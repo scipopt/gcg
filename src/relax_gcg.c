@@ -2593,9 +2593,10 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 
    /* setting parameters for Benders' decomposition */
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "constraints/benderslp/maxdepth", -1) );
-   SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "conflict/useprop", FALSE) );
-   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "propagating/maxrounds", 0) );
+   //SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "conflict/useprop", FALSE) );
+   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "propagating/maxrounds", 0) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "propagating/maxroundsroot", 0) );
+   //SCIP_CALL( SCIPsetIntParam(scip, "propagating/maxrounds", 0) );
 
    /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",

@@ -33,8 +33,8 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
-/* #define CHECKCONSISTENCY */
+/*#define SCIP_DEBUG*/
+#define CHECKCONSISTENCY
 #include <assert.h>
 #include <string.h>
 
@@ -291,6 +291,7 @@ static
 SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
+   int i;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -323,6 +324,13 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
    conshdlrData->stack[conshdlrData->nstack] = cons;
    ++(conshdlrData->nstack);
 
+   i = conshdlrData->nstack - 1;
+   while( i > conshdlrData->nstack - 10 && i >= 0  )
+   {
+      printf("Stack %d: %s\n", i, SCIPconsGetName(conshdlrData->stack[i]));
+      i--;
+   }
+
    return SCIP_OKAY;
 }
 
@@ -332,6 +340,7 @@ static
 SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
+   int i;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -351,6 +360,13 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
    /* remove constraint from the stack */
    if( conshdlrData->nstack > 0 )
       --(conshdlrData->nstack);
+
+   i = conshdlrData->nstack - 1;
+   while( i > conshdlrData->nstack - 10 && i >= 0  )
+   {
+      printf("Stack %d: %s\n", i, SCIPconsGetName(conshdlrData->stack[i]));
+      i--;
+   }
 
    return SCIP_OKAY;
 }
@@ -774,17 +790,17 @@ void GCGconsOrigbranchCheckConsistency(
       assert(consdata->node != NULL);
       assert((consdata->parentcons == NULL) == (SCIPnodeGetDepth(consdata->node) == 0));
       /** todo assertions for all nchildcons */
-      if( consdata->nchildcons == 2 )
-         assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->childcons[0] == conss[i]
-            || SCIPconsGetData(consdata->parentcons)->childcons[1] == conss[i]
+      if( consdata->nchildconss == 2 )
+         assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->childconss[0] == conss[i]
+            || SCIPconsGetData(consdata->parentcons)->childconss[1] == conss[i]
             || ( SCIPinProbing(scip) && SCIPconsGetData(consdata->parentcons)->probingtmpcons == conss[i]));
-      if( consdata->nchildcons == 2 )
-         assert(consdata->childcons[0] == NULL || SCIPconsGetData(consdata->childcons[0])->parentcons == conss[i]);
-      if( consdata->nchildcons == 2 )
-         assert(consdata->childcons[1] == NULL || SCIPconsGetData(consdata->childcons[1])->parentcons == conss[i]);
+      if( consdata->nchildconss == 2 )
+         assert(consdata->childconss[0] == NULL || SCIPconsGetData(consdata->childconss[0])->parentcons == conss[i]);
+      if( consdata->nchildconss == 2 )
+         assert(consdata->childconss[1] == NULL || SCIPconsGetData(consdata->childconss[1])->parentcons == conss[i]);
       assert(consdata->probingtmpcons == NULL || SCIPinProbing(scip));
       assert(consdata->probingtmpcons == NULL || SCIPconsGetData(consdata->probingtmpcons)->parentcons == conss[i]);
-      assert(consdata->mastercons == NULL || GCGconsMasterbranchGetOrigcons(consdata->mastercons) == conss[i]);
+      assert(SCIPnodeGetDepth(consdata->node) == 0 || consdata->mastercons == NULL || GCGconsMasterbranchGetOrigcons(consdata->mastercons) == conss[i]);
    }
 #endif
 #endif

@@ -19,7 +19,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+//#define SCIP_DEBUG
 #include <assert.h>
 #include <string.h>
 
@@ -38,12 +38,13 @@
 #include "scip/pub_benders.h"
 #include "scip/bendersdefcuts.h"
 
-#define BENDERS_NAME            "gcg"
-#define BENDERS_DESC            "Benders' decomposition template"
-#define BENDERS_PRIORITY        0
-#define BENDERS_CUTLP        TRUE            /**< should Benders' cut be generated for LP solutions */
-#define BENDERS_CUTPSEUDO    TRUE            /**< should Benders' cut be generated for pseudo solutions */
-#define BENDERS_CUTRELAX     TRUE            /**< should Benders' cut be generated for relaxation solutions */
+#define BENDERS_NAME                "gcg"
+#define BENDERS_DESC                "Benders' decomposition template"
+#define BENDERS_PRIORITY            0
+#define BENDERS_CUTLP            TRUE   /**< should Benders' cut be generated for LP solutions */
+#define BENDERS_CUTPSEUDO        TRUE   /**< should Benders' cut be generated for pseudo solutions */
+#define BENDERS_CUTRELAX         TRUE   /**< should Benders' cut be generated for relaxation solutions */
+#define BENDERS_SHAREAUXVARS    FALSE   /**< should this Benders' share the highest priority Benders' aux vars */
 
 
 #define DEFAULT_USEHEURSOLVING           FALSE      /**< should heuristic solving be used */
@@ -639,7 +640,8 @@ SCIP_DECL_BENDERSGETVAR(bendersGetvarGcg)
       if( GCGoriginalVarIsLinking(origvar) )
       {
          (*mappedvar) = GCGlinkingVarGetPricingVars(origvar)[probnumber];
-         (*mappedvar) = SCIPvarGetProbvar((*mappedvar));
+         //if( (*mappedvar) != NULL )
+            //(*mappedvar) = SCIPvarGetProbvar((*mappedvar));
       }
    }
 
@@ -663,6 +665,7 @@ static
 SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
 {  /*lint --e{715}*/
    SCIP_BENDERSDATA* bendersdata;
+   SCIP_Bool intsol;                /** flag to indicate whether the solution is integer */
 
    assert(benders != NULL);
 
@@ -671,6 +674,7 @@ SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
 
    /* creates a solution to the original problem */
 #ifdef SCIP_DEBUG
+   SCIPdebugMessage("The master problem solution.\n");
    SCIP_CALL( SCIPprintSol(scip, sol, NULL, FALSE) );
 #endif
    if( !infeasible )
@@ -787,7 +791,8 @@ SCIP_RETCODE SCIPincludeBendersGcg(
     * compile independent of new callbacks being added in future SCIP versions
     */
    SCIP_CALL( SCIPincludeBendersBasic(scip, &benders, BENDERS_NAME, BENDERS_DESC, BENDERS_PRIORITY,
-         BENDERS_CUTLP, BENDERS_CUTPSEUDO, BENDERS_CUTRELAX, bendersGetvarGcg, bendersCreatesubGcg, bendersdata) );
+         BENDERS_CUTLP, BENDERS_CUTPSEUDO, BENDERS_CUTRELAX, BENDERS_SHAREAUXVARS, bendersGetvarGcg,
+         bendersCreatesubGcg, bendersdata) );
    assert(benders != NULL);
 
    /* set non fundamental callbacks via setter functions */
@@ -800,9 +805,8 @@ SCIP_RETCODE SCIPincludeBendersGcg(
    SCIP_CALL( SCIPsetBendersInitsol(scip, benders, bendersInitsolGcg) );
    SCIP_CALL( SCIPsetBendersExitsol(scip, benders, bendersExitsolGcg) );
    SCIP_CALL( SCIPsetBendersPresubsolve(scip, benders, bendersPresubsolveGcg) );
-   SCIP_CALL( SCIPsetBendersSolvesub(scip, benders, bendersSolvesubGcg) );
+   SCIP_CALL( SCIPsetBendersSolveAndFreesub(scip, benders, bendersSolvesubGcg, bendersFreesubGcg) );
    SCIP_CALL( SCIPsetBendersPostsolve(scip, benders, bendersPostsolveGcg) );
-   SCIP_CALL( SCIPsetBendersFreesub(scip, benders, bendersFreesubGcg) );
 #endif
 
    /* including the default cuts for Benders' decomposition */

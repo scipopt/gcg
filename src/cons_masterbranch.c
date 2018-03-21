@@ -182,6 +182,8 @@ SCIP_RETCODE initializeConsdata(
    origcons = GCGconsOrigbranchGetActiveCons(origscip);
    assert(origcons != NULL);
 
+   assert(SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) == SCIPnodeGetNumber(SCIPgetCurrentNode(origscip)));
+
    /* @fixme: There should be an assertion instead; I guess consdata->origcons should be NULL */
    if( consdata->origcons != origcons ) /*rootnode?*/
    {
@@ -454,8 +456,8 @@ SCIP_RETCODE applyGlobalBndchgsToPricingprobs(
    assert(origscip != NULL);
 
    /* if the decomposition mode is BENDERS, then the pricing problems should not be updated */
-   if( SCIPgetDepth(origscip) > 0 && GCGgetDecompositionMode(origscip) == DEC_DECMODE_BENDERS )
-      return SCIP_OKAY;
+   //if( SCIPgetDepth(origscip) > 0 && GCGgetDecompositionMode(origscip) == DEC_DECMODE_BENDERS )
+      //return SCIP_OKAY;
 
    if( !conshdlrdata->pendingbndsactivated )
    {
@@ -1441,6 +1443,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    SCIP* origscip;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_CONSDATA* consdata;
+   int i;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -1524,6 +1527,15 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       SCIP_CALL( GCGrelaxBranchActiveMaster(origscip, consdata->branchrule, consdata->branchdata) );
    }
 
+#if 0
+   i = conshdlrdata->nstack - 1;
+   while( i > conshdlrdata->nstack - 10 && i >= 0  )
+   {
+      printf("Master Stack %d: %s\n", i, SCIPconsGetName(conshdlrdata->stack[i]));
+      i--;
+   }
+#endif
+
    return SCIP_OKAY;
 }
 
@@ -1534,6 +1546,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_CONSDATA* consdata;
    SCIP* origscip;
+   int i;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -1578,6 +1591,13 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    if( consdata->branchrule != NULL )
    {
       SCIP_CALL( GCGrelaxBranchDeactiveMaster(origscip, consdata->branchrule, consdata->branchdata) );
+   }
+
+   i = conshdlrdata->nstack - 1;
+   while( i > conshdlrdata->nstack - 10 && i >= 0  )
+   {
+      printf("Master Stack %d: %s\n", i, SCIPconsGetName(conshdlrdata->stack[i]));
+      i--;
    }
 
    return SCIP_OKAY;
