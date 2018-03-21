@@ -1984,12 +1984,12 @@ void Seeedpool::addSeeedToIncomplete(
    SCIP_Bool* success
    )
 {
+   *success = FALSE;
    if( seeedIsNoDuplicateOfSeeeds(seeed, incompleteSeeeds, false) )
    {
       incompleteSeeeds.push_back( seeed );
       *success = TRUE;
    }
-   *success = FALSE;
    return;
 }
 SCIP_Bool Seeedpool::areThereContinuousVars(){

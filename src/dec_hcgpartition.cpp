@@ -790,6 +790,8 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxHcgpartition)
       detectordata->found = TRUE;
       (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hc\\_%d", numberOfBlocks[0]);
       newSeeeds[1]->addDetectorChainInfo(decinfo);
+      seeedPropagationData->newSeeeds[0] = (newSeeeds)[1];
+      ++(seeedPropagationData->nNewSeeeds);
       return SCIP_OKAY;
    }
    else //propagation unsuccessful

@@ -2123,6 +2123,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    SEEED_PROPAGATION_DATA* seeedPropData;
    gcg::Seeedpool* seeedpool;
    SCIP_Bool finished;
+   SCIP_Bool success;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
@@ -2136,7 +2137,6 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    SCIP_CALL( SCIPallocBufferArray(scip, &detectors, conshdlrdata->ndetectors) );
 
    ndetectors = 0;
-   SCIPinfoMessage(scip, NULL, "Available detectors for propagation:\n");
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
       if( conshdlrdata->detectors[i]->propagateFromToolbox )
@@ -2166,11 +2166,17 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    seeedPropData->seeedpool = seeedpool;
    seeedPropData->nNewSeeeds = 0;
    seeedPropData->seeedToPropagate = new gcg::Seeed(conshdlrdata->curruserseeed);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropData->newSeeeds), 1) );
 
    retcode = SCIP_ERROR;
    finished = FALSE;
    while( !finished )
    {
+      SCIPinfoMessage(scip, NULL, "Available detectors for propagation:\n");
+      for( i = 0; i < ndetectors; ++i )
+      {
+         SCIPinfoMessage(scip, NULL, "%s\n", detectors[i]->name);
+      }
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name of the detector that you want to use (or \"none\"): \nGCG/toolbox> : ", &command, &endoffile) );
       commandlen = strlen(command);
 
@@ -2180,36 +2186,48 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
          {
             if( strncmp( command, detectors[i]->name, commandlen) == 0 )
             {
-               retcode = conshdlrdata->detectors[i]->propagateFromToolbox(scip, conshdlrdata->detectors[i], seeedPropData, &result, dialoghdlr, dialog);
+               retcode = detectors[i]->propagateFromToolbox(scip, conshdlrdata->detectors[i], seeedPropData, &result, dialoghdlr, dialog);
                break;
             }
          }
       }
       if( retcode == SCIP_OKAY )
       {
-         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-            "Seeed was successfully propagated. Do you want to visualize the current Seeed, (\"visualize\"),continue decomposition with the newly propagated Seeed (\"continue\"), \
-             or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> : ", &command, &endoffile) );
-         //@TODO: Handle the three cases
-         if( strncmp( command, "visualize", commandlen) == 0 )
+         SCIPinfoMessage(scip, NULL, "Seeed was successfully propagated.\n");
+         //@TODO: Display additional seeed information, find public alternative for isNoDuplicateOfSeeeds
+         if( FALSE/*!seeedIsNoDuplicateOfSeeeds(seeedPropData->newSeeeds[0], seeedpool->incompleteSeeeds, FALSE)*/ )
          {
-
+            SCIPinfoMessage(scip, NULL, "Found Seeed is a duplicate of a previously found Seeed.\n");
          }
-         else if( strncmp( command, "continue", commandlen) == 0 )
-         {
 
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+            "Do you want to visualize the newly propagated Seeed (\"yes\"/\"no\")?\nGCG/toolbox> : ", &command, &endoffile) );
+         commandlen = strlen(command);
+         if( strncmp( command, "yes", commandlen) == 0 )
+         {
+            SCIP_CALL(SCIPconshdlrDecompSelectVisualize(scip, dialoghdlr, dialog ) );
+         }
+
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+            "Do you want to continue the decomposition with the newly propagated Seeed (\"continue\"), \
+or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> : ", &command, &endoffile) );
+         commandlen = strlen(command);
+         if( strncmp( command, "continue", commandlen) == 0 )
+         {
+            seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->seeedToPropagate, &success);
+            seeedPropData->seeedToPropagate = seeedPropData->newSeeeds[0];
          }
          else if( strncmp( command, "previous", commandlen) == 0 )
          {
-            
+            seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->newSeeeds[0], &success);
          }
-         //@TODO: Display additional seeed information
       }
       else
       {
          SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
             "Seeed propagation unsuccessful. Do you want to select another detector (\"detector\") or \
-            return to the previous menu(\"previous\")?\nGCG/toolbox> : ", &command, &endoffile) );
+return to the previous menu(\"previous\")?\nGCG/toolbox> : ", &command, &endoffile) );
+         commandlen = strlen(command);
          if( strncmp( command, "detector", commandlen) == 0 )
          {
             continue;
@@ -2222,7 +2240,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
       }
    }
 
-   SCIPfreeMemoryArrayNull( scip, & seeedPropData->newSeeeds );
+   SCIPfreeMemoryArrayNull( scip, &(seeedPropData->newSeeeds) );
    delete seeedPropData->seeedToPropagate;
    seeedPropData->newSeeeds = NULL;
    seeedPropData->nNewSeeeds = 0;
