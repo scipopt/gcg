@@ -290,10 +290,6 @@ void Pricingcontroller::initPricing(
    curchunk = (curchunk + 1) % nchunks;
    startchunk = curchunk;
 
-   /* reset pricing problems */
-   for( int i = 0; i < npricingprobs; ++i )
-      GCGpricingprobReset(scip_, pricingprobs[i]);
-
    SCIPdebugMessage("initialize pricing, chunk = %d/%d\n", curchunk+1, nchunks);
 }
 
@@ -311,9 +307,13 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
    SCIP_Real*            dualsolconv         /**< dual solution values / Farkas coefficients of convexity constraints */
    )
 {
-   SCIPdebugMessage("setup pricing queue, chunk = %d/%d\n", curchunk+1, nchunks);
+   SCIPdebugMessage("Setup pricing queue, chunk = %d/%d\n", curchunk+1, nchunks);
 
    GCGpqueueClear(pqueue);
+
+      /* reset pricing problems */
+   for( int i = 0; i < npricingprobs; ++i )
+      GCGpricingprobReset(scip_, pricingprobs[i]);
 
    for( int i = 0; i < npricingjobs; ++i )
    {

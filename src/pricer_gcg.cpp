@@ -3143,7 +3143,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    /* stabilization loop */
    do
    {
-      SCIP_Bool optimal;
+      SCIP_Bool optimal = FALSE;
 
 #ifndef NDEBUG
       if( nextchunk )
@@ -3202,7 +3202,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
          if( foundvarscolpool )
          {
-            SCIPdebugMessage("Found column(s) with negative reduced cost in column pool\n");
+            SCIPdebugMessage("*** Found column(s) with negative reduced cost in column pool\n");
             assert(GCGpricestoreGetNCols(pricestore) > 0);
             break;
          }
