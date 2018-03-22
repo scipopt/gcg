@@ -3237,7 +3237,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             goto done;
          }
 
-         SCIPdebugMessage("*** Solve pricing problem %d, solver = %s, stabilized = %u, %s\n",
+         SCIPdebugMessage("*** Solve pricing problem %d, solver <%s>, stabilized = %u, %s\n",
             GCGpricingprobGetProbnr(pricingprob), GCGpricingjobGetSolver(pricingjob)->name, stabilized,
             GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
 
@@ -3431,13 +3431,17 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    }
    while( nextchunk || (stabilized && nfoundvars == 0) );
 
+   SCIPdebugMessage("*** Pricing loop finished, found %d improving columns.\n", nfoundvars);
+
 #ifdef _OPENMP
-   SCIPdebugMessage("Pricing loop finished, number of threads = %d\n", omp_get_num_threads());
+   SCIPdebugMessage("Parallel pricing: used %d threads.\n", omp_get_num_threads());
 #endif
 
    SCIP_CALL( pricingcontroller->moveCols(colpool, pricestore, pricerdata->usecolpool, TRUE) );
 
    SCIP_CALL( GCGpricestoreApplyCols(pricestore, &nfoundvars) );
+
+   SCIPdebugMessage("Added %d new variables.\n", nfoundvars);
 
    SCIPfreeBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs);
    SCIPfreeMemoryArray(scip_, &cols);

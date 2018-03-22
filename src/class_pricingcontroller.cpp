@@ -245,7 +245,7 @@ SCIP_RETCODE Pricingcontroller::initSol()
          {
             if( solvers[j]->enabled )
             {
-               SCIP_CALL_EXC( GCGpricingjobCreate(scip_, &pricingjobs[npricingprobs + j], pricingprobs[npricingprobs], solvers[j], npricingprobs / actchunksize) );
+               SCIP_CALL_EXC( GCGpricingjobCreate(scip_, &pricingjobs[npricingjobs], pricingprobs[npricingprobs], solvers[j], npricingprobs / actchunksize) );
                ++npricingjobs;
             }
          }
@@ -394,15 +394,13 @@ void Pricingcontroller::evaluatePricingjob(
 {
    GCG_PRICINGPROB* pricingprob = GCGpricingjobGetPricingprob(pricingjob);
 
-   SCIPdebugMessage("Problem %d, status = %d\n", GCGpricingprobGetProbnr(pricingprob), status);
-
    /* If the pricing job has not yielded any improving column, possibly solve it again;
     * increase at least one of its limits, or solve it exactly if it was solved heuristically before
     */
    // @todo: update score of pricing job
    if( !pricingprobIsDone(pricingprob) )
    {
-      SCIPdebugMessage("Problem %d has not yielded improving columns\n", GCGpricingprobGetProbnr(pricingprob));
+      SCIPdebugMessage("Problem %d has not yielded improving columns.\n", GCGpricingprobGetProbnr(pricingprob));
 
       if( GCGpricingjobIsHeuristic(pricingjob) )
       {

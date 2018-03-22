@@ -149,6 +149,8 @@ void GCGpricingprobUpdate(
          --k;
       }
    }
+
+   pricingprob->ncols = MIN(pricingprob->ncols + ncols, pricingprob->colssize);
 }
 
 /** for a pricing problem, move its columns to the pricing store or column pool */
