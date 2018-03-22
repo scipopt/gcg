@@ -217,7 +217,8 @@ LIBOBJ		=	reader_blk.o \
 			gcgcol.o \
 			colpool.o \
 			pricestore_gcg.o \
-			pricingjob.o
+			pricingjob.o \
+			pricingprob.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \

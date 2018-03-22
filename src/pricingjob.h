@@ -36,7 +36,8 @@
 
 #include "struct_pricingjob.h"
 #include "type_pricingjob.h"
-#include "pub_pricingprob.h"
+
+#include "type_pricingprob.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,7 +63,6 @@ void GCGpricingjobFree(
 /** setup a pricing job at the beginning of the pricing loop */
 EXTERN
 SCIP_RETCODE GCGpricingjobSetup(
-   SCIP*                 scip,               /**< master SCIP instance */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
    int                   scoring,            /**< scoring parameter */

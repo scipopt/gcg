@@ -39,10 +39,13 @@
 #include "pub_pricingprob.h"
 
 #include "gcg.h"
+#include "pricestore_gcg.h"
+#include "pub_colpool.h"
+#include "pub_gcgcol.h"
+#include "pub_pricingjob.h"
 
 #include "scip/scip.h"
 
-#include <assert.h>
 
 /** create a pricing problem */
 SCIP_RETCODE GCGpricingprobCreate(
@@ -86,6 +89,7 @@ void GCGpricingprobFree(
 
 /** reset the pricing problem statistics for the current pricing round */
 void GCGpricingprobReset(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    )
 {
@@ -93,13 +97,13 @@ void GCGpricingprobReset(
    assert(pricingprob->nimpcols == 0);
 
    pricingprob->nsolves = 0;
-   pricingprob->nheuriters = 0;
-   pricingprob->status = SCIP_STATUS_UNKNOWN;
+   pricingprob->pricingstatus = SCIP_STATUS_UNKNOWN;
    pricingprob->lowerbound = -SCIPinfinity(scip);
 }
 
 /** update solution information of a pricing problem */
 void GCGpricingprobUpdate(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    int                   nsolves,            /**< additional number of times the pricing problem was solved */
    SCIP_STATUS           status,             /**< new pricing status */
@@ -110,13 +114,16 @@ void GCGpricingprobUpdate(
 {
    int i;
    int j;
+   int k;
 
    pricingprob->nsolves += nsolves;
-   pricingprob->status = status;
+   pricingprob->pricingstatus = status;
    if( SCIPisDualfeasGT(scip, lowerbound, pricingprob->lowerbound) )
       pricingprob->lowerbound = lowerbound;
 
-   /* add new columns; ensure that the column array remains sorted by reduced costs */
+   /* add new columns; ensure that the column array remains sorted by reduced costs;
+    * only the best pricingprob->ncols are stored, the rest is sorted out and freed
+    */
    for( i = pricingprob->ncols + ncols - 1, j = pricingprob->ncols-1, k = ncols-1; k >= 0; --i )
    {
       if( j >= 0 && SCIPisDualfeasGT(scip, GCGcolGetRedcost(pricingprob->cols[j]), GCGcolGetRedcost(cols[k])) )
@@ -124,7 +131,7 @@ void GCGpricingprobUpdate(
          if( i < pricingprob->colssize )
             pricingprob->cols[i] = pricingprob->cols[j];
          else
-            GCGfreeCol(&pricingprob->cols[j]);
+            GCGfreeGcgCol(&pricingprob->cols[j]);
 
          --j;
       }
@@ -133,11 +140,11 @@ void GCGpricingprobUpdate(
          if( i < pricingprob->colssize )
          {
             if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(cols[k])) )
-               ++pricingjob->nimpcols;
+               ++pricingprob->nimpcols;
             pricingprob->cols[i] = cols[k];
          }
          else
-            GCGfreeCol(&cols[k]);
+            GCGfreeGcgCol(&cols[k]);
 
          --k;
       }
@@ -146,6 +153,7 @@ void GCGpricingprobUpdate(
 
 /** for a pricing problem, move its columns to the pricing store or column pool */
 SCIP_RETCODE GCGpricingprobMoveCols(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    GCG_COLPOOL*          colpool,            /**< GCG column pool */
    GCG_PRICESTORE*       pricestore,         /**< GCG pricing store */
@@ -163,11 +171,11 @@ SCIP_RETCODE GCGpricingprobMoveCols(
 
       added = FALSE;
 
-      if( usepricestore && SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(pricingprob->cols[i])) )
+      if( usepricestore && SCIPisDualfeasNegative(scip, GCGcolGetRedcost(pricingprob->cols[i])) )
       {
-         SCIP_CALL( GCGcomputeColMastercoefs(scip_, pricingprob->cols[i]) );
+         SCIP_CALL( GCGcomputeColMastercoefs(scip, pricingprob->cols[i]) );
 
-         SCIP_CALL( GCGpricestoreAddCol(scip_, pricestore, pricingprob->cols[i], FALSE) );
+         SCIP_CALL( GCGpricestoreAddCol(scip, pricestore, pricingprob->cols[i], FALSE) );
          added = TRUE;
       }
       else if( usecolpool )
@@ -185,11 +193,13 @@ SCIP_RETCODE GCGpricingprobMoveCols(
          SCIPdebugPrintf("added to column pool or price store.\n");
       }
 
-      cols[i] = NULL;
+      pricingprob->cols[i] = NULL;
    }
 
    pricingprob->ncols = 0;
    pricingprob->nimpcols = 0;
+
+   return SCIP_OKAY;
 }
 
 /** get the SCIP instance corresponding to the pricing problem */
@@ -286,7 +296,7 @@ int GCGpricingprobGetNColsLastRounds(
    int i;
 
    ncols = 0;
-   for( i = 0; i < nroundcols; ++i )
+   for( i = 0; i < nroundscol; ++i )
       ncols += pricingprob->ncolsround[i];
 
    return ncols;

@@ -36,6 +36,11 @@
 
 #include "struct_pricingprob.h"
 #include "type_pricingprob.h"
+
+#include "pricer_gcg.h"
+#include "type_colpool.h"
+#include "type_pricestore_gcg.h"
+#include "type_pricingjob.h"
 #include "type_solver.h"
 
 #ifdef __cplusplus
@@ -63,12 +68,14 @@ void GCGpricingprobFree(
 /** reset the pricing problem statistics for the current pricing round */
 EXTERN
 void GCGpricingprobReset(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** update solution information of a pricing problem */
 EXTERN
 void GCGpricingprobUpdate(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    int                   nsolves,            /**< additional number of times the pricing problem was solved */
    SCIP_STATUS           status,             /**< new pricing status */
@@ -80,6 +87,7 @@ void GCGpricingprobUpdate(
 /** for a pricing problem, move its columns to the pricing store or column pool */
 EXTERN
 SCIP_RETCODE GCGpricingprobMoveCols(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    GCG_COLPOOL*          colpool,            /**< GCG column pool */
    GCG_PRICESTORE*       pricestore,         /**< GCG pricing store */

@@ -2946,14 +2946,14 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    updateRedcosts(pricetype, cols, *ncols);
    SCIPsortPtr((void**) cols, GCGcolCompRedcost, *ncols); /* If pricing was aborted due to a limit, columns may not be sorted */
 
-   assert(status == SCIP_STATUS_OPTIMAL
-      || status == SCIP_STATUS_INFEASIBLE
-      || status == SCIP_STATUS_UNBOUNDED
-      || status == SCIP_STATUS_NODELIMIT
-      || status == SCIP_STATUS_STALLNODELIMIT
-      || status == SCIP_STATUS_GAPLIMIT
-      || status == SCIP_STATUS_SOLLIMIT
-      || status == SCIP_STATUS_UNKNOWN);
+   assert(*status == SCIP_STATUS_OPTIMAL
+      || *status == SCIP_STATUS_INFEASIBLE
+      || *status == SCIP_STATUS_UNBOUNDED
+      || *status == SCIP_STATUS_NODELIMIT
+      || *status == SCIP_STATUS_STALLNODELIMIT
+      || *status == SCIP_STATUS_GAPLIMIT
+      || *status == SCIP_STATUS_SOLLIMIT
+      || *status == SCIP_STATUS_UNKNOWN);
 
    if( !GCGpricingjobIsHeuristic(pricingjob) )
    {

@@ -39,10 +39,10 @@
 #include "pub_pricingjob.h"
 
 #include "gcg.h"
+#include "pub_pricingprob.h"
 
 #include "scip/scip.h"
 
-#include <assert.h>
 
 /** create a pricing job */
 SCIP_RETCODE GCGpricingjobCreate(
@@ -77,7 +77,6 @@ void GCGpricingjobFree(
 
 /** setup a pricing job at the beginning of the pricing loop */
 SCIP_RETCODE GCGpricingjobSetup(
-   SCIP*                 scip,               /**< master SCIP instance */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
    int                   scoring,            /**< scoring parameter */

@@ -292,7 +292,7 @@ void Pricingcontroller::initPricing(
 
    /* reset pricing problems */
    for( int i = 0; i < npricingprobs; ++i )
-      GCGpricingprobReset(pricingprobs[i]);
+      GCGpricingprobReset(scip_, pricingprobs[i]);
 
    SCIPdebugMessage("initialize pricing, chunk = %d/%d\n", curchunk+1, nchunks);
 }
@@ -317,7 +317,7 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
 
    for( int i = 0; i < npricingjobs; ++i )
    {
-      SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], heurpricingiters > 0,
+      SCIP_CALL_EXC( GCGpricingjobSetup(pricingjobs[i], heurpricingiters > 0,
          sorting, nroundscol, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i)) );
 
       if( GCGpricingjobGetChunk(pricingjobs[i]) == curchunk )
@@ -375,7 +375,7 @@ void Pricingcontroller::updatePricingprob(
    int                   ncols               /**< number of found columns */
    )
 {
-   GCGpricingprobUpdate(pricingprob, nsolves, status, lowerbound, cols, ncols);
+   GCGpricingprobUpdate(scip_, pricingprob, nsolves, status, lowerbound, cols, ncols);
 }
 
 /** update solution statistics of a pricing job */
@@ -488,7 +488,7 @@ SCIP_RETCODE Pricingcontroller::moveCols(
 
    for( int i = 0; i < npricingprobs; ++i )
    {
-      SCIP_CALL( GCGpricingprobMoveCols(pricingprobs[i], colpool, pricestore, usecolpool, usepricestore) );
+      SCIP_CALL( GCGpricingprobMoveCols(scip_, pricingprobs[i], colpool, pricestore, usecolpool, usepricestore) );
    }
 
    return SCIP_OKAY;
