@@ -1264,11 +1264,12 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "conss", "assign unassigned constraints to master/blocks");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "vars", "assign unassigned variables to master(only)/linking/blocks");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "refine", "refine implicit constraint and variables assignments");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "finish by detector", "choose a finishing detector that completes the decomposition");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "finish", "choose a finishing detector that completes the decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "quit the modification process and returns to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "undo", "last modification is undone (atm only the last modification can be undone)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "shows a visualization of the current decomposition ");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "propagate", "list all detectors that can propagate and apply propagation");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "propagate", "list all detectors that can propagate the current seeed and apply propagation");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "propagate", "list all detectors that can finish the current seeed and apply a finisher");
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
 
@@ -2124,6 +2125,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    gcg::Seeedpool* seeedpool;
    SCIP_Bool finished;
    SCIP_Bool success;
+   SCIP_Bool fromunpresolved;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
@@ -2149,17 +2151,19 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
 
    if( ndetectors == 0 )
    {
-      SCIPinfoMessage(scip, NULL, "No detector available!\n\n");
+      SCIPinfoMessage(scip, NULL, "No detector implements this callback, returning!\n\n");
       return SCIP_OKAY;
    }
 
    if (conshdlrdata->seeedpool != NULL )
    {
       seeedpool = conshdlrdata->seeedpool;
+      fromunpresolved = FALSE;
    }
    else
    {
       seeedpool = conshdlrdata->seeedpoolunpresolved;
+      fromunpresolved = TRUE;
    }
 
    seeedPropData = new SEEED_PROPAGATION_DATA();
@@ -2194,8 +2198,10 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
       if( retcode == SCIP_OKAY )
       {
          SCIPinfoMessage(scip, NULL, "Seeed was successfully propagated.\n");
-         //@TODO: Display additional seeed information, find public alternative for isNoDuplicateOfSeeeds
-         if( FALSE/*!seeedIsNoDuplicateOfSeeeds(seeedPropData->newSeeeds[0], seeedpool->incompleteSeeeds, FALSE)*/ )
+         seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->newSeeeds[0], &success);
+         conshdlrdata->listall->at( seeedPropData->newSeeeds[0]->getID() )->displayInfo( seeedPropData->seeedpool, 0 );
+
+         if( !success )
          {
             SCIPinfoMessage(scip, NULL, "Found Seeed is a duplicate of a previously found Seeed.\n");
          }
@@ -2219,13 +2225,12 @@ or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> : ", &command,
          }
          else if( strncmp( command, "previous", commandlen) == 0 )
          {
-            seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->newSeeeds[0], &success);
+            continue;
          }
       }
       else
       {
-         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-            "Seeed propagation unsuccessful. Do you want to select another detector (\"detector\") or \
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Seeed propagation unsuccessful. Do you want to select another detector (\"detector\") or \
 return to the previous menu(\"previous\")?\nGCG/toolbox> : ", &command, &endoffile) );
          commandlen = strlen(command);
          if( strncmp( command, "detector", commandlen) == 0 )
@@ -2239,6 +2244,16 @@ return to the previous menu(\"previous\")?\nGCG/toolbox> : ", &command, &endoffi
          }
       }
    }
+
+   if( fromunpresolved )
+   {
+      conshdlrdata->seeedpoolunpresolved = seeedPropData->seeedpool;
+   }
+   else
+   {
+      conshdlrdata->seeedpool = seeedPropData->seeedpool;
+   }
+   conshdlrdata->curruserseeed = seeedPropData->seeedToPropagate;
 
    SCIPfreeMemoryArrayNull( scip, &(seeedPropData->newSeeeds) );
    delete seeedPropData->seeedToPropagate;
@@ -2472,15 +2487,13 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
          SCIPconshdlrDecompToolboxModifyVars(scip, dialoghdlr, dialog);
          continue;
       }
-      if( strncmp( command, "finish by detector", commandlen2) == 0 )
+      if( strncmp( command, "finish", commandlen2) == 0 )
       {
-         SCIPdialoghdlrClearBuffer(dialoghdlr);
          SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
          continue;
       }
-      if( strncmp( command, "refine implicit constraint and variables assignments", commandlen2) == 0 )
+      if( strncmp( command, "refine", commandlen2) == 0 )
       {
-         SCIPdialoghdlrClearBuffer(dialoghdlr);
          gcg::Seeedpool* seeedpool;
          if( conshdlrdata->curruserseeed->isFromUnpresolved() )
             seeedpool = conshdlrdata->seeedpoolunpresolved;
@@ -2532,7 +2545,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
          continue;
       }
 
-      if( strncmp( command, "undo last modification", commandlen2) == 0 )
+      if( strncmp( command, "undo", commandlen2) == 0 )
       {
          if ( conshdlrdata->lastuserseeed == NULL )
             SCIPdialogMessage(scip, NULL, " nothing to be undone \n");
