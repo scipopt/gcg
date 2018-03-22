@@ -2170,10 +2170,11 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    seeedPropData->seeedToPropagate = new gcg::Seeed(conshdlrdata->curruserseeed);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropData->newSeeeds), 1) );
 
-   retcode = SCIP_ERROR;
+
    finished = FALSE;
    while( !finished )
    {
+      retcode = SCIP_ERROR;
       SCIPinfoMessage(scip, NULL, "Available detectors for propagation:\n");
       for( i = 0; i < ndetectors; ++i )
       {
@@ -2193,12 +2194,16 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
             }
          }
       }
+      else
+      {
+         finished = TRUE;
+         continue;
+      }
       if( retcode == SCIP_OKAY )
       {
-         SCIPinfoMessage(scip, NULL, "Seeed was successfully propagated.\n");
+         SCIPinfoMessage(scip, NULL, "Seeed was successfully propagated. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
          seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->newSeeeds[0], &success);
-         conshdlrdata->listall->at( seeedPropData->newSeeeds[0]->getID() )->displayInfo( seeedPropData->seeedpool, 0 );
-
+         //conshdlrdata->listall->at( seeedPropData->newSeeeds[0]->getID() )->displayInfo( seeedPropData->seeedpool, 0 );
          if( !success )
          {
             SCIPinfoMessage(scip, NULL, "Found Seeed is a duplicate of a previously found Seeed.\n");
@@ -2229,7 +2234,7 @@ or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &
       else
       {
          SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Seeed propagation unsuccessful. Do you want to select another detector (\"detector\") or \
-return to the previous menu(\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );
+return to the previous menu (\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );
          commandlen = strlen(command);
          if( strncmp( command, "detector", commandlen) == 0 )
          {
@@ -2251,7 +2256,7 @@ return to the previous menu(\"previous\")?\nGCG/toolbox> ", &command, &endoffile
    {
       conshdlrdata->seeedpool = seeedPropData->seeedpool;
    }
-   conshdlrdata->curruserseeed = seeedPropData->seeedToPropagate;
+   //conshdlrdata->curruserseeed = seeedPropData->seeedToPropagate;
 
    SCIPfreeMemoryArrayNull( scip, &(seeedPropData->newSeeeds) );
    delete seeedPropData->seeedToPropagate;
