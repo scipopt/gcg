@@ -117,7 +117,8 @@ git checkout "${CURRENTBRANCH}"
 
 
 # 3) do sth with the output: TODO
-
+cd check
+./plotcomparedres.py
 
 # termination
 exit 0
