@@ -100,15 +100,9 @@ do
 	OLDset=$(find . -type f -name "*.set"  -printf "%p\n" | sort -n | head -n 1)
 	echo "$OLDset"
 	mv "$OLDset" "version${index}.set"
-	
-	# parse the res file to a readable format for later use
-	cd ..
-	mkdir -p pickles
-	chmod +x parseres.py
-	./parseres.py results/version${index}.res
 
 	# go back to the main folder to check out next version correctly
-	cd ..
+	cd ../..
 	
 done
 
@@ -117,7 +111,19 @@ git checkout "${CURRENTBRANCH}"
 
 
 # 3) do sth with the output: TODO
+	
+# parse the res files to a readable format for later use
 cd check
+mkdir -p pickles
+chmod +x parseres.py
+
+index=0
+while [ $index -lt $nversions ]
+do
+	index=$((index + 1))
+	./parseres.py results/version${index}.res
+done
+
 ./plotcomparedres.py
 
 # termination
