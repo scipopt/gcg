@@ -101,8 +101,14 @@ do
 	echo "$OLDset"
 	mv "$OLDset" "version${index}.set"
 	
+	# parse the res file to a readable format for later use
+	cd ..
+	makedir -p pickles
+	chmod +x parseres.py
+	./parseres.py results/version${index}.res
+
 	# go back to the main folder to check out next version correctly
-	cd ../..
+	cd ..
 	
 done
 
@@ -111,6 +117,7 @@ git checkout "${CURRENTBRANCH}"
 
 
 # 3) do sth with the output: TODO
+
 
 # termination
 exit 0
