@@ -81,6 +81,8 @@ struct SCIP_SepaData
    SCIP_ROW**            newcuts;            /**< new cuts to tighten original problem */
    int                   nnewcuts;           /**< number of new cuts */
    int                   maxnewcuts;         /**< maximal number of allowed new cuts */
+   int                   round;              /**< number of separation round in probing LP of current node */
+   int                   currentnodenr;      /**< number of current node */
    SCIP_ROW*             objrow;             /**< row with obj coefficients */
    SCIP_Bool             enable;             /**< parameter returns if basis separator is enabled */
    SCIP_Bool             enableobj;          /**< parameter returns if objective constraint is enabled */
@@ -97,7 +99,8 @@ struct SCIP_SepaData
    int                   posslackexp;        /**< parameter returns exponent of usage of positive slack */
    SCIP_Bool             posslackexpgen;     /**< parameter returns if exponent should be automatically generated */
    SCIP_Real             posslackexpgenfactor; /**< parameter returns factor for automatically generated exponent */
-   int                   iterations;         /**< parameter returns number of new rows adding iterations (rows just cut off probing lp sol) */
+   int                   maxrounds;          /**< parameter returns maximum number of separation rounds in probing LP (-1 if unlimited) */
+   int                   maxroundsroot;      /**< parameter returns maximum number of separation rounds in probing LP in root node (-1 if unlimited) */
    int                   mincuts;            /**< parameter returns number of minimum cuts needed to return *result = SCIP_Separated */
    SCIP_Real             objconvex;          /**< parameter return convex combination factor */
 };
@@ -1076,9 +1079,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP* origscip;
    SCIP_SEPADATA* sepadata;
 
-   SCIP_SEPA** sepas;
-   int nsepas;
-
    SCIP_ROW** cuts;
    SCIP_ROW* mastercut;
    SCIP_ROW* origcut;
@@ -1113,6 +1113,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    int nbasis;
    int nlprowsstart;
    int nlprows;
+   int maxrounds;
    SCIP_ROW** lprows;
 
    assert(scip != NULL);
@@ -1163,6 +1164,14 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       return SCIP_OKAY;
    }
 
+   if( sepadata->currentnodenr != SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) )
+   {
+      sepadata->currentnodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
+      sepadata->round = 0;
+   }
+
+   maxrounds = (SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) ? sepadata->maxroundsroot : sepadata->maxrounds);
+
    /* get current original solution */
    origsol = GCGrelaxGetCurrentOrigSol(origscip);
 
@@ -1175,7 +1184,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
    *result = SCIP_DIDNOTFIND;
 
-   /* init iteration counter */
+   /* init iteration and round counter */
    iteration = 0;
 
    /* set parameter setting for separation */
@@ -1205,12 +1214,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    /* store number of lp rows in the beginning */
    nlprowsstart = SCIPgetNLPRows(origscip);
 
-   /* while the counter is smaller than the number of allowed iterations,
+   /* while the counter is smaller than the number of allowed rounds,
     * try to separate origsol via probing lp sol */
    /* TODO: while z*(T) = 0 like Range suggests? But then we have to adjust which cuts are added */
-   while( iteration < sepadata->iterations )
+   while( sepadata->round < sepadata->maxrounds )
    {
-      SCIPdebugMessage("iteration %d of at most %d iterations\n", iteration + 1, sepadata->iterations);
+      SCIPdebugMessage("round %d of at most %d rounds\n", sepadata->round + 1, sepadata->maxrounds);
 
       SCIP_CALL( SCIPapplyCutsProbing(origscip, &cutoff) );
 
@@ -1310,46 +1319,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
       assert(!lperror);
 
-      /* get separators of origscip */
-      sepas = SCIPgetSepas(origscip);
-      nsepas = SCIPgetNSepas(origscip);
-
-      SCIPdebugMessage("set parameters of separators\n");
-
-      /* loop over sepas and enable/disable sepa */
-      for( i = 0; i < nsepas; ++i )
-      {
-         const char* sepaname;
-         char paramname[SCIP_MAXSTRLEN];
-
-         sepaname = SCIPsepaGetName(sepas[i]);
-
-         (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "separating/%s/freq", sepaname);
-
-         /* disable intobj, closecuts, rapidlearning and cgmip separator*/
-         if( strcmp(sepaname, "intobj") == 0 || strcmp(sepaname, "closecuts") == 0
-            || strcmp(sepaname, "rapidlearning") == 0
-            || (strcmp(sepaname, "cgmip") == 0))
-         {
-            SCIP_CALL( SCIPsetIntParam(origscip, paramname, -1) );
-         }
-         else
-         {
-            SCIP_CALL( SCIPsetIntParam(origscip, paramname, 0) );
-         }
-      }
-
       SCIPdebugMessage("separate current LP solution\n");
 
       /** separate current probing lp sol of origscip */
-      SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, FALSE, TRUE, &delayed, &cutoff) );
-
-      if( delayed && !cutoff )
-      {
-         SCIPdebugMessage("call delayed separators\n");
-
-         SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, TRUE, TRUE, &delayed, &cutoff) );
-      }
+      SCIP_CALL( SCIPseparateSol(origscip, NULL, FALSE, FALSE, FALSE, &delayed, &cutoff) );
 
       /* if cut off is detected set result pointer and return SCIP_OKAY */
       if( cutoff )
@@ -1362,16 +1335,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          return SCIP_OKAY;
       }
-
-      SCIPdebugMessage("separate current LP solution and current original solution in cutpool\n");
-
-      /* separate cuts in cutpool */
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, &resultdummy) );
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), NULL, &resultdummy) );
-
-      /* separate cuts in cutpool */
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), origsol, &resultdummy) );
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), origsol, &resultdummy) );
 
       assert(sepadata->norigcuts == sepadata->nmastercuts);
 
@@ -1459,22 +1422,23 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIPfreeBufferArray(scip, &roworigvars);
       }
 
+      SCIPdebugMessage("%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
+
+      ++sepadata->round;
+      ++iteration;
+
       if( SCIPgetNCuts(scip) >= sepadata->mincuts )
       {
          *result = SCIP_SEPARATED;
 
-         iteration = sepadata->iterations;
+         SCIPfreeBufferArray(scip, &mastervals);
+         break;
       }
       else if( SCIPgetNCuts(origscip) == 0 )
       {
-         iteration = sepadata->iterations;
+         SCIPfreeBufferArray(scip, &mastervals);
+         break;
       }
-      else
-      {
-         ++iteration;
-      }
-
-      SCIPdebugMessage("%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
 
       SCIPfreeBufferArray(scip, &mastervals);
 
@@ -1554,6 +1518,8 @@ SCIP_RETCODE SCIPincludeSepaBasis(
    sepadata->nnewcuts = 0;
    sepadata->maxnewcuts = 0;
    sepadata->objrow = NULL;
+   sepadata->round = 0;
+   sepadata->currentnodenr = -1;
 
    /* include separator */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
@@ -1591,12 +1557,14 @@ SCIP_RETCODE SCIPincludeSepaBasis(
       "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 1, 0, 2, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobj", "parameter returns if basis is searched with different objective",
       &(sepadata->chgobj), FALSE, TRUE, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/iterations", "parameter returns if number new rows adding"
-      "iterations (rows just cut off probing lp sol)", &(sepadata->iterations), FALSE, 100, 1, 10000000 , NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/maxrounds", "parameter returns maximum number of separation rounds in probing LP (-1 if unlimited)",
+      &(sepadata->maxrounds), FALSE, 100, -1, INT_MAX , NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/maxroundsroot", "parameter returns maximum number of separation rounds in probing LP in root node (-1 if unlimited)",
+      &(sepadata->maxroundsroot), FALSE, 100, -1, INT_MAX , NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/mincuts", "parameter returns number of minimum cuts needed to "
       "return *result = SCIP_Separated", &(sepadata->mincuts), FALSE, 1, 1, 100, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobjallways", "parameter returns if obj is changed not only in the "
-      "first iteration", &(sepadata->chgobjallways), FALSE, FALSE, NULL, NULL) );
+      "first round", &(sepadata->chgobjallways), FALSE, FALSE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/forcecuts", "parameter returns if cuts are forced to enter the LP ",
       &(sepadata->forcecuts), FALSE, FALSE, NULL, NULL) );
 

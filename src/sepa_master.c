@@ -187,9 +187,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIP_VAR** rowvars;
    SCIP_SEPADATA* sepadata;
 
-   SCIP_SEPA** sepas;
-   int nsepas;
-
    SCIP_VAR** mastervars;
    SCIP_Real* mastervals;
    int nmastervars;
@@ -243,30 +240,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
 
-   SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_DEFAULT, TRUE) );
-
-   sepas = SCIPgetSepas(origscip);
-   nsepas = SCIPgetNSepas(origscip);
-
-   for( i = 0; i < nsepas; ++i )
-   {
-      const char* sepaname;
-      char paramname[SCIP_MAXSTRLEN];
-
-      sepaname = SCIPsepaGetName(sepas[i]);
-
-      /* get frequency parameter of separator */
-      (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "separating/%s/freq", sepaname);
-
-      if( strcmp(sepaname, "intobj") == 0 || strcmp(sepaname, "closecuts") == 0
-         || (strcmp(sepaname, "cgmip") == 0))
-         SCIP_CALL( SCIPsetIntParam(origscip, paramname, -1) );
-      else
-         SCIP_CALL( SCIPsetIntParam(origscip, paramname, 0) );
-   }
+   SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_AGGRESSIVE, TRUE) );
 
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
-         FALSE, FALSE, TRUE, &delayed, &cutoff) );
+         FALSE, FALSE, FALSE, &delayed, &cutoff) );
 
    SCIPdebugMessage("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(origscip));
 
