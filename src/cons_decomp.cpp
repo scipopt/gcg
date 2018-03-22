@@ -1269,7 +1269,6 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "undo", "last modification is undone (atm only the last modification can be undone)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "shows a visualization of the current decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "propagate", "list all detectors that can propagate the current seeed and apply propagation");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "propagate", "list all detectors that can finish the current seeed and apply a finisher");
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
 
@@ -1806,7 +1805,7 @@ SCIP_DIALOG*            dialog )
 
     seeedpool = seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
     /** Do user want to modify existing or create a new partial decomposition ?*/
-    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify a regular expression (modified ECMAScript regular expression grammar) matching the names of unassigned constraints you want to assign : \nGCG/toolbox : ", &consregex, &endoffile) );
+    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify a regular expression (modified ECMAScript regular expression grammar) matching the names of unassigned constraints you want to assign : \nGCG/toolbox> ", &consregex, &endoffile) );
 
     /** case distinction: */
 
@@ -1936,7 +1935,7 @@ SCIP_DIALOG*            dialog )
        }
 
        /** Do user want to modify existing or create a new partial decomposition ?*/
-       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify the index of the finisher to use : \nGCG/toolbox : ", &command, &endoffile) );
+       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify the index of the finisher to use : \nGCG/toolbox> ", &command, &endoffile) );
 
        finisherid = strtol(command, &tail, 10);
 
@@ -2011,7 +2010,7 @@ SCIP_DIALOG*            dialog )
 
     seeedpool = seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
     /** Do user want to modify existing or create a new partial decomposition ?*/
-    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify a regular expression (modified ECMAScript regular expression grammar) matching the names of unassigned variables you want to assign : \nGCG/toolbox : ", &varregex, &endoffile) );
+    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify a regular expression (modified ECMAScript regular expression grammar) matching the names of unassigned variables you want to assign : \nGCG/toolbox> ", &varregex, &endoffile) );
 
 
     /** case distinction: */
@@ -2143,7 +2142,6 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    {
       if( conshdlrdata->detectors[i]->propagateFromToolbox )
       {
-         SCIPinfoMessage(scip, NULL, "%s\n", conshdlrdata->detectors[i]->name);
          detectors[ndetectors] = conshdlrdata->detectors[i];
          ++ndetectors;
       }
@@ -2181,7 +2179,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
       {
          SCIPinfoMessage(scip, NULL, "%s\n", detectors[i]->name);
       }
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name of the detector that you want to use (or \"none\"): \nGCG/toolbox> : ", &command, &endoffile) );
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name of the detector that you want to use (or \"none\"): \nGCG/toolbox> ", &command, &endoffile) );
       commandlen = strlen(command);
 
       if( !strncmp( command, "none", commandlen) == 0 )
@@ -2207,7 +2205,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
          }
 
          SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-            "Do you want to visualize the newly propagated Seeed (\"yes\"/\"no\")?\nGCG/toolbox> : ", &command, &endoffile) );
+            "Do you want to visualize the newly propagated Seeed (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
          commandlen = strlen(command);
          if( strncmp( command, "yes", commandlen) == 0 )
          {
@@ -2216,7 +2214,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
 
          SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
             "Do you want to continue the decomposition with the newly propagated Seeed (\"continue\"), \
-or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> : ", &command, &endoffile) );
+or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );
          commandlen = strlen(command);
          if( strncmp( command, "continue", commandlen) == 0 )
          {
@@ -2231,7 +2229,7 @@ or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> : ", &command,
       else
       {
          SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Seeed propagation unsuccessful. Do you want to select another detector (\"detector\") or \
-return to the previous menu(\"previous\")?\nGCG/toolbox> : ", &command, &endoffile) );
+return to the previous menu(\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );
          commandlen = strlen(command);
          if( strncmp( command, "detector", commandlen) == 0 )
          {
@@ -2294,10 +2292,14 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       return SCIP_OKAY;
    }
 
+   commandlen = 0;
    /** Do user want to modify existing or create a new partial decomposition ?*/
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Do you want to modify an existing (\"modify\") or create a new partial decomposition (\"create\")? : \nGCG/toolbox : ", &command, &endoffile) );
+   while( (strncmp( command, "modify", commandlen) != 0 && strncmp( command, "create", commandlen) != 0) || commandlen == 0)
+   {
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Do you want to modify an existing (\"modify\") or create a new partial decomposition (\"create\")? : \nGCG/toolbox> ", &command, &endoffile) );
+      commandlen = strlen(command);
+   }
 
-   commandlen = strlen(command);
 
    /** case distinction: */
    if( strncmp( command, "modify", commandlen) == 0 )
@@ -2407,7 +2409,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       gcg::Seeedpool* seeedpool;
       SCIP_Bool isfromunpresolved;
 
-      while( strncmp( command, "presolved", commandlen) != 0 && strncmp( command, "unpresolved", commandlen) != 0 )
+      while( (strncmp( command, "presolved", commandlen) != 0 && strncmp( command, "unpresolved", commandlen) != 0) || commandlen == 0)
       {
          SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Invalid input. Should the new partial decomposition be for the presolved or the unpresolved problem? (type \"presolved\" or \"unpresolved\") : \nGCG/toolbox> ", &command, &endoffile) );
          commandlen = strlen(command);

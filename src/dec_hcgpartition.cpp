@@ -704,10 +704,7 @@ static
 DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxHcgpartition)
 {
    /* add hcgpartition presolver parameters */
-   char setstr[SCIP_MAXSTRLEN];
    char decinfo[SCIP_MAXSTRLEN];
-   int maxnblockcandidates;
-   int nMaxSeeeds;
    gcg::Seeed** newSeeeds;
    DEC_DETECTORDATA* detectordata;
    gcg::Seeed* seeed;
@@ -733,20 +730,14 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxHcgpartition)
    int nconss = seeedPropagationData->seeedpool->getNConss();
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/hcgpartition/maxnblockcandidates");
-   SCIP_CALL( SCIPgetIntParam(scip, setstr, &maxnblockcandidates) );
-
-   maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size() );
-
    assert(scip != NULL);
    assert(detectordata != NULL);
 
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
-   nMaxSeeeds = detectordata->maxblocks-detectordata->minblocks+1;
 
    /* allocate space for output data */
    assert(detectordata->maxblocks >= detectordata->minblocks);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 1 ) );
 
    /* build the hypergraph structure from the original problem */
 
@@ -784,13 +775,13 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxHcgpartition)
       return SCIP_ERROR;
    }
 
-   SCIP_CALL( graph->createSeeedFromPartition(seeed, NULL, &newSeeeds[1], seeedPropagationData->seeedpool));
-   if( (newSeeeds)[1] != NULL ) //propagation successful
+   SCIP_CALL( graph->createSeeedFromPartition(seeed, NULL, &newSeeeds[0], seeedPropagationData->seeedpool));
+   if( (newSeeeds)[0] != NULL ) //propagation successful
    {
       detectordata->found = TRUE;
       (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hc\\_%d", numberOfBlocks[0]);
-      newSeeeds[1]->addDetectorChainInfo(decinfo);
-      seeedPropagationData->newSeeeds[0] = (newSeeeds)[1];
+      newSeeeds[0]->addDetectorChainInfo(decinfo);
+      seeedPropagationData->newSeeeds[0] = (newSeeeds)[0];
       ++(seeedPropagationData->nNewSeeeds);
       return SCIP_OKAY;
    }
