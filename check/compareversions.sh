@@ -103,7 +103,7 @@ do
 	
 	# parse the res file to a readable format for later use
 	cd ..
-	makedir -p pickles
+	mkdir -p pickles
 	chmod +x parseres.py
 	./parseres.py results/version${index}.res
 
