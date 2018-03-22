@@ -21,3 +21,5 @@ obj/
 release
 src/TAGS
 src/githash.c
+.lvimrc
+*.swp

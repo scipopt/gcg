@@ -60,6 +60,7 @@
 #include "cons_decomp.h"
 #include "scip_misc.h"
 
+#include "scip/struct_set.h"
 #include "gcg.h"
 
 #ifndef NBLISS
@@ -143,6 +144,9 @@ struct SCIP_RelaxData
 
    /* statistical information */
    SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
+   SCIP_CLOCK*           rootnodetime;       /**< time in root node */
+   SCIP_RealList*        degeneracy;         /**< degeneracy list */
+   SCIP_RealList*        dualbounds;         /**< dual bounds list */
 };
 
 /*
@@ -2090,8 +2094,12 @@ void initRelaxdata(
    relaxdata->varlinkconsblock = NULL;
    relaxdata->pricingprobsmemused = 0.0;
 
-   relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
+   relaxdata->rootnodetime = NULL;
+   relaxdata->degeneracy = NULL;
+   relaxdata->dualbounds = NULL;
+
+   relaxdata->relaxisinitialized = FALSE;
 }
 
 /*
@@ -2119,7 +2127,6 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
 }
 
 /** deinitialization method of relaxator (called before transformed problem is freed) */
-
 static
 SCIP_DECL_RELAXEXIT(relaxExitGcg)
 {
@@ -2164,6 +2171,15 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    assert(relaxdata->masterprob != NULL);
 
    initRelaxdata(relaxdata);
+   SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
+   SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->degeneracy)) );
+   SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->dualbounds)) );
+   relaxdata->degeneracy->data = 0.;
+   relaxdata->degeneracy->depth = 0;
+   relaxdata->degeneracy->next= NULL;
+   relaxdata->dualbounds->data = 0.;
+   relaxdata->dualbounds->depth= 0;
+   relaxdata->dualbounds->next= NULL;
 
    return SCIP_OKAY;
 }
@@ -2175,6 +2191,8 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
 {
    SCIP_RELAXDATA* relaxdata;
    int i;
+   SCIP_RealList* current;
+   SCIP_RealList* next;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -2190,7 +2208,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
 
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->markedmasterconss));
    relaxdata->markedmasterconss = NULL;
-
 
    /* free arrays for constraints */
    for( i = 0; i < relaxdata->nmasterconss; i++ )
@@ -2240,6 +2257,28 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->storedorigsol) );
    }
 
+   /* free root node clock */
+   if( relaxdata->rootnodetime != NULL )
+   {
+      SCIP_CALL( SCIPfreeClock(scip, &(relaxdata->rootnodetime)) );
+   }
+
+   /* free lists */
+   current = relaxdata->degeneracy;
+   while( current != NULL )
+   {
+      next = current->next;
+      SCIPfreeMemory(scip, &current);
+      current = next;
+   }
+   current = relaxdata->dualbounds;
+   while( current != NULL )
+   {
+      next = current->next;
+      SCIPfreeMemory(scip, &current);
+      current = next;
+   }
+
    relaxdata->relaxisinitialized = FALSE;
 
    return SCIP_OKAY;
@@ -2257,6 +2296,10 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_Real timelimit;
    SCIP_Real memorylimit;
    SCIP_Bool stored;
+   SCIP_RealList* current_deg;
+   SCIP_RealList* current_db;
+   SCIP_RealList* next_deg;
+   SCIP_RealList* next_db;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -2285,9 +2328,44 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    /* solve the next node in the master problem */
    SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
+   /* get current degeneracy and dualbounds */
+   SCIPdebugMessage("****NIKLAS**** start updating list ...\n");
+   SCIPdebugMessage("****NIKLAS**** ... initialize with relaxdata ...\n");
+   current_deg = relaxdata->degeneracy;
+   current_db = relaxdata->dualbounds;
+   SCIPdebugMessage("****NIKLAS**** ... look for latest list entry ...\n");
+   while( current_deg->next != NULL )
+   {
+      current_deg = current_deg->next;
+   }
+   while( current_db->next != NULL )
+   {
+      current_db = current_db->next;
+   }
+   SCIPdebugMessage("****NIKLAS**** ... allocate new memory ...\n");
+   SCIP_CALL( SCIPallocMemory(scip, &next_deg) );
+   SCIP_CALL( SCIPallocMemory(scip, &next_db) );
+   SCIPdebugMessage("****NIKLAS**** ... insert into list ...\n");
+   current_deg->next = next_deg;
+   current_deg->next->data = GCGgetDegeneracy(scip);
+   current_deg->next->depth = SCIPgetDepth(scip);
+   current_deg->next->next = NULL;
+   current_db->next = next_db;
+   current_db->next->data = SCIPgetDualbound(scip);
+   current_db->next->depth = SCIPgetDepth(scip);
+   current_db->next->next = NULL;
+   SCIPdebugMessage("****NIKLAS**** ... finished for current node.\n");
+   
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
+      /* start the root node time clock */
+      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+      {
+         SCIP_CALL( SCIPstartClock(scip, relaxdata->rootnodetime) );
+         SCIPdebugMessage("  Root Node Time clock started");
+      }
+
       /* update the number of the last solved node */
       relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
 
@@ -2312,7 +2390,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
          if( !SCIPisInfinity(scip, timelimit) )
          {
-
             /* give the master 2% more time then the original scip has left */
             mastertimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
             SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit) );
@@ -2330,6 +2407,11 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
             if( *result == SCIP_SUCCESS )
             {
                *result = SCIP_CUTOFF;
+               if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+               {
+                  SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+                  SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+               }
                return SCIP_OKAY;
             }
          }
@@ -2338,7 +2420,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          {
             SCIP_CALL( SCIPsolve(masterprob) );
          }
-
 
          if( SCIPgetStatus(masterprob) != SCIP_STATUS_TIMELIMIT )
          {
@@ -2351,6 +2432,11 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
       {
          *result = SCIP_DIDNOTRUN;
+         if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+         {
+            SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+            SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+         }
          return SCIP_OKAY;
       }
 
@@ -2358,7 +2444,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
       {
          *lowerbound = SCIPgetLocalDualbound(masterprob);
-
       }
       else
       {
@@ -2373,6 +2458,11 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
             if( tilim-SCIPgetSolvingTime(masterprob) < 0 )
             {
                *result = SCIP_DIDNOTRUN;
+               if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+               {
+                  SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+                  SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+               }
                return SCIP_OKAY;
             }
             *lowerbound = SCIPinfinity(scip);
@@ -2380,12 +2470,22 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          else if( SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN )
          {
             *result = SCIP_DIDNOTRUN;
+            if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+            {
+               SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+               SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+            }
             return SCIP_OKAY;
          }
          else
          {
             SCIPwarningMessage(scip, "Stage <%d> is not handled!\n", SCIPgetStage(masterprob));
             *result = SCIP_DIDNOTRUN;
+            if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+            {
+               SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+               SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+            }
             return SCIP_OKAY;
          }
       }
@@ -2412,7 +2512,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    #endif
          if( !stored )
          {
-
             SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
          }
          /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
@@ -2430,6 +2529,11 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
                GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
       }
 
+   if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+   {
+      SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+      SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+   }
    }
    else
    {
@@ -3975,4 +4079,61 @@ int GCGgetNTransvars(
    assert(relaxdata != NULL);
 
    return relaxdata->ntransvars;
+}
+
+/** return clock clocking root node time */
+SCIP_CLOCK* GCGgetRootNodeTime(
+   SCIP*                 scip                /**< SCIP data structure */
+  )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+   
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->rootnodetime;
+}
+
+/** return degeneracy list */
+SCIP_RealList* GCGgetDegeneracyList(
+   SCIP*                 scip                /**< SCIP data structure */
+  )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+   
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->degeneracy;
+}
+
+/** return dual bounds list */
+SCIP_RealList* GCGgetDualboundsList(
+   SCIP*                 scip                /**< SCIP data structure */
+  )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+   
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->dualbounds;
 }

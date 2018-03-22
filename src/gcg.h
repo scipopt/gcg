@@ -51,6 +51,13 @@
 extern "C" {
 #endif
 
+typedef struct SCIP_RealList
+{
+   SCIP_Real data;
+   int depth;
+   struct SCIP_RealList* next;
+} SCIP_RealList;
+
 /** returns whether the scip is the original scip instance */
 extern
 SCIP_Bool GCGisOriginal(
@@ -258,6 +265,24 @@ int GCGgetNLinkingvars(
 /** return number of variables directly transferred to the master problem */
 extern
 int GCGgetNTransvars(
+   SCIP*                 scip                /**< SCIP data structure */
+  );
+
+/** return clock clockig root node time */
+extern
+SCIP_CLOCK* GCGgetRootNodeTime(
+   SCIP*                 scip                /**< SCIP data structure */
+  );
+
+/** return Degeneracy List */
+extern
+SCIP_RealList* GCGgetDegeneracyList(
+   SCIP*                 scip                /**< SCIP data structure */
+  );
+
+/** return Dual Bounds List */
+extern
+SCIP_RealList* GCGgetDualboundsList(
    SCIP*                 scip                /**< SCIP data structure */
   );
 
