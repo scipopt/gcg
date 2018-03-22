@@ -11,8 +11,11 @@ import matplotlib.pyplot as plt
 if len(sys.argv) < 2:
 	sys.exit("Usage: ./parseout.py RESFILE")
 
+#  variables to perform line split with
+columns = ['name','type','origconss','origvars','preconss','prevars','detector','decblocks','decrel','decmconss','decmvars','dualbound','primbound','gap','prcalls','prvars','prtime','mlptime','miters','node','time','status']
+
 # array for all processed lines
-linearray = []
+linearray = [] 
 
 # checkout outfile
 resfile = sys.argv[1]
@@ -25,4 +28,6 @@ for line in fh:
 		line = " ".join(line.split())
 		linearray.append(line.split(" "))
 
-
+#store data into panda dataframe & save it as pickle
+df = pd.DataFrame(columns=columns, data=linearray)
+df.to_pickle('pickles/' + 'res_' + resfile.split('/')[-1].replace('.res', '.pkl'))
