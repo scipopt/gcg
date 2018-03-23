@@ -69,6 +69,7 @@ struct SCIP_SepaData
    int                   ncuts;          /**< number of cuts in the original problem */
    int                   maxcuts;            /**< maximal number of allowed cuts */
    SCIP_Bool             enable;             /**< parameter returns if master separator is enabled */
+   int                   separationsetting;  /**< parameter returns which parameter setting is used for separation */
 };
 
 
@@ -240,7 +241,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
 
-   SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_AGGRESSIVE, TRUE) );
+   /* set parameter setting for separation */
+   SCIP_CALL( SCIPsetSeparating(origscip, (SCIP_PARAMSETTING) sepadata->separationsetting, TRUE) );
 
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
          FALSE, FALSE, FALSE, &delayed, &cutoff) );
@@ -355,8 +357,11 @@ SCIP_RETCODE SCIPincludeSepaMaster(
          sepaExeclpMaster, sepaExecsolMaster,
          sepadata) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/master/enable", "enable master separator",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enable", "enable master separator",
          &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/paramsetting", "parameter returns which parameter setting is used for "
+      "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 1, 0, 2, NULL, NULL) );
 
    return SCIP_OKAY;
 }
