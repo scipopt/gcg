@@ -200,6 +200,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    int j;
    SCIP_Bool feasible;
 
+   SCIP_Bool isroot;
+
    assert(scip != NULL);
    assert(result != NULL);
 
@@ -232,6 +234,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       return SCIP_OKAY;
    }
 
+   /* ensure to separate current sol */
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
+
    if( GCGrelaxIsOrigSolFeasible(origscip) )
    {
       SCIPdebugMessage("Current solution is feasible, no separation necessary!\n");
@@ -239,15 +244,35 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
+   isroot = SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip);
 
    /* set parameter setting for separation */
    SCIP_CALL( SCIPsetSeparating(origscip, (SCIP_PARAMSETTING) sepadata->separationsetting, TRUE) );
 
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
-         FALSE, FALSE, FALSE, &delayed, &cutoff) );
+         isroot, TRUE, FALSE, &delayed, &cutoff) );
 
    SCIPdebugMessage("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(origscip));
+
+   if( delayed && !cutoff )
+   {
+      SCIPdebugMessage("call delayed separators\n");
+
+      SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
+            isroot, TRUE, TRUE, &delayed, &cutoff) );
+   }
+
+   /* if cut off is detected set result pointer and return SCIP_OKAY */
+   if( cutoff )
+   {
+      *result = SCIP_CUTOFF;
+      SCIP_CALL( SCIPendProbing(origscip) );
+
+      /* disable separating again */
+      SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_OFF, TRUE) );
+
+      return SCIP_OKAY;
+   }
 
    cuts = SCIPgetCuts(origscip);
    ncuts = SCIPgetNCuts(origscip);
