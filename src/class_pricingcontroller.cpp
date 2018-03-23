@@ -168,7 +168,7 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
       GCG_SOLVER* solver1 = GCGpricingjobGetSolver(pricingjob1);
       GCG_SOLVER* solver2 = GCGpricingjobGetSolver(pricingjob2);
 
-      if( solver1->priority < solver2->priority )
+      if( solver1->priority > solver2->priority )
          return -1;
       else
          return 1;
