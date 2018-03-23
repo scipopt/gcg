@@ -182,9 +182,9 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
          return 1;
    }
 
-   if( GCGpricingprobGetNSolves(pricingprob1) < GCGpricingprobGetNSolves(pricingprob2) )
+   if( GCGpricingjobGetNHeurIters(pricingjob1) < GCGpricingjobGetNHeurIters(pricingjob2) )
       return -1;
-   else if( GCGpricingprobGetNSolves(pricingprob1) > GCGpricingprobGetNSolves(pricingprob2) )
+   else if( GCGpricingjobGetNHeurIters(pricingjob1) > GCGpricingjobGetNHeurIters(pricingjob2) )
       return 1;
 
    if( GCGpricingjobGetScore(pricingjob1) >= GCGpricingjobGetScore(pricingjob2) )
@@ -368,22 +368,13 @@ SCIP_RETCODE Pricingcontroller::setPricingjobTimelimit(
 /** update solution information of a pricing problem */
 void Pricingcontroller::updatePricingprob(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
-   int                   nsolves,            /**< additional number of times the pricing problem was solved */
    SCIP_STATUS           status,             /**< new pricing status */
    SCIP_Real             lowerbound,         /**< new lower bound */
    GCG_COL**             cols,               /**< columns found by the last solver call */
    int                   ncols               /**< number of found columns */
    )
 {
-   GCGpricingprobUpdate(scip_, pricingprob, nsolves, status, lowerbound, cols, ncols);
-}
-
-/** update solution statistics of a pricing job */
-void Pricingcontroller::updatePricingjobSolvingStats(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   )
-{
-   GCGpricingjobUpdateSolvingStats(pricingjob);
+   GCGpricingprobUpdate(scip_, pricingprob, status, lowerbound, cols, ncols);
 }
 
 /** decide whether a pricing job must be treated again */
@@ -418,6 +409,8 @@ void Pricingcontroller::evaluatePricingjob(
          SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
       }
    }
+
+   GCGpricingjobIncreaseNHeurIters(pricingjob);
 }
 
 /** collect solution results from all pricing problems */

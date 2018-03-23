@@ -82,7 +82,7 @@ SCIP_Bool GCGpricingjobIsHeuristic(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
-/* get the number of heuristic pricing iterations of the pricing job */
+/** get the number of heuristic pricing iterations of the pricing job */
 EXTERN
 int GCGpricingjobGetNHeurIters(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */

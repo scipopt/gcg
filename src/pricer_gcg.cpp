@@ -3261,7 +3261,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          SCIPdebugMessage("  -> ncols: %d, problowerbound: %.4g\n", ncols, problowerbound);
 
          /* update pricing problem results, store columns */
-         pricingcontroller->updatePricingprob(pricingprob, 1, status, problowerbound, cols, ncols);
+         pricingcontroller->updatePricingprob(pricingprob, status, problowerbound, cols, ncols);
          BMSclearMemoryArray(cols, maxcols);
          ncols = 0;
 

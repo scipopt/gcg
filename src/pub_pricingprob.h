@@ -64,49 +64,49 @@ int GCGpricingprobGetProbnr(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
+/** get the status of a pricing problem */
+EXTERN
+SCIP_STATUS GCGpricingprobGetStatus(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   );
+
+/** get the lower bound of a pricing problem */
+EXTERN
+SCIP_Real GCGpricingprobGetLowerbound(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   );
+
+/** get the best column found by solving a particular pricing problem */
+EXTERN
+GCG_COL* GCGpricingprobGetBestCol(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   );
+
+/** get the best reduced cost of a pricing problem */
+EXTERN
+SCIP_Real GCGpricingprobGetBestRedcost(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   );
+
+/** get the number of columns found for this pricing problem */
+EXTERN
+int GCGpricingprobGetNCols(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   );
+
+/** get the number of improving columns found for this pricing problem */
+EXTERN
+int GCGpricingprobGetNImpCols(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   );
+
 /** get the number of times the pricing problem was solved during the loop */
 EXTERN
 int GCGpricingprobGetNSolves(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/* get the status of a pricing problem */
-EXTERN
-SCIP_STATUS GCGpricingprobGetStatus(
-   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
-   );
-
-/* get the lower bound of a pricing problem */
-EXTERN
-SCIP_Real GCGpricingprobGetLowerbound(
-   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
-   );
-
-/* get the best column found by solving a particular pricing problem */
-EXTERN
-GCG_COL* GCGpricingprobGetBestCol(
-   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
-   );
-
-/* get the best reduced cost of a pricing problem */
-EXTERN
-SCIP_Real GCGpricingprobGetBestRedcost(
-   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
-   );
-
-/* get the number of columns found for this pricing problem */
-EXTERN
-int GCGpricingprobGetNCols(
-   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
-   );
-
-/* get the number of improving columns found for this pricing problem */
-EXTERN
-int GCGpricingprobGetNImpCols(
-   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
-   );
-
-/* get the total number of improving colums found in the last pricing rounds */
+/** get the total number of improving colums found in the last pricing rounds */
 EXTERN
 int GCGpricingprobGetNColsLastRounds(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */

@@ -77,7 +77,6 @@ EXTERN
 void GCGpricingprobUpdate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
-   int                   nsolves,            /**< additional number of times the pricing problem was solved */
    SCIP_STATUS           status,             /**< new pricing status */
    SCIP_Real             lowerbound,         /**< new lower bound */
    GCG_COL**             cols,               /**< columns found by the last solver call */
@@ -102,7 +101,7 @@ void GCGpricingjobSetLowerbound(
    SCIP_Real             lowerbound          /**< new lower bound */
    );
 
-/* update numbers of improving columns over the last pricing rounds */
+/** update numbers of improving columns over the last pricing rounds */
 EXTERN
 void GCGpricingprobUpdateNColsround(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */

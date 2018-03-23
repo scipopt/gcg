@@ -61,12 +61,12 @@ SCIP_RETCODE GCGpricingprobCreate(
 
    (*pricingprob)->pricingscip = pricingscip;
    (*pricingprob)->probnr = probnr;
-   (*pricingprob)->nsolves = 0;
    (*pricingprob)->pricingstatus = SCIP_STATUS_UNKNOWN;
    (*pricingprob)->lowerbound = -SCIPinfinity(scip);
    (*pricingprob)->colssize = colssize;
    (*pricingprob)->ncols = 0;
    (*pricingprob)->nimpcols = 0;
+   (*pricingprob)->nsolves  = 0;
 
    SCIP_CALL( SCIPallocClearMemoryArray(scip, &(*pricingprob)->cols, colssize) );
    SCIP_CALL( SCIPallocClearMemoryArray(scip, &(*pricingprob)->ncolsround, nroundscol) );
@@ -96,16 +96,15 @@ void GCGpricingprobReset(
    assert(pricingprob->ncols == 0);
    assert(pricingprob->nimpcols == 0);
 
-   pricingprob->nsolves = 0;
    pricingprob->pricingstatus = SCIP_STATUS_UNKNOWN;
    pricingprob->lowerbound = -SCIPinfinity(scip);
+   pricingprob->nsolves = 0;
 }
 
 /** update solution information of a pricing problem */
 void GCGpricingprobUpdate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
-   int                   nsolves,            /**< additional number of times the pricing problem was solved */
    SCIP_STATUS           status,             /**< new pricing status */
    SCIP_Real             lowerbound,         /**< new lower bound */
    GCG_COL**             cols,               /**< columns found by the last solver call */
@@ -116,7 +115,6 @@ void GCGpricingprobUpdate(
    int j;
    int k;
 
-   pricingprob->nsolves += nsolves;
    pricingprob->pricingstatus = status;
    if( SCIPisDualfeasGT(scip, lowerbound, pricingprob->lowerbound) )
       pricingprob->lowerbound = lowerbound;
@@ -151,6 +149,8 @@ void GCGpricingprobUpdate(
    }
 
    pricingprob->ncols = MIN(pricingprob->ncols + ncols, pricingprob->colssize);
+
+   ++pricingprob->nsolves;
 }
 
 /** for a pricing problem, move its columns to the pricing store or column pool */
@@ -220,15 +220,7 @@ int GCGpricingprobGetProbnr(
    return pricingprob->probnr;
 }
 
-/** get the number of times the pricing problem was solved during the loop */
-int GCGpricingprobGetNSolves(
-   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
-   )
-{
-   return pricingprob->nsolves;
-}
-
-/* get the status of a pricing problem */
+/** get the status of a pricing problem */
 SCIP_STATUS GCGpricingprobGetStatus(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    )
@@ -236,7 +228,7 @@ SCIP_STATUS GCGpricingprobGetStatus(
    return pricingprob->pricingstatus;
 }
 
-/* get the lower bound of a pricing problem */
+/** get the lower bound of a pricing problem */
 SCIP_Real GCGpricingprobGetLowerbound(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    )
@@ -244,7 +236,7 @@ SCIP_Real GCGpricingprobGetLowerbound(
    return pricingprob->lowerbound;
 }
 
-/* get the best column found by solving a particular pricing problem */
+/** get the best column found by solving a particular pricing problem */
 GCG_COL* GCGpricingprobGetBestCol(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    )
@@ -258,7 +250,7 @@ GCG_COL* GCGpricingprobGetBestCol(
    }
 }
 
-/* get the best reduced cost of a pricing problem */
+/** get the best reduced cost of a pricing problem */
 SCIP_Real GCGpricingprobGetBestRedcost(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    )
@@ -272,7 +264,7 @@ SCIP_Real GCGpricingprobGetBestRedcost(
    }
 }
 
-/* get the number of columns found for this pricing problem */
+/** get the number of columns found for this pricing problem */
 int GCGpricingprobGetNCols(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    )
@@ -280,7 +272,7 @@ int GCGpricingprobGetNCols(
    return pricingprob->ncols;
 }
 
-/* get the number of improving columns found for this pricing problem */
+/** get the number of improving columns found for this pricing problem */
 int GCGpricingprobGetNImpCols(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    )
@@ -288,7 +280,15 @@ int GCGpricingprobGetNImpCols(
    return pricingprob->nimpcols;
 }
 
-/* get the total number of improving colums found in the last pricing rounds */
+/** get the number of times the pricing problem was solved during the loop */
+int GCGpricingprobGetNSolves(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   )
+{
+   return pricingprob->nsolves;
+}
+
+/** get the total number of improving colums found in the last pricing rounds */
 int GCGpricingprobGetNColsLastRounds(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
@@ -304,7 +304,7 @@ int GCGpricingprobGetNColsLastRounds(
    return ncols;
 }
 
-/* update numbers of improving columns over the last pricing rounds */
+/** update numbers of improving columns over the last pricing rounds */
 void GCGpricingprobUpdateNColsround(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */

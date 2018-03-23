@@ -116,15 +116,6 @@ SCIP_RETCODE GCGpricingjobSetup(
    return SCIP_OKAY;
 }
 
-/** update solving statistics of a pricing job */
-void GCGpricingjobUpdateSolvingStats(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   )
-{
-   if( pricingjob->heuristic )
-      ++pricingjob->nheuriters;
-}
-
 /** get the pricing problem structure associated with a pricing job */
 GCG_PRICINGPROB* GCGpricingjobGetPricingprob(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
@@ -180,7 +171,16 @@ void GCGpricingjobSetExact(
    pricingjob->heuristic = FALSE;
 }
 
-/* get the number of heuristic pricing iterations of the pricing job */
+/** update number of heuristic pricing iterations of a pricing job */
+void GCGpricingjobIncreaseNHeurIters(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   if( pricingjob->heuristic )
+      ++pricingjob->nheuriters;
+}
+
+/** get the number of heuristic pricing iterations of the pricing job */
 int GCGpricingjobGetNHeurIters(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    )

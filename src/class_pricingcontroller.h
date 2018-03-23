@@ -114,7 +114,6 @@ public:
    /** update solution information of a pricing problem */
    void updatePricingprob(
       GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
-      int                   nsolves,            /**< additional number of times the pricing problem was solved */
       SCIP_STATUS           status,             /**< new pricing status */
       SCIP_Real             lowerbound,         /**< new lower bound */
       GCG_COL**             cols,               /**< columns found by the last solver call */
