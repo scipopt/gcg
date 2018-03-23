@@ -75,6 +75,7 @@ private:
 
    /* statistics */
    int                   eagerage;           /**< iterations since last eager iteration */
+   int                   nsolvedprobs;       /**< number of completely solved pricing problems during the current pricing loop */
 
 
 public:
@@ -166,7 +167,6 @@ public:
    SCIP_Bool canPricingloopBeAborted(
       PricingType*          pricetype,          /**< type of pricing (reduced cost or Farkas) */
       int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-      int                   nsolvedprobs,       /**< number of pricing problems solved so far */
       int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
       SCIP_Bool             optimal             /**< optimal or heuristic pricing */
       ) const;

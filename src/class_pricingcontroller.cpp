@@ -101,6 +101,7 @@ Pricingcontroller::Pricingcontroller(
    pricingtype_ = NULL;
 
    eagerage = 0;
+   nsolvedprobs = 0;
 }
 
 Pricingcontroller::~Pricingcontroller()
@@ -195,7 +196,7 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
    return 0;
 }
 
-/** check if a pricing job is done */
+/** check if a pricing problem is done */
 SCIP_Bool Pricingcontroller::pricingprobIsDone(
    GCG_PRICINGPROB*      pricingprob        /**< pricing problem structure */
    ) const
@@ -326,6 +327,8 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
       }
    }
 
+   nsolvedprobs = 0;
+
    return SCIP_OKAY;
 }
 
@@ -385,6 +388,9 @@ void Pricingcontroller::evaluatePricingjob(
 {
    GCG_PRICINGPROB* pricingprob = GCGpricingjobGetPricingprob(pricingjob);
 
+   if( GCGpricingjobIsHeuristic(pricingjob) )
+      GCGpricingjobIncreaseNHeurIters(pricingjob);
+
    /* If the pricing job has not yielded any improving column, possibly solve it again;
     * increase at least one of its limits, or solve it exactly if it was solved heuristically before
     */
@@ -409,8 +415,8 @@ void Pricingcontroller::evaluatePricingjob(
          SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
       }
    }
-
-   GCGpricingjobIncreaseNHeurIters(pricingjob);
+   else
+      ++nsolvedprobs;
 }
 
 /** collect solution results from all pricing problems */
@@ -543,7 +549,6 @@ SCIP_Real Pricingcontroller::getDualconvsum(
 SCIP_Bool Pricingcontroller::canPricingloopBeAborted(
    PricingType*          pricetype,          /**< type of pricing (reduced cost or Farkas) */
    int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-   int                   nsolvedprobs,       /**< number of pricing problems solved so far */
    int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
    SCIP_Bool             optimal             /**< optimal or heuristic pricing */
    ) const

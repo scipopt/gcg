@@ -3034,7 +3034,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_Bool enableppcuts;
    SCIP_Bool enablestab;
    int ncols = 0;
-   int nsolvedprobs;
    int nsuccessfulprobs;
    int maxcols;
    int i;
@@ -3152,7 +3151,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       }
 #endif
 
-      nsolvedprobs = 0;
       nsuccessfulprobs = 0;
       *bestredcostvalid = isMasterLPOptimal() && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
       nextchunk = FALSE;
@@ -3231,7 +3229,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             goto done;
 
          #pragma omp flush(nfoundvars, nsuccessfulprobs)
-         if( (pricingcontroller->canPricingloopBeAborted(pricetype, nfoundvars, nsolvedprobs, nsuccessfulprobs, !GCGpricingjobIsHeuristic(pricingjob)) || infeasible) && !stabilized )
+         if( (pricingcontroller->canPricingloopBeAborted(pricetype, nfoundvars, nsuccessfulprobs, !GCGpricingjobIsHeuristic(pricingjob)) || infeasible) && !stabilized )
          {
             SCIPdebugMessage("*** Abort pricing loop, infeasible = %u, stabilized = %u\n", infeasible, stabilized);
             goto done;
@@ -3278,12 +3276,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             {
                #pragma omp atomic
                ++nsuccessfulprobs;
-            }
-
-            if( GCGpricingprobGetNSolves(pricingprob) == 1 )
-            {
-               #pragma omp atomic
-               ++nsolvedprobs;
             }
 
 #ifdef SCIP_STATISTIC
