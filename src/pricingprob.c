@@ -107,48 +107,92 @@ void GCGpricingprobUpdate(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    SCIP_STATUS           status,             /**< new pricing status */
    SCIP_Real             lowerbound,         /**< new lower bound */
-   GCG_COL**             cols,               /**< columns found by the last solver call */
+   GCG_COL**             cols,               /**< sorted array of columns found by the last solver call */
    int                   ncols               /**< number of found columns */
    )
 {
    int i;
    int j;
-   int k;
+   int pos;
+   int nnewcols;
 
+   /* update status and lower bound */
    pricingprob->pricingstatus = status;
    if( SCIPisDualfeasGT(scip, lowerbound, pricingprob->lowerbound) )
       pricingprob->lowerbound = lowerbound;
 
-   /* add new columns; ensure that the column array remains sorted by reduced costs;
-    * only the best pricingprob->ncols are stored, the rest is sorted out and freed
+   /*
+    * ensure that no columns are stored double:
+    * for each new column, check whether it is equal to a column in 'pricingprob->cols';
+    * if this is the case, free it
     */
-   for( i = pricingprob->ncols + ncols - 1, j = pricingprob->ncols-1, k = ncols-1; k >= 0; --i )
+   nnewcols = ncols;
+   for( j = ncols-1, pos = pricingprob->ncols-1; j >= 0; --j )
    {
-      if( j >= 0 && SCIPisDualfeasGT(scip, GCGcolGetRedcost(pricingprob->cols[j]), GCGcolGetRedcost(cols[k])) )
-      {
-         if( i < pricingprob->colssize )
-            pricingprob->cols[i] = pricingprob->cols[j];
-         else
-            GCGfreeGcgCol(&pricingprob->cols[j]);
+      SCIP_Bool equal = FALSE;
 
-         --j;
-      }
-      else
-      {
-         if( i < pricingprob->colssize )
-         {
-            if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(cols[k])) )
-               ++pricingprob->nimpcols;
-            pricingprob->cols[i] = cols[k];
-         }
-         else
-            GCGfreeGcgCol(&cols[k]);
+      /* columns with higher reduced cost cannot be equal */
+      for( ; pos >= 0 && SCIPisDualfeasGT(scip, GCGcolGetRedcost(pricingprob->cols[pos]), GCGcolGetRedcost(cols[j])); --pos );
 
-         --k;
+      /* among columns with equal reduced cost, check which are equal to the given one */
+      for( i = pos; i >= 0 && SCIPisDualfeasEQ(scip, GCGcolGetRedcost(pricingprob->cols[i]), GCGcolGetRedcost(cols[j])) & !equal; --i )
+         if( GCGcolIsEq(pricingprob->cols[i], cols[j]) )
+            equal = TRUE;
+
+      if( equal )
+      {
+         GCGfreeGcgCol(&cols[j]);
+         cols[j] = NULL;
+         --nnewcols;
       }
    }
 
-   pricingprob->ncols = MIN(pricingprob->ncols + ncols, pricingprob->colssize);
+   /* add new columns, i.e. sort columns given in 'cols' into 'pricingprob->cols';
+    * ensure that the array 'pricingprob->cols' remains sorted by reduced costs;
+    * only the best 'pricingprob->ncols' are stored, the rest is freed
+    */
+   for( pos = pricingprob->ncols + nnewcols - 1, i = pricingprob->ncols - 1, j = ncols - 1; j >= 0; )
+   {
+      if( cols[j] == NULL )
+      {
+         --j;
+         continue;
+      }
+
+      /* case 1: keep current column from 'pricingprob->cols' */
+      if( i >= 0 && SCIPisDualfeasGT(scip, GCGcolGetRedcost(pricingprob->cols[i]), GCGcolGetRedcost(cols[j])) )
+      {
+         if( pos < pricingprob->colssize )
+            pricingprob->cols[pos] = pricingprob->cols[i];
+         else
+         {
+            if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(pricingprob->cols[i])) )
+               --pricingprob->nimpcols;
+            assert(pricingprob->nimpcols >= 0);
+            GCGfreeGcgCol(&pricingprob->cols[i]);
+         }
+
+         --i;
+         --pos;
+      }
+      /* case 2: add current column from 'cols' to 'pricingprob->cols' */
+      else
+      {
+         if( pos < pricingprob->colssize )
+         {
+            if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(cols[j])) )
+               ++pricingprob->nimpcols;
+            pricingprob->cols[pos] = cols[j];
+         }
+         else
+            GCGfreeGcgCol(&cols[j]);
+
+         --j;
+         --pos;
+      }
+   }
+
+   pricingprob->ncols = MIN(pricingprob->ncols + nnewcols, pricingprob->colssize);
 
    ++pricingprob->nsolves;
 }
