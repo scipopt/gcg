@@ -12,6 +12,7 @@ from collections import OrderedDict
 
 import pandas as pd
 import pickle
+import numpy as np
 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -19,6 +20,8 @@ from matplotlib import lines
 from matplotlib import transforms
 from matplotlib import ticker
 from matplotlib import patches as mpatches
+
+import vbc_reader as vbc
 
 # Define the global parameter list
 params = {}
@@ -28,7 +31,9 @@ plotnames = ['complete',
              'summary',
              'bubble',
              'time',
-             'gap']
+             'gap',
+             'depth',
+             'nodeID']
 
 def parse_arguments(args):
     """
@@ -63,7 +68,7 @@ def parse_arguments(args):
                         default=0,
                         help='end the data-collection or the plots with node MAXNODE (default is MAXNODE=0, which will be the last node)')
 
-    parser.add_argument('-i', '--instances', type=str, nargs = '*',
+    parser.add_argument('--instances', type=str, nargs = '*',
                         default="",
                         help='names of the instances to be included in the plot/data-collection (can be only part of the name; default is all instances in FILENAMES)')
 
@@ -82,38 +87,11 @@ def parse_arguments(args):
     parser.add_argument('--no-text', action='store_true',
                         help='do not write any text on the plots (such as node or round numbers)')
 
-#    parser.add_argument('-a', '--complete-only', action='store_true',
-#                        help='create only complete plots')
-#
-#    parser.add_argument('-A', '--no-complete', action='store_true',
-#                        help='create no complete plots')
-#
-#    parser.add_argument('-z', '--summary-only', action='store_true',
-#                        help='create only summary plots')
-#
-#    parser.add_argument('-Z', '--no-summary', action='store_true',
-#                        help='create no summary plots')
-#
-#    parser.add_argument('-b', '--bubble-only', action='store_true',
-#                        help='create only bubble plots')
-#
-#    parser.add_argument('-B', '--no-bubble', action='store_true',
-#                        help='create no bubble plots')
-#
-#    parser.add_argument('-t', '--time-only', action='store_true',
-#                        help='create only time plots')
-#
-#    parser.add_argument('-T', '--no-time', action='store_true',
-#                        help='create no time plots')
-#
-#    parser.add_argument('-g', '--gap-only', action='store_true',
-#                        help='create only gap plots')
-#
-#    parser.add_argument('-G', '--no-gap', action='store_true',
-#                        help='create no gap plots')
+    parser.add_argument('--dualoptdiff', action = 'store_true',
+                        help='for all plots involving the gap: use the best primal bound instead of the current one')
 
-#    parser.add_argument('-r', '--root-only', action='store_true',
-#                        help='set this flag, to collect data just for the root-node')
+    parser.add_argument('--lptimeinsummary', action = 'store_true',
+                        help='draw the Master LP time in the summary')
 
     # arguments concerning in- and output files
     parser.add_argument('-o', '--outdir', type=str,
@@ -140,7 +118,7 @@ def parse_arguments(args):
         print 'please make sure that 1 <= MINROUND <= MAXROUND (or MAXROUND == 0 for the last possible round)'
         exit()
     if (0 < parsed_args.maxnode and parsed_args.maxnode < parsed_args.minnode) or parsed_args.minnode <= 0 or parsed_args.maxnode < 0:
-        print 'please make sure that 1 <= MINNODE <= MAXNODE (or MAXNODE == 0 for the last possible round)'
+        print 'please make sure that 1 <= MINNODE <= MAXNODE (or MAXNODE == 0 for the last possible node)'
         exit()
     if not parsed_args.colors in plt.cm.datad:
         print 'please use a colormap that is supported by pyplot (' + parsed_args.colors + ' is not supported)'
@@ -166,38 +144,25 @@ def set_params(args):
         params['no_' + plotname] = vars(args)['no_' + plotname] or any([vars(args)[other_plotname + '_only'] for other_plotname in plotnames if not other_plotname == plotname])
     for key, val in vars(args).iteritems():
         # set all other params
-        if not any([plotname in key for plotname in plotnames]):
+        if not any([plotname == key.replace('no_','').replace('_only','') for plotname in plotnames]):
             params[key] = val
     return
 
-#    params['outdir'] = args.outdir
-#    params['root_only'] = args.root_only
-#    params['details'] = not args.png
-#    params['nSplit'] = args.splitrounds
-#    params['minRound'] = args.minround
-#    params['maxRound'] = args.maxround
-#    params['colors'] = args.colors
-#    params['lines'] = args.lines
-#    params['instances'] = args.instances
-#    params['no_text'] = args.no_text
-#    params['save'] = args.save
-#    params['load'] = args.load
-#    params['no_summary'] = args.no_summary or args.bubble_only or args.time_only or args.gap_only or args.complete_only
-#    params['no_bubble'] = args.no_bubble or args.summary_only or args.time_only or args.gap_only or args.complete_only
-#    params['no_time'] = args.no_time or args.summary_only or args.bubble_only or args.gap_only or args.complete_only
-#    params['no_gap'] = args.no_gap or args.summary_only or args.bubble_only or args.time_only or args.complete_only
-#    params['no_complete'] = args.no_complete or args.summary_only or args.bubble_only or args.time_only or args.gap_only
-
-def get_colmap(pricers):
+def get_colmap(pricers, consider_masterlptime = True):
     """
     Returns a list of colors, with same length as pricers, that can be used for the bar plot
     Also returns a mapping color -> pricer_id, used for legends
     Each pricing problem has its own color
     :param pricers: a list with pricing_problem ids
-    :return: a list of colors as used by pyplot.bar()
+    :param consider_masterlptime: reserve the first color of the colormap for the master lp time in case it is not included in the pricers list
+    :return colors: a list of colors as used by pyplot.bar()
+    :return mapping: a mapping pricer_id -> color
     """
     # build a list of pricer ids, in which each pricer id appears once and sort it by id
-    pricer_ids = []
+    if consider_masterlptime:
+        pricer_ids = [min(pricers) - 2]
+    else:
+        pricer_ids = []
     for p in pricers:
         if not p in pricer_ids:
             pricer_ids.append(p)
@@ -343,7 +308,7 @@ def make_complete_plot(data, info):
     x = data.starting_time.values
     y = (data.nVars - ymin).values
     widths = data.time.values
-    colors, cmapping = get_colmap(data.pricing_prob.values)
+    colors, cmapping = get_colmap(data.pricing_prob.values, consider_masterlptime = False)
 
     # sometimes we need just the height of the bars of the pricing problems
     y_pricers = (data[data.pricing_prob >= 0].nVars - ymin).values
@@ -524,10 +489,11 @@ def make_summary_plot(data, info):
     start_time = time.time()
 
     # extract summary data
-    data = data.query('pricing_prob <> -2')
     summary = pd.DataFrame()
-    summary['time'] = data.groupby(level=['node','pricing_round','stab_round', 'round']).sum().time
-    summary['found_frac'] = data.astype(bool).groupby(level=['node','pricing_round','stab_round', 'round']).sum().nVars/data.groupby(level=['node','pricing_round','stab_round', 'round']).count().nVars*100
+    summary['time'] = data.query('pricing_prob <> -2').groupby(level=['node','pricing_round','stab_round', 'round']).sum().time
+    summary['mlp_time'] = data.query('pricing_prob == -2').groupby(level=['node','pricing_round','stab_round', 'round']).sum().time
+    summary['mlp_time'] = summary['mlp_time'].fillna(0.00)
+    summary['found_frac'] = data.query('pricing_prob <> -2').astype(bool).groupby(level=['node','pricing_round','stab_round', 'round']).sum().nVars/data.query('pricing_prob <> -2').groupby(level=['node','pricing_round','stab_round', 'round']).count().nVars*100
     summary = summary.reset_index()
 
     if not data.farkas.all() and data.farkas.any():
@@ -543,12 +509,15 @@ def make_summary_plot(data, info):
     # get the data for the plot
     x = summary[summary.stab_round <= 0]['round'].values
     y_time = summary[summary.stab_round <= 0].time.values
+    y_mlp_time = summary[summary.stab_round <= 0].mlp_time.values
     y_found_frac = summary[summary.stab_round <= 0].found_frac.values
     x_stab = summary[summary.stab_round > 0]['round'].values
     y_stab_time = summary[summary.stab_round > 0].time.values
+    y_stab_mlp_time = summary[summary.stab_round > 0].mlp_time.values
     y_stab_found_frac = summary[summary.stab_round > 0].found_frac.values
     x_mean = summary['round'].values
     y_mean_time = summary.time.rolling(int(.05*(max(x_mean) - min(x_mean))), center = True).mean()
+    y_mean_mlp_time = summary.mlp_time.rolling(int(.05*(max(x_mean) - min(x_mean))), center = True).mean()
     y_mean_found_frac = summary.found_frac.rolling(int(.05*(max(x_mean) - min(x_mean))), center = True).mean()
 
     # format the plot
@@ -592,12 +561,17 @@ def make_summary_plot(data, info):
     perimeter = max([3.5,(p2[0] - p1[0])/5.])
 
     # plot the data
-    ax1.scatter(x,y_time, color='k', s=perimeter**2)
-    ax2.scatter(x,y_found_frac, color='r', s=perimeter**2)
-    ax1.scatter(x_stab,y_stab_time, color='k', s=perimeter**2, marker='x', alpha=.5)
-    ax2.scatter(x_stab,y_stab_found_frac, color='r', s=perimeter**2, marker='x', alpha=.5)
-    ax1.plot(x_mean,y_mean_time, 'k--')
-    ax2.plot(x_mean,y_mean_found_frac, 'r--')
+    handles = []
+    handles.append(ax1.scatter(x,y_time, color='k', s=perimeter**2, zorder = 2, label = 'Pricing Time'))
+    handles.append(ax2.scatter(x,y_found_frac, color='r', s=perimeter**2, label = 'Success'))
+    handles.append(ax1.scatter(x_stab,y_stab_time, color='k', s=perimeter**2, marker='x', alpha=.5, zorder = 2, label = 'Pricing Time in Stabilization Round'))
+    handles.append(ax2.scatter(x_stab,y_stab_found_frac, color='r', s=perimeter**2, marker='x', alpha=.5, label = 'Success in Stabilization Round'))
+    ax1.plot(x_mean,y_mean_time, 'k--', zorder = 2, label = None)
+    ax2.plot(x_mean,y_mean_found_frac, 'r--', label = None)
+    if params['lptimeinsummary']:
+        handles.append(ax1.scatter(x,y_mlp_time, color='g', s=perimeter**2, zorder = 1, label = 'Master LP Time'))
+        handles.append(ax1.scatter(x_stab,y_stab_mlp_time, color='g', s=perimeter**2, marker='x', alpha=.5, zorder = 1, label = 'Master LP Time in Stabilization Rounds'))
+        ax1.plot(x_mean,y_mean_mlp_time, 'g--', zorder = 1, label = None)
 
     # add a line after the root-node
     if summary.node.max() > 1:
@@ -637,15 +611,16 @@ def make_summary_plot(data, info):
         ax1.text(x_line, 1.01, "\it{End of initial Farkas Pricing}", size = 'smaller', ha = align, color = 'blue', zorder = 1, transform = trans)
 
     # draw a legend
-    handles = []
-    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, label = 'Pricing Round'))
-    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'x', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, alpha = .7, label = 'Stabilization Round'))
-    plt.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, .5, 1.04), ncol = 2, mode = 'expand')
+#    handles = []
+#    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, label = 'Pricing Round'))
+#    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'x', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, alpha = .7, label = 'Stabilization Round'))
+#    plt.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, .5, 1.04), ncol = 2, mode = 'expand')
+    plt.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, 1., 1.04), ncol = 4, mode = 'expand')
 
     # add other information
-    ax1.text(.5, 1.11, '\\textbf{\\underline{' + info['instance'].replace('_','\_') + '}}', ha = 'center', size = 'large', transform = ax1.transAxes)
-    ax1.text(.75, 1.055, '\\textbf{Settings:} \\textit{' + info['settings'].replace('_','\_') + '}', ha = 'right', size = 'medium', transform = ax1.transAxes)
-    ax1.text(1., 1.055, '\\textbf{SCIP Status:} \\textit{' + info['status'].replace('_',' ') + '}', ha = 'right', size = 'medium', transform = ax1.transAxes)
+    ax1.text(.3, 1.11, '\\textbf{\\underline{' + info['instance'].replace('_','\_') + '}}', ha = 'center', size = 'large', transform = ax1.transAxes)
+    ax1.text(.75, 1.11, '\\textbf{Settings:} \\textit{' + info['settings'].replace('_','\_') + '}', ha = 'right', size = 'medium', transform = ax1.transAxes)
+    ax1.text(1., 1.11, '\\textbf{SCIP Status:} \\textit{' + info['status'].replace('_',' ') + '}', ha = 'right', size = 'medium', transform = ax1.transAxes)
 
     print '    plotted summary:', time.time() - start_time
     start_time = time.time()
@@ -653,7 +628,7 @@ def make_summary_plot(data, info):
     # save the plot
     fig.set_size_inches(11.7,8.3)
     plt.tight_layout()
-    fig.subplots_adjust(top = 0.87)
+    fig.subplots_adjust(top = 0.88)
     save_plot(fig, 'summary', info)
     plt.close()
     print '    saved summary:', time.time() - start_time
@@ -667,7 +642,7 @@ def make_bubble_plot(data, info):
     """
     start_time = time.time()
 
-    # flat out the data again
+    # flat out the data again and do not consider the master lp time in this plot
     data = data.query('pricing_prob <> -2').reset_index()
 
     pricer_min = data.pricing_prob.min()
@@ -941,10 +916,35 @@ def make_gap_plot(data, info, root_bounds):
     rb = rb.rename(columns = {'iter': 'pricing_round'})[['pricing_round','pb','db','time']].set_index('pricing_round')
     gap_data = rb.join(gap_data, how = 'inner', lsuffix = '_rb')
     gap_data.db = gap_data.db.expanding().max()
-    gap_data['gap'] = abs(gap_data.pb - gap_data.db)
-    gap_data['gap'] = gap_data.gap / gap_data.gap.values[0]
+
+    if params['dualoptdiff']:
+        # check if the primal bound is the upper bound
+        primal_is_upper = None
+        if not (gap_data.pb.dropna().empty or gap_data.db.dropna().empty):
+            if gap_data.pb.dropna().iloc[0] > gap_data.db.dropna().iloc[0]:
+                primal_is_upper = True
+            else:
+                primal_is_upper = False
+
+        if primal_is_upper is None:
+            print '    cannot calculate dualoptdiff, since it is not clear if the primal bound is the upper or lower'
+            gap_data['gap'] = abs(gap_data.pb - gap_data.db)
+            gap_data['gap'] = gap_data.gap / gap_data.gap.values[0]
+        elif primal_is_upper:
+            gap_data['gap'] = abs(gap_data.pb.min() - gap_data.db)
+            gap_data['gap'] = gap_data.gap / gap_data.gap.values[0]
+        elif not primal_is_upper:
+            gap_data['gap'] = abs(gap_data.pb.max() - gap_data.db)
+            gap_data['gap'] = gap_data.gap / gap_data.gap.values[0]
+
+    else:
+        gap_data['gap'] = abs(gap_data.pb - gap_data.db)
+        gap_data['gap'] = gap_data.gap / gap_data.gap.values[0]
+
     gap_data = gap_data.sort_values('time')
-    mean_data = gap_data['gap'].groupby(gap_data.time.apply(lambda x: round(x,1))).mean()
+    mean_data = gap_data['gap'].groupby(gap_data.time.apply(lambda x: round(x,2))).mean()
+    if len(mean_data) >= 20:
+        mean_data = mean_data.rolling(max(int(.08 * len(mean_data)), 5), center = True).mean()
 
     print '    extracted gap data:', time.time() - start_time
     start_time = time.time()
@@ -986,10 +986,133 @@ def make_gap_plot(data, info, root_bounds):
 
     return
 
-def make_depth_plot(data, info, root_bounds):
+def make_depth_plot(info):
     """
     For each instance create a plot, comparing the size of the gap at each node
+    :param info: information about the instance
+    :return:
     """
+    start_time = time.time()
+
+    # read the tree data from a vbc file
+    tree_data = vbc.read('results/vbc/' + info['instance'] + '.vbc')
+    if tree_data is None or tree_data.empty:
+        print '    no vbc data found'
+        return
+
+    # calculate the gap
+    tree_data.depth = tree_data.depth.astype('int')
+    tree_data['gap'] = abs(tree_data['primalbound'] - tree_data['dualbound'])
+    if not tree_data.gap.dropna().empty and tree_data.gap.max() <> 0:
+        tree_data.gap = tree_data.gap / tree_data.gap.dropna().max()
+        tree_data.loc[tree_data.gap.isnull(), 'gap'] = 1.0
+    mean_data = tree_data.sort_values('depth').groupby('depth').mean()
+    if len(mean_data) >= 20:
+        mean_data = mean_data.rolling(max(int(len(mean_data) * .08), 5)).mean()
+
+    print '    extracted depth data:', time.time() - start_time
+    start_time = time.time()
+
+    # set x and y values
+    x = tree_data.depth.values
+    y = (1 - tree_data.gap).values
+    x_mean = mean_data.index.values
+    y_mean = (1 - mean_data.gap).values
+
+    # create the figure
+    fig = plt.gcf()
+    ax = fig.gca()
+
+    # plot the data
+    ax.scatter(x, y, color = 'black')
+    ax.plot(x_mean, y_mean, 'k--')
+
+    print '    plotted depth data:', time.time() - start_time
+    start_time = time.time()
+
+    # format the plot
+    ax.text(.3, 1.03, '\\textbf{\\underline{' + info['instance'].replace('_','\_') + '}}', ha = 'center', size = 'large', transform = ax.transAxes)
+    ax.text(.75, 1.03, '\\textbf{Settings:} \\textit{' + info['settings'].replace('_','\_') + '}', ha = 'right', size = 'medium', transform = ax.transAxes)
+    ax.text(1., 1.03, '\\textbf{SCIP Status:} \\textit{' + info['status'].replace('_',' ') + '}', ha = 'right', size = 'medium', transform = ax.transAxes)
+    ax.set_xlabel('Node Depth', size = 'large')
+    ax.set_ylabel('Gap closed', size = 'large')
+    ax.tick_params(axis='both', labelsize='large')
+
+    # save the plot
+    fig.set_size_inches(11.7,8.3)
+    fig.tight_layout()
+    fig.subplots_adjust(top = .925)
+    save_plot(fig, 'depth', info)
+    plt.close()
+
+    print '    saved depth plot:', time.time() - start_time
+    start_time = time.time()
+
+    return
+
+def make_nodeID_plot(info):
+    """
+    For each instance create a plot, comparing the size of the gap at each node
+    :param info: information about the instance
+    :return:
+    """
+    plotname = 'nodeID'
+    start_time = time.time()
+
+    # read the tree data from a vbc file
+    tree_data = vbc.read('results/vbc/' + info['instance'] + '.vbc')
+    if tree_data is None or tree_data.empty:
+        print '    no vbc data found'
+        return
+
+    # calculate the gap
+    tree_data.node_scip = tree_data.node_scip.astype('int')
+    tree_data['gap'] = abs(tree_data['primalbound'] - tree_data['dualbound'])
+    if not tree_data.gap.dropna().empty and tree_data.gap.max() <> 0:
+        tree_data.gap = tree_data.gap / tree_data.gap.dropna().max()
+        tree_data.loc[tree_data.gap.isnull(), 'gap'] = 1.0
+    mean_data = tree_data.sort_values('node_scip').rolling(5, center = True).mean()
+    if len(mean_data) >= 20:
+        mean_data = mean_data.rolling(max(int(len(mean_data) * .08), 5)).mean()
+
+    print '    extracted ' + plotname + ' data:', time.time() - start_time
+    start_time = time.time()
+
+    # set x and y values
+    x = tree_data.node_scip.values
+    y = (1 - tree_data.gap).values
+    x_mean = mean_data.index.values
+    y_mean = (1 - mean_data.gap).values
+
+    # create the figure
+    fig = plt.gcf()
+    ax = fig.gca()
+
+    # plot the data
+    ax.scatter(x, y, color = 'black')
+    ax.plot(x_mean, y_mean, 'k--')
+
+    print '    plotted ' + plotname + ' data:', time.time() - start_time
+    start_time = time.time()
+
+    # format the plot
+    ax.text(.3, 1.03, '\\textbf{\\underline{' + info['instance'].replace('_','\_') + '}}', ha = 'center', size = 'large', transform = ax.transAxes)
+    ax.text(.75, 1.03, '\\textbf{Settings:} \\textit{' + info['settings'].replace('_','\_') + '}', ha = 'right', size = 'medium', transform = ax.transAxes)
+    ax.text(1., 1.03, '\\textbf{SCIP Status:} \\textit{' + info['status'].replace('_',' ') + '}', ha = 'right', size = 'medium', transform = ax.transAxes)
+    ax.set_xlabel('Node ID', size = 'large')
+    ax.set_ylabel('Gap closed', size = 'large')
+    ax.tick_params(axis='both', labelsize='large')
+
+    # save the plot
+    fig.set_size_inches(11.7,8.3)
+    fig.tight_layout()
+    fig.subplots_adjust(top = .925)
+    save_plot(fig, plotname, info)
+    plt.close()
+
+    print '    saved ' + plotname + ' plot:', time.time() - start_time
+    start_time = time.time()
+
     return
 
 def plots(data, info, root_bounds = None):
@@ -1004,9 +1127,13 @@ def plots(data, info, root_bounds = None):
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
 
-    # plot everything involving root bounds if possible and requested
+    # plot everything involving root bounds and the b&b-tree if possible and requested
     if not (root_bounds is None or params['no_gap']):
         make_gap_plot(data, info, root_bounds)
+    if not params['no_depth']:
+        make_depth_plot(info)
+    if not params['no_nodeID']:
+        make_nodeID_plot(info)
 
     # set parameters determining which part of the data shall be plotted
     if params['maxround'] <= 0:
@@ -1351,7 +1478,7 @@ def parse_files(files):
                     try:
                         if int(message.split()[1]) > 0:
                             # check if the column pool output should be included in the data
-                            if node < params['minNode'] or (0 < params['maxNode'] < node) or pricing_round < params['minRound'] or (0 < params['maxRound'] < pricing_round):
+                            if node < params['minnode'] or (0 < params['maxnode'] < node) or pricing_round < params['minround'] or (0 < params['maxround'] < pricing_round):
                                 continue
 
                             # store all indices
@@ -1378,7 +1505,7 @@ def parse_files(files):
                         pricing_prob = int(message.split()[2])
 
                         # check if the pricing prob should be included in the data
-                        if node < params['minNode'] or (0 < params['maxNode'] < node) or pricing_round < params['minRound'] or (0 < params['maxRound'] < pricing_round):
+                        if node < params['minnode'] or (0 < params['maxnode'] < node) or pricing_round < params['minround'] or (0 < params['maxround'] < pricing_round):
                             continue
 
                         # store all indices

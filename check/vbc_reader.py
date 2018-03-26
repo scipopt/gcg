@@ -160,5 +160,3 @@ def read(file):
         
     df.apply(pd.to_numeric, errors='ignore')
     return df
-
-df = read('/home/mueller/gcg/test_vbc.vbc')
