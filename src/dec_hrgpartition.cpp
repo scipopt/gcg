@@ -711,15 +711,15 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxHrgpartition)
    SCIP_RETCODE retcode;
    char* command;
    int commandlen;
-   int ncblocks;
    SCIP_Bool endoffile;
+   int nblocks;
    /* Graph stuff for hmetis */
    MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
    char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
 
    seeed = seeedPropagationData->seeedToPropagate;
    detectordata = DECdetectorGetData(detector);
-   
+
    *result = SCIP_DIDNOTFIND;
 
    std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getSortedCandidatesNBlocks();
@@ -747,21 +747,27 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxHrgpartition)
 
    SCIP_CALL( createMetisFile(scip, detectordata, seeed->getID(), graph, tempfile) );
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:\n");
 
+   SCIPinfoMessage(scip, NULL, "Maximal number of blocks the decomposition can contain: %d\n", seeed->getNOpenconss() );
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the number of blocks that the decomposition should contain (e.g. \"5\") \nGCG/toolbox> : ", &command, &endoffile) );
    commandlen = strlen(command);
 
    if( commandlen != 0 )
    {
-      ncblocks = atoi(command);
+      nblocks = atoi(command);
    }
    else
    {
+      SCIPinfoMessage(scip, NULL, "Invalid input!\n");
       return SCIP_ERROR;
    }
 
-   int nblocks = numberOfBlocks[0] - ncblocks; // Get number of wanted blocks
+   if(nblocks > seeed->getNOpenconss() || nblocks <= 0)
+   {
+      SCIPinfoMessage(scip, NULL, "Invalid number of blocks, choose at most %d\n", seeed->getNOpenconss() );
+      return SCIP_ERROR;
+   }
 
    if(nblocks > seeed->getNOpenconss() || nblocks <= 0)
    {
@@ -795,6 +801,115 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxHrgpartition)
       (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hr\\_%d", numberOfBlocks[0]);
       newSeeeds[1]->addDetectorChainInfo(decinfo);
       seeedPropagationData->newSeeeds[0] = (newSeeeds)[1];
+      ++(seeedPropagationData->nNewSeeeds);
+      seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
+      SCIPfreeMemoryArray(scip, &newSeeeds);
+      *result = SCIP_SUCCESS;
+      return SCIP_OKAY;
+   }
+   else //propagation unsuccessful
+   {
+      SCIPfreeMemoryArray(scip, &newSeeeds);
+      return SCIP_ERROR;
+   }
+}
+
+static
+DEC_DECL_FINISHFROMTOOLBOX(finishFromToolboxHrgpartition)
+{
+   /* add hrgpartition presolver parameters */
+   char decinfo[SCIP_MAXSTRLEN];
+   gcg::Seeed** newSeeeds;
+   DEC_DETECTORDATA* detectordata;
+   gcg::Seeed* seeed;
+   SCIP_RETCODE retcode;
+   char* command;
+   int commandlen;
+   SCIP_Bool endoffile;
+   int nblocks;
+   /* Graph stuff for hmetis */
+   MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
+   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
+
+   seeed = seeedPropagationData->seeedToPropagate;
+   detectordata = DECdetectorGetData(detector);
+
+   *result = SCIP_DIDNOTFIND;
+
+   std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getSortedCandidatesNBlocks();
+   if( numberOfBlocks.empty() )
+      numberOfBlocks.push_back(DEFAULT_FALLBACK_NBLOCKS);
+
+   int nconss = seeedPropagationData->seeedpool->getNConss();
+   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
+
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+
+   SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
+
+   /* allocate space for output data */
+   assert(detectordata->maxblocks >= detectordata->minblocks);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 2 ) );
+
+    /* build the hypergraph structure from the original problem */
+
+   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
+   graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
+
+   SCIP_CALL( graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed) );
+
+   SCIP_CALL( createMetisFile(scip, detectordata, seeed->getID(), graph, tempfile) );
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:\n");
+
+   SCIPinfoMessage(scip, NULL, "Maximal number of blocks the decomposition can contain: %d\n", seeed->getNOpenconss());
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the number of blocks that the decomposition should contain (e.g. \"5\") \nGCG/toolbox> : ", &command, &endoffile) );
+   commandlen = strlen(command);
+
+   if( commandlen != 0 )
+   {
+      nblocks = atoi(command);
+   }
+   else
+   {
+      SCIPinfoMessage(scip, NULL, "Invalid input!\n");
+      return SCIP_ERROR;
+   }
+
+   if(nblocks > seeed->getNOpenconss() || nblocks <= 0)
+   {
+      SCIPinfoMessage(scip, NULL, "Invalid number of blocks, choose at most %d\n", seeed->getNOpenconss() );
+      return SCIP_ERROR;
+   }
+
+   retcode = callMetis(scip, detectordata, graph, tempfile, nblocks, result);
+
+   if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
+   {
+      return SCIP_ERROR;
+   }
+
+   if( detectordata->tidy )
+   {
+      int status = remove( tempfile );
+      if( status == -1 )
+      {
+         SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
+         return SCIP_WRITEERROR;
+      }
+   }
+
+   SCIP_CALL( graph->createSeeedFromPartition(seeed, &newSeeeds[0], &newSeeeds[1], seeedPropagationData->seeedpool) );
+
+   delete graph;
+   graph = NULL;
+   if( (newSeeeds)[0] != NULL ) //propagation successful
+   {
+      detectordata->found = TRUE;
+      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hr\\_%d", numberOfBlocks[0]);
+      newSeeeds[0]->addDetectorChainInfo(decinfo);
+      seeedPropagationData->newSeeeds[0] = (newSeeeds)[0];
       ++(seeedPropagationData->nNewSeeeds);
       seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
       SCIPfreeMemoryArray(scip, &newSeeeds);
@@ -987,7 +1102,7 @@ SCIP_RETCODE SCIPincludeDetectorHrgpartition(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectAndBuildArrowhead, freeHrgpartition, initHrgpartition, exitHrgpartition, propagateSeeedHrgpartition, propagateFromToolboxHrgpartition, NULL, finishSeeedHrgpartition, detectorPostprocessSeeedHrgpartition, setParamAggressiveHrgpartition, setParamDefaultHrgpartition, setParamFastHrgpartition) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectAndBuildArrowhead, freeHrgpartition, initHrgpartition, exitHrgpartition, propagateSeeedHrgpartition, propagateFromToolboxHrgpartition, finishFromToolboxHrgpartition, finishSeeedHrgpartition, detectorPostprocessSeeedHrgpartition, setParamAggressiveHrgpartition, setParamDefaultHrgpartition, setParamFastHrgpartition) );
 
 
    /* add hrgpartition presolver parameters */

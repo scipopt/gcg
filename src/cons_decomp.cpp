@@ -2119,12 +2119,13 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    SCIP_Result result;
    SCIP_RETCODE retcode;
    DEC_Detector** detectors;
-   int ndetectors, i;
+   int ndetectors, i, j;
    SEEED_PROPAGATION_DATA* seeedPropData;
    gcg::Seeedpool* seeedpool;
    SCIP_Bool finished;
    SCIP_Bool success;
    SCIP_Bool fromunpresolved;
+   char stri[SCIP_MAXSTRLEN];
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
@@ -2175,19 +2176,23 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    while( !finished )
    {
       retcode = SCIP_ERROR;
+      j = 1;
       SCIPinfoMessage(scip, NULL, "Available detectors for propagation:\n");
       for( i = 0; i < ndetectors; ++i )
       {
+         SCIPinfoMessage(scip, NULL, "%d)", j);
          SCIPinfoMessage(scip, NULL, "%s\n", detectors[i]->name);
+         ++j;
       }
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name of the detector that you want to use (or \"none\"): \nGCG/toolbox> ", &command, &endoffile) );
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name or number of the detector that you want to use (or \"none\"): \nGCG/toolbox> ", &command, &endoffile) );
       commandlen = strlen(command);
 
       if( !strncmp( command, "none", commandlen) == 0 )
       {
          for( i = 0; i < ndetectors; ++i )
          {
-            if( strncmp( command, detectors[i]->name, commandlen) == 0 )
+            sprintf(stri, "%d", i+1);
+            if( strncmp( command, detectors[i]->name, commandlen) == 0 || strncmp( command, stri, commandlen ) == 0 )
             {
                retcode = detectors[i]->propagateFromToolbox(scip, detectors[i], seeedPropData, &result, dialoghdlr, dialog);
                break;
@@ -2206,7 +2211,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
          seeedPropData->newSeeeds[0]->displayInfo( seeedPropData->seeedpool, 0 );
          if( !success )
          {
-            SCIPinfoMessage(scip, NULL, "Found Seeed is a duplicate of a previously found Seeed.\n");
+            SCIPinfoMessage(scip, NULL, "\nFound Seeed is a duplicate of a previously found Seeed.\n\n");
          }
 
          SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
