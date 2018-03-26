@@ -2106,10 +2106,11 @@ SCIP_DIALOG*            dialog )
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
+SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
-   SCIP_DIALOG*            dialog )
+   SCIP_DIALOG*            dialog,
+   SCIP_Bool               propagate )
 {
    char* command;
    int commandlen;
@@ -2141,10 +2142,21 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    ndetectors = 0;
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      if( conshdlrdata->detectors[i]->propagateFromToolbox )
+      if( propagate )
       {
-         detectors[ndetectors] = conshdlrdata->detectors[i];
-         ++ndetectors;
+         if( conshdlrdata->detectors[i]->propagateFromToolbox )
+         {
+            detectors[ndetectors] = conshdlrdata->detectors[i];
+            ++ndetectors;
+         }
+      }
+      else
+      {
+         if( conshdlrdata->detectors[i]->finishFromToolbox )
+         {
+            detectors[ndetectors] = conshdlrdata->detectors[i];
+            ++ndetectors;
+         }
       }
    }
 
@@ -2177,7 +2189,10 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    {
       retcode = SCIP_ERROR;
       j = 1;
-      SCIPinfoMessage(scip, NULL, "Available detectors for propagation:\n");
+      if( propagate )
+         SCIPinfoMessage(scip, NULL, "Available detectors for propagation:\n");
+      else
+         SCIPinfoMessage(scip, NULL, "Available detectors for finishing:\n");
       for( i = 0; i < ndetectors; ++i )
       {
          SCIPinfoMessage(scip, NULL, "%d)", j);
@@ -2194,7 +2209,10 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
             sprintf(stri, "%d", i+1);
             if( strncmp( command, detectors[i]->name, commandlen) == 0 || strncmp( command, stri, commandlen ) == 0 )
             {
-               retcode = detectors[i]->propagateFromToolbox(scip, detectors[i], seeedPropData, &result, dialoghdlr, dialog);
+               if( propagate )
+                  retcode = detectors[i]->propagateFromToolbox(scip, detectors[i], seeedPropData, &result, dialoghdlr, dialog);
+               else
+                  retcode = detectors[i]->finishFromToolbox(scip, detectors[i], seeedPropData, &result, dialoghdlr, dialog);
                break;
             }
          }
@@ -2206,8 +2224,17 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
       }
       if( retcode == SCIP_OKAY )
       {
-         SCIPinfoMessage(scip, NULL, "Seeed was successfully propagated. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
-         seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->newSeeeds[0], &success);
+         if( propagate )
+         {
+            SCIPinfoMessage(scip, NULL, "Seeed was successfully propagated. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
+            seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->newSeeeds[0], &success);
+         }
+         else
+         {
+            SCIPinfoMessage(scip, NULL, "Seeed was successfully finished. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
+            seeedPropData->seeedpool->addSeeedToFinished(seeedPropData->newSeeeds[0], &success);
+         }
+
          seeedPropData->newSeeeds[0]->displayInfo( seeedPropData->seeedpool, 0 );
          if( !success )
          {
@@ -2215,7 +2242,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
          }
 
          SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-            "Do you want to visualize the newly propagated Seeed (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
+            "Do you want to visualize the new Seeed (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
          commandlen = strlen(command);
          if( strncmp( command, "yes", commandlen) == 0 )
          {
@@ -2223,7 +2250,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
          }
 
          SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-            "Do you want to continue the decomposition with the newly propagated Seeed (\"continue\"), \
+            "Do you want to continue the decomposition with the new Seeed (\"continue\"), \
 or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );
          commandlen = strlen(command);
          if( strncmp( command, "continue", commandlen) == 0 )
@@ -2238,7 +2265,15 @@ or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &
       }
       else
       {
-         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Seeed propagation unsuccessful. Do you want to select another detector (\"detector\") or \
+         if( propagate )
+         {
+            SCIPinfoMessage(scip, NULL, "Seeed propagation unsuccessful. ");
+         }
+         else
+         {
+            SCIPinfoMessage(scip, NULL, "Finishing of Seeed unsuccessful. ");
+         }
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Do you want to select another detector (\"detector\") or \
 return to the previous menu (\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );
          commandlen = strlen(command);
          if( strncmp( command, "detector", commandlen) == 0 )
@@ -2271,6 +2306,22 @@ return to the previous menu (\"previous\")?\nGCG/toolbox> ", &command, &endoffil
 
    SCIPfreeBufferArray(scip, &detectors);
    return SCIP_OKAY;
+}
+
+SCIP_RETCODE SCIPconshdlrDecompToolboxFinishSeeed(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog )
+{
+   return SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(scip, dialoghdlr, dialog, FALSE);
+}
+
+SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog )
+{
+   return SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(scip, dialoghdlr, dialog, TRUE);
 }
 
 SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
