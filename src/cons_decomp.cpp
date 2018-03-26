@@ -1269,6 +1269,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "undo", "last modification is undone (atm only the last modification can be undone)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "shows a visualization of the current decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "propagate", "list all detectors that can propagate the current seeed and apply propagation");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "finish", "list all detectors that can finish the current seeed and finish it");
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
 
@@ -2456,6 +2457,12 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
                SCIP_CALL( SCIPconshdlrDecompToolboxPropagateSeeed(scip, dialoghdlr, dialog) );
                continue;
             }
+
+            if( strncmp( command, "finish", commandlen2) == 0 )
+            {
+               SCIP_CALL( SCIPconshdlrDecompToolboxFinishSeeed(scip, dialoghdlr, dialog) );
+               continue;
+            }
          }
    } /* finished yes == modify */
    else
@@ -2631,6 +2638,11 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       if( strncmp( command, "propagate", commandlen2) == 0 )
       {
          SCIP_CALL( SCIPconshdlrDecompToolboxPropagateSeeed(scip, dialoghdlr, dialog) );
+         continue;
+      }
+      if( strncmp( command, "finish", commandlen2) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompToolboxFinishSeeed(scip, dialoghdlr, dialog) );
          continue;
       }
    }
