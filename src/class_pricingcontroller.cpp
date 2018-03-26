@@ -158,20 +158,17 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
    pricingprob2 = GCGpricingjobGetPricingprob(pricingjob2);
 
    /** preliminary strategy:
-    *  * if the pricing problems are the same, sort by priority of pricing solvers
     *  * heuristic before exact
+    *  * if the pricing problems are the same, sort by priority of pricing solvers
     *  * prefer pricing problems with less number of solves in the current pricing call
     *  * then sorting by score
     */
 
-   if( pricingprob1 == pricingprob2 )
+   if( GCGpricingjobIsHeuristic(pricingjob1) && GCGpricingjobIsHeuristic(pricingjob2) )
    {
-      GCG_SOLVER* solver1 = GCGpricingjobGetSolver(pricingjob1);
-      GCG_SOLVER* solver2 = GCGpricingjobGetSolver(pricingjob2);
-
-      if( solver1->priority > solver2->priority )
+      if( GCGpricingjobGetNHeurIters(pricingjob1) < GCGpricingjobGetNHeurIters(pricingjob2) )
          return -1;
-      else
+      else if( GCGpricingjobGetNHeurIters(pricingjob1) > GCGpricingjobGetNHeurIters(pricingjob2) )
          return 1;
    }
 
@@ -183,10 +180,16 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
          return 1;
    }
 
-   if( GCGpricingjobGetNHeurIters(pricingjob1) < GCGpricingjobGetNHeurIters(pricingjob2) )
-      return -1;
-   else if( GCGpricingjobGetNHeurIters(pricingjob1) > GCGpricingjobGetNHeurIters(pricingjob2) )
-      return 1;
+   if( pricingprob1 == pricingprob2 )
+   {
+      GCG_SOLVER* solver1 = GCGpricingjobGetSolver(pricingjob1);
+      GCG_SOLVER* solver2 = GCGpricingjobGetSolver(pricingjob2);
+
+      if( solver1->priority > solver2->priority )
+         return -1;
+      else
+         return 1;
+   }
 
    if( GCGpricingjobGetScore(pricingjob1) >= GCGpricingjobGetScore(pricingjob2) )
       return -1;
