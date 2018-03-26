@@ -2189,7 +2189,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
          {
             if( strncmp( command, detectors[i]->name, commandlen) == 0 )
             {
-               retcode = detectors[i]->propagateFromToolbox(scip, conshdlrdata->detectors[i], seeedPropData, &result, dialoghdlr, dialog);
+               retcode = detectors[i]->propagateFromToolbox(scip, detectors[i], seeedPropData, &result, dialoghdlr, dialog);
                break;
             }
          }
@@ -2203,7 +2203,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
       {
          SCIPinfoMessage(scip, NULL, "Seeed was successfully propagated. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
          seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->newSeeeds[0], &success);
-         //conshdlrdata->listall->at( seeedPropData->newSeeeds[0]->getID() )->displayInfo( seeedPropData->seeedpool, 0 );
+         seeedPropData->newSeeeds[0]->displayInfo( seeedPropData->seeedpool, 0 );
          if( !success )
          {
             SCIPinfoMessage(scip, NULL, "Found Seeed is a duplicate of a previously found Seeed.\n");
@@ -2223,8 +2223,8 @@ or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &
          commandlen = strlen(command);
          if( strncmp( command, "continue", commandlen) == 0 )
          {
-            seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->seeedToPropagate, &success);
             seeedPropData->seeedToPropagate = seeedPropData->newSeeeds[0];
+            continue;
          }
          else if( strncmp( command, "previous", commandlen) == 0 )
          {

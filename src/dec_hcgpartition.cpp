@@ -713,13 +713,12 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxHcgpartition)
    int commandlen;
    int ncblocks;
    SCIP_Bool endoffile;
-
-   seeed = seeedPropagationData->seeedToPropagate;
-   detectordata = DECdetectorGetData(detector);
-
    /* Graph stuff for hmetis */
    MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
    char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
+
+   seeed = seeedPropagationData->seeedToPropagate;
+   detectordata = DECdetectorGetData(detector);
 
    *result = SCIP_DIDNOTFIND;
 
@@ -787,6 +786,8 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxHcgpartition)
    }
 
    SCIP_CALL( graph->createSeeedFromPartition(seeed, &newSeeeds[0], &newSeeeds[1], seeedPropagationData->seeedpool));
+   delete graph;
+   graph = NULL;
    if( (newSeeeds)[1] != NULL ) //propagation successful
    {
       detectordata->found = TRUE;
@@ -794,10 +795,14 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxHcgpartition)
       newSeeeds[1]->addDetectorChainInfo(decinfo);
       seeedPropagationData->newSeeeds[0] = (newSeeeds)[1];
       ++(seeedPropagationData->nNewSeeeds);
+      seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
+      SCIPfreeMemoryArray(scip, &newSeeeds);
+      *result = SCIP_SUCCESS;
       return SCIP_OKAY;
    }
    else //propagation unsuccessful
    {
+      SCIPfreeMemoryArray(scip, &newSeeeds);
       return SCIP_ERROR;
    }
 }
