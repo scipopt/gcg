@@ -37,6 +37,8 @@
 #include "class_pricingtype.h"
 #include "gcg.h"
 #include "scip_misc.h"
+#include "branch_generic.h"
+#include "cons_masterbranch.h"
 #include "pub_gcgpqueue.h"
 #include "pub_pricingjob.h"
 #include "pub_pricingprob.h"
@@ -199,6 +201,46 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
    return 0;
 }
 
+/** for each pricing problem, get its corresponding generic branching constraints */
+SCIP_RETCODE Pricingcontroller::getGenericBranchconss()
+{
+   /* get current branching rule */
+   SCIP_CONS* branchcons = GCGconsMasterbranchGetActiveCons(scip_);
+   SCIP_BRANCHRULE* branchrule = GCGconsMasterbranchGetBranchrule(branchcons);
+
+   assert(branchcons != NULL);
+   assert(branchrule != NULL);
+
+   while( GCGisBranchruleGeneric(branchrule) )
+   {
+      GCG_BRANCHDATA* branchdata;
+      SCIP_CONS* mastercons;
+      int consblocknr;
+
+      branchdata = GCGconsMasterbranchGetBranchdata(branchcons);
+      assert(branchdata != NULL);
+
+      mastercons = GCGbranchGenericBranchdataGetMastercons(branchdata);
+      consblocknr = GCGbranchGenericBranchdataGetConsblocknr(branchdata);
+      assert(mastercons != NULL);
+      assert(consblocknr >= 0);
+
+      for( int i = 0; i < npricingprobs; ++i )
+      {
+         /* search for the pricing problem to which the generic branching decision belongs */
+         if( consblocknr == GCGpricingprobGetProbnr(pricingprobs[i]) )
+         {
+            SCIP_CALL( GCGpricingprobAddGenericBranchData(scip_, pricingprobs[i], branchcons, pricingtype_->consGetDual(scip_, mastercons)) );
+            break;
+         }
+      }
+      assert(i < npricingprobs);
+
+      branchcons = GCGconsMasterbranchGetParentcons(branchcons);
+      branchrule = GCGconsMasterbranchGetBranchrule(branchcons);
+   }
+}
+
 /** check if a pricing problem is done */
 SCIP_Bool Pricingcontroller::pricingprobIsDone(
    GCG_PRICINGPROB*      pricingprob        /**< pricing problem structure */
@@ -284,7 +326,7 @@ SCIP_RETCODE Pricingcontroller::exitSol()
 }
 
 /** pricing initialization, called right at the beginning of pricing */
-void Pricingcontroller::initPricing(
+SCIP_RETCODE Pricingcontroller::initPricing(
    PricingType*          pricingtype         /**< type of pricing */
    )
 {
@@ -294,7 +336,14 @@ void Pricingcontroller::initPricing(
    curchunk = (curchunk + 1) % nchunks;
    startchunk = curchunk;
 
+   for( int i = 0; i < npricingprobs; ++i )
+      GCGpricingprobInitPricing(pricingprobs[i]);
+
+   SCIP_CALL( getGenericBranchconss() );
+
    SCIPdebugMessage("initialize pricing, chunk = %d/%d\n", curchunk+1, nchunks);
+
+   return SCIP_OKAY;
 }
 
 /** pricing deinitialization, called when pricing is finished */
@@ -576,6 +625,18 @@ void Pricingcontroller::increaseEagerage()
 {
    if( eagerfreq > 0 )
       eagerage++;
+}
+
+/** for a given problem index, get the corresponding pricing problem (or NULL, if it does not exist) */
+GCG_PRICINGPROB* Pricingcontroller::getPricingprob(
+   int                   probnr              /**< index of the pricing problem */
+   )
+{
+   for( int i = 0; i < npricingprobs; ++i )
+      if( GCGpricingprobGetProbnr(pricingprobs[i]) == probnr )
+         return pricingprobs[i];
+
+   return NULL;
 }
 
 } /* namespace gcg */

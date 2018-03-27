@@ -65,6 +65,21 @@ void GCGpricingprobFree(
    GCG_PRICINGPROB**     pricingprob         /**< pricing problem to be freed */
 );
 
+/** initialize pricing problem at the beginning of the pricing round */
+EXTERN
+void GCGpricingprobInitPricing(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   );
+
+/** add generic branching data (constraint and dual value) to the current pricing problem */
+EXTERN
+SCIP_RETCODE GCGpricingprobAddGenericBranchData(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
+   SCIP_CONS*            branchcons,         /**< generic branching constraint */
+   SCIP_Real             branchdual          /**< corresponding dual solution value */
+   );
+
 /** reset the pricing problem statistics for the current pricing round */
 EXTERN
 void GCGpricingprobReset(

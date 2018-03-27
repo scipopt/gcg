@@ -53,6 +53,13 @@ struct GCG_PricingProb
    SCIP*                pricingscip;        /**< SCIP data structure */
    int                  probnr;             /**< (block) index of the corresponding pricing problem */
 
+   /* generic branching information */
+   SCIP_CONS**          branchconss;        /**< stack of generic branching constraints */
+   SCIP_Real*           branchduals;        /**< corresponding dual solution values */
+   int                  nbranchconss;       /**< number of generic branching constraints */
+   int                  branchconsssize;    /**< size of generic branching constraints array */
+   int                  lastconsidx;        /**< arrax index of last generic branching constraint added to the pricing problem */
+
    /* result values */
    SCIP_STATUS          pricingstatus;      /**< current solution status of the pricing problem */
    SCIP_Real            lowerbound;         /**< lower bound obtained by solving the pricing problem */

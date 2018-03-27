@@ -61,6 +61,11 @@ SCIP_RETCODE GCGpricingprobCreate(
 
    (*pricingprob)->pricingscip = pricingscip;
    (*pricingprob)->probnr = probnr;
+   (*pricingprob)->branchconss = NULL;
+   (*pricingprob)->branchduals = NULL;
+   (*pricingprob)->nbranchconss = 0;
+   (*pricingprob)->branchconsssize = 0;
+   (*pricingprob)->lastconsidx = 0;
    (*pricingprob)->pricingstatus = SCIP_STATUS_UNKNOWN;
    (*pricingprob)->lowerbound = -SCIPinfinity(scip);
    (*pricingprob)->colssize = colssize;
@@ -81,10 +86,64 @@ void GCGpricingprobFree(
    GCG_PRICINGPROB**     pricingprob         /**< pricing problem to be freed */
 )
 {
+   SCIPfreeMemoryArrayNull(scip, &(*pricingprob)->branchduals);
+   SCIPfreeMemoryArrayNull(scip, &(*pricingprob)->branchconss);
    SCIPfreeMemoryArray(scip, &(*pricingprob)->ncolsround);
    SCIPfreeMemoryArray(scip, &(*pricingprob)->cols);
    SCIPfreeMemory(scip, pricingprob);
    *pricingprob = NULL;
+}
+
+/** initialize pricing problem at the beginning of the pricing round */
+void GCGpricingprobInitPricing(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   )
+{
+   assert(pricingprob->ncols == 0);
+   assert(pricingprob->nimpcols == 0);
+
+   pricingprob->nbranchconss = 0;
+   pricingprob->lastconsidx = 0;
+}
+
+/** add generic branching data (constraint and dual value) to the current pricing problem */
+SCIP_RETCODE GCGpricingprobAddGenericBranchData(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
+   SCIP_CONS*            branchcons,         /**< generic branching constraint */
+   SCIP_Real             branchdual          /**< corresponding dual solution value */
+   )
+{
+   /* allocate memory, if necessary */
+   if( pricingprob->branchconsssize == pricingprob->nbranchconss )
+   {
+      assert((pricingprob->branchconsssize == 0) == (pricingprob->branchconss == NULL));
+      assert((pricingprob->branchconsssize == 0) == (pricingprob->branchduals == NULL));
+
+      pricingprob->branchconsssize = SCIPcalcMemGrowSize(scip, pricingprob->branchconsssize+1);
+
+      if( pricingprob->branchconss == NULL )
+      {
+         SCIP_CALL( SCIPallocMemoryArray(scip, &pricingprob->branchconss, pricingprob->branchconsssize) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &pricingprob->branchduals, pricingprob->branchconsssize) );
+      }
+      else
+      {
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &pricingprob->branchconss, pricingprob->branchconsssize) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &pricingprob->branchduals, pricingprob->branchconsssize) );
+      }
+
+   }
+
+   /* add constraint and dual solution value */
+   pricingprob->branchconss[pricingprob->nbranchconss] = branchcons;
+   pricingprob->branchduals[pricingprob->nbranchconss] = branchdual;
+   ++pricingprob->nbranchconss;
+   ++pricingprob->lastconsidx;
+
+   assert(pricingprob->nbranchconss == pricingprob->lastconsidx);
+
+   return SCIP_OKAY;
 }
 
 /** reset the pricing problem statistics for the current pricing round */
@@ -262,6 +321,23 @@ int GCGpricingprobGetProbnr(
    )
 {
    return pricingprob->probnr;
+}
+
+/** get generic branching data corresponding to the pricing problem */
+void GCGpricingprobGetGenericBranchData(
+   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
+   SCIP_CONS***          branchconss,        /**< pointer to store branching constraints array */
+   SCIP_Real**           branchduals,        /**< pointer to store array of corresponding dual values */
+   int*                  nbranchconss        /**< pointer to store number of generic branching constraints */
+   )
+{
+   assert(branchconss != NULL);
+   assert(branchduals != NULL);
+   assert(nbranchconss != NULL);
+
+   *branchconss = pricingprob->branchconss;
+   *branchduals = pricingprob->branchduals;
+   *nbranchconss = pricingprob->nbranchconss;
 }
 
 /** get the status of a pricing problem */

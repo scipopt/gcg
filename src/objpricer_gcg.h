@@ -418,7 +418,7 @@ private:
       int                   prob,               /**< index of pricing problem */
       SCIP_CONS***          consstack,          /**< stack of branching constraints */
       int*                  nconsstack,         /**< size of the stack */
-      SCIP_Real**           consduals           /**< dual values of the masterbranch solutions */
+      SCIP_Real**           consduals           /**< dual values of the masterbranch solutions, or NULL */
    ) const;
 
    /** add bounds change from constraint from the pricing problem at this node

@@ -1753,14 +1753,15 @@ SCIP_Real ObjPricerGcg::computeRedCost(
    PricingType*          pricetype,          /**< type of pricing */
    SCIP_SOL*             sol,                /**< solution to compute reduced cost for */
    SCIP_Bool             solisray,           /**< is the solution a ray? */
-   int                   prob,               /**< number of the pricing problem the solution belongs to */
+   int                   probnr,             /**< number of the pricing problem the solution belongs to */
    SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    ) const
 {
+   GCG_PRICINGPROB* pricingprob;
    SCIP* pricingscip;
-   SCIP_CONS** branchconss = NULL; /* stack of branching constraints */
-   int nbranchconss = 0; /* number of branching constraints */
-   SCIP_Real* branchduals = NULL; /* dual values of branching constraints in the master (sigma) */
+   SCIP_CONS** branchconss;                  /* stack of genericbranching constraints */
+   int nbranchconss;                         /* number of generic branching constraints */
+   SCIP_Real* branchduals;                   /* dual values of branching constraints in the master (sigma) */
    int i;
 
    SCIP_VAR** solvars;
@@ -1770,8 +1771,11 @@ SCIP_Real ObjPricerGcg::computeRedCost(
 
    assert(pricerdata != NULL);
 
+   pricingprob = pricingcontroller->getPricingprob(probnr);
+   assert(pricingprob != NULL);
+
    objvalue = 0.0;
-   pricingscip = pricerdata->pricingprobs[prob];
+   pricingscip = pricerdata->pricingprobs[probnr];
    solvars = SCIPgetOrigVars(pricingscip);
    nsolvars = SCIPgetNOrigVars(pricingscip);
    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip_, &solvals, nsolvars) );
@@ -1779,18 +1783,18 @@ SCIP_Real ObjPricerGcg::computeRedCost(
 
    /* compute the objective function value of the solution */
    for( i = 0; i < nsolvars; i++ )
-      objvalue += solvals[i] * pricerdata->realdualvalues[prob][SCIPvarGetProbindex(solvars[i])];
+      objvalue += solvals[i] * pricerdata->realdualvalues[probnr][SCIPvarGetProbindex(solvars[i])];
 
    if( objvalptr != NULL )
       *objvalptr = objvalue;
 
-   /* Compute path to last generic branching node */
-   SCIP_CALL_ABORT( computeGenericBranchingconssStack(pricetype, prob, &branchconss, &nbranchconss, &branchduals) );
+   /* get path to the last generic branching node */
+   GCGpricingprobGetGenericBranchData(pricingprob, &branchconss, &branchduals, &nbranchconss);
 
    for( i = nbranchconss - 1; i >= 0; --i )
    {
       SCIP_Bool feasible;
-      SCIP_CALL_ABORT( checkBranchingBoundChanges(prob, sol, branchconss[i], &feasible) );
+      SCIP_CALL_ABORT( checkBranchingBoundChanges(probnr, sol, branchconss[i], &feasible) );
       if( feasible )
       {
          objvalue -= branchduals[i];
@@ -1801,7 +1805,7 @@ SCIP_Real ObjPricerGcg::computeRedCost(
    SCIPfreeBlockMemoryArray(scip_, &solvals, nsolvars);
 
    /* compute reduced cost of variable (i.e. subtract dual solution of convexity constraint, if solution corresponds to a point) */
-   return (solisray ? objvalue : objvalue - pricerdata->dualsolconv[prob]);
+   return (solisray ? objvalue : objvalue - pricerdata->dualsolconv[probnr]);
 }
 
 SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
@@ -1810,11 +1814,12 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
    SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    ) const
 {
-   SCIP_CONS** branchconss = NULL; /* stack of branching constraints */
-   int nbranchconss = 0; /* number of branching constraints */
-   SCIP_Real* branchduals = NULL; /* dual values of branching constraints in the master (sigma) */
+   GCG_PRICINGPROB* pricingprob;
+   SCIP_CONS** branchconss;                  /* stack of genericbranching constraints */
+   int nbranchconss;                         /* number of generic branching constraints */
+   SCIP_Real* branchduals;                   /* dual values of branching constraints in the master (sigma) */
    int i;
-   int prob;
+   int probnr;
 
    SCIP_Bool isray;
 
@@ -1828,22 +1833,25 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
    assert(pricerdata != NULL);
 
    objvalue = 0.0;
-   prob = GCGcolGetProbNr(gcgcol);
+   probnr = GCGcolGetProbNr(gcgcol);
 
    solvars = GCGcolGetVars(gcgcol);
    nsolvars = GCGcolGetNVars(gcgcol);
    solvals = GCGcolGetVals(gcgcol);
    isray = GCGcolIsRay(gcgcol);
 
+   pricingprob = pricingcontroller->getPricingprob(probnr);
+   assert(pricingprob != NULL);
+
    /* compute the objective function value of the column */
    for( i = 0; i < nsolvars; i++ )
-      objvalue += solvals[i] * pricerdata->realdualvalues[prob][SCIPvarGetProbindex(solvars[i])];
+      objvalue += solvals[i] * pricerdata->realdualvalues[probnr][SCIPvarGetProbindex(solvars[i])];
 
    if( objvalptr != NULL )
       *objvalptr = objvalue;
 
-   /* Compute path to last generic branching node */
-   SCIP_CALL_ABORT( computeGenericBranchingconssStack(pricetype, prob, &branchconss, &nbranchconss, &branchduals) );
+   /* get path to the last generic branching node */
+   GCGpricingprobGetGenericBranchData(pricingprob, &branchconss, &branchduals, &nbranchconss);
 
    for( i = nbranchconss -1; i >= 0; --i )
    {
@@ -1857,7 +1865,7 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
    SCIPfreeMemoryArrayNull(scip_, &branchconss);
    SCIPfreeMemoryArrayNull(scip_, &branchduals);
 
-   redcost = (isray ? objvalue : objvalue - pricerdata->dualsolconv[prob]);
+   redcost = (isray ? objvalue : objvalue - pricerdata->dualsolconv[probnr]);
 
    GCGcolUpdateRedcost(gcgcol, redcost, FALSE);
 
@@ -2651,57 +2659,6 @@ SCIP_RETCODE ObjPricerGcg::freePricingProblems()
             SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[j]) );
             SCIP_CALL( SCIPstopClock(scip_, pricerdata->freeclock) );
          }
-
-   return SCIP_OKAY;
-}
-
-/** computes the stack of masterbranch constraints up to the last generic branching node
- * @note This method has to be threadsafe!
- */
-SCIP_RETCODE ObjPricerGcg::computeGenericBranchingconssStack(
-   PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
-   int                   prob,               /**< index of pricing problem */
-   SCIP_CONS***          consstack,          /**< stack of branching constraints */
-   int*                  nconsstack,         /**< size of the stack */
-   SCIP_Real**           consduals           /**< dual values of the masterbranch solutions */
-   ) const
-{
-   SCIP_BRANCHRULE *branchrule;
-   SCIP_CONS *masterbranchcons;
-   int consblocknr;
-
-   assert(consstack != NULL);
-   assert(nconsstack != NULL);
-
-   *consstack = NULL;
-   *nconsstack = 0;
-
-   /* get current branching rule */
-   masterbranchcons = GCGconsMasterbranchGetActiveCons(scip_);
-   branchrule = GCGconsMasterbranchGetBranchrule(masterbranchcons);
-
-   while( GCGisBranchruleGeneric(branchrule) )
-   {
-      SCIP_CONS* mastercons = GCGbranchGenericBranchdataGetMastercons(GCGconsMasterbranchGetBranchdata(masterbranchcons));;
-      consblocknr = GCGbranchGenericBranchdataGetConsblocknr(GCGconsMasterbranchGetBranchdata(masterbranchcons));
-
-      /* check if branching decision belongs to current pricing problem */
-      if(consblocknr == prob)
-      {
-         SCIP_CALL( SCIPreallocMemoryArray(scip_, consstack, (size_t)(*nconsstack) +1) );
-         SCIP_CALL( SCIPreallocMemoryArray(scip_, consduals, (size_t)(*nconsstack) +1) );
-
-         (*consstack)[*nconsstack] = masterbranchcons;
-         (*consduals)[*nconsstack] = pricetype->consGetDual(scip_, mastercons);
-
-//         SCIPdebugPrintCons(scip_, mastercons, NULL);
-//         SCIPdebugMessage("Dual: %.4f\n", (*consduals)[*nconsstack]);
-         assert( !SCIPisFeasNegative(scip_, (*consduals)[*nconsstack]));
-         (*nconsstack) += 1;
-      }
-      masterbranchcons = GCGconsMasterbranchGetParentcons(masterbranchcons);
-      branchrule = GCGconsMasterbranchGetBranchrule(masterbranchcons);
-   }
 
    return SCIP_OKAY;
 }
@@ -3622,7 +3579,6 @@ SCIP_Real GCGcomputeRedCostGcgCol(
 
    return redcost;
 }
-
 
 /** performs the pricing routine, gets the type of pricing that should be done: farkas or redcost pricing */
 SCIP_RETCODE ObjPricerGcg::priceNewVariables(

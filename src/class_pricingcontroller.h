@@ -92,7 +92,7 @@ public:
    SCIP_RETCODE exitSol();
 
    /** pricing initialization, called right at the beginning of pricing */
-   void initPricing(
+   SCIP_RETCODE initPricing(
       PricingType*          pricingtype         /**< type of pricing */
    );
 
@@ -175,11 +175,19 @@ public:
 
    void increaseEagerage();
 
+   /** for a given problem index, get the corresponding pricing problem (or NULL, if it does not exist) */
+   GCG_PRICINGPROB* getPricingprob(
+      int                   probnr              /**< index of the pricing problem */
+      );
+
 
 private:
    /** comparison operator for pricing jobs w.r.t. their solution priority */
    static
    SCIP_DECL_SORTPTRCOMP(comparePricingjobs);
+
+   /** for each pricing problem, get its corresponding generic branching constraints */
+   SCIP_RETCODE getGenericBranchconss();
 
    /** check if a pricing job is done */
    SCIP_Bool pricingprobIsDone(
