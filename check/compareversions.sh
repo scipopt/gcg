@@ -72,6 +72,10 @@ do
 	make deps ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 	make -j ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
+	# make sure the testsets can be found: make symbolic link (TODO for striplibn for now, there should be a more elegant version -> discuss design!)
+	cd check/instances
+	ln -s /opt/instances/striplibn striblibn
+	cd ../..
 	# run testset
 	make test ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
