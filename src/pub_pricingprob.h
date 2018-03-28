@@ -68,9 +68,21 @@ int GCGpricingprobGetProbnr(
 EXTERN
 void GCGpricingprobGetGenericBranchData(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
-   SCIP_CONS***          branchconss,        /**< pointer to store branching constraints array */
-   SCIP_Real**           branchduals,        /**< pointer to store array of corresponding dual values */
-   int*                  nbranchconss        /**< pointer to store number of generic branching constraints */
+   SCIP_CONS***          branchconss,        /**< pointer to store branching constraints array, or NULL */
+   SCIP_Real**           branchduals,        /**< pointer to store array of corresponding dual values, or NULL */
+   int*                  nbranchconss        /**< pointer to store number of generic branching constraints, or NULL */
+   );
+
+/** get the number of generic branching constraints corresponding to the pricing problem */
+EXTERN
+int GCGpricingprobGetNGenericBranchconss(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   );
+
+/** get index of next generic branching constraint added to the pricing problem */
+EXTERN
+int GCGpricingprobGetNextConsIdx(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** get the status of a pricing problem */

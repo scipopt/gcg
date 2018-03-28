@@ -109,6 +109,12 @@ SCIP_RETCODE GCGpricingprobMoveCols(
    SCIP_Bool             usepricestore       /**< use price store? */
    );
 
+/** decrease index of next generic branching constraint added to the pricing problem */
+EXTERN
+void GCGpricingprobDecreaseNextConsIdx(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   );
+
 /** set the lower bound of a pricing job */
 EXTERN
 void GCGpricingjobSetLowerbound(

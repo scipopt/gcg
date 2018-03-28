@@ -60,6 +60,7 @@ SCIP_RETCODE GCGpricingjobCreate(
    (*pricingjob)->chunk = chunk;
    (*pricingjob)->score = 0.0;
    (*pricingjob)->heuristic = FALSE;
+   (*pricingjob)->nextbranchconsidx = 0;
    (*pricingjob)->nheuriters = 0;
 
    return SCIP_OKAY;
@@ -112,6 +113,11 @@ SCIP_RETCODE GCGpricingjobSetup(
 
    /* initialize result variables */
    pricingjob->nheuriters = 0;
+   /* @todo: Currently, we add generic branching constraints only in exact pricing */
+   if( heuristic )
+      pricingjob->nextbranchconsidx = 0;
+   else
+      pricingjob->nextbranchconsidx = GCGpricingprobGetNGenericBranchconss(pricingprob);
 
    return SCIP_OKAY;
 }
@@ -169,6 +175,7 @@ void GCGpricingjobSetExact(
    )
 {
    pricingjob->heuristic = FALSE;
+   pricingjob->nextbranchconsidx = GCGpricingprobGetNGenericBranchconss(GCGpricingjobGetPricingprob(pricingjob));
 }
 
 /** update number of heuristic pricing iterations of a pricing job */
@@ -186,4 +193,20 @@ int GCGpricingjobGetNHeurIters(
    )
 {
    return pricingjob->nheuriters;
+}
+
+/** get next generic branching constraint index */
+int GCGpricingjobGetNextBranchconsIdx(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->nextbranchconsidx;
+}
+
+/** decrease next generic branching constraint index */
+void GCGpricingjobDecreaseNextBranchconsIdx(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   --pricingjob->nextbranchconsidx;
 }

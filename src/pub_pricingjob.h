@@ -88,6 +88,12 @@ int GCGpricingjobGetNHeurIters(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
+/** get next generic branching constraint index */
+EXTERN
+int GCGpricingjobGetNextBranchconsIdx(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
 /**@} */
 
 

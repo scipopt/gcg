@@ -90,6 +90,12 @@ void GCGpricingjobIncreaseNHeurIters(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
+/** decrease next generic branching constraint index */
+EXTERN
+void GCGpricingjobDecreaseNextBranchconsIdx(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
 #ifdef __cplusplus
 }
 #endif

@@ -58,7 +58,7 @@ struct GCG_PricingProb
    SCIP_Real*           branchduals;        /**< corresponding dual solution values */
    int                  nbranchconss;       /**< number of generic branching constraints */
    int                  branchconsssize;    /**< size of generic branching constraints array */
-   int                  lastconsidx;        /**< arrax index of last generic branching constraint added to the pricing problem */
+   int                  nextconsidx;        /**< index of next generic branching constraint that should be added to the pricing problem */
 
    /* result values */
    SCIP_STATUS          pricingstatus;      /**< current solution status of the pricing problem */

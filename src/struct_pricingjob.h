@@ -59,6 +59,7 @@ struct GCG_PricingJob
    SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
 
    /* result/statistic values */
+   int                  nextbranchconsidx;  /**< index of next generic branching constraint with which the job should be performed */
    int                  nheuriters;         /**< number of times the pricing job was performed heuristically */
 };
 
