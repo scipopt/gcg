@@ -107,6 +107,13 @@ def parse_arguments(args):
     parser.add_argument('--png', action='store_true',
                         help='set this flag for a non-zoomable png-plot as output')
 
+    parser.add_argument('--vbconly', action='store_true',
+                        help='plot the plots involving only the vbc data (nodeID and depth); no pricing data is needed')
+
+    parser.add_argument('--vbcdir', type=str,
+                        default="results/vbc",
+                        help='directory of the vbc-files (needed for nodeID & depth plots; default: "results/vbc")')
+
     parser.add_argument('filenames', nargs='+',
                         help='names of the files to be used for the plots; should be GCG output with STATISTICS=true, formatted as by the check-scripts for multiple instances or whole testsets')
 
@@ -532,8 +539,8 @@ def make_summary_plot(data, info):
     xmin = 0
     xmax = max(x.tolist() + x_stab.tolist()) + 0.9
     ax1.set_xlim([xmin, xmax])
-    if max(y_time) > 0:
-        ax1.set_ylim([-max(y_time)*0.1,max(y_time)*1.1])
+    if max(y_time) > 0 or max(y_mlp_time):
+        ax1.set_ylim([-max(max(y_time), max(y_mlp_time)) * 0.1, max(max(y_time), max(y_mlp_time)) * 1.1])
     else:
         ax1.set_ylim([-0.001,0.01])
     ax2.set_ylim([-max(y_found_frac)*0.15,max(y_found_frac)*1.15])
@@ -893,10 +900,19 @@ def make_time_plot(data, info):
 
     # save
     fig.set_size_inches(11.7,8.3)
-    save_plot(fig, 'times', info)
-    plt.close()
+
+    print '    set plot size:', time.time() - start_time
+    start_time = time.time()
+
+    save_plot(fig, 'time', info)
 
     print '    saved time plot:', time.time() - start_time
+    start_time = time.time()
+
+
+    plt.close()
+
+    print '    close time plot:', time.time() - start_time
     start_time = time.time()
 
 def make_gap_plot(data, info, root_bounds):
@@ -995,7 +1011,7 @@ def make_depth_plot(info):
     start_time = time.time()
 
     # read the tree data from a vbc file
-    tree_data = vbc.read('results/vbc/' + info['instance'] + '.vbc')
+    tree_data = vbc.read(params['vbcdir'] + '/' + info['instance'] + '.vbc')
     if tree_data is None or tree_data.empty:
         print '    no vbc data found'
         return
@@ -1060,7 +1076,7 @@ def make_nodeID_plot(info):
     start_time = time.time()
 
     # read the tree data from a vbc file
-    tree_data = vbc.read('results/vbc/' + info['instance'] + '.vbc')
+    tree_data = vbc.read(params['vbcdir'] + '/' + info['instance'] + '.vbc')
     if tree_data is None or tree_data.empty:
         print '    no vbc data found'
         return
@@ -1539,8 +1555,17 @@ def main():
     set_params(parsed_args)
     if not os.path.exists(params['outdir']):
         os.makedirs(params['outdir'])
+    if not os.path.exists(params['vbcdir']):
+        os.makedirs(params['vbcdir'])
     if params['load']:
         load_data(parsed_args.filenames)
+    elif params['vbconly']:
+        # use tex to render the text output
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif')
+        for file in parsed_args.filenames:
+            make_nodeID_plot({'instance': os.path.splitext(os.path.basename(file))[0], 'settings': 'unknown', 'status': 'unknown'})
+            make_depth_plot({'instance': os.path.splitext(os.path.basename(file))[0], 'settings': 'unknown', 'status': 'unknown'})
     else:
         parse_files(parsed_args.filenames)
         if params['pickle']:
