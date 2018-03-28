@@ -218,7 +218,7 @@ SCIP_RETCODE Pricingcontroller::getGenericBranchconss()
    SCIP_BRANCHRULE* branchrule = GCGconsMasterbranchGetBranchrule(branchcons);
 
    assert(branchcons != NULL);
-   assert(branchrule != NULL);
+   assert(SCIPnodeGetDepth(GCGconsMasterbranchGetNode(branchcons)) == 0 || branchrule != NULL);
 
    while( GCGisBranchruleGeneric(branchrule) )
    {
