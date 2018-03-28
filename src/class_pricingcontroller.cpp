@@ -226,6 +226,8 @@ SCIP_RETCODE Pricingcontroller::getGenericBranchconss()
       SCIP_CONS* mastercons;
       int consblocknr;
 
+      int i;
+
       branchdata = GCGconsMasterbranchGetBranchdata(branchcons);
       assert(branchdata != NULL);
 
@@ -234,7 +236,7 @@ SCIP_RETCODE Pricingcontroller::getGenericBranchconss()
       assert(mastercons != NULL);
       assert(consblocknr >= 0);
 
-      for( int i = 0; i < npricingprobs; ++i )
+      for( i = 0; i < npricingprobs; ++i )
       {
          /* search for the pricing problem to which the generic branching decision belongs */
          if( consblocknr == GCGpricingprobGetProbnr(pricingprobs[i]) )

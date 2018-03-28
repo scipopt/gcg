@@ -141,7 +141,7 @@ SCIP_RETCODE GCGpricingprobAddGenericBranchData(
    ++pricingprob->nbranchconss;
    ++pricingprob->nextconsidx;
 
-   assert(pricingprob->nbranchconss == pricingprob->lastconsidx);
+   assert(pricingprob->nbranchconss == pricingprob->nextconsidx);
 
    return SCIP_OKAY;
 }
