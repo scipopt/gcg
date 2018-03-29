@@ -259,8 +259,8 @@ SCIP_RETCODE writeGpNonzeros(
    ofs.open (filename, std::ofstream::out | std::ofstream::app );
 
    /* start writing dots */
-   ofs << "plot \"-\" using 1:2:(" << radius << ") notitle with circles fc rgb \"" << SCIPvisuGetColorNonzero()
-      << "\" fill solid" << std::endl;
+   ofs << "plot \"-\" using 1:2:(" << radius << ") notitle with dots fc rgb \"" << SCIPvisuGetColorNonzero()
+      << "\" " << std::endl;
 
    /* write scatter plot */
    for( int row = 0; row < seeed->getNConss(); ++row )
