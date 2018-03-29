@@ -2125,7 +2125,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(
    SEEED_PROPAGATION_DATA* seeedPropData;
    gcg::Seeedpool* seeedpool;
    SCIP_Bool finished;
-   SCIP_Bool success;
+   SCIP_Bool isduplicate;
    SCIP_Bool fromunpresolved;
    char stri[SCIP_MAXSTRLEN];
 
@@ -2228,16 +2228,18 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(
          if( propagate )
          {
             SCIPinfoMessage(scip, NULL, "Seeed was successfully propagated. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
-            seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->newSeeeds[0], &success);
+            isduplicate = seeedPropData->seeedpool->isSeeedDuplicateofIncomplete(seeedPropData->newSeeeds[0]);
+            //seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->newSeeeds[0], isduplicate);
          }
          else
          {
             SCIPinfoMessage(scip, NULL, "Seeed was successfully finished. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
-            seeedPropData->seeedpool->addSeeedToFinished(seeedPropData->newSeeeds[0], &success);
+            isduplicate = seeedPropData->seeedpool->isSeeedDuplicateofFinished(seeedPropData->newSeeeds[0]);
+            //seeedPropData->seeedpool->addSeeedToFinished(seeedPropData->newSeeeds[0], isduplicate);
          }
 
          seeedPropData->newSeeeds[0]->displayInfo( seeedPropData->seeedpool, 0 );
-         if( !success )
+         if( isduplicate )
          {
             SCIPinfoMessage(scip, NULL, "\nFound Seeed is a duplicate of a previously found Seeed.\n\n");
          }
@@ -2247,9 +2249,27 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(
          commandlen = strlen(command);
          if( strncmp( command, "yes", commandlen) == 0 )
          {
-            SCIP_CALL(SCIPconshdlrDecompSelectVisualize(scip, dialoghdlr, dialog ) );
+            SCIP_CALL( SCIPconshdlrDecompSelectVisualize(scip, dialoghdlr, dialog ) );
          }
 
+         if( !isduplicate )
+         {
+            SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+                  "Do you want to save the newly found seeed? (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
+            commandlen = strlen(command);
+            if( strncmp( command, "yes", commandlen) == 0 )
+            {
+               if( propagate )
+               {
+                  seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->newSeeeds[0], isduplicate);
+               }
+               else
+               {
+                  seeedPropData->seeedpool->addSeeedToFinished(seeedPropData->newSeeeds[0], isduplicate);
+               }
+            }
+         }
+   
          SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
             "Do you want to continue the decomposition with the new Seeed (\"continue\"), \
 or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );

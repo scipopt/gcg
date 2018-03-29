@@ -1992,6 +1992,21 @@ void Seeedpool::addSeeedToIncomplete(
    }
    return;
 }
+
+SCIP_Bool Seeedpool::isSeeedDuplicateofIncomplete(
+   SeeedPtr seeed
+   )
+{
+   return !(seeedIsNoDuplicateOfSeeeds(seeed, incompleteSeeeds, false));
+}
+
+SCIP_Bool Seeedpool::isSeeedDuplicateofFinished(
+   SeeedPtr seeed
+   )
+{
+   return !(seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false));
+}
+
 SCIP_Bool Seeedpool::areThereContinuousVars(){
 
    for( int v = 0; v < getNVars(); ++v )

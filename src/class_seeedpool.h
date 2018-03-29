@@ -219,6 +219,14 @@ public:
       SCIP_Bool* success
       );
 
+   SCIP_Bool isSeeedDuplicateofIncomplete(
+      SeeedPtr seeed
+      );
+
+   SCIP_Bool isSeeedDuplicateofFinished(
+      SeeedPtr seeed
+      );
+
    /** calculates the strong decomposition score of a seeed */
    SCIP_RETCODE calcStrongDecompositionScore(
       SeeedPtr seeed,
