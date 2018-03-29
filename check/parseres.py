@@ -26,7 +26,15 @@ for line in fh:
 	# get all data lines of first table
 	if '----------' not in line and line not in ['\n', '\r\n'] and not line.startswith("Name   ") and not line.startswith(" ") and not line.startswith("@"):
 		line = " ".join(line.split())
-		linearray.append(line.split(" "))
+		row = line.split(" ")
+		# extra spaces should only be in the status column, join these
+		if len(columns) < len(row):
+			row[len(columns)-1:len(row)] = [''.join(row[len(columns)-1:len(row)])]
+				
+		linearray.append(row)
+
+print columns
+print linearray
 
 #store data into panda dataframe & save it as pickle
 df = pd.DataFrame(columns=columns, data=linearray)
