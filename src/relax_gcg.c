@@ -1264,7 +1264,7 @@ SCIP_RETCODE createPricingVariables(
       {
          int tempblock;
          tempblock = (int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar)-1; /*lint !e507*/
-         if( tempblock == DECdecompGetNBlocks(relaxdata->decdecomp) )
+         if( tempblock >= DECdecompGetNBlocks(relaxdata->decdecomp) )
          {
             blocknr = -1;
          }
