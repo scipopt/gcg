@@ -63,7 +63,7 @@
 #define DEFAULT_COPYCUTS      TRUE      /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
                                           *  of the original scip be copied to constraints of the subscip        */
 
-#define DEFAULT_PBHEUR        TRUE      /**< default value for using the restricted master heuristic as
+#define DEFAULT_PBHEUR        FALSE     /**< default value for using the restricted master heuristic as
                                           *  price-and-branch heuristic?
                                           *  (this changes the HEUR_TIMING to SCIP_HEURTIMING_AFTERNODE,
                                           *  and it changes the HEUR_FREQ to 0.                                  */
