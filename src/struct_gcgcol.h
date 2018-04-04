@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -56,6 +56,15 @@ struct GCG_Col
    SCIP_Real            redcost;            /**< last known reduced cost */
    int                  age;                /**< age of column (number of iterations since it was created;
                                                  each time reduced cost are calculated counts as an interation) */
+   int                  pos;                /**< position in column pool (or -1) */
+   SCIP_Real*           mastercoefs;        /**< array of master coefficients */
+   int                  nmastercoefs;       /**< number of master coefficients */
+   SCIP_Real*           mastercuts;         /**< array of master cut coefficients */
+   int                  nmastercuts;        /**< number of master cut coefficients */
+   SCIP_Real            norm;               /**< norm of the coefficients in the master */
+   int*                 linkvars;           /**< array of indices of variables in var-array which are linking variables */
+   int                  nlinkvars;          /**< number of variables in var-array which are linking variables */
+   SCIP_Bool            initcoefs;          /**< returns if mastercoefs and linkvars have been computed */
 };
 
 #ifdef __cplusplus

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -204,6 +204,35 @@ SCIP_RETCODE GCGsetPricingObjs(
    SCIP_Real*            dualsolconv         /**< array of dual solutions corresponding to convexity constraints */
    );
 
+/** creates a new master variable corresponding to the given gcg column */
+extern
+SCIP_RETCODE GCGcreateNewMasterVarFromGcgCol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             infarkas,           /**< in Farkas pricing? */
+   GCG_COL*              gcgcol,             /**< GCG column data structure */
+   SCIP_Bool             force,              /**< should the given variable be added also if it has non-negative reduced cost? */
+   SCIP_Bool*            added,              /**< pointer to store whether the variable was successfully added */
+   SCIP_VAR**            addedvar,           /**< pointer to store the created variable */
+   SCIP_Real             score               /**< score of column (or -1.0 if not specified) */
+
+   );
+
+/** computes the reduced cost of a column */
+extern
+SCIP_Real GCGcomputeRedCostGcgCol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             infarkas,           /**< in Farkas pricing? */
+   GCG_COL*              gcgcol,             /**< gcg column to compute reduced cost for */
+   SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
+   );
+
+
+/** compute master and cut coefficients of column */
+extern
+SCIP_RETCODE GCGcomputeColMastercoefs(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_COL*              gcgcol              /**< GCG column data structure */
+   );
 
 #ifdef __cplusplus
 }
