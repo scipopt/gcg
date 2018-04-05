@@ -1800,8 +1800,6 @@ SCIP_Real ObjPricerGcg::computeRedCost(
          objvalue -= branchduals[i];
       }
    }
-   SCIPfreeMemoryArrayNull(scip_, &branchconss);
-   SCIPfreeMemoryArrayNull(scip_, &branchduals);
    SCIPfreeBlockMemoryArray(scip_, &solvals, nsolvars);
 
    /* compute reduced cost of variable (i.e. subtract dual solution of convexity constraint, if solution corresponds to a point) */
@@ -1862,8 +1860,6 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
          objvalue -= branchduals[i];
       }
    }
-   SCIPfreeMemoryArrayNull(scip_, &branchconss);
-   SCIPfreeMemoryArrayNull(scip_, &branchduals);
 
    redcost = (isray ? objvalue : objvalue - pricerdata->dualsolconv[probnr]);
 
