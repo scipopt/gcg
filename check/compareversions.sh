@@ -4,6 +4,9 @@
 # README
 #
 # This script will run different versions of GCG using the test script for comparison.
+# Comparing different GCG versions (that might have different compile conventions) is basically one huge workaround, so beware!
+# Some older versions might require manual linking of libraries (especially tag < v2*). If the test runs overnight it might stop until someone manually presses Enter.
+# You have been warned.
 #
 # Call this script with arguments: "global flags" "gitversion1" "flags for gitversion1" "gitversion2" "flags for gitversion2" "gitversion3" ...
 # e.g. ./compareversions "TEST=mytestset SETTINGS=mysettings -j" "master" "" "mybranch" "LPS=cpx"
@@ -55,6 +58,23 @@ done
 CURRENTBRANCH=$(git symbolic-ref -q HEAD)
 CURRENTBRANCH=${CURRENTBRANCH##refs/heads/}
 CURRENTBRANCH=${CURRENTBRANCH:-HEAD}
+
+# If there is one test file for all versions, store the test file in case it differs in the versions
+# (This is assuming that setting the test in the additional flags is intentional and test sets are supposed to differ in that case.)
+
+# First cut the testset name from a copy of the global flags
+TESTNAME="${GLOBALFLAGS}"
+TESTNAME=${TESTNAME#*TEST=}
+TESTNAME=${TESTNAME%% *}
+
+# Store testset (Here is your problem if there are copy issues, name is hardcoded.)
+mkdir -p testset
+cd testset
+cp "$TESTNAME".test "$TESTNAME"_comparecopy.test
+cd ..
+
+# TODO Replace testset name in global flags by copy
+GLOBALFLAGS=${GLOBALFLAGS//"$TESTNAME"/"$TESTNAME"_comparecopy}
 
 # Script is in check, so switch to gcg main folder
 cd ..
@@ -113,11 +133,14 @@ done
 # Return to branch the script was called on
 git checkout "${CURRENTBRANCH}"
 
+# TODO Remove copy of global testset
+cd check/testset
+rm "$TESTNAME"_comparecopy.test
+cd ..
 
 # 3) do sth with the output: TODO
 	
 # parse the res files to a readable format for later use
-cd check
 mkdir -p pickles
 chmod +x parseres.py
 
