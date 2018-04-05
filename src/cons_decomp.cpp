@@ -1696,7 +1696,6 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
 
       commandlen = strlen(command);
 
-      /** case distinction: */
       if( strncmp( command, "back", commandlen) == 0 )
       {
          conshdlrdata->startidvisu -= conshdlrdata->selectvisulength;
@@ -2205,10 +2204,14 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(
          SCIPinfoMessage(scip, NULL, "%s\n", detectors[i]->name);
          ++j;
       }
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name or number of the detector that you want to use (or \"none\"): \nGCG/toolbox> ", &command, &endoffile) );
-      commandlen = strlen(command);
+      commandlen = 0;
+      while( commandlen == 0 )
+      {
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name or number of the detector that you want to use (or \"none\"): \nGCG/toolbox> ", &command, &endoffile) );
+         commandlen = strlen(command);
+      }
 
-      if( !strncmp( command, "none", commandlen) == 0 )
+      if( !strncmp( command, "none", commandlen) == 0 && !strncmp( command, "quit", commandlen) == 0 )
       {
          for( i = 0; i < ndetectors; ++i )
          {
@@ -2247,19 +2250,32 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(
             SCIPinfoMessage(scip, NULL, "\nFound Seeed is a duplicate of a previously found Seeed.\n\n");
          }
 
-         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-            "Do you want to visualize the new Seeed (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
-         commandlen = strlen(command);
+         commandlen = 0;
+         while( commandlen == 0 )
+         {
+            SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+               "Do you want to visualize the new Seeed (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
+            commandlen = strlen(command);
+         }
          if( strncmp( command, "yes", commandlen) == 0 )
          {
             SCIP_CALL( SCIPconshdlrDecompSelectVisualize(scip, dialoghdlr, dialog ) );
          }
+         else if( strncmp( command, "quit", commandlen) == 0 )
+         {
+            finished = TRUE;
+            continue;
+         }
 
          if( !isduplicate )
          {
-            SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-               "Do you want to save the newly found seeed? (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
-            commandlen = strlen(command);
+            commandlen = 0;
+            while( commandlen == 0 )
+            {
+               SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+                  "Do you want to save the newly found seeed? (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
+               commandlen = strlen(command);
+            }
             if( strncmp( command, "yes", commandlen) == 0 )
             {
                if( propagate )
@@ -2271,12 +2287,20 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(
                   seeedPropData->seeedpool->addSeeedToFinished(seeedPropData->newSeeeds[0], &isduplicate);
                }
             }
+            else if( strncmp( command, "quit", commandlen) == 0 )
+            {
+               finished = TRUE;
+               continue;
+            }
          }
-   
-         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-            "Do you want to continue the decomposition with the new Seeed (\"continue\"), \
-or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );
-         commandlen = strlen(command);
+         commandlen = 0;
+         while( commandlen == 0 )
+         {
+            SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+               "Do you want to continue the decomposition with the new Seeed (\"continue\"), \
+   or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );
+            commandlen = strlen(command);
+         }
          if( strncmp( command, "continue", commandlen) == 0 )
          {
             seeedPropData->seeedToPropagate = seeedPropData->newSeeeds[0];
@@ -2284,6 +2308,11 @@ or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &
          }
          else if( strncmp( command, "previous", commandlen) == 0 )
          {
+            continue;
+         }
+         else if( strncmp( command, "quit", commandlen) == 0 )
+         {
+            finished = TRUE;
             continue;
          }
       }
@@ -2297,14 +2326,18 @@ or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &
          {
             SCIPinfoMessage(scip, NULL, "Finishing of Seeed unsuccessful. ");
          }
-         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Do you want to select another detector (\"detector\") or \
-return to the previous menu (\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );
-         commandlen = strlen(command);
+         commandlen = 0;
+         while( commandlen == 0 )
+         {
+            SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Do you want to select another detector (\"detector\") or \
+   return to the previous menu (\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );
+            commandlen = strlen(command);
+         }
          if( strncmp( command, "detector", commandlen) == 0 )
          {
             continue;
          }
-         else if( strncmp( command, "previous", commandlen) == 0 )
+         else
          {
             finished = TRUE;
             continue;
