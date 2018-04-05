@@ -98,27 +98,21 @@ do
 	# change name of output files: sort by last modified and take the first one
 	cd check/results
 	OLDout=$(find . -type f -name "*.out"  -printf "%p\n" | sort -n | head -n 1)
-	echo "$OLDout"
 	mv "$OLDout" "version${index}.out"
 
 	OLDres=$(find . -type f -name "*.res"  -printf "%p\n" | sort -n | head -n 1)
-	echo "$OLDres"
 	mv "$OLDres" "version${index}.res"
 
 	OLDerr=$(find . -type f -name "*.err"  -printf "%p\n" | sort -n | head -n 1)
-	echo "$OLDerr"
 	mv "$OLDerr" "version${index}.err"
 
 	OLDtex=$(find . -type f -name "*.tex"  -printf "%p\n" | sort -n | head -n 1)
-	echo "$OLDtex"
 	mv "$OLDtex" "version${index}.tex"
 
 	OLDpav=$(find . -type f -name "*.pav"  -printf "%p\n" | sort -n | head -n 1)
-	echo "$OLDpav"
 	mv "$OLDpav" "version${index}.pav"
 
 	OLDset=$(find . -type f -name "*.set"  -printf "%p\n" | sort -n | head -n 1)
-	echo "$OLDset"
 	mv "$OLDset" "version${index}.set"
 
 	# go back to the main folder to check out next version correctly
