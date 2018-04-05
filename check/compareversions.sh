@@ -92,7 +92,7 @@ do
 	make deps ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 	make -j ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
-	# run testset
+	# run testset Assumes there are links from gcg/check/instances to the instance folders!
 	make test ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
 	# change name of output files: sort by last modified and take the first one
