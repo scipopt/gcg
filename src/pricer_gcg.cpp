@@ -2867,6 +2867,7 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    int nextconsidxjob;
    GCG_SOLVER* solver;
    GCG_DECL_SOLVERSOLVE((*solversolve));
+   SCIP_Bool heuristic;
    SCIP_RETCODE retcode;
    SCIP_CLOCK* clock;
    int* calls;
@@ -2883,12 +2884,13 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    assert(solver != NULL);
 
    GCGpricingprobGetGenericBranchData(pricingprob, &branchconss, NULL, &nbranchconss);
+   heuristic = GCGpricingjobIsHeuristic(pricingjob);
 
    nextconsidxprob = GCGpricingprobGetNextConsIdx(pricingprob);
    nextconsidxjob = GCGpricingjobGetNextBranchconsIdx(pricingjob);
    assert(nextconsidxjob >= -1);
    assert(nextconsidxprob >= -1);
-   assert(nextconsidxjob == nextconsidxprob || nextconsidxjob == nextconsidxprob+1);
+   assert(heuristic || nextconsidxjob == nextconsidxprob || nextconsidxjob == nextconsidxprob+1);
 
    // @todo: this should be done by the pricing solvers
    #pragma omp critical (limits)
@@ -2898,7 +2900,7 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    SCIP_CALL( retcode );
 
    /* add the next generic branching constraint if necessary */
-   if( !GCGpricingjobIsHeuristic(pricingjob) && nextconsidxprob < nbranchconss && nextconsidxprob == nextconsidxjob )
+   if( !heuristic && nextconsidxprob < nbranchconss && nextconsidxprob == nextconsidxjob )
    {
       if( SCIPgetStage(pricingscip) > SCIP_STAGE_SOLVING )
       {
@@ -2910,7 +2912,7 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
       SCIP_CALL( addBranchingBoundChangesToPricing(probnr, branchconss[nextconsidxjob]) );
    }
 
-   SCIP_CALL( getSolverPointers(solver, pricetype, !GCGpricingjobIsHeuristic(pricingjob), &clock, &calls, &solversolve) );
+   SCIP_CALL( getSolverPointers(solver, pricetype, !heuristic, &clock, &calls, &solversolve) );
    assert(solversolve == solver->solversolve || solversolve == solver->solversolveheur);
 
    /* continue if the appropriate solver is not available */
@@ -2937,7 +2939,7 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
       || *status == SCIP_STATUS_SOLLIMIT
       || *status == SCIP_STATUS_UNKNOWN);
 
-   if( !GCGpricingjobIsHeuristic(pricingjob) )
+   if( !heuristic )
    {
       #pragma omp atomic
       pricerdata->solvedsubmipsoptimal++;

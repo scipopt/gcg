@@ -115,7 +115,7 @@ SCIP_RETCODE GCGpricingjobSetup(
    pricingjob->nheuriters = 0;
    /* @todo: Currently, we add generic branching constraints only in exact pricing */
    if( heuristic )
-      pricingjob->nextbranchconsidx = 0;
+      pricingjob->nextbranchconsidx = -1;
    else
       pricingjob->nextbranchconsidx = GCGpricingprobGetNGenericBranchconss(pricingprob);
 

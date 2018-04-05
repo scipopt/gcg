@@ -454,10 +454,11 @@ void Pricingcontroller::evaluatePricingjob(
    GCG_PRICINGPROB* pricingprob = GCGpricingjobGetPricingprob(pricingjob);
    int nextconsidxjob = GCGpricingjobGetNextBranchconsIdx(pricingjob);
    int nextconsidxprob = GCGpricingprobGetNextConsIdx(pricingprob);
+   SCIP_Bool heuristic = GCGpricingjobIsHeuristic(pricingjob);
 
    assert(nextconsidxjob >= -1);
    assert(nextconsidxprob >= -1);
-   assert(nextconsidxjob == nextconsidxprob || nextconsidxjob == nextconsidxprob+1);
+   assert(heuristic || nextconsidxjob == nextconsidxprob || nextconsidxjob == nextconsidxprob+1);
 
    /* Indicate that the next generic branching constraint should be added before performing the job again */
    if( nextconsidxjob > -1 )
@@ -469,7 +470,7 @@ void Pricingcontroller::evaluatePricingjob(
    }
 
    /* If there is no generic branching constraint left to be added, go to the next heuristic pricing iteration */
-   if( nextconsidxjob == -1 && GCGpricingjobIsHeuristic(pricingjob) )
+   if( nextconsidxjob == -1 && heuristic )
       GCGpricingjobIncreaseNHeurIters(pricingjob);
 
    /* If the pricing job has not yielded any improving column, possibly solve it again;
@@ -480,7 +481,7 @@ void Pricingcontroller::evaluatePricingjob(
    {
       SCIPdebugMessage("Problem %d has not yielded improving columns.\n", GCGpricingprobGetProbnr(pricingprob));
 
-      if( GCGpricingjobIsHeuristic(pricingjob) )
+      if( heuristic )
       {
          assert(limitWasReached(status) || status == SCIP_STATUS_UNKNOWN);
 
