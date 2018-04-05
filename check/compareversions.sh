@@ -73,7 +73,7 @@ cd testset
 cp "$TESTNAME".test "$TESTNAME"_comparecopy.test
 cd ..
 
-# TODO Replace testset name in global flags by copy
+# Replace testset name in global flags by copy
 GLOBALFLAGS=${GLOBALFLAGS//"$TESTNAME"/"$TESTNAME"_comparecopy}
 
 # Script is in check, so switch to gcg main folder
@@ -92,10 +92,6 @@ do
 	make deps ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 	make -j ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
-	# make sure the testsets can be found: make symbolic link (TODO for striplibn for now, there should be a more elegant version -> discuss design!)
-	cd check/instances
-	ln -s /opt/instances/striplibn striblibn
-	cd ../..
 	# run testset
 	make test ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
@@ -127,13 +123,12 @@ do
 
 	# go back to the main folder to check out next version correctly
 	cd ../..
-	
 done
 
 # Return to branch the script was called on
 git checkout "${CURRENTBRANCH}"
 
-# TODO Remove copy of global testset
+# Remove copy of global testset
 cd check/testset
 rm "$TESTNAME"_comparecopy.test
 cd ..
