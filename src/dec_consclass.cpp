@@ -289,6 +289,18 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
    return SCIP_OKAY;
 }
 
+static
+DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
+{
+   
+}
+
+static
+DEC_DECL_FINISHFROMTOOLBOX(finishFromToolboxConsclass)
+{
+   
+}
+
 #define detectorPostprocessSeeedConsclass NULL
 
 static

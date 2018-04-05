@@ -1186,13 +1186,13 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 
-   /* select */
-   if( !SCIPdialogHasEntry(root, "select") )
+   /* explore */
+   if( !SCIPdialogHasEntry(root, "explore") )
    {
       SCIP_CALL( SCIPincludeDialog(scip, &submenu,
          NULL,
          GCGdialogExecSelect, NULL, NULL,
-         "select", "select decompositions", FALSE, NULL) );
+         "explore", "explore decompositions", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
    }
