@@ -1613,7 +1613,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "command", "description");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "-------", "-----------");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "select", "selects/unselects decomposition with given id");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "modify", "calls the decomposition toolbox to modify or create a decomposition");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "toolbox", "calls the decomposition toolbox to modify or create a decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "back", "displays the preceding decompositions (if there are some)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "next", "displays the subsequent decompositions (if there are some)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "top", "displays the first decompositions");
@@ -1770,7 +1770,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
          continue;
       }
 
-      if( strncmp( command, "modify", commandlen) == 0 )
+      if( strncmp( command, "toolbox", commandlen) == 0 )
       {
          SCIPconshdlrDecompExecToolbox(scip, dialoghdlr, dialog);
          continue;
@@ -2218,12 +2218,12 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(
       {
          if( propagate )
          {
-            SCIPinfoMessage(scip, NULL, "Seeed was successfully propagated. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
+            SCIPinfoMessage(scip, NULL, "\nSeeed was successfully propagated. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
             isduplicate = seeedPropData->seeedpool->isSeeedDuplicateofIncomplete(seeedPropData->newSeeeds[0]);
          }
          else
          {
-            SCIPinfoMessage(scip, NULL, "Seeed was successfully finished. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
+            SCIPinfoMessage(scip, NULL, "\nSeeed was successfully finished. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
             isduplicate = seeedPropData->seeedpool->isSeeedDuplicateofFinished(seeedPropData->newSeeeds[0]);
          }
 
@@ -2307,11 +2307,11 @@ or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &
       {
          if( propagate )
          {
-            SCIPinfoMessage(scip, NULL, "Seeed propagation unsuccessful. ");
+            SCIPinfoMessage(scip, NULL, "Seeed propagation unsuccessful.\n");
          }
          else
          {
-            SCIPinfoMessage(scip, NULL, "Finishing of Seeed unsuccessful. ");
+            SCIPinfoMessage(scip, NULL, "Finishing of Seeed unsuccessful.\n");
          }
          commandlen = 0;
          while( commandlen == 0 )

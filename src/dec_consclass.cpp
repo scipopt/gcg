@@ -292,13 +292,67 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 static
 DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
 {
+   *result = SCIP_DIDNOTFIND;
+   char decinfo[SCIP_MAXSTRLEN];
+   gcg::ConsClassifier** classifiers;
+   SCIP_Bool newclassifier;
+   int nclassifiers;
+
+   if( seeedPropagationData->seeedToPropagate->getNOpenconss() != seeedPropagationData->seeedpool->getNConss() )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Aborting dec_consclass because there are %d open vars of %d total vars and %d open conss of %d total conss \n ", seeedPropagationData->seeedToPropagate->getNOpenvars(), seeedPropagationData->seeedpool->getNVars(), seeedPropagationData->seeedToPropagate->getNOpenconss() ,seeedPropagationData->seeedpool->getNConss() );
+      return SCIP_ERROR;
+   }
+   if( seeedPropagationData->seeedpool->getNConsClassifiers() == 0 )
+   {
+      SCIPinfoMessage(scip, NULL, "No ConsClassifiers available for propagation, aborting...\n");
+      return SCIP_ERROR;
+   }
+   std::vector<gcg::Seeed*> foundseeeds(0);
+
+   gcg::Seeed* seeedOrig;
+   gcg::Seeed* seeed;
+
+   int maximumnclasses;
+
+   if( seeedPropagationData->seeedpool->getNConss() + seeedPropagationData->seeedpool->getNVars() >= 50000 )
+      SCIPgetIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs", &maximumnclasses);
+   else
+      SCIPgetIntParam(scip, "detection/maxnclassesperclassifier", &maximumnclasses);
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &classifiers, seeedPropagationData->seeedpool->getNConsClassifiers()) );
    
+   SCIPinfoMessage(scip, NULL, "%d consclassifiers available for propagation:\n", seeedPropagationData->seeedpool->getNConsClassifiers() );
+   for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNConsClassifiers(); ++classifierIndex )
+   {
+      newclassifier = TRUE;
+      for( int i = 0; i < nclassifiers; ++i )
+      {
+         if( classifiers[i] == seeedPropagationData->seeedpool->getConsClassifier( classifierIndex ) )
+         {
+            newclassifier = FALSE;
+         }
+      }
+      gcg::ConsClassifier* classifier = seeedPropagationData->seeedpool->getConsClassifier( classifierIndex );
+      if( newclassifier )
+      {
+         SCIPinfoMessage(scip, NULL, "%s\n", classifier->getName() );
+         classifiers[nclassifiers] = classifier;
+         ++nclassifiers;
+      }
+   }
+
+
+   SCIPfreeMemoryArray(scip, &classifiers);
+   //@TODO: Rest of implementation
+   return SCIP_ERROR;
 }
 
 static
 DEC_DECL_FINISHFROMTOOLBOX(finishFromToolboxConsclass)
 {
-   
+   //@TODO: Implementation
+   return SCIP_ERROR;
 }
 
 #define detectorPostprocessSeeedConsclass NULL
@@ -435,7 +489,7 @@ SCIP_RETCODE SCIPincludeDetectorConsclass(SCIP* scip /**< SCIP data structure */
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectConsclass,
-         freeConsclass, initConsclass, exitConsclass, propagateSeeedConsclass, NULL, NULL, finishSeeedConsclass, detectorPostprocessSeeedConsclass, setParamAggressiveConsclass, setParamDefaultConsclass, setParamFastConsclass));
+         freeConsclass, initConsclass, exitConsclass, propagateSeeedConsclass, propagateFromToolboxConsclass, finishFromToolboxConsclass, finishSeeedConsclass, detectorPostprocessSeeedConsclass, setParamAggressiveConsclass, setParamDefaultConsclass, setParamFastConsclass));
 
    /**@todo add consclass detector parameters */
 
