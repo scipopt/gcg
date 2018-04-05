@@ -2764,12 +2764,12 @@ SCIP_RETCODE ObjPricerGcg::checkBranchingBoundChangesGcgCol(
       if( components[i].sense == GCG_COMPSENSE_GE )
       {
          *feasible = SCIPisFeasGE(pricerdata->pricingprobs[prob], val, components[i].bound);
-         SCIPdebugMessage("<%s> %.4f >= %.4f\n", SCIPvarGetName(pricingvar), val, components[i].bound);
+/*         SCIPdebugMessage("<%s> %.4f >= %.4f\n", SCIPvarGetName(pricingvar), val, components[i].bound); */
       }
       else
       {
          *feasible = SCIPisFeasLT(pricerdata->pricingprobs[prob], val, components[i].bound);
-         SCIPdebugMessage("<%s> %.4f < %.4f\n", SCIPvarGetName(pricingvar), val, components[i].bound);
+/*         SCIPdebugMessage("<%s> %.4f < %.4f\n", SCIPvarGetName(pricingvar), val, components[i].bound); */
       }
       if( !*feasible )
          break;
