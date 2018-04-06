@@ -2884,9 +2884,9 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
 
    nextconsidxprob = GCGpricingprobGetNextConsIdx(pricingprob);
    nextconsidxjob = GCGpricingjobGetNextBranchconsIdx(pricingjob);
-   assert(nextconsidxjob >= -1);
-   assert(nextconsidxprob >= -1);
-   assert(heuristic || nextconsidxjob == nextconsidxprob || nextconsidxjob == nextconsidxprob+1);
+   assert(nextconsidxjob >= 0);
+   assert(nextconsidxprob >= 0);
+   assert(nextconsidxjob == nextconsidxprob || nextconsidxjob == nextconsidxprob-1);
 
    // @todo: this should be done by the pricing solvers
    #pragma omp critical (limits)
@@ -2896,16 +2896,18 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    SCIP_CALL( retcode );
 
    /* add the next generic branching constraint if necessary */
-   if( !heuristic && nextconsidxprob < nbranchconss && nextconsidxprob == nextconsidxjob )
+   if( nextconsidxjob == nextconsidxprob-1 )
    {
       if( SCIPgetStage(pricingscip) > SCIP_STAGE_SOLVING )
       {
          SCIP_CALL( SCIPfreeTransform(pricingscip) );
       }
 
-      SCIPdebugMessage(" *** Apply generic branching bound change of depth %d\n", -nextconsidxjob);
+      SCIPdebugMessage("*** Apply generic branching bound change of depth %d\n", -nextconsidxjob);
       SCIP_CALL( SCIPtransformProb(pricingscip) );
       SCIP_CALL( addBranchingBoundChangesToPricing(probnr, branchconss[nextconsidxjob]) );
+
+      GCGpricingprobDecreaseNextConsIdx(pricingprob);
    }
 
    SCIP_CALL( getSolverPointers(solver, pricetype, !heuristic, &clock, &calls, &solversolve) );

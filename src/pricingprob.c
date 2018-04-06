@@ -361,6 +361,7 @@ void GCGpricingprobDecreaseNextConsIdx(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    )
 {
+   assert(pricingprob->nextconsidx >= 1);
    --pricingprob->nextconsidx;
 }
 

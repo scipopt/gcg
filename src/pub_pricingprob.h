@@ -85,6 +85,12 @@ int GCGpricingprobGetNextConsIdx(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
+/** decrease index of next generic branching constraint added to the pricing problem */
+EXTERN
+void GCGpricingprobDecreaseNextConsIdx(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   );
+
 /** get the status of a pricing problem */
 EXTERN
 SCIP_STATUS GCGpricingprobGetStatus(

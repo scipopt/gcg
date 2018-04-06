@@ -260,7 +260,7 @@ SCIP_Bool Pricingcontroller::pricingprobIsDone(
    ) const
 {
    return GCGpricingprobGetNImpCols(pricingprob) > 0
-      || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
+      || (GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_OPTIMAL && GCGpricingprobGetNextConsIdx(pricingprob) == 0)
       || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
       || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
       || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_INFORUNBD;
@@ -456,21 +456,12 @@ void Pricingcontroller::evaluatePricingjob(
    int nextconsidxprob = GCGpricingprobGetNextConsIdx(pricingprob);
    SCIP_Bool heuristic = GCGpricingjobIsHeuristic(pricingjob);
 
-   assert(nextconsidxjob >= -1);
-   assert(nextconsidxprob >= -1);
-   assert(heuristic || nextconsidxjob == nextconsidxprob || nextconsidxjob == nextconsidxprob+1);
+   assert(nextconsidxjob >= 0);
+   assert(nextconsidxprob >= 0);
+   assert(nextconsidxjob == nextconsidxprob);
 
-   /* Indicate that the next generic branching constraint should be added before performing the job again */
-   if( nextconsidxjob > -1 )
-   {
-      GCGpricingjobDecreaseNextBranchconsIdx(pricingjob);
-      nextconsidxjob = GCGpricingjobGetNextBranchconsIdx(pricingjob);
-      if( nextconsidxjob < nextconsidxprob )
-         GCGpricingprobDecreaseNextConsIdx(pricingprob);
-   }
-
-   /* If there is no generic branching constraint left to be added, go to the next heuristic pricing iteration */
-   if( nextconsidxjob == -1 && heuristic )
+   /* Go to the next heuristic pricing iteration */
+   if( heuristic )
       GCGpricingjobIncreaseNHeurIters(pricingjob);
 
    /* If the pricing job has not yielded any improving column, possibly solve it again;
@@ -481,7 +472,7 @@ void Pricingcontroller::evaluatePricingjob(
    {
       SCIPdebugMessage("Problem %d has not yielded improving columns.\n", GCGpricingprobGetProbnr(pricingprob));
 
-      if( heuristic )
+      if( heuristic && status != SCIP_STATUS_OPTIMAL )
       {
          assert(limitWasReached(status) || status == SCIP_STATUS_UNKNOWN);
 
@@ -495,6 +486,20 @@ void Pricingcontroller::evaluatePricingjob(
             SCIPdebugMessage("  -> increase a limit\n");
          }
          SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+
+         return;
+      }
+
+      /* Indicate that the next generic branching constraint should be added before performing the job again */
+      GCGpricingjobDecreaseNextBranchconsIdx(pricingjob);
+      nextconsidxjob = GCGpricingjobGetNextBranchconsIdx(pricingjob);
+
+      if( status == SCIP_STATUS_OPTIMAL && nextconsidxjob > -1 )
+      {
+         SCIPdebugMessage("  -> consider next generic branching constraint.\n");
+
+         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+         return;
       }
    }
    else
