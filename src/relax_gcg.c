@@ -3940,7 +3940,7 @@ DEC_DECOMP* GCGgetStructDecdecomp(
    return relaxdata->decdecomp;
 }
 
-/** sets the structure information */
+/** gets the filename information if exists*/
 const char* GCGgetFilename(
    SCIP*                 scip               /**< SCIP data structure */
 )

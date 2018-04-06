@@ -42,6 +42,8 @@
 
 
 #include <string.h>
+
+
 /** transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method
  */
@@ -485,6 +487,8 @@ SCIP_RETCODE GCGprintMiplibStructureInformation(
 
    return SCIP_OKAY;
 }
+
+
 
 
 /** print out complete detection statistics */

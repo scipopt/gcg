@@ -252,6 +252,14 @@ enum weightinggpresolvedoriginaldecomps{
  * Local methods
  */
 
+SCIP_Real calcLogarithm(SCIP_Real val)
+{
+   return log(val) / log(2);
+}
+
+
+
+
 SCORETYPE SCIPconshdlrdataGetScoretype(
    SCIP_CONSHDLRDATA* conshdlrdata
 )
@@ -6143,3 +6151,363 @@ SCIP_RETCODE GCGprintDecompInformation(
 
    return SCIP_OKAY;
 }
+
+SCIP_RETCODE GCGprintMiplibBaseInformation(
+   SCIP*                scip,
+   FILE*                file
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   /** write base information */
+
+   SCIP_VAR** vars;
+   SCIP_CONS** conss;
+   SCIP_Real absmaxvalobj;
+   SCIP_Real absminvalobj;
+   DEC_DETECTOR* connecteddetector;
+   SCIP_Real maxrationonzerovals;
+   SCIP_Bool debugoutput;
+
+   char* name;
+   char probname[SCIP_MAXSTRLEN];
+   char outname[SCIP_MAXSTRLEN];
+
+   int nvarsnonzerocoef;
+   int nvarsnonzerolb;
+   int nvarsnonzeroub;
+   int nvarslbnotinf;
+   int nvarsubnotinf;
+   int ncontvars;
+   int nbinvars;
+   int nintvars;
+   int nimplintvars;
+   int nconsnonzerorhs; /* lhss are included */
+
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   nvarsnonzerocoef = 0;
+   nvarsnonzerolb = 0;
+   nvarsnonzeroub = 0;
+   nvarslbnotinf = 0;
+   nvarsubnotinf = 0;
+   ncontvars = 0;
+   nbinvars = 0;
+   nintvars = 0;
+   nimplintvars = 0;
+   nconsnonzerorhs = 0; /* lhss are included */
+   absmaxvalobj = 0;
+   absminvalobj = SCIPinfinity(scip);
+   connecteddetector = NULL;
+   maxrationonzerovals = 0.;
+   debugoutput = TRUE;
+
+   /* sanitize filename */
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+   SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
+
+   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s%s%s", "/home/bastubbe/results/baseinfo2017/" , name, ".csv");
+
+
+   /*
+    * current features:
+    * instance, log nconss, nvars, nnonzeros, conss/var ratio, density matrix, density obj, density lb, density ub, density rhs,
+    * percentage bin vars, percentage int vars, percentage cont vars, dynamism conss, dynamism obj,
+    * components maxwhite score, ncomponents, percentage min nconss component, percentage max nconss component, percentage median nconss component, percentage mean nconss component,
+    * percentage min nvars component, percentage max nvars component, percentage median nvars component, percentage mean nvars component,
+    * decomp maxwhite score, decomp ncomponents, decomp percentage min nconss component, decomp percentage max nconss component, decomp percentage median nconss component, decomp percentage mean nconss component,
+    * decomp percentage min nvars component, decomp percentage max nvars component, decomp percentage median nvars component, decomp percentage mean nvars component,
+ OUT:   * percentage agg conss, percentage vbd conss, percentage par conss, percenetage pac conss, percentage cov conss, percentage car conss, percentage eqk conss,
+    * percentage bin conss, percentage ivk conss, percentage kna conss, percentage ikn conss, percentage m01 conss, percentage gen conss
+    *
+    * */
+
+   /* instance, log nconss, log nvars, log nnonzeros, nconss/nvars ratio, density matrix, density obj, density lb, density ub, density rhs, percentage bin vars, percentage int vars, percentage cont vars, dynamism conss, dynamism obj,
+    * OUT: percentage empty conss, percentage free conss, percentage singleton conss, percentage agg conss, percentage vbd conss, percentage par conss, percentage pac conss, percentage cov conss, percentage car conss, percentage eqk conss, percentage bin conss, percentage ivk conss, percentage kna conss, percentage ikn conss, percentage m01 conss, percentage gen conss, END OUT
+    * components maxwhite score, ncomponents, percentage min nconss component, percentage max nconss component, percentage median nconss component, percentage mean nconss component, percentage min nvars component, percentage max nvars component, percentage median nvars component, percentage mean nvars component, decomp maxwhite score, decomp ncomponents, decomp percentage min nconss component, decomp percentage max nconss component, decomp percentage median nconss component, decomp percentage mean nconss component, decomp percentage min nvars component, decomp percentage max nvars component, decomp percentage median nvars component, decomp percentage mean nvars component  */
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "name, ");
+
+   /** log nconss */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", calcLogarithm( conshdlrdata->seeedpool->getNTotalConss() ));
+
+   /** log nvars */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", calcLogarithm( conshdlrdata->seeedpool->getNVars() ));
+
+   /** log nnonzeros */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", calcLogarithm( conshdlrdata->seeedpool->getNVars() ));
+
+   /** log ratio conss vs vars */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real ) conshdlrdata->seeedpool->getNTotalConss() / conshdlrdata->seeedpool->getNVars() ));
+
+   /** density of matrix */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  conshdlrdata->seeedpool->getNTotalNonzeros() /  (conshdlrdata->seeedpool->getNTotalConss() ) ) );
+
+   assert( conshdlrdata->seeedpool->getNVars() == SCIPgetNVars(scip) );
+   vars = SCIPgetVars(scip);
+   for( int v = 0; v < SCIPgetNVars(scip); ++v )
+   {
+      SCIP_VAR* var = vars[v];
+      SCIP_Real absobjval;
+      if( !SCIPisEQ( scip, SCIPvarGetObj(var), 0.) )
+      {
+         ++nvarsnonzerocoef;
+         absobjval = abs(SCIPvarGetObj(var) );
+         absobjval = calcLogarithm(absobjval);
+         if( SCIPisLT(scip, absmaxvalobj, absobjval ) )
+            absmaxvalobj = absobjval;
+         if( SCIPisGT(scip, absminvalobj, absobjval ) )
+            absminvalobj = absobjval;
+      }
+
+      if( !SCIPisEQ( scip, SCIPvarGetLbGlobal(var), 0.) && !SCIPisInfinity(scip, -SCIPvarGetLbGlobal(var)) )
+         ++nvarsnonzerolb;
+      if( !SCIPisEQ( scip, SCIPvarGetUbGlobal(var), 0.) && !SCIPisInfinity(scip, SCIPvarGetUbGlobal(var) ) )
+         ++nvarsnonzeroub;
+
+      if( !SCIPisInfinity(scip, -SCIPvarGetLbGlobal(var) ) )
+         ++nvarslbnotinf;
+      if(  !SCIPisInfinity(scip, SCIPvarGetUbGlobal(var) ) )
+         ++nvarsubnotinf;
+
+
+
+      assert(SCIPvarGetType(var) == SCIP_VARTYPE_BINARY || SCIPvarGetType(var) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(var) == SCIP_VARTYPE_INTEGER || SCIPvarGetType(var) == SCIP_VARTYPE_IMPLINT  );
+
+      if( SCIPvarGetType(var) == SCIP_VARTYPE_BINARY )
+         ++nbinvars;
+      if( SCIPvarGetType(var) == SCIP_VARTYPE_CONTINUOUS )
+         ++ncontvars;
+      if( SCIPvarGetType(var) == SCIP_VARTYPE_INTEGER )
+         ++nintvars;
+      if( SCIPvarGetType(var) == SCIP_VARTYPE_IMPLINT )
+         ++nimplintvars;
+   }
+   conss = SCIPgetConss(scip);
+   for( int c = 0; c < SCIPgetNConss(scip); ++c )
+   {
+      SCIP_CONS* cons = conss[c];
+      SCIP_Real lhs = GCGconsGetLhs(scip, cons);
+      SCIP_Real rhs = GCGconsGetRhs(scip, cons);
+
+      if( !SCIPisEQ( scip, rhs, 0. ) && !SCIPisInfinity(scip, rhs) )
+         ++nconsnonzerorhs;
+      if( !SCIPisEQ( scip, lhs, 0. ) && !SCIPisInfinity(scip, -lhs) && !SCIPisEQ(scip, lhs, rhs) )
+         ++nconsnonzerorhs;
+   }
+
+
+   /** density of objective */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nvarsnonzerocoef /   conshdlrdata->seeedpool->getNVars() ) );
+
+   /** density of lower bound */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nvarsnonzerolb /   nvarslbnotinf) );
+
+   /** density of upper bound */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nvarsnonzeroub /   nvarslbnotinf );
+
+   /** density of rhs */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nconsnonzerorhs /   conshdlrdata->seeedpool->getNTotalConss() );
+
+   /** percentage of Binary, Integer, Continuous Variables */
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nbinvars /   conshdlrdata->seeedpool->getNVars()) );
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nintvars /   conshdlrdata->seeedpool->getNVars()) );
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  ncontvars /   conshdlrdata->seeedpool->getNVars() ) );
+
+   /* dynamism: max log ratio max/min absolute value of nonzero per constraint */
+   for( int c = 0; c < SCIPgetNConss(scip); ++c )
+   {
+      SCIP_CONS* cons = conss[c];
+
+      SCIP_Real* curvals;
+      SCIP_Real maxval;
+      SCIP_Real minval;
+      int ncurvars;
+      ncurvars = GCGconsGetNVars(scip, cons);
+
+      if( ncurvars == 0)
+         continue;
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars));
+      GCGconsGetVals(scip, cons, curvals, ncurvars ) ;
+
+      maxval = calcLogarithm(abs( curvals[0] ) );
+      minval = calcLogarithm( abs( curvals[0] ) );
+
+      for( int v = 0; v < ncurvars; ++v )
+      {
+         SCIP_Real absval = abs( curvals[v]);
+         if( SCIPisEQ(scip, absval, 0. ) )
+            continue;
+
+         absval = calcLogarithm(absval);
+
+         if( SCIPisLT(scip, maxval, absval ) )
+            maxval = absval;
+         if( SCIPisGT(scip, minval, absval ) )
+            minval = absval;
+      }
+
+      /** ratio becomes difference according logarithm rules */
+      if( SCIPisGT( scip, maxval - minval, maxrationonzerovals ) )
+         maxrationonzerovals = maxval - minval;
+
+      SCIPfreeBufferArray(scip, &curvals);
+   }
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  maxrationonzerovals) );
+
+   if ( !SCIPisInfinity(scip, absminvalobj) )
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  (absmaxvalobj - absminvalobj ) ) );
+   else
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( 0 ) );
+
+
+
+
+   return SCIP_OKAY;
+}
+
+
+SCIP_RETCODE GCGprintMiplibConnectedInformation(
+   SCIP*                scip,
+   FILE*                file
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   DEC_DETECTOR* connecteddetector;
+   std::ofstream myfile;
+
+   char* name;
+
+   char probname[SCIP_MAXSTRLEN];
+   char outname[SCIP_MAXSTRLEN];
+
+   SCIP_Bool debugoutput;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   /* sanitize filename */
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+   SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
+
+   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s%s%s", "/home/bastubbe/results/baseinfo2017/" , name, ".csv");
+
+
+
+   debugoutput = FALSE;
+
+
+   assert( conshdlrdata != NULL ) ;
+
+   for ( int d = 0; d < conshdlrdata->ndetectors; ++d )
+   {
+      SeeedPtr seeedconnected;
+      SEEED_PROPAGATION_DATA* seeedPropData;
+      SCIP_Result success;
+
+      if ( strcmp("connectedbase", DECdetectorGetName(conshdlrdata->detectors[d]) ) == 0  )
+      {
+           connecteddetector = conshdlrdata->detectors[d];
+           break;
+        }
+     }
+
+     assert( connecteddetector != NULL );
+
+     seeedconnected = new gcg::Seeed(scip, -1, conshdlrdata->seeedpool->getNConss(), conshdlrdata->seeedpool->getNVars() );
+
+     seeedPropData = new SEEED_PROPAGATION_DATA();
+     seeedPropData->seeedpool = conshdlrdata->seeedpool;
+     seeedPropData->nNewSeeeds = 0;
+
+     seeedPropData->seeedToPropagate = new gcg::Seeed( seeedconnected );
+
+     SCIPinfoMessage(scip, NULL, "start finish seeed disconnected component  \n");
+     SCIP_CALL_ABORT( connecteddetector->finishSeeed( scip, connecteddetector, seeedPropData,
+        &success) );
+
+     SCIPinfoMessage(scip, NULL, "end finish seeed disconnected component  \n");
+     assert(seeedPropData->nNewSeeeds == 1);
+
+     delete seeedconnected;
+     seeedconnected = seeedPropData->newSeeeds[0];
+
+
+     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  seeedconnected->getMaxWhiteScore() ) );
+
+     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", seeedconnected->getComponentInformation(conshdlrdata->seeedpool).c_str() );
+
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GCGprintMiplibDecompInformation(
+   SCIP*                scip,
+   FILE*                file
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   DEC_DETECTOR* connecteddetector;
+   std::ofstream myfile;
+
+   char* name;
+
+   char probname[SCIP_MAXSTRLEN];
+   char outname[SCIP_MAXSTRLEN];
+
+   SCIP_Bool debugoutput;
+
+   SeeedPtr bestseeed;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   /* sanitize filename */
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+   SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
+
+   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s%s%s", "/home/bastubbe/results/baseinfo2017/" , name, ".csv");
+
+   debugoutput = FALSE;
+
+   assert( conshdlrdata != NULL ) ;
+
+   sortFinishedForScore();
+
+   bestseeed = finishedSeeeds[0];
+
+
+
+     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  seeedconnected->getMaxWhiteScore() ) );
+
+     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", seeedconnected->getComponentInformation(conshdlrdata->seeedpool).c_str() );
+
+
+   return SCIP_OKAY;
+}
+

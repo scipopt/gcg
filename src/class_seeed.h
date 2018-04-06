@@ -616,6 +616,11 @@ public:
    /** returns the time that the detectors needed for detecting */
    std::vector<SCIP_Real> getDetectorClockTimes();
 
+
+   std::string Seeed::getComponentInformation(
+      Seeedpool* seeedpool
+      );
+
    /** returns the data of the consclassifier that the given detector made use of */
    SCIP_RETCODE getConsClassifierData(
       int detectorchainindex, /**< index of the detector in the detectorchain */
