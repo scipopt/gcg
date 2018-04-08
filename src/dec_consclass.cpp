@@ -305,8 +305,13 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
    }
    if( seeedPropagationData->seeedpool->getNConsClassifiers() == 0 )
    {
-      SCIPinfoMessage(scip, NULL, "No ConsClassifiers available for propagation, aborting...\n");
-      return SCIP_ERROR;
+      SCIPinfoMessage(scip, NULL, "No ConsClassifiers listed for propagation, starting classification.\n");
+      seeedPropagationData->seeedpool->calcClassifierAndNBlockCandidates(scip);
+      if( seeedPropagationData->seeedpool->getNConsClassifiers() == 0 )
+      {
+         SCIPinfoMessage(scip, NULL, "No ConsClassifiers found after calculation, aborting!.\n");
+         return SCIP_ERROR;
+      }
    }
    std::vector<gcg::Seeed*> foundseeeds(0);
 
