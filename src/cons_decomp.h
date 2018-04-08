@@ -57,6 +57,12 @@ enum scoretype {
    SETPART_AGG_FWHITE
 };
 
+enum toolboxtype {
+   PROPAGATE,
+   FINISH,
+   POSTPROCESS
+};
+
 typedef enum scoretype SCORETYPE;
 
 struct seeedpool_wrapper;
