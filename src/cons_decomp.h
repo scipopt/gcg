@@ -231,6 +231,18 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
    SCIP_DIALOG*            dialog
    );
 
+SCIP_RETCODE SCIPconshdlrDecompExecToolboxModify(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   );
+
+SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   );
+
 SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,

@@ -1269,7 +1269,8 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "undo", "last modification is undone (atm only the last modification can be undone)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "shows a visualization of the current decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "propagate", "list all detectors that can propagate the current seeed and apply one to propagate it");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "finishseeed", "list all detectors that can finish the current seeed and apply one to finish it");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "finish", "list all detectors that can finish the current seeed and apply one to finish it");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "postprocess", "apply postprocessing to a finished seeed by selecting a suitable postprocessor");
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
 
@@ -1614,6 +1615,8 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "-------", "-----------");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "select", "selects/unselects decomposition with given id");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "toolbox", "calls the decomposition toolbox to modify or create a decomposition");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "modify", "modify an existing decomposition");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "create", "create a new decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "back", "displays the preceding decompositions (if there are some)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "next", "displays the subsequent decompositions (if there are some)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "top", "displays the first decompositions");
@@ -1772,7 +1775,17 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
 
       if( strncmp( command, "toolbox", commandlen) == 0 )
       {
-         SCIPconshdlrDecompExecToolbox(scip, dialoghdlr, dialog);
+         SCIP_CALL( SCIPconshdlrDecompExecToolbox(scip, dialoghdlr, dialog) );
+         continue;
+      }
+      if( strncmp( command, "modify", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompExecToolboxModify(scip, dialoghdlr, dialog) );
+         continue;
+      }
+      if( strncmp( command, "create", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompExecToolboxCreate(scip, dialoghdlr, dialog) );
          continue;
       }
    }
@@ -2118,11 +2131,11 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(
    SCIP_Result result;
    SCIP_RETCODE retcode;
    DEC_Detector** detectors;
-   int ndetectors, i, j;
+   int ndetectors;
+   int i, j;
    SEEED_PROPAGATION_DATA* seeedPropData;
    gcg::Seeedpool* seeedpool;
    SCIP_Bool finished;
-   SCIP_Bool isduplicate;
    char stri[SCIP_MAXSTRLEN];
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -2177,10 +2190,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(
    {
       retcode = SCIP_ERROR;
       j = 1;
-      if( propagate )
-         SCIPinfoMessage(scip, NULL, "Available detectors for propagation:\n");
-      else
-         SCIPinfoMessage(scip, NULL, "Available detectors for finishing:\n");
+      SCIPinfoMessage(scip, NULL, "Available detectors:\n");
       for( i = 0; i < ndetectors; ++i )
       {
          SCIPinfoMessage(scip, NULL, "%d)", j);
@@ -2219,19 +2229,13 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(
          if( propagate )
          {
             SCIPinfoMessage(scip, NULL, "\nSeeed was successfully propagated. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
-            isduplicate = seeedPropData->seeedpool->isSeeedDuplicateofIncomplete(seeedPropData->newSeeeds[0]);
          }
          else
          {
             SCIPinfoMessage(scip, NULL, "\nSeeed was successfully finished. Seeed id: %d\n",seeedPropData->newSeeeds[0]->getID() );
-            isduplicate = seeedPropData->seeedpool->isSeeedDuplicateofFinished(seeedPropData->newSeeeds[0]);
          }
 
          seeedPropData->newSeeeds[0]->displayInfo( seeedPropData->seeedpool, 0 );
-         if( isduplicate )
-         {
-            SCIPinfoMessage(scip, NULL, "\nFound Seeed is a duplicate of a previously found Seeed.\n\n");
-         }
 
          commandlen = 0;
          while( commandlen == 0 )
@@ -2250,55 +2254,25 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(
             continue;
          }
 
-         if( !isduplicate )
-         {
-            commandlen = 0;
-            while( commandlen == 0 )
-            {
-               SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-                  "Do you want to save the newly found seeed? (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
-               commandlen = strlen(command);
-            }
-            if( strncmp( command, "yes", commandlen) == 0 )
-            {
-               if( propagate )
-               {
-                  seeedPropData->seeedpool->addSeeedToIncomplete(seeedPropData->newSeeeds[0], &isduplicate);
-               }
-               else
-               {
-                  seeedPropData->seeedpool->addSeeedToFinished(seeedPropData->newSeeeds[0], &isduplicate);
-               }
-            }
-            else if( strncmp( command, "quit", commandlen) == 0 )
-            {
-               finished = TRUE;
-               continue;
-            }
-         }
+         SCIPinfoMessage(scip, NULL, "\nSaving newly found seeed...\n\n");
+         conshdlrdata->curruserseeed = new gcg::Seeed( seeedPropData->newSeeeds[0] );
+         SCIP_CALL( SCIPconshdlrDecompUserSeeedFlush(scip) );
+
          commandlen = 0;
          while( commandlen == 0 )
          {
             SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-               "Do you want to continue the decomposition with the new Seeed (\"continue\"), \
+               "\nDo you want to continue the decomposition with the new Seeed (\"continue\"), \
 or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );
             commandlen = strlen(command);
          }
          if( strncmp( command, "continue", commandlen) == 0 )
          {
-            conshdlrdata->curruserseeed = new gcg::Seeed( seeedPropData->newSeeeds[0] );
-            conshdlrdata->curruserseeed->setID( seeedpool->getNewIdForSeeed() );
-            conshdlrdata->curruserseeed->sort();
-            conshdlrdata->curruserseeed->calcHashvalue();
-            if( propagate )
-            {
-               conshdlrdata->curruserseeed->setUsergiven(gcg::USERGIVEN::PARTIAL);
-            }
-            else
-            {
-               conshdlrdata->curruserseeed->setUsergiven(gcg::USERGIVEN::COMPLETE);
-               conshdlrdata->curruserseeed->setFinishedByFinisher( true );
-            }
+            conshdlrdata->curruserseeed = new gcg::Seeed(seeedPropData->newSeeeds[0]);
+         }
+         else
+         {
+            conshdlrdata->curruserseeed = new gcg::Seeed(seeedPropData->seeedToPropagate);
          }
          finished = TRUE;
          continue;
@@ -2332,15 +2306,6 @@ return to the previous menu (\"previous\")?\nGCG/toolbox> ", &command, &endoffil
       }
    }
 
-   if( conshdlrdata->curruserseeed->isFromUnpresolved() )
-   {
-      conshdlrdata->seeedpoolunpresolved = seeedPropData->seeedpool;
-   }
-   else
-   {
-      conshdlrdata->seeedpool = seeedPropData->seeedpool;
-   }
-
    SCIPfreeMemoryArrayNull( scip, &(seeedPropData->newSeeeds) );
    delete seeedPropData->seeedToPropagate;
    seeedPropData->newSeeeds = NULL;
@@ -2365,6 +2330,584 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    SCIP_DIALOG*            dialog )
 {
    return SCIPconshdlrDecompToolboxPropagateOrFinishSeeed(scip, dialoghdlr, dialog, TRUE);
+}
+
+SCIP_RETCODE SCIPconshdlrDecompToolboxPostprocessSeeed(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog )
+{
+   char* command;
+   int commandlen;
+   SCIP_Bool endoffile;
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_Result result;
+   SCIP_RETCODE retcode;
+   DEC_Detector** detectors;
+   int ndetectors;
+   int i, j;
+   SEEED_PROPAGATION_DATA* seeedPropData;
+   gcg::Seeedpool* seeedpool;
+   SCIP_Bool finished;
+   char stri[SCIP_MAXSTRLEN];
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+
+   if( conshdlrdata->curruserseeed->isComplete() == FALSE ) 
+   {
+      SCIPinfoMessage(scip, NULL, "The currently selected seeed is not finished, postprocessing not possible.\n");
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &detectors, conshdlrdata->ndetectors) );
+
+   ndetectors = 0;
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   {
+      if( conshdlrdata->detectors[i]->postprocessSeeed )
+      {
+         detectors[ndetectors] = conshdlrdata->detectors[i];
+         ++ndetectors;
+      }
+   }
+
+   if( ndetectors == 0 )
+   {
+      SCIPinfoMessage(scip, NULL, "No detector implements this callback, returning!\n\n");
+      return SCIP_OKAY;
+   }
+
+   seeedpool = conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+
+   seeedPropData = new SEEED_PROPAGATION_DATA();
+   seeedPropData->seeedpool = seeedpool;
+   seeedPropData->nNewSeeeds = 0;
+   seeedPropData->seeedToPropagate = new gcg::Seeed(conshdlrdata->curruserseeed);
+   
+   finished = FALSE;
+   while( !finished )
+   {
+      retcode = SCIP_ERROR;
+      j = 1;
+
+      SCIPinfoMessage(scip, NULL, "Available detectors for postprocessing:\n");
+      for( i = 0; i < ndetectors; ++i )
+      {
+         SCIPinfoMessage(scip, NULL, "%d)", j);
+         SCIPinfoMessage(scip, NULL, "%s\n", detectors[i]->name);
+         ++j;
+      }
+      commandlen = 0;
+      while( commandlen == 0 )
+      {
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name or number of the detector that you want to use (or \"none\"): \nGCG/toolbox> ", &command, &endoffile) );
+         commandlen = strlen(command);
+      }
+
+      if( !strncmp( command, "none", commandlen) == 0 && !strncmp( command, "quit", commandlen) == 0 )
+      {
+         for( i = 0; i < ndetectors; ++i )
+         {
+            sprintf(stri, "%d", i+1);
+            if( strncmp(command, detectors[i]->name, commandlen) == 0 || strncmp(command, stri, commandlen) == 0 )
+            {
+               retcode = detectors[i]->postprocessSeeed(scip, detectors[i], seeedPropData, &result);
+               break;
+            }
+         }
+      }
+      else
+      {
+         finished = TRUE;
+         continue;
+      }
+      if( retcode == SCIP_OKAY )
+      {
+         //TODO: What has to be done once postprocessing has been finished?
+      }
+   }
+
+   conshdlrdata->curruserseeed = new gcg::Seeed(seeedPropData->seeedToPropagate);
+
+   delete seeedPropData->seeedToPropagate;
+   seeedPropData->newSeeeds = NULL;
+   seeedPropData->nNewSeeeds = 0;
+   delete seeedPropData;
+
+   SCIPfreeBufferArray(scip, &detectors);
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE SCIPconshdlrDecompExecToolboxModify(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_Bool         finished;
+   char* command;
+   SCIP_Bool endoffile;
+   int commandlen;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_Bool selectedsomeseeed;
+
+   selectedsomeseeed = TRUE;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+   finished = FALSE;
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT )
+   {
+      SCIPinfoMessage(scip, NULL, "No problem is loaded. Please load a problem first.\n");
+      return SCIP_OKAY;
+   }
+
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+   {
+      SCIP_CALL( SCIPtransformProb(scip) );
+      SCIPinfoMessage(scip, NULL, "Applied tranformation to problem.\n");
+   }
+   /** 1) update list of interesting seeeds */
+   SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+
+   /** 2) while user has not aborted: show current list extract */
+   while ( !finished )
+   {
+
+      SCIP_CALL( SCIPconshdlrDecompShowListExtractHeader(scip) );
+
+      SCIP_CALL( SCIPconshdlrDecompShowListExtract(scip) );
+
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please choose an existing partial decomposition for modification (type \"choose <id>\" or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
+
+      commandlen = strlen(command);
+
+      /** case distinction: */
+      if( strncmp( command, "back", commandlen) == 0 )
+      {
+         conshdlrdata->startidvisu -= conshdlrdata->selectvisulength;
+         if(conshdlrdata->startidvisu < 0 )
+            conshdlrdata->startidvisu = 0;
+         continue;
+      }
+      if( strncmp( command, "next", commandlen) == 0 )
+      {
+         conshdlrdata->startidvisu += conshdlrdata->selectvisulength;
+         if( conshdlrdata->startidvisu > (int) conshdlrdata->listall->size() - conshdlrdata->selectvisulength )
+            conshdlrdata->startidvisu = conshdlrdata->listall->size() - conshdlrdata->selectvisulength ;
+         continue;
+      }
+      if( strncmp( command, "top", commandlen) == 0 )
+      {
+         conshdlrdata->startidvisu = 0;
+         continue;
+      }
+      if( strncmp( command, "end", commandlen) == 0 )
+      {
+         conshdlrdata->startidvisu = conshdlrdata->listall->size() - conshdlrdata->selectvisulength ;
+         continue;
+      }
+
+      if( strncmp( command, "quit", commandlen) == 0 )
+      {
+         finished = TRUE;
+         selectedsomeseeed = FALSE;
+         continue;
+      }
+
+      if( strncmp( command, "choose", commandlen) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompToolboxChoose(scip, dialoghdlr, dialog ) );
+         finished = TRUE;
+         break;
+      }
+
+
+      if( strncmp( command, "abort", commandlen) == 0 )
+      {
+         finished = TRUE;
+         selectedsomeseeed = FALSE;
+         continue;
+      }
+
+      if( strncmp( command, "change number displayed", commandlen) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompModifyNVisualized(scip, dialoghdlr, dialog) );
+         continue;
+      }
+
+      if( strncmp( command, "help", commandlen) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompShowHelp(scip) );
+         continue;
+      }
+
+      if( strncmp( command, "visualize", commandlen) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompSelectVisualize(scip, dialoghdlr, dialog ) );
+         continue;
+      }
+
+      if( strncmp( command, "propagate", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompToolboxPropagateSeeed(scip, dialoghdlr, dialog) );
+         continue;
+      }
+
+      if( strncmp( command, "finishseeed", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompToolboxFinishSeeed(scip, dialoghdlr, dialog) );
+         continue;
+      }
+
+      if( strncmp( command, "postprocess", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompToolboxPostprocessSeeed(scip, dialoghdlr, dialog) );
+         continue;
+      }
+   }
+   finished = FALSE;
+   while ( !finished && selectedsomeseeed )
+   {
+      int commandlen2;
+      SCIP_Bool success;
+
+      SCIP_CALL( SCIPconshdlrDecompShowCurrUserSeeedInfo(scip) );
+
+      SCIP_CALL( SCIPconshdlrDecompShowToolboxInfo(scip) );
+
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "How do you want to proceed the with the current decomposition? (or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
+
+      commandlen2 = strlen(command);
+
+      /** case distinction: */
+      if( strncmp( command, "conss", commandlen2) == 0 )
+      {
+         SCIPconshdlrDecompToolboxModifyConss(scip, dialoghdlr, dialog);
+         continue;
+      }
+      if( strncmp( command, "vars", commandlen2) == 0 )
+      {
+         SCIPconshdlrDecompToolboxModifyVars(scip, dialoghdlr, dialog);
+         continue;
+      }
+      if( strncmp( command, "finish", commandlen2) == 0 )
+      {
+         SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
+         continue;
+      }
+      if( strncmp( command, "refine", commandlen2) == 0 )
+      {
+         gcg::Seeedpool* seeedpool;
+         if( conshdlrdata->curruserseeed->isFromUnpresolved() )
+            seeedpool = conshdlrdata->seeedpoolunpresolved;
+         else
+            seeedpool = conshdlrdata->seeedpool;
+         if( conshdlrdata->lastuserseeed != NULL)
+            delete conshdlrdata->lastuserseeed;
+         conshdlrdata->lastuserseeed = new gcg::Seeed( conshdlrdata->curruserseeed) ;
+         conshdlrdata->curruserseeed->considerImplicits(seeedpool);
+         //SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
+         continue;
+      }
+
+      if( strncmp( command, "quit", commandlen2) == 0 )
+      {
+         gcg::Seeedpool* seeedpool;
+         if( !conshdlrdata->curruserseeed->isFromUnpresolved() && conshdlrdata->seeedpool == NULL )
+            SCIPconshdlrDecompCreateSeeedpool(scip);
+
+         seeedpool = ( conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool);
+         if( seeedpool == NULL )
+
+         conshdlrdata->curruserseeed->sort();
+         conshdlrdata->curruserseeed->considerImplicits(seeedpool);
+         conshdlrdata->curruserseeed->calcHashvalue();
+         assert( conshdlrdata->curruserseeed->checkConsistency(seeedpool) );
+
+
+
+         if( conshdlrdata->curruserseeed->isComplete() )
+         {
+            seeedpool->addSeeedToFinished(conshdlrdata->curruserseeed, &success);
+            if( !success )
+            {
+               delete conshdlrdata->curruserseeed;
+            }
+         } else
+         {
+            seeedpool->addSeeedToIncomplete(conshdlrdata->curruserseeed, &success);
+            if( !success )
+            {
+               delete conshdlrdata->curruserseeed;
+            }
+         }
+         conshdlrdata->curruserseeed = NULL;
+         finished = TRUE;
+
+
+         continue;
+      }
+
+      if( strncmp( command, "undo", commandlen2) == 0 )
+      {
+         if ( conshdlrdata->lastuserseeed == NULL )
+            SCIPdialogMessage(scip, NULL, " nothing to be undone \n");
+         else
+         {
+            delete conshdlrdata->curruserseeed;
+            conshdlrdata->curruserseeed = conshdlrdata->lastuserseeed;
+            conshdlrdata->lastuserseeed = NULL;
+         }
+         continue;
+      }
+
+
+      if( strncmp( command, "visualize", commandlen2) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompSelectVisualizeCurrentUserSeeed(scip, dialoghdlr, dialog ) );
+         continue;
+      }
+
+      if( strncmp( command, "propagate", commandlen2) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompToolboxPropagateSeeed(scip, dialoghdlr, dialog) );
+         continue;
+      }
+      if( strncmp( command, "finishseeed", commandlen2) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompToolboxFinishSeeed(scip, dialoghdlr, dialog) );
+         continue;
+      }
+
+      if( strncmp( command, "postprocess", commandlen2) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompToolboxPostprocessSeeed(scip, dialoghdlr, dialog) );
+         continue;
+      }
+   }
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog )
+{
+   SCIP_CONSHDLR* conshdlr;
+   char* command;
+   SCIP_Bool endoffile;
+   SCIP_Bool         finished;
+   int commandlen;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT )
+   {
+      SCIPinfoMessage(scip, NULL, "No problem is loaded. Please load a problem first.\n");
+      return SCIP_OKAY;
+   }
+
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+   {
+      SCIP_CALL( SCIPtransformProb(scip) );
+      SCIPinfoMessage(scip, NULL, "Applied tranformation to problem.\n");
+   }
+
+   /* create new decomposition */
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Should the new partial decomposition be for the presolved or the unpresolved problem? (type \"presolved\" or \"unpresolved\") : \nGCG/toolbox> ", &command, &endoffile) );
+   commandlen = strlen(command);
+
+   if( conshdlrdata->curruserseeed != NULL )
+      delete conshdlrdata->curruserseeed;
+
+   gcg::Seeedpool* seeedpool;
+   SCIP_Bool isfromunpresolved;
+
+   while( (strncmp( command, "presolved", commandlen) != 0 && strncmp( command, "unpresolved", commandlen) != 0) || commandlen == 0)
+   {
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Invalid input. Should the new partial decomposition be for the presolved or the unpresolved problem? (type \"presolved\" or \"unpresolved\") : \nGCG/toolbox> ", &command, &endoffile) );
+      commandlen = strlen(command);
+   }
+
+   /** case distinction: */
+   if( strncmp( command, "presolved", commandlen) == 0 )
+   {
+      isfromunpresolved = FALSE;
+      if (conshdlrdata->seeedpool != NULL )
+         seeedpool = conshdlrdata->seeedpool;
+      else
+      {
+         if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+         {
+            SCIPinfoMessage(scip, NULL, "Problem is not presolved yet. Please presolve it first!\n");
+            return SCIP_OKAY;
+         }
+
+         conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+         seeedpool = conshdlrdata->seeedpool;
+      }
+   }
+   else
+   {
+      isfromunpresolved = TRUE;
+      if ( conshdlrdata->seeedpoolunpresolved == NULL )
+         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);
+       seeedpool = conshdlrdata->seeedpoolunpresolved;
+
+   }
+   if( seeedpool == NULL )
+   {
+      if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
+
+      {
+         if (conshdlrdata->seeedpool == NULL )
+            conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+         seeedpool = conshdlrdata->seeedpool;
+      }
+      else
+      {
+         if ( conshdlrdata->seeedpoolunpresolved == NULL)
+            conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);
+         seeedpool = conshdlrdata->seeedpoolunpresolved;
+      }
+
+   }
+   conshdlrdata->curruserseeed = new gcg::Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool->getNConss(), seeedpool->getNVars() );
+   conshdlrdata->curruserseeed->setIsFromUnpresolved(isfromunpresolved);
+   finished = FALSE;
+   while ( !finished )
+   {
+      int commandlen2;
+      SCIP_Bool success;
+
+      SCIP_CALL( SCIPconshdlrDecompShowCurrUserSeeedInfo(scip) );
+
+      SCIP_CALL( SCIPconshdlrDecompShowToolboxInfo(scip) );
+
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "How do you want to proceed the with the current decomposition? (or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
+
+      commandlen2 = strlen(command);
+
+      /** case distinction: */
+      if( strncmp( command, "conss", commandlen2) == 0 )
+      {
+         SCIPconshdlrDecompToolboxModifyConss(scip, dialoghdlr, dialog);
+         continue;
+      }
+      if( strncmp( command, "vars", commandlen2) == 0 )
+      {
+         SCIPconshdlrDecompToolboxModifyVars(scip, dialoghdlr, dialog);
+         continue;
+      }
+/*      if( strncmp( command, "finish", commandlen2) == 0 )
+      {
+         SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
+         continue;
+      }*/
+      if( strncmp( command, "refine", commandlen2) == 0 )
+      {
+         if( conshdlrdata->curruserseeed->isFromUnpresolved() )
+            seeedpool = conshdlrdata->seeedpoolunpresolved;
+         else
+            seeedpool = conshdlrdata->seeedpool;
+         if( conshdlrdata->lastuserseeed != NULL)
+            delete conshdlrdata->lastuserseeed;
+         conshdlrdata->lastuserseeed = new gcg::Seeed( conshdlrdata->curruserseeed) ;
+         conshdlrdata->curruserseeed->considerImplicits(seeedpool);
+         //SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
+         continue;
+      }
+
+      if( strncmp( command, "quit", commandlen2) == 0 )
+      {
+         if( !conshdlrdata->curruserseeed->isFromUnpresolved() && conshdlrdata->seeedpool == NULL )
+            SCIPconshdlrDecompCreateSeeedpool(scip);
+
+         seeedpool = ( conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool);
+         if( seeedpool == NULL )
+
+         conshdlrdata->curruserseeed->sort();
+         conshdlrdata->curruserseeed->considerImplicits(seeedpool);
+         conshdlrdata->curruserseeed->calcHashvalue();
+         assert( conshdlrdata->curruserseeed->checkConsistency(seeedpool) );
+
+
+
+         if( conshdlrdata->curruserseeed->isComplete() )
+         {
+            seeedpool->addSeeedToFinished(conshdlrdata->curruserseeed, &success);
+            if( !success )
+            {
+               delete conshdlrdata->curruserseeed;
+            }
+         } else
+         {
+            seeedpool->addSeeedToIncomplete(conshdlrdata->curruserseeed, &success);
+            if( !success )
+            {
+               delete conshdlrdata->curruserseeed;
+            }
+         }
+         conshdlrdata->curruserseeed = NULL;
+         finished = TRUE;
+
+
+         continue;
+      }
+
+      if( strncmp( command, "undo", commandlen2) == 0 )
+      {
+         if ( conshdlrdata->lastuserseeed == NULL )
+            SCIPdialogMessage(scip, NULL, " nothing to be undone \n");
+         else
+         {
+            delete conshdlrdata->curruserseeed;
+            conshdlrdata->curruserseeed = conshdlrdata->lastuserseeed;
+            conshdlrdata->lastuserseeed = NULL;
+         }
+         continue;
+      }
+
+
+      if( strncmp( command, "visualize", commandlen2) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompSelectVisualizeCurrentUserSeeed(scip, dialoghdlr, dialog ) );
+         continue;
+      }
+
+      if( strncmp( command, "propagate", commandlen2) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompToolboxPropagateSeeed(scip, dialoghdlr, dialog) );
+         continue;
+      }
+
+      if( strncmp( command, "finish", commandlen2) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompToolboxFinishSeeed(scip, dialoghdlr, dialog) );
+         continue;
+      }
+
+      if( strncmp( command, "postprocess", commandlen2) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompToolboxPostprocessSeeed(scip, dialoghdlr, dialog) );
+         continue;
+      }
+   }
+   return SCIP_OKAY;
 }
 
 SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
@@ -2511,6 +3054,12 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
                SCIP_CALL( SCIPconshdlrDecompToolboxFinishSeeed(scip, dialoghdlr, dialog) );
                continue;
             }
+
+            if( strncmp( command, "postprocess", commandlen2) == 0 )
+            {
+               SCIP_CALL( SCIPconshdlrDecompToolboxPostprocessSeeed(scip, dialoghdlr, dialog) );
+               continue;
+            }
          }
    } /* finished yes == modify */
    else
@@ -2605,11 +3154,11 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
          SCIPconshdlrDecompToolboxModifyVars(scip, dialoghdlr, dialog);
          continue;
       }
-      if( strncmp( command, "finish", commandlen2) == 0 )
+/*      if( strncmp( command, "finish", commandlen2) == 0 )
       {
          SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
          continue;
-      }
+      }*/
       if( strncmp( command, "refine", commandlen2) == 0 )
       {
          gcg::Seeedpool* seeedpool;
@@ -2688,9 +3237,15 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
          SCIP_CALL( SCIPconshdlrDecompToolboxPropagateSeeed(scip, dialoghdlr, dialog) );
          continue;
       }
-      if( strncmp( command, "finishseeed", commandlen2) == 0 )
+      if( strncmp( command, "finish", commandlen2) == 0 )
       {
          SCIP_CALL( SCIPconshdlrDecompToolboxFinishSeeed(scip, dialoghdlr, dialog) );
+         continue;
+      }
+
+      if( strncmp( command, "postprocess", commandlen2) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompToolboxPostprocessSeeed(scip, dialoghdlr, dialog) );
          continue;
       }
    }
@@ -4032,7 +4587,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
       return SCIP_OKAY;
 
 }
-
 
 /** finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if complete etc */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
