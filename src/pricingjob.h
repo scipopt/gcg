@@ -72,27 +72,21 @@ SCIP_RETCODE GCGpricingjobSetup(
    int                   nraysprob           /**< total number of extreme rays generated so far by the pricing problem */
    );
 
-/** set the pricing job to be performed heuristically */
-EXTERN
-void GCGpricingjobSetHeuristic(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
 /** set the pricing job to be performed exactly */
 EXTERN
 void GCGpricingjobSetExact(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
-/** update number of heuristic pricing iterations of a pricing job */
+/** reset number of heuristic pricing iterations of a pricing job */
 EXTERN
-void GCGpricingjobIncreaseNHeurIters(
+void GCGpricingjobResetHeuristic(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
-/** decrease next generic branching constraint index */
+/** update number of heuristic pricing iterations of a pricing job */
 EXTERN
-void GCGpricingjobDecreaseNextBranchconsIdx(
+void GCGpricingjobIncreaseNHeurIters(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 

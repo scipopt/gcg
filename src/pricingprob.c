@@ -65,7 +65,8 @@ SCIP_RETCODE GCGpricingprobCreate(
    (*pricingprob)->branchduals = NULL;
    (*pricingprob)->nbranchconss = 0;
    (*pricingprob)->branchconsssize = 0;
-   (*pricingprob)->nextconsidx = 0;
+   (*pricingprob)->branchconsidx = 0;
+   (*pricingprob)->consisadded = TRUE;
    (*pricingprob)->pricingstatus = SCIP_STATUS_UNKNOWN;
    (*pricingprob)->lowerbound = -SCIPinfinity(scip);
    (*pricingprob)->colssize = colssize;
@@ -103,7 +104,8 @@ void GCGpricingprobInitPricing(
    assert(pricingprob->nimpcols == 0);
 
    pricingprob->nbranchconss = 0;
-   pricingprob->nextconsidx = 0;
+   pricingprob->branchconsidx = 0;
+   pricingprob->consisadded = TRUE;
 }
 
 /** add generic branching data (constraint and dual value) to the current pricing problem */
@@ -139,9 +141,8 @@ SCIP_RETCODE GCGpricingprobAddGenericBranchData(
    pricingprob->branchconss[pricingprob->nbranchconss] = branchcons;
    pricingprob->branchduals[pricingprob->nbranchconss] = branchdual;
    ++pricingprob->nbranchconss;
-   ++pricingprob->nextconsidx;
-
-   assert(pricingprob->nbranchconss == pricingprob->nextconsidx);
+   ++pricingprob->branchconsidx;
+   pricingprob->consisadded = FALSE;
 
    return SCIP_OKAY;
 }
@@ -155,7 +156,7 @@ void GCGpricingprobReset(
    assert(pricingprob->ncols == 0);
    assert(pricingprob->nimpcols == 0);
 
-   pricingprob->nextconsidx = pricingprob->nbranchconss;
+   pricingprob->branchconsidx = pricingprob->nbranchconss;
    pricingprob->pricingstatus = SCIP_STATUS_UNKNOWN;
    pricingprob->lowerbound = -SCIPinfinity(scip);
    pricingprob->nsolves = 0;
@@ -348,21 +349,39 @@ int GCGpricingprobGetNGenericBranchconss(
    return pricingprob->nbranchconss;
 }
 
-/** get index of next generic branching constraint added to the pricing problem */
-int GCGpricingprobGetNextConsIdx(
+/** get index of current generic branching constraint considered the pricing problem */
+int GCGpricingprobGetBranchconsIdx(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    )
 {
-   return pricingprob->nextconsidx;
+   return pricingprob->branchconsidx;
 }
 
-/** decrease index of next generic branching constraint added to the pricing problem */
-void GCGpricingprobDecreaseNextConsIdx(
+/** check if the current generic branching constraint has already been added */
+SCIP_Bool GCGpricingprobBranchconsIsAdded(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    )
 {
-   assert(pricingprob->nextconsidx >= 1);
-   --pricingprob->nextconsidx;
+   return pricingprob->consisadded;
+}
+
+/** mark the current generic branching constraint to be added */
+void GCGpricingprobMarkBranchconsAdded(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   )
+{
+   pricingprob->consisadded = TRUE;
+}
+
+/** add the information that the next branching constraint must be added */
+void GCGpricingprobNextBranchcons(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   )
+{
+   assert(pricingprob->branchconsidx >= 1);
+   --pricingprob->branchconsidx;
+   pricingprob->consisadded = FALSE;
+   pricingprob->pricingstatus = SCIP_STATUS_UNKNOWN;
 }
 
 /** get the status of a pricing problem */

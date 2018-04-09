@@ -79,15 +79,21 @@ int GCGpricingprobGetNGenericBranchconss(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/** get index of next generic branching constraint added to the pricing problem */
+/** get index of current generic branching constraint considered the pricing problem */
 EXTERN
-int GCGpricingprobGetNextConsIdx(
+int GCGpricingprobGetBranchconsIdx(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/** decrease index of next generic branching constraint added to the pricing problem */
+/** check if the current generic branching constraint has already been added */
 EXTERN
-void GCGpricingprobDecreaseNextConsIdx(
+SCIP_Bool GCGpricingprobBranchconsIsAdded(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   );
+
+/** mark the current generic branching constraint to be added */
+EXTERN
+void GCGpricingprobMarkBranchconsAdded(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 

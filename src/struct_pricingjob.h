@@ -57,9 +57,6 @@ struct GCG_PricingJob
    int                  chunk;              /**< chunk the pricing job belongs to */
    SCIP_Real            score;              /**< current score of the pricing job */
    SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
-
-   /* result/statistic values */
-   int                  nextbranchconsidx;  /**< index of next generic branching constraint with which the job should be performed */
    int                  nheuriters;         /**< number of times the pricing job was performed heuristically */
 };
 

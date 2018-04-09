@@ -2857,10 +2857,6 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    GCG_PRICINGPROB* pricingprob;
    SCIP* pricingscip;
    int probnr;
-   SCIP_CONS** branchconss;
-   int nbranchconss;
-   int nextconsidxprob;
-   int nextconsidxjob;
    GCG_SOLVER* solver;
    GCG_DECL_SOLVERSOLVE((*solversolve));
    SCIP_Bool heuristic;
@@ -2879,14 +2875,7 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    solver = GCGpricingjobGetSolver(pricingjob);
    assert(solver != NULL);
 
-   GCGpricingprobGetGenericBranchData(pricingprob, &branchconss, NULL, &nbranchconss);
    heuristic = GCGpricingjobIsHeuristic(pricingjob);
-
-   nextconsidxprob = GCGpricingprobGetNextConsIdx(pricingprob);
-   nextconsidxjob = GCGpricingjobGetNextBranchconsIdx(pricingjob);
-   assert(nextconsidxjob >= 0);
-   assert(nextconsidxprob >= 0);
-   assert(nextconsidxjob == nextconsidxprob || nextconsidxjob == nextconsidxprob-1);
 
    // @todo: this should be done by the pricing solvers
    #pragma omp critical (limits)
@@ -2896,18 +2885,25 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    SCIP_CALL( retcode );
 
    /* add the next generic branching constraint if necessary */
-   if( nextconsidxjob == nextconsidxprob-1 )
+   if( !GCGpricingprobBranchconsIsAdded(pricingprob) )
    {
+      SCIP_CONS** branchconss;
+      int nbranchconss;
+      int branchconsidx;
+
+      GCGpricingprobGetGenericBranchData(pricingprob, &branchconss, NULL, &nbranchconss);
+      branchconsidx = GCGpricingprobGetBranchconsIdx(pricingprob);
+
       if( SCIPgetStage(pricingscip) > SCIP_STAGE_SOLVING )
       {
          SCIP_CALL( SCIPfreeTransform(pricingscip) );
       }
 
-      SCIPdebugMessage("*** Apply generic branching bound change of depth %d\n", -nextconsidxjob);
+      SCIPdebugMessage("*** Apply generic branching bound change of depth %d\n", -branchconsidx);
       SCIP_CALL( SCIPtransformProb(pricingscip) );
-      SCIP_CALL( addBranchingBoundChangesToPricing(probnr, branchconss[nextconsidxjob]) );
+      SCIP_CALL( addBranchingBoundChangesToPricing(probnr, branchconss[branchconsidx]) );
 
-      GCGpricingprobDecreaseNextConsIdx(pricingprob);
+      GCGpricingprobMarkBranchconsAdded(pricingprob);
    }
 
    SCIP_CALL( getSolverPointers(solver, pricetype, !heuristic, &clock, &calls, &solversolve) );

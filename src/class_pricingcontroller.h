@@ -107,6 +107,13 @@ public:
    /** get the next pricing job to be performed */
    GCG_PRICINGJOB* getNextPricingjob();
 
+   /** add the information that the next branching constraint must be added,
+    * and for the pricing job, reset heuristic pricing counter and flag
+    */
+   SCIP_RETCODE pricingprobNextBranchcons(
+      GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+      );
+
    /** set an individual time limit for a pricing job */
    SCIP_RETCODE setPricingjobTimelimit(
       GCG_PRICINGJOB*       pricingjob          /**< pricing job */
@@ -191,6 +198,11 @@ private:
 
    /** check if a pricing job is done */
    SCIP_Bool pricingprobIsDone(
+      GCG_PRICINGPROB*      pricingprob        /**< pricing problem structure */
+      ) const;
+
+   /** check whether the next generic branching constraint of a pricing problem must be considered */
+   SCIP_Bool pricingprobNeedsNextBranchingcons(
       GCG_PRICINGPROB*      pricingprob        /**< pricing problem structure */
       ) const;
 

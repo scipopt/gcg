@@ -159,13 +159,10 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
    pricingprob1 = GCGpricingjobGetPricingprob(pricingjob1);
    pricingprob2 = GCGpricingjobGetPricingprob(pricingjob2);
 
-   /** preliminary strategy:
+   /** preliminary order of sorting:
     *  * heuristic before exact
-    *  * if the pricing problems are the same:
-    *    * first sort by node in the generic branching path
-    *    * then sort by priority of pricing solvers
-    *  * prefer pricing problems with less number of solves in the current pricing call
-    *  * then sorting by score
+    *  * if the pricing problems are the same: priority of pricing solvers
+    *  * score
     */
 
    if( GCGpricingjobIsHeuristic(pricingjob1) && GCGpricingjobIsHeuristic(pricingjob2) )
@@ -188,13 +185,6 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
    {
       GCG_SOLVER* solver1 = GCGpricingjobGetSolver(pricingjob1);
       GCG_SOLVER* solver2 = GCGpricingjobGetSolver(pricingjob2);
-      int nextconsidx1 = GCGpricingjobGetNextBranchconsIdx(pricingjob1);
-      int nextconsidx2 = GCGpricingjobGetNextBranchconsIdx(pricingjob2);
-
-      if( nextconsidx1 > nextconsidx2 )
-         return -1;
-      else if( nextconsidx1 < nextconsidx2 )
-         return 1;
 
       if( solver1->priority > solver2->priority )
          return -1;
@@ -260,10 +250,20 @@ SCIP_Bool Pricingcontroller::pricingprobIsDone(
    ) const
 {
    return GCGpricingprobGetNImpCols(pricingprob) > 0
-      || (GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_OPTIMAL && GCGpricingprobGetNextConsIdx(pricingprob) == 0)
+      || (GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_OPTIMAL && GCGpricingprobGetBranchconsIdx(pricingprob) == 0)
       || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
       || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
       || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_INFORUNBD;
+}
+
+/** check whether the next generic branching constraint of a pricing problem must be considered */
+SCIP_Bool Pricingcontroller::pricingprobNeedsNextBranchingcons(
+   GCG_PRICINGPROB*      pricingprob        /**< pricing problem structure */
+   ) const
+{
+   return GCGpricingprobGetNImpCols(pricingprob) == 0
+      && GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
+      && GCGpricingprobGetBranchconsIdx(pricingprob) > 0;
 }
 
 /** check if a limit was reached such that the pricing job might be treated again */
@@ -411,6 +411,29 @@ GCG_PRICINGJOB* Pricingcontroller::getNextPricingjob()
    return pricingjob;
 }
 
+/** add the information that the next branching constraint must be added,
+ * and for the pricing job, reset heuristic pricing counter and flag
+ */
+SCIP_RETCODE Pricingcontroller::pricingprobNextBranchcons(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   )
+{
+   int i;
+
+   GCGpricingprobNextBranchcons(pricingprob);
+
+   /* reset heuristic pricing counter and flag for every corresponding pricing job */
+   if( heurpricingiters > 0 )
+      for( i = 0; i < npricingjobs; ++i )
+         if( GCGpricingjobGetPricingprob(pricingjobs[i]) == pricingprob )
+            GCGpricingjobResetHeuristic(pricingjobs[i]);
+
+   /* re-sort the priority queue */
+   SCIP_CALL( GCGpqueueResort(pqueue) );
+
+   return SCIP_OKAY;
+}
+
 /** set an individual time limit for a pricing job */
 SCIP_RETCODE Pricingcontroller::setPricingjobTimelimit(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
@@ -452,13 +475,7 @@ void Pricingcontroller::evaluatePricingjob(
    )
 {
    GCG_PRICINGPROB* pricingprob = GCGpricingjobGetPricingprob(pricingjob);
-   int nextconsidxjob = GCGpricingjobGetNextBranchconsIdx(pricingjob);
-   int nextconsidxprob = GCGpricingprobGetNextConsIdx(pricingprob);
    SCIP_Bool heuristic = GCGpricingjobIsHeuristic(pricingjob);
-
-   assert(nextconsidxjob >= 0);
-   assert(nextconsidxprob >= 0);
-   assert(nextconsidxjob == nextconsidxprob);
 
    /* Go to the next heuristic pricing iteration */
    if( heuristic )
@@ -490,15 +507,15 @@ void Pricingcontroller::evaluatePricingjob(
          return;
       }
 
-      /* Indicate that the next generic branching constraint should be added before performing the job again */
-      GCGpricingjobDecreaseNextBranchconsIdx(pricingjob);
-      nextconsidxjob = GCGpricingjobGetNextBranchconsIdx(pricingjob);
-
-      if( status == SCIP_STATUS_OPTIMAL && nextconsidxjob > -1 )
+      if( pricingprobNeedsNextBranchingcons(pricingprob) )
       {
+
          SCIPdebugMessage("  -> consider next generic branching constraint.\n");
 
+         SCIP_CALL_EXC( pricingprobNextBranchcons(pricingprob) );
+
          SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+
          return;
       }
    }
