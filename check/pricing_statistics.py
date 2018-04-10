@@ -93,6 +93,9 @@ def parse_arguments(args):
     parser.add_argument('--lptimeinsummary', action = 'store_true',
                         help='draw the Master LP time in the summary')
 
+    parser.add_argument('--gapperround', action = 'store_true',
+                        help='calculate the gap in the root node not for every pricing problem but for whole pricing iterations (affects only the gap plot)')
+
     # arguments concerning in- and output files
     parser.add_argument('-o', '--outdir', type=str,
                         default="plots",
@@ -571,13 +574,13 @@ def make_summary_plot(data, info):
     handles = []
     handles.append(ax1.scatter(x,y_time, color='k', s=perimeter**2, zorder = 2, label = 'Pricing Time'))
     handles.append(ax2.scatter(x,y_found_frac, color='r', s=perimeter**2, label = 'Success'))
-    handles.append(ax1.scatter(x_stab,y_stab_time, color='k', s=perimeter**2, marker='x', alpha=.5, zorder = 2, label = 'Pricing Time in Stabilization Round'))
-    handles.append(ax2.scatter(x_stab,y_stab_found_frac, color='r', s=perimeter**2, marker='x', alpha=.5, label = 'Success in Stabilization Round'))
+    ax1.scatter(x_stab,y_stab_time, color='k', s=perimeter**2, marker='x', alpha=.5, zorder = 2, label = 'Pricing Time in Stabilization Round')
+    ax2.scatter(x_stab,y_stab_found_frac, color='r', s=perimeter**2, marker='x', alpha=.5, label = 'Success in Stabilization Round')
     ax1.plot(x_mean,y_mean_time, 'k--', zorder = 2, label = None)
     ax2.plot(x_mean,y_mean_found_frac, 'r--', label = None)
     if params['lptimeinsummary']:
         handles.append(ax1.scatter(x,y_mlp_time, color='g', s=perimeter**2, zorder = 1, label = 'Master LP Time'))
-        handles.append(ax1.scatter(x_stab,y_stab_mlp_time, color='g', s=perimeter**2, marker='x', alpha=.5, zorder = 1, label = 'Master LP Time in Stabilization Rounds'))
+        ax1.scatter(x_stab,y_stab_mlp_time, color='g', s=perimeter**2, marker='x', alpha=.5, zorder = 1, label = 'Master LP Time in Stabilization Rounds')
         ax1.plot(x_mean,y_mean_mlp_time, 'g--', zorder = 1, label = None)
 
     # add a line after the root-node
@@ -618,10 +621,7 @@ def make_summary_plot(data, info):
         ax1.text(x_line, 1.01, "\it{End of initial Farkas Pricing}", size = 'smaller', ha = align, color = 'blue', zorder = 1, transform = trans)
 
     # draw a legend
-#    handles = []
-#    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, label = 'Pricing Round'))
-#    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'x', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, alpha = .7, label = 'Stabilization Round'))
-#    plt.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, .5, 1.04), ncol = 2, mode = 'expand')
+    handles.append(lines.Line2D([0,0], [0,0], color = 'None', marker = 'x', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, alpha = .7, label = '... in Stabilization Round'))
     plt.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, 1., 1.04), ncol = 4, mode = 'expand')
 
     # add other information
@@ -926,22 +926,26 @@ def make_gap_plot(data, info, root_bounds):
     start_time = time.time()
 
     # calculate the gap data as combination of pricing statistics and root bounds data
-    gap_data = data.query('(farkas == False) & (node == 1) & (pricing_prob >= 0)').groupby(['pricing_round','pricing_prob']).sum()
+    if params['gapperround']:
+        gap_data = data.query('(farkas == False) & (node == 1) & (pricing_prob >= 0)').drop(['farkas', 'nVars'], axis = 1).groupby('pricing_round').sum()
+    else:
+        gap_data = data.query('(farkas == False) & (node == 1) & (pricing_prob >= 0)').drop(['farkas', 'nVars'], axis = 1).groupby(['pricing_round','pricing_prob']).sum()
     rb = root_bounds.copy()
     rb.iter += gap_data.reset_index().pricing_round.min()
-    rb = rb.rename(columns = {'iter': 'pricing_round'})[['pricing_round','pb','db','time']].set_index('pricing_round')
+    rb = rb.rename(columns = {'iter': 'pricing_round'})[['pricing_round','pb','db']].set_index('pricing_round')
     gap_data = rb.join(gap_data, how = 'inner', lsuffix = '_rb')
     gap_data.db = gap_data.db.expanding().max()
 
     if params['dualoptdiff']:
         # check if the primal bound is the upper bound
         primal_is_upper = None
-        if not (gap_data.pb.dropna().empty or gap_data.db.dropna().empty):
+        if not gap_data.pb.dropna().empty and not gap_data.db.dropna().empty:
             if gap_data.pb.dropna().iloc[0] > gap_data.db.dropna().iloc[0]:
                 primal_is_upper = True
             else:
                 primal_is_upper = False
 
+        # calculate the gap itself (normalized to 1 as the largest gap)
         if primal_is_upper is None:
             print '    cannot calculate dualoptdiff, since it is not clear if the primal bound is the upper or lower'
             gap_data['gap'] = abs(gap_data.pb - gap_data.db)
@@ -979,12 +983,17 @@ def make_gap_plot(data, info, root_bounds):
     ax.text(.3, 1.03, '\\textbf{\\underline{' + info['instance'].replace('_','\_') + '}}', ha = 'center', size = 'large', transform = ax.transAxes)
     ax.text(.75, 1.03, '\\textbf{Settings:} \\textit{' + info['settings'].replace('_','\_') + '}', ha = 'right', size = 'medium', transform = ax.transAxes)
     ax.text(1., 1.03, '\\textbf{SCIP Status:} \\textit{' + info['status'].replace('_',' ') + '}', ha = 'right', size = 'medium', transform = ax.transAxes)
-    ax.set_xlabel('Time of one pricing problem', size = 'large')
+    if params['gapperround']:
+        ax.set_xlabel('Time of one pricing round', size = 'large')
+        color = 'k'
+    else:
+        ax.set_xlabel('Time of one pricing problem', size = 'large')
+        color = get_colmap(gap_data.index.get_level_values('pricing_prob').tolist())[0]
     ax.set_ylabel('Gap closed', size = 'large')
     ax.tick_params(axis='both', labelsize='large')
 
     # plot the data
-    ax.scatter(x, y, color = get_colmap(gap_data.index.get_level_values('pricing_prob').tolist())[0])
+    ax.scatter(x, y, color = color)
     ax.plot(x_mean, y_mean, 'k--')
 
     print '    plotted gap data:', time.time() - start_time
