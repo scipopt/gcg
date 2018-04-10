@@ -182,8 +182,6 @@ SCIP_RETCODE initializeConsdata(
    origcons = GCGconsOrigbranchGetActiveCons(origscip);
    assert(origcons != NULL);
 
-   assert(SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) == SCIPnodeGetNumber(SCIPgetCurrentNode(origscip)));
-
    /* @fixme: There should be an assertion instead; I guess consdata->origcons should be NULL */
    if( consdata->origcons != origcons ) /*rootnode?*/
    {
