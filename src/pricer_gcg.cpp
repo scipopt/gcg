@@ -2893,6 +2893,8 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
 
       GCGpricingprobGetGenericBranchData(pricingprob, &branchconss, NULL, &nbranchconss);
       branchconsidx = GCGpricingprobGetBranchconsIdx(pricingprob);
+      assert(branchconsidx >= 0);
+      assert(branchconsidx < nbranchconss);
 
       if( SCIPgetStage(pricingscip) > SCIP_STAGE_SOLVING )
       {

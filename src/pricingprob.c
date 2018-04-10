@@ -142,7 +142,6 @@ SCIP_RETCODE GCGpricingprobAddGenericBranchData(
    pricingprob->branchduals[pricingprob->nbranchconss] = branchdual;
    ++pricingprob->nbranchconss;
    ++pricingprob->branchconsidx;
-   pricingprob->consisadded = FALSE;
 
    return SCIP_OKAY;
 }
