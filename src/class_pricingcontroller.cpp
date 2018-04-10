@@ -538,7 +538,7 @@ void Pricingcontroller::collectResults(
    SCIP_Bool foundcols = FALSE;
 
    /* initializations */
-   *infeasible = (pricingtype_->getType() == GCG_PRICETYPE_FARKAS);
+   *infeasible = FALSE;
    *optimal = TRUE;
    *beststabobj = 0.0;
    *bestredcost = 0.0;
@@ -552,10 +552,7 @@ void Pricingcontroller::collectResults(
       SCIP_Real lowerbound = GCGpricingprobGetLowerbound(pricingprobs[i]);
 
       /* check infeasibility */
-      if( GCGpricingprobGetStatus(pricingprobs[i]) == SCIP_STATUS_INFEASIBLE )
-         *infeasible = TRUE;
-      if( pricingtype_->getType() == GCG_PRICETYPE_FARKAS && (GCGpricingprobGetStatus(pricingprobs[i]) != SCIP_STATUS_OPTIMAL || GCGpricingprobGetNImpCols(pricingprobs[i]) > 0) )
-         *infeasible = FALSE;
+      *infeasible |= GCGpricingprobGetStatus(pricingprobs[i]) == SCIP_STATUS_INFEASIBLE;
 
       /* check optimality */
       *optimal &= GCGpricingprobGetStatus(pricingprobs[i]) == SCIP_STATUS_OPTIMAL;
@@ -574,6 +571,7 @@ void Pricingcontroller::collectResults(
       *bestredcost += GCGpricingprobGetBestRedcost(pricingprobs[i]) * nidentblocks;
    }
 
+   *infeasible |= (pricingtype_->getType() == GCG_PRICETYPE_FARKAS && *optimal && !foundcols);
    *bestredcostvalid &= foundcols || *optimal;
 }
 
