@@ -487,7 +487,8 @@ void Pricingcontroller::evaluatePricingjob(
    // @todo: update score of pricing job
    if( !pricingprobIsDone(pricingprob) )
    {
-      SCIPdebugMessage("Problem %d has not yielded improving columns.\n", GCGpricingprobGetProbnr(pricingprob));
+      SCIPdebugMessage("Solving problem %d with <%s> has not yielded improving columns.\n",
+         GCGpricingprobGetProbnr(pricingprob), GCGpricingjobGetSolver(pricingjob)->name);
 
       if( heuristic && status != SCIP_STATUS_OPTIMAL )
       {
@@ -496,7 +497,7 @@ void Pricingcontroller::evaluatePricingjob(
          if( !limitWasReached(status) || GCGpricingjobGetNHeurIters(pricingjob) >= heurpricingiters )
          {
             GCGpricingjobSetExact(pricingjob);
-            SCIPdebugMessage("  -> solve exactly\n");
+            SCIPdebugMessage("  -> set exact\n");
          }
          else
          {
