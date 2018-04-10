@@ -2685,7 +2685,7 @@ SCIP_RETCODE ObjPricerGcg::addBranchingBoundChangesToPricing(
       {
          SCIP_CALL( SCIPtightenVarLb(pricerdata->pricingprobs[prob], var, bound, TRUE, &infeasible, &tightened));
          SCIPdebugMessage("Added <%s> >= %.2f\n", SCIPvarGetName(var), bound);
-         assert(infeasible || tightened ||  SCIPisGE(pricerdata->pricingprobs[prob], SCIPvarGetLbLocal(var), bound));
+         assert(infeasible || tightened ||  SCIPisGE(pricerdata->pricingprobs[prob], SCIPvarGetLbGlobal(var), bound));
       }
       else
       {
@@ -2896,10 +2896,7 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
       assert(branchconsidx >= 0);
       assert(branchconsidx < nbranchconss);
 
-      if( SCIPgetStage(pricingscip) > SCIP_STAGE_SOLVING )
-      {
-         SCIP_CALL( SCIPfreeTransform(pricingscip) );
-      }
+      SCIP_CALL( SCIPfreeTransform(pricingscip) );
 
       SCIPdebugMessage("*** Apply generic branching bound change of depth %d\n", -branchconsidx);
       SCIP_CALL( SCIPtransformProb(pricingscip) );
