@@ -3763,6 +3763,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    int nmasterconss;
    int origverblevel;
 
+   int maxcols = MAX(MAX(farkaspricing->getMaxcolsprob(),reducedcostpricing->getMaxcolsprob()),reducedcostpricing->getMaxcolsprobroot()); /*lint !e666*/
+
    assert(scip == scip_);
    assert(pricer != NULL);
    assert(pricerdata != NULL);
@@ -3897,7 +3899,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->avgrootnodedegeneracy = 0.0;
    pricerdata->ndegeneracycalcs = 0;
 
-   SCIP_CALL( pricingcontroller->initSol() );
+   SCIP_CALL( pricingcontroller->initSol(maxcols) );
 
    SCIP_CALL( solversInitsol() );
 
@@ -4359,9 +4361,7 @@ SCIP_RETCODE ObjPricerGcg::createPricingTypes()
 /** create the pricing controller */
 SCIP_RETCODE ObjPricerGcg::createPricingcontroller()
 {
-   int maxcols = MAX(MAX(farkaspricing->getMaxcolsprob(),reducedcostpricing->getMaxcolsprob()),reducedcostpricing->getMaxcolsprobroot()); /*lint !e666*/
-
-   pricingcontroller = new Pricingcontroller(scip_, maxcols);
+   pricingcontroller = new Pricingcontroller(scip_);
    SCIP_CALL( pricingcontroller->addParameters() );
 
    return SCIP_OKAY;

@@ -79,8 +79,7 @@
 namespace gcg {
 
 Pricingcontroller::Pricingcontroller(
-   SCIP*                  scip,
-   int                    maxcols
+   SCIP*                  scip
    )
 {
    scip_ = scip;
@@ -88,7 +87,7 @@ Pricingcontroller::Pricingcontroller(
    npricingprobs = 0;
    pricingjobs = NULL;
    npricingjobs = 0;
-   maxcols_ = maxcols;
+   maxcols_ = 0;
 
    sorting = DEFAULT_SORTING;
    nroundscol = DEFAULT_NROUNDSCOL;
@@ -277,7 +276,9 @@ SCIP_Bool Pricingcontroller::limitWasReached(
       || status == SCIP_STATUS_SOLLIMIT;
 }
 
-SCIP_RETCODE Pricingcontroller::initSol()
+SCIP_RETCODE Pricingcontroller::initSol(
+   int                    maxcols
+   )
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
    int nblocks = GCGgetNPricingprobs(origprob);
@@ -285,6 +286,7 @@ SCIP_RETCODE Pricingcontroller::initSol()
    int nsolvers = GCGpricerGetNSolvers(scip_);
    int actchunksize = MIN(chunksize, GCGgetNRelPricingprobs(origprob));
 
+   maxcols_ = maxcols;
    npricingprobs = 0;
    npricingjobs = 0;
    nchunks = (int) SCIPceil(scip_, (SCIP_Real) GCGgetNRelPricingprobs(origprob) / actchunksize);

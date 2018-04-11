@@ -80,14 +80,14 @@ private:
 
 public:
    /** constructor */
-   Pricingcontroller(SCIP* scip, int maxcols);
+   Pricingcontroller(SCIP* scip);
 
    /** destructor */
    virtual ~Pricingcontroller();
 
    SCIP_RETCODE addParameters();
 
-   SCIP_RETCODE initSol();
+   SCIP_RETCODE initSol(int maxcols);
 
    SCIP_RETCODE exitSol();
 
