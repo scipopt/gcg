@@ -109,7 +109,7 @@ extern
 SCIP_RETCODE GCGpricerIncludeSolver(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           name,               /**< name of solver */
-   const char*           description,        /**< description of solver */
+   const char*           desc,               /**< description of solver */
    int                   priority,           /**< priority of solver */
    SCIP_Bool             enabled,            /**< flag to indicate whether the solver is enabled */
    GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
@@ -119,22 +119,9 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    GCG_DECL_SOLVEREXIT   ((*solverexit)),    /**< exit method of solver */
    GCG_DECL_SOLVERINITSOL((*solverinitsol)), /**< initsol method of solver */
    GCG_DECL_SOLVEREXITSOL((*solverexitsol)), /**< exitsol method of solver */
-   GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
+   GCG_SOLVERDATA*       solverdata          /**< pricing solver data */
    );
 
-
-/** returns the solverdata of a solver */
-extern
-GCG_SOLVERDATA* GCGsolverGetSolverdata(
-   GCG_SOLVER*           solver              /**< pointer so solver */
-   );
-
-/** sets solver data of specific solver */
-extern
-void GCGsolverSetSolverdata(
-   GCG_SOLVER*           solver,             /**< pointer to solver  */
-   GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
-   );
 
 /** writes out a list of all pricing problem solvers */
 extern

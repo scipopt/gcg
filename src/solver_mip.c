@@ -44,10 +44,10 @@
 #include "scip/cons_knapsack.h"
 #include "gcg.h"
 #include "pricer_gcg.h"
+#include "pub_solver.h"
 #include "relax_gcg.h"
 #include "scip/scipdefplugins.h"
 #include "pub_gcgcol.h"
-#include "solver.h"
 
 #define SOLVER_NAME          "mip"
 #define SOLVER_DESC          "mip solver for pricing problems"
@@ -465,12 +465,12 @@ GCG_DECL_SOLVERFREE(solverFreeMip)
    assert(scip != NULL);
    assert(solver != NULL);
 
-   solverdata = GCGsolverGetSolverdata(solver);
+   solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
    SCIPfreeMemory(scip, &solverdata);
 
-   GCGsolverSetSolverdata(solver, NULL);
+   GCGsolverSetData(solver, NULL);
 
    return SCIP_OKAY;
 }
@@ -486,7 +486,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 {  /*lint --e{715}*/
    GCG_SOLVERDATA* solverdata;
 
-   solverdata = GCGsolverGetSolverdata(solver);
+   solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
    if( strcmp(solverdata->settingsfile, "-") != 0 )
@@ -521,7 +521,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
 #endif
 
-   solverdata = GCGsolverGetSolverdata(solver);
+   solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
    *lowerbound = -SCIPinfinity(pricingprob);

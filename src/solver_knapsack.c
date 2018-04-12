@@ -40,11 +40,10 @@
 #include "solver_knapsack.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_knapsack.h"
-#include "type_solver.h"
 #include "pricer_gcg.h"
+#include "pub_solver.h"
 #include "relax_gcg.h"
 #include "pub_gcgcol.h"
-#include "solver.h"
 
 #define SOLVER_NAME          "knapsack"
 #define SOLVER_DESC          "knapsack solver for pricing problems"

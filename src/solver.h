@@ -26,10 +26,9 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    solver.h
- * @ingroup PUBLICMETHODS
- * @brief   GCG solver management
+ * @brief   private methods for GCG pricing solvers
  * @author  Henri Lotze
- * @ingroup PRICINGSOLVERS
+ * @author  Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -37,24 +36,100 @@
 #ifndef GCG_SOLVER_H_
 #define GCG_SOLVER_H_
 
-#include "scip/scip.h"
 #include "type_solver.h"
+#include "scip/scip.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** returns the solverdata of a solver */
-extern
-GCG_SOLVERDATA* GCGsolverGetSolverdata(
-   GCG_SOLVER*           solver              /**< pointer so solver */
+/** creates a GCG pricing solver */
+EXTERN
+SCIP_RETCODE GCGsolverCreate(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_SOLVER**          solver,             /**< pointer to pricing solver data structure */
+   const char*           name,               /**< name of solver */
+   const char*           desc,               /**< description of solver */
+   int                   priority,           /**< priority of solver */
+   SCIP_Bool             enabled,            /**< flag to indicate whether the solver is enabled */
+   GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
+   GCG_DECL_SOLVERSOLVEHEUR((*solveheur)),   /**< heuristic solving method for solver */
+   GCG_DECL_SOLVERFREE   ((*solverfree)),    /**< free method of solver */
+   GCG_DECL_SOLVERINIT   ((*solverinit)),    /**< init method of solver */
+   GCG_DECL_SOLVEREXIT   ((*solverexit)),    /**< exit method of solver */
+   GCG_DECL_SOLVERINITSOL((*solverinitsol)), /**< initsol method of solver */
+   GCG_DECL_SOLVEREXITSOL((*solverexitsol)), /**< exitsol method of solver */
+   GCG_SOLVERDATA*       solverdata          /**< pricing solver data */
    );
 
-/** sets solver data of specific solver */
-extern
-void GCGsolverSetSolverdata(
-   GCG_SOLVER*           solver,             /**< pointer to solver  */
-   GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
+/** calls destructor and frees memory of GCG pricing solver */
+EXTERN
+SCIP_RETCODE GCGsolverFree(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_SOLVER**          solver              /**< pointer to pricing solver data structure */
+   );
+
+/** initializes GCG pricing solver */
+EXTERN
+SCIP_RETCODE GCGsolverInit(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_SOLVER*           solver              /**< pricing solver */
+   );
+
+/** calls exit method of GCG pricing solver */
+EXTERN
+SCIP_RETCODE GCGsolverExit(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_SOLVER*           solver              /**< pricing solver */
+   );
+
+/** calls solving process initialization method of GCG pricing solver */
+EXTERN
+SCIP_RETCODE GCGsolverInitsol(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_SOLVER*           solver              /**< pricing solver */
+   );
+
+/** calls solving process deinitialization method of GCG pricing solver */
+EXTERN
+SCIP_RETCODE GCGsolverExitsol(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_SOLVER*           solver              /**< pricing solver */
+   );
+
+/** calls heuristic or exact solving method of GCG pricing solver */
+EXTERN
+SCIP_RETCODE GCGsolverSolve(
+   SCIP*                 pricingprob,        /**< the pricing problem that should be solved */
+   GCG_SOLVER*           solver,             /**< pricing solver */
+   SCIP_Bool             redcost,            /**< is reduced cost (TRUE) or Farkas (FALSE) pricing performed? */
+   SCIP_Bool             heuristic,          /**< shall the pricing problem be solved heuristically? */
+   int                   probnr,             /**< number of the pricing problem */
+   SCIP_Real             dualsolconv,        /**< dual solution of the corresponding convexity constraint */
+   SCIP_Real*            lowerbound,         /**< pointer to store lower bound of pricing problem */
+   GCG_COL**             cols,               /**< array to store returned columns corresponding to solutions */
+   int                   maxcols,            /**< indicates the maximum size of the cols array */
+   int*                  ncols,              /**< pointer to store number of columns */
+   SCIP_STATUS*          status,             /**< pointer to store the returned pricing status */
+   SCIP_Bool*            solved              /**< pointer to store whether the solution method was called */
+   );
+
+/** starts solving clock of GCG pricing solver */
+EXTERN
+SCIP_RETCODE GCGsolverStartClock(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_SOLVER*           solver,             /**< pricing solver */
+   SCIP_Bool             redcost,            /**< is reduced cost (TRUE) or Farkas (FALSE) pricing performed? */
+   SCIP_Bool             heuristic           /**< is the pricing problem solved heuristically? */
+   );
+
+/** stops solving clock of GCG pricing solver */
+EXTERN
+SCIP_RETCODE GCGsolverStopClock(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_SOLVER*           solver,             /**< pricing solver */
+   SCIP_Bool             redcost,            /**< is reduced cost (TRUE) or Farkas (FALSE) pricing performed? */
+   SCIP_Bool             heuristic           /**< is the pricing problem solved heuristically? */
    );
 
 #ifdef __cplusplus

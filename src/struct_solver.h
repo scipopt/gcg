@@ -45,7 +45,7 @@ extern "C" {
 struct GCG_Solver
 {
    char*                 name;               /**< solver name */
-   char*                 description;        /**< solver description */
+   char*                 desc;               /**< solver description */
    int                   priority;           /**< solver priority */
    SCIP_Bool             enabled;            /**< solver activation status */
    GCG_SOLVERDATA*       solverdata;         /**< private solver data structure */
