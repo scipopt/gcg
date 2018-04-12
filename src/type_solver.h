@@ -96,16 +96,12 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
 #define GCG_DECL_SOLVEREXITSOL(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver)
 
 
-/** solving method for pricing solver which solves the pricing problem
+/** solving method for pricing solver which solves the pricing problem to optimality
  *
  *
  *  input:
  *  - pricingprob     : the pricing problem that should be solved
  *  - solver          : the solver itself
- *  - heuristic       : use an exact or heuristic version of the specified solver
- *  - nodelimit       : nodelimit for the specified solver
- *  - stallnodelimit  : stallnodelimit for the specified solver
- *  - gaplimit        : gaplimit for the specified solver
  *  - probnr          : number of the pricing problem
  *  - dualsolconv     : dual solution of the corresponding convexity constraint
  *  - lowerbound      : pointer to store lower bound of pricing problem
@@ -118,7 +114,30 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *                      - SCIP_STATUS_UNBOUNDED if the problem was solved and is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */
-#define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* pricingprob, GCG_SOLVER* solver, SCIP_Bool heuristic, SCIP_Longint nodelimit, SCIP_Longint stallnodelimit, SCIP_Real gaplimit, int probnr, SCIP_Real dualsolconv, SCIP_Real* lowerbound, GCG_COL** cols, int maxcols, int* ncols, SCIP_STATUS* result)
+#define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* pricingprob, GCG_SOLVER* solver, int probnr, SCIP_Real dualsolconv, SCIP_Real* lowerbound, GCG_COL** cols, int maxcols, int* ncols, SCIP_STATUS* result)
+
+/** solving method for pricing solver using heuristic pricing only
+ *
+ *
+ *  input:
+ *  - pricingprob     : the pricing problem that should be solved
+ *  - solver          : the solver itself
+ *  - probnr          : number of the pricing problem
+ *  - dualsolconv     : dual solution of the corresponding convexity constraint
+ *  - lowerbound      : pointer to store lower bound of pricing problem
+ *  - sols            : array to store returned solutions
+ *  - maxsols         : indicates the maximum size of the sols array
+ *  - solisray        : array to store whether the solution is a point or a ray
+ *  - nsols           : pointer to store number of solutions
+ *  - result          : the result of the solving call:
+ *                      - SCIP_STATUS_OPTIMAL if the problem was solved heuristically with a finite solution value
+ *                                            (not necessarily to optimality)
+ *                      - SCIP_STATUS_INFEASIBLE if the problem was proven to be infeasible
+ *                      - SCIP_STATUS_UNBOUNDED if the problem is unbounded
+ *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
+ */
+#define GCG_DECL_SOLVERSOLVEHEUR(x) SCIP_RETCODE x (SCIP* pricingprob, GCG_SOLVER* solver,  int probnr, SCIP_Real dualsolconv, SCIP_Real* lowerbound, GCG_COL** cols, int maxcols, int* ncols, SCIP_STATUS* result)
+
 
 #ifdef __cplusplus
 }

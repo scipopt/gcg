@@ -47,9 +47,6 @@
 #include <exception>
 
 #define DEFAULT_USEHEURPRICING           FALSE      /**< should heuristic pricing be used */
-#define DEFAULT_NODELIMIT                1000LL
-#define DEFAULT_STALLNODELIMIT           100LL
-#define DEFAULT_GAPLIMIT                 0.2
 #define DEFAULT_SORTING                  2          /**< default sorting method for pricing mips
                                                      *    0 :   order of pricing problems
                                                      *    1 :   according to dual solution of convexity constraint
@@ -107,18 +104,6 @@ SCIP_RETCODE Pricingcontroller::addParameters()
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/useheurpricing",
          "should pricing be performed heuristically before solving the MIPs to optimality?",
          &useheurpricing, TRUE, DEFAULT_USEHEURPRICING, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddLongintParam(origprob, "pricing/masterpricer/nodelimit",
-         "node limit for heuristic pricing",
-         &nodelimit, TRUE, DEFAULT_NODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddLongintParam(origprob, "pricing/masterpricer/stallnodelimit",
-         "stall node limit for heuristic pricing",
-         &stallnodelimit, TRUE, DEFAULT_STALLNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/gaplimit",
-         "gap limit for heuristic pricing",
-         &gaplimit, TRUE, DEFAULT_GAPLIMIT, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/sorting",
          "which sorting method should be used to sort the pricing problems (0 = order of pricing problems, 1 = according to dual solution of convexity constraint, 2 = according to reliability from previous round)",
@@ -258,7 +243,7 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
    {
       if( pricingjobs[i] != NULL )
       {
-         SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], useheurpricing, nodelimit, stallnodelimit, gaplimit, maxcolsprob,
+         SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], useheurpricing, maxcolsprob,
             sorting, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i), maxcols) );
 
          bestobjvals[i] = -SCIPinfinity(scip_);

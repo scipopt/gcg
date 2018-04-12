@@ -56,9 +56,6 @@ struct GCG_PricingJob
    int                  chunk;              /**< chunk the pricing job belongs to */
    SCIP_Real            score;              /**< current score of the pricing job */
    SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
-   SCIP_Longint         nodelimit;          /**< node limit to which the pricing job is to be exectuted */
-   SCIP_Longint         stallnodelimit;     /**< stall node limit to which the pricing job is to be executed */
-   SCIP_Real            gaplimit;           /**< Gap limit to which the pricing job is to be executed */
 
    /* result values */
    int                  nsolves;            /**< number of times the pricing job was performed during the loop */

@@ -56,11 +56,9 @@
 #define SOLVER_ENABLED      TRUE  /**< indicates whether the solver should be enabled */
 
 #define DEFAULT_CHECKSOLS           TRUE
-/*
 #define DEFAULT_HEURNODELIMIT       1000LL
 #define DEFAULT_HEURSTALLNODELIMIT  100LL
 #define DEFAULT_HEURGAPLIMIT        0.2
-*/
 #define DEFAULT_SETTINGSFILE        "-"
 
 /** branching data for branching decisions */
@@ -482,47 +480,67 @@ GCG_DECL_SOLVERFREE(solverFreeMip)
 #define solverInitMip NULL
 #define solverExitMip NULL
 
-/* solving method for pricing solver which solves the pricing problem heuristically or to optimality */
+/** solving method for pricing solver which solves the pricing problem to optimality */
 static
 GCG_DECL_SOLVERSOLVE(solverSolveMip)
-{  //lint --e{715}
+{  /*lint --e{715}*/
    GCG_SOLVERDATA* solverdata;
+
+   solverdata = GCGsolverGetSolverdata(solver);
+   assert(solverdata != NULL);
+
+   if( strcmp(solverdata->settingsfile, "-") != 0 )
+   {
+      SCIP_CALL( SCIPreadParams(pricingprob, solverdata->settingsfile) );
+   }
+
+#ifdef DEBUG_PRICING_ALL_OUTPUT
+   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+   SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
+#endif
+
+   *lowerbound = -SCIPinfinity(pricingprob);
+   SCIPdebugMessage("Solving pricing %d (pointer: %p)\n", probnr, (void*)pricingprob);
+   SCIP_CALL( solveProblem(pricingprob, probnr, solverdata, cols, maxcols, ncols, lowerbound, result) );
+
+#ifdef DEBUG_PRICING_ALL_OUTPUT
+   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", 0) );
+   SCIP_CALL( SCIPprintStatistics(pricingprob, NULL) );
+#endif
+
+   return SCIP_OKAY;
+}
+
+/** heuristic solving method of mip solver */
+static
+GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
+{  /*lint --e{715}*/
+   GCG_SOLVERDATA* solverdata;
+
+#ifdef DEBUG_PRICING_ALL_OUTPUT
+   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+#endif
 
    solverdata = GCGsolverGetSolverdata(solver);
    assert(solverdata != NULL);
 
    *lowerbound = -SCIPinfinity(pricingprob);
 
-#ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
-#endif
+   SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", solverdata->heurstallnodelimit) );
+   SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", solverdata->heurnodelimit) );
+   SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", solverdata->heurgaplimit) );
 
-   if( heuristic )
-   {
-      SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", stallnodelimit) );
-      SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", nodelimit) );
-      SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", gaplimit) );
+   SCIPdebugMessage("Solving pricing %d heuristically (pointer: %p)\n", probnr, (void*)pricingprob);
+   SCIP_CALL( solveProblem(pricingprob, probnr, solverdata, cols, maxcols, ncols, lowerbound, result) );
 
-      SCIPdebugMessage("Solving pricing %d heuristically (pointer: %p)\n", probnr, (void*)pricingprob);
-      SCIP_CALL( solveProblem(pricingprob, probnr, solverdata, cols, maxcols, ncols, lowerbound, result) );
-
-      SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", -1LL) );
-      SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", -1LL) );
-      SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", 0.0) );
-
-   }
-   else
-   {
-#ifdef DEBUG_PRICING_ALL_OUTPUT
-      SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
-#endif
-      SCIPdebugMessage("Solving pricing %d (pointer: %p)\n", probnr, (void*)pricingprob);
-      SCIP_CALL( solveProblem(pricingprob, probnr, solverdata, cols, maxcols, ncols, lowerbound, result) );
-   }
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", 0) );
    SCIP_CALL( SCIPprintStatistics(pricingprob, NULL) );
 #endif
+
+   SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", -1LL) );
+   SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", -1LL) );
+   SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", 0.0) );
 
    return SCIP_OKAY;
 }
@@ -541,13 +559,13 @@ SCIP_RETCODE GCGincludeSolverMip(
    solverdata->settingsfile = NULL;
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
-         solverSolveMip, solverFreeMip, solverInitMip, solverExitMip,
+         solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
          solverInitsolMip, solverExitsolMip, solverdata) );
 
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricingsolver/mip/checksols",
          "should solutions of the pricing MIPs be checked for duplicity?",
          &solverdata->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
-/*
+
    SCIP_CALL( SCIPaddLongintParam(origprob, "pricingsolver/mip/heurnodelimit",
          "node limit for heuristic pricing",
          &solverdata->heurnodelimit, TRUE, DEFAULT_HEURNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
@@ -559,7 +577,7 @@ SCIP_RETCODE GCGincludeSolverMip(
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/mip/heurgaplimit",
          "gap limit for heuristic pricing",
          &solverdata->heurgaplimit, TRUE, DEFAULT_HEURGAPLIMIT, 0.0, 1.0, NULL, NULL) );
-*/
+
    SCIP_CALL( SCIPaddStringParam(origprob, "pricingsolver/mip/settingsfile",
          "settings file for pricing problems",
          &solverdata->settingsfile, TRUE, DEFAULT_SETTINGSFILE, NULL, NULL) );

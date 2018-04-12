@@ -65,9 +65,6 @@ SCIP_RETCODE GCGpricingjobSetup(
    SCIP*                 scip,               /**< master SCIP instance */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
-   SCIP_Longint          nodelimit,          /**< node limit to which the pricing job is to be exectuted */
-   SCIP_Longint          stallnodelimit,     /**< stall node limit to which the pricing job is to be executed */
-   SCIP_Real             gaplimit,           /**< gap limit to which the pricing job is to be executed */
    int                   maxcolsprob,        /**< maximum number of columns that the problem should be looking for */
    int                   scoring,            /**< scoring parameter */
    SCIP_Real             dualsolconv,        /**< dual solution value of corresponding convexity constraint */
@@ -104,27 +101,6 @@ void GCGpricingjobSetHeuristic(
 EXTERN
 void GCGpricingjobSetExact(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/** set the node limit of the pricing job */
-EXTERN
-void GCGpricingjobSetNodelimit(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   SCIP_Longint          nodelimit           /**< new node limit */
-   );
-
-/** set the node stall limit of the pricing job */
-EXTERN
-void GCGpricingjobSetStallnodelimit(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   SCIP_Longint          stallnodelimit      /**< new stall node limit */
-   );
-
-/** set the gap limit of the pricing job */
-EXTERN
-void GCGpricingjobSetGaplimit(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   SCIP_Real             gaplimit            /**< new gap limit */
    );
 
 /** set the lower bound of a pricing job */

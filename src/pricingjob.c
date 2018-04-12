@@ -84,9 +84,6 @@ SCIP_RETCODE GCGpricingjobSetup(
    SCIP*                 scip,               /**< master SCIP instance */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
-   SCIP_Longint          nodelimit,          /**< node limit to which the pricing job is to be exectuted */
-   SCIP_Longint          stallnodelimit,     /**< stall node limit to which the pricing job is to be executed */
-   SCIP_Real             gaplimit,           /**< gap limit to which the pricing job is to be executed */
    int                   maxcolsprob,        /**< maximum number of columns that the problem should be looking for */
    int                   scoring,            /**< scoring parameter */
    SCIP_Real             dualsolconv,        /**< dual solution value of corresponding convexity constraint */
@@ -96,10 +93,6 @@ SCIP_RETCODE GCGpricingjobSetup(
    )
 {
    pricingjob->heuristic = heuristic;
-
-   pricingjob->nodelimit = nodelimit;
-   pricingjob->stallnodelimit = stallnodelimit;
-   pricingjob->gaplimit = gaplimit;
 
    /* set the solution limit on the pricing problem */
    SCIP_CALL( SCIPsetIntParam(pricingjob->pricingscip, "limits/solutions", SCIPgetNLimSolsFound(pricingjob->pricingscip) + maxcolsprob) );
@@ -238,57 +231,6 @@ void GCGpricingjobSetHeuristic(
    )
 {
    pricingjob->heuristic = TRUE;
-}
-
-/** return the configured node limit of the pricing job */
-SCIP_Longint GCGpricingjobGetNodelimit(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   )
-{
-   return pricingjob->nodelimit;
-}
-
-/** set the node limit of the pricing job */
-void GCGpricingjobSetNodelimit(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   SCIP_Longint          nodelimit           /**< new node limit */
-   )
-{
-   pricingjob->nodelimit = nodelimit;
-}
-
-/** return the configured stall limit of the pricing job */
-SCIP_Longint GCGpricingjobGetStallnodelimit(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   )
-{
-   return pricingjob->stallnodelimit;
-}
-
-/** set the stall limit of the pricing job */
-void GCGpricingjobSetStallnodelimit(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   SCIP_Longint          stallnodelimit      /**< new node stall limit */
-   )
-{
-   pricingjob->stallnodelimit = stallnodelimit;
-}
-
-/** return the configured gap limit of the pricing job */
-SCIP_Real GCGpricingjobGetGaplimit(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   )
-{
-   return pricingjob->gaplimit;
-}
-
-/** set the gap limit of the pricing job */
-void GCGpricingjobSetGaplimit(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   SCIP_Real             gaplimit            /**< new gap limit */
-   )
-{
-   pricingjob->gaplimit = gaplimit;
 }
 
 /** set the pricing job to be performed exactly */

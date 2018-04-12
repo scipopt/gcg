@@ -77,24 +77,6 @@ SCIP_Bool GCGpricingjobIsHeuristic(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
-/** return the configured node limit of the pricing job */
-EXTERN
-SCIP_Longint GCGpricingjobGetNodelimit(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/** return the configured stall node limit of the pricing job */
-EXTERN
-SCIP_Longint GCGpricingjobGetStallnodelimit(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/** return the configured gap limit of the pricing job */
-EXTERN
-SCIP_Real GCGpricingjobGetGaplimit(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
 /** get the chunk of a pricing job */
 EXTERN
 SCIP_Real GCGpricingjobGetChunk(

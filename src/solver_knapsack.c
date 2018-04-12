@@ -442,16 +442,29 @@ SCIP_RETCODE solveKnapsack(
 #define solverInitKnapsack NULL
 #define solverExitKnapsack NULL
 
-/** Solving method for knapsack solver */
+/** exact solving method for knapsack solver */
 static
 GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 {  /*lint --e{715}*/
 
    /* solve the knapsack problem exactly */
-   SCIP_CALL( solveKnapsack(!(heuristic), pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, result) );
+   SCIP_CALL( solveKnapsack(TRUE, pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, result) );
 
    return SCIP_OKAY;
 }
+
+
+/** heuristic solving method of knapsack solver */
+static
+GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
+{  /*lint --e{715}*/
+
+   /* solve the knapsack problem approximately */
+   SCIP_CALL( solveKnapsack(FALSE, pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, result) );
+
+   return SCIP_OKAY;
+}
+
 
 /** creates the knapsack solver for pricing problems and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverKnapsack(
@@ -459,7 +472,7 @@ SCIP_RETCODE GCGincludeSolverKnapsack(
    )
 {
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED, solverSolveKnapsack,
-         /*solverSolveHeurKnapsack,*/ solverFreeKnapsack, solverInitKnapsack, solverExitKnapsack,
+         solverSolveHeurKnapsack, solverFreeKnapsack, solverInitKnapsack, solverExitKnapsack,
          solverInitsolKnapsack, solverExitsolKnapsack, NULL) );
 
    return SCIP_OKAY;
