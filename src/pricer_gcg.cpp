@@ -3103,7 +3103,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          }
 
          SCIPdebugMessage("*** Solve pricing problem %d, solver <%s>, stabilized = %u, %s\n",
-            GCGpricingprobGetProbnr(pricingprob), GCGpricingjobGetSolver(pricingjob)->name, stabilized,
+            GCGpricingprobGetProbnr(pricingprob), GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)), stabilized,
             GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
 
          #pragma omp critical (limits)

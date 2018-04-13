@@ -490,7 +490,7 @@ void Pricingcontroller::evaluatePricingjob(
    if( !pricingprobIsDone(pricingprob) )
    {
       SCIPdebugMessage("Solving problem %d with <%s> has not yielded improving columns.\n",
-         GCGpricingprobGetProbnr(pricingprob), GCGpricingjobGetSolver(pricingjob)->name);
+         GCGpricingprobGetProbnr(pricingprob), GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)));
 
       if( heuristic && status != SCIP_STATUS_OPTIMAL )
       {
