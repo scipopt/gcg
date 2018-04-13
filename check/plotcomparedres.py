@@ -20,20 +20,24 @@ for file in os.listdir("pickles/"):
 
 # Count number of not "ok" instances (failed/aborted/timeout/...) for each res file
 fails = {}
+highestfails = 0
 
 for key in datasets.keys():
 	# crop the filenames (keys in datasets) by removing res_ ... .pkl
 	croppedkey = key.split('/')[-1].replace('res_', '').replace('.pkl', '')
 	fails[croppedkey] = 0
 	for status in datasets[key]['status']:
-		if status != 'ok':
+		if status != 'ok' and status != 'solved' and status != 'solvednotverified':
 			fails[croppedkey] = fails[croppedkey] + 1
+			if highestfails < fails[croppedkey]:
+				highestfails = fails[croppedkey]
 
 # Plot results
 fig = plt.figure()
 plt.title("Number of unsolved instances")
 plt.xlabel("GCG Version")
 plt.ylim(ymin=0)
+plt.ylim(ymax=highestfails)
 plt.bar(range(len(fails)), fails.values(), align='center')
 plt.xticks(range(len(fails)), fails.keys())
 plt.savefig('images/failcomparison.pdf')

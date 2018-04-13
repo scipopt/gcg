@@ -132,6 +132,7 @@ cd ..
 # parse the res files to a readable format for later use
 mkdir -p pickles
 chmod +x parseres.py
+chmod +x plotcomparedres.py
 
 index=0
 while [ $index -lt $nversions ]
