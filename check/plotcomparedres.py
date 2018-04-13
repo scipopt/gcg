@@ -34,10 +34,19 @@ for key in datasets.keys():
 
 # Plot results
 fig = plt.figure()
+ax = plt.axes()        
 plt.title("Number of unsolved instances")
 plt.xlabel("GCG Version")
 plt.ylim(ymin=0)
-plt.ylim(ymax=highestfails)
-plt.bar(range(len(fails)), fails.values(), align='center')
+plt.ylim(ymax=highestfails+(highestfails/10))			# max y value is set to more than highest value
+ax.grid(True,axis='y')
+bars = plt.bar(range(len(fails)), fails.values(), align='center')
 plt.xticks(range(len(fails)), fails.keys())
-plt.savefig('images/failcomparison.pdf')
+
+for item in bars:
+        height = item.get_height()
+        ax.text(item.get_x()+item.get_width()/2., 1.01*height,
+                '%d' % int(height),
+                ha='center')
+
+plt.savefig('images/failcomparison.pdf')			# name of image
