@@ -42,9 +42,9 @@
 #include "pub_gcgpqueue.h"
 #include "pub_pricingjob.h"
 #include "pub_pricingprob.h"
+#include "pub_solver.h"
 #include "pricingjob.h"
 #include "pricingprob.h"
-#include "struct_solver.h"
 
 #include "scip/scip.h"
 #include "objscip/objscip.h"
@@ -185,7 +185,7 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
       GCG_SOLVER* solver1 = GCGpricingjobGetSolver(pricingjob1);
       GCG_SOLVER* solver2 = GCGpricingjobGetSolver(pricingjob2);
 
-      if( solver1->priority > solver2->priority )
+      if( GCGsolverGetPriority(solver1) > GCGsolverGetPriority(solver2) )
          return -1;
       else
          return 1;
@@ -304,7 +304,7 @@ SCIP_RETCODE Pricingcontroller::initSol(
 
          for( int j = 0; j < nsolvers; ++j )
          {
-            if( solvers[j]->enabled )
+            if( GCGsolverIsEnabled(solvers[j]) )
             {
                SCIP_CALL_EXC( GCGpricingjobCreate(scip_, &pricingjobs[npricingjobs], pricingprobs[npricingprobs], solvers[j], npricingprobs / actchunksize) );
                ++npricingjobs;

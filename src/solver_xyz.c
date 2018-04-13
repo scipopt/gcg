@@ -35,8 +35,8 @@
 #include <assert.h>
 
 #include "solver_xyz.h"
-#include "type_solver.h"
 #include "pricer_gcg.h"
+#include "pub_solver.h"
 
 #define SOLVER_NAME          "xyz"
 #define SOLVER_DESC          "xyz solver for pricing problems"

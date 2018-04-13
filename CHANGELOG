@@ -18,6 +18,7 @@ features
 code cleanup
 - use SCIP_STATISTIC for pricing statistics and add compiler flag STATISTICS; if STATISTICS is set to true,
   SCIP_STATISTIC will be defined
+- introduce new module solver.c for managing pricing solvers, to be compliant to how SCIP plugins are designed
 
 bug fixes
 - fix a bug in the automatic update of the stabilization parameter alpha

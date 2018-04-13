@@ -38,8 +38,8 @@
 
 #include "scip/scip.h"
 #include "gcg.h"
-#include "type_solver.h"
 #include "solver_cplex.h"
+#include "pub_solver.h"
 #include "pub_gcgcol.h"
 
 #ifdef CPLEXSOLVER
@@ -867,11 +867,11 @@ GCG_DECL_SOLVERFREE(solverFreeCplex)
    assert(scip != NULL);
    assert(solver != NULL);
 
-   solverdata = GCGsolverGetSolverdata(solver);
+   solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
    SCIPfreeMemory(scip, &solverdata);
-   GCGsolverSetSolverdata(solver, NULL);
+   GCGsolverSetData(solver, NULL);
 
    return SCIP_OKAY;
 }
@@ -886,7 +886,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolCplex)
    assert(scip != NULL);
    assert(solver != NULL);
 
-   solverdata = GCGsolverGetSolverdata(solver);
+   solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
    solverdata->npricingprobs = GCGgetNPricingprobs(solverdata->origprob);
@@ -923,7 +923,7 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
    assert(scip != NULL);
    assert(solver != NULL);
 
-   solverdata = GCGsolverGetSolverdata(solver);
+   solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
    retval = SCIP_OKAY;
@@ -990,7 +990,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
    SCIP_RETCODE retval;
    long long nodelim;
 
-   solverdata = GCGsolverGetSolverdata(solver);
+   solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
    assert(solverdata->created != NULL);
 
@@ -1031,7 +1031,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveCplex)
 
    assert(solver != NULL);
 
-   solverdata = GCGsolverGetSolverdata(solver);
+   solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
    assert(solverdata->created != NULL);
 

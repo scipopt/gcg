@@ -47,6 +47,7 @@
 #include "class_stabilization.h"
 #include "pricer_gcg.h"
 #include "gcg.h"
+#include "pub_gcgcol.h"
 #include "sepa_master.h"
 #include "objscip/objscip.h"
 #include "scip/cons_linear.h"

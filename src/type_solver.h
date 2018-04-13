@@ -39,7 +39,7 @@
 #include "scip/def.h"
 #include "scip/type_result.h"
 #include "scip/type_scip.h"
-#include "pub_gcgcol.h"
+#include "type_gcgcol.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -136,7 +136,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *                      - SCIP_STATUS_UNBOUNDED if the problem is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */
-#define GCG_DECL_SOLVERSOLVEHEUR(x) SCIP_RETCODE x (SCIP* pricingprob, GCG_SOLVER* solver,  int probnr, SCIP_Real dualsolconv, SCIP_Real* lowerbound, GCG_COL** cols, int maxcols, int* ncols, SCIP_STATUS* result)
+#define GCG_DECL_SOLVERSOLVEHEUR(x) SCIP_RETCODE x (SCIP* pricingprob, GCG_SOLVER* solver, int probnr, SCIP_Real dualsolconv, SCIP_Real* lowerbound, GCG_COL** cols, int maxcols, int* ncols, SCIP_STATUS* result)
 
 
 #ifdef __cplusplus

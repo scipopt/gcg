@@ -346,16 +346,6 @@ private:
       double*               degeneracy          /**< pointer to store degeneracy */
    );
 
-   /** initializes the pointers to the appropriate structures */
-   SCIP_RETCODE getSolverPointers(
-      GCG_SOLVER*           solver,             /**< pricing solver */
-      PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
-      SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
-      SCIP_CLOCK**          clock,              /**< clock belonging to this setting */
-      int**                 calls,              /**< calls belonging to this setting */
-      GCG_DECL_SOLVERSOLVE((**solversolve))     /**< solving function belonging to this setting */
-   ) const;
-
    /** set subproblem memory limit */
    SCIP_RETCODE setPricingProblemMemorylimit(
       SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
