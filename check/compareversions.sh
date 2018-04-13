@@ -84,6 +84,8 @@ do
 	index=$((index + 1))
 
 	# get version
+	git submodule foreach --recursive git clean -f
+	git submodule foreach git reset --hard
 	git checkout "${VERSION[$index]}"
 	git submodule init
 	git submodule sync
