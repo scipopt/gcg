@@ -4638,7 +4638,6 @@ void GCGpricerPrintListOfSolvers(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
    int nsolvers;
@@ -4656,12 +4655,14 @@ void GCGpricerPrintListOfSolvers(
 
    nsolvers = pricerdata->nsolvers;
 
-   SCIPdialogMessage(scip, NULL, " solver               priority description\n --------------       -------- -----------\n");
+   SCIPdialogMessage(scip, NULL, " solver               priority enabled description\n");
+   SCIPdialogMessage(scip, NULL, " --------------       -------- ------- -----------\n");
 
    for( i = 0; i < nsolvers; ++i )
    {
       SCIPdialogMessage(scip, NULL,  " %-20s", GCGsolverGetName(pricerdata->solvers[i]));
       SCIPdialogMessage(scip, NULL,  " %8d", GCGsolverGetPriority(pricerdata->solvers[i]));
+      SCIPdialogMessage(scip, NULL,  " %7s", GCGsolverIsEnabled(pricerdata->solvers[i]) ? "TRUE" : "FALSE");
       SCIPdialogMessage(scip, NULL,  " %s\n", GCGsolverGetDesc(pricerdata->solvers[i]));
    }
 }
