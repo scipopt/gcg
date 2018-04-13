@@ -21,10 +21,19 @@ for file in os.listdir("pickles/"):
 # Count number of not "ok" instances (failed/aborted/timeout/...) for each res file
 fails = {}
 highestfails = 0
+maxstringlen = 12 # TODO make this number flexible
 
 for key in datasets.keys():
-	# crop the filenames (keys in datasets) by removing res_ ... .pkl
+	# crop the filenames (keys in datasets) by removing res_ ... .pkl and add linebreak for very long keys
 	croppedkey = key.split('/')[-1].replace('res_', '').replace('.pkl', '')
+	if len(croppedkey) > maxstringlen:
+		charlist = list(croppedkey)
+		ninserts = len(charlist)/maxstringlen
+		while ninserts > 0:
+			charlist.insert(ninserts*maxstringlen, '\n')
+			ninserts = ninserts - 1
+		croppedkey = ''.join(charlist)
+	# countfails
 	fails[croppedkey] = 0
 	for status in datasets[key]['status']:
 		if status != 'ok' and status != 'solved' and status != 'solvednotverified':
