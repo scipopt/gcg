@@ -95,7 +95,7 @@ SCIP_RETCODE GCGpricingjobSetup(
    switch( scoring )
    {
    case 'i':
-      pricingjob->score = (SCIP_Real) GCGpricingprobGetProbnr(pricingprob);
+      pricingjob->score = - (SCIP_Real) GCGpricingprobGetProbnr(pricingprob);
       break;
    case 'd':
       pricingjob->score = dualsolconv;
