@@ -3130,7 +3130,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
 #ifdef SCIP_STATISTIC
             SCIPstatisticMessage("P p %d : %d in %g\n",
-               GCGpricingprobGetProbnr(pricingprob), nimpcols - GCGpricingprobGetNImpcols(pricingprob), pricingtime);
+               GCGpricingprobGetProbnr(pricingprob), GCGpricingprobGetNImpCols(pricingprob) - oldnimpcols, pricingtime);
 #endif
          }
 
