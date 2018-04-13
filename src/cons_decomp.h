@@ -555,6 +555,14 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
    FILE*                file
    );
 
+SCIP_RETCODE GCGprintMiplibDecompInformation(
+   SCIP*                scip,
+   FILE*                file
+   );
+
+SCIP_RETCODE GCGprintOptionalOutput(
+   SCIP*                scip
+   );
 
 
 #ifdef __cplusplus

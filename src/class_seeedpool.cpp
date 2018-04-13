@@ -2376,6 +2376,40 @@ int Seeedpool::getNIncompleteSeeeds()
    return incompleteSeeeds.size();
 }
 
+
+/** returns total number of constraints where ranged constraints are counted twice */
+int Seeedpool::getNTotalConss(
+){
+   int nconss = 0;
+
+   for ( int c = 0; c < getNConss(); ++c )
+   {
+      SCIP_CONS* cons = consToScipCons[c];
+      nconss += GCGconsIsRanged(scip, cons) ? 2 : 1;
+   }
+
+   return nconss;
+}
+
+/** returns the number of nonzero entries in the coefficient matrix */
+long Seeedpool::getNTotalNonzeros()
+{
+   long ntotalnonzeros = nnonzeros;
+
+   for (int c  = 0; c < getNConss(); ++c )
+   {
+      SCIP_CONS* cons = getScipCons(c);
+      if( GCGconsIsRanged(scip, cons) )
+      {
+         ntotalnonzeros += GCGconsGetNVars(scip, cons);
+      }
+   }
+
+   return ntotalnonzeros;
+}
+
+
+
 /** returns true if the given seeed is a duplicate of a seeed that is already contained in
  *  finished seeeds or current seeeds data structure */
 bool Seeedpool::hasDuplicate(
@@ -3239,6 +3273,23 @@ SCIP* Seeedpool::getScip()
 {
    return scip;
 }
+
+/** returns scip cons for corresponing id */
+SCIP_CONS* Seeedpool::getScipCons(
+   int consid
+   )
+{
+   return consToScipCons[consid];
+}
+
+/** returns scip var for corresponing id */
+SCIP_VAR* Seeedpool::getScipVar(
+   int varid
+){
+   return varToScipVar[varid];
+}
+
+
 
 /** returns the candidates for block size sorted in descending order by how often a candidate was added */
 std::vector<int> Seeedpool::getSortedCandidatesNBlocks()

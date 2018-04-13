@@ -655,16 +655,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
    SCIP_RESULT result;
-   SCIP_Bool emphfast;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
-
-   SCIPgetBoolParam(scip, "detection/emphfast/enabled", &emphfast);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL," start of detectstructure, test for emph fast: %d\n", emphfast);
-   if( emphfast )
-      SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_FAST, FALSE) );
 
    if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
    {
@@ -677,6 +671,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    }
    else
       SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists");
+
+   SCIP_CALL( GCGprintOptionalOutput(scip) );
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 

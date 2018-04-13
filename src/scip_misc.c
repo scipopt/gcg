@@ -692,6 +692,20 @@ SCIP_RETCODE GCGconsGetVals(
    return SCIP_OKAY;
 }
 
+/** returns true if the constraint should be a master constraint and false otherwise */
+SCIP_Bool GCGconsIsRanged(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to check */
+){
+   assert(scip != NULL);
+
+   SCIP_Real lhs = GCGconsGetLhs(scip, cons);
+   SCIP_Real rhs = GCGconsGetRhs(scip, cons);
+
+
+   return !(SCIPisEQ(scip, lhs, rhs) || SCIPisInfinity(scip, -lhs) || SCIPisInfinity(scip, rhs) );
+}
+
 
 /** returns true if the constraint should be a master constraint and false otherwise */
 SCIP_Bool GCGgetConsIsSetppc(

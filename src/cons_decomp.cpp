@@ -83,6 +83,7 @@
 #include "type_decomp.h"
 #include "wrapper_seeed.h"
 #include "reader_tex.h"
+#include "scip_misc.h"
 
 typedef gcg::Seeed* SeeedPtr;
 
@@ -144,6 +145,7 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_STAIRLINKINGHEUR                      FALSE    /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
 
 #define DEFAULT_WRITEMIPLIB2017FEATURES               FALSE    /**< indicates whether miplib2017 features should be written */
+#define DEFAULT_WRITEMIPLIB2017PLOTSANDDEC            FALSE    /**< indicates whether miplib2017 features should be written */
 
 /*
  * Data structures
@@ -198,6 +200,7 @@ struct SCIP_ConshdlrData
    SCIP_Bool             legacymodeenabled;                 /**< indicates whether detection consist of legacy mode detection */
    SCIP_Bool             stairlinkingheur;                  /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
    SCIP_Bool             writemiplib2017features;           /**< indicates whether miplib2017 features should be written */
+   SCIP_Bool             writemiplib2017plotsanddec;        /**< indicates whether dec and gp files for miplib 2017 should be written */
 
    int**                 candidatesNBlocks;                 /**< pointer to store candidates for number of blocks calculated by the seeedpool */
    int*                  nCandidates;
@@ -944,6 +947,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/enabled", "indicates whether detection consist of legacy mode detection", &conshdlrdata->legacymodeenabled, FALSE, DEFAULT_LEGACYMODE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/stairlinkingheur", "indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated", &conshdlrdata->stairlinkingheur, FALSE, DEFAULT_STAIRLINKINGHEUR, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "write/miplib2017features", "indicates whether miplib2017 features should be written", &conshdlrdata->writemiplib2017features, FALSE, DEFAULT_WRITEMIPLIB2017FEATURES, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "write/miplib2017plotsanddec", "indicates whether dec and gp files are written for miplib2017", &conshdlrdata->writemiplib2017plotsanddec, FALSE, DEFAULT_WRITEMIPLIB2017PLOTSANDDEC, NULL, NULL) );
+
    SCIP_CALL( SCIPaddIntParam(scip, "detection/strong_detection/dualvalrandommethod",
       "Method for random dual values use for strong decomposition: 1) naive, 2) expected equality exponential distributed, 3) expected overestimation exponential distributed ", &conshdlrdata->strongdetectiondualvalrandommethod, FALSE,
       DEFAULT_DUALVALRANDOMMETHOD, 1, 3, NULL, NULL) );
@@ -3093,6 +3098,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
 
    conshdlrdata->curruserseeed->setSeeedpool(currseeedpool );
    conshdlrdata->curruserseeed->setIsFromUnpresolved( !presolved );
+
    if( markedincomplete )
       conshdlrdata->curruserseeed->setUsergiven(USERGIVEN::PARTIAL);
    else
@@ -6167,9 +6173,7 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
    SCIP_CONS** conss;
    SCIP_Real absmaxvalobj;
    SCIP_Real absminvalobj;
-   DEC_DETECTOR* connecteddetector;
    SCIP_Real maxrationonzerovals;
-   SCIP_Bool debugoutput;
 
    char* name;
    char probname[SCIP_MAXSTRLEN];
@@ -6205,9 +6209,7 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
    nconsnonzerorhs = 0; /* lhss are included */
    absmaxvalobj = 0;
    absminvalobj = SCIPinfinity(scip);
-   connecteddetector = NULL;
    maxrationonzerovals = 0.;
-   debugoutput = TRUE;
 
    /* sanitize filename */
    (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
@@ -6311,10 +6313,10 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nvarsnonzerolb /   nvarslbnotinf) );
 
    /** density of upper bound */
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nvarsnonzeroub /   nvarslbnotinf );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nvarsnonzeroub /   nvarslbnotinf ) );
 
    /** density of rhs */
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nconsnonzerorhs /   conshdlrdata->seeedpool->getNTotalConss() );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nconsnonzerorhs /   conshdlrdata->seeedpool->getNTotalConss() ) );
 
    /** percentage of Binary, Integer, Continuous Variables */
 
@@ -6378,6 +6380,7 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
 }
 
 
+
 SCIP_RETCODE GCGprintMiplibConnectedInformation(
    SCIP*                scip,
    FILE*                file
@@ -6390,12 +6393,15 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
    DEC_DETECTOR* connecteddetector;
    std::ofstream myfile;
 
+   SeeedPtr seeedconnected;
+   SEEED_PROPAGATION_DATA* seeedPropData;
+   SCIP_Result success;
+
+
    char* name;
 
    char probname[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
-
-   SCIP_Bool debugoutput;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
@@ -6412,16 +6418,11 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
 
 
-   debugoutput = FALSE;
-
 
    assert( conshdlrdata != NULL ) ;
 
    for ( int d = 0; d < conshdlrdata->ndetectors; ++d )
    {
-      SeeedPtr seeedconnected;
-      SEEED_PROPAGATION_DATA* seeedPropData;
-      SCIP_Result success;
 
       if ( strcmp("connectedbase", DECdetectorGetName(conshdlrdata->detectors[d]) ) == 0  )
       {
@@ -6453,7 +6454,7 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  seeedconnected->getMaxWhiteScore() ) );
 
-     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", seeedconnected->getComponentInformation(conshdlrdata->seeedpool).c_str() );
+     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", seeedconnected->getComponentInformation().c_str() );
 
 
    return SCIP_OKAY;
@@ -6468,7 +6469,6 @@ SCIP_RETCODE GCGprintMiplibDecompInformation(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
-   DEC_DETECTOR* connecteddetector;
    std::ofstream myfile;
 
    char* name;
@@ -6476,7 +6476,6 @@ SCIP_RETCODE GCGprintMiplibDecompInformation(
    char probname[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
 
-   SCIP_Bool debugoutput;
 
    SeeedPtr bestseeed;
 
@@ -6493,21 +6492,38 @@ SCIP_RETCODE GCGprintMiplibDecompInformation(
 
    (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s%s%s", "/home/bastubbe/results/baseinfo2017/" , name, ".csv");
 
-   debugoutput = FALSE;
 
    assert( conshdlrdata != NULL ) ;
 
-   sortFinishedForScore();
+   SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE) );
 
-   bestseeed = finishedSeeeds[0];
+   bestseeed = conshdlrdata->candidates->at(0).first;
 
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  bestseeed->getMaxWhiteScore() ) );
 
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", bestseeed->getComponentInformation().c_str() );
 
-     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  seeedconnected->getMaxWhiteScore() ) );
+   return SCIP_OKAY;
+}
 
-     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", seeedconnected->getComponentInformation(conshdlrdata->seeedpool).c_str() );
+SCIP_RETCODE GCGprintOptionalOutput(
+   SCIP*                scip
+   )
+{
+
+   SCIP_Bool miplibfeatureoutput;
+   SCIP_Bool miplibplotdecandgp;
+
+   /** check setting for optiional output */
+   SCIPgetBoolParam(scip, "write/miplib2017features", &miplibfeatureoutput);
+   SCIPgetBoolParam(scip, "write/miplib2017plotsanddec", &miplibplotdecandgp);
+
+   if( miplibfeatureoutput )
+      GCGprintMiplibStructureInformation(scip);
+
 
 
    return SCIP_OKAY;
 }
+
 

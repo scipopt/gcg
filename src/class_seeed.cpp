@@ -4571,7 +4571,6 @@ std::vector<SCIP_Real> Seeed::getDetectorClockTimes()
 
 
 std::string Seeed::getComponentInformation(
-   Seeedpool* seeedpool
    ){
 
    std::stringstream buf;
@@ -4591,7 +4590,7 @@ std::string Seeed::getComponentInformation(
    SCIP_Real meanvar = 0.;
    std::vector<int> ncols(getNBlocks(), 0);
 
-   for( size_t b = 0; b  < getNBlocks(); ++b )
+   for( int b = 0; b  < getNBlocks(); ++b )
    {
        for( int c = 0; c < getNConssForBlock(b); ++c  )
        {
@@ -4605,7 +4604,6 @@ std::string Seeed::getComponentInformation(
        for( int v = 0; v < getNVarsForBlock(b); ++v )
        {
           int var = getVarsForBlock(b)[v];
-          SCIP_Var* scipvar = seeedpool->getScipVar(var);
 
           ncols[b]++;
           meanvar += 1;

@@ -475,10 +475,36 @@ SCIP_RETCODE GCGprintInstanceName(
 
 
 SCIP_RETCODE GCGprintMiplibStructureInformation(
-   SCIP*                scip,
-   FILE*                file
+   SCIP*                scip
    )
 {
+   FILE* file;
+
+
+
+   file = fopen(filename, "a");
+   if( file == NULL )
+   {
+      SCIPdialogMessage(scip, NULL, "error creating file <%s>\n", filename);
+      SCIPprintSysError(filename);
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+   }
+   else
+   {
+      SCIP_RETCODE retcode;
+      retcode = GCGprintStatistics(scip, file);
+      if( retcode != SCIP_OKAY )
+      {
+         fclose(file);
+         SCIP_CALL( retcode );
+      }
+      else
+      {
+         SCIPdialogMessage(scip, NULL, "written statistics to file <%s>\n", filename);
+         fclose(file);
+      }
+   }
+
    SCIP_CALL( GCGprintMiplibBaseInformation(scip, file) );
 
    SCIP_CALL( GCGprintMiplibConnectedInformation(scip, file));
