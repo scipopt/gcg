@@ -93,7 +93,8 @@ do
 	make deps ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 	make -j ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
-	# run testset Assumes there are links from gcg/check/instances to the instance folders! TODO
+	# 'make test' assumes there are links from gcg/check/instances to the instance folders.
+	# if your testset instances are not found make sure the links are set
 	make test ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
 	# change name of output files: sort by last modified and take the first one
@@ -102,6 +103,7 @@ do
 	# establish VERSIONNAME as a name safe to use as a filename
 	VERSIONNAME="${VERSION[$index]//\/}"		# remove slashs
 	VERSIONNAME="${VERSIONNAME//.}"			# remove points
+	VERSIONNAME="${VERSIONNAME}_${TESTNAME}"	# add testset name for later identification
 	
 	OLDout=$(find . -type f -name "*.out"  -printf "%p\n" | sort -n | head -n 1)
 	mv "$OLDout" "${VERSIONNAME}.out"
@@ -133,9 +135,11 @@ cd check/testset
 rm "$TESTNAME"_comparecopy.test
 cd ..
 
-# 3) do sth with the output: TODO
+# 3) do sth with the output:
 	
-# parse the res files to a readable format for later use
+# parse the res files to a readable format
+echo "Start plotting..."
+
 mkdir -p pickles
 chmod +x parseres.py
 chmod +x plotcomparedres.py
@@ -146,6 +150,8 @@ for i in results/*.res; do
 done
 
 ./plotcomparedres.py
+
+echo "Finished."
 
 # termination
 exit 0
