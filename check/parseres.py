@@ -32,13 +32,9 @@ for line in fh:
 	elif '----------' not in line and line not in ['\n', '\r\n'] and not line.startswith("Name   ") and not line.startswith(" ") and not line.startswith("@"):
 		line = " ".join(line.split())
 		row = line.split(" ")
-		# extra spaces should only be in the status column, join these
-		if len(columns) < len(row):
-			row[len(columns)-1:len(row)] = [''.join(row[len(columns)-1:len(row)])]
-				
 		linearray.append(row)
 
-# there might be empty items in our coulumns list, remove these
+# there might be empty items in our columns list, remove these
 index = 0
 while index < len(columns):
 	if columns[index] == "":
@@ -46,6 +42,11 @@ while index < len(columns):
 	else:
 		index = index + 1
 
-#store data into panda dataframe & save it as pickle
+# as the status column might contain spaces join all additional items
+for row in linearray:
+	if len(row) > len(columns):
+		row[len(columns)-1:len(row)] = [''.join(row[len(columns)-1:len(row)])]
+
+# store data into panda dataframe & save it as pickle
 df = pd.DataFrame(columns=columns, data=linearray)
 df.to_pickle('pickles/' + 'res_' + resfile.split('/')[-1].replace('.res', '.pkl'))

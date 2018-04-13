@@ -41,7 +41,7 @@ plt.ylim(ymin=0)
 plt.ylim(ymax=highestfails+(highestfails/10))			# max y value is set to more than highest value
 ax.grid(True,axis='y')
 bars = plt.bar(range(len(fails)), fails.values(), align='center')
-plt.xticks(range(len(fails)), fails.keys())
+plt.xticks(range(len(fails)), fails.keys(), rotation=90)
 
 for item in bars:
         height = item.get_height()

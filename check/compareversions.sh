@@ -140,11 +140,9 @@ mkdir -p pickles
 chmod +x parseres.py
 chmod +x plotcomparedres.py
 
-index=0
-while [ $index -lt $nversions ]
-do
-	index=$((index + 1))
-	./parseres.py results/version${index}.res
+shopt -s nullglob
+for i in results/*.res; do
+    ./parseres.py $i
 done
 
 ./plotcomparedres.py
