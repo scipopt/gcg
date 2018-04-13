@@ -53,8 +53,9 @@ private:
    int                   npricingprobs;      /**< number of pricing problems */
 
    /* parameters */
-   SCIP_Bool             useheurpricing;     /**< should heuristic pricing be used? */
-   int                   sorting;            /**< how should pricing problems be sorted */
+   int                   heurpricingiters;   /**< maximum number of heuristic pricing iterations per pricing call and problem */
+   char                  sorting;            /**< order by which the pricing problems should be sorted */
+   int                   nroundscol;         /**< number of previous pricing rounds for which the number of improving columns should be counted */
    SCIP_Real             relmaxsuccessfulprobs; /**< maximal percentage of pricing problems that need to be solved successfully */
    int                   chunksize;          /**< maximal number of pricing problems to be solved during one pricing loop */
    int                   eagerfreq;          /**< frequency at which all pricing problems should be solved */
@@ -118,6 +119,11 @@ public:
       int                   ncols               /**< number of columns found */
       );
 
+   /** update solution statistics of a pricing job */
+   void updatePricingjobSolvingStats(
+      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
    /** decide whether a pricing job must be treated again */
    void evaluatePricingjob(
       GCG_PRICINGJOB*       pricingjob         /**< pricing job */
@@ -179,6 +185,16 @@ private:
    /** comparison operator for pricing jobs w.r.t. their solution priority */
    static
    SCIP_DECL_SORTPTRCOMP(comparePricingjobs);
+
+   /** check if the pricing job is done */
+   SCIP_Bool pricingjobIsDone(
+      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+      ) const;
+
+   /** check if the pricing job has terminated with a limit */
+   SCIP_Bool pricingjobHasLimit(
+      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+      ) const;
 };
 
 } /* namespace gcg */

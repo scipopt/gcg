@@ -70,7 +70,7 @@
 #define DEFAULT_HEURGAPLIMIT        0.2
 
 
-/** branching data for branching decisions */
+/** pricing solver data */
 struct GCG_SolverData
 {
    SCIP*                 origprob;           /**< original problem SCIP instance */
