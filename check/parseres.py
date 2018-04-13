@@ -46,15 +46,6 @@ while index < len(columns):
 	else:
 		index = index + 1
 
-
-# DEBUG
-print columns 
-print linearray
-
-
 #store data into panda dataframe & save it as pickle
 df = pd.DataFrame(columns=columns, data=linearray)
 df.to_pickle('pickles/' + 'res_' + resfile.split('/')[-1].replace('.res', '.pkl'))
-
-# DEBUG
-print df

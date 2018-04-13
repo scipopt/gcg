@@ -82,6 +82,7 @@ index=0
 while [ $index -lt $nversions ]
 do
 	index=$((index + 1))
+
 	# get version
 	git checkout "${VERSION[$index]}"
 	git submodule init
@@ -92,28 +93,33 @@ do
 	make deps ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 	make -j ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
-	# run testset Assumes there are links from gcg/check/instances to the instance folders!
+	# run testset Assumes there are links from gcg/check/instances to the instance folders! TODO
 	make test ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
 	# change name of output files: sort by last modified and take the first one
 	cd check/results
+	
+	# establish VERSIONNAME as a name safe to use as a filename
+	VERSIONNAME="${VERSION[$index]//\/}"		# remove slashs
+	VERSIONNAME="${VERSIONNAME//.}"			# remove points
+	
 	OLDout=$(find . -type f -name "*.out"  -printf "%p\n" | sort -n | head -n 1)
-	mv "$OLDout" "version${index}.out"
+	mv "$OLDout" "${VERSIONNAME}.out"
 
 	OLDres=$(find . -type f -name "*.res"  -printf "%p\n" | sort -n | head -n 1)
-	mv "$OLDres" "version${index}.res"
+	mv "$OLDres" "${VERSIONNAME}.res"
 
 	OLDerr=$(find . -type f -name "*.err"  -printf "%p\n" | sort -n | head -n 1)
-	mv "$OLDerr" "version${index}.err"
+	mv "$OLDerr" "${VERSIONNAME}.err"
 
 	OLDtex=$(find . -type f -name "*.tex"  -printf "%p\n" | sort -n | head -n 1)
-	mv "$OLDtex" "version${index}.tex"
+	mv "$OLDtex" "${VERSIONNAME}.tex"
 
 	OLDpav=$(find . -type f -name "*.pav"  -printf "%p\n" | sort -n | head -n 1)
-	mv "$OLDpav" "version${index}.pav"
+	mv "$OLDpav" "${VERSIONNAME}.pav"
 
 	OLDset=$(find . -type f -name "*.set"  -printf "%p\n" | sort -n | head -n 1)
-	mv "$OLDset" "version${index}.set"
+	mv "$OLDset" "${VERSIONNAME}.set"
 
 	# go back to the main folder to check out next version correctly
 	cd ../..
