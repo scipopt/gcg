@@ -43,6 +43,18 @@
 #include <string.h>
 
 
+/** compares two solvers w. r. t. their priorities */
+SCIP_DECL_SORTPTRCOMP(GCGsolverComp)
+{  /*lint --e{715}*/
+   GCG_SOLVER* solver1 = (GCG_SOLVER*) elem1;
+   GCG_SOLVER* solver2 = (GCG_SOLVER*) elem2;
+
+   assert(solver1 != NULL);
+   assert(solver2 != NULL);
+
+   return solver2->priority - solver1->priority; /* prefer higher priorities */
+}
+
 /** creates a GCG pricing solver */
 SCIP_RETCODE GCGsolverCreate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */

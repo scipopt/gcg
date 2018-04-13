@@ -185,9 +185,6 @@ public:
       return reducedcostpricing;
    }
 
-   /** ensures size of solvers array */
-   SCIP_RETCODE ensureSizeSolvers();
-
    SCIP* getOrigprob()
    {
       return origprob;

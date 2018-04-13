@@ -376,24 +376,6 @@ SCIP_RETCODE ObjPricerGcg::ensureSizePricedvars(
 }
 
 
-/** ensures size of solvers array */
-SCIP_RETCODE ObjPricerGcg::ensureSizeSolvers()
-{
-   assert(pricerdata != NULL);
-   assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
-
-   if( pricerdata->nsolvers == 0 )
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip_, &(pricerdata->solvers), 1) ); /*lint !e506*/
-   }
-   else
-   {
-      SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->solvers), (size_t)pricerdata->nsolvers+1) );
-   }
-
-   return SCIP_OKAY;
-}
-
 #ifdef SCIP_STATISTIC
 /** ensures size of root bounds arrays */
 SCIP_RETCODE ObjPricerGcg::ensureSizeRootBounds(
@@ -3791,6 +3773,9 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    SCIP_CALL( pricingcontroller->initSol(maxcols) );
 
+   /* sort solvers by priority */
+   SCIPsortPtr((void**)pricerdata->solvers, GCGsolverComp, pricerdata->nsolvers);
+
    SCIP_CALL( solversInitsol() );
 
    if( pricerdata->farkasmaxobj )
@@ -4576,7 +4561,6 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    GCG_SOLVER* solver;
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   int pos;
 
    assert(scip != NULL);
 
@@ -4594,16 +4578,16 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    assert(solver != NULL);
 
    /* add solver to pricer data */
-   /* @todo: priority is now a parameter, do not sort solvers here */
-   SCIP_CALL( pricer->ensureSizeSolvers() );
-   pos = pricerdata->nsolvers;
-   while( pos >= 1 && GCGsolverGetPriority(pricerdata->solvers[pos-1]) < priority )
+   if( pricerdata->nsolvers == 0 )
    {
-      pricerdata->solvers[pos] = pricerdata->solvers[pos-1];
-      pos--;
+      SCIP_CALL( SCIPallocMemoryArray(scip_, &(pricerdata->solvers), 1) ); /*lint !e506*/
    }
-   pricerdata->solvers[pos] = solver;
-   pricerdata->nsolvers++;
+   else
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->solvers), (size_t)pricerdata->nsolvers+1) );
+   }
+   pricerdata->solvers[pricerdata->nsolvers] = solver;
+   ++pricerdata->nsolvers;
 
    return SCIP_OKAY;
 }

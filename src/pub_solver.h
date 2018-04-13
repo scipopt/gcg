@@ -43,6 +43,10 @@
 extern "C" {
 #endif
 
+/** compares two solvers w. r. t. their priorities */
+EXTERN
+SCIP_DECL_SORTPTRCOMP(GCGsolverComp);
+
 /** gets user data of GCG pricing solver */
 EXTERN
 GCG_SOLVERDATA* GCGsolverGetData(
