@@ -11,11 +11,9 @@ import matplotlib.pyplot as plt
 if len(sys.argv) < 2:
 	sys.exit("Usage: ./parseout.py RESFILE")
 
-#  variables to perform line split with
-columns = ['name','type','origconss','origvars','preconss','prevars','detector','decblocks','decrel','decmconss','decmvars','dualbound','primbound','gap','prcalls','prvars','prtime','mlptime','miters','node','time','status']
-
 # array for all processed lines
 linearray = [] 
+columns = []
 
 # checkout outfile
 resfile = sys.argv[1]
@@ -23,8 +21,15 @@ fh = open(resfile, 'r')
 
 # write solving information of testset into 
 for line in fh:
+	# get data column names (and add 'status' for the last column)
+	if line.startswith("Name   "):
+		line = " ".join(line.split())
+		line = line.replace(" ", "")
+		columns = line.split("|")
+		columns.append("status")
+
 	# get all data lines of first table
-	if '----------' not in line and line not in ['\n', '\r\n'] and not line.startswith("Name   ") and not line.startswith(" ") and not line.startswith("@"):
+	elif '----------' not in line and line not in ['\n', '\r\n'] and not line.startswith("Name   ") and not line.startswith(" ") and not line.startswith("@"):
 		line = " ".join(line.split())
 		row = line.split(" ")
 		# extra spaces should only be in the status column, join these
@@ -33,6 +38,23 @@ for line in fh:
 				
 		linearray.append(row)
 
+# there might be empty items in our coulumns list, remove these
+index = 0
+while index < len(columns):
+	if columns[index] == "":
+		del columns[index]
+	else:
+		index = index + 1
+
+
+# DEBUG
+print columns 
+print linearray
+
+
 #store data into panda dataframe & save it as pickle
 df = pd.DataFrame(columns=columns, data=linearray)
 df.to_pickle('pickles/' + 'res_' + resfile.split('/')[-1].replace('.res', '.pkl'))
+
+# DEBUG
+print df
