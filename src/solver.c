@@ -219,8 +219,11 @@ SCIP_RETCODE GCGsolverExitsol(
    return SCIP_OKAY;
 }
 
-/** calls heuristic or exact solving method of GCG pricing solver */
+/** calls heuristic or exact solving method of GCG pricing solver
+ * @note This method has to be threadsafe!
+ */
 SCIP_RETCODE GCGsolverSolve(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
    SCIP*                 pricingprob,        /**< the pricing problem that should be solved */
    GCG_SOLVER*           solver,             /**< pricing solver */
    SCIP_Bool             redcost,            /**< is reduced cost (TRUE) or Farkas (FALSE) pricing performed? */
@@ -235,6 +238,8 @@ SCIP_RETCODE GCGsolverSolve(
    SCIP_Bool*            solved              /**< pointer to store whether the solution method was called */
    )
 {
+   SCIP_CLOCK* clock;
+
    assert(pricingprob != NULL);
    assert(solver != NULL);
    assert(lowerbound != NULL);
@@ -248,18 +253,49 @@ SCIP_RETCODE GCGsolverSolve(
    {
       if( solver->solversolveheur != NULL )
       {
+         if( redcost )
+            clock = solver->heurredcostclock;
+         else
+            clock = solver->heurfarkasclock;
+
+         #pragma omp critical (clock)
+         {
+            SCIP_CALL( SCIPstartClock(scip, clock) );
+         }
+
          SCIP_CALL( solver->solversolveheur(pricingprob, solver, probnr, dualsolconv,
             lowerbound, cols, maxcols, ncols, status) );
          *solved = TRUE;
+
+         #pragma omp critical (clock)
+         {
+            SCIP_CALL( SCIPstopClock(scip, clock) );
+         }
       }
    }
    else
    {
       if( solver->solversolve != NULL )
       {
+         if( redcost )
+            clock = solver->optredcostclock;
+         else
+            clock = solver->optfarkasclock;
+
+         #pragma omp critical (clock)
+         {
+            SCIP_CALL( SCIPstartClock(scip, clock) );
+         }
+
          SCIP_CALL( solver->solversolve(pricingprob, solver, probnr, dualsolconv,
             lowerbound, cols, maxcols, ncols, status) );
          *solved = TRUE;
+
+         #pragma omp critical (clock)
+         {
+            SCIP_CALL( SCIPstopClock(scip, clock) );
+         }
+
       }
    }
 
@@ -277,64 +313,6 @@ SCIP_RETCODE GCGsolverSolve(
             ++solver->heurfarkascalls;
          else
             ++solver->optfarkascalls;
-   }
-
-   return SCIP_OKAY;
-}
-
-/** starts solving clock of GCG pricing solver */
-SCIP_RETCODE GCGsolverStartClock(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
-   GCG_SOLVER*           solver,             /**< pricing solver */
-   SCIP_Bool             redcost,            /**< is reduced cost (TRUE) or Farkas (FALSE) pricing performed? */
-   SCIP_Bool             heuristic           /**< is the pricing problem solved heuristically? */
-   )
-{
-   SCIP_CLOCK* clock;
-
-   if( redcost )
-      if( heuristic )
-         clock = solver->heurredcostclock;
-      else
-         clock = solver->optredcostclock;
-   else
-      if( heuristic )
-         clock = solver->heurfarkasclock;
-      else
-         clock = solver->optfarkasclock;
-
-   #pragma omp critical (clock)
-   {
-      SCIP_CALL( SCIPstartClock(scip, clock) );
-   }
-
-   return SCIP_OKAY;
-}
-
-/** stops solving clock of GCG pricing solver */
-SCIP_RETCODE GCGsolverStopClock(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
-   GCG_SOLVER*           solver,             /**< pricing solver */
-   SCIP_Bool             redcost,            /**< is reduced cost (TRUE) or Farkas (FALSE) pricing performed? */
-   SCIP_Bool             heuristic           /**< is the pricing problem solved heuristically? */
-   )
-{
-   SCIP_CLOCK* clock;
-
-   if( redcost )
-      if( heuristic )
-         clock = solver->heurredcostclock;
-      else
-         clock = solver->optredcostclock;
-   else
-      if( heuristic )
-         clock = solver->heurfarkasclock;
-      else
-         clock = solver->optfarkasclock;
-
-   #pragma omp critical (clock)
-   {
-      SCIP_CALL( SCIPstopClock(scip, clock) );
    }
 
    return SCIP_OKAY;

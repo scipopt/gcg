@@ -100,6 +100,7 @@ SCIP_RETCODE GCGsolverExitsol(
 /** calls heuristic or exact solving method of GCG pricing solver */
 EXTERN
 SCIP_RETCODE GCGsolverSolve(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
    SCIP*                 pricingprob,        /**< the pricing problem that should be solved */
    GCG_SOLVER*           solver,             /**< pricing solver */
    SCIP_Bool             redcost,            /**< is reduced cost (TRUE) or Farkas (FALSE) pricing performed? */
@@ -112,24 +113,6 @@ SCIP_RETCODE GCGsolverSolve(
    int*                  ncols,              /**< pointer to store number of columns */
    SCIP_STATUS*          status,             /**< pointer to store the returned pricing status */
    SCIP_Bool*            solved              /**< pointer to store whether the solution method was called */
-   );
-
-/** starts solving clock of GCG pricing solver */
-EXTERN
-SCIP_RETCODE GCGsolverStartClock(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
-   GCG_SOLVER*           solver,             /**< pricing solver */
-   SCIP_Bool             redcost,            /**< is reduced cost (TRUE) or Farkas (FALSE) pricing performed? */
-   SCIP_Bool             heuristic           /**< is the pricing problem solved heuristically? */
-   );
-
-/** stops solving clock of GCG pricing solver */
-EXTERN
-SCIP_RETCODE GCGsolverStopClock(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
-   GCG_SOLVER*           solver,             /**< pricing solver */
-   SCIP_Bool             redcost,            /**< is reduced cost (TRUE) or Farkas (FALSE) pricing performed? */
-   SCIP_Bool             heuristic           /**< is the pricing problem solved heuristically? */
    );
 
 #ifdef __cplusplus

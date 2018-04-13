@@ -734,11 +734,9 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
       }
       SCIP_CALL( retcode );
 
-      SCIP_CALL_ABORT( GCGsolverStartClock(scip_, solver, pricetype->getType() == GCG_PRICETYPE_REDCOST, GCGpricingjobIsHeuristic(pricingjob)) );
-
       SCIPdebugMessage(" Apply solver <%s>\n", GCGsolverGetName(solver));
 
-      SCIP_CALL( GCGsolverSolve(pricingscip, solver, pricetype->getType() == GCG_PRICETYPE_REDCOST,
+      SCIP_CALL( GCGsolverSolve(scip_, pricingscip, solver, pricetype->getType() == GCG_PRICETYPE_REDCOST,
             GCGpricingjobIsHeuristic(pricingjob), probnr, pricerdata->dualsolconv[probnr], &lowerbound,
             cols, maxcols, &ncols, &status, &solved) );
 
@@ -758,8 +756,6 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
          || status == SCIP_STATUS_GAPLIMIT
          || status == SCIP_STATUS_SOLLIMIT
          || status == SCIP_STATUS_UNKNOWN);
-
-      SCIP_CALL_ABORT( GCGsolverStopClock(scip_, solver, pricetype->getType() == GCG_PRICETYPE_REDCOST, GCGpricingjobIsHeuristic(pricingjob)) );
 
       if( !solved )
          continue;
