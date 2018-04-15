@@ -66,8 +66,6 @@ def parse_info_string(info_string):
     # rename some things
     if 'bound' in info:
         info['dualbound'] = float(info.pop('bound'))
-        if abs(info['dualbound'] - 100000000000000000000) <= 0.01 or abs(info['dualbound'] + 100000000000000000000) <= 0.01:
-            info['dualbound'] = np.NaN
     if 'node' in info:
         info['node_scip'] = int(info['node'].split('(')[0])
         info['node_hex'] = info.pop('node').split('(')[1].strip('()')
@@ -90,7 +88,7 @@ def read(file):
     # initialize variables
     df = pd.DataFrame(columns = ['time', 'node_scip', 'node_hex', 'parent', 'color', 'depth', 'var', 'primalbound', 'dualbound', 'nr'])
     df.index.name = 'node'
-    info = {}
+    tree_info = {}
     primalbound = np.NaN
     
     # read the lines
@@ -99,7 +97,7 @@ def read(file):
         # read information about the whole tree from the first lines
         if line.startswith('#'):
             line_array = line[1:].split(':')
-            info[line_array[0]] = line_array[1]
+            tree_info[line_array[0]] = line_array[1]
             continue
 
         line_array = line.split()
@@ -135,8 +133,10 @@ def read(file):
         elif ident == 'L':
             # new global lower bound (primal bound)
             primalbound = float(line_array[0])
-            if abs(primalbound - 100000000000000000000) <= 0.01 or abs(primalbound + 100000000000000000000) <= 0.01:
-                primalbound = np.NaN
+            if 'primal_is_upper' in tree_info and tree_info['primal_is_upper']:
+                tree_info['primal_is_upper'] = 'Ambiguous'
+            elif (not ('primal_is_upper' in tree_info)) or (tree_info['primal_is_upper'] <> 'Ambiguous'):
+                tree_info['primal_is_upper'] = False
             continue
         elif ident == 'N':
             parent = int(line_array[0])
@@ -154,9 +154,12 @@ def read(file):
         elif ident == 'U':
             # new global upper bound (primal bound)
             primalbound = float(line_array[0])
-            if abs(primalbound - 100000000000000000000) <= 0.01 or abs(primalbound + 100000000000000000000) <= 0.01:
-                primalbound = np.NaN
+            if 'primal_is_upper' in tree_info and not tree_info['primal_is_upper']:
+                tree_info['primal_is_upper'] = 'Ambiguous'
+            elif (not ('primal_is_upper' in tree_info)) or (tree_info['primal_is_upper'] <> 'Ambiguous'):
+                tree_info['primal_is_upper'] = True
             continue
         
     df.apply(pd.to_numeric, errors='ignore')
-    return df
+    df.depth = df.depth.astype('int')
+    return df, tree_info

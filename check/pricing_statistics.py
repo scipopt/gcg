@@ -224,6 +224,13 @@ def get_x1_in_data(obj, figure):
     """
     return obj.get_window_extent(renderer = figure.canvas.get_renderer()).transformed(figure.gca().transData.inverted()).x1
 
+def is_fin(x):
+    """
+    auxilliary function to determine if a value is finite
+    """
+    abs_inf = 10**20
+    return abs_inf <> abs(x)
+
 def get_info_from_filename(filename):
     """
     Parses a filename and extracts the instance name, settings & scip_status
@@ -934,7 +941,7 @@ def make_gap_plot(data, info, root_bounds):
     rb.iter += gap_data.reset_index().pricing_round.min()
     rb = rb.rename(columns = {'iter': 'pricing_round'})[['pricing_round','pb','db']].set_index('pricing_round')
     gap_data = rb.join(gap_data, how = 'inner', lsuffix = '_rb')
-    gap_data.db = gap_data.db.expanding().max()
+    #gap_data.db = gap_data.db.expanding().max()
 
     if params['dualoptdiff']:
         # check if the primal bound is the upper bound
@@ -949,17 +956,19 @@ def make_gap_plot(data, info, root_bounds):
         if primal_is_upper is None:
             print '    cannot calculate dualoptdiff, since it is not clear if the primal bound is the upper or lower'
             gap_data['gap'] = abs(gap_data.pb - gap_data.db)
-            gap_data['gap'] = gap_data.gap / gap_data.gap.values[0]
         elif primal_is_upper:
-            gap_data['gap'] = abs(gap_data.pb.min() - gap_data.db)
-            gap_data['gap'] = gap_data.gap / gap_data.gap.values[0]
+            gap_data['gap'] = gap_data.pb.min() - gap_data.db
         elif not primal_is_upper:
-            gap_data['gap'] = abs(gap_data.pb.max() - gap_data.db)
-            gap_data['gap'] = gap_data.gap / gap_data.gap.values[0]
+            gap_data['gap'] = gap_data.db - gap_data.pb.max()
 
     else:
         gap_data['gap'] = abs(gap_data.pb - gap_data.db)
-        gap_data['gap'] = gap_data.gap / gap_data.gap.values[0]
+
+    # normalize all finite gaps and set all infinite gaps to one
+    max_gap = gap_data.gap.dropna()[is_fin(gap_data.pb) & is_fin(gap_data.db)].max()
+    gap_data.gap = gap_data.gap / max_gap
+    gap_data.loc[gap_data.gap > 1., 'gap'] = 1.
+    gap_data.loc[gap_data.gap < 0., 'gap'] = 0.
 
     gap_data = gap_data.sort_values('time')
     mean_data = gap_data['gap'].groupby(gap_data.time.apply(lambda x: round(x,2))).mean()
@@ -1020,17 +1029,32 @@ def make_depth_plot(info):
     start_time = time.time()
 
     # read the tree data from a vbc file
-    tree_data = vbc.read(params['vbcdir'] + '/' + info['instance'] + '.vbc')
-    if tree_data is None or tree_data.empty:
-        print '    no vbc data found'
+    tree_data, tree_info = vbc.read(params['vbcdir'] + '/' + info['instance'] + '.vbc')
+    if tree_data is None or tree_data.empty or not 'primal_is_upper' in tree_info or (tree_data.primalbound == np.NaN).all():
+        print '    no plotable vbc data found'
         return
 
+    # check if the primal is a lower or upper bound
+    if tree_info['primal_is_upper'] == 'Ambiguous':
+        print '    the vbc file lists the primal bound as both upper and lower; will skip this plot'
+        return
+    elif tree_info['primal_is_upper']:
+        tree_data['infeasible'] = (tree_data.dualbound > tree_data.primalbound).astype('bool')
+    elif not tree_info['primal_is_upper']:
+        tree_data['infeasible'] = (tree_data.dualbound < tree_data.primalbound).astype('bool')
+
     # calculate the gap
-    tree_data.depth = tree_data.depth.astype('int')
-    tree_data['gap'] = abs(tree_data['primalbound'] - tree_data['dualbound'])
-    if not tree_data.gap.dropna().empty and tree_data.gap.max() <> 0:
-        tree_data.gap = tree_data.gap / tree_data.gap.dropna().max()
-        tree_data.loc[tree_data.gap.isnull(), 'gap'] = 1.0
+    if params['dualoptdiff'] and not tree_data.gap.dropna().empty:
+        if tree_info['primal_is_upper']:
+            tree_data['gap'] = abs(tree_data.loc[is_fin(primalbound), 'primalbound'].dropna().min() - tree_data.dualbound).astype('float')
+        else:
+            tree_data['gap'] = abs(tree_data.loc[is_fin(primalbound), 'primalbound'].dropna().max() - tree_data.dualbound).astype('float')
+    else:
+        tree_data['gap'] = abs(tree_data.primalbound - tree_data.dualbound).astype('float')
+    max_gap = tree_data.gap[-tree_data.infeasible & is_fin(tree_data.primalbound) & is_fin(tree_data.dualbound)].max()
+    tree_data.loc[-tree_data.infeasible, 'gap'] = tree_data.gap[-tree_data.infeasible] / max_gap
+    tree_data.loc[tree_data.infeasible, 'gap'] = 0.
+    tree_data.gap = tree_data.gap.fillna(1.)
     mean_data = tree_data.sort_values('depth').groupby('depth').mean()
     if len(mean_data) >= 20:
         mean_data = mean_data.rolling(max(int(len(mean_data) * .08), 5)).mean()
@@ -1039,8 +1063,8 @@ def make_depth_plot(info):
     start_time = time.time()
 
     # set x and y values
-    x = tree_data.depth.values
-    y = (1 - tree_data.gap).values
+    x = [tree_data.depth[-tree_data.infeasible].values, tree_data.depth[tree_data.infeasible].values]
+    y = [(1 - tree_data.gap)[-tree_data.infeasible].values, (1 - tree_data.gap)[tree_data.infeasible].values]
     x_mean = mean_data.index.values
     y_mean = (1 - mean_data.gap).values
 
@@ -1049,7 +1073,8 @@ def make_depth_plot(info):
     ax = fig.gca()
 
     # plot the data
-    ax.scatter(x, y, color = 'black')
+    ax.scatter(x[0], y[0], color = 'black')
+    ax.scatter(x[1], y[1], color = 'black', marker = 'x')
     ax.plot(x_mean, y_mean, 'k--')
 
     print '    plotted depth data:', time.time() - start_time
@@ -1085,17 +1110,32 @@ def make_nodeID_plot(info):
     start_time = time.time()
 
     # read the tree data from a vbc file
-    tree_data = vbc.read(params['vbcdir'] + '/' + info['instance'] + '.vbc')
-    if tree_data is None or tree_data.empty:
-        print '    no vbc data found'
+    tree_data, tree_info = vbc.read(params['vbcdir'] + '/' + info['instance'] + '.vbc')
+    if tree_data is None or tree_data.empty or not 'primal_is_upper' in tree_info or (tree_data.primalbound == np.NaN).all():
+        print '    no plotable vbc data found'
         return
 
+    # check if the primal is a lower or upper bound
+    if tree_info['primal_is_upper'] == 'Ambiguous':
+        print '    the vbc file lists the primal bound as both upper and lower; will skip this plot'
+        return
+    elif tree_info['primal_is_upper']:
+        tree_data['infeasible'] = (tree_data.dualbound > tree_data.primalbound).astype('bool')
+    elif not tree_info['primal_is_upper']:
+        tree_data['infeasible'] = (tree_data.dualbound < tree_data.primalbound).astype('bool')
+
     # calculate the gap
-    tree_data.node_scip = tree_data.node_scip.astype('int')
-    tree_data['gap'] = abs(tree_data['primalbound'] - tree_data['dualbound'])
-    if not tree_data.gap.dropna().empty and tree_data.gap.max() <> 0:
-        tree_data.gap = tree_data.gap / tree_data.gap.dropna().max()
-        tree_data.loc[tree_data.gap.isnull(), 'gap'] = 1.0
+    if params['dualoptdiff'] and not tree_data.gap.dropna().empty:
+        if tree_info['primal_is_upper']:
+            tree_data['gap'] = abs(tree_data.loc[is_fin(primalbound), 'primalbound'].dropna().min() - tree_data.dualbound).astype('float')
+        else:
+            tree_data['gap'] = abs(tree_data.loc[is_fin(primalbound), 'primalbound'].dropna().max() - tree_data.dualbound).astype('float')
+    else:
+        tree_data['gap'] = abs(tree_data.primalbound - tree_data.dualbound).astype('float')
+    max_gap = tree_data.gap[-tree_data.infeasible & is_fin(tree_data.primalbound) & is_fin(tree_data.dualbound)].max()
+    tree_data.loc[-tree_data.infeasible, 'gap'] = tree_data.gap[-tree_data.infeasible] / max_gap
+    tree_data.loc[tree_data.infeasible, 'gap'] = 0.
+    tree_data.gap = tree_data.gap.fillna(1.)
     mean_data = tree_data.sort_values('node_scip').rolling(5, center = True).mean()
     if len(mean_data) >= 20:
         mean_data = mean_data.rolling(max(int(len(mean_data) * .08), 5)).mean()
@@ -1104,8 +1144,8 @@ def make_nodeID_plot(info):
     start_time = time.time()
 
     # set x and y values
-    x = tree_data.node_scip.values
-    y = (1 - tree_data.gap).values
+    x = [tree_data.node_scip[-tree_data.infeasible].values, tree_data.node_scip[tree_data.infeasible].values]
+    y = [(1 - tree_data.gap)[-tree_data.infeasible].values, (1 - tree_data.gap)[tree_data.infeasible].values]
     x_mean = mean_data.index.values
     y_mean = (1 - mean_data.gap).values
 
@@ -1114,7 +1154,8 @@ def make_nodeID_plot(info):
     ax = fig.gca()
 
     # plot the data
-    ax.scatter(x, y, color = 'black')
+    ax.scatter(x[0], y[0], color = 'black')
+    ax.scatter(x[1], y[1], color = 'black', marker = 'x')
     ax.plot(x_mean, y_mean, 'k--')
 
     print '    plotted ' + plotname + ' data:', time.time() - start_time
@@ -1181,10 +1222,6 @@ def plots(data, info, root_bounds = None):
     if params['minnode'] > 1 or params['maxnode'] > 0:
         info['nodes_min'] = minNode
         info['nodes_max'] = maxNode
-#    if params['root_only']:
-#        maxNode = 1
-#    else:
-#        maxNode = data.index.get_level_values('node').max()
 
     if params['splitrounds'] <= 0:
         # do not split the plots, but still check if rounds or nodes were neglected
