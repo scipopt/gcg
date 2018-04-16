@@ -40,7 +40,7 @@ testcluster:
 		$(notdir $(MAINFILE)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) \
 		$(THREADS) $(FEASTOL) $(LPS) $(DISPFREQ) $(CONTINUE) \
 		$(QUEUETYPE) $(QUEUE) $(PPN) $(CLIENTTMPDIR) $(NOWAITCLUSTER) $(EXCLUSIVE) \
-		$(PERMUTE) $(MODE) $(PROJECT);
+		$(PERMUTE) $(MODE) $(STATISTICS) $(PROJECT);
 
 .PHONY: testclusterdip
 testclusterdip:

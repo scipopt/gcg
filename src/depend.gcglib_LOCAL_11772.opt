@@ -248,8 +248,7 @@ $(LIBOBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualfix.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
@@ -780,12 +779,7 @@ $(LIBOBJDIR)/heur_gcgdins.o: src/heur_gcgdins.c src/heur_gcgdins.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
-<<<<<<< HEAD
  lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualfix.h \
-=======
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
->>>>>>> master
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
@@ -908,12 +902,7 @@ $(LIBOBJDIR)/heur_gcgfeaspump.o: src/heur_gcgfeaspump.c src/heur_gcgfeaspump.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
-<<<<<<< HEAD
  lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualfix.h \
-=======
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
->>>>>>> master
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
@@ -1248,12 +1237,7 @@ $(LIBOBJDIR)/heur_gcgrens.o: src/heur_gcgrens.c src/heur_gcgrens.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
-<<<<<<< HEAD
  lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualfix.h \
-=======
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
->>>>>>> master
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
@@ -1376,12 +1360,7 @@ $(LIBOBJDIR)/heur_gcgrins.o: src/heur_gcgrins.c src/heur_gcgrins.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
-<<<<<<< HEAD
  lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualfix.h \
-=======
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
->>>>>>> master
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
@@ -2179,12 +2158,7 @@ $(LIBOBJDIR)/heur_restmaster.o: src/heur_restmaster.c src/heur_restmaster.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
-<<<<<<< HEAD
  lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualfix.h \
-=======
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
->>>>>>> master
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
@@ -2360,12 +2334,7 @@ $(LIBOBJDIR)/heur_xpcrossover.o: src/heur_xpcrossover.c src/heur_xpcrossover.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
-<<<<<<< HEAD
  lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualfix.h \
-=======
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
->>>>>>> master
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
@@ -2488,12 +2457,7 @@ $(LIBOBJDIR)/heur_xprins.o: src/heur_xprins.c src/heur_xprins.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
-<<<<<<< HEAD
  lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualfix.h \
-=======
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
->>>>>>> master
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
@@ -2838,12 +2802,7 @@ $(LIBOBJDIR)/sepa_basis.o: src/sepa_basis.c lib/scip/src/scip/scip.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
-<<<<<<< HEAD
  lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualfix.h \
-=======
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
->>>>>>> master
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
@@ -3431,12 +3390,7 @@ $(LIBOBJDIR)/solver_mip.o: src/solver_mip.c src/solver_mip.h lib/scip/src/scip/s
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
-<<<<<<< HEAD
  lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualfix.h \
-=======
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
->>>>>>> master
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
@@ -3972,12 +3926,7 @@ $(LIBOBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
-<<<<<<< HEAD
  lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualfix.h \
-=======
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
->>>>>>> master
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
@@ -4435,80 +4384,9 @@ $(LIBOBJDIR)/dec_stairheur.o: src/dec_stairheur.cpp src/dec_stairheur.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
-<<<<<<< HEAD
  src/cons_decomp.h src/type_detector.h src/type_decomp.h \
  src/struct_decomp.h src/pub_decomp.h src/scip_misc.h \
  lib/scip/src/scip/cons_setppc.h
-=======
- lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h src/cons_decomp.h \
- src/type_detector.h src/type_decomp.h src/struct_decomp.h \
- src/pub_decomp.h src/scip_misc.h lib/scip/src/scip/cons_setppc.h
-$(LIBOBJDIR)/dec_consname.o: src/dec_consname.cpp src/dec_consname.h \
- lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
- lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
- lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
- lib/scip/src/scip/type_paramset.h lib/scip/src/scip/type_event.h \
- lib/scip/src/scip/type_lp.h lib/scip/src/scip/type_nlp.h \
- lib/scip/src/scip/type_var.h lib/scip/src/scip/type_prob.h \
- lib/scip/src/scip/type_tree.h lib/scip/src/scip/type_bandit.h \
- lib/scip/src/scip/type_branch.h lib/scip/src/scip/type_conflict.h \
- lib/scip/src/scip/type_cons.h lib/scip/src/scip/type_sol.h \
- lib/scip/src/scip/type_heur.h lib/scip/src/scip/type_dialog.h \
- lib/scip/src/scip/type_disp.h lib/scip/src/scip/type_compr.h \
- lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
- lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
- lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
- lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
- lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
- lib/scip/src/scip/pub_cons.h lib/scip/src/scip/struct_cons.h \
- lib/scip/src/scip/pub_cutpool.h lib/scip/src/scip/type_cutpool.h \
- lib/scip/src/scip/pub_dialog.h lib/scip/src/scip/pub_disp.h \
- lib/scip/src/scip/pub_event.h lib/scip/src/scip/pub_fileio.h \
- lib/scip/src/scip/pub_heur.h lib/scip/src/scip/pub_compr.h \
- lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
- lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
- lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
- lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
- lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
- lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
- lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
- lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
- lib/scip/src/scip/pub_tree.h lib/scip/src/scip/type_reopt.h \
- lib/scip/src/scip/struct_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/struct_var.h lib/scip/src/scip/implics.h \
- lib/scip/src/scip/history.h lib/scip/src/lpi/lpi.h \
- lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
- lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/nlpi/struct_expr.h \
- lib/scip/src/scip/presolve.h lib/scip/src/scip/cuts.h \
- lib/scip/src/scip/set.h lib/scip/src/scip/struct_set.h \
- lib/scip/src/scip/message.h lib/scip/src/scip/debug.h \
- lib/scip/src/scip/type_cuts.h lib/scip/src/scip/struct_cuts.h \
- lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/heuristics.h \
- lib/scip/src/scip/struct_scip.h lib/scip/src/scip/type_interrupt.h \
- lib/scip/src/scip/type_mem.h lib/scip/src/scip/type_primal.h \
- lib/scip/src/scip/type_pricestore.h lib/scip/src/scip/type_sepastore.h \
- lib/scip/src/scip/type_conflictstore.h \
- lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
- lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h src/cons_decomp.h \
- src/type_detector.h src/type_decomp.h src/scip_misc.h \
- lib/scip/src/scip/cons_setppc.h src/pub_decomp.h
->>>>>>> master
 $(LIBOBJDIR)/dec_colors.o: src/dec_colors.cpp src/dec_colors.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \

@@ -145,10 +145,14 @@ EOF
 		fi
 		echo optimize                      >> $TMPFILE
 		echo display statistics            >> $TMPFILE
+<<<<<<< HEAD
+		echo display additionalstatistics  >> $TMPFILE
+=======
       if test $STATISTICS = "true"
       then
          echo display additionalstatistics  >> $TMPFILE
       fi
+>>>>>>> master
 #       echo display solution              >> $TMPFILE
 		echo checksol                      >> $TMPFILE
 	fi
