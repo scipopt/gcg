@@ -2360,7 +2360,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxFinishSeeed(
    SCIP_DIALOGHDLR*        dialoghdlr,
    SCIP_DIALOG*            dialog )
 {
-   return SCIPconshdlrDecompToolboxActOnSeeed(scip, dialoghdlr, dialog, PROPAGATE);
+   return SCIPconshdlrDecompToolboxActOnSeeed(scip, dialoghdlr, dialog, FINISH);
 }
 
 SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
@@ -2368,7 +2368,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    SCIP_DIALOGHDLR*        dialoghdlr,
    SCIP_DIALOG*            dialog )
 {
-   return SCIPconshdlrDecompToolboxActOnSeeed(scip, dialoghdlr, dialog, FINISH);
+   return SCIPconshdlrDecompToolboxActOnSeeed(scip, dialoghdlr, dialog, PROPAGATE);
 }
 
 SCIP_RETCODE SCIPconshdlrDecompToolboxPostprocessSeeed(
