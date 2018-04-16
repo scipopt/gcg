@@ -99,7 +99,7 @@ void GCGpricingprobMarkBranchconsAdded(
 
 /** get the status of a pricing problem */
 EXTERN
-SCIP_STATUS GCGpricingprobGetStatus(
+GCG_PRICINGSTATUS GCGpricingprobGetStatus(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 

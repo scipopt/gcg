@@ -111,7 +111,7 @@ SCIP_RETCODE GCGsolverSolve(
    GCG_COL**             cols,               /**< array to store returned columns corresponding to solutions */
    int                   maxcols,            /**< indicates the maximum size of the cols array */
    int*                  ncols,              /**< pointer to store number of columns */
-   SCIP_STATUS*          status,             /**< pointer to store the returned pricing status */
+   GCG_PRICINGSTATUS*    status,             /**< pointer to store the returned pricing status */
    SCIP_Bool*            solved              /**< pointer to store whether the solution method was called */
    );
 

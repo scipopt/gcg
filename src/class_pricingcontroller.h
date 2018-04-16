@@ -122,7 +122,7 @@ public:
    /** update solution information of a pricing problem */
    void updatePricingprob(
       GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
-      SCIP_STATUS           status,             /**< new pricing status */
+      GCG_PRICINGSTATUS     status,             /**< new pricing status */
       SCIP_Real             lowerbound,         /**< new lower bound */
       GCG_COL**             cols,               /**< columns found by the last solver call */
       int                   ncols               /**< number of found columns */
@@ -136,7 +136,7 @@ public:
    /** decide whether a pricing job must be treated again */
    void evaluatePricingjob(
       GCG_PRICINGJOB*       pricingjob,        /**< pricing job */
-      SCIP_STATUS           status             /**< pricing solution status */
+      GCG_PRICINGSTATUS     status             /**< status of pricing job */
       );
 
    /** collect solution results from all pricing problems */
@@ -204,11 +204,6 @@ private:
    /** check whether the next generic branching constraint of a pricing problem must be considered */
    SCIP_Bool pricingprobNeedsNextBranchingcons(
       GCG_PRICINGPROB*      pricingprob        /**< pricing problem structure */
-      ) const;
-
-   /** check if a limit was reached such that the pricing job might be treated again */
-   SCIP_Bool limitWasReached(
-      SCIP_STATUS           status             /**< pricing solution status */
       ) const;
 };
 

@@ -92,7 +92,7 @@ EXTERN
 void GCGpricingprobUpdate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
-   SCIP_STATUS           status,             /**< new pricing status */
+   GCG_PRICINGSTATUS     status,             /**< status of last pricing job */
    SCIP_Real             lowerbound,         /**< new lower bound */
    GCG_COL**             cols,               /**< columns found by the last solver call */
    int                   ncols               /**< number of found columns */

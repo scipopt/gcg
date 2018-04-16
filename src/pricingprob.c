@@ -67,7 +67,7 @@ SCIP_RETCODE GCGpricingprobCreate(
    (*pricingprob)->branchconsssize = 0;
    (*pricingprob)->branchconsidx = 0;
    (*pricingprob)->consisadded = TRUE;
-   (*pricingprob)->pricingstatus = SCIP_STATUS_UNKNOWN;
+   (*pricingprob)->status = GCG_PRICINGSTATUS_UNKNOWN;
    (*pricingprob)->lowerbound = -SCIPinfinity(scip);
    (*pricingprob)->colssize = colssize;
    (*pricingprob)->ncols = 0;
@@ -156,7 +156,7 @@ void GCGpricingprobReset(
    assert(pricingprob->nimpcols == 0);
 
    pricingprob->branchconsidx = pricingprob->nbranchconss;
-   pricingprob->pricingstatus = SCIP_STATUS_UNKNOWN;
+   pricingprob->status = GCG_PRICINGSTATUS_UNKNOWN;
    pricingprob->lowerbound = -SCIPinfinity(scip);
    pricingprob->nsolves = 0;
 }
@@ -165,7 +165,7 @@ void GCGpricingprobReset(
 void GCGpricingprobUpdate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
-   SCIP_STATUS           status,             /**< new pricing status */
+   GCG_PRICINGSTATUS     status,             /**< status of last pricing job */
    SCIP_Real             lowerbound,         /**< new lower bound */
    GCG_COL**             cols,               /**< sorted array of columns found by the last solver call */
    int                   ncols               /**< number of found columns */
@@ -176,8 +176,12 @@ void GCGpricingprobUpdate(
    int pos;
    int nnewcols;
 
+   /* if the solver was not applicable to the problem, there is nothing to be done */
+   if( status == GCG_PRICINGSTATUS_NOTAPPLICABLE )
+      return;
+
    /* update status and lower bound */
-   pricingprob->pricingstatus = status;
+   pricingprob->status = status;
    if( SCIPisDualfeasGT(scip, lowerbound, pricingprob->lowerbound) )
       pricingprob->lowerbound = lowerbound;
 
@@ -380,15 +384,15 @@ void GCGpricingprobNextBranchcons(
    assert(pricingprob->branchconsidx >= 1);
    --pricingprob->branchconsidx;
    pricingprob->consisadded = FALSE;
-   pricingprob->pricingstatus = SCIP_STATUS_UNKNOWN;
+   pricingprob->status = GCG_PRICINGSTATUS_UNKNOWN;
 }
 
 /** get the status of a pricing problem */
-SCIP_STATUS GCGpricingprobGetStatus(
+GCG_PRICINGSTATUS GCGpricingprobGetStatus(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    )
 {
-   return pricingprob->pricingstatus;
+   return pricingprob->status;
 }
 
 /** get the lower bound of a pricing problem */

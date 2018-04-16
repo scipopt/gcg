@@ -2735,7 +2735,7 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
    int                   maxcols,            /**< size of the cols array to indicate maximum columns */
-   SCIP_STATUS*          status,             /**< pointer to store pricing status */
+   GCG_PRICINGSTATUS*    status,             /**< pointer to store pricing status */
    SCIP_Real*            lowerbound,         /**< pointer to store the obtained lower bound */
    GCG_COL**             cols,               /**< array to store generated found columns */
    int*                  ncols               /**< number of found columns */
@@ -2799,15 +2799,6 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
 
    updateRedcosts(pricetype, cols, *ncols);
    SCIPsortPtr((void**) cols, GCGcolCompRedcost, *ncols); /* If pricing was aborted due to a limit, columns may not be sorted */
-
-   assert(*status == SCIP_STATUS_OPTIMAL
-      || *status == SCIP_STATUS_INFEASIBLE
-      || *status == SCIP_STATUS_UNBOUNDED
-      || *status == SCIP_STATUS_NODELIMIT
-      || *status == SCIP_STATUS_STALLNODELIMIT
-      || *status == SCIP_STATUS_GAPLIMIT
-      || *status == SCIP_STATUS_SOLLIMIT
-      || *status == SCIP_STATUS_UNKNOWN);
 
    if( !heuristic )
    {
@@ -3064,7 +3055,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       while( (pricingjob = pricingcontroller->getNextPricingjob()) != NULL )
       {
          GCG_PRICINGPROB* pricingprob = GCGpricingjobGetPricingprob(pricingjob);
-         SCIP_STATUS status = SCIP_STATUS_UNKNOWN;
+         GCG_PRICINGSTATUS status = GCG_PRICINGSTATUS_UNKNOWN;
          SCIP_Real problowerbound = -SCIPinfinity(scip_);
          SCIP_RETCODE private_retcode;
 

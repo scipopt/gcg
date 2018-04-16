@@ -249,10 +249,9 @@ SCIP_Bool Pricingcontroller::pricingprobIsDone(
    ) const
 {
    return GCGpricingprobGetNImpCols(pricingprob) > 0
-      || (GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_OPTIMAL && GCGpricingprobGetBranchconsIdx(pricingprob) == 0)
-      || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
-      || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
-      || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_INFORUNBD;
+      || (GCGpricingprobGetStatus(pricingprob) == GCG_PRICINGSTATUS_OPTIMAL && GCGpricingprobGetBranchconsIdx(pricingprob) == 0)
+      || GCGpricingprobGetStatus(pricingprob) == GCG_PRICINGSTATUS_INFEASIBLE
+      || GCGpricingprobGetStatus(pricingprob) == GCG_PRICINGSTATUS_UNBOUNDED;
 }
 
 /** check whether the next generic branching constraint of a pricing problem must be considered */
@@ -261,19 +260,8 @@ SCIP_Bool Pricingcontroller::pricingprobNeedsNextBranchingcons(
    ) const
 {
    return GCGpricingprobGetNImpCols(pricingprob) == 0
-      && GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
+      && GCGpricingprobGetStatus(pricingprob) == GCG_PRICINGSTATUS_OPTIMAL
       && GCGpricingprobGetBranchconsIdx(pricingprob) > 0;
-}
-
-/** check if a limit was reached such that the pricing job might be treated again */
-SCIP_Bool Pricingcontroller::limitWasReached(
-   SCIP_STATUS           status             /**< pricing solution status */
-   ) const
-{
-   return status == SCIP_STATUS_NODELIMIT
-      || status == SCIP_STATUS_STALLNODELIMIT
-      || status == SCIP_STATUS_GAPLIMIT
-      || status == SCIP_STATUS_SOLLIMIT;
 }
 
 SCIP_RETCODE Pricingcontroller::initSol(
@@ -461,7 +449,7 @@ SCIP_RETCODE Pricingcontroller::setPricingjobTimelimit(
 /** update solution information of a pricing problem */
 void Pricingcontroller::updatePricingprob(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
-   SCIP_STATUS           status,             /**< new pricing status */
+   GCG_PRICINGSTATUS     status,             /**< new pricing status */
    SCIP_Real             lowerbound,         /**< new lower bound */
    GCG_COL**             cols,               /**< columns found by the last solver call */
    int                   ncols               /**< number of found columns */
@@ -473,7 +461,7 @@ void Pricingcontroller::updatePricingprob(
 /** decide whether a pricing job must be treated again */
 void Pricingcontroller::evaluatePricingjob(
    GCG_PRICINGJOB*       pricingjob,        /**< pricing job */
-   SCIP_STATUS           status             /**< pricing solution status */
+   GCG_PRICINGSTATUS     status             /**< status of pricing job */
    )
 {
    GCG_PRICINGPROB* pricingprob = GCGpricingjobGetPricingprob(pricingjob);
@@ -482,6 +470,10 @@ void Pricingcontroller::evaluatePricingjob(
    /* Go to the next heuristic pricing iteration */
    if( heuristic )
       GCGpricingjobIncreaseNHeurIters(pricingjob);
+
+   /* If the solver was not appliable to the pricing problem, leave and do not add the job to the queue again */
+   if( status == GCG_PRICINGSTATUS_NOTAPPLICABLE )
+      return;
 
    /* If the pricing job has not yielded any improving column, possibly solve it again;
     * increase at least one of its limits, or solve it exactly if it was solved heuristically before
@@ -492,11 +484,11 @@ void Pricingcontroller::evaluatePricingjob(
       SCIPdebugMessage("Solving problem %d with <%s> has not yielded improving columns.\n",
          GCGpricingprobGetProbnr(pricingprob), GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)));
 
-      if( heuristic && status != SCIP_STATUS_OPTIMAL )
+      if( heuristic && status != GCG_PRICINGSTATUS_OPTIMAL )
       {
-         assert(limitWasReached(status) || status == SCIP_STATUS_UNKNOWN);
+         assert(status == GCG_PRICINGSTATUS_UNKNOWN || status == GCG_PRICINGSTATUS_SOLVERLIMIT);
 
-         if( !limitWasReached(status) || GCGpricingjobGetNHeurIters(pricingjob) >= heurpricingiters )
+         if( status != GCG_PRICINGSTATUS_SOLVERLIMIT || GCGpricingjobGetNHeurIters(pricingjob) >= heurpricingiters )
          {
             GCGpricingjobSetExact(pricingjob);
             SCIPdebugMessage("  -> set exact\n");
@@ -555,10 +547,10 @@ void Pricingcontroller::collectResults(
       SCIP_Real lowerbound = GCGpricingprobGetLowerbound(pricingprobs[i]);
 
       /* check infeasibility */
-      *infeasible |= GCGpricingprobGetStatus(pricingprobs[i]) == SCIP_STATUS_INFEASIBLE;
+      *infeasible |= GCGpricingprobGetStatus(pricingprobs[i]) == GCG_PRICINGSTATUS_INFEASIBLE;
 
       /* check optimality */
-      *optimal &= GCGpricingprobGetStatus(pricingprobs[i]) == SCIP_STATUS_OPTIMAL;
+      *optimal &= GCGpricingprobGetStatus(pricingprobs[i]) == GCG_PRICINGSTATUS_OPTIMAL;
 
       if( GCGpricingprobGetNImpCols(pricingprobs[i]) > 0 )
          foundcols = TRUE;

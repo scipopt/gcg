@@ -376,7 +376,7 @@ private:
       GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
       int                   maxcols,            /**< size of the cols array to indicate maximum columns */
-      SCIP_STATUS*          status,             /**< pointer to store pricing status */
+      GCG_PRICINGSTATUS*    status,             /**< pointer to store pricing status */
       SCIP_Real*            lowerbound,         /**< pointer to store the obtained lower bound */
       GCG_COL**             cols,               /**< array to store generated found columns */
       int*                  ncols               /**< number of found columns */

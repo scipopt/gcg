@@ -25,57 +25,38 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_pricingprob.h
- * @brief  data structure to store pricing problem information
+/**@file   type_pricingstatus.h
+ * @brief  type definitions for pricing status
  * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_PRICINGPROB_H_
-#define GCG_STRUCT_PRICINGPROB_H_
-
-#include "scip/def.h"
-#include "scip/type_misc.h"
-#include "scip/scip.h"
-
-#include "type_pricingprob.h"
-#include "type_gcgcol.h"
-#include "type_solver.h"
+#ifndef __GCG_TYPE_PRICINGSTATUS_H__
+#define __GCG_TYPE_PRICINGSTATUS_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct GCG_PricingProb
+/** GCG pricing status */
+enum GCG_PricingStatus
 {
-   /* problem data */
-   SCIP*                pricingscip;        /**< SCIP data structure */
-   int                  probnr;             /**< (block) index of the corresponding pricing problem */
+   GCG_PRICINGSTATUS_UNKNOWN        = 0,     /**< the pricing solver terminated with an unknown status;
+                                              *   feasible columns might have been found, but it is not known
+                                              *   whether the pricing problem has been solved to optimality
+                                              */
+   GCG_PRICINGSTATUS_NOTAPPLICABLE  = 1,     /**< the pricing solver can not be applied on the pricing problem */
+   GCG_PRICINGSTATUS_SOLVERLIMIT    = 2,     /**< a solver specific limit was reached, and the solver can be called again */
+   GCG_PRICINGSTATUS_OPTIMAL        = 3,     /**< the pricing problem was solved to optimality, an optimal solution is available */
 
-   /* generic branching information */
-   SCIP_CONS**          branchconss;        /**< stack of generic branching constraints */
-   SCIP_Real*           branchduals;        /**< corresponding dual solution values */
-   int                  nbranchconss;       /**< number of generic branching constraints */
-   int                  branchconsssize;    /**< size of generic branching constraints array */
-   int                  branchconsidx;      /**< lowest index generic branching constraint that is considered */
-   SCIP_Bool            consisadded;        /**< flag to indicate whether this constraint has already been added */
-
-   /* result values */
-   GCG_PRICINGSTATUS    status;             /**< current status of the pricing problem */
-   SCIP_Real            lowerbound;         /**< lower bound obtained by solving the pricing problem */
-   GCG_COL**            cols;               /**< array of columns found in the current pricing round */
-   int                  colssize;           /**< size of column array */
-   int                  ncols;              /**< number of columns found in the current pricing round */
-   int                  nimpcols;           /**< number of improving columns found in the current pricing round */
-
-   /* statistics */
-   int                  nsolves;            /**< number of times the pricing problem was solved during the loop */
-   int*                 ncolsround;         /**< number of improving columns found in the last rounds */
+   GCG_PRICINGSTATUS_INFEASIBLE     = 4,     /**< the problem was proven to be infeasible */
+   GCG_PRICINGSTATUS_UNBOUNDED      = 5      /**< the problem was proven to be unbounded */
 };
+typedef enum GCG_PricingStatus GCG_PRICINGSTATUS;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* STRUCT_PRICINGPROB_H_ */
+#endif

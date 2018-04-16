@@ -70,7 +70,7 @@ SCIP_RETCODE solveKnapsack(
    GCG_COL**             cols,               /**< array of columns corresponding to solutions */
    int                   maxcols,            /**< size of preallocated array */
    int*                  ncols,              /**< pointer to store number of columns */
-   SCIP_STATUS*          result              /**< pointer to store pricing problem status */
+   GCG_PRICINGSTATUS*    status              /**< pointer to store pricing problem status */
    )
 { /*lint -e715 */
    SCIP_CONS* cons;
@@ -109,7 +109,7 @@ SCIP_RETCODE solveKnapsack(
    assert(lowerbound != NULL);
    assert(cols != NULL);
    assert(ncols != NULL);
-   assert(result != NULL);
+   assert(status != NULL);
 
    assert(SCIPgetObjsense(pricingprob) == SCIP_OBJSENSE_MINIMIZE);
 
@@ -118,7 +118,7 @@ SCIP_RETCODE solveKnapsack(
 
    SCIPdebugMessage("Knapsack solver -- checking prerequisites\n");
 
-   *result = SCIP_STATUS_UNKNOWN;
+   *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
 
    /* check prerequisites: the pricing problem can be solved as a knapsack problem only if
     * - all variables are nonnegative integer variables
@@ -259,6 +259,7 @@ SCIP_RETCODE solveKnapsack(
    else
       return SCIP_OKAY;
 
+   *status = GCG_PRICINGSTATUS_UNKNOWN;
 
    /* Count number of knapsack items */
    SCIPdebugMessage("Count number of knapsack items:\n");
@@ -340,7 +341,7 @@ SCIP_RETCODE solveKnapsack(
    if( capacity < 0 )
    {
       SCIPdebugMessage("Pricing problem is infeasible\n");
-      *result = SCIP_STATUS_INFEASIBLE;
+      *status = GCG_PRICINGSTATUS_INFEASIBLE;
       goto TERMINATE;
    }
 
@@ -364,7 +365,7 @@ SCIP_RETCODE solveKnapsack(
       goto TERMINATE;
    }
    else if( exactly )
-      *result = SCIP_STATUS_OPTIMAL;
+      *status = GCG_PRICINGSTATUS_OPTIMAL;
 
    SCIPdebugMessage("Knapsack solved, solval = %g\n", solval);
 
@@ -474,7 +475,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 {  /*lint --e{715}*/
 
    /* solve the knapsack problem exactly */
-   SCIP_CALL( solveKnapsack(TRUE, pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, result) );
+   SCIP_CALL( solveKnapsack(TRUE, pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, status) );
 
    return SCIP_OKAY;
 }
@@ -486,7 +487,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 {  /*lint --e{715}*/
 
    /* solve the knapsack problem approximately */
-   SCIP_CALL( solveKnapsack(FALSE, pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, result) );
+   SCIP_CALL( solveKnapsack(FALSE, pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, status) );
 
    return SCIP_OKAY;
 }
