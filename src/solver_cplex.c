@@ -686,19 +686,26 @@ SCIP_RETCODE solveCplex(
    /* get solution status */
    cpxstatus = CPXgetstat(solverdata->cpxenv[probnr], solverdata->lp[probnr]);
 
+   /* handle CPLEX solution status */
    switch( cpxstatus )
    {
+   /* pricing problem was solved to optimality */
+   /* @todo what about CPXMIP_OPTIMAL_TOL = 102? should not happen if gaplimit is set to 0, but happens anyway */
    case CPXMIP_OPTIMAL: /* 101 */
    case CPXMIP_OPTIMAL_TOL: /* 102 */
       assert(nsolscplex > 0);
       *status = GCG_PRICINGSTATUS_OPTIMAL;
       CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
       break;
+
+   /* pricing problem was proven to be infeasible */
    case CPXMIP_INFEASIBLE: /* 103 */
       assert(nsolscplex == 0);
       *status = GCG_PRICINGSTATUS_INFEASIBLE;
       break;
-   case CPXMIP_UNBOUNDED:
+
+   /* pricing problem is possibly unbounded */
+   case CPXMIP_UNBOUNDED: /* 118 */
    case CPXMIP_INForUNBD: /* 119 */
    {
       int cpxretval;
@@ -745,27 +752,37 @@ SCIP_RETCODE solveCplex(
 
       goto TERMINATE;
    }
+
+   /* a heuristic pricing limit was reached and may be increased in the next round */
    case CPXMIP_NODE_LIM_FEAS: /* 105 */
-   case CPXMIP_TIME_LIM_FEAS: /* 107 */
-   case CPXMIP_MEM_LIM_FEAS: /* 112 */
    case CPXMIP_SOL_LIM: /* 104 */
       assert(nsolscplex > 0);
-      *status = GCG_PRICINGSTATUS_UNKNOWN; /* @todo: increase the limits */
+      *status = GCG_PRICINGSTATUS_UNKNOWN; /* @todo: change status here and increase the limits */
       CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
       break;
+
+   /* no feasible solution was found, not clear whether one exists or the problem is infeasible */
    case CPXMIP_NODE_LIM_INFEAS: /* 106 */
    case CPXMIP_TIME_LIM_INFEAS: /* 108 */
    case CPXMIP_MEM_LIM_INFEAS: /* 111 */
+   case CPXMIP_ABORT_INFEAS: /* 114 */
       assert(nsolscplex ==  0);
       *status = GCG_PRICINGSTATUS_UNKNOWN;
       break;
-   case CPX_STAT_ABORT_USER: /* 13 */
+
+   /* a feasible solution exists */
+   case CPXMIP_TIME_LIM_FEAS: /* 107 */
+   case CPXMIP_MEM_LIM_FEAS: /* 112 */
+   case CPXMIP_ABORT_FEAS: /* 113 */
+   case CPXMIP_FEASIBLE: /* 127 */
+      assert(nsolscplex > 0);
+      CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
+      *status = GCG_PRICINGSTATUS_UNKNOWN;
+      break;
+
    default:
-   {
-      /* @todo what about CPXMIP_OPTIMAL_TOL = 102? should not happen, because gaplimit is set to 0, but happens anyway */
       *status = GCG_PRICINGSTATUS_UNKNOWN;
       goto TERMINATE;
-   }
    }
 
    CHECK_ZERO( CPXgetbestobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], lowerbound) );
