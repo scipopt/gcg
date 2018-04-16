@@ -18,7 +18,22 @@ for file in os.listdir("pickles/"):
 		datasets[file] = pd.read_pickle(os.path.join("pickles/", file))
 		filenames.append(file)
 
-# Count number of not "ok" instances (failed/aborted/timeout/...) for each res file
+# Check whether the number of tested instances instances differs (sanity check)
+ninstances = -1
+printwarning = False
+for res in filenames:
+	if ninstances == -1:
+		ninstances = datasets[res].shape[0]	# count rows
+	else:
+		if ninstances != datasets[res].shape[0]:
+			printwarning = True
+if printwarning == True:
+	print "--------------------------------------------------------------------------------------------------"
+	print "Warning: Not all tests had the same number of instances."
+	print "Did you enter more than one testset? Did all tested versions have access to all testset instances?"
+	print "--------------------------------------------------------------------------------------------------"
+
+# Count number of not "ok"/"solved"/"solved not verified" instances (failed/aborted/timeout/...) for each res file
 fails = {}
 highestfails = 0
 maxstringlen = 12 # TODO make this number flexible
