@@ -6507,19 +6507,21 @@ SCIP_RETCODE GCGprintMiplibDecompInformation(
 }
 
 SCIP_RETCODE GCGprintOptionalOutput(
-   SCIP*                scip
+   SCIP*                 scip,
+   SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */
    )
 {
 
    SCIP_Bool miplibfeatureoutput;
    SCIP_Bool miplibplotdecandgp;
 
-   /** check setting for optiional output */
+   /** check setting for optional output */
    SCIPgetBoolParam(scip, "write/miplib2017features", &miplibfeatureoutput);
    SCIPgetBoolParam(scip, "write/miplib2017plotsanddec", &miplibplotdecandgp);
 
    if( miplibfeatureoutput )
-      GCGprintMiplibStructureInformation(scip);
+      GCGprintMiplibStructureInformation(scip, dialoghdlr);
+
 
 
 

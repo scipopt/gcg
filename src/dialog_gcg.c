@@ -672,7 +672,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    else
       SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists");
 
-   SCIP_CALL( GCGprintOptionalOutput(scip) );
+   SCIP_CALL( GCGprintOptionalOutput(scip, dialoghdlr) );
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 

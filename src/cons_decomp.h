@@ -561,7 +561,8 @@ SCIP_RETCODE GCGprintMiplibDecompInformation(
    );
 
 SCIP_RETCODE GCGprintOptionalOutput(
-   SCIP*                scip
+   SCIP*                scip,
+   SCIP_DIALOGHDLR*     dialoghdlr         /**< dialog handler */
    );
 
 
