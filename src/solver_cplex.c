@@ -634,7 +634,7 @@ SCIP_RETCODE updateProblem(
 /** solves the pricingproblem with the CPLEX solver */
 static
 SCIP_RETCODE solveCplex(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP*                 pricingprob,        /**< pricing problem */
    int                   probnr,             /**< problem number */
@@ -643,7 +643,7 @@ SCIP_RETCODE solveCplex(
    GCG_COL**             cols,               /**< array of columns corresponding to solutions */
    int                   maxcols,            /**< size of preallocated array */
    int*                  ncols,              /**< pointer to store number of columns */
-   SCIP_STATUS*          result              /**< pointer to store the result code */
+   GCG_PRICINGSTATUS*    status              /**< pointer to store the pricing status */
    )
 { /*lint -e715*/
    SCIP_RETCODE retval;
@@ -656,11 +656,11 @@ SCIP_RETCODE solveCplex(
    int curadvind = -1;
    int nsolscplex;
    int numcols;
-   int status;
+   int cpxstatus;
    int s;
 
    *ncols = 0;
-   *result = SCIP_STATUS_UNKNOWN;
+   *status = GCG_PRICINGSTATUS_UNKNOWN;
    upperbound = SCIPinfinity(pricingprob);
 
    retval = SCIP_OKAY;
@@ -684,19 +684,19 @@ SCIP_RETCODE solveCplex(
    nsolscplex = CPXgetsolnpoolnumsolns(solverdata->cpxenv[probnr], solverdata->lp[probnr]);
 
    /* get solution status */
-   status = CPXgetstat(solverdata->cpxenv[probnr], solverdata->lp[probnr]);
+   cpxstatus = CPXgetstat(solverdata->cpxenv[probnr], solverdata->lp[probnr]);
 
-   switch( status )
+   switch( cpxstatus )
    {
    case CPXMIP_OPTIMAL: /* 101 */
    case CPXMIP_OPTIMAL_TOL: /* 102 */
       assert(nsolscplex > 0);
-      *result = SCIP_STATUS_OPTIMAL;
+      *status = GCG_PRICINGSTATUS_OPTIMAL;
       CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
       break;
    case CPXMIP_INFEASIBLE: /* 103 */
       assert(nsolscplex == 0);
-      *result = SCIP_STATUS_INFEASIBLE;
+      *status = GCG_PRICINGSTATUS_INFEASIBLE;
       break;
    case CPXMIP_UNBOUNDED:
    case CPXMIP_INForUNBD: /* 119 */
@@ -708,7 +708,7 @@ SCIP_RETCODE solveCplex(
 
       CHECK_ZERO( CPXsolution(solverdata->cpxenv[probnr], solverdata->lp[probnr], &dummy, NULL, primsol, NULL, NULL, NULL) );
 
-      assert(dummy == status);
+      assert(dummy == cpxstatus);
 
       cpxretval = CPXgetray(solverdata->cpxenv[probnr], solverdata->lp[probnr], cplexsolvals);
 
@@ -739,7 +739,7 @@ SCIP_RETCODE solveCplex(
 
       ++(*ncols);
 
-      *result = SCIP_STATUS_UNBOUNDED;
+      *status = GCG_PRICINGSTATUS_UNBOUNDED;
 
       SCIPfreeBufferArray(scip, &primsol);
 
@@ -750,27 +750,27 @@ SCIP_RETCODE solveCplex(
    case CPXMIP_MEM_LIM_FEAS: /* 112 */
    case CPXMIP_SOL_LIM: /* 104 */
       assert(nsolscplex > 0);
-      *result = SCIP_STATUS_UNKNOWN;
+      *status = GCG_PRICINGSTATUS_UNKNOWN; /* @todo: increase the limits */
       CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
       break;
    case CPXMIP_NODE_LIM_INFEAS: /* 106 */
    case CPXMIP_TIME_LIM_INFEAS: /* 108 */
    case CPXMIP_MEM_LIM_INFEAS: /* 111 */
       assert(nsolscplex ==  0);
-      *result = SCIP_STATUS_UNKNOWN;
+      *status = GCG_PRICINGSTATUS_UNKNOWN;
       break;
    case CPX_STAT_ABORT_USER: /* 13 */
    default:
    {
       /* @todo what about CPXMIP_OPTIMAL_TOL = 102? should not happen, because gaplimit is set to 0, but happens anyway */
-      *result = SCIP_STATUS_UNKNOWN;
+      *status = GCG_PRICINGSTATUS_UNKNOWN;
       goto TERMINATE;
    }
    }
 
    CHECK_ZERO( CPXgetbestobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], lowerbound) );
 
-   SCIPdebugMessage("pricing problem %d solved with CPLEX: status=%d, nsols=%d, lowerbound=%g, upperbound=%g\n", probnr, status, nsolscplex, *lowerbound, upperbound);
+   SCIPdebugMessage("pricing problem %d solved with CPLEX: cpxstatus=%d, nsols=%d, lowerbound=%g, upperbound=%g\n", probnr, cpxstatus, nsolscplex, *lowerbound, upperbound);
 
 #ifndef NDEBUG
    /* in debug mode, we check that the first solution in the solution pool is the incumbent */
@@ -810,10 +810,10 @@ SCIP_RETCODE solveCplex(
       {
          SCIP_CALL( SCIPcheckSolOrig(pricingprob, sol, &feasible, FALSE, FALSE) );
 
-         /* if the optimal solution is not feasible, we return SCIP_UNKNOWN as result */
+         /* if the optimal solution is not feasible, we return GCG_PRICINGSTATUS_UNKNOWN as status */
          if( !feasible && s == 0 )
          {
-            *result = SCIP_STATUS_UNKNOWN;
+            *status = GCG_PRICINGSTATUS_UNKNOWN;
          }
       }
       else
@@ -839,7 +839,7 @@ SCIP_RETCODE solveCplex(
       SCIP_CALL( SCIPfreeSol(pricingprob, &sol) );
    }
 
-   assert( *result != SCIP_STATUS_OPTIMAL || *ncols > 0 );
+   assert(*status != GCG_PRICINGSTATUS_OPTIMAL || *ncols > 0);
  TERMINATE:
    if( predisabled )
    {
@@ -1015,8 +1015,8 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, solverdata->heurgaplimit) );
 
    /* solve the pricing problem and evaluate solution */
-   SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, result) );
-   assert(*result != SCIP_STATUS_OPTIMAL || *ncols > 0);
+   SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, status) );
+   assert(*status != GCG_PRICINGSTATUS_OPTIMAL || *ncols > 0);
 
    CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, nodelim) );
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, 0.0) );
@@ -1050,8 +1050,9 @@ GCG_DECL_SOLVERSOLVE(solverSolveCplex)
    }
 
    /* solve the pricing problem and evaluate solution */
-   SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, result) );
-   assert(*result != SCIP_STATUS_OPTIMAL || *ncols > 0);
+   SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, status) );
+   assert(*status != GCG_PRICINGSTATUS_OPTIMAL || *ncols > 0);
+
    return SCIP_OKAY;
 }
 #endif
