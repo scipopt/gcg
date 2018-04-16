@@ -61,20 +61,30 @@ CURRENTBRANCH=${CURRENTBRANCH:-HEAD}
 
 # If there is one test file for all versions, store the test file in case it differs in the versions
 # (This is assuming that setting the test in the additional flags is intentional and test sets are supposed to differ in that case.)
+if [[ $GLOBALFLAGS = *"TEST="* ]]; then
+	# First cut the testset name from a copy of the global flags
+	TESTNAME="${GLOBALFLAGS}"
+	TESTNAME=${TESTNAME#*TEST=}
+	TESTNAME=${TESTNAME%% *}
 
-# First cut the testset name from a copy of the global flags
-TESTNAME="${GLOBALFLAGS}"
-TESTNAME=${TESTNAME#*TEST=}
-TESTNAME=${TESTNAME%% *}
+	# Store testset (Here is your problem if there are copy issues, name is hardcoded.)
+	mkdir -p testset
+	cd testset
+	cp "$TESTNAME".test "$TESTNAME"_comparecopy.test
+	cd ..
 
-# Store testset (Here is your problem if there are copy issues, name is hardcoded.)
-mkdir -p testset
-cd testset
-cp "$TESTNAME".test "$TESTNAME"_comparecopy.test
-cd ..
+	# Replace testset name in global flags by copy
+	GLOBALFLAGS=${GLOBALFLAGS//"$TESTNAME"/"$TESTNAME"_comparecopy}
+fi
 
-# Replace testset name in global flags by copy
-GLOBALFLAGS=${GLOBALFLAGS//"$TESTNAME"/"$TESTNAME"_comparecopy}
+# If a global settings file was specified, check whether it exists.
+SETTINGSNAME="${GLOBALFLAGS}"
+SETTINGSNAME=${SETTINGSNAME#*SETTINGS=}
+SETTINGSNAME=${SETTINGSNAME%% *}
+
+if [ ! -f ../settings/${SETTINGSNAME}.set ]; then
+    echo "Warning: Global setting file ${SETTINGSNAME}.set not found! GCG will use default settings instead."
+fi
 
 # Script is in check, so switch to gcg main folder
 cd ..
@@ -82,6 +92,15 @@ index=0
 while [ $index -lt $nversions ]
 do
 	index=$((index + 1))
+
+	# If a settings file for this version was specified, check whether it exists.
+	SETTINGSNAME="${ADDFLAGS[$index]}"
+	SETTINGSNAME=${SETTINGSNAME#*SETTINGS=}
+	SETTINGSNAME=${SETTINGSNAME%% *}
+
+	if [ ! -f ../settings/${SETTINGSNAME}.set ]; then
+	    echo "Warning: Additional setting file ${SETTINGSNAME}.set not found! GCG will use default settings instead."
+	fi
 
 	# get version
 	git submodule foreach --recursive git clean -f
