@@ -71,8 +71,9 @@ plt.tick_params(axis='x', which='major', labelsize=7)
 
 for item in bars:
         height = item.get_height()
-        ax.text(item.get_x()+item.get_width()/2., 1.01*height,
-                '%d' % int(height),
-                ha='center')
+	if height == 0:
+		ax.text(item.get_x()+item.get_width()/2., 1, '%d' % int(height), ha='center')
+	else:
+        	ax.text(item.get_x()+item.get_width()/2., 1.01*height, '%d' % int(height), ha='center')
 
 plt.savefig('images/failcomparison.pdf')			# name of image
