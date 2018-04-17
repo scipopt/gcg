@@ -6251,13 +6251,13 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", calcLogarithm( conshdlrdata->seeedpool->getNVars() ));
 
    /** log nnonzeros */
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", calcLogarithm( conshdlrdata->seeedpool->getNVars() ));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", calcLogarithm( conshdlrdata->seeedpool->getNTotalNonzeros() ));
 
    /** log ratio conss vs vars */
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real ) conshdlrdata->seeedpool->getNTotalConss() / conshdlrdata->seeedpool->getNVars() ));
 
    /** density of matrix */
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  conshdlrdata->seeedpool->getNTotalNonzeros() /  (conshdlrdata->seeedpool->getNTotalConss() ) ) );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  conshdlrdata->seeedpool->getNTotalNonzeros() /  (conshdlrdata->seeedpool->getNTotalConss() ) ) /  (SCIP_Real ) conshdlrdata->seeedpool->getNVars() );
 
    assert( conshdlrdata->seeedpool->getNVars() == SCIPgetNVars(scip) );
    vars = SCIPgetVars(scip);
@@ -6285,8 +6285,6 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
          ++nvarslbnotinf;
       if(  !SCIPisInfinity(scip, SCIPvarGetUbGlobal(var) ) )
          ++nvarsubnotinf;
-
-
 
       assert(SCIPvarGetType(var) == SCIP_VARTYPE_BINARY || SCIPvarGetType(var) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(var) == SCIP_VARTYPE_INTEGER || SCIPvarGetType(var) == SCIP_VARTYPE_IMPLINT  );
 
@@ -6381,8 +6379,6 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( 0 ) );
 
 
-
-
    return SCIP_OKAY;
 }
 
@@ -6460,9 +6456,10 @@ SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
     * OUT: percentage empty conss, percentage free conss, percentage singleton conss, percentage agg conss, percentage vbd conss, percentage par conss, percentage pac conss, percentage cov conss, percentage car conss, percentage eqk conss, percentage bin conss, percentage ivk conss, percentage kna conss, percentage ikn conss, percentage m01 conss, percentage gen conss, END OUT
     * components maxwhite score, ncomponents, percentage min nconss component, percentage max nconss component, percentage median nconss component, percentage mean nconss component, percentage min nvars component, percentage max nvars component, percentage median nvars component, percentage mean nvars component, decomp maxwhite score, decomp ncomponents, decomp percentage min nconss component, decomp percentage max nconss component, decomp percentage median nconss component, decomp percentage mean nconss component, decomp percentage min nvars component, decomp percentage max nvars component, decomp percentage median nvars component, decomp percentage mean nvars component  */
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s  ",
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s \n",
       "instance",
       "log nconss ",
+      "log nvars ",
       "log nnonzeros",
       "nconss/nvars ratio",
       "density matrix",
@@ -6519,6 +6516,7 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
    std::ofstream myfile;
 
    SeeedPtr seeedconnected;
+   SeeedPtr seeedconnectedfinished;
    SEEED_PROPAGATION_DATA* seeedPropData;
    SCIP_Result success;
 
@@ -6539,10 +6537,6 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
    (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
    SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
 
-   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s%s%s", "/home/bastubbe/results/baseinfo2017/" , name, ".csv");
-
-
-
 
    assert( conshdlrdata != NULL ) ;
 
@@ -6559,27 +6553,43 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
      assert( connecteddetector != NULL );
 
      seeedconnected = new gcg::Seeed(scip, -1, conshdlrdata->seeedpool->getNConss(), conshdlrdata->seeedpool->getNVars() );
-
+     seeedconnected->setSeeedpool(conshdlrdata->seeedpool);
      seeedPropData = new SEEED_PROPAGATION_DATA();
      seeedPropData->seeedpool = conshdlrdata->seeedpool;
      seeedPropData->nNewSeeeds = 0;
 
      seeedPropData->seeedToPropagate = new gcg::Seeed( seeedconnected );
 
-     SCIPinfoMessage(scip, NULL, "start finish seeed disconnected component  \n");
+   //  SCIPinfoMessage(scip, NULL, "start finish seeed disconnected component  \n");
      SCIP_CALL_ABORT( connecteddetector->finishSeeed( scip, connecteddetector, seeedPropData,
         &success) );
 
-     SCIPinfoMessage(scip, NULL, "end finish seeed disconnected component  \n");
+     seeedconnectedfinished = seeedPropData->newSeeeds[0];
+
+   //  SCIPinfoMessage(scip, NULL, "end finish seeed disconnected component  \n");
      assert(seeedPropData->nNewSeeeds == 1);
 
+  //   printf(" seeed test 0 \n");
+
+  //   SCIPinfoMessage(scip, NULL, " TEST start best2 decomp info:\n");
+
+  //   printf(" seeed test \n");
+
+     //assert(seeedconnectedfinished->getMaxWhiteScore() == 0. );
+
+   //  SCIPinfoMessage(scip, NULL, "start best decomp info: score:   \n ");
+
+ //    SCIPinfoMessage(scip, NULL, "start best decomp info: score: %f component info: %s \n ", seeedconnectedfinished->getMaxWhiteScore(), seeedconnectedfinished->getComponentInformation().c_str() );
+
+     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  seeedconnectedfinished->getMaxWhiteScore() ) );
+
+     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", seeedconnectedfinished->getComponentInformation().c_str() );
+
      delete seeedconnected;
+     delete seeedconnectedfinished;
      seeedconnected = seeedPropData->newSeeeds[0];
-
-
-     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  seeedconnected->getMaxWhiteScore() ) );
-
-     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", seeedconnected->getComponentInformation().c_str() );
+     SCIPfreeMemoryArray(scip, &seeedPropData->newSeeeds);
+     delete seeedPropData;
 
 
    return SCIP_OKAY;
@@ -6601,7 +6611,6 @@ SCIP_RETCODE GCGprintMiplibDecompInformation(
    char probname[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
 
-
    SeeedPtr bestseeed;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -6610,23 +6619,15 @@ SCIP_RETCODE GCGprintMiplibDecompInformation(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-
-   /* sanitize filename */
-   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
-   SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
-
-   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s%s%s", "/home/bastubbe/results/baseinfo2017/" , name, ".csv");
-
-
-   assert( conshdlrdata != NULL ) ;
-
    SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE) );
 
    bestseeed = conshdlrdata->candidates->at(0).first;
 
+//   std::cout << "start best decomp info: score: " << bestseeed->getMaxWhiteScore()  << " compnnent info: " << bestseeed->getComponentInformation() << "end best decomp info " << std::endl;
+
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  bestseeed->getMaxWhiteScore() ) );
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", bestseeed->getComponentInformation().c_str() );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s ", bestseeed->getComponentInformation().c_str() );
 
    return SCIP_OKAY;
 }

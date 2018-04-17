@@ -4637,7 +4637,7 @@ std::string Seeed::getComponentInformation(
    buf << ( (SCIP_Real) medianrow ) / ntotalrows << ", " << ( (SCIP_Real) meanrow ) / ntotalrows << ", ";
 
    buf << ( (SCIP_Real) minvar ) / ntotalcols << ", " << ( (SCIP_Real) maxvar ) / ntotalcols << ", ";
-   buf << ( (SCIP_Real) medianvar ) / ntotalcols << ", " << ( (SCIP_Real) meanvar ) / ntotalcols << ", ";
+   buf << ( (SCIP_Real) medianvar ) / ntotalcols << ", " << ( (SCIP_Real) meanvar ) / ntotalcols << " ";
 
 
    return buf.str();
@@ -6380,6 +6380,7 @@ void Seeed::calcmaxwhitescore(){
    SCIP_CLOCK* clock;
 
    SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
+
    SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
 
    if( blockareascore == -1. )
