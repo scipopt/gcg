@@ -6494,9 +6494,6 @@ SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
       "decomp percentage mean nvars component"
       );
 
-
-
-
    return SCIP_OKAY;
 }
 
@@ -6560,26 +6557,14 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
      seeedPropData->seeedToPropagate = new gcg::Seeed( seeedconnected );
 
-   //  SCIPinfoMessage(scip, NULL, "start finish seeed disconnected component  \n");
      SCIP_CALL_ABORT( connecteddetector->finishSeeed( scip, connecteddetector, seeedPropData,
         &success) );
 
      seeedconnectedfinished = seeedPropData->newSeeeds[0];
 
-   //  SCIPinfoMessage(scip, NULL, "end finish seeed disconnected component  \n");
      assert(seeedPropData->nNewSeeeds == 1);
 
-  //   printf(" seeed test 0 \n");
 
-  //   SCIPinfoMessage(scip, NULL, " TEST start best2 decomp info:\n");
-
-  //   printf(" seeed test \n");
-
-     //assert(seeedconnectedfinished->getMaxWhiteScore() == 0. );
-
-   //  SCIPinfoMessage(scip, NULL, "start best decomp info: score:   \n ");
-
- //    SCIPinfoMessage(scip, NULL, "start best decomp info: score: %f component info: %s \n ", seeedconnectedfinished->getMaxWhiteScore(), seeedconnectedfinished->getComponentInformation().c_str() );
 
      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  seeedconnectedfinished->getMaxWhiteScore() ) );
 
