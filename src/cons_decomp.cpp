@@ -145,7 +145,8 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_STAIRLINKINGHEUR                      FALSE    /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
 
 #define DEFAULT_WRITEMIPLIB2017FEATURES               FALSE    /**< indicates whether miplib2017 features should be written */
-#define DEFAULT_WRITEMIPLIB2017PLOTSANDDEC            FALSE    /**< indicates whether miplib2017 features should be written */
+#define DEFAULT_WRITEMIPLIB2017PLOTSANDDEC            FALSE    /**< indicates whether miplib2017 gp and dec files  should be written */
+#define DEFAULT_WRITEMIPLIB2017FEATUREFILEPATH        "."      /**< indicates where the miplib feature output should be written to */
 
 /*
  * Data structures
@@ -201,6 +202,8 @@ struct SCIP_ConshdlrData
    SCIP_Bool             stairlinkingheur;                  /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
    SCIP_Bool             writemiplib2017features;           /**< indicates whether miplib2017 features should be written */
    SCIP_Bool             writemiplib2017plotsanddec;        /**< indicates whether dec and gp files for miplib 2017 should be written */
+
+   char*                 writemiplib2017featurefilepath;
 
    int**                 candidatesNBlocks;                 /**< pointer to store candidates for number of blocks calculated by the seeedpool */
    int*                  nCandidates;
@@ -948,6 +951,9 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/stairlinkingheur", "indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated", &conshdlrdata->stairlinkingheur, FALSE, DEFAULT_STAIRLINKINGHEUR, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "write/miplib2017features", "indicates whether miplib2017 features should be written", &conshdlrdata->writemiplib2017features, FALSE, DEFAULT_WRITEMIPLIB2017FEATURES, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "write/miplib2017plotsanddec", "indicates whether dec and gp files are written for miplib2017", &conshdlrdata->writemiplib2017plotsanddec, FALSE, DEFAULT_WRITEMIPLIB2017PLOTSANDDEC, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip, "write/miplib2017featurefilepath", "path to the file for miplib2017 feature output", &conshdlrdata->writemiplib2017featurefilepath, FALSE, DEFAULT_WRITEMIPLIB2017FEATUREFILEPATH, NULL, NULL) );
+
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/strong_detection/dualvalrandommethod",
       "Method for random dual values use for strong decomposition: 1) naive, 2) expected equality exponential distributed, 3) expected overestimation exponential distributed ", &conshdlrdata->strongdetectiondualvalrandommethod, FALSE,
@@ -6175,10 +6181,10 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
    SCIP_Real absminvalobj;
    SCIP_Real maxrationonzerovals;
 
+   SCIP_Bool fullpathinfile;
+
    char* name;
    char probname[SCIP_MAXSTRLEN];
-   char outname[SCIP_MAXSTRLEN];
-
    int nvarsnonzerocoef;
    int nvarsnonzerolb;
    int nvarsnonzeroub;
@@ -6211,12 +6217,12 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
    absminvalobj = SCIPinfinity(scip);
    maxrationonzerovals = 0.;
 
+   fullpathinfile = TRUE;
+
    /* sanitize filename */
+
    (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
    SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
-
-   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s%s%s", "/home/bastubbe/results/baseinfo2017/" , name, ".csv");
-
 
    /*
     * current features:
@@ -6234,9 +6240,10 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
    /* instance, log nconss, log nvars, log nnonzeros, nconss/nvars ratio, density matrix, density obj, density lb, density ub, density rhs, percentage bin vars, percentage int vars, percentage cont vars, dynamism conss, dynamism obj,
     * OUT: percentage empty conss, percentage free conss, percentage singleton conss, percentage agg conss, percentage vbd conss, percentage par conss, percentage pac conss, percentage cov conss, percentage car conss, percentage eqk conss, percentage bin conss, percentage ivk conss, percentage kna conss, percentage ikn conss, percentage m01 conss, percentage gen conss, END OUT
     * components maxwhite score, ncomponents, percentage min nconss component, percentage max nconss component, percentage median nconss component, percentage mean nconss component, percentage min nvars component, percentage max nvars component, percentage median nvars component, percentage mean nvars component, decomp maxwhite score, decomp ncomponents, decomp percentage min nconss component, decomp percentage max nconss component, decomp percentage median nconss component, decomp percentage mean nconss component, decomp percentage min nvars component, decomp percentage max nvars component, decomp percentage median nvars component, decomp percentage mean nvars component  */
-
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "name, ");
-
+   if( fullpathinfile )
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", GCGgetFilename(scip) ) ;
+   else
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", name) ;
    /** log nconss */
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", calcLogarithm( conshdlrdata->seeedpool->getNTotalConss() ));
 
@@ -6378,6 +6385,124 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
 
    return SCIP_OKAY;
 }
+
+
+SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
+   SCIP*                scip,
+   FILE*                file
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   /** write base information */
+
+   SCIP_VAR** vars;
+   SCIP_CONS** conss;
+   SCIP_Real absmaxvalobj;
+   SCIP_Real absminvalobj;
+   SCIP_Real maxrationonzerovals;
+
+   SCIP_Bool fullpathinfile;
+
+   char* name;
+   char probname[SCIP_MAXSTRLEN];
+   int nvarsnonzerocoef;
+   int nvarsnonzerolb;
+   int nvarsnonzeroub;
+   int nvarslbnotinf;
+   int nvarsubnotinf;
+   int ncontvars;
+   int nbinvars;
+   int nintvars;
+   int nimplintvars;
+   int nconsnonzerorhs; /* lhss are included */
+
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   nvarsnonzerocoef = 0;
+   nvarsnonzerolb = 0;
+   nvarsnonzeroub = 0;
+   nvarslbnotinf = 0;
+   nvarsubnotinf = 0;
+   ncontvars = 0;
+   nbinvars = 0;
+   nintvars = 0;
+   nimplintvars = 0;
+   nconsnonzerorhs = 0; /* lhss are included */
+   absmaxvalobj = 0;
+   absminvalobj = SCIPinfinity(scip);
+   maxrationonzerovals = 0.;
+
+   fullpathinfile = TRUE;
+
+
+   /*
+    * current features:
+    * instance, log nconss, nvars, nnonzeros, conss/var ratio, density matrix, density obj, density lb, density ub, density rhs,
+    * percentage bin vars, percentage int vars, percentage cont vars, dynamism conss, dynamism obj,
+    * components maxwhite score, ncomponents, percentage min nconss component, percentage max nconss component, percentage median nconss component, percentage mean nconss component,
+    * percentage min nvars component, percentage max nvars component, percentage median nvars component, percentage mean nvars component,
+    * decomp maxwhite score, decomp ncomponents, decomp percentage min nconss component, decomp percentage max nconss component, decomp percentage median nconss component, decomp percentage mean nconss component,
+    * decomp percentage min nvars component, decomp percentage max nvars component, decomp percentage median nvars component, decomp percentage mean nvars component,
+ OUT:   * percentage agg conss, percentage vbd conss, percentage par conss, percenetage pac conss, percentage cov conss, percentage car conss, percentage eqk conss,
+    * percentage bin conss, percentage ivk conss, percentage kna conss, percentage ikn conss, percentage m01 conss, percentage gen conss
+    *
+    * */
+
+   /* instance, log nconss, log nvars, log nnonzeros, nconss/nvars ratio, density matrix, density obj, density lb, density ub, density rhs, percentage bin vars, percentage int vars, percentage cont vars, dynamism conss, dynamism obj,
+    * OUT: percentage empty conss, percentage free conss, percentage singleton conss, percentage agg conss, percentage vbd conss, percentage par conss, percentage pac conss, percentage cov conss, percentage car conss, percentage eqk conss, percentage bin conss, percentage ivk conss, percentage kna conss, percentage ikn conss, percentage m01 conss, percentage gen conss, END OUT
+    * components maxwhite score, ncomponents, percentage min nconss component, percentage max nconss component, percentage median nconss component, percentage mean nconss component, percentage min nvars component, percentage max nvars component, percentage median nvars component, percentage mean nvars component, decomp maxwhite score, decomp ncomponents, decomp percentage min nconss component, decomp percentage max nconss component, decomp percentage median nconss component, decomp percentage mean nconss component, decomp percentage min nvars component, decomp percentage max nvars component, decomp percentage median nvars component, decomp percentage mean nvars component  */
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s  ",
+      "instance",
+      "log nconss ",
+      "log nnonzeros",
+      "nconss/nvars ratio",
+      "density matrix",
+      "density obj",
+      "density lb",
+      "density ub",
+      "density rhs",
+      "percentage binary vars",
+      "percentage integer vars",
+      "percentage continuous vars",
+      "dynamism conss",
+      "dynamism obj",
+      "components maxwhite score",
+      "ncomponents",
+      "percentage min nconss component",
+      "percentage max nconss component",
+      "percentage median nconss component",
+      "percentage mean nconss component",
+      "percentage min nvars component",
+      "percentage max nvars component",
+      "percentage median nvars component",
+      "percentage mean nvars component",
+      "decomp maxwhite score",
+      "decomp ncomponents",
+      "decomp percentage min nconss component",
+      "decomp percentage max nconss component",
+      "decomp percentage median nconss component",
+      "decomp percentage mean nconss component",
+      "decomp percentage min nvars component",
+      "decomp percentage max nvars component",
+      "decomp percentage median nvars component",
+      "decomp percentage mean nvars component"
+      );
+
+
+
+
+   return SCIP_OKAY;
+}
+
 
 
 

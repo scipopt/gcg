@@ -38,7 +38,7 @@
 #include "pricer_gcg.h"
 #include "pub_gcgvar.h"
 #include "cons_decomp.h"
-
+#include <unistd.h>
 
 
 #include <string.h>
@@ -480,6 +480,7 @@ SCIP_RETCODE GCGprintMiplibStructureInformation(
    )
 {
    FILE* file;
+   SCIP_Bool createfile;
 
    char* filepath;
    char completefilepath[SCIP_MAXSTRLEN];
@@ -488,23 +489,35 @@ SCIP_RETCODE GCGprintMiplibStructureInformation(
 
    (void) SCIPsnprintf(completefilepath, SCIP_MAXSTRLEN, "%s%s", filepath, ".csv");
 
+   if( access( completefilepath, W_OK ) != -1 ) {
+      createfile  = FALSE;
+   } else
+   {
+      createfile = TRUE;
+   }
+
    file = fopen(completefilepath, "a");
    if( file == NULL )
    {
       SCIPdialogMessage(scip, NULL, "error creating file <%s>\n", completefilepath);
       SCIPprintSysError(completefilepath);
       SCIPdialoghdlrClearBuffer(dialoghdlr);
+
+      return SCIP_OKAY;
    }
-   else
-   {
-         fclose(file);
-   }
+
+   if( createfile )
+      SCIP_CALL( GCGprintMiplibBaseInformationHeader(scip, file) );
+
 
    SCIP_CALL( GCGprintMiplibBaseInformation(scip, file) );
 
-   SCIP_CALL( GCGprintMiplibConnectedInformation(scip, file));
+   SCIP_CALL( GCGprintMiplibConnectedInformation(scip, file) );
 
    SCIP_CALL( GCGprintMiplibDecompInformation(scip, file) );
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n, " );
+
 
    fclose(file);
 

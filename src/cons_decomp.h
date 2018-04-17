@@ -550,6 +550,12 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
    FILE*                file
    );
 
+SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
+   SCIP*                scip,
+   FILE*                file
+   );
+
+
 SCIP_RETCODE GCGprintMiplibConnectedInformation(
    SCIP*                scip,
    FILE*                file

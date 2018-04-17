@@ -267,6 +267,20 @@ do
                 then
                     echo display additionalstatistics  >> $TMPFILE
                 fi
+            elif test $MODE = "miplibfeatures"
+            then
+		if test ! -e results/features
+		then
+		    mkdir results/features
+		fi
+		#disable presolving
+		echo set presolving maxrounds 0    >> $TMPFILE
+		echo set write miplib2017features TRUE  >> $TMPFILE
+		echo set write miplib2017featurefilepath results/features/featurefile >> $TMPFILE
+		echo change instancename $PROB     >> $TMPFILE
+                echo presolve                      >> $TMPFILE
+                echo detect                        >> $TMPFILE
+		echo quit                          >> $TMPFILE
 	    elif test $MODE = "detectionstatistics"
 	    then
 		echo change instancename $PROB     >> $TMPFILE
