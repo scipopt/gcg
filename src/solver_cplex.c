@@ -33,6 +33,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+/* #define DEBUG_PRICING_ALL_OUTPUT */
 
 #include <string.h>
 
@@ -184,6 +185,9 @@ SCIP_RETCODE buildProblem(
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPRHS, SCIPfeastol(pricingprob)) );
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPINT, SCIPfeastol(pricingprob)) );
    CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_THREADS, solverdata->threads) );
+#ifdef DEBUG_PRICING_ALL_OUTPUT
+   CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_SCRIND, CPX_ON) );
+#endif
 
    /* set objective sense */
    assert(SCIPgetObjsense(pricingprob) == SCIP_OBJSENSE_MINIMIZE);
