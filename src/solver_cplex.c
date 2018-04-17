@@ -694,9 +694,7 @@ SCIP_RETCODE solveCplex(
    switch( cpxstatus )
    {
    /* pricing problem was solved to optimality */
-   /* @todo what about CPXMIP_OPTIMAL_TOL = 102? should not happen if gaplimit is set to 0, but happens anyway */
    case CPXMIP_OPTIMAL: /* 101 */
-   case CPXMIP_OPTIMAL_TOL: /* 102 */
       assert(nsolscplex > 0);
       *status = GCG_PRICINGSTATUS_OPTIMAL;
       CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
@@ -758,6 +756,8 @@ SCIP_RETCODE solveCplex(
    }
 
    /* a heuristic pricing limit was reached and may be increased in the next round */
+   /* @todo: CPXMIP_OPTIMAL_TOL = 102 seems to occur even if gaplimit is set to 0 */
+   case CPXMIP_OPTIMAL_TOL: /* 102 */
    case CPXMIP_NODE_LIM_FEAS: /* 105 */
    case CPXMIP_SOL_LIM: /* 104 */
       assert(nsolscplex > 0);
