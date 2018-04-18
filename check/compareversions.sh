@@ -168,7 +168,6 @@ mkdir -p pickles
 chmod +x parseres.py
 chmod +x plotcomparedres.py
 
-# TODO remove parsing after it is embedded in plot script
 # parse the res files to a readable format
 shopt -s nullglob
 for i in ${RESDIR}/*.res; do

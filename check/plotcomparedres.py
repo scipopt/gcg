@@ -20,10 +20,6 @@ if len(sys.argv) > 1:
 	outdir = sys.argv[1]
 	outdirset = True
 
-# TODO put parsing here
-
-# 1) Plot how many instances were unsolved per version
-
 # Get premade res data
 datasets = {}
 sumsets = {}
@@ -51,10 +47,13 @@ if printwarning == True:
 	print "Did you enter more than one testset? Did all tested versions have access to all testset instances?"
 	print "--------------------------------------------------------------------------------------------------"
 
-# Count number of not "ok"/"solved"/"solved not verified" instances (failed/aborted/timeout/...) for each res file
+
+# Get some statistics for each res file
+maxstringlen = 12 # TODO make this number flexible
 fails = {}
 highestfails = 0
-maxstringlen = 12 # TODO make this number flexible
+runtime = {}
+highesttime = 0
 
 for key in datasets.keys():
 	# crop the filenames (keys in datasets) by removing res_ ... .pkl and add linebreak for very long keys
@@ -70,8 +69,14 @@ for key in datasets.keys():
 	fails[croppedkey] = sumsets['sum' + key].loc['Fail']
 	if fails[croppedkey] > highestfails:
 		highestfails = int(float(fails[croppedkey]))
+	# get runtime
+	runtime[croppedkey] = 0.0
+	for time in datasets[key]['TotalTime']:
+		runtime[croppedkey] = runtime[croppedkey] + float(time)
+		if highesttime < runtime[croppedkey]:
+			highesttime = runtime[croppedkey]
 
-# Plot results
+# 1) Plot how many instances were unsolved per version
 fig = plt.figure()
 ax = plt.axes()        
 plt.title("Number of unsolved instances")
@@ -99,3 +104,33 @@ for item in bars:
         	ax.text(item.get_x()+item.get_width()/2., 1.01*height, '%d' % int(height), ha='center')
 
 plt.savefig(outdir + '/failcomparison.pdf')			# name of image
+
+# 2) Plot runtime per version
+fig = plt.figure()
+ax = plt.axes()        
+plt.title("Runtime comparison")
+plt.xlabel("GCG Version")
+plt.ylabel("Runtime in seconds")
+plt.ylim(ymin=0)
+if highesttime >= 10:
+	valymax = highesttime+(highesttime/10)
+# guarantee that max y value is set to more than highest value
+elif highesttime == 0: 
+	valymax = highesttime+2
+else:
+	valymax = highesttime+1
+plt.ylim(ymax=valymax)	
+ax.grid(True,axis='y')
+bars = plt.bar(range(len(runtime)), runtime.values(), align='center')
+plt.xticks(range(len(runtime)), runtime.keys(), rotation=90)
+plt.tight_layout()
+plt.tick_params(axis='x', which='major', labelsize=7)
+
+for item in bars:
+        height = item.get_height()
+	if height == 0:
+		ax.text(item.get_x()+item.get_width()/2., 1, '%ds' % int(height), ha='center')
+	else:
+        	ax.text(item.get_x()+item.get_width()/2., 1.01*height, '%ds' % int(height), ha='center')
+
+plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image

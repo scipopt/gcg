@@ -58,6 +58,7 @@ for line in fh:
 		sumline = line.split(" ")
 		break
 
+
 # there might be empty items in our columns list, remove these
 index = 0
 while index < len(columns):
@@ -66,6 +67,12 @@ while index < len(columns):
 	else:
 		index = index + 1
 
+# rename the last time column to TotalTime
+for i, label in reversed(list(enumerate(columns))):
+	if label == 'Time':
+		columns[i] = 'TotalTime'
+		break
+
 # as the status column might contain spaces join all additional items
 for row in linearray:
 	if len(row) > len(columns):
@@ -73,6 +80,7 @@ for row in linearray:
 
 # store data into panda dataframe & save it as pickle
 df = pd.DataFrame(columns=columns, data=linearray)
+print df
 sumdf = pd.Series(index=sumcolumns, data=sumline)
 
 if outdirset:
