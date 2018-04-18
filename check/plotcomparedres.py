@@ -81,33 +81,37 @@ for key in datasets.keys():
 		if highesttime < runtime[croppedkey]:
 			highesttime = runtime[croppedkey]
 
+# add a settings function
+def setbarplotparams(highestbar):
+	plt.ylim(ymin=0)
+	if highestbar >= 10:
+		valymax = highestbar+(highestbar/10)
+	# guarantee that max y value is set to more than highest value
+	elif highestbar == 0: 
+		valymax = highestbar+2
+	else:
+		valymax = highestbar+1
+	plt.ylim(ymax=valymax)	
+	ax.grid(True,axis='y')
+	plt.tight_layout()
+	plt.tick_params(axis='x', which='major', labelsize=7)
+
+	for item in bars:
+		height = item.get_height()
+		position = 1
+		if highestbar > 0:
+			position = height + (int(float(highestbar))/100)
+		ax.text(item.get_x()+item.get_width()/2., position, '%ds' % int(height), ha='center', size='xx-small')
+	return;
+
 # 1) Plot how many instances were unsolved per version
 fig = plt.figure()
 ax = plt.axes()        
 plt.title("Number of unsolved instances")
 plt.xlabel("GCG Version")
-plt.ylim(ymin=0)
-valymax= 0
-if highestfails >= 10:
-	valymax = int(float(highestfails))+(int(float(highestfails))/10)
-# guarantee that max y value is set to more than highest value
-elif highestfails == 0: 
-	valymax = highestfails+2
-else:
-	valymax = highestfails+1
-plt.ylim(ymax=valymax)	
-ax.grid(True,axis='y')
 bars = plt.bar(range(len(fails)), fails.values(), align='center')
 plt.xticks(range(len(fails)), fails.keys(), rotation=90)
-plt.tight_layout()
-plt.tick_params(axis='x', which='major', labelsize=7)
-for item in bars:
-        height = item.get_height()
-	position = 1
-	if highestfails > 0:
-		position = height + (int(float(highestfails))/100)
-	ax.text(item.get_x()+item.get_width()/2., position, '%d' % int(height), ha='center', size='xx-small')
-
+setbarplotparams(int(float(highestfails)))
 plt.savefig(outdir + '/failcomparison.pdf')			# name of image
 
 # 2) Plot runtime per version
@@ -116,27 +120,7 @@ ax = plt.axes()
 plt.title("Runtime comparison")
 plt.xlabel("GCG Version")
 plt.ylabel("Runtime in seconds")
-plt.ylim(ymin=0)
-if highesttime >= 10:
-	valymax = highesttime+(highesttime/10)
-# guarantee that max y value is set to more than highest value
-elif highesttime == 0: 
-	valymax = highesttime+2
-else:
-	valymax = highesttime+1
-plt.ylim(ymax=valymax)	
-ax.grid(True,axis='y')
 bars = plt.bar(range(len(runtime)), runtime.values(), align='center')
 plt.xticks(range(len(runtime)), runtime.keys(), rotation=90)
-plt.tight_layout()
-plt.tick_params(axis='x', which='major', labelsize=7)
-
-for item in bars:
-        height = item.get_height()
-	position = 1
-	if highesttime > 0:
-		position = height + (int(float(highesttime))/100)
-	ax.text(item.get_x()+item.get_width()/2., position, '%ds' % int(height), ha='center', size='xx-small')
-
-
+setbarplotparams(highesttime)
 plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image
