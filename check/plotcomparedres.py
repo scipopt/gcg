@@ -19,6 +19,8 @@ outdir = "pickles/"
 if len(sys.argv) > 1:
 	outdir = sys.argv[1]
 	outdirset = True
+	if not os.path.exists(outdir):
+	    os.makedir(outdir)
 
 # Get premade res data
 datasets = {}
@@ -31,6 +33,9 @@ for resfile in os.listdir(resdir):
 		filenames.append(resfile)
 	elif resfile.endswith(".pkl") and resfile.startswith("sumres_"):
 		sumsets[resfile] = pd.read_pickle(os.path.join(resdir, resfile))
+
+# sort names alphabetically
+sorted(datasets.items(), reverse=False)
 
 # Check whether the number of tested instances instances differs (sanity check)
 ninstances = -1
@@ -68,7 +73,7 @@ for key in datasets.keys():
 	# get amount of failed instances
 	fails[croppedkey] = sumsets['sum' + key].loc['Fail']
 	if fails[croppedkey] > highestfails:
-		highestfails = int(float(fails[croppedkey]))
+		highestfails = fails[croppedkey]
 	# get runtime
 	runtime[croppedkey] = 0.0
 	for time in datasets[key]['TotalTime']:
@@ -82,8 +87,9 @@ ax = plt.axes()
 plt.title("Number of unsolved instances")
 plt.xlabel("GCG Version")
 plt.ylim(ymin=0)
+valymax= 0
 if highestfails >= 10:
-	valymax = highestfails+(highestfails/10)
+	valymax = int(float(highestfails))+(int(float(highestfails))/10)
 # guarantee that max y value is set to more than highest value
 elif highestfails == 0: 
 	valymax = highestfails+2
@@ -95,13 +101,12 @@ bars = plt.bar(range(len(fails)), fails.values(), align='center')
 plt.xticks(range(len(fails)), fails.keys(), rotation=90)
 plt.tight_layout()
 plt.tick_params(axis='x', which='major', labelsize=7)
-
 for item in bars:
         height = item.get_height()
-	if height == 0:
-		ax.text(item.get_x()+item.get_width()/2., 1, '%d' % int(height), ha='center')
-	else:
-        	ax.text(item.get_x()+item.get_width()/2., 1.01*height, '%d' % int(height), ha='center')
+	position = 1
+	if highestfails > 0:
+		position = height + (int(float(highestfails))/100)
+	ax.text(item.get_x()+item.get_width()/2., position, '%d' % int(height), ha='center', size='xx-small')
 
 plt.savefig(outdir + '/failcomparison.pdf')			# name of image
 
@@ -128,9 +133,10 @@ plt.tick_params(axis='x', which='major', labelsize=7)
 
 for item in bars:
         height = item.get_height()
-	if height == 0:
-		ax.text(item.get_x()+item.get_width()/2., 1, '%ds' % int(height), ha='center')
-	else:
-        	ax.text(item.get_x()+item.get_width()/2., 1.01*height, '%ds' % int(height), ha='center')
+	position = 1
+	if highesttime > 0:
+		position = height + (int(float(highesttime))/100)
+	ax.text(item.get_x()+item.get_width()/2., position, '%ds' % int(height), ha='center', size='xx-small')
+
 
 plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image

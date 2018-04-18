@@ -26,6 +26,8 @@ outdirset = False
 if len(sys.argv) > 2:
 	outdir = sys.argv[2]
 	outdirset = True
+	if not os.path.exists(outdir):
+	    os.makedir(outdir)
 
 # checkout outfile
 fh = open(resfile, 'r')
@@ -53,7 +55,7 @@ for line in fh:
 		sumcolumns = line.split(" ")
 	
 	# if isdatatable is False and the summary values line is reached get the data line & finish reading
-	elif not isdatatable and line.startswith("   "):
+	elif not isdatatable and line.startswith("  "):
 		line = " ".join(line.split())
 		sumline = line.split(" ")
 		break
@@ -80,7 +82,6 @@ for row in linearray:
 
 # store data into panda dataframe & save it as pickle
 df = pd.DataFrame(columns=columns, data=linearray)
-print df
 sumdf = pd.Series(index=sumcolumns, data=sumline)
 
 if outdirset:
