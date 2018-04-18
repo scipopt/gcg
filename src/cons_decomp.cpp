@@ -43,6 +43,8 @@
 
 #include "cons_decomp.h"
 
+#include "reader_gp.h"
+
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -145,8 +147,13 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_STAIRLINKINGHEUR                      FALSE    /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
 
 #define DEFAULT_WRITEMIPLIB2017FEATURES               FALSE    /**< indicates whether miplib2017 features should be written */
-#define DEFAULT_WRITEMIPLIB2017PLOTSANDDEC            FALSE    /**< indicates whether miplib2017 gp and dec files  should be written */
+#define DEFAULT_WRITEMIPLIB2017PLOTSANDDECS           FALSE    /**< indicates whether miplib2017 gp and dec files  should be written */
 #define DEFAULT_WRITEMIPLIB2017FEATUREFILEPATH        "."      /**< indicates where the miplib feature output should be written to */
+
+#define DEFAULT_WRITEMIPLIB2017MATRIXFILEPATH        "."      /**< indicates where the miplib feature output should be written to */
+
+#define DEFAULT_WRITEMIPLIB2017DECOMPFILEPATH        "."      /**< indicates where the miplib feature output should be written to */
+
 
 /*
  * Data structures
@@ -201,9 +208,11 @@ struct SCIP_ConshdlrData
    SCIP_Bool             legacymodeenabled;                 /**< indicates whether detection consist of legacy mode detection */
    SCIP_Bool             stairlinkingheur;                  /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
    SCIP_Bool             writemiplib2017features;           /**< indicates whether miplib2017 features should be written */
-   SCIP_Bool             writemiplib2017plotsanddec;        /**< indicates whether dec and gp files for miplib 2017 should be written */
+   SCIP_Bool             writemiplib2017plotsanddecs;             /**< indicates whether dec and gp files for miplib 2017 should be written */
 
    char*                 writemiplib2017featurefilepath;
+   char*                 writemiplib2017matrixfilepath;
+   char*                 writemiplib2017decompfilepath;
 
    int**                 candidatesNBlocks;                 /**< pointer to store candidates for number of blocks calculated by the seeedpool */
    int*                  nCandidates;
@@ -950,9 +959,11 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/enabled", "indicates whether detection consist of legacy mode detection", &conshdlrdata->legacymodeenabled, FALSE, DEFAULT_LEGACYMODE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/stairlinkingheur", "indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated", &conshdlrdata->stairlinkingheur, FALSE, DEFAULT_STAIRLINKINGHEUR, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "write/miplib2017features", "indicates whether miplib2017 features should be written", &conshdlrdata->writemiplib2017features, FALSE, DEFAULT_WRITEMIPLIB2017FEATURES, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "write/miplib2017plotsanddec", "indicates whether dec and gp files are written for miplib2017", &conshdlrdata->writemiplib2017plotsanddec, FALSE, DEFAULT_WRITEMIPLIB2017PLOTSANDDEC, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "write/miplib2017plotsanddecs", "indicates whether dec and gp files are written for miplib2017", &conshdlrdata->writemiplib2017plotsanddecs, FALSE, DEFAULT_WRITEMIPLIB2017PLOTSANDDECS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip, "write/miplib2017featurefilepath", "path to the file for miplib2017 feature output", &conshdlrdata->writemiplib2017featurefilepath, FALSE, DEFAULT_WRITEMIPLIB2017FEATUREFILEPATH, NULL, NULL) );
+   SCIP_CALL( SCIPaddStringParam(scip, "write/miplib2017matrixfilepath", "path to matrix gp file that is to write", &conshdlrdata->writemiplib2017matrixfilepath, FALSE, DEFAULT_WRITEMIPLIB2017MATRIXFILEPATH, NULL, NULL) );
+   SCIP_CALL( SCIPaddStringParam(scip, "write/miplib2017decompfilepath", "path to decomp dec and gp files to write", &conshdlrdata->writemiplib2017decompfilepath, FALSE, DEFAULT_WRITEMIPLIB2017DECOMPFILEPATH, NULL, NULL) );
 
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/strong_detection/dualvalrandommethod",
@@ -6394,49 +6405,11 @@ SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
 
    /** write base information */
 
-   SCIP_VAR** vars;
-   SCIP_CONS** conss;
-   SCIP_Real absmaxvalobj;
-   SCIP_Real absminvalobj;
-   SCIP_Real maxrationonzerovals;
-
-   SCIP_Bool fullpathinfile;
-
-   char* name;
-   char probname[SCIP_MAXSTRLEN];
-   int nvarsnonzerocoef;
-   int nvarsnonzerolb;
-   int nvarsnonzeroub;
-   int nvarslbnotinf;
-   int nvarsubnotinf;
-   int ncontvars;
-   int nbinvars;
-   int nintvars;
-   int nimplintvars;
-   int nconsnonzerorhs; /* lhss are included */
-
-
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
-
-   nvarsnonzerocoef = 0;
-   nvarsnonzerolb = 0;
-   nvarsnonzeroub = 0;
-   nvarslbnotinf = 0;
-   nvarsubnotinf = 0;
-   ncontvars = 0;
-   nbinvars = 0;
-   nintvars = 0;
-   nimplintvars = 0;
-   nconsnonzerorhs = 0; /* lhss are included */
-   absmaxvalobj = 0;
-   absminvalobj = SCIPinfinity(scip);
-   maxrationonzerovals = 0.;
-
-   fullpathinfile = TRUE;
 
 
    /*
@@ -6516,12 +6489,12 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
    SeeedPtr seeedconnectedfinished;
    SEEED_PROPAGATION_DATA* seeedPropData;
    SCIP_Result success;
+   SCIP_Bool writeplot;
 
 
    char* name;
 
    char probname[SCIP_MAXSTRLEN];
-   char outname[SCIP_MAXSTRLEN];
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
@@ -6570,8 +6543,50 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", seeedconnectedfinished->getComponentInformation().c_str() );
 
+     SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &writeplot );
+
+     if( writeplot )
+     {
+        char*   folder;
+        char filename[SCIP_MAXSTRLEN];
+        char* outputname;
+        MiscVisualization* misc;
+        char problemname[SCIP_MAXSTRLEN];
+
+        SCIPgetStringParam(scip, "write/miplib2017matrixfilepath", &folder);
+
+        strcpy(filename, folder);
+
+        strcat(filename, "/matrix.gp");
+
+//        SCIPsetStringParam(scip, "visual/colors/colorblock", "#D3D3D3");
+//        SCIPsetStringParam(scip, "visual/colors/colorlines", "#000000");
+//        SCIPsetIntParam(scip, "visual/colorscheme", 1);
+
+        misc = new MiscVisualization();
+
+        conshdlrdata->seeedpool->addSeeedToFinishedUnchecked(seeedconnectedfinished);
+
+        /* get filename for compiled file */
+        (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+        SCIPsplitFilename(problemname, NULL, &outputname, NULL, NULL);
+
+        strcat(outputname, ".pdf");
+
+        SCIPinfoMessage(scip, NULL, "filename for matrix plot is %s \n", filename );
+        SCIPinfoMessage(scip, NULL, "foldername for matrix plot is %s \n", folder );
+
+
+        /* actual writing */
+        GCGwriteGpVisualization(scip, filename, outputname, seeedconnectedfinished->getID() );
+
+        delete misc;
+
+     }
+
      delete seeedconnected;
-     delete seeedconnectedfinished;
+     if ( !writeplot )
+        delete seeedconnectedfinished;
      seeedconnected = seeedPropData->newSeeeds[0];
      SCIPfreeMemoryArray(scip, &seeedPropData->newSeeeds);
      delete seeedPropData;
@@ -6591,10 +6606,6 @@ SCIP_RETCODE GCGprintMiplibDecompInformation(
 
    std::ofstream myfile;
 
-   char* name;
-
-   char probname[SCIP_MAXSTRLEN];
-   char outname[SCIP_MAXSTRLEN];
 
    SeeedPtr bestseeed;
 
@@ -6628,7 +6639,7 @@ SCIP_RETCODE GCGprintOptionalOutput(
 
    /** check setting for optional output */
    SCIPgetBoolParam(scip, "write/miplib2017features", &miplibfeatureoutput);
-   SCIPgetBoolParam(scip, "write/miplib2017plotsanddec", &miplibplotdecandgp);
+   SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &miplibplotdecandgp);
 
    if( miplibfeatureoutput )
       GCGprintMiplibStructureInformation(scip, dialoghdlr);
