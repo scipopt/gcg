@@ -344,30 +344,41 @@ SCIP_RETCODE solveKnapsack(
       *status = GCG_PRICINGSTATUS_INFEASIBLE;
       goto TERMINATE;
    }
-
-   SCIPdebugMessage("Solve pricing problem as knapsack\n");
-
-   /* solve knapsack problem, all result pointers are needed! */
-   if( exactly )
+   else if( capacity == 0 )
    {
-      SCIP_CALL( SCIPsolveKnapsackExactly(pricingprob, nitems, weights, profits, capacity, items, solitems,
-         nonsolitems, &nsolitems, &nnonsolitems, &solval, &success ));
+      SCIPdebugMessage("Knapsack has zero capacity\n");
+
+      nsolitems = 0;
+      nnonsolitems = nitems;
+      for( i = 0; i < nitems; ++i )
+         nonsolitems[i] = items[i];
    }
    else
    {
-      SCIP_CALL( SCIPsolveKnapsackApproximately(pricingprob, nitems, weights, profits, capacity, items, solitems,
-         nonsolitems, &nsolitems, &nnonsolitems, &solval ));
-   }
+      SCIPdebugMessage("Solve pricing problem as knapsack\n");
 
-   if( !success )
-   {
-      SCIPwarningMessage(pricingprob, "Knapsack solver could not solve pricing problem!");
-      goto TERMINATE;
-   }
-   else if( exactly )
-      *status = GCG_PRICINGSTATUS_OPTIMAL;
+      /* solve knapsack problem, all result pointers are needed! */
+      if( exactly )
+      {
+         SCIP_CALL( SCIPsolveKnapsackExactly(pricingprob, nitems, weights, profits, capacity, items, solitems,
+            nonsolitems, &nsolitems, &nnonsolitems, &solval, &success ));
+      }
+      else
+      {
+         SCIP_CALL( SCIPsolveKnapsackApproximately(pricingprob, nitems, weights, profits, capacity, items, solitems,
+            nonsolitems, &nsolitems, &nnonsolitems, &solval ));
+      }
 
-   SCIPdebugMessage("Knapsack solved, solval = %g\n", solval);
+      if( !success )
+      {
+         SCIPwarningMessage(pricingprob, "Knapsack solver could not solve pricing problem!");
+         goto TERMINATE;
+      }
+      else if( exactly )
+         *status = GCG_PRICINGSTATUS_OPTIMAL;
+
+      SCIPdebugMessage("Knapsack solved, solval = %g\n", solval);
+   }
 
    nsolvars = 0;
 
