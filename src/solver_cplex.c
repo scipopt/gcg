@@ -30,6 +30,7 @@
  * @author Gerald Gamrath
  * @author Alexander Gross
  * @author Hanna Franzen
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -403,6 +404,7 @@ SCIP_RETCODE updateProblem(
    SCIP_VAR** consvars;
    SCIP_Real* consvals;
    SCIP_VAR* var;
+   SCIP_VAR* origvar;
    double* varobj;
    int* udpatevaridx;
    int* objidx;
@@ -461,11 +463,13 @@ SCIP_RETCODE updateProblem(
       CHECK_ZERO( CPXdelrows(solverdata->cpxenv[probnr], solverdata->lp[probnr], nbasicpricingconss, ncpxrows - 1) );
    }
 
+   SCIPdebugMessage("Set objective coefficients:\n");
+
    /* get new bounds and objective coefficients of variables */
    for( i = 0; i < nvars; i++ )
    {
-      var = vars[i];
-      varidx = SCIPvarGetIndex(var);
+      origvar = vars[i];
+      varidx = SCIPvarGetIndex(origvar);
       assert(0 <= varidx);
       assert(varidx < npricingvars);
 
@@ -475,17 +479,17 @@ SCIP_RETCODE updateProblem(
       boundtypes[2 * (size_t)varidx + 1] = 'U';
 
       if( SCIPgetStage(pricingprob) >= SCIP_STAGE_TRANSFORMED )
-      {
-         assert(SCIPgetStage(pricingprob) == SCIP_STAGE_TRANSFORMED);
+         var = SCIPvarGetTransVar(origvar);
+      else
+         var = origvar;
 
-         var = SCIPvarGetTransVar(var);
-      }
-
-      bounds[2 * (size_t)varidx] = (double) SCIPvarGetLbLocal(var);
-      bounds[2 * (size_t)varidx + 1] = (double) SCIPvarGetUbLocal(var);
+      bounds[2 * (size_t)varidx] = (double) SCIPvarGetLbGlobal(var);
+      bounds[2 * (size_t)varidx + 1] = (double) SCIPvarGetUbGlobal(var);
 
       objidx[varidx] = varidx;
-      varobj[varidx] = SCIPvarGetObj(var);
+      varobj[varidx] = SCIPvarGetObj(origvar);
+
+      SCIPdebugMessage("  <%s> --> %g\n", SCIPvarGetName(var), varobj[varidx]);
    }
 
    /* update bounds and objective coefficient of basic variables */
