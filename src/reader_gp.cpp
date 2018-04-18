@@ -261,8 +261,8 @@ SCIP_RETCODE writeGpNonzeros(
    ofs.open (filename, std::ofstream::out | std::ofstream::app );
 
    /* start writing dots */
-   ofs << "plot \"-\" using 1:2:(" << radius << ") notitle with dots fc rgb \"" << SCIPvisuGetColorNonzero()
-      << "\" " << std::endl;
+   ofs << "plot \"-\" using 1:2:(" << radius << ") notitle pt 7 ps " << radius << " fc rgb \"" << SCIPvisuGetColorNonzero()
+      << "\"  " << std::endl;
 
    /* write scatter plot */
    for( int row = 0; row < seeed->getNConss(); ++row )
@@ -410,7 +410,7 @@ SCIP_RETCODE writeGpSeeed(
    }
    else
    {
-      ofs << "plot \"-\" using 1:2:(0) notitle with dots lw 2 fc rgb \"black\" "
+      ofs << "plot \"-\" using 1:2:(0) notitle with circles fill solid lw 2 fc rgb \"black\" "
          << std::endl << "0 0" << std::endl << "e" << std::endl;
    }
 
