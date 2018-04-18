@@ -7,16 +7,29 @@ import re
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# check command line arguments
+if len(sys.argv) < 2:
+	sys.exit("Usage: ./plotcomparedres.py PKLDIR OUTPUTDIR (where OUTPUTDIR is optional)")
+
+# get parameters
+resdir = sys.argv[1]
+
+outdirset = False
+outdir = "pickles/"
+if len(sys.argv) > 1:
+	outdir = sys.argv[1]
+	outdirset = True
+
 # 1) Plot how many instances were unsolved per version
 
 # Get premade res data
 datasets = {}
 filenames = []
 
-for file in os.listdir("pickles/"):
-	if file.endswith(".pkl") and file.startswith("res_"):
-		datasets[file] = pd.read_pickle(os.path.join("pickles/", file))
-		filenames.append(file)
+for resfile in os.listdir(outdir):
+	if resfile.endswith(".pkl") and resfile.startswith("res_"):
+		datasets[resfile] = pd.read_pickle(os.path.join(outdir, resfile))
+		filenames.append(resfile)
 
 # Check whether the number of tested instances instances differs (sanity check)
 ninstances = -1
@@ -76,4 +89,4 @@ for item in bars:
 	else:
         	ax.text(item.get_x()+item.get_width()/2., 1.01*height, '%d' % int(height), ha='center')
 
-plt.savefig('images/failcomparison.pdf')			# name of image
+plt.savefig(outdir + '/failcomparison.pdf')			# name of image

@@ -9,14 +9,21 @@ import matplotlib.pyplot as plt
 
 # check command line arguments
 if len(sys.argv) < 2:
-	sys.exit("Usage: ./parseout.py RESFILE")
+	sys.exit("Usage: ./parseout.py RESFILE OUTPUTDIR (where OUTPUTDIR is optional)")
 
 # array for all processed lines
 linearray = [] 
 columns = []
 
-# checkout outfile
+# get parameters
 resfile = sys.argv[1]
+
+outdirset = False
+if len(sys.argv) > 2:
+	outdir = sys.argv[2]
+	outdirset = True
+
+# checkout outfile
 fh = open(resfile, 'r')
 
 # write solving information of testset into 
@@ -49,4 +56,8 @@ for row in linearray:
 
 # store data into panda dataframe & save it as pickle
 df = pd.DataFrame(columns=columns, data=linearray)
-df.to_pickle('pickles/' + 'res_' + resfile.split('/')[-1].replace('.res', '.pkl'))
+
+if outdirset:
+	df.to_pickle(outdir + '/' + 'res_' + resfile.split('/')[-1].replace('.res', '.pkl'))
+else:
+	df.to_pickle('pickles/' + 'res_' + resfile.split('/')[-1].replace('.res', '.pkl'))

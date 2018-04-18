@@ -86,6 +86,10 @@ if [ ! -f ../settings/${SETTINGSNAME}.set ]; then
     echo "Warning: Global setting file ${SETTINGSNAME}.set not found! GCG will use default settings instead."
 fi
 
+# TODO Add new folder for all files generated in the current run (we are currently in check directory)
+RESDIR="results/compareversions$(date '+%d-%m-%Y_%H-%M')"
+mkdir -p $RESDIR
+
 # Script is in check, so switch to gcg main folder
 cd ..
 index=0
@@ -126,23 +130,24 @@ do
 	VERSIONNAME="${VERSIONNAME//.}"			# remove points
 	VERSIONNAME="${VERSIONNAME}_${TESTNAME}"	# add testset name for later identification
 	
+	# move the resulting files to the result directory of this comparison run
 	OLDout=$(find . -type f -name "*.out"  -printf "%p\n" | sort -n | head -n 1)
-	mv "$OLDout" "${VERSIONNAME}.out"
+	mv "$OLDout" "../${RESDIR}/${VERSIONNAME}.out"
 
 	OLDres=$(find . -type f -name "*.res"  -printf "%p\n" | sort -n | head -n 1)
-	mv "$OLDres" "${VERSIONNAME}.res"
+	mv "$OLDres" "../${RESDIR}/${VERSIONNAME}.res"
 
 	OLDerr=$(find . -type f -name "*.err"  -printf "%p\n" | sort -n | head -n 1)
-	mv "$OLDerr" "${VERSIONNAME}.err"
+	mv "$OLDerr" "../${RESDIR}/${VERSIONNAME}.err"
 
 	OLDtex=$(find . -type f -name "*.tex"  -printf "%p\n" | sort -n | head -n 1)
-	mv "$OLDtex" "${VERSIONNAME}.tex"
+	mv "$OLDtex" "../${RESDIR}/${VERSIONNAME}.tex"
 
 	OLDpav=$(find . -type f -name "*.pav"  -printf "%p\n" | sort -n | head -n 1)
-	mv "$OLDpav" "${VERSIONNAME}.pav"
+	mv "$OLDpav" "../${RESDIR}/${VERSIONNAME}.pav"
 
 	OLDset=$(find . -type f -name "*.set"  -printf "%p\n" | sort -n | head -n 1)
-	mv "$OLDset" "${VERSIONNAME}.set"
+	mv "$OLDset" "../${RESDIR}/${VERSIONNAME}.set"
 
 	# go back to the main folder to check out next version correctly
 	cd ../..
@@ -157,22 +162,23 @@ rm "$TESTNAME"_comparecopy.test
 cd ..
 
 # 3) do sth with the output:
-	
-# parse the res files to a readable format
 echo "Start plotting..."
 
 mkdir -p pickles
 chmod +x parseres.py
 chmod +x plotcomparedres.py
 
+# parse the res files to a readable format
 shopt -s nullglob
-for i in results/*.res; do
-    ./parseres.py $i
+for i in ${RESDIR}/*.res; do
+	./parseres.py $i ${RESDIR}
 done
 
-./plotcomparedres.py
+# plot the results
+./plotcomparedres.py ${RESDIR}
 
 echo "Finished."
+echo "The results and plots can be found in $RESDIR." 
 
 # termination
 exit 0
