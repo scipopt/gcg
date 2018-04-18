@@ -11,9 +11,13 @@ import matplotlib.pyplot as plt
 if len(sys.argv) < 2:
 	sys.exit("Usage: ./parseout.py RESFILE OUTPUTDIR (where OUTPUTDIR is optional)")
 
-# array for all processed lines
+# array for all processed lines of data table
 linearray = [] 
 columns = []
+
+# array for (first) line of summary table
+sumline = []
+sumcolumns = []
 
 # get parameters
 resfile = sys.argv[1]
@@ -26,20 +30,33 @@ if len(sys.argv) > 2:
 # checkout outfile
 fh = open(resfile, 'r')
 
-# write solving information of testset into 
+# write solving information of testset, differentiate between big result table and small summary table
+isdatatable = True
 for line in fh:
 	# get data column names (and add 'status' for the last column)
-	if line.startswith("Name   "):
+	if isdatatable and line.startswith("Name   "):
 		line = " ".join(line.split())
 		line = line.replace(" ", "")
 		columns = line.split("|")
 		columns.append("status")
 
 	# get all data lines of first table
-	elif '----------' not in line and line not in ['\n', '\r\n'] and not line.startswith("Name   ") and not line.startswith(" ") and not line.startswith("@"):
+	elif isdatatable and '----------' not in line and line not in ['\n', '\r\n'] and not line.startswith("Name   ") and not line.startswith(" ") and not line.startswith("@"):
 		line = " ".join(line.split())
 		row = line.split(" ")
 		linearray.append(row)
+
+	# when summary table starts get column names and set isdatatable to False
+	elif line.startswith("  Cnt "):
+		isdatatable = False
+		line = " ".join(line.split())
+		sumcolumns = line.split(" ")
+	
+	# if isdatatable is False and the summary values line is reached get the data line & finish reading
+	elif not isdatatable and line.startswith("   "):
+		line = " ".join(line.split())
+		sumline = line.split(" ")
+		break
 
 # there might be empty items in our columns list, remove these
 index = 0
@@ -56,8 +73,11 @@ for row in linearray:
 
 # store data into panda dataframe & save it as pickle
 df = pd.DataFrame(columns=columns, data=linearray)
+sumdf = pd.Series(index=sumcolumns, data=sumline)
 
 if outdirset:
 	df.to_pickle(outdir + '/' + 'res_' + resfile.split('/')[-1].replace('.res', '.pkl'))
+	sumdf.to_pickle(outdir + '/' + 'sumres_' + resfile.split('/')[-1].replace('.res', '.pkl'))
 else:
 	df.to_pickle('pickles/' + 'res_' + resfile.split('/')[-1].replace('.res', '.pkl'))
+	sumdf.to_pickle('pickles/' + 'sumres_' + resfile.split('/')[-1].replace('.res', '.pkl'))

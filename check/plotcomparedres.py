@@ -20,16 +20,21 @@ if len(sys.argv) > 1:
 	outdir = sys.argv[1]
 	outdirset = True
 
+# TODO put parsing here
+
 # 1) Plot how many instances were unsolved per version
 
 # Get premade res data
 datasets = {}
+sumsets = {}
 filenames = []
 
-for resfile in os.listdir(outdir):
+for resfile in os.listdir(resdir):
 	if resfile.endswith(".pkl") and resfile.startswith("res_"):
-		datasets[resfile] = pd.read_pickle(os.path.join(outdir, resfile))
+		datasets[resfile] = pd.read_pickle(os.path.join(resdir, resfile))
 		filenames.append(resfile)
+	elif resfile.endswith(".pkl") and resfile.startswith("sumres_"):
+		sumsets[resfile] = pd.read_pickle(os.path.join(resdir, resfile))
 
 # Check whether the number of tested instances instances differs (sanity check)
 ninstances = -1
@@ -61,13 +66,10 @@ for key in datasets.keys():
 			charlist.insert(ninserts*maxstringlen, '\n')
 			ninserts = ninserts - 1
 		croppedkey = ''.join(charlist)
-	# countfails
-	fails[croppedkey] = 0
-	for status in datasets[key]['status']:
-		if status != 'ok' and status != 'solved' and status != 'solvednotverified':
-			fails[croppedkey] = fails[croppedkey] + 1
-			if highestfails < fails[croppedkey]:
-				highestfails = fails[croppedkey]
+	# get amount of failed instances
+	fails[croppedkey] = sumsets['sum' + key].loc['Fail']
+	if fails[croppedkey] > highestfails:
+		highestfails = int(float(fails[croppedkey]))
 
 # Plot results
 fig = plt.figure()
@@ -75,7 +77,14 @@ ax = plt.axes()
 plt.title("Number of unsolved instances")
 plt.xlabel("GCG Version")
 plt.ylim(ymin=0)
-plt.ylim(ymax=highestfails+(highestfails/10))			# max y value is set to more than highest value
+if highestfails >= 10:
+	valymax = highestfails+(highestfails/10)
+# guarantee that max y value is set to more than highest value
+elif highestfails == 0: 
+	valymax = highestfails+2
+else:
+	valymax = highestfails+1
+plt.ylim(ymax=valymax)	
 ax.grid(True,axis='y')
 bars = plt.bar(range(len(fails)), fails.values(), align='center')
 plt.xticks(range(len(fails)), fails.keys(), rotation=90)
