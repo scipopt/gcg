@@ -4105,12 +4105,9 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
          if( (SCIPisInfinity(origprob, ub) && SCIPisPositive(origprob, obj))
           || (SCIPisInfinity(origprob, -lb) && SCIPisNegative(origprob, obj)) )
-         {
-            pricerdata->maxobj = SCIPinfinity(origprob);
-            break;
-         }
-
-         pricerdata->maxobj += MAX(ub * obj, lb * obj) - MIN(ub * obj, lb * obj);
+            pricerdata->maxobj += 100* ABS(obj);
+         else
+            pricerdata->maxobj += MAX(ub * obj, lb * obj) - MIN(ub * obj, lb * obj);
       }
       if( SCIPisPositive(origprob, pricerdata->maxobj) )
          pricerdata->farkasalpha = 1.0/pricerdata->maxobj;

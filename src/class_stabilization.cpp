@@ -350,7 +350,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
       return SCIP_OKAY;
    }
    /* in case the bound is not improving and we have a stability center, do nothing */
-   if( SCIPisLE(scip_, lowerbound, stabcenterbound) && hasstabilitycenter )
+   if( hasstabilitycenter && (SCIPisInfinity(scip_, -stabcenterbound) || SCIPisLE(scip_, lowerbound, stabcenterbound)) )
    {
       SCIPdebugPrintf("no bound increase: %g <= %g\n", lowerbound, SCIPnodeGetLowerbound(SCIPgetCurrentNode(scip_)));
       return SCIP_OKAY;
