@@ -6224,12 +6224,12 @@ SCIP_RETCODE findTranslationForDec(
    norigvars = SCIPgetNOrigVars(scip);
    origvars = SCIPgetOrigVars(scip);
 
-   for( int oc = 0; oc < norigconss; ++oc )
+   for( size_t oc = 0; oc < consindex->size(); ++oc )
    {
       consindex->at(oc) = -1;
    }
 
-   for( int ov = 0; ov < norigvars; ++ov )
+   for( size_t ov = 0; ov < varindex->size(); ++ov )
    {
       varindex->at(ov) = -1;
    }
@@ -6248,10 +6248,14 @@ SCIP_RETCODE findTranslationForDec(
       origconsid = origseeedpool->getIndexForCons(origcons);
 
       SCIPgetTransformedCons(scip, origcons, &transcons);
-      assert(transcons != NULL);
+      if( transcons == NULL )
+      {
+ //       std::cout << "consname: " << SCIPconsGetName(origcons) << " ; oc:" << oc << " has no transformed constraint "  << std::endl;
+        continue;
+      }
       transconsid = transseeedpool->getIndexForCons(transcons);
 
-      std::cout << "consname: " << SCIPconsGetName(origcons) << " ; oc:" << oc << " ;transconsid: " << transconsid << " ; origconsid: " << origconsid << " transformed: " << origseeedpool->getTransformedInfo() << std::endl;
+ //     std::cout << "consname: " << SCIPconsGetName(origcons) << " ; oc:" << oc << " ;transconsid: " << transconsid << " ; origconsid: " << origconsid << " transformed: " << origseeedpool->getTransformedInfo() << std::endl;
 
       if( fromunpresolvedtopresolved  )
       {
@@ -6276,7 +6280,13 @@ SCIP_RETCODE findTranslationForDec(
       origvar = origvars[ov];
       origvarid = origseeedpool->getIndexForVar(origvar);
       SCIPgetTransformedVar(scip, origvar, &transvar);
-      assert(transvar != NULL);
+
+      if( transvar == NULL)
+      {
+         continue;
+      }
+
+
       transvarid = transseeedpool->getIndexForVar( SCIPvarGetProbvar(transvar) );
 
       if( fromunpresolvedtopresolved  )
@@ -6288,8 +6298,6 @@ SCIP_RETCODE findTranslationForDec(
          varindex->at(transvarid) = origvarid;
       }
    }
-
-
 
    *success = TRUE;
 
