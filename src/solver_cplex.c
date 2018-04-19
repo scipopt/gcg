@@ -340,10 +340,10 @@ SCIP_RETCODE buildProblem(
 
 #ifdef WRITEPROBLEMS
    {
-      char* ausgabe[SCIP_MAXSTRLEN];
-      SCIPsnprintf(ausgabe, SCIP_MAXSTRLEN, "cplex-%s.lp", SCIPgetProbName(pricingprob));
-      printf("print pricing problem to %s\n", ausgabe);
-      CHECK_ZERO( CPXwriteprob(solverdata->cpxenv[probnr], solverdata->lp[probnr], ausgabe, "lp") );
+      char filename[SCIP_MAXSTRLEN];
+      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "cplex-%s.lp", SCIPgetProbName(pricingprob));
+      SCIPinfoMessage(pricingprob, NULL, "print pricing problem to %s\n", filename);
+      CHECK_ZERO( CPXwriteprob(solverdata->cpxenv[probnr], solverdata->lp[probnr], filename, "lp") );
    }
 #endif
 
@@ -600,10 +600,10 @@ SCIP_RETCODE updateProblem(
  TERMINATE:
 #ifdef WRITEPROBLEMS
    {
-      char* ausgabe[SCIP_MAXSTRLEN];
-      SCIPsnprintf(ausgabe, SCIP_MAXSTRLEN, "cplex-%s-%d-%d.lp", SCIPgetProbName(pricingprob), SCIPgetNNodes(scip), solverdata->nupdates[probnr]);
-      printf("print pricing problem to %s\n", ausgabe);
-      CHECK_ZERO( CPXwriteprob(solverdata->cpxenv[probnr], solverdata->lp[probnr], ausgabe, "lp") );
+      char filename[SCIP_MAXSTRLEN];
+      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "cplex-%s-%d-%d.lp", SCIPgetProbName(pricingprob), SCIPgetNNodes(scip), solverdata->nupdates[probnr]);
+      SCIPinfoMessage(pricingprob, NULL, "print pricing problem to %s\n", filename);
+      CHECK_ZERO( CPXwriteprob(solverdata->cpxenv[probnr], solverdata->lp[probnr], filename, "lp") );
    }
 #endif
 
