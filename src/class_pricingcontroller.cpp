@@ -302,9 +302,6 @@ SCIP_RETCODE Pricingcontroller::initSol(
       }
    }
 
-   assert(npricingprobs == GCGgetNRelPricingprobs(origprob));
-   assert(npricingjobs == GCGgetNRelPricingprobs(origprob) * nsolvers);
-
    SCIP_CALL_EXC( GCGpqueueCreate(&pqueue, npricingjobs, 2.0, comparePricingjobs) );
 
    return SCIP_OKAY;
