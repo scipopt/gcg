@@ -2127,7 +2127,6 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_Result result;
-   SCIP_RETCODE retcode;
    DEC_Detector** detectors;
    int ndetectors;
    int i, j;
@@ -2198,16 +2197,18 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
    seeedPropData->seeedpool = seeedpool;
    seeedPropData->nNewSeeeds = 0;
    seeedPropData->seeedToPropagate = new gcg::Seeed(conshdlrdata->curruserseeed);
+   seeedPropData->seeedToPropagate->setSeeedpool(seeedpool);
    if( action != POSTPROCESS )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropData->newSeeeds), 1) );
+      seeedPropData->newSeeeds[0] = NULL;
    }
 
 
    finished = FALSE;
    while( !finished )
    {
-      retcode = SCIP_ERROR;
+      result = SCIP_DIDNOTFIND;
       /* list the detectors implementing the specified callback by name with a leading number */
       j = 1;
       SCIPinfoMessage(scip, NULL, "Available detectors:\n");
@@ -2228,15 +2229,15 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
       {
          for( i = 0; i < ndetectors; ++i )
          {
-            sprintf(stri, "%d", i+1); //used for displaying numberings in the list, off-by-one since detectors start with 0
+            sprintf(stri, "%d", i+1); //used for matching numberings in the list, off-by-one since detectors start with 0
             if( strncmp( command, detectors[i]->name, commandlen) == 0 || strncmp( command, stri, commandlen ) == 0 )
             {
                if( action == PROPAGATE )
-                  retcode = detectors[i]->propagateFromToolbox(scip, detectors[i], seeedPropData, &result, dialoghdlr, dialog);
+                  SCIP_CALL( detectors[i]->propagateFromToolbox(scip, detectors[i], seeedPropData, &result, dialoghdlr, dialog) );
                else if( action == FINISH )
-                  retcode = detectors[i]->finishFromToolbox(scip, detectors[i], seeedPropData, &result, dialoghdlr, dialog);
+                  SCIP_CALL( detectors[i]->finishFromToolbox(scip, detectors[i], seeedPropData, &result, dialoghdlr, dialog) );
                else if( action == POSTPROCESS )
-                  retcode = detectors[i]->postprocessSeeed(scip, detectors[i], seeedPropData, &result);
+                  SCIP_CALL( detectors[i]->postprocessSeeed(scip, detectors[i], seeedPropData, &result) );
                break;
             }
          }
@@ -2246,12 +2247,14 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
          finished = TRUE;
          continue;
       }
-      if( retcode == SCIP_OKAY )
+      if( result == SCIP_SUCCESS )
       {
          if( action != POSTPROCESS )
          {
+            assert(seeedPropData->newSeeeds[0] != NULL);
             SCIPinfoMessage(scip, NULL, "\nSeeed was successfully %s.\n", actiontype);
-
+            
+            seeedPropData->newSeeeds[0]->considerImplicits( seeedPropData->seeedpool ); //There may be open vars/cons left that were not matched
             seeedPropData->newSeeeds[0]->displayInfo( seeedPropData->seeedpool, 0 );
 
             commandlen = 0;
@@ -2274,6 +2277,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
             SCIPinfoMessage(scip, NULL, "\nSaving newly found seeed...\n\n");
             conshdlrdata->curruserseeed = new gcg::Seeed( seeedPropData->newSeeeds[0] );
             SCIP_CALL( SCIPconshdlrDecompUserSeeedFlush(scip) );
+            assert(conshdlrdata->curruserseeed == NULL);
 
             commandlen = 0;
             while( commandlen == 0 )
@@ -2296,7 +2300,9 @@ or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &
          }
          else if( action == POSTPROCESS )
          {
-            SCIPinfoMessage(scip, NULL, "\nSeeed was successfully %s. %d seeeds were found.\n", actiontype, seeedPropData->nNewSeeeds);
+            SCIPinfoMessage(scip, NULL, "\nSeeed successfully %s. %d seeeds were found in the process.\n", actiontype, seeedPropData->nNewSeeeds);
+
+            commandlen = 0;
             while( commandlen == 0 )
             {
                SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Do you want to save all found seeeds (\"all\") or none (\"none\")?\nGCG/toolbox> ", &command, &endoffile) );

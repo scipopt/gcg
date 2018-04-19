@@ -662,20 +662,21 @@ SCIP_RETCODE fromToolbox(
    else
    {
       SCIPinfoMessage(scip, NULL, "Invalid input!\n");
-      return SCIP_ERROR;
+      return SCIP_OKAY;
    }
 
    if(nblocks > seeed->getNOpenconss() || nblocks <= 0)
    {
       SCIPinfoMessage(scip, NULL, "Invalid number of blocks, choose at most %d\n", seeed->getNOpenconss() );
-      return SCIP_ERROR;
+      return SCIP_OKAY;
    }
 
    retcode = callMetis(scip, detectordata, graph, tempfile, nblocks, result);
 
    if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
    {
-      return SCIP_ERROR;
+      *result = SCIP_DIDNOTFIND;
+      return SCIP_OKAY;
    }
 
    if( detectordata->tidy )
@@ -719,7 +720,8 @@ SCIP_RETCODE fromToolbox(
    else //propagation/finishing unsuccessful
    {
       SCIPfreeMemoryArray(scip, &newSeeeds);
-      return SCIP_ERROR;
+      *result = SCIP_DIDNOTFIND;
+      return SCIP_OKAY;
    }
 }
 

@@ -170,7 +170,10 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
    SCIP_Bool byconssadj;
 
    gcg::Seeed* seeed;
+
+   assert(seeedPropagationData->seeedToPropagate->getSeeedpool() == seeedPropagationData->seeedpool);
    seeed  = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
+   assert(scip == seeedPropagationData->seeedpool->getScip() );
 
    SCIPgetBoolParam(scip, "detection/detectors/postprocess/useconssadj", &byconssadj);
 
@@ -179,7 +182,7 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
       seeed->postprocessMasterToBlocksConssAdjacency(seeedPropagationData->seeedpool, &success );
    else
       seeed->postprocessMasterToBlocks(seeedPropagationData->seeedpool, &success );
-
+  
 
    if ( !success )
    {

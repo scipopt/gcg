@@ -173,7 +173,7 @@ Seeed::Seeed(
    isFinishedByFinisherUnpresolved = seeedtocopy->isFinishedByFinisherUnpresolved;
    isselected = false;
    detectorchainstring = NULL;
-   isfromunpresolved = FALSE;
+   isfromunpresolved = seeedtocopy->isfromunpresolved;
    listofancestorids = seeedtocopy->listofancestorids;
 
    varsforblocksorted = seeedtocopy->varsforblocksorted;
