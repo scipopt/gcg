@@ -1053,6 +1053,8 @@ Seeedpool::Seeedpool(
 
    }
 
+   createconssadj = (getNConss() < 50000);
+
    if( createconssadj )
    {
       std::vector<std::list<int>> conssadjacenciestemp( consToScipCons.size(), std::list<int>(0) );
@@ -1076,6 +1078,7 @@ Seeedpool::Seeedpool(
                   conssadjacenciestemp[i].insert(consiter, othercons);
             }
          }
+
       }
 
       for( size_t i = 0; i < consToScipCons.size(); ++ i )
@@ -1092,6 +1095,7 @@ Seeedpool::Seeedpool(
    /*  init  seeedpool with empty seeed */
    SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), nConss, nVars );
 
+   emptyseeed->setSeeedpool(this);
    addSeeedToCurr( emptyseeed );
    addSeeedToAncestor(emptyseeed);
 

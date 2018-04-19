@@ -112,7 +112,7 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_MAXNCLASSESFORNBLOCKCANDIDATES 18                 /** Maximum number of classes a classifier can have to be used for voting nblockcandidates */
 #define DEFAULT_ENABLEORIGDETECTION FALSE                         /**< indicates whether to start detection for the original problem */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
-#define DEFAULT_ENABLEORIGCLASSIFICATION              TRUE        /**< indicates whether to start detection for the original problem */
+#define DEFAULT_ENABLEORIGCLASSIFICATION              FALSE       /**< indicates whether to start detection for the original problem */
 
 #define DEFAULT_CONSSCLASSNNONZENABLED                TRUE        /**<  indicates whether constraint classifier for nonzero entries is enabled */
 #define DEFAULT_CONSSCLASSNNONZENABLEDORIG            TRUE       /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
@@ -4216,7 +4216,8 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    }
 
    finished = conshdlrdata->seeedpool->finishIncompleteSeeeds(tofinishpresolved);
-   finishedunpresolved = conshdlrdata->seeedpoolunpresolved->finishIncompleteSeeeds(tofinishunpresolved);
+   if( conshdlrdata->seeedpoolunpresolved != NULL )
+      finishedunpresolved = conshdlrdata->seeedpoolunpresolved->finishIncompleteSeeeds(tofinishunpresolved);
 
    seeediter = selectedseeeds.begin();
    seeediterend = selectedseeeds.end();
@@ -4629,6 +4630,7 @@ SCIP_RETCODE DECdetectStructure(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_Bool onlylegacymode;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
@@ -4645,9 +4647,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
 
 
-
    /* check whether only legacy mode should be executed */
-   SCIP_Bool onlylegacymode;
    SCIPgetBoolParam(scip, "detection/legacymode/onlylegacymode", &onlylegacymode);
 
    SCIPdebugMessage("start only legacy mode? %s \n", (onlylegacymode ? "yes": "no") );
@@ -4672,8 +4672,10 @@ SCIP_RETCODE DECdetectStructure(
       SCIPgetBoolParam(scip, "detection/origprob/classificationenabled", &classifyOrig);
 
       /** get data of the seeedpool with original vars and conss */
-      SCIPdebugMessage("is seeedpoolunpresolved not initilized yet ? %s -> %s create it \n", (conshdlrdata->seeedpoolunpresolved == NULL ? "yes" : "no"), (conshdlrdata->seeedpoolunpresolved == NULL ? "" : "Do not")  );
-      if ( conshdlrdata->seeedpoolunpresolved == NULL )
+      SCIPdebugMessage("is seeedpoolunpresolved not initilized yet but needed ? %s -> %s create it \n", (conshdlrdata->seeedpoolunpresolved == NULL ? "yes" : "no"), (conshdlrdata->seeedpoolunpresolved == NULL ? "" : "Do not")  );
+
+
+      if ( conshdlrdata->seeedpoolunpresolved == NULL && ( classifyOrig || calculateOrigDecomps ) )
          conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
 
 
@@ -4710,25 +4712,26 @@ SCIP_RETCODE DECdetectStructure(
          SCIPdebugMessage("finding decompositions for original problem is NOT enabled!\n" );
 
       /** get the cons and var classifier for translating them later*/
-      for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNConsClassifiers(); ++i )
+      if( classifyOrig )
       {
-         gcg::ConsClassifier* classifier = new gcg::ConsClassifier(
-            conshdlrdata->seeedpoolunpresolved->getConsClassifier(i));
-         consClassDistributions.push_back(classifier);
-      }
-      for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNVarClassifiers(); ++i )
-      {
-         gcg::VarClassifier* classifier = new gcg::VarClassifier(conshdlrdata->seeedpoolunpresolved->getVarClassifier(i));
-         varClassDistributions.push_back(classifier);
+         for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNConsClassifiers(); ++i )
+         {
+            gcg::ConsClassifier* classifier = new gcg::ConsClassifier(
+               conshdlrdata->seeedpoolunpresolved->getConsClassifier(i));
+            consClassDistributions.push_back(classifier);
+         }
+         for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNVarClassifiers(); ++i )
+         {
+            gcg::VarClassifier* classifier = new gcg::VarClassifier(conshdlrdata->seeedpoolunpresolved->getVarClassifier(i));
+            varClassDistributions.push_back(classifier);
+         }
       }
 
       SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock));
 
-
       //Presolving
       if( presolveOrigProblem )
          SCIP_CALL(SCIPpresolve(scip));
-
 
       /** detection for presolved problem */
 
@@ -4750,6 +4753,7 @@ SCIP_RETCODE DECdetectStructure(
       SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
       if( conshdlrdata->seeedpool == NULL )
       {
+         SCIPdebugMessagePrint(scip, "start creating seeedpool for current problem \n");
          conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
          SCIPdebugMessagePrint(scip, "created seeedpool for current problem, n detectors: %d \n", conshdlrdata->ndetectors);
       }
