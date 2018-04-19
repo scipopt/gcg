@@ -795,7 +795,14 @@ SCIP_RETCODE solveCplex(
 
    CHECK_ZERO( CPXgetbestobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], lowerbound) );
 
+   /* In case of optimality, it might happen that the "lower bound" returned by CPLEX exceeds the optimal solution value;
+    * probably, this is not a bug but a feature
+    */
+   *lowerbound = MIN(*lowerbound, upperbound);
+
    SCIPdebugMessage("pricing problem %d solved with CPLEX: cpxstatus=%d, nsols=%d, lowerbound=%g, upperbound=%g\n", probnr, cpxstatus, nsolscplex, *lowerbound, upperbound);
+
+   assert(SCIPisFeasEQ(scip, *lowerbound, upperbound) || cpxstatus != CPXMIP_OPTIMAL);
 
 #ifndef NDEBUG
    /* in debug mode, we check that the first solution in the solution pool is the incumbent */
