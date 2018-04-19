@@ -1678,16 +1678,14 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   /** 1) update list of interesting seeeds */
-
-   SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
-
-
-   /** 2) while user has not aborted: show current list extract */
+   /** while user has not aborted: show current list extract */
 
    while ( !finished )
    {
       int commandlen;
+
+      /** update list of interesting seeeds */
+      SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
 
       SCIP_CALL( SCIPconshdlrDecompShowListExtractHeader(scip) );
 
@@ -2139,12 +2137,16 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
    char stri[SCIP_MAXSTRLEN];
    const char* actiontype;
 
+   /* set string for dialog */
    if( action == PROPAGATE )
      actiontype = "propagated";
    else if( action == FINISH )
       actiontype = "finished";
-   else
+   else if( action == POSTPROCESS )
       actiontype = "postprocessed";
+   else
+      actiontype = "UNDEFINED_ACTION";
+
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
@@ -2163,32 +2165,24 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
 
    SCIP_CALL( SCIPallocBufferArray(scip, &detectors, conshdlrdata->ndetectors) );
 
+   /* determine the detectors that implement the specified callback */
    ndetectors = 0;
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      if( action == PROPAGATE )
+      if( action == PROPAGATE && conshdlrdata->detectors[i]->propagateFromToolbox )
       {
-         if( conshdlrdata->detectors[i]->propagateFromToolbox )
-         {
-            detectors[ndetectors] = conshdlrdata->detectors[i];
-            ++ndetectors;
-         }
+         detectors[ndetectors] = conshdlrdata->detectors[i];
+         ++ndetectors;
       }
-      else if( action == FINISH )
+      else if( action == FINISH && conshdlrdata->detectors[i]->finishFromToolbox )
       {
-         if( conshdlrdata->detectors[i]->finishFromToolbox )
-         {
-            detectors[ndetectors] = conshdlrdata->detectors[i];
-            ++ndetectors;
-         }
+         detectors[ndetectors] = conshdlrdata->detectors[i];
+         ++ndetectors;
       }
-      else if( action == POSTPROCESS )
+      else if( action == POSTPROCESS && conshdlrdata->detectors[i]->postprocessSeeed )
       {
-         if( conshdlrdata->detectors[i]->postprocessSeeed )
-         {
-            detectors[ndetectors] = conshdlrdata->detectors[i];
-            ++ndetectors;
-         }
+         detectors[ndetectors] = conshdlrdata->detectors[i];
+         ++ndetectors;
       }
    }
 
@@ -2214,6 +2208,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
    while( !finished )
    {
       retcode = SCIP_ERROR;
+      /* list the detectors implementing the specified callback by name with a leading number */
       j = 1;
       SCIPinfoMessage(scip, NULL, "Available detectors:\n");
       for( i = 0; i < ndetectors; ++i )
@@ -2233,7 +2228,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
       {
          for( i = 0; i < ndetectors; ++i )
          {
-            sprintf(stri, "%d", i+1);
+            sprintf(stri, "%d", i+1); //used for displaying numberings in the list, off-by-one since detectors start with 0
             if( strncmp( command, detectors[i]->name, commandlen) == 0 || strncmp( command, stri, commandlen ) == 0 )
             {
                if( action == PROPAGATE )
@@ -2301,7 +2296,7 @@ or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &
          }
          else if( action == POSTPROCESS )
          {
-            SCIPinfoMessage(scip, NULL, "\nSeeed was successfully %s. %d seeeds were found during postprocessing.\n", actiontype, seeedPropData->nNewSeeeds);
+            SCIPinfoMessage(scip, NULL, "\nSeeed was successfully %s. %d seeeds were found.\n", actiontype, seeedPropData->nNewSeeeds);
             while( commandlen == 0 )
             {
                SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Do you want to save all found seeeds (\"all\") or none (\"none\")?\nGCG/toolbox> ", &command, &endoffile) );
