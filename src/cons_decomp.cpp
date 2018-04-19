@@ -5218,7 +5218,8 @@ SCIP_RETCODE DECwriteFamilyTree(
 SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    SCIP*     scip,
    FILE*     file,
-   SCIP_Bool transformed
+   SCIP_Bool transformed,
+   SCIP_RESULT* result
    ){
 
    SCIP_CONSHDLR* conshdlr;
@@ -5241,7 +5242,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
 
    if( conshdlrdata->seeedtowrite != NULL )
    {
-      conshdlrdata->seeedtowrite->writeAsDec(file, seeedpool);
+      conshdlrdata->seeedtowrite->writeAsDec(file, seeedpool, result);
       return SCIP_OKAY;
    }
 
@@ -5251,7 +5252,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
       return SCIP_OKAY;
    }
 
-   conshdlrdata->candidates->at(0).first->writeAsDec(file, seeedpool);
+   conshdlrdata->candidates->at(0).first->writeAsDec(file, seeedpool, result);
 
 
    return SCIP_OKAY;

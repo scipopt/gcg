@@ -440,7 +440,8 @@ extern
 SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    SCIP*     scip,
    FILE*     file,
-   SCIP_Bool transformed
+   SCIP_Bool transformed,
+   SCIP_RESULT* result
    );
 
 /** returns the best known decomposition, if available and NULL otherwise */

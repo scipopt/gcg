@@ -6308,7 +6308,8 @@ SCIP_RETCODE findTranslationForDec(
 SCIP_RETCODE Seeed::writeAsDec(
    FILE* file,
    //GCG_PROBLEM_TRANSFORMED_STATUS transformed,
-   Seeedpool*   seeedpooltowriteto
+   Seeedpool*   seeedpooltowriteto,
+   SCIP_RESULT*  result
    )
 {
 
@@ -6412,23 +6413,25 @@ SCIP_RETCODE Seeed::writeAsDec(
 
       transseeed->deleteEmptyBlocks(false);
 
-      displayInfo(getSeeedpool(), 0 );
+      //displayInfo(getSeeedpool(), 0 );
 
-      transseeed->displayInfo(seeedpooltowriteto, 0 );
+      //transseeed->displayInfo(seeedpooltowriteto, 0 );
 
       if( transseeed->isComplete() != isComplete() )
          success = FALSE;
 
-      assert(success);
-
       if( ! success )
       {
          if( isFromUnpresolved() )
-            SCIPwarningMessage(seeedpooltowriteto->getScip(), "Writing dec-file is not possible since translation to presolved (transformed) problem failed. Please consider writing for original problem.\n" );
+            SCIPwarningMessage(seeedpooltowriteto->getScip(), "Writing dec-file is not possible since translation to presolved (transformed) problem failed. Please consider writing for original problem. Ignore next message about written problem if it is there.\n" );
          else
-            SCIPwarningMessage(seeedpooltowriteto->getScip(), "Writing dec-file is not possible since translation to unpresolved (non-transformed) problem failed. Please consider writing for transformed problem.\n" );
+            SCIPwarningMessage(seeedpooltowriteto->getScip(), "Writing dec-file is not possible since translation to unpresolved (non-transformed) problem failed. Please consider writing for transformed problem. Ignore next message about written problem if it is there.\n" );
+         /** unforunately there is no appropiate result type */
+         *result = SCIP_SUCCESS;
          return SCIP_OKAY;
       }
+      else
+         *result = SCIP_SUCCESS;
 
       helpseeed = transseeed;
 
