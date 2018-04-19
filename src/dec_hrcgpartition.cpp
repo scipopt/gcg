@@ -739,7 +739,7 @@ SCIP_RETCODE fromToolbox(
       newSeeeds[0]->addDetectorChainInfo(decinfo);
       seeedPropagationData->newSeeeds[0] = (newSeeeds)[0];
       ++(seeedPropagationData->nNewSeeeds);
-      seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
+      seeedPropagationData->newSeeeds[0]->setFinishingDetectorPropagated(detector);
       SCIPfreeMemoryArray(scip, &newSeeeds);
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
