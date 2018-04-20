@@ -1230,7 +1230,6 @@ SCIP_DECL_READERWRITE(readerWriteDec)
 
    SCIPconshdlrDecompWriteDec(scip, file, transformed, result);
 
-
    return SCIP_OKAY;
 }
 

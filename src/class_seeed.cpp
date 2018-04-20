@@ -6556,7 +6556,7 @@ SCIP_RETCODE Seeed::writeAsDec(
    {
       if( this != helpseeed )
          delete helpseeed;
-
+      *result = SCIP_SUCCESS;
       return SCIP_OKAY;
    }
    for( int b = 0; b < helpseeed->getNBlocks(); ++b )
@@ -6583,6 +6583,7 @@ SCIP_RETCODE Seeed::writeAsDec(
    if( this != helpseeed )
       delete helpseeed;
 
+   *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
 

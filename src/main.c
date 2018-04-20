@@ -147,7 +147,8 @@ SCIP_RETCODE fromCommandLine(
    }
    else
    {
-      SCIP_CALL( DECdetectStructure(scip, &result) ); /* including presolving */
+      SCIP_CALL( SCIPpresolve(scip) );
+      SCIP_CALL( DECdetectStructure(scip, &result) );
    }
 
    /*******************
