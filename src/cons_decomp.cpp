@@ -4919,7 +4919,10 @@ SCIP_RETCODE DECdetectStructure(
 SCIP_RETCODE DECwriteAllDecomps(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 directory,          /**< directory for decompositions */
-   char*                 extension           /**< extension for decompositions */
+   char*                 extension,          /**< extension for decompositions */
+   SCIP_Bool             original,           /**< should decomps for original problem be written */
+   SCIP_Bool             presolved           /**< should decomps for preoslved problem be written */
+
    )
 {
    MiscVisualization* misc = new MiscVisualization();
@@ -4928,6 +4931,7 @@ SCIP_RETCODE DECwriteAllDecomps(
    char outname[SCIP_MAXSTRLEN];
    char tempstring[SCIP_MAXSTRLEN];
    int i;
+   SCIP_Bool nodecomps;
 
    int maxtowrite;
    int nwritten;
@@ -4944,7 +4948,18 @@ SCIP_RETCODE DECwriteAllDecomps(
    maxtowrite = -1;
    nwritten = 0;
 
-   if( conshdlrdata->seeedpool->getNFinishedSeeeds() == 0 )
+   nodecomps = ( conshdlrdata->seeedpool == NULL && conshdlrdata->seeedpoolunpresolved == NULL );
+
+   nodecomps = nodecomps || ( !presolved && !original );
+
+   nodecomps = nodecomps || (
+      ( presolved && conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->getNFinishedSeeeds() == 0) &&
+      ( original && conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() == 0)
+       )
+      ;
+
+
+   if( presolved && conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->getNFinishedSeeeds() == 0 )
    {
       SCIPwarningMessage(scip, "No decomposition available.\n");
       return SCIP_OKAY;
@@ -4953,7 +4968,7 @@ SCIP_RETCODE DECwriteAllDecomps(
    SCIPgetIntParam(scip, "visual/nmaxdecompstowrite", &maxtowrite );
 
    /** write presolved decomps */
-   for( i = 0; conshdlrdata->seeedpool!= NULL && i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
+   for( i = 0; presolved && conshdlrdata->seeedpool!= NULL && i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
    {
       SeeedPtr seeed;
 
@@ -4978,7 +4993,7 @@ SCIP_RETCODE DECwriteAllDecomps(
       conshdlrdata->seeedtowrite = NULL;
 
       if( maxtowrite != -1 && nwritten >= maxtowrite )
-         return SCIP_OKAY;
+         break;
 
 
    }
@@ -4986,7 +5001,7 @@ SCIP_RETCODE DECwriteAllDecomps(
 
 
    /** write orig decomps */
-   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL &&  i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() ; ++i )
+   for( i = 0; original && conshdlrdata->seeedpoolunpresolved != NULL &&  i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() ; ++i )
    {
       SeeedPtr seeed;
 
@@ -5009,7 +5024,7 @@ SCIP_RETCODE DECwriteAllDecomps(
       conshdlrdata->seeedtowrite = NULL;
 
       if( maxtowrite != -1 && nwritten >= maxtowrite )
-         return SCIP_OKAY;
+         break;
    }
 
 

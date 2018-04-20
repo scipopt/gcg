@@ -412,7 +412,10 @@ SCIP_RETCODE DECdetectStructure(
 SCIP_RETCODE DECwriteAllDecomps(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 directory,          /**< directory for decompositions */
-   char*                 extension           /**< the file extension for the export */
+   char*                 extension,          /**< the file extension for the export */
+   SCIP_Bool             original,           /**< should decomps for original problem be written */
+   SCIP_Bool             presolved           /**< should decomps for preoslved problem be written */
+
    );
 
 

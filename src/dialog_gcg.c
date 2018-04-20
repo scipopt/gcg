@@ -99,7 +99,10 @@ SCIP_RETCODE writeAllDecompositions(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG*          dialog,             /**< dialog menu */
    SCIP_DIALOGHDLR*      dialoghdlr,         /**< dialog handler */
-   SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
+   SCIP_DIALOG**         nextdialog,          /**< pointer to store next dialog to execute */
+   SCIP_Bool             original,           /**< should decomps for original problem be written */
+   SCIP_Bool             presolved           /**< should decomps for preoslved problem be written */
+
    )
 {
    char filename[SCIP_MAXSTRLEN];
@@ -153,7 +156,7 @@ SCIP_RETCODE writeAllDecompositions(
 
       do
       {
-         SCIP_RETCODE retcode = DECwriteAllDecomps(scip, dirname, extension);
+         SCIP_RETCODE retcode = DECwriteAllDecomps(scip, dirname, extension, original, presolved);
 
          if( retcode == SCIP_FILECREATEERROR )
          {
@@ -849,7 +852,45 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteAllDecompositions)
 
    if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
    {
-      SCIP_CALL( writeAllDecompositions(scip, dialog, dialoghdlr, nextdialog) );
+      SCIP_CALL( writeAllDecompositions(scip, dialog, dialoghdlr, nextdialog, TRUE, TRUE) );
+   }
+   else
+      SCIPdialogMessage(scip, NULL, "no problem available\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+
+/** dialog execution method for writing all known decompositions */
+static
+SCIP_DECL_DIALOGEXEC(GCGdialogExecWritePresolvedDecompositions)
+{
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
+   {
+      SCIP_CALL( writeAllDecompositions(scip, dialog, dialoghdlr, nextdialog, FALSE, TRUE) );
+   }
+   else
+      SCIPdialogMessage(scip, NULL, "no problem available\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+
+/** dialog execution method for writing all known decompositions */
+static
+SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteOriginalDecompositions)
+{
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
+   {
+      SCIP_CALL( writeAllDecompositions(scip, dialog, dialoghdlr, nextdialog, TRUE, FALSE) );
    }
    else
       SCIPdialogMessage(scip, NULL, "no problem available\n");
@@ -1381,6 +1422,30 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+   /* write original decompositions */
+   if( !SCIPdialogHasEntry(submenu, "alloriginaldecompositions") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteOriginalDecompositions, NULL, NULL,
+            "alloriginaldecompositions",
+            "write all known original decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})",
+            FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* write alldecompositions */
+   if( !SCIPdialogHasEntry(submenu, "allpresolveddecompositions") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWritePresolvedDecompositions, NULL, NULL,
+            "allpresolveddecompositions",
+            "write all known presolved decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})",
+            FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+
 
    /* write family tree of whites decompositions */
    if( !SCIPdialogHasEntry(submenu, "familytree") )
