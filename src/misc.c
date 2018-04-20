@@ -38,10 +38,12 @@
 #include "pricer_gcg.h"
 #include "pub_gcgvar.h"
 #include "cons_decomp.h"
-
+#include <unistd.h>
 
 
 #include <string.h>
+
+
 /** transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method
  */
@@ -470,6 +472,58 @@ SCIP_RETCODE GCGprintInstanceName(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "filename: %s \n", GCGgetFilename(scip) );
    return SCIP_OKAY;
 }
+
+
+SCIP_RETCODE GCGprintMiplibStructureInformation(
+   SCIP*                scip,
+   SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */
+   )
+{
+   FILE* file;
+   SCIP_Bool createfile;
+
+   char* filepath;
+   char completefilepath[SCIP_MAXSTRLEN];
+
+   SCIPgetStringParam(scip, "write/miplib2017featurefilepath", &filepath);
+
+   (void) SCIPsnprintf(completefilepath, SCIP_MAXSTRLEN, "%s%s", filepath, ".csv");
+
+   if( access( completefilepath, W_OK ) != -1 ) {
+      createfile  = FALSE;
+   } else
+   {
+      createfile = TRUE;
+   }
+
+   file = fopen(completefilepath, "a");
+   if( file == NULL )
+   {
+      SCIPdialogMessage(scip, NULL, "error creating file <%s>\n", completefilepath);
+      SCIPprintSysError(completefilepath);
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+
+      return SCIP_OKAY;
+   }
+
+   if( createfile )
+      SCIP_CALL( GCGprintMiplibBaseInformationHeader(scip, file) );
+
+
+   SCIP_CALL( GCGprintMiplibBaseInformation(scip, file) );
+
+   SCIP_CALL( GCGprintMiplibConnectedInformation(scip, file) );
+
+   SCIP_CALL( GCGprintMiplibDecompInformation(scip, file) );
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n, " );
+
+
+   fclose(file);
+
+   return SCIP_OKAY;
+}
+
 
 
 

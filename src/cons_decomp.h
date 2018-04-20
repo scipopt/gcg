@@ -546,6 +546,32 @@ SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
    int* outputsize   /**< size of output */
    );
 
+SCIP_RETCODE GCGprintMiplibBaseInformation(
+   SCIP*                scip,
+   FILE*                file
+   );
+
+SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
+   SCIP*                scip,
+   FILE*                file
+   );
+
+
+SCIP_RETCODE GCGprintMiplibConnectedInformation(
+   SCIP*                scip,
+   FILE*                file
+   );
+
+SCIP_RETCODE GCGprintMiplibDecompInformation(
+   SCIP*                scip,
+   FILE*                file
+   );
+
+SCIP_RETCODE GCGprintOptionalOutput(
+   SCIP*                scip,
+   SCIP_DIALOGHDLR*     dialoghdlr         /**< dialog handler */
+   );
+
 
 #ifdef __cplusplus
 }

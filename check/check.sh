@@ -267,6 +267,50 @@ do
                 then
                     echo display additionalstatistics  >> $TMPFILE
                 fi
+            elif test $MODE = "miplibfeatures"
+            then
+		if test ! -e results/features
+		then
+		    mkdir results/features
+		fi
+		#disable presolving
+		echo set presolving maxrounds 0    >> $TMPFILE
+		echo set write miplib2017features TRUE  >> $TMPFILE
+		echo set write miplib2017featurefilepath results/features/featurefile >> $TMPFILE
+		echo change instancename $PROB     >> $TMPFILE
+                echo presolve                      >> $TMPFILE
+                echo detect                        >> $TMPFILE
+		echo quit                          >> $TMPFILE
+            elif test $MODE = "miplibfeaturesplots"
+            then
+		if test ! -e $DIR/features
+		then
+		    mkdir $DIR/features
+		fi
+		if test ! -e $DIR/features/decs
+		then
+		    mkdir $DIR/features/decs
+		fi
+		if test ! -e $DIR/features/matrix
+		then
+		    mkdir $DIR/features/matrix
+		fi
+		#disable presolving
+#		echo set presolving maxrounds 0    >> $TMPFILE
+		echo set write miplib2017features TRUE  >> $TMPFILE
+		echo set write miplib2017plotsanddecs TRUE  >> $TMPFILE
+		echo set display verblevel 5 >> $TMPFILE
+
+		echo set write miplib2017featurefilepath $DIR/features/featurefile >> $TMPFILE
+		echo set write miplib2017matrixfilepath $DIR/features/matrix >> $TMPFILE
+		echo set write miplib2017decompfilepath $DIR/features/decs >> $TMPFILE
+		echo set visual colorscheme 1 >> $TMPFILE
+		echo change instancename $PROB     >> $TMPFILE
+                echo presolve                      >> $TMPFILE
+                echo detect                        >> $TMPFILE
+		echo write transproblem  $DIR/features/decs/$NAME.dec     >> $TMPFILE
+		echo write transproblem  $DIR/features/decs/$NAME.gp      >> $TMPFILE
+		echo quit                          >> $TMPFILE
 	    elif test $MODE = "detectionstatistics"
 	    then
 		echo change instancename $PROB     >> $TMPFILE

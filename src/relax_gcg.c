@@ -882,6 +882,7 @@ SCIP_RETCODE checkIdenticalBlocks(
       relaxdata->blockrepresentative[i] = i;
       relaxdata->nblocksidentical[i] = 1;
    }
+
    relaxdata->nrelpricingprobs = relaxdata->npricingprobs;
    nrelevant = 0;
 
@@ -890,6 +891,14 @@ SCIP_RETCODE checkIdenticalBlocks(
       SCIPdebugMessage("discretization is off, aggregation is off\n");
       return SCIP_OKAY;
    }
+
+
+   if(  relaxdata->nlinkingvars != 0 )
+      {
+         SCIPdebugMessage("aggregation is off in presence of linking vars\n");
+         return SCIP_OKAY;
+      }
+
 
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
@@ -1255,7 +1264,7 @@ SCIP_RETCODE createPricingVariables(
       {
          int tempblock;
          tempblock = (int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar)-1; /*lint !e507*/
-         if( tempblock == DECdecompGetNBlocks(relaxdata->decdecomp) )
+         if( tempblock >= DECdecompGetNBlocks(relaxdata->decdecomp) )
          {
             blocknr = -1;
          }
@@ -3940,7 +3949,7 @@ DEC_DECOMP* GCGgetStructDecdecomp(
    return relaxdata->decdecomp;
 }
 
-/** sets the structure information */
+/** gets the filename information if exists*/
 const char* GCGgetFilename(
    SCIP*                 scip               /**< SCIP data structure */
 )

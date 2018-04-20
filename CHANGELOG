@@ -92,7 +92,27 @@ new parameters:
 - new parameter "detectors/*/overruleemphasis" flag to indicate whether emphasis settings for detector <%s> should be overruled by normal settings
 - new parameter "detectors/*/postprocessingenabled" is this detector enabled when postprocessing in the original and the transformed problem
 - new parameter "detectors/*/usefulrecall" indicates whether this detector is called on descendants of a partial decomposition
--new parameter "detectors/connectedbase/useconssadj" should the constraint adjacency datastructure  be used (and not the constraint-variable-incidency)
+- new parameter "detectors/connectedbase/useconssadj" should the constraint adjacency datastructure  be used (and not the constraint-variable-incidency)
+- new parameter "set/visual/colorscheme" sets the color scheme of visualizations produced by the gp and tex reader
+- new parameter "set/visual/draftmode" sets whether nonzeros are shown in visualizations produced by the gp and tex reader
+- new parameter "set/visual/nonzeroradius" sets the radius of nonzeros in visualizations produced by the gp and tex reader
+- new parameter "set/visual/pdfreader" sets a PDF reader that is used for opening visualizations
+- new parameter "set/visual/nmaxdecompstowrite" sets maximum number of decompositions to write
+- new parameter "set/visual/colors/colorblock" sets color for blocks in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/colorlines" sets color for lines in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/colorlinking" sets color for linking variables in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/colormasterconss" sets color for master constraints in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/colormastervars" sets color for master variables in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/colornonzeros" sets color for nonzeros in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/coloropen" sets color for open areas in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/colorstairlinking" sets color for stairlinking variables in visualizations produced by the gp and tex reader
+- new parameter "set/visual/famtree/maxndecomps" sets maximum number of finished decompositions in family tree
+- new parameter "set/visual/report/maxndecomps" sets maximum number of decompositions shown in report
+- new parameter "set/visual/report/showstatistics" sets whether statistics for each decomposition are included in report
+- new parameter "set/visual/report/showtitle" sets whether a title page is included in report
+- new parameter "set/visual/report/showtoc" sets whether a table of contents is included in report
+- new parameter "set/visual/report/showtype" sets whether only decompositions of a certain type are included in report
+- new parameter "set/visual/report/usegp" sets whether the report uses gnuplot or LaTeX/Tikz images in report
 
 code cleanup
 - use SCIP_STATISTIC for pricing statistics and add compiler flag STATISTICS; if STATISTICS is set to true,

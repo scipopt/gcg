@@ -39,9 +39,11 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 
 #include "cons_decomp.h"
+
+#include "reader_gp.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -83,6 +85,7 @@
 #include "type_decomp.h"
 #include "wrapper_seeed.h"
 #include "reader_tex.h"
+#include "scip_misc.h"
 
 typedef gcg::Seeed* SeeedPtr;
 
@@ -109,7 +112,7 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_MAXNCLASSESFORNBLOCKCANDIDATES 18                 /** Maximum number of classes a classifier can have to be used for voting nblockcandidates */
 #define DEFAULT_ENABLEORIGDETECTION FALSE                         /**< indicates whether to start detection for the original problem */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
-#define DEFAULT_ENABLEORIGCLASSIFICATION              TRUE        /**< indicates whether to start detection for the original problem */
+#define DEFAULT_ENABLEORIGCLASSIFICATION              FALSE       /**< indicates whether to start detection for the original problem */
 
 #define DEFAULT_CONSSCLASSNNONZENABLED                TRUE        /**<  indicates whether constraint classifier for nonzero entries is enabled */
 #define DEFAULT_CONSSCLASSNNONZENABLEDORIG            TRUE       /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
@@ -142,6 +145,15 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_ONLYLEGACYMODE                        FALSE    /**< indicates whether detection should only consist of legacy mode detection */
 #define DEFAULT_LEGACYMODE                            FALSE    /**< indicates whether detection should consist of legacy mode detection */
 #define DEFAULT_STAIRLINKINGHEUR                      FALSE    /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
+
+#define DEFAULT_WRITEMIPLIB2017FEATURES               FALSE    /**< indicates whether miplib2017 features should be written */
+#define DEFAULT_WRITEMIPLIB2017PLOTSANDDECS           FALSE    /**< indicates whether miplib2017 gp and dec files  should be written */
+#define DEFAULT_WRITEMIPLIB2017FEATUREFILEPATH        "."      /**< indicates where the miplib feature output should be written to */
+
+#define DEFAULT_WRITEMIPLIB2017MATRIXFILEPATH        "."      /**< indicates where the miplib feature output should be written to */
+
+#define DEFAULT_WRITEMIPLIB2017DECOMPFILEPATH        "."      /**< indicates where the miplib feature output should be written to */
+
 
 /*
  * Data structures
@@ -195,6 +207,12 @@ struct SCIP_ConshdlrData
    SCIP_Bool             onlylegacymode;                    /**< indicates whether detection should only consist of legacy mode detection, this is sufficient to enable it */
    SCIP_Bool             legacymodeenabled;                 /**< indicates whether detection consist of legacy mode detection */
    SCIP_Bool             stairlinkingheur;                  /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
+   SCIP_Bool             writemiplib2017features;           /**< indicates whether miplib2017 features should be written */
+   SCIP_Bool             writemiplib2017plotsanddecs;             /**< indicates whether dec and gp files for miplib 2017 should be written */
+
+   char*                 writemiplib2017featurefilepath;
+   char*                 writemiplib2017matrixfilepath;
+   char*                 writemiplib2017decompfilepath;
 
    int**                 candidatesNBlocks;                 /**< pointer to store candidates for number of blocks calculated by the seeedpool */
    int*                  nCandidates;
@@ -248,6 +266,14 @@ enum weightinggpresolvedoriginaldecomps{
 /*
  * Local methods
  */
+
+SCIP_Real calcLogarithm(SCIP_Real val)
+{
+   return log(val) / log(2);
+}
+
+
+
 
 SCORETYPE SCIPconshdlrdataGetScoretype(
    SCIP_CONSHDLRDATA* conshdlrdata
@@ -932,12 +958,20 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/onlylegacymode", "indicates whether detection should only consist of legacy mode detection", &conshdlrdata->onlylegacymode, FALSE, DEFAULT_ONLYLEGACYMODE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/enabled", "indicates whether detection consist of legacy mode detection", &conshdlrdata->legacymodeenabled, FALSE, DEFAULT_LEGACYMODE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/stairlinkingheur", "indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated", &conshdlrdata->stairlinkingheur, FALSE, DEFAULT_STAIRLINKINGHEUR, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "write/miplib2017features", "indicates whether miplib2017 features should be written", &conshdlrdata->writemiplib2017features, FALSE, DEFAULT_WRITEMIPLIB2017FEATURES, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "write/miplib2017plotsanddecs", "indicates whether dec and gp files are written for miplib2017", &conshdlrdata->writemiplib2017plotsanddecs, FALSE, DEFAULT_WRITEMIPLIB2017PLOTSANDDECS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip, "write/miplib2017featurefilepath", "path to the file for miplib2017 feature output", &conshdlrdata->writemiplib2017featurefilepath, FALSE, DEFAULT_WRITEMIPLIB2017FEATUREFILEPATH, NULL, NULL) );
+   SCIP_CALL( SCIPaddStringParam(scip, "write/miplib2017matrixfilepath", "path to matrix gp file that is to write", &conshdlrdata->writemiplib2017matrixfilepath, FALSE, DEFAULT_WRITEMIPLIB2017MATRIXFILEPATH, NULL, NULL) );
+   SCIP_CALL( SCIPaddStringParam(scip, "write/miplib2017decompfilepath", "path to decomp dec and gp files to write", &conshdlrdata->writemiplib2017decompfilepath, FALSE, DEFAULT_WRITEMIPLIB2017DECOMPFILEPATH, NULL, NULL) );
+
+
    SCIP_CALL( SCIPaddIntParam(scip, "detection/strong_detection/dualvalrandommethod",
       "Method for random dual values use for strong decomposition: 1) naive, 2) expected equality exponential distributed, 3) expected overestimation exponential distributed ", &conshdlrdata->strongdetectiondualvalrandommethod, FALSE,
       DEFAULT_DUALVALRANDOMMETHOD, 1, 3, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(scip, "detection/strong_detection/coeffactororigvsrandom",
-      " convex coefficient for orig dual val (1-this coef is facor for random dual value) ", &conshdlrdata->coeffactororigvsrandom, FALSE,
+      " convex coefficient for orig dual val (1-this coef is factor for random dual value) ", &conshdlrdata->coeffactororigvsrandom, FALSE,
       DEFAULT_COEFFACTORORIGVSRANDOM, 0., 1., NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
@@ -3088,6 +3122,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
 
    conshdlrdata->curruserseeed->setSeeedpool(currseeedpool );
    conshdlrdata->curruserseeed->setIsFromUnpresolved( !presolved );
+
    if( markedincomplete )
       conshdlrdata->curruserseeed->setUsergiven(USERGIVEN::PARTIAL);
    else
@@ -4181,7 +4216,8 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    }
 
    finished = conshdlrdata->seeedpool->finishIncompleteSeeeds(tofinishpresolved);
-   finishedunpresolved = conshdlrdata->seeedpoolunpresolved->finishIncompleteSeeeds(tofinishunpresolved);
+   if( conshdlrdata->seeedpoolunpresolved != NULL )
+      finishedunpresolved = conshdlrdata->seeedpoolunpresolved->finishIncompleteSeeeds(tofinishunpresolved);
 
    seeediter = selectedseeeds.begin();
    seeediterend = selectedseeeds.end();
@@ -4594,6 +4630,7 @@ SCIP_RETCODE DECdetectStructure(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_Bool onlylegacymode;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
@@ -4610,9 +4647,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
 
 
-
    /* check whether only legacy mode should be executed */
-   SCIP_Bool onlylegacymode;
    SCIPgetBoolParam(scip, "detection/legacymode/onlylegacymode", &onlylegacymode);
 
    SCIPdebugMessage("start only legacy mode? %s \n", (onlylegacymode ? "yes": "no") );
@@ -4637,8 +4672,10 @@ SCIP_RETCODE DECdetectStructure(
       SCIPgetBoolParam(scip, "detection/origprob/classificationenabled", &classifyOrig);
 
       /** get data of the seeedpool with original vars and conss */
-      SCIPdebugMessage("is seeedpoolunpresolved not initilized yet ? %s -> %s create it \n", (conshdlrdata->seeedpoolunpresolved == NULL ? "yes" : "no"), (conshdlrdata->seeedpoolunpresolved == NULL ? "" : "Do not")  );
-      if ( conshdlrdata->seeedpoolunpresolved == NULL )
+      SCIPdebugMessage("is seeedpoolunpresolved not initilized yet but needed ? %s -> %s create it \n", (conshdlrdata->seeedpoolunpresolved == NULL ? "yes" : "no"), (conshdlrdata->seeedpoolunpresolved == NULL ? "" : "Do not")  );
+
+
+      if ( conshdlrdata->seeedpoolunpresolved == NULL && ( classifyOrig || calculateOrigDecomps ) )
          conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
 
 
@@ -4675,25 +4712,26 @@ SCIP_RETCODE DECdetectStructure(
          SCIPdebugMessage("finding decompositions for original problem is NOT enabled!\n" );
 
       /** get the cons and var classifier for translating them later*/
-      for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNConsClassifiers(); ++i )
+      if( classifyOrig )
       {
-         gcg::ConsClassifier* classifier = new gcg::ConsClassifier(
-            conshdlrdata->seeedpoolunpresolved->getConsClassifier(i));
-         consClassDistributions.push_back(classifier);
-      }
-      for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNVarClassifiers(); ++i )
-      {
-         gcg::VarClassifier* classifier = new gcg::VarClassifier(conshdlrdata->seeedpoolunpresolved->getVarClassifier(i));
-         varClassDistributions.push_back(classifier);
+         for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNConsClassifiers(); ++i )
+         {
+            gcg::ConsClassifier* classifier = new gcg::ConsClassifier(
+               conshdlrdata->seeedpoolunpresolved->getConsClassifier(i));
+            consClassDistributions.push_back(classifier);
+         }
+         for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNVarClassifiers(); ++i )
+         {
+            gcg::VarClassifier* classifier = new gcg::VarClassifier(conshdlrdata->seeedpoolunpresolved->getVarClassifier(i));
+            varClassDistributions.push_back(classifier);
+         }
       }
 
       SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock));
 
-
       //Presolving
       if( presolveOrigProblem )
          SCIP_CALL(SCIPpresolve(scip));
-
 
       /** detection for presolved problem */
 
@@ -4715,6 +4753,7 @@ SCIP_RETCODE DECdetectStructure(
       SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
       if( conshdlrdata->seeedpool == NULL )
       {
+         SCIPdebugMessagePrint(scip, "start creating seeedpool for current problem \n");
          conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
          SCIPdebugMessagePrint(scip, "created seeedpool for current problem, n detectors: %d \n", conshdlrdata->ndetectors);
       }
@@ -6146,3 +6185,480 @@ SCIP_RETCODE GCGprintDecompInformation(
 
    return SCIP_OKAY;
 }
+
+SCIP_RETCODE GCGprintMiplibBaseInformation(
+   SCIP*                scip,
+   FILE*                file
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   /** write base information */
+
+   SCIP_VAR** vars;
+   SCIP_CONS** conss;
+   SCIP_Real absmaxvalobj;
+   SCIP_Real absminvalobj;
+   SCIP_Real maxrationonzerovals;
+
+   SCIP_Bool fullpathinfile;
+
+   char* name;
+   char probname[SCIP_MAXSTRLEN];
+   int nvarsnonzerocoef;
+   int nvarsnonzerolb;
+   int nvarsnonzeroub;
+   int nvarslbnotinf;
+   int nvarsubnotinf;
+   int ncontvars;
+   int nbinvars;
+   int nintvars;
+   int nimplintvars;
+   int nconsnonzerorhs; /* lhss are included */
+
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   nvarsnonzerocoef = 0;
+   nvarsnonzerolb = 0;
+   nvarsnonzeroub = 0;
+   nvarslbnotinf = 0;
+   nvarsubnotinf = 0;
+   ncontvars = 0;
+   nbinvars = 0;
+   nintvars = 0;
+   nimplintvars = 0;
+   nconsnonzerorhs = 0; /* lhss are included */
+   absmaxvalobj = 0;
+   absminvalobj = SCIPinfinity(scip);
+   maxrationonzerovals = 0.;
+
+   fullpathinfile = TRUE;
+
+   /* sanitize filename */
+
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+   SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
+
+   /*
+    * current features:
+    * instance, log nconss, nvars, nnonzeros, conss/var ratio, density matrix, density obj, density lb, density ub, density rhs,
+    * percentage bin vars, percentage int vars, percentage cont vars, dynamism conss, dynamism obj,
+    * components maxwhite score, ncomponents, percentage min nconss component, percentage max nconss component, percentage median nconss component, percentage mean nconss component,
+    * percentage min nvars component, percentage max nvars component, percentage median nvars component, percentage mean nvars component,
+    * decomp maxwhite score, decomp ncomponents, decomp percentage min nconss component, decomp percentage max nconss component, decomp percentage median nconss component, decomp percentage mean nconss component,
+    * decomp percentage min nvars component, decomp percentage max nvars component, decomp percentage median nvars component, decomp percentage mean nvars component,
+ OUT:   * percentage agg conss, percentage vbd conss, percentage par conss, percenetage pac conss, percentage cov conss, percentage car conss, percentage eqk conss,
+    * percentage bin conss, percentage ivk conss, percentage kna conss, percentage ikn conss, percentage m01 conss, percentage gen conss
+    *
+    * */
+
+   /* instance, log nconss, log nvars, log nnonzeros, nconss/nvars ratio, density matrix, density obj, density lb, density ub, density rhs, percentage bin vars, percentage int vars, percentage cont vars, dynamism conss, dynamism obj,
+    * OUT: percentage empty conss, percentage free conss, percentage singleton conss, percentage agg conss, percentage vbd conss, percentage par conss, percentage pac conss, percentage cov conss, percentage car conss, percentage eqk conss, percentage bin conss, percentage ivk conss, percentage kna conss, percentage ikn conss, percentage m01 conss, percentage gen conss, END OUT
+    * components maxwhite score, ncomponents, percentage min nconss component, percentage max nconss component, percentage median nconss component, percentage mean nconss component, percentage min nvars component, percentage max nvars component, percentage median nvars component, percentage mean nvars component, decomp maxwhite score, decomp ncomponents, decomp percentage min nconss component, decomp percentage max nconss component, decomp percentage median nconss component, decomp percentage mean nconss component, decomp percentage min nvars component, decomp percentage max nvars component, decomp percentage median nvars component, decomp percentage mean nvars component  */
+   if( fullpathinfile )
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", GCGgetFilename(scip) ) ;
+   else
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", name) ;
+   /** log nconss */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", calcLogarithm( conshdlrdata->seeedpool->getNTotalConss() ));
+
+   /** log nvars */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", calcLogarithm( conshdlrdata->seeedpool->getNVars() ));
+
+   /** log nnonzeros */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", calcLogarithm( conshdlrdata->seeedpool->getNTotalNonzeros() ));
+
+   /** log ratio conss vs vars */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real ) conshdlrdata->seeedpool->getNTotalConss() / conshdlrdata->seeedpool->getNVars() ));
+
+   /** density of matrix */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  conshdlrdata->seeedpool->getNTotalNonzeros() /  (conshdlrdata->seeedpool->getNTotalConss() ) ) /  (SCIP_Real ) conshdlrdata->seeedpool->getNVars() );
+
+   assert( conshdlrdata->seeedpool->getNVars() == SCIPgetNVars(scip) );
+   vars = SCIPgetVars(scip);
+   for( int v = 0; v < SCIPgetNVars(scip); ++v )
+   {
+      SCIP_VAR* var = vars[v];
+      SCIP_Real absobjval;
+      if( !SCIPisEQ( scip, SCIPvarGetObj(var), 0.) )
+      {
+         ++nvarsnonzerocoef;
+         absobjval = abs(SCIPvarGetObj(var) );
+         absobjval = calcLogarithm(absobjval);
+         if( SCIPisLT(scip, absmaxvalobj, absobjval ) )
+            absmaxvalobj = absobjval;
+         if( SCIPisGT(scip, absminvalobj, absobjval ) )
+            absminvalobj = absobjval;
+      }
+
+      if( !SCIPisEQ( scip, SCIPvarGetLbGlobal(var), 0.) && !SCIPisInfinity(scip, -SCIPvarGetLbGlobal(var)) )
+         ++nvarsnonzerolb;
+      if( !SCIPisEQ( scip, SCIPvarGetUbGlobal(var), 0.) && !SCIPisInfinity(scip, SCIPvarGetUbGlobal(var) ) )
+         ++nvarsnonzeroub;
+
+      if( !SCIPisInfinity(scip, -SCIPvarGetLbGlobal(var) ) )
+         ++nvarslbnotinf;
+      if(  !SCIPisInfinity(scip, SCIPvarGetUbGlobal(var) ) )
+         ++nvarsubnotinf;
+
+      assert(SCIPvarGetType(var) == SCIP_VARTYPE_BINARY || SCIPvarGetType(var) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(var) == SCIP_VARTYPE_INTEGER || SCIPvarGetType(var) == SCIP_VARTYPE_IMPLINT  );
+
+      if( SCIPvarGetType(var) == SCIP_VARTYPE_BINARY )
+         ++nbinvars;
+      if( SCIPvarGetType(var) == SCIP_VARTYPE_CONTINUOUS )
+         ++ncontvars;
+      if( SCIPvarGetType(var) == SCIP_VARTYPE_INTEGER )
+         ++nintvars;
+      if( SCIPvarGetType(var) == SCIP_VARTYPE_IMPLINT )
+         ++nimplintvars;
+   }
+   conss = SCIPgetConss(scip);
+   for( int c = 0; c < SCIPgetNConss(scip); ++c )
+   {
+      SCIP_CONS* cons = conss[c];
+      SCIP_Real lhs = GCGconsGetLhs(scip, cons);
+      SCIP_Real rhs = GCGconsGetRhs(scip, cons);
+
+      if( !SCIPisEQ( scip, rhs, 0. ) && !SCIPisInfinity(scip, rhs) )
+         ++nconsnonzerorhs;
+      if( !SCIPisEQ( scip, lhs, 0. ) && !SCIPisInfinity(scip, -lhs) && !SCIPisEQ(scip, lhs, rhs) )
+         ++nconsnonzerorhs;
+   }
+
+
+   /** density of objective */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nvarsnonzerocoef /   conshdlrdata->seeedpool->getNVars() ) );
+
+   /** density of lower bound */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nvarsnonzerolb /   nvarslbnotinf) );
+
+   /** density of upper bound */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nvarsnonzeroub /   nvarslbnotinf ) );
+
+   /** density of rhs */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nconsnonzerorhs /   conshdlrdata->seeedpool->getNTotalConss() ) );
+
+   /** percentage of Binary, Integer, Continuous Variables */
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nbinvars /   conshdlrdata->seeedpool->getNVars()) );
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  nintvars /   conshdlrdata->seeedpool->getNVars()) );
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  ncontvars /   conshdlrdata->seeedpool->getNVars() ) );
+
+   /* dynamism: max log ratio max/min absolute value of nonzero per constraint */
+   for( int c = 0; c < SCIPgetNConss(scip); ++c )
+   {
+      SCIP_CONS* cons = conss[c];
+
+      SCIP_Real* curvals;
+      SCIP_Real maxval;
+      SCIP_Real minval;
+      int ncurvars;
+      ncurvars = GCGconsGetNVars(scip, cons);
+
+      if( ncurvars == 0)
+         continue;
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars));
+      GCGconsGetVals(scip, cons, curvals, ncurvars ) ;
+
+      maxval = calcLogarithm(abs( curvals[0] ) );
+      minval = calcLogarithm( abs( curvals[0] ) );
+
+      for( int v = 0; v < ncurvars; ++v )
+      {
+         SCIP_Real absval = abs( curvals[v]);
+         if( SCIPisEQ(scip, absval, 0. ) )
+            continue;
+
+         absval = calcLogarithm(absval);
+
+         if( SCIPisLT(scip, maxval, absval ) )
+            maxval = absval;
+         if( SCIPisGT(scip, minval, absval ) )
+            minval = absval;
+      }
+
+      /** ratio becomes difference according logarithm rules */
+      if( SCIPisGT( scip, maxval - minval, maxrationonzerovals ) )
+         maxrationonzerovals = maxval - minval;
+
+      SCIPfreeBufferArray(scip, &curvals);
+   }
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  maxrationonzerovals) );
+
+   if ( !SCIPisInfinity(scip, absminvalobj) )
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  (absmaxvalobj - absminvalobj ) ) );
+   else
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( 0 ) );
+
+
+   return SCIP_OKAY;
+}
+
+
+SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
+   SCIP*                scip,
+   FILE*                file
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   /** write base information */
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   /*
+    * current features:
+    * instance, log nconss, nvars, nnonzeros, conss/var ratio, density matrix, density obj, density lb, density ub, density rhs,
+    * percentage bin vars, percentage int vars, percentage cont vars, dynamism conss, dynamism obj,
+    * components maxwhite score, ncomponents, percentage min nconss component, percentage max nconss component, percentage median nconss component, percentage mean nconss component,
+    * percentage min nvars component, percentage max nvars component, percentage median nvars component, percentage mean nvars component,
+    * decomp maxwhite score, decomp ncomponents, decomp percentage min nconss component, decomp percentage max nconss component, decomp percentage median nconss component, decomp percentage mean nconss component,
+    * decomp percentage min nvars component, decomp percentage max nvars component, decomp percentage median nvars component, decomp percentage mean nvars component,
+ OUT:   * percentage agg conss, percentage vbd conss, percentage par conss, percenetage pac conss, percentage cov conss, percentage car conss, percentage eqk conss,
+    * percentage bin conss, percentage ivk conss, percentage kna conss, percentage ikn conss, percentage m01 conss, percentage gen conss
+    *
+    * */
+
+   /* instance, log nconss, log nvars, log nnonzeros, nconss/nvars ratio, density matrix, density obj, density lb, density ub, density rhs, percentage bin vars, percentage int vars, percentage cont vars, dynamism conss, dynamism obj,
+    * OUT: percentage empty conss, percentage free conss, percentage singleton conss, percentage agg conss, percentage vbd conss, percentage par conss, percentage pac conss, percentage cov conss, percentage car conss, percentage eqk conss, percentage bin conss, percentage ivk conss, percentage kna conss, percentage ikn conss, percentage m01 conss, percentage gen conss, END OUT
+    * components maxwhite score, ncomponents, percentage min nconss component, percentage max nconss component, percentage median nconss component, percentage mean nconss component, percentage min nvars component, percentage max nvars component, percentage median nvars component, percentage mean nvars component, decomp maxwhite score, decomp ncomponents, decomp percentage min nconss component, decomp percentage max nconss component, decomp percentage median nconss component, decomp percentage mean nconss component, decomp percentage min nvars component, decomp percentage max nvars component, decomp percentage median nvars component, decomp percentage mean nvars component  */
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s \n",
+      "instance",
+      "log nconss ",
+      "log nvars ",
+      "log nnonzeros",
+      "nconss/nvars ratio",
+      "density matrix",
+      "density obj",
+      "density lb",
+      "density ub",
+      "density rhs",
+      "percentage binary vars",
+      "percentage integer vars",
+      "percentage continuous vars",
+      "dynamism conss",
+      "dynamism obj",
+      "components maxwhite score",
+      "ncomponents",
+      "percentage min nconss component",
+      "percentage max nconss component",
+      "percentage median nconss component",
+      "percentage mean nconss component",
+      "percentage min nvars component",
+      "percentage max nvars component",
+      "percentage median nvars component",
+      "percentage mean nvars component",
+      "decomp maxwhite score",
+      "decomp ncomponents",
+      "decomp percentage min nconss component",
+      "decomp percentage max nconss component",
+      "decomp percentage median nconss component",
+      "decomp percentage mean nconss component",
+      "decomp percentage min nvars component",
+      "decomp percentage max nvars component",
+      "decomp percentage median nvars component",
+      "decomp percentage mean nvars component"
+      );
+
+   return SCIP_OKAY;
+}
+
+
+
+
+SCIP_RETCODE GCGprintMiplibConnectedInformation(
+   SCIP*                scip,
+   FILE*                file
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   DEC_DETECTOR* connecteddetector;
+   std::ofstream myfile;
+
+   SeeedPtr seeedconnected;
+   SeeedPtr seeedconnectedfinished;
+   SEEED_PROPAGATION_DATA* seeedPropData;
+   SCIP_Result success;
+   SCIP_Bool writeplot;
+
+
+   char* name;
+
+   char probname[SCIP_MAXSTRLEN];
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   /* sanitize filename */
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+   SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
+
+
+   assert( conshdlrdata != NULL ) ;
+
+   for ( int d = 0; d < conshdlrdata->ndetectors; ++d )
+   {
+
+      if ( strcmp("connectedbase", DECdetectorGetName(conshdlrdata->detectors[d]) ) == 0  )
+      {
+           connecteddetector = conshdlrdata->detectors[d];
+           break;
+        }
+     }
+
+     assert( connecteddetector != NULL );
+
+     seeedconnected = new gcg::Seeed(scip, -1, conshdlrdata->seeedpool->getNConss(), conshdlrdata->seeedpool->getNVars() );
+     seeedconnected->setSeeedpool(conshdlrdata->seeedpool);
+     seeedPropData = new SEEED_PROPAGATION_DATA();
+     seeedPropData->seeedpool = conshdlrdata->seeedpool;
+     seeedPropData->nNewSeeeds = 0;
+
+     seeedPropData->seeedToPropagate = new gcg::Seeed( seeedconnected );
+
+     SCIP_CALL_ABORT( connecteddetector->finishSeeed( scip, connecteddetector, seeedPropData,
+        &success) );
+
+     seeedconnectedfinished = seeedPropData->newSeeeds[0];
+
+     assert(seeedPropData->nNewSeeeds == 1);
+
+
+
+     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  seeedconnectedfinished->getMaxWhiteScore() ) );
+
+     SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s, ", seeedconnectedfinished->getComponentInformation().c_str() );
+
+     SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &writeplot );
+
+     if( writeplot )
+     {
+        char*   folder;
+        char filename[SCIP_MAXSTRLEN];
+        char* outputname;
+        MiscVisualization* misc;
+        char problemname[SCIP_MAXSTRLEN];
+
+        SCIPgetStringParam(scip, "write/miplib2017matrixfilepath", &folder);
+
+        strcpy(filename, folder);
+
+        strcat(filename, "/matrix.gp");
+
+//        SCIPsetStringParam(scip, "visual/colors/colorblock", "#D3D3D3");
+//        SCIPsetStringParam(scip, "visual/colors/colorlines", "#000000");
+//        SCIPsetIntParam(scip, "visual/colorscheme", 1);
+
+        misc = new MiscVisualization();
+
+        conshdlrdata->seeedpool->addSeeedToFinishedUnchecked(seeedconnectedfinished);
+
+        /* get filename for compiled file */
+        (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+        SCIPsplitFilename(problemname, NULL, &outputname, NULL, NULL);
+
+        strcat(outputname, ".pdf");
+
+        SCIPinfoMessage(scip, NULL, "filename for matrix plot is %s \n", filename );
+        SCIPinfoMessage(scip, NULL, "foldername for matrix plot is %s \n", folder );
+
+
+        /* actual writing */
+        GCGwriteGpVisualization(scip, filename, outputname, seeedconnectedfinished->getID() );
+
+        delete misc;
+
+     }
+
+     delete seeedconnected;
+     if ( !writeplot )
+        delete seeedconnectedfinished;
+     seeedconnected = seeedPropData->newSeeeds[0];
+     SCIPfreeMemoryArray(scip, &seeedPropData->newSeeeds);
+     delete seeedPropData;
+
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GCGprintMiplibDecompInformation(
+   SCIP*                scip,
+   FILE*                file
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   std::ofstream myfile;
+
+
+   SeeedPtr bestseeed;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE) );
+
+   bestseeed = conshdlrdata->candidates->at(0).first;
+
+//   std::cout << "start best decomp info: score: " << bestseeed->getMaxWhiteScore()  << " compnnent info: " << bestseeed->getComponentInformation() << "end best decomp info " << std::endl;
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ", ( (SCIP_Real )  bestseeed->getMaxWhiteScore() ) );
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%s ", bestseeed->getComponentInformation().c_str() );
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GCGprintOptionalOutput(
+   SCIP*                 scip,
+   SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */
+   )
+{
+
+   SCIP_Bool miplibfeatureoutput;
+   SCIP_Bool miplibplotdecandgp;
+
+   /** check setting for optional output */
+   SCIPgetBoolParam(scip, "write/miplib2017features", &miplibfeatureoutput);
+   SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &miplibplotdecandgp);
+
+   if( miplibfeatureoutput )
+      GCGprintMiplibStructureInformation(scip, dialoghdlr);
+
+
+
+
+   return SCIP_OKAY;
+}
+
+

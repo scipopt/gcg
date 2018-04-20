@@ -112,6 +112,8 @@ SCIP_DECL_READERWRITE(readerWriteGp)
       *result = SCIP_SUCCESS;
    }
 
+   delete misc;
+
    return SCIP_OKAY;
 }
 
@@ -259,8 +261,8 @@ SCIP_RETCODE writeGpNonzeros(
    ofs.open (filename, std::ofstream::out | std::ofstream::app );
 
    /* start writing dots */
-   ofs << "plot \"-\" using 1:2:(" << radius << ") notitle with circles fc rgb \"" << SCIPvisuGetColorNonzero()
-      << "\" fill solid" << std::endl;
+   ofs << "plot \"-\" using 1:2:(" << radius << ") notitle pt 7 ps " << radius << " fc rgb \"" << SCIPvisuGetColorNonzero()
+      << "\"  " << std::endl;
 
    /* write scatter plot */
    for( int row = 0; row < seeed->getNConss(); ++row )
@@ -295,6 +297,8 @@ SCIP_RETCODE writeGpSeeed(
    int objcounter = 0;
    int nvars;
    int nconss;
+   SCIP_Bool writematrix;
+   SCIP_Bool noticsbutlabels;
 
    nvars = seeed->getNVars();
    nconss = seeed->getNConss();
@@ -302,11 +306,39 @@ SCIP_RETCODE writeGpSeeed(
    std::ofstream ofs;
    ofs.open( filename, std::ofstream::out | std::ofstream::app );
 
+   writematrix = FALSE;
+   noticsbutlabels = FALSE;
+
+   if ( seeed->getNBlocks() == 1 &&  seeed->isComplete() && seeed->getNMasterconss() == 0   && seeed->getNLinkingvars() == 0  && seeed->getNMastervars() == 0 )
+      writematrix = TRUE;
+
+   SCIPgetBoolParam(seeedpool->getScip(), "write/miplib2017plotsanddecs", &noticsbutlabels);
+
    /* set coordinate range */
-   ofs << "set xrange [-1:" << nvars << "]" << std::endl;
-   ofs << "set yrange[" << nconss << ":-1]" << std::endl;
+   if( !writematrix && !noticsbutlabels )
+   {
+      ofs << "set xrange [-1:" << nvars << "]" << std::endl;
+      ofs << "set yrange[" << nconss << ":-1]" << std::endl;
+   }
+   else
+   {
+      ofs << "set xrange [0:" << nvars << "]" << std::endl;
+      ofs << "set yrange[" << nconss << ":0]" << std::endl;
+      if( !writematrix )
+      {
+         ofs << " unset xtics " << std::endl;
+         ofs << " unset ytics " << std::endl;
+      }
+   }
+
+   if( noticsbutlabels )
+   {
+      ofs << "set tic scale 0" << std::endl;
+   }
+
 
    /* --- draw boxes ---*/
+
 
    /* linking vars */
    if(seeed->getNLinkingvars() != 0)
@@ -330,8 +362,8 @@ SCIP_RETCODE writeGpSeeed(
    if(seeed->getNMastervars() != 0)
    {
       ++objcounter;
-      drawGpBox( filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
-         seeed->getNMasterconss(), SCIPvisuGetColorMastervars() );
+//      drawGpBox( filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
+//         seeed->getNMasterconss(), SCIPvisuGetColorMastervars() );
       colboxcounter += seeed->getNMastervars();
    }
 
@@ -378,7 +410,7 @@ SCIP_RETCODE writeGpSeeed(
    }
    else
    {
-      ofs << "plot \"-\" using 1:2:(0) notitle with circles lw 2 fc rgb \"black\" fill solid"
+      ofs << "plot \"-\" using 1:2:(0) notitle with circles fill solid lw 2 fc rgb \"black\" "
          << std::endl << "0 0" << std::endl << "e" << std::endl;
    }
 

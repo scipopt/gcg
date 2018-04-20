@@ -81,6 +81,12 @@ SCIP_RETCODE GCGprintInstanceName(
    FILE*                 file                /**< output file or NULL for standard output */
 );
 
+SCIP_RETCODE GCGprintMiplibStructureInformation(
+   SCIP*                scip,
+   SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */
+   );
+
+
 
 SCIP_RETCODE GCGprintBlockcandidateInformation(
    SCIP*                 scip,               /**< SCIP data structure */

@@ -282,6 +282,14 @@ public:
    /** returns size of incomplete seeed data structure */
    int getNIncompleteSeeeds();
 
+   /** returns total number of constraints where ranged constraints are counted twice */
+   int getNTotalConss(
+   );
+
+   /** returns the number of nonzero entries in the coefficient matrix */
+   long getNTotalNonzeros();
+
+
    /** returns true if the given seeed is a duplicate of a seeed that is already contained in
     *  finished seeeds or current seeeds data structure */
    bool hasDuplicate(
@@ -466,6 +474,15 @@ public:
    /* returns associated scip */
    SCIP* getScip();
 
+   /** returns scip cons for corresponing id */
+   SCIP_CONS* getScipCons(
+      int consid
+      );
+
+   /** returns scip var for corresponing id */
+   SCIP_VAR* getScipVar(
+      int varid
+   );
 
    /** returns the candidates for block size sorted in descending order by how often a candidate was added */
    std::vector<int> getSortedCandidatesNBlocks();
