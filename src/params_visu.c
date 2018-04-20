@@ -159,7 +159,7 @@ SCIP_RETCODE SCIPincludeParamsVisu(
       (int*) &visudata->visucolorscheme, FALSE, DEFAULT_VISU_COLORSCHEME, 0, 2, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
-      "visual/nonzeroradius", "integer value to scale dots on range 1-10",
+      "visual/nonzeroradius", "integer value to scale points on range 1-10",
       &visudata->visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,

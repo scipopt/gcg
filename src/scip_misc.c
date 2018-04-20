@@ -697,10 +697,14 @@ SCIP_Bool GCGconsIsRanged(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to check */
 ){
+
+   SCIP_Real lhs;
+   SCIP_Real rhs;
+
    assert(scip != NULL);
 
-   SCIP_Real lhs = GCGconsGetLhs(scip, cons);
-   SCIP_Real rhs = GCGconsGetRhs(scip, cons);
+   rhs = GCGconsGetRhs(scip, cons);
+   lhs = GCGconsGetLhs(scip, cons);
 
 
    return !(SCIPisEQ(scip, lhs, rhs) || SCIPisInfinity(scip, -lhs) || SCIPisInfinity(scip, rhs) );

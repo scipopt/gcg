@@ -4603,8 +4603,6 @@ std::string Seeed::getComponentInformation(
 
        for( int v = 0; v < getNVarsForBlock(b); ++v )
        {
-          int var = getVarsForBlock(b)[v];
-
           ncols[b]++;
           meanvar += 1;
        }

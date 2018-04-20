@@ -171,6 +171,7 @@ SCIP_RETCODE writeGpNonzeros(
    float radius            /**< radius of the dots */
    )
 {
+   int radiusscale;
    std::vector<int> orderToRows(seeed->getNConss(), -1);
    std::vector<int> rowToOrder(seeed->getNConss(), -1);
    std::vector<int> orderToCols(seeed->getNVars(), -1);
@@ -259,6 +260,10 @@ SCIP_RETCODE writeGpNonzeros(
    }
 
    ofs.open (filename, std::ofstream::out | std::ofstream::app );
+
+   SCIPgetIntParam(seeedpool->getScip(), "visual/nonzeroradius", &radiusscale);
+
+   radius *= radiusscale;
 
    /* start writing dots */
    ofs << "plot \"-\" using 1:2:(" << radius << ") notitle pt 7 ps " << radius << " fc rgb \"" << SCIPvisuGetColorNonzero()
@@ -397,7 +402,7 @@ SCIP_RETCODE writeGpSeeed(
    }
 
    /* --- draw nonzeros --- */
-   if(SCIPvisuGetDraftmode() == FALSE)
+   if( SCIPvisuGetDraftmode() == FALSE )
    {
       /* scale nonzero radius with 2% of maximal index */
       int radiusscale;
