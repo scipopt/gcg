@@ -7,7 +7,6 @@ import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import collections
-import numpy as np #TODO debug
 
 # check command line arguments
 if len(sys.argv) < 2:
@@ -144,7 +143,7 @@ else:
 	for i in range(len(items)):
 		if i > 0:
 			# from the second item on calculate the version speed differences
-			name = items[i-1][0] + ' -> ' + items[i][0]
+			name = items[i-1][0] + '\n->\n' + items[i][0]
 			diff = float(items[i-1][1]) + float(items[i][1])			
 			runtimecomp[name] = diff
 			if diff > highestdiff:
@@ -162,7 +161,7 @@ else:
 	fig, ax1 = plt.subplots()
 	bar1 = ax1.bar(range(len(runtimecomp)), runtimecomp.values(), color='b')
 	plt.xticks(range(len(runtimecomp)), runtimecomp.keys(), rotation=90)
-	plt.tick_params(axis='x', which='major', labelsize=7)
+	plt.tick_params(axis='x', which='major', labelsize=5)
 	ax1.set_ylabel('Speedup in seconds', color='b')
 	ax1.tick_params('y', colors='b')
 

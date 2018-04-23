@@ -128,6 +128,11 @@ do
 	# establish VERSIONNAME as a name safe to use as a filename
 	VERSIONNAME="${VERSION[$index]//\/}"		# remove slashs
 	VERSIONNAME="${VERSIONNAME//.}"			# remove points
+	while [ -f "../${RESDIR}/${VERSIONNAME}.res" ]
+	do
+		echo ${VERSIONNAME} exists
+		VERSIONNAME=${VERSIONNAME}1
+	done
 	
 	# move the resulting files to the result directory of this comparison run
 	OLDout=$(find . -type f -name "*.out"  -printf "%p\n" | sort -n | head -n 1)
