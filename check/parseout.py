@@ -17,6 +17,19 @@ def ct(string):
 	sim = string.strip()[1:-1]
 	return sim.upper()
 
+def real_path(string):
+	splitted = string.split('/')
+	check = False
+	ret = ""
+	for w in splitted:
+		if w == "check":
+			check = True
+		elif check:
+			ret += "/" + w
+		else:
+			continue
+	return ret[1:]
+
 # data dictionary
 data = {
 	'OVERALL TIME': [],
@@ -55,6 +68,8 @@ data = {
 	'LP CALLS': [],
 	'LP TIME': [],
 	'LP ITERATIONS': [],
+	'LP FILE': [],
+	'DEC FILE': [],
 }
 
 
@@ -77,7 +92,16 @@ for line in fh:
 	# get instance name
 	if line.startswith("read problem") and '.dec' not in line and '.blk' not in line:
 		index.append(line.split()[2].split('/')[-1].split('.')[0])
+
+	# get instance lp
+	if line.startswith("read problem") and '.dec' not in line and '.blk' not in line:
+		data['LP FILE'].append(real_path(line.split()[2][1:-1]))
 	
+	# get instance dec
+	if line.startswith("read problem") and ('.dec' in line or '.blk' in line):
+		data['DEC FILE'].append(real_path(line.split()[2][1:-1]))
+	
+	# reading of master stats finished
 	if line.startswith("Original Program statistics:"):
 		opstat = True
 		continue
@@ -232,9 +256,9 @@ for line in fh:
 	if search == "BLOCKS":
 		if line.lstrip().startswith("blocks"):
 			data['NBLOCKS'].append(int(line.split(':')[1]))
-			if line.lstrip().startswith("aggr. blocks"):
-				data['AGGREGATIONS'].append(int(line.split(':')[1]))
-				search = ""
+		if line.lstrip().startswith("aggr. blocks"):
+			data['AGGREGATIONS'].append(int(line.split(':')[1]))
+			search = ""
 
 	# get solution statistics
 	if line.startswith("Solution") and not opstat:
@@ -409,6 +433,11 @@ for line in fh:
 			data['LP TIME'].append(float('NaN'))
 		if len(data['LP ITERATIONS']) < it:
 			data['LP ITERATIONS'].append(-1)
+		
+		if len(data['LP FILE']) < it:
+			data['LP FILE'].append(-1)
+		if len(data['DEC FILE']) < it:
+			data['DEC FILE'].append(-1)
 
 #for key in data:
 #	print("{0}: {1}".format(key, len(data[key])))
