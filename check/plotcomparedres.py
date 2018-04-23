@@ -7,6 +7,7 @@ import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import collections
+import numpy as np #TODO debug
 
 # check command line arguments
 if len(sys.argv) < 2:
@@ -122,10 +123,55 @@ plt.savefig(outdir + '/failcomparison.pdf')			# name of image
 # 2) Plot runtime per version
 fig = plt.figure()
 ax = plt.axes()        
-plt.title("Runtime comparison")
+plt.title("Runtime per version")
 plt.xlabel("GCG Version")
 plt.ylabel("Runtime in seconds")
 bars = plt.bar(range(len(runtime)), runtime.values(), align='center')
 plt.xticks(range(len(runtime)), runtime.keys(), rotation=90)
 setbarplotparams(highesttime)
-plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image
+plt.savefig(outdir + '/runtimes.pdf')				# name of image
+
+# 3) Plot runtime comparison
+# Calculate version-to-version speedup
+
+items = list(runtime.items())
+if len(items) < 2:
+	print "Enter more than one GCG version to generate a runtime comparison plot."
+else:
+	highestdiff = 0
+	runtimecomp = collections.OrderedDict()
+	cumulative = collections.OrderedDict()
+	for i in range(len(items)):
+		if i > 0:
+			# from the second item on calculate the version speed differences
+			name = items[i-1][0] + ' -> ' + items[i][0]
+			diff = float(items[i-1][1]) + float(items[i][1])			
+			runtimecomp[name] = diff
+			if diff > highestdiff:
+				highestdiff = diff
+			# for the first one set initial cumulative value
+			if i == 1:
+				cumulative[name] = diff
+			# for all following add the last value to current diff
+			else:
+				cumitems = list(cumulative.items())
+				cumsum = cumitems[len(cumitems)-1][1]
+				cumulative[name] = diff + cumsum
+
+	# first plot version-to-version comparison bars
+	fig, ax1 = plt.subplots()
+	bar1 = ax1.bar(range(len(runtimecomp)), runtimecomp.values(), color='b')
+	plt.xticks(range(len(runtimecomp)), runtimecomp.keys(), rotation=90)
+	plt.tick_params(axis='x', which='major', labelsize=7)
+	ax1.set_ylabel('Speedup in seconds', color='b')
+	ax1.tick_params('y', colors='b')
+
+	# then plot cumulative speedup
+	ax2 = ax1.twinx()
+	ax2.plot(range(len(runtimecomp)), cumulative.values(), 'r-')
+	ax2.set_ylabel('Cumulative Speedup in seconds', color='r')
+	ax2.tick_params('y', colors='r')
+	
+	fig.tight_layout()
+	plt.title("Version-to-version runtime comparison")
+	plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image
