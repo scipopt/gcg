@@ -128,7 +128,6 @@ do
 	# establish VERSIONNAME as a name safe to use as a filename
 	VERSIONNAME="${VERSION[$index]//\/}"		# remove slashs
 	VERSIONNAME="${VERSIONNAME//.}"			# remove points
-	VERSIONNAME="${VERSIONNAME}_${TESTNAME}"	# add testset name for later identification
 	
 	# move the resulting files to the result directory of this comparison run
 	OLDout=$(find . -type f -name "*.out"  -printf "%p\n" | sort -n | head -n 1)

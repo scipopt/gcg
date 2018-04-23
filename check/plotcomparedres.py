@@ -106,7 +106,7 @@ def setbarplotparams(highestbar):
 		position = 1
 		if highestbar > 0:
 			position = height + (int(float(highestbar))/100)
-		ax.text(item.get_x()+item.get_width()/2., position, '%ds' % int(height), ha='center', size='xx-small')
+		ax.text(item.get_x()+item.get_width()/2., position, '%d' % int(height), ha='center', size='xx-small')
 	return;
 
 # 1) Plot how many instances were unsolved per version
