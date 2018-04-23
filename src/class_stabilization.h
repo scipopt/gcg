@@ -78,16 +78,13 @@ private:
    SCIP_Real stabcenterbound;
    SCIP_Bool inmispricingschedule; /**< currently in mispricing schedule */
    SCIP_Real subgradientproduct;
-   SCIP_Real farkasalpha; /**< alpha that is used for Farkas pricing (in convex combination of original objective with dual basis and dual ray) */
-   SCIP_Real farkasalphabar; /**< alpha that is used for Farkas mispricing */
-   SCIP_Bool infarkas;
+
 public:
    /** constructor */
    Stabilization(
       SCIP*              scip,               /**< SCIP data structure */
       PricingType*       pricingtype,        /**< the pricing type when the stabilization should run */
-      SCIP_Bool          hybridascent,       /**< enable hybridization of smoothing with an ascent method? */
-      SCIP_Real          farkasalpha_        /**< initial value for farkas alpha */
+      SCIP_Bool          hybridascent        /**< enable hybridization of smoothing with an ascent method? */
    );
    /** constructor */
    Stabilization();
@@ -142,22 +139,6 @@ public:
    SCIP_Bool isInMispricingSchedule(
    ) const;
 
-   /** enabling Farkas */
-   void activateFarkas(
-   );
-
-   /** disabling Farkas */
-   void disablingFarkas(
-   );
-
-   /** in Farkas*/
-   SCIP_Bool inFarkas(
-   ) const;
-
-   /** get Farkas alpha */
-   SCIP_Real getFarkasAlpha(
-   ) const;
-
    /** sets the variable linking constraints in the master */
    SCIP_RETCODE setLinkingConss(
       SCIP_CONS**        linkingconss,       /**< array of linking master constraints */
@@ -190,8 +171,6 @@ public:
    SCIP_RETCODE updateSubgradientProduct(
       GCG_COL**            pricingcols         /**< solutions of the pricing problems */
    );
-
-   void increaseFarkasAlpha();
 
 private:
    /** updates the number of iterations */

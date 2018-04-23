@@ -94,7 +94,8 @@ public:
    /** computes the pricing problem objectives */
    SCIP_RETCODE setPricingObjs(
       PricingType*          pricetype,          /**< Farkas or Reduced cost pricing */
-      SCIP_Bool             stabilize           /**< do we use stabilization ? */
+      SCIP_Bool             stabilize,          /**< do we use stabilization ? */
+      SCIP_Bool             fillduals           /**< fill objective with duals */
    );
 
    /** update reduced cost of columns in column pool */
@@ -251,12 +252,6 @@ private:
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    ) const;
-
-   SCIP_Real computeQuasiRedCostGcgCol(
-      PricingType*          pricetype,          /**< type of pricing */
-      GCG_Col*              gcgcol,             /**< gcg column to compute reduced cost for */
-      SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
-      ) const;
 
    /** counts the number of variables with negative reduced cost */
    int countPricedVariables(

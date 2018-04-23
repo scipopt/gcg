@@ -1,0 +1,9 @@
+# SCIP version 4.0.0
+
+pricing/masterpricer/bigmartificial = -1.0
+
+pricing/masterpricer/useartificialvars = TRUE
+
+sepa/basis/enable = FALSE
+
+sepa/master/enable = FALSE
