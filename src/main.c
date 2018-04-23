@@ -49,7 +49,7 @@
 #include "gcg.h"
 
 #if SCIP_VERSION < 500
-#error GCG 2.1.4 can only be compiled with SCIP version 5.0.0 or higher
+#error GCG 3.0.0 can only be compiled with SCIP version 5.0.0 or higher
 #endif
 
 /** returns GCG major version */

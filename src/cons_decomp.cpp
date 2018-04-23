@@ -6471,19 +6471,8 @@ SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
    )
 {
 
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
    SCIP_Bool shortfeatures;
-   /** write base information */
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-
+   /** write base information header */
    /*
     * current features:
     * instance, log nconss, nvars, nnonzeros, conss/var ratio, density matrix, density obj, density lb, density ub, density rhs,
