@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -325,7 +325,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
       /* add the cut to the master problem */
-      SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, FALSE, &feasible) );
+      SCIP_CALL( SCIPaddRow(scip, mastercut, FALSE, &feasible) );
       sepadata->mastercuts[sepadata->ncuts] = mastercut;
       sepadata->ncuts++;
 
