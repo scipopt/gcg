@@ -1,0 +1,234 @@
+# SCIP version 4.0.1
+
+# abort presolve, if at most this fraction of the problem was changed in last presolve round
+# [type: real, advanced: TRUE, range: [0,1], default: 0.0008]
+presolving/abortfac = 0
+
+# maximal number of restarts (-1: unlimited)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+presolving/maxrestarts = 0
+
+# should multi-aggregation of variables be forbidden?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
+presolving/donotmultaggr = TRUE
+
+# should aggregation of variables be forbidden?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
+presolving/donotaggr = TRUE
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/nonlinear/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/quadratic/maxprerounds = 0
+
+# timing mask of the constraint handler's presolving method (4:FAST, 8:MEDIUM, 16:EXHAUSTIVE, 32:FINAL)
+# [type: int, advanced: TRUE, range: [4,60], default: 20]
+constraints/linear/presoltiming = 4
+
+# should pairwise constraint comparison be performed in presolving?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/presolpairwise = FALSE
+
+# should hash table be used for detecting redundant constraints in advance
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/presolusehashing = FALSE
+
+# should presolving search for aggregations in equations
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/aggregatevariables = FALSE
+
+# should presolving try to simplify inequalities
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/simplifyinequalities = FALSE
+
+# should dual presolving steps be performed?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/dualpresolving = FALSE
+
+# should stuffing of singleton continuous variables be performed?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/singletonstuffing = FALSE
+
+# should presolving try to detect constraints parallel to the objective function defining an upper bound and prevent these constraints from entering the LP?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/detectcutoffbound = FALSE
+
+# should presolving try to detect constraints parallel to the objective function defining a lower bound and prevent these constraints from entering the LP?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/detectlowerbound = FALSE
+
+# should presolving and propagation try to improve bounds, detect infeasibility, and extract sub-constraints from ranged rows and equations?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/rangedrowpropagation = FALSE
+
+# should presolving and propagation extract sub-constraints from ranged rows and equations?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/rangedrowartcons = FALSE
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/abspower/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/and/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/bivariate/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/bounddisjunction/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/cardinality/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/conjunction/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/cumulative/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/disjunction/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/indicator/maxprerounds = 0
+
+# enable linear upgrading for constraint handler <indicator>
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/upgrade/indicator = FALSE
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/knapsack/maxprerounds = 0
+
+# enable linear upgrading for constraint handler <knapsack>
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/upgrade/knapsack = FALSE
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/linking/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/logicor/maxprerounds = 0
+
+# enable linear upgrading for constraint handler <logicor>
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/upgrade/logicor = FALSE
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/or/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/orbitope/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/pseudoboolean/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/setppc/maxprerounds = 0
+
+# enable linear upgrading for constraint handler <setppc>
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/upgrade/setppc = FALSE
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/soc/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/SOS1/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/SOS2/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/superindicator/maxprerounds = 0
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/varbound/maxprerounds = 0
+
+# enable linear upgrading for constraint handler <varbound>
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/upgrade/varbound = FALSE
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/xor/maxprerounds = 0
+
+# enable linear upgrading for constraint handler <xor>
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/upgrade/xor = FALSE
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, advanced: TRUE, range: [-1,2147483647], default: -1]
+constraints/components/maxprerounds = 0
+
+# maximal number of presolving rounds the presolver participates in (-1: no limit)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+presolving/domcol/maxrounds = 0
+
+# maximal number of presolving rounds the presolver participates in (-1: no limit)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+presolving/dualcomp/maxrounds = 0
+
+# maximal number of presolving rounds the presolver participates in (-1: no limit)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+presolving/gateextraction/maxrounds = 0
+
+# maximal number of presolving rounds the presolver participates in (-1: no limit)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+presolving/qpkktref/maxrounds = 0
+
+# maximal number of presolving rounds the propagator participates in (-1: no limit)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+propagating/genvbounds/maxprerounds = 0
+
+# maximal number of presolving rounds the propagator participates in (-1: no limit)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+propagating/obbt/maxprerounds = 0
+
+# maximal number of presolving rounds the propagator participates in (-1: no limit)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+propagating/nlobbt/maxprerounds = 0
+
+# maximal number of presolving rounds the propagator participates in (-1: no limit)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+propagating/probing/maxprerounds = 0
+
+# maximal number of presolving rounds the propagator participates in (-1: no limit)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+propagating/pseudoobj/maxprerounds = 0
+
+# maximal number of presolving rounds the propagator participates in (-1: no limit)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+propagating/redcost/maxprerounds = 0
+
+# maximal number of presolving rounds the propagator participates in (-1: no limit)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+propagating/rootredcost/maxprerounds = 0
+
+# maximal number of presolving rounds the propagator participates in (-1: no limit)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+propagating/vbounds/maxprerounds = 0
+
