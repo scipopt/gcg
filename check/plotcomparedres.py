@@ -6,6 +6,7 @@ import os
 import re
 import pandas as pd
 import matplotlib.pyplot as plt
+import collections
 
 # check command line arguments
 if len(sys.argv) < 2:
@@ -35,16 +36,16 @@ for resfile in os.listdir(resdir):
 		sumsets[resfile] = pd.read_pickle(os.path.join(resdir, resfile))
 
 # sort names alphabetically
-sorted(datasets.items(), reverse=False)
+ordereddata = collections.OrderedDict(sorted(datasets.items()))
 
 # Check whether the number of tested instances instances differs (sanity check)
 ninstances = -1
 printwarning = False
 for res in filenames:
 	if ninstances == -1:
-		ninstances = datasets[res].shape[0]	# count rows
+		ninstances = ordereddata[res].shape[0]	# count rows
 	else:
-		if ninstances != datasets[res].shape[0]:
+		if ninstances != ordereddata[res].shape[0]:
 			printwarning = True
 if printwarning == True:
 	print "--------------------------------------------------------------------------------------------------"
@@ -53,15 +54,15 @@ if printwarning == True:
 	print "--------------------------------------------------------------------------------------------------"
 
 
-# Get some statistics for each res file
+# Get some statistics for each res file (first in temp dicts that will later be sorted)
 maxstringlen = 12 # TODO make this number flexible
-fails = {}
+tempfails = {}
 highestfails = 0
-runtime = {}
+tempruntime = {}
 highesttime = 0
 
-for key in datasets.keys():
-	# crop the filenames (keys in datasets) by removing res_ ... .pkl and add linebreak for very long keys
+for key in ordereddata.keys():
+	# crop the filenames (keys in ordereddata) by removing res_ ... .pkl and add linebreak for very long keys
 	croppedkey = key.split('/')[-1].replace('res_', '').replace('.pkl', '')
 	if len(croppedkey) > maxstringlen:
 		charlist = list(croppedkey)
@@ -71,15 +72,19 @@ for key in datasets.keys():
 			ninserts = ninserts - 1
 		croppedkey = ''.join(charlist)
 	# get amount of failed instances
-	fails[croppedkey] = sumsets['sum' + key].loc['Fail']
-	if fails[croppedkey] > highestfails:
-		highestfails = fails[croppedkey]
+	tempfails[croppedkey] = sumsets['sum' + key].loc['Fail']
+	if tempfails[croppedkey] > highestfails:
+		highestfails = tempfails[croppedkey]
 	# get runtime
-	runtime[croppedkey] = 0.0
-	for time in datasets[key]['TotalTime']:
-		runtime[croppedkey] = runtime[croppedkey] + float(time)
-		if highesttime < runtime[croppedkey]:
-			highesttime = runtime[croppedkey]
+	tempruntime[croppedkey] = 0.0
+	for time in ordereddata[key]['TotalTime']:
+		tempruntime[croppedkey] = tempruntime[croppedkey] + float(time)
+		if highesttime < tempruntime[croppedkey]:
+			highesttime = tempruntime[croppedkey]
+
+# order statistics by keys
+fails = collections.OrderedDict(sorted(tempfails.items()))
+runtime = collections.OrderedDict(sorted(tempruntime.items()))
 
 # add a settings function
 def setbarplotparams(highestbar):
