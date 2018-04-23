@@ -128,10 +128,25 @@ do
 	# establish VERSIONNAME as a name safe to use as a filename
 	VERSIONNAME="${VERSION[$index]//\/}"		# remove slashs
 	VERSIONNAME="${VERSIONNAME//.}"			# remove points
+	# add a number to the version if there exists a file with the same name
+	numbers='^[0-9]+$'
+	firsttry=true	# bool to make sure a name ending on a number is not changed
 	while [ -f "../${RESDIR}/${VERSIONNAME}.res" ]
 	do
 		echo ${VERSIONNAME} exists
-		VERSIONNAME=${VERSIONNAME}1
+		lastchar="${VERSIONNAME: -1}"
+		if [ firsttry ] && [[ $lastchar =~ $numbers ]] ; then
+			VERSIONNAME=${VERSIONNAME}1
+			firsttry=false
+		else
+			if [[ $lastchar =~ $numbers ]] ; then
+				VERSIONNAME=${VERSIONNAME::-1}
+				lastchar=$((lastchar + 1))
+				VERSIONNAME=${VERSIONNAME}${lastchar}
+			else
+				VERSIONNAME=${VERSIONNAME}1
+			fi
+		fi
 	done
 	
 	# move the resulting files to the result directory of this comparison run
