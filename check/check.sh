@@ -275,6 +275,17 @@ do
 		fi
 		#disable presolving
 		echo set presolving maxrounds 0    >> $TMPFILE
+		echo set detection consclassifier consnamelevenshtein enabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamelevenshtein origenabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamenonumbers enabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamenonumbers origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevalues origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevalues enabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevaluesigns origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevaluesigns enabled FALSE    >> $TMPFILE
+		echo set detection varclassifier scipvartype origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier scipvartype enabled FALSE    >> $TMPFILE
+
 		echo set write miplib2017features TRUE  >> $TMPFILE
 		echo set write miplib2017featurefilepath results/features/featurefile >> $TMPFILE
 		echo change instancename $PROB     >> $TMPFILE
@@ -297,6 +308,18 @@ do
 		fi
 		#disable presolving
 #		echo set presolving maxrounds 0    >> $TMPFILE
+		echo set detection consclassifier consnamelevenshtein enabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamelevenshtein origenabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamenonumbers enabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamenonumbers origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevalues origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevalues enabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevaluesigns origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevaluesigns enabled FALSE    >> $TMPFILE
+		echo set detection varclassifier scipvartype origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier scipvartype enabled FALSE    >> $TMPFILE
+
+
 		echo set write miplib2017features TRUE  >> $TMPFILE
 		echo set write miplib2017plotsanddecs TRUE  >> $TMPFILE
 		echo set display verblevel 5 >> $TMPFILE
