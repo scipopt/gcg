@@ -291,7 +291,6 @@ static
 SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
-   int i;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -324,13 +323,6 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
    conshdlrData->stack[conshdlrData->nstack] = cons;
    ++(conshdlrData->nstack);
 
-   i = conshdlrData->nstack - 1;
-   while( i > conshdlrData->nstack - 10 && i >= 0  )
-   {
-      printf("Stack %d: %s\n", i, SCIPconsGetName(conshdlrData->stack[i]));
-      i--;
-   }
-
    return SCIP_OKAY;
 }
 
@@ -340,7 +332,6 @@ static
 SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
-   int i;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -360,13 +351,6 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
    /* remove constraint from the stack */
    if( conshdlrData->nstack > 0 )
       --(conshdlrData->nstack);
-
-   i = conshdlrData->nstack - 1;
-   while( i > conshdlrData->nstack - 10 && i >= 0  )
-   {
-      printf("Stack %d: %s\n", i, SCIPconsGetName(conshdlrData->stack[i]));
-      i--;
-   }
 
    return SCIP_OKAY;
 }

@@ -117,8 +117,8 @@ SCIP_DECL_VARDELTRANS(gcgvardeltrans)
 {
    /*lint -e715 */
    assert((*vardata)->vartype == GCG_VARTYPE_MASTER);
-   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.norigvars);
-   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.norigvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
 
    SCIPfreeBlockMemory(scip, vardata);
 

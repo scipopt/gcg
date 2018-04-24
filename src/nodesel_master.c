@@ -171,9 +171,6 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
          SCIP_CALL( SCIPgetLeaves(scip, &nodes, &nnodes) );
          *selnode = nodes[0];
       }
-
-      if( *selnode != NULL )
-         printf("selected master node: %lld\n", SCIPnodeGetNumber(*selnode));
    }
 
 #ifndef NDEBUG

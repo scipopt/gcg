@@ -207,9 +207,12 @@ SCIP_RETCODE setOriginalProblemValues(
    )
 {
    SCIP_VAR** origvars;
-   SCIP_Real* origvals;
    int norigvars;
    int i;
+
+#ifndef NDEBUG
+   SCIP_Real* origvals;
+#endif
 
    assert(origprob != NULL);
    assert(vars != NULL);
@@ -223,8 +226,10 @@ SCIP_RETCODE setOriginalProblemValues(
       {
          origvars = master ? GCGmasterVarGetOrigvars(vars[i]) : GCGpricingVarGetOrigvars(vars[i]);
 
+#ifndef NDEBUG
          if( master )
             origvals = GCGmasterVarGetOrigvals(vars[i]);
+#endif
 
          /* all master variables should be associated with a single original variable. This is because no reformulation has
           * been performed. */
@@ -367,22 +372,7 @@ SCIP_RETCODE createOriginalProblemSolution(
 
 /* TODO: Implement all necessary Benders' decomposition methods. The methods with an #if 0 ... #else #define ... are optional */
 
-/** copy method for benders plugins (called when SCIP copies plugins) */
-#if 0
-static
-SCIP_DECL_BENDERSCOPY(bendersCopyGcg)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of gcg Benders' decompostion not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define bendersCopyGcg NULL
-#endif
-
 /** destructor of Benders' decomposition to free user data (called when SCIP is exiting) */
-#if 1
 static
 SCIP_DECL_BENDERSFREE(bendersFreeGcg)
 {  /*lint --e{715}*/
@@ -393,10 +383,6 @@ SCIP_DECL_BENDERSFREE(bendersFreeGcg)
 
    bendersdata = SCIPbendersGetData(benders);
 
-   /* freeing the relaxation solution */
-   if( bendersdata->relaxsol != NULL )
-      SCIP_CALL( SCIPfreeSol(bendersdata->origprob, &bendersdata->relaxsol) );
-
    if( bendersdata != NULL )
    {
       SCIPfreeMemory(scip, &bendersdata);
@@ -404,39 +390,7 @@ SCIP_DECL_BENDERSFREE(bendersFreeGcg)
 
    return SCIP_OKAY;
 }
-#else
-#define bendersFreeGcg NULL
-#endif
 
-
-/** initialization method of Benders' decomposition (called after problem was transformed) */
-#if 0
-static
-SCIP_DECL_BENDERSINIT(bendersInitGcg)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of gcg Benders' decomposition not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define bendersInitGcg NULL
-#endif
-
-
-/** deinitialization method of Benders' decomposition (called before transformed problem is freed) */
-#if 0
-static
-SCIP_DECL_BENDERSEXIT(bendersExitGcg)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of gcg Benders' decomposition not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define bendersExitGcg NULL
-#endif
 
 
 /** presolving initialization method of constraint handler (called when presolving is about to begin) */
@@ -456,21 +410,6 @@ SCIP_DECL_BENDERSINITPRE(bendersInitpreGcg)
 
    return SCIP_OKAY;
 }
-
-
-/** presolving deinitialization method of constraint handler (called after presolving has been finished) */
-#if 0
-static
-SCIP_DECL_BENDERSEXITPRE(bendersExitpreGcg)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of gcg Benders' decomposition not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define bendersExitpreGcg NULL
-#endif
 
 
 /** solving process initialization method of Benders' decomposition (called when branch and bound process is about to begin) */
@@ -593,6 +532,10 @@ SCIP_DECL_BENDERSEXITSOL(bendersExitsolGcg)
    SCIPfreeBlockMemoryArray(scip, &(bendersdata->subproblemcallsdist), nsubproblems);
    SCIPfreeBlockMemoryArray(scip, &(bendersdata->subprobobjvals), nsubproblems);
 
+   /* freeing the relaxation solution */
+   if( bendersdata->relaxsol != NULL )
+      SCIP_CALL( SCIPfreeSol(bendersdata->origprob, &bendersdata->relaxsol) );
+
    return SCIP_OKAY;
 }
 
@@ -665,7 +608,6 @@ static
 SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
 {  /*lint --e{715}*/
    SCIP_BENDERSDATA* bendersdata;
-   SCIP_Bool intsol;                /** flag to indicate whether the solution is integer */
 
    assert(benders != NULL);
 
@@ -728,30 +670,6 @@ SCIP_DECL_BENDERSCREATESUB(bendersCreatesubGcg)
 
 
 
-#if 0
-/** the subproblem solving method for Benders' decomposition */
-static
-SCIP_DECL_BENDERSSOLVESUB(bendersSolvesubGcg)
-{  /*lint --e{715}*/
-   return SCIP_OKAY;
-}
-#else
-#define bendersSolvesubGcg NULL
-#endif
-
-
-#if 0
-/** the subproblem freeing method for Benders' decomposition */
-static
-SCIP_DECL_BENDERSFREESUB(bendersFreesubGcg)
-{  /*lint --e{715}*/
-   return SCIP_OKAY;
-}
-#else
-#define bendersFreesubGcg NULL
-#endif
-
-
 /*
  * Benders' decomposition specific interface methods
  */
@@ -778,36 +696,18 @@ SCIP_RETCODE SCIPincludeBendersGcg(
 
 
    /* include Benders' decomposition */
-#if 0
-   /* use SCIPincludeBenders() if you want to set all callbacks explicitly and realize (by getting compiler errors) when
-    * new callbacks are added in future SCIP versions
-    */
-   SCIP_CALL( SCIPincludeBenders(scip, BENDERS_NAME, BENDERS_DESC, BENDERS_PRIORITY, nsubproblems,
-         bendersCopyGcg, bendersFreeGcg, bendersInitGcg, bendersExitGcg, bendersInitpreGcg, bendersExitpreGcg,
-         bendersInitsolGcg, bendersExitsolGcg, bendersGetmastervarGcg, bendersExecGcg,
-         bendersPostsolveGcg, bendersFreesubGcg, bendersdata) );
-#else
-   /* use SCIPincludeBendersBasic() plus setter functions if you want to set callbacks one-by-one and your code should
-    * compile independent of new callbacks being added in future SCIP versions
-    */
    SCIP_CALL( SCIPincludeBendersBasic(scip, &benders, BENDERS_NAME, BENDERS_DESC, BENDERS_PRIORITY,
          BENDERS_CUTLP, BENDERS_CUTPSEUDO, BENDERS_CUTRELAX, BENDERS_SHAREAUXVARS, bendersGetvarGcg,
          bendersCreatesubGcg, bendersdata) );
    assert(benders != NULL);
 
    /* set non fundamental callbacks via setter functions */
-   SCIP_CALL( SCIPsetBendersCopy(scip, benders, bendersCopyGcg) );
    SCIP_CALL( SCIPsetBendersFree(scip, benders, bendersFreeGcg) );
-   SCIP_CALL( SCIPsetBendersInit(scip, benders, bendersInitGcg) );
-   SCIP_CALL( SCIPsetBendersExit(scip, benders, bendersExitGcg) );
    SCIP_CALL( SCIPsetBendersInitpre(scip, benders, bendersInitpreGcg) );
-   SCIP_CALL( SCIPsetBendersExitpre(scip, benders, bendersExitpreGcg) );
    SCIP_CALL( SCIPsetBendersInitsol(scip, benders, bendersInitsolGcg) );
    SCIP_CALL( SCIPsetBendersExitsol(scip, benders, bendersExitsolGcg) );
    SCIP_CALL( SCIPsetBendersPresubsolve(scip, benders, bendersPresubsolveGcg) );
-   SCIP_CALL( SCIPsetBendersSolveAndFreesub(scip, benders, bendersSolvesubGcg, bendersFreesubGcg) );
    SCIP_CALL( SCIPsetBendersPostsolve(scip, benders, bendersPostsolveGcg) );
-#endif
 
    /* including the default cuts for Benders' decomposition */
    SCIP_CALL( SCIPincludeBendersDefaultCuts(scip, benders) );

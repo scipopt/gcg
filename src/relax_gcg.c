@@ -2371,7 +2371,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    {
       /* update the number of the last solved node */
       relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
-      printf("Current node number: %lld\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
       /* increase the node limit for the master problem by 1 */
       SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
@@ -2593,10 +2592,8 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 
    /* setting parameters for Benders' decomposition */
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "constraints/benderslp/maxdepth", -1) );
-   //SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "conflict/useprop", FALSE) );
-   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "propagating/maxrounds", 0) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "propagating/maxroundsroot", 0) );
-   //SCIP_CALL( SCIPsetIntParam(scip, "propagating/maxrounds", 0) );
+   //SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "display/lpinfo", TRUE) );
 
    /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
