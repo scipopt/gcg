@@ -123,7 +123,16 @@ do
 	make -j ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
 	# 'make test' assumes there are links from gcg/check/instances to the instance folders.
-	# if your testset instances are not found make sure the links are set
+	# if your testset instances are not found make sure the links are set TODO
+	cd check/instances
+	ln -s /opt/instances/striplibn striblibn
+	ln -s /opt/instances/striplib striblib
+	ln -s /opt/instances/tkp tkp
+	ln -s /opt/instances/ORlib ORlib
+	ln -s /opt/instances/mirplib mirplib
+	ln -s /opt/instances/highway-pricing highway-pricing
+	cd ../..
+
 	make test ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
 	# change name of output files: sort by last modified and take the first one
