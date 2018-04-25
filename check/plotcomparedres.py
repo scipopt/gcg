@@ -27,6 +27,7 @@ if len(sys.argv) > 1:
 datasets = {}
 sumsets = {}
 filenames = []
+sumnames = []
 
 for resfile in os.listdir(resdir):
 	if resfile.endswith(".pkl") and resfile.startswith("res_"):
@@ -34,11 +35,13 @@ for resfile in os.listdir(resdir):
 		filenames.append(resfile)
 	elif resfile.endswith(".pkl") and resfile.startswith("sumres_"):
 		sumsets[resfile] = pd.read_pickle(os.path.join(resdir, resfile))
+		sumnames.append(resfile)
 
 # sort names alphabetically
 ordereddata = collections.OrderedDict(sorted(datasets.items()))
+orderedsum = collections.OrderedDict(sorted(sumsets.items()))
 
-# Check whether the number of tested instances instances differs (sanity check)
+# Sanity check: check whether the number of tested instances instances differs
 ninstances = -1
 printwarning = False
 for res in filenames:
@@ -53,6 +56,14 @@ if printwarning == True:
 	print "Did you enter more than one testset? Did all tested versions have access to all testset instances?"
 	print "--------------------------------------------------------------------------------------------------"
 
+# Sanity check: check for fails, let the dev know
+for res in sumnames:
+	if not sumsets[res][Fail] == 0:	
+		print "--------------------------------------------------------------------------------------------------"
+		print "Warning: There were some failed runs in the tests. This might influence the significance of the"
+		print "comparisons! Recommendation: Check for memlimits, aborts, fails etc. in the tested GCG versions."
+		print "--------------------------------------------------------------------------------------------------"
+		break
 
 # Get some statistics for each res file (first in temp dicts that will later be sorted)
 maxstringlen = 12 # TODO make this number flexible
