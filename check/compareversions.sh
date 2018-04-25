@@ -78,15 +78,17 @@ if [[ $GLOBALFLAGS = *"TEST="* ]]; then
 fi
 
 # If a global settings file was specified, check whether it exists.
-SETTINGSNAME="${GLOBALFLAGS}"
-SETTINGSNAME=${SETTINGSNAME#*SETTINGS=}
-SETTINGSNAME=${SETTINGSNAME%% *}
+if [[ $GLOBALFLAGS = *"SETTINGS="* ]]; then
+	SETTINGSNAME="${GLOBALFLAGS}"
+	SETTINGSNAME=${SETTINGSNAME#*SETTINGS=}
+	SETTINGSNAME=${SETTINGSNAME%% *}
 
-if [ ! -f ../settings/${SETTINGSNAME}.set ]; then
-    echo "Warning: Global setting file ${SETTINGSNAME}.set not found! GCG will use default settings instead."
+	if [ ! -f ../settings/${SETTINGSNAME}.set ]; then
+		echo "Warning: Global setting file ${SETTINGSNAME}.set not found! GCG will use default settings instead."
+	fi
 fi
 
-# TODO Add new folder for all files generated in the current run (we are currently in check directory)
+# Add new folder for all files generated in the current run (we are currently in check directory)
 RESDIR="results/compareversions$(date '+%d-%m-%Y_%H-%M')"
 mkdir -p $RESDIR
 
@@ -98,12 +100,14 @@ do
 	index=$((index + 1))
 
 	# If a settings file for this version was specified, check whether it exists.
-	SETTINGSNAME="${ADDFLAGS[$index]}"
-	SETTINGSNAME=${SETTINGSNAME#*SETTINGS=}
-	SETTINGSNAME=${SETTINGSNAME%% *}
+	if [[ ${ADDFLAGS[$index]} = *"SETTINGS="* ]]; then
+		SETTINGSNAME="${ADDFLAGS[$index]}"
+		SETTINGSNAME=${SETTINGSNAME#*SETTINGS=}
+		SETTINGSNAME=${SETTINGSNAME%% *}
+	fi
 
 	if [ ! -f ../settings/${SETTINGSNAME}.set ]; then
-	    echo "Warning: Additional setting file ${SETTINGSNAME}.set not found! GCG will use default settings instead."
+		echo "Warning: Additional setting file ${SETTINGSNAME}.set not found! GCG will use default settings instead."
 	fi
 
 	# get version
