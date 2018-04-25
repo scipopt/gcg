@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -2250,7 +2250,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
             continue;
 
          /* round solval if possible to avoid numerical troubles */
-         if( SCIPvarIsIntegral(solvars[i]) && SCIPisIntegral(scip, solval) )
+         if( SCIPvarIsIntegral(solvars[i]) && SCIPisFeasIntegral(scip, solval) )
             solval = SCIPround(scip, solval);
 
          /* add quota of original variable's objcoef to the master variable's coef */
@@ -2339,7 +2339,6 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    SCIP_Real objcoeff;
    SCIP_VAR* newvar;
 
-   SCIP_Real objvalue;
    SCIP_Real redcost;
    SCIP_Bool isray;
    int prob;
@@ -2357,7 +2356,6 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    if( addedvar != NULL )
       *addedvar = NULL;
 
-   objvalue = 0.0;
    redcost = 0.0;
 
    prob = GCGcolGetProbNr(gcgcol);
@@ -2373,22 +2371,22 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
 
       if( !SCIPisDualfeasNegative(scip, redcost) )
       {
-         SCIPdebugMessage("    var with redcost %g (objvalue=%g, dualsol=%g, ray=%u) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob], isray);
+         SCIPdebugMessage("    var with redcost %g (dualsol=%g, ray=%u) was not added\n", redcost, pricerdata->dualsolconv[prob], isray);
          *added = FALSE;
 
          return SCIP_OKAY;
       }
-      SCIPdebugMessage("    found var with redcost %g (objvalue=%g, dualsol=%g, ray=%u)\n", redcost, objvalue, pricerdata->dualsolconv[prob], isray);
+      SCIPdebugMessage("    found var with redcost %g (dualsol=%g, ray=%u)\n", redcost, pricerdata->dualsolconv[prob], isray);
    }
    else
    {
-      SCIPdebugMessage("    force var (objvalue=%g, dualsol=%g, ray=%u)\n",  objvalue, pricerdata->dualsolconv[prob], isray);
+      SCIPdebugMessage("    force var (dualsol=%g, ray=%u)\n", pricerdata->dualsolconv[prob], isray);
    }
 
    *added = TRUE;
 
    /* compute objective coefficient of the variable */
-   objcoeff = 0;
+   objcoeff = 0.0;
    for( i = 0; i < nsolvars; i++ )
    {
       SCIP_Real solval;
@@ -2409,10 +2407,6 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
           * priced-in variables get no objective value for this origvar */
          if( GCGoriginalVarIsLinking(origvar) )
             continue;
-
-         /* round solval if possible to avoid numerical troubles */
-         if( SCIPvarIsIntegral(solvars[i]) && SCIPisIntegral(scip, solval) )
-            solval = SCIPround(scip, solval);
 
          /* add quota of original variable's objcoef to the master variable's coef */
          objcoeff += solval * SCIPvarGetObj(origvar);
@@ -2445,7 +2439,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
          pricerdata->eventhdlr, NULL, NULL) );
 
    if( SCIPisNegative(scip, score) )
-      score = pricerdata->dualsolconv[prob] - objvalue;
+      score = pricerdata->dualsolconv[prob] - objcoeff;
 
    /* add variable */
    if( !force )

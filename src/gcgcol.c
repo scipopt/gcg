@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -103,6 +103,10 @@ SCIP_RETCODE GCGcreateGcgCol(
 
       origval = (vals[i] - constant) / scalar;
 
+      /* round origval if possible to avoid numerical troubles */
+      if( SCIPvarIsIntegral(origvar) && SCIPisFeasIntegral(pricingprob, origval) )
+         origval = SCIPround(pricingprob, origval);
+
       if( !SCIPisZero(pricingprob, origval) )
       {
          (*gcgcol)->vars[nnonz] = origvar;
@@ -179,6 +183,10 @@ SCIP_RETCODE GCGcreateGcgColFromSol(
 
       solvar = solvars[i];
       solval = SCIPgetSolVal(pricingprob, sol, solvar);
+
+      /* round solval if possible to avoid numerical troubles */
+      if( SCIPvarIsIntegral(solvar) && SCIPisFeasIntegral(pricingprob, solval) )
+         solval = SCIPround(pricingprob, solval);
 
       if( SCIPisZero(pricingprob, solval) )
       {

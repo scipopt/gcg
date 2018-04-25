@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -81,8 +81,6 @@ struct GCG_SolverData
    int                   npricingprobs;      /**< number of pricing problems */
    CPXENVptr*            cpxenv;             /**< array of CPLEX environments for the pricing problems */
    CPXLPptr*             lp;                 /**< array of CPLEX problems for the pricing problems */
-   SCIP_Bool*            created;            /**< array storing for each pricing problem, whether the CPLEX problem was
-                                              *   already created */
    int*                  nupdates;           /**< array storing the number of updates for all of the pricing problems */
    /**
     *  information about the basic pricing problem (without potential branching constraints)
@@ -346,8 +344,6 @@ SCIP_RETCODE buildProblem(
       CHECK_ZERO( CPXwriteprob(solverdata->cpxenv[probnr], solverdata->lp[probnr], filename, "lp") );
    }
 #endif
-
-   solverdata->created[probnr] = TRUE;
 
  TERMINATE:
    /* free temporary memory */
@@ -917,6 +913,8 @@ GCG_DECL_SOLVERINITSOL(solverInitsolCplex)
    GCG_SOLVERDATA* solverdata;
    int npricingprobs;
 
+   int i;
+
    assert(scip != NULL);
    assert(solver != NULL);
 
@@ -928,9 +926,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolCplex)
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->cpxenv), npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->lp), npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->created), npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->nupdates), npricingprobs) );
-   BMSclearMemoryArray(solverdata->created, npricingprobs);
    BMSclearMemoryArray(solverdata->nupdates, npricingprobs);
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->pricingprobs), npricingprobs) );
@@ -940,6 +936,14 @@ GCG_DECL_SOLVERINITSOL(solverInitsolCplex)
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->nbasicpricingconss), npricingprobs) );
    BMSclearMemoryArray(solverdata->npricingvars, npricingprobs);
    BMSclearMemoryArray(solverdata->nbasicpricingconss, npricingprobs);
+
+   for( i = 0; i < npricingprobs; ++i )
+   {
+      if( GCGisPricingprobRelevant(solverdata->origprob, i) )
+      {
+         SCIP_CALL( buildProblem(solverdata->masterprob, solverdata, GCGgetPricingprob(solverdata->origprob, i), i) );
+      }
+   }
 
    return SCIP_OKAY;
 }
@@ -967,7 +971,7 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
    /* free pricing problems */
    for( i = 0; i < npricingprobs; ++i )
    {
-      if( solverdata->created[i] )
+      if( GCGisPricingprobRelevant(solverdata->origprob, i) )
       {
          /* free LP */
          CHECK_ZERO( CPXfreeprob(solverdata->cpxenv[i], &solverdata->lp[i]) );
@@ -1005,7 +1009,6 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
    SCIPfreeBlockMemoryArray(scip, &(solverdata->pricingprobs), solverdata->npricingprobs);
 
    SCIPfreeBlockMemoryArray(scip, &(solverdata->nupdates), solverdata->npricingprobs);
-   SCIPfreeBlockMemoryArray(scip, &(solverdata->created), solverdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip, &(solverdata->lp), solverdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip, &(solverdata->cpxenv), solverdata->npricingprobs);
 
@@ -1026,21 +1029,13 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
-   assert(solverdata->created != NULL);
 
    SCIPdebugMessage("calling heuristic pricing with CPLEX for pricing problem %d\n", probnr);
 
    retval = SCIP_OKAY;
 
-   /* build the pricing problem in CPLEX or update it */
-   if( !solverdata->created[probnr] )
-   {
-      SCIP_CALL( buildProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
-   }
-   else
-   {
-      SCIP_CALL( updateProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
-   }
+   /* update the pricing problem in CPLEX */
+   SCIP_CALL( updateProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
 
    CHECK_ZERO( CPXgetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, &nodelim) );
    CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, solverdata->heurnodelimit) );
@@ -1067,19 +1062,11 @@ GCG_DECL_SOLVERSOLVE(solverSolveCplex)
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
-   assert(solverdata->created != NULL);
 
    SCIPdebugMessage("calling CPLEX pricing solver for pricing problem %d\n", probnr);
 
-   /* build the pricing problem in CPLEX or update it */
-   if( !solverdata->created[probnr] )
-   {
-      SCIP_CALL( buildProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
-   }
-   else
-   {
-      SCIP_CALL( updateProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
-   }
+   /* update the pricing problem in CPLEX */
+   SCIP_CALL( updateProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
 
    /* solve the pricing problem and evaluate solution */
    SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, status) );

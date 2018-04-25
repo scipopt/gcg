@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -564,7 +564,6 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgpscostdiving) /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
    SCIP_VAR** lpcands;
    SCIP_Real* lpcandssol;
-   SCIP_Real* lpcandsfrac;
    int nlpcands;
    SCIP_Bool bestcandmayrounddown;
    SCIP_Bool bestcandmayroundup;
@@ -584,9 +583,8 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgpscostdiving) /*lint --e{715}*/
    assert(divingdata->rootsol != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
    assert(lpcands != NULL);
-   assert(lpcandsfrac != NULL);
    assert(lpcandssol != NULL);
 
    bestcandmayrounddown = TRUE;
@@ -621,7 +619,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgpscostdiving) /*lint --e{715}*/
       mayroundup = SCIPvarMayRoundUp(var);
       primsol = lpcandssol[c];
       rootsolval = SCIPgetSolVal(scip, divingdata->rootsol, var);
-      frac = lpcandsfrac[c];
+      frac = lpcandssol[c] - SCIPfloor(scip, lpcandssol[c]);
 
       if( mayrounddown || mayroundup )
       {

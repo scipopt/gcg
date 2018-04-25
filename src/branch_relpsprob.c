@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -972,7 +972,6 @@ SCIP_RETCODE execRelpsprob(
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    SCIP_VAR**            branchcands,        /**< branching candidates */
    SCIP_Real*            branchcandssol,     /**< solution value for the branching candidates */
-   SCIP_Real*            branchcandsfrac,    /**< fractional part of the branching candidates, zero possible */
    int                   nbranchcands,       /**< number of branching candidates */
    int                   nvars,              /**< number of variables to be watched be bdchgdata */
    SCIP_RESULT*          result,             /**< pointer to the result of the execution */
@@ -1109,7 +1108,8 @@ SCIP_RETCODE execRelpsprob(
 
          /* combine the four score values */
          score = calcScore(scip, branchruledata, conflictscore, avgconflictscore, conflengthscore, avgconflengthscore,
-            inferencescore, avginferencescore, cutoffscore, avgcutoffscore, pscostscore, avgpscostscore, branchcandsfrac[c]);
+            inferencescore, avginferencescore, cutoffscore, avgcutoffscore, pscostscore, avgpscostscore,
+            branchcandssol[c] - SCIPfloor(scip, branchcandssol[c]));
 
          /* pseudo cost of variable is not reliable: insert candidate in initcands buffer */
          for( j = ninitcands; j > 0 && score > initcandscores[j-1]; --j )
@@ -1228,12 +1228,15 @@ SCIP_RETCODE execRelpsprob(
          /* if both roundings are valid, update scores */
          if( !downinf && !upinf )
          {
+            SCIP_Real frac;
             SCIP_Real conflictscore;
             SCIP_Real conflengthscore;
             SCIP_Real inferencescore;
             SCIP_Real cutoffscore;
             SCIP_Real pscostscore;
             SCIP_Real score;
+
+            frac = branchcandssol[c] - SCIPfloor(scip, branchcandssol[c]);
 
             /* check for a better score */
             conflictscore = SCIPgetVarConflictScore(scip, branchcands[c]);
@@ -1242,14 +1245,14 @@ SCIP_RETCODE execRelpsprob(
             cutoffscore = SCIPgetVarAvgCutoffScore(scip, branchcands[c]);
             pscostscore = SCIPgetBranchScore(scip, branchcands[c], downgain, upgain);
             score = calcScore(scip, branchruledata, conflictscore, avgconflictscore, conflengthscore, avgconflengthscore,
-               inferencescore, avginferencescore, cutoffscore, avgcutoffscore, pscostscore, avgpscostscore, branchcandsfrac[c]);
+               inferencescore, avginferencescore, cutoffscore, avgcutoffscore, pscostscore, avgpscostscore, frac);
 
             if( SCIPisSumGE(scip, score, bestsbscore) )
             {
                SCIP_Real fracscore;
                SCIP_Real domainscore;
 
-               fracscore = MIN(branchcandsfrac[c], 1.0 - branchcandsfrac[c]);
+               fracscore = MIN(frac, 1.0 - frac);
                domainscore = -(SCIPvarGetUbLocal(branchcands[c]) - SCIPvarGetLbLocal(branchcands[c]));
                if( SCIPisSumGT(scip, score, bestsbscore )
                   || SCIPisSumGT(scip, fracscore, bestsbfracscore)
@@ -1263,9 +1266,9 @@ SCIP_RETCODE execRelpsprob(
             }
 
             /* update pseudo cost values */
-            assert(!SCIPisFeasNegative(scip, branchcandsfrac[c]));
-            SCIP_CALL( SCIPupdateVarPseudocost(scip, branchcands[c], 0.0-branchcandsfrac[c], downgain, 1.0) );
-            SCIP_CALL( SCIPupdateVarPseudocost(scip, branchcands[c], 1.0-branchcandsfrac[c], upgain, 1.0) );
+            assert(!SCIPisFeasNegative(scip, frac));
+            SCIP_CALL( SCIPupdateVarPseudocost(scip, branchcands[c], 0.0-frac, downgain, 1.0) );
+            SCIP_CALL( SCIPupdateVarPseudocost(scip, branchcands[c], 1.0-frac, upgain, 1.0) );
 
             SCIPdebugMessage(" -> variable <%s> (solval=%g, down=%g (%+g), up=%g (%+g), score=%g/ %g/%g %g/%g -> %g)\n",
                SCIPvarGetName(branchcands[c]), branchcandssol[c], down, downgain, up, upgain,
@@ -1538,7 +1541,6 @@ SCIP_RETCODE SCIPgetRelpsprobBranchVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            branchcands,        /**< brancing candidates */
    SCIP_Real*            branchcandssol,     /**< solution value for the branching candidates */
-   SCIP_Real*            branchcandsfrac,    /**< fractional part of the branching candidates, zero possible */
    int                   nbranchcands,       /**< number of branching candidates */
    int                   nvars,              /**< number of variables to be watched by bdchgdata */
    SCIP_RESULT*          result,             /**< pointer to the result of the execution */
@@ -1558,7 +1560,7 @@ SCIP_RETCODE SCIPgetRelpsprobBranchVar(
    assert(origscip != NULL);
 
    /* execute branching rule */
-   SCIP_CALL( execRelpsprob(origscip, branchrule, branchcands, branchcandssol, branchcandsfrac, nbranchcands, nvars, result, branchvar) );
+   SCIP_CALL( execRelpsprob(origscip, branchrule, branchcands, branchcandssol, nbranchcands, nvars, result, branchvar) );
 
    return SCIP_OKAY;
 }
