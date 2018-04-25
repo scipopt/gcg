@@ -2,34 +2,33 @@
 
 # flag to indicate whether detector <connected> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/connected/enabled = FALSE
+detection/detectors/connected/enabled = FALSE
 
 # Type of the graph: 'c' column hypergraph, 'r' row hypergraph, 'a' column-row hypergraph
 # [type: char, range: {cra}, default: r]
-detectors/arrowheur/type = a
-detectors/arrowheur/enabled = FALSE
+detection/detectors/arrowheur/type = a
+detection/detectors/arrowheur/enabled = FALSE
 
 # flag to indicate whether detector <staircase> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/staircase/enabled = FALSE
+detection/detectors/staircase/enabled = FALSE
 
 # flag to indicate whether detector <random> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/random/enabled = FALSE
+detection/detectors/random/enabled = FALSE
 
 # flag to indicate whether detector <isomorph> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/isomorph/enabled = FALSE
+detection/detectors/isomorph/enabled = FALSE
 
 # flag to indicate whether detector <colors> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/colors/enabled = FALSE
+detection/detectors/colors/enabled = FALSE
 
 # flag to indicate whether detector <cutpacking> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/cutpacking/enabled = FALSE
+detection/detectors/cutpacking/enabled = FALSE
 
 # flag to indicate whether detector <stairheur> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/stairheur/enabled = FALSE
-
+detection/detectors/stairheur/enabled = FALSE

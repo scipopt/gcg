@@ -5391,7 +5391,7 @@ sepa/basis/mincuts = 1
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 sepa/basis/chgobjallways = FALSE
 
-# parameter returns if cuts are forced to enter the LP 
+# parameter returns if cuts are forced to enter the LP
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 sepa/basis/forcecuts = FALSE
 

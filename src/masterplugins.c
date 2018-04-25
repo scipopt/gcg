@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -89,7 +89,7 @@
 
 #include "scip/presol_implics.h"
 #include "scip/presol_inttobinary.h"
-#include "scip/presol_trivial.h"
+#include "presol_roundbound.h"
 #include "scip/presol_boundshift.h"
 
 #if USEPROP
@@ -181,7 +181,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludePresolBoundshift(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
-   SCIP_CALL( SCIPincludePresolTrivial(scip) );
+   SCIP_CALL( SCIPincludePresolRoundbound(scip) );
 
 #if USEPROP
    SCIP_CALL( SCIPincludePropDualfix(scip) );

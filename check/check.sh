@@ -267,6 +267,118 @@ do
                 then
                     echo display additionalstatistics  >> $TMPFILE
                 fi
+            elif test $MODE = "miplibfeaturesoriginal"
+            then
+		if test ! -e results/features_original
+		then
+		    mkdir results/features_original
+		fi
+		echo set write miplib2017features TRUE  >> $TMPFILE
+		echo set write miplib2017featurefilepath results/features_original/featurefile >> $TMPFILE
+		echo change instancename $PROB     >> $TMPFILE
+                echo detect                        >> $TMPFILE
+		echo quit                          >> $TMPFILE
+            elif test $MODE = "miplibfeaturespresolved"
+            then
+		if test ! -e results/features_presolved
+		then
+		    mkdir results/features_presolved
+		fi
+		echo set write miplib2017features TRUE  >> $TMPFILE
+		echo set write miplib2017featurefilepath results/features_presolved/featurefile >> $TMPFILE
+		echo change instancename $PROB     >> $TMPFILE
+                echo presolve                      >> $TMPFILE
+                echo detect                        >> $TMPFILE
+		echo quit                          >> $TMPFILE
+            elif test $MODE = "miplibfeaturesplotsoriginal"
+            then
+		if test ! -e $DIR/features_original
+		then
+		    mkdir $DIR/features_original
+		fi
+		if test ! -e $DIR/features_original/decs
+		then
+		    mkdir $DIR/features_original/decs
+		fi
+		if test ! -e $DIR/features_original/matrix
+		then
+		    mkdir $DIR/features_original/matrix
+		fi
+		#disable presolving
+		echo set presolving maxrounds 0    >> $TMPFILE
+		echo set write miplib2017features TRUE  >> $TMPFILE
+		echo set write miplib2017plotsanddecs TRUE  >> $TMPFILE
+		echo set write miplib2017shortbasefeatures TRUE  >> $TMPFILE
+#		echo set display verblevel 5 >> $TMPFILE
+
+		echo set write miplib2017featurefilepath $DIR/features_original/featurefile >> $TMPFILE
+		echo set write miplib2017matrixfilepath $DIR/features_original/matrix >> $TMPFILE
+		echo set write miplib2017decompfilepath $DIR/features_original/decs >> $TMPFILE
+		echo set visual colorscheme 1 >> $TMPFILE
+		echo change instancename $PROB     >> $TMPFILE
+                echo detect                        >> $TMPFILE
+		echo write problem  $DIR/features_original/decs/$NAME.dec     >> $TMPFILE
+		echo write problem  $DIR/features_original/decs/$NAME.gp      >> $TMPFILE
+		echo quit                          >> $TMPFILE
+            elif test $MODE = "miplibfeaturesplotspresolved"
+            then
+		if test ! -e $DIR/features_presolved
+		then
+		    mkdir $DIR/features_presolved
+		fi
+		if test ! -e $DIR/features_presolved/decs
+		then
+		    mkdir $DIR/features_presolved/decs
+		fi
+		if test ! -e $DIR/features_presolved/matrix
+		then
+		    mkdir $DIR/features_presolved/matrix
+		fi
+		echo set write miplib2017features TRUE  >> $TMPFILE
+		echo set write miplib2017plotsanddecs TRUE  >> $TMPFILE
+		echo set write miplib2017shortbasefeatures TRUE  >> $TMPFILE
+#		echo set display verblevel 5 >> $TMPFILE
+
+		echo set write miplib2017featurefilepath $DIR/features_presolved/featurefile >> $TMPFILE
+		echo set write miplib2017matrixfilepath $DIR/features_presolved/matrix >> $TMPFILE
+		echo set write miplib2017decompfilepath $DIR/features_presolved/decs >> $TMPFILE
+		echo set visual colorscheme 1 >> $TMPFILE
+		echo change instancename $PROB     >> $TMPFILE
+		echo presolve                      >> $TMPFILE
+                echo detect                        >> $TMPFILE
+		echo write trans  $DIR/features_presolved/decs/$NAME.dec     >> $TMPFILE
+		echo write trans  $DIR/features_presolved/decs/$NAME.gp      >> $TMPFILE
+		echo quit                          >> $TMPFILE
+	    elif test $MODE = "detectionstatistics"
+	    then
+		echo change instancename $PROB     >> $TMPFILE
+		echo set detection allowclassifier enabled TRUE >> $TMPFILE
+		echo presolve                      >> $TMPFILE
+		echo detect                        >> $TMPFILE
+                echo display detectionst           >> $TMPFILE
+	    elif test $MODE = "checkexistence"
+	    then
+		echo change instancename $PROB     >> $TMPFILE
+		echo set presolving maxrounds 0    >> $TMPFILE
+		echo presolve                      >> $TMPFILE
+		echo detect                        >> $TMPFILE
+		if test -f $DECFILE
+                    then
+                        BLKFILE=$DECFILE
+                    fi
+                    if test -f $BLKFILE
+                    then
+                        EXT=${BLKFILE##*.}
+                        if test "$EXT" = "gz"
+                        then
+                            presol=`zgrep -A1 PRESOLVE $BLKFILE`
+                        else
+                            presol=`grep -A1 PRESOLVE $BLKFILE`
+                        fi
+                        echo $presol
+                        # If the decomposition contains presolving information ...
+                        echo read $BLKFILE         >> $TMPFILE
+                    fi
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE
@@ -316,6 +428,10 @@ EOF
                         echo read $BLKFILE         >> $TMPFILE
                     fi
                 fi
+                GP_BASE=`basename $DECFILE .dec`
+#                echo detect                        >> $TMPFILE
+#                echo write problem $HOME\/results\/gpsBench\/$GP_BASE.gp >> $TMPFILE
+#                echo write problem $HOME\/results\/decsBench\/$GP_BASE.dec >> $TMPFILE
                 echo optimize                      >> $TMPFILE
                 echo display statistics            >> $TMPFILE
                 if test $STATISTICS = "true"

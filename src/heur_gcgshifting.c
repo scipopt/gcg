@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -39,6 +39,7 @@
 #include "heur_gcgshifting.h"
 #include "gcg.h"
 #include "relax_gcg.h"
+#include "scip/misc.h"
 
 
 #define HEUR_NAME             "gcgshifting"
@@ -492,7 +493,7 @@ SCIP_DECL_HEURINIT(heurInitGcgshifting) /*lint --e{715}*/
 
    /* create random number generator */
    SCIP_CALL( SCIPcreateRandom(scip, &heurdata->randnumgen,
-         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
+        SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
 
    SCIPheurSetData(heur, heurdata);
 

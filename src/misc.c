@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -39,8 +39,12 @@
 #include "benders_gcg.h"
 #include "pub_gcgvar.h"
 #include "cons_decomp.h"
+#include <unistd.h>
+
 
 #include <string.h>
+
+
 /** transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method
  */
@@ -472,6 +476,104 @@ SCIP_RETCODE GCGprintStatistics(
    }
    return SCIP_OKAY;
 }
+
+SCIP_RETCODE GCGprintInstanceName(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "filename: %s \n", GCGgetFilename(scip) );
+   return SCIP_OKAY;
+}
+
+
+SCIP_RETCODE GCGprintMiplibStructureInformation(
+   SCIP*                scip,
+   SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */
+   )
+{
+   FILE* file;
+   SCIP_Bool createfile;
+
+   char* filepath;
+   char completefilepath[SCIP_MAXSTRLEN];
+
+   SCIPgetStringParam(scip, "write/miplib2017featurefilepath", &filepath);
+
+   (void) SCIPsnprintf(completefilepath, SCIP_MAXSTRLEN, "%s%s", filepath, ".csv");
+
+   if( access( completefilepath, W_OK ) != -1 ) {
+      createfile  = FALSE;
+   } else
+   {
+      createfile = TRUE;
+   }
+
+   file = fopen(completefilepath, "a");
+   if( file == NULL )
+   {
+      SCIPdialogMessage(scip, NULL, "error creating file <%s>\n", completefilepath);
+      SCIPprintSysError(completefilepath);
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+
+      return SCIP_OKAY;
+   }
+
+   if( createfile )
+      SCIP_CALL( GCGprintMiplibBaseInformationHeader(scip, file) );
+
+
+   SCIP_CALL( GCGprintMiplibBaseInformation(scip, file) );
+
+   SCIP_CALL( GCGprintMiplibConnectedInformation(scip, file) );
+
+   SCIP_CALL( GCGprintMiplibDecompInformation(scip, file) );
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n, " );
+
+
+   fclose(file);
+
+   return SCIP_OKAY;
+}
+
+
+
+
+/** print out complete detection statistics */
+SCIP_RETCODE GCGprintCompleteDetectionStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   assert(scip != NULL);
+
+   if( !GCGdetectionTookPlace(scip) )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nDetection did not take place so far\n");
+      return SCIP_OKAY;
+   }
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nStart writing complete detection information:\n");
+
+   SCIP_CALL( GCGprintInstanceName(scip, file) );
+
+
+
+   GCGprintBlockcandidateInformation(scip, file);
+
+   GCGprintCompleteDetectionTime(scip, file);
+
+   GCGprintClassifierInformation(scip, file);
+
+   GCGprintDecompInformation(scip, file);
+
+//   GCGprintMiplibStructureInformation(scip, file);
+
+   return SCIP_OKAY;
+}
+
+
 
 /** returns whether the constraint belongs to GCG or not */
 SCIP_Bool GCGisConsGCGCons(
