@@ -60,6 +60,7 @@
 #include <regex>
 #include <vector>
 
+#if 0
 #include "../lib/scip-git/src/scip/clock.h"
 #include "../lib/scip-git/src/scip/def.h"
 #include "../lib/scip-git/src/scip/pub_cons.h"
@@ -76,6 +77,24 @@
 #include "../lib/scip-git/src/scip/type_retcode.h"
 #include "../lib/scip-git/src/scip/type_scip.h"
 #include "../lib/scip-git/src/scip/type_set.h"
+#else
+#include "scip/clock.h"
+#include "scip/def.h"
+#include "scip/pub_cons.h"
+#include "scip/pub_dialog.h"
+#include "scip/pub_message.h"
+#include "scip/pub_misc.h"
+#include "scip/type_clock.h"
+#include "scip/type_cons.h"
+#include "scip/type_dialog.h"
+#include "scip/type_message.h"
+#include "scip/type_misc.h"
+#include "scip/type_paramset.h"
+#include "scip/type_result.h"
+#include "scip/type_retcode.h"
+#include "scip/type_scip.h"
+#include "scip/type_set.h"
+#endif
 #include "class_consclassifier.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"

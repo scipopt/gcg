@@ -65,6 +65,7 @@
 #define SUBPROBLEM_STAT_ARRAYLEN_CUTS 1024   /**< length of the array for foundVars histogram representation */
 #define SUBPROBLEM_STAT_BUCKETSIZE_CUTS 1    /**< size of the buckets for foundVars histogram representation */
 
+#define LARGE_VALUE  10000    /**< a large value that is used to create an artificial solution */
 
 /*
  * Data structures
@@ -199,14 +200,19 @@ SCIP_RETCODE setSubproblemObjs(
 static
 SCIP_RETCODE setOriginalProblemValues(
    SCIP*                 origprob,           /**< the SCIP instance of the original problem */
+   SCIP*                 masterprob,         /**< the Benders' master problem */
+   SCIP_BENDERS*         benders,            /**< the Benders' decomposition structure */
    SCIP_SOL*             origsol,            /**< the solution for the original problem */
    SCIP_VAR**            vars,               /**< the variables from the decomposed problem */
-   SCIP_Real*            vals,               /**< the solution values of the given problem */
+   SCIP_Real*            vals,               /**< the solution values of the given problem, can be NULL */
    int                   nvars,              /**< the number of variables */
-   SCIP_Bool             master              /**< are the variables from the master problem */
+   SCIP_Bool             master,             /**< are the variables from the master problem */
+   SCIP_Bool             artificial          /**< should an artifical (possibly infeasible) solution be created to
+                                                  generate branching candidates */
    )
 {
    SCIP_VAR** origvars;
+   SCIP_Real val;
    int norigvars;
    int i;
 
@@ -215,8 +221,10 @@ SCIP_RETCODE setOriginalProblemValues(
 #endif
 
    assert(origprob != NULL);
+   assert(masterprob != NULL);
+   assert(benders != NULL);
    assert(vars != NULL);
-   assert(vals != NULL);
+   assert(vals != NULL || artificial);
 
    /* looping through all variables to update the values in the original solution */
    for( i = 0; i < nvars; i++ )
@@ -224,6 +232,8 @@ SCIP_RETCODE setOriginalProblemValues(
       norigvars = master ? GCGmasterVarGetNOrigvars(vars[i]) : GCGpricingVarGetNOrigvars(vars[i]);
       if( norigvars > 0 )
       {
+         SCIP_VAR* mastervar;
+
          origvars = master ? GCGmasterVarGetOrigvars(vars[i]) : GCGpricingVarGetOrigvars(vars[i]);
 
 #ifndef NDEBUG
@@ -238,9 +248,44 @@ SCIP_RETCODE setOriginalProblemValues(
 
          assert((master && GCGvarIsMaster(vars[i])) || (!master && GCGvarIsPricing(vars[i])));
 
-         assert(!SCIPisInfinity(origprob, vals[i]));
+         /* for all variables that are from the subproblems, they are set to their bounds if the solution is being
+          * created to identify branching candidates. */
+         if( !master && artificial )
+         {
+            if( SCIPisNegative(origprob, SCIPvarGetObj(origvars[0])) )
+            {
+               val = SCIPvarGetLbGlobal(origvars[0]);
+               if( SCIPisInfinity(origprob, -val) )
+                  val = -LARGE_VALUE;
+            }
+            else
+            {
+               val = SCIPvarGetUbGlobal(origvars[0]);
+               if( SCIPisInfinity(origprob, val) )
+                  val = LARGE_VALUE;
+            }
+         }
+         else
+            val = vals[i];
 
-         SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvars[0], vals[i]) );
+         /* identifying whether the variable is a master problem variable. The variable is a master problem variable if
+          * there is a mapping from the subproblem to the master problem */
+         if( master )
+            mastervar = vars[i];
+         else
+         {
+            mastervar = NULL;
+            SCIP_CALL( SCIPgetBendersMasterVar(masterprob, benders, vars[i], &mastervar) );
+         }
+
+         assert(!SCIPisInfinity(origprob, val));
+
+         SCIPdebugMsg(masterprob, "setting the value of <%s> (dw variable <%s>) to %g in the original solution. "
+            "Variable type: %d\n", SCIPvarGetName(origvars[0]), SCIPvarGetName(vars[i]), val, master);
+
+         /* only update the solution value of master variables if an artificial solution is being created. */
+         if( master || mastervar == NULL )
+            SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvars[0], val) );
       }
    }
 
@@ -254,7 +299,9 @@ static
 SCIP_RETCODE createOriginalProblemSolution(
    SCIP*                 masterprob,         /**< the Benders' master problem */
    SCIP_BENDERS*         benders,            /**< the Benders' decomposition structure */
-   SCIP_SOL*             sol                 /**< the solution passed to the Benders' decomposition subproblems. */
+   SCIP_SOL*             sol,                /**< the solution passed to the Benders' decomposition subproblems. */
+   SCIP_Bool             artificial          /**< should an artifical (possibly infeasible) solution be created to
+                                                  generate branching candidates */
    )
 {
    /* Don't know whether we need to consider the fixed variables. Must check. */
@@ -289,13 +336,11 @@ SCIP_RETCODE createOriginalProblemSolution(
    assert(vars != NULL);
 
    /* getting the best solution from the master problem */
-   bestsol = SCIPgetBestSol(masterprob);
-
    SCIP_CALL( SCIPallocBufferArray(masterprob, &vals, nvars) );
-   SCIP_CALL( SCIPgetSolVals(masterprob, bestsol, nvars, vars, vals) );
+   SCIP_CALL( SCIPgetSolVals(masterprob, sol, nvars, vars, vals) );
 
    /* setting the values using the master problem solution */
-   SCIP_CALL( setOriginalProblemValues(origprob, origsol, vars, vals, nvars, TRUE) );
+   SCIP_CALL( setOriginalProblemValues(origprob, masterprob, benders, origsol, vars, vals, nvars, TRUE, artificial) );
 
    /* freeing the values buffer array for use for the pricing problems */
    SCIPfreeBufferArray(masterprob, &vals);
@@ -318,14 +363,25 @@ SCIP_RETCODE createOriginalProblemSolution(
       SCIP_CALL( SCIPprintSol(subproblem, bestsol, NULL, FALSE) );
 #endif
 
-      SCIP_CALL( SCIPallocBufferArray(subproblem, &vals, nvars) );
-      SCIP_CALL( SCIPgetSolVals(subproblem, bestsol, nvars, vars, vals) );
+      /* the branching candidates come from the master problem solution. However, we need a full solution to pass to the
+       * original problem to find the branching candidate. So the subproblem variables are set to their bounds, creating
+       * a possibly infeasible solution, but with the fractional master problem variables. */
+      if( artificial )
+      {
+         /* setting the values of the subproblem variables to their bounds. */
+         SCIP_CALL( setOriginalProblemValues(origprob, masterprob, benders, origsol, vars, NULL, nvars, FALSE, artificial) );
+      }
+      else
+      {
+         SCIP_CALL( SCIPallocBufferArray(subproblem, &vals, nvars) );
+         SCIP_CALL( SCIPgetSolVals(subproblem, bestsol, nvars, vars, vals) );
 
-      /* setting the values using the master problem solution */
-      SCIP_CALL( setOriginalProblemValues(origprob, origsol, vars, vals, nvars, FALSE) );
+         /* setting the values using the master problem solution */
+         SCIP_CALL( setOriginalProblemValues(origprob, masterprob, benders, origsol, vars, vals, nvars, FALSE, artificial) );
 
-      /* freeing the values buffer array for use for the pricing problems */
-      SCIPfreeBufferArray(subproblem, &vals);
+         /* freeing the values buffer array for use for the pricing problems */
+         SCIPfreeBufferArray(subproblem, &vals);
+      }
    }
 
    /* if the solution is NULL, then the solution comes from the relaxation. Thus, it should be stored in the
@@ -359,6 +415,10 @@ SCIP_RETCODE createOriginalProblemSolution(
       bendersdata->relaxsol = origsol;
    }
 
+   printf("Master Solution\n");
+   SCIP_CALL( SCIPprintSol(masterprob, sol, 0, 0) );
+   printf("Original Solution\n");
+   SCIP_CALL( SCIPprintSol(origprob, origsol, 0, 0) );
 
    return SCIP_OKAY;
 }
@@ -596,8 +656,23 @@ SCIP_DECL_BENDERSGETVAR(bendersGetvarGcg)
 static
 SCIP_DECL_BENDERSPRESUBSOLVE(bendersPresubsolveGcg)
 {  /*lint --e{715}*/
+   SCIP_BENDERSDATA* bendersdata;
+
+   assert(benders != NULL);
+
+   bendersdata = SCIPbendersGetData(benders);
+   assert(bendersdata != NULL);
 
    SCIP_CALL( bendersCallOperations(scip, benders) );
+
+   if( SCIPgetDepth(scip) > 0 && !checkint && type == SCIP_BENDERSENFOTYPE_LP )
+   {
+      SCIP_CALL( createOriginalProblemSolution(scip, benders, sol, TRUE) );
+      SCIP_CALL( GCGrelaxUpdateCurrentSol(bendersdata->origprob) );
+
+      (*skipsolve) = TRUE;
+      (*result) = SCIP_DIDNOTRUN;
+   }
 
    return SCIP_OKAY;
 }
@@ -619,9 +694,10 @@ SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
    SCIPdebugMessage("The master problem solution.\n");
    SCIP_CALL( SCIPprintSol(scip, sol, NULL, FALSE) );
 #endif
-   if( !infeasible )
+   if( type == SCIP_BENDERSENFOTYPE_LP )
    {
-      SCIP_CALL( createOriginalProblemSolution(scip, benders, sol) );
+      /* if the problem was found to be infeasible, then an artificial solution is created. */
+      SCIP_CALL( createOriginalProblemSolution(scip, benders, sol, infeasible) );
       SCIP_CALL( GCGrelaxUpdateCurrentSol(bendersdata->origprob) );
    }
 
