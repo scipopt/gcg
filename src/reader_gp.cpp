@@ -332,18 +332,18 @@ SCIP_RETCODE writeGpSeeed(
    {
       ofs << "set xrange [0:" << nvars << "]" << std::endl;
       ofs << "set yrange[" << nconss << ":0]" << std::endl;
-      if( !writematrix )
-      {
-         ofs << " unset xtics " << std::endl;
-         ofs << " unset ytics " << std::endl;
-      }
-      else
-      {
-         ofs << " set xtics nomirror " << std::endl;
-         ofs << " set ytics nomirror" << std::endl;
-         ofs << " set xtics out " << std::endl;
-         ofs << " set ytics out" << std::endl;
-      }
+//      if( !writematrix )
+//      {
+//         ofs << " unset xtics " << std::endl;
+//         ofs << " unset ytics " << std::endl;
+//      }
+//      else
+//      {
+      ofs << " set xtics nomirror " << std::endl;
+      ofs << " set ytics nomirror" << std::endl;
+      ofs << " set xtics out " << std::endl;
+      ofs << " set ytics out" << std::endl;
+  //    }
    }
 
 //   if( noticsbutlabels )
