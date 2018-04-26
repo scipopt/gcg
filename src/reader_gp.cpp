@@ -265,6 +265,9 @@ SCIP_RETCODE writeGpNonzeros(
 
    radius *= radiusscale;
 
+   if ( radius < 0.000122 )
+      radius = 0.000122;
+
    /* start writing dots */
    ofs << "plot \"-\" using 1:2:(" << radius << ") notitle pt 7 ps " << radius << " fc rgb \"" << SCIPvisuGetColorNonzero()
       << "\"  " << std::endl;
@@ -419,7 +422,7 @@ SCIP_RETCODE writeGpSeeed(
       else
          radiusscale = seeed->getNConss() / 200;
 
-      radiusscale = 4;
+      radiusscale = 0.6;
       writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), radiusscale) );
    }
    else
