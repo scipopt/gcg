@@ -307,6 +307,286 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
    return SCIP_OKAY;
 }
 
+static
+DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
+{
+   *result = SCIP_DIDNOTFIND;
+   char decinfo[SCIP_MAXSTRLEN];
+   gcg::VarClassifier** classifiers;
+   int nclassifiers;
+   SCIP_Bool newclassifier;
+   gcg::VarClassifier** selectedclassifiers;
+   int nselectedclassifiers;
+   int i, j;
+   char stri[SCIP_MAXSTRLEN];
+   SCIP_Bool finished;
+
+   char* command;
+   int commandlen;
+   SCIP_Bool endoffile;
+
+   if (seeedPropagationData->seeedToPropagate->getNOpenconss() != seeedPropagationData->seeedpool->getNConss() ||  seeedPropagationData->seeedToPropagate->getNOpenvars() != seeedPropagationData->seeedpool->getNVars() )
+   {
+      *result = SCIP_SUCCESS;
+      return SCIP_OKAY;
+   }
+
+   std::vector<gcg::Seeed*> foundseeeds(0);
+
+   gcg::Seeed* seeedOrig;
+   gcg::Seeed* seeed;
+
+   int maximumnclasses;
+
+   if( seeedPropagationData->seeedpool->getNConss() + seeedPropagationData->seeedpool->getNVars() >= 50000 )
+         SCIPgetIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs", &maximumnclasses);
+      else
+         SCIPgetIntParam(scip, "detection/maxnclassesperclassifier", &maximumnclasses);
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &classifiers, seeedPropagationData->seeedpool->getNVarClassifiers()) );
+
+   if( seeedPropagationData->seeedpool->getNVarClassifiers() == 0 )
+   {
+       SCIPinfoMessage(scip, NULL, "No varclassifiers available for propagation, aborting!\n");
+       *result = SCIP_DIDNOTFIND;
+       return SCIP_OKAY;
+   }
+
+   SCIPinfoMessage(scip, NULL, "\n%d varclassifiers available for propagation.\n", seeedPropagationData->seeedpool->getNVarClassifiers() );
+
+   nclassifiers = 0;
+   for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNVarClassifiers(); ++classifierIndex )
+   {
+      gcg::VarClassifier* classifier = seeedPropagationData->seeedpool->getVarClassifier( classifierIndex );
+      if( classifier->getNClasses() > maximumnclasses )
+      {
+         std::cout << " the current varclass distribution includes " << classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of cons class detector" << std::endl;
+         continue;
+      }
+      newclassifier = TRUE;
+      for( i = 0; i < nclassifiers; ++i )
+      {
+         if( classifiers[i] == classifier )
+         {
+            newclassifier = FALSE;
+         }
+      }
+
+      if( newclassifier )
+      {
+         classifiers[nclassifiers] = classifier;
+         ++nclassifiers;
+      }
+   }
+
+   /* user selects wanted subset of classifiers */
+   SCIPinfoMessage(scip, NULL, "You will now be asked to enter a selection of varclassifiers iteratively. If you have finished your selection, enter \"none\".\n");
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &selectedclassifiers, nclassifiers) );
+   nselectedclassifiers = 0;
+
+   finished = FALSE;
+   while( !finished )
+   {
+      SCIPinfoMessage(scip, NULL, "Available varclassifiers:\n");
+      for( i = 0; i < nclassifiers; ++i )
+      {
+         SCIPinfoMessage(scip, NULL, "%d) ", i+1); //+1 as we want the list to start with 1)
+         SCIPinfoMessage(scip, NULL, "%s\n", classifiers[i]->getName() );
+      }
+
+      commandlen = 0;
+      while( commandlen == 0 )
+      {
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name(s) or number(s) of varclassifiers (seperated by spaces) or \"none\", (use \"quit\" to exit detector): \nGCG/toolbox> ", &command, &endoffile) );
+         commandlen = strlen(command);
+      }
+
+      if( !strncmp( command, "none", commandlen) == 0 && !strncmp( command, "quit", commandlen) == 0 )
+      {
+         for( i = 0; i < nclassifiers; ++i )
+         {
+            newclassifier = TRUE;
+            sprintf(stri, "%d", i+1); //used for matching numberings in the list, off-by-one since classifiers array starts with index 0 and our list with 1)
+            if( strncmp( command, classifiers[i]->getName(), commandlen) == 0 || strncmp( command, stri, commandlen ) == 0 )
+            {
+               /* check that we do not select the same classifier multiple times*/
+               for( j = 0; j < nselectedclassifiers; ++j )
+               {
+                  if( selectedclassifiers[j] == classifiers[i] )
+                  {
+                     newclassifier = FALSE;
+                  }
+               }
+               if( newclassifier )
+               {
+                  selectedclassifiers[nselectedclassifiers] = classifiers[i];
+                  ++nselectedclassifiers;
+
+                  SCIPinfoMessage(scip, NULL, "\nCurrently selected classifiers: ");
+                  for( j = 0; j < nselectedclassifiers; ++j )
+                  {
+                     SCIPinfoMessage(scip, NULL, "%s ", selectedclassifiers[j]->getName());
+                  }
+                  SCIPinfoMessage(scip, NULL, "\n\n");
+
+                  if( nselectedclassifiers >= nclassifiers )
+                  {
+                     finished = TRUE;
+                     break;
+                  }
+               }
+               else
+               {
+                  SCIPinfoMessage(scip, NULL, "\n+++Classifier %s is already selected!+++\n\n", classifiers[i]->getName());
+               }
+            }
+         }
+      }
+      else if( strncmp( command, "none", commandlen) == 0 )
+      {
+         finished = TRUE;
+         continue;
+      }
+      else if( strncmp( command, "quit", commandlen) == 0 )
+      {
+         SCIPfreeMemoryArray(scip, &selectedclassifiers);
+         SCIPfreeMemoryArray(scip, &classifiers);
+         *result = SCIP_DIDNOTFIND;
+         return SCIP_OKAY;
+      }
+   }
+
+   for( int classifierIndex = 0; classifierIndex < nselectedclassifiers; ++classifierIndex )
+   {
+      gcg::VarClassifier* classifier = seeedPropagationData->seeedpool->getVarClassifier( classifierIndex );
+      std::vector<int> varclassindices_master = std::vector<int>(0);
+      std::vector<int> varclassindices_linking = std::vector<int>(0);
+
+      seeedOrig = seeedPropagationData->seeedToPropagate;
+
+      for( i = 0; i < classifier->getNClasses(); ++ i )
+      {
+         switch( classifier->getClassDecompInfo( i ) )
+         {
+            case gcg::ALL:
+               break;
+            case gcg::LINKING:
+               varclassindices_linking.push_back( i );
+               break;
+            case gcg::MASTER:
+               varclassindices_master.push_back( i );
+               break;
+            case gcg::BLOCK:
+               break;
+         }
+      }
+
+      std::vector< std::vector<int> > subsetsOfVarclasses = classifier->getAllSubsets( true, false, false, false );
+
+      for( size_t subset = 0; subset < subsetsOfVarclasses.size(); ++subset )
+      {
+         if( subsetsOfVarclasses[subset].size() == 0 && varclassindices_master.size() == 0 && varclassindices_linking.size() == 0 )
+            continue;
+
+         seeed = new gcg::Seeed(seeedOrig);
+
+         /** book open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
+         for( i = 0; i < seeed->getNOpenvars(); ++i )
+         {
+            bool foundVar = false;
+            for( size_t varclassId = 0; varclassId < subsetsOfVarclasses[subset].size(); ++varclassId )
+            {
+               if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == subsetsOfVarclasses[subset][varclassId] )
+               {
+                  seeed->bookAsLinkingVar(seeed->getOpenvars()[i]);
+                  foundVar = true;
+                  break;
+               }
+            }
+            /** only check varclassindices_linking if current var has not already been found in a subset */
+            if ( !foundVar )
+            {
+               for( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
+               {
+                  if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_linking[varclassId] )
+                  {
+                     seeed->bookAsLinkingVar(seeed->getOpenvars()[i]);
+                     foundVar = true;
+                     break;
+                  }
+               }
+            }
+            /** only check varclassindices_master if current var has not already been found in a subset */
+            if ( !foundVar )
+            {
+               for( size_t varclassId = 0; varclassId < varclassindices_master.size(); ++varclassId )
+               {
+                  if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_master[varclassId] )
+                  {
+                     seeed->bookAsMasterVar(seeed->getOpenvars()[i]);
+                     break;
+                  }
+               }
+            }
+         }
+
+         /** set decinfo to: varclass_<classfier_name>:<linking_class_name#1>-...-<linking_class_name#n> */
+         std::stringstream decdesc;
+         decdesc << "varclass" << "\\_" << classifier->getName() << ": \\\\ ";
+         std::vector<int> curlinkingclasses( varclassindices_linking );
+         for ( size_t varclassId = 0; varclassId < subsetsOfVarclasses[subset].size(); ++varclassId )
+         {
+            if ( varclassId > 0 )
+            {
+               decdesc << "-";
+            }
+            decdesc << classifier->getClassName( subsetsOfVarclasses[subset][varclassId] );
+
+            if( std::find( varclassindices_linking.begin(), varclassindices_linking.end(),
+               subsetsOfVarclasses[subset][varclassId] ) == varclassindices_linking.end() )
+            {
+               curlinkingclasses.push_back( subsetsOfVarclasses[subset][varclassId] );
+            }
+         }
+         for ( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
+         {
+            if ( varclassId > 0 || subsetsOfVarclasses[subset].size() > 0)
+            {
+               decdesc << "-";
+            }
+            decdesc << classifier->getClassName( varclassindices_linking[varclassId] );
+         }
+
+         seeed->flushBooked();
+         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
+         seeed->addDetectorChainInfo(decinfo);
+         seeed->setDetectorPropagated(detector);
+         seeed->setVarClassifierStatistics( seeed->getNDetectors() - 1, classifier, curlinkingclasses,
+            varclassindices_master );
+
+         foundseeeds.push_back(seeed);
+      }
+   }
+
+   //@TODO: This alloc is already done in cons_decomp:SCIPconshdlrDecompToolboxActOnSeeed(..). 
+   //This is contrary to the behaviour of other detectors such as hrcg, hrg and hr but not connectedbase
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), foundseeeds.size() ) );
+   seeedPropagationData->nNewSeeeds = foundseeeds.size();
+
+   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
+   {
+      seeedPropagationData->newSeeeds[s] = foundseeeds[s];
+   }
+
+   *result = SCIP_SUCCESS;
+   SCIPfreeMemoryArray(scip, &selectedclassifiers);
+   SCIPfreeMemoryArray(scip, &classifiers);
+   return SCIP_OKAY;
+}
+
+#define finishFromToolboxVarclass NULL
+
 #define detectorPostprocessSeeedVarclass NULL
 
 static
@@ -449,7 +729,7 @@ SCIP_RETCODE SCIPincludeDetectorVarclass(SCIP* scip /**< SCIP data structure */
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectVarclass,
-         freeVarclass, initVarclass, exitVarclass, propagateSeeedVarclass, NULL, NULL, finishSeeedVarclass, detectorPostprocessSeeedVarclass, setParamAggressiveVarclass, setParamDefaultVarclass, setParamFastVarclass));
+         freeVarclass, initVarclass, exitVarclass, propagateSeeedVarclass, propagateFromToolboxVarclass, finishFromToolboxVarclass, finishSeeedVarclass, detectorPostprocessSeeedVarclass, setParamAggressiveVarclass, setParamDefaultVarclass, setParamFastVarclass));
 
    /**@todo add varclass detector parameters */
 
