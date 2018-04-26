@@ -3631,7 +3631,7 @@ void Seeedpool::addConsClassifier(
          consclassescollection.push_back( givenClassifier );
       else
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " consclassifier %s is not considered since it offers the same structure as  %s  consclassifier\n ", givenClassifier->getName(), equiv->getName() );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " consclassifier \"%s\" is not considered since it offers the same structure as \"%s\" consclassifier\n ", givenClassifier->getName(), equiv->getName() );
          delete givenClassifier;
       }
    }
@@ -3732,7 +3732,7 @@ ConsClassifier* Seeedpool::createConsClassifierForSCIPConstypes()
       classifier->assignConsToClass( i, classForCons[i] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier %s yields a classification with %d  different constraint classes \n", classifier->getName(), (int) foundConstypes.size() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), (int) foundConstypes.size() );
    return classifier;
 }
 
@@ -4171,7 +4171,7 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
 
 
    classifier->removeEmptyClasses();
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier %s yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
 
    return classifier;
 }
@@ -4246,7 +4246,7 @@ ConsClassifier* Seeedpool::createConsClassifierForConsnamesDigitFreeIdentical()
       classifier->assignConsToClass( i, classForCons[i] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier %s yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
 
    return classifier;
 }
@@ -4416,7 +4416,7 @@ ConsClassifier* Seeedpool::createConsClassifierForNNonzeros()
    {
       classifier->assignConsToClass( i, classForCons[i] );
    }
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier %s yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
 
    return classifier;
 }
@@ -4499,7 +4499,7 @@ void Seeedpool::addVarClassifier(
          varclassescollection.push_back( givenClassifier );
       else
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier %s not considered since it offers the same structure as  %s.\n", givenClassifier->getName(), equiv->getName() );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" not considered since it offers the same structure as \"%s\".\n", givenClassifier->getName(), equiv->getName() );
          delete givenClassifier;
       }
 
@@ -4565,7 +4565,7 @@ VarClassifier* Seeedpool::createVarClassifierForObjValues()
       classifier->assignVarToClass( v, classforvars[v] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier %s yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
 
    return classifier;
 }
@@ -4613,7 +4613,7 @@ VarClassifier* Seeedpool::createVarClassifierForObjValueSigns()
    /* remove a class if there is no variable with the respective sign */
    classifier->removeEmptyClasses();
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier %s yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
 
    return classifier;
 }
@@ -4691,7 +4691,7 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
       classifier->assignVarToClass( i, classForVars[i] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier %s yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
 
    return classifier;
 }
