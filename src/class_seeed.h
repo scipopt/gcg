@@ -233,8 +233,7 @@ public:
    Seeed(
       SCIP* scip,       /**< scip data structure */
       int id,           /**< id that is given to this seeed */
-      int nConss,       /**< number of constraints */
-      int nVars         /**< number of variables */
+      Seeedpool* seeedpool
       );
 
    /** copy constructor */
