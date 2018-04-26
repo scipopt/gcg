@@ -1221,7 +1221,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
    /* while the counter is smaller than the number of allowed rounds,
     * try to separate origsol via probing lp sol */
-   /* TODO: while z*(T) = 0 like Range suggests? But then we have to adjust which cuts are added */
    while( sepadata->round < maxrounds )
    {
       SCIPdebugMessage("round %d of at most %d rounds\n", sepadata->round + 1, maxrounds);
@@ -1567,7 +1566,7 @@ SCIP_RETCODE SCIPincludeSepaBasis(
             &(sepadata->posslackexpgenfactor), FALSE, 0.1, SCIPepsilon(GCGmasterGetOrigprob(scip)),
             SCIPinfinity(GCGmasterGetOrigprob(scip)), NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/objconvex", "convex combination factor",
+   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/objconvex", "convex combination factor (= 0.0, use original objective; = 1.0, use face objective)",
          &(sepadata->objconvex), FALSE, 1.0, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/paramsetting", "parameter returns which parameter setting is used for "
