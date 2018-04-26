@@ -1053,7 +1053,11 @@ Seeedpool::Seeedpool(
 
    }
 
-   createconssadj = (getNConss() < 1000);
+   SCIPgetBoolParam(scip, "detection/conssadjcalculated", &createconssadj );
+   createconssadj = createconssadj && (getNConss() < 1000);
+
+   if( !createconssadj )
+      SCIPsetBoolParam(scip, "detection/conssadjcalculated", FALSE );
 
    if( createconssadj )
    {
