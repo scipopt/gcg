@@ -296,9 +296,9 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
    char decinfo[SCIP_MAXSTRLEN];
    gcg::ConsClassifier** classifiers;
    int nclassifiers;
-   SCIP_Bool newclassifier;
-   gcg::ConsClassifier** selectedclassifiers;
-   int nselectedclassifiers;
+   SCIP_Bool newclass, newclassifier;
+   gcg::ConsClassifier* selectedclassifier;
+   std::vector<int> selectedclasses;
    int i, j;
    char stri[SCIP_MAXSTRLEN];
    SCIP_Bool finished;
@@ -357,17 +357,14 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
 
       if( newclassifier )
       {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "The constraint classifier \"%s\" consists of %d different classes.\n", classifier->getName(), classifier->getNClasses() );
          classifiers[nclassifiers] = classifier;
          ++nclassifiers;
       }
    }
    
-   /* user selects wanted subset of classifiers */
-   SCIPinfoMessage(scip, NULL, "You will now be asked to enter a selection of consclassifiers iteratively. If you have finished your selection, enter \"none\".\n");
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &selectedclassifiers, nclassifiers) );
-   nselectedclassifiers = 0;
-
+   selectedclassifier = classifiers[0]; //default case to omit warnings
+   /* user selects a consclassifier */
    finished = FALSE;
    while( !finished )
    {
@@ -381,39 +378,89 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
       commandlen = 0;
       while( commandlen == 0 )
       {
-         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name(s) or number(s) of consclassifiers (seperated by spaces) or \"none\", (use \"quit\" to exit detector): \nGCG/toolbox> ", &command, &endoffile) );
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name or number of the consclassifier that you want to use (seperated by spaces) or \"done\", (use \"quit\" to exit detector): \nGCG/toolbox> ", &command, &endoffile) );
          commandlen = strlen(command);
       }
 
-      if( !strncmp( command, "none", commandlen) == 0 && !strncmp( command, "quit", commandlen) == 0 )
+      if( !strncmp( command, "done", commandlen) == 0 && !strncmp( command, "quit", commandlen) == 0 )
       {
          for( i = 0; i < nclassifiers; ++i )
          {
-            newclassifier = TRUE;
             sprintf(stri, "%d", i+1); //used for matching numberings in the list, off-by-one since classifiers array starts with index 0 and our list with 1)
             if( strncmp( command, classifiers[i]->getName(), commandlen) == 0 || strncmp( command, stri, commandlen ) == 0 )
             {
+               selectedclassifier = classifiers[i];
+               finished = TRUE;
+               continue;
+            }
+         }
+      }
+      else if( strncmp( command, "done", commandlen) == 0 )
+      {
+         finished = TRUE;
+         continue;
+      }
+      else if( strncmp( command, "quit", commandlen) == 0 )
+      {
+         SCIPfreeMemoryArray(scip, &classifiers);
+         *result = SCIP_DIDNOTFIND;
+         return SCIP_OKAY;
+      }
+   }
+
+   std::vector<int> consclassindices = std::vector<int>(0);
+   for( i = 0; i < selectedclassifier->getNClasses(); ++i )
+   {
+      consclassindices.push_back(i);
+   }
+
+   SCIPinfoMessage(scip, NULL, "You will now be asked to enter a selection of classes iteratively. If you have finished your selection, enter \"done\".\n");
+   finished = FALSE;
+   while( !finished )
+   {
+      std::vector<int> nConssOfClasses = selectedclassifier->getNConssOfClasses();
+      SCIPinfoMessage(scip, NULL, "The following classes are available for the selected consclassifier \"%s\":\n",selectedclassifier->getName());
+      for( i = 0; i < static_cast<int>(consclassindices.size()); ++i )
+      {
+         SCIPinfoMessage(scip, NULL, "%d) ", i+1); //+1 as we want the list to start with 1)
+         SCIPinfoMessage(scip, NULL, "%s || NConss: %d || %s\n", selectedclassifier->getClassNameOfCons(consclassindices[i]),nConssOfClasses[i], selectedclassifier->getClassDescription(consclassindices[i]));
+      }
+
+      commandlen = 0;
+      while( commandlen == 0 )
+      {
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name(s) or number(s) of classes (seperated by spaces) or \"done\", (use \"quit\" to exit detector): \nGCG/toolbox> ", &command, &endoffile) );
+         commandlen = strlen(command);
+      }
+
+      if( !strncmp( command, "done", commandlen) == 0 && !strncmp( command, "quit", commandlen) == 0 )
+      {
+         for( i = 0; i < static_cast<int>(consclassindices.size()); ++i )
+         {
+            newclass = TRUE;
+            sprintf(stri, "%d", i+1); //used for matching numberings in the list, off-by-one since classifiers array starts with index 0 and our list with 1)
+            if( strncmp( command, selectedclassifier->getClassNameOfCons(consclassindices[i]), commandlen) == 0 || strncmp( command, stri, commandlen ) == 0 )
+            {
                /* check that we do not select the same classifier multiple times*/
-               for( j = 0; j < nselectedclassifiers; ++j )
+               for( j = 0; j < static_cast<int>(selectedclasses.size()); ++j )
                {
-                  if( selectedclassifiers[j] == classifiers[i] )
+                  if( selectedclasses[j] == consclassindices[i] )
                   {
-                     newclassifier = FALSE;
+                     newclass = FALSE;
                   }
                }
-               if( newclassifier )
+               if( newclass )
                {
-                  selectedclassifiers[nselectedclassifiers] = classifiers[i];
-                  ++nselectedclassifiers;
+                  selectedclasses.push_back(consclassindices[i]);
 
                   SCIPinfoMessage(scip, NULL, "\nCurrently selected classifiers: ");
-                  for( j = 0; j < nselectedclassifiers; ++j )
+                  for( j = 0; j < static_cast<int>(selectedclasses.size()); ++j )
                   {
-                     SCIPinfoMessage(scip, NULL, "%s ", selectedclassifiers[j]->getName());
+                     SCIPinfoMessage(scip, NULL, "\"%s\" ", selectedclassifier->getClassNameOfCons(selectedclasses[j]));
                   }
                   SCIPinfoMessage(scip, NULL, "\n\n");
 
-                  if( nselectedclassifiers >= nclassifiers )
+                  if( selectedclasses.size() >= consclassindices.size() )
                   {
                      finished = TRUE;
                      break;
@@ -421,112 +468,106 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
                }
                else
                {
-                  SCIPinfoMessage(scip, NULL, "\n+++Classifier %s is already selected!+++\n\n", classifiers[i]->getName());
+                  SCIPinfoMessage(scip, NULL, "\n+++Class \"%s\" is already selected!+++\n\n", selectedclassifier->getClassNameOfCons(consclassindices[i]));
                }
             }
          }
       }
-      else if( strncmp( command, "none", commandlen) == 0 )
+      else if( strncmp( command, "done", commandlen) == 0 )
       {
          finished = TRUE;
          continue;
       }
       else if( strncmp( command, "quit", commandlen) == 0 )
       {
-         SCIPfreeMemoryArray(scip, &selectedclassifiers);
+         SCIPfreeMemoryArray(scip, &selectedclasses);
          SCIPfreeMemoryArray(scip, &classifiers);
          *result = SCIP_DIDNOTFIND;
          return SCIP_OKAY;
       }
    }
 
-   for( int classifierIndex = 0; classifierIndex < nselectedclassifiers; ++classifierIndex )
+   std::vector<int> consclassindices_master = std::vector<int>(0);
+
+   seeedOrig = seeedPropagationData->seeedToPropagate;
+
+   for( i = 0; i < selectedclassifier->getNClasses(); ++ i )
    {
-      gcg::ConsClassifier* classifier = selectedclassifiers[classifierIndex];
-      std::vector<int> consclassindices_master = std::vector<int>(0);
+      if ( selectedclassifier->getClassDecompInfo(i) == gcg::ONLY_MASTER )
+         consclassindices_master.push_back(i);
+   }
 
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "The current constraint classifier %s consists of %d different classes.\n", classifier->getName(), classifier->getNClasses() );
+   if( selectedclasses.size() == 0 && consclassindices_master.size() == 0 )
+   {
+      *result = SCIP_DIDNOTFIND;
+      SCIPfreeMemoryArray(scip, &classifiers);
+      return SCIP_OKAY;
+   }
 
-      seeedOrig = seeedPropagationData->seeedToPropagate;
+   seeed = new gcg::Seeed(seeedOrig);
 
-      for( i = 0; i < classifier->getNClasses(); ++ i )
+   /** book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
+   for( i = 0; i < seeed->getNOpenconss(); ++i )
+   {
+      bool foundCons = false;
+      for( size_t consclassId = 0; consclassId < selectedclasses.size(); ++consclassId )
       {
-         if ( classifier->getClassDecompInfo(i) == gcg::ONLY_MASTER )
-            consclassindices_master.push_back(i);
+         if( selectedclassifier->getClassOfCons( seeed->getOpenconss()[i] ) == selectedclasses[consclassId] )
+         {
+            seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+            foundCons = true;
+            break;
+         }
       }
-
-      std::vector< std::vector<int> > subsetsOfConsclasses = classifier->getAllSubsets( true, false, false );
-
-      for( size_t subset = 0; subset < subsetsOfConsclasses.size(); ++subset )
+      /** only check consclassindices_master if current cons has not already been found in a subset */
+      if( !foundCons )
       {
-         if( subsetsOfConsclasses[subset].size() == 0 && consclassindices_master.size() == 0 )
-            continue;
-
-         seeed = new gcg::Seeed(seeedOrig);
-
-         /** book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
-         for( i = 0; i < seeed->getNOpenconss(); ++i )
-         {
-            bool foundCons = false;
-            for( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
-            {
-               if( classifier->getClassOfCons( seeed->getOpenconss()[i] ) == subsetsOfConsclasses[subset][consclassId] )
-               {
-                  seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
-                  foundCons = true;
-                  break;
-               }
-            }
-            /** only check consclassindices_master if current cons has not already been found in a subset */
-            if( !foundCons )
-            {
-               for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
-               {
-                  if( classifier->getClassOfCons( seeed->getOpenconss()[i] ) == consclassindices_master[consclassId] )
-                  {
-                     seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
-                     break;
-                  }
-               }
-            }
-         }
-
-         /** set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
-         std::stringstream decdesc;
-         decdesc << "consclass" << "\\_" << classifier->getName() << ": \\\\ ";
-         std::vector<int> curmasterclasses( consclassindices_master );
-         for( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
-         {
-            if( consclassId > 0 )
-            {
-               decdesc << "-";
-            }
-            decdesc << classifier->getClassName( subsetsOfConsclasses[subset][consclassId] );
-
-            if( std::find( consclassindices_master.begin(), consclassindices_master.end(),
-               subsetsOfConsclasses[subset][consclassId] ) == consclassindices_master.end() )
-            {
-               curmasterclasses.push_back( subsetsOfConsclasses[subset][consclassId] );
-            }
-         }
          for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
          {
-            if( consclassId > 0 || subsetsOfConsclasses[subset].size() > 0)
+            if( selectedclassifier->getClassOfCons( seeed->getOpenconss()[i] ) == consclassindices_master[consclassId] )
             {
-               decdesc << "-";
+               seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+               break;
             }
-            decdesc << classifier->getClassName( consclassindices_master[consclassId] );
          }
-
-         seeed->flushBooked();
-         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
-         seeed->addDetectorChainInfo(decinfo);
-         seeed->setDetectorPropagated(detector);
-         seeed->setConsClassifierStatistics( seeed->getNDetectors() - 1, classifier, curmasterclasses );
-
-         foundseeeds.push_back(seeed);
       }
    }
+
+   /** set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
+   std::stringstream decdesc;
+   decdesc << "consclass" << "\\_" << selectedclassifier->getName() << ": \\\\ ";
+   std::vector<int> curmasterclasses( consclassindices_master );
+   for( size_t consclassId = 0; consclassId < selectedclasses.size(); ++consclassId )
+   {
+      if( consclassId > 0 )
+      {
+         decdesc << "-";
+      }
+      decdesc << selectedclassifier->getClassName( selectedclasses[consclassId] );
+
+      if( std::find( consclassindices_master.begin(), consclassindices_master.end(),
+         selectedclasses[consclassId] ) == consclassindices_master.end() )
+      {
+         curmasterclasses.push_back( selectedclasses[consclassId] );
+      }
+   }
+   for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
+   {
+      if( consclassId > 0 || selectedclasses.size() > 0)
+      {
+         decdesc << "-";
+      }
+      decdesc << selectedclassifier->getClassName( consclassindices_master[consclassId] );
+   }
+
+   seeed->flushBooked();
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
+   seeed->addDetectorChainInfo(decinfo);
+   seeed->setDetectorPropagated(detector);
+   seeed->setConsClassifierStatistics( seeed->getNDetectors() - 1, selectedclassifier, curmasterclasses );
+
+   foundseeeds.push_back(seeed);
+
 
    //@TODO: This alloc is already done in cons_decomp:SCIPconshdlrDecompToolboxActOnSeeed(..). 
    //This is contrary to the behaviour of other detectors such as hrcg, hrg and hr but not connectedbase
@@ -539,7 +580,6 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
    }
 
    *result = SCIP_SUCCESS;
-   SCIPfreeMemoryArray(scip, &selectedclassifiers);
    SCIPfreeMemoryArray(scip, &classifiers);
    return SCIP_OKAY;
 }
