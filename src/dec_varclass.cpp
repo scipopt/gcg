@@ -314,9 +314,9 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
    char decinfo[SCIP_MAXSTRLEN];
    gcg::VarClassifier** classifiers;
    int nclassifiers;
-   SCIP_Bool newclassifier;
-   gcg::VarClassifier** selectedclassifiers;
-   int nselectedclassifiers;
+   SCIP_Bool newclass, newclassifier;
+   gcg::VarClassifier* selectedclassifier;
+   std::vector<int> selectedclasses;
    int i, j;
    char stri[SCIP_MAXSTRLEN];
    SCIP_Bool finished;
@@ -329,6 +329,17 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
    {
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
+   }
+
+   if( seeedPropagationData->seeedpool->getNVarClassifiers() == 0 )
+   {
+      SCIPinfoMessage(scip, NULL, "No VarClassifiers listed for propagation, starting classification.\n");
+      seeedPropagationData->seeedpool->calcClassifierAndNBlockCandidates(scip);
+      if( seeedPropagationData->seeedpool->getNVarClassifiers() == 0 )
+      {
+         SCIPinfoMessage(scip, NULL, "No VarClassifiers found after calculation, aborting!.\n");
+         return SCIP_ERROR;
+      }
    }
 
    std::vector<gcg::Seeed*> foundseeeds(0);
@@ -379,16 +390,12 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
       }
    }
 
-   /* user selects wanted subset of classifiers */
-   SCIPinfoMessage(scip, NULL, "You will now be asked to enter a selection of varclassifiers iteratively. If you have finished your selection, enter \"none\".\n");
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &selectedclassifiers, nclassifiers) );
-   nselectedclassifiers = 0;
-
+   selectedclassifier = classifiers[0]; //default case to omit warnings
+   /* user selects a consclassifier */
    finished = FALSE;
    while( !finished )
    {
-      SCIPinfoMessage(scip, NULL, "Available varclassifiers:\n");
+      SCIPinfoMessage(scip, NULL, "Available consclassifiers:\n");
       for( i = 0; i < nclassifiers; ++i )
       {
          SCIPinfoMessage(scip, NULL, "%d) ", i+1); //+1 as we want the list to start with 1)
@@ -398,39 +405,89 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
       commandlen = 0;
       while( commandlen == 0 )
       {
-         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name(s) or number(s) of varclassifiers (seperated by spaces) or \"none\", (use \"quit\" to exit detector): \nGCG/toolbox> ", &command, &endoffile) );
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name or number of the varclassifier that you want to use (seperated by spaces) or \"done\", (use \"quit\" to exit detector): \nGCG/toolbox> ", &command, &endoffile) );
          commandlen = strlen(command);
       }
 
-      if( !strncmp( command, "none", commandlen) == 0 && !strncmp( command, "quit", commandlen) == 0 )
+      if( !strncmp( command, "done", commandlen) == 0 && !strncmp( command, "quit", commandlen) == 0 )
       {
          for( i = 0; i < nclassifiers; ++i )
          {
-            newclassifier = TRUE;
             sprintf(stri, "%d", i+1); //used for matching numberings in the list, off-by-one since classifiers array starts with index 0 and our list with 1)
             if( strncmp( command, classifiers[i]->getName(), commandlen) == 0 || strncmp( command, stri, commandlen ) == 0 )
             {
+               selectedclassifier = classifiers[i];
+               finished = TRUE;
+               continue;
+            }
+         }
+      }
+      else if( strncmp( command, "done", commandlen) == 0 )
+      {
+         finished = TRUE;
+         continue;
+      }
+      else if( strncmp( command, "quit", commandlen) == 0 )
+      {
+         SCIPfreeMemoryArray(scip, &classifiers);
+         *result = SCIP_DIDNOTFIND;
+         return SCIP_OKAY;
+      }
+   }
+
+   std::vector<int> varclassindices = std::vector<int>(0);
+   for( i = 0; i < selectedclassifier->getNClasses(); ++i )
+   {
+      varclassindices.push_back(i);
+   }
+
+   SCIPinfoMessage(scip, NULL, "You will now be asked to enter a selection of classes iteratively. If you have finished your selection, enter \"done\".\n");
+   finished = FALSE;
+   while( !finished )
+   {
+      std::vector<int> nVarsOfClasses = selectedclassifier->getNVarsOfClasses();
+      SCIPinfoMessage(scip, NULL, "The following classes are available for the selected varclassifier \"%s\":\n",selectedclassifier->getName());
+      for( i = 0; i < static_cast<int>(varclassindices.size()); ++i )
+      {
+         SCIPinfoMessage(scip, NULL, "%d) ", i+1); //+1 as we want the list to start with 1)
+         SCIPinfoMessage(scip, NULL, "%s || NConss: %d || %s\n", selectedclassifier->getClassNameOfVar(varclassindices[i]), nVarsOfClasses[i], selectedclassifier->getClassDescription(varclassindices[i]));
+      }
+
+      commandlen = 0;
+      while( commandlen == 0 )
+      {
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name(s) or number(s) of classes (seperated by spaces) or \"done\", (use \"quit\" to exit detector): \nGCG/toolbox> ", &command, &endoffile) );
+         commandlen = strlen(command);
+      }
+
+      if( !strncmp( command, "done", commandlen) == 0 && !strncmp( command, "quit", commandlen) == 0 )
+      {
+         for( i = 0; i < static_cast<int>(varclassindices.size()); ++i )
+         {
+            newclass = TRUE;
+            sprintf(stri, "%d", i+1); //used for matching numberings in the list, off-by-one since classifiers array starts with index 0 and our list with 1)
+            if( strncmp( command, selectedclassifier->getClassNameOfVar(varclassindices[i]), commandlen) == 0 || strncmp( command, stri, commandlen ) == 0 )
+            {
                /* check that we do not select the same classifier multiple times*/
-               for( j = 0; j < nselectedclassifiers; ++j )
+               for( j = 0; j < static_cast<int>(selectedclasses.size()); ++j )
                {
-                  if( selectedclassifiers[j] == classifiers[i] )
+                  if( selectedclasses[j] == varclassindices[i] )
                   {
-                     newclassifier = FALSE;
+                     newclass = FALSE;
                   }
                }
-               if( newclassifier )
+               if( newclass )
                {
-                  selectedclassifiers[nselectedclassifiers] = classifiers[i];
-                  ++nselectedclassifiers;
+                  selectedclasses.push_back(varclassindices[i]);
 
                   SCIPinfoMessage(scip, NULL, "\nCurrently selected classifiers: ");
-                  for( j = 0; j < nselectedclassifiers; ++j )
+                  for( j = 0; j < static_cast<int>(selectedclasses.size()); ++j )
                   {
-                     SCIPinfoMessage(scip, NULL, "%s ", selectedclassifiers[j]->getName());
+                     SCIPinfoMessage(scip, NULL, "\"%s\" ", selectedclassifier->getClassNameOfVar(selectedclasses[j]));
                   }
                   SCIPinfoMessage(scip, NULL, "\n\n");
 
-                  if( nselectedclassifiers >= nclassifiers )
+                  if( selectedclasses.size() >= varclassindices.size() )
                   {
                      finished = TRUE;
                      break;
@@ -438,136 +495,134 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
                }
                else
                {
-                  SCIPinfoMessage(scip, NULL, "\n+++Classifier %s is already selected!+++\n\n", classifiers[i]->getName());
+                  SCIPinfoMessage(scip, NULL, "\n+++Class \"%s\" is already selected!+++\n\n", selectedclassifier->getClassNameOfVar(varclassindices[i]));
                }
             }
          }
       }
-      else if( strncmp( command, "none", commandlen) == 0 )
+      else if( strncmp( command, "done", commandlen) == 0 )
       {
          finished = TRUE;
          continue;
       }
       else if( strncmp( command, "quit", commandlen) == 0 )
       {
-         SCIPfreeMemoryArray(scip, &selectedclassifiers);
+         SCIPfreeMemoryArray(scip, &selectedclasses);
          SCIPfreeMemoryArray(scip, &classifiers);
          *result = SCIP_DIDNOTFIND;
          return SCIP_OKAY;
       }
    }
 
-   for( int classifierIndex = 0; classifierIndex < nselectedclassifiers; ++classifierIndex )
+   std::vector<int> varclassindices_master = std::vector<int>(0);
+   std::vector<int> varclassindices_linking = std::vector<int>(0);
+
+   seeedOrig = seeedPropagationData->seeedToPropagate;
+
+   for( i = 0; i < selectedclassifier->getNClasses(); ++ i )
    {
-      gcg::VarClassifier* classifier = seeedPropagationData->seeedpool->getVarClassifier( classifierIndex );
-      std::vector<int> varclassindices_master = std::vector<int>(0);
-      std::vector<int> varclassindices_linking = std::vector<int>(0);
-
-      seeedOrig = seeedPropagationData->seeedToPropagate;
-
-      for( i = 0; i < classifier->getNClasses(); ++ i )
+      switch( selectedclassifier->getClassDecompInfo( i ) )
       {
-         switch( classifier->getClassDecompInfo( i ) )
-         {
-            case gcg::ALL:
-               break;
-            case gcg::LINKING:
-               varclassindices_linking.push_back( i );
-               break;
-            case gcg::MASTER:
-               varclassindices_master.push_back( i );
-               break;
-            case gcg::BLOCK:
-               break;
-         }
-      }
-
-      std::vector< std::vector<int> > subsetsOfVarclasses = classifier->getAllSubsets( true, false, false, false );
-
-      for( size_t subset = 0; subset < subsetsOfVarclasses.size(); ++subset )
-      {
-         if( subsetsOfVarclasses[subset].size() == 0 && varclassindices_master.size() == 0 && varclassindices_linking.size() == 0 )
-            continue;
-
-         seeed = new gcg::Seeed(seeedOrig);
-
-         /** book open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
-         for( i = 0; i < seeed->getNOpenvars(); ++i )
-         {
-            bool foundVar = false;
-            for( size_t varclassId = 0; varclassId < subsetsOfVarclasses[subset].size(); ++varclassId )
-            {
-               if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == subsetsOfVarclasses[subset][varclassId] )
-               {
-                  seeed->bookAsLinkingVar(seeed->getOpenvars()[i]);
-                  foundVar = true;
-                  break;
-               }
-            }
-            /** only check varclassindices_linking if current var has not already been found in a subset */
-            if ( !foundVar )
-            {
-               for( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
-               {
-                  if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_linking[varclassId] )
-                  {
-                     seeed->bookAsLinkingVar(seeed->getOpenvars()[i]);
-                     foundVar = true;
-                     break;
-                  }
-               }
-            }
-            /** only check varclassindices_master if current var has not already been found in a subset */
-            if ( !foundVar )
-            {
-               for( size_t varclassId = 0; varclassId < varclassindices_master.size(); ++varclassId )
-               {
-                  if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_master[varclassId] )
-                  {
-                     seeed->bookAsMasterVar(seeed->getOpenvars()[i]);
-                     break;
-                  }
-               }
-            }
-         }
-
-         /** set decinfo to: varclass_<classfier_name>:<linking_class_name#1>-...-<linking_class_name#n> */
-         std::stringstream decdesc;
-         decdesc << "varclass" << "\\_" << classifier->getName() << ": \\\\ ";
-         std::vector<int> curlinkingclasses( varclassindices_linking );
-         for ( size_t varclassId = 0; varclassId < subsetsOfVarclasses[subset].size(); ++varclassId )
-         {
-            if ( varclassId > 0 )
-            {
-               decdesc << "-";
-            }
-            decdesc << classifier->getClassName( subsetsOfVarclasses[subset][varclassId] );
-
-            if( std::find( varclassindices_linking.begin(), varclassindices_linking.end(),
-               subsetsOfVarclasses[subset][varclassId] ) == varclassindices_linking.end() )
-            {
-               curlinkingclasses.push_back( subsetsOfVarclasses[subset][varclassId] );
-            }
-         }
-         for ( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
-         {
-            if ( varclassId > 0 || subsetsOfVarclasses[subset].size() > 0)
-            {
-               decdesc << "-";
-            }
-            decdesc << classifier->getClassName( varclassindices_linking[varclassId] );
-         }
-
-         seeed->flushBooked();
-         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
-         seeed->addDetectorChainInfo(decinfo);
-         seeed->setDetectorPropagated(detector);
-         seeed->setVarClassifierStatistics( seeed->getNDetectors() - 1, classifier, curlinkingclasses,
-            varclassindices_master );
-
-         foundseeeds.push_back(seeed);
+         case gcg::ALL:
+            break;
+         case gcg::LINKING:
+            varclassindices_linking.push_back( i );
+            break;
+         case gcg::MASTER:
+            varclassindices_master.push_back( i );
+            break;
+         case gcg::BLOCK:
+            break;
       }
    }
+
+   if( selectedclasses.size() == 0 && varclassindices_master.size() == 0 && varclassindices_linking.size() == 0 )
+   {
+      *result = SCIP_DIDNOTFIND;
+      SCIPfreeMemoryArray(scip, &selectedclasses);
+      SCIPfreeMemoryArray(scip, &classifiers);
+      return SCIP_OKAY;
+   }
+
+   seeed = new gcg::Seeed(seeedOrig);
+
+   /** book open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
+   for( i = 0; i < seeed->getNOpenvars(); ++i )
+   {
+      bool foundVar = false;
+      for( size_t varclassId = 0; varclassId < selectedclasses.size(); ++varclassId )
+      {
+         if( selectedclassifier->getClassOfVar( seeed->getOpenvars()[i] ) == selectedclasses[varclassId] )
+         {
+            seeed->bookAsLinkingVar(seeed->getOpenvars()[i]);
+            foundVar = true;
+            break;
+         }
+      }
+      /** only check varclassindices_linking if current var has not already been found in a subset */
+      if ( !foundVar )
+      {
+         for( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
+         {
+            if( selectedclassifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_linking[varclassId] )
+            {
+               seeed->bookAsLinkingVar(seeed->getOpenvars()[i]);
+               foundVar = true;
+               break;
+            }
+         }
+      }
+      /** only check varclassindices_master if current var has not already been found in a subset */
+      if ( !foundVar )
+      {
+         for( size_t varclassId = 0; varclassId < varclassindices_master.size(); ++varclassId )
+         {
+            if( selectedclassifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_master[varclassId] )
+            {
+               seeed->bookAsMasterVar(seeed->getOpenvars()[i]);
+               break;
+            }
+         }
+      }
+   }
+
+   /** set decinfo to: varclass_<classfier_name>:<linking_class_name#1>-...-<linking_class_name#n> */
+   std::stringstream decdesc;
+   decdesc << "varclass" << "\\_" << selectedclassifier->getName() << ": \\\\ ";
+   std::vector<int> curlinkingclasses( varclassindices_linking );
+   for ( size_t varclassId = 0; varclassId < selectedclasses.size(); ++varclassId )
+   {
+      if ( varclassId > 0 )
+      {
+         decdesc << "-";
+      }
+      decdesc << selectedclassifier->getClassName( selectedclasses[varclassId] );
+
+      if( std::find( varclassindices_linking.begin(), varclassindices_linking.end(),
+         selectedclasses[varclassId] ) == varclassindices_linking.end() )
+      {
+         curlinkingclasses.push_back( selectedclasses[varclassId] );
+      }
+   }
+   for ( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
+   {
+      if ( varclassId > 0 || selectedclasses.size() > 0)
+      {
+         decdesc << "-";
+      }
+      decdesc << selectedclassifier->getClassName( varclassindices_linking[varclassId] );
+   }
+
+   seeed->flushBooked();
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
+   seeed->addDetectorChainInfo(decinfo);
+   seeed->setDetectorPropagated(detector);
+   seeed->setVarClassifierStatistics( seeed->getNDetectors() - 1, selectedclassifier, curlinkingclasses,
+      varclassindices_master );
+
+   foundseeeds.push_back(seeed);
+
+
 
    //@TODO: This alloc is already done in cons_decomp:SCIPconshdlrDecompToolboxActOnSeeed(..). 
    //This is contrary to the behaviour of other detectors such as hrcg, hrg and hr but not connectedbase
@@ -580,7 +635,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
    }
 
    *result = SCIP_SUCCESS;
-   SCIPfreeMemoryArray(scip, &selectedclassifiers);
+   SCIPfreeMemoryArray(scip, &selectedclasses);
    SCIPfreeMemoryArray(scip, &classifiers);
    return SCIP_OKAY;
 }

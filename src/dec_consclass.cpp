@@ -580,6 +580,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
    }
 
    *result = SCIP_SUCCESS;
+   SCIPfreeMemoryArray(scip, &selectedclasses);
    SCIPfreeMemoryArray(scip, &classifiers);
    return SCIP_OKAY;
 }
