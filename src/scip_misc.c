@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -690,6 +690,24 @@ SCIP_RETCODE GCGconsGetVals(
       SCIPdebugMessage("WARNING: UNKNOWN NOT IMPLEMENTED: %s\n", conshdlrname);
    }
    return SCIP_OKAY;
+}
+
+/** returns true if the constraint should be a master constraint and false otherwise */
+SCIP_Bool GCGconsIsRanged(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to check */
+){
+
+   SCIP_Real lhs;
+   SCIP_Real rhs;
+
+   assert(scip != NULL);
+
+   rhs = GCGconsGetRhs(scip, cons);
+   lhs = GCGconsGetLhs(scip, cons);
+
+
+   return !(SCIPisEQ(scip, lhs, rhs) || SCIPisInfinity(scip, -lhs) || SCIPisInfinity(scip, rhs) );
 }
 
 

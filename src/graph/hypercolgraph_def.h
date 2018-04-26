@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -393,16 +393,10 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
        SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) seeedpool->getIndexForCons(conss[c]), (void*) (size_t) consblock) );
    }
 
-   if( firstSeeed != NULL )
-   {
-      (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars());
-      SCIP_CALL((*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool));
-   }
-   if( secondSeeed != NULL )
-   {
-      (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars());
-      SCIP_CALL((*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool));
-   }
+   (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool);
+   SCIP_CALL((*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool));
+   (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool);
+   SCIP_CALL((*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool));
    SCIPhashmapFree(&constoblock);
 
    return SCIP_OKAY;

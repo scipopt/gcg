@@ -69,10 +69,10 @@
 
 /* 8 shades of grey */
 #define GREY_COLOR_MASTERVARS   "#323232"    /**< for mastervars (in block area) */
-#define GREY_COLOR_MASTERCONS   "#999999"    /**< for masterconss */
-#define GREY_COLOR_LINKING      "#666666"    /**< for linking areas */
+#define GREY_COLOR_MASTERCONS   "#666666"    /**< for masterconss */
+#define GREY_COLOR_LINKING      "#4C4C4C"    /**< for linking areas */
 #define GREY_COLOR_STAIRLINKING "#191919"    /**< for stairlinking areas */
-#define GREY_COLOR_BLOCK        "#4C4C4C"    /**< for finished blocks */
+#define GREY_COLOR_BLOCK        "#d3d3d3"    /**< for finished blocks */
 #define GREY_COLOR_OPEN         "#7F7F7F"    /**< for open (not assigned) elements */
 #define GREY_COLOR_NONZERO      COLOR_BLACK  /**< for nonzero dots */
 #define GREY_COLOR_LINE         COLOR_BLACK  /**< for outlines of blocks */
@@ -80,7 +80,7 @@
 /* visualization imaging defaults */
 #define DEFAULT_VISU_DRAFTMODE   FALSE                /**< if true no nonzeros are shown in visualizations */
 #define DEFAULT_VISU_COLORSCHEME COLORSCHEME_DEFAULT  /**< is of type VISU_COLORSCHEME */
-#define DEFAULT_VISU_RADIUS      5                    /**< possible scale: 1-10 */
+#define DEFAULT_VISU_RADIUS      2                    /**< possible scale: 1-10 */
 #define DEFAULT_VISU_USEGP       FALSE                /**< if true gnuplot is used for visualizations,
                                                        * otherwise LaTeX/Tikz */
 
@@ -159,7 +159,7 @@ SCIP_RETCODE SCIPincludeParamsVisu(
       (int*) &visudata->visucolorscheme, FALSE, DEFAULT_VISU_COLORSCHEME, 0, 2, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
-      "visual/nonzeroradius", "integer value to scale dots on range 1-10",
+      "visual/nonzeroradius", "integer value to scale points on range 1-10",
       &visudata->visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,

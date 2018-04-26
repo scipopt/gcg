@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1747,6 +1747,20 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
+   /* check if no problem is read */
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      newval = MAX( 0, DEFAULT_MAXDECOMPSEXACT   );
+      (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsexact", name);
+      SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+      SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+      newval = MAX( 0, DEFAULT_MAXDECOMPSEXTEND  );
+      (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsextend", name);
+      SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+      SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+      return SCIP_OKAY;
+   }
 
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
 
@@ -1791,6 +1805,23 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultIsomorph)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
+
+   /* check if no problem is read */
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      newval = MAX( 0, DEFAULT_MAXDECOMPSEXACT   );
+      (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsexact", name);
+      SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+      SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+      newval = MAX( 0, DEFAULT_MAXDECOMPSEXTEND  );
+      (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsextend", name);
+      SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+      SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+      return SCIP_OKAY;
+   }
+
+
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
 
    modifier = log(modifier) / log(2);
@@ -1834,6 +1865,22 @@ DEC_DECL_SETPARAMFAST(setParamFastIsomorph)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
+   /* check if no problem is read */
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      newval = MAX( 0, DEFAULT_MAXDECOMPSEXACT   );
+      (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsexact", name);
+      SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+      SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+      newval = MAX( 0, DEFAULT_MAXDECOMPSEXTEND  );
+      (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsextend", name);
+      SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+      SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+      return SCIP_OKAY;
+   }
+
+
 
    newval = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) >  SET_MULTIPLEFORSIZETRANSF) ? 0 : 1;
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsexact", name);
@@ -1849,7 +1896,6 @@ DEC_DECL_SETPARAMFAST(setParamFastIsomorph)
    return SCIP_OKAY;
 
 }
-
 
 
 /*

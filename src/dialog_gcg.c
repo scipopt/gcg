@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -99,7 +99,10 @@ SCIP_RETCODE writeAllDecompositions(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG*          dialog,             /**< dialog menu */
    SCIP_DIALOGHDLR*      dialoghdlr,         /**< dialog handler */
-   SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
+   SCIP_DIALOG**         nextdialog,          /**< pointer to store next dialog to execute */
+   SCIP_Bool             original,           /**< should decomps for original problem be written */
+   SCIP_Bool             presolved           /**< should decomps for preoslved problem be written */
+
    )
 {
    char filename[SCIP_MAXSTRLEN];
@@ -153,7 +156,7 @@ SCIP_RETCODE writeAllDecompositions(
 
       do
       {
-         SCIP_RETCODE retcode = DECwriteAllDecomps(scip, dirname, extension);
+         SCIP_RETCODE retcode = DECwriteAllDecomps(scip, dirname, extension, original, presolved);
 
          if( retcode == SCIP_FILECREATEERROR )
          {
@@ -655,16 +658,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
    SCIP_RESULT result;
-   SCIP_Bool emphfast;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
-
-   SCIPgetBoolParam(scip, "detection/emphfast/enabled", &emphfast);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL," start of detectstructure, test for emph fast: %d\n", emphfast);
-   if( emphfast )
-      SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_FAST, FALSE) );
 
    if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
    {
@@ -677,6 +674,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    }
    else
       SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists");
+
+   SCIP_CALL( GCGprintOptionalOutput(scip, dialoghdlr) );
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
@@ -720,7 +719,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
    SCIP_RESULT result;
    int presolrounds;
-   SCIP_Bool emphfast;
 
    presolrounds = -1;
 
@@ -729,12 +727,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
 
    assert(SCIPconshdlrDecompCheckConsistency(scip) );
-
-   SCIPgetBoolParam(scip, "detection/emphfast/enabled", &emphfast);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL," start of detectstructure, test for emph fast: %d\n", emphfast);
-   if( emphfast )
-      SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_FAST, FALSE) );
-
 
  //  SCIPdialogMessage(scip, NULL, "In optimize3 \n");
    SCIPdialogMessage(scip, NULL, "\n");
@@ -860,7 +852,45 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteAllDecompositions)
 
    if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
    {
-      SCIP_CALL( writeAllDecompositions(scip, dialog, dialoghdlr, nextdialog) );
+      SCIP_CALL( writeAllDecompositions(scip, dialog, dialoghdlr, nextdialog, TRUE, TRUE) );
+   }
+   else
+      SCIPdialogMessage(scip, NULL, "no problem available\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+
+/** dialog execution method for writing all known decompositions */
+static
+SCIP_DECL_DIALOGEXEC(GCGdialogExecWritePresolvedDecompositions)
+{
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
+   {
+      SCIP_CALL( writeAllDecompositions(scip, dialog, dialoghdlr, nextdialog, FALSE, TRUE) );
+   }
+   else
+      SCIPdialogMessage(scip, NULL, "no problem available\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+
+/** dialog execution method for writing all known decompositions */
+static
+SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteOriginalDecompositions)
+{
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
+   {
+      SCIP_CALL( writeAllDecompositions(scip, dialog, dialoghdlr, nextdialog, TRUE, FALSE) );
    }
    else
       SCIPdialogMessage(scip, NULL, "no problem available\n");
@@ -1392,6 +1422,30 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+   /* write original decompositions */
+   if( !SCIPdialogHasEntry(submenu, "alloriginaldecompositions") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteOriginalDecompositions, NULL, NULL,
+            "alloriginaldecompositions",
+            "write all known original decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})",
+            FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* write alldecompositions */
+   if( !SCIPdialogHasEntry(submenu, "allpresolveddecompositions") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWritePresolvedDecompositions, NULL, NULL,
+            "allpresolveddecompositions",
+            "write all known presolved decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})",
+            FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+
 
    /* write family tree of whites decompositions */
    if( !SCIPdialogHasEntry(submenu, "familytree") )

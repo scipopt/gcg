@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -33,7 +33,7 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define GCG_VERSION 213
+#define GCG_VERSION 214
 #define GCG_SUBVERSION 0
 
 #include <string.h>
@@ -49,7 +49,7 @@
 #include "gcg.h"
 
 #if SCIP_VERSION < 500
-#error GCG 2.1.3 can only be compiled with SCIP version 5.0.0 or higher
+#error GCG 2.1.4 can only be compiled with SCIP version 5.0.0 or higher
 #endif
 
 /** returns GCG major version */
@@ -97,7 +97,7 @@ void GCGprintVersion(
 #endif
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " [GitHash: %s]", GCGgetGitHash());
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Copyright (c) 2010-2017 Operations Research, RWTH Aachen University\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Copyright (c) 2010-2018 Operations Research, RWTH Aachen University\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "                        Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)\n\n");
 }
 
@@ -147,7 +147,8 @@ SCIP_RETCODE fromCommandLine(
    }
    else
    {
-      SCIP_CALL( DECdetectStructure(scip, &result) ); /* including presolving */
+      SCIP_CALL( SCIPpresolve(scip) );
+      SCIP_CALL( DECdetectStructure(scip, &result) );
    }
 
    /*******************

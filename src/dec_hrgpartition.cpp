@@ -900,8 +900,15 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrgpartition)
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
    ++newval;
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
-   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
+   /* check if no problem is read */
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnblockcandidates", name);
+      SCIP_CALL( SCIPsetIntParam(scip, setstr, DEFAULT_MAXNBLOCKCANDIDATES ) );
+      SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, DEFAULT_MAXNBLOCKCANDIDATES);
+      return SCIP_OKAY;
+   }
 
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
 
@@ -944,6 +951,15 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultHrgpartition)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
+   /* check if no problem is read */
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnblockcandidates", name);
+      SCIP_CALL( SCIPsetIntParam(scip, setstr, DEFAULT_MAXNBLOCKCANDIDATES ) );
+      SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, DEFAULT_MAXNBLOCKCANDIDATES);
+      return SCIP_OKAY;
+   }
+
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
 
    modifier = log(modifier) / log(2);
@@ -976,8 +992,8 @@ DEC_DECL_SETPARAMFAST(setParamFastHrgpartition)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   if ( SCIPgetNConss(scip) + SCIPgetNVars(scip) > 6000 )
-      SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   if ( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM && SCIPgetNConss(scip) + SCIPgetNVars(scip) < 6000 )
+      SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
    else SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
@@ -986,6 +1002,14 @@ DEC_DECL_SETPARAMFAST(setParamFastHrgpartition)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
+   /* check if no problem is read */
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnblockcandidates", name);
+      SCIP_CALL( SCIPsetIntParam(scip, setstr, DEFAULT_MAXNBLOCKCANDIDATES ) );
+      SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, DEFAULT_MAXNBLOCKCANDIDATES);
+      return SCIP_OKAY;
+   }
 
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
 

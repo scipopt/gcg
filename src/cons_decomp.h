@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -432,7 +432,10 @@ SCIP_RETCODE DECdetectStructure(
 SCIP_RETCODE DECwriteAllDecomps(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 directory,          /**< directory for decompositions */
-   char*                 extension           /**< the file extension for the export */
+   char*                 extension,          /**< the file extension for the export */
+   SCIP_Bool             original,           /**< should decomps for original problem be written */
+   SCIP_Bool             presolved           /**< should decomps for preoslved problem be written */
+
    );
 
 
@@ -460,7 +463,8 @@ extern
 SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    SCIP*     scip,
    FILE*     file,
-   SCIP_Bool transformed
+   SCIP_Bool transformed,
+   SCIP_RESULT* result
    );
 
 /** returns the best known decomposition, if available and NULL otherwise */
@@ -563,6 +567,32 @@ SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
    SCIP* scip,       /**< SCIP data structure */
    int** output,     /**< array to put ids into */
    int* outputsize   /**< size of output */
+   );
+
+SCIP_RETCODE GCGprintMiplibBaseInformation(
+   SCIP*                scip,
+   FILE*                file
+   );
+
+SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
+   SCIP*                scip,
+   FILE*                file
+   );
+
+
+SCIP_RETCODE GCGprintMiplibConnectedInformation(
+   SCIP*                scip,
+   FILE*                file
+   );
+
+SCIP_RETCODE GCGprintMiplibDecompInformation(
+   SCIP*                scip,
+   FILE*                file
+   );
+
+SCIP_RETCODE GCGprintOptionalOutput(
+   SCIP*                scip,
+   SCIP_DIALOGHDLR*     dialoghdlr         /**< dialog handler */
    );
 
 

@@ -1053,6 +1053,8 @@ Seeedpool::Seeedpool(
 
    }
 
+   createconssadj = (getNConss() < 50000);
+
    if( createconssadj )
    {
       std::vector<std::list<int>> conssadjacenciestemp( consToScipCons.size(), std::list<int>(0) );
@@ -1076,6 +1078,7 @@ Seeedpool::Seeedpool(
                   conssadjacenciestemp[i].insert(consiter, othercons);
             }
          }
+
       }
 
       for( size_t i = 0; i < consToScipCons.size(); ++ i )
@@ -1090,7 +1093,7 @@ Seeedpool::Seeedpool(
       }
    }
    /*  init  seeedpool with empty seeed */
-   SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), nConss, nVars );
+   SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), this );
 
    addSeeedToCurr( emptyseeed );
    addSeeedToAncestor(emptyseeed);
@@ -1293,6 +1296,13 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    for( int round = 0; round < maxndetectionrounds; ++ round )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Begin of detection round %d of %d total rounds \n", round, maxndetectionrounds);
+      if( currSeeeds.size() == 0 )
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Detection loop can be aborted since there are no more partial decompositions to refine! \n" );
+         break;
+      }
+
+
       std::vector<SeeedPtr> nextSeeeds = std::vector < SeeedPtr > ( 0 );
       std::vector<SeeedPtr> currSeeedsToDelete = std::vector < SeeedPtr > ( 0 );
 
@@ -2391,6 +2401,40 @@ int Seeedpool::getNIncompleteSeeeds()
    return incompleteSeeeds.size();
 }
 
+
+/** returns total number of constraints where ranged constraints are counted twice */
+int Seeedpool::getNTotalConss(
+){
+   int nconss = 0;
+
+   for ( int c = 0; c < getNConss(); ++c )
+   {
+      SCIP_CONS* cons = consToScipCons[c];
+      nconss += GCGconsIsRanged(scip, cons) ? 2 : 1;
+   }
+
+   return nconss;
+}
+
+/** returns the number of nonzero entries in the coefficient matrix */
+long Seeedpool::getNTotalNonzeros()
+{
+   long ntotalnonzeros = nnonzeros;
+
+   for (int c  = 0; c < getNConss(); ++c )
+   {
+      SCIP_CONS* cons = getScipCons(c);
+      if( GCGconsIsRanged(scip, cons) )
+      {
+         ntotalnonzeros += GCGconsGetNVars(scip, cons);
+      }
+   }
+
+   return ntotalnonzeros;
+}
+
+
+
 /** returns true if the given seeed is a duplicate of a seeed that is already contained in
  *  finished seeeds or current seeeds data structure */
 bool Seeedpool::hasDuplicate(
@@ -2401,6 +2445,9 @@ bool Seeedpool::hasDuplicate(
 
    return !seeedIsNoDuplicate( seeed, currSeeeds, finishedSeeeds, true );
 }
+
+
+
 
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
 void Seeedpool::translateSeeedData(
@@ -2651,7 +2698,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
 
       SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL, " transform seeed %d \n", otherseeed->getID() );
 
-      newseeed = new Seeed( scip, this->getNewIdForSeeed(), this->getNConss(), this->getNVars() );
+      newseeed = new Seeed( scip, this->getNewIdForSeeed(), this );
 
       /** prepare new seeed */
       newseeed->setNBlocks( otherseeed->getNBlocks() );
@@ -2722,7 +2769,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       }
 
       newseeed->setDetectorChainString( otherseeed->getDetectorChainString() );
-      newseeed->setStemsFromUnpresolved( true );
+      newseeed->setStemsFromUnpresolved( this->transformed );
       newseeed->setFinishedByFinisherUnpresolved( otherseeed->getFinishedByFinisher() );
 
       if( otherseeed->getFinishedByFinisher() )
@@ -2732,7 +2779,6 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->sort();
       newseeed->considerImplicits( this );
       newseeed->deleteEmptyBlocks(false);
-      newseeed->setSeeedpool(this);
       newseeed->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
 
       if( newseeed->checkConsistency( this ) )
@@ -3254,6 +3300,23 @@ SCIP* Seeedpool::getScip()
 {
    return scip;
 }
+
+/** returns scip cons for corresponing id */
+SCIP_CONS* Seeedpool::getScipCons(
+   int consid
+   )
+{
+   return consToScipCons[consid];
+}
+
+/** returns scip var for corresponing id */
+SCIP_VAR* Seeedpool::getScipVar(
+   int varid
+){
+   return varToScipVar[varid];
+}
+
+
 
 /** returns the candidates for block size sorted in descending order by how often a candidate was added */
 std::vector<int> Seeedpool::getSortedCandidatesNBlocks()
@@ -5305,7 +5368,7 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 //   std::cout << "Linkingvars decomp: " << DECdecompGetNLinkingvars( decomp ) << "\tStairlinkingvars decomp: " << DECdecompGetNTotalStairlinkingvars( decomp ) << "\n";
 
    /* create new seeed and initialize its data */
-   SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nConss, nVars );
+   SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), this );
    seeed->setNBlocks( DECdecompGetNBlocks( decomp ) );
 
    assert( seeed->getNOpenconss() == nConss );

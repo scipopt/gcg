@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -114,6 +114,12 @@ SCIP_RETCODE GCGconsGetVals(
    SCIP_Real*            vals,               /**< array where values are stored */
    int                   nvals               /**< size of storage array */
    );
+
+/** returns true if the constraint should be a master constraint and false otherwise */
+SCIP_Bool GCGconsIsRanged(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to check */
+);
 
 /** returns true if the constraint should be a master constraint and false otherwise */
 SCIP_Bool GCGgetConsIsSetppc(

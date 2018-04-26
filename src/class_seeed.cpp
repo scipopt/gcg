@@ -87,12 +87,11 @@ const int Seeed::nPrimes = 70;
 Seeed::Seeed(
    SCIP* _scip,
    int givenid,
-   int givennconss,
-   int givennvars
+   Seeedpool* givenseeedpool
    ) :
-   scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givennvars ), nConss( givennconss ), masterConss( 0 ),
-   masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), isvaropen( givennvars, true ),
-   isconsopen( givennconss, true ), isvarmaster( givennvars, false ),   isconsmaster( givennconss, false ),
+   scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givenseeedpool->getNVars() ), nConss( givenseeedpool->getNConss() ), masterConss( 0 ),
+   masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), isvaropen( givenseeedpool->getNVars(), true ),
+   isconsopen( givenseeedpool->getNConss(), true ), isvarmaster( givenseeedpool->getNVars(), false ),   isconsmaster( givenseeedpool->getNConss(), false ),
    ncoeffsforblock(std::vector<int>(0)), calculatedncoeffsforblock(FALSE),
    varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
    conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
@@ -106,7 +105,7 @@ Seeed::Seeed(
    maxwhitescoreagg(-1.), blockareascore(-1.), blockareascoreagg(-1.), maxforeseeingwhitescore(-1.),
    maxforeseeingwhitescoreagg(-1.), setpartfwhitescore(-1.), setpartfwhitescoreagg(-1.),
    detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
-   isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
+   isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL ), seeedpool(givenseeedpool)
 {
 
    for( int i = 0; i < nConss; ++i )
@@ -4569,6 +4568,78 @@ std::vector<SCIP_Real> Seeed::getDetectorClockTimes()
    return detectorClockTimes;
 }
 
+
+std::string Seeed::getComponentInformation(
+   ){
+
+   std::stringstream buf;
+
+   int minrow = getNConss();
+   int maxrow = 0;
+   SCIP_Real medianrow = 0.;
+   SCIP_Real meanrow = 0.;
+   std::vector<int> nrows(getNBlocks(), 0);
+
+   int ntotalcols = getNVars();
+   int ntotalrows = seeedpool->getNTotalConss();
+
+   int minvar = getNVars();
+   int maxvar = 0;
+   SCIP_Real medianvar = 0;
+   SCIP_Real meanvar = 0.;
+   std::vector<int> ncols(getNBlocks(), 0);
+
+   for( int b = 0; b  < getNBlocks(); ++b )
+   {
+       for( int c = 0; c < getNConssForBlock(b); ++c  )
+       {
+          int cons = getConssForBlock(b)[c];
+          SCIP_Cons* scipcons = seeedpool->getScipCons(cons);
+
+          nrows[b] += GCGconsIsRanged(scip, scipcons) ? 2 : 1;
+          meanrow += GCGconsIsRanged(scip, scipcons) ? 2 : 1;
+       }
+
+       for( int v = 0; v < getNVarsForBlock(b); ++v )
+       {
+          ncols[b]++;
+          meanvar += 1;
+       }
+   }
+
+   std::sort(nrows.begin(), nrows.end());
+   std::sort(ncols.begin(), ncols.end());
+
+   minrow = nrows[0];
+   minvar = ncols[0];
+
+   maxrow = nrows[getNBlocks()-1];
+   maxvar = ncols[getNBlocks()-1];
+
+   meanrow = meanrow / getNBlocks();
+   meanvar = meanvar / getNBlocks();
+
+   if( getNBlocks() % 2 == 0)
+   {
+      medianrow =  ( nrows[ getNBlocks() / 2  ] + nrows[ getNBlocks() / 2  - 1 ] ) / 2.;
+       medianvar = ( ncols[ getNBlocks() / 2  ] + ncols[ getNBlocks() / 2  - 1 ] ) / 2.;
+   }
+   else
+   {
+      medianrow = nrows[ getNBlocks() / 2  ];
+      medianvar = ncols[ getNBlocks() / 2  ];
+   }
+
+   buf << getNBlocks() << ", " << ( (SCIP_Real) minrow ) / ntotalrows << ", " << ( (SCIP_Real) maxrow ) / ntotalrows << ", ";
+   buf << ( (SCIP_Real) medianrow ) / ntotalrows << ", " << ( (SCIP_Real) meanrow ) / ntotalrows << ", ";
+
+   buf << ( (SCIP_Real) minvar ) / ntotalcols << ", " << ( (SCIP_Real) maxvar ) / ntotalcols << ", ";
+   buf << ( (SCIP_Real) medianvar ) / ntotalcols << ", " << ( (SCIP_Real) meanvar ) / ntotalcols << " ";
+
+
+   return buf.str();
+}
+
 /** returns the data of the consclassifier that the given detector made use of */
 SCIP_RETCODE Seeed::getConsClassifierData(
    int detectorchainindex,
@@ -6198,10 +6269,243 @@ SCIP_RETCODE Seeed::setDetectorChainString(
    return SCIP_OKAY;
 }
 
+/**
+ * finds  a translation from orig to transformed seeedpool
+ * @param consindex already allocated
+ * @param varindex already allocated
+ */
+SCIP_RETCODE findTranslationForDec(
+   Seeedpool*        origseeedpool,
+   Seeedpool*        transseeedpool,
+   std::vector<int>* consindex,
+   std::vector<int>* varindex,
+   SCIP_Bool         fromunpresolvedtopresolved,
+   SCIP_Bool*        success
+)
+{
+   SCIP* scip;
+   int norigconss;
+   int norigvars;
+   SCIP_CONS** origconss;
+   SCIP_VAR**  origvars;
+
+   scip = origseeedpool->getScip();
+   norigconss = SCIPgetNOrigConss(scip);
+   origconss = SCIPgetOrigConss(scip);
+   norigvars = SCIPgetNOrigVars(scip);
+   origvars = SCIPgetOrigVars(scip);
+
+   for( size_t oc = 0; oc < consindex->size(); ++oc )
+   {
+      consindex->at(oc) = -1;
+   }
+
+   for( size_t ov = 0; ov < varindex->size(); ++ov )
+   {
+      varindex->at(ov) = -1;
+   }
+
+   for( int oc = 0; oc < norigconss; ++oc )
+   {
+      SCIP_CONS* origcons;
+      SCIP_CONS* transcons;
+      int origconsid;
+      int transconsid;
+
+      origconsid = -1;
+      transconsid = -1;
+
+      origcons = origconss[oc];
+      origconsid = origseeedpool->getIndexForCons(origcons);
+
+      SCIPgetTransformedCons(scip, origcons, &transcons);
+      if( transcons == NULL )
+      {
+ //       std::cout << "consname: " << SCIPconsGetName(origcons) << " ; oc:" << oc << " has no transformed constraint "  << std::endl;
+        continue;
+      }
+      transconsid = transseeedpool->getIndexForCons(transcons);
+
+ //     std::cout << "consname: " << SCIPconsGetName(origcons) << " ; oc:" << oc << " ;transconsid: " << transconsid << " ; origconsid: " << origconsid << " transformed: " << origseeedpool->getTransformedInfo() << std::endl;
+
+      if( fromunpresolvedtopresolved  )
+      {
+         consindex->at(origconsid) = transconsid;
+      }
+      else
+      {
+         consindex->at(transconsid) = origconsid;
+      }
+   }
+
+   for( int ov = 0; ov < norigvars; ++ov )
+   {
+      SCIP_VAR* origvar;
+      SCIP_VAR* transvar;
+      int origvarid;
+      int transvarid;
+
+      origvarid = -1;
+      transvarid = -1;
+
+      origvar = origvars[ov];
+      origvarid = origseeedpool->getIndexForVar(origvar);
+      SCIPgetTransformedVar(scip, origvar, &transvar);
+
+      if( transvar == NULL)
+      {
+         continue;
+      }
+
+
+      transvarid = transseeedpool->getIndexForVar( SCIPvarGetProbvar(transvar) );
+
+      if( fromunpresolvedtopresolved  )
+      {
+         varindex->at(origvarid) = transvarid;
+      }
+      else
+      {
+         varindex->at(transvarid) = origvarid;
+      }
+   }
+
+   *success = TRUE;
+
+   return SCIP_OKAY;
+
+}
+
 SCIP_RETCODE Seeed::writeAsDec(
-   FILE* file
-   ){
+   FILE* file,
+   //GCG_PROBLEM_TRANSFORMED_STATUS transformed,
+   Seeedpool*   seeedpooltowriteto,
+   SCIP_RESULT*  result
+   )
+{
+
+   Seeed*      helpseeed;
    static const char commentchars[] = "\\";
+
+   int nconss;
+   int nvars;
+   std::vector<int> consindex(0);
+   std::vector<int> varindex(0);
+
+   assert(seeedpooltowriteto != NULL);
+
+   helpseeed = this;
+   nconss = seeedpooltowriteto->getNConss();
+   nvars = seeedpooltowriteto->getNVars();
+
+   consindex = std::vector<int>(nconss);
+   varindex = std::vector<int>(nvars);
+
+   /* is there no translation needed ? */
+   if( getSeeedpool() == seeedpooltowriteto )
+   {
+      for( int i = 0; i < nconss; ++i )
+         consindex[i] = i;
+      for( int i = 0; i < nvars; ++i )
+         varindex[i] = i;
+   }
+   else /** translation is neeeded */
+   {
+      SCIP_Bool success;
+
+      Seeed* transseeed;
+      success = FALSE;
+
+      if( isFromUnpresolved() )
+         findTranslationForDec(getSeeedpool(), seeedpooltowriteto, &consindex, &varindex, isFromUnpresolved() , &success );
+      else
+         findTranslationForDec( seeedpooltowriteto, getSeeedpool(), &consindex, &varindex, isFromUnpresolved() , &success );
+
+      transseeed = new Seeed(seeedpooltowriteto->getScip(), -1, seeedpooltowriteto );
+
+      /** translate seeed */
+      transseeed->setNBlocks(getNBlocks() );
+
+      for( int b = 0; b < getNBlocks(); ++b )
+      {
+         for( int c = 0; c < getNConssForBlock(b); ++c )
+         {
+            int cons = consindex[getConssForBlock(b)[c] ];
+            if( cons == -1 )
+               continue;
+            transseeed->bookAsBlockCons(cons, b);
+         }
+
+         for( int v = 0; v < getNVarsForBlock(b); ++v )
+         {
+            int var = varindex[getVarsForBlock(b)[v] ];
+            if( var == -1 )
+               continue;
+            transseeed->bookAsBlockVar(var, b);
+         }
+
+         for( int v = 0; v < getNStairlinkingvars(b); ++v )
+         {
+            int var = varindex[getStairlinkingvars(b)[v] ];
+            if( var == -1 )
+               continue;
+            transseeed->bookAsStairlinkingVar(var, b);
+         }
+      }
+
+      for( int c = 0; c < getNMasterconss(); ++c )
+      {
+         int cons = consindex[getMasterconss()[c] ];
+         if( cons == -1 )
+            continue;
+         transseeed->bookAsMasterCons(cons);
+      }
+
+      for( int v = 0; v < getNLinkingvars(); ++v )
+      {
+         int var = varindex[getLinkingvars()[v] ];
+         if( var == -1 )
+            continue;
+         transseeed->bookAsLinkingVar(var);
+      }
+
+      for( int v = 0; v < getNMastervars(); ++v )
+      {
+         int var = varindex[getMastervars()[v] ];
+         if( var == -1 )
+            continue;
+         transseeed->bookAsMasterVar(var);
+      }
+
+      transseeed->flushBooked();
+
+      transseeed->considerImplicits(seeedpooltowriteto);
+
+      transseeed->deleteEmptyBlocks(false);
+
+      //displayInfo(getSeeedpool(), 0 );
+
+      //transseeed->displayInfo(seeedpooltowriteto, 0 );
+
+      if( transseeed->isComplete() != isComplete() )
+         success = FALSE;
+
+      if( ! success )
+      {
+         if( isFromUnpresolved() )
+            SCIPwarningMessage(seeedpooltowriteto->getScip(), "Writing dec-file is not possible since translation to presolved (transformed) problem failed. Please consider writing for original problem. Ignore next message about written problem if it is there.\n" );
+         else
+            SCIPwarningMessage(seeedpooltowriteto->getScip(), "Writing dec-file is not possible since translation to unpresolved (non-transformed) problem failed. Please consider writing for transformed problem. Ignore next message about written problem if it is there.\n" );
+         /** unforunately there is no appropiate result type */
+         *result = SCIP_SUCCESS;
+         return SCIP_OKAY;
+      }
+      else
+         *result = SCIP_SUCCESS;
+
+      helpseeed = transseeed;
+
+   }
 
    /** @TODO: statistical stuff  */
    /* at first: write meta data of decomposition as comment */
@@ -6218,10 +6522,10 @@ SCIP_RETCODE Seeed::writeAsDec(
    }
 
 
-   if( !isComplete() )
+   if( !helpseeed->isComplete() )
          SCIPinfoMessage(scip, file, "INCOMPLETE\n1\n" );
 
-   if( isFromUnpresolved() )
+   if( ( isFromUnpresolved() && seeedpooltowriteto == getSeeedpool() ) || ( !isFromUnpresolved() && seeedpooltowriteto != getSeeedpool() )  )
       SCIPinfoMessage(scip, file, "PRESOLVED\n0\n" );
    else
       SCIPinfoMessage(scip, file, "PRESOLVED\n1\n" );
@@ -6229,44 +6533,53 @@ SCIP_RETCODE Seeed::writeAsDec(
    SCIPinfoMessage(scip, file, "NBLOCKS\n%d\n", getNBlocks() );
 
 
-   for( int b = 0; b < getNBlocks(); ++b )
+   for( int b = 0; b < helpseeed->getNBlocks(); ++b )
    {
       SCIPinfoMessage(scip, file, "BLOCK %d\n", b+1 );
-      for( size_t c = 0; c < conssForBlocks[b].size(); ++c )
+      for( size_t c = 0; c < helpseeed->conssForBlocks[b].size(); ++c )
       {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getConsForIndex( conssForBlocks[b][c])) );
+         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpooltowriteto->getConsForIndex(  helpseeed->conssForBlocks[b][c]  )) );
       }
    }
 
     SCIPinfoMessage(scip, file, "MASTERCONSS\n" );
-   for( int mc = 0; mc < getNMasterconss(); ++mc )
+   for( int mc = 0; mc < helpseeed->getNMasterconss(); ++mc )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getConsForIndex( masterConss[mc])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpooltowriteto->getConsForIndex( helpseeed->masterConss[mc])) );
    }
 
-   if( isComplete() )
+   if( helpseeed->isComplete() )
+   {
+      if( this != helpseeed )
+         delete helpseeed;
+      *result = SCIP_SUCCESS;
       return SCIP_OKAY;
-
-   for( int b = 0; b < getNBlocks(); ++b )
+   }
+   for( int b = 0; b < helpseeed->getNBlocks(); ++b )
    {
       SCIPinfoMessage(scip, file, "BLOCKVARS %d\n", b+1 );
-      for( size_t v = 0; v < varsForBlocks[b].size(); ++v )
+      for( size_t v = 0; v < helpseeed->varsForBlocks[b].size(); ++v )
       {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( varsForBlocks[b][v])) );
+         SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpooltowriteto->getVarForIndex( helpseeed->varsForBlocks[b][v])) );
       }
    }
 
    SCIPinfoMessage(scip, file, "LINKINGVARS\n" );
-   for( int lv = 0; lv < getNLinkingvars(); ++lv )
+   for( int lv = 0; lv < helpseeed->getNLinkingvars(); ++lv )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( linkingVars[lv])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpooltowriteto->getVarForIndex( helpseeed->linkingVars[lv])) );
    }
 
    SCIPinfoMessage(scip, file, "MASTERVARS\n" );
-   for( int mv = 0; mv < getNMastervars(); ++mv )
+   for( int mv = 0; mv < helpseeed->getNMastervars(); ++mv )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( masterVars[mv])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpooltowriteto->getVarForIndex( helpseeed->masterVars[mv])) );
    }
+
+   if( this != helpseeed )
+      delete helpseeed;
+
+   *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
 
@@ -6306,6 +6619,7 @@ void Seeed::calcmaxwhitescore(){
    SCIP_CLOCK* clock;
 
    SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
+
    SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
 
    if( blockareascore == -1. )
