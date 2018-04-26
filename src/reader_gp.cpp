@@ -412,7 +412,7 @@ SCIP_RETCODE writeGpSeeed(
       else
          radiusscale = seeed->getNConss() / 200;
 
-      radiusscale = 5;
+      radiusscale = 4;
       writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), radiusscale) );
    }
    else
