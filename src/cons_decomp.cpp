@@ -6672,6 +6672,7 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
         char* outputname;
         MiscVisualization* misc;
         char problemname[SCIP_MAXSTRLEN];
+        gcg::Seeed* matrixseeed;
 
         SCIPgetStringParam(scip, "write/miplib2017matrixfilepath", &folder);
 
@@ -6689,7 +6690,18 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
         misc = new MiscVisualization();
 
-        seeedpool->addSeeedToFinishedUnchecked(seeedconnectedfinished);
+        matrixseeed = new gcg::Seeed(scip, -1, seeedpool);
+        matrixseeed->setNBlocks(1);
+
+        for( int i = 0; i < seeedpool->getNConss(); ++i )
+           matrixseeed->bookAsBlockCons(i,0);
+
+        for( int i = 0; i < seeedpool->getNVars(); ++i )
+           matrixseeed->bookAsBlockVar(i,0);
+
+        matrixseeed->flushBooked();
+
+        seeedpool->addSeeedToFinishedUnchecked(matrixseeed);
 
         /* get filename for compiled file */
         (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
@@ -6702,8 +6714,9 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
 
         /* actual writing */
-        GCGwriteGpVisualization(scip, filename, outputname, seeedconnectedfinished->getID() );
+        GCGwriteGpVisualization(scip, filename, outputname, matrixseeed->getID() );
 
+        delete matrixseeed;
         delete misc;
 
      }
