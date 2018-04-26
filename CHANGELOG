@@ -14,6 +14,7 @@ features
 - add hybridization of dual variable smoothing with an ascent method
 - add price store similar to SCIP's sepa store for better column management
 - restructure column pool similar to SCIP's cut pool
+- added parameter heuristics/restmaster/pbheur to use restricted master heuristic as price-and-branch heuristic
 
 code cleanup
 - use SCIP_STATISTIC for pricing statistics and add compiler flag STATISTICS; if STATISTICS is set to true,
@@ -21,6 +22,7 @@ code cleanup
 
 bug fixes
 - fix a bug in the automatic update of the stabilization parameter alpha
+- fix issue with pricing problem initialization in CPLEX pricing solver
 
 
 GCG Version 2.1.4

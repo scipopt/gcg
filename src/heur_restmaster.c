@@ -28,6 +28,7 @@
 /**@file   heur_restmaster.c
  * @brief  Restricted Master Heuristic
  * @author Christian Puchert
+ * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -60,10 +61,12 @@
 #define DEFAULT_USELPROWS     FALSE     /**< should subproblem be created out of the rows in the LP rows,
                                           *  otherwise, the copy constructor of the constraints handlers are used*/
 #define DEFAULT_COPYCUTS      TRUE      /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
-                                          *  of the original scip be copied to constraints of the subscip       */
+                                          *  of the original scip be copied to constraints of the subscip        */
 
-
-
+#define DEFAULT_PBHEUR        FALSE     /**< default value for using the restricted master heuristic as
+                                          *  price-and-branch heuristic?
+                                          *  (this changes the HEUR_TIMING to SCIP_HEURTIMING_AFTERNODE,
+                                          *  and it changes the HEUR_FREQ to 0.                                  */
 
 /*
  * Data structures
@@ -83,6 +86,10 @@ struct SCIP_HeurData
    SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
                                               *   to constraints in subproblem?
                                               */
+   SCIP_Bool             pbheur;             /**< value for using the restricted master heuristic as
+                                              *  price-and-branch heuristic?
+                                              *  (this changes the HEUR_TIMING to SCIP_HEURTIMING_AFTERNODE,
+                                              *  and it changes the HEUR_FREQ to 0.                                   */
 };
 
 
@@ -100,6 +107,7 @@ SCIP_RETCODE setupSubproblem(
    SCIP_VAR**            restmastervars,     /**< the variables of the restricted                                */
    SCIP_Real             minfixingrate,      /**< percentage of integer variables that have to be fixed          */
    SCIP_Bool             uselprows,          /**< should subproblem be created out of the rows in the LP rows?   */
+   SCIP_Bool             pbheur,             /**< use heuristic as price-and-branch heuristic?                   */
    SCIP_Bool*            success             /**< pointer to store whether the problem was created successfully  */
    )
 {
@@ -118,7 +126,7 @@ SCIP_RETCODE setupSubproblem(
    fixingcounter = 0;
 
    /* fix zero variables in the restricted master problem */
-   for( i = 0; i < nmastervars; i++ )
+   for( i = 0; i < nmastervars && !pbheur; i++ )
    {
       SCIP_Real mastersolval;
 
@@ -146,7 +154,7 @@ SCIP_RETCODE setupSubproblem(
    SCIPdebugMessage(" -> %d out of %d (%.2f percent) master variables fixed.\n", fixingcounter, nmastervars, fixingrate * 100.0);
 
    /* abort, if the amount of fixed variables is insufficient */
-   if( fixingrate < minfixingrate )
+   if( fixingrate < minfixingrate && !pbheur)
    {
       SCIPdebugMessage(" -> not enough variables fixed.\n");
       *success = FALSE;
@@ -323,6 +331,15 @@ SCIP_DECL_HEURINIT(heurInitRestmaster)
    /* initialize data */
    heurdata->usednodes = 0;
 
+   /* change timing to after node, call heuristic only at root and increase maxnodes for price-and-branch heuristic */
+   if( heurdata->pbheur )
+   {
+      heurdata->maxnodes = INT_MAX;
+
+      SCIPheurSetTimingmask(heur, SCIP_HEURTIMING_AFTERNODE);
+      SCIPheurSetFreq(heur, 0);
+   }
+
    return SCIP_OKAY;
 }
 
@@ -394,20 +411,24 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    /* calculate the maximal number of branching nodes until heuristic is aborted */
    nstallnodes = (SCIP_Longint)(heurdata->nodesquot * SCIPgetNNodes(origprob));
 
-   /* reward restricted master if it succeeded often */
-   nstallnodes = (SCIP_Longint)(nstallnodes * 3.0 * (SCIPheurGetNBestSolsFound(heur)+1.0)/(SCIPheurGetNCalls(heur) + 1.0));
-   nstallnodes -= 100 * SCIPheurGetNCalls(heur);  /* count the setup costs for the sub-MIP as 100 nodes */
-   nstallnodes += heurdata->nodesofs;
-
-   /* determine the node limit for the current process */
-   nstallnodes -= heurdata->usednodes;
-   nstallnodes = MIN(nstallnodes, heurdata->maxnodes);
-
-   /* check whether we have enough nodes left to call subproblem solving */
-   if( nstallnodes < heurdata->minnodes )
+   if( !heurdata->pbheur )
    {
-/*       SCIPdebugMessage("skipping Restricted Master Heuristic: nstallnodes=%"SCIP_LONGINT_FORMAT", minnodes=%"SCIP_LONGINT_FORMAT"\n", nstallnodes, heurdata->minnodes); */
-      return SCIP_OKAY;
+      /* reward restricted master if it succeeded often */
+      nstallnodes = (SCIP_Longint)(nstallnodes * 3.0 * (SCIPheurGetNBestSolsFound(heur)+1.0)/(SCIPheurGetNCalls(heur) + 1.0));
+      nstallnodes -= 100 * SCIPheurGetNCalls(heur);  /* count the setup costs for the sub-MIP as 100 nodes */
+      nstallnodes += heurdata->nodesofs;
+
+      /* determine the node limit for the current process */
+      nstallnodes -= heurdata->usednodes;
+      nstallnodes = MIN(nstallnodes, heurdata->maxnodes);
+
+
+      /* check whether we have enough nodes left to call subproblem solving */
+      if( nstallnodes < heurdata->minnodes )
+      {
+   /*       SCIPdebugMessage("skipping Restricted Master Heuristic: nstallnodes=%"SCIP_LONGINT_FORMAT", minnodes=%"SCIP_LONGINT_FORMAT"\n", nstallnodes, heurdata->minnodes); */
+         return SCIP_OKAY;
+      }
    }
 
    /* check whether there is enough time and memory left */
@@ -481,7 +502,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    success = FALSE;
 
    /* set up restricted master problem by fixing variables to zero */
-   SCIP_CALL( setupSubproblem(scip, restmaster, restmastervars, heurdata->minfixingrate, heurdata->uselprows, &success) );
+   SCIP_CALL( setupSubproblem(scip, restmaster, restmastervars, heurdata->minfixingrate, heurdata->uselprows, heurdata->pbheur, &success) );
    SCIPdebugMessage("restricted master problem: %d vars, %d cons, success=%u\n", SCIPgetNVars(restmaster), SCIPgetNConss(restmaster), success);
 
    /* do not abort subproblem on CTRL-C */
@@ -490,37 +511,44 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    /* disable output to console */
    SCIP_CALL( SCIPsetIntParam(restmaster, "display/verblevel", 0) );
 
+   /* if price-and-branch heuristic, set node limits according to original problem */
+   if( heurdata->pbheur )
+      nstallnodes = heurdata->maxnodes;
+
    /* set limits for the subproblem */
    SCIP_CALL( SCIPsetLongintParam(restmaster, "limits/stallnodes", nstallnodes) );
    SCIP_CALL( SCIPsetLongintParam(restmaster, "limits/nodes", heurdata->maxnodes) );
    SCIP_CALL( SCIPsetRealParam(restmaster, "limits/time", timelimit) );
    SCIP_CALL( SCIPsetRealParam(restmaster, "limits/memory", memorylimit) );
 
-   /* forbid recursive call of heuristics solving subMIPs */
-   SCIP_CALL( SCIPsetSubscipsOff(restmaster, TRUE) );
-
-   /* disable cutting plane separation */
-   SCIP_CALL( SCIPsetSeparating(restmaster, SCIP_PARAMSETTING_OFF, TRUE) );
-
-   /* disable expensive presolving */
-   SCIP_CALL( SCIPsetPresolving(restmaster, SCIP_PARAMSETTING_FAST, TRUE) );
-
-   /* use best estimate node selection */
-   if( SCIPfindNodesel(scip, "estimate") != NULL )
+   /* set specific parameters only of price-and-branch is not used */
+   if( !heurdata->pbheur )
    {
-      SCIP_CALL( SCIPsetIntParam(restmaster, "nodeselection/estimate/stdpriority", INT_MAX/4) );
-   }
+      /* forbid recursive call of heuristics solving subMIPs */
+      SCIP_CALL( SCIPsetSubscipsOff(restmaster, TRUE) );
+      /* disable cutting plane separation */
+      SCIP_CALL( SCIPsetSeparating(restmaster, SCIP_PARAMSETTING_OFF, TRUE) );
 
-   /* use inference branching */
-   if( SCIPfindBranchrule(scip, "inference") != NULL )
-   {
-      SCIP_CALL( SCIPsetIntParam(restmaster, "branching/inference/priority", INT_MAX/4) );
-   }
+      /* disable expensive presolving */
+      SCIP_CALL( SCIPsetPresolving(restmaster, SCIP_PARAMSETTING_FAST, TRUE) );
 
-   /* disable conflict analysis */
-   if( !SCIPisParamFixed(restmaster, "conflict/enable") )
-   {
-      SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/enable", FALSE) );
+      /* use best estimate node selection */
+      if( SCIPfindNodesel(scip, "estimate") != NULL )
+      {
+         SCIP_CALL( SCIPsetIntParam(restmaster, "nodeselection/estimate/stdpriority", INT_MAX/4) );
+      }
+
+      /* use inference branching */
+      if( SCIPfindBranchrule(scip, "inference") != NULL )
+      {
+         SCIP_CALL( SCIPsetIntParam(restmaster, "branching/inference/priority", INT_MAX/4) );
+      }
+
+      /* disable conflict analysis */
+      if( !SCIPisParamFixed(restmaster, "conflict/enable") )
+      {
+         SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/enable", FALSE) );
+      }
    }
 
    /* if the subproblem could not be created, free memory and return */
@@ -577,7 +605,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    /* after presolving, we should have at least reached a certain fixing rate over ALL variables (including continuous)
     * to ensure that not only the MIP but also the LP relaxation is easy enough
     */
-   if( ( nmastervars - SCIPgetNVars(restmaster) ) / (SCIP_Real)nmastervars >= heurdata->minfixingrate / 2.0 )
+   if( heurdata->pbheur || ( nmastervars - SCIPgetNVars(restmaster) ) / (SCIP_Real)nmastervars >= heurdata->minfixingrate / 2.0 )
    {
       SCIP_SOL** restmastersols;
       int nrestmastersols;
@@ -674,6 +702,10 @@ SCIP_RETCODE SCIPincludeHeurRestmaster(
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
          "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
          &heurdata->copycuts, TRUE, DEFAULT_COPYCUTS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/pbheur",
+         "should the restricted master heuristic be used as price-and-branch heuristic?",
+         &heurdata->pbheur, FALSE, DEFAULT_PBHEUR, NULL, NULL) );
 
    return SCIP_OKAY;
 }
