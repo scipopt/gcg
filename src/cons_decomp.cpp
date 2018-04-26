@@ -2162,6 +2162,7 @@ SCIP_DIALOG*            dialog )
    return SCIP_OKAY;
 }
 
+/* Apply propagation, finishing or postprocessing to the current user seeed via dialog */
 SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
@@ -2298,46 +2299,65 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
       {
          if( action != POSTPROCESS )
          {
-            //@TODO: detectors such as dec_consclass may return more than one seeed, handle this case!
-            assert(seeedPropData->newSeeeds[0] != NULL);
+            for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
+            {
+               assert(seeedPropData->newSeeeds[i] != NULL);
+            }
+            
             SCIPinfoMessage(scip, NULL, "\nSeeed was successfully %s.\n", actiontype);
             
-            seeedPropData->newSeeeds[0]->considerImplicits( seeedPropData->seeedpool ); //There may be open vars/cons left that were not matched
-            seeedPropData->newSeeeds[0]->displayInfo( seeedPropData->seeedpool, 0 );
-
-            commandlen = 0;
-            while( commandlen == 0 )
+            for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
             {
-               SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-                  "Do you want to visualize the new Seeed (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
-               commandlen = strlen(command);
-            }
-            if( strncmp( command, "yes", commandlen) == 0 )
-            {
-               SCIP_CALL( SCIPconshdlrDecompSelectVisualize(scip, dialoghdlr, dialog ) );
-            }
-            else if( strncmp( command, "quit", commandlen) == 0 )
-            {
-               finished = TRUE;
-               continue;
+               seeedPropData->newSeeeds[i]->considerImplicits( seeedPropData->seeedpool ); //There may be open vars/cons left that were not matched
+               seeedPropData->newSeeeds[i]->displayInfo( seeedPropData->seeedpool, 0 );
             }
 
-            SCIPinfoMessage(scip, NULL, "\nSaving newly found seeed...\n\n");
-            conshdlrdata->curruserseeed = new gcg::Seeed( seeedPropData->newSeeeds[0] );
-            SCIP_CALL( SCIPconshdlrDecompUserSeeedFlush(scip) );
-            assert(conshdlrdata->curruserseeed == NULL);
-
-            commandlen = 0;
-            while( commandlen == 0 )
+            if( seeedPropData->nNewSeeeds == 1 )
             {
-               SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-                  "\nDo you want to continue the decomposition with the new Seeed (\"continue\"), \
+               commandlen = 0;
+               while( commandlen == 0 )
+               {
+                  SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+                     "Do you want to visualize the new Seeed (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
+                  commandlen = strlen(command);
+               }
+               if( strncmp( command, "yes", commandlen) == 0 )
+               {
+                  SCIP_CALL( SCIPconshdlrDecompSelectVisualize(scip, dialoghdlr, dialog ) );
+               }
+               else if( strncmp( command, "quit", commandlen) == 0 )
+               {
+                  finished = TRUE;
+                  continue;
+               }
+            }
+
+            SCIPinfoMessage(scip, NULL, "\nSaving newly found seeeds...\n\n");
+            for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
+            {
+               conshdlrdata->curruserseeed = new gcg::Seeed( seeedPropData->newSeeeds[i] );
+               SCIP_CALL( SCIPconshdlrDecompUserSeeedFlush(scip) );
+               assert(conshdlrdata->curruserseeed == NULL);
+            }
+
+            if( seeedPropData->nNewSeeeds == 1 )
+            {
+               commandlen = 0;
+               while( commandlen == 0 )
+               {
+                  SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+                     "\nDo you want to continue the decomposition with the new Seeed (\"continue\"), \
 or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &endoffile) );
-               commandlen = strlen(command);
-            }
-            if( strncmp( command, "continue", commandlen) == 0 )
-            {
-               conshdlrdata->curruserseeed = new gcg::Seeed(seeedPropData->newSeeeds[0]);
+                  commandlen = strlen(command);
+               }
+               if( strncmp( command, "continue", commandlen) == 0 )
+               {
+                  conshdlrdata->curruserseeed = new gcg::Seeed(seeedPropData->newSeeeds[0]);
+               }
+               else
+               {
+                  conshdlrdata->curruserseeed = new gcg::Seeed(seeedPropData->seeedToPropagate);
+               }
             }
             else
             {
