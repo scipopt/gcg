@@ -295,8 +295,17 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
    gcg::ConsClassifier** classifiers;
-   SCIP_Bool newclassifier;
    int nclassifiers;
+   SCIP_Bool newclassifier;
+   gcg::ConsClassifier** selectedclassifiers;
+   int nselectedclassifiers;
+   int i, j;
+   char stri[SCIP_MAXSTRLEN];
+   SCIP_Bool finished;
+
+   char* command;
+   int commandlen;
+   SCIP_Bool endoffile;
 
    if( seeedPropagationData->seeedToPropagate->getNOpenconss() != seeedPropagationData->seeedpool->getNConss() )
    {
@@ -326,39 +335,216 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
       SCIPgetIntParam(scip, "detection/maxnclassesperclassifier", &maximumnclasses);
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &classifiers, seeedPropagationData->seeedpool->getNConsClassifiers()) );
-   
-   SCIPinfoMessage(scip, NULL, "%d consclassifiers available for propagation:\n", seeedPropagationData->seeedpool->getNConsClassifiers() );
+
+   SCIPinfoMessage(scip, NULL, "\n%d consclassifiers available for propagation.\n", seeedPropagationData->seeedpool->getNConsClassifiers() );
+   nclassifiers = 0;
    for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNConsClassifiers(); ++classifierIndex )
    {
-      newclassifier = TRUE;
-      for( int i = 0; i < nclassifiers; ++i )
+      gcg::ConsClassifier* classifier = seeedPropagationData->seeedpool->getConsClassifier( classifierIndex );
+      if( classifier->getNClasses() > maximumnclasses )
       {
-         if( classifiers[i] == seeedPropagationData->seeedpool->getConsClassifier( classifierIndex ) )
+         std::cout << " the current consclass distribution includes " << classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of cons class detector" << std::endl;
+         continue;
+      }
+      newclassifier = TRUE;
+      for( i = 0; i < nclassifiers; ++i )
+      {
+         if( classifiers[i] == classifier )
          {
             newclassifier = FALSE;
          }
       }
-      gcg::ConsClassifier* classifier = seeedPropagationData->seeedpool->getConsClassifier( classifierIndex );
+
       if( newclassifier )
       {
-         SCIPinfoMessage(scip, NULL, "%s\n", classifier->getName() );
          classifiers[nclassifiers] = classifier;
          ++nclassifiers;
       }
    }
+   
+   /* user selects wanted subset of classifiers */
+   SCIPinfoMessage(scip, NULL, "You will now be asked to enter a selection of consclassifiers iteratively. If you have finished your selection, enter \"none\".\n");
 
+   SCIP_CALL( SCIPallocMemoryArray(scip, &selectedclassifiers, nclassifiers) );
+   nselectedclassifiers = 0;
 
+   finished = FALSE;
+   while( !finished )
+   {
+      SCIPinfoMessage(scip, NULL, "Available consclassifiers:\n");
+      for( i = 0; i < nclassifiers; ++i )
+      {
+         SCIPinfoMessage(scip, NULL, "%d) ", i+1); //+1 as we want the list to start with 1)
+         SCIPinfoMessage(scip, NULL, "%s\n", classifiers[i]->getName() );
+      }
+
+      commandlen = 0;
+      while( commandlen == 0 )
+      {
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name(s) or number(s) of consclassifiers (seperated by spaces) or \"none\", (use \"quit\" to exit detector): \nGCG/toolbox> ", &command, &endoffile) );
+         commandlen = strlen(command);
+      }
+
+      if( !strncmp( command, "none", commandlen) == 0 && !strncmp( command, "quit", commandlen) == 0 )
+      {
+         for( i = 0; i < nclassifiers; ++i )
+         {
+            newclassifier = TRUE;
+            sprintf(stri, "%d", i+1); //used for matching numberings in the list, off-by-one since classifiers array starts with index 0 and our list with 1)
+            if( strncmp( command, classifiers[i]->getName(), commandlen) == 0 || strncmp( command, stri, commandlen ) == 0 )
+            {
+               /* check that we do not select the same classifier multiple times*/
+               for( j = 0; j < nselectedclassifiers; ++j )
+               {
+                  if( selectedclassifiers[j] == classifiers[i] )
+                  {
+                     newclassifier = FALSE;
+                  }
+               }
+               if( newclassifier )
+               {
+                  selectedclassifiers[nselectedclassifiers] = classifiers[i];
+                  ++nselectedclassifiers;
+
+                  SCIPinfoMessage(scip, NULL, "\nCurrently selected classifiers: ");
+                  for( j = 0; j < nselectedclassifiers; ++j )
+                  {
+                     SCIPinfoMessage(scip, NULL, "%s ", selectedclassifiers[j]->getName());
+                  }
+                  SCIPinfoMessage(scip, NULL, "\n\n");
+
+                  if( nselectedclassifiers >= nclassifiers )
+                  {
+                     finished = TRUE;
+                     break;
+                  }
+               }
+               else
+               {
+                  SCIPinfoMessage(scip, NULL, "\n+++Classifier %s is already selected!+++\n\n", classifiers[i]->getName());
+               }
+            }
+         }
+      }
+      else if( strncmp( command, "none", commandlen) == 0 )
+      {
+         finished = TRUE;
+         continue;
+      }
+      else if( strncmp( command, "quit", commandlen) == 0 )
+      {
+         SCIPfreeMemoryArray(scip, &selectedclassifiers);
+         SCIPfreeMemoryArray(scip, &classifiers);
+         *result = SCIP_DIDNOTFIND;
+         return SCIP_OKAY;
+      }
+   }
+
+   for( int classifierIndex = 0; classifierIndex < nselectedclassifiers; ++classifierIndex )
+   {
+      gcg::ConsClassifier* classifier = selectedclassifiers[classifierIndex];
+      std::vector<int> consclassindices_master = std::vector<int>(0);
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "The current constraint classifier %s consists of %d different classes.\n", classifier->getName(), classifier->getNClasses() );
+
+      seeedOrig = seeedPropagationData->seeedToPropagate;
+
+      for( i = 0; i < classifier->getNClasses(); ++ i )
+      {
+         if ( classifier->getClassDecompInfo(i) == gcg::ONLY_MASTER )
+            consclassindices_master.push_back(i);
+      }
+
+      std::vector< std::vector<int> > subsetsOfConsclasses = classifier->getAllSubsets( true, false, false );
+
+      for( size_t subset = 0; subset < subsetsOfConsclasses.size(); ++subset )
+      {
+         if( subsetsOfConsclasses[subset].size() == 0 && consclassindices_master.size() == 0 )
+            continue;
+
+         seeed = new gcg::Seeed(seeedOrig);
+
+         /** book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
+         for( i = 0; i < seeed->getNOpenconss(); ++i )
+         {
+            bool foundCons = false;
+            for( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
+            {
+               if( classifier->getClassOfCons( seeed->getOpenconss()[i] ) == subsetsOfConsclasses[subset][consclassId] )
+               {
+                  seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+                  foundCons = true;
+                  break;
+               }
+            }
+            /** only check consclassindices_master if current cons has not already been found in a subset */
+            if( !foundCons )
+            {
+               for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
+               {
+                  if( classifier->getClassOfCons( seeed->getOpenconss()[i] ) == consclassindices_master[consclassId] )
+                  {
+                     seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+                     break;
+                  }
+               }
+            }
+         }
+
+         /** set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
+         std::stringstream decdesc;
+         decdesc << "consclass" << "\\_" << classifier->getName() << ": \\\\ ";
+         std::vector<int> curmasterclasses( consclassindices_master );
+         for( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
+         {
+            if( consclassId > 0 )
+            {
+               decdesc << "-";
+            }
+            decdesc << classifier->getClassName( subsetsOfConsclasses[subset][consclassId] );
+
+            if( std::find( consclassindices_master.begin(), consclassindices_master.end(),
+               subsetsOfConsclasses[subset][consclassId] ) == consclassindices_master.end() )
+            {
+               curmasterclasses.push_back( subsetsOfConsclasses[subset][consclassId] );
+            }
+         }
+         for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
+         {
+            if( consclassId > 0 || subsetsOfConsclasses[subset].size() > 0)
+            {
+               decdesc << "-";
+            }
+            decdesc << classifier->getClassName( consclassindices_master[consclassId] );
+         }
+
+         seeed->flushBooked();
+         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
+         seeed->addDetectorChainInfo(decinfo);
+         seeed->setDetectorPropagated(detector);
+         seeed->setConsClassifierStatistics( seeed->getNDetectors() - 1, classifier, curmasterclasses );
+
+         foundseeeds.push_back(seeed);
+      }
+   }
+
+   //@TODO: This alloc is already done in cons_decomp:SCIPconshdlrDecompToolboxActOnSeeed(..). 
+   //This is contrary to the behaviour of other detectors such as hrcg, hrg and hr but not connectedbase
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), foundseeeds.size() ) );
+   seeedPropagationData->nNewSeeeds  = foundseeeds.size();
+
+   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
+   {
+      seeedPropagationData->newSeeeds[s] = foundseeeds[s];
+   }
+
+   *result = SCIP_SUCCESS;
+   SCIPfreeMemoryArray(scip, &selectedclassifiers);
    SCIPfreeMemoryArray(scip, &classifiers);
-   //@TODO: Rest of implementation
-   return SCIP_ERROR;
+   return SCIP_OKAY;
 }
 
-static
-DEC_DECL_FINISHFROMTOOLBOX(finishFromToolboxConsclass)
-{
-   //@TODO: Implementation
-   return SCIP_ERROR;
-}
+#define finishFromToolboxConsclass NULL
 
 #define detectorPostprocessSeeedConsclass NULL
 

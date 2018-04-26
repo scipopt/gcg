@@ -655,7 +655,7 @@ SCIP_RETCODE fromToolbox(
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:\n");
 
    SCIPinfoMessage(scip, NULL, "Maximal number of blocks the decomposition can contain: %d\n", seeed->getNOpenconss());
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the number of blocks that the decomposition should contain (e.g. \"5\") \nGCG/toolbox> : ", &command, &endoffile) );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the number of blocks that the decomposition should contain (e.g. \"5\") \nGCG/toolbox> ", &command, &endoffile) );
    commandlen = strlen(command);
 
    if( commandlen != 0 )

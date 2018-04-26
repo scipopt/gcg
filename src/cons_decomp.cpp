@@ -2298,6 +2298,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
       {
          if( action != POSTPROCESS )
          {
+            //@TODO: detectors such as dec_consclass may return more than one seeed, handle this case!
             assert(seeedPropData->newSeeeds[0] != NULL);
             SCIPinfoMessage(scip, NULL, "\nSeeed was successfully %s.\n", actiontype);
             
@@ -2773,7 +2774,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
       }
 
    }
-   conshdlrdata->curruserseeed = new gcg::Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool->getNConss(), seeedpool->getNVars() );
+   conshdlrdata->curruserseeed = new gcg::Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool );
    conshdlrdata->curruserseeed->setIsFromUnpresolved(isfromunpresolved);
    finished = FALSE;
    while ( !finished )
