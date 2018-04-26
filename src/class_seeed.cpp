@@ -87,12 +87,11 @@ const int Seeed::nPrimes = 70;
 Seeed::Seeed(
    SCIP* _scip,
    int givenid,
-   int givennconss,
-   int givennvars
+   Seeedpool* givenseeedpool
    ) :
-   scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givennvars ), nConss( givennconss ), masterConss( 0 ),
-   masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), isvaropen( givennvars, true ),
-   isconsopen( givennconss, true ), isvarmaster( givennvars, false ),   isconsmaster( givennconss, false ),
+   scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givenseeedpool->getNVars() ), nConss( givenseeedpool->getNConss() ), masterConss( 0 ),
+   masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), isvaropen( givenseeedpool->getNVars(), true ),
+   isconsopen( givenseeedpool->getNConss(), true ), isvarmaster( givenseeedpool->getNVars(), false ),   isconsmaster( givenseeedpool->getNConss(), false ),
    ncoeffsforblock(std::vector<int>(0)), calculatedncoeffsforblock(FALSE),
    varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
    conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
@@ -106,7 +105,7 @@ Seeed::Seeed(
    maxwhitescoreagg(-1.), blockareascore(-1.), blockareascoreagg(-1.), maxforeseeingwhitescore(-1.),
    maxforeseeingwhitescoreagg(-1.), setpartfwhitescore(-1.), setpartfwhitescoreagg(-1.),
    detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
-   isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
+   isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL ), seeedpool(givenseeedpool)
 {
 
    for( int i = 0; i < nConss; ++i )
@@ -6422,8 +6421,7 @@ SCIP_RETCODE Seeed::writeAsDec(
       else
          findTranslationForDec( seeedpooltowriteto, getSeeedpool(), &consindex, &varindex, isFromUnpresolved() , &success );
 
-      transseeed = new Seeed(seeedpooltowriteto->getScip(), -1, seeedpooltowriteto->getNConss(), seeedpooltowriteto->getNVars() );
-      transseeed->setSeeedpool(seeedpooltowriteto);
+      transseeed = new Seeed(seeedpooltowriteto->getScip(), -1, seeedpooltowriteto );
 
       /** translate seeed */
       transseeed->setNBlocks(getNBlocks() );

@@ -567,9 +567,9 @@ SCIP_RETCODE HyperrowcolGraph<T>::createSeeedFromPartition(
 
    if( !emptyblocks )
    {
-      (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars());
+      (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool);
       SCIP_CALL( (*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
-      (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars());
+      (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool);
       SCIP_CALL( (*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool) );
       for (int col = 0; col < (*firstSeeed)->getNLinkingvars(); ++col)
       {

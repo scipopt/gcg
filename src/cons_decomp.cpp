@@ -849,6 +849,15 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 
 /** constraint enforcing method of constraint handler for LP solutions */
 static
+SCIP_DECL_CONSENFORELAX(consEnforeDecomp)
+{  /*lint --e{715}*/
+   *result = SCIP_FEASIBLE;
+   return SCIP_OKAY;
+}
+
+
+/** constraint enforcing method of constraint handler for LP solutions */
+static
 SCIP_DECL_CONSENFOLP(consEnfolpDecomp)
 {  /*lint --e{715}*/
    *result = SCIP_FEASIBLE;
@@ -2328,7 +2337,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
          }
 
       }
-      conshdlrdata->curruserseeed = new gcg::Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool->getNConss(), seeedpool->getNVars() );
+      conshdlrdata->curruserseeed = new gcg::Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool );
       conshdlrdata->curruserseeed->setIsFromUnpresolved(isfromunpresolved);
    }
 
@@ -3122,10 +3131,9 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    assert( currseeedpool != NULL );
    assert( conshdlrdata->curruserseeed == NULL );
 
-   conshdlrdata->curruserseeed = new gcg::Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool->getNConss(), currseeedpool->getNVars() );
+   conshdlrdata->curruserseeed = new gcg::Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool );
 
-   conshdlrdata->curruserseeed->setSeeedpool(currseeedpool );
-   conshdlrdata->curruserseeed->setIsFromUnpresolved( !presolved );
+      conshdlrdata->curruserseeed->setIsFromUnpresolved( !presolved );
 
    if( markedincomplete )
       conshdlrdata->curruserseeed->setUsergiven(USERGIVEN::PARTIAL);
@@ -4333,7 +4341,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
 
    seeedpool = conshdlrdata->seeedpool;
 
-   dummyAncestor = new gcg::Seeed( scip, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars() );
+   dummyAncestor = new gcg::Seeed( scip, seeedpool->getNewIdForSeeed(), seeedpool );
    seeedpool->addSeeedToAncestor( dummyAncestor );
 
    SCIPdebugMessagePrint(scip, "Checking %d detectors for legacy mode.\n", conshdlrdata->ndetectors);
@@ -6632,8 +6640,7 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
      assert( connecteddetector != NULL );
 
-     seeedconnected = new gcg::Seeed(scip, -1, seeedpool->getNConss(), seeedpool->getNVars() );
-     seeedconnected->setSeeedpool(seeedpool);
+     seeedconnected = new gcg::Seeed(scip, -1, seeedpool);
      seeedPropData = new SEEED_PROPAGATION_DATA();
      seeedPropData->seeedpool = seeedpool;
      seeedPropData->nNewSeeeds = 0;
