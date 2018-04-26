@@ -6716,7 +6716,6 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
         /* actual writing */
         GCGwriteGpVisualization(scip, filename, outputname, matrixseeed->getID() );
 
-        delete matrixseeed;
         delete misc;
 
      }
