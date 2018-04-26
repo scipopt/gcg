@@ -1053,7 +1053,7 @@ Seeedpool::Seeedpool(
 
    }
 
-   createconssadj = (getNConss() < 50000);
+   createconssadj = (getNConss() < 1000);
 
    if( createconssadj )
    {
