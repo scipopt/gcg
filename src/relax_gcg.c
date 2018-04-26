@@ -1672,7 +1672,7 @@ SCIP_RETCODE createMaster(
    }
 
    /* set integral objective status in the extended problem, if possible */
-   if( SCIPisObjIntegral(scip) && relaxdata->discretization )
+   if( SCIPisObjIntegral(scip) && relaxdata->discretization && SCIPgetNContVars(scip) == 0 )
    {
       SCIP_CALL( SCIPsetObjIntegral(relaxdata->masterprob) );
    }
@@ -1967,10 +1967,7 @@ SCIP_RETCODE initRelaxator(
 
    if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Warning: Discretization with continuous variables may lead to wrong solutions.\n");
-//      Disabling stabilization.\n");
-
-      //SCIPsetBoolParam(scip, "pricing/masterpricer/stabilization", FALSE);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Warning: Discretization with continuous variables is only an experimental feature.\n");
    }
 
    SCIP_CALL( createMaster(scip, relaxdata) );

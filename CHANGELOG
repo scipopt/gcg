@@ -15,6 +15,7 @@ features
 - add price store similar to SCIP's sepa store for better column management
 - restructure column pool similar to SCIP's cut pool
 - added parameter heuristics/restmaster/pbheur to use restricted master heuristic as price-and-branch heuristic
+- enable discretization when original problem is a mixed integer program; continuous variables are convexified
 
 code cleanup
 - use SCIP_STATISTIC for pricing statistics and add compiler flag STATISTICS; if STATISTICS is set to true,
