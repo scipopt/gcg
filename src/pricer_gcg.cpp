@@ -145,7 +145,8 @@ struct SCIP_PricerData
    SCIP_Real*            solvals;            /**< solution values of variables in the pricing problems */
    int*                  npointsprob;        /**< number of variables representing points created by the pricing probs */
    int*                  nraysprob;          /**< number of variables representing rays created by the pricing probs */
-   SCIP_Longint          currnodenr;         /**< current node number in the masterproblem*/
+   SCIP_Longint          currnodenr;         /**< current node number in the masterproblem */
+   SCIP_Bool             newnode;            /**< indicate whether we are at a new branch-and-bound node */
    SCIP_HASHMAP*         mapcons2idx;        /**< hashmap mapping constraints to their index in the conss array */
    int                   npricingprobsnotnull; /**< number of non-Null pricing problems*/
 
@@ -2657,6 +2658,8 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
       int nbranchconss;
       int branchconsidx;
 
+      int i;
+
       GCGpricingprobGetGenericBranchData(pricingprob, &branchconss, NULL, &nbranchconss);
       branchconsidx = GCGpricingprobGetBranchconsIdx(pricingprob);
       assert(branchconsidx >= 0);
@@ -2667,6 +2670,11 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
       SCIPdebugMessage("*** Apply generic branching bound change of depth %d\n", -branchconsidx);
       SCIP_CALL( SCIPtransformProb(pricingscip) );
       SCIP_CALL( addBranchingBoundChangesToPricing(probnr, branchconss[branchconsidx]) );
+
+      for( i = 0; i < pricerdata->nsolvers; ++i )
+      {
+         SCIP_CALL( GCGsolverUpdate(pricingscip, pricerdata->solvers[i], probnr, FALSE, TRUE, FALSE) );
+      }
 
       GCGpricingprobMarkBranchconsAdded(pricingprob);
    }
@@ -2894,6 +2902,21 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       /* set the objective function */
       SCIP_CALL( freePricingProblems() );
       SCIP_CALL( setPricingObjs(pricetype, stabilized) );
+
+      /* call update method of pricing solvers to update objectives;
+       * also, let them update their bounds since the transformed pricing problems
+       * might have contained generic branching bounds before freeing
+       */
+      for( i = 0; i < pricerdata->nsolvers; ++i  )
+      {
+         for( j = 0; j < pricerdata->npricingprobs; ++j )
+         {
+            if( pricerdata->pricingprobs[j] != NULL )
+            {
+               SCIP_CALL( GCGsolverUpdate(pricerdata->pricingprobs[j], pricerdata->solvers[i], j, TRUE, TRUE, FALSE) );
+            }
+         }
+      }
 
       /* todo: do this inside the updateRedcostColumnPool */
       if( !colpoolupdated && pricerdata->usecolpool )
@@ -3219,6 +3242,7 @@ SCIP_RETCODE GCGsetPricingObjs(
   ObjPricerGcg* pricer;
   SCIP_Bool stabilizationtmp;
   int i;
+  int j;
 
   assert(scip != NULL);
 
@@ -3230,6 +3254,18 @@ SCIP_RETCODE GCGsetPricingObjs(
   pricer->pricerdata->stabilization = FALSE;
 
   SCIP_CALL( pricer->setPricingObjs(pricer->getReducedCostPricingNonConst(), FALSE) );
+
+   /* notify the pricing solvers that the objective values have changed */
+   for( i = 0; i < pricer->pricerdata->nsolvers; ++i  )
+   {
+      for( j = 0; j < pricer->pricerdata->npricingprobs; ++j )
+      {
+         if( pricer->pricerdata->pricingprobs[j] != NULL )
+         {
+            SCIP_CALL( GCGsolverUpdate(pricer->pricerdata->pricingprobs[j], pricer->pricerdata->solvers[i], j, TRUE, FALSE, FALSE) );
+         }
+      }
+   }
 
   if(dualsolconv != NULL)
   {
@@ -3362,6 +3398,24 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    nfoundvars = 0;
 
    bestredcostvalid = TRUE;
+
+   /* If pricing is performed for the first time at this node, update variable bounds and pricing constraints */
+   if( pricerdata->newnode )
+   {
+      int i;
+      int j;
+
+      for( i = 0; i < pricerdata->nsolvers; ++i  )
+      {
+         for( j = 0; j < pricerdata->npricingprobs; ++j )
+         {
+            if( pricerdata->pricingprobs[j] != NULL )
+            {
+               SCIP_CALL( GCGsolverUpdate(pricerdata->pricingprobs[j], pricerdata->solvers[i], j, FALSE, TRUE, TRUE) );
+            }
+         }
+      }
+   }
 
    pricingcontroller->initPricing(pricetype);
 
@@ -3499,6 +3553,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", origverblevel) );
 
    pricerdata->currnodenr = -1;
+   pricerdata->newnode = TRUE;
    pricerdata->artificialused = FALSE;
 
    nmasterconss = GCGgetNMasterConss(origprob);
@@ -3819,6 +3874,7 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    else
    {
       pricerdata->currnodenr = SCIPgetNNodes(scip);
+      pricerdata->newnode = TRUE;
       pricerdata->nroundsredcost = 0;
    }
 
@@ -3964,6 +4020,13 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    origsols = SCIPgetSols(origprob);
    norigsols = SCIPgetNSols(origprob);
    assert(norigsols >= 0);
+
+   /* update current node */
+   if( SCIPgetNNodes(scip) != pricerdata->currnodenr )
+   {
+      pricerdata->currnodenr = SCIPgetNNodes(scip);
+      pricerdata->newnode = TRUE;
+   }
 
    *result = SCIP_SUCCESS;
 
@@ -4335,6 +4398,7 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    const char*           desc,               /**< description of solver */
    int                   priority,           /**< priority of solver */
    SCIP_Bool             enabled,            /**< flag to indicate whether the solver is enabled */
+   GCG_DECL_SOLVERUPDATE((*solverupdate)),   /**< update method for solver */
    GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
    GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur)), /**< heuristic solving method for solver */
    GCG_DECL_SOLVERFREE   ((*solverfree)),    /**< free method of solver */
@@ -4360,7 +4424,7 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    /* create pricing solver */
    solver = NULL;
    SCIP_CALL( GCGsolverCreate(scip, &solver, name, desc, priority, enabled,
-      solversolve, solversolveheur, solverfree, solverinit, solverexit, solverinitsol, solverexitsol,
+      solverupdate, solversolve, solversolveheur, solverfree, solverinit, solverexit, solverinitsol, solverexitsol,
       solverdata) );
    assert(solver != NULL);
 

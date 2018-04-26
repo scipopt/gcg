@@ -52,6 +52,7 @@ SCIP_RETCODE GCGsolverCreate(
    const char*           desc,               /**< description of solver */
    int                   priority,           /**< priority of solver */
    SCIP_Bool             enabled,            /**< flag to indicate whether the solver is enabled */
+   GCG_DECL_SOLVERUPDATE((*solverupdate)),   /**< update method for solver */
    GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
    GCG_DECL_SOLVERSOLVEHEUR((*solveheur)),   /**< heuristic solving method for solver */
    GCG_DECL_SOLVERFREE   ((*solverfree)),    /**< free method of solver */
@@ -95,6 +96,17 @@ EXTERN
 SCIP_RETCODE GCGsolverExitsol(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_SOLVER*           solver              /**< pricing solver */
+   );
+
+/** calls update method of GCG pricing solver */
+EXTERN
+SCIP_RETCODE GCGsolverUpdate(
+   SCIP*                 pricingprob,
+   GCG_SOLVER*           solver,
+   int                   probnr,             /**< number of the pricing problem */
+   SCIP_Bool             varobjschanged,
+   SCIP_Bool             varbndschanged,
+   SCIP_Bool             consschanged
    );
 
 /** calls heuristic or exact solving method of GCG pricing solver */

@@ -63,6 +63,7 @@ SCIP_RETCODE GCGsolverCreate(
    const char*           desc,               /**< description of solver */
    int                   priority,           /**< priority of solver */
    SCIP_Bool             enabled,            /**< flag to indicate whether the solver is enabled */
+   GCG_DECL_SOLVERUPDATE((*solverupdate)),   /**< update method for solver */
    GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
    GCG_DECL_SOLVERSOLVEHEUR((*solveheur)),   /**< heuristic solving method for solver */
    GCG_DECL_SOLVERFREE   ((*solverfree)),    /**< free method of solver */
@@ -86,6 +87,7 @@ SCIP_RETCODE GCGsolverCreate(
 
    (*solver)->priority = priority;
    (*solver)->enabled = enabled;
+   (*solver)->solverupdate = solverupdate;
    (*solver)->solversolve = solversolve;
    (*solver)->solversolveheur = solveheur;
    (*solver)->solverfree = solverfree;
@@ -226,6 +228,28 @@ SCIP_RETCODE GCGsolverExitsol(
    if( solver->solverexitsol != NULL )
    {
       SCIP_CALL( solver->solverexitsol(scip, solver) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** calls update method of GCG pricing solver */
+EXTERN
+SCIP_RETCODE GCGsolverUpdate(
+   SCIP*                 pricingprob,
+   GCG_SOLVER*           solver,
+   int                   probnr,             /**< number of the pricing problem */
+   SCIP_Bool             varobjschanged,
+   SCIP_Bool             varbndschanged,
+   SCIP_Bool             consschanged
+   )
+{
+   assert(pricingprob != NULL);
+   assert(solver != NULL);
+
+   if( solver->solverupdate != NULL )
+   {
+      SCIP_CALL( solver->solverupdate(pricingprob, solver, probnr, varobjschanged, varbndschanged, consschanged) );
    }
 
    return SCIP_OKAY;

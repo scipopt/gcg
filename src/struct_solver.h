@@ -50,13 +50,14 @@ struct GCG_Solver
    SCIP_Bool             enabled;            /**< solver activation status */
    GCG_SOLVERDATA*       solverdata;         /**< private solver data structure */
 
-   GCG_DECL_SOLVERSOLVE((*solversolve));     /**< solving callback method */
-   GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur)); /**< heuristic solving callback method */
    GCG_DECL_SOLVERFREE((*solverfree));       /**< destruction method */
    GCG_DECL_SOLVERINIT((*solverinit));       /**< initialization method */
    GCG_DECL_SOLVEREXIT((*solverexit));       /**< deinitialization method */
    GCG_DECL_SOLVERINITSOL((*solverinitsol)); /**< solving process initialization method */
    GCG_DECL_SOLVEREXITSOL((*solverexitsol)); /**< solving process deinitialization method */
+   GCG_DECL_SOLVERUPDATE((*solverupdate));   /**< update method */
+   GCG_DECL_SOLVERSOLVE((*solversolve));     /**< solving callback method */
+   GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur)); /**< heuristic solving callback method */
 
    SCIP_CLOCK*           optfarkasclock;     /**< optimal farkas pricing time */
    SCIP_CLOCK*           optredcostclock;    /**< optimal reduced cost pricing time */

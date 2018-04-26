@@ -560,6 +560,8 @@ GCG_DECL_SOLVERINITSOL(solverInitsolMip)
 /** solving process deinitialization method of pricing solver (called before branch and bound process data is freed) */
 #define solverExitsolMip NULL
 
+#define solverUpdateMip NULL
+
 /** solving method for pricing solver which solves the pricing problem to optimality */
 static
 GCG_DECL_SOLVERSOLVE(solverSolveMip)
@@ -686,7 +688,7 @@ SCIP_RETCODE GCGincludeSolverMip(
    solverdata->settingsfile = NULL;
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
-         solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
+         solverUpdateMip, solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
          solverInitsolMip, solverExitsolMip, solverdata) );
 
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricingsolver/mip/checksols",

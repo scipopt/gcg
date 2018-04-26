@@ -50,18 +50,18 @@ typedef struct GCG_SolverData GCG_SOLVERDATA;   /**< solver data */
 typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
 
 
-/** destructor of pricing solver to free user data (called when SCIP is exiting)
+/** destructor of pricing solver to free user data (called when GCG is exiting)
  *
  *  input:
- *  - scip            : SCIP main data structure
- *  - solver          :  the pricing solver itself
+ *  - scip            : SCIP main data structure (master problem)
+ *  - solver          : the pricing solver itself
  */
 #define GCG_DECL_SOLVERFREE(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver)
 
 /** initialization method of pricing solver (called after problem was transformed and solver is active)
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - scip            : SCIP main data structure (master problem)
  *  - solver          : the pricing solver itself
  */
 #define GCG_DECL_SOLVERINIT(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver)
@@ -69,7 +69,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
 /** deinitialization method of pricing solver (called before transformed problem is freed and solver is active)
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - scip            : SCIP main data structure (master problem)
  *  - solver          : the pricing solver itself
  */
 #define GCG_DECL_SOLVEREXIT(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver)
@@ -80,7 +80,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  The pricing solver may use this call to initialize its branch and bound specific data.
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - scip            : SCIP main data structure (master problem)
  *  - solver          : the pricing solver itself
  */
 #define GCG_DECL_SOLVERINITSOL(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver)
@@ -91,18 +91,25 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  The pricing solver should use this call to clean up its branch and bound data.
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - scip            : SCIP main data structure (master problem)
  *  - solver          : the pricing solver itself
  */
 #define GCG_DECL_SOLVEREXITSOL(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver)
 
+/**
+ * update method for pricing solver, used to update solver specific pricing problem data
+ *
+ * The pricing solver may use this method to update its own representation of the pricing problem,
+ * i.e. to apply changes on variable objectives and bounds and to apply branching constraints
+ */
+#define GCG_DECL_SOLVERUPDATE(x) SCIP_RETCODE x (SCIP* pricingprob, GCG_SOLVER* solver, int probnr, SCIP_Bool varobjschanged, SCIP_Bool varbndschanged, SCIP_Bool consschanged)
 
 /** solving method for pricing solver which solves the pricing problem to optimality
  *
  *
  *  input:
  *  - pricingprob     : the pricing problem that should be solved
- *  - solver          : the solver itself
+ *  - solver          : the pricing solver itself
  *  - probnr          : number of the pricing problem
  *  - dualsolconv     : dual solution of the corresponding convexity constraint
  *  - lowerbound      : pointer to store lower bound of pricing problem
@@ -118,7 +125,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *
  *  input:
  *  - pricingprob     : the pricing problem that should be solved
- *  - solver          : the solver itself
+ *  - solver          : the pricing solver itself
  *  - probnr          : number of the pricing problem
  *  - dualsolconv     : dual solution of the corresponding convexity constraint
  *  - lowerbound      : pointer to store lower bound of pricing problem

@@ -479,6 +479,7 @@ SCIP_RETCODE solveKnapsack(
 #define solverExitsolKnapsack NULL
 #define solverInitKnapsack NULL
 #define solverExitKnapsack NULL
+#define solverUpdateKnapsack NULL
 
 /** exact solving method for knapsack solver */
 static
@@ -509,8 +510,8 @@ SCIP_RETCODE GCGincludeSolverKnapsack(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED, solverSolveKnapsack,
-         solverSolveHeurKnapsack, solverFreeKnapsack, solverInitKnapsack, solverExitKnapsack,
+   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED, solverUpdateKnapsack, 
+         solverSolveKnapsack, solverSolveHeurKnapsack, solverFreeKnapsack, solverInitKnapsack, solverExitKnapsack,
          solverInitsolKnapsack, solverExitsolKnapsack, NULL) );
 
    return SCIP_OKAY;

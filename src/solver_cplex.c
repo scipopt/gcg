@@ -1018,8 +1018,22 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
 #define solverInitCplex NULL
 #define solverExitCplex NULL
 
+/** update method for pricing solver, used to update solver specific pricing problem data */
+static
+GCG_DECL_SOLVERUPDATE(solverUpdateCplex)
+{
+   GCG_SOLVERDATA* solverdata;
 
-/** heuristic solving method of mip solver */
+   solverdata = GCGsolverGetData(solver);
+   assert(solverdata != NULL);
+
+   /* update the pricing problem in CPLEX */
+   SCIP_CALL( updateProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
+
+   return SCIP_OKAY;
+}
+
+/** heuristic solving method of CPLEX solver */
 static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
 {
@@ -1033,9 +1047,6 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
    SCIPdebugMessage("calling heuristic pricing with CPLEX for pricing problem %d\n", probnr);
 
    retval = SCIP_OKAY;
-
-   /* update the pricing problem in CPLEX */
-   SCIP_CALL( updateProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
 
    CHECK_ZERO( CPXgetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, &nodelim) );
    CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, solverdata->heurnodelimit) );
@@ -1065,9 +1076,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveCplex)
 
    SCIPdebugMessage("calling CPLEX pricing solver for pricing problem %d\n", probnr);
 
-   /* update the pricing problem in CPLEX */
-   SCIP_CALL( updateProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
-
    /* solve the pricing problem and evaluate solution */
    SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, status) );
    assert(*status != GCG_PRICINGSTATUS_OPTIMAL || *ncols > 0);
@@ -1087,9 +1095,8 @@ SCIP_RETCODE GCGincludeSolverCplex(
    solverdata->origprob = GCGmasterGetOrigprob(scip);
    solverdata->masterprob = scip;
 
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
-         SOLVER_ENABLED,
-         solverSolveCplex, solverSolveHeurCplex, solverFreeCplex, solverInitCplex,
+   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
+         solverUpdateCplex, solverSolveCplex, solverSolveHeurCplex, solverFreeCplex, solverInitCplex,
          solverExitCplex, solverInitsolCplex, solverExitsolCplex, solverdata));
 
    SCIP_CALL( SCIPaddBoolParam(solverdata->origprob, "pricingsolver/cplex/checksols",
