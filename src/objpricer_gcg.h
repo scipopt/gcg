@@ -94,8 +94,7 @@ public:
    /** computes the pricing problem objectives */
    SCIP_RETCODE setPricingObjs(
       PricingType*          pricetype,          /**< Farkas or Reduced cost pricing */
-      SCIP_Bool             stabilize,          /**< do we use stabilization ? */
-      SCIP_Bool             fillduals           /**< fill objective with duals */
+      SCIP_Bool             stabilize           /**< do we use stabilization ? */
    );
 
    /** update reduced cost of columns in column pool */

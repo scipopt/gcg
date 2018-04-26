@@ -113,10 +113,12 @@ using namespace scip;
 #define DEFAULT_PRICE_MINCOLORTH 0.0
 #define DEFAULT_PRICE_EFFICIACYCHOICE 0
 
-#define DEFAULT_BIGMARTIFICIAL           -1.0       /**< default value for for big M obj of artificial variables (negative if max obj should be used) */
 #define DEFAULT_USEARTIFICIALVARS        FALSE      /**< add artificial vars to master (instead of using Farkas pricing) */
+#define DEFAULT_USEMAXOBJ                TRUE       /**< default value for using maxobj for big M objective of artificial variables */
+#define DEFAULT_ONLYRELIABLEBIGM         TRUE       /**< default value for only using maxobj for big M objective of artificial variables if it is reliable */
+#define DEFAULT_FACTORUNRELIABLE         1000       /**< default factor to use for objective of unbounded variables */
+#define DEFAULT_BIGMARTIFICIAL           1000       /**< default value for big M objective of artificial variables (if maxobj is not used)*/
 
-#define DEFAULT_DUALFILLVALUE            FALSE      /**< fill duals? */
 #define DEFAULT_FARKASTRIVIALSOLS        FALSE      /**< should the master variables corresponding to trivial pricing solutions be added in the first Farkas pricing? */
 
 #define EVENTHDLR_NAME         "probdatavardeleted"
@@ -193,14 +195,16 @@ struct SCIP_PricerData
    SCIP_Real             abortpricinggap;    /**< gap between dual bound and RMP objective at which pricing is aborted */
    SCIP_Bool             stabilization;      /**< should stabilization be used */
    SCIP_Bool             usecolpool;         /**< should the colpool be checked for negative redcost cols before solving the pricing problems? */
-   SCIP_Real             maxobj;             /**< maxobj bound that can be used for big M obj of artificial variables */
-   SCIP_Real             bigmartificial;     /**< value for for big M obj of artificial variables (negative if max obj should be used) */
+   SCIP_Bool             useartificialvars;  /**< use artificial variables to make RMP feasible (instead of applying Farkas pricing) */
+   SCIP_Real             maxobj;             /**< maxobj bound that can be used for big M objective of artificial variables */
+   SCIP_Bool             usemaxobj;          /**< use maxobj for big M objective of artificial variables */
+   SCIP_Bool             onlyreliablebigm;   /**< only use maxobj for big M objective of artificial variables if it is reliable */
+   SCIP_Real             factorunreliable;   /**< factor to use for objective of unbounded variables */
+   SCIP_Real             bigmartificial;     /**< value for for big M objective of artificial variables (if maxobj is not used) */
    SCIP_Bool             hybridascent;       /**< should hybridization of smoothing with an ascent method be enabled */
    SCIP_Bool             hybridascentnoagg;  /**< should hybridization of smoothing with an ascent method be enabled
                                               *   if pricing problems cannot be aggregation */
-   SCIP_Bool             useartificialvars;  /**< use artificial variables to make RMP feasible (instead of applying Farkas pricing) */
    SCIP_Bool             addtrivialsols;     /**< should the master variables corresponding to trivial pricing solutions be added in the first Farkas pricing? */
-   SCIP_Real             dualfillvalue;      /**< shift zero dual Farkas values by this value depending on rhs/lhs */
    int                   colpoolagelimit;    /**< agelimit of columns in colpool */
    int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
 
@@ -938,8 +942,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
  */
 SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    PricingType*          pricetype,          /**< Farkas or Reduced cost pricing */
-   SCIP_Bool             stabilize,          /**< do we use stabilization ? */
-   SCIP_Bool             fillduals           /**< fill objective with duals */
+   SCIP_Bool             stabilize           /**< do we use stabilization ? */
    )
 {
    SCIP_CONS** origconss;
@@ -1047,15 +1050,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       {
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
       }
-
-      if( fillduals )
-      {
-         if( SCIPisNegative(scip_, SCIPgetRhsLinear(scip_, masterconss[i])) )
-            dualsol -= pricerdata->dualfillvalue;
-         else if( SCIPisPositive(scip_, SCIPgetLhsLinear(scip_, masterconss[i])) )
-            dualsol += pricerdata->dualfillvalue;
-      }
-
 
       if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, pricetype->consGetDual(scip_, masterconss[i])) )
       {
@@ -2957,8 +2951,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Bool infeasible;
    SCIP_Bool pricinghaserror;
    SCIP_Bool stabilized;
-   SCIP_Bool fillduals;
-   SCIP_Bool dualsfilled;
    SCIP_Bool added;
    SCIP_Bool colpoolupdated;
    SCIP_Bool enableppcuts;
@@ -3051,7 +3043,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       GCGcolpoolUpdateNode(colpool);
 
    colpoolupdated = FALSE;
-   fillduals = SCIPisPositive(origprob, pricerdata->dualfillvalue) && pricetype->getType() == GCG_PRICETYPE_FARKAS;
 
 #ifdef SCIP_STATISTIC
    if( pricerdata->nroundsredcost > 0 && pricetype->getType() == GCG_PRICETYPE_REDCOST )
@@ -3097,12 +3088,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       stabilized = enablestab && stabilization->isStabilized();
 
-      /* store if duals are filled */
-      dualsfilled = fillduals;
-
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
-      SCIP_CALL( setPricingObjs(pricetype, stabilized, fillduals) );
+      SCIP_CALL( setPricingObjs(pricetype, stabilized) );
 
       /* todo: do this inside the updateRedcostColumnPool */
       if( !colpoolupdated && pricerdata->usecolpool )
@@ -3330,11 +3318,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             }
          }
       }
-      else if( dualsfilled && pricetype->getType() == GCG_PRICETYPE_FARKAS && nfoundvars == 0 )
-      {
-         /* don't fill duals in this pricing round */
-         fillduals = FALSE;
-      }
 
       /* if no column has negative reduced cost, add columns to colpool or free them */
       if( nfoundvars == 0 )
@@ -3360,7 +3343,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
       }
    }
-   while( (stabilized || dualsfilled) && nfoundvars == 0 );
+   while( stabilized && nfoundvars == 0 );
 
 #ifndef NDEBUG
    oldnfoundvars = nfoundvars;
@@ -3539,7 +3522,7 @@ SCIP_RETCODE GCGsetPricingObjs(
 
   pricer->pricerdata->stabilization = FALSE;
 
-  SCIP_CALL( pricer->setPricingObjs(pricer->getReducedCostPricingNonConst(), FALSE, FALSE) );
+  SCIP_CALL( pricer->setPricingObjs(pricer->getReducedCostPricingNonConst(), FALSE) );
 
   if(dualsolconv != NULL)
   {
@@ -3934,8 +3917,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    SCIP_CALL( solversInitsol() );
 
-   /* if bigmartificial is negative, use maxobj */
-   if( SCIPisNegative(origprob, pricerdata->bigmartificial) )
+   /* if maxobj should be used, compute it */
+   if( pricerdata->usemaxobj )
    {
       SCIP_Bool reliable;
       pricerdata->maxobj = 0.0;
@@ -3952,20 +3935,26 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
          ub = SCIPvarGetUbGlobal(var);
          lb = SCIPvarGetLbGlobal(var);
 
-   //      if( !SCIPisPositive(origprob, obj) || !SCIPisPositive(origprob, ub) )
-   //         continue;
-
+         /* check if influence of variable on objective is bounded */
          if( (SCIPisInfinity(origprob, ub) && SCIPisPositive(origprob, obj))
           || (SCIPisInfinity(origprob, -lb) && SCIPisNegative(origprob, obj)) )
          {
-            pricerdata->maxobj += 100* ABS(obj);
+            /* if it is not bounded, maxobj is not reliable; use large, heuristic value */
+            pricerdata->maxobj += pricerdata->factorunreliable* ABS(obj);
             reliable = FALSE;
          }
          else
+            /* if it is bounded, add maximum difference to maxobj */
             pricerdata->maxobj += MAX(ub * obj, lb * obj) - MIN(ub * obj, lb * obj);
       }
-      if( !reliable )
-         SCIPwarningMessage(scip, "Big M used for artificial variables not reliable.");
+      if( !reliable && pricerdata->onlyreliablebigm )
+      {
+         pricerdata->useartificialvars = FALSE;
+         pricerdata->maxobj = SCIPinfinity(origprob);
+         SCIPwarningMessage(scip, "Big M used for artificial variables not reliable; use regular Farkas pricing instead.");
+      }
+      else if( !reliable && !pricerdata->onlyreliablebigm )
+         SCIPwarningMessage(scip, "Big M used for artificial variables not reliable. This might lead to wrong solutions.");
    }
    else
       pricerdata->maxobj = SCIPinfinity(origprob);
@@ -4189,7 +4178,7 @@ SCIP_RETCODE ObjPricerGcg::addTrivialsols(
 
       SCIP_CALL( SCIPcreateSol(pricingprob, &trivialsol, NULL) );
 
-      SCIP_CALL( SCIPtrySol(pricingprob, trivialsol, TRUE, TRUE, TRUE, TRUE, TRUE, &feasible) );
+      SCIP_CALL( SCIPtrySol(pricingprob, trivialsol, FALSE, TRUE, TRUE, TRUE, TRUE, &feasible) );
 
       if( feasible )
       {
@@ -4225,7 +4214,7 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
    nconvconss = GCGgetNPricingprobs(origprob);
 
    /* if bigmartificial is negative, use maxobj */
-   if( SCIPisNegative(origprob, pricerdata->bigmartificial) )
+   if( pricerdata->usemaxobj )
       bigm = pricerdata->maxobj;
    else
       bigm = pricerdata->bigmartificial;
@@ -4485,10 +4474,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
          "should stabilization be performed?",
          &pricerdata->stabilization, FALSE, DEFAULT_STABILIZATION, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/bigmartificial",
-         "value for for big M obj of artificial variables (negative if max obj should be used)",
-         &pricerdata->bigmartificial, FALSE, DEFAULT_BIGMARTIFICIAL, -SCIPinfinity(origprob), SCIPinfinity(origprob), NULL, NULL) );
-
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/usecolpool",
          "should the colpool be checked for negative redcost cols before solving the pricing problems?",
          &pricerdata->usecolpool, FALSE, DEFAULT_USECOLPOOL, NULL, NULL) );
@@ -4505,13 +4490,25 @@ SCIP_RETCODE SCIPincludePricerGcg(
          "should artificial variables be used to make the RMP feasible (instead of applying Farkas pricing)?",
          &pricerdata->useartificialvars, FALSE, DEFAULT_USEARTIFICIALVARS, NULL, NULL) );
 
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/usemaxobj",
+         "use maxobj for big M objective of artificial variables",
+         &pricerdata->usemaxobj, FALSE, DEFAULT_USEMAXOBJ, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/onlyreliablebigm",
+         "only use maxobj for big M objective of artificial variables if it is reliable",
+         &pricerdata->onlyreliablebigm, FALSE, DEFAULT_ONLYRELIABLEBIGM, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/factorunreliable",
+         "factor to use for objective of unbounded variables",
+         &pricerdata->factorunreliable, FALSE, DEFAULT_FACTORUNRELIABLE, 0.0, SCIPinfinity(origprob), NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/bigmartificial",
+         "value for for big M objective of artificial variables (negative if max obj should be used)",
+         &pricerdata->bigmartificial, FALSE, DEFAULT_BIGMARTIFICIAL, 0.0, SCIPinfinity(origprob), NULL, NULL) );
+
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/addtrivialsols",
          "should the master variables corresponding to trivial pricing solutions be added in the first Farkas pricing?",
          &pricerdata->addtrivialsols, FALSE, DEFAULT_FARKASTRIVIALSOLS, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/dualfillvalue",
-         "shift the dual farkas values by this value depending on rhs/lhs",
-         &pricerdata->dualfillvalue, FALSE, DEFAULT_DUALFILLVALUE, 0.0, SCIPinfinity(origprob), NULL, NULL) );
 
    SCIP_CALL( SCIPsetIntParam(scip, "lp/disablecutoff", DEFAULT_DISABLECUTOFF) );
 
