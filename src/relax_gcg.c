@@ -1359,18 +1359,6 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotaggr", TRUE) );
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
 
-   /* settings needed for Farkas pricing */
-   /* store parameters that are changed for the generation of the subproblem cuts */
-   SCIPsetParam(masterscip, "conflict/enable", FALSE);
-
-   SCIPsetIntParam(masterscip, "lp/disablecutoff", 1);
-   SCIPsetIntParam(masterscip, "lp/scaling", 0);
-
-   SCIPsetCharParam(masterscip, "lp/initalgorithm", 'd');
-   SCIPsetCharParam(masterscip, "lp/resolvealgorithm", 'd');
-
-   SCIPsetBoolParam(masterscip, "misc/alwaysgetduals", TRUE);
-
    return SCIP_OKAY;
 }
 
@@ -2421,9 +2409,9 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    #else
          SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
    #endif
-         if( !stored )
+         /* only check failed solution if best master solution is valid */
+         if( !stored && GCGmasterIsBestsolValid(relaxdata->masterprob) )
          {
-
             SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
          }
          /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
@@ -2440,7 +2428,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
                GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
       }
-
    }
    else
    {
