@@ -480,7 +480,6 @@ SCIP_RETCODE GCGprintMiplibStructureInformation(
    )
 {
    FILE* file;
-   SCIP_Bool createfile;
 
    char* filepath;
    char completefilepath[SCIP_MAXSTRLEN];
@@ -489,12 +488,6 @@ SCIP_RETCODE GCGprintMiplibStructureInformation(
 
    (void) SCIPsnprintf(completefilepath, SCIP_MAXSTRLEN, "%s%s", filepath, ".csv");
 
-   if( access( completefilepath, W_OK ) != -1 ) {
-      createfile  = FALSE;
-   } else
-   {
-      createfile = TRUE;
-   }
 
    file = fopen(completefilepath, "w");
    if( file == NULL )

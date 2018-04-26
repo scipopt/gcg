@@ -944,6 +944,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
          conshdlrdata) );
    assert(conshdlr != FALSE);
 
+   SCIP_CALL( SCIPsetConshdlrEnforelax(scip, conshdlr, consEnforeDecomp) );
    SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeDecomp) );
    SCIP_CALL( SCIPsetConshdlrInit(scip, conshdlr, consInitDecomp) );
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitDecomp) );
@@ -6482,18 +6483,9 @@ SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
    )
 {
 
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
 
    SCIP_Bool shortfeatures;
    /** write base information */
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
 
    /*
     * current features:
@@ -6673,7 +6665,6 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
         char* instancename;
 
         char probname2[SCIP_MAXSTRLEN];
-        char instancename2[SCIP_MAXSTRLEN];
 
         MiscVisualization* misc;
         char problemname[SCIP_MAXSTRLEN];
