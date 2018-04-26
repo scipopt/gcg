@@ -2291,7 +2291,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
       {
          if( action != POSTPROCESS )
          {
-            SCIPinfoMessage(scip, NULL, "Considering implicits of newly found seeed(s)...\n")
+            SCIPinfoMessage(scip, NULL, "Considering implicits of newly found seeed(s)...\n");
             for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
             {
                assert(seeedPropData->newSeeeds[i] != NULL);
