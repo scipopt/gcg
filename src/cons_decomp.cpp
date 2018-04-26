@@ -6671,7 +6671,9 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
         char filename[SCIP_MAXSTRLEN];
         char* outputname;
         char* instancename;
+
         char probname2[SCIP_MAXSTRLEN];
+        char instancename2[SCIP_MAXSTRLEN];
 
         MiscVisualization* misc;
         char problemname[SCIP_MAXSTRLEN];
@@ -6685,9 +6687,9 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
         (void) SCIPsnprintf(probname2, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
         SCIPsplitFilename(probname2, NULL, &instancename, NULL, NULL);
+        strcpy(instancename2, instancename);
 
-
-        strcat(filename, instancename);
+        strcat(filename, instancename2);
 
         strcat(filename, ".gp");
 
