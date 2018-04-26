@@ -119,8 +119,6 @@ using namespace scip;
 #define DEFAULT_FACTORUNRELIABLE         1000       /**< default factor to use for objective of unbounded variables */
 #define DEFAULT_BIGMARTIFICIAL           1000       /**< default value for big M objective of artificial variables (if maxobj is not used)*/
 
-#define DEFAULT_FARKASTRIVIALSOLS        FALSE      /**< should the master variables corresponding to trivial pricing solutions be added in the first Farkas pricing? */
-
 #define EVENTHDLR_NAME         "probdatavardeleted"
 #define EVENTHDLR_DESC         "event handler for variable deleted event"
 
@@ -204,7 +202,6 @@ struct SCIP_PricerData
    SCIP_Bool             hybridascent;       /**< should hybridization of smoothing with an ascent method be enabled */
    SCIP_Bool             hybridascentnoagg;  /**< should hybridization of smoothing with an ascent method be enabled
                                               *   if pricing problems cannot be aggregation */
-   SCIP_Bool             addtrivialsols;     /**< should the master variables corresponding to trivial pricing solutions be added in the first Farkas pricing? */
    int                   colpoolagelimit;    /**< agelimit of columns in colpool */
    int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
 
@@ -4150,50 +4147,6 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    return retcode;
 }
 
-/** add artificial columns corresponding to trivial sols */
-SCIP_RETCODE ObjPricerGcg::addTrivialsols(
-   )
-{
-   int i;
-   int npricingprobs;
-
-   assert(pricerdata != NULL);
-   assert(pricerdata->pricedvars != NULL);
-
-   npricingprobs = GCGgetNPricingprobs(origprob);
-
-   for( i = 0; i < npricingprobs; ++i )
-   {
-      SCIP* pricingprob;
-      SCIP_SOL* trivialsol;
-      SCIP_Bool feasible;
-      SCIP_Bool added;
-
-      if( !GCGisPricingprobRelevant(origprob, i) )
-         continue;
-
-      pricingprob = GCGgetPricingprob(origprob, i);
-
-      SCIP_CALL( SCIPtransformProb(pricingprob) );
-
-      SCIP_CALL( SCIPcreateSol(pricingprob, &trivialsol, NULL) );
-
-      SCIP_CALL( SCIPtrySol(pricingprob, trivialsol, FALSE, TRUE, TRUE, TRUE, TRUE, &feasible) );
-
-      if( feasible )
-      {
-         SCIPinfoMessage(scip_, NULL, "Add trivial sol for pricing problem %d\n", i);
-         SCIP_CALL( createNewMasterVar(scip_, NULL, NULL, NULL, NULL, 0, FALSE, i, TRUE, &added, NULL) );
-      }
-
-      SCIPfreeSol(pricingprob, &trivialsol);
-
-      SCIP_CALL( SCIPfreeTransform(pricingprob) );
-   }
-
-   return SCIP_OKAY;
-}
-
 /** add artificial vars */
 SCIP_RETCODE ObjPricerGcg::addArtificialVars(
    )
@@ -4305,13 +4258,6 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    assert(norigsols >= 0);
 
    *result = SCIP_SUCCESS;
-
-   /** add trivial solutions if possible */
-   if( pricerdata->addtrivialsols && farkaspricing->getCalls() == 0 )
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Try to add master variables corresponding to trivial pricing solutions.\n");
-      SCIP_CALL( addTrivialsols() );
-   }
 
    /* Add already known solutions for the original problem to the master variable space */
    /** @todo This is just a workaround around SCIP stages! */
@@ -4505,10 +4451,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/bigmartificial",
          "value for for big M objective of artificial variables (negative if max obj should be used)",
          &pricerdata->bigmartificial, FALSE, DEFAULT_BIGMARTIFICIAL, 0.0, SCIPinfinity(origprob), NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/addtrivialsols",
-         "should the master variables corresponding to trivial pricing solutions be added in the first Farkas pricing?",
-         &pricerdata->addtrivialsols, FALSE, DEFAULT_FARKASTRIVIALSOLS, NULL, NULL) );
 
    SCIP_CALL( SCIPsetIntParam(scip, "lp/disablecutoff", DEFAULT_DISABLECUTOFF) );
 
