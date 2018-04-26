@@ -15,6 +15,8 @@ features
 - add price store similar to SCIP's sepa store for better column management
 - restructure column pool similar to SCIP's cut pool
 - added parameter heuristics/restmaster/pbheur to use restricted master heuristic as price-and-branch heuristic
+- artificial variables can now be added in the first Farkas pricing iteration to make the restricted master problem
+  feasible (including various options on setting the big M objective coefficients of these variables)
 
 code cleanup
 - use SCIP_STATISTIC for pricing statistics and add compiler flag STATISTICS; if STATISTICS is set to true,

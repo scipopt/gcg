@@ -93,6 +93,7 @@ struct GCG_MasterVarData
    SCIP_Real*            origvals;           /**< this variable represents vals[i] times the variable origvars[i] in the
                                               *   original program */
    SCIP_Bool             isray;              /**< does this variable represent a ray or an extreme point? */
+   SCIP_Bool             isartificial;       /**< is variable artificial? */
 
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
