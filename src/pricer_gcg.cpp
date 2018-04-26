@@ -3665,7 +3665,9 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    {
       double degeneracy = 0.0;
 
-      SCIP_CALL( computeCurrentDegeneracy(&degeneracy) );
+      /* only compute degeneracy if current solution is basic */
+      if( SCIPisLPSolBasic(scip_) )
+         SCIP_CALL( computeCurrentDegeneracy(&degeneracy) );
 
       pricerdata->rootnodedegeneracy = degeneracy;
 
