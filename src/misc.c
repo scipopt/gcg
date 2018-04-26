@@ -506,8 +506,7 @@ SCIP_RETCODE GCGprintMiplibStructureInformation(
       return SCIP_OKAY;
    }
 
-   if( createfile )
-      SCIP_CALL( GCGprintMiplibBaseInformationHeader(scip, file) );
+   SCIP_CALL( GCGprintMiplibBaseInformationHeader(scip, file) );
 
 
    SCIP_CALL( GCGprintMiplibBaseInformation(scip, file) );
