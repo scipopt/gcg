@@ -80,7 +80,7 @@
 /* visualization imaging defaults */
 #define DEFAULT_VISU_DRAFTMODE   FALSE                /**< if true no nonzeros are shown in visualizations */
 #define DEFAULT_VISU_COLORSCHEME COLORSCHEME_DEFAULT  /**< is of type VISU_COLORSCHEME */
-#define DEFAULT_VISU_RADIUS      2                    /**< possible scale: 1-10 */
+#define DEFAULT_VISU_RADIUS      5                    /**< possible scale: 1-10 */
 #define DEFAULT_VISU_USEGP       FALSE                /**< if true gnuplot is used for visualizations,
                                                        * otherwise LaTeX/Tikz */
 

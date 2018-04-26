@@ -408,10 +408,11 @@ SCIP_RETCODE writeGpSeeed(
       /* scale nonzero radius with 2% of maximal index */
       int radiusscale;
       if(seeed->getNVars() > seeed->getNConss())
-         radiusscale = seeed->getNVars() / 50;
+         radiusscale = seeed->getNVars() / 200;
       else
-         radiusscale = seeed->getNConss() / 50;
+         radiusscale = seeed->getNConss() / 200;
 
+      radiusscale = 5;
       writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), radiusscale) );
    }
    else
