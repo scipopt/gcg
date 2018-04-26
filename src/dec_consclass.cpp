@@ -480,7 +480,6 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
       }
       else if( strncmp( command, "quit", commandlen) == 0 )
       {
-         SCIPfreeMemoryArray(scip, &selectedclasses);
          SCIPfreeMemoryArray(scip, &classifiers);
          *result = SCIP_DIDNOTFIND;
          return SCIP_OKAY;
@@ -580,7 +579,6 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
    }
 
    *result = SCIP_SUCCESS;
-   SCIPfreeMemoryArray(scip, &selectedclasses);
    SCIPfreeMemoryArray(scip, &classifiers);
    return SCIP_OKAY;
 }

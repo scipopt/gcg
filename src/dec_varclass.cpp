@@ -507,7 +507,6 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
       }
       else if( strncmp( command, "quit", commandlen) == 0 )
       {
-         SCIPfreeMemoryArray(scip, &selectedclasses);
          SCIPfreeMemoryArray(scip, &classifiers);
          *result = SCIP_DIDNOTFIND;
          return SCIP_OKAY;
@@ -539,7 +538,6 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
    if( selectedclasses.size() == 0 && varclassindices_master.size() == 0 && varclassindices_linking.size() == 0 )
    {
       *result = SCIP_DIDNOTFIND;
-      SCIPfreeMemoryArray(scip, &selectedclasses);
       SCIPfreeMemoryArray(scip, &classifiers);
       return SCIP_OKAY;
    }
@@ -635,7 +633,6 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
    }
 
    *result = SCIP_SUCCESS;
-   SCIPfreeMemoryArray(scip, &selectedclasses);
    SCIPfreeMemoryArray(scip, &classifiers);
    return SCIP_OKAY;
 }
