@@ -6670,6 +6670,9 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
         char*   folder;
         char filename[SCIP_MAXSTRLEN];
         char* outputname;
+        char* instancename;
+        char probname2[SCIP_MAXSTRLEN];
+
         MiscVisualization* misc;
         char problemname[SCIP_MAXSTRLEN];
         gcg::Seeed* matrixseeed;
@@ -6680,7 +6683,11 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
         strcat(filename,"/");
 
-        strcat(filename, GCGgetFilename(scip));
+        (void) SCIPsnprintf(probname2, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+        SCIPsplitFilename(probname2, NULL, &instancename, NULL, NULL);
+
+
+        strcat(filename, instancename);
 
         strcat(filename, ".gp");
 
