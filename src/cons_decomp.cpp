@@ -6689,7 +6689,7 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
         SCIPsplitFilename(probname2, NULL, &instancename, NULL, NULL);
         //strcpy(instancename2, instancename);
 
-        strcat(filename, instancename(scip));
+        strcat(filename, instancename);
 
         strcat(filename, ".gp");
 
