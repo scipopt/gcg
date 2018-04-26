@@ -828,7 +828,7 @@ SCIP_RETCODE solveCplex(
 
       CHECK_ZERO( CPXgetsolnpoolx(solverdata->cpxenv[probnr], solverdata->lp[probnr], s, cplexsolvals, 0, numcols - 1) );
 
-      SCIP_CALL( SCIPcreateSol(pricingprob, &sol, NULL) );
+      SCIP_CALL( SCIPcreateOrigSol(pricingprob, &sol, NULL) );
       SCIP_CALL( SCIPsetSolVals(pricingprob, sol, numcols, solverdata->pricingvars[probnr], cplexsolvals) );
 
       feasible = FALSE;
