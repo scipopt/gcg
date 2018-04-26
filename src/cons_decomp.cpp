@@ -2180,7 +2180,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
    int i, j;
    SEEED_PROPAGATION_DATA* seeedPropData;
    gcg::Seeedpool* seeedpool;
-   SCIP_Bool finished;
+   SCIP_Bool finished, displayinfo;
    char stri[SCIP_MAXSTRLEN];
    const char* actiontype;
 
@@ -2193,7 +2193,6 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
       actiontype = "postprocessed";
    else
       actiontype = "UNDEFINED_ACTION";
-
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
@@ -2216,17 +2215,9 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
    ndetectors = 0;
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      if( action == PROPAGATE && conshdlrdata->detectors[i]->propagateFromToolbox )
-      {
-         detectors[ndetectors] = conshdlrdata->detectors[i];
-         ++ndetectors;
-      }
-      else if( action == FINISH && conshdlrdata->detectors[i]->finishFromToolbox )
-      {
-         detectors[ndetectors] = conshdlrdata->detectors[i];
-         ++ndetectors;
-      }
-      else if( action == POSTPROCESS && conshdlrdata->detectors[i]->postprocessSeeed )
+      if( (action == PROPAGATE && conshdlrdata->detectors[i]->propagateFromToolbox)
+       || (action == FINISH && conshdlrdata->detectors[i]->finishFromToolbox)
+       || (action == POSTPROCESS && conshdlrdata->detectors[i]->postprocessSeeed) )
       {
          detectors[ndetectors] = conshdlrdata->detectors[i];
          ++ndetectors;
@@ -2239,6 +2230,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
       return SCIP_OKAY;
    }
 
+   /* build seeed propagation data needed in callbacks */
    seeedpool = conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
 
    seeedPropData = new SEEED_PROPAGATION_DATA();
@@ -2252,7 +2244,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
       seeedPropData->newSeeeds[0] = NULL;
    }
 
-
+   /* user dialog to select wanted detector, apply it and handle the returned seeeds, if any */
    finished = FALSE;
    while( !finished )
    {
@@ -2302,14 +2294,38 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
             for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
             {
                assert(seeedPropData->newSeeeds[i] != NULL);
+               seeedPropData->newSeeeds[i]->considerImplicits( seeedPropData->seeedpool ); //There may be open vars/cons left that were not matched
             }
             
-            SCIPinfoMessage(scip, NULL, "\nSeeed was successfully %s.\n", actiontype);
+            SCIPinfoMessage(scip, NULL, "\nSeeed was successfully %s, %d potentially new seeed(s) found.\n", actiontype, seeedPropData->nNewSeeeds);
             
-            for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
+            displayinfo = TRUE;
+            if( seeedPropData->nNewSeeeds > 1 )
             {
-               seeedPropData->newSeeeds[i]->considerImplicits( seeedPropData->seeedpool ); //There may be open vars/cons left that were not matched
-               seeedPropData->newSeeeds[i]->displayInfo( seeedPropData->seeedpool, 0 );
+               commandlen = 0;
+               while( commandlen == 0 )
+               {
+                  SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+                     "More than one seeed found. Do you want to display information about all found seeeds anyway? (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
+                  commandlen = strlen(command);
+               }
+               if( strncmp( command, "no", commandlen) == 0 )
+               {
+                  displayinfo = FALSE;
+               }
+               else if( strncmp( command, "quit", commandlen) == 0 )
+               {
+                  finished = TRUE;
+                  continue;
+               }
+            }
+
+            if( displayinfo )
+            {
+               for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
+               {
+                  seeedPropData->newSeeeds[i]->displayInfo( seeedPropData->seeedpool, 0 );
+               }
             }
 
             if( seeedPropData->nNewSeeeds == 1 )
@@ -2368,7 +2384,7 @@ or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> ", &command, &
          }
          else if( action == POSTPROCESS )
          {
-            SCIPinfoMessage(scip, NULL, "\nSeeed successfully %s. %d seeeds were found in the process.\n", actiontype, seeedPropData->nNewSeeeds);
+            SCIPinfoMessage(scip, NULL, "\nSeeed successfully %s. %d seeed(s) found in the process.\n", actiontype, seeedPropData->nNewSeeeds);
 
             commandlen = 0;
             while( commandlen == 0 )
