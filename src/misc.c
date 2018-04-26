@@ -496,7 +496,7 @@ SCIP_RETCODE GCGprintMiplibStructureInformation(
       createfile = TRUE;
    }
 
-   file = fopen(completefilepath, "a");
+   file = fopen(completefilepath, "w");
    if( file == NULL )
    {
       SCIPdialogMessage(scip, NULL, "error creating file <%s>\n", completefilepath);
