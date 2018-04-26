@@ -6685,9 +6685,9 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
         strcat(filename,"/");
 
-   //     (void) SCIPsnprintf(probname2, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
-    //    SCIPsplitFilename(probname2, NULL, &instancename, NULL, NULL);
-   //     strcpy(instancename2, instancename);
+        (void) SCIPsnprintf(probname2, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+        SCIPsplitFilename(probname2, NULL, &instancename, NULL, NULL);
+        strcpy(instancename2, instancename);
 
         strcat(filename, GCGgetFilename(scip));
 
