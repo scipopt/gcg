@@ -253,7 +253,7 @@ SCIP_RETCODE initializeConsdata(
       if( SCIPboundchgGetBoundchgtype(boundchg) == SCIP_BOUNDCHGTYPE_BRANCHING )
       {
          consdata->nbranchingchgs++;
-         assert(consdata->nbranchingchgs == consdata->nlocalbndchgs+1);
+         assert(consdata->nbranchingchgs == i+1);
       }
    }
 
@@ -1312,7 +1312,7 @@ SCIP_RETCODE applyLocalBndchgsToCopiedMastervars(
          {
             SCIP_CALL( SCIPchgVarLb(scip, mastervar, consdata->localnewbnds[i]) );
             ++(*propcount);
-            SCIPdebugMessage("changed lb of copied original var %s(%s) locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), SCIPvarGetName(mastervar), consdata->localnewbnds[i]);
+            SCIPdebugMessage("changed lb of copied original var %s locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), consdata->localnewbnds[i]);
          }
       }
       else
@@ -1321,7 +1321,7 @@ SCIP_RETCODE applyLocalBndchgsToCopiedMastervars(
          {
             SCIP_CALL( SCIPchgVarUb(scip, mastervar, consdata->localnewbnds[i]) );
             ++(*propcount);
-            SCIPdebugMessage("changed ub of copied original var %s(%s) locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), SCIPvarGetName(mastervar), consdata->localnewbnds[i]);
+            SCIPdebugMessage("changed ub of copied original var %s locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), consdata->localnewbnds[i]);
          }
       }
    }

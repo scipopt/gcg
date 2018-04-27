@@ -1502,7 +1502,7 @@ SCIP_RETCODE createMasterProblem(
 
    /* NOTE: This is just for testing. Separation, presolving and heuristics are turned off */
    SCIP_CALL( SCIPsetSeparating(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
-   SCIP_CALL( SCIPsetHeuristics(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
+   //SCIP_CALL( SCIPsetHeuristics(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
    SCIP_CALL( SCIPsetPresolving(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
    //SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxrounds", 0) );
    SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxroundsroot", 0) );
