@@ -480,7 +480,7 @@ SCIP_RETCODE allocateMemoryForSolution(
    SCIP_CALL( SCIPallocBufferArray(scip, &mult->subgradient, core->nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &mult->lagrangiancostslocal, core->nvariables) );
    SCIP_CALL( SCIPallocBufferArray(scip, &mult->lagrangiancostsglobal, core->nvariables) );
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &mult->xgreedylocal, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &mult->xgreedylocal, SCIPgetNVars(scip)) );
 
    for( i = 0; i < core->nvariables; i++ )
    {
@@ -826,8 +826,8 @@ SCIP_RETCODE initInstance(
    SCP_INSTANCE*         inst                /**< unitialized SCP instance                                        */
    )
 {
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &inst->varsfixed, SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &inst->rowscovered, SCIPgetNConss(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &inst->varsfixed, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &inst->rowscovered, SCIPgetNConss(scip)) );
    inst->nvarsfixed = 0;
    inst->nrowscovered = 0;
    inst->costsfixed = 0.0;
@@ -894,7 +894,7 @@ SCIP_RETCODE initTentativeCore(
 
    /* mapvariables is a mapping: SCIPvarGetIndex(core->variables[i]) -> i */
    SCIP_CALL( SCIPhashmapCreate(&core->mapvariables, SCIPblkmem(scip), SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &core->varincore, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &core->varincore, SCIPgetNVars(scip)) );
 
    core->rowsavailable = FALSE;
    core->rows = NULL;
@@ -2917,9 +2917,9 @@ SCIP_RETCODE setCoveringHeuristic(
    SCIP_CALL( allocateMemoryForSolution(scip, &heurdata->core, &heurdata->multbestlbtotal) );
    SCIP_CALL( allocateMemoryForSolution(scip, &heurdata->core, &heurdata->tpmultlbsubinst) );
 
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &heurdata->bestubinst_sol, SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &heurdata->bestubsubinstsol, SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &heurdata->bestubsol, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &heurdata->bestubinst_sol, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &heurdata->bestubsubinstsol, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &heurdata->bestubsol, SCIPgetNVars(scip)) );
 
    heurdata->multbestlbtotal.lblagrangeglobal = 0;
    heurdata->bestub = SCIP_REAL_MAX;
