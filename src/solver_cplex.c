@@ -1073,12 +1073,17 @@ GCG_DECL_SOLVERUPDATE(solverUpdateCplex)
       SCIP_CALL( updateBranchingConss(solverdata->masterprob, solverdata, pricingprob, probnr) );
    }
 
-   /* update the pricing problem in CPLEX */
-   ++(solverdata->nupdates[probnr]);
-
 #ifdef WRITEPROBLEMS
+   /* Print the pricing problem after updating:
+    *  * after checking variable bounds, because they change in particular when a new generic branching subproblem is considered
+    *  * but not after adding new branching constraints, since objectives will be set afterwards before solving
+    */
+   if( varboundschanged && !consschanged )
    {
       char filename[SCIP_MAXSTRLEN];
+
+      ++(solverdata->nupdates[probnr]);
+
       (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "cplex-%s-%d-%d.lp", SCIPgetProbName(pricingprob), SCIPgetNNodes(scip), solverdata->nupdates[probnr]);
       SCIPinfoMessage(pricingprob, NULL, "print pricing problem to %s\n", filename);
       CHECK_ZERO( CPXwriteprob(solverdata->cpxenv[probnr], solverdata->lp[probnr], filename, "lp") );
