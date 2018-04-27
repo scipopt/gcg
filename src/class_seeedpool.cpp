@@ -2558,6 +2558,7 @@ void Seeedpool::translateSeeeds(
       origseeeds.size() );
 
    newseeeds = getTranslatedSeeeds( origseeeds, rowothertothis, rowthistoother, colothertothis, colthistoother );
+
 }
 
 /** calculates necessary data for translating seeeds and classifiers */
@@ -2637,11 +2638,20 @@ void Seeedpool::calcTranslationMapping(
 
    for( int i = 0; i < ncolsother; ++i )
    {
-      SCIP_VAR* othervar = origscipvars[i];
+      SCIP_VAR* othervar;
+      SCIP_VAR* probvar;
+      SCIP_CALL_ABORT( SCIPgetTransformedVar(scip, origscipvars[i], &othervar ) );
+      if (othervar == NULL)
+         continue;
+
+      probvar = SCIPvarGetProbvar(othervar);
+      if ( probvar == NULL )
+         continue;
+
       for( int j2 = i; j2 < ncolsthis + i; ++j2 )
       {
          int j = j2 % ncolsthis;
-         if( othervar == thisscipvars[j] )
+         if( probvar == thisscipvars[j] )
          {
             colothertothis[i] = j;
             colthistoother[j] = i;
@@ -2680,10 +2690,6 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       SeeedPtr newseeed;
 
       otherseeed = origseeeds[s];
-
-      /** ignore seeeds with one block or no block, they are supposed to be found anyway */
-      if( otherseeed->getNBlocks() == 1 || otherseeed->getNBlocks() == 0 )
-         continue;
 
       SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL, " transform seeed %d \n", otherseeed->getID() );
 
@@ -2777,6 +2783,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
          delete newseeed;
          newseeed = NULL;
       }
+
    }
 
    return newseeeds;
@@ -4064,13 +4071,6 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
 
 
    classifier = new ConsClassifier( scip, "constypes according to miplip", (int) SCIP_CONSTYPE_GENERAL + 1, getNConss() );
-
-#ifdef WRITE_ORIG_CONSTYPES
-   std::ofstream myfile;
-   myfile.open ("origconstypes.csv", std::ios::app );
-   myfile << SCIPgetProbName(scip) << ", ";
-#endif
-
 
 
    /** set class names and descriptions of every class */

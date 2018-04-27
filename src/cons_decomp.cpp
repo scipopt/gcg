@@ -4022,10 +4022,12 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       }
    }
 
+
    seeedpool->translateSeeeds(seeedpoolunpresolved, seeedstotranslate, seeedstranslated);
 
    seeediter = seeedstranslated.begin();
    seeediterend = seeedstranslated.end();
+
 
    for(; seeediter != seeediterend; ++seeediter )
    {
