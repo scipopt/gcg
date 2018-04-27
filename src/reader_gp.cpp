@@ -265,6 +265,9 @@ SCIP_RETCODE writeGpNonzeros(
 
    radius *= radiusscale;
 
+   if ( radius < 0.000122 )
+      radius = 0.000122;
+
    /* start writing dots */
    ofs << "plot \"-\" using 1:2:(" << radius << ") notitle pt 7 ps " << radius << " fc rgb \"" << SCIPvisuGetColorNonzero()
       << "\"  " << std::endl;
@@ -329,88 +332,97 @@ SCIP_RETCODE writeGpSeeed(
    {
       ofs << "set xrange [0:" << nvars << "]" << std::endl;
       ofs << "set yrange[" << nconss << ":0]" << std::endl;
-      if( !writematrix )
-      {
-         ofs << " unset xtics " << std::endl;
-         ofs << " unset ytics " << std::endl;
-      }
+//      if( !writematrix )
+//      {
+//         ofs << " unset xtics " << std::endl;
+//         ofs << " unset ytics " << std::endl;
+//      }
+//      else
+//      {
+      ofs << " set xtics nomirror " << std::endl;
+      ofs << " set ytics nomirror" << std::endl;
+      ofs << " set xtics out " << std::endl;
+      ofs << " set ytics out" << std::endl;
+  //    }
    }
 
-   if( noticsbutlabels )
-   {
-      ofs << "set tic scale 0" << std::endl;
-   }
+//   if( noticsbutlabels )
+//   {
+//      ofs << "set tic scale 0" << std::endl;
+//   }
 
 
    /* --- draw boxes ---*/
 
-
-   /* linking vars */
-   if(seeed->getNLinkingvars() != 0)
+   if( !writematrix )
    {
-      ++objcounter; /* has to start at 1 for gnuplot */
-      drawGpBox( filename, objcounter, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
-         SCIPvisuGetColorLinking() );
-      colboxcounter += seeed->getNLinkingvars();
-   }
+      /* linking vars */
+      if(seeed->getNLinkingvars() != 0)
+      {
+         ++objcounter; /* has to start at 1 for gnuplot */
+         drawGpBox( filename, objcounter, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
+            SCIPvisuGetColorLinking() );
+         colboxcounter += seeed->getNLinkingvars();
+      }
 
-   /* masterconss */
-   if(seeed->getNMasterconss() != 0)
-   {
-      ++objcounter;
-      drawGpBox( filename, objcounter, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
-         SCIPvisuGetColorMasterconss() );
-      rowboxcounter += seeed->getNMasterconss();
-   }
-
-   /* mastervars */
-   if(seeed->getNMastervars() != 0)
-   {
-      ++objcounter;
-//      drawGpBox( filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
-//         seeed->getNMasterconss(), SCIPvisuGetColorMastervars() );
-      colboxcounter += seeed->getNMastervars();
-   }
-
-   /* blocks (blocks are not empty) */
-   for( int b = 0; b < seeed->getNBlocks() ; ++b )
-   {
-      ++objcounter;
-      drawGpBox(filename, objcounter, colboxcounter, rowboxcounter,
-         colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b), SCIPvisuGetColorBlock());
-      colboxcounter += seeed->getNVarsForBlock(b);
-
-      if( seeed->getNStairlinkingvars(b) != 0 )
+      /* masterconss */
+      if(seeed->getNMasterconss() != 0)
       {
          ++objcounter;
-         drawGpBox( filename, objcounter, colboxcounter, rowboxcounter,
-            colboxcounter + seeed->getNStairlinkingvars(b),
-            rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1), SCIPvisuGetColorStairlinking() );
+         drawGpBox( filename, objcounter, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
+            SCIPvisuGetColorMasterconss() );
+         rowboxcounter += seeed->getNMasterconss();
       }
-      colboxcounter += seeed->getNStairlinkingvars(b);
-      rowboxcounter += seeed->getNConssForBlock(b);
-   }
 
-   /* open */
-   if(seeed->getNOpenvars() != 0)
-   {
-      ++objcounter;
-      drawGpBox( filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
-         rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen() );
-      colboxcounter += seeed->getNOpenvars();
-      rowboxcounter += seeed->getNOpenconss();
-   }
+      /* mastervars */
+      if(seeed->getNMastervars() != 0)
+      {
+         ++objcounter;
+         //      drawGpBox( filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
+         //         seeed->getNMasterconss(), SCIPvisuGetColorMastervars() );
+         colboxcounter += seeed->getNMastervars();
+      }
 
+      /* blocks (blocks are not empty) */
+      for( int b = 0; b < seeed->getNBlocks() ; ++b )
+      {
+         ++objcounter;
+         drawGpBox(filename, objcounter, colboxcounter, rowboxcounter,
+            colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b), SCIPvisuGetColorBlock());
+         colboxcounter += seeed->getNVarsForBlock(b);
+
+         if( seeed->getNStairlinkingvars(b) != 0 )
+         {
+            ++objcounter;
+            drawGpBox( filename, objcounter, colboxcounter, rowboxcounter,
+               colboxcounter + seeed->getNStairlinkingvars(b),
+               rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1), SCIPvisuGetColorStairlinking() );
+         }
+         colboxcounter += seeed->getNStairlinkingvars(b);
+         rowboxcounter += seeed->getNConssForBlock(b);
+      }
+
+      /* open */
+      if(seeed->getNOpenvars() != 0)
+      {
+         ++objcounter;
+         drawGpBox( filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
+            rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen() );
+         colboxcounter += seeed->getNOpenvars();
+         rowboxcounter += seeed->getNOpenconss();
+      }
+   }
    /* --- draw nonzeros --- */
    if( SCIPvisuGetDraftmode() == FALSE )
    {
       /* scale nonzero radius with 2% of maximal index */
       int radiusscale;
       if(seeed->getNVars() > seeed->getNConss())
-         radiusscale = seeed->getNVars() / 50;
+         radiusscale = seeed->getNVars() / 200;
       else
-         radiusscale = seeed->getNConss() / 50;
+         radiusscale = seeed->getNConss() / 200;
 
+      radiusscale = 0.6;
       writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), radiusscale) );
    }
    else

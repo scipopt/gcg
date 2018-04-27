@@ -1053,7 +1053,11 @@ Seeedpool::Seeedpool(
 
    }
 
-   createconssadj = (getNConss() < 50000);
+   SCIPgetBoolParam(scip, "detection/conssadjcalculated", &createconssadj );
+   createconssadj = createconssadj && (getNConss() < 1000);
+
+   if( !createconssadj )
+      SCIPsetBoolParam(scip, "detection/conssadjcalculated", FALSE );
 
    if( createconssadj )
    {
@@ -1093,9 +1097,8 @@ Seeedpool::Seeedpool(
       }
    }
    /*  init  seeedpool with empty seeed */
-   SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), nConss, nVars );
+   SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), this );
 
-   emptyseeed->setSeeedpool(this);
    addSeeedToCurr( emptyseeed );
    addSeeedToAncestor(emptyseeed);
 
@@ -2684,7 +2687,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
 
       SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL, " transform seeed %d \n", otherseeed->getID() );
 
-      newseeed = new Seeed( scip, this->getNewIdForSeeed(), this->getNConss(), this->getNVars() );
+      newseeed = new Seeed( scip, this->getNewIdForSeeed(), this );
 
       /** prepare new seeed */
       newseeed->setNBlocks( otherseeed->getNBlocks() );
@@ -2765,7 +2768,6 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->sort();
       newseeed->considerImplicits( this );
       newseeed->deleteEmptyBlocks(false);
-      newseeed->setSeeedpool(this);
       newseeed->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
 
       if( newseeed->checkConsistency( this ) )
@@ -5355,7 +5357,7 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 //   std::cout << "Linkingvars decomp: " << DECdecompGetNLinkingvars( decomp ) << "\tStairlinkingvars decomp: " << DECdecompGetNTotalStairlinkingvars( decomp ) << "\n";
 
    /* create new seeed and initialize its data */
-   SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nConss, nVars );
+   SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), this );
    seeed->setNBlocks( DECdecompGetNBlocks( decomp ) );
 
    assert( seeed->getNOpenconss() == nConss );

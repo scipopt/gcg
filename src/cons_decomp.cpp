@@ -111,6 +111,7 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_MAXNCLASSES 9
 #define DEFAULT_MAXNCLASSESFORNBLOCKCANDIDATES 18                 /** Maximum number of classes a classifier can have to be used for voting nblockcandidates */
 #define DEFAULT_ENABLEORIGDETECTION FALSE                         /**< indicates whether to start detection for the original problem */
+#define DEFAULT_CONSSADJCALCULATED                    TRUE        /**< indicates whether conss adjecency datastructures should be calculated */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
 #define DEFAULT_ENABLEORIGCLASSIFICATION              FALSE       /**< indicates whether to start detection for the original problem */
 
@@ -187,6 +188,7 @@ struct SCIP_ConshdlrData
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    SCIP_Bool             allowclassifierduplicates;         /**< indicates whether classifier duplicates are allowed (for statistical reasons) */
    SCIP_Bool             enableemphfast;               /**< indicates whether emphasis settings are set to fast */
+   SCIP_Bool             conssadjcalculated;
    SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
    SCIP_Bool             enableorigclassification;               /**< indicates whether to start constraint classification for the original problem */
    SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
@@ -942,6 +944,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
          conshdlrdata) );
    assert(conshdlr != FALSE);
 
+   SCIP_CALL( SCIPsetConshdlrEnforelax(scip, conshdlr, consEnforeDecomp) );
    SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeDecomp) );
    SCIP_CALL( SCIPsetConshdlrInit(scip, conshdlr, consInitDecomp) );
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitDecomp) );
@@ -949,6 +952,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/allowclassifierduplicates/enabled", "indicates whether classifier duplicates are allowed (for statistical reasons)", &conshdlrdata->allowclassifierduplicates, FALSE, DEFAULT_ALLOWCLASSIFIERDUPLICATES, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/emphfast/enabled", "indicates whether emphasis setting are set to fast", &conshdlrdata->enableemphfast, TRUE, DEFAULT_ENABLEEMPHFAST, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssadjcalculated", "conss adjecency datastructures should be calculated", &conshdlrdata->conssadjcalculated, FALSE, DEFAULT_CONSSADJCALCULATED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/enabled", "indicates whether to start detection for the original problem", &conshdlrdata->enableorigdetection, FALSE, DEFAULT_ENABLEORIGDETECTION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/classificationenabled", "indicates whether to classify constraints and variables for the original problem", &conshdlrdata->enableorigclassification, FALSE, DEFAULT_ENABLEORIGCLASSIFICATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", "indicates whether constraint classifier for nonzero entries is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSNNONZENABLED, NULL, NULL) );
@@ -2337,7 +2341,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
          }
 
       }
-      conshdlrdata->curruserseeed = new gcg::Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool->getNConss(), seeedpool->getNVars() );
+      conshdlrdata->curruserseeed = new gcg::Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool );
       conshdlrdata->curruserseeed->setIsFromUnpresolved(isfromunpresolved);
    }
 
@@ -3131,10 +3135,9 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    assert( currseeedpool != NULL );
    assert( conshdlrdata->curruserseeed == NULL );
 
-   conshdlrdata->curruserseeed = new gcg::Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool->getNConss(), currseeedpool->getNVars() );
+   conshdlrdata->curruserseeed = new gcg::Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool );
 
-   conshdlrdata->curruserseeed->setSeeedpool(currseeedpool );
-   conshdlrdata->curruserseeed->setIsFromUnpresolved( !presolved );
+      conshdlrdata->curruserseeed->setIsFromUnpresolved( !presolved );
 
    if( markedincomplete )
       conshdlrdata->curruserseeed->setUsergiven(USERGIVEN::PARTIAL);
@@ -4342,7 +4345,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
 
    seeedpool = conshdlrdata->seeedpool;
 
-   dummyAncestor = new gcg::Seeed( scip, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars() );
+   dummyAncestor = new gcg::Seeed( scip, seeedpool->getNewIdForSeeed(), seeedpool );
    seeedpool->addSeeedToAncestor( dummyAncestor );
 
    SCIPdebugMessagePrint(scip, "Checking %d detectors for legacy mode.\n", conshdlrdata->ndetectors);
@@ -6482,6 +6485,7 @@ SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
 
    SCIP_Bool shortfeatures;
    /** write base information header */
+
    /*
     * current features:
     * instance, log nconss, nvars, nnonzeros, conss/var ratio, density matrix, density obj, density lb, density ub, density rhs,
@@ -6630,8 +6634,7 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
      assert( connecteddetector != NULL );
 
-     seeedconnected = new gcg::Seeed(scip, -1, seeedpool->getNConss(), seeedpool->getNVars() );
-     seeedconnected->setSeeedpool(seeedpool);
+     seeedconnected = new gcg::Seeed(scip, -1, seeedpool);
      seeedPropData = new SEEED_PROPAGATION_DATA();
      seeedPropData->seeedpool = seeedpool;
      seeedPropData->nNewSeeeds = 0;
@@ -6658,8 +6661,13 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
         char*   folder;
         char filename[SCIP_MAXSTRLEN];
         char* outputname;
+        char* instancename;
+
+        char probname2[SCIP_MAXSTRLEN];
+
         MiscVisualization* misc;
         char problemname[SCIP_MAXSTRLEN];
+        gcg::Seeed* matrixseeed;
 
         SCIPgetStringParam(scip, "write/miplib2017matrixfilepath", &folder);
 
@@ -6667,7 +6675,11 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
         strcat(filename,"/");
 
-        strcat(filename, GCGgetFilename(scip));
+        (void) SCIPsnprintf(probname2, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+        SCIPsplitFilename(probname2, NULL, &instancename, NULL, NULL);
+        //strcpy(instancename2, instancename);
+
+        strcat(filename, instancename);
 
         strcat(filename, ".gp");
 
@@ -6677,7 +6689,18 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
         misc = new MiscVisualization();
 
-        seeedpool->addSeeedToFinishedUnchecked(seeedconnectedfinished);
+        matrixseeed = new gcg::Seeed(scip, -1, seeedpool);
+        matrixseeed->setNBlocks(1);
+
+        for( int i = 0; i < seeedpool->getNConss(); ++i )
+           matrixseeed->bookAsBlockCons(i,0);
+
+        for( int i = 0; i < seeedpool->getNVars(); ++i )
+           matrixseeed->bookAsBlockVar(i,0);
+
+        matrixseeed->flushBooked();
+
+        seeedpool->addSeeedToFinishedUnchecked(matrixseeed);
 
         /* get filename for compiled file */
         (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
@@ -6690,7 +6713,7 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
 
         /* actual writing */
-        GCGwriteGpVisualization(scip, filename, outputname, seeedconnectedfinished->getID() );
+        GCGwriteGpVisualization(scip, filename, outputname, matrixseeed->getID() );
 
         delete misc;
 

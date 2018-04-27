@@ -207,14 +207,16 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
    char decinfo[SCIP_MAXSTRLEN];
 
    SCIP_Bool byconssadj;
+   SCIP_Bool conssadjcalculated;
 
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
    SCIPgetBoolParam(scip, "detection/detectors/connectedbase/useconssadj", &byconssadj);
+   SCIPgetBoolParam(scip, "detection/conssadjcalculated", &conssadjcalculated);
    //complete the seeed by bfs
 
-   if( byconssadj )
+   if( byconssadj &&  conssadjcalculated)
       seeed->completeByConnectedConssAdjacency(seeedPropagationData->seeedpool );
    else
       seeed->completeByConnected(seeedPropagationData->seeedpool );
