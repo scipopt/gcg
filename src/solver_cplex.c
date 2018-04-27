@@ -390,7 +390,9 @@ SCIP_RETCODE updateVars(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP*                 pricingprob,        /**< pricing problem */
-   int                   probnr              /**< problem number */
+   int                   probnr,             /**< problem number */
+   SCIP_Bool             varobjschanged,     /**< have the objective coefficients changed? */
+   SCIP_Bool             varbndschanged      /**< have the lower and upper bounds changed? */
    )
 {
    SCIP_VAR** vars;
@@ -414,12 +416,18 @@ SCIP_RETCODE updateVars(
 
    retval = SCIP_OKAY;
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &objidx, npricingvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &varobj, npricingvars) );
+   if( varobjschanged )
+   {
+      SCIP_CALL( SCIPallocBufferArray(scip, &objidx, npricingvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &varobj, npricingvars) );
+   }
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &updatevaridx, 2 * npricingvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &boundtypes, 2 * npricingvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &bounds, 2 * npricingvars) );
+   if( varbndschanged)
+   {
+      SCIP_CALL( SCIPallocBufferArray(scip, &updatevaridx, 2 * npricingvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &boundtypes, 2 * npricingvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &bounds, 2 * npricingvars) );
+   }
 
    /* get new bounds and objective coefficients of variables */
    for( i = 0; i < nvars; i++ )
@@ -433,34 +441,51 @@ SCIP_RETCODE updateVars(
       assert(0 <= varidx);
       assert(varidx < npricingvars);
 
-      updatevaridx[2 * (size_t)varidx] = varidx;
-      updatevaridx[2 * (size_t)varidx + 1] = varidx;
-      boundtypes[2 * (size_t)varidx] = 'L';
-      boundtypes[2 * (size_t)varidx + 1] = 'U';
-
       if( SCIPgetStage(pricingprob) >= SCIP_STAGE_TRANSFORMED )
          var = SCIPvarGetTransVar(origvar);
       else
          var = origvar;
 
-      bounds[2 * (size_t)varidx] = (double) SCIPvarGetLbGlobal(var);
-      bounds[2 * (size_t)varidx + 1] = (double) SCIPvarGetUbGlobal(var);
+      updatevaridx[2 * (size_t)varidx] = varidx;
+      updatevaridx[2 * (size_t)varidx + 1] = varidx;
 
-      objidx[varidx] = varidx;
-      varobj[varidx] = SCIPvarGetObj(origvar);
+      if( varbndschanged )
+      {
+         boundtypes[2 * (size_t)varidx] = 'L';
+         boundtypes[2 * (size_t)varidx + 1] = 'U';
+         bounds[2 * (size_t)varidx] = (double) SCIPvarGetLbGlobal(var);
+         bounds[2 * (size_t)varidx + 1] = (double) SCIPvarGetUbGlobal(var);
+      }
+
+      if( varobjschanged )
+      {
+         objidx[varidx] = varidx;
+         varobj[varidx] = SCIPvarGetObj(origvar);
+      }
    }
 
    /* update bounds and objective coefficient of basic variables */
-   CHECK_ZERO( CPXchgbds(solverdata->cpxenv[probnr], solverdata->lp[probnr], 2 * nvars, updatevaridx, boundtypes, bounds) );
-   CHECK_ZERO( CPXchgobj(solverdata->cpxenv[probnr], solverdata->lp[probnr], nvars, objidx, varobj) );
+   if( varbndschanged )
+   {
+      CHECK_ZERO( CPXchgbds(solverdata->cpxenv[probnr], solverdata->lp[probnr], 2 * nvars, updatevaridx, boundtypes, bounds) );
+   }
+   if( varobjschanged )
+   {
+      CHECK_ZERO( CPXchgobj(solverdata->cpxenv[probnr], solverdata->lp[probnr], nvars, objidx, varobj) );
+   }
 
 TERMINATE:
-   SCIPfreeBufferArray(scip, &bounds);
-   SCIPfreeBufferArray(scip, &boundtypes);
-   SCIPfreeBufferArray(scip, &updatevaridx);
-
-   SCIPfreeBufferArray(scip, &varobj);
-   SCIPfreeBufferArray(scip, &objidx);
+   if( varbndschanged )
+   {
+      SCIPfreeBufferArray(scip, &bounds);
+      SCIPfreeBufferArray(scip, &boundtypes);
+      SCIPfreeBufferArray(scip, &updatevaridx);
+   }
+   if( varobjschanged)
+   {
+      SCIPfreeBufferArray(scip, &varobj);
+      SCIPfreeBufferArray(scip, &objidx);
+   }
 
    return retval;
 }
@@ -1042,8 +1067,11 @@ GCG_DECL_SOLVERUPDATE(solverUpdateCplex)
    assert(solverdata != NULL);
 
    /* update pricing problem information */
-   SCIP_CALL( updateVars(solverdata->masterprob, solverdata, pricingprob, probnr) );
-   SCIP_CALL( updateBranchingConss(solverdata->masterprob, solverdata, pricingprob, probnr) );
+   SCIP_CALL( updateVars(solverdata->masterprob, solverdata, pricingprob, probnr, varobjschanged, varboundschanged) );
+   if( consschanged )
+   {
+      SCIP_CALL( updateBranchingConss(solverdata->masterprob, solverdata, pricingprob, probnr) );
+   }
 
    /* update the pricing problem in CPLEX */
    ++(solverdata->nupdates[probnr]);
