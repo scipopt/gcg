@@ -226,14 +226,9 @@ void pqueue_destroy(
    PQUEUE*               queue               /**< priority queue instance                                         */
    )
 {
-   if( queue->keys != NULL )
-      SCIPfreeBufferArray(scip, &queue->keys);
-
-   if( queue->data != NULL )
-      SCIPfreeBufferArray(scip, &queue->data);
-
-   if( queue->positions != NULL )
-      SCIPfreeBufferArray(scip, &queue->positions);
+   SCIPfreeBufferArrayNull(scip, &queue->positions);
+   SCIPfreeBufferArrayNull(scip, &queue->data);
+   SCIPfreeBufferArrayNull(scip, &queue->keys);
 }
 
 /** inserts an element with key 'key' and value 'elem' into the queue.
@@ -749,15 +744,15 @@ SCIP_RETCODE getConsVars(
 /** releases all memory of a lagrange multiplier */
 static
 void freeMemoryForSolution(
-   SCIP *scip,                               /**< master SCIP data structure                                      */
-   SCP_Lagrange_Sol *mult                    /**< initialized SCP lagrange multiplier that is to be freed         */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_Lagrange_Sol*     mult                /**< initialized SCP lagrange multiplier that is to be freed         */
    )
 {
-   SCIPfreeBufferArray(scip, &mult->u);
-   SCIPfreeBufferArray(scip, &mult->subgradient);
-   SCIPfreeBufferArray(scip, &mult->lagrangiancostslocal);
-   SCIPfreeBufferArray(scip, &mult->lagrangiancostsglobal);
    SCIPfreeBufferArray(scip, &mult->xgreedylocal);
+   SCIPfreeBufferArray(scip, &mult->lagrangiancostsglobal);
+   SCIPfreeBufferArray(scip, &mult->lagrangiancostslocal);
+   SCIPfreeBufferArray(scip, &mult->subgradient);
+   SCIPfreeBufferArray(scip, &mult->u);
 }
 
 /** creates a set covering solution. Adds all fixed variables of 'inst' and all variables of 'source' to 'dest'.
@@ -876,8 +871,8 @@ void freeInstance(
    SCP_INSTANCE*         inst                /**< initialized SCP instance that is to be freed                    */
    )
 {
-   SCIPfreeBufferArray(scip, &inst->varsfixed);
    SCIPfreeBufferArray(scip, &inst->rowscovered);
+   SCIPfreeBufferArray(scip, &inst->varsfixed);
 }
 
 /** initializes a tentative core: for each row the first few columns covering this row are added to the core */
@@ -981,6 +976,8 @@ SCIP_RETCODE initTentativeCore(
       core->nactiveconss++;
    }
 
+   SCIPfreeBufferArray(scip, &vars);
+
    /* create list of core variables, so it is easy to traverse them */
    j = 0;
    SCIP_CALL( SCIPallocBufferArray(scip, &core->listcorevariables, core->ncorevariables) );
@@ -990,7 +987,6 @@ SCIP_RETCODE initTentativeCore(
          core->listcorevariables[j++] = i;
    }
 
-   SCIPfreeBufferArray(scip, &vars);
    SCIPdebugMessage("%d variables in the tentative core\n", core->ncorevariables);
 
    return SCIP_OKAY;
@@ -1043,9 +1039,9 @@ SCIP_RETCODE computeCoreRows(
 
    assert(core->rows == NULL);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &vars, core->maxconstraintvariables) );
    SCIP_CALL( SCIPallocBufferArray(scip, &core->rows, core->nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &core->nrowvars, core->nconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &vars, core->maxconstraintvariables) );
 
    /* iterate through list of constraints */
    for( i = 0; i < core->nconss; i++ )
@@ -1182,43 +1178,37 @@ void freeCore(
    assert(core->mapvariables != NULL);
    assert(core->nvarconss != NULL);
 
-   SCIPfreeBufferArray(scip, &core->varincore);
-   SCIPhashmapFree(&core->mapvariables);
-   SCIPfreeBufferArray(scip, &core->nvarconss);
-   SCIPfreeBufferArray(scip, &core->constraintid);
-   SCIPfreeBufferArray(scip, &core->delta);
-   SCIPfreeBufferArray(scip, &core->delta_pos);
-   SCIPfreeBufferArray(scip, &core->solgreedy);
+   if( core->rowsavailable )
+   {
+      int i;
+
+      for( i = 0; i < core->nconss; i++ )
+         if( core->rows[i] )
+            SCIPfreeBufferArray(scip, &core->rows[i]);
+
+      SCIPfreeBufferArray(scip, &core->nrowvars);
+      SCIPfreeBufferArray(scip, &core->rows);
+   }
 
    if( core->columnsavailable )
    {
       int i;
 
       for( i = 0; i < core->nvariables; i++ )
-      {
          if( core->columns[i] )
             SCIPfreeBufferArray(scip, &core->columns[i]);
-      }
 
       SCIPfreeBufferArray(scip, &core->columns);
    }
 
-   if( core->rowsavailable )
-   {
-      int i;
-
-      for( i = 0; i < core->nconss; i++ )
-      {
-         if( core->rows[i] )
-            SCIPfreeBufferArray(scip, &core->rows[i]);
-      }
-
-      SCIPfreeBufferArray(scip, &core->rows);
-      SCIPfreeBufferArray(scip, &core->nrowvars);
-   }
-
-   if( core->listcorevariables != NULL )
-      SCIPfreeBufferArray(scip, &core->listcorevariables);
+   SCIPfreeBufferArrayNull(scip, &core->listcorevariables);
+   SCIPfreeBufferArray(scip, &core->constraintid);
+   SCIPfreeBufferArray(scip, &core->nvarconss);
+   SCIPfreeBufferArray(scip, &core->solgreedy);
+   SCIPfreeBufferArray(scip, &core->delta_pos);
+   SCIPfreeBufferArray(scip, &core->delta);
+   SCIPfreeBufferArray(scip, &core->varincore);
+   SCIPhashmapFree(&core->mapvariables);
 }
 
 /** computes a new core based on the delta values of variables, see formula (9) in the paper */
@@ -1767,9 +1757,10 @@ SCIP_RETCODE removeRedundantColumns(
       }
    }
 
-   SCIPfreeBufferArray(scip, &costs);
-   SCIPfreeBufferArray(scip, &varpos);
    SCIPfreeBufferArray(scip, &nvarcovering);
+   SCIPfreeBufferArray(scip, &varpos);
+   SCIPfreeBufferArray(scip, &costs);
+
    return SCIP_OKAY;
 }
 
@@ -2300,8 +2291,8 @@ SCIP_RETCODE subgradientOptimization(
       }
    }
 
-   freeMemoryForSolution(scip, &next_mult);
    freeMemoryForSolution(scip, &last_mult);
+   freeMemoryForSolution(scip, &next_mult);
 
    return SCIP_OKAY;
 }
@@ -3020,30 +3011,34 @@ SCIP_RETCODE setCoveringHeuristic(
    SCIP_CALL( reportSolution(scip, inst, heurdata->bestubsol, heur) );
 
    /* release all memory that was allocated before */
-   pqueue_destroy(scip, &heurdata->greedyqueue);
-   SCIPfreeBufferArray(scip, &heurdata->greedycolpos);
-   SCIPfreeBufferArray(scip, &heurdata->greedycolmu);
-   SCIPfreeBufferArray(scip, &heurdata->greedycolgamma);
-   SCIPfreeBufferArray(scip, &heurdata->greedycolscore);
+   SCIPfreeBufferArray(scip, &heurdata->bestubsol);
+   SCIPfreeBufferArray(scip, &heurdata->bestubsubinstsol);
+   SCIPfreeBufferArray(scip, &heurdata->bestubinst_sol);
 
-   SCIPfreeBufferArray(scip, &heurdata->rccols);
-   SCIPfreeBufferArray(scip, &heurdata->rccoldelta);
-   SCIPfreeBufferArray(scip, &heurdata->sglastlb);
+   freeMemoryForSolution(scip, &heurdata->tpmultlbsubinst);
+   freeMemoryForSolution(scip, &heurdata->multbestlbtotal);
+   freeMemoryForSolution(scip, &heurdata->multbestlbsubinst);
+   freeMemoryForSolution(scip, &heurdata->multbestlbinst);
+
+   freeInstance(scip, &heurdata->greedyinst);
+   SCIPfreeBufferArray(scip, &heurdata->greedycolscore);
+   SCIPfreeBufferArray(scip, &heurdata->greedycolgamma);
+   SCIPfreeBufferArray(scip, &heurdata->greedycolmu);
+   SCIPfreeBufferArray(scip, &heurdata->greedycolpos);
+
+   pqueue_destroy(scip, &heurdata->greedyqueue);
+
+   freeInstance(scip, &heurdata->subinst);
+   freeInstance(scip, &heurdata->inst);
+
    SCIPfreeBufferArray(scip, &heurdata->vars);
 
-   freeMemoryForSolution(scip, &heurdata->multbestlbinst);
-   freeMemoryForSolution(scip, &heurdata->multbestlbsubinst);
-   freeMemoryForSolution(scip, &heurdata->multbestlbtotal);
-   freeMemoryForSolution(scip, &heurdata->tpmultlbsubinst);
-   freeInstance(scip, &heurdata->greedyinst);
-
-   SCIPfreeBufferArray(scip, &heurdata->bestubsol);
-   SCIPfreeBufferArray(scip, &heurdata->bestubinst_sol);
-   SCIPfreeBufferArray(scip, &heurdata->bestubsubinstsol);
-
-   freeInstance(scip, &heurdata->inst);
-   freeInstance(scip, &heurdata->subinst);
    freeCore(scip, &heurdata->core);
+
+   SCIPfreeBufferArray(scip, &heurdata->sglastlb);
+
+   SCIPfreeBufferArray(scip, &heurdata->rccoldelta);
+   SCIPfreeBufferArray(scip, &heurdata->rccols);
 
    return SCIP_OKAY;
 }
