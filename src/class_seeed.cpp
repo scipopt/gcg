@@ -6631,6 +6631,9 @@ void Seeed::calcmaxwhitescore(){
    /** maxwhitescore = 1 - ( 1 - blackareascore) + (1 - borderareascore ) ) */
    maxwhitescore = blockareascore + borderareascore - 1.;
 
+   if( maxwhitescore < 0. )
+     maxwhitescore = 0.;
+
    SCIP_CALL_ABORT(SCIPstopClock( seeedpool->getScip(), clock) );
    seeedpool->scorecalculatingtime += SCIPgetClockTime( seeedpool->getScip(), clock);
    SCIP_CALL_ABORT(SCIPfreeClock( seeedpool->getScip(), &clock) );
