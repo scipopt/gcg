@@ -415,10 +415,10 @@ SCIP_RETCODE createOriginalProblemSolution(
       bendersdata->relaxsol = origsol;
    }
 
-   printf("Master Solution\n");
-   SCIP_CALL( SCIPprintSol(masterprob, sol, 0, 0) );
-   printf("Original Solution\n");
-   SCIP_CALL( SCIPprintSol(origprob, origsol, 0, 0) );
+   //printf("Master Solution\n");
+   //SCIP_CALL( SCIPprintSol(masterprob, sol, 0, 0) );
+   //printf("Original Solution\n");
+   //SCIP_CALL( SCIPprintSol(origprob, origsol, 0, 0) );
 
    return SCIP_OKAY;
 }
@@ -665,14 +665,14 @@ SCIP_DECL_BENDERSPRESUBSOLVE(bendersPresubsolveGcg)
 
    SCIP_CALL( bendersCallOperations(scip, benders) );
 
-   if( SCIPgetDepth(scip) > 0 && !checkint && type == SCIP_BENDERSENFOTYPE_LP )
-   {
-      SCIP_CALL( createOriginalProblemSolution(scip, benders, sol, TRUE) );
-      SCIP_CALL( GCGrelaxUpdateCurrentSol(bendersdata->origprob) );
+   //if( SCIPgetDepth(scip) > 0 && !checkint && type == SCIP_BENDERSENFOTYPE_LP )
+   //{
+      //SCIP_CALL( createOriginalProblemSolution(scip, benders, sol, TRUE) );
+      //SCIP_CALL( GCGrelaxUpdateCurrentSol(bendersdata->origprob) );
 
-      (*skipsolve) = TRUE;
-      (*result) = SCIP_DIDNOTRUN;
-   }
+      //(*skipsolve) = TRUE;
+      //(*result) = SCIP_DIDNOTRUN;
+   //}
 
    return SCIP_OKAY;
 }
@@ -694,7 +694,7 @@ SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
    SCIPdebugMessage("The master problem solution.\n");
    SCIP_CALL( SCIPprintSol(scip, sol, NULL, FALSE) );
 #endif
-   if( type == SCIP_BENDERSENFOTYPE_LP )
+   if( type == SCIP_BENDERSENFOTYPE_LP && !infeasible )
    {
       /* if the problem was found to be infeasible, then an artificial solution is created. */
       SCIP_CALL( createOriginalProblemSolution(scip, benders, sol, infeasible) );

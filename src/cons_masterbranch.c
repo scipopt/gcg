@@ -35,7 +35,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define SCIP_DEBUG
+/* #define SCIP_DEBUG */
 #include <assert.h>
 #include <string.h>
 
@@ -156,6 +156,7 @@ SCIP_RETCODE initializeConsdata(
    SCIP_VAR* boundchgvar;
 
    int i;
+   int addedbndchgs;
 
    assert(scip != NULL);
    assert(GCGisMaster(scip));
@@ -241,20 +242,24 @@ SCIP_RETCODE initializeConsdata(
 
    consdata->nbranchingchgs = 0;
 
+   addedbndchgs = 0;
    for( i = 0; i < consdata->nlocalbndchgs; ++i )
    {
       boundchg = SCIPdomchgGetBoundchg(domchg, i);
 
-      consdata->localbndvars[i] = SCIPboundchgGetVar(boundchg);
-      consdata->localnewbnds[i] = SCIPboundchgGetNewbound(boundchg);
-      consdata->localbndtypes[i] = SCIPboundchgGetBoundtype(boundchg);
-
       if( SCIPboundchgGetBoundchgtype(boundchg) == SCIP_BOUNDCHGTYPE_BRANCHING )
       {
+         consdata->localbndvars[addedbndchgs] = SCIPboundchgGetVar(boundchg);
+         consdata->localnewbnds[addedbndchgs] = SCIPboundchgGetNewbound(boundchg);
+         consdata->localbndtypes[addedbndchgs] = SCIPboundchgGetBoundtype(boundchg);
+
+         addedbndchgs++;
+
          consdata->nbranchingchgs++;
-         assert(consdata->nbranchingchgs == i+1);
+         assert(consdata->nbranchingchgs == addedbndchgs);
       }
    }
+   consdata->nlocalbndchgs = addedbndchgs;
 
    consdata->needprop = TRUE;
 
@@ -1308,31 +1313,19 @@ SCIP_RETCODE applyLocalBndchgsToCopiedMastervars(
       if( consdata->localbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
       {
          if( SCIPisLT(scip, SCIPvarGetLbLocal(mastervar), consdata->localnewbnds[i]) )
-         //if( SCIPisLT(scip, SCIPvarGetLbLocal(mastervar), consdata->localnewbnds[i])
-            //&& SCIPisGE(scip, SCIPvarGetUbLocal(mastervar), consdata->localnewbnds[i]) )
          {
-            if( SCIPisLT(scip, SCIPvarGetUbLocal(mastervar), consdata->localnewbnds[i]) )
-            {
-               SCIP_CALL( SCIPchgVarUb(scip, mastervar, consdata->localnewbnds[i]) );
-            }
             SCIP_CALL( SCIPchgVarLb(scip, mastervar, consdata->localnewbnds[i]) );
             ++(*propcount);
-            SCIPdebugMessage("changed lb of copied original var %s locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), consdata->localnewbnds[i]);
+            SCIPdebugMessage("changed lb of copied original var %s(%s) locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), SCIPvarGetName(mastervar), consdata->localnewbnds[i]);
          }
       }
       else
       {
          if( SCIPisGT(scip, SCIPvarGetUbLocal(mastervar), consdata->localnewbnds[i]) )
-         //if( SCIPisLE(scip, SCIPvarGetLbLocal(mastervar), consdata->localnewbnds[i])
-            //&& SCIPisGT(scip, SCIPvarGetUbLocal(mastervar), consdata->localnewbnds[i]) )
          {
-            if( SCIPisGT(scip, SCIPvarGetLbLocal(mastervar), consdata->localnewbnds[i]) )
-            {
-               SCIP_CALL( SCIPchgVarLb(scip, mastervar, consdata->localnewbnds[i]) );
-            }
             SCIP_CALL( SCIPchgVarUb(scip, mastervar, consdata->localnewbnds[i]) );
             ++(*propcount);
-            SCIPdebugMessage("changed ub of copied original var %s locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), consdata->localnewbnds[i]);
+            SCIPdebugMessage("changed ub of copied original var %s(%s) locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), SCIPvarGetName(mastervar), consdata->localnewbnds[i]);
          }
       }
    }
