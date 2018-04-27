@@ -423,7 +423,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
       for( i = 0; i < static_cast<int>(consclassindices.size()); ++i )
       {
          SCIPinfoMessage(scip, NULL, "%d) ", i+1); //+1 as we want the list to start with 1)
-         SCIPinfoMessage(scip, NULL, "%s || NConss: %d || %s\n", selectedclassifier->getClassNameOfCons(consclassindices[i]),nConssOfClasses[i], selectedclassifier->getClassDescription(consclassindices[i]));
+         SCIPinfoMessage(scip, NULL, "%s || NConss: %d || %s\n", selectedclassifier->getClassName(consclassindices[i]),nConssOfClasses[i], selectedclassifier->getClassDescription(consclassindices[i]));
       }
 
       commandlen = 0;
