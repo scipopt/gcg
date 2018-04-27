@@ -4615,6 +4615,12 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
    std::vector<int> classForVars = std::vector<int>( getNVars(), - 1 );
    VarClassifier* classifier;
 
+   SCIP_Bool onlycontsub;
+   SCIP_Bool onlybinmaster;
+
+   SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/onlycontsubpr", &onlycontsub);
+   SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/onlybinmaster", &onlybinmaster);
+
    /** firstly, assign all variables to classindices */
    for( int i = 0; i < getNVars(); ++ i )
    {
@@ -4623,6 +4629,14 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
       var = getVarForIndex( i );
       SCIP_VARTYPE vT = SCIPvarGetType( var );
       size_t vartype;
+
+      if( onlycontsub )
+      {
+         if ( vT == SCIP_VARTYPE_BINARY )
+            vT = SCIP_VARTYPE_INTEGER;
+         if( vT == SCIP_VARTYPE_IMPLINT )
+            vT = SCIP_VARTYPE_CONTINUOUS;
+      }
 
       /** check whether the variable's vartype is new */
       for( vartype = 0; vartype < foundVartypes.size(); ++ vartype )
@@ -4655,15 +4669,27 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
       {
          case SCIP_VARTYPE_BINARY:
             name = "bin";
+            if( onlybinmaster )
+               classifier->setClassDecompInfo(c, gcg::LINKING);
             break;
          case SCIP_VARTYPE_INTEGER:
             name = "int";
+            if( onlycontsub )
+               classifier->setClassDecompInfo(c, gcg::LINKING);
+            if( onlybinmaster )
+               classifier->setClassDecompInfo(c, gcg::BLOCK);
             break;
          case SCIP_VARTYPE_IMPLINT:
             name = "impl";
+            if( onlybinmaster )
+               classifier->setClassDecompInfo(c, gcg::BLOCK);
             break;
          case SCIP_VARTYPE_CONTINUOUS:
             name = "cont";
+            if( onlycontsub )
+               classifier->setClassDecompInfo(c, gcg::BLOCK);
+            if( onlybinmaster )
+               classifier->setClassDecompInfo(c, gcg::BLOCK);
             break;
          default:
             name = "newVartype";
@@ -4681,6 +4707,9 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
    }
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier %s yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
+
+
+
 
    return classifier;
 }
