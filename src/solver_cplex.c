@@ -384,11 +384,9 @@ SCIP_RETCODE buildProblem(
 }
 
 
-/** updates the given pricing problem, i.e. update bounds and objective coefficients of variables and add branching
- *  constraints, if needed
- */
+/** updates bounds and objective coefficients of variables in the given pricing problem */
 static
-SCIP_RETCODE updateProblem(
+SCIP_RETCODE updateVars(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP*                 pricingprob,        /**< pricing problem */
@@ -396,81 +394,47 @@ SCIP_RETCODE updateProblem(
    )
 {
    SCIP_VAR** vars;
-   SCIP_CONS** conss;
-   SCIP_VAR** consvars;
-   SCIP_Real* consvals;
-   SCIP_VAR* var;
-   SCIP_VAR* origvar;
    double* varobj;
-   int* udpatevaridx;
-   int* objidx;
    double* bounds;
+   int* objidx;
+   int* updatevaridx;
    char* boundtypes;
-   char** newconsnames = NULL;
-   double* newrhss;
-   double* newranges;
-   char* newsenses;
-   double* newcoefs;
-   int* newrowidx;
-   int* newcolidx;
-   SCIP_Real lhs;
-   SCIP_Real rhs;
-   SCIP_RETCODE retval;
-   int nconss;
    int nvars;
-   int varidx;
-   int ncpxrows;
-   int nconsvars;
-   int nnonzeros;
    int npricingvars;
-   int nbasicpricingconss;
-   int nnewconss = 0;
-   int considx;
-   int idx;
-   int c;
-   int i;
-   int v;
 
-   conss = SCIPgetOrigConss(pricingprob);
-   nconss = SCIPgetNOrigConss(pricingprob);
+   SCIP_RETCODE retval;
+   int i;
+
    vars = SCIPgetOrigVars(pricingprob);
    nvars = SCIPgetNOrigVars(pricingprob);
    npricingvars = solverdata->npricingvars[probnr];
-   nbasicpricingconss = solverdata->nbasicpricingconss[probnr];
 
    assert(npricingvars == nvars);
+   assert(npricingvars == CPXgetnumcols(solverdata->cpxenv[probnr], solverdata->lp[probnr]));
 
    retval = SCIP_OKAY;
 
    SCIP_CALL( SCIPallocBufferArray(scip, &objidx, npricingvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &varobj, npricingvars) );
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &udpatevaridx, 2 * npricingvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &updatevaridx, 2 * npricingvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &boundtypes, 2 * npricingvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &bounds, 2 * npricingvars) );
-
-   ++(solverdata->nupdates[probnr]);
-
-   ncpxrows = CPXgetnumrows(solverdata->cpxenv[probnr], solverdata->lp[probnr]);
-   assert(npricingvars == CPXgetnumcols(solverdata->cpxenv[probnr], solverdata->lp[probnr]));
-
-   if( nbasicpricingconss < ncpxrows )
-   {
-      CHECK_ZERO( CPXdelrows(solverdata->cpxenv[probnr], solverdata->lp[probnr], nbasicpricingconss, ncpxrows - 1) );
-   }
-
-   SCIPdebugMessage("Set objective coefficients:\n");
 
    /* get new bounds and objective coefficients of variables */
    for( i = 0; i < nvars; i++ )
    {
+      SCIP_VAR* origvar;
+      SCIP_VAR* var;
+      int varidx;
+
       origvar = vars[i];
       varidx = SCIPvarGetIndex(origvar);
       assert(0 <= varidx);
       assert(varidx < npricingvars);
 
-      udpatevaridx[2 * (size_t)varidx] = varidx;
-      udpatevaridx[2 * (size_t)varidx + 1] = varidx;
+      updatevaridx[2 * (size_t)varidx] = varidx;
+      updatevaridx[2 * (size_t)varidx + 1] = varidx;
       boundtypes[2 * (size_t)varidx] = 'L';
       boundtypes[2 * (size_t)varidx + 1] = 'U';
 
@@ -484,32 +448,94 @@ SCIP_RETCODE updateProblem(
 
       objidx[varidx] = varidx;
       varobj[varidx] = SCIPvarGetObj(origvar);
-
-      SCIPdebugMessage("  <%s> --> %g\n", SCIPvarGetName(var), varobj[varidx]);
    }
 
    /* update bounds and objective coefficient of basic variables */
-   CHECK_ZERO( CPXchgbds(solverdata->cpxenv[probnr], solverdata->lp[probnr], 2 * nvars, udpatevaridx, boundtypes, bounds) );
+   CHECK_ZERO( CPXchgbds(solverdata->cpxenv[probnr], solverdata->lp[probnr], 2 * nvars, updatevaridx, boundtypes, bounds) );
    CHECK_ZERO( CPXchgobj(solverdata->cpxenv[probnr], solverdata->lp[probnr], nvars, objidx, varobj) );
+
+TERMINATE:
+   SCIPfreeBufferArray(scip, &bounds);
+   SCIPfreeBufferArray(scip, &boundtypes);
+   SCIPfreeBufferArray(scip, &updatevaridx);
+
+   SCIPfreeBufferArray(scip, &varobj);
+   SCIPfreeBufferArray(scip, &objidx);
+
+   return retval;
+}
+
+/** updates branching constraints in the given pricing problem */
+static
+SCIP_RETCODE updateBranchingConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
+   SCIP*                 pricingprob,        /**< pricing problem */
+   int                   probnr              /**< problem number */
+   )
+{
+   SCIP_CONS** conss;
+   SCIP_VAR** consvars;
+   SCIP_Real* consvals;
+   char** newconsnames = NULL;
+   char* newsenses;
+   double* newrhss;
+   double* newranges;
+   double* newcoefs;
+   int* newrowidx;
+   int* newcolidx;
+   int nconss;
+   int nbasicpricingconss;
+   int ncpxrows;
+   int nnewconss = 0;
+   int nnonzeros;
+   int nvars;
+   int npricingvars;
+
+   SCIP_RETCODE retval;
+   int idx;
+   int c;
+
+   conss = SCIPgetOrigConss(pricingprob);
+   nconss = SCIPgetNOrigConss(pricingprob);
+   nbasicpricingconss = solverdata->nbasicpricingconss[probnr];
+
+   nvars = SCIPgetNOrigVars(pricingprob);
+   npricingvars = solverdata->npricingvars[probnr];
+
+   assert(npricingvars == nvars);
+   assert(npricingvars == CPXgetnumcols(solverdata->cpxenv[probnr], solverdata->lp[probnr]));
+
+   retval = SCIP_OKAY;
+
+   ncpxrows = CPXgetnumrows(solverdata->cpxenv[probnr], solverdata->lp[probnr]);
+
+   if( nbasicpricingconss < ncpxrows )
+   {
+      CHECK_ZERO( CPXdelrows(solverdata->cpxenv[probnr], solverdata->lp[probnr], nbasicpricingconss, ncpxrows - 1) );
+   }
 
    nnewconss = nconss - nbasicpricingconss;
 
    if( nnewconss == 0 )
-      goto TERMINATE;
+      return retval;
 
    /* temporary arrays for storing data about new constraints */
-   SCIP_CALL( SCIPallocBufferArray(scip, &newrhss, nnewconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &newsenses, nnewconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &newrhss, nnewconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &newranges, nnewconss) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &newconsnames, nnewconss) );
-
-   BMSclearMemoryArray(newconsnames, nnewconss);
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &newconsnames, nnewconss) );
 
    /* get information about new constraints */
    nnonzeros = 0;
 
    for( c = 0; c < nconss; ++c )
    {
+      SCIP_Real lhs;
+      SCIP_Real rhs;
+      int nconsvars;
+      int considx;
+
       /* we assume that nothing changed about the basic constraints */
       if( c < nbasicpricingconss )
       {
@@ -567,6 +593,10 @@ SCIP_RETCODE updateProblem(
    /* collect coefficients in new constriants */
    for( c = 0, idx = 0; c < nconss; ++c )
    {
+      int nconsvars;
+
+      int v;
+
       /* we assume that nothing changed about the basic constraints */
       if( c < nbasicpricingconss )
       {
@@ -593,17 +623,7 @@ SCIP_RETCODE updateProblem(
    CHECK_ZERO( CPXnewrows(solverdata->cpxenv[probnr], solverdata->lp[probnr], nnewconss, newrhss, newsenses, newranges, newconsnames) );
    CHECK_ZERO( CPXchgcoeflist(solverdata->cpxenv[probnr], solverdata->lp[probnr], nnonzeros, newrowidx, newcolidx, newcoefs) );
 
- TERMINATE:
-#ifdef WRITEPROBLEMS
-   {
-      char filename[SCIP_MAXSTRLEN];
-      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "cplex-%s-%d-%d.lp", SCIPgetProbName(pricingprob), SCIPgetNNodes(scip), solverdata->nupdates[probnr]);
-      SCIPinfoMessage(pricingprob, NULL, "print pricing problem to %s\n", filename);
-      CHECK_ZERO( CPXwriteprob(solverdata->cpxenv[probnr], solverdata->lp[probnr], filename, "lp") );
-   }
-#endif
-
-   /* free temporary memory */
+TERMINATE:
    if( nnewconss > 0 )
    {
       SCIPfreeBufferArray(scip, &newcoefs);
@@ -621,21 +641,15 @@ SCIP_RETCODE updateProblem(
 
       SCIPfreeBufferArray(scip, &newconsnames);
       SCIPfreeBufferArray(scip, &newranges);
-      SCIPfreeBufferArray(scip, &newsenses);
       SCIPfreeBufferArray(scip, &newrhss);
+      SCIPfreeBufferArray(scip, &newsenses);
    }
-
-   SCIPfreeBufferArray(scip, &bounds);
-   SCIPfreeBufferArray(scip, &boundtypes);
-   SCIPfreeBufferArray(scip, &udpatevaridx);
-   SCIPfreeBufferArray(scip, &varobj);
-   SCIPfreeBufferArray(scip, &objidx);
 
    return retval;
 }
 
 
-/** solves the pricingproblem with the CPLEX solver */
+/** solves the pricing problem with CPLEX */
 static
 SCIP_RETCODE solveCplex(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
@@ -1027,8 +1041,21 @@ GCG_DECL_SOLVERUPDATE(solverUpdateCplex)
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
+   /* update pricing problem information */
+   SCIP_CALL( updateVars(solverdata->masterprob, solverdata, pricingprob, probnr) );
+   SCIP_CALL( updateBranchingConss(solverdata->masterprob, solverdata, pricingprob, probnr) );
+
    /* update the pricing problem in CPLEX */
-   SCIP_CALL( updateProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
+   ++(solverdata->nupdates[probnr]);
+
+#ifdef WRITEPROBLEMS
+   {
+      char filename[SCIP_MAXSTRLEN];
+      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "cplex-%s-%d-%d.lp", SCIPgetProbName(pricingprob), SCIPgetNNodes(scip), solverdata->nupdates[probnr]);
+      SCIPinfoMessage(pricingprob, NULL, "print pricing problem to %s\n", filename);
+      CHECK_ZERO( CPXwriteprob(solverdata->cpxenv[probnr], solverdata->lp[probnr], filename, "lp") );
+   }
+#endif
 
    return SCIP_OKAY;
 }
