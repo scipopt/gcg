@@ -450,7 +450,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
       for( i = 0; i < static_cast<int>(varclassindices.size()); ++i )
       {
          SCIPinfoMessage(scip, NULL, "%d) ", i+1); //+1 as we want the list to start with 1)
-         SCIPinfoMessage(scip, NULL, "%s || NConss: %d || %s\n", selectedclassifier->getClassNameOfVar(varclassindices[i]), nVarsOfClasses[i], selectedclassifier->getClassDescription(varclassindices[i]));
+         SCIPinfoMessage(scip, NULL, "%s || NConss: %d || %s\n", selectedclassifier->getClassName(varclassindices[i]), nVarsOfClasses[i], selectedclassifier->getClassDescription(varclassindices[i]));
       }
 
       commandlen = 0;
