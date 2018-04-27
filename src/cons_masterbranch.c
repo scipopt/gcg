@@ -156,7 +156,6 @@ SCIP_RETCODE initializeConsdata(
    SCIP_VAR* boundchgvar;
 
    int i;
-   int addedbndchgs;
 
    assert(scip != NULL);
    assert(GCGisMaster(scip));
@@ -242,24 +241,21 @@ SCIP_RETCODE initializeConsdata(
 
    consdata->nbranchingchgs = 0;
 
-   addedbndchgs = 0;
    for( i = 0; i < consdata->nlocalbndchgs; ++i )
    {
       boundchg = SCIPdomchgGetBoundchg(domchg, i);
 
+      consdata->localbndvars[i] = SCIPboundchgGetVar(boundchg);
+      consdata->localnewbnds[i] = SCIPboundchgGetNewbound(boundchg);
+      consdata->localbndtypes[i] = SCIPboundchgGetBoundtype(boundchg);
+
+
       if( SCIPboundchgGetBoundchgtype(boundchg) == SCIP_BOUNDCHGTYPE_BRANCHING )
       {
-         consdata->localbndvars[addedbndchgs] = SCIPboundchgGetVar(boundchg);
-         consdata->localnewbnds[addedbndchgs] = SCIPboundchgGetNewbound(boundchg);
-         consdata->localbndtypes[addedbndchgs] = SCIPboundchgGetBoundtype(boundchg);
-
-         addedbndchgs++;
-
          consdata->nbranchingchgs++;
-         assert(consdata->nbranchingchgs == addedbndchgs);
+         assert(consdata->nbranchingchgs == consdata->nlocalbndchgs+1);
       }
    }
-   consdata->nlocalbndchgs = addedbndchgs;
 
    consdata->needprop = TRUE;
 
