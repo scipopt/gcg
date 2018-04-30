@@ -186,7 +186,7 @@ else:
 		if i > 0:
 			# from the second item on calculate the version speed differences
 			name = items[i-1][0] + '\n->\n' + items[i][0]
-			diff = float(items[i-1][1]) - float(items[i][1])
+			diff = int(round( float(items[i-1][1]) - float(items[i][1]) ))
 			runtimecomp[name] = diff
 			if diff > highestdiff:
 				highestdiff = diff
