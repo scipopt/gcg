@@ -1480,7 +1480,9 @@ SCIP_RETCODE createMasterProblem(
    assert(name != NULL);
 
    SCIP_CALL( SCIPcreateProb(masterscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
-   SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
+
+   if( mode == DEC_DECMODE_DANTZIGWOLFE )
+      SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
 
    /* set clocktype */
    SCIP_CALL( SCIPsetIntParam(masterscip, "timing/clocktype", clocktype) );
@@ -1807,7 +1809,7 @@ SCIP_RETCODE createMaster(
    /* create master and pricing problem constraints */
    SCIP_CALL( createMasterprobConss(scip, relaxdata) );
    SCIP_CALL( createPricingprobConss(scip, relaxdata, hashorig2pricingvar) );
-   SCIP_CALL( GCGmasterCreateInitialMastervars(relaxdata->masterprob) );
+   SCIP_CALL( GCGmasterCreateInitialMastervars(relaxdata->masterprob, scip) );
 
    /* check if the master problem is a set partitioning or set covering problem */
    SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
@@ -2362,6 +2364,34 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 
    initRelaxdata(relaxdata);
 
+   /* if the Benders mode is used, then the master problem needs to be freed and then recreated for Benders'
+    * decomposition.
+    * This allows for the Benders' related plugins to be added and the correct parameter settings made.
+    */
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+   {
+      assert(relaxdata->masterprob != NULL);
+
+      /* freeing the SCIP instance prepared for Dantzig-Wolfe decomposition. */
+      SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
+
+      /* initialize the scip data structure for the master problem */
+      SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
+
+      /* Benders' decomposition uses the default plugins of SCIP. */
+      SCIP_CALL( SCIPincludeDefaultPlugins(relaxdata->masterprob) );
+      /* TODO: Need to check a parameter if Benders' is going to be used. */
+      /* The Benders' decomposition constraint handler is included here, but the Benders' decomposition plugin is included
+       * after the number of subproblems are known. This occurs when the relaxator is being initialised. */
+      SCIP_CALL( SCIPincludeConshdlrBenders(relaxdata->masterprob, TRUE) );
+      SCIP_CALL( SCIPsetMessagehdlr(relaxdata->masterprob, SCIPgetMessagehdlr(scip)) );
+
+      /* setting parameters for Benders' decomposition */
+      SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "constraints/benderslp/maxdepth", -1) );
+      //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "propagating/maxroundsroot", 0) );
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "display/lpinfo", TRUE) );
+   }
+
    return SCIP_OKAY;
 }
 
@@ -2681,6 +2711,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    /* Disable restarts */
    SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrestarts", 0) );
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
+
    /* initialize the scip data structure for the master problem */
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
