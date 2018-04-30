@@ -1067,7 +1067,7 @@ GCG_DECL_SOLVERUPDATE(solverUpdateCplex)
    assert(solverdata != NULL);
 
    /* update pricing problem information */
-   SCIP_CALL( updateVars(solverdata->masterprob, solverdata, pricingprob, probnr, varobjschanged, varboundschanged) );
+   SCIP_CALL( updateVars(solverdata->masterprob, solverdata, pricingprob, probnr, varobjschanged, varbndschanged) );
    if( consschanged )
    {
       SCIP_CALL( updateBranchingConss(solverdata->masterprob, solverdata, pricingprob, probnr) );
@@ -1078,7 +1078,7 @@ GCG_DECL_SOLVERUPDATE(solverUpdateCplex)
     *  * after checking variable bounds, because they change in particular when a new generic branching subproblem is considered
     *  * but not after adding new branching constraints, since objectives will be set afterwards before solving
     */
-   if( varboundschanged && !consschanged )
+   if( varbndschanged && !consschanged )
    {
       char filename[SCIP_MAXSTRLEN];
 
