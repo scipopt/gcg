@@ -2441,7 +2441,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       }
 
       /* set the lower bound pointer */
-      if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
+      if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING && GCGmasterIsCurrentSolValid(masterprob) )
       {
          *lowerbound = SCIPgetLocalDualbound(masterprob);
       }
@@ -2449,9 +2449,9 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       {
          SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
          assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
-         if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
+         if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL && GCGmasterIsCurrentSolValid(masterprob) )
             *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
-         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT )
+         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || !GCGmasterIsCurrentSolValid(masterprob) )
          {
             SCIP_Real tilim;
             SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
@@ -2498,7 +2498,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       }
 
       /* if a new primal solution was found in the master problem, transfer it to the original problem */
-      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
+      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) && GCGmasterIsCurrentSolValid(masterprob) )
       {
          SCIP_SOL* newsol;
 
@@ -2510,7 +2510,8 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    #else
          SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
    #endif
-         if( !stored )
+         /* only check failed solution if best master solution is valid */
+         if( !stored && GCGmasterIsBestsolValid(relaxdata->masterprob) )
          {
             SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
          }
@@ -2528,12 +2529,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
                GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
       }
-
-   if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
-   {
-      SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
-      SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
-   }
    }
    else
    {
@@ -3824,7 +3819,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          return SCIP_OKAY;
       }
 
-      if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) )
+      if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) && GCGmasterIsSolValid(relaxdata->masterprob, mastersol) )
       {
          int i;
 
