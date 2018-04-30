@@ -12,6 +12,10 @@ import collections
 if len(sys.argv) < 2:
 	sys.exit('Usage: ./plotcomparedres.py PKLDIR OUTPUTDIR (where OUTPUTDIR is optional)')
 
+# -------------------------------------------------------------------------------------------------------------------------
+# Get all necessary parameters and statistics
+# -------------------------------------------------------------------------------------------------------------------------
+
 # get parameters
 resdir = sys.argv[1]
 
@@ -98,11 +102,26 @@ for key in ordereddata.keys():
 fails = collections.OrderedDict(sorted(tempfails.items()))
 runtime = collections.OrderedDict(sorted(tempruntime.items()))
 
-# add a settings function
+# -------------------------------------------------------------------------------------------------------------------------
+# Add functions for often used parts of the plots
+# -------------------------------------------------------------------------------------------------------------------------
+
+# function to label bars
+def labelbars(bars, highestbar):
+	for item in bars:
+		height = item.get_height()
+		position = 1
+		if highestbar > 0:
+			position = height + (int(float(highestbar))/100)
+		ax.text(item.get_x()+item.get_width()/2., position, '%d' % int(height), ha='center', size='xx-small')
+	return;
+
+# settings function for axis limits, layout and bar tests
 def setbarplotparams(highestbar):
 	plt.ylim(ymin=0)
 	if highestbar >= 10:
 		valymax = highestbar+(highestbar/10)
+
 	# guarantee that max y value is set to more than highest value
 	elif highestbar == 0: 
 		valymax = highestbar+2
@@ -112,28 +131,30 @@ def setbarplotparams(highestbar):
 	ax.grid(True,axis='y')
 	plt.tight_layout()
 	plt.tick_params(axis='x', which='major', labelsize=7)
-
-	for item in bars:
-		height = item.get_height()
-		position = 1
-		if highestbar > 0:
-			position = height + (int(float(highestbar))/100)
-		ax.text(item.get_x()+item.get_width()/2., position, '%d' % int(height), ha='center', size='xx-small')
+	labelbars(bars, highestbar)
 	return;
+
+# -------------------------------------------------------------------------------------------------------------------------
+# Plots
+# -------------------------------------------------------------------------------------------------------------------------
 
 # 1) Plot how many instances were unsolved per version
 fig = plt.figure()
 ax = plt.axes()        
 plt.title('Number of unsolved instances')
 plt.xlabel('GCG Version')
+
 bars = plt.bar(range(len(fails)), fails.values(), align='center')
 plt.xticks(range(len(fails)), fails.keys(), rotation=90)
 setbarplotparams(int(float(highestfails)))
+
 # if ninstances == -1 the number of instances differs
 stringninstances = 'unknown or differed'
 if ninstances >= 0:
 	stringninstances = str(ninstances)
+
 plt.figtext(.01,.01,'The total number of instances in the test (per version) was ' + stringninstances + '.', size='x-small')
+
 plt.savefig(outdir + '/failcomparison.pdf')			# name of image
 
 # 2) Plot runtime per version
@@ -142,9 +163,11 @@ ax = plt.axes()
 plt.title('Runtime per version')
 plt.xlabel('GCG Version')
 plt.ylabel('Runtime in seconds')
+
 bars = plt.bar(range(len(runtime)), runtime.values(), align='center')
 plt.xticks(range(len(runtime)), runtime.keys(), rotation=90)
 setbarplotparams(highesttime)
+
 plt.savefig(outdir + '/runtimes.pdf')				# name of image
 
 # 3) Plot runtime comparison
@@ -155,16 +178,20 @@ if len(items) < 2:
 	print 'Enter more than one GCG version to generate a runtime comparison plot.'
 else:
 	highestdiff = 0
+	lowestdiff = 0
 	runtimecomp = collections.OrderedDict()
 	cumulative = collections.OrderedDict()
 	for i in range(len(items)):
+		diff = 0
 		if i > 0:
 			# from the second item on calculate the version speed differences
 			name = items[i-1][0] + '\n->\n' + items[i][0]
-			diff = float(items[i-1][1]) + float(items[i][1])			
+			diff = float(items[i-1][1]) - float(items[i][1])
 			runtimecomp[name] = diff
 			if diff > highestdiff:
 				highestdiff = diff
+			if diff < lowestdiff:
+				lowestdiff = diff
 			# for the first one set initial cumulative value
 			if i == 1:
 				cumulative[name] = diff
@@ -181,6 +208,14 @@ else:
 	plt.tick_params(axis='x', which='major', labelsize=5)
 	ax1.set_ylabel('Speedup in seconds', color='b')
 	ax1.tick_params('y', colors='b')
+
+	# make space far bar labels
+	ax1.set_ylim(ymin=(lowestdiff+0.1*lowestdiff), ymax=(highestdiff+0.1*highestdiff))
+	longestbar = highestdiff	
+	if abs(lowestdiff) > longestbar:
+		longestbar = abs(lowestdiff)
+
+	labelbars(bar1, longestbar)
 
 	# plot cumulative speedup if there is more than one bar
 	if len(items) > 2:
