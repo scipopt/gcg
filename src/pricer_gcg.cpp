@@ -3560,6 +3560,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    masterconss = GCGgetMasterConss(origprob);
 
    pricerdata->artificialvars = NULL;
+   pricerdata->nartificialvars = 0;
 
    /* init array containing all pricing problems */
    pricerdata->npricingprobs = GCGgetNPricingprobs(origprob);
