@@ -35,7 +35,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
+/*#define SCIP_DEBUG*/
 #include <assert.h>
 #include <string.h>
 
@@ -249,11 +249,10 @@ SCIP_RETCODE initializeConsdata(
       consdata->localnewbnds[i] = SCIPboundchgGetNewbound(boundchg);
       consdata->localbndtypes[i] = SCIPboundchgGetBoundtype(boundchg);
 
-
       if( SCIPboundchgGetBoundchgtype(boundchg) == SCIP_BOUNDCHGTYPE_BRANCHING )
       {
          consdata->nbranchingchgs++;
-         assert(consdata->nbranchingchgs == consdata->nlocalbndchgs+1);
+         assert(consdata->nbranchingchgs == i+1);
       }
    }
 
@@ -453,10 +452,6 @@ SCIP_RETCODE applyGlobalBndchgsToPricingprobs(
    /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
-
-   /* if the decomposition mode is BENDERS, then the pricing problems should not be updated */
-   //if( SCIPgetDepth(origscip) > 0 && GCGgetDecompositionMode(origscip) == DEC_DECMODE_BENDERS )
-      //return SCIP_OKAY;
 
    if( !conshdlrdata->pendingbndsactivated )
    {
@@ -951,11 +946,6 @@ SCIP_RETCODE applyLocalBndchgsToPricingprobs(
    origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
-   /* if the decomposition mode is BENDERS, then the pricing problems should not be updated */
-   //if( SCIPgetDepth(origscip) > 0 && GCGgetDecompositionMode(origscip) == DEC_DECMODE_BENDERS )
-   if( GCGgetDecompositionMode(origscip) == DEC_DECMODE_BENDERS )
-      return SCIP_OKAY;
-
    /* iterate over all local bound changes in the original problem */
    for( i = 0; i < consdata->nlocalbndchgs; i++ )
    {
@@ -1045,11 +1035,6 @@ SCIP_RETCODE undoLocalBndchgsToPricingprobs(
    /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
-
-   /* if the decomposition mode is BENDERS, then the pricing problems should not be updated */
-   //if( SCIPgetDepth(origscip) > 0 && GCGgetDecompositionMode(origscip) == DEC_DECMODE_BENDERS )
-   if( GCGgetDecompositionMode(origscip) == DEC_DECMODE_BENDERS )
-      return SCIP_OKAY;
 
    /* iterate over all local bound changes in the original problem */
    for( i = consdata->nlocalbndchgs - 1; i >= 0; i-- )
@@ -1312,7 +1297,7 @@ SCIP_RETCODE applyLocalBndchgsToCopiedMastervars(
          {
             SCIP_CALL( SCIPchgVarLb(scip, mastervar, consdata->localnewbnds[i]) );
             ++(*propcount);
-            SCIPdebugMessage("changed lb of copied original var %s(%s) locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), SCIPvarGetName(mastervar), consdata->localnewbnds[i]);
+            SCIPdebugMessage("changed lb of copied original var %s locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), consdata->localnewbnds[i]);
          }
       }
       else
@@ -1321,7 +1306,7 @@ SCIP_RETCODE applyLocalBndchgsToCopiedMastervars(
          {
             SCIP_CALL( SCIPchgVarUb(scip, mastervar, consdata->localnewbnds[i]) );
             ++(*propcount);
-            SCIPdebugMessage("changed ub of copied original var %s(%s) locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), SCIPvarGetName(mastervar), consdata->localnewbnds[i]);
+            SCIPdebugMessage("changed ub of copied original var %s locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), consdata->localnewbnds[i]);
          }
       }
    }

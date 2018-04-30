@@ -4964,23 +4964,17 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 /** create initial master variables */
 extern "C"
 SCIP_RETCODE GCGmasterCreateInitialMastervars(
-   SCIP*                 scip                /**< master SCIP data structure */
+   SCIP*                 scip,               /**< master SCIP data structure */
+   SCIP*                 origprob            /**< the original problem */
    )
 {
-   ObjPricerGcg* pricer;
    int i;
-   SCIP* origprob;
    SCIP_VAR** vars;
    int nvars;
    int npricingprobs;
    int v;
 
    assert(scip != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
-   assert(pricer != NULL);
-
-   origprob = pricer->getOrigprob();
    assert(origprob != NULL);
 
    npricingprobs = GCGgetNPricingprobs(origprob);

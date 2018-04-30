@@ -40,7 +40,7 @@
 
 #define BENDERS_NAME                "gcg"
 #define BENDERS_DESC                "Benders' decomposition template"
-#define BENDERS_PRIORITY            0
+#define BENDERS_PRIORITY         1000
 #define BENDERS_CUTLP            TRUE   /**< should Benders' cut be generated for LP solutions */
 #define BENDERS_CUTPSEUDO        TRUE   /**< should Benders' cut be generated for pseudo solutions */
 #define BENDERS_CUTRELAX         TRUE   /**< should Benders' cut be generated for relaxation solutions */
@@ -663,7 +663,7 @@ SCIP_DECL_BENDERSPRESUBSOLVE(bendersPresubsolveGcg)
    bendersdata = SCIPbendersGetData(benders);
    assert(bendersdata != NULL);
 
-   SCIP_CALL( bendersCallOperations(scip, benders) );
+   //SCIP_CALL( bendersCallOperations(scip, benders) );
 
    //if( SCIPgetDepth(scip) > 0 && !checkint && type == SCIP_BENDERSENFOTYPE_LP )
    //{
