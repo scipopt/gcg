@@ -58,7 +58,7 @@ if printwarning == True:
 
 # Sanity check: check for fails, let the dev know
 for res in sumnames:
-	if not sumsets[res][Fail] == 0:	
+	if not sumsets[res]['Fail'] == 0:	
 		print "--------------------------------------------------------------------------------------------------"
 		print "Warning: There were some failed runs in the tests. This might influence the significance of the"
 		print "comparisons! Recommendation: Check for memlimits, aborts, fails etc. in the tested GCG versions."

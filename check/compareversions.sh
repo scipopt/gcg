@@ -123,7 +123,7 @@ do
 	make -j ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
 	# 'make test' assumes there are links from gcg/check/instances to the instance folders.
-	# if your testset instances are not found make sure the links are set TODO
+	# if your testset instances are not found make sure the links are set!
 	make test ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
 	# change name of output files: sort by last modified and take the first one
@@ -132,26 +132,24 @@ do
 	# establish VERSIONNAME as a name safe to use as a filename
 	VERSIONNAME="${VERSION[$index]//\/}"		# remove slashs
 	VERSIONNAME="${VERSIONNAME//.}"			# remove points
-	# add a number to the version if there exists a file with the same name
-	numbers='^[0-9]+$'
-	firsttry=true	# bool to make sure a name ending on a number is not changed
-	while [ -f "../${RESDIR}/${VERSIONNAME}.res" ]
-	do
+
+	# if the file name exist add add a number until the name is unique
+	lastchar=""
+	if [ -f "../${RESDIR}/${VERSIONNAME}.res" ] ; then
 		echo ${VERSIONNAME} exists
-		lastchar="${VERSIONNAME: -1}"
-		if [ firsttry ] && [[ $lastchar =~ $numbers ]] ; then
-			VERSIONNAME=${VERSIONNAME}1
-			firsttry=false
-		else
-			if [[ $lastchar =~ $numbers ]] ; then
-				VERSIONNAME=${VERSIONNAME::-1}
-				lastchar=$((lastchar + 1))
-				VERSIONNAME=${VERSIONNAME}${lastchar}
-			else
-				VERSIONNAME=${VERSIONNAME}1
-			fi
-		fi
-	done
+		VERSIONNAME=${VERSIONNAME}1
+		while [ -f "../${RESDIR}/${VERSIONNAME}.res" ]
+		do
+			echo ${VERSIONNAME} exists
+			# as we added a '1' before the loop we can safely increment the last character
+			lastchar="${VERSIONNAME: -1}"
+			VERSIONNAME=${VERSIONNAME::-1}
+			# note: lastchar is a string, not a single char. (e.g. 9+1=10)
+			lastchar=$((lastchar + 1))
+			VERSIONNAME=${VERSIONNAME}${lastchar}
+		done
+	fi
+	
 	
 	# move the resulting files to the result directory of this comparison run
 	OLDout=$(find . -type f -name "*.out"  -printf "%p\n" | sort -n | head -n 1)
