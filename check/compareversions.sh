@@ -117,7 +117,10 @@ do
 	git submodule init
 	git submodule sync
 	git submodule update
-	make soplex
+	make soplex	# in some older versions not sufficient
+	cd lib/soplex-git
+	make
+	cd ../..
 	make scip
 	make deps ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 	make -j ${GLOBALFLAGS} ${ADDFLAGS[$index]}
