@@ -10,13 +10,13 @@ import collections
 
 # check command line arguments
 if len(sys.argv) < 2:
-	sys.exit("Usage: ./plotcomparedres.py PKLDIR OUTPUTDIR (where OUTPUTDIR is optional)")
+	sys.exit('Usage: ./plotcomparedres.py PKLDIR OUTPUTDIR (where OUTPUTDIR is optional)')
 
 # get parameters
 resdir = sys.argv[1]
 
 outdirset = False
-outdir = "pickles/"
+outdir = 'pickles/'
 if len(sys.argv) > 1:
 	outdir = sys.argv[1]
 	outdirset = True
@@ -30,10 +30,10 @@ filenames = []
 sumnames = []
 
 for resfile in os.listdir(resdir):
-	if resfile.endswith(".pkl") and resfile.startswith("res_"):
+	if resfile.endswith('.pkl') and resfile.startswith('res_'):
 		datasets[resfile] = pd.read_pickle(os.path.join(resdir, resfile))
 		filenames.append(resfile)
-	elif resfile.endswith(".pkl") and resfile.startswith("sumres_"):
+	elif resfile.endswith('.pkl') and resfile.startswith('sumres_'):
 		sumsets[resfile] = pd.read_pickle(os.path.join(resdir, resfile))
 		sumnames.append(resfile)
 
@@ -51,18 +51,19 @@ for res in filenames:
 		if ninstances != ordereddata[res].shape[0]:
 			printwarning = True
 if printwarning == True:
-	print "--------------------------------------------------------------------------------------------------"
-	print "Warning: Not all tests had the same number of instances."
-	print "Did you enter more than one testset? Did all tested versions have access to all testset instances?"
-	print "--------------------------------------------------------------------------------------------------"
+	print '--------------------------------------------------------------------------------------------------'
+	print 'Warning: Not all tests had the same number of instances.'
+	print 'Did you enter more than one testset? Did all tested versions have access to all testset instances?'
+	print '--------------------------------------------------------------------------------------------------'
+	ninstances = -1
 
 # Sanity check: check for fails, let the dev know
 for res in sumnames:
-	if not sumsets[res]['Fail'] == 0:	
-		print "--------------------------------------------------------------------------------------------------"
-		print "Warning: There were some failed runs in the tests. This might influence the significance of the"
-		print "comparisons! Recommendation: Check for memlimits, aborts, fails etc. in the tested GCG versions."
-		print "--------------------------------------------------------------------------------------------------"
+	if not sumsets[res]['Fail'] == '0':	
+		print '--------------------------------------------------------------------------------------------------'
+		print 'Warning: There were some failed runs in the tests. This might influence the significance of the'
+		print 'comparisons! Recommendation: Check for memlimits, aborts, fails etc. in the tested GCG versions.'
+		print '--------------------------------------------------------------------------------------------------'
 		break
 
 # Get some statistics for each res file (first in temp dicts that will later be sorted)
@@ -123,19 +124,24 @@ def setbarplotparams(highestbar):
 # 1) Plot how many instances were unsolved per version
 fig = plt.figure()
 ax = plt.axes()        
-plt.title("Number of unsolved instances")
-plt.xlabel("GCG Version")
+plt.title('Number of unsolved instances')
+plt.xlabel('GCG Version')
 bars = plt.bar(range(len(fails)), fails.values(), align='center')
 plt.xticks(range(len(fails)), fails.keys(), rotation=90)
 setbarplotparams(int(float(highestfails)))
+# if ninstances == -1 the number of instances differs
+stringninstances = 'unknown or differed'
+if ninstances >= 0:
+	stringninstances = str(ninstances)
+plt.figtext(.01,.01,'The total number of instances in the test (per version) was ' + stringninstances + '.', size='x-small')
 plt.savefig(outdir + '/failcomparison.pdf')			# name of image
 
 # 2) Plot runtime per version
 fig = plt.figure()
 ax = plt.axes()        
-plt.title("Runtime per version")
-plt.xlabel("GCG Version")
-plt.ylabel("Runtime in seconds")
+plt.title('Runtime per version')
+plt.xlabel('GCG Version')
+plt.ylabel('Runtime in seconds')
 bars = plt.bar(range(len(runtime)), runtime.values(), align='center')
 plt.xticks(range(len(runtime)), runtime.keys(), rotation=90)
 setbarplotparams(highesttime)
@@ -146,7 +152,7 @@ plt.savefig(outdir + '/runtimes.pdf')				# name of image
 
 items = list(runtime.items())
 if len(items) < 2:
-	print "Enter more than one GCG version to generate a runtime comparison plot."
+	print 'Enter more than one GCG version to generate a runtime comparison plot.'
 else:
 	highestdiff = 0
 	runtimecomp = collections.OrderedDict()
@@ -176,12 +182,14 @@ else:
 	ax1.set_ylabel('Speedup in seconds', color='b')
 	ax1.tick_params('y', colors='b')
 
-	# then plot cumulative speedup
-	ax2 = ax1.twinx()
-	ax2.plot(range(len(runtimecomp)), cumulative.values(), 'r-')
-	ax2.set_ylabel('Cumulative Speedup in seconds', color='r')
-	ax2.tick_params('y', colors='r')
+	# plot cumulative speedup if there is more than one bar
+	if len(items) > 2:
+		ax2 = ax1.twinx()
+		ax2.plot(range(len(runtimecomp)), cumulative.values(), 'r-')
+		ax2.set_ylabel('Cumulative Speedup in seconds', color='r')
+		ax2.tick_params('y', colors='r')
 	
-	fig.tight_layout()
-	plt.title("Version-to-version runtime comparison")
+	fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+	plt.title('Version-to-version runtime comparison')
+
 	plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image
