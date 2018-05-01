@@ -515,7 +515,6 @@ SCIP_RETCODE updateBranchingConss(
    int nnewconss = 0;
    int nnonzeros;
    int nvars;
-   int npricingvars;
 
    SCIP_RETCODE retval;
    int idx;
@@ -526,10 +525,6 @@ SCIP_RETCODE updateBranchingConss(
    nbasicpricingconss = solverdata->nbasicpricingconss[probnr];
 
    nvars = SCIPgetNOrigVars(pricingprob);
-   npricingvars = solverdata->npricingvars[probnr];
-
-   assert(npricingvars == nvars);
-   assert(npricingvars == CPXgetnumcols(solverdata->cpxenv[probnr], solverdata->lp[probnr]));
 
    retval = SCIP_OKAY;
 
