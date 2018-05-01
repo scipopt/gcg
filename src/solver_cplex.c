@@ -59,6 +59,8 @@
       }                                                                 \
    }
 
+#define CPX_LONG_MAX     9223372036800000000LL
+
 
 #define SOLVER_NAME          "cplex"
 #define SOLVER_DESC          "cplex solver for pricing problems"
@@ -67,9 +69,13 @@
 
 #define DEFAULT_CHECKSOLS     TRUE   /**< should solutions of the pricing MIPs be checked for duplicity? */
 #define DEFAULT_THREADS       1      /**< number of threads the CPLEX pricing solver is allowed to use (0: automatic) */
-
-#define DEFAULT_HEURNODELIMIT       1000LL
-#define DEFAULT_HEURGAPLIMIT        0.2
+#define DEFAULT_STARTNODELIMIT       1000LL  /**< start node limit for heuristic pricing */
+#define DEFAULT_STARTGAPLIMIT        0.2     /**< start gap limit for heuristic pricing */
+#define DEFAULT_STARTSOLLIMIT        10LL    /**< start solution limit for heuristic pricing */
+#define DEFAULT_NODELIMITFAC         1.25    /**< factor by which to increase node limit for heuristic pricing */
+#define DEFAULT_STALLNODELIMITFAC    1.25    /**< factor by which to increase stalling node limit for heuristic pricing */
+#define DEFAULT_GAPLIMITFAC          0.8     /**< factor by which to decrease gap limit for heuristic pricing */
+#define DEFAULT_SOLLIMITFAC          1.5     /**< factor by which to increase solution limit for heuristic pricing */
 
 
 /** pricing solver data */
@@ -82,6 +88,9 @@ struct GCG_SolverData
    CPXENVptr*            cpxenv;             /**< array of CPLEX environments for the pricing problems */
    CPXLPptr*             lp;                 /**< array of CPLEX problems for the pricing problems */
    int*                  nupdates;           /**< array storing the number of updates for all of the pricing problems */
+   SCIP_Longint*         curnodelimit;        /**< current node limit per pricing problem */
+   SCIP_Real*            curgaplimit;         /**< current gap limit per pricing problem */
+   SCIP_Longint*         cursollimit;         /**< current solution limit per pricing problem */
    /**
     *  information about the basic pricing problem (without potential branching constraints)
     */
@@ -94,8 +103,12 @@ struct GCG_SolverData
     */
    SCIP_Bool             checksols;          /**< should solutions of the pricing MIPs be checked for duplicity? */
    int                   threads;            /**< number of threads the CPLEX pricing solver is allowed to use (0: automatic) */
-   SCIP_Longint          heurnodelimit;      /**< node limit for heuristic pricing */
-   SCIP_Real             heurgaplimit;       /**< gap limit for heuristic pricing */
+   SCIP_Longint          startnodelimit;      /**< start node limit for heuristic pricing */
+   SCIP_Real             startgaplimit;       /**< start gap limit for heuristic pricing */
+   int                   startsollimit;       /**< start solution limit for heuristic pricing */
+   SCIP_Real             nodelimitfac;        /**< factor by which to increase node limit for heuristic pricing */
+   SCIP_Real             gaplimitfac;         /**< factor by which to decrease gap limit for heuristic pricing */
+   SCIP_Real             sollimitfac;         /**< factor by which to increase solution limit for heuristic pricing */
 };
 
 /*
@@ -759,7 +772,7 @@ SCIP_RETCODE solveCplex(
       {
          assert(!predisabled);
 
-         SCIPdebugMessage("disable presolving in CPLEX to get primal ray\n");
+         SCIPdebugMessage("   -> disable presolving in CPLEX to get primal ray\n");
 
          CHECK_ZERO( CPXgetintparam(solverdata->cpxenv[probnr], CPX_PARAM_PREIND, &curpreind) );
          CHECK_ZERO( CPXgetintparam(solverdata->cpxenv[probnr], CPX_PARAM_ADVIND, &curadvind) );
@@ -792,10 +805,26 @@ SCIP_RETCODE solveCplex(
    /* a heuristic pricing limit was reached and may be increased in the next round */
    /* @todo: CPXMIP_OPTIMAL_TOL = 102 seems to occur even if gaplimit is set to 0 */
    case CPXMIP_OPTIMAL_TOL: /* 102 */
+      assert(nsolscplex > 0);
+      solverdata->curgaplimit[probnr] *= solverdata->gaplimitfac;
+      SCIPdebugMessage("   -> gap limit reached, decreasing to %g\n", solverdata->curgaplimit[probnr]);
+      *status = GCG_PRICINGSTATUS_SOLVERLIMIT;
+      CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
+      break;
+
    case CPXMIP_NODE_LIM_FEAS: /* 105 */
+      assert(nsolscplex > 0);
+      solverdata->curnodelimit[probnr] *= solverdata->nodelimitfac;
+      SCIPdebugMessage("   -> node limit reached, increasing to %"SCIP_LONGINT_FORMAT"\n", solverdata->curnodelimit[probnr]);
+      *status = GCG_PRICINGSTATUS_SOLVERLIMIT;
+      CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
+      break;
+
    case CPXMIP_SOL_LIM: /* 104 */
       assert(nsolscplex > 0);
-      *status = GCG_PRICINGSTATUS_UNKNOWN; /* @todo: change status here and increase the limits */
+      solverdata->cursollimit[probnr] *= solverdata->sollimitfac;
+      SCIPdebugMessage("   -> solution limit reached, increasing to %"SCIP_LONGINT_FORMAT"\n", solverdata->cursollimit[probnr]);
+      *status = GCG_PRICINGSTATUS_SOLVERLIMIT;
       CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
       break;
 
@@ -830,7 +859,7 @@ SCIP_RETCODE solveCplex(
     */
    *lowerbound = MIN(*lowerbound, upperbound);
 
-   SCIPdebugMessage("pricing problem %d solved with CPLEX: cpxstatus=%d, nsols=%d, lowerbound=%g, upperbound=%g\n", probnr, cpxstatus, nsolscplex, *lowerbound, upperbound);
+   SCIPdebugMessage("   -> pricing problem %d solved: cpxstatus=%d, nsols=%d, lowerbound=%g, upperbound=%g\n", probnr, cpxstatus, nsolscplex, *lowerbound, upperbound);
 
    assert(SCIPisFeasEQ(scip, *lowerbound, upperbound) || cpxstatus != CPXMIP_OPTIMAL);
 
@@ -971,12 +1000,20 @@ GCG_DECL_SOLVERINITSOL(solverInitsolCplex)
    BMSclearMemoryArray(solverdata->npricingvars, npricingprobs);
    BMSclearMemoryArray(solverdata->nbasicpricingconss, npricingprobs);
 
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &solverdata->curnodelimit, npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &solverdata->curgaplimit, npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &solverdata->cursollimit, npricingprobs) );
+
    for( i = 0; i < npricingprobs; ++i )
    {
       if( GCGisPricingprobRelevant(solverdata->origprob, i) )
       {
          SCIP_CALL( buildProblem(solverdata->masterprob, solverdata, GCGgetPricingprob(solverdata->origprob, i), i) );
       }
+
+      solverdata->curnodelimit[i] = solverdata->startnodelimit;
+      solverdata->curgaplimit[i] = solverdata->startgaplimit;
+      solverdata->cursollimit[i] = solverdata->startsollimit;
    }
 
    return SCIP_OKAY;
@@ -1036,6 +1073,10 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
    }
 
  TERMINATE:
+   SCIPfreeBlockMemoryArray(scip, &solverdata->cursollimit, solverdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &solverdata->curgaplimit, solverdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &solverdata->curnodelimit, solverdata->npricingprobs);
+
    SCIPfreeBlockMemoryArray(scip, &(solverdata->nbasicpricingconss), solverdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip, &(solverdata->npricingvars), solverdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip, &(solverdata->pricingconss), solverdata->npricingprobs);
@@ -1061,12 +1102,20 @@ GCG_DECL_SOLVERUPDATE(solverUpdateCplex)
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
+   SCIPdebugMessage("CPLEX solver -- update data for problem %d: varobjschanged = %u, varbndschanged = %u, consschanged = %u\n",
+      probnr, varobjschanged, varbndschanged, consschanged);
+
    /* update pricing problem information */
    SCIP_CALL( updateVars(solverdata->masterprob, solverdata, pricingprob, probnr, varobjschanged, varbndschanged) );
    if( consschanged )
    {
       SCIP_CALL( updateBranchingConss(solverdata->masterprob, solverdata, pricingprob, probnr) );
    }
+
+   /* reset heuristic pricing limits */
+   solverdata->curnodelimit[probnr] = solverdata->startnodelimit;
+   solverdata->curgaplimit[probnr] = solverdata->startgaplimit;
+   solverdata->cursollimit[probnr] = solverdata->startsollimit;
 
 #ifdef WRITEPROBLEMS
    /* Print the pricing problem after updating:
@@ -1094,7 +1143,6 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
 {
    GCG_SOLVERDATA* solverdata;
    SCIP_RETCODE retval;
-   long long nodelim;
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
@@ -1103,16 +1151,14 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
 
    retval = SCIP_OKAY;
 
-   CHECK_ZERO( CPXgetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, &nodelim) );
-   CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, solverdata->heurnodelimit) );
-   CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, solverdata->heurgaplimit) );
+   /* set heuristic limits */
+   CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, (long long) solverdata->curnodelimit[probnr]) );
+   CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, (double) solverdata->curgaplimit[probnr]) );
+   CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_INTSOLLIM, (long long) solverdata->cursollimit[probnr]) );
 
    /* solve the pricing problem and evaluate solution */
    SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, status) );
    assert(*status != GCG_PRICINGSTATUS_OPTIMAL || *ncols > 0);
-
-   CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, nodelim) );
-   CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, 0.0) );
 
  TERMINATE:
    return retval;
@@ -1123,19 +1169,28 @@ static
 GCG_DECL_SOLVERSOLVE(solverSolveCplex)
 {
    GCG_SOLVERDATA* solverdata;
+   SCIP_RETCODE retval;
 
    assert(solver != NULL);
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   SCIPdebugMessage("calling CPLEX pricing solver for pricing problem %d\n", probnr);
+   SCIPdebugMessage("calling exact pricing with CPLEX for pricing problem %d\n", probnr);
+
+   retval = SCIP_OKAY;
+
+   /* set limits to (infinite/zero) default values */
+   CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, CPX_LONG_MAX) );
+   CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, 0.0) );
+   CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_INTSOLLIM, CPX_LONG_MAX) );
 
    /* solve the pricing problem and evaluate solution */
    SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, status) );
    assert(*status != GCG_PRICINGSTATUS_OPTIMAL || *ncols > 0);
 
-   return SCIP_OKAY;
+ TERMINATE:
+   return retval;
 }
 #endif
 /** creates the CPLEX pricing solver and includes it in GCG */
@@ -1162,13 +1217,29 @@ SCIP_RETCODE GCGincludeSolverCplex(
          "number of threads the CPLEX pricing solver is allowed to use (0: automatic)",
          &solverdata->threads, TRUE, DEFAULT_THREADS, 0, INT_MAX, NULL, NULL));
 
-   SCIP_CALL( SCIPaddLongintParam(solverdata->origprob, "pricingsolver/cplex/heurnodelimit",
-         "node limit for heuristic pricing",
-         &solverdata->heurnodelimit, TRUE, DEFAULT_HEURNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddLongintParam(solverdata->origprob, "pricingsolver/cplex/startnodelimit",
+         "start node limit for heuristic pricing",
+         &solverdata->startnodelimit, TRUE, DEFAULT_STARTNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/cplex/heurgaplimit",
-         "gap limit for heuristic pricing",
-         &solverdata->heurgaplimit, TRUE, DEFAULT_HEURGAPLIMIT, 0.0, 1.0, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/cplex/startgaplimit",
+         "start gap limit for heuristic pricing",
+         &solverdata->startgaplimit, TRUE, DEFAULT_STARTGAPLIMIT, 0.0, 1.0, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(solverdata->origprob, "pricingsolver/cplex/startsollimit",
+         "start solution limit for heuristic pricing",
+         &solverdata->startsollimit, TRUE, DEFAULT_STARTSOLLIMIT, -1, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/cplex/nodelimitfac",
+         "factor by which to increase node limit for heuristic pricing",
+         &solverdata->nodelimitfac, TRUE, DEFAULT_NODELIMITFAC, 1.0, SCIPinfinity(solverdata->origprob), NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/cplex/gaplimitfac",
+         "factor by which to decrease gap limit for heuristic pricing",
+         &solverdata->gaplimitfac, TRUE, DEFAULT_GAPLIMITFAC, 0.0, 1.0, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/cplex/sollimitfac",
+         "factor by which to increase solution limit for heuristic pricing",
+         &solverdata->sollimitfac, TRUE, DEFAULT_SOLLIMITFAC, 1.0, SCIPinfinity(solverdata->origprob), NULL, NULL) );
 #endif
    return SCIP_OKAY;
 }
