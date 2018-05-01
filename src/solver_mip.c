@@ -489,47 +489,10 @@ GCG_DECL_SOLVERFREE(solverFreeMip)
 }
 
 /** initialization method of pricing solver (called after problem was transformed and solver is active) */
-static
-GCG_DECL_SOLVERINIT(solverInitMip)
-{
-   GCG_SOLVERDATA* solverdata;
-   int npricingprobs;
-
-   assert(scip != NULL);
-   assert(solver != NULL);
-
-   solverdata = GCGsolverGetData(solver);
-   assert(solverdata != NULL);
-
-   npricingprobs = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &solverdata->curnodelimit, npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &solverdata->curstallnodelimit, npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &solverdata->curgaplimit, npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &solverdata->cursollimit, npricingprobs) );
-
-   return SCIP_OKAY;
-}
+#define solverInitMip NULL
 
 /** deinitialization method of pricing solver (called before transformed problem is freed and solver is active) */
-static
-GCG_DECL_SOLVEREXIT(solverExitMip)
-{
-   GCG_SOLVERDATA* solverdata;
-
-   assert(scip != NULL);
-   assert(solver != NULL);
-
-   solverdata = GCGsolverGetData(solver);
-   assert(solverdata != NULL);
-
-   SCIPfreeMemoryArray(scip, &solverdata->cursollimit);
-   SCIPfreeMemoryArray(scip, &solverdata->curgaplimit);
-   SCIPfreeMemoryArray(scip, &solverdata->curstallnodelimit);
-   SCIPfreeMemoryArray(scip, &solverdata->curnodelimit);
-
-   return SCIP_OKAY;
-}
+#define solverExitMip NULL
 
 /** solving process initialization method of pricing solver (called when branch and bound process is about to begin) */
 static
@@ -547,18 +510,44 @@ GCG_DECL_SOLVERINITSOL(solverInitsolMip)
 
    npricingprobs = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
 
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &solverdata->curnodelimit, npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &solverdata->curstallnodelimit, npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &solverdata->curgaplimit, npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &solverdata->cursollimit, npricingprobs) );
+
    for( i = 0; i < npricingprobs; ++i )
    {
-     solverdata->curnodelimit[i] = solverdata->startnodelimit;
-     solverdata->curstallnodelimit[i] = solverdata->startstallnodelimit;
-     solverdata->curgaplimit[i] = solverdata->startgaplimit;
+      solverdata->curnodelimit[i] = solverdata->startnodelimit;
+      solverdata->curstallnodelimit[i] = solverdata->startstallnodelimit;
+      solverdata->curgaplimit[i] = solverdata->startgaplimit;
+      solverdata->cursollimit[i] = solverdata->startsollimit;
    }
 
    return SCIP_OKAY;
 }
 
 /** solving process deinitialization method of pricing solver (called before branch and bound process data is freed) */
-#define solverExitsolMip NULL
+static
+GCG_DECL_SOLVEREXITSOL(solverExitsolMip)
+{
+   GCG_SOLVERDATA* solverdata;
+   int npricingprobs;
+
+   assert(scip != NULL);
+   assert(solver != NULL);
+
+   solverdata = GCGsolverGetData(solver);
+   assert(solverdata != NULL);
+
+   npricingprobs = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
+
+   SCIPfreeBlockMemoryArray(scip, &solverdata->cursollimit, npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &solverdata->curgaplimit, npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &solverdata->curstallnodelimit, npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &solverdata->curnodelimit, npricingprobs);
+
+   return SCIP_OKAY;
+}
 
 #define solverUpdateMip NULL
 
