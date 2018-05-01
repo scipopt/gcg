@@ -463,11 +463,20 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolvingTime)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputNNodes)
 {  /*lint --e{715}*/
+   SCIP* masterprob;
+
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_NNODES) == 0);
    assert(scip != NULL);
 
-   SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNNodes(scip), DISP_WIDT_NNODES);
+   /* get master problem */
+   masterprob = GCGgetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+      SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNNodes(masterprob), DISP_WIDT_NNODES);
+   else
+      SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNNodes(scip), DISP_WIDT_NNODES);
 
    return SCIP_OKAY;
 }
@@ -476,11 +485,20 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNNodes)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputNNodesLeft)
 {  /*lint --e{715}*/
+   SCIP* masterprob;
+
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_NODESLEFT) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNNodesLeft(scip), DISP_WIDT_NODESLEFT);
+   /* get master problem */
+   masterprob = GCGgetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNNodesLeft(masterprob), DISP_WIDT_NODESLEFT);
+   else
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNNodesLeft(scip), DISP_WIDT_NODESLEFT);
 
    return SCIP_OKAY;
 }
@@ -502,6 +520,8 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNLPIterations)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputNLPAvgIters)
 {  /*lint --e{715}*/
+   SCIP_Longint nnodes;
+
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_LPAVGITERS) == 0);
    assert(scip != NULL);
@@ -512,7 +532,12 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNLPAvgIters)
     *       nodes.
     */
 
-   if( SCIPgetNNodes(scip) < 2 )
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+      nnodes = SCIPgetNNodes(GCGgetMasterprob(scip));
+   else
+      nnodes = SCIPgetNNodes(scip);
+
+   if( nnodes < 2 )
       SCIPinfoMessage(scip, file, "     - ");
    else
       SCIPinfoMessage(scip, file, "%6.1f ",

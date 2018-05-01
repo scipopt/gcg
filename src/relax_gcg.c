@@ -48,7 +48,6 @@
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_setppc.h"
-#include "scip/cons_benders.h"
 #include "scip/scip.h"
 #include "scip/misc.h"
 
@@ -61,6 +60,7 @@
 #include "pricer_gcg.h"
 #include "benders_gcg.h"
 #include "masterplugins.h"
+#include "bendersplugins.h"
 #include "nodesel_master.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
@@ -82,7 +82,7 @@
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
-#define DEFAULT_MODE 0
+#define DEFAULT_MODE 0  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition) */
 #define DELVARS
 
 /*
@@ -94,6 +94,7 @@ struct SCIP_RelaxData
 {
    /* problems and convexity constraints */
    SCIP*                 masterprob;         /**< the master problem */
+   SCIP*                 altmasterprob;      /**< the master problem for the alternate decomposition algorithm */
    SCIP**                pricingprobs;       /**< the array of pricing problems */
    int                   npricingprobs;      /**< the number of pricing problems */
    int                   nrelpricingprobs;   /**< the number of relevant pricing problems */
@@ -138,6 +139,7 @@ struct SCIP_RelaxData
    SCIP_Bool             masterissetcover;   /**< is the master a set covering problem? */
    SCIP_Bool             dispinfos;          /**< should additional information be displayed? */
    int                   mode;               /**< the decomposition mode for GCG. 0: Dantzig-Wolfe (default), 1: Benders' decomposition, 2: automatic */
+   int                   origverblevel;      /**< the verbosity level of the original problem */
 
    /* data for probing */
    SCIP_Bool             masterinprobing;    /**< is the master problem in probing mode? */
@@ -155,37 +157,6 @@ struct SCIP_RelaxData
    /* filename information */
    const char*           filename;
 };
-
-#if 1
-/** information method for a parameter change of mode */
-static
-SCIP_DECL_PARAMCHGD(paramChgdDecompositionMode)
-{  /*lint --e{715}*/
-   SCIP* masterprob;
-   int newval;
-
-   masterprob = GCGgetMasterprob(scip);
-   newval = SCIPparamGetInt(param);
-
-   /* if the decomposition mode is changed, then the separation frequency of the Benders' decomposition constraint
-    * handler must be modified */
-   if( newval == DEC_DECMODE_DANTZIGWOLFE )
-   {
-      SCIP_CALL( SCIPsetIntParam(masterprob, "constraints/benders/sepafreq", -1) );
-   }
-   else if( newval == DEC_DECMODE_BENDERS )
-   {
-      SCIP_CALL( SCIPsetIntParam(masterprob, "constraints/benders/sepafreq", 1) );
-   }
-   else
-   {
-      assert(newval == DEC_DECMODE_AUTO);
-      SCIP_CALL( SCIPsetIntParam(masterprob, "constraints/benders/sepafreq", -1) );
-   }
-
-   return SCIP_OKAY;
-}
-#endif
 
 
 /*
@@ -1480,7 +1451,9 @@ SCIP_RETCODE createMasterProblem(
    assert(name != NULL);
 
    SCIP_CALL( SCIPcreateProb(masterscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
-   SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
+
+   if( mode == DEC_DECMODE_DANTZIGWOLFE )
+      SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
 
    /* set clocktype */
    SCIP_CALL( SCIPsetIntParam(masterscip, "timing/clocktype", clocktype) );
@@ -1501,7 +1474,7 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
 
    /* NOTE: This is just for testing. Separation, presolving and heuristics are turned off */
-   SCIP_CALL( SCIPsetSeparating(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
+   //SCIP_CALL( SCIPsetSeparating(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
    //SCIP_CALL( SCIPsetHeuristics(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
    SCIP_CALL( SCIPsetPresolving(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
    //SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxrounds", 0) );
@@ -1807,7 +1780,7 @@ SCIP_RETCODE createMaster(
    /* create master and pricing problem constraints */
    SCIP_CALL( createMasterprobConss(scip, relaxdata) );
    SCIP_CALL( createPricingprobConss(scip, relaxdata, hashorig2pricingvar) );
-   SCIP_CALL( GCGmasterCreateInitialMastervars(relaxdata->masterprob) );
+   SCIP_CALL( GCGmasterCreateInitialMastervars(relaxdata->masterprob, scip) );
 
    /* check if the master problem is a set partitioning or set covering problem */
    SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
@@ -2142,11 +2115,6 @@ SCIP_RETCODE initRelaxator(
 
    SCIP_CALL( createMaster(scip, relaxdata) );
 
-   /* Including the GCG Benders' decomposition plugin for the master problem.
-    * This must be done after the number of subproblems are known. */
-   SCIP_CALL( SCIPincludeBendersGcg(relaxdata->masterprob, scip, relaxdata->npricingprobs) );
-   SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "benders/gcg/lnscheck", FALSE) );
-
    /* for Benders' decomposition, the Benders' plugin must be activated */
    if( relaxdata->mode == DEC_DECMODE_BENDERS )
    {
@@ -2300,6 +2268,12 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
    }
 
+   /* free the alternate master problem */
+   if( relaxdata->altmasterprob != NULL )
+   {
+      SCIP_CALL( SCIPfree(&(relaxdata->altmasterprob)) );
+   }
+
    /* free used decomposition */
    if( relaxdata->decdecomp != NULL )
    {
@@ -2361,6 +2335,40 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    assert(relaxdata->masterprob != NULL);
 
    initRelaxdata(relaxdata);
+
+   /* if the master problem decomposition mode is the same as the original SCIP instance mode, then the master problem
+    * must be swapped with the alternate master problem.
+    */
+   if( GCGgetMasterDecompMode(relaxdata->masterprob) != GCGgetDecompositionMode(scip) )
+   {
+      SCIP* tmpscip;
+
+      tmpscip = relaxdata->masterprob;
+      relaxdata->masterprob = relaxdata->altmasterprob;
+      relaxdata->altmasterprob = tmpscip;
+   }
+
+   /* alternative verbosity levels are used for the Benders' decomposition mode compared to the Dantzig-Wolfe
+    * decomposition mode.
+    */
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+   {
+      /* first getting the verbosity level for the original problem before setting it to none. While the verbosity level
+       * was collected previously, the user may have changed this in the mean time.
+       */
+      SCIP_CALL( SCIPgetIntParam(scip, "display/verblevel", &relaxdata->origverblevel) );
+      SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+
+      /* deactivating display columns */
+      SCIP_CALL( SCIPsetIntParam(scip, "display/sumlpiterations/active", 0) );
+      SCIP_CALL( SCIPsetIntParam(scip, "display/lpiterations/active", 0) );
+      SCIP_CALL( SCIPsetIntParam(scip, "display/degeneracy/active", 0) );
+   }
+
+   /* fixing the GCG mode parameter. This ensure that the user does not change this during the solution process. If the
+    * mode parameter were to change, the behaviour is unknown.
+    */
+   SCIP_CALL( SCIPfixParam(scip, "relaxing/gcg/mode") );
 
    return SCIP_OKAY;
 }
@@ -2439,13 +2447,21 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
 
    relaxdata->relaxisinitialized = FALSE;
 
+   /* returning the verbosity level of the original problem to its original value */
+   //SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", relaxdata->origverblevel) );
+
    return SCIP_OKAY;
 }
 
 
-/** execution method of relaxator */
+/** execution method of the relaxator for Dantzig-Wolfe reformulation */
 static
-SCIP_DECL_RELAXEXEC(relaxExecGcg)
+SCIP_RETCODE relaxExecGcgDantzigWolfe(
+   SCIP*                 scip,               /**< the SCIP data structure */
+   SCIP_RELAX*           relax,              /**< the relaxator */
+   SCIP_Real*            lowerbound,         /**< the lowerbound computed by the relaxator for the current node */
+   SCIP_RESULT*          result              /**< the result of the relaxation call */
+   )
 {
    SCIP* masterprob;
    SCIP_RELAXDATA* relaxdata;
@@ -2641,6 +2657,200 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    return SCIP_OKAY;
 }
 
+/** execution method of the relaxator for Benders' decomposition */
+static
+SCIP_RETCODE relaxExecGcgBendersDecomposition(
+   SCIP*                 scip,               /**< the SCIP data structure */
+   SCIP_RELAX*           relax,              /**< the relaxator */
+   SCIP_Real*            lowerbound,         /**< the lowerbound computed by the relaxator for the current node */
+   SCIP_RESULT*          result              /**< the result of the relaxation call */
+   )
+{
+   SCIP* masterprob;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_Bool cutoff;
+   SCIP_Longint nodelimit;
+   SCIP_Real timelimit;
+   SCIP_Real memorylimit;
+   SCIP_Bool stored;
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+   assert(result != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+   *result = SCIP_DIDNOTRUN;
+
+
+   if( !relaxdata->relaxisinitialized )
+   {
+      SCIP_CALL( initRelaxator(scip, relax) );
+      SCIP_CALL( GCGconsOrigbranchAddRootCons(scip) );
+      relaxdata->relaxisinitialized = TRUE;
+      assert(relaxdata->decdecomp != NULL);
+   }
+
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
+
+   /* construct the LP in the original problem */
+   SCIP_CALL( SCIPconstructLP(scip, &cutoff) );
+   assert(!cutoff);
+   SCIP_CALL( SCIPflushLP(scip) );
+
+   /* solve the next node in the master problem */
+   SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
+
+   /* update the number of the last solved node */
+   relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
+
+   /* prior to performing the decomposition the original problem verbosity is changed to NONE. This avoids output from
+    * the original problem before the decomposition output. Once the decomposition has been performed, then the
+    * verbosity level of the original problem is returned to the original verbosity level.
+    */
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", relaxdata->origverblevel) );
+   SCIP_CALL( SCIPsetIntParam(masterprob, "display/verblevel", relaxdata->origverblevel) );
+
+   /* increase the node limit for the master problem by 1 */
+   SCIP_CALL( SCIPgetLongintParam(scip, "limits/nodes", &nodelimit) );
+   SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes", nodelimit) );
+
+   /* loop to solve the master problem, this is a workaround and does not fix any problem */
+   while( !SCIPisStopped(scip) )
+   {
+      SCIP_Real mastertimelimit = SCIPinfinity(scip);
+
+      /* set memorylimit for master */
+      SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
+      if( !SCIPisInfinity(scip, memorylimit) )
+         memorylimit -= SCIPgetMemUsed(scip)/1048576.0;
+
+      SCIP_CALL( SCIPsetRealParam(masterprob, "limits/memory", memorylimit) );
+
+      SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
+      if( !SCIPisInfinity(scip, timelimit) )
+      {
+
+         /* give the master 2% more time then the original scip has left */
+         mastertimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
+         SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit) );
+
+         SCIPdebugMessage("  time limit for master: %f, left: %f, left for original problem: %f\n",
+               mastertimelimit,
+               mastertimelimit - SCIPgetSolvingTime(masterprob),
+               timelimit - SCIPgetSolvingTime(scip));
+      }
+
+      /* if we have a blockdetection, see whether the node is block diagonal */
+      if( DECdecompGetType(relaxdata->decdecomp) == DEC_DECTYPE_DIAGONAL )
+      {
+         SCIP_CALL( solveDiagonalBlocks(scip, relaxdata, result, lowerbound) );
+         if( *result == SCIP_SUCCESS )
+         {
+            *result = SCIP_CUTOFF;
+            return SCIP_OKAY;
+         }
+      }
+      /* We are solving the masterproblem regularly */
+      else
+      {
+         SCIP_CALL( SCIPsolve(masterprob) );
+      }
+
+
+      if( SCIPgetStatus(masterprob) != SCIP_STATUS_TIMELIMIT )
+      {
+         break;
+      }
+
+      if( !SCIPisInfinity(scip, timelimit) && !SCIPisStopped(scip) )
+         SCIPinfoMessage(scip, NULL, "time for master problem was too short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
+   }
+   if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
+   {
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
+   /* set the lower bound pointer */
+   if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
+   {
+      *lowerbound = SCIPgetLocalDualbound(masterprob);
+
+   }
+   else
+   {
+      SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
+      assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
+      if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
+         *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
+      else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT )
+      {
+         SCIP_Real tilim;
+         SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
+         if( tilim-SCIPgetSolvingTime(masterprob) < 0 )
+         {
+            *result = SCIP_DIDNOTRUN;
+            return SCIP_OKAY;
+         }
+         *lowerbound = SCIPinfinity(scip);
+      }
+      else if( SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN )
+      {
+         *result = SCIP_DIDNOTRUN;
+         return SCIP_OKAY;
+      }
+      else
+      {
+         SCIPwarningMessage(scip, "Stage <%d> is not handled!\n", SCIPgetStage(masterprob));
+         *result = SCIP_DIDNOTRUN;
+         return SCIP_OKAY;
+      }
+   }
+
+   SCIPdebugMessage("  update lower bound (value = %g).\n", *lowerbound);
+
+   if( relaxdata->currentorigsol != NULL )
+   {
+      SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
+   }
+
+   *result = SCIP_SUCCESS;
+
+   return SCIP_OKAY;
+}
+
+/** execution method of relaxator */
+static
+SCIP_DECL_RELAXEXEC(relaxExecGcg)
+{
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+   assert(result != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* selecting the solving algorithm based upon the decomposition mode selected by the user */
+   if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
+   {
+      SCIP_CALL( relaxExecGcgDantzigWolfe(scip, relax, lowerbound, result) );
+   }
+   else if( relaxdata->mode == DEC_DECMODE_BENDERS )
+   {
+      SCIP_CALL( relaxExecGcgBendersDecomposition(scip, relax, lowerbound, result) );
+   }
+   else
+   {
+      SCIPinfoMessage(scip, NULL, "Sorry, the automatic selection is not currently available\n");
+   }
+
+   return SCIP_OKAY;
+}
+
 #define relaxCopyGcg NULL
 #define relaxInitGcg NULL
 
@@ -2681,15 +2891,17 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    /* Disable restarts */
    SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrestarts", 0) );
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
-   /* initialize the scip data structure for the master problem */
+
+   /* initialize the scip data structure for the master problem. The master problem is initialized as the Dantzig-Wolfe
+    * master problem. The alternate master problem is initialized as the Benders' decomposition master problem.
+    */
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
-   /* TODO: Need to check a parameter if Benders' is going to be used. */
-   /* The Benders' decomposition constraint handler is included here, but the Benders' decomposition plugin is included
-    * after the number of subproblems are known. This occurs when the relaxator is being initialised. */
-   SCIP_CALL( SCIPincludeConshdlrBenders(relaxdata->masterprob, TRUE) );
    SCIP_CALL( SCIPsetMessagehdlr(relaxdata->masterprob, SCIPgetMessagehdlr(scip)) );
+
+   /* getting the verbosity level of the original problem */
+   SCIP_CALL( SCIPgetIntParam(scip, "display/verblevel", &relaxdata->origverblevel) );
 
    /* disable display output in the master problem */
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
@@ -2707,10 +2919,16 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "lp/cleanupcolsroot", TRUE) );
 #endif
 
-   /* setting parameters for Benders' decomposition */
-   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "constraints/benderslp/maxdepth", -1) );
-   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "propagating/maxroundsroot", 0) );
-   //SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "display/lpinfo", TRUE) );
+   /* initializing the alternate master problem. The alternate master problem is initially the Benders' decomposition
+    * master problem
+    */
+   SCIP_CALL( SCIPcreate(&(relaxdata->altmasterprob)) );
+   SCIP_CALL( SCIPincludeBendersGcg(relaxdata->altmasterprob, scip) );
+   SCIP_CALL( GCGincludeBendersPlugins(relaxdata->altmasterprob) );
+   SCIP_CALL( SCIPsetMessagehdlr(relaxdata->altmasterprob, SCIPgetMessagehdlr(scip)) );
+
+   SCIP_CALL( SCIPsetIntParam(relaxdata->altmasterprob, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+   SCIP_CALL( SCIPsetBoolParam(relaxdata->altmasterprob, "display/relevantstats", FALSE) );
 
    /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
@@ -2723,8 +2941,8 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
          "should additional information about the blocks be displayed?",
          &(relaxdata->dispinfos), FALSE, DEFAULT_DISPINFOS, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/mode",
-            "the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition, 2: auto)",
-            &(relaxdata->mode), FALSE, DEFAULT_MODE, 0, 2, paramChgdDecompositionMode, NULL) );
+            "the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition)",
+            &(relaxdata->mode), FALSE, DEFAULT_MODE, 0, 1, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -3082,6 +3300,38 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    *transcons = mastercons;
 
    return SCIP_OKAY;
+}
+
+/** returns the original problem for the given master problem */
+SCIP* GCGgetOriginalprob(
+   SCIP*                 masterprob          /**< the SCIP data structure for the master problem */
+   )
+{
+   SCIP* origprob;
+   SCIP_BENDERS* benders;
+   SCIP_PRICER* pricer;
+
+   assert(masterprob != NULL);
+
+   /* retrieving the Benders' decomposition and the pricer plugins. There should only be one or the other for a given
+    * master problem. If there are both, then an error is returned */
+   benders = SCIPfindBenders(masterprob, "gcg");
+   pricer = SCIPfindPricer(masterprob, "gcg");
+   assert((benders != NULL && pricer == NULL) || (pricer != NULL && benders == NULL));
+
+   origprob = NULL;
+   if( benders != NULL )
+   {
+      origprob = GCGbendersGetOrigprob(masterprob);
+      assert(GCGgetDecompositionMode(origprob) == DEC_DECMODE_BENDERS);
+   }
+   else
+   {
+      origprob = GCGmasterGetOrigprob(masterprob);
+      assert(GCGgetDecompositionMode(origprob) == DEC_DECMODE_DANTZIGWOLFE);
+   }
+
+   return origprob;
 }
 
 /** returns the master problem */
@@ -4317,7 +4567,7 @@ SCIP_SOL* GCGgetBendersRelaxationSol(
 }
 
 /** returns the decomposition mode */
-int GCGgetDecompositionMode(
+DEC_DECMODE GCGgetDecompositionMode(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -4332,5 +4582,34 @@ int GCGgetDecompositionMode(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   return relaxdata->mode;
+   return (DEC_DECMODE)relaxdata->mode;
+}
+
+/** returns the decomposition mode of the master problem. The mode is given by the existence of either the GCG pricer or
+ * the GCG Benders' decomposition plugins.
+ */
+DEC_DECMODE GCGgetMasterDecompMode(
+   SCIP*                 masterprob          /**< the master problem SCIP instance */
+   )
+{
+   SCIP_BENDERS* benders;
+   SCIP_PRICER* pricer;
+
+   assert(masterprob != NULL);
+
+   /* retrieving the Benders' decomposition and the pricer plugins. There should only be one or the other for a given
+    * master problem. If there are both, then an error is returned */
+   benders = SCIPfindBenders(masterprob, "gcg");
+   pricer = SCIPfindPricer(masterprob, "gcg");
+   assert((benders != NULL && pricer == NULL) || (pricer != NULL && benders == NULL));
+
+   if( benders != NULL )
+      return DEC_DECMODE_BENDERS;
+   else if( pricer != NULL )
+      return DEC_DECMODE_DANTZIGWOLFE;
+   else
+   {
+      SCIPerrorMessage("Sorry, the decomposition mode of the master problem is invalid. This should not happen.");
+      SCIPABORT();
+   }
 }

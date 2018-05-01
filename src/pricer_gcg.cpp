@@ -3911,7 +3911,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    SCIP_CALL( createPricestore() );
 
-   SCIP_CALL( SCIPactivateEventHdlrDisplay(scip_) );
+   if( GCGgetDecompositionMode(origprob) != DEC_DECMODE_BENDERS )
+      SCIP_CALL( SCIPactivateEventHdlrDisplay(scip_) );
 
    return SCIP_OKAY;
 }
@@ -4803,18 +4804,20 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 
    assert(scip != NULL);
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
-   assert(pricer != NULL);
-
-   pricerdata = pricer->getPricerdata();
-   assert(pricerdata != NULL);
-
-   origprob = GCGmasterGetOrigprob(scip);
+   origprob = GCGgetOriginalprob(scip);
    assert(origprob != NULL);
 
-   addpricingvars = TRUE;
-   if( GCGgetDecompositionMode(origprob) == DEC_DECMODE_BENDERS )
-      addpricingvars = FALSE;
+   addpricingvars = FALSE;
+   if( GCGgetDecompositionMode(origprob) == DEC_DECMODE_DANTZIGWOLFE )
+   {
+      pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+      assert(pricer != NULL);
+
+      pricerdata = pricer->getPricerdata();
+      assert(pricerdata != NULL);
+
+      addpricingvars = TRUE;
+   }
 
    /* now compute coefficients of the master variables in the master constraint */
    origvars = SCIPgetVars(origprob);
@@ -4964,23 +4967,17 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 /** create initial master variables */
 extern "C"
 SCIP_RETCODE GCGmasterCreateInitialMastervars(
-   SCIP*                 scip                /**< master SCIP data structure */
+   SCIP*                 scip,               /**< master SCIP data structure */
+   SCIP*                 origprob            /**< the original problem */
    )
 {
-   ObjPricerGcg* pricer;
    int i;
-   SCIP* origprob;
    SCIP_VAR** vars;
    int nvars;
    int npricingprobs;
    int v;
 
    assert(scip != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
-   assert(pricer != NULL);
-
-   origprob = pricer->getOrigprob();
    assert(origprob != NULL);
 
    npricingprobs = GCGgetNPricingprobs(origprob);

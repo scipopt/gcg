@@ -39,8 +39,7 @@ extern "C" {
 EXTERN
 SCIP_RETCODE SCIPincludeBendersGcg(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP*                 origprob,           /**< the SCIP instance of the original problem */
-   int                   nsubproblems        /**< the number of subproblems in the Benders' decomposition */
+   SCIP*                 origprob            /**< the SCIP instance of the original problem */
    );
 
 /**@addtogroup BENDERS
@@ -52,6 +51,12 @@ SCIP_RETCODE SCIPincludeBendersGcg(
 EXTERN
 SCIP_SOL* SCIPbendersGetRelaxSol(
    SCIP_BENDERS*         benders             /**< the Benders' decomposition structure */
+   );
+
+/** returns the original problem for the given master problem */
+EXTERN
+SCIP* GCGbendersGetOrigprob(
+   SCIP*                 masterprob          /**< the master problem SCIP instance */
    );
 
 /* @} */

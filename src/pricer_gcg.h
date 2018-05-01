@@ -175,7 +175,8 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 /** create initial master variables */
 extern
 SCIP_RETCODE GCGmasterCreateInitialMastervars(
-   SCIP*                 scip                /**< master SCIP data structure */
+   SCIP*                 scip,               /**< master SCIP data structure */
+   SCIP*                 origprob            /**< the original problem */
    );
 
 /** get root node degeneracy */
