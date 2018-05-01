@@ -157,6 +157,11 @@ SCIP_Bool GCGisConsGCGCons(
    );
 
 
+/** returns the original problem for the given master problem */
+SCIP* GCGgetOriginalprob(
+   SCIP*                 masterprob          /**< the SCIP data structure for the master problem */
+   );
+
 /** returns the master problem */
 extern
 SCIP* GCGgetMasterprob(

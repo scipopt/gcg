@@ -217,8 +217,16 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
 /** returns the decomposition mode */
 extern
-int GCGgetDecompositionMode(
+DEC_DECMODE GCGgetDecompositionMode(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the decomposition mode of the master problem. The mode is given by the existence of either the GCG pricer or
+ * the GCG Benders' decomposition plugins.
+ */
+extern
+DEC_DECMODE GCGgetMasterDecompMode(
+   SCIP*                 masterprob          /**< the master problem SCIP instance */
    );
 
 #ifdef __cplusplus

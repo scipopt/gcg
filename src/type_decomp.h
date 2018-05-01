@@ -64,7 +64,6 @@ enum Decmode
 
 typedef enum Decmode DEC_DECMODE; /**< decomposition mode */
 
-
 #ifdef __cplusplus
 }
 #endif

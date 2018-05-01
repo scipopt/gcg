@@ -3911,7 +3911,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    SCIP_CALL( createPricestore() );
 
-   SCIP_CALL( SCIPactivateEventHdlrDisplay(scip_) );
+   if( GCGgetDecompositionMode(origprob) != DEC_DECMODE_BENDERS )
+      SCIP_CALL( SCIPactivateEventHdlrDisplay(scip_) );
 
    return SCIP_OKAY;
 }
@@ -4803,18 +4804,20 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 
    assert(scip != NULL);
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
-   assert(pricer != NULL);
-
-   pricerdata = pricer->getPricerdata();
-   assert(pricerdata != NULL);
-
-   origprob = GCGmasterGetOrigprob(scip);
+   origprob = GCGgetOriginalprob(scip);
    assert(origprob != NULL);
 
-   addpricingvars = TRUE;
-   if( GCGgetDecompositionMode(origprob) == DEC_DECMODE_BENDERS )
-      addpricingvars = FALSE;
+   addpricingvars = FALSE;
+   if( GCGgetDecompositionMode(origprob) == DEC_DECMODE_DANTZIGWOLFE )
+   {
+      pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+      assert(pricer != NULL);
+
+      pricerdata = pricer->getPricerdata();
+      assert(pricerdata != NULL);
+
+      addpricingvars = TRUE;
+   }
 
    /* now compute coefficients of the master variables in the master constraint */
    origvars = SCIPgetVars(origprob);

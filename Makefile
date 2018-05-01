@@ -177,6 +177,7 @@ LIBOBJ		=	reader_tex.o \
 			branch_empty.o \
 			branch_relpsprob.o \
 			masterplugins.o \
+			bendersplugins.o \
 			nodesel_master.o \
 			sepa_master.o \
 			sepa_basis.o \
