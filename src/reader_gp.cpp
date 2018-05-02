@@ -121,17 +121,35 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 /** write file header with terminal etc. */
 static
 SCIP_RETCODE writeGpHeader(
+   SCIP*                 scip,
    char*                 filename,           /**< filename (including path) to write to */
    const char*           outputname          /**< the filename to which gnuplot should compile the visualization */
    )
 {
    std::ofstream ofs;
+   SCIP_Bool plotformiplib;
+   char alternativeoutputname[SCIP_MAXSTRLEN];
+
+   SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &plotformiplib);
    ofs.open( filename, std::ofstream::out );
+
+   if( plotformiplib )
+   {
+      (void) SCIPsnprintf(alternativeoutputname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+      strcat(alternativeoutputname, ".png");
+   }
 
    /* set output format and file */
    ofs << "set encoding utf8" << std::endl;
-   ofs << "set terminal pdf" << std::endl;
-   ofs << "set output \"" << outputname << "\"" << std::endl;
+   if( !plotformiplib )
+      ofs << "set terminal pdf" << std::endl;
+   else
+      ofs << "set terminal pngcairo" << std::endl;
+
+   if( !plotformiplib )
+      ofs << "set output \"" << outputname << "\"" << std::endl;
+   else
+      ofs << "set output \"" << alternativeoutputname << "\"" << std::endl;
 
    ofs.close();
 
@@ -172,6 +190,7 @@ SCIP_RETCODE writeGpNonzeros(
    )
 {
    int radiusscale;
+   SCIP_Bool plotmiplib;
    std::vector<int> orderToRows(seeed->getNConss(), -1);
    std::vector<int> rowToOrder(seeed->getNConss(), -1);
    std::vector<int> orderToCols(seeed->getNVars(), -1);
@@ -262,11 +281,12 @@ SCIP_RETCODE writeGpNonzeros(
    ofs.open (filename, std::ofstream::out | std::ofstream::app );
 
    SCIPgetIntParam(seeedpool->getScip(), "visual/nonzeroradius", &radiusscale);
+   SCIPgetBoolParam(seeedpool->getScip(), "write/miplib2017plotsanddecs", &plotmiplib);
 
    radius *= radiusscale;
 
-   if ( radius < 0.000122 )
-      radius = 0.000122;
+   if ( plotmiplib && radius < 0.01 )
+      radius = 0.01;
 
    /* start writing dots */
    ofs << "plot \"-\" using 1:2:(" << radius << ") notitle pt 7 ps " << radius << " fc rgb \"" << SCIPvisuGetColorNonzero()
@@ -468,7 +488,7 @@ SCIP_RETCODE GCGwriteGpVisualization(
    }
 
    /* write file */
-   writeGpHeader( filename, outputname );
+   writeGpHeader(scip, filename, outputname );
    writeGpSeeed( filename, seeed, seeedpool );
 
    return SCIP_OKAY;
