@@ -121,7 +121,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
          SCIPsplitFilename(problemname, NULL, &outname2, NULL, NULL);
 
          strcat(outname2, ".png");
-         GCGwriteGpVisualization(scip, filename, outputname, seeed->getID() );
+         GCGwriteGpVisualization(scip, filename, outname2, seeed->getID() );
       }
 
       *result = SCIP_SUCCESS;
