@@ -88,9 +88,9 @@ struct GCG_SolverData
    CPXENVptr*            cpxenv;             /**< array of CPLEX environments for the pricing problems */
    CPXLPptr*             lp;                 /**< array of CPLEX problems for the pricing problems */
    int*                  nupdates;           /**< array storing the number of updates for all of the pricing problems */
-   SCIP_Longint*         curnodelimit;        /**< current node limit per pricing problem */
-   SCIP_Real*            curgaplimit;         /**< current gap limit per pricing problem */
-   SCIP_Longint*         cursollimit;         /**< current solution limit per pricing problem */
+   SCIP_Longint*         curnodelimit;       /**< current node limit per pricing problem */
+   SCIP_Real*            curgaplimit;        /**< current gap limit per pricing problem */
+   SCIP_Longint*         cursollimit;        /**< current solution limit per pricing problem */
    /**
     *  information about the basic pricing problem (without potential branching constraints)
     */
@@ -103,12 +103,12 @@ struct GCG_SolverData
     */
    SCIP_Bool             checksols;          /**< should solutions of the pricing MIPs be checked for duplicity? */
    int                   threads;            /**< number of threads the CPLEX pricing solver is allowed to use (0: automatic) */
-   SCIP_Longint          startnodelimit;      /**< start node limit for heuristic pricing */
-   SCIP_Real             startgaplimit;       /**< start gap limit for heuristic pricing */
-   int                   startsollimit;       /**< start solution limit for heuristic pricing */
-   SCIP_Real             nodelimitfac;        /**< factor by which to increase node limit for heuristic pricing */
-   SCIP_Real             gaplimitfac;         /**< factor by which to decrease gap limit for heuristic pricing */
-   SCIP_Real             sollimitfac;         /**< factor by which to increase solution limit for heuristic pricing */
+   SCIP_Longint          startnodelimit;     /**< start node limit for heuristic pricing */
+   SCIP_Real             startgaplimit;      /**< start gap limit for heuristic pricing */
+   int                   startsollimit;      /**< start solution limit for heuristic pricing */
+   SCIP_Real             nodelimitfac;       /**< factor by which to increase node limit for heuristic pricing */
+   SCIP_Real             gaplimitfac;        /**< factor by which to decrease gap limit for heuristic pricing */
+   SCIP_Real             sollimitfac;        /**< factor by which to increase solution limit for heuristic pricing */
 };
 
 /*
