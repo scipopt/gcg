@@ -133,11 +133,7 @@ SCIP_RETCODE writeGpHeader(
    SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &plotformiplib);
    ofs.open( filename, std::ofstream::out );
 
-   if( plotformiplib )
-   {
-      (void) SCIPsnprintf(alternativeoutputname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
-      strcat(alternativeoutputname, ".png");
-   }
+
 
    /* set output format and file */
    ofs << "set encoding utf8" << std::endl;
@@ -146,10 +142,7 @@ SCIP_RETCODE writeGpHeader(
    else
       ofs << "set terminal pngcairo" << std::endl;
 
-   if( !plotformiplib )
       ofs << "set output \"" << outputname << "\"" << std::endl;
-   else
-      ofs << "set output \"" << alternativeoutputname << "\"" << std::endl;
 
    ofs.close();
 
@@ -289,7 +282,11 @@ SCIP_RETCODE writeGpNonzeros(
       radius = 0.01;
 
    /* start writing dots */
-   ofs << "plot \"-\" using 1:2:(" << radius << ") notitle pt 7 ps " << radius << " fc rgb \"" << SCIPvisuGetColorNonzero()
+   if ( plotmiplib )
+      ofs << "plot \"-\" using 1:2:(" << radius << ") notitle pt 7 ps " << radius << " lc rgb \"" << SCIPvisuGetColorNonzero()
+            << "\"  " << std::endl;
+   else
+      ofs << "plot \"-\" using 1:2:(" << radius << ") notitle pt 7 ps " << radius << " fc rgb \"" << SCIPvisuGetColorNonzero()
       << "\"  " << std::endl;
 
    /* write scatter plot */
