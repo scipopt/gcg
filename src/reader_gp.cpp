@@ -97,17 +97,32 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    }
    else
    {
+      SCIP_Bool plotmiplib;
       seeed = seeedwr.seeed;
 
       /* reader internally works with the filename instead of the C FILE type */
       filename = misc->GCGgetFilePath(scip, file);
 
-      /* get filename for compiled file */
-      misc->GCGgetVisualizationFilename(scip, seeed, "pdf", outputname);
-      strcat(outputname, ".pdf");
+      SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &plotmiplib );
 
-      /* actual writing */
-      GCGwriteGpVisualization(scip, filename, outputname, seeed->getID() );
+      if( !plotmiplib )
+      {
+         /* get filename for compiled file */
+         misc->GCGgetVisualizationFilename(scip, seeed, "pdf", outputname);
+         strcat(outputname, ".pdf");
+
+         GCGwriteGpVisualization(scip, filename, outputname, seeed->getID() );
+      }
+      else
+      {
+         char problemname[SCIP_MAXSTRLEN];
+         char* outname2;
+         (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+         SCIPsplitFilename(problemname, NULL, &outname2, NULL, NULL);
+
+         strcat(outname2, ".png");
+         GCGwriteGpVisualization(scip, filename, outputname, seeed->getID() );
+      }
 
       *result = SCIP_SUCCESS;
    }
@@ -128,7 +143,6 @@ SCIP_RETCODE writeGpHeader(
 {
    std::ofstream ofs;
    SCIP_Bool plotformiplib;
-   char alternativeoutputname[SCIP_MAXSTRLEN];
 
    SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &plotformiplib);
    ofs.open( filename, std::ofstream::out );
