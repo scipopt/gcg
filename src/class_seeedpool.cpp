@@ -1061,41 +1061,9 @@ Seeedpool::Seeedpool(
 
    if( createconssadj )
    {
-      std::vector<std::list<int>> conssadjacenciestemp( consToScipCons.size(), std::list<int>(0) );
-
-      /** find constraint <-> constraint relationships and store them in both directions */
-      for( size_t i = 0; i < consToScipCons.size(); ++i )
-      {
-         for( size_t varid = 0; varid < varsForConss[i].size(); ++varid )
-         {
-            int var = varsForConss[i][varid];
-
-            for( size_t otherconsid = 0; otherconsid < conssForVars[var].size(); ++otherconsid )
-            {
-               int othercons = conssForVars[var][otherconsid];
-               if( othercons == (int) i )
-                  continue;
-
-               std::list<int>::iterator consiter = std::lower_bound( conssadjacenciestemp[i].begin(),conssadjacenciestemp[i].end(), othercons);
-
-               if( consiter == conssadjacenciestemp[i].end() || *consiter != othercons )
-                  conssadjacenciestemp[i].insert(consiter, othercons);
-            }
-         }
-
-      }
-
-      for( size_t i = 0; i < consToScipCons.size(); ++ i )
-      {
-         conssadjacencies.push_back(std::vector<int>(0));
-         std::list<int>::iterator consiter = conssadjacenciestemp[i].begin();
-         std::list<int>::iterator consiterend = conssadjacenciestemp[i].end();
-         for( ; consiter != consiterend; ++consiter )
-         {
-            conssadjacencies[i].push_back(*consiter);
-         }
-      }
+      createConssAdjacency();
    }
+
    /*  init  seeedpool with empty seeed */
    SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), this );
 
@@ -1246,6 +1214,47 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
 
    return SCIP_OKAY;
 }
+
+void Seeedpool::createConssAdjacency()
+{
+
+   std::vector<std::list<int>> conssadjacenciestemp( consToScipCons.size(), std::list<int>(0) );
+
+   /** find constraint <-> constraint relationships and store them in both directions */
+   for( size_t i = 0; i < consToScipCons.size(); ++i )
+   {
+      for( size_t varid = 0; varid < varsForConss[i].size(); ++varid )
+      {
+         int var = varsForConss[i][varid];
+
+         for( size_t otherconsid = 0; otherconsid < conssForVars[var].size(); ++otherconsid )
+         {
+            int othercons = conssForVars[var][otherconsid];
+            if( othercons == (int) i )
+               continue;
+
+            std::list<int>::iterator consiter = std::lower_bound( conssadjacenciestemp[i].begin(),conssadjacenciestemp[i].end(), othercons);
+
+            if( consiter == conssadjacenciestemp[i].end() || *consiter != othercons )
+               conssadjacenciestemp[i].insert(consiter, othercons);
+         }
+      }
+
+   }
+
+   for( size_t i = 0; i < consToScipCons.size(); ++ i )
+   {
+      conssadjacencies.push_back(std::vector<int>(0));
+      std::list<int>::iterator consiter = conssadjacenciestemp[i].begin();
+      std::list<int>::iterator consiterend = conssadjacenciestemp[i].end();
+      for( ; consiter != consiterend; ++consiter )
+      {
+         conssadjacencies[i].push_back(*consiter);
+      }
+   }
+
+}
+
 
 
 /** constructs seeeds using the registered detectors

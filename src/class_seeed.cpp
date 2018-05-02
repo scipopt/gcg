@@ -2515,6 +2515,7 @@ SCIP_RETCODE Seeed::completeByConnected(
      ){
 
      int cons;
+     SCIP_Bool conssadjcalculated;
 
      changedHashvalue = true;
 
@@ -2529,6 +2530,10 @@ SCIP_RETCODE Seeed::completeByConnected(
      if( getNLinkingvars() != 0 )
         return completeByConnected(givenseeedpool);
 
+     SCIPgetBoolParam(scip, "detection/conssadjcalculated", &conssadjcalculated);
+
+     if( !conssadjcalculated )
+        givenseeedpool->createConssAdjacency();
 
      std::vector<bool> isConsOpen( nConss, false );
      std::vector<bool> isConsVisited( nConss, false );
