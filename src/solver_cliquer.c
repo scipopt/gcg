@@ -49,7 +49,7 @@
 
 #define SOLVER_NAME          "cliquer"
 #define SOLVER_DESC          "heuristic solver for pricing problems that solves independent set problems with cliquer"
-#define SOLVER_PRIORITY      500
+#define SOLVER_PRIORITY      150
 
 #define SOLVER_ENABLED       TRUE            /**< indicates whether the solver should be enabled */
 
