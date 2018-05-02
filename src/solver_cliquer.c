@@ -472,7 +472,6 @@ SCIP_RETCODE solveCliquer(
 { /*lint -e715 */
    SCIP_CONS**    constraints;
    SCIP_CONS**    markedconstraints;
-   SCIP_CONS**    couplingcons;
    SCIP_CONSHDLR* conshdlr;
    SCIP_VAR**     lconsvars;
    SCIP_VAR**     vconsvars;
@@ -537,7 +536,6 @@ SCIP_RETCODE solveCliquer(
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&indsetvars,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&solvals,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&vconsvars,2) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&couplingcons,nconss) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkedvars,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkmatrix,npricingprobvars) );
    for( i = 0; i < npricingprobvars; ++i )
@@ -1117,7 +1115,6 @@ SCIP_RETCODE solveCliquer(
    }
    SCIPfreeBufferArray(pricingprob,&linkmatrix);
    SCIPfreeBufferArray(pricingprob,&linkedvars);
-   SCIPfreeBufferArray(pricingprob,&couplingcons);
    SCIPfreeBufferArray(pricingprob,&vconsvars);
    SCIPfreeBufferArray(pricingprob,&solvals);
    SCIPfreeBufferArray(pricingprob,&indsetvars);
