@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1318,7 +1318,7 @@ SCIP_DECL_HEURINIT(heurInitXpcrossover)
    heurdata->nextnodenumber = 0;
 
    /* create random number generator */
-   SCIP_CALL( SCIPrandomCreate(&heurdata->randnumgen, SCIPblkmem(scip),
+   SCIP_CALL( SCIPcreateRandom(scip, &heurdata->randnumgen,
          SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
 
    /* initialize hash table */
@@ -1359,7 +1359,7 @@ SCIP_DECL_HEUREXIT(heurExitXpcrossover)
    SCIPhashtableFree(&heurdata->hashtable);
 
    /* free random number generator */
-   SCIPrandomFree(&heurdata->randnumgen);
+   SCIPfreeRandom(scip, &heurdata->randnumgen);
 
    return SCIP_OKAY;
 }

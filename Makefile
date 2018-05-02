@@ -34,7 +34,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	2.1.2
+VERSION         :=	2.1.4
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -56,6 +56,7 @@ MASTERSETTINGS	=	default
 
 VALGRIND	=	false
 MODE		=	readdec
+STATISTICS  =  false
 PROJECT		=	none
 GTEST		=	true
 PARASCIP	= 	true

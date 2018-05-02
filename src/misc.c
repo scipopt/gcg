@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -73,6 +73,9 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
 
    SCIP_CALL( SCIPcreateSol(scip, origsol, GCGrelaxGetProbingheur(scip)) );
 
+   if( !GCGmasterIsSolValid(masterprob, mastersol) )
+      return SCIP_OKAY;
+
    SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );
    SCIP_CALL( SCIPallocBufferArray(scip, &blocknrs, npricingprobs) );
 
@@ -99,6 +102,9 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       SCIP_Real* origvals;
       SCIP_Bool isray;
       int blocknr;
+
+      if( !SCIPisPositive(masterprob, mastervals[i]) )
+         continue;
 
       origvars = GCGmasterVarGetOrigvars(mastervars[i]);
       norigvars = GCGmasterVarGetNOrigvars(mastervars[i]);
@@ -151,6 +157,13 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
          /* increase the corresponding value */
          SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origvars[0]), origvals[0] * mastervals[i],  SCIPvarGetName(mastervars[i]));
          SCIP_CALL( SCIPincSolVal(scip, *origsol, origvars[0], origvals[0] * mastervals[i]) );
+         mastervals[i] = 0.0;
+         continue;
+      }
+      if( blocknr == -2 )
+      {
+         assert(norigvars == 0);
+
          mastervals[i] = 0.0;
          continue;
       }

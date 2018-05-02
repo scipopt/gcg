@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -2435,6 +2435,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       /* if we have a master variable, we branch on it */
       if( GCGvarGetBlock(mastervar) == -1 )
       {
+         assert(!GCGmasterVarIsArtificial(mastervar));
 #ifndef NDEBUG
          foundblocknr = TRUE;
 #endif

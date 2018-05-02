@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1643,8 +1643,9 @@ SCIP_RETCODE DECdecompRemoveDeletedConss(
             SCIP_CALL( SCIPreleaseCons(scip, &decdecomp->subscipconss[block][c]) );
          }
       }
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->subscipconss[block],
-         SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]), SCIPcalcMemGrowSize(scip, pos)) );
+      if( decdecomp->nsubscipconss[block] > 0 )
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->subscipconss[block],
+            SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]), SCIPcalcMemGrowSize(scip, pos)) );
       decdecomp->nsubscipconss[block] = pos;
    }
 
@@ -1660,7 +1661,7 @@ SCIP_RETCODE DECdecompRemoveDeletedConss(
          SCIP_CALL( SCIPreleaseCons(scip, &decdecomp->linkingconss[c]) );
       }
    }
-   if( decdecomp->linkingconss != NULL )
+   if( decdecomp->nlinkingconss > 0 )
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss,
          SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss), SCIPcalcMemGrowSize(scip, pos)) );
    decdecomp->nlinkingconss = pos;

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -217,6 +217,12 @@ SCIP_Bool GCGmasterVarIsRay(
    SCIP_VAR*             var                 /**< variable data structure */
    );
 
+/** returns TRUE or FALSE whether a master variable is an artificial variable */
+extern
+SCIP_Bool GCGmasterVarIsArtificial(
+   SCIP_VAR*             var                 /**< variable data structure */
+   );
+
 /** returns the number of original variables the master variable is contained in */
 extern
 int GCGmasterVarGetNOrigvars(
@@ -352,6 +358,14 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< original variable */
    SCIP_VAR**            newvar              /**< pointer to store new variable */
+   );
+
+/** creates artificial variable and the vardata */
+SCIP_RETCODE GCGcreateArtificialVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            newvar,              /**< pointer to store new variable */
+   const char*           name,               /**< name of variable, or NULL for automatic name creation */
+   SCIP_Real             objcoef             /**< objective coefficient of artificial variable */
    );
 
 /** sets the creation node of this var */

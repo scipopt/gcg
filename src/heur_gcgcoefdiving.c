@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -284,7 +284,6 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgcoefdiving) /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
    SCIP_VAR** lpcands;
    SCIP_Real* lpcandssol;
-   SCIP_Real* lpcandsfrac;
    int nlpcands;
    SCIP_Bool bestcandmayrounddown;
    SCIP_Bool bestcandmayroundup;
@@ -304,9 +303,8 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgcoefdiving) /*lint --e{715}*/
    assert(divingdata != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
    assert(lpcands != NULL);
-   assert(lpcandsfrac != NULL);
    assert(lpcandssol != NULL);
 
    bestcandmayrounddown = TRUE;
@@ -331,7 +329,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgcoefdiving) /*lint --e{715}*/
       SCIP_Real frac;
 
       var = lpcands[c];
-      frac = lpcandsfrac[c];
+      frac = lpcandssol[c] - SCIPfloor(scip, lpcandssol[c]);
 
       /* if the variable is on the tabu list, do not choose it */
       for( i = 0; i < tabulistsize; ++i )
