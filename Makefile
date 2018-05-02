@@ -208,9 +208,9 @@ LIBOBJ		=	reader_blk.o \
 			event_relaxsol.o \
 			event_solvingstats.o \
 			event_display.o \
+			solver_cliquer.o \
 			solver_mip.o \
 			solver_knapsack.o \
-			solver_independentset.o \
 			cons_decomp.o \
 			decomp.o \
 			dec_arrowheur.o \

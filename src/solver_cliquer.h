@@ -25,16 +25,17 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   solver_independentset.h
- * @brief  knapsack solver for pricing problems
- * @author Gerald Gamrath
+/**@file   solver_cliquer.h
+ * @brief  heuristic solver for pricing problems that solves independent set problems with cliquer
+ * @author Henri Lotze
+ * @author Christian Puchert
  * @ingroup PRICINGSOLVERS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_SOLVER_INDEPENDENTSET_H__
-#define GCG_SOLVER_INPEPENDENTSET_H__
+#ifndef GCG_SOLVER_CLIQUER_H__
+#define GCG_SOLVER_CLIQUER_H__
 
 #include "scip/scip.h"
 
@@ -42,9 +43,9 @@
 extern "C" {
 #endif
 
-/** creates the knapsack solver for pricing problems and includes it in GCG */
+/** creates the cliquer solver for pricing problems and includes it in GCG */
 extern
-SCIP_RETCODE GCGincludeSolverIndependentSet(
+SCIP_RETCODE GCGincludeSolverCliquer(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

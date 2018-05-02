@@ -133,8 +133,8 @@
 #include "scip/debug.h"
 #include "dialog_master.h"
 #include "disp_master.h"
+#include "solver_cliquer.h"
 #include "solver_knapsack.h"
-#include "solver_independentset.h"
 #include "solver_mip.h"
 #include "event_bestsol.h"
 #include "event_relaxsol.h"
@@ -270,8 +270,8 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    /* Jonas' stuff */
    SCIP_CALL( SCIPincludeSepaBasis(scip) );
 
+   SCIP_CALL( GCGincludeSolverCliquer(scip) );
    SCIP_CALL( GCGincludeSolverKnapsack(scip) );
-   SCIP_CALL( GCGincludeSolverIndependentSet(scip) );
    SCIP_CALL( GCGincludeSolverMip(scip) );
 
 #ifndef NCPLEXSOLVER
