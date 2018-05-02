@@ -42,10 +42,10 @@
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 #include "pub_gcgcol.h"
-#include "cliquer.h"
-#include "graph.h"                           /* Graph structure from cliquer library */
-
 #include "pub_gcgvar.h"
+
+#include "cliquer.h"
+
 
 #define SOLVER_NAME          "cliquer"
 #define SOLVER_DESC          "heuristic solver for pricing problems that solves independent set problems with cliquer"
@@ -1181,7 +1181,7 @@ SCIP_RETCODE GCGincludeSolverCliquer(
    origprob = GCGmasterGetOrigprob(scip);
    SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
 
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED, solverSolveIndependentSet,
+   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED, solverSolveCliquer,
          solverSolveHeurCliquer, solverFreeCliquer, solverInitCliquer, solverExitCliquer,
          solverInitsolCliquer, solverExitsolCliquer, solverdata) );
 

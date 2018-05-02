@@ -152,6 +152,10 @@
 #include "heur_restmaster.h"
 #include "heur_setcover.h"
 
+#ifndef NCLIQUER
+#include "solver_cliquer.h"
+#endif
+
 #ifndef NCPLEXSOLVER
 #include "solver_cplex.h"
 #endif
@@ -270,9 +274,12 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    /* Jonas' stuff */
    SCIP_CALL( SCIPincludeSepaBasis(scip) );
 
-   SCIP_CALL( GCGincludeSolverCliquer(scip) );
    SCIP_CALL( GCGincludeSolverKnapsack(scip) );
    SCIP_CALL( GCGincludeSolverMip(scip) );
+
+#ifndef NCLIQUER
+   SCIP_CALL( GCGincludeSolverCliquer(scip) );
+#endif
 
 #ifndef NCPLEXSOLVER
    SCIP_CALL( GCGincludeSolverCplex(scip) );
