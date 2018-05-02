@@ -2533,7 +2533,10 @@ SCIP_RETCODE Seeed::completeByConnected(
      SCIPgetBoolParam(scip, "detection/conssadjcalculated", &conssadjcalculated);
 
      if( !conssadjcalculated )
+     {
         givenseeedpool->createConssAdjacency();
+        SCIPsetBoolParam(scip, "detection/conssadjcalculated", TRUE);
+     }
 
      std::vector<bool> isConsOpen( nConss, false );
      std::vector<bool> isConsVisited( nConss, false );
