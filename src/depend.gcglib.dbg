@@ -97,14 +97,15 @@ $(LIBOBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/s
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
  lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
- lib/scip/src/scip/heuristics.h lib/scip/src/scip/cons_integral.h \
- lib/scip/src/scip/cons_knapsack.h lib/scip/src/scip/cons_linear.h \
- lib/scip/src/scip/cons_logicor.h lib/scip/src/scip/cons_setppc.h \
- lib/scip/src/scip/cons_varbound.h lib/scip/src/scip/heur_actconsdiving.h \
- lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heuristics.h lib/scip/src/scip/cons_indicator.h \
+ lib/scip/src/scip/cons_integral.h lib/scip/src/scip/cons_knapsack.h \
+ lib/scip/src/scip/cons_linear.h lib/scip/src/scip/cons_logicor.h \
+ lib/scip/src/scip/cons_setppc.h lib/scip/src/scip/cons_varbound.h \
+ lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
+ lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
+ lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_dualval.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \

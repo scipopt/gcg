@@ -240,6 +240,11 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+
 SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
    SCIP*       scip
    );

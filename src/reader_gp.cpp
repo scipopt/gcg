@@ -265,8 +265,8 @@ SCIP_RETCODE writeGpNonzeros(
 
    radius *= radiusscale;
 
-   if ( radius < 0.000122 )
-      radius = 0.000122;
+   if ( radius < 0.0007 )
+      radius = 0.0007;
 
    /* start writing dots */
    ofs << "plot \"-\" using 1:2:(" << radius << ") notitle pt 7 ps " << radius << " fc rgb \"" << SCIPvisuGetColorNonzero()
