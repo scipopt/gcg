@@ -945,7 +945,10 @@ Seeedpool::Seeedpool(
       relevantCons = transformed ? consGetRelevantRepr( scip, conss[i] ) : conss[i];
 
       if( SCIPconsIsDeleted( relevantCons ) || SCIPconsIsObsolete(relevantCons) )
+      {
          continue;
+      }
+
 
       if( relevantCons != NULL )
       {
@@ -987,7 +990,7 @@ Seeedpool::Seeedpool(
       }
    }
 
-   /** from here on nVars and nConss represents the relevant numbers */
+    /** from here on nVars and nConss represents the relevant numbers */
    nVars = relevantVarCounter;
    nConss = relevantConsCounter;
    SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, " nvars: %d / nconss: %d \n", nVars, nConss  );
@@ -2539,7 +2542,9 @@ void Seeedpool::translateSeeeds(
    SCIPgetIntParam(scip, "presolving/maxrounds", &roundspresolving);
 
    presolvingdisabled = (roundspresolving == 0);
-   if( presolvingdisabled )
+
+   presolvingdisabled =  presolvingdisabled &&  (nVars == origpool->getNVars() );
+   if( presolvingdisabled && FALSE ) /** @TODO BUG consider removing this shortcut */
    {
       missingrowinthis = std::vector<int>(0);
       rowothertothis = std::vector<int>(0);
@@ -2648,7 +2653,9 @@ void Seeedpool::calcTranslationMapping(
          }
       }
       if( ! foundmaintained )
+      {
          missingrowinthis.push_back( i );
+      }
    }
 
    for( int i = 0; i < ncolsother; ++i )

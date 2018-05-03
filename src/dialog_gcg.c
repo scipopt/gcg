@@ -761,7 +761,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          if( SCIPconshdlrDecompUnpresolvedSeeedExists(scip) )
          {
             SCIP_Bool success;
-            SCIPinfoMessage(scip, NULL,"there is an unpresolved user decomposition -> try to translate it to presolved problem...  \n");
+            SCIPinfoMessage(scip, NULL,"there is an unpresolved decomposition -> try to translate it to presolved problem...  \n");
             SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
 
             if( !success )
@@ -808,11 +808,17 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE ) );
       if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
       {
-         SCIPinfoMessage(scip, NULL,"best candidate decomposition is from unpresolved problem -> revoke presolving and use it \n");
+         int npresolvingrounds;
+
          /* @TODO experimental */
-         SCIPfreeTransform(scip);
-         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-         SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+         SCIPgetIntParam(scip, "presolving/maxrounds", &npresolvingrounds);
+         if( npresolvingrounds > 0)
+         {
+            SCIPinfoMessage(scip, NULL,"best candidate decomposition is from unpresolved problem -> revoke presolving and use it \n");
+            SCIPfreeTransform(scip);
+            SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+            SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+         }
       }
       SCIP_CALL( SCIPsolve(scip) );
       break;

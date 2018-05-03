@@ -789,10 +789,10 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
 
    delete conshdlrdata->seeedpool;
 
-   if( conshdlrdata->seeedpoolunpresolved != NULL )
-        delete conshdlrdata->seeedpoolunpresolved;
-
-   conshdlrdata->seeedpoolunpresolved = NULL;
+//   if( conshdlrdata->seeedpoolunpresolved != NULL )
+//        delete conshdlrdata->seeedpoolunpresolved;
+//
+//   conshdlrdata->seeedpoolunpresolved = NULL;
 
    conshdlrdata->seeedpool = NULL;
    return SCIP_OKAY;
@@ -4153,7 +4153,8 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
 
    return ( (conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->getNFinishedSeeeds() > 0 )  ||
       ( conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->getNIncompleteSeeeds() > 0 ) ||
-      ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds() > 0 ) ) ;
+      ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds() > 0 )  ||
+      ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() > 0 )      ) ;
 }
 
 /** returns TRUE iff there is at least one full decompositions */
