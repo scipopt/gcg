@@ -1053,7 +1053,11 @@ Seeedpool::Seeedpool(
 
    }
 
-   createconssadj = (getNConss() < 50000);
+   SCIPgetBoolParam(scip, "detection/conssadjcalculated", &createconssadj );
+   createconssadj = createconssadj && (getNConss() < 1000);
+
+   if( !createconssadj )
+      SCIPsetBoolParam(scip, "detection/conssadjcalculated", FALSE );
 
    if( createconssadj )
    {
@@ -1093,9 +1097,8 @@ Seeedpool::Seeedpool(
       }
    }
    /*  init  seeedpool with empty seeed */
-   SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), nConss, nVars );
+   SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), this );
 
-   emptyseeed->setSeeedpool(this);
    addSeeedToCurr( emptyseeed );
    addSeeedToAncestor(emptyseeed);
 
@@ -2555,6 +2558,7 @@ void Seeedpool::translateSeeeds(
       origseeeds.size() );
 
    newseeeds = getTranslatedSeeeds( origseeeds, rowothertothis, rowthistoother, colothertothis, colthistoother );
+
 }
 
 /** calculates necessary data for translating seeeds and classifiers */
@@ -2634,11 +2638,20 @@ void Seeedpool::calcTranslationMapping(
 
    for( int i = 0; i < ncolsother; ++i )
    {
-      SCIP_VAR* othervar = origscipvars[i];
+      SCIP_VAR* othervar;
+      SCIP_VAR* probvar;
+      SCIP_CALL_ABORT( SCIPgetTransformedVar(scip, origscipvars[i], &othervar ) );
+      if (othervar == NULL)
+         continue;
+
+      probvar = SCIPvarGetProbvar(othervar);
+      if ( probvar == NULL )
+         continue;
+
       for( int j2 = i; j2 < ncolsthis + i; ++j2 )
       {
          int j = j2 % ncolsthis;
-         if( othervar == thisscipvars[j] )
+         if( probvar == thisscipvars[j] )
          {
             colothertothis[i] = j;
             colthistoother[j] = i;
@@ -2678,13 +2691,9 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
 
       otherseeed = origseeeds[s];
 
-      /** ignore seeeds with one block or no block, they are supposed to be found anyway */
-      if( otherseeed->getNBlocks() == 1 || otherseeed->getNBlocks() == 0 )
-         continue;
-
       SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL, " transform seeed %d \n", otherseeed->getID() );
 
-      newseeed = new Seeed( scip, this->getNewIdForSeeed(), this->getNConss(), this->getNVars() );
+      newseeed = new Seeed( scip, this->getNewIdForSeeed(), this );
 
       /** prepare new seeed */
       newseeed->setNBlocks( otherseeed->getNBlocks() );
@@ -2765,7 +2774,6 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->sort();
       newseeed->considerImplicits( this );
       newseeed->deleteEmptyBlocks(false);
-      newseeed->setSeeedpool(this);
       newseeed->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
 
       if( newseeed->checkConsistency( this ) )
@@ -2775,6 +2783,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
          delete newseeed;
          newseeed = NULL;
       }
+
    }
 
    return newseeeds;
@@ -4063,13 +4072,6 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
 
    classifier = new ConsClassifier( scip, "constypes according to miplip", (int) SCIP_CONSTYPE_GENERAL + 1, getNConss() );
 
-#ifdef WRITE_ORIG_CONSTYPES
-   std::ofstream myfile;
-   myfile.open ("origconstypes.csv", std::ios::app );
-   myfile << SCIPgetProbName(scip) << ", ";
-#endif
-
-
 
    /** set class names and descriptions of every class */
    for( int c = 0; c < classifier->getNClasses(); ++ c )
@@ -5355,7 +5357,7 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 //   std::cout << "Linkingvars decomp: " << DECdecompGetNLinkingvars( decomp ) << "\tStairlinkingvars decomp: " << DECdecompGetNTotalStairlinkingvars( decomp ) << "\n";
 
    /* create new seeed and initialize its data */
-   SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nConss, nVars );
+   SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), this );
    seeed->setNBlocks( DECdecompGetNBlocks( decomp ) );
 
    assert( seeed->getNOpenconss() == nConss );

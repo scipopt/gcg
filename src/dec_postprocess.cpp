@@ -168,14 +168,17 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
    char decinfo[SCIP_MAXSTRLEN];
    SCIP_Bool success;
    SCIP_Bool byconssadj;
+   SCIP_Bool conssadjcalculated;
 
    gcg::Seeed* seeed;
    seeed  = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
    SCIPgetBoolParam(scip, "detection/detectors/postprocess/useconssadj", &byconssadj);
+   SCIPgetBoolParam(scip, "detection/conssadjcalculated", &conssadjcalculated);
+
 
    //complete the seeed by bfs
-   if ( byconssadj )
+   if ( byconssadj && conssadjcalculated)
       seeed->postprocessMasterToBlocksConssAdjacency(seeedPropagationData->seeedpool, &success );
    else
       seeed->postprocessMasterToBlocks(seeedPropagationData->seeedpool, &success );
