@@ -172,14 +172,6 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
       return SCIP_OKAY;
    }
 
-   /* if we are solving a problem using Benders' decomposition, then we do not need to check for integrality. An
-    * integral master problem will result in an integral solution for the original problem */
-   SCIP_CALL( SCIPgetIntParam(origprob, "relaxing/gcg/mode", &mode) );
-   if( mode == DEC_DECMODE_BENDERS )
-   {
-      return SCIP_OKAY;
-   }
-
    /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
    if( GCGrelaxIsOrigSolFeasible(origprob) )
    {
@@ -244,14 +236,6 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
       return SCIP_OKAY;
    }
 
-   /* if we are solving a problem using Benders' decomposition, then we do not need to check for integrality. An
-    * integral master problem will result in an integral solution for the original problem */
-   SCIP_CALL( SCIPgetIntParam(origprob, "relaxing/gcg/mode", &mode) );
-   if( mode == DEC_DECMODE_BENDERS )
-   {
-      return SCIP_OKAY;
-   }
-
    assert(SCIPgetNPseudoBranchCands(origprob) > 0);
 
    sortBranchrules(conshdlrdata->branchrules, conshdlrdata->nbranchrules);
@@ -302,14 +286,6 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( discretization )
-   {
-      return SCIP_OKAY;
-   }
-
-   /* if we are solving a problem using Benders' decomposition, then we do not need to check for integrality. An
-    * integral master problem will result in an integral solution for the original problem */
-   SCIP_CALL( SCIPgetIntParam(origprob, "relaxing/gcg/mode", &mode) );
-   if( mode == DEC_DECMODE_BENDERS )
    {
       return SCIP_OKAY;
    }

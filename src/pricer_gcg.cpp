@@ -3911,8 +3911,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    SCIP_CALL( createPricestore() );
 
-   if( GCGgetDecompositionMode(origprob) != DEC_DECMODE_BENDERS )
-      SCIP_CALL( SCIPactivateEventHdlrDisplay(scip_) );
+   SCIP_CALL( SCIPactivateEventHdlrDisplay(scip_) );
 
    return SCIP_OKAY;
 }
@@ -4022,13 +4021,6 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    /* retrieving the decomposition mode */
    SCIP_CALL( SCIPgetIntParam(origprob, "relaxing/gcg/mode", &decompmode) );
 
-   /* if the decomposition mode is Benders', then no columns will be added by the pricer */
-   if( decompmode == DEC_DECMODE_BENDERS )
-   {
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
-   }
-
    if( reducedcostpricing->getCalls() == 0 )
    {
       /** @todo This is just a workaround around SCIP stages! */
@@ -4100,13 +4092,6 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
 
    /* retrieving the decomposition mode */
    SCIP_CALL( SCIPgetIntParam(origprob, "relaxing/gcg/mode", &decompmode) );
-
-   /* if the decomp mode is Benders', then no columns will be added by the pricer */
-   if( decompmode == DEC_DECMODE_BENDERS )
-   {
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
-   }
 
    /** @todo This is just a workaround around SCIP stages! */
    if( reducedcostpricing->getCalls() == 0 && farkaspricing->getCalls() == 0 )

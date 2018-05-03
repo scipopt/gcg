@@ -95,9 +95,7 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
    }
 #endif
 
-   /* if Benders decomposition is used, then the relaxation solution has already been updated. */
-   if( GCGgetDecompositionMode(origprob) != DEC_DECMODE_BENDERS )
-      SCIP_CALL( GCGrelaxUpdateCurrentSol(origprob) );
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(origprob) );
 
    return SCIP_OKAY;
 }
