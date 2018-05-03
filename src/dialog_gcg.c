@@ -742,13 +742,12 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
    case SCIP_STAGE_PRESOLVING:
  //     SCIPdialogMessage(scip, NULL, "in presolving \n");
-
-
-      //      if( DEChasDetectionRun(scip) || (DECgetBestDecomp(scip) != NULL) )
-//      {
-//         SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
-//         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-//      }
+      SCIPinfoMessage(scip, NULL,"there is an unpresolved user decomposition an problem is not presolved yet -> disable presolving and start   \n");
+      if( SCIPconshdlrDecompUnpresolvedUserSeeedAdded(scip) )
+      {
+         SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
+         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+      }
       SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
 
    case SCIP_STAGE_PRESOLVED:

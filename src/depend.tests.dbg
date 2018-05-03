@@ -97,11 +97,11 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
  lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
- lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
+ lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
+ lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -128,8 +128,9 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
+ lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
+ lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -275,11 +276,11 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
  lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
- lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
+ lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
+ lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -306,8 +307,9 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
+ lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
+ lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -455,11 +457,11 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
  lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
- lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
+ lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
+ lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -486,8 +488,9 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
+ lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
+ lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -632,11 +635,11 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
  lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
- lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
+ lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
+ lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -663,8 +666,9 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
+ lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
+ lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -813,11 +817,11 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
  lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
- lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
+ lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
+ lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -844,8 +848,9 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
+ lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
+ lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -991,11 +996,11 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
  lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
- lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
+ lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
+ lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -1022,8 +1027,9 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
+ lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
+ lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -1170,11 +1176,11 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
  lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
- lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
+ lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
+ lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -1201,8 +1207,9 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
+ lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
+ lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -1349,11 +1356,11 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
  lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
- lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
+ lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
+ lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -1380,8 +1387,9 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
+ lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
+ lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -1530,11 +1538,11 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
  lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
- lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
+ lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
+ lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -1561,8 +1569,9 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
+ lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
+ lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -1713,11 +1722,11 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
  lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
- lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
+ lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
+ lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -1744,8 +1753,9 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
- lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
+ lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
+ lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
