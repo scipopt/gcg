@@ -141,7 +141,6 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
 {  /*lint --e{715}*/
    SCIP* origprob;
    SCIP_Bool discretization;
-   int mode;
    int i;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
@@ -209,7 +208,6 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
 {  /*lint --e{715}*/
    SCIP* origprob;
    SCIP_Bool discretization;
-   int mode;
    SCIP_CONSHDLRDATA* conshdlrdata;
    int i;
 
@@ -267,7 +265,6 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    int norigvars;
    SCIP_Real solval;
    SCIP_Bool discretization;
-   int mode;
    int v;
    int i;
 
