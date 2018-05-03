@@ -1121,6 +1121,7 @@ Seeedpool::~Seeedpool()
       SCIPreleaseCons(scip, &cons);
    }
 
+
    for( size_t i = 0; i < ancestorseeeds.size(); ++i )
    {
       size_t help = ancestorseeeds.size() - i - 1;

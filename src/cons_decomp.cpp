@@ -784,12 +784,9 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
    }
 
    delete conshdlrdata->seeedpool;
+  // delete conshdlrdata->seeedpoolunpresolved;
 
-   if( conshdlrdata->seeedpoolunpresolved != NULL )
-        delete conshdlrdata->seeedpoolunpresolved;
-
-   conshdlrdata->seeedpoolunpresolved = NULL;
-
+ //  conshdlrdata->seeedpoolunpresolved = NULL;
    conshdlrdata->seeedpool = NULL;
    return SCIP_OKAY;
 }
@@ -2530,7 +2527,9 @@ int SCIPconshdlrDecompGetNFormerDetectionConssForID(
       currseeedpool = conshdlrdata->seeedpoolunpresolved;
    }
 
-   assert(seeed != NULL);
+   /** seeed is not found hence we should not trust the isomorph information from detection */
+   if (seeed == NULL)
+      return -1;
 
    return currseeedpool->getNConss();
 
