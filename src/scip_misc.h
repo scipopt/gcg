@@ -116,11 +116,23 @@ SCIP_RETCODE GCGconsGetVals(
    );
 
 /** returns true if the constraint should be a master constraint and false otherwise */
+SCIP_Bool GCGconsIsRanged(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to check */
+);
+
+/** returns true if the constraint should be a master constraint and false otherwise */
 SCIP_Bool GCGgetConsIsSetppc(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to check */
    SCIP_SETPPCTYPE*      setppctype          /**< returns the type of the constraints */
    );
+
+SCIP_Bool GCGgetConsIsCardinalityCons(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons               /**< constraint to check */
+);
+
 
 /** returns TRUE or FALSE, depending whether we are in the root node or not */
 extern

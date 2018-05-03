@@ -40,6 +40,7 @@
 #include "cons_decomp.h"
 #include "gcgsort.h"
 #include <string.h>
+#include <unistd.h>
 
 /** computes the generator of mastervar for the entry in origvar
  * @return entry of the generator corresponding to origvar */
@@ -115,7 +116,6 @@ GCG_DECL_SORTPTRCOMP(mastervarcomp)
 
    return 0;
 }
-
 
 /** transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method
@@ -589,6 +589,96 @@ SCIP_RETCODE GCGprintStatistics(
    }
    return SCIP_OKAY;
 }
+
+SCIP_RETCODE GCGprintInstanceName(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "filename: %s \n", GCGgetFilename(scip) );
+   return SCIP_OKAY;
+}
+
+
+SCIP_RETCODE GCGprintMiplibStructureInformation(
+   SCIP*                scip,
+   SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */
+   )
+{
+   FILE* file;
+
+   char* filepath;
+   char completefilepath[SCIP_MAXSTRLEN];
+
+   SCIPgetStringParam(scip, "write/miplib2017featurefilepath", &filepath);
+
+   (void) SCIPsnprintf(completefilepath, SCIP_MAXSTRLEN, "%s%s", filepath, ".csv");
+
+
+   file = fopen(completefilepath, "w");
+   if( file == NULL )
+   {
+      SCIPdialogMessage(scip, NULL, "error creating file <%s>\n", completefilepath);
+      SCIPprintSysError(completefilepath);
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( GCGprintMiplibBaseInformationHeader(scip, file) );
+
+
+   SCIP_CALL( GCGprintMiplibBaseInformation(scip, file) );
+
+   SCIP_CALL( GCGprintMiplibConnectedInformation(scip, file) );
+
+   SCIP_CALL( GCGprintMiplibDecompInformation(scip, file) );
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n, " );
+
+
+   fclose(file);
+
+   return SCIP_OKAY;
+}
+
+
+
+
+/** print out complete detection statistics */
+SCIP_RETCODE GCGprintCompleteDetectionStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   assert(scip != NULL);
+
+   if( !GCGdetectionTookPlace(scip) )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nDetection did not take place so far\n");
+      return SCIP_OKAY;
+   }
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nStart writing complete detection information:\n");
+
+   SCIP_CALL( GCGprintInstanceName(scip, file) );
+
+
+
+   GCGprintBlockcandidateInformation(scip, file);
+
+   GCGprintCompleteDetectionTime(scip, file);
+
+   GCGprintClassifierInformation(scip, file);
+
+   GCGprintDecompInformation(scip, file);
+
+//   GCGprintMiplibStructureInformation(scip, file);
+
+   return SCIP_OKAY;
+}
+
+
 
 /** returns whether the constraint belongs to GCG or not */
 SCIP_Bool GCGisConsGCGCons(

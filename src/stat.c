@@ -95,6 +95,8 @@ SCIP_RETCODE GCGwriteDecompositionData(
       SCIPinfoMessage(scip, NULL, "%d:\t\t%d\t\t%d\n", i, nvarsinblocks[i], nconssinblocks[i]);
    }
 
+   DECdecompFree(scip, &decomposition);
+
    return SCIP_OKAY;
 }
 

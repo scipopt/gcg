@@ -161,7 +161,7 @@ SCIP_RETCODE addVarToMasterbranch(
 
    *added = FALSE;
 
-   if( !GCGisMasterVarInBlock(mastervar, GCGbranchGenericBranchdataGetConsblocknr(branchdata)) )
+   if( ( GCGvarGetBlock(mastervar) == -1 && GCGbranchGenericBranchdataGetConsblocknr(branchdata) != -1 )  || !GCGisMasterVarInBlock(mastervar, GCGbranchGenericBranchdataGetConsblocknr(branchdata)) )
       return SCIP_OKAY;
 
    SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata));
@@ -1047,8 +1047,8 @@ SCIP_RETCODE Separate(
 
       if( !SCIPisFeasIntegral(scip, alpha[k]) )
       {
-         SCIP_Real mu_F;
-         SCIP_Bool even = TRUE;
+//         SCIP_Real mu_F;
+//         SCIP_Bool even = TRUE;
 
          SCIPdebugMessage("alpha[%d] = %g\n", k, alpha[k]);
          found = TRUE;
@@ -1551,7 +1551,7 @@ SCIP_RETCODE Explore(
    if( !SCIPisFeasIntegral(scip, alpha_i) )
    {
       int l;
-      SCIP_Real nu_F = 0.0;
+//      SCIP_Real nu_F = 0.0;
 
       found = TRUE;
       /* SCIPdebugMessage("fractional alpha(%s) = %g\n", SCIPvarGetName(origvar), alpha_i); */

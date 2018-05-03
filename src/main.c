@@ -33,7 +33,7 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define GCG_VERSION 214
+#define GCG_VERSION 300
 #define GCG_SUBVERSION 0
 
 #include <string.h>
@@ -49,7 +49,7 @@
 #include "gcg.h"
 
 #if SCIP_VERSION < 500
-#error GCG 2.1.4 can only be compiled with SCIP version 5.0.0 or higher
+#error GCG 3.0.0 can only be compiled with SCIP version 5.0.0 or higher
 #endif
 
 /** returns GCG major version */
@@ -136,6 +136,8 @@ SCIP_RETCODE fromCommandLine(
    SCIPinfoMessage(scip, NULL, "============\n\n");
    SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
    SCIP_CALL( SCIPtransformProb(scip) );
+   GCGsetFilename(scip, filename);
+
    if( decname != NULL )
    {
       SCIPinfoMessage(scip, NULL, "\nread decomposition <%s>\n", decname);
