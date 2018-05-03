@@ -3173,6 +3173,33 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    return conshdlrdata->unpresolveduserseeedadded;
 }
 
+SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
+   SCIP*                 scip                /**< SCIP data structure */
+   ){
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if ( conshdlrdata->seeedpoolunpresolved == NULL )
+      return FALSE;
+
+
+   return ( conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() > 0 );
+
+}
+
+
+
 SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
    SCIP*          scip
    )
@@ -4042,10 +4069,10 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       {
          SCIP_CALL(SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, *seeediter ) );
          *success = TRUE;
-         SCIPdebugMessagePrint(scip, " SUCCESS: unpresolved complete seeed did translate to complete presolved one \n");
+//         SCIPdebugMessagePrint(scip, " SUCCESS: unpresolved complete seeed did translate to complete presolved one \n");
       }
       else {
-         SCIPdebugMessagePrint(scip, " unpresolved complete seeed did not translate to complete presolved one \n");
+//         SCIPdebugMessagePrint(scip, " unpresolved complete seeed did not translate to complete presolved one \n");
          SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, *seeediter ) );
       }
    }
