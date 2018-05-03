@@ -52,7 +52,8 @@
 #include <exception>
 
 #define DEFAULT_HEURPRICINGITERS         1          /**< maximum number of heuristic pricing iterations per pricing call and problem */
-#define DEFAULT_SORTING                  'r'          /**< order by which the pricing problems should be sorted:
+#define DEFAULT_MAXHEURDEPTH             -1         /**< maximum depth at which heuristic pricing should be performed (-1 for infinity) */
+#define DEFAULT_SORTING                  'r'        /**< order by which the pricing problems should be sorted:
                                                      *    'i'ndices
                                                      *    'd'ual solutions of convexity constraints
                                                      *    'r'eliability from all previous rounds
@@ -116,6 +117,10 @@ SCIP_RETCODE Pricingcontroller::addParameters()
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/heurpricingiters",
          "maximum number of heuristic pricing iterations per pricing call and problem",
          &heurpricingiters, FALSE, DEFAULT_HEURPRICINGITERS, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxheurdepth",
+         "maximum depth at which heuristic pricing should be performed (-1 for infinity)",
+         &maxheurdepth, FALSE, DEFAULT_MAXHEURDEPTH, -1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddCharParam(origprob, "pricing/masterpricer/sorting",
          "order by which the pricing problems should be sorted ('i'ndices, 'd'ual solutions of convexity constraints, 'r'eliability from previous rounds, reliability from the 'l'ast nroundscol rounds)",
@@ -370,7 +375,8 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
 
    for( int i = 0; i < npricingjobs; ++i )
    {
-      SCIP_CALL_EXC( GCGpricingjobSetup(pricingjobs[i], heurpricingiters > 0,
+      SCIP_CALL_EXC( GCGpricingjobSetup(pricingjobs[i],
+         (heurpricingiters > 0 && (maxheurdepth == -1 || SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)) <= maxheurdepth)),
          sorting, nroundscol, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i)) );
 
       if( GCGpricingjobGetChunk(pricingjobs[i]) == curchunk )

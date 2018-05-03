@@ -2863,7 +2863,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    nstabrounds = 0;
 #endif
 
-   SCIPdebugMessage("***** New pricing round at node %" SCIP_LONGINT_FORMAT "\n", SCIPgetNNodes(scip_));
+   SCIPdebugMessage("***** New pricing round at node %" SCIP_LONGINT_FORMAT " (depth = %d)\n",
+      SCIPgetNNodes(scip_), SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)));
 
    /* stabilization loop */
    do
