@@ -5043,6 +5043,14 @@ SCIP_Real Seeed::getScore(
    SCORETYPE type
    )
 {
+   /** if there are indicator constraints in the master we want to reject this decomposition */
+   for( int mc = 0; mc < getNMasterconss(); ++mc )
+   {
+      SCIP_CONS* cons;
+      cons = getSeeedpool()->getScipCons(getMasterconss()[mc]);
+      if( GCGconsGetType(cons) == consType::indicator )
+         return 0.;
+   }
 
    /** calculate maximum white score anyway */
    if( maxwhitescore == -1. )

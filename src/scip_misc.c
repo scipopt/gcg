@@ -35,6 +35,7 @@
 #include "scip_misc.h"
 #include "scip/scipdefplugins.h"
 #include <string.h>
+#include "scip/cons_indicator.h"
 
 /** returns TRUE if variable is relevant, FALSE otherwise */
 SCIP_Bool GCGisVarRelevant(
@@ -95,6 +96,10 @@ consType GCGconsGetType(
    {
       return sos2;
    }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+      {
+         return sos2;
+      }
    return unknown;
 }
 
@@ -184,6 +189,10 @@ SCIP_Real GCGconsGetRhs(
    else if( strcmp(conshdlrname, "SOS2") == 0 )
    {
       SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
+   }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+   {
+      return 0.;
    }
    else
    {
@@ -277,6 +286,10 @@ SCIP_Real GCGconsGetLhs(
    {
       SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
    }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+   {
+      return -SCIPinfinity(scip);
+   }
    else
    {
       SCIPdebugMessage("WARNING: NOT IMPLEMENTED");
@@ -337,6 +350,10 @@ SCIP_Real GCGconsGetDualfarkas(
    {
       SCIPdebugMessage("masterbranch: return dualsol 0\n");
       return 0.0;
+   }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+   {
+      SCIPdebugMessage("WARNING: indicator conss NOT IMPLEMENTED");
    }
    else
    {
@@ -399,6 +416,10 @@ SCIP_Real GCGconsGetDualsol(
       SCIPdebugMessage("masterbranch: return dualsol 0\n");
       return 0.0;
    }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+   {
+      SCIPdebugMessage("WARNING: indicator conss NOT IMPLEMENTED");
+   }
    else
    {
       SCIPdebugMessage("WARNING: NOT IMPLEMENTED");
@@ -442,6 +463,10 @@ int GCGconsGetNVars(
       return SCIPgetNVarsKnapsack(scip, cons);
    }
    else if( strcmp(conshdlrname, "varbound") == 0 )
+   {
+      return 2;
+   }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
    {
       return 2;
    }
@@ -569,6 +594,17 @@ SCIP_RETCODE GCGconsGetVars(
 
       BMScopyMemoryArray(vars, SCIPgetVarsSOS2(scip, cons), nvars);
    }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+   {
+      if( nvars != 2 )
+         return SCIP_INVALIDDATA;
+
+      /** indicator conss : s - My <= 0 */
+
+      /** slack variable first */
+      vars[0] =   SCIPgetSlackVarIndicator(cons);
+      vars[1] =   SCIPgetBinaryVarIndicator(cons);
+   }
    else
    {
       SCIPwarningMessage(scip, "WARNING: NOT IMPLEMENTED <%s>\n", conshdlrname);
@@ -684,6 +720,17 @@ SCIP_RETCODE GCGconsGetVals(
    {
       /* store constraint */
       SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
+   }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+   {
+      if( nvals != 2 )
+         return SCIP_INVALIDDATA;
+
+      /** indicator conss : s - My <= 0 */
+
+      /** slack variable first */
+      vals[0] =   1.;
+      vals[1] =   SCIPvarGetUbGlobal( SCIPgetSlackVarIndicator(cons) );
    }
    else
    {
