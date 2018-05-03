@@ -219,6 +219,21 @@ public:
       int*                  nimpcols            /**< pointer to store number of improving columns */
       );
 
+   /** add a new column to the pricing storage */
+   SCIP_RETCODE addColToPricestore(
+      GCG_COL*              col                 /**< priced col */
+      );
+
+   /** for each pricing problem, get the best found column from the pricing storage */
+   void getBestCols(
+      GCG_COL**             pricingprobcols     /**< array to be filled with best column per pricing problem */
+      );
+
+   /** get the sum over the dual values of convexity constraints */
+   SCIP_Real getDualconvsum(
+      GCG_COL**             bestcols            /**< best columns found per pricing problem */
+      );
+
    /* computes the objective value of the current (stabilized) dual variables) in the dual program */
    SCIP_RETCODE getStabilizedDualObjectiveValue(
       PricingType*       pricetype,          /**< type of pricing */
@@ -245,6 +260,7 @@ public:
 private:
    ReducedCostPricing*    reducedcostpricing;
    FarkasPricing*         farkaspricing;
+   PricingType*           pricingtype;          /**< current pricing type, or NULL if we are not in pricing */
    Pricingcontroller*     pricingcontroller;
    Stabilization*         stabilization;
 
@@ -371,9 +387,7 @@ private:
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
       int                   maxcols,            /**< size of the cols array to indicate maximum columns */
       GCG_PRICINGSTATUS*    status,             /**< pointer to store pricing status */
-      SCIP_Real*            lowerbound,         /**< pointer to store the obtained lower bound */
-      GCG_COL**             cols,               /**< array to store generated found columns */
-      int*                  ncols               /**< number of found columns */
+      SCIP_Real*            lowerbound          /**< pointer to store the obtained lower bound */
       );
 
    /** frees all solvers */

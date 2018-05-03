@@ -460,13 +460,11 @@ SCIP_Real scaleRelativeToMax(
 static
 SCIP_RETCODE solveCliquer(
    SCIP_Bool             exactly,            /**< should the pricing problem be solved to optimality or heuristically? */
+   SCIP*                 scip,               /**< master problem SCIP data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    GCG_SOLVERDATA*       solver,             /**< solver data structure */
    int                   probnr,             /**< problem number */
    SCIP_Real*            lowerbound,         /**< pointer to store lower bound */
-   GCG_COL**             cols,               /**< array of columns corresponding to solutions */
-   int                   maxcols,            /**< size of preallocated array */
-   int*                  ncols,              /**< pointer to store number of columns */
    GCG_PRICINGSTATUS*    status              /**< pointer to store pricing problem status */
    )
 { /*lint -e715 */
@@ -496,13 +494,16 @@ SCIP_RETCODE solveCliquer(
    int            nodeindex0;
    int            nodeindex1;
    int            coefindex;
-   int            i,j,k;
+   GCG_COL*       col;
 
+   int            i;
+   int            j;
+   int            k;
+
+   assert(scip != NULL);
    assert(pricingprob != NULL);
    assert(solver != NULL);
    assert(lowerbound != NULL);
-   assert(cols != NULL);
-   assert(ncols != NULL);
    assert(status != NULL);
 
    pricingprobvars = SCIPgetVars(pricingprob);
@@ -1103,8 +1104,8 @@ SCIP_RETCODE solveCliquer(
    }
 
    /* Create a column corresponding to our clique result */
-   SCIP_CALL( GCGcreateGcgCol(pricingprob, &cols[0], probnr, pricingprobvars, solvals, npricingprobvars, FALSE, SCIPinfinity(pricingprob)) );
-   *ncols = 1;
+   SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, pricingprobvars, solvals, npricingprobvars, FALSE, SCIPinfinity(pricingprob)) );
+   SCIP_CALL( GCGpricerAddCol(scip, col) );
    *status = GCG_PRICINGSTATUS_UNKNOWN;
    set_free(clique); /* clique can only be freed if non-empty */ 
 
@@ -1164,7 +1165,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCliquer)
    assert(solverdata != NULL);
 
    /* solve the independent set problem approximately */
-   SCIP_CALL( solveCliquer(FALSE, pricingprob, solverdata, probnr, lowerbound, cols, maxcols, ncols, status) );
+   SCIP_CALL( solveCliquer(FALSE, scip, pricingprob, solverdata, probnr, lowerbound, status) );
 
    return SCIP_OKAY;
 }

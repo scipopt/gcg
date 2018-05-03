@@ -28,6 +28,7 @@
 /**@file   pricestore.c
  * @brief  methods for storing priced cols (based on SCIP's separation storage)
  * @author Jonas Witt
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -108,6 +109,7 @@ SCIP_RETCODE GCGpricestoreCreate(
    (*pricestore)->colssize = 0;
    (*pricestore)->ncols = 0;
    (*pricestore)->nforcedcols = 0;
+   (*pricestore)->nefficaciouscols = 0;
    (*pricestore)->ncolsfound = 0;
    (*pricestore)->ncolsfoundround = 0;
    (*pricestore)->ncolsapplied = 0;
@@ -205,7 +207,10 @@ void pricestoreDelCol(
    assert(pricestore->cols != NULL);
    assert(pricestore->nforcedcols <= pos && pos < pricestore->ncols);
 
-   /* release the row */
+   if( SCIPisDualfeasNegative(pricestore->scip, GCGcolGetRedcost(pricestore->cols[pos])) )
+      pricestore->nefficaciouscols--;
+
+   /* free the column */
    if( free )
       GCGfreeGcgCol(&(pricestore->cols[pos]));
 
@@ -223,7 +228,7 @@ void pricestoreDelCol(
 SCIP_RETCODE GCGpricestoreAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
-   GCG_COL*              col,                /**< pricerated col */
+   GCG_COL*              col,                /**< priced col */
    SCIP_Bool             forcecol            /**< should the col be forced to enter the LP? */
    )
 {
@@ -294,6 +299,8 @@ SCIP_RETCODE GCGpricestoreAddCol(
    pricestore->orthogonalities[pos] = 1.0;
    pricestore->scores[pos] = colscore;
    pricestore->ncols++;
+   if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(col)) )
+      pricestore->nefficaciouscols++;
 
    /* stop timing */
    SCIPstopClock(pricestore->scip, pricestore->priceclock);
@@ -339,10 +346,10 @@ SCIP_RETCODE pricestoreUpdateOrthogonalities(
             switch ( pricestore->efficiacychoice )
             {
             case GCG_EFFICIACYCHOICE_DANTZIG:
-               colefficiacy = -1.0 *GCGcolGetRedcost(pricestore->cols[pos]);
+               colefficiacy = -1.0 * GCGcolGetRedcost(pricestore->cols[pos]);
                break;
             case GCG_EFFICIACYCHOICE_STEEPESTEDGE:
-               colefficiacy = -1.0 *GCGcolGetRedcost(pricestore->cols[pos])/ GCGcolGetNorm(col);
+               colefficiacy = -1.0 * GCGcolGetRedcost(pricestore->cols[pos])/ GCGcolGetNorm(col);
                break;
             case GCG_EFFICIACYCHOICE_LAMBDA:
                SCIPerrorMessage("Lambda pricing not yet implemented.\n");
@@ -448,10 +455,10 @@ SCIP_RETCODE computeScore(
    switch ( pricestore->efficiacychoice )
    {
    case GCG_EFFICIACYCHOICE_DANTZIG:
-      colefficiacy = -1.0 *GCGcolGetRedcost(pricestore->cols[pos]);
+      colefficiacy = -1.0 * GCGcolGetRedcost(pricestore->cols[pos]);
       break;
    case GCG_EFFICIACYCHOICE_STEEPESTEDGE:
-      colefficiacy = -1.0 *GCGcolGetRedcost(pricestore->cols[pos])/ GCGcolGetNorm(col);
+      colefficiacy = -1.0 * GCGcolGetRedcost(pricestore->cols[pos])/ GCGcolGetNorm(col);
       break;
    case GCG_EFFICIACYCHOICE_LAMBDA:
       SCIPerrorMessage("Lambda pricing not yet implemented.\n");
@@ -478,8 +485,10 @@ SCIP_RETCODE computeScore(
 
 /** adds cols to priced vars and clears price storage */
 SCIP_RETCODE GCGpricestoreApplyCols(
-   GCG_PRICESTORE*       pricestore,          /**< price storage */
-   int*                  nfoundvars           /**< pointer to store number of variables that were added to the problem */
+   GCG_PRICESTORE*       pricestore,         /**< price storage */
+   GCG_COLPOOL*          colpool,            /**< GCG column pool */
+   SCIP_Bool             usecolpool,         /**< use column pool? */
+   int*                  nfoundvars          /**< pointer to store number of variables that were added to the problem */
    )
 {
    SCIP* scip;
@@ -546,6 +555,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
       GCG_COL* col;
       int bestpos;
       SCIP_Real score;
+      SCIP_Bool keep = FALSE;
 
       /* get best non-forced col */
       bestpos = pricestoreGetBestCol(pricestore);
@@ -570,9 +580,15 @@ SCIP_RETCODE GCGpricestoreApplyCols(
       {
          /* add col to the LP and update orthogonalities */
          SCIP_CALL( pricestoreApplyCol(pricestore, col, FALSE, mincolorthogonality, depth, &ncolsapplied, score) );
+         keep = FALSE;
       }
-
-      GCGfreeGcgCol(&col);
+      else if( usecolpool )
+      {
+         SCIP_CALL( GCGcolpoolAddCol(colpool, col, &keep) );
+      }
+      
+      if( !keep )
+         GCGfreeGcgCol(&col);
    }
 
    *nfoundvars = ncolsapplied;
@@ -605,6 +621,7 @@ void GCGpricestoreClearCols(
 
    /* reset counters */
    pricestore->ncols = 0;
+   pricestore->nefficaciouscols = 0;
    pricestore->nforcedcols = 0;
    pricestore->ncolsfoundround = 0;
 
@@ -661,6 +678,16 @@ int GCGpricestoreGetNCols(
    assert(pricestore != NULL);
 
    return pricestore->ncols;
+}
+
+/** get number of efficacious cols in the price storage */
+int GCGpricestoreGetNEfficaciousCols(
+   GCG_PRICESTORE*       pricestore           /**< price storage */
+   )
+{
+   assert(pricestore != NULL);
+
+   return pricestore->nefficaciouscols;
 }
 
 /** get total number of cols found so far */

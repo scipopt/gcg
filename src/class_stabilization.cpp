@@ -586,6 +586,8 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
             if( !GCGisPricingprobRelevant(origprob, block) )
                continue;
 
+            assert(pricingcols[block] != NULL);
+
             SCIP_VAR* pricingvar = GCGoriginalVarGetPricingVar(vars[j]);
             assert(GCGvarIsPricing(pricingvar));
             SCIP* pricingprob = GCGgetPricingprob(origprob, block);
@@ -657,6 +659,8 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
             if( !GCGisPricingprobRelevant(origprob, block) )
                continue;
 
+            assert(pricingcols[block] != NULL);
+
             SCIP_VAR* pricingvar = GCGoriginalVarGetPricingVar(var);
             assert(GCGvarIsPricing(pricingvar));
             SCIP* pricingprob = GCGgetPricingprob(origprob, block);
@@ -697,6 +701,8 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
 
       if( SCIPisFeasZero(origprob, stabdual) )
          continue;
+
+      assert(pricingcols[block] != NULL);
 
       SCIP_Real masterval = SCIPgetSolVal(scip_, (SCIP_SOL*) NULL, mastervar);
       SCIP_Real pricingval = GCGcolGetSolVal(pricingprob, pricingcols[block], pricingvar);
@@ -766,6 +772,8 @@ void Stabilization::calculateSubgradient(
             int block = GCGvarGetBlock(vars[j]);
             if( !GCGisPricingprobRelevant(origprob, block) )
                continue;
+
+            assert(pricingcols[block] != NULL);
 
             SCIP_VAR* pricingvar = GCGoriginalVarGetPricingVar(vars[j]);
             assert(GCGvarIsPricing(pricingvar));
@@ -837,6 +845,8 @@ void Stabilization::calculateSubgradient(
             if( !GCGisPricingprobRelevant(origprob, block) )
                continue;
 
+            assert(pricingcols[block] != NULL);
+
             SCIP_VAR* pricingvar = GCGoriginalVarGetPricingVar(var);
             assert(GCGvarIsPricing(pricingvar));
             SCIP* pricingprob = GCGgetPricingprob(origprob, block);
@@ -885,6 +895,8 @@ void Stabilization::calculateSubgradient(
       assert(GCGvarIsPricing(pricingvar));
       SCIP* pricingprob = GCGgetPricingprob(origprob, block);
       assert(pricingprob != NULL);
+
+      assert(pricingcols[block] != NULL);
 
       assert(stabcenterlinkingconsvals != NULL);
       SCIP_Real masterval = SCIPgetSolVal(scip_, (SCIP_SOL*) NULL, mastervar);

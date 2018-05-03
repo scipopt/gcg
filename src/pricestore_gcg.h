@@ -49,6 +49,7 @@
 #include "scip/type_reopt.h"
 #include "scip/type_branch.h"
 
+#include "pub_colpool.h"
 #include "pub_gcgcol.h"
 #include "type_pricestore_gcg.h"
 
@@ -110,15 +111,17 @@ extern
 SCIP_RETCODE GCGpricestoreAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
-   GCG_COL*              col,                /**< pricerated col */
+   GCG_COL*              col,                /**< priced col */
    SCIP_Bool             forcecol            /**< should the col be forced to enter the LP? */
    );
 
 /** adds cols to priced vars and clears price storage */
 extern
 SCIP_RETCODE GCGpricestoreApplyCols(
-   GCG_PRICESTORE*       pricestore,          /**< price storage */
-   int*                  nfoundvars           /**< pointer to store number of variables that were added to the problem */
+   GCG_PRICESTORE*       pricestore,         /**< price storage */
+   GCG_COLPOOL*          colpool,            /**< GCG column pool */
+   SCIP_Bool             usecolpool,         /**< use column pool? */
+   int*                  nfoundvars          /**< pointer to store number of variables that were added to the problem */
    );
 
 /** clears the price storage without adding the cols to priced vars */
@@ -143,6 +146,12 @@ GCG_COL** GCGpricestoreGetCols(
 /** get number of cols in the price storage */
 extern
 int GCGpricestoreGetNCols(
+   GCG_PRICESTORE*       pricestore           /**< price storage */
+   );
+
+/** get number of efficacious cols in the price storage */
+extern
+int GCGpricestoreGetNEfficaciousCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 

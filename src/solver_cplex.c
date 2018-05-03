@@ -115,34 +115,6 @@ struct GCG_SolverData
  * local methods
  */
 
-/** checks whether the given solution is equal to one of the former solutions in the sols array */
-static
-SCIP_Bool colIsNew(
-   SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
-   GCG_COL**             cols,               /**< array of columns to check */
-   int                   ncols,              /**< number of columns to check */
-   GCG_COL*              newcol              /**< potentially new column */
-   )
-{
-   int s;
-
-   assert(pricingprob != NULL);
-   assert(cols != NULL);
-
-   for( s = 0; s < ncols; ++s )
-   {
-      assert(cols[s] != NULL);
-
-      if( GCGcolIsEq(cols[s], newcol) )
-      {
-         return FALSE;
-      }
-   }
-
-   return TRUE;
-}
-
-
 /** creates a CPLEX environment and builds the pricing problem */
 static
 SCIP_RETCODE buildProblem(
@@ -691,12 +663,11 @@ SCIP_RETCODE solveCplex(
    int                   probnr,             /**< problem number */
    SCIP_Real             dualsolconv,        /**< dual solution value of the corresponding convexity constraint */
    SCIP_Real*            lowerbound,         /**< pointer to store lower bound */
-   GCG_COL**             cols,               /**< array of columns corresponding to solutions */
-   int                   maxcols,            /**< size of preallocated array */
    int*                  ncols,              /**< pointer to store number of columns */
    GCG_PRICINGSTATUS*    status              /**< pointer to store the pricing status */
    )
 { /*lint -e715*/
+   GCG_COL* col;
    SCIP_RETCODE retval;
    SCIP_Bool predisabled = FALSE;
    double* cplexsolvals;
@@ -791,8 +762,8 @@ SCIP_RETCODE solveCplex(
          CHECK_ZERO( cpxretval );
       }
 
-      SCIP_CALL( GCGcreateGcgCol(pricingprob, &cols[*ncols], probnr, solverdata->pricingvars[probnr], cplexsolvals, numcols, TRUE, SCIPinfinity(pricingprob)) );
-
+      SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, solverdata->pricingvars[probnr], cplexsolvals, numcols, TRUE, SCIPinfinity(pricingprob)) );
+      SCIP_CALL( GCGpricerAddCol(scip, col) );
       ++(*ncols);
 
       *status = GCG_PRICINGSTATUS_UNBOUNDED;
@@ -914,17 +885,9 @@ SCIP_RETCODE solveCplex(
 
       if( feasible )
       {
-         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &cols[*ncols], probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
-
-         /* check whether the column is equal to one of the previous solutions */
-         if( colIsNew(pricingprob, cols, *ncols, cols[*ncols]) )
-         {
-            ++(*ncols);
-         }
-         else
-         {
-            GCGfreeGcgCol(&cols[*ncols]);
-         }
+         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &col, probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
+         SCIP_CALL( GCGpricerAddCol(scip, col) );
+         ++(*ncols);
       }
 
       SCIP_CALL( SCIPfreeSol(pricingprob, &sol) );
@@ -1142,6 +1105,7 @@ static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
 {
    GCG_SOLVERDATA* solverdata;
+   int ncols;
    SCIP_RETCODE retval;
 
    solverdata = GCGsolverGetData(solver);
@@ -1157,8 +1121,8 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
    CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_INTSOLLIM, (long long) solverdata->cursollimit[probnr]) );
 
    /* solve the pricing problem and evaluate solution */
-   SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, status) );
-   assert(*status != GCG_PRICINGSTATUS_OPTIMAL || *ncols > 0);
+   SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, &ncols, status) );
+   assert(*status != GCG_PRICINGSTATUS_OPTIMAL || ncols > 0);
 
  TERMINATE:
    return retval;
@@ -1169,6 +1133,7 @@ static
 GCG_DECL_SOLVERSOLVE(solverSolveCplex)
 {
    GCG_SOLVERDATA* solverdata;
+   int ncols;
    SCIP_RETCODE retval;
 
    assert(solver != NULL);
@@ -1186,8 +1151,8 @@ GCG_DECL_SOLVERSOLVE(solverSolveCplex)
    CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_INTSOLLIM, CPX_LONG_MAX) );
 
    /* solve the pricing problem and evaluate solution */
-   SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, status) );
-   assert(*status != GCG_PRICINGSTATUS_OPTIMAL || *ncols > 0);
+   SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, &ncols, status) );
+   assert(*status != GCG_PRICINGSTATUS_OPTIMAL || ncols > 0);
 
  TERMINATE:
    return retval;

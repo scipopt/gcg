@@ -64,9 +64,6 @@ struct GCG_PricingProb
    /* result values */
    GCG_PRICINGSTATUS    status;             /**< current status of the pricing problem */
    SCIP_Real            lowerbound;         /**< lower bound obtained by solving the pricing problem */
-   GCG_COL**            cols;               /**< array of columns found in the current pricing round */
-   int                  colssize;           /**< size of column array */
-   int                  ncols;              /**< number of columns found in the current pricing round */
    int                  nimpcols;           /**< number of improving columns found in the current pricing round */
 
    /* statistics */

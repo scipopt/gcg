@@ -109,24 +109,6 @@ SCIP_Real GCGpricingprobGetLowerbound(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/** get the best column found by solving a particular pricing problem */
-EXTERN
-GCG_COL* GCGpricingprobGetBestCol(
-   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
-   );
-
-/** get the best reduced cost of a pricing problem */
-EXTERN
-SCIP_Real GCGpricingprobGetBestRedcost(
-   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
-   );
-
-/** get the number of columns found for this pricing problem */
-EXTERN
-int GCGpricingprobGetNCols(
-   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
-   );
-
 /** get the number of improving columns found for this pricing problem */
 EXTERN
 int GCGpricingprobGetNImpCols(

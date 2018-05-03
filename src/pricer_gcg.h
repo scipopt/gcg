@@ -176,6 +176,13 @@ int GCGpricerGetNRaysProb(
    int                   probnr              /**< index of pricing problem */
    );
 
+/** add a new column to the pricing storage */
+extern
+SCIP_RETCODE GCGpricerAddCol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_COL*              col                 /**< priced col */
+   );
+
 /** transfers a primal solution of the original problem into the master variable space,
  *  i.e. creates one master variable for each block and adds the solution to the master problem  */
 extern

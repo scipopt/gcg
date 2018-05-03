@@ -39,15 +39,16 @@ extern "C" {
 struct GCG_PriceStore
 {
    SCIP*                 scip;               /**< SCIP data structure */
-   GCG_COL**             cols;               /**< array with pricerated cols sorted by score */
+   GCG_COL**             cols;               /**< array with priced cols sorted by score */
    SCIP_Real*            objparallelisms;    /**< parallelism of col to the objective function */
    SCIP_Real*            orthogonalities;    /**< minimal orthogonality of col with all other cols of larger score */
-   SCIP_Real*            scores;             /**< score for each pricerated col: weighted sum of efficacy and orthogonality */
+   SCIP_Real*            scores;             /**< score for each priced col: weighted sum of efficacy and orthogonality */
    int                   colssize;           /**< size of cols and score arrays */
-   int                   ncols;              /**< number of pricerated cols (max. is set->price_maxcols) */
-   int                   nforcedcols;        /**< number of forced pricerated cols (first positions in cols array) */
+   int                   ncols;              /**< number of priced cols (max. is set->price_maxcols) */
+   int                   nforcedcols;        /**< number of forced priced cols (first positions in cols array) */
+   int                   nefficaciouscols;   /**< number of improving priced cols */
    int                   ncolsfound;         /**< total number of cols found so far */
-   int                   ncolsfoundround;    /**< number of cols found so far in this priceration round */
+   int                   ncolsfoundround;    /**< number of cols found so far in this pricing round */
    int                   ncolsapplied;       /**< total number of cols applied to the LPs */
    SCIP_Bool             infarkas;           /**< is the price storage currently being filled with the columns from farkas pricing? */
    SCIP_Bool             forcecols;          /**< should the cols be used despite the number of cols parameter limit? */

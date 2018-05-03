@@ -125,8 +125,7 @@ public:
       GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
       GCG_PRICINGSTATUS     status,             /**< new pricing status */
       SCIP_Real             lowerbound,         /**< new lower bound */
-      GCG_COL**             cols,               /**< columns found by the last solver call */
-      int                   ncols               /**< number of found columns */
+      int                   nimpcols            /**< number of new improving columns */
       );
 
    /** update solution statistics of a pricing job */
@@ -142,6 +141,7 @@ public:
 
    /** collect solution results from all pricing problems */
    void collectResults(
+      GCG_COL**             bestcols,           /**< best found columns per pricing problem */
       SCIP_Bool*            infeasible,         /**< pointer to store whether pricing is infeasible */
       SCIP_Bool*            optimal,            /**< pointer to store whether all pricing problems were solved to optimality */
       SCIP_Real*            bestobjvals,        /**< array to store best lower bounds */
@@ -150,26 +150,8 @@ public:
       SCIP_Bool*            bestredcostvalid    /**< pointer to store whether best reduced cost is valid */
       );
 
-   /** for all pricing problems, move their columns to the pricing store or column pool */
-   SCIP_RETCODE moveCols(
-      GCG_COLPOOL*          colpool,            /**< GCG column pool */
-      GCG_PRICESTORE*       pricestore,         /**< GCG pricing store */
-      SCIP_Bool             usecolpool,         /**< use column pool? */
-      SCIP_Bool             usepricestore       /**< use price store? */
-      );
-
    /** check if the next chunk of pricing problems is to be used */
    SCIP_Bool checkNextChunk();
-
-   /** get best columns found by the pricing jobs */
-   void getBestCols(
-      GCG_COL**             cols                /**< column array to be filled */
-      );
-
-   /** get the sum over the dual values of convexity constraints */
-   SCIP_Real getDualconvsum(
-      PricingType*          pricetype           /**< type of pricing (reduced cost or Farkas) */
-      );
 
    /** decide whether the pricing loop can be aborted */
    SCIP_Bool canPricingloopBeAborted(

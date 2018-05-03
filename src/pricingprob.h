@@ -71,6 +71,13 @@ void GCGpricingprobInitPricing(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
+/** uninitialize pricing problem at the beginning of the pricing round */
+EXTERN
+void GCGpricingprobExitPricing(
+   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
+   int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
+   );
+
 /** add generic branching data (constraint and dual value) to the current pricing problem */
 EXTERN
 SCIP_RETCODE GCGpricingprobAddGenericBranchData(
@@ -94,19 +101,7 @@ void GCGpricingprobUpdate(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    GCG_PRICINGSTATUS     status,             /**< status of last pricing job */
    SCIP_Real             lowerbound,         /**< new lower bound */
-   GCG_COL**             cols,               /**< columns found by the last solver call */
-   int                   ncols               /**< number of found columns */
-   );
-
-/** for a pricing problem, move its columns to the pricing store or column pool */
-EXTERN
-SCIP_RETCODE GCGpricingprobMoveCols(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
-   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
-   GCG_COLPOOL*          colpool,            /**< GCG column pool */
-   GCG_PRICESTORE*       pricestore,         /**< GCG pricing store */
-   SCIP_Bool             usecolpool,         /**< use column pool? */
-   SCIP_Bool             usepricestore       /**< use price store? */
+   int                   nimpcols            /**< number of new improving columns */
    );
 
 /** add the information that the next branching constraint must be added */
@@ -120,13 +115,6 @@ EXTERN
 void GCGpricingjobSetLowerbound(
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_Real             lowerbound          /**< new lower bound */
-   );
-
-/** update numbers of improving columns over the last pricing rounds */
-EXTERN
-void GCGpricingprobUpdateNColsround(
-   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
-   int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
    );
 
 #ifdef __cplusplus

@@ -120,9 +120,6 @@ SCIP_RETCODE GCGsolverSolve(
    int                   probnr,             /**< number of the pricing problem */
    SCIP_Real             dualsolconv,        /**< dual solution of the corresponding convexity constraint */
    SCIP_Real*            lowerbound,         /**< pointer to store lower bound of pricing problem */
-   GCG_COL**             cols,               /**< array to store returned columns corresponding to solutions */
-   int                   maxcols,            /**< indicates the maximum size of the cols array */
-   int*                  ncols,              /**< pointer to store number of columns */
    GCG_PRICINGSTATUS*    status,             /**< pointer to store the returned pricing status */
    SCIP_Bool*            solved              /**< pointer to store whether the solution method was called */
    );
