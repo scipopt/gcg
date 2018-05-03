@@ -4008,7 +4008,6 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
 { /*lint -esym(715, stopearly)*/
    SCIP_RETCODE retcode;
-   int decompmode;
 
    assert(scip == scip_);
    assert(pricer != NULL);
@@ -4017,9 +4016,6 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    assert(farkaspricing != NULL);
 
    *result = SCIP_DIDNOTRUN;
-
-   /* retrieving the decomposition mode */
-   SCIP_CALL( SCIPgetIntParam(origprob, "relaxing/gcg/mode", &decompmode) );
 
    if( reducedcostpricing->getCalls() == 0 )
    {
@@ -4080,7 +4076,6 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    SCIP_RETCODE retcode;
    SCIP_SOL** origsols;
    int norigsols;
-   int decompmode;
 
    assert(scip == scip_);
    assert(pricer != NULL);
@@ -4089,9 +4084,6 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    assert(farkaspricing != NULL);
 
    *result = SCIP_DIDNOTRUN;
-
-   /* retrieving the decomposition mode */
-   SCIP_CALL( SCIPgetIntParam(origprob, "relaxing/gcg/mode", &decompmode) );
 
    /** @todo This is just a workaround around SCIP stages! */
    if( reducedcostpricing->getCalls() == 0 && farkaspricing->getCalls() == 0 )
@@ -4784,15 +4776,12 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP_Real** pricingvals;
    int* npricingvars;
 
-   SCIP_Bool addpricingvars;        /* flag to indicate whether pricing variables should be added for the solution.
-                                       this will be false if Benders' decomposition is used. */
-
    assert(scip != NULL);
 
    origprob = GCGgetOriginalprob(scip);
    assert(origprob != NULL);
 
-   addpricingvars = FALSE;
+   pricerdata = NULL;   /* the pricerdata is set to NULL when the Benders' decomposition mode is used. */
    if( GCGgetDecompositionMode(origprob) == DEC_DECMODE_DANTZIGWOLFE )
    {
       pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
@@ -4800,8 +4789,6 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 
       pricerdata = pricer->getPricerdata();
       assert(pricerdata != NULL);
-
-      addpricingvars = TRUE;
    }
 
    /* now compute coefficients of the master variables in the master constraint */
@@ -4811,7 +4798,7 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    /* allocate memory for storing variables and solution values from the solution */
    SCIP_CALL( SCIPallocBufferArray(scip, &origsolvals, norigvars) ); /*lint !e530*/
 
-   if( addpricingvars )
+   if( pricerdata != NULL )
    {
       SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars, pricerdata->npricingprobs) ); /*lint !e530*/
       SCIP_CALL( SCIPallocBufferArray(scip, &pricingvals, pricerdata->npricingprobs) ); /*lint !e530*/
@@ -4842,7 +4829,7 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 
       if( blocknr >= 0 )
       {
-         if( addpricingvars && !SCIPisZero(scip, origsolvals[i]) )
+         if( pricerdata != NULL && !SCIPisZero(scip, origsolvals[i]) )
          {
             pricingvars[blocknr][npricingvars[blocknr]] = GCGoriginalVarGetPricingVar(origvars[i]);
             pricingvals[blocknr][npricingvars[blocknr]] = origsolvals[i];
@@ -4869,7 +4856,7 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 
          if( GCGoriginalVarIsLinking(origvars[i]) )
          {
-            if( addpricingvars )
+            if( pricerdata != NULL )
             {
                if( !SCIPisZero(scip, origsolvals[i]) )
                {
@@ -4905,7 +4892,7 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    }
 
    /* create variables in the master problem */
-   if( addpricingvars )
+   if( pricerdata != NULL )
    {
       for( prob = 0; prob < pricerdata->npricingprobs; prob++ )
       {
@@ -4931,7 +4918,7 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
       *stored = added;
 
    /* free memory for storing variables and solution values from the solution */
-   if( addpricingvars )
+   if( pricerdata != NULL )
    {
       for( i = pricerdata->npricingprobs - 1; i>= 0; i-- )
       {

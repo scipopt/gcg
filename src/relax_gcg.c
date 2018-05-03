@@ -2454,32 +2454,25 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
 }
 
 
-/** execution method of the relaxator for Dantzig-Wolfe reformulation */
+/** initialize the relaxator and master problem for solving the original problem by Dantzig-Wolfe reformulation and
+ * Benders' decomposition
+ */
 static
-SCIP_RETCODE relaxExecGcgDantzigWolfe(
+SCIP_RETCODE initializeMasterProblemSolve(
    SCIP*                 scip,               /**< the SCIP data structure */
-   SCIP_RELAX*           relax,              /**< the relaxator */
-   SCIP_Real*            lowerbound,         /**< the lowerbound computed by the relaxator for the current node */
-   SCIP_RESULT*          result              /**< the result of the relaxation call */
+   SCIP_RELAX*           relax               /**< the relaxator */
    )
 {
-   SCIP* masterprob;
    SCIP_RELAXDATA* relaxdata;
    SCIP_Bool cutoff;
-   SCIP_Longint oldnnodes;
-   SCIP_Real timelimit;
-   SCIP_Real memorylimit;
-   SCIP_Bool stored;
 
    assert(scip != NULL);
    assert(relax != NULL);
-   assert(result != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   *result = SCIP_DIDNOTRUN;
 
-
+   /* the relaxator is initialised if it has not been previously initialised */
    if( !relaxdata->relaxisinitialized )
    {
       SCIP_CALL( initRelaxator(scip, relax) );
@@ -2488,233 +2481,40 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
       assert(relaxdata->decdecomp != NULL);
    }
 
-   masterprob = relaxdata->masterprob;
-   assert(masterprob != NULL);
-
    /* construct the LP in the original problem */
    SCIP_CALL( SCIPconstructLP(scip, &cutoff) );
    assert(!cutoff);
    SCIP_CALL( SCIPflushLP(scip) );
-
-   /* solve the next node in the master problem */
-   SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
-
-   /* only solve the relaxation if it was not yet solved at the current node */
-   if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
-   {
-      /* update the number of the last solved node */
-      relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
-
-      /* increase the node limit for the master problem by 1 */
-      SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
-      SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes",
-            ( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) ? 1 : oldnnodes+1)) );
-
-
-      /* loop to solve the master problem, this is a workaround and does not fix any problem */
-      while( !SCIPisStopped(scip) )
-      {
-         SCIP_Real mastertimelimit = SCIPinfinity(scip);
-
-         /* set memorylimit for master */
-         SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
-         if( !SCIPisInfinity(scip, memorylimit) )
-            memorylimit -= SCIPgetMemUsed(scip)/1048576.0;
-
-         SCIP_CALL( SCIPsetRealParam(masterprob, "limits/memory", memorylimit) );
-
-         SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-         if( !SCIPisInfinity(scip, timelimit) )
-         {
-
-            /* give the master 2% more time then the original scip has left */
-            mastertimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
-            SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit) );
-
-            SCIPdebugMessage("  time limit for master: %f, left: %f, left for original problem: %f\n",
-                  mastertimelimit,
-                  mastertimelimit - SCIPgetSolvingTime(masterprob),
-                  timelimit - SCIPgetSolvingTime(scip));
-         }
-
-         /* if we have a blockdetection, see whether the node is block diagonal */
-         if( DECdecompGetType(relaxdata->decdecomp) == DEC_DECTYPE_DIAGONAL )
-         {
-            SCIP_CALL( solveDiagonalBlocks(scip, relaxdata, result, lowerbound) );
-            if( *result == SCIP_SUCCESS )
-            {
-               *result = SCIP_CUTOFF;
-               return SCIP_OKAY;
-            }
-         }
-         /* We are solving the masterproblem regularly */
-         else
-         {
-            SCIP_CALL( SCIPsolve(masterprob) );
-         }
-
-
-         if( SCIPgetStatus(masterprob) != SCIP_STATUS_TIMELIMIT )
-         {
-            break;
-         }
-
-         if( !SCIPisInfinity(scip, timelimit) && !SCIPisStopped(scip) )
-            SCIPinfoMessage(scip, NULL, "time for master problem was too short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
-      }
-      if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
-      {
-         *result = SCIP_DIDNOTRUN;
-         return SCIP_OKAY;
-      }
-
-      /* set the lower bound pointer */
-      if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
-      {
-         *lowerbound = SCIPgetLocalDualbound(masterprob);
-
-      }
-      else
-      {
-         SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
-         assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
-         if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
-            *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
-         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT )
-         {
-            SCIP_Real tilim;
-            SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
-            if( tilim-SCIPgetSolvingTime(masterprob) < 0 )
-            {
-               *result = SCIP_DIDNOTRUN;
-               return SCIP_OKAY;
-            }
-            *lowerbound = SCIPinfinity(scip);
-         }
-         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN )
-         {
-            *result = SCIP_DIDNOTRUN;
-            return SCIP_OKAY;
-         }
-         else
-         {
-            SCIPwarningMessage(scip, "Stage <%d> is not handled!\n", SCIPgetStage(masterprob));
-            *result = SCIP_DIDNOTRUN;
-            return SCIP_OKAY;
-         }
-      }
-
-      SCIPdebugMessage("  update lower bound (value = %g).\n", *lowerbound);
-
-      if( relaxdata->currentorigsol != NULL )
-      {
-         SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
-      }
-
-      /* if a new primal solution was found in the master problem, transfer it to the original problem */
-      if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE && SCIPgetBestSol(relaxdata->masterprob) != NULL
-         && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
-      {
-         SCIP_SOL* newsol;
-
-         relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
-
-         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
-   #ifdef SCIP_DEBUG
-         SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
-   #else
-         SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
-   #endif
-         if( !stored )
-         {
-
-            SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
-         }
-         /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
-          *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
-          */
-         SCIP_CALL( SCIPfreeSol(scip, &newsol) );
-
-         if( stored )
-            SCIPdebugMessage("  updated current best primal feasible solution.\n");
-      }
-
-      if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL )
-      {
-         SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
-               GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
-      }
-
-   }
-   else
-   {
-      SCIPdebugMessage("Problem has been already solved at this node\n");
-   }
-
-
-   *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
 }
 
-/** execution method of the relaxator for Benders' decomposition */
+
+/** method to solve the master problem that is used by Dantzig-Wolfe and Benders' decomposition */
 static
-SCIP_RETCODE relaxExecGcgBendersDecomposition(
+SCIP_RETCODE solveMasterProblem(
    SCIP*                 scip,               /**< the SCIP data structure */
-   SCIP_RELAX*           relax,              /**< the relaxator */
+   SCIP*                 masterprob,         /**< the master problem SCIP instance */
+   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator data */
+   SCIP_Longint          nodelimit,          /**< the number of nodes the will be solved in this master problem */
    SCIP_Real*            lowerbound,         /**< the lowerbound computed by the relaxator for the current node */
    SCIP_RESULT*          result              /**< the result of the relaxation call */
    )
 {
-   SCIP* masterprob;
-   SCIP_RELAXDATA* relaxdata;
-   SCIP_Bool cutoff;
-   SCIP_Longint nodelimit;
    SCIP_Real timelimit;
    SCIP_Real memorylimit;
    SCIP_Bool stored;
 
    assert(scip != NULL);
-   assert(relax != NULL);
-   assert(result != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-   *result = SCIP_DIDNOTRUN;
-
-
-   if( !relaxdata->relaxisinitialized )
-   {
-      SCIP_CALL( initRelaxator(scip, relax) );
-      SCIP_CALL( GCGconsOrigbranchAddRootCons(scip) );
-      relaxdata->relaxisinitialized = TRUE;
-      assert(relaxdata->decdecomp != NULL);
-   }
-
-   masterprob = relaxdata->masterprob;
    assert(masterprob != NULL);
-
-   /* construct the LP in the original problem */
-   SCIP_CALL( SCIPconstructLP(scip, &cutoff) );
-   assert(!cutoff);
-   SCIP_CALL( SCIPflushLP(scip) );
-
-   /* solve the next node in the master problem */
-   SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
+   assert(relaxdata != NULL);
 
    /* update the number of the last solved node */
    relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
 
-   /* prior to performing the decomposition the original problem verbosity is changed to NONE. This avoids output from
-    * the original problem before the decomposition output. Once the decomposition has been performed, then the
-    * verbosity level of the original problem is returned to the original verbosity level.
-    */
-   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", relaxdata->origverblevel) );
-   SCIP_CALL( SCIPsetIntParam(masterprob, "display/verblevel", relaxdata->origverblevel) );
-
    /* increase the node limit for the master problem by 1 */
-   SCIP_CALL( SCIPgetLongintParam(scip, "limits/nodes", &nodelimit) );
    SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes", nodelimit) );
+
 
    /* loop to solve the master problem, this is a workaround and does not fix any problem */
    while( !SCIPisStopped(scip) )
@@ -2816,6 +2616,140 @@ SCIP_RETCODE relaxExecGcgBendersDecomposition(
       SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
    }
 
+   return SCIP_OKAY;
+}
+
+
+
+
+/** execution method of the relaxator for Dantzig-Wolfe reformulation */
+static
+SCIP_RETCODE relaxExecGcgDantzigWolfe(
+   SCIP*                 scip,               /**< the SCIP data structure */
+   SCIP_RELAX*           relax,              /**< the relaxator */
+   SCIP_Real*            lowerbound,         /**< the lowerbound computed by the relaxator for the current node */
+   SCIP_RESULT*          result              /**< the result of the relaxation call */
+   )
+{
+   SCIP* masterprob;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_Longint oldnnodes;
+   SCIP_Longint nodelimit;
+   SCIP_Bool stored;
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+   assert(result != NULL);
+   assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+   *result = SCIP_DIDNOTRUN;
+
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
+
+   /* solve the next node in the master problem */
+   SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
+
+   /* only solve the relaxation if it was not yet solved at the current node */
+   if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
+   {
+      /* increase the node limit for the master problem by 1 */
+      SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
+
+      nodelimit = (SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) ? 1 : oldnnodes + 1);
+      /* solving the master problem */
+      SCIP_CALL( solveMasterProblem(scip, masterprob, relaxdata, nodelimit, lowerbound, result) );
+
+      /* if a new primal solution was found in the master problem, transfer it to the original problem */
+      if( SCIPgetBestSol(relaxdata->masterprob) != NULL
+         && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
+      {
+         SCIP_SOL* newsol;
+
+         relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
+
+         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
+   #ifdef SCIP_DEBUG
+         SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
+   #else
+         SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
+   #endif
+         if( !stored )
+         {
+
+            SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
+         }
+         /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
+          *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
+          */
+         SCIP_CALL( SCIPfreeSol(scip, &newsol) );
+
+         if( stored )
+            SCIPdebugMessage("  updated current best primal feasible solution.\n");
+      }
+
+      if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL )
+      {
+         SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
+               GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
+      }
+
+   }
+   else
+   {
+      SCIPdebugMessage("Problem has been already solved at this node\n");
+   }
+
+
+   *result = SCIP_SUCCESS;
+
+   return SCIP_OKAY;
+}
+
+/** execution method of the relaxator for Benders' decomposition */
+static
+SCIP_RETCODE relaxExecGcgBendersDecomposition(
+   SCIP*                 scip,               /**< the SCIP data structure */
+   SCIP_RELAX*           relax,              /**< the relaxator */
+   SCIP_Real*            lowerbound,         /**< the lowerbound computed by the relaxator for the current node */
+   SCIP_RESULT*          result              /**< the result of the relaxation call */
+   )
+{
+   SCIP* masterprob;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_Longint nodelimit;
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+   assert(result != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+   *result = SCIP_DIDNOTRUN;
+
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
+
+   /* solve the next node in the master problem */
+   SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
+
+   /* prior to performing the decomposition the original problem verbosity is changed to NONE. This avoids output from
+    * the original problem before the decomposition output. Once the decomposition has been performed, then the
+    * verbosity level of the original problem is returned to the original verbosity level.
+    */
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", relaxdata->origverblevel) );
+   SCIP_CALL( SCIPsetIntParam(masterprob, "display/verblevel", relaxdata->origverblevel) );
+
+   /* getting the node limit from the original problem. This is because the master problem is solved to optimality in
+    * the execution of the relaxator.
+    */
+   SCIP_CALL( SCIPgetLongintParam(scip, "limits/nodes", &nodelimit) );
+
+   /* solving the master problem */
+   SCIP_CALL( solveMasterProblem(scip, masterprob, relaxdata, nodelimit, lowerbound, result) );
+
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -2833,6 +2767,11 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   /* checking whether the relaxator needs to be initialised. If so, then the master problem and pricing problems will
+    * be created.
+    */
+   SCIP_CALL( initializeMasterProblemSolve(scip, relax) );
 
    /* selecting the solving algorithm based upon the decomposition mode selected by the user */
    if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
@@ -3320,15 +3259,19 @@ SCIP* GCGgetOriginalprob(
    assert((benders != NULL && pricer == NULL) || (pricer != NULL && benders == NULL));
 
    origprob = NULL;
-   if( benders != NULL )
+   if( benders != NULL && pricer == NULL )
    {
       origprob = GCGbendersGetOrigprob(masterprob);
       assert(GCGgetDecompositionMode(origprob) == DEC_DECMODE_BENDERS);
    }
-   else
+   else if( pricer != NULL && benders == NULL )
    {
       origprob = GCGmasterGetOrigprob(masterprob);
       assert(GCGgetDecompositionMode(origprob) == DEC_DECMODE_DANTZIGWOLFE);
+   }
+   else
+   {
+      SCIPerrorMessage("There must exist either a pricer or a benders, not both.\n");
    }
 
    return origprob;
@@ -4594,6 +4537,7 @@ DEC_DECMODE GCGgetMasterDecompMode(
 {
    SCIP_BENDERS* benders;
    SCIP_PRICER* pricer;
+   DEC_DECMODE mode;
 
    assert(masterprob != NULL);
 
@@ -4604,12 +4548,15 @@ DEC_DECMODE GCGgetMasterDecompMode(
    assert((benders != NULL && pricer == NULL) || (pricer != NULL && benders == NULL));
 
    if( benders != NULL )
-      return DEC_DECMODE_BENDERS;
+      mode = DEC_DECMODE_BENDERS;
    else if( pricer != NULL )
-      return DEC_DECMODE_DANTZIGWOLFE;
+      mode = DEC_DECMODE_DANTZIGWOLFE;
    else
    {
+      mode = DEC_DECMODE_UNKNOWN;
       SCIPerrorMessage("Sorry, the decomposition mode of the master problem is invalid. This should not happen.");
       SCIPABORT();
    }
+
+   return mode;
 }
