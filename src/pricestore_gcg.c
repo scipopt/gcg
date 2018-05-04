@@ -46,6 +46,7 @@
 #include "scip/cons.h"
 #include "scip/debug.h"
 
+#include "gcg.h"
 #include "pricestore_gcg.h"
 #include "struct_pricestore_gcg.h"
 #include "pricer_gcg.h"
@@ -377,24 +378,17 @@ SCIP_RETCODE pricestoreApplyCol(
    GCG_COL*              col,                /**< col to apply to the LP */
    SCIP_Bool             force,              /**< force column */
    SCIP_Real             mincolorthogonality,/**< minimal orthogonality of cols to apply to LP */
-   int                   depth,              /**< depth of current node */
-   int*                  ncolsapplied,       /**< pointer to count the number of applied cols */
-   SCIP_Real             score               /**< score of column (or -1.0 if not specified) */
+   int                   depth,              /**< depth of current node */   
+   SCIP_Real             score,              /**< score of column (or -1.0 if not specified) */
+   SCIP_Bool*            added               /**< pointer to store whether the column was added */
    )
 {
-   SCIP_Bool added;
    assert(pricestore != NULL);
-   assert(ncolsapplied != NULL);
+   assert(added != NULL);
 
    /* a col could have been added twice to the price store; add it only once! */
-   SCIP_CALL( GCGcreateNewMasterVarFromGcgCol(pricestore->scip, pricestore->infarkas, col, force, &added, NULL, score) );
-
-   assert(added);
-   /* update statistics */
-   if( added )
-   {
-      (*ncolsapplied)++;
-   }
+   SCIP_CALL( GCGcreateNewMasterVarFromGcgCol(pricestore->scip, pricestore->infarkas, col, force, added, NULL, score) );
+   assert(*added);
 
    /* update the orthogonalities if needed */
    if( SCIPisGT(pricestore->scip, mincolorthogonality, SCIPepsilon(pricestore->scip)) || SCIPisPositive(pricestore->scip, pricestore->orthofac))
@@ -487,9 +481,12 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 {
    SCIP* scip;
    SCIP_NODE* node;
+   SCIP_Bool added;
+   int* ncolsappliedprob;
    SCIP_Real mincolorthogonality;
    int depth;
    int maxpricecols;
+   int maxpricecolsprob;
    int ncolsapplied;
    int pos;
 
@@ -507,8 +504,10 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 
    /* get maximal number of cols to add to the LP */
    maxpricecols = GCGpricerGetMaxColsRound(scip);
+   maxpricecolsprob = GCGpricerGetMaxColsProb(scip);
 
    ncolsapplied = 0;
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &ncolsappliedprob, GCGgetNPricingprobs(GCGmasterGetOrigprob(scip))) );
 
    /* get depth of current node */
    depth = SCIPnodeGetDepth(node);
@@ -527,23 +526,33 @@ SCIP_RETCODE GCGpricestoreApplyCols(
    for( pos = 0; pos < pricestore->nforcedcols; pos++ )
    {
       GCG_COL* col;
+      int probnr;
 
       col = pricestore->cols[pos];
       assert(SCIPisInfinity(scip, pricestore->scores[pos]));
 
-      /* add col to the priced vars and update orthogonalities */
-      SCIPdebugMessage(" -> applying forced col %p\n", (void*) col);
+      probnr = GCGcolGetProbNr(col);
 
-      SCIP_CALL( pricestoreApplyCol(pricestore, col, TRUE, mincolorthogonality, depth, &ncolsapplied, pricestore->scores[pos]) );
+      /* add col to the priced vars and update orthogonalities */
+      SCIPdebugMessage(" -> applying forced col %p (probnr = %d)\n", (void*) col, probnr);
+
+      SCIP_CALL( pricestoreApplyCol(pricestore, col, TRUE, mincolorthogonality, depth, pricestore->scores[pos], &added) );
+
+      if( added )
+      {
+         ++ncolsapplied;
+         ++ncolsappliedprob[probnr];
+      }
    }
 
    /* apply non-forced cols */
-   while( ncolsapplied < maxpricecols && pricestore->ncols > pricestore->nforcedcols )
+   while( pricestore->ncols > pricestore->nforcedcols )
    {
       GCG_COL* col;
       int bestpos;
       SCIP_Real score;
       SCIP_Bool keep = FALSE;
+      int probnr;
 
       /* get best non-forced col */
       bestpos = pricestoreGetBestCol(pricestore);
@@ -552,23 +561,29 @@ SCIP_RETCODE GCGpricestoreApplyCols(
       col = pricestore->cols[bestpos];
       score = pricestore->scores[bestpos];
       assert(!SCIPisInfinity(scip, pricestore->scores[bestpos]));
+      probnr = GCGcolGetProbNr(col);
 
-      SCIPdebugMessage(" -> applying col %p (pos=%d/%d, efficacy=%g, objparallelism=%g, orthogonality=%g, score=%g)\n",
-         (void*)col, bestpos, pricestore->ncols, GCGcolGetRedcost(pricestore->cols[bestpos]), pricestore->objparallelisms[bestpos],
-         pricestore->orthogonalities[bestpos], pricestore->scores[bestpos]);
-
-      /* release the row and delete the col (also issuing ROWDELETEDPRICE event) */
+      /* delete column from the pricestore */
       pricestoreDelCol(pricestore, bestpos, FALSE);
 
       /* Do not add (non-forced) non-violated cols.
        * Note: do not take SCIPsetIsEfficacious(), because constraint handlers often add cols w.r.t. SCIPsetIsFeasPositive().
        * Note2: if pricerating/feastolfac != -1, constraint handlers may even add cols w.r.t. SCIPsetIsPositive(); those are currently rejected here
        */
-      if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(col)) )
+      if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(col)) && ncolsapplied < maxpricecols && ncolsappliedprob[probnr] < maxpricecolsprob )
       {
          /* add col to the LP and update orthogonalities */
-         SCIP_CALL( pricestoreApplyCol(pricestore, col, FALSE, mincolorthogonality, depth, &ncolsapplied, score) );
+         SCIP_CALL( pricestoreApplyCol(pricestore, col, FALSE, mincolorthogonality, depth, score, &added) );
          keep = FALSE;
+         if( added )
+         {
+            SCIPdebugMessage(" -> applying col %p (pos=%d/%d, probnr = %d, efficacy=%g, objparallelism=%g, orthogonality=%g, score=%g)\n",
+            (void*) col, bestpos, probnr, pricestore->ncols, GCGcolGetRedcost(pricestore->cols[bestpos]), pricestore->objparallelisms[bestpos],
+            pricestore->orthogonalities[bestpos], pricestore->scores[bestpos]);
+
+            ++ncolsapplied;
+            ++ncolsappliedprob[probnr];
+         }
       }
       else if( usecolpool )
       {
@@ -583,6 +598,8 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 
    /* clear the price storage and reset statistics for price round */
    GCGpricestoreClearCols(pricestore);
+
+   SCIPfreeBufferArray(scip, &ncolsappliedprob);
 
    /* stop timing */
    SCIPstopClock(pricestore->scip, pricestore->priceclock);
