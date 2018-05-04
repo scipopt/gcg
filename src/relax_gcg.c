@@ -1473,13 +1473,14 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotaggr", TRUE) );
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
 
-   /* NOTE: This is just for testing. Separation, presolving and heuristics are turned off */
-   //SCIP_CALL( SCIPsetSeparating(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
-   //SCIP_CALL( SCIPsetHeuristics(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
-   SCIP_CALL( SCIPsetPresolving(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
-   //SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxrounds", 0) );
-   SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxroundsroot", 0) );
-   SCIP_CALL( SCIPsetIntParam(masterscip, "heuristics/trysol/freq", 1) );
+   /* for Benders' decomposition, some additional parameter settings are required for the master problem. */
+   if( mode == DEC_DECMODE_BENDERS )
+   {
+      SCIP_CALL( SCIPsetSeparating(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
+      SCIP_CALL( SCIPsetPresolving(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
+      SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxroundsroot", 0) );
+      SCIP_CALL( SCIPsetIntParam(masterscip, "heuristics/trysol/freq", 1) );
+   }
 
    return SCIP_OKAY;
 }
@@ -1745,8 +1746,6 @@ SCIP_RETCODE createMaster(
    SCIPdebugMessage("Creating master problem...\n");
 
    SCIP_CALL( initRelaxProblemdata(scip, relaxdata) );
-
-   SCIP_CALL( SCIPsetHeuristics(scip, SCIP_PARAMSETTING_OFF, TRUE) );
 
    /* get clocktype of the original SCIP instance in order to use the same clocktype in master and pricing problems */
    SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype) );
