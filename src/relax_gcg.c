@@ -1780,7 +1780,7 @@ SCIP_RETCODE createMaster(
    /* create master and pricing problem constraints */
    SCIP_CALL( createMasterprobConss(scip, relaxdata) );
    SCIP_CALL( createPricingprobConss(scip, relaxdata, hashorig2pricingvar) );
-   SCIP_CALL( GCGmasterCreateInitialMastervars(relaxdata->masterprob, scip) );
+   SCIP_CALL( GCGmasterCreateInitialMastervars(relaxdata->masterprob) );
 
    /* check if the master problem is a set partitioning or set covering problem */
    SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
