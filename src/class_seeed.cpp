@@ -6647,6 +6647,11 @@ void Seeed::calcmaxwhitescore(){
    /** maxwhitescore = 1 - ( 1 - blackareascore) + (1 - borderareascore ) ) */
    maxwhitescore = blockareascore + borderareascore - 1.;
 
+   std::cout << "calculated blockareascore: " << blockareascore << std::endl;
+   std::cout << "calculated borderareascore: " << borderareascore << std::endl;
+   std::cout << "calculated maxwhitescore: " << maxwhitescore << std::endl;
+
+
    if( maxwhitescore < 0. )
      maxwhitescore = 0.;
 
