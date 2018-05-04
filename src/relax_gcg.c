@@ -1657,7 +1657,8 @@ SCIP_RETCODE createPricingprobConss(
                {
                   if( SCIPisFeasEQ( scip, SCIPvarGetLbGlobal(curvars[i]), SCIPvarGetUbGlobal(curvars[i]) ) && SCIPisFeasEQ( scip, SCIPvarGetUbGlobal(curvars[i]), 0. )  )
                      continue;
-                  assert(GCGvarIsPricing(curvars[i]));
+
+                  assert(GCGvarIsPricing(curvars[i]) || ( SCIPvarIsNegated(curvars[i]) && GCGvarIsPricing(SCIPvarGetNegatedVar(curvars[i]) ) ) );
                }
 
                SCIPfreeBufferArrayNull(scip, &curvars);
@@ -1697,6 +1698,7 @@ SCIP_RETCODE createMaster(
    assert(relaxdata != NULL);
 
    assert(relaxdata->decdecomp != NULL);
+
 
    SCIP_CALL( convertStructToGCG(scip, relaxdata, relaxdata->decdecomp) );
 
