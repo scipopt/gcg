@@ -165,22 +165,22 @@ public:
       SCIP_Bool*     bestredcostvalid    /**< pointer to store if bestredcost are valid (pp solvedoptimal) */
    );
 
-   const FarkasPricing *getFarkasPricing() const
+   const FarkasPricing* getFarkasPricing() const
    {
       return farkaspricing;
    }
 
-   FarkasPricing *getFarkasPricingNonConst()
+   FarkasPricing* getFarkasPricingNonConst()
    {
       return farkaspricing;
    }
 
-   const ReducedCostPricing *getReducedCostPricing() const
+   const ReducedCostPricing* getReducedCostPricing() const
    {
       return reducedcostpricing;
    }
 
-   ReducedCostPricing *getReducedCostPricingNonConst()
+   ReducedCostPricing* getReducedCostPricingNonConst()
    {
       return reducedcostpricing;
    }
@@ -189,6 +189,12 @@ public:
    {
       return origprob;
    }
+
+   /** get the number of columns to be added to the master LP in the current pricing round */
+   int getMaxColsRound() const;
+
+   /** get the number of columns per pricing problem to be added to the master LP in the current pricing round */
+   int getMaxColsProb() const;
 
    /** add artificial vars */
    SCIP_RETCODE addArtificialVars();

@@ -89,9 +89,6 @@ SCIP_RETCODE GCGpricestoreCreate(
    SCIP_Real             orthofac,            /**< factor of orthogonalities in score function */
    SCIP_Real             mincolorth,          /**< minimal orthogonality of columns to add
                                                   (with respect to columns added in the current round) */
-   SCIP_Real             maxpricecolsroot,    /**< maximum number of columns per round at the root */
-   SCIP_Real             maxpricecols,        /**< maximum number of columns per round */
-   SCIP_Real             maxpricecolsfarkas,  /**< maximum number of columns per Farkas round */
    GCG_EFFICIACYCHOICE   efficiacychoice      /**< choice to base efficiacy on */
    )
 {
@@ -121,9 +118,6 @@ SCIP_RETCODE GCGpricestoreCreate(
    (*pricestore)->mincolorth = mincolorth;       /**< minimal orthogonality of columns to add
                                                       (with respect to columns added in the current round) */
    (*pricestore)->efficiacychoice = efficiacychoice;
-   (*pricestore)->maxpricecolsroot = maxpricecolsroot;       /**< maximum number of columns per round at the root node */
-   (*pricestore)->maxpricecols = maxpricecols;       /**< maximum number of columns per round */
-   (*pricestore)->maxpricecolsfarkas = maxpricecolsfarkas; /**< maximum number of columns per Farkas round */
 
    return SCIP_OKAY;
 }
@@ -512,13 +506,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
    assert(node != NULL);
 
    /* get maximal number of cols to add to the LP */
-   /* TODO: get Farkas/Redcost from pricer */
-   if( pricestore->infarkas )
-      maxpricecols = pricestore->maxpricecolsfarkas;
-   else if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) )
-      maxpricecols = pricestore->maxpricecolsroot;
-   else
-      maxpricecols = pricestore->maxpricecols;
+   maxpricecols = GCGpricerGetMaxColsRound(scip);
 
    ncolsapplied = 0;
 

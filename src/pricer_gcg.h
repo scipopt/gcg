@@ -176,6 +176,18 @@ int GCGpricerGetNRaysProb(
    int                   probnr              /**< index of pricing problem */
    );
 
+/** get the number of columns to be added to the master LP in the current pricing round */
+extern
+int GCGpricerGetMaxColsRound(
+   SCIP*                 scip                /**< master SCIP data structure */
+   );
+
+/** get the number of columns per pricing problem to be added to the master LP in the current pricing round */
+extern
+int GCGpricerGetMaxColsProb(
+   SCIP*                 scip                /**< master SCIP data structure */
+   );
+
 /** add a new column to the pricing storage */
 extern
 SCIP_RETCODE GCGpricerAddCol(

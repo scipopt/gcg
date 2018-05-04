@@ -351,6 +351,28 @@ SCIP_Bool ObjPricerGcg::isMasterLPOptimal() const
    return SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL;
 }
 
+/** get the number of columns to be added to the master LP in the current pricing round */
+int ObjPricerGcg::getMaxColsRound() const
+{
+   assert(pricingtype != NULL);
+
+   if( pricingtype->getType() == GCG_PRICETYPE_FARKAS || SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_) )
+      return pricingtype->getMaxcolsround();
+   else
+      return pricingtype->getMaxcolsroundroot();
+}
+
+/** get the number of columns per pricing problem to be added to the master LP in the current pricing round */
+int ObjPricerGcg::getMaxColsProb() const
+{
+   assert(pricingtype != NULL);
+
+   if( pricingtype->getType() == GCG_PRICETYPE_FARKAS || SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_) )
+      return pricingtype->getMaxcolsprob();
+   else
+      return pricingtype->getMaxcolsprobroot();
+}
+
 /** ensures size of pricedvars array */
 SCIP_RETCODE ObjPricerGcg::ensureSizePricedvars(
    int                   size                /**< needed size */
@@ -4171,7 +4193,6 @@ SCIP_RETCODE ObjPricerGcg::createPricestore()
    SCIP_CALL( GCGpricestoreCreate(scip_, &pricestore,
       pricerdata->redcostfac, pricerdata->objparalfac, pricerdata->orthofac,
       pricerdata->mincolorth,
-      reducedcostpricing->getMaxcolsroundroot(), reducedcostpricing->getMaxcolsround(), farkaspricing->getMaxcolsround(),
       pricerdata->efficiacychoice) );
 
    return SCIP_OKAY;
@@ -4790,6 +4811,38 @@ int GCGpricerGetNRaysProb(
       return 0;
    else
       return pricerdata->nraysprob[probnr];
+}
+
+/** get the number of columns to be added to the master LP in the current pricing round */
+extern "C"
+int GCGpricerGetMaxColsRound(
+   SCIP*                 scip                /**< master SCIP data structure */
+   )
+{
+   ObjPricerGcg* pricer;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   return pricer->getMaxColsRound();
+}
+
+/** get the number of columns per pricing problem to be added to the master LP in the current pricing round */
+extern "C"
+int GCGpricerGetMaxColsProb(
+   SCIP*                 scip                /**< master SCIP data structure */
+   )
+{
+   ObjPricerGcg* pricer;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   return pricer->getMaxColsProb();
 }
 
 /** add a new column to the pricing storage */

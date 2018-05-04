@@ -67,9 +67,6 @@ SCIP_RETCODE GCGpricestoreCreate(
    SCIP_Real             orthofac,            /**< factor of orthogonalities in score function */
    SCIP_Real             mincolorth,          /**< minimal orthogonality of columns to add
                                                   (with respect to columns added in the current round) */
-   SCIP_Real             maxpricecolsroot,    /**< maximum number of columns per round */
-   SCIP_Real             maxpricecols,        /**< maximum number of columns per round */
-   SCIP_Real             maxpricecolsfarkas,  /**< maximum number of columns per Farkas round */
    GCG_EFFICIACYCHOICE   efficiacychoice      /**< choice to base efficiacy on */
    );
 
