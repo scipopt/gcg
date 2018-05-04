@@ -60,24 +60,6 @@
 #include <regex>
 #include <vector>
 
-#if 0
-#include "../lib/scip-git/src/scip/clock.h"
-#include "../lib/scip-git/src/scip/def.h"
-#include "../lib/scip-git/src/scip/pub_cons.h"
-#include "../lib/scip-git/src/scip/pub_dialog.h"
-#include "../lib/scip-git/src/scip/pub_message.h"
-#include "../lib/scip-git/src/scip/pub_misc.h"
-#include "../lib/scip-git/src/scip/type_clock.h"
-#include "../lib/scip-git/src/scip/type_cons.h"
-#include "../lib/scip-git/src/scip/type_dialog.h"
-#include "../lib/scip-git/src/scip/type_message.h"
-#include "../lib/scip-git/src/scip/type_misc.h"
-#include "../lib/scip-git/src/scip/type_paramset.h"
-#include "../lib/scip-git/src/scip/type_result.h"
-#include "../lib/scip-git/src/scip/type_retcode.h"
-#include "../lib/scip-git/src/scip/type_scip.h"
-#include "../lib/scip-git/src/scip/type_set.h"
-#else
 #include "scip/clock.h"
 #include "scip/def.h"
 #include "scip/pub_cons.h"

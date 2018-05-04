@@ -338,7 +338,7 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
 /** creates the corresponding constraint in the master problem for the linking variable */
 extern
 SCIP_RETCODE GCGlinkingVarCreateMasterCons(
-   SCIP*                 masterscip,         /**< msater problem SCIP data structure */
+   SCIP*                 masterscip,         /**< master problem SCIP data structure */
    int                   pricingprobnr,      /**< number of the pricing problem */
    SCIP_VAR*             origvar,            /**< original variable */
    SCIP_CONS**           linkcons            /**< constraint linking pricing variables */

@@ -19,7 +19,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+/* #define SCIP_DEBUG */
 #include <assert.h>
 #include <string.h>
 
@@ -57,17 +57,12 @@
  * Data structures
  */
 
-/* TODO: fill in the necessary Benders' decomposition data */
-
 /** Benders' decomposition data */
 struct SCIP_BendersData
 {
    SCIP*                 origprob;           /**< the SCIP instance of the original problem */
    SCIP_SOL*             relaxsol;           /**< the solution to the original problem related to the relaxation */
 };
-
-
-
 
 /*
  * Local methods
@@ -90,7 +85,7 @@ SCIP_Real varGetObj(
       return SCIPvarGetObj(origvar);
 }
 
-/* Initialises the objective function for all subproblems. */
+/* Initializes the objective function for all subproblems. */
 static
 SCIP_RETCODE setSubproblemObjs(
    SCIP_BENDERS*         benders,            /**< the benders' decomposition constraint handler */
@@ -213,14 +208,14 @@ SCIP_RETCODE setOriginalProblemValues(
 
          /* only update the solution value of master variables if an artificial solution is being created. */
          if( master || mastervar == NULL )
+         {
             SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvars[0], val) );
+         }
       }
    }
 
    return SCIP_OKAY;
 }
-
-
 
 /** creates an original problem solution from the master and subproblem solutions */
 static
@@ -338,21 +333,15 @@ SCIP_RETCODE createOriginalProblemSolution(
    else
    {
       if( bendersdata->relaxsol != NULL )
+      {
          SCIP_CALL( SCIPfreeSol(origprob, &bendersdata->relaxsol) );
+      }
 
       bendersdata->relaxsol = origsol;
    }
 
-   //printf("Master Solution\n");
-   //SCIP_CALL( SCIPprintSol(masterprob, sol, 0, 0) );
-   //printf("Original Solution\n");
-   //SCIP_CALL( SCIPprintSol(origprob, origsol, 0, 0) );
-
    return SCIP_OKAY;
 }
-
-
-
 
 /*
  * Callback methods for Benders' decomposition
@@ -379,8 +368,6 @@ SCIP_DECL_BENDERSFREE(bendersFreeGcg)
    return SCIP_OKAY;
 }
 
-
-
 /** presolving initialization method of constraint handler (called when presolving is about to begin) */
 static
 SCIP_DECL_BENDERSINITPRE(bendersInitpreGcg)
@@ -394,11 +381,12 @@ SCIP_DECL_BENDERSINITPRE(bendersInitpreGcg)
    nsubproblems = SCIPbendersGetNSubproblems(benders);
 
    for( i = 0; i < nsubproblems; i++ )
+   {
       SCIP_CALL( GCGaddDataAuxiliaryVar(scip, SCIPbendersGetAuxiliaryVar(benders, i), i) );
+   }
 
    return SCIP_OKAY;
 }
-
 
 /** solving process deinitialization method of Benders' decomposition (called before branch and bound process data is freed) */
 static
@@ -413,11 +401,12 @@ SCIP_DECL_BENDERSEXITSOL(bendersExitsolGcg)
 
    /* freeing the relaxation solution */
    if( bendersdata->relaxsol != NULL )
+   {
       SCIP_CALL( SCIPfreeSol(bendersdata->origprob, &bendersdata->relaxsol) );
+   }
 
    return SCIP_OKAY;
 }
-
 
 /** mapping method between the master problem variables and the subproblem variables of Benders' decomposition */
 static
@@ -446,7 +435,6 @@ SCIP_DECL_BENDERSGETVAR(bendersGetvarGcg)
       if( GCGoriginalVarIsLinking(origvar) )
       {
          (*mappedvar) = GCGoriginalVarGetMastervars(origvar)[0];
-         //(*mappedvar) = SCIPvarGetProbvar((*mappedvar));
       }
    }
    else
@@ -462,14 +450,11 @@ SCIP_DECL_BENDERSGETVAR(bendersGetvarGcg)
       if( GCGoriginalVarIsLinking(origvar) )
       {
          (*mappedvar) = GCGlinkingVarGetPricingVars(origvar)[probnumber];
-         //if( (*mappedvar) != NULL )
-            //(*mappedvar) = SCIPvarGetProbvar((*mappedvar));
       }
    }
 
    return SCIP_OKAY;
 }
-
 
 /** the post-execution method for Benders' decomposition */
 static
@@ -497,9 +482,7 @@ SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
    return SCIP_OKAY;
 }
 
-
-
-/** the method for creating the Benders' decomposition subproblem. This method is called during the initialisation stage
+/** the method for creating the Benders' decomposition subproblem. This method is called during the initialization stage
  *  (after the master problem was transformed)
  *
  *  This method must create the SCIP instance for the subproblem and add the required variables and constraints. In
@@ -536,8 +519,6 @@ SCIP_DECL_BENDERSCREATESUB(bendersCreatesubGcg)
 
    return SCIP_OKAY;
 }
-
-
 
 /*
  * Benders' decomposition specific interface methods
@@ -578,8 +559,6 @@ SCIP_RETCODE SCIPincludeBendersGcg(
    return SCIP_OKAY;
 }
 
-
-
 /** returns the last relaxation solution */
 SCIP_SOL* SCIPbendersGetRelaxSol(
    SCIP_BENDERS*         benders             /**< the Benders' decomposition structure */
@@ -594,7 +573,6 @@ SCIP_SOL* SCIPbendersGetRelaxSol(
 
    return bendersdata->relaxsol;
 }
-
 
 /** returns the original problem for the given master problem */
 SCIP* GCGbendersGetOrigprob(
