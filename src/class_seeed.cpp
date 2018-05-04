@@ -6842,7 +6842,7 @@ void Seeed::calcborderareascore(){
    unsigned long borderarea;
 
 
-   matrixarea = getNVars() * getNConss();
+   matrixarea = (unsigned long) getNVars() * (unsigned long)getNConss();
    borderarea = 0;
 
    borderarea += (unsigned long) ( getNLinkingvars() + getNTotalStairlinkingvars() ) * (unsigned long) getNConss();
