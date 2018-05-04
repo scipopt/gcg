@@ -7089,7 +7089,7 @@ void Seeed::calcblockareascore(){
    unsigned long blockarea;
 
 
-   matrixarea = getNVars() * getNConss();
+   matrixarea = (unsigned long) getNVars()  * (unsigned long) getNConss() ;
    blockarea = 0;
 
    for( int i = 0; i < getNBlocks(); ++ i )
