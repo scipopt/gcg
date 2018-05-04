@@ -217,6 +217,24 @@ void pricestoreDelCol(
    pricestore->ncols--;
 }
 
+/** for a given column, check if an identical column already exists in the price storage;
+ *  if one exists, return its position, otherwise, return -1
+ */
+static
+int pricestoreFindEqualCol(
+   GCG_PRICESTORE*       pricestore,         /**< price storage */
+   GCG_COL*              col                 /**< column to be checked */
+   )
+{
+   int c;
+
+   for( c = 0; c < pricestore->ncols; ++c )
+      if( GCGcolIsEq(col, pricestore->cols[c]) )
+         return c;
+
+   return -1;
+}
+
 /** adds col to price storage;
  *  if the col should be forced to enter the LP, an infinite score will be used
  */
@@ -230,6 +248,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
    SCIP_Real colobjparallelism;
    SCIP_Real colscore;
 
+   int oldpos;
    int pos;
 
    assert(pricestore != NULL);
@@ -239,20 +258,12 @@ SCIP_RETCODE GCGpricestoreAddCol(
    /* start timing */
    SCIPstartClock(pricestore->scip, pricestore->priceclock);
 
-   /* update statistics of total number of found cols */
-   pricestore->ncolsfound++;
-   pricestore->ncolsfoundround++;
-
    /* a col is forced to enter the LP if
     *  - we construct the initial LP, or
     *  - it has infinite score factor, or
     * if it is a non-forced col and no cols should be added, abort
     */
    forcecol = forcecol || pricestore->forcecols;
-
-   /* get enough memory to store the col */
-   SCIP_CALL( pricestoreEnsureColsMem(pricestore, pricestore->ncols+1) );
-   assert(pricestore->ncols < pricestore->colssize);
 
    GCGcolComputeNorm(scip, col);
 
@@ -272,30 +283,70 @@ SCIP_RETCODE GCGpricestoreAddCol(
          colobjparallelism = 0.0; /* no need to calculate it */
    }
 
-   SCIPdebugMessage("adding col %p to price storage of size %d (forcecol=%u)\n",
-      (void*)col, pricestore->ncols, forcecol);
+   oldpos = pricestoreFindEqualCol(pricestore, col);
 
-   /* add col to arrays */
-   if( forcecol )
+   pos = -1;
+
+   /* If the column is no duplicate of an existing one, add it */
+   if( oldpos == -1 )
    {
-      /* make room at the beginning of the array for forced col */
+      /* get enough memory to store the col */
+      SCIP_CALL( pricestoreEnsureColsMem(pricestore, pricestore->ncols+1) );
+      assert(pricestore->ncols < pricestore->colssize);
+
+      if( forcecol )
+      {
+         /* make room at the beginning of the array for forced col */
+         pos = pricestore->nforcedcols;
+         pricestore->cols[pricestore->ncols] = pricestore->cols[pos];
+         pricestore->objparallelisms[pricestore->ncols] = pricestore->objparallelisms[pos];
+         pricestore->orthogonalities[pricestore->ncols] = pricestore->orthogonalities[pos];
+         pricestore->scores[pricestore->ncols] = pricestore->scores[pos];
+         pricestore->nforcedcols++;
+      }
+      else
+         pos = pricestore->ncols;
+
+      pricestore->ncols++;
+      if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(col)) )
+         pricestore->nefficaciouscols++;
+
+      /* update statistics of total number of found cols */
+      pricestore->ncolsfound++;
+      pricestore->ncolsfoundround++;
+   }
+   /* Otherwise, if the new column is forced and the duplicate one is not,
+    * remove the duplicate and replace it by the new column
+    */
+   else if( forcecol && oldpos >= pricestore->nforcedcols )
+   {
+      GCGfreeGcgCol(&pricestore->cols[oldpos]);
+      pricestore->cols[oldpos] = pricestore->cols[pricestore->nforcedcols];
+      pricestore->objparallelisms[oldpos] = pricestore->objparallelisms[pricestore->nforcedcols];
+      pricestore->orthogonalities[oldpos] = pricestore->orthogonalities[pricestore->nforcedcols];
+      pricestore->scores[oldpos] = pricestore->scores[pricestore->nforcedcols];
+
       pos = pricestore->nforcedcols;
-      pricestore->cols[pricestore->ncols] = pricestore->cols[pos];
-      pricestore->objparallelisms[pricestore->ncols] = pricestore->objparallelisms[pos];
-      pricestore->orthogonalities[pricestore->ncols] = pricestore->orthogonalities[pos];
-      pricestore->scores[pricestore->ncols] = pricestore->scores[pos];
       pricestore->nforcedcols++;
    }
+   /* The column already exists and is not forced, free it */
    else
-      pos = pricestore->ncols;
+   {
+      /* @todo: This is a little dangerous */
+      GCGfreeGcgCol(&col);
+   }
 
-   pricestore->cols[pos] = col;
-   pricestore->objparallelisms[pos] = colobjparallelism;
-   pricestore->orthogonalities[pos] = 1.0;
-   pricestore->scores[pos] = colscore;
-   pricestore->ncols++;
-   if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(col)) )
-      pricestore->nefficaciouscols++;
+   if( pos > -1 )
+   {
+      SCIPdebugMessage("adding col %p to price storage of size %d (forcecol=%u)\n",
+         (void*)col, pricestore->ncols, forcecol);
+
+      /* add col to arrays */
+      pricestore->cols[pos] = col;
+      pricestore->objparallelisms[pos] = colobjparallelism;
+      pricestore->orthogonalities[pos] = 1.0;
+      pricestore->scores[pos] = colscore;
+   }
 
    /* stop timing */
    SCIPstopClock(pricestore->scip, pricestore->priceclock);
@@ -386,7 +437,6 @@ SCIP_RETCODE pricestoreApplyCol(
    assert(pricestore != NULL);
    assert(added != NULL);
 
-   /* a col could have been added twice to the price store; add it only once! */
    SCIP_CALL( GCGcreateNewMasterVarFromGcgCol(pricestore->scip, pricestore->infarkas, col, force, added, NULL, score) );
    assert(*added);
 
