@@ -784,7 +784,7 @@ void GCGconsOrigbranchCheckConsistency(
          assert(consdata->childconss[1] == NULL || SCIPconsGetData(consdata->childconss[1])->parentcons == conss[i]);
       assert(consdata->probingtmpcons == NULL || SCIPinProbing(scip));
       assert(consdata->probingtmpcons == NULL || SCIPconsGetData(consdata->probingtmpcons)->parentcons == conss[i]);
-      assert(SCIPnodeGetDepth(consdata->node) == 0 || consdata->mastercons == NULL || GCGconsMasterbranchGetOrigcons(consdata->mastercons) == conss[i]);
+      assert(consdata->mastercons == NULL || GCGconsMasterbranchGetOrigcons(consdata->mastercons) == conss[i]);
    }
 #endif
 #endif
