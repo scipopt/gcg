@@ -119,19 +119,26 @@ SCIP_RETCODE setSubproblemObjs(
    return SCIP_OKAY;
 }
 
-/** sets the values the given variables in the original problem */
+/** sets the pricing problem variable values for the original problem using the decomposed problem solution
+ *  There is a mapping between the original problem and the variables from the pricing problems. This mapping is used to
+ *  identify the variables of the original problem corresponding to the pricing problem variables.
+ *
+ *  An artificial solution can be constructed, which is indicated by the vals array provided as NULL. An artifical
+ *  solution sets the original problem variables corresponding to pricing problems variables to their bounds. An
+ *  artificial solution is created if branching candidates need to be found. Branching candidates only come from the
+ *  master problem, so the variable values of the pricing problem variables does not affect the branching variable
+ *  selection
+ */
 static
-SCIP_RETCODE setOriginalProblemValues(
+SCIP_RETCODE setOriginalProblemPricingValues(
    SCIP*                 origprob,           /**< the SCIP instance of the original problem */
    SCIP*                 masterprob,         /**< the Benders' master problem */
    SCIP_BENDERS*         benders,            /**< the Benders' decomposition structure */
    SCIP_SOL*             origsol,            /**< the solution for the original problem */
    SCIP_VAR**            vars,               /**< the variables from the decomposed problem */
-   SCIP_Real*            vals,               /**< the solution values of the given problem, can be NULL */
-   int                   nvars,              /**< the number of variables */
-   SCIP_Bool             master,             /**< are the variables from the master problem */
-   SCIP_Bool             artificial          /**< should an artifical (possibly infeasible) solution be created to
-                                                  generate branching candidates */
+   SCIP_Real*            vals,               /**< the solution values of the given problem, can be NULL for an
+                                                  artificial solution */
+   int                   nvars               /**< the number of variables */
    )
 {
    SCIP_VAR** origvars;
@@ -139,41 +146,29 @@ SCIP_RETCODE setOriginalProblemValues(
    int norigvars;
    int i;
 
-#ifndef NDEBUG
-   SCIP_Real* origvals;
-#endif
-
    assert(origprob != NULL);
    assert(masterprob != NULL);
    assert(benders != NULL);
    assert(vars != NULL);
-   assert(vals != NULL || artificial);
 
    /* looping through all variables to update the values in the original solution */
    for( i = 0; i < nvars; i++ )
    {
-      norigvars = master ? GCGmasterVarGetNOrigvars(vars[i]) : GCGpricingVarGetNOrigvars(vars[i]);
+      norigvars = GCGpricingVarGetNOrigvars(vars[i]);
       if( norigvars > 0 )
       {
          SCIP_VAR* mastervar;
 
-         origvars = master ? GCGmasterVarGetOrigvars(vars[i]) : GCGpricingVarGetOrigvars(vars[i]);
+         origvars = GCGpricingVarGetOrigvars(vars[i]);
 
-#ifndef NDEBUG
-         if( master )
-            origvals = GCGmasterVarGetOrigvals(vars[i]);
-#endif
-
-         /* all master variables should be associated with a single original variable. This is because no reformulation has
+         /* all variables should be associated with a single original variable. This is because no reformulation has
           * been performed. */
          assert(norigvars == 1);
-         assert(!master || origvals[0] == 1.0);
-
-         assert((master && GCGvarIsMaster(vars[i])) || (!master && GCGvarIsPricing(vars[i])));
+         assert(GCGvarIsPricing(vars[i]));
 
          /* for all variables that are from the subproblems, they are set to their bounds if the solution is being
           * created to identify branching candidates. */
-         if( !master && artificial )
+         if( vals == NULL )
          {
             if( SCIPisNegative(origprob, SCIPvarGetObj(origvars[0])) )
             {
@@ -192,28 +187,79 @@ SCIP_RETCODE setOriginalProblemValues(
             val = vals[i];
 
          /* identifying whether the variable is a master problem variable. The variable is a master problem variable if
-          * there is a mapping from the subproblem to the master problem */
-         if( master )
-            mastervar = vars[i];
-         else
-         {
-            mastervar = NULL;
-            SCIP_CALL( SCIPgetBendersMasterVar(masterprob, benders, vars[i], &mastervar) );
-         }
-
+          * there is a mapping from the subproblem to the master problem. If a mapping exists, then the variable value
+          * is not updated in the master problem
+          */
+         mastervar = NULL;
+         SCIP_CALL( SCIPgetBendersMasterVar(masterprob, benders, vars[i], &mastervar) );
          assert(!SCIPisInfinity(origprob, val));
 
-         SCIPdebugMsg(masterprob, "setting the value of <%s> (dw variable <%s>) to %g in the original solution. "
-            "Variable type: %d\n", SCIPvarGetName(origvars[0]), SCIPvarGetName(vars[i]), val, master);
+         SCIPdebugMsg(masterprob, "setting the value of <%s> (dw variable <%s>) to %g in the original solution.\n",
+            SCIPvarGetName(origvars[0]), SCIPvarGetName(vars[i]), val);
 
-         /* only update the solution value of master variables if an artificial solution is being created. */
-         if( master || mastervar == NULL )
+         /* only update the solution value if the master problem variable does not exist. */
+         if( mastervar == NULL )
          {
             SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvars[0], val) );
          }
       }
    }
 
+   return SCIP_OKAY;
+}
+
+/** sets the master problem values for the original problem using the decomposed problem solution */
+static
+SCIP_RETCODE setOriginalProblemMasterValues(
+   SCIP*                 origprob,           /**< the SCIP instance of the original problem */
+   SCIP*                 masterprob,         /**< the Benders' master problem */
+   SCIP_BENDERS*         benders,            /**< the Benders' decomposition structure */
+   SCIP_SOL*             origsol,            /**< the solution for the original problem */
+   SCIP_VAR**            vars,               /**< the variables from the decomposed problem */
+   SCIP_Real*            vals,               /**< the solution values of the given problem, can be NULL */
+   int                   nvars               /**< the number of variables */
+   )
+{
+   SCIP_VAR** origvars;
+   int norigvars;
+   int i;
+
+#ifndef NDEBUG
+   SCIP_Real* origvals;
+#endif
+
+   assert(origprob != NULL);
+   assert(masterprob != NULL);
+   assert(benders != NULL);
+   assert(vars != NULL);
+   assert(vals != NULL);
+
+   /* looping through all variables to update the values in the original solution */
+   for( i = 0; i < nvars; i++ )
+   {
+      norigvars = GCGmasterVarGetNOrigvars(vars[i]);
+      if( norigvars > 0 )
+      {
+         origvars = GCGmasterVarGetOrigvars(vars[i]);
+
+#ifndef NDEBUG
+         origvals = GCGmasterVarGetOrigvals(vars[i]);
+#endif
+
+         /* all master variables should be associated with a single original variable. This is because no reformulation has
+          * been performed. */
+         assert(norigvars == 1);
+         assert(origvals[0] == 1.0);
+         assert(GCGvarIsMaster(vars[i]));
+         assert(!SCIPisInfinity(origprob, vals[i]));
+
+         SCIPdebugMsg(masterprob, "setting the value of <%s> (dw variable <%s>) to %g in the original solution.\n",
+            SCIPvarGetName(origvars[0]), SCIPvarGetName(vars[i]), vals[i]);
+
+         /* only update the solution value of master variables. */
+         SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvars[0], vals[i]) );
+      }
+   }
    return SCIP_OKAY;
 }
 
@@ -263,7 +309,7 @@ SCIP_RETCODE createOriginalProblemSolution(
    SCIP_CALL( SCIPgetSolVals(masterprob, sol, nvars, vars, vals) );
 
    /* setting the values using the master problem solution */
-   SCIP_CALL( setOriginalProblemValues(origprob, masterprob, benders, origsol, vars, vals, nvars, TRUE, artificial) );
+   SCIP_CALL( setOriginalProblemMasterValues(origprob, masterprob, benders, origsol, vars, vals, nvars) );
 
    /* freeing the values buffer array for use for the pricing problems */
    SCIPfreeBufferArray(masterprob, &vals);
@@ -292,7 +338,7 @@ SCIP_RETCODE createOriginalProblemSolution(
       if( artificial )
       {
          /* setting the values of the subproblem variables to their bounds. */
-         SCIP_CALL( setOriginalProblemValues(origprob, masterprob, benders, origsol, vars, NULL, nvars, FALSE, artificial) );
+         SCIP_CALL( setOriginalProblemPricingValues(origprob, masterprob, benders, origsol, vars, NULL, nvars) );
       }
       else
       {
@@ -300,7 +346,7 @@ SCIP_RETCODE createOriginalProblemSolution(
          SCIP_CALL( SCIPgetSolVals(subproblem, bestsol, nvars, vars, vals) );
 
          /* setting the values using the master problem solution */
-         SCIP_CALL( setOriginalProblemValues(origprob, masterprob, benders, origsol, vars, vals, nvars, FALSE, artificial) );
+         SCIP_CALL( setOriginalProblemPricingValues(origprob, masterprob, benders, origsol, vars, vals, nvars) );
 
          /* freeing the values buffer array for use for the pricing problems */
          SCIPfreeBufferArray(subproblem, &vals);
