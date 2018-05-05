@@ -768,7 +768,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
             {
                SCIPinfoMessage(scip, NULL,"translatation was not successfull -> revoke presolving and use user given decomposition   \n");
                /* @TODO experimental */
+               SCIPconshdlrDecompNotifyNonFinalFreeTransform(scip);
                SCIPfreeTransform(scip);
+               SCIPconshdlrDecompNotifyFinishedNonFinalFreeTransform(scip);
                SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
                SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
                SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
@@ -815,7 +817,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          if( npresolvingrounds > 0)
          {
             SCIPinfoMessage(scip, NULL,"best candidate decomposition is from unpresolved problem -> revoke presolving and use it \n");
+            SCIPconshdlrDecompNotifyNonFinalFreeTransform(scip);
             SCIPfreeTransform(scip);
+            SCIPconshdlrDecompNotifyFinishedNonFinalFreeTransform(scip);
             SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
             SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
          }
