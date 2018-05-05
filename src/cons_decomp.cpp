@@ -756,6 +756,8 @@ SCIP_DECL_CONSINIT(consInitDecomp)
    return SCIP_OKAY;
 }
 
+
+
 /** deinitialization method of constraint handler (called before transformed problem is freed) */
 static
 SCIP_DECL_CONSEXIT(consExitDecomp)
