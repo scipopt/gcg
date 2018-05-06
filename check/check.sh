@@ -56,6 +56,10 @@ if test ! -e results
 then
     mkdir results
 fi
+if test ! -e results/vbc && $STATISTICS = "true"
+then
+    mkdir results/vbc
+fi
 if test ! -e locks
 then
     mkdir locks
