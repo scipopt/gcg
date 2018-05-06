@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -156,8 +156,8 @@ public:
       SCIP_Real*           dualdiff             /**< pointer to store difference of duals solutions */
    );
 
-   /** perform Farkas or reduced cost pricing */
-   SCIP_RETCODE performPricing(
+   /** the pricing loop: solve the pricing problems */
+   SCIP_RETCODE pricingLoop(
       PricingType*   pricetype,          /**< type of pricing */
       SCIP_RESULT*   result,             /**< result pointer */
       int*           nfoundvars,         /**< pointer to store number of found variables */
@@ -185,9 +185,6 @@ public:
       return reducedcostpricing;
    }
 
-   /** ensures size of solvers array */
-   SCIP_RETCODE ensureSizeSolvers();
-
    SCIP* getOrigprob()
    {
       return origprob;
@@ -214,12 +211,20 @@ public:
    /** create the pointers for the pricestore */
    SCIP_RETCODE createPricestore();
 
+   /** for given columns, (re-)compute and update their reduced costs */
+   void updateRedcosts(
+      PricingType*          pricetype,          /**< type of pricing */
+      GCG_COL**             cols,               /**< columns to compute reduced costs for */
+      int                   ncols,              /**< number of columns */
+      int*                  nimpcols            /**< pointer to store number of improving columns */
+      );
+
    /* computes the objective value of the current (stabilized) dual variables) in the dual program */
    SCIP_RETCODE getStabilizedDualObjectiveValue(
       PricingType*       pricetype,          /**< type of pricing */
       SCIP_Real*         stabdualval,        /**< pointer to store stabilized dual objective value */
       SCIP_Bool          stabilize           /**< stabilize? */
-   );
+      );
 
    SCIP_Real computeRedCostGcgCol(
       PricingType*          pricetype,          /**< type of pricing */
@@ -253,12 +258,6 @@ private:
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    ) const;
-
-   SCIP_Real computeQuasiRedCostGcgCol(
-      PricingType*          pricetype,          /**< type of pricing */
-      GCG_Col*              gcgcol,             /**< gcg column to compute reduced cost for */
-      SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
-      ) const;
 
    /** for given columns, (re-)compute and update their reduced costs */
    void updateRedcosts(
@@ -338,21 +337,12 @@ private:
       double*               degeneracy          /**< pointer to store degeneracy */
    );
 
-   /** initializes the pointers to the appropriate structures */
-   SCIP_RETCODE getSolverPointers(
-      GCG_SOLVER*           solver,             /**< pricing solver */
-      PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
-      SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
-      SCIP_CLOCK**          clock,              /**< clock belonging to this setting */
-      int**                 calls,              /**< calls belonging to this setting */
-      GCG_DECL_SOLVERSOLVE((**solversolve))     /**< solving function belonging to this setting */
-   ) const;
-
    /** set subproblem memory limit */
    SCIP_RETCODE setPricingProblemMemorylimit(
       SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
    );
 
+#if 0
    /** generic method to generate feasible columns from the pricing problem
     * @note This method has to be threadsafe!
     */
@@ -370,6 +360,20 @@ private:
       GCG_PRICINGJOB*       pricingjob,         /**< pricing job to be performed */
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
       int                   maxcols             /**< size of the cols array to indicate maximum columns */
+      );
+#endif
+
+   /** perform a pricing job, i.e. apply the corresponding solver to the pricing problem
+    * @note This method has to be threadsafe!
+    */
+   SCIP_RETCODE performPricingjob(
+      GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+      PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
+      int                   maxcols,            /**< size of the cols array to indicate maximum columns */
+      GCG_PRICINGSTATUS*    status,             /**< pointer to store pricing status */
+      SCIP_Real*            lowerbound,         /**< pointer to store the obtained lower bound */
+      GCG_COL**             cols,               /**< array to store generated found columns */
+      int*                  ncols               /**< number of found columns */
       );
 
    /** frees all solvers */
@@ -395,7 +399,7 @@ private:
       int                   prob,               /**< index of pricing problem */
       SCIP_CONS***          consstack,          /**< stack of branching constraints */
       int*                  nconsstack,         /**< size of the stack */
-      SCIP_Real**           consduals           /**< dual values of the masterbranch solutions */
+      SCIP_Real**           consduals           /**< dual values of the masterbranch solutions, or NULL */
    ) const;
 
    /** add bounds change from constraint from the pricing problem at this node

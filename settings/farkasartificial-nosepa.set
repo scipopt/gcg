@@ -1,9 +1,0 @@
-# SCIP version 4.0.0
-
-pricing/masterpricer/farkas/stabilization = FALSE
-
-pricing/masterpricer/farkas/useartificialvars = TRUE
-
-sepa/basis/enable = FALSE
-
-sepa/master/enable = FALSE

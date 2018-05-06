@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -40,8 +40,8 @@
 #include "solver_knapsack.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_knapsack.h"
-#include "type_solver.h"
 #include "pricer_gcg.h"
+#include "pub_solver.h"
 #include "relax_gcg.h"
 #include "pub_gcgcol.h"
 
@@ -70,7 +70,7 @@ SCIP_RETCODE solveKnapsack(
    GCG_COL**             cols,               /**< array of columns corresponding to solutions */
    int                   maxcols,            /**< size of preallocated array */
    int*                  ncols,              /**< pointer to store number of columns */
-   SCIP_STATUS*          result              /**< pointer to store pricing problem status */
+   GCG_PRICINGSTATUS*    status              /**< pointer to store pricing problem status */
    )
 { /*lint -e715 */
    SCIP_CONS* cons;
@@ -109,7 +109,7 @@ SCIP_RETCODE solveKnapsack(
    assert(lowerbound != NULL);
    assert(cols != NULL);
    assert(ncols != NULL);
-   assert(result != NULL);
+   assert(status != NULL);
 
    assert(SCIPgetObjsense(pricingprob) == SCIP_OBJSENSE_MINIMIZE);
 
@@ -118,7 +118,7 @@ SCIP_RETCODE solveKnapsack(
 
    SCIPdebugMessage("Knapsack solver -- checking prerequisites\n");
 
-   *result = SCIP_STATUS_UNKNOWN;
+   *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
 
    /* check prerequisites: the pricing problem can be solved as a knapsack problem only if
     * - all variables are nonnegative integer variables
@@ -259,6 +259,7 @@ SCIP_RETCODE solveKnapsack(
    else
       return SCIP_OKAY;
 
+   *status = GCG_PRICINGSTATUS_UNKNOWN;
 
    /* Count number of knapsack items */
    SCIPdebugMessage("Count number of knapsack items:\n");
@@ -340,33 +341,44 @@ SCIP_RETCODE solveKnapsack(
    if( capacity < 0 )
    {
       SCIPdebugMessage("Pricing problem is infeasible\n");
-      *result = SCIP_STATUS_INFEASIBLE;
+      *status = GCG_PRICINGSTATUS_INFEASIBLE;
       goto TERMINATE;
    }
-
-   SCIPdebugMessage("Solve pricing problem as knapsack\n");
-
-   /* solve knapsack problem, all result pointers are needed! */
-   if( exactly )
+   else if( capacity == 0 )
    {
-      SCIP_CALL( SCIPsolveKnapsackExactly(pricingprob, nitems, weights, profits, capacity, items, solitems,
-         nonsolitems, &nsolitems, &nnonsolitems, &solval, &success ));
+      SCIPdebugMessage("Knapsack has zero capacity\n");
+
+      nsolitems = 0;
+      nnonsolitems = nitems;
+      for( i = 0; i < nitems; ++i )
+         nonsolitems[i] = items[i];
    }
    else
    {
-      SCIP_CALL( SCIPsolveKnapsackApproximately(pricingprob, nitems, weights, profits, capacity, items, solitems,
-         nonsolitems, &nsolitems, &nnonsolitems, &solval ));
-   }
+      SCIPdebugMessage("Solve pricing problem as knapsack\n");
 
-   if( !success )
-   {
-      SCIPwarningMessage(pricingprob, "Knapsack solver could not solve pricing problem!");
-      goto TERMINATE;
-   }
-   else if( exactly )
-      *result = SCIP_STATUS_OPTIMAL;
+      /* solve knapsack problem, all result pointers are needed! */
+      if( exactly )
+      {
+         SCIP_CALL( SCIPsolveKnapsackExactly(pricingprob, nitems, weights, profits, capacity, items, solitems,
+            nonsolitems, &nsolitems, &nnonsolitems, &solval, &success ));
+      }
+      else
+      {
+         SCIP_CALL( SCIPsolveKnapsackApproximately(pricingprob, nitems, weights, profits, capacity, items, solitems,
+            nonsolitems, &nsolitems, &nnonsolitems, &solval ));
+      }
 
-   SCIPdebugMessage("Knapsack solved, solval = %g\n", solval);
+      if( !success )
+      {
+         SCIPwarningMessage(pricingprob, "Knapsack solver could not solve pricing problem!");
+         goto TERMINATE;
+      }
+      else if( exactly )
+         *status = GCG_PRICINGSTATUS_OPTIMAL;
+
+      SCIPdebugMessage("Knapsack solved, solval = %g\n", solval);
+   }
 
    nsolvars = 0;
 
@@ -467,6 +479,7 @@ SCIP_RETCODE solveKnapsack(
 #define solverExitsolKnapsack NULL
 #define solverInitKnapsack NULL
 #define solverExitKnapsack NULL
+#define solverUpdateKnapsack NULL
 
 /** exact solving method for knapsack solver */
 static
@@ -474,7 +487,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 {  /*lint --e{715}*/
 
    /* solve the knapsack problem exactly */
-   SCIP_CALL( solveKnapsack(TRUE, pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, result) );
+   SCIP_CALL( solveKnapsack(TRUE, pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, status) );
 
    return SCIP_OKAY;
 }
@@ -486,7 +499,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 {  /*lint --e{715}*/
 
    /* solve the knapsack problem approximately */
-   SCIP_CALL( solveKnapsack(FALSE, pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, result) );
+   SCIP_CALL( solveKnapsack(FALSE, pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, status) );
 
    return SCIP_OKAY;
 }
@@ -497,8 +510,8 @@ SCIP_RETCODE GCGincludeSolverKnapsack(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED, solverSolveKnapsack,
-         solverSolveHeurKnapsack, solverFreeKnapsack, solverInitKnapsack, solverExitKnapsack,
+   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED, solverUpdateKnapsack, 
+         solverSolveKnapsack, solverSolveHeurKnapsack, solverFreeKnapsack, solverInitKnapsack, solverExitKnapsack,
          solverInitsolKnapsack, solverExitsolKnapsack, NULL) );
 
    return SCIP_OKAY;

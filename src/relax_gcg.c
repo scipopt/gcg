@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -71,7 +71,7 @@
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
 #define RELAX_PRIORITY         -1
 #define RELAX_FREQ             1
-#define RELAX_INCLUDESLP       FALSE
+#define RELAX_INCLUDESLP       TRUE
 
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
@@ -1359,18 +1359,6 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotaggr", TRUE) );
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
 
-   /* settings needed for Farkas pricing */
-   /* store parameters that are changed for the generation of the subproblem cuts */
-   SCIPsetParam(masterscip, "conflict/enable", FALSE);
-
-   SCIPsetIntParam(masterscip, "lp/disablecutoff", 1);
-   SCIPsetIntParam(masterscip, "lp/scaling", 0);
-
-   SCIPsetCharParam(masterscip, "lp/initalgorithm", 'd');
-   SCIPsetCharParam(masterscip, "lp/resolvealgorithm", 'd');
-
-   SCIPsetBoolParam(masterscip, "misc/alwaysgetduals", TRUE);
-
    return SCIP_OKAY;
 }
 
@@ -2421,9 +2409,9 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    #else
          SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
    #endif
-         if( !stored )
+         /* only check failed solution if best master solution is valid */
+         if( !stored && GCGmasterIsBestsolValid(relaxdata->masterprob) )
          {
-
             SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
          }
          /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
@@ -2440,7 +2428,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
                GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
       }
-
    }
    else
    {
@@ -2467,10 +2454,17 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    )
 {
    SCIP_RELAXDATA* relaxdata;
+
 #ifndef NBLISS
-   char name[SCIP_MAXSTRLEN];
-   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "bliss %s", GCGgetBlissVersion());
-   SCIP_CALL( SCIPincludeExternalCodeInformation(scip, name, "A Tool for Computing Automorphism Groups of Graphs by T. Junttila and P. Kaski (http://www.tcs.hut.fi/Software/bliss/)") );
+   {
+      char name[SCIP_MAXSTRLEN];
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "bliss %s", GCGgetBlissVersion());
+      SCIP_CALL( SCIPincludeExternalCodeInformation(scip, name, "A Tool for Computing Automorphism Groups of Graphs by T. Junttila and P. Kaski (http://www.tcs.hut.fi/Software/bliss/)") );
+   }
+#endif
+
+#ifndef NCLIQUER
+      SCIP_CALL( SCIPincludeExternalCodeInformation(scip, "Cliquer", "A set of C routines for finding cliques in an arbitrary weighted graph by S. Niskanen and P. Ostergard (https://users.aalto.fi/~pat/cliquer.html)") );
 #endif
 
    /* create GCG relaxator data */

@@ -34,7 +34,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	2.1.3
+VERSION         :=	2.1.4
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -56,14 +56,18 @@ MASTERSETTINGS	=	default
 
 VALGRIND	=	false
 MODE		=	readdec
+STATISTICS  =  false
 PROJECT		=	none
 GTEST		=	true
 PARASCIP	= 	true
 BLISS      	=   true
+CLIQUER     =   false
 OPENMP      =   false
 GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
-LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
+LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER)
+
+STATISTICS = false
 
 # overriding SCIP PARASCIP setting if compiled with OPENMP
 ifeq ($(OPENMP),true)
@@ -99,6 +103,26 @@ SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
 LINKMSG		+=	"bliss graph isomorphism framework (disable by compiling with \"make BLISS=false\"):\n"
 LINKMSG		+=	" -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
 LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"blissinc/libbliss.$(STATICLIBEXT)\"\n"
+endif
+
+#-----------------------------------------------------------------------------
+# Cliquer
+#-----------------------------------------------------------------------------
+
+ifeq ($(CLIQUER),false)
+FLAGS		+=	-DNCLIQUER
+else
+LDFLAGS		+= 	-lcliquer
+ifeq ($(COMP),gnu)
+FLAGS		+=	-isystem$(LIBDIR)/cliquerinc
+else
+FLAGS		+=	-I$(LIBDIR)/cliquerinc
+endif
+SOFTLINKS	+=	$(LIBDIR)/cliquerinc
+SOFTLINKS	+=	$(LIBDIR)/libcliquer.$(STATICLIBEXT)
+LINKMSG		+=	"cliquer library (disable by compiling with \"make CLIQUER=false\"):\n"
+LINKMSG		+=	" -> cliquerinc is the path to the cliquer include files, e.g., \"cliquer-1.21\"\n"
+LINKMSG		+=	" -> \"libcliquer.$(STATICLIBEXT)\" is the path to the cliquer library, e.g., \"cliquerinc/libcliquer.$(STATICLIBEXT)\"\n"
 endif
 
 #-----------------------------------------------------------------------------
@@ -186,6 +210,7 @@ LIBOBJ		=	reader_blk.o \
 			event_relaxsol.o \
 			event_solvingstats.o \
 			event_display.o \
+			solver.o \
 			solver_mip.o \
 			solver_knapsack.o \
 			cons_decomp.o \
@@ -217,12 +242,17 @@ LIBOBJ		=	reader_blk.o \
 			gcgcol.o \
 			colpool.o \
 			pricestore_gcg.o \
-			pricingjob.o
+			pricingjob.o \
+			pricingprob.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
 			dec_isomorph.o \
 			bliss.o
+endif
+
+ifeq ($(CLIQUER),true)
+LIBOBJ		+=	solver_cliquer.o
 endif
 
 ifeq ($(CPLEXSOLVER),true)
@@ -509,6 +539,10 @@ ifneq ($(LAST_BLISS),$(BLISS))
 		@-touch $(SRCDIR)/relax_gcg.c
 		@-touch $(SRCDIR)/gcgplugins.c
 endif
+ifneq ($(LAST_CLIQUER),$(CLIQUER))
+		@-touch $(SRCDIR)/solver_cliquer.c
+		@-touch $(SRCDIR)/masterplugins.c
+endif
 ifneq ($(USRFLAGS),$(LAST_USRFLAGS))
 		@-touch $(ALLSRC)
 endif
@@ -542,6 +576,7 @@ endif
 		@echo "LAST_GCGGITHASH=$(GCGGITHASH)" >> $(LASTSETTINGS)
 		@echo "LAST_LPS=$(LPS)" >> $(LASTSETTINGS)
 		@echo "LAST_BLISS=$(BLISS)" >> $(LASTSETTINGS)
+		@echo "LAST_CLIQUER=$(CLIQUER)" >> $(LASTSETTINGS)
 		@echo "LAST_USRFLAGS=$(USRFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USROFLAGS=$(USROFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRCFLAGS=$(USRCFLAGS)" >> $(LASTSETTINGS)

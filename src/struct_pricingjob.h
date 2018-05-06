@@ -25,8 +25,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_gcgcol.h
- * @brief  struct to store pricing jobs
+/**@file   struct_pricingjob.h
+ * @brief  data structure for pricing jobs
  * @author Christian Puchert
  */
 
@@ -40,7 +40,8 @@
 #include "scip/scip.h"
 
 #include "type_pricingjob.h"
-#include "type_gcgcol.h"
+#include "type_pricingprob.h"
+#include "type_solver.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,26 +50,14 @@ extern "C" {
 struct GCG_PricingJob
 {
    /* problem data */
-   SCIP*                pricingscip;        /**< SCIP data structure of the corresponding pricing problem */
-   int                  probnr;             /**< index of the corresponding pricing problem */
+   GCG_PRICINGPROB*     pricingprob;        /**< data structure of the corresponding pricing problem */
+   GCG_SOLVER*          solver;             /**< solver with which to solve the pricing problem */
 
    /* strategic parameters */
    int                  chunk;              /**< chunk the pricing job belongs to */
    SCIP_Real            score;              /**< current score of the pricing job */
    SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
-
-   /* result values */
-   int                  nsolves;            /**< number of times the pricing job was performed during the loop */
-   SCIP_STATUS          pricingstatus;      /**< current solution status of the pricing problem */
-   SCIP_Real            lowerbound;         /**< lower bound obtained by solving the pricing problem */
-   GCG_COL**            cols;               /**< array of columns found by the pricing problem */
-   int                  colssize;           /**< size of column array */
-   int                  ncols;              /**< number of columns found by the pricing problem */
-   int                  nimpcols;           /**< number of improving columns found by the pricing problem */
-
-   /* statistics */
-   int                  nheuriters;         /**< number of heuristic pricing iterations on this pricing job */
-   int*                 ncolsround;         /**< number of improving columns found in the last rounds */
+   int                  nheuriters;         /**< number of times the pricing job was performed heuristically */
 };
 
 #ifdef __cplusplus

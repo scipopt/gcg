@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -35,8 +35,8 @@
 #include <assert.h>
 
 #include "solver_xyz.h"
-#include "type_solver.h"
 #include "pricer_gcg.h"
+#include "pub_solver.h"
 
 #define SOLVER_NAME          "xyz"
 #define SOLVER_DESC          "xyz solver for pricing problems"

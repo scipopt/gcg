@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -109,9 +109,10 @@ extern
 SCIP_RETCODE GCGpricerIncludeSolver(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           name,               /**< name of solver */
-   const char*           description,        /**< description of solver */
+   const char*           desc,               /**< description of solver */
    int                   priority,           /**< priority of solver */
    SCIP_Bool             enabled,            /**< flag to indicate whether the solver is enabled */
+   GCG_DECL_SOLVERUPDATE((*solverupdate)),   /**< update method for solver */
    GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
    GCG_DECL_SOLVERSOLVEHEUR((*solveheur)),   /**< heuristic solving method for solver */
    GCG_DECL_SOLVERFREE   ((*solverfree)),    /**< free method of solver */
@@ -119,21 +120,20 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    GCG_DECL_SOLVEREXIT   ((*solverexit)),    /**< exit method of solver */
    GCG_DECL_SOLVERINITSOL((*solverinitsol)), /**< initsol method of solver */
    GCG_DECL_SOLVEREXITSOL((*solverexitsol)), /**< exitsol method of solver */
-   GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
+   GCG_SOLVERDATA*       solverdata          /**< pricing solver data */
    );
 
 
-/** returns the solverdata of a solver */
+/** returns the available pricing solvers */
 extern
-GCG_SOLVERDATA* GCGsolverGetSolverdata(
-   GCG_SOLVER*           solver              /**< pointer so solver */
+GCG_SOLVER** GCGpricerGetSolvers(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** sets solver data of specific solver */
+/** returns the number of available pricing solvers */
 extern
-void GCGsolverSetSolverdata(
-   GCG_SOLVER*           solver,             /**< pointer to solver  */
-   GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
+int GCGpricerGetNSolvers(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** writes out a list of all pricing problem solvers */
