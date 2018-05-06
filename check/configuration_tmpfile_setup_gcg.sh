@@ -99,6 +99,10 @@ echo set display freq $DISPFREQ        >> $TMPFILE
 # avoid switching to dfs - better abort with memory error
 echo set memory savefac 1.0            >> $TMPFILE
 echo set save $SETFILE                 >> $TMPFILE
+if test $STATISTICS = "true"
+then
+    echo set visual vbcfilename results/vbc/$NAME.$SETNAME.vbc >> $TMPFILE
+fi
 
 if test "$REOPT" = false
 then
