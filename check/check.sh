@@ -237,7 +237,7 @@ do
             echo set display freq $DISPFREQ        >> $TMPFILE
             if test $STATISTICS = "true"
             then
-                echo set visual vbcfilename results/vbc/$NAME.vbc >> $TMPFILE
+                echo set visual vbcfilename results/vbc/$NAME.$SETNAME.vbc >> $TMPFILE
             fi
             echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
             if test "$LPS" = "none"

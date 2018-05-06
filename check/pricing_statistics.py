@@ -1041,7 +1041,7 @@ def make_nodeID_plot(info):
     start_time = time.time()
 
     # read the tree data from a vbc file
-    tree_data, tree_info = vbc.read(params['vbcdir'] + '/' + info['instance'] + '.vbc')
+    tree_data, tree_info = vbc.read(params['vbcdir'] + '/' + info['instance'] + '.' + info['settings'] + '.vbc')
     if tree_data is None or tree_data.empty or not 'primal_is_upper' in tree_info or (tree_data.primalbound == np.NaN).all():
         print '    no plotable vbc data found'
         return
@@ -1138,7 +1138,7 @@ def make_depth_plot(info):
     start_time = time.time()
 
     # read the tree data from a vbc file
-    tree_data, tree_info = vbc.read(params['vbcdir'] + '/' + info['instance'] + '.vbc')
+    tree_data, tree_info = vbc.read(params['vbcdir'] + '/' + info['instance'] + '.' + info['settings'] + '.vbc')
     if tree_data is None or tree_data.empty or not 'primal_is_upper' in tree_info or (tree_data.primalbound == np.NaN).all():
         print '    no plotable vbc data found'
         return
