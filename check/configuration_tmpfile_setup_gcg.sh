@@ -99,9 +99,9 @@ echo set display freq $DISPFREQ        >> $TMPFILE
 # avoid switching to dfs - better abort with memory error
 echo set memory savefac 1.0            >> $TMPFILE
 echo set save $SETFILE                 >> $TMPFILE
-if test $STATISTICS = "true"
+if test "$STATISTICS" = "true"
 then
-    echo set visual vbcfilename results/vbc/$NAME.$SETNAME.vbc >> $TMPFILE
+    echo set visual vbcfilename $GCGPATH/results/vbc/$SHORTPROBNAME.$SETNAME.vbc >> $TMPFILE
 fi
 
 if test "$REOPT" = false
@@ -149,7 +149,7 @@ EOF
 		fi
 		echo optimize                      >> $TMPFILE
 		echo display statistics            >> $TMPFILE
-      if test $STATISTICS = "true"
+      if test "$STATISTICS" = "true"
       then
          echo display additionalstatistics  >> $TMPFILE
       fi

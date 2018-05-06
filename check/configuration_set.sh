@@ -47,7 +47,7 @@ TIMEFORMAT=$6    # the format for the time (sec or format)
 MEMLIMIT=$7      # the memory limit in MB
 MEMFORMAT=$8     # the format for hard memory limit (kB or MB)
 VALGRIND=$9      # should valgrind be used?
-STATISTICS=$10   # should statistics be printed?
+STATISTICS=${10} # should statistics be printed?
 
 # get current GCG path
 GCGPATH=`pwd`
@@ -66,7 +66,7 @@ then
 fi
 
 # create vbc directory if it doesn't already exist
-if test ! -e $GCGPATH/results/vbc
+if test ! -e $GCGPATH/results/vbc && "$STATISTICS" = "true"
 then
     mkdir $GCGPATH/results/vbc
 fi
