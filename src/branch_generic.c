@@ -2435,6 +2435,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       /* if we have a master variable, we branch on it */
       if( GCGvarGetBlock(mastervar) == -1 )
       {
+         assert(!GCGmasterVarIsArtificial(mastervar));
 #ifndef NDEBUG
          foundblocknr = TRUE;
 #endif

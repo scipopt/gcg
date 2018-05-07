@@ -46,7 +46,8 @@ LPS=${12}        # - LP solver to use
 DISPFREQ=${13}   # - display frequency for chronological output table
 REOPT=${14}      # - true if we use reoptimization, i.e., using a difflist file instead if an instance file
 CLIENTTMPDIR=${15}
-SOLBASENAME=${16}
+STATISTICS=${16}
+SOLBASENAME=${17}
 
 #args=("$@")
 #for ((i=0; i < $#; i++)) {
@@ -144,7 +145,10 @@ EOF
 		fi
 		echo optimize                      >> $TMPFILE
 		echo display statistics            >> $TMPFILE
-#		echo display additionalstatistics  >> $TMPFILE
+      if test $STATISTICS = "true"
+      then
+         echo display additionalstatistics  >> $TMPFILE
+      fi
 #       echo display solution              >> $TMPFILE
 		echo checksol                      >> $TMPFILE
 	fi
