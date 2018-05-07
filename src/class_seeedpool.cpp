@@ -1776,11 +1776,10 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             else
                delete seeed;
 
-            SCIPfreeMemoryArrayNull( scip, & seeedPropData->newSeeeds );
-            seeedPropData->newSeeeds = NULL;
-            seeedPropData->nNewSeeeds = 0;
          }
-
+         SCIPfreeMemoryArrayNull( scip, & seeedPropData->newSeeeds );
+         seeedPropData->newSeeeds = NULL;
+         seeedPropData->nNewSeeeds = 0;
          delete seeedPropData->seeedToPropagate;
          delete seeedPropData;
       }
