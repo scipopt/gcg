@@ -54,7 +54,7 @@ build:
     - make OPT=dbg CPLEXSOLVER=false PARASCIP=true
     - make googletest
     - make OPT=dbg CPLEXSOLVER=false PARASCIP=true tests
-    - bin/gcg_test 2>/dev/null
+#     - bin/gcg_test 2>/dev/null
   artifacts:
     paths:
       - mybinary
