@@ -1086,9 +1086,6 @@ SCIP_RETCODE readDECFile(
             if ( decinput->presolved )
             {
                SCIPconshdlrDecompCreateSeeedpool(scip);
-  //             seeedpool = SCIPconshdlrDecompGetSeeedpool(scip);
-//               decinput->seeed = new gcg::Seeed(scip, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars() );
-
             }
             else
             {

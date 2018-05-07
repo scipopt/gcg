@@ -1,0 +1,11 @@
+detection/consclassifier/consnamelevenshtein/enabled = FALSE
+detection/consclassifier/consnamelevenshtein/origenabled = FALSE
+detection/consclassifier/consnamenonumbers/enabled = FALSE
+detection/consclassifier/consnamenonumbers/origenabled = FALSE
+detection/varclassifier/objectivevalues/origenabled = FALSE
+detection/varclassifier/objectivevalues/enabled = FALSE
+detection/varclassifier/objectivevaluesigns/origenabled = FALSE
+detection/varclassifier/objectivevaluesigns/enabled = FALSE
+detection/varclassifier/scipvartype/origenabled = FALSE
+detection/varclassifier/scipvartype/enabled = FALSE
+detection/detectors/postprocess/postprocessingenabled =  FALSE

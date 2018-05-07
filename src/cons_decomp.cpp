@@ -111,6 +111,7 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_MAXNCLASSES 9
 #define DEFAULT_MAXNCLASSESFORNBLOCKCANDIDATES 18                 /** Maximum number of classes a classifier can have to be used for voting nblockcandidates */
 #define DEFAULT_ENABLEORIGDETECTION FALSE                         /**< indicates whether to start detection for the original problem */
+#define DEFAULT_CONSSADJCALCULATED                    TRUE        /**< indicates whether conss adjecency datastructures should be calculated */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
 #define DEFAULT_ENABLEORIGCLASSIFICATION              FALSE       /**< indicates whether to start detection for the original problem */
 
@@ -131,6 +132,8 @@ typedef gcg::Seeed* SeeedPtr;
 
 #define DEFAULT_VARCLASSSCIPVARTYPESENABLED           TRUE        /**< indicates whether variable classifier for scipvartypes is enabled */
 #define DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG       TRUE       /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
+#define DEFAULT_VARCLASSSCIPVARTYPESONLYCONTSUBPR     FALSE      /**< indicates whether only decomposition with only continiuous variables in the subproblems should be searched*/
+#define DEFAULT_VARCLASSSCIPVARTYPESONLYBINMASTER     FALSE      /**< indicates whether only decomposition with only binary variables in the master should be searched */
 
 #define DEFAULT_VARCLASSOBJVALSENABLED                TRUE        /**< indicates whether variable classifier for objective function values is enabled */
 #define DEFAULT_VARCLASSOBJVALSENABLEDORIG            TRUE       /**< indicates whether variable classifier for objective function values is enabled for the original problem */
@@ -187,6 +190,7 @@ struct SCIP_ConshdlrData
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    SCIP_Bool             allowclassifierduplicates;         /**< indicates whether classifier duplicates are allowed (for statistical reasons) */
    SCIP_Bool             enableemphfast;               /**< indicates whether emphasis settings are set to fast */
+   SCIP_Bool             conssadjcalculated;
    SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
    SCIP_Bool             enableorigclassification;               /**< indicates whether to start constraint classification for the original problem */
    SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
@@ -201,6 +205,8 @@ struct SCIP_ConshdlrData
    SCIP_Bool             conssclasslevenshteinenabledorig;  /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
    SCIP_Bool             varclassvartypesenabled;           /**< indicates whether variable classifier for scipvartypes is enabled */
    SCIP_Bool             varclassvartypesenabledorig;       /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
+   SCIP_Bool             varclassvartypesonlycontsubpr;     /**< indicates whether only decomposition with only continiuous variables in the subproblems should be searched*/
+   SCIP_Bool             varclassvartypesonlybinmaster;     /**< indicates whether only decomposition with only binary variables in the master should be searched */
    SCIP_Bool             varclassobjvalsenabled;            /**< indicates whether variable classifier for objective function values is enabled */
    SCIP_Bool             varclassobjvalsenabledorig;        /**< indicates whether variable classifier for objective function values is enabled for the original problem */
    SCIP_Bool             varclassobjvalsignsenabled;        /**< indicates whether variable classifier for objective function value signs is enabled */
@@ -942,6 +948,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
          conshdlrdata) );
    assert(conshdlr != FALSE);
 
+   SCIP_CALL( SCIPsetConshdlrEnforelax(scip, conshdlr, consEnforeDecomp) );
    SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeDecomp) );
    SCIP_CALL( SCIPsetConshdlrInit(scip, conshdlr, consInitDecomp) );
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitDecomp) );
@@ -949,6 +956,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/allowclassifierduplicates/enabled", "indicates whether classifier duplicates are allowed (for statistical reasons)", &conshdlrdata->allowclassifierduplicates, FALSE, DEFAULT_ALLOWCLASSIFIERDUPLICATES, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/emphfast/enabled", "indicates whether emphasis setting are set to fast", &conshdlrdata->enableemphfast, TRUE, DEFAULT_ENABLEEMPHFAST, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssadjcalculated", "conss adjecency datastructures should be calculated", &conshdlrdata->conssadjcalculated, FALSE, DEFAULT_CONSSADJCALCULATED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/enabled", "indicates whether to start detection for the original problem", &conshdlrdata->enableorigdetection, FALSE, DEFAULT_ENABLEORIGDETECTION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/classificationenabled", "indicates whether to classify constraints and variables for the original problem", &conshdlrdata->enableorigclassification, FALSE, DEFAULT_ENABLEORIGCLASSIFICATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", "indicates whether constraint classifier for nonzero entries is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSNNONZENABLED, NULL, NULL) );
@@ -964,6 +972,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/enabled", "indicates whether variable classifier for scipvartypes is enabled", &conshdlrdata->varclassvartypesenabled, FALSE, DEFAULT_VARCLASSSCIPVARTYPESENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/origenabled", "indicates whether variable classifier for scipvartypes is enabled for the original problem", &conshdlrdata->varclassvartypesenabledorig, FALSE, DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevalues/enabled", "indicates whether variable classifier for objective function values is enabled", &conshdlrdata->varclassobjvalsenabled, FALSE, DEFAULT_VARCLASSOBJVALSENABLED, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/onlycontsubpr", "indicates whether only decomposition with only continiuous variables in the subproblems should be searched", &conshdlrdata->varclassvartypesonlycontsubpr, FALSE, DEFAULT_VARCLASSSCIPVARTYPESONLYCONTSUBPR, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/onlybinmaster", "indicates whether only decomposition with only binary variables in the master should be searched", &conshdlrdata->varclassvartypesonlybinmaster, FALSE, DEFAULT_VARCLASSSCIPVARTYPESONLYBINMASTER, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevalues/origenabled", "indicates whether variable classifier for objective function values is enabled for the original problem", &conshdlrdata->varclassobjvalsenabledorig, FALSE, DEFAULT_VARCLASSOBJVALSENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevaluesigns/enabled", "indicates whether variable classifier for objective function value signs is enabled", &conshdlrdata->varclassobjvalsignsenabled, FALSE, DEFAULT_VARCLASSOBJVALSIGNSENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevaluesigns/origenabled", "indicates whether variable classifier for objective function value signs is enabled for the original problem", &conshdlrdata->varclassobjvalsignsenabledorig, FALSE, DEFAULT_VARCLASSOBJVALSIGNSENABLEDORIG, NULL, NULL) );
@@ -4847,10 +4857,12 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       }
    }
 
+
    seeedpool->translateSeeeds(seeedpoolunpresolved, seeedstotranslate, seeedstranslated);
 
    seeediter = seeedstranslated.begin();
    seeediterend = seeedstranslated.end();
+
 
    for(; seeediter != seeediterend; ++seeediter )
    {
@@ -7308,18 +7320,8 @@ SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
    )
 {
 
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
    SCIP_Bool shortfeatures;
-   /** write base information */
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
+   /** write base information header */
 
    /*
     * current features:
@@ -7496,8 +7498,13 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
         char*   folder;
         char filename[SCIP_MAXSTRLEN];
         char* outputname;
+        char* instancename;
+
+        char probname2[SCIP_MAXSTRLEN];
+
         MiscVisualization* misc;
         char problemname[SCIP_MAXSTRLEN];
+        gcg::Seeed* matrixseeed;
 
         SCIPgetStringParam(scip, "write/miplib2017matrixfilepath", &folder);
 
@@ -7505,7 +7512,11 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
         strcat(filename,"/");
 
-        strcat(filename, GCGgetFilename(scip));
+        (void) SCIPsnprintf(probname2, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+        SCIPsplitFilename(probname2, NULL, &instancename, NULL, NULL);
+        //strcpy(instancename2, instancename);
+
+        strcat(filename, instancename);
 
         strcat(filename, ".gp");
 
@@ -7515,7 +7526,18 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
         misc = new MiscVisualization();
 
-        seeedpool->addSeeedToFinishedUnchecked(seeedconnectedfinished);
+        matrixseeed = new gcg::Seeed(scip, -1, seeedpool);
+        matrixseeed->setNBlocks(1);
+
+        for( int i = 0; i < seeedpool->getNConss(); ++i )
+           matrixseeed->bookAsBlockCons(i,0);
+
+        for( int i = 0; i < seeedpool->getNVars(); ++i )
+           matrixseeed->bookAsBlockVar(i,0);
+
+        matrixseeed->flushBooked();
+
+        seeedpool->addSeeedToFinishedUnchecked(matrixseeed);
 
         /* get filename for compiled file */
         (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
@@ -7528,7 +7550,7 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
 
 
         /* actual writing */
-        GCGwriteGpVisualization(scip, filename, outputname, seeedconnectedfinished->getID() );
+        GCGwriteGpVisualization(scip, filename, outputname, matrixseeed->getID() );
 
         delete misc;
 

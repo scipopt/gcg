@@ -88,8 +88,11 @@ std::vector<std::vector<int>> VarClassifier::getAllSubsets( bool all, bool linki
    std::vector<int> classindices;
    for ( int i = 0; i < getNClasses(); ++i )
    {
-      if ( ( all && getClassDecompInfo( i ) == ALL ) || ( linking && getClassDecompInfo( i ) == LINKING )
-            || ( master && getClassDecompInfo( i ) == MASTER ) || ( block && getClassDecompInfo( i ) == BLOCK ) )
+      if ( ( all && getClassDecompInfo( i ) == ALL ) ||
+           ( linking && getClassDecompInfo( i ) == LINKING ) ||
+           ( master && getClassDecompInfo( i ) == MASTER ) ||
+           ( block && getClassDecompInfo( i ) == BLOCK )
+          )
          classindices.push_back( i );
    }
    return IndexClassifier::getAllSubsets( classindices );
