@@ -7073,7 +7073,7 @@ void Seeed::calcblockareascore(){
    unsigned long blockarea;
 
 
-   matrixarea = getNVars() * getNConss();
+   matrixarea = (unsigned long)getNVars() * (unsigned long) getNConss();
    blockarea = 0;
 
    for( int i = 0; i < getNBlocks(); ++ i )
@@ -7096,7 +7096,7 @@ void Seeed::calcblockareascoreagg(){
    SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
    SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
 
-   matrixarea = getNVars() * getNConss();
+   matrixarea = (unsigned long)getNVars() * (unsigned long)getNConss();
    blockarea = 0;
 
    for( int i = 0; i < nrepblocks; ++ i )
