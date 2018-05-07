@@ -1125,8 +1125,8 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
            else
            {
               SCIPdebugMessage("Block %d is not identical to block %d!\n", b1, b2);
-              SCIPhashmapFree(&varmap2);
            }
+           SCIPhashmapFree(&varmap2);
         }
 
         reptoblocks.push_back( currrep );
