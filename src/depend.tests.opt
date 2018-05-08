@@ -1,7 +1,6 @@
 $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/type_message.h \
- lib/scip/src/scip/struct_message.h lib/scip/src/blockmemshell/memory.h \
+ lib/scip/src/scip/type_message.h lib/scip/src/blockmemshell/memory.h \
  lib/scip/src/scip/type_result.h lib/scip/src/scip/type_clock.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/type_timing.h \
  lib/scip/src/scip/type_scip.h lib/scip/src/scip/type_paramset.h \
@@ -33,6 +32,7 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -198,8 +198,7 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  src/tests/test.h lib/scip/src/objscip/objscip.h \
  lib/scip/src/objscip/objbranchrule.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/type_message.h \
- lib/scip/src/scip/struct_message.h lib/scip/src/blockmemshell/memory.h \
+ lib/scip/src/scip/type_message.h lib/scip/src/blockmemshell/memory.h \
  lib/scip/src/scip/type_result.h lib/scip/src/scip/type_clock.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/type_timing.h \
  lib/scip/src/scip/type_scip.h lib/scip/src/scip/type_paramset.h \
@@ -231,6 +230,7 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -394,8 +394,7 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  src/graph/bipartitegraph.h src/graph/matrixgraph.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -427,6 +426,7 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -593,8 +593,7 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  src/graph/hyperrowcolgraph.h src/graph/matrixgraph.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -626,6 +625,7 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -792,8 +792,7 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  src/graph/hypercolgraph.h src/graph/matrixgraph.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -825,6 +824,7 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -991,8 +991,7 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  src/graph/hyperrowgraph.h src/graph/matrixgraph.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -1024,6 +1023,7 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -1189,8 +1189,7 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
 $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -1222,6 +1221,7 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -1382,8 +1382,7 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
 $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -1415,6 +1414,7 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -1579,8 +1579,7 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
 $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -1612,6 +1611,7 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -1774,8 +1774,7 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  src/graph/graph.h lib/scip/src/objscip/objscip.h \
  lib/scip/src/objscip/objbranchrule.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/type_message.h \
- lib/scip/src/scip/struct_message.h lib/scip/src/blockmemshell/memory.h \
+ lib/scip/src/scip/type_message.h lib/scip/src/blockmemshell/memory.h \
  lib/scip/src/scip/type_result.h lib/scip/src/scip/type_clock.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/type_timing.h \
  lib/scip/src/scip/type_scip.h lib/scip/src/scip/type_paramset.h \
@@ -1807,6 +1806,7 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -1973,8 +1973,7 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  src/graph/columngraph.h src/graph/graph.h lib/scip/src/objscip/objscip.h \
  lib/scip/src/objscip/objbranchrule.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/type_message.h \
- lib/scip/src/scip/struct_message.h lib/scip/src/blockmemshell/memory.h \
+ lib/scip/src/scip/type_message.h lib/scip/src/blockmemshell/memory.h \
  lib/scip/src/scip/type_result.h lib/scip/src/scip/type_clock.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/type_timing.h \
  lib/scip/src/scip/type_scip.h lib/scip/src/scip/type_paramset.h \
@@ -2006,6 +2005,7 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -2171,8 +2171,7 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
 $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -2204,6 +2203,7 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -2366,8 +2366,7 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
 $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -2399,6 +2398,7 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -2561,8 +2561,7 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
 $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -2594,6 +2593,7 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -2758,8 +2758,7 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
 $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -2791,6 +2790,7 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -2958,8 +2958,7 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
 $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -2991,6 +2990,7 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -3154,8 +3154,7 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  src/type_gcgcol.h src/struct_gcgcol.h
 $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  src/struct_gcgcol.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/scip.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_timing.h \
@@ -3188,6 +3187,7 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
