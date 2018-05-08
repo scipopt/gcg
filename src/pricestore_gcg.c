@@ -429,7 +429,7 @@ SCIP_RETCODE pricestoreApplyCol(
    GCG_COL*              col,                /**< col to apply to the LP */
    SCIP_Bool             force,              /**< force column */
    SCIP_Real             mincolorthogonality,/**< minimal orthogonality of cols to apply to LP */
-   int                   depth,              /**< depth of current node */   
+   int                   depth,              /**< depth of current node */
    SCIP_Real             score,              /**< score of column (or -1.0 if not specified) */
    SCIP_Bool*            added               /**< pointer to store whether the column was added */
    )
@@ -613,9 +613,6 @@ SCIP_RETCODE GCGpricestoreApplyCols(
       assert(!SCIPisInfinity(scip, pricestore->scores[bestpos]));
       probnr = GCGcolGetProbNr(col);
 
-      /* delete column from the pricestore */
-      pricestoreDelCol(pricestore, bestpos, FALSE);
-
       /* Do not add (non-forced) non-violated cols.
        * Note: do not take SCIPsetIsEfficacious(), because constraint handlers often add cols w.r.t. SCIPsetIsFeasPositive().
        * Note2: if pricerating/feastolfac != -1, constraint handlers may even add cols w.r.t. SCIPsetIsPositive(); those are currently rejected here
@@ -627,8 +624,8 @@ SCIP_RETCODE GCGpricestoreApplyCols(
          keep = FALSE;
          if( added )
          {
-            SCIPdebugMessage(" -> applying col %p (pos=%d/%d, probnr = %d, efficacy=%g, objparallelism=%g, orthogonality=%g, score=%g)\n",
-            (void*) col, bestpos, probnr, pricestore->ncols, GCGcolGetRedcost(pricestore->cols[bestpos]), pricestore->objparallelisms[bestpos],
+            SCIPdebugMessage(" -> applying col %p (pos=%d/%d, probnr=%d, efficacy=%g, objparallelism=%g, orthogonality=%g, score=%g)\n",
+            (void*) col, bestpos+1, pricestore->ncols, probnr, GCGcolGetRedcost(pricestore->cols[bestpos]), pricestore->objparallelisms[bestpos],
             pricestore->orthogonalities[bestpos], pricestore->scores[bestpos]);
 
             ++ncolsapplied;
@@ -639,9 +636,9 @@ SCIP_RETCODE GCGpricestoreApplyCols(
       {
          SCIP_CALL( GCGcolpoolAddCol(colpool, col, &keep) );
       }
-      
-      if( !keep )
-         GCGfreeGcgCol(&col);
+
+      /* delete column from the pricestore */
+      pricestoreDelCol(pricestore, bestpos, !keep);
    }
 
    *nfoundvars = ncolsapplied;
@@ -784,4 +781,3 @@ SCIP_Real GCGpricestoreGetTime(
 
    return SCIPclockGetTime(pricestore->priceclock);
 }
-
