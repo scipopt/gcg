@@ -2879,7 +2879,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_CALL( SCIPgetLPI(scip_, &lpi) );
 
    /* check preliminary conditions for stabilization */
-   enablestab = pricerdata->stabilization 
+   enablestab = pricerdata->stabilization
       && (pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST)
       && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
@@ -3605,8 +3605,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    int nmasterconss;
    int origverblevel;
 
-   int maxcols = MAX(MAX(farkaspricing->getMaxcolsprob(),reducedcostpricing->getMaxcolsprob()),reducedcostpricing->getMaxcolsprobroot()); /*lint !e666*/
-
    assert(scip == scip_);
    assert(pricer != NULL);
    assert(pricerdata != NULL);
@@ -3735,7 +3733,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->avgrootnodedegeneracy = 0.0;
    pricerdata->ndegeneracycalcs = 0;
 
-   SCIP_CALL( pricingcontroller->initSol(maxcols) );
+   SCIP_CALL( pricingcontroller->initSol() );
 
    /* sort solvers by priority */
    SCIPsortPtr((void**)pricerdata->solvers, GCGsolverComp, pricerdata->nsolvers);

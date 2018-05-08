@@ -54,7 +54,6 @@ private:
    int                   npricingprobs;      /**< number of pricing problems */
    GCG_PRICINGJOB**      pricingjobs;        /**< pricing jobs */
    int                   npricingjobs;       /**< number of pricing jobs */
-   int                   maxcols_;           /**< maximum number of columns per job in a round */
 
    /* parameters */
    int                   heurpricingiters;   /**< maximum number of heuristic pricing iterations per pricing call and problem */
@@ -88,7 +87,7 @@ public:
 
    SCIP_RETCODE addParameters();
 
-   SCIP_RETCODE initSol(int maxcols);
+   SCIP_RETCODE initSol();
 
    SCIP_RETCODE exitSol();
 
