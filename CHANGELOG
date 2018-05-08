@@ -22,6 +22,9 @@ features
   single backtracking in addition to limited discrepancy search in master variable diving;
   added branching on another variable and limited disc. search to original variable diving
 - added menu item "write reportdecompositions" that creates a report of all decompositions in form of a .tex file
+- Benders' decomposition mode has been added. The Benders' decomposition mode is activated by setting
+  "relaxing/gcg/mode" to 1. When using the Benders' decomposition mode, the decompositions found by the detectors are
+  used as the master and subproblems.
 
 - add additional pricing and variable statistics
 - add check/bounds_script.py, which plots some information on the reduced cost pricing
@@ -93,6 +96,7 @@ new parameters:
 - new parameter "detectors/*/postprocessingenabled" is this detector enabled when postprocessing in the original and the transformed problem
 - new parameter "detectors/*/usefulrecall" indicates whether this detector is called on descendants of a partial decomposition
 - new parameter "detectors/connectedbase/useconssadj" should the constraint adjacency datastructure  be used (and not the constraint-variable-incidency)
+- new parameter "relaxing/gcg/mode" is used to set the the Dantzig-Wolfe or Benders' decomposition mode of GCG.
 - new parameter "set/visual/colorscheme" sets the color scheme of visualizations produced by the gp and tex reader
 - new parameter "set/visual/draftmode" sets whether nonzeros are shown in visualizations produced by the gp and tex reader
 - new parameter "set/visual/nonzeroradius" sets the radius of nonzeros in visualizations produced by the gp and tex reader
