@@ -5043,6 +5043,14 @@ SCIP_Real Seeed::getScore(
    SCORETYPE type
    )
 {
+   /** if there are indicator constraints in the master we want to reject this decomposition */
+   for( int mc = 0; mc < getNMasterconss(); ++mc )
+   {
+      SCIP_CONS* cons;
+      cons = getSeeedpool()->getScipCons(getMasterconss()[mc]);
+      if( GCGconsGetType(cons) == consType::indicator )
+         return 0.;
+   }
 
    /** calculate maximum white score anyway */
    if( maxwhitescore == -1. )
@@ -7065,7 +7073,7 @@ void Seeed::calcblockareascore(){
    unsigned long blockarea;
 
 
-   matrixarea = getNVars() * getNConss();
+   matrixarea = (unsigned long)getNVars() * (unsigned long) getNConss();
    blockarea = 0;
 
    for( int i = 0; i < getNBlocks(); ++ i )
@@ -7088,7 +7096,7 @@ void Seeed::calcblockareascoreagg(){
    SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
    SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
 
-   matrixarea = getNVars() * getNConss();
+   matrixarea = (unsigned long)getNVars() * (unsigned long)getNConss();
    blockarea = 0;
 
    for( int i = 0; i < nrepblocks; ++ i )

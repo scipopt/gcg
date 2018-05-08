@@ -258,9 +258,12 @@ struct SCIP_ConshdlrData
    int                    currscoretype;
    SCIP_Bool              resortcandidates;
 
+   SCIP_Bool               nonfinalfreetransform;
    std::vector<int>*       userblocknrcandidates;
 
    SeeedPtr                seeedtowrite;
+
+
 
 };
 
@@ -753,6 +756,8 @@ SCIP_DECL_CONSINIT(consInitDecomp)
    return SCIP_OKAY;
 }
 
+
+
 /** deinitialization method of constraint handler (called before transformed problem is freed) */
 static
 SCIP_DECL_CONSEXIT(consExitDecomp)
@@ -789,10 +794,14 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
 
    delete conshdlrdata->seeedpool;
 
-   if( conshdlrdata->seeedpoolunpresolved != NULL )
-        delete conshdlrdata->seeedpoolunpresolved;
+   if( !conshdlrdata->nonfinalfreetransform )
+   {
+      if( conshdlrdata->seeedpoolunpresolved != NULL )
+         delete conshdlrdata->seeedpoolunpresolved;
+      conshdlrdata->seeedpoolunpresolved = NULL;
+   }
 
-   conshdlrdata->seeedpoolunpresolved = NULL;
+
 
    conshdlrdata->seeedpool = NULL;
    return SCIP_OKAY;
@@ -810,11 +819,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->completedetectionclock) );
 
-   if( conshdlrdata->seeedpool != NULL )
-      delete conshdlrdata->seeedpool;
-
-   if( conshdlrdata->seeedpoolunpresolved != NULL )
-      delete conshdlrdata->seeedpoolunpresolved;
 
 
 
@@ -936,6 +940,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->seeedcounter = 0;
    conshdlrdata->currscoretype = scoretype::MAX_WHITE;
    conshdlrdata->resortcandidates = TRUE;
+   conshdlrdata->nonfinalfreetransform = FALSE;
    conshdlrdata->userblocknrcandidates = new std::vector<int>(0);
    conshdlrdata->seeedtowrite = NULL;
 
@@ -952,6 +957,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeDecomp) );
    SCIP_CALL( SCIPsetConshdlrInit(scip, conshdlr, consInitDecomp) );
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitDecomp) );
+
 
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/allowclassifierduplicates/enabled", "indicates whether classifier duplicates are allowed (for statistical reasons)", &conshdlrdata->allowclassifierduplicates, FALSE, DEFAULT_ALLOWCLASSIFIERDUPLICATES, NULL, NULL) );
@@ -4003,6 +4009,33 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    return conshdlrdata->unpresolveduserseeedadded;
 }
 
+SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
+   SCIP*                 scip                /**< SCIP data structure */
+   ){
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if ( conshdlrdata->seeedpoolunpresolved == NULL )
+      return FALSE;
+
+
+   return ( conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() > 0 );
+
+}
+
+
+
 SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
    SCIP*          scip
    )
@@ -4871,10 +4904,10 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       {
          SCIP_CALL(SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, *seeediter ) );
          *success = TRUE;
-         SCIPdebugMessagePrint(scip, " SUCCESS: unpresolved complete seeed did translate to complete presolved one \n");
+//         SCIPdebugMessagePrint(scip, " SUCCESS: unpresolved complete seeed did translate to complete presolved one \n");
       }
       else {
-         SCIPdebugMessagePrint(scip, " unpresolved complete seeed did not translate to complete presolved one \n");
+//         SCIPdebugMessagePrint(scip, " unpresolved complete seeed did not translate to complete presolved one \n");
          SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, *seeediter ) );
       }
    }
@@ -4955,7 +4988,8 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
 
    return ( (conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->getNFinishedSeeeds() > 0 )  ||
       ( conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->getNIncompleteSeeeds() > 0 ) ||
-      ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds() > 0 ) ) ;
+      ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds() > 0 )  ||
+      ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() > 0 )      ) ;
 }
 
 /** returns TRUE iff there is at least one full decompositions */
@@ -5957,6 +5991,49 @@ const char* SCIPconshdlrDecompGetPdfReader(
    }
    return "no pdf viewer found ";
 }
+
+SCIP_RETCODE SCIPconshdlrDecompNotifyNonFinalFreeTransform(
+   SCIP*                scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   conshdlrdata->nonfinalfreetransform = TRUE;
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE SCIPconshdlrDecompNotifyFinishedNonFinalFreeTransform(
+   SCIP*                scip
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   conshdlrdata->nonfinalfreetransform = FALSE;
+
+   return SCIP_OKAY;
+}
+
+
 
 /** gets an array of all seeeds that are currently considered relevant
  * @params seeedswr  output of the relevant seeeds (don't forget to free the individual wrappers after use)
