@@ -76,7 +76,6 @@
 #include "scip/type_retcode.h"
 #include "scip/type_scip.h"
 #include "scip/type_set.h"
-#endif
 #include "class_consclassifier.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"

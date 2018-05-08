@@ -2446,9 +2446,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
 
    relaxdata->relaxisinitialized = FALSE;
 
-   /* returning the verbosity level of the original problem to its original value */
-   //SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", relaxdata->origverblevel) );
-
    return SCIP_OKAY;
 }
 

@@ -4951,7 +4951,7 @@ SCIP_RETCODE GCGmasterCreateInitialMastervars(
 
    assert(scip != NULL);
 
-   origprob = GCGgetOriginalProb(scip);
+   origprob = GCGgetOriginalprob(scip);
    assert(origprob != NULL);
 
    npricingprobs = GCGgetNPricingprobs(origprob);

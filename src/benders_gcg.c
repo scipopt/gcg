@@ -273,7 +273,6 @@ SCIP_RETCODE createOriginalProblemSolution(
                                                   generate branching candidates */
    )
 {
-   /* Don't know whether we need to consider the fixed variables. Must check. */
    SCIP* origprob;
    SCIP* subproblem;
    SCIP_BENDERSDATA* bendersdata;
@@ -354,7 +353,7 @@ SCIP_RETCODE createOriginalProblemSolution(
    }
 
    /* if the solution is NULL, then the solution comes from the relaxation. Thus, it should be stored in the
-    * bendersdata. When it is not null, then solution comes from a heuristic. So this solution should be passed to the
+    * bendersdata. When it is not NULL, then solution comes from a heuristic. So this solution should be passed to the
     * solution storage. */
    if( sol != NULL )
    {
@@ -550,17 +549,13 @@ SCIP_DECL_BENDERSCREATESUB(bendersCreatesubGcg)
 
    origprob = bendersdata->origprob;
 
-   /* TODO: Not sure whether the relevance check is necessary for Benders'. Must check */
-   if( TRUE || GCGisPricingprobRelevant(origprob, probnumber) )
-   {
-      SCIPaddBendersSubproblem(scip, benders, GCGgetPricingprob(origprob, probnumber));
+   SCIPaddBendersSubproblem(scip, benders, GCGgetPricingprob(origprob, probnumber));
 
-      /* setting the objective coefficients for the subproblems.
-       * This is required because the variables are added to the pricing problems with a zero coefficient. In the DW
-       * context, this is appropriate because the objective coefficients are constantly changing. In the BD context, the
-       * objective coefficients are static, so they only need to be updated once. */
-      SCIP_CALL( setSubproblemObjs(benders, probnumber) );
-   }
+   /* setting the objective coefficients for the subproblems.
+    * This is required because the variables are added to the pricing problems with a zero coefficient. In the DW
+    * context, this is appropriate because the objective coefficients are constantly changing. In the BD context, the
+    * objective coefficients are static, so they only need to be updated once. */
+   SCIP_CALL( setSubproblemObjs(benders, probnumber) );
 
 
    return SCIP_OKAY;
@@ -585,7 +580,6 @@ SCIP_RETCODE SCIPincludeBendersGcg(
    bendersdata->relaxsol = NULL;
 
    benders = NULL;
-
 
    /* include Benders' decomposition */
    SCIP_CALL( SCIPincludeBendersBasic(scip, &benders, BENDERS_NAME, BENDERS_DESC, BENDERS_PRIORITY,
