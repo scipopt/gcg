@@ -58,6 +58,8 @@ SCIP_RETCODE GCGincludeBendersPlugins(
    SCIP_CALL( SCIPincludeConshdlrLinear(scip) ); /* linear must be before its specializations due to constraint upgrading */
    SCIP_CALL( SCIPincludeConshdlrAbspower(scip) ); /* absolute power needs to be after quadratic and nonlinear due to constraint upgrading */
    SCIP_CALL( SCIPincludeConshdlrAnd(scip) );
+   SCIP_CALL( SCIPincludeConshdlrBenders(scip) );
+   SCIP_CALL( SCIPincludeConshdlrBenderslp(scip) );
    SCIP_CALL( SCIPincludeConshdlrBivariate(scip) ); /* bivariate needs to be after quadratic and nonlinear due to constraint upgrading */
    SCIP_CALL( SCIPincludeConshdlrBounddisjunction(scip) );
    SCIP_CALL( SCIPincludeConshdlrCardinality(scip) );
@@ -236,7 +238,6 @@ SCIP_RETCODE GCGincludeBendersPlugins(
    SCIP_CALL( SCIPincludeTableDefault(scip) );
 
    /* Benders' decomposition specific plugins */
-   SCIP_CALL( SCIPincludeConshdlrBenders(scip, TRUE) );
 
 
    return SCIP_OKAY;
