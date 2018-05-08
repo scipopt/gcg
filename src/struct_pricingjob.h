@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,53 +25,43 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_solver.h
- * @brief  data structures for solvers
- * @author Gerald Gamrath
+/**@file   struct_pricingjob.h
+ * @brief  data structure for pricing jobs
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_SOLVER_H__
-#define GCG_STRUCT_SOLVER_H__
+#ifndef GCG_STRUCT_PRICINGJOB_H_
+#define GCG_STRUCT_PRICINGJOB_H_
 
+#include "scip/def.h"
+#include "scip/type_misc.h"
+#include "scip/scip.h"
+
+#include "type_pricingjob.h"
+#include "type_pricingprob.h"
 #include "type_solver.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** pricing problem solver data structure */
-struct GCG_Solver
+struct GCG_PricingJob
 {
-   char*                 name;               /**< solver name */
-   char*                 desc;               /**< solver description */
-   int                   priority;           /**< solver priority */
-   SCIP_Bool             enabled;            /**< solver activation status */
-   GCG_SOLVERDATA*       solverdata;         /**< private solver data structure */
+   /* problem data */
+   GCG_PRICINGPROB*     pricingprob;        /**< data structure of the corresponding pricing problem */
+   GCG_SOLVER*          solver;             /**< solver with which to solve the pricing problem */
 
-   GCG_DECL_SOLVERFREE((*solverfree));       /**< destruction method */
-   GCG_DECL_SOLVERINIT((*solverinit));       /**< initialization method */
-   GCG_DECL_SOLVEREXIT((*solverexit));       /**< deinitialization method */
-   GCG_DECL_SOLVERINITSOL((*solverinitsol)); /**< solving process initialization method */
-   GCG_DECL_SOLVEREXITSOL((*solverexitsol)); /**< solving process deinitialization method */
-   GCG_DECL_SOLVERUPDATE((*solverupdate));   /**< update method */
-   GCG_DECL_SOLVERSOLVE((*solversolve));     /**< solving callback method */
-   GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur)); /**< heuristic solving callback method */
-
-   SCIP_CLOCK*           optfarkasclock;     /**< optimal farkas pricing time */
-   SCIP_CLOCK*           optredcostclock;    /**< optimal reduced cost pricing time */
-   SCIP_CLOCK*           heurfarkasclock;    /**< heuristic farkas pricing time */
-   SCIP_CLOCK*           heurredcostclock;   /**< heuristic reduced cost pricing time */
-   int                   optfarkascalls;     /**< optimal farkas pricing calls */
-   int                   optredcostcalls;    /**< optimal reduced cost pricing calls */
-   int                   heurfarkascalls;    /**< heuristic farkas pricing calls */
-   int                   heurredcostcalls;   /**< heuristic reduced cost pricing calls */
+   /* strategic parameters */
+   int                  chunk;              /**< chunk the pricing job belongs to */
+   SCIP_Real            score;              /**< current score of the pricing job */
+   SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
+   int                  nheuriters;         /**< number of times the pricing job was performed heuristically */
 };
-
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* STRUCT_PRICINGJOB_H_ */

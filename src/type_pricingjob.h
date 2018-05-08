@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,50 +25,24 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_solver.h
- * @brief  data structures for solvers
- * @author Gerald Gamrath
+/**@file   type_pricingjob.h
+ * @ingroup TYPEDEFINITIONS
+ * @brief  type definitions for pricing job data structure
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_SOLVER_H__
-#define GCG_STRUCT_SOLVER_H__
+#ifndef GCG_TYPE_PRICINGJOB_H__
+#define GCG_TYPE_PRICINGJOB_H__
 
-#include "type_solver.h"
+#include "struct_pricingjob.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** pricing problem solver data structure */
-struct GCG_Solver
-{
-   char*                 name;               /**< solver name */
-   char*                 desc;               /**< solver description */
-   int                   priority;           /**< solver priority */
-   SCIP_Bool             enabled;            /**< solver activation status */
-   GCG_SOLVERDATA*       solverdata;         /**< private solver data structure */
-
-   GCG_DECL_SOLVERFREE((*solverfree));       /**< destruction method */
-   GCG_DECL_SOLVERINIT((*solverinit));       /**< initialization method */
-   GCG_DECL_SOLVEREXIT((*solverexit));       /**< deinitialization method */
-   GCG_DECL_SOLVERINITSOL((*solverinitsol)); /**< solving process initialization method */
-   GCG_DECL_SOLVEREXITSOL((*solverexitsol)); /**< solving process deinitialization method */
-   GCG_DECL_SOLVERUPDATE((*solverupdate));   /**< update method */
-   GCG_DECL_SOLVERSOLVE((*solversolve));     /**< solving callback method */
-   GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur)); /**< heuristic solving callback method */
-
-   SCIP_CLOCK*           optfarkasclock;     /**< optimal farkas pricing time */
-   SCIP_CLOCK*           optredcostclock;    /**< optimal reduced cost pricing time */
-   SCIP_CLOCK*           heurfarkasclock;    /**< heuristic farkas pricing time */
-   SCIP_CLOCK*           heurredcostclock;   /**< heuristic reduced cost pricing time */
-   int                   optfarkascalls;     /**< optimal farkas pricing calls */
-   int                   optredcostcalls;    /**< optimal reduced cost pricing calls */
-   int                   heurfarkascalls;    /**< heuristic farkas pricing calls */
-   int                   heurredcostcalls;   /**< heuristic reduced cost pricing calls */
-};
-
+typedef struct GCG_PricingJob GCG_PRICINGJOB; /**< data structure to store pricing jobs */
 
 #ifdef __cplusplus
 }

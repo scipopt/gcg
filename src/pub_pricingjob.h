@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,53 +25,73 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_solver.h
- * @brief  data structures for solvers
- * @author Gerald Gamrath
+/**@file   pub_pricingjob.h
+ * @ingroup PUBLICMETHODS
+ * @brief  public methods for working with pricing jobs
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#ifndef GCG_PUB_PRICINGJOB_H__
+#define GCG_PUB_PRICINGJOB_H__
 
-#ifndef GCG_STRUCT_SOLVER_H__
-#define GCG_STRUCT_SOLVER_H__
-
-#include "type_solver.h"
+#include "type_pricingjob.h"
+#include "scip/type_scip.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** pricing problem solver data structure */
-struct GCG_Solver
-{
-   char*                 name;               /**< solver name */
-   char*                 desc;               /**< solver description */
-   int                   priority;           /**< solver priority */
-   SCIP_Bool             enabled;            /**< solver activation status */
-   GCG_SOLVERDATA*       solverdata;         /**< private solver data structure */
+/*
+ * GCG Pricing Job
+ */
 
-   GCG_DECL_SOLVERFREE((*solverfree));       /**< destruction method */
-   GCG_DECL_SOLVERINIT((*solverinit));       /**< initialization method */
-   GCG_DECL_SOLVEREXIT((*solverexit));       /**< deinitialization method */
-   GCG_DECL_SOLVERINITSOL((*solverinitsol)); /**< solving process initialization method */
-   GCG_DECL_SOLVEREXITSOL((*solverexitsol)); /**< solving process deinitialization method */
-   GCG_DECL_SOLVERUPDATE((*solverupdate));   /**< update method */
-   GCG_DECL_SOLVERSOLVE((*solversolve));     /**< solving callback method */
-   GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur)); /**< heuristic solving callback method */
+/**@defgroup GCG_PricingJob gcg pricingjob
+ *
+ * @{
+ */
 
-   SCIP_CLOCK*           optfarkasclock;     /**< optimal farkas pricing time */
-   SCIP_CLOCK*           optredcostclock;    /**< optimal reduced cost pricing time */
-   SCIP_CLOCK*           heurfarkasclock;    /**< heuristic farkas pricing time */
-   SCIP_CLOCK*           heurredcostclock;   /**< heuristic reduced cost pricing time */
-   int                   optfarkascalls;     /**< optimal farkas pricing calls */
-   int                   optredcostcalls;    /**< optimal reduced cost pricing calls */
-   int                   heurfarkascalls;    /**< heuristic farkas pricing calls */
-   int                   heurredcostcalls;   /**< heuristic reduced cost pricing calls */
-};
+
+/** get the pricing problem structure associated with a pricing job */
+EXTERN
+GCG_PRICINGPROB* GCGpricingjobGetPricingprob(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** get the pricing solver with which the pricing job is to be performed */
+EXTERN
+GCG_SOLVER* GCGpricingjobGetSolver(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** get the chunk of a pricing job */
+EXTERN
+SCIP_Real GCGpricingjobGetChunk(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** get the score of a pricing job */
+EXTERN
+SCIP_Real GCGpricingjobGetScore(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** return whether the pricing job is to be performed heuristically */
+EXTERN
+SCIP_Bool GCGpricingjobIsHeuristic(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** get the number of heuristic pricing iterations of the pricing job */
+EXTERN
+int GCGpricingjobGetNHeurIters(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/**@} */
 
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif
