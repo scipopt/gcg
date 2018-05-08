@@ -945,7 +945,10 @@ Seeedpool::Seeedpool(
       relevantCons = transformed ? consGetRelevantRepr( scip, conss[i] ) : conss[i];
 
       if( SCIPconsIsDeleted( relevantCons ) || SCIPconsIsObsolete(relevantCons) )
+      {
          continue;
+      }
+
 
       if( relevantCons != NULL )
       {
@@ -987,7 +990,7 @@ Seeedpool::Seeedpool(
       }
    }
 
-   /** from here on nVars and nConss represents the relevant numbers */
+    /** from here on nVars and nConss represents the relevant numbers */
    nVars = relevantVarCounter;
    nConss = relevantConsCounter;
    SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, " nvars: %d / nconss: %d \n", nVars, nConss  );
@@ -1061,41 +1064,9 @@ Seeedpool::Seeedpool(
 
    if( createconssadj )
    {
-      std::vector<std::list<int>> conssadjacenciestemp( consToScipCons.size(), std::list<int>(0) );
-
-      /** find constraint <-> constraint relationships and store them in both directions */
-      for( size_t i = 0; i < consToScipCons.size(); ++i )
-      {
-         for( size_t varid = 0; varid < varsForConss[i].size(); ++varid )
-         {
-            int var = varsForConss[i][varid];
-
-            for( size_t otherconsid = 0; otherconsid < conssForVars[var].size(); ++otherconsid )
-            {
-               int othercons = conssForVars[var][otherconsid];
-               if( othercons == (int) i )
-                  continue;
-
-               std::list<int>::iterator consiter = std::lower_bound( conssadjacenciestemp[i].begin(),conssadjacenciestemp[i].end(), othercons);
-
-               if( consiter == conssadjacenciestemp[i].end() || *consiter != othercons )
-                  conssadjacenciestemp[i].insert(consiter, othercons);
-            }
-         }
-
-      }
-
-      for( size_t i = 0; i < consToScipCons.size(); ++ i )
-      {
-         conssadjacencies.push_back(std::vector<int>(0));
-         std::list<int>::iterator consiter = conssadjacenciestemp[i].begin();
-         std::list<int>::iterator consiterend = conssadjacenciestemp[i].end();
-         for( ; consiter != consiterend; ++consiter )
-         {
-            conssadjacencies[i].push_back(*consiter);
-         }
-      }
+      createConssAdjacency();
    }
+
    /*  init  seeedpool with empty seeed */
    SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), this );
 
@@ -1120,6 +1091,7 @@ Seeedpool::~Seeedpool()
       cons = getConsForIndex(c);
       SCIPreleaseCons(scip, &cons);
    }
+
 
    for( size_t i = 0; i < ancestorseeeds.size(); ++i )
    {
@@ -1246,6 +1218,47 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
 
    return SCIP_OKAY;
 }
+
+void Seeedpool::createConssAdjacency()
+{
+
+   std::vector<std::list<int>> conssadjacenciestemp( consToScipCons.size(), std::list<int>(0) );
+
+   /** find constraint <-> constraint relationships and store them in both directions */
+   for( size_t i = 0; i < consToScipCons.size(); ++i )
+   {
+      for( size_t varid = 0; varid < varsForConss[i].size(); ++varid )
+      {
+         int var = varsForConss[i][varid];
+
+         for( size_t otherconsid = 0; otherconsid < conssForVars[var].size(); ++otherconsid )
+         {
+            int othercons = conssForVars[var][otherconsid];
+            if( othercons == (int) i )
+               continue;
+
+            std::list<int>::iterator consiter = std::lower_bound( conssadjacenciestemp[i].begin(),conssadjacenciestemp[i].end(), othercons);
+
+            if( consiter == conssadjacenciestemp[i].end() || *consiter != othercons )
+               conssadjacenciestemp[i].insert(consiter, othercons);
+         }
+      }
+
+   }
+
+   for( size_t i = 0; i < consToScipCons.size(); ++ i )
+   {
+      conssadjacencies.push_back(std::vector<int>(0));
+      std::list<int>::iterator consiter = conssadjacenciestemp[i].begin();
+      std::list<int>::iterator consiterend = conssadjacenciestemp[i].end();
+      for( ; consiter != consiterend; ++consiter )
+      {
+         conssadjacencies[i].push_back(*consiter);
+      }
+   }
+
+}
+
 
 
 /** constructs seeeds using the registered detectors
@@ -1773,11 +1786,10 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             else
                delete seeed;
 
-            SCIPfreeMemoryArrayNull( scip, & seeedPropData->newSeeeds );
-            seeedPropData->newSeeeds = NULL;
-            seeedPropData->nNewSeeeds = 0;
          }
-
+         SCIPfreeMemoryArrayNull( scip, & seeedPropData->newSeeeds );
+         seeedPropData->newSeeeds = NULL;
+         seeedPropData->nNewSeeeds = 0;
          delete seeedPropData->seeedToPropagate;
          delete seeedPropData;
       }
@@ -2524,6 +2536,9 @@ void Seeedpool::translateSeeeds(
 {
    assert( newseeeds.empty() );
 
+   int roundspresolving;
+   SCIP_Bool presolvingdisabled;
+
    std::vector<int> rowothertothis( 0 );
    std::vector<int> rowthistoother( 0 );
    std::vector<int> colothertothis( 0 );
@@ -2532,25 +2547,30 @@ void Seeedpool::translateSeeeds(
 
 //   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL, "started translate seeed method: presolving is %s \n", (presolvingdisabled ? "disabled, try short method." : "enabled, has to do long version. " ) );
 //
-//   if( presolvingdisabled )
-//   {
-//      missingrowinthis = std::vector<int>(0);
-//      rowothertothis = std::vector<int>(0);
-//      rowthistoother = std::vector<int>(0);
-//      colothertothis = std::vector<int>(0);
-//      colthistoother = std::vector<int>(0);
-//      for( int i = 0; i < nConss ; ++i )
-//      {
-//         rowothertothis.push_back(i);
-//         rowthistoother.push_back(i);
-//      }
-//      for( int j = 0; j < nVars ; ++j )
-//      {
-//         colthistoother.push_back(j);
-//         colothertothis.push_back(j);
-//      }
-//   } else
 
+   SCIPgetIntParam(scip, "presolving/maxrounds", &roundspresolving);
+
+   presolvingdisabled = (roundspresolving == 0);
+
+   presolvingdisabled =  presolvingdisabled &&  (nVars == origpool->getNVars() );
+   if( presolvingdisabled && FALSE ) /** @TODO BUG consider removing this shortcut */
+   {
+      missingrowinthis = std::vector<int>(0);
+      rowothertothis = std::vector<int>(0);
+      rowthistoother = std::vector<int>(0);
+      colothertothis = std::vector<int>(0);
+      colthistoother = std::vector<int>(0);
+      for( int i = 0; i < nConss ; ++i )
+      {
+         rowothertothis.push_back(i);
+         rowthistoother.push_back(i);
+      }
+      for( int j = 0; j < nVars ; ++j )
+      {
+         colthistoother.push_back(j);
+         colothertothis.push_back(j);
+      }
+   } else
       calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
 
    SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL,
@@ -2620,6 +2640,15 @@ void Seeedpool::calcTranslationMapping(
          int j = j2 % nrowsthis;
          SCIP_CONS* thisrow = thisscipconss[j];
          assert( SCIPconsIsTransformed( thisrow ) );
+
+         if( SCIPconsGetTransformed(origscipconss[i]) == thisrow )
+         {
+            rowothertothis[i] = j;
+            rowthistoother[j] = i;
+            foundmaintained = true;
+            break;
+         }
+
          char buffer[SCIP_MAXSTRLEN];
          assert( this->scip != NULL );
          strcpy( buffer, SCIPconsGetName( thisrow ) + 2 );
@@ -2633,7 +2662,9 @@ void Seeedpool::calcTranslationMapping(
          }
       }
       if( ! foundmaintained )
+      {
          missingrowinthis.push_back( i );
+      }
    }
 
    for( int i = 0; i < ncolsother; ++i )
@@ -4615,6 +4646,12 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
    std::vector<int> classForVars = std::vector<int>( getNVars(), - 1 );
    VarClassifier* classifier;
 
+   SCIP_Bool onlycontsub;
+   SCIP_Bool onlybinmaster;
+
+   SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/onlycontsubpr", &onlycontsub);
+   SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/onlybinmaster", &onlybinmaster);
+
    /** firstly, assign all variables to classindices */
    for( int i = 0; i < getNVars(); ++ i )
    {
@@ -4623,6 +4660,14 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
       var = getVarForIndex( i );
       SCIP_VARTYPE vT = SCIPvarGetType( var );
       size_t vartype;
+
+      if( onlycontsub )
+      {
+         if ( vT == SCIP_VARTYPE_BINARY )
+            vT = SCIP_VARTYPE_INTEGER;
+         if( vT == SCIP_VARTYPE_IMPLINT )
+            vT = SCIP_VARTYPE_CONTINUOUS;
+      }
 
       /** check whether the variable's vartype is new */
       for( vartype = 0; vartype < foundVartypes.size(); ++ vartype )
@@ -4655,15 +4700,27 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
       {
          case SCIP_VARTYPE_BINARY:
             name = "bin";
+            if( onlybinmaster )
+               classifier->setClassDecompInfo(c, gcg::LINKING);
             break;
          case SCIP_VARTYPE_INTEGER:
             name = "int";
+            if( onlycontsub )
+               classifier->setClassDecompInfo(c, gcg::LINKING);
+            if( onlybinmaster )
+               classifier->setClassDecompInfo(c, gcg::BLOCK);
             break;
          case SCIP_VARTYPE_IMPLINT:
             name = "impl";
+            if( onlybinmaster )
+               classifier->setClassDecompInfo(c, gcg::BLOCK);
             break;
          case SCIP_VARTYPE_CONTINUOUS:
             name = "cont";
+            if( onlycontsub )
+               classifier->setClassDecompInfo(c, gcg::BLOCK);
+            if( onlybinmaster )
+               classifier->setClassDecompInfo(c, gcg::BLOCK);
             break;
          default:
             name = "newVartype";
@@ -4681,6 +4738,9 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
    }
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier %s yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
+
+
+
 
    return classifier;
 }

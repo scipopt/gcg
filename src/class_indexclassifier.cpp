@@ -39,7 +39,6 @@
 #include <sstream>
 #include <algorithm>
 
-
 namespace gcg {
 
 /** local methods */

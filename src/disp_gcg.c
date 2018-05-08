@@ -975,12 +975,12 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputPrimalbound)
    primalbound = SCIPgetPrimalbound(scip);
 
    /* @todo find a better way to do this */
-   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGmasterIsBestsolValid(masterprob) )
    {
       SCIP_Real masterprimalbound;
-
       masterprimalbound = SCIPgetPrimalbound(masterprob);
       masterprimalbound = SCIPretransformObj(scip, masterprimalbound);
+
       primalbound = MIN(primalbound, masterprimalbound);
    }
 

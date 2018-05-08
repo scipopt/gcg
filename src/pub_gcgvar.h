@@ -218,9 +218,9 @@ SCIP_Bool GCGmasterVarIsRay(
    SCIP_VAR*             var                 /**< variable data structure */
    );
 
-/** returns whether the master variable is a copy of an original variable */
+/** returns TRUE or FALSE whether a master variable is an artificial variable */
 extern
-SCIP_Bool GCGmasterVarIsOriginalCopy(
+SCIP_Bool GCGmasterVarIsArtificial(
    SCIP_VAR*             var                 /**< variable data structure */
    );
 
@@ -367,6 +367,14 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< original variable */
    SCIP_VAR**            newvar              /**< pointer to store new variable */
+   );
+
+/** creates artificial variable and the vardata */
+SCIP_RETCODE GCGcreateArtificialVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            newvar,              /**< pointer to store new variable */
+   const char*           name,               /**< name of variable, or NULL for automatic name creation */
+   SCIP_Real             objcoef             /**< objective coefficient of artificial variable */
    );
 
 /* adds the vardata to the auxiliary variable */

@@ -103,6 +103,10 @@ SCIP_RETCODE GCGcreateGcgCol(
 
       origval = (vals[i] - constant) / scalar;
 
+      /* round origval if possible to avoid numerical troubles */
+      if( SCIPvarIsIntegral(origvar) && SCIPisFeasIntegral(pricingprob, origval) )
+         origval = SCIPround(pricingprob, origval);
+
       if( !SCIPisZero(pricingprob, origval) )
       {
          (*gcgcol)->vars[nnonz] = origvar;
@@ -179,6 +183,10 @@ SCIP_RETCODE GCGcreateGcgColFromSol(
 
       solvar = solvars[i];
       solval = SCIPgetSolVal(pricingprob, sol, solvar);
+
+      /* round solval if possible to avoid numerical troubles */
+      if( SCIPvarIsIntegral(solvar) && SCIPisFeasIntegral(pricingprob, solval) )
+         solval = SCIPround(pricingprob, solval);
 
       if( SCIPisZero(pricingprob, solval) )
       {
@@ -362,7 +370,7 @@ int GCGcolGetAge(
 }
 
 /** update reduced cost of variable and increase age */
-SCIP_RETCODE GCGcolUpdateRedcost(
+void GCGcolUpdateRedcost(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real            redcost,            /**< new reduced cost */
    SCIP_Bool            growold             /**< change age depending on reduced cost? */
@@ -371,20 +379,12 @@ SCIP_RETCODE GCGcolUpdateRedcost(
    gcgcol->redcost = redcost;
 
    if( !growold )
-   {
-      return SCIP_OKAY;
-   }
+      return;
 
    if( !SCIPisNegative(gcgcol->pricingprob, redcost) )
-   {
       ++(gcgcol->age);
-   }
    else
-   {
       gcgcol->age = 0;
-   }
-
-   return SCIP_OKAY;
 }
 
 /** get master coefficients of column */

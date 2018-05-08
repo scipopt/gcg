@@ -1125,8 +1125,8 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
            else
            {
               SCIPdebugMessage("Block %d is not identical to block %d!\n", b1, b2);
-              SCIPhashmapFree(&varmap2);
            }
+           SCIPhashmapFree(&varmap2);
         }
 
         reptoblocks.push_back( currrep );
@@ -2515,6 +2515,7 @@ SCIP_RETCODE Seeed::completeByConnected(
      ){
 
      int cons;
+     SCIP_Bool conssadjcalculated;
 
      changedHashvalue = true;
 
@@ -2529,6 +2530,13 @@ SCIP_RETCODE Seeed::completeByConnected(
      if( getNLinkingvars() != 0 )
         return completeByConnected(givenseeedpool);
 
+     SCIPgetBoolParam(scip, "detection/conssadjcalculated", &conssadjcalculated);
+
+     if( !conssadjcalculated )
+     {
+        givenseeedpool->createConssAdjacency();
+        SCIPsetBoolParam(scip, "detection/conssadjcalculated", TRUE);
+     }
 
      std::vector<bool> isConsOpen( nConss, false );
      std::vector<bool> isConsVisited( nConss, false );
@@ -5043,6 +5051,14 @@ SCIP_Real Seeed::getScore(
    SCORETYPE type
    )
 {
+   /** if there are indicator constraints in the master we want to reject this decomposition */
+   for( int mc = 0; mc < getNMasterconss(); ++mc )
+   {
+      SCIP_CONS* cons;
+      cons = getSeeedpool()->getScipCons(getMasterconss()[mc]);
+      if( GCGconsGetType(cons) == consType::indicator )
+         return 0.;
+   }
 
    /** calculate maximum white score anyway */
    if( maxwhitescore == -1. )
@@ -6631,6 +6647,14 @@ void Seeed::calcmaxwhitescore(){
    /** maxwhitescore = 1 - ( 1 - blackareascore) + (1 - borderareascore ) ) */
    maxwhitescore = blockareascore + borderareascore - 1.;
 
+   std::cout << "calculated blockareascore: " << blockareascore << std::endl;
+   std::cout << "calculated borderareascore: " << borderareascore << std::endl;
+   std::cout << "calculated maxwhitescore: " << maxwhitescore << std::endl;
+
+
+   if( maxwhitescore < 0. )
+     maxwhitescore = 0.;
+
    SCIP_CALL_ABORT(SCIPstopClock( seeedpool->getScip(), clock) );
    seeedpool->scorecalculatingtime += SCIPgetClockTime( seeedpool->getScip(), clock);
    SCIP_CALL_ABORT(SCIPfreeClock( seeedpool->getScip(), &clock) );
@@ -6818,7 +6842,7 @@ void Seeed::calcborderareascore(){
    unsigned long borderarea;
 
 
-   matrixarea = getNVars() * getNConss();
+   matrixarea = (unsigned long) getNVars() * (unsigned long)getNConss();
    borderarea = 0;
 
    borderarea += (unsigned long) ( getNLinkingvars() + getNTotalStairlinkingvars() ) * (unsigned long) getNConss();
@@ -7065,7 +7089,7 @@ void Seeed::calcblockareascore(){
    unsigned long blockarea;
 
 
-   matrixarea = getNVars() * getNConss();
+   matrixarea = (unsigned long) getNVars()  * (unsigned long) getNConss() ;
    blockarea = 0;
 
    for( int i = 0; i < getNBlocks(); ++ i )
@@ -7088,7 +7112,7 @@ void Seeed::calcblockareascoreagg(){
    SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
    SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
 
-   matrixarea = getNVars() * getNConss();
+   matrixarea = (unsigned long)getNVars() * (unsigned long)getNConss();
    blockarea = 0;
 
    for( int i = 0; i < nrepblocks; ++ i )

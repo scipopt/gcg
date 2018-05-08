@@ -144,7 +144,7 @@ SCIP_Bool GCGcolIsEq(
 
 /** update reduced cost of variable and increase age */
 extern
-SCIP_RETCODE GCGcolUpdateRedcost(
+void GCGcolUpdateRedcost(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real            redcost,            /**< new reduced cost */
    SCIP_Bool            growold             /**< increase age counter? */

@@ -101,6 +101,17 @@ const char* SCIPconshdlrDecompGetPdfReader(
    SCIP*                scip
    );
 
+extern
+SCIP_RETCODE SCIPconshdlrDecompNotifyNonFinalFreeTransform(
+   SCIP*                scip
+   );
+
+extern
+SCIP_RETCODE SCIPconshdlrDecompNotifyFinishedNonFinalFreeTransform(
+   SCIP*                scip
+   );
+
+
 /** returns the data of the provided detector */
 extern
 DEC_DETECTORDATA* DECdetectorGetData(
@@ -239,6 +250,11 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
 SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    SCIP*                 scip                /**< SCIP data structure */
    );
+
+SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 
 SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
    SCIP*       scip

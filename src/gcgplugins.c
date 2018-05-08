@@ -29,6 +29,7 @@
  * @brief  SCIP plugins for generic column generation
  * @author Gerald Gamrath
  * @author Martin Bergner
+ * @author Michael Bastubbe
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -43,12 +44,14 @@
 /* include header files here, such that the user only has to include
  * gcgplugins.h
  */
+#include "scip/cons_indicator.h"
 #include "scip/cons_integral.h"
 #include "scip/cons_knapsack.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_logicor.h"
 #include "scip/cons_setppc.h"
 #include "scip/cons_varbound.h"
+
 
 #if USEHEURS
 #include "scip/heur_actconsdiving.h"
@@ -241,6 +244,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    )
 {
    SCIP_CALL( SCIPincludeConshdlrLinear(scip) ); /* linear must be first due to constraint upgrading */
+   SCIP_CALL( SCIPincludeConshdlrIndicator(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegral(scip) );
    SCIP_CALL( SCIPincludeConshdlrKnapsack(scip) );
    SCIP_CALL( SCIPincludeConshdlrLogicor(scip) );

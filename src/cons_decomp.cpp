@@ -132,6 +132,8 @@ typedef gcg::Seeed* SeeedPtr;
 
 #define DEFAULT_VARCLASSSCIPVARTYPESENABLED           TRUE        /**< indicates whether variable classifier for scipvartypes is enabled */
 #define DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG       TRUE       /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
+#define DEFAULT_VARCLASSSCIPVARTYPESONLYCONTSUBPR     FALSE      /**< indicates whether only decomposition with only continiuous variables in the subproblems should be searched*/
+#define DEFAULT_VARCLASSSCIPVARTYPESONLYBINMASTER     FALSE      /**< indicates whether only decomposition with only binary variables in the master should be searched */
 
 #define DEFAULT_VARCLASSOBJVALSENABLED                TRUE        /**< indicates whether variable classifier for objective function values is enabled */
 #define DEFAULT_VARCLASSOBJVALSENABLEDORIG            TRUE       /**< indicates whether variable classifier for objective function values is enabled for the original problem */
@@ -203,6 +205,8 @@ struct SCIP_ConshdlrData
    SCIP_Bool             conssclasslevenshteinenabledorig;  /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
    SCIP_Bool             varclassvartypesenabled;           /**< indicates whether variable classifier for scipvartypes is enabled */
    SCIP_Bool             varclassvartypesenabledorig;       /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
+   SCIP_Bool             varclassvartypesonlycontsubpr;     /**< indicates whether only decomposition with only continiuous variables in the subproblems should be searched*/
+   SCIP_Bool             varclassvartypesonlybinmaster;     /**< indicates whether only decomposition with only binary variables in the master should be searched */
    SCIP_Bool             varclassobjvalsenabled;            /**< indicates whether variable classifier for objective function values is enabled */
    SCIP_Bool             varclassobjvalsenabledorig;        /**< indicates whether variable classifier for objective function values is enabled for the original problem */
    SCIP_Bool             varclassobjvalsignsenabled;        /**< indicates whether variable classifier for objective function value signs is enabled */
@@ -254,9 +258,12 @@ struct SCIP_ConshdlrData
    int                    currscoretype;
    SCIP_Bool              resortcandidates;
 
+   SCIP_Bool               nonfinalfreetransform;
    std::vector<int>*       userblocknrcandidates;
 
    SeeedPtr                seeedtowrite;
+
+
 
 };
 
@@ -749,6 +756,8 @@ SCIP_DECL_CONSINIT(consInitDecomp)
    return SCIP_OKAY;
 }
 
+
+
 /** deinitialization method of constraint handler (called before transformed problem is freed) */
 static
 SCIP_DECL_CONSEXIT(consExitDecomp)
@@ -784,13 +793,15 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
    }
 
    delete conshdlrdata->seeedpool;
-
-   if( conshdlrdata->seeedpoolunpresolved != NULL )
-        delete conshdlrdata->seeedpoolunpresolved;
-
-   conshdlrdata->seeedpoolunpresolved = NULL;
-
    conshdlrdata->seeedpool = NULL;
+
+   if( !conshdlrdata->nonfinalfreetransform )
+   {
+      if( conshdlrdata->seeedpoolunpresolved != NULL )
+         delete conshdlrdata->seeedpoolunpresolved;
+      conshdlrdata->seeedpoolunpresolved = NULL;
+   }
+
    return SCIP_OKAY;
 }
 
@@ -806,11 +817,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->completedetectionclock) );
 
-   if( conshdlrdata->seeedpool != NULL )
-      delete conshdlrdata->seeedpool;
-
-   if( conshdlrdata->seeedpoolunpresolved != NULL )
-      delete conshdlrdata->seeedpoolunpresolved;
 
 
 
@@ -932,6 +938,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->seeedcounter = 0;
    conshdlrdata->currscoretype = scoretype::MAX_WHITE;
    conshdlrdata->resortcandidates = TRUE;
+   conshdlrdata->nonfinalfreetransform = FALSE;
    conshdlrdata->userblocknrcandidates = new std::vector<int>(0);
    conshdlrdata->seeedtowrite = NULL;
 
@@ -948,6 +955,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeDecomp) );
    SCIP_CALL( SCIPsetConshdlrInit(scip, conshdlr, consInitDecomp) );
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitDecomp) );
+
 
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/allowclassifierduplicates/enabled", "indicates whether classifier duplicates are allowed (for statistical reasons)", &conshdlrdata->allowclassifierduplicates, FALSE, DEFAULT_ALLOWCLASSIFIERDUPLICATES, NULL, NULL) );
@@ -968,6 +976,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/enabled", "indicates whether variable classifier for scipvartypes is enabled", &conshdlrdata->varclassvartypesenabled, FALSE, DEFAULT_VARCLASSSCIPVARTYPESENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/origenabled", "indicates whether variable classifier for scipvartypes is enabled for the original problem", &conshdlrdata->varclassvartypesenabledorig, FALSE, DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevalues/enabled", "indicates whether variable classifier for objective function values is enabled", &conshdlrdata->varclassobjvalsenabled, FALSE, DEFAULT_VARCLASSOBJVALSENABLED, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/onlycontsubpr", "indicates whether only decomposition with only continiuous variables in the subproblems should be searched", &conshdlrdata->varclassvartypesonlycontsubpr, FALSE, DEFAULT_VARCLASSSCIPVARTYPESONLYCONTSUBPR, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/onlybinmaster", "indicates whether only decomposition with only binary variables in the master should be searched", &conshdlrdata->varclassvartypesonlybinmaster, FALSE, DEFAULT_VARCLASSSCIPVARTYPESONLYBINMASTER, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevalues/origenabled", "indicates whether variable classifier for objective function values is enabled for the original problem", &conshdlrdata->varclassobjvalsenabledorig, FALSE, DEFAULT_VARCLASSOBJVALSENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevaluesigns/enabled", "indicates whether variable classifier for objective function value signs is enabled", &conshdlrdata->varclassobjvalsignsenabled, FALSE, DEFAULT_VARCLASSOBJVALSIGNSENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevaluesigns/origenabled", "indicates whether variable classifier for objective function value signs is enabled for the original problem", &conshdlrdata->varclassobjvalsignsenabledorig, FALSE, DEFAULT_VARCLASSOBJVALSIGNSENABLEDORIG, NULL, NULL) );
@@ -2530,7 +2540,9 @@ int SCIPconshdlrDecompGetNFormerDetectionConssForID(
       currseeedpool = conshdlrdata->seeedpoolunpresolved;
    }
 
-   assert(seeed != NULL);
+   /** seeed is not found hence we should not trust the isomorph information from detection */
+   if (seeed == NULL)
+      return -1;
 
    return currseeedpool->getNConss();
 
@@ -3166,6 +3178,33 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
 
    return conshdlrdata->unpresolveduserseeedadded;
 }
+
+SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
+   SCIP*                 scip                /**< SCIP data structure */
+   ){
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if ( conshdlrdata->seeedpoolunpresolved == NULL )
+      return FALSE;
+
+
+   return ( conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() > 0 );
+
+}
+
+
 
 SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
    SCIP*          scip
@@ -4036,10 +4075,10 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       {
          SCIP_CALL(SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, *seeediter ) );
          *success = TRUE;
-         SCIPdebugMessagePrint(scip, " SUCCESS: unpresolved complete seeed did translate to complete presolved one \n");
+//         SCIPdebugMessagePrint(scip, " SUCCESS: unpresolved complete seeed did translate to complete presolved one \n");
       }
       else {
-         SCIPdebugMessagePrint(scip, " unpresolved complete seeed did not translate to complete presolved one \n");
+//         SCIPdebugMessagePrint(scip, " unpresolved complete seeed did not translate to complete presolved one \n");
          SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, *seeediter ) );
       }
    }
@@ -4120,7 +4159,8 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
 
    return ( (conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->getNFinishedSeeeds() > 0 )  ||
       ( conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->getNIncompleteSeeeds() > 0 ) ||
-      ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds() > 0 ) ) ;
+      ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds() > 0 )  ||
+      ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() > 0 )      ) ;
 }
 
 /** returns TRUE iff there is at least one full decompositions */
@@ -5122,6 +5162,49 @@ const char* SCIPconshdlrDecompGetPdfReader(
    }
    return "no pdf viewer found ";
 }
+
+SCIP_RETCODE SCIPconshdlrDecompNotifyNonFinalFreeTransform(
+   SCIP*                scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   conshdlrdata->nonfinalfreetransform = TRUE;
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE SCIPconshdlrDecompNotifyFinishedNonFinalFreeTransform(
+   SCIP*                scip
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   conshdlrdata->nonfinalfreetransform = FALSE;
+
+   return SCIP_OKAY;
+}
+
+
 
 /** gets an array of all seeeds that are currently considered relevant
  * @params seeedswr  output of the relevant seeeds (don't forget to free the individual wrappers after use)
@@ -6705,10 +6788,10 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
         seeedpool->addSeeedToFinishedUnchecked(matrixseeed);
 
         /* get filename for compiled file */
-        (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+        (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
         SCIPsplitFilename(problemname, NULL, &outputname, NULL, NULL);
 
-        strcat(outputname, ".pdf");
+        strcat(outputname, ".png");
 
         SCIPinfoMessage(scip, NULL, "filename for matrix plot is %s \n", filename );
         SCIPinfoMessage(scip, NULL, "foldername for matrix plot is %s \n", folder );
