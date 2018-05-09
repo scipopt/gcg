@@ -180,6 +180,9 @@ public:
       SCIP* givenScip /**< SCIP data structure */
       );
 
+   void createConssAdjacency();
+
+
    /** constructs seeeds using the registered detectors
     *  @return user has to free seeeds */
    std::vector<SeeedPtr> findSeeeds();

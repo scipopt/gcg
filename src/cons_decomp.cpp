@@ -7617,10 +7617,10 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
         seeedpool->addSeeedToFinishedUnchecked(matrixseeed);
 
         /* get filename for compiled file */
-        (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+        (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
         SCIPsplitFilename(problemname, NULL, &outputname, NULL, NULL);
 
-        strcat(outputname, ".pdf");
+        strcat(outputname, ".png");
 
         SCIPinfoMessage(scip, NULL, "filename for matrix plot is %s \n", filename );
         SCIPinfoMessage(scip, NULL, "foldername for matrix plot is %s \n", folder );
