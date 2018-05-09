@@ -58,8 +58,6 @@ build:
     - make googletest
     - make OPT=dbg CPLEXSOLVER=false PARASCIP=true tests
     - bin/gcg_test 2>/dev/null
-  only:
-    - master
   artifacts:
     paths:
       - bin/gcg_test
