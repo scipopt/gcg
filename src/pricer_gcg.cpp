@@ -5176,6 +5176,10 @@ SCIP_Bool GCGmasterIsCurrentSolValid(
 
    assert(scip != NULL);
 
+   /* checking the decomposition mode. If Benders' is used, then the solution is assumed to be valid. */
+   if( GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS )
+      return TRUE;
+
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
@@ -5216,6 +5220,10 @@ SCIP_Bool GCGmasterIsBestsolValid(
 
    assert(scip != NULL);
 
+   /* checking the decomposition mode. If Benders' is used, then the solution is assumed to be valid. */
+   if( GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS )
+      return TRUE;
+
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
@@ -5250,6 +5258,10 @@ SCIP_Bool GCGmasterIsSolValid(
    int i;
 
    assert(scip != NULL);
+
+   /* checking the decomposition mode. If Benders' is used, then the solution is assumed to be valid. */
+   if( GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS )
+      return TRUE;
 
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);

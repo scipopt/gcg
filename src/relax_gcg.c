@@ -1480,6 +1480,8 @@ SCIP_RETCODE createMasterProblem(
       SCIP_CALL( SCIPsetPresolving(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
       SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxroundsroot", 0) );
       SCIP_CALL( SCIPsetIntParam(masterscip, "heuristics/trysol/freq", 1) );
+      SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benders/active", TRUE) );
+      SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benderslp/active", TRUE) );
    }
 
    return SCIP_OKAY;
@@ -2422,10 +2424,10 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->convconss), relaxdata->npricingprobs);
 
    /* free master problem */
-   if( relaxdata->masterprob != NULL )
-   {
-      SCIP_CALL( SCIPfreeProb(relaxdata->masterprob) );
-   }
+   //if( relaxdata->masterprob != NULL )
+   //{
+      //SCIP_CALL( SCIPfreeProb(relaxdata->masterprob) );
+   //}
 
    /* free pricing problems */
    for( i = relaxdata->npricingprobs - 1; i >= 0 ; i-- )
@@ -2501,7 +2503,6 @@ SCIP_RETCODE solveMasterProblem(
 {
    SCIP_Real timelimit;
    SCIP_Real memorylimit;
-   SCIP_Bool stored;
 
    assert(scip != NULL);
    assert(masterprob != NULL);
@@ -2572,7 +2573,7 @@ SCIP_RETCODE solveMasterProblem(
    }
 
    /* set the lower bound pointer */
-      if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING && GCGmasterIsCurrentSolValid(masterprob) )
+   if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING && GCGmasterIsCurrentSolValid(masterprob) )
    {
       *lowerbound = SCIPgetLocalDualbound(masterprob);
    }
@@ -2607,11 +2608,6 @@ SCIP_RETCODE solveMasterProblem(
    }
 
    SCIPdebugMessage("  update lower bound (value = %g).\n", *lowerbound);
-
-   if( relaxdata->currentorigsol != NULL )
-   {
-      SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
-   }
 
    return SCIP_OKAY;
 }
@@ -2658,6 +2654,11 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
       nodelimit = (SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) ? 1 : oldnnodes + 1);
       /* solving the master problem */
       SCIP_CALL( solveMasterProblem(scip, masterprob, relaxdata, nodelimit, lowerbound, result) );
+
+      if( relaxdata->currentorigsol != NULL )
+      {
+         SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
+      }
 
       /* if a new primal solution was found in the master problem, transfer it to the original problem */
       if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) && GCGmasterIsCurrentSolValid(masterprob) )
@@ -2744,6 +2745,12 @@ SCIP_RETCODE relaxExecGcgBendersDecomposition(
 
    /* solving the master problem */
    SCIP_CALL( solveMasterProblem(scip, masterprob, relaxdata, nodelimit, lowerbound, result) );
+
+   /* set the lower bound pointer */
+   if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVED && GCGmasterIsCurrentSolValid(masterprob) )
+   {
+      *lowerbound = SCIPgetDualbound(masterprob);
+   }
 
    *result = SCIP_SUCCESS;
 
@@ -4168,7 +4175,10 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol, RELAX_INCLUDESLP) );
          assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, relaxdata->currentorigsol)));
 
-         SCIP_CALL( SCIPcheckSolOrig(scip, relaxdata->currentorigsol, &stored, FALSE, TRUE) );
+         if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+            SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
+         else
+            SCIP_CALL( SCIPcheckSolOrig(scip, relaxdata->currentorigsol, &stored, FALSE, TRUE) );
 
          SCIPdebugMessage("updated current original LP solution, %s feasible in the original problem!\n",
             (stored ? "" : "not"));
