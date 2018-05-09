@@ -88,7 +88,6 @@ Pricingcontroller::Pricingcontroller(
    npricingprobs = 0;
    pricingjobs = NULL;
    npricingjobs = 0;
-   maxcols_ = 0;
 
    sorting = DEFAULT_SORTING;
    nroundscol = DEFAULT_NROUNDSCOL;
@@ -113,7 +112,7 @@ Pricingcontroller::~Pricingcontroller()
 SCIP_RETCODE Pricingcontroller::addParameters()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
-   
+
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/heurpricingiters",
          "maximum number of heuristic pricing iterations per pricing call and problem",
          &heurpricingiters, FALSE, DEFAULT_HEURPRICINGITERS, 0, INT_MAX, NULL, NULL) );
@@ -137,7 +136,7 @@ SCIP_RETCODE Pricingcontroller::addParameters()
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/chunksize",
          "maximal number of pricing problems to be solved during one pricing loop",
          &chunksize, TRUE, DEFAULT_CHUNKSIZE, 1, INT_MAX, NULL, NULL) );
-   
+
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/eagerfreq",
          "frequency at which all pricingproblems should be solved (0 to disable)",
          &eagerfreq, FALSE, DEFAULT_EAGERFREQ, 0, INT_MAX, NULL, NULL) );
@@ -269,9 +268,7 @@ SCIP_Bool Pricingcontroller::pricingprobNeedsNextBranchingcons(
       && GCGpricingprobGetBranchconsIdx(pricingprob) > 0;
 }
 
-SCIP_RETCODE Pricingcontroller::initSol(
-   int                    maxcols
-   )
+SCIP_RETCODE Pricingcontroller::initSol()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
    int nblocks = GCGgetNPricingprobs(origprob);
@@ -279,7 +276,6 @@ SCIP_RETCODE Pricingcontroller::initSol(
    int nsolvers = GCGpricerGetNSolvers(scip_);
    int actchunksize = MIN(chunksize, GCGgetNRelPricingprobs(origprob));
 
-   maxcols_ = maxcols;
    npricingprobs = 0;
    npricingjobs = 0;
    nchunks = (int) SCIPceil(scip_, (SCIP_Real) GCGgetNRelPricingprobs(origprob) / actchunksize);
@@ -293,7 +289,7 @@ SCIP_RETCODE Pricingcontroller::initSol(
    {
       if( GCGisPricingprobRelevant(origprob, i) )
       {
-         SCIP_CALL_EXC( GCGpricingprobCreate(scip_, &pricingprobs[npricingprobs], GCGgetPricingprob(origprob, i), i, maxcols_, nroundscol) );
+         SCIP_CALL_EXC( GCGpricingprobCreate(scip_, &pricingprobs[npricingprobs], GCGgetPricingprob(origprob, i), i, nroundscol) );
 
          for( int j = 0; j < nsolvers; ++j )
          {
@@ -577,7 +573,7 @@ void Pricingcontroller::collectResults(
 SCIP_Bool Pricingcontroller::checkNextChunk()
 {
    int nextchunk = (curchunk + 1) % nchunks;
-   
+
    if( nextchunk == startchunk )
    {
       SCIPdebugMessage("not considering next chunk.\n");

@@ -54,7 +54,6 @@ SCIP_RETCODE GCGpricingprobCreate(
    GCG_PRICINGPROB**     pricingprob,        /**< pricing problem to be created */
    SCIP*                 pricingscip,        /**< SCIP data structure of the corresponding pricing problem */
    int                   probnr,             /**< index of the corresponding pricing problem */
-   int                   colssize,           /**< size of column array */
    int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
 );
 
