@@ -193,6 +193,7 @@ set(gcgheaders
     heur_setcover.h
     heur_xpcrossover.h
     heur_xprins.h
+    hmetis.h
     masterplugins.h
     nodesel_master.h
     objdialog.h
@@ -248,6 +249,12 @@ set(symheaders
 set(cliquersources
     ${cliquer}
 )
+
+if(HMETIS_FOUND)
+   include_directories(${CMAKE_CURRENT_BINARY_DIR})
+   add_definitions(-DHMETIS_HEADER)
+   configure_file(hmetis.h.in hmetis.h)
+endif()
 
 # all source files should be compiled with a c++ compiler
 if(CXXONLY)

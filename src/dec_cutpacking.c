@@ -55,6 +55,12 @@
 #include "pub_decomp.h"
 #include "scip_misc.h"
 
+#ifdef HMETIS_HEADER
+#include "hmetis.h"
+#else
+#define HMETIS_EXECUTABLE "hmetis"
+#endif
+
 #define DEC_DETECTORNAME      "cutpacking"   /**< name of the detector */
 #define DEC_DESC              "detects staircase matrices via graph partioning and cutpacking" /**< detector description */
 #define DEC_PRIORITY          1100           /**< priority of the detector */
@@ -1825,7 +1831,7 @@ SCIP_RETCODE callMetis(
       return SCIP_WRITEERROR;
    }
 
-   (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"", tempfile, 2,
+   (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"" HMETIS_EXECUTABLE " %s %d -seed %d -ptype %s -ufactor %f %s\"", tempfile, 2,
       detectordata->randomseed, detectordata->metisuseptyperb ? "rb" : "kway", detectordata->metisubfactor,
       detectordata->metisverbose ? "" : "> /dev/null");
 

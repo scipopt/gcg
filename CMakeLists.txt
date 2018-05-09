@@ -41,36 +41,20 @@ endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-#option(ZLIB "should zlib be linked" ON)
-#option(READLINE "should readline be linked" ON)
 option(GMP "should gmp be linked" ON)
 option(CLIQUER "should cliquer be linked" OFF)
-#option(IPOPT "should ipopt be linked" ON)
-#option(WORHP "should worhp be linked" OFF)
-#option(PARASCIP "should scip be compiled thread safe" OFF)
-#option(LPSCHECK "double check SoPlex results with CPLEX" OFF)
-#option(LEGACY "build SCIP/SoPlex in legacy mode" OFF)
-#option(NOBLKBUFMEM "should block and buffer memory be disabled" OFF)
-#option(NOBLKMEM "should block and buffer memory be disabled" OFF)
-#option(NOBUFMEM "should block and buffer memory be disabled" OFF)
-#option(DEBUGSOL "should the debug solution mechanism be enabled" OFF)
-#option(SANITIZE_ADDRESS "should the address sanitizer be enabled in debug mode if available" OFF)
-#option(SANITIZE_MEMORY "should the memory sanitizer be enabled in debug mode if available" OFF)
-#option(SANITIZE_UNDEFINED "should the undefined behavior sanitizer be enabled in debug mode if available" ON)
-#option(SANITIZE_THREAD "should the thread sanitizer be enabled in debug mode if available" OFF)
-#option(COVERAGE "enable coverage support" OFF)
-#SET(COVERAGE_CTEST_ARGS "" CACHE STRING "additional ctest arguments for coverage")
+option(HMETIS "should hmetis be called" ON)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
 
 # GMP
 if(GMP)
-    find_package(GMP)
+   find_package(GMP)
 endif()
 if(GMP_FOUND)
-    include_directories(${GMP_INCLUDE_DIRS})
-    add_definitions(-DWITH_GMP)
+   include_directories(${GMP_INCLUDE_DIRS})
+   add_definitions(-DWITH_GMP)
 else()
-    set(GMP_LIBRARIES "")
+   set(GMP_LIBRARIES "")
 endif()
 
 # CLIQUER
@@ -83,8 +67,16 @@ if(CLIQUER_FOUND)
    set(cliquer solver_cliquer.c)
    set(CLIQUER_PIC_LIBRARIES ${CLIQUER_LIBRARIES})
 else()
-    set(CLIQUER_LIBRARIES "")
-    set(CLIQUER_PIC_LIBRARIES "")
+   set(CLIQUER_LIBRARIES "")
+   set(CLIQUER_PIC_LIBRARIES "")
+endif()
+
+# HMETIS
+if(HMETIS)
+   find_package(HMETIS)
+endif()
+if(HMETIS_FOUND)
+   add_definitions(-DWITH_HMETIS)
 endif()
 
 set(SYM bliss CACHE STRING "options for symmetry computation")  #create the variable
@@ -181,14 +173,14 @@ set(GCG_DIR ${CMAKE_BINARY_DIR})
 #
 # add GCG tests
 #
-#add_subdirectory(check) TODO: write it
+add_subdirectory(check)
 
 #
 # add unit tests as a single target. Including tests will add the unit tests as single executables
 #
-add_custom_target(unittests)
+add_custom_target(gcg_unittests)
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
-add_custom_target(all_executables DEPENDS gcg unittests)
+add_custom_target(gcg_all_executables DEPENDS gcg gcg_unittests)
 
 enable_testing()
 

@@ -62,6 +62,7 @@ GTEST		=	true
 PARASCIP	= 	true
 BLISS      	=   true
 CLIQUER     =   false
+HMETIS      =   true
 OPENMP      =   false
 GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
@@ -99,7 +100,7 @@ SOFTLINKS	+=	$(LIBDIR)/include/bliss
 SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
 LINKMSG		+=	"bliss graph isomorphism framework (disable by compiling with \"make BLISS=false\"):\n"
 LINKMSG		+=	" -> bliss is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
-LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"blissinc/libbliss.$(STATICLIBEXT)\"\n"
+LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"bliss-0.72/libbliss.$(STATICLIBEXT)\"\n"
 endif
 
 #-----------------------------------------------------------------------------
@@ -119,6 +120,14 @@ SOFTLINKS	+=	$(LIBDIR)/libcliquer.$(STATICLIBEXT)
 LINKMSG		+=	"cliquer library (disable by compiling with \"make CLIQUER=false\"):\n"
 LINKMSG		+=	" -> cliquer is the path to the cliquer include files, e.g., \"cliquer-1.21\"\n"
 LINKMSG		+=	" -> \"libcliquer.$(STATICLIBEXT)\" is the path to the cliquer library, e.g., \"cliquerinc/libcliquer.$(STATICLIBEXT)\"\n"
+endif
+
+#-----------------------------------------------------------------------------
+# hmetis
+#-----------------------------------------------------------------------------
+
+ifeq ($(HMETIS),true)
+FLAGS		+=	-DWITH_HMETIS
 endif
 
 #-----------------------------------------------------------------------------

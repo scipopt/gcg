@@ -61,6 +61,12 @@
 #include "graph/graph_tclique.h"
 #include "graph/weights.h"
 
+#ifdef HMETIS_HEADER
+#include "hmetis.h"
+#else
+#define HMETIS_EXECUTABLE "hmetis"
+#endif
+
 #include <set>
 
 using gcg::HyperrowcolGraph;
@@ -236,7 +242,7 @@ SCIP_RETCODE callMetis(
    /* call metis via syscall as there is no library usable ... */
    if( !SCIPisInfinity(scip, DECgetRemainingTime(scip)) )
    {
-      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
+      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;" HMETIS_EXECUTABLE " %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
                detectordata->tempfile,
                detectordata->blocks,
@@ -247,7 +253,7 @@ SCIP_RETCODE callMetis(
    }
    else
    {
-      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
+      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"" HMETIS_EXECUTABLE " %s %d -seed %d -ptype %s -ufactor %f %s\"",
                detectordata->tempfile,
                detectordata->blocks,
                detectordata->randomseed,

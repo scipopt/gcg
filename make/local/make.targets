@@ -197,9 +197,9 @@ coverage: tests
 		mv gcov/gcg.capture gcov/gcg.capture.tmp
 		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/scip/*" > gcov/gcg.capture
 		mv gcov/gcg.capture gcov/gcg.capture.tmp
-		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/blissinc/*" > gcov/gcg.capture
+		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/include/bliss/*" > gcov/gcg.capture
 		mv gcov/gcg.capture gcov/gcg.capture.tmp
-		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/cliquerinc/*" > gcov/gcg.capture
+		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/include/cliquer/*" > gcov/gcg.capture
 		mv gcov/gcg.capture gcov/gcg.capture.tmp
 		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/gtest/*" > gcov/gcg.capture
 		mv gcov/gcg.capture gcov/gcg.capture.tmp

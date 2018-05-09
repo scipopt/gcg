@@ -330,14 +330,16 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectorConnected(scip) );
-   SCIP_CALL( SCIPincludeDetectorArrowheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );
    SCIP_CALL( SCIPincludeDetectorColors(scip) );
-   SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
    SCIP_CALL( SCIPincludeDetectorConsname(scip) );
-
+   
+#ifdef WITH_HMETIS
+   SCIP_CALL( SCIPincludeDetectorArrowheur(scip) );
+   SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
+#endif
 
 #ifdef WITH_BLISS
    SCIP_CALL( SCIPincludeDetectorIsomorphism(scip) );
