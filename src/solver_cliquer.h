@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,70 +25,32 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   graphtest.cpp
- * @brief  Description
- * @author bergner
+/**@file   solver_cliquer.h
+ * @brief  heuristic solver for pricing problems that solves independent set problems with cliquer
+ * @author Henri Lotze
+ * @author Christian Puchert
+ * @ingroup PRICINGSOLVERS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "graphtest.h"
-#include <fstream>
-#include <cerrno>
-#include <cstdio>
+#ifndef GCG_SOLVER_CLIQUER_H__
+#define GCG_SOLVER_CLIQUER_H__
 
-void GraphTest::SetUp() {
-  SCIP_CALL_ABORT( SCIPcreate(&scip) );
-  SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
-  SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-  SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
-  SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
-  SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
-  SCIP_CALL_ABORT( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
-  SCIP_CALL_ABORT( SCIPcreateProbBasic(scip, "prob") );
+#include "scip/scip.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** creates the cliquer solver for pricing problems and includes it in GCG */
+extern
+SCIP_RETCODE GCGincludeSolverCliquer(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+#ifdef __cplusplus
 }
+#endif
 
-void GraphTest::TearDown() {
-  SCIP_CALL_ABORT( SCIPfree(&scip) );
-}
-
-SCIP_RETCODE GraphTest::createVar(const char * str) {
-   SCIP_VAR* var;
-   char* endptr;
-   SCIP_Bool success;
-   SCIP_CALL( SCIPparseVar(scip, &var, str, TRUE, FALSE, NULL, NULL, NULL, NULL, NULL, &endptr, &success) );
-   assert(success);
-   SCIP_CALL( SCIPaddVar(scip, var) );
-   SCIP_CALL( SCIPreleaseVar(scip, &var) );
-   return SCIP_OKAY;
-}
-
-SCIP_RETCODE GraphTest::createCons(const char * str) {
-   SCIP_CONS* cons;
-   SCIP_Bool success;
-   SCIP_CALL( SCIPparseCons(scip, &cons, str, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, &success) );
-   assert(success);
-   SCIP_CALL( SCIPaddCons(scip, cons) );
-   SCIP_CALL( SCIPreleaseCons(scip, &cons) );
-   return SCIP_OKAY;
-}
-
-void GraphTest::parseFile(
-   const char *str,
-   std::vector<int> &array)
-{
-   std::ifstream stream(str);
-   stream.exceptions( std::ios::failbit );
-
-   ASSERT_TRUE(stream.good());
-
-   int input;
-
-   for( size_t i = 0; i < array.size(); ++i )
-   {
-      ASSERT_FALSE(stream.eof());
-      ASSERT_TRUE(static_cast<bool>(stream >> input));
-      ASSERT_EQ(array[i], input);
-   }
-   stream.close();
-}
+#endif
