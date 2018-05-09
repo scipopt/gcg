@@ -27,7 +27,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# path to e.g. findGMP module
+# path to e.g. FindGMP module
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
 option(SHARED "Build shared libraries" ON)
@@ -41,10 +41,31 @@ endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
+option(OPENMP "should gcg be compiled with openmp" OFF)
+option(GSL "should gcg be compiled with GSL" ON)
 option(GMP "should gmp be linked" ON)
-option(CLIQUER "should cliquer be linked" OFF)
+option(CLIQUER "should cliquer be linked" ON)
 option(HMETIS "should hmetis be called" ON)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
+
+# OPENMP
+if(OPENMP)
+   find_package(OpenMP)
+   if(OPENMP_FOUND)
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+   endif()
+endif()
+
+# GSL
+if(GSL)
+   find_package(GSL)
+   if(GSL_FOUND)
+      include_directories(${GSL_INCLUDE_DIRS})
+      add_definitions(-DWITH_GSL)
+      set(GSL_PIC_LIBRARIES ${GSL_LIBRARIES})
+   endif()
+endif()
 
 # GMP
 if(GMP)
@@ -64,7 +85,6 @@ endif()
 if(CLIQUER_FOUND)
    include_directories(${CLIQUER_INCLUDE_DIRS})
    add_definitions(-DWITH_CLIQUER)
-   set(cliquer solver_cliquer.c)
    set(CLIQUER_PIC_LIBRARIES ${CLIQUER_LIBRARIES})
 else()
    set(CLIQUER_LIBRARIES "")
@@ -186,6 +206,7 @@ add_custom_target(gcg_all_executables DEPENDS gcg gcg_unittests)
 
 enable_testing()
 
-
-include(FeatureSummary)
-feature_summary(WHAT ALL)
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+   include(FeatureSummary)
+   feature_summary(WHAT ALL)
+endif()

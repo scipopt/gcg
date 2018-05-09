@@ -193,7 +193,6 @@ set(gcgheaders
     heur_setcover.h
     heur_xpcrossover.h
     heur_xprins.h
-    hmetis.h
     masterplugins.h
     nodesel_master.h
     objdialog.h
@@ -246,9 +245,11 @@ set(symheaders
     dec_isomorph.h
 )
 
-set(cliquersources
-    ${cliquer}
-)
+if(CLIQUER_FOUND)
+   set(gcgsources ${gcgsources}
+      solver_cliquer.c
+   )
+endif()   
 
 if(HMETIS_FOUND)
    include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -258,7 +259,7 @@ endif()
 
 # all source files should be compiled with a c++ compiler
 if(CXXONLY)
-    set_source_files_properties(main.c ${gcgsources} ${symsources} ${cliquersources} PROPERTIES LANGUAGE CXX)
+    set_source_files_properties(main.c ${gcgsources} ${symsources} PROPERTIES LANGUAGE CXX)
 
     # for the clang compiler this suppresses the warnings about treating 'c' input as 'c++' when CXXONLY is enabled
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -266,16 +267,16 @@ if(CXXONLY)
     endif()
 endif()
 
-add_library(libgcg ${gcgsources} ${symsources} ${cliquersources})
+add_library(libgcg ${gcgsources} ${symsources})
 setLibProperties(libgcg "gcg")
 
 target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
 
 if(SHARED)
-    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES} ${CLIQUER_PIC_LIBRARIES})
-    add_executable(gcg main.c ${gcgsources} ${symsources} ${cliquersources})
+    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES} ${CLIQUER_PIC_LIBRARIES} ${GSL_PIC_LIBRARIES})
+    add_executable(gcg main.c ${gcgsources} ${symsources})
 else()
-    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES})
+    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${GSL_LIBRARIES})
     add_executable(gcg main.c)
     target_link_libraries(gcg libgcg)
 endif()
@@ -287,7 +288,7 @@ endif()
 
 target_compile_definitions(gcg PRIVATE EXTERN=extern)
 
-target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES})
+target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${GSL_LIBRARIES})
 
 add_dependencies(libgcg gcg_update_githash)
 add_dependencies(gcg gcg_update_githash)
@@ -305,6 +306,7 @@ set_target_properties(gcg PROPERTIES
 # install the header files of gcg
 install(FILES ${gcgheaders} DESTINATION include/gcg)
 install(FILES ${symheaders} DESTINATION include/gcg)
+install(FILES ${CMAKE_BINARY_DIR}/src/hmetis.h DESTINATION include/gcg)
 
 # install the binary and the library to appropriate locations and add them to an export group
 install(TARGETS gcg libgcg EXPORT gcg-targets
