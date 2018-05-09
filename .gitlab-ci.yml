@@ -2,7 +2,7 @@
 # use the official gcc image, based on debian
 # can use verions as well, like gcc:5.2
 # see https://hub.docker.com/_/gcc/
-image: gcc
+image: registry.git.or.rwth-aachen.de/meier/gcg-docker-base-image:master
 
 build:
   stage: build
@@ -55,6 +55,8 @@ build:
     - make googletest
     - make OPT=dbg CPLEXSOLVER=false PARASCIP=true tests
     - bin/gcg_test 2>/dev/null
+  only:
+    - master
   artifacts:
     paths:
       - bin/gcg_test
