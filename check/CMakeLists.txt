@@ -1,31 +1,11 @@
-#instances/cpmp/p1250-2.lp
-#instances/cpmp/p1650-2.txt.lp
-#instances/cpmp/p2050-1.txt.lp
-#instances/cs/TEST0055.lp
-#instances/cs/TEST0059.lp
-#instances/gap/gap4_2.txt.lp
-#instances/gap/gap8_4.txt.lp
-#instances/mkp/strong_d_45_15_12.lp
-#instances/mkp/strong_s_75_15_14.lp
-#instances/mkp/strong_s_75_15_18.lp
-#
-#=opt=  p1250-2         412
-#=opt=  p1650-2.txt     336
-#=opt=  p2050-1.txt     266
-#=opt=  TEST0055        11
-#=opt=  TEST0059        11
-#=opt=  gap4_2.txt      644
-#=opt=  gap8_4.txt      1117
-#=opt=  strong_d_45_15_12      -8703
-#=opt=  strong_s_75_15_14      -7158
-#=opt=  strong_s_75_15_18      -8360
-
 include(CTest)
 
-add_custom_target(check
+add_dependencies(check
+   gcg_check)
+
+add_custom_target(gcg_check
    COMMAND ${CMAKE_CTEST_COMMAND} -R "-default" --output-on-failure --schedule-random
-   DEPENDS gcg
-   )
+   DEPENDS gcg)
 
 #
 # define the instance sets and settings.
@@ -60,6 +40,60 @@ set(instances_BPP
    "instances/bpp/N1C1W4_M.BPP.lp\;41"
    "instances/bpp/N1C2W2_O.BPP.lp\;29"
    "instances/bpp/N1C3W1_A.lp\;16"
+   )
+
+#
+# CPMP instances
+#
+
+set(settings_CPMP
+    "default"
+)
+
+set(instances_CPMP
+   "instances/cpmp/p1250-2.lp\;412"
+   "instances/cpmp/p1650-2.txt.lp\;336"
+   "instances/cpmp/p2050-1.txt.lp\;266"
+   )
+
+#
+# CS instances
+#
+
+set(settings_CS
+    "default"
+)
+
+set(instances_CS
+   "instances/cs/TEST0055.lp\;11"
+   "instances/cs/TEST0059.lp\;11"
+   )
+
+#
+# GAP instances
+#
+
+set(settings_GAP
+    "default"
+)
+
+set(instances_GAP
+   "instances/gap/gap4_2.txt.lp\;644"
+   "instances/gap/gap8_4.txt.lp\;1117"
+   )
+
+#
+# MKP instances
+#
+
+set(settings_MKP
+    "default"
+)
+
+set(instances_MKP
+   "instances/mkp/strong_d_45_15_12.lp\;-8703"
+   "instances/mkp/strong_s_75_15_14.lp\;-7158"
+   "instances/mkp/strong_s_75_15_18.lp\;-8360"
    )
 
 #
@@ -118,6 +152,10 @@ endmacro(add_instancetests)
 
 add_instancetests(instances_MIPLIB settings_MIP "MIPLIB")
 add_instancetests(instances_BPP settings_BPP "BPP")
+add_instancetests(instances_CPMP settings_CPMP "CPMP")
+add_instancetests(instances_CS settings_CS "CS")
+add_instancetests(instances_GAP settings_GAP "GAP")
+add_instancetests(instances_MKP settings_MKP "MKP")
 
 #
 # add a test for handling of the SIGTERM signal. The test uses the timeout command that

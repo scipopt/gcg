@@ -173,8 +173,10 @@ set(GCG_DIR ${CMAKE_BINARY_DIR})
 #
 # add GCG tests
 #
+if(NOT TARGET check)
+   add_custom_target(check)
+endif()
 add_subdirectory(check)
-
 #
 # add unit tests as a single target. Including tests will add the unit tests as single executables
 #
