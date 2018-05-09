@@ -87,19 +87,18 @@ endif
 # BLISS
 #-----------------------------------------------------------------------------
 
-ifeq ($(BLISS),false)
-FLAGS		+=	-DNBLISS
-else
+ifeq ($(BLISS),true)
+FLAGS		+=	-DWITH_BLISS
 LDFLAGS		+= 	-lbliss
 ifeq ($(COMP),gnu)
-FLAGS		+=	-isystem$(LIBDIR)/blissinc
+FLAGS		+=	-isystem$(LIBDIR)/include
 else
-FLAGS		+=	-I$(LIBDIR)/blissinc
+FLAGS		+=	-I$(LIBDIR)/include
 endif
-SOFTLINKS	+=	$(LIBDIR)/blissinc
+SOFTLINKS	+=	$(LIBDIR)/include/bliss
 SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
 LINKMSG		+=	"bliss graph isomorphism framework (disable by compiling with \"make BLISS=false\"):\n"
-LINKMSG		+=	" -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
+LINKMSG		+=	" -> bliss is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
 LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"blissinc/libbliss.$(STATICLIBEXT)\"\n"
 endif
 
@@ -107,19 +106,18 @@ endif
 # Cliquer
 #-----------------------------------------------------------------------------
 
-ifeq ($(CLIQUER),false)
-FLAGS		+=	-DNCLIQUER
-else
+ifeq ($(CLIQUER),true)
+FLAGS		+=	-DWITH_CLIQUER
 LDFLAGS		+= 	-lcliquer
 ifeq ($(COMP),gnu)
-FLAGS		+=	-isystem$(LIBDIR)/cliquerinc
+FLAGS		+=	-isystem$(LIBDIR)/include
 else
-FLAGS		+=	-I$(LIBDIR)/cliquerinc
+FLAGS		+=	-I$(LIBDIR)/include
 endif
-SOFTLINKS	+=	$(LIBDIR)/cliquerinc
+SOFTLINKS	+=	$(LIBDIR)/include/cliquer
 SOFTLINKS	+=	$(LIBDIR)/libcliquer.$(STATICLIBEXT)
 LINKMSG		+=	"cliquer library (disable by compiling with \"make CLIQUER=false\"):\n"
-LINKMSG		+=	" -> cliquerinc is the path to the cliquer include files, e.g., \"cliquer-1.21\"\n"
+LINKMSG		+=	" -> cliquer is the path to the cliquer include files, e.g., \"cliquer-1.21\"\n"
 LINKMSG		+=	" -> \"libcliquer.$(STATICLIBEXT)\" is the path to the cliquer library, e.g., \"cliquerinc/libcliquer.$(STATICLIBEXT)\"\n"
 endif
 

@@ -169,7 +169,7 @@
 #include "cons_decomp.h"
 #include "dec_connected.h"
 
-#ifndef NBLISS
+#ifdef WITH_BLISS
 #include "dec_isomorph.h"
 #endif
 
@@ -339,7 +339,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorConsname(scip) );
 
 
-#ifndef NBLISS
+#ifdef WITH_BLISS
    SCIP_CALL( SCIPincludeDetectorIsomorphism(scip) );
 #endif
 

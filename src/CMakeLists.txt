@@ -245,9 +245,13 @@ set(symheaders
     dec_isomorph.h
 )
 
+set(cliquersources
+    ${cliquer}
+)
+
 # all source files should be compiled with a c++ compiler
 if(CXXONLY)
-    set_source_files_properties(main.c ${gcgsources} ${symsources} PROPERTIES LANGUAGE CXX)
+    set_source_files_properties(main.c ${gcgsources} ${symsources} ${cliquersources} PROPERTIES LANGUAGE CXX)
 
     # for the clang compiler this suppresses the warnings about treating 'c' input as 'c++' when CXXONLY is enabled
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -255,16 +259,16 @@ if(CXXONLY)
     endif()
 endif()
 
-add_library(libgcg ${gcgsources} ${symsources})
+add_library(libgcg ${gcgsources} ${symsources} ${cliquersources})
 setLibProperties(libgcg "gcg")
 
 target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
 
 if(SHARED)
-    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES})
-    add_executable(gcg main.c ${gcgsources} ${symsources})
+    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES} ${CLIQUER_PIC_LIBRARIES})
+    add_executable(gcg main.c ${gcgsources} ${symsources} ${cliquersources})
 else()
-    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
+    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES})
     add_executable(gcg main.c)
     target_link_libraries(gcg libgcg)
 endif()
@@ -276,7 +280,7 @@ endif()
 
 target_compile_definitions(gcg PRIVATE EXTERN=extern)
 
-target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
+target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES})
 
 add_dependencies(libgcg gcg_update_githash)
 add_dependencies(gcg gcg_update_githash)

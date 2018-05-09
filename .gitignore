@@ -10,9 +10,10 @@ doc/gcg.tag
 doc/html/
 gcg-*.*.*
 gcg-metis*
-lib/blissinc
+lib/include/bliss
+lib/include/cliquer
+lib/bliss
 lib/cliquer
-lib/cliquerinc
 lib/cpxinc
 lib/gtest
 lib/lib*
@@ -23,4 +24,4 @@ obj/
 release
 src/TAGS
 src/githash.c
-build/
+build*

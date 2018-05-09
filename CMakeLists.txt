@@ -43,8 +43,8 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 #option(ZLIB "should zlib be linked" ON)
 #option(READLINE "should readline be linked" ON)
-#option(GMP "should gmp be linked" ON)
-#option(ZIMPL "should zimpl be linked" ON)
+option(GMP "should gmp be linked" ON)
+option(CLIQUER "should cliquer be linked" OFF)
 #option(IPOPT "should ipopt be linked" ON)
 #option(WORHP "should worhp be linked" OFF)
 #option(PARASCIP "should scip be compiled thread safe" OFF)
@@ -60,7 +60,32 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 #option(SANITIZE_THREAD "should the thread sanitizer be enabled in debug mode if available" OFF)
 #option(COVERAGE "enable coverage support" OFF)
 #SET(COVERAGE_CTEST_ARGS "" CACHE STRING "additional ctest arguments for coverage")
-#option(MT "use static runtime libraries for Visual Studio compiler" OFF)
+option(MT "use static runtime libraries for Visual Studio compiler" OFF)
+
+# GMP
+if(GMP)
+    find_package(GMP)
+endif()
+if(GMP_FOUND)
+    include_directories(${GMP_INCLUDE_DIRS})
+    add_definitions(-DWITH_GMP)
+else()
+    set(GMP_LIBRARIES "")
+endif()
+
+# CLIQUER
+if(CLIQUER)
+   find_package(CLIQUER)
+endif()
+if(CLIQUER_FOUND)
+   include_directories(${CLIQUER_INCLUDE_DIRS})
+   add_definitions(-DWITH_CLIQUER)
+   set(cliquer solver_cliquer.c)
+   set(CLIQUER_PIC_LIBRARIES ${CLIQUER_LIBRARIES})
+else()
+    set(CLIQUER_LIBRARIES "")
+    set(CLIQUER_PIC_LIBRARIES "")
+endif()
 
 set(SYM bliss CACHE STRING "options for symmetry computation")  #create the variable
 set_property(CACHE SYM PROPERTY STRINGS bliss none )  #define list of values GUI will offer for the variable
@@ -117,32 +142,33 @@ set(CMAKE_CXX_STANDARD 11)
 #search the selected symmetry computation program
 if(SYM STREQUAL "bliss")
 
-    # Apparently, bliss requires GMP
-    find_package(GMP REQUIRED)
+   # Apparently, bliss requires GMP
+   find_package(GMP REQUIRED)
+   include_directories(${GMP_INCLUDE_DIRS})
+   add_definitions(-DWITH_GMP)
 
-    find_package(BLISS)
-    if(BLISS_FOUND)
-        include_directories(${BLISS_INCLUDE_DIRS})
-        set(sym bliss.cpp bliss_automorph.cpp dec_isomorph.cpp)
-        set(SYM_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
-        set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_CXX_FLAGS}")
-    else()
-        set(sym )
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNBLISS")
-    endif()
+   find_package(BLISS)
+   if(BLISS_FOUND)
+      include_directories(${BLISS_INCLUDE_DIRS})
+      set(sym bliss.cpp bliss_automorph.cpp dec_isomorph.cpp)
+      set(SYM_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
+      set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_CXX_FLAGS} -DWITH_BLISS")
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DWITH_BLISS")
+   else()
+      set(sym )
+   endif()
 elseif(SYM STREQUAL "none")
-    set(sym )
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNBLISS")
+   set(sym )
 else()
-    message(FATAL_ERROR "option SYM has wrong value")
+   message(FATAL_ERROR "option SYM has wrong value")
 endif()
 
 # SCIP
 find_package(SCIP REQUIRED CONFIG)
 if(SCIP_FOUND)
-  # SCIP headers can be directly included
-  include_directories(${SCIP_INCLUDE_DIRS})
+   # SCIP headers can be directly included
+   include_directories(${SCIP_INCLUDE_DIRS})
 endif()
 
 # go to src/ and compile the code
