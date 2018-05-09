@@ -6,6 +6,8 @@
 image: gcc
 
 build:
+  tags:
+    - docker
   stage: build
   # instead of calling g++ directly you can also use some build toolkit like make
   # install the necessary build tools when needed
@@ -68,6 +70,8 @@ build:
 
 # run tests using the binary built before
 # test:
+#  tags:
+#    - docker
 #   stage: test
 #  script:
 #    - bin/gcg_test
