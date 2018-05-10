@@ -404,6 +404,10 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    SCIP_RESULT result
    );
 
+SCIP_Bool SCIPconshdlrDecompDetectBenders(
+   SCIP*                   scip
+   );
+
 
 SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(
    SCIP*                   scip

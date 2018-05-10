@@ -2934,6 +2934,9 @@ SCIP_RETCODE Seeed::considerImplicits(
    bool master;
    bool hitsOpenVar;
    bool hitsOpenCons;
+   bool benders;
+
+   benders = givenseeedpool->isForBenders();
 
    changedHashvalue = true;
 
@@ -2942,6 +2945,7 @@ SCIP_RETCODE Seeed::considerImplicits(
    /** set openConss with more than two blockvars to master */
    for( size_t c = 0; c < openConss.size(); ++ c )
    {
+      std::vector<bool> hitsblock = std::vector<bool>(nBlocks, false);
       blocksOfBlockvars.clear();
       master = false;
       hitsOpenVar = false;
@@ -2962,25 +2966,33 @@ SCIP_RETCODE Seeed::considerImplicits(
          if( isVarOpenvar( var ) )
          {
             hitsOpenVar = true;
-            continue;
+            if( !benders )
+               continue;
          }
 
 
          for( int b = 0; b < nBlocks && ! master; ++ b )
          {
-            if( isVarBlockvarOfBlock( var, b ) )
+            if( isVarBlockvarOfBlock( var, b ) && !hitsblock[b] )
             {
+               hitsblock[b] = true;
                blocksOfBlockvars.push_back( b );
                break;
             }
          }
       }
 
-      if( blocksOfBlockvars.size() > 1 && ! master )
+      if ( benders && blocksOfBlockvars.size() == 1 && !master )
+         bookAsBlockCons( cons, blocksOfBlockvars[0] );
+
+      if( benders && master )
+         bookAsMasterCons( cons );
+
+      if( blocksOfBlockvars.size() > 1 )
          bookAsMasterCons( cons );
 
       /* also assign open constraints that only have vars assigned to one single block and no open vars*/
-      if( blocksOfBlockvars.size() == 1 && ! hitsOpenVar && ! master )
+      if( blocksOfBlockvars.size() == 1 && ! hitsOpenVar && ! master && ! benders )
          bookAsBlockCons( cons, blocksOfBlockvars[0] );
    }
 
@@ -2989,16 +3001,31 @@ SCIP_RETCODE Seeed::considerImplicits(
    /** set open var to linking, if it can be found in more than one block or set it to a block if it has only constraints in that block and no open constraints or set it to master if it only hits master constraints */
    for( size_t i = 0; i < openVars.size(); ++ i )
    {
+      std::vector<bool> hitsblock = std::vector<bool>(nBlocks, false);
+      bool hitsmasterconss = false;
+      bool hitonlymasterconss = true;
+      bool hitonlyblockconss = true;
       blocksOfOpenvar.clear();
       var = openVars[i];
       hitsOpenCons = false;
+
+
       for( int c = 0; c < givenseeedpool->getNConssForVar( var ); ++ c )
       {
          cons = givenseeedpool->getConssForVar( var )[c];
+         if ( isConsMastercons(cons) )
+         {
+            hitsmasterconss = true;
+            hitonlyblockconss = false;
+            continue;
+         }
+
          if( isConsOpencons( cons ) )
          {
             hitsOpenCons = true;
-            break;
+            hitonlyblockconss = false;
+            hitonlymasterconss = false;
+            continue;
          }
       }
       for( int b = 0; b < nBlocks; ++ b )
@@ -3006,8 +3033,10 @@ SCIP_RETCODE Seeed::considerImplicits(
          for( int c = 0; c < givenseeedpool->getNConssForVar( var ); ++ c )
          {
             cons = givenseeedpool->getConssForVar( var )[c];
-            if( isConsBlockconsOfBlock( cons, b ) )
+            if( isConsBlockconsOfBlock( cons, b ) && !hitsblock[b] )
             {
+               hitsblock[b] = true;
+               hitonlymasterconss = false;
                blocksOfOpenvar.push_back( b );
                break;
             }
@@ -3020,15 +3049,33 @@ SCIP_RETCODE Seeed::considerImplicits(
          continue;
       }
 
-      if( blocksOfOpenvar.size() == 1 && ! hitsOpenCons )
+      if( benders && blocksOfOpenvar.size() == 1 &&  hitsmasterconss )
+      {
+         bookAsLinkingVar( var );
+      }
+
+      if( benders && hitonlyblockconss && blocksOfOpenvar.size() > 0 )
       {
          bookAsBlockVar( var, blocksOfOpenvar[0] );
       }
 
-      if( blocksOfOpenvar.size() == 0 && ! hitsOpenCons )
+      if( benders && hitonlymasterconss)
+      {
+         bookAsMasterVar( var);
+      }
+
+      if( !benders && blocksOfOpenvar.size() == 1 && ! hitsOpenCons )
+      {
+         bookAsBlockVar( var, blocksOfOpenvar[0] );
+      }
+
+      if( !benders && blocksOfOpenvar.size() == 0 && ! hitsOpenCons )
       {
          bookAsMasterVar( var );
       }
+
+
+
    }
 
    flushBooked();

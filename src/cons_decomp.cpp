@@ -159,6 +159,9 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_WRITEMIPLIB2017DECOMPFILEPATH        "."      /**< indicates where the miplib feature output should be written to */
 
 
+#define DEFAULT_DETECTBENDERS                        FALSE    /**< indicates whether benders detection mode is enabled */
+
+
 /*
  * Data structures
  */
@@ -217,7 +220,7 @@ struct SCIP_ConshdlrData
    SCIP_Bool             writemiplib2017features;           /**< indicates whether miplib2017 features should be written */
    SCIP_Bool             writemiplib2017plotsanddecs;             /**< indicates whether dec and gp files for miplib 2017 should be written */
    SCIP_Bool             writemiplib2017shortbasefeatures;             /**< indicates whether base features for miplib 2017 should be shortened */
-
+   SCIP_Bool             detectbenders;                     /**< indeicates wehther or not benders detection mode is enabled */
 
    char*                 writemiplib2017featurefilepath;
    char*                 writemiplib2017matrixfilepath;
@@ -989,6 +992,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "write/miplib2017features", "indicates whether miplib2017 features should be written", &conshdlrdata->writemiplib2017features, FALSE, DEFAULT_WRITEMIPLIB2017FEATURES, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "write/miplib2017plotsanddecs", "indicates whether dec and gp files are written for miplib2017", &conshdlrdata->writemiplib2017plotsanddecs, FALSE, DEFAULT_WRITEMIPLIB2017PLOTSANDDECS, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "write/miplib2017shortbasefeatures", "indicates whether base features for miplib 2017 should be shortened", &conshdlrdata->writemiplib2017shortbasefeatures, FALSE, DEFAULT_WRITEMIPLIB2017SHORTBASEFEATURES, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/benders/enabled", "indicates whether benders detection is enabled", &conshdlrdata->detectbenders, FALSE, DEFAULT_DETECTBENDERS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip, "write/miplib2017featurefilepath", "path to the file for miplib2017 feature output", &conshdlrdata->writemiplib2017featurefilepath, FALSE, DEFAULT_WRITEMIPLIB2017FEATUREFILEPATH, NULL, NULL) );
    SCIP_CALL( SCIPaddStringParam(scip, "write/miplib2017matrixfilepath", "path to matrix gp file that is to write", &conshdlrdata->writemiplib2017matrixfilepath, FALSE, DEFAULT_WRITEMIPLIB2017MATRIXFILEPATH, NULL, NULL) );
@@ -1697,6 +1701,18 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
 
    return SCIP_OKAY;
 }
+
+SCIP_Bool SCIPconshdlrDecompDetectBenders(
+   SCIP*                   scip
+   )
+{
+   SCIP_Bool benders;
+
+   SCIPgetBoolParam(scip, "detection/benders/enabled", &benders);
+
+   return benders;
+}
+
 
 SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(
    SCIP*                   scip
@@ -2798,7 +2814,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
             return SCIP_OKAY;
          }
 
-         conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+         conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
          seeedpool = conshdlrdata->seeedpool;
       }
    }
@@ -2806,7 +2822,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
    {
       isfromunpresolved = TRUE;
       if ( conshdlrdata->seeedpoolunpresolved == NULL )
-         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);
+         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE, SCIPconshdlrDecompDetectBenders(scip));
        seeedpool = conshdlrdata->seeedpoolunpresolved;
 
    }
@@ -2816,13 +2832,13 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
 
       {
          if (conshdlrdata->seeedpool == NULL )
-            conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+            conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
          seeedpool = conshdlrdata->seeedpool;
       }
       else
       {
          if ( conshdlrdata->seeedpoolunpresolved == NULL)
-            conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);
+            conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE, SCIPconshdlrDecompDetectBenders(scip));
          seeedpool = conshdlrdata->seeedpoolunpresolved;
       }
 
@@ -3135,7 +3151,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
                return SCIP_OKAY;
             }
 
-            conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+            conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
             seeedpool = conshdlrdata->seeedpool;
          }
       }
@@ -3143,7 +3159,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       {
          isfromunpresolved = TRUE;
          if ( conshdlrdata->seeedpoolunpresolved == NULL )
-            conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);
+            conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE,SCIPconshdlrDecompDetectBenders(scip));
           seeedpool = conshdlrdata->seeedpoolunpresolved;
 
       }
@@ -3153,13 +3169,13 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
 
          {
             if (conshdlrdata->seeedpool == NULL )
-               conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+               conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
             seeedpool = conshdlrdata->seeedpool;
          }
          else
          {
             if ( conshdlrdata->seeedpoolunpresolved == NULL)
-               conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);
+               conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE, SCIPconshdlrDecompDetectBenders(scip));
             seeedpool = conshdlrdata->seeedpoolunpresolved;
          }
 
@@ -3425,7 +3441,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpool(
    assert(conshdlrdata != NULL);
 
    if( conshdlrdata->seeedpool == NULL )
-      conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+      conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
 
 
    return SCIP_OKAY;
@@ -3446,7 +3462,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
    assert(conshdlrdata != NULL);
 
    if( conshdlrdata->seeedpoolunpresolved == NULL )
-      conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);
+      conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE, SCIPconshdlrDecompDetectBenders(scip));
 
    return SCIP_OKAY;
 }
@@ -5212,7 +5228,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    }
 
    if ( conshdlrdata->seeedpool == NULL )
-      conshdlrdata->seeedpool = new gcg::Seeedpool( scip, CONSHDLR_NAME, TRUE );
+      conshdlrdata->seeedpool = new gcg::Seeedpool( scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip) );
 
    seeedpool = conshdlrdata->seeedpool;
 
@@ -5571,7 +5587,7 @@ SCIP_RETCODE DECdetectStructure(
          detectonlyorig = TRUE;
 
       if ( conshdlrdata->seeedpoolunpresolved == NULL && ( classifyOrig || calculateOrigDecomps || detectonlyorig) )
-         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
+         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE, SCIPconshdlrDecompDetectBenders(scip));         /**< seeedpool with original variables and constraints */
 
 
       SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock));
@@ -5651,7 +5667,7 @@ SCIP_RETCODE DECdetectStructure(
          if( conshdlrdata->seeedpool == NULL )
          {
             SCIPdebugMessagePrint(scip, "start creating seeedpool for current problem \n");
-            conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+            conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
             SCIPdebugMessagePrint(scip, "created seeedpool for current problem, n detectors: %d \n", conshdlrdata->ndetectors);
          }
          else
@@ -6231,13 +6247,13 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    if( transformed )
    {
       if (conshdlrdata->seeedpool == NULL )
-         conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+         conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
       seeedpool = conshdlrdata->seeedpool;
    }
    else
    {
       if (conshdlrdata->seeedpoolunpresolved == NULL )
-         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);
+         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE, SCIPconshdlrDecompDetectBenders(scip));
       seeedpool = conshdlrdata->seeedpoolunpresolved;
    }
 
@@ -6290,7 +6306,7 @@ DEC_DECOMP* DECgetBestDecomp(
    //seeedpool = ( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) ? conshdlrdata->seeedpoolunpresolved :  conshdlrdata->seeedpool );
 
    if( conshdlrdata->seeedpool == NULL )
-      conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+      conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
 
    seeedpool = conshdlrdata->seeedpool;
    seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved;
