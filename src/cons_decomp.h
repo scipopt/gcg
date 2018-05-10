@@ -54,7 +54,8 @@ enum scoretype {
    MAX_FORESSEEING_WHITE,
    SETPART_FWHITE,
    MAX_FORESSEEING_AGG_WHITE,
-   SETPART_AGG_FWHITE
+   SETPART_AGG_FWHITE,
+   BENDERS
 };
 
 enum toolboxtype {

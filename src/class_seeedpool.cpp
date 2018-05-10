@@ -638,6 +638,16 @@ SCIP_Bool cmpSeeedsPPCaggFWhite(
 }
 
 
+/** returns TRUE if seeed i has a greater score than seeed j */
+SCIP_Bool cmpSeeedsBenders(
+   SeeedPtr i,
+   SeeedPtr j
+   )
+{
+   return ( i->getScore( BENDERS )  > j->getScore( BENDERS ) );
+}
+
+
 /* method to thin out the vector of given seeeds */
 std::vector<SeeedPtr> thinout(
    std::vector<SeeedPtr> finishedseeeds,
@@ -1850,6 +1860,10 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
    if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::SETPART_AGG_FWHITE )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsPPCaggFWhite);
+
+   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::BENDERS )
+      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsBenders);
+
 
 }
 

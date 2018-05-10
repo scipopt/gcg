@@ -101,7 +101,7 @@ Seeed::Seeed(
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
    nNewBlocks( 0 ), usedClassifier( 0 ), classesToMaster( 0 ), classesToLinking( 0 ), listofancestorids( 0 ),
-   usergiven( USERGIVEN::NOT ), isfromlegacymode( false ), score( -1. ), maxwhitescore( -1. ), strongdecompositionscore(-1.), borderareascore( -1. ),
+   usergiven( USERGIVEN::NOT ), isfromlegacymode( false ), score( -1. ), maxwhitescore( -1. ), bendersscore(-1.), benderareascore(-1.),  strongdecompositionscore(-1.), borderareascore( -1. ),
    maxwhitescoreagg(-1.), blockareascore(-1.), blockareascoreagg(-1.), maxforeseeingwhitescore(-1.),
    maxforeseeingwhitescoreagg(-1.), setpartfwhitescore(-1.), setpartfwhitescoreagg(-1.),
    detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
@@ -152,6 +152,8 @@ Seeed::Seeed(
    score = seeedtocopy->score;
    borderareascore = seeedtocopy->borderareascore;
    maxwhitescore = seeedtocopy->maxwhitescore;
+   bendersscore = -1.;
+   benderareascore = -1.;
    changedHashvalue = seeedtocopy->changedHashvalue;
    detectorClockTimes = seeedtocopy->detectorClockTimes;
    pctVarsToBorder = seeedtocopy->pctVarsToBorder;
@@ -3441,6 +3443,20 @@ SCIP_RETCODE Seeed::displayInfo(
    if( getNOpenconss() + getNOpenconss() == 0 )
           std::cout << " PPC-max-foreseeing-white-aggregated-score: " <<  setpartfwhitescoreagg << std::endl;
 
+   if( getNOpenconss() + getNOpenconss() == 0 )
+          std::cout << " Benderborderarea: " << benderareascore << std::endl;
+
+
+   if( getNOpenconss() + getNOpenconss() == 0 )
+          std::cout << " Bendersscore: " << bendersscore << std::endl;
+
+   if( getNOpenconss() + getNOpenconss() == 0 )
+          std::cout << " blockarea: " << blockareascore << std::endl;
+
+
+   if( getNOpenconss() + getNOpenconss() == 0 )
+          std::cout << " borderareascore: " << borderareascore << std::endl;
+
 
    std::cout << " HassetppMaster: " << hasSetppMaster(givenseeedpool) << std::endl;
    std::cout << " HassetppcMaster: " << hasSetppcMaster(givenseeedpool) << std::endl;
@@ -5211,6 +5227,14 @@ SCIP_Real Seeed::getMaxWhiteScore()
 }
 
 
+/** returns the "maximum white score" */
+SCIP_Real Seeed::getBendersScore()
+{
+
+   return getScore(SCORETYPE::BENDERS);
+}
+
+
 /** returns the number of nonzero coeffs in a certain block */
 int  Seeed::getNCoeffsForBlock(
    gcg::Seeedpool* givenseeedpool,
@@ -5298,6 +5322,14 @@ SCIP_Real Seeed::getScore(
          calcsetpartfwhitescoreagg();
       return setpartfwhitescoreagg;
    }
+
+   if( type == scoretype::BENDERS )
+      {
+         if( bendersscore == -1. )
+            calcbendersscore();
+         return bendersscore;
+      }
+
 
    return 0;
 }
@@ -6834,12 +6866,9 @@ void Seeed::calcmaxwhitescore(){
    if( borderareascore == -1. )
       calcborderareascore();
 
-   /** maxwhitescore = 1 - ( 1 - blackareascore) + (1 - borderareascore ) ) */
+   /** maxwhitescore = 1 - ( 1 - blackareascore + (1 - borderareascore ) ) */
    maxwhitescore = blockareascore + borderareascore - 1.;
 
-   std::cout << "calculated blockareascore: " << blockareascore << std::endl;
-   std::cout << "calculated borderareascore: " << borderareascore << std::endl;
-   std::cout << "calculated maxwhitescore: " << maxwhitescore << std::endl;
 
 
    if( maxwhitescore < 0. )
@@ -6851,6 +6880,92 @@ void Seeed::calcmaxwhitescore(){
 
    return;
 }
+
+void Seeed::calcbenderareascore()
+{
+   unsigned long nrelevantconss;
+   unsigned long nrelevantvars;
+   unsigned long benderborderarea;
+   unsigned long totalarea;
+
+   nrelevantconss = 0;
+   nrelevantvars = 0;
+
+   for( int  c = 0; c < getNMasterconss(); ++c )
+   {
+      bool relevant = true;
+      int cons = getMasterconss()[c];
+      for( int v = 0; v < seeedpool->getNVarsForCons(cons); ++v )
+      {
+         int var = seeedpool->getVarsForCons(cons)[v];
+         if ( isVarOpenvar(var) || isVarMastervar(var) || isVarLinkingvar(var) )
+         {
+            relevant = false;
+            break;
+         }
+
+      }
+      if( relevant )
+         ++nrelevantconss;
+   }
+
+   for( int b = 0; b < getNBlocks(); ++b )
+   {
+      for(int v = 0; v < getNVarsForBlock(b); ++v )
+      {
+         bool relevant = true;
+         int var = getVarsForBlock(b)[v];
+         for( int c = 0; c < seeedpool->getNConssForVar(var); ++c )
+         {
+            int cons = seeedpool->getConssForVar(var)[c];
+            if( isConsMastercons(cons) || isConsOpencons(cons)  )
+            {
+               relevant  = false;
+               break;
+            }
+         }
+         if( relevant )
+            ++nrelevantvars;
+      }
+   }
+
+
+   benderborderarea = ( nrelevantconss * nrelevantvars  );
+   totalarea = ( (unsigned long) getNConss() * (unsigned long) getNVars() );
+   benderareascore =  ( SCIP_Real) benderborderarea / totalarea;
+
+}
+
+void Seeed::calcbendersscore(){
+
+   SCIP_CLOCK* clock;
+
+   SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
+
+   SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
+
+   if( blockareascore == -1. )
+      calcblockareascore();
+
+   if( benderareascore == -1. )
+      calcbenderareascore();
+
+   if( borderareascore == -1. )
+      calcborderareascore();
+
+   /** maxwhitescore = 1 - ( 1 - blockareascore + (1 - borderareascore - benderborderscore ) ) */
+   bendersscore = blockareascore + benderareascore + borderareascore - 1.;
+
+    if( bendersscore < 0. )
+     bendersscore = 0.;
+
+   SCIP_CALL_ABORT(SCIPstopClock( seeedpool->getScip(), clock) );
+   seeedpool->scorecalculatingtime += SCIPgetClockTime( seeedpool->getScip(), clock);
+   SCIP_CALL_ABORT(SCIPfreeClock( seeedpool->getScip(), &clock) );
+
+   return;
+}
+
 
 SCIP_RETCODE Seeed::calcclassicscore()
 {

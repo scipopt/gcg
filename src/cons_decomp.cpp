@@ -309,27 +309,31 @@ char*  SCIPconshdlrDecompGetScoretypeShortName(
    SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
 
 
-   if( sctype == scoretype::MAX_WHITE)
+   if( sctype == scoretype::MAX_WHITE )
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maxwhi") ;
 
-   if( sctype == scoretype::CLASSIC)
+   if( sctype == scoretype::CLASSIC )
          SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classi") ;
 
-   if( sctype == scoretype::BORDER_AREA)
+   if( sctype == scoretype::BORDER_AREA )
          SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "border") ;
 
-   if( sctype == scoretype::MAX_FORESSEEING_WHITE)
+   if( sctype == scoretype::MAX_FORESSEEING_WHITE )
          SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "forswh") ;
 
-   if( sctype == scoretype::MAX_FORESSEEING_AGG_WHITE)
+   if( sctype == scoretype::MAX_FORESSEEING_AGG_WHITE )
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "fawh") ;
 
 
-   if( sctype == scoretype::SETPART_FWHITE)
+   if( sctype == scoretype::SETPART_FWHITE )
          SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh ") ;
 
-   if( sctype == scoretype::SETPART_AGG_FWHITE)
+   if( sctype == scoretype::SETPART_AGG_FWHITE )
            SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfawh") ;
+
+
+   if( sctype == scoretype::BENDERS )
+              SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "bender") ;
 
 
    SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
@@ -370,6 +374,9 @@ char*  SCIPconshdlrDecompGetScoretypeDescription(
 
       if( sctype == scoretype::SETPART_AGG_FWHITE)
          SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
+
+      if( sctype == scoretype::BENDERS)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "experimental score to evaluate benders decompositions")  ;
 
 
       SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
@@ -1028,8 +1035,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
       NO_MODIF, 0, 3, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/scoretype",
-         "indicates which score should be used for comparing (partial) decompositions (0:max white, 1: border area, 2:classic, 3:max foreseeing white, 4: ppc-max-white, 5:max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info): ", &conshdlrdata->currscoretype, FALSE,
-         scoretype::SETPART_FWHITE, 0, 6, NULL, NULL) );
+         "indicates which score should be used for comparing (partial) decompositions (0:max white, 1: border area, 2:classic, 3:max foreseeing white, 4: ppc-max-white, 5:max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info, 7: experimental benders score): ", &conshdlrdata->currscoretype, FALSE,
+         scoretype::SETPART_FWHITE, 0, 7, NULL, NULL) );
 
 
 
@@ -1070,6 +1077,8 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
    nuserpresolvedpartial = 0;
    nuserunpresolvedfull = 0;
    nuserunpresolvedpartial = 0;
+
+//   std::sort( conshdlrdata->listall->size(), conshdlrdata->listall->size(), sort_pred() );
 
    /** count corresponding seeeds */
    for ( i = 0; i < conshdlrdata->listall->size(); ++i )
@@ -1759,6 +1768,8 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+
+   SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
    /** while user has not aborted: show current list extract */
 
    while ( !finished )
