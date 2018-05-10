@@ -156,7 +156,7 @@
 #include "solver_cliquer.h"
 #endif
 
-#ifndef NCPLEXSOLVER
+#ifdef WITH_CPLEXSOLVER
 #include "solver_cplex.h"
 #endif
 
@@ -281,7 +281,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( GCGincludeSolverCliquer(scip) );
 #endif
 
-#ifndef NCPLEXSOLVER
+#ifdef WITH_CPLEXSOLVER
    SCIP_CALL( GCGincludeSolverCplex(scip) );
 #endif
 

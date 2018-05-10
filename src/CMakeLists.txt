@@ -87,7 +87,6 @@ set(gcgsources
     scip_misc.c
     sepa_basis.c
     sepa_master.c
-    solver_cplex.c
     solver_knapsack.c
     solver_mip.c
     solver_xyz.c
@@ -214,7 +213,6 @@ set(gcgheaders
     scip_misc.h
     sepa_basis.h
     sepa_master.h
-    solver_cplex.h
     solver_knapsack.h
     solver_mip.h
     solver_xyz.h
@@ -249,7 +247,16 @@ if(CLIQUER_FOUND)
    set(gcgsources ${gcgsources}
       solver_cliquer.c
    )
-endif()   
+endif()
+
+if(CPLEX_FOUND)
+   set(gcgsources ${gcgsources}
+      solver_cplex.c
+   )
+   set(gcgheaders ${gcgheaders}
+      solver_cplex.h
+   )
+endif()
 
 if(HMETIS_FOUND)
    include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -273,10 +280,10 @@ setLibProperties(libgcg "gcg")
 target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
 
 if(SHARED)
-    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES} ${CLIQUER_PIC_LIBRARIES} ${GSL_PIC_LIBRARIES})
+    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES} ${CLIQUER_PIC_LIBRARIES} ${CPLEX_PIC_LIBRARIES} ${GSL_PIC_LIBRARIES})
     add_executable(gcg main.c ${gcgsources} ${symsources})
 else()
-    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${GSL_LIBRARIES})
+    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES})
     add_executable(gcg main.c)
     target_link_libraries(gcg libgcg)
 endif()
@@ -288,7 +295,7 @@ endif()
 
 target_compile_definitions(gcg PRIVATE EXTERN=extern)
 
-target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${GSL_LIBRARIES})
+target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES})
 
 add_dependencies(libgcg gcg_update_githash)
 add_dependencies(gcg gcg_update_githash)

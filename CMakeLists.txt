@@ -45,6 +45,7 @@ option(OPENMP "should gcg be compiled with openmp" OFF)
 option(GSL "should gcg be compiled with GSL" ON)
 option(GMP "should gmp be linked" ON)
 option(CLIQUER "should cliquer be linked" ON)
+option(CPLEX "should Cplex be used for solving pricing MIPs" OFF)
 option(HMETIS "should hmetis be called" ON)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
 
@@ -89,6 +90,18 @@ if(CLIQUER_FOUND)
 else()
    set(CLIQUER_LIBRARIES "")
    set(CLIQUER_PIC_LIBRARIES "")
+endif()
+
+# CPLEX
+if(CPLEX)
+   find_package(CPLEX REQUIRED)
+endif()
+if(CPLEX_FOUND)
+   include_directories(${CPLEX_INCLUDE_DIRS})
+   set(CPLEX_PIC_LIBRARIES ${CPLEX_LIBRARIES})
+else()
+   set(CPLEX_LIBRARIES "")
+   set(CPLEX_PIC_LIBRARIES "")
 endif()
 
 # HMETIS
