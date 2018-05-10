@@ -827,11 +827,12 @@ SCIP_Bool seeedIsNoDuplicate(
 Seeedpool::Seeedpool(
    SCIP* givenScip,
    const char* conshdlrName,
-   SCIP_Bool _transformed
+   SCIP_Bool _transformed,
+   SCIP_Bool _benders
    ) :
    scip( givenScip ), incompleteSeeeds( 0 ), currSeeeds( 0 ), ancestorseeeds( 0 ), unpresolvedfixedtozerovars(0),
    nVars( SCIPgetNVars( givenScip ) ), nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ),
-   nFinishingDetectors( 0 ), nPostprocessingDetectors(0), nnonzeros( 0 ), candidatesNBlocks( 0 ),   dualvalsrandom(std::vector<SCIP_Real>(0)), dualvalsoptimaloriglp(std::vector<SCIP_Real>(0)) , dualvalsrandomset(FALSE), dualvalsoptimaloriglpcalculated(FALSE), transformed( _transformed ),
+   nFinishingDetectors( 0 ), nPostprocessingDetectors(0), nnonzeros( 0 ), candidatesNBlocks( 0 ),   dualvalsrandom(std::vector<SCIP_Real>(0)), dualvalsoptimaloriglp(std::vector<SCIP_Real>(0)) , dualvalsrandomset(FALSE), dualvalsoptimaloriglpcalculated(FALSE), transformed( _transformed ), benders(_benders),
    classificationtime(0.), nblockscandidatescalctime(0.), postprocessingtime(0.), scorecalculatingtime(0.), translatingtime(0.)
 {
    SCIP_CONS** conss;
@@ -2473,6 +2474,13 @@ bool Seeedpool::hasDuplicate(
 
    return !seeedIsNoDuplicate( seeed, currSeeeds, finishedSeeeds, true );
 }
+
+
+/** returns whether or not this seeedpool is for detectiong decompositions for benders */
+  SCIP_Bool Seeedpool::isForBenders()
+  {
+        return benders;
+  }
 
 
 
