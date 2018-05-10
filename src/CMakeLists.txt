@@ -21,6 +21,7 @@ set(gcgsources
     class_consclassifier.cpp
     class_indexclassifier.cpp
     class_miscvisualization.cpp
+    class_pricingcontroller.cpp
     class_pricingtype.cpp
     class_seeed.cpp
     class_seeedpool.cpp
@@ -116,6 +117,8 @@ set(gcgsources
     presol_roundbound.c
     pricer_gcg.cpp
     pricestore_gcg.c
+    pricingjob.c
+    pricingprob.c
     reader_blk.cpp
     reader_cls.cpp
     reader_dec.cpp
@@ -126,6 +129,7 @@ set(gcgsources
     scip_misc.c
     sepa_basis.c
     sepa_master.c
+    solver.c
     solver_knapsack.c
     solver_mip.c
     stat.c
@@ -164,6 +168,7 @@ set(gcgheaders
     class_consclassifier.h
     class_indexclassifier.h
     class_miscvisualization.h
+    class_pricingcontroller.h
     class_pricingtype.h
     class_seeed.h
     class_seeedpool.h
@@ -252,6 +257,8 @@ set(gcgheaders
     presol_roundbound.h
     pricestore_gcg.h
     pricer_gcg.h
+    pricingjob.h
+    pricingprob.h
     pub_bliss.h
     pub_colpool.h
     pub_decomp.h
@@ -269,6 +276,7 @@ set(gcgheaders
     scip_misc.h
     sepa_basis.h
     sepa_master.h
+    solver.h
     solver_knapsack.h
     solver_mip.h
     stat.h
@@ -368,7 +376,7 @@ set_target_properties(gcg PROPERTIES
 # install the header files of gcg
 install(FILES ${gcgheaders} DESTINATION include/gcg)
 install(FILES ${symheaders} DESTINATION include/gcg)
-install(FILES ${CMAKE_BINARY_DIR}/src/hmetis.h DESTINATION include/gcg)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmetis.h DESTINATION include/gcg)
 
 # install the binary and the library to appropriate locations and add them to an export group
 install(TARGETS gcg libgcg EXPORT gcg-targets
