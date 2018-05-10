@@ -35,6 +35,7 @@
 #include "scip_misc.h"
 #include "scip/scipdefplugins.h"
 #include <string.h>
+#include "scip/cons_indicator.h"
 
 /** returns TRUE if variable is relevant, FALSE otherwise */
 SCIP_Bool GCGisVarRelevant(
@@ -95,6 +96,10 @@ consType GCGconsGetType(
    {
       return sos2;
    }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+      {
+         return sos2;
+      }
    return unknown;
 }
 
@@ -184,6 +189,10 @@ SCIP_Real GCGconsGetRhs(
    else if( strcmp(conshdlrname, "SOS2") == 0 )
    {
       SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
+   }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+   {
+      return 0.;
    }
    else
    {
@@ -277,6 +286,10 @@ SCIP_Real GCGconsGetLhs(
    {
       SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
    }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+   {
+      return -SCIPinfinity(scip);
+   }
    else
    {
       SCIPdebugMessage("WARNING: NOT IMPLEMENTED");
@@ -337,6 +350,10 @@ SCIP_Real GCGconsGetDualfarkas(
    {
       SCIPdebugMessage("masterbranch: return dualsol 0\n");
       return 0.0;
+   }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+   {
+      SCIPdebugMessage("WARNING: indicator conss NOT IMPLEMENTED");
    }
    else
    {
@@ -399,6 +416,10 @@ SCIP_Real GCGconsGetDualsol(
       SCIPdebugMessage("masterbranch: return dualsol 0\n");
       return 0.0;
    }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+   {
+      SCIPdebugMessage("WARNING: indicator conss NOT IMPLEMENTED");
+   }
    else
    {
       SCIPdebugMessage("WARNING: NOT IMPLEMENTED");
@@ -423,6 +444,8 @@ int GCGconsGetNVars(
    assert(conshdlr != NULL);
    conshdlrname = SCIPconshdlrGetName(conshdlr);
 
+
+
    if( strcmp(conshdlrname, "linear") == 0 )
    {
       return SCIPgetNVarsLinear(scip, cons);
@@ -440,6 +463,10 @@ int GCGconsGetNVars(
       return SCIPgetNVarsKnapsack(scip, cons);
    }
    else if( strcmp(conshdlrname, "varbound") == 0 )
+   {
+      return 2;
+   }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
    {
       return 2;
    }
@@ -567,6 +594,17 @@ SCIP_RETCODE GCGconsGetVars(
 
       BMScopyMemoryArray(vars, SCIPgetVarsSOS2(scip, cons), nvars);
    }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+   {
+      if( nvars != 2 )
+         return SCIP_INVALIDDATA;
+
+      /** indicator conss : s - My <= 0 */
+
+      /** slack variable first */
+      vars[0] =   SCIPgetSlackVarIndicator(cons);
+      vars[1] =   SCIPgetBinaryVarIndicator(cons);
+   }
    else
    {
       SCIPwarningMessage(scip, "WARNING: NOT IMPLEMENTED <%s>\n", conshdlrname);
@@ -683,11 +721,40 @@ SCIP_RETCODE GCGconsGetVals(
       /* store constraint */
       SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
    }
+   else if( strcmp(conshdlrname, "indicator") == 0 )
+   {
+      if( nvals != 2 )
+         return SCIP_INVALIDDATA;
+
+      /** indicator conss : s - My <= 0 */
+
+      /** slack variable first */
+      vals[0] =   1.;
+      vals[1] =   SCIPvarGetUbGlobal( SCIPgetSlackVarIndicator(cons) );
+   }
    else
    {
       SCIPdebugMessage("WARNING: UNKNOWN NOT IMPLEMENTED: %s\n", conshdlrname);
    }
    return SCIP_OKAY;
+}
+
+/** returns true if the constraint should be a master constraint and false otherwise */
+SCIP_Bool GCGconsIsRanged(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to check */
+){
+
+   SCIP_Real lhs;
+   SCIP_Real rhs;
+
+   assert(scip != NULL);
+
+   rhs = GCGconsGetRhs(scip, cons);
+   lhs = GCGconsGetLhs(scip, cons);
+
+
+   return !(SCIPisEQ(scip, lhs, rhs) || SCIPisInfinity(scip, -lhs) || SCIPisInfinity(scip, rhs) );
 }
 
 
@@ -776,6 +843,78 @@ SCIP_Bool GCGgetConsIsSetppc(
    SCIPdebugPrintf("%s master\n", relevant ? "in" : "not in");
    return relevant;
 }
+
+/** returns true if the constraint should be a master constraint and false otherwise */
+SCIP_Bool GCGgetConsIsCardinalityCons(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons               /**< constraint to check */
+)
+{
+   SCIP_VAR** vars;
+   SCIP_Real* vals;
+   int i;
+
+   int nvars;
+   SCIP_Bool relevant = TRUE;
+   assert(scip != NULL);
+   assert(cons != NULL);
+
+   SCIPdebugMessage("cons %s is ", SCIPconsGetName(cons));
+
+   if(  GCGconsGetType(cons) == setpartitioning  )
+   {
+      return TRUE;
+   }
+   nvars = GCGconsGetNVars(scip, cons);
+   vars = NULL;
+   vals = NULL;
+   if( nvars > 0 )
+   {
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vars, nvars) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals, nvars) );
+      SCIP_CALL_ABORT( GCGconsGetVars(scip, cons, vars, nvars) );
+      SCIP_CALL_ABORT( GCGconsGetVals(scip, cons, vals, nvars) );
+   }
+
+   /* check vars and vals for integrality */
+   for( i = 0; i < nvars && relevant; ++i )
+   {
+      assert(vars != NULL);
+      assert(vals != NULL);
+
+//      if( !SCIPvarIsBinary(vars[i]) )
+//      {
+//         SCIPdebugPrintf("(%s is not integral) ", SCIPvarGetName(vars[i]) );
+//         relevant = FALSE;
+//      }
+      if( !SCIPisEQ(scip, vals[i], 1.0) )
+      {
+         SCIPdebugPrintf("(coeff for var %s is %.2f != 1.0) ", SCIPvarGetName(vars[i]), vals[i] );
+         relevant = FALSE;
+      }
+   }
+
+   if( relevant )
+   {
+      SCIP_Real rhs = GCGconsGetRhs(scip, cons);
+      SCIP_Real lhs = GCGconsGetLhs(scip, cons);
+      SCIPdebugPrintf("(lhs %.2f, rhs %.2f)", lhs, rhs);
+
+      if(! SCIPisFeasEQ(scip, lhs, rhs) )
+      {
+         relevant = FALSE;
+      }
+   }
+
+   /* free temporary data  */
+   SCIPfreeBufferArrayNull(scip, &vals);
+   SCIPfreeBufferArrayNull(scip, &vars);
+
+   SCIPdebugPrintf("%s master\n", relevant ? "in" : "not in");
+   return relevant;
+}
+
+
 
 /** returns TRUE or FALSE, depending whether we are in the root node or not */
 SCIP_Bool GCGisRootNode(

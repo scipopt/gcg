@@ -88,7 +88,7 @@
 
 #include "scip/presol_implics.h"
 #include "scip/presol_inttobinary.h"
-#include "scip/presol_trivial.h"
+#include "presol_roundbound.h"
 #include "scip/presol_boundshift.h"
 
 #if USEPROP
@@ -185,7 +185,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludePresolBoundshift(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
-   SCIP_CALL( SCIPincludePresolTrivial(scip) );
+   SCIP_CALL( SCIPincludePresolRoundbound(scip) );
 
 #if USEPROP
    SCIP_CALL( SCIPincludePropDualfix(scip) );

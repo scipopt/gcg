@@ -90,17 +90,40 @@ public:
    /** Destruktor */
    virtual ~Graph();
 
+   /** adds n nodes in the graph at the same time. it is much faster than to call addNode() many times */
+   SCIP_RETCODE addNNodes(int _n_nodes);
+
+   /** adds n nodes in the graph at the same time. it is much faster than to call addNode() many times. weights represent node weights */
+   SCIP_RETCODE addNNodes(int _n_nodes, std::vector<int> weights);
+
    /** adds the node with the given weight to the graph */
    SCIP_RETCODE addNode(int i,int weight);
 
+   /** adds the node with the 0 weight to the graph */
+   SCIP_RETCODE addNode();
+
    /** adds the edge to the graph */
    SCIP_RETCODE addEdge(int i, int j);
+
+   /** adds the weighted edge to the graph */
+   SCIP_RETCODE addEdge(int i, int j, double weight);
+
+   /** sets the weight of the edge in the graph */
+   SCIP_RETCODE setEdge(int i, int j, double weight);
+
+   /** returns the weight of the edge in the graph */
+   double getEdgeWeight(int i, int j);
+
+   std::vector<std::pair<int, double> > getNeighborWeights(int i);
 
    /** return the number of nodes */
    int getNNodes();
 
    /** return the number of edges (or hyperedges) */
    int getNEdges();
+
+   /** get list of edges in the graph (not defined how edges are implemented) */
+   SCIP_RETCODE getEdges(std::vector<void*>& edges);
 
    /** returns whether there is an edge between nodes i and j */
    virtual int edge(int i, int j);
@@ -134,6 +157,7 @@ public:
       SCIP_Bool          writeweights        /**< whether to write weights */
     );
 
+
    /**
     * reads the partition from the given file.
     * The format is graph dependent. The default is a file with one line for each node a
@@ -164,6 +188,36 @@ public:
    }
 
    SCIP_RETCODE flush();
+
+   SCIP_RETCODE normalize();
+
+   virtual double getEdgeWeightPercentile(double q);
+
+#ifdef WITH_GSL
+   /** function needed for MST clustering */
+   virtual void expand(int factor);
+
+   /** function needed for MST clustering */
+   virtual void inflate(double factor);
+
+   /** function needed for MST clustering */
+   virtual void colL1Norm();
+
+   /** function needed for MST clustering */
+   virtual void prune();
+
+   /** function needed for MST clustering */
+   virtual bool stopMCL(int iter);
+
+   /** function needed for MST clustering */
+   virtual std::vector<int> getClustersMCL();
+
+   /** function needed for MST clustering */
+   virtual void initMCL();
+
+   /** function needed for MST clustering */
+   virtual void clearMCL();
+#endif
 
 };
 

@@ -31,6 +31,7 @@
  * @author  Gerald Gamrath
  * @author  Martin Bergner
  * @author  Alexander Gross
+ * @author  Michael Bastubbe
  *
  * \bug
  * - The memory limit is not strictly enforced
@@ -40,13 +41,15 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include <assert.h>
+/*#define SCIP_DEBUG*/
+
 #include <string.h>
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
+#include "scip/misc.h"
 
 #include "relax_gcg.h"
 
@@ -59,6 +62,7 @@
 #include "nodesel_master.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
+
 
 #include "gcg.h"
 
@@ -143,6 +147,9 @@ struct SCIP_RelaxData
 
    /* statistical information */
    SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
+
+   /* filename information */
+   const char*           filename;
 };
 
 /*
@@ -264,7 +271,7 @@ SCIP_RETCODE convertStructToGCG(
    assert(DECdecompGetLinkingconss(decdecomp) != NULL || DECdecompGetNLinkingconss(decdecomp) == 0);
    assert(DECdecompGetNSubscipvars(decdecomp) != NULL || DECdecompGetSubscipvars(decdecomp) == NULL);
 
-   SCIP_CALL( DECdecompRemoveDeletedConss(scip, decdecomp) );
+   //SCIP_CALL( DECdecompRemoveDeletedConss(scip, decdecomp) );
    SCIP_CALL( DECdecompAddRemainingConss(scip, decdecomp) );
    SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
 
@@ -356,6 +363,8 @@ SCIP_RETCODE convertStructToGCG(
          {
             SCIP_VAR** curvars;
             int        ncurvars;
+            if( SCIPconsIsDeleted(subscipconss[j][k]) )
+               continue;
             ncurvars = GCGconsGetNVars(scip, subscipconss[j][k]);
             curvars = NULL;
             if( ncurvars > 0 )
@@ -748,6 +757,56 @@ SCIP_RETCODE checkIdentical(
 
 /* checks whether two pricingproblems represent identical blocks */
 static
+SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
+   SCIP_HASHMAP**        hashorig2pricingvar,/**< mapping from orig to pricingvar  */
+   int                   probnr1,            /**< number of the first pricingproblem */
+   int                   probnr2,            /**< number of the second pricingproblem */
+   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
+                                              *   to those of the first pricing problem */
+   SCIP_Bool*            identical           /**< return value: are blocks identical */
+   )
+{
+   SCIP* scip1;
+   SCIP* scip2;
+   int seeedid;
+
+
+   assert(relaxdata != NULL);
+   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
+   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
+   assert(varmap != NULL);
+   assert(identical != NULL);
+
+   scip1 = relaxdata->pricingprobs[probnr1];
+   scip2 = relaxdata->pricingprobs[probnr2];
+   assert(scip1 != NULL);
+   assert(scip2 != NULL);
+
+   *identical = FALSE;
+
+   /* 1) find seeed number */
+
+   seeedid = DECdecompGetSeeedID(relaxdata->decdecomp);
+
+   /* 2) are pricingproblems identical for this seeed? */
+   SCIP_CALL(SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(scip, seeedid, probnr2, probnr1, identical) );
+
+   /* 3) create varmap if pricing probs are identical */
+   if( *identical )
+   {
+      SCIP_CALL(SCIPconshdlrDecompCreateVarmapForSeeedId(scip, hashorig2pricingvar, seeedid, probnr2, probnr1, scip2, scip1, varmap) );
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
+
+
+static
 SCIP_RETCODE pricingprobsAreIdentical(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
@@ -783,7 +842,7 @@ SCIP_RETCODE pricingprobsAreIdentical(
    checkIdentical(scip, relaxdata, probnr1, probnr2, varmap, identical, scip1, scip2);
 #else
    SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1)+1) );
-   SCIP_CALL( cmpGraphPair(scip, scip1, scip2, probnr1, probnr2, &result, varmap, consmap) );
+   SCIP_CALL( cmpGraphPair(scip, scip2, scip1, probnr2, probnr1, &result, varmap, consmap) );
 
    *identical = (result == SCIP_SUCCESS);
 
@@ -797,7 +856,8 @@ SCIP_RETCODE pricingprobsAreIdentical(
 static
 SCIP_RETCODE checkIdenticalBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RELAXDATA*       relaxdata           /**< the relaxator data data structure*/
+   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator data data structure*/
+   SCIP_HASHMAP**         hashorig2pricingvar /**< mapping from orig to pricingvar for each block */
    )
 {
    SCIP_HASHMAP* varmap;
@@ -822,14 +882,24 @@ SCIP_RETCODE checkIdenticalBlocks(
       relaxdata->blockrepresentative[i] = i;
       relaxdata->nblocksidentical[i] = 1;
    }
+
    relaxdata->nrelpricingprobs = relaxdata->npricingprobs;
    nrelevant = 0;
 
-   if( !relaxdata->discretization || !relaxdata->aggregation )
+   if(  ( !relaxdata->discretization || !relaxdata->aggregation ) )
    {
       SCIPdebugMessage("discretization is off, aggregation is off\n");
       return SCIP_OKAY;
    }
+
+
+   if(  relaxdata->nlinkingvars != 0 )
+      {
+         SCIPdebugMessage("aggregation is off in presence of linking vars\n");
+         return SCIP_OKAY;
+      }
+
+
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {
@@ -842,7 +912,26 @@ SCIP_RETCODE checkIdenticalBlocks(
                SCIPblkmem(scip),
                5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /* +1 to deal with empty subproblems */
 
-         SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
+         /** if (possibly deactive) conss has been added since structure detecting we need to reevaluate identity of subproblems */
+         if( SCIPgetNConss(scip) != SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ) )
+         {
+            SCIPdebugMessage("nconss: %d; ndetectionconss: %d -> using classical identity test \n", SCIPgetNConss(scip), SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ));
+            SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
+         }
+         else
+         {
+            SCIPdebugMessage( "nconss: %d; ndetectionconss: %d -> using seeed information for identity test \n", SCIPgetNConss(scip), SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ) );
+            SCIP_CALL( pricingprobsAreIdenticalFromDetectionInfo( scip, relaxdata, hashorig2pricingvar, i, j, varmap, &identical ) );
+         }
+
+
+/**
+ *  new method of cons_decomp that uses seeed information
+ * 1) check varmap
+ * 2) build varmap for seeeds in seeed datatstructures
+ * 3) translate varmap when transforming seeed to decomp (store varmap in decomp or seeed?)
+ * 4) write method in cons_decomp using seeed agg info and varmap*/
+
 
          if( identical )
          {
@@ -853,7 +942,7 @@ SCIP_RETCODE checkIdenticalBlocks(
             nvars = SCIPgetNVars(relaxdata->pricingprobs[i]);
 
             /*
-             * quick check whether some of the variables are linking in which case we can not aggregate
+             * quick check whether some of the variables are linking in which case we cannot aggregate
              * this is suboptimal but we use bliss anyway
              */
 
@@ -958,6 +1047,7 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/maxprerounds", 0) );
    SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/freq") );
    SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );
+
 
    /* disable solution storage ! */
    SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
@@ -1174,12 +1264,13 @@ SCIP_RETCODE createPricingVariables(
       {
          int tempblock;
          tempblock = (int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar)-1; /*lint !e507*/
-         if( tempblock == DECdecompGetNBlocks(relaxdata->decdecomp) )
+         if( tempblock >= DECdecompGetNBlocks(relaxdata->decdecomp) )
          {
             blocknr = -1;
          }
          else
          {
+            SCIPinfoMessage(scip, NULL, " changed block number to %d \n", tempblock );
             blocknr = tempblock; /*lint !e806*/
          }
       }
@@ -1459,7 +1550,7 @@ SCIP_RETCODE createMasterprobConss(
    nmasterconss = DECdecompGetNLinkingconss(relaxdata->decdecomp);
    newcons = NULL;
 
-   assert(SCIPhashmapGetNElements(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
+ //  assert(SCIPhashmapGetNElements(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
    for( c = 0; c < nmasterconss; ++c )
    {
       if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[c])), "origbranch") == 0 )
@@ -1546,6 +1637,8 @@ SCIP_RETCODE createPricingprobConss(
          assert(success);
 
          SCIP_CALL( SCIPaddCons(relaxdata->pricingprobs[b], newcons) );
+
+
 #ifndef NDEBUG
          {
             SCIP_VAR** curvars;
@@ -1562,7 +1655,10 @@ SCIP_RETCODE createPricingprobConss(
 
                for( i = 0; i < ncurvars; ++i )
                {
-                  assert(GCGvarIsPricing(curvars[i]));
+                  if( SCIPisFeasEQ( scip, SCIPvarGetLbGlobal(curvars[i]), SCIPvarGetUbGlobal(curvars[i]) ) && SCIPisFeasEQ( scip, SCIPvarGetUbGlobal(curvars[i]), 0. )  )
+                     continue;
+
+                  assert(GCGvarIsPricing(curvars[i]) || ( SCIPvarIsNegated(curvars[i]) && GCGvarIsPricing(SCIPvarGetNegatedVar(curvars[i]) ) ) );
                }
 
                SCIPfreeBufferArrayNull(scip, &curvars);
@@ -1602,6 +1698,7 @@ SCIP_RETCODE createMaster(
    assert(relaxdata != NULL);
 
    assert(relaxdata->decdecomp != NULL);
+
 
    SCIP_CALL( convertStructToGCG(scip, relaxdata, relaxdata->decdecomp) );
 
@@ -1656,7 +1753,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
 
    /* check for identity of blocks */
-   SCIP_CALL( checkIdenticalBlocks(scip, relaxdata) );
+   SCIP_CALL( checkIdenticalBlocks(scip, relaxdata, hashorig2pricingvar) );
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {
@@ -1949,10 +2046,19 @@ SCIP_RETCODE initRelaxator(
       relaxdata->decdecomp = DECgetBestDecomp(scip);
       if( relaxdata->decdecomp == NULL )
       {
-         SCIPerrorMessage("No decomposition specified!\n");
-         return SCIP_ERROR;
+         SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE) );
+         relaxdata->decdecomp = DECgetBestDecomp(scip);
+         if( relaxdata->decdecomp == NULL )
+         {
+            SCIPerrorMessage("No decomposition specified!\n");
+            return SCIP_ERROR;
+         }
       }
    }
+
+   SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks, %d linking vars and %d linking constraints.\n", DECdecompGetNBlocks(relaxdata->decdecomp), DECdecompGetNLinkingvars(relaxdata->decdecomp), DECdecompGetNLinkingconss(relaxdata->decdecomp));
+   SCIPinfoMessage(scip, NULL, "This decomposition has a maxwhite score of %f .\n", DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
+
 
    /* permute the decomposition if the permutation seed is set */
    SCIP_CALL( SCIPgetIntParam(scip, "randomization/permutationseed", &permutationseed) );
@@ -2092,6 +2198,8 @@ void initRelaxdata(
 
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
+
+   relaxdata->filename = NULL;
 }
 
 /*
@@ -2113,6 +2221,13 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
    }
 
+   /* free used decomposition */
+   if( relaxdata->decdecomp != NULL )
+   {
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
+   }
+
+   SCIPfreeBlockMemoryArrayNull( scip, & relaxdata->filename, SCIP_MAXSTRLEN);
    SCIPfreeMemory(scip, &relaxdata);
 
    return SCIP_OKAY;
@@ -2130,6 +2245,9 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   if( relaxdata->decdecomp != NULL )
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
 
    /* free array for branchrules*/
    if( relaxdata->nbranchrules > 0 )
@@ -2265,6 +2383,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
    *result = SCIP_DIDNOTRUN;
+
 
    if( !relaxdata->relaxisinitialized )
    {
@@ -3785,8 +3904,38 @@ void GCGsetStructDecdecomp(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
+   if( relaxdata->decdecomp != NULL )
+      DECdecompFree(scip, &relaxdata->decdecomp );
+
    relaxdata->decdecomp = decdecomp;
 }
+
+/** sets the structure information */
+SCIP_RETCODE GCGsetFilename(
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           filename           /**< input file name */
+ )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+   assert(filename != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+   if (relaxdata->filename != NULL)
+      SCIPfreeBlockMemoryArray(scip, &(relaxdata->filename), SCIP_MAXSTRLEN);
+
+   SCIP_CALL( SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, filename, SCIP_MAXSTRLEN ) );
+
+   return SCIP_OKAY;
+}
+
+
 
 /** gets the structure information */
 DEC_DECOMP* GCGgetStructDecdecomp(
@@ -3805,6 +3954,33 @@ DEC_DECOMP* GCGgetStructDecdecomp(
    assert(relaxdata != NULL);
 
    return relaxdata->decdecomp;
+}
+
+/** gets the filename information if exists*/
+const char* GCGgetFilename(
+   SCIP*                 scip               /**< SCIP data structure */
+)
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   if( relaxdata->filename == NULL )
+   {
+      char help[SCIP_MAXSTRLEN];
+      (void) strncat( help, "unknown", 7 );
+      SCIP_CALL_ABORT(SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, help, SCIP_MAXSTRLEN ) );
+   }
+
+   return relaxdata->filename;
+
 }
 
 /** gets the total memory used after problem creation stage for all pricingproblems */

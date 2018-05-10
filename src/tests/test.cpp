@@ -79,9 +79,10 @@ class GcgResultTest : public ::testing::Test {
      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
      SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/arrowheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/dbscan/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/random/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/staircase/enabled", FALSE) );
 
      SCIP_CALL_ABORT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
      SCIP_CALL_ABORT( SCIPpresolve(scip) );
@@ -153,9 +154,9 @@ class GcgLibTest : public ::testing::Test {
    virtual void SetUp() {
       SCIP_CALL_ABORT( SCIPcreate(&scip) );
       SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
-      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
-      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
-      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
+      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/arrowheur/enabled", FALSE) );
+      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/random/enabled", FALSE) );
+      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/staircase/enabled", FALSE) );
       SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
       SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
    }
@@ -167,11 +168,12 @@ class GcgLibTest : public ::testing::Test {
 
 SCIP* GcgLibTest::scip = NULL;
 
-
+/* working, but too slow, so just removed it :)
 TEST_F(GcgLibTest, FreeTransformTest) {
    SCIP_RESULT result;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
-   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detection/detectors/arrowheur/enabled", FALSE) );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detection/detectors/dbscan/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
@@ -192,7 +194,8 @@ TEST_F(GcgLibTest, FreeTransformTest) {
 TEST_F(GcgLibTest, FreeProbTest) {
    SCIP_RESULT result;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
-   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detection/detectors/arrowheur/enabled", FALSE) );
+   //SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detection/detectors/dbscan/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
@@ -215,7 +218,7 @@ TEST_F(GcgLibTest, FreeSolveTest) {
    int nconss;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
    nconss = SCIPgetNConss(scip);
-   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detection/detectors/arrowheur/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
@@ -232,7 +235,7 @@ TEST_F(GcgLibTest, FreeSolveTest) {
 
    ASSERT_EQ(SCIP_STATUS_OPTIMAL, SCIPgetStatus(scip));
    ASSERT_EQ(nconss+1, SCIPgetNConss(scip));
-}
+}*/
 
 class GcgDecTest : public ::testing::Test {
  protected:
@@ -242,9 +245,9 @@ class GcgDecTest : public ::testing::Test {
      SCIP_CALL_ABORT( SCIPcreate(&scip) );
      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/arrowheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/random/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/staircase/enabled", FALSE) );
    }
 
    virtual void TearDown() {

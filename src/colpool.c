@@ -547,4 +547,3 @@ SCIP_Longint GCGcolpoolGetNColsFound(
 
    return colpool->ncolsfound;
 }
-

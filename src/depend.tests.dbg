@@ -360,7 +360,8 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/gtest/gtest/gtest_prod.h lib/gtest/gtest/gtest-test-part.h \
  lib/gtest/gtest/gtest-typed-test.h lib/gtest/gtest/gtest_pred_impl.h \
  src/graph/graph_tclique.h src/graph/bridge.h \
- lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h
+ lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
+ src/graph/graph_gcg.h
 $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  src/graph/bipartitegraph.h src/graph/matrixgraph.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
@@ -426,7 +427,13 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
  src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
  src/type_detector.h src/graph/bridge.h src/graph/graph_interface.h \
- src/graph/graph.h src/tests/graphtest.h src/tests/test.h \
+ src/class_seeed.h src/struct_detector.h src/cons_decomp.h \
+ src/class_consclassifier.h src/class_indexclassifier.h \
+ src/class_varclassifier.h src/graph/graph_gcg.h src/graph/graph.h \
+ src/class_seeedpool.h src/gcg.h src/type_branchgcg.h src/type_solver.h \
+ src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h src/pub_gcgvar.h \
+ src/pub_decomp.h src/class_seeed.h src/graph/graph.h \
+ src/tests/graphtest.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -544,7 +551,7 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/gtest/gtest/internal/gtest-param-util-generated.h \
  lib/gtest/gtest/gtest_prod.h lib/gtest/gtest/gtest-test-part.h \
  lib/gtest/gtest/gtest-typed-test.h lib/gtest/gtest/gtest_pred_impl.h \
- src/graph/graph_tclique.h
+ src/graph/graph_tclique.h src/graph/graph_gcg.h
 $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  src/graph/hyperrowcolgraph.h src/graph/matrixgraph.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
@@ -610,7 +617,13 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
  src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
  src/type_detector.h src/graph/bridge.h src/graph/graph_interface.h \
- src/graph/hypergraph.h src/graph/graph.h src/tests/test.h \
+ src/class_seeed.h src/struct_detector.h src/cons_decomp.h \
+ src/class_consclassifier.h src/class_indexclassifier.h \
+ src/class_varclassifier.h src/graph/graph_gcg.h src/graph/graph.h \
+ src/class_seeedpool.h src/gcg.h src/type_branchgcg.h src/type_solver.h \
+ src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h src/pub_gcgvar.h \
+ src/pub_decomp.h src/class_seeed.h src/graph/hypergraph.h \
+ src/graph/graph.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -728,7 +741,7 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/gtest/gtest/internal/gtest-param-util-generated.h \
  lib/gtest/gtest/gtest_prod.h lib/gtest/gtest/gtest-test-part.h \
  lib/gtest/gtest/gtest-typed-test.h lib/gtest/gtest/gtest_pred_impl.h \
- src/tests/graphtest.h src/graph/graph_tclique.h
+ src/tests/graphtest.h src/graph/graph_tclique.h src/graph/graph_gcg.h
 $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  src/graph/hypercolgraph.h src/graph/matrixgraph.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
@@ -794,7 +807,13 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
  src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
  src/type_detector.h src/graph/bridge.h src/graph/graph_interface.h \
- src/graph/hypergraph.h src/graph/graph.h src/tests/test.h \
+ src/class_seeed.h src/struct_detector.h src/cons_decomp.h \
+ src/class_consclassifier.h src/class_indexclassifier.h \
+ src/class_varclassifier.h src/graph/graph_gcg.h src/graph/graph.h \
+ src/class_seeedpool.h src/gcg.h src/type_branchgcg.h src/type_solver.h \
+ src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h src/pub_gcgvar.h \
+ src/pub_decomp.h src/class_seeed.h src/graph/hypergraph.h \
+ src/graph/graph.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -912,7 +931,7 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/gtest/gtest/internal/gtest-param-util-generated.h \
  lib/gtest/gtest/gtest_prod.h lib/gtest/gtest/gtest-test-part.h \
  lib/gtest/gtest/gtest-typed-test.h lib/gtest/gtest/gtest_pred_impl.h \
- src/tests/graphtest.h src/graph/graph_tclique.h
+ src/tests/graphtest.h src/graph/graph_tclique.h src/graph/graph_gcg.h
 $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  src/graph/hyperrowgraph.h src/graph/matrixgraph.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
@@ -978,7 +997,13 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
  src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
  src/type_detector.h src/graph/bridge.h src/graph/graph_interface.h \
- src/graph/hypergraph.h src/graph/graph.h src/tests/test.h \
+ src/class_seeed.h src/struct_detector.h src/cons_decomp.h \
+ src/class_consclassifier.h src/class_indexclassifier.h \
+ src/class_varclassifier.h src/graph/graph_gcg.h src/graph/graph.h \
+ src/class_seeedpool.h src/gcg.h src/type_branchgcg.h src/type_solver.h \
+ src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h src/pub_gcgvar.h \
+ src/pub_decomp.h src/class_seeed.h src/graph/hypergraph.h \
+ src/graph/graph.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -1096,7 +1121,7 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/gtest/gtest/internal/gtest-param-util-generated.h \
  lib/gtest/gtest/gtest_prod.h lib/gtest/gtest/gtest-test-part.h \
  lib/gtest/gtest/gtest-typed-test.h lib/gtest/gtest/gtest_pred_impl.h \
- src/tests/graphtest.h src/graph/graph_tclique.h
+ src/tests/graphtest.h src/graph/graph_tclique.h src/graph/graph_gcg.h
 $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
@@ -1701,7 +1726,13 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
  src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
  src/type_detector.h src/graph/bridge.h src/graph/graph_interface.h \
- src/graph/bipartitegraph.h src/graph/matrixgraph.h src/tests/test.h \
+ src/graph/bipartitegraph.h src/graph/matrixgraph.h src/class_seeed.h \
+ src/struct_detector.h src/cons_decomp.h src/class_consclassifier.h \
+ src/class_indexclassifier.h src/class_varclassifier.h \
+ src/graph/graph_gcg.h src/graph/graph.h src/class_seeedpool.h src/gcg.h \
+ src/type_branchgcg.h src/type_solver.h src/pub_gcgcol.h \
+ src/type_gcgcol.h src/struct_gcgcol.h src/pub_gcgvar.h src/pub_decomp.h \
+ src/class_seeed.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -1819,7 +1850,7 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/gtest/gtest/internal/gtest-param-util-generated.h \
  lib/gtest/gtest/gtest_prod.h lib/gtest/gtest/gtest-test-part.h \
  lib/gtest/gtest/gtest-typed-test.h lib/gtest/gtest/gtest_pred_impl.h \
- src/tests/graphtest.h src/graph/graph_tclique.h
+ src/tests/graphtest.h src/graph/graph_tclique.h src/graph/graph_gcg.h
 $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  src/graph/columngraph.h src/graph/graph.h lib/scip/src/objscip/objscip.h \
  lib/scip/src/objscip/objbranchrule.h lib/scip/src/scip/scip.h \
@@ -1885,7 +1916,13 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
  src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
  src/type_detector.h src/graph/bridge.h src/graph/graph_interface.h \
- src/graph/bipartitegraph.h src/graph/matrixgraph.h src/tests/test.h \
+ src/graph/bipartitegraph.h src/graph/matrixgraph.h src/class_seeed.h \
+ src/struct_detector.h src/cons_decomp.h src/class_consclassifier.h \
+ src/class_indexclassifier.h src/class_varclassifier.h \
+ src/graph/graph_gcg.h src/graph/graph.h src/class_seeedpool.h src/gcg.h \
+ src/type_branchgcg.h src/type_solver.h src/pub_gcgcol.h \
+ src/type_gcgcol.h src/struct_gcgcol.h src/pub_gcgvar.h src/pub_decomp.h \
+ src/class_seeed.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -2003,7 +2040,7 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/gtest/gtest/internal/gtest-param-util-generated.h \
  lib/gtest/gtest/gtest_prod.h lib/gtest/gtest/gtest-test-part.h \
  lib/gtest/gtest/gtest-typed-test.h lib/gtest/gtest/gtest_pred_impl.h \
- src/tests/graphtest.h src/graph/graph_tclique.h
+ src/tests/graphtest.h src/graph/graph_tclique.h src/graph/graph_gcg.h
 $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
@@ -2728,9 +2765,16 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/tclique/tclique_def.h src/graph/weights.h src/pub_decomp.h \
  src/type_decomp.h src/type_detector.h src/graph/graph.h \
  src/graph/bridge.h src/graph/graph_interface.h \
- src/graph/graphalgorithms.h src/graph/hypergraph.h \
- src/graph/graphalgorithms_def.h src/graph/graphalgorithms.h \
- src/graph/graph_tclique.h
+ src/graph/graphalgorithms.h src/graph/hypergraph.h src/graph/graph_gcg.h \
+ src/graph/graphalgorithms_def.h src/graph/graph_tclique.h \
+ src/graph/graph_gcg.h src/graph/rowgraph_weighted.h src/graph/rowgraph.h \
+ src/graph/bipartitegraph.h src/graph/matrixgraph.h src/class_seeed.h \
+ src/struct_detector.h src/cons_decomp.h src/class_consclassifier.h \
+ src/class_indexclassifier.h src/class_varclassifier.h \
+ src/graph/graph_gcg.h src/graph/graph.h src/class_seeedpool.h src/gcg.h \
+ src/type_branchgcg.h src/type_solver.h src/pub_gcgcol.h \
+ src/type_gcgcol.h src/struct_gcgcol.h src/pub_gcgvar.h src/pub_decomp.h \
+ src/class_seeed.h src/graph/graph.h
 $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \

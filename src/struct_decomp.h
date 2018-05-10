@@ -28,6 +28,7 @@
 /**@file   struct_decomp.h
  * @brief  structure information for decomposition information in GCG projects
  * @author Martin Bergner
+ * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -57,14 +58,28 @@ struct DecDecomp
    int                   nlinkingconss;      /**< number of linking constraints */
    SCIP_VAR**            linkingvars;        /**< array of variables linking the blocks */
    int                   nlinkingvars;       /**< number of linking variables */
-   SCIP_VAR***           stairlinkingvars;   /**< array of variables staircaslinking the blocks */
-   int*                  nstairlinkingvars;  /**< number of staircaslinking variables */
+   int                   nmastervars;        /**< number of linking variables that are purelz master variables*/
+   SCIP_VAR***           stairlinkingvars;   /**< array of variables staircaselinking the blocks */
+   int*                  nstairlinkingvars;  /**< number of staircaselinking variables */
    SCIP_HASHMAP*         vartoblock;         /**< hashmap mapping variables to their blocks (from 1 to nblocks) */
    SCIP_HASHMAP*         constoblock;        /**< hashmap mapping constraints to their blocks (from 1 to nblocks) */
    SCIP_HASHMAP*         varindex;           /**< hashmap mapping variables to indices for a visual ordering */
    SCIP_HASHMAP*         consindex;          /**< hashmap mapping constraints to indices for visual ordering */
    DEC_DECTYPE           type;               /**< type of the decomposition */
+   DEC_DETECTOR**        detectorchain;      /**< array of detectors that worked on this decomposition */
    DEC_DETECTOR*         detector;           /**< detector that found this decomposition */
+   int                   sizedetectorchain;  /**< number of detectors that worked on this decomposition */
+   int                   seeedid;            /**< id of the seeed this decomposition originates from */
+   SCIP_Real*            detectorclocktimes; /**< times of the detectors that worked on this decomposition */
+   SCIP_Real*            pctvarstoborder;    /**< percentages of variables assigned to the border of the corresponding detectors on this decomposition */
+   SCIP_Real*            pctconsstoborder;    /**< percentages of constraints assigned to the border of the corresponding detectors on this decomposition */
+   SCIP_Real*            pctvarstoblock;      /**< percentages of variables assigned to a block of the corresponding detectors on this decomposition */
+   SCIP_Real*            pctconsstoblock;     /**< percentages of variables assigned to a block of the corresponding detectors on this decomposition */
+   SCIP_Real*            pctvarsfromopen;     /**< percentages of variables assigned to a block or border of the corresponding detectors on this decomposition */
+   SCIP_Real*            pctconssfromopen;    /**< percentages of constraints assigned to a block or the border of the corresponding detectors on this decomposition */
+   int*                  nnewblocks;          /**< number of new blocks of the corresponding detectors on this decomposition */
+   char*                 detectorchainstring; /**< string for the detector information working on that decomposition */
+   SCIP_Real             maxwhitescore;       /**< maximum white score (i.e. [fraction of white area] (nonborder+nonblock)  ) */
 };
 
 #ifdef __cplusplus

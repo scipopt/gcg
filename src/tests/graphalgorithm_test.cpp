@@ -38,10 +38,15 @@
 #include "graph/graphalgorithms.h"
 #include "graph/graphalgorithms_def.h"
 #include "graph/graph_tclique.h"
+#include "graph/rowgraph_weighted.h"
+#include "graph/graph_gcg.h"
+#include "graph/graph.h"
 
 using gcg::GraphAlgorithms;
 using gcg::GraphTclique;
 using gcg::Hypergraph;
+
+using namespace std;
 
 class GraphAlgorithmEmptyTest : public ::testing::Test {
 
@@ -342,3 +347,154 @@ TEST_F(GraphAlgorithmWeigthedMulticutTest, WeigthedMulticutMincut) {
 TEST_F(GraphAlgorithmWeigthedMulticutTest, WeigthedMulticutKmetric) {
    ASSERT_NEAR(8.0, GraphAlgorithms<GraphTclique>::computekMetric(*graph), 1e-6);
 }
+
+class GraphAlgorithmMSTTest : public ::testing::Test {
+
+   virtual void SetUp() {
+      SCIP_CALL_ABORT( SCIPcreate(&scip) );
+      graph = new gcg::Graph<gcg::GraphGCG>(scip);
+
+      graph->addNNodes(20);
+
+      double w1 = 0.3;
+      double w2 = 0.6;
+      eps = 0.5;
+      for(int i = 0; i< graph->getNNodes() -1; i++)
+      {
+         graph->addEdge(i, i+1, w1);
+
+         if(i == 6 || i == 12)
+         {
+            graph->setEdge(i, i+1, w2);
+         }
+      }
+      graph->addEdge(2, 17, w2);
+      graph->addEdge(2, 8, w2);
+      graph->addEdge(17, 8, w2);
+
+   }
+
+   virtual void TearDown() {
+      SCIPfree(&scip);
+      delete graph;
+   }
+
+protected:
+   gcg::Graph<gcg::GraphGCG>* graph;
+   SCIP* scip;
+   double eps;
+};
+
+TEST_F(GraphAlgorithmMSTTest, MSTmainTest) {
+   std::cout << "This is MST test..." << std::endl;
+   std::vector<int> labels = GraphAlgorithms<gcg::GraphGCG>::mst(*graph, eps);
+   for(auto label: labels)
+   {
+      std::cout << "Label = " << label << std::endl;
+   }
+
+   std::cout << "Total nodes: " << graph->getNNodes() << std::endl;
+   for(int i = 0; i< graph->getNNodes(); i++)
+   {
+      auto ns = graph->getNeighborWeights(i);
+      std::cout << "Node " << i << ": ";
+      for(auto n: ns)
+      {
+         std::cout << n.first << ", ";
+      }
+      std::cout << "" << std::endl;
+   }
+   std::cout << "Now we print all the edges that are saved in the list...." << std::endl;
+   std::vector<void*> edges;
+   graph->getEdges(edges);
+   for(int i = 0 ; i < (int)edges.size(); i++)
+   {
+      gcg::EdgeGCG next_edge = *(gcg::EdgeGCG *)(edges[i]);
+      std::cout << "Edge: " << next_edge.src << ", " << next_edge.dest << std::endl;
+   }
+
+   std::cout << "Edges total: " << graph->getNEdges() << std::endl;
+}
+
+
+class GraphAlgorithmMCLTest : public ::testing::Test {
+
+   virtual void SetUp() {
+      SCIP_CALL_ABORT( SCIPcreate(&scip) );
+
+
+      graph = new gcg::Graph<gcg::GraphGCG>(scip);
+
+      graph->addNNodes(12);
+
+      double w = 1.0;
+      graph->addEdge(0, 1, w);
+      graph->addEdge(0, 5, w);
+      graph->addEdge(0, 6, w);
+      graph->addEdge(0, 9, w);
+      graph->addEdge(1, 2, w);
+      graph->addEdge(1, 4, w);
+      graph->addEdge(2, 3, w);
+      graph->addEdge(2, 4, w);
+      graph->addEdge(3, 7, w);
+      graph->addEdge(3, 8, w);
+      graph->addEdge(3, 10, w);
+      graph->addEdge(4, 6, w);
+      graph->addEdge(4, 7, w);
+      graph->addEdge(5, 9, w);
+      graph->addEdge(6, 9, w);
+      graph->addEdge(7, 8, w);
+      graph->addEdge(7, 10, w);
+      graph->addEdge(8, 10, w);
+      graph->addEdge(8, 11, w);
+      graph->addEdge(10, 11, w);
+
+      graph->flush();
+
+   }
+
+   virtual void TearDown() {
+      SCIPfree(&scip);
+      delete graph;
+   }
+
+protected:
+   gcg::Graph<gcg::GraphGCG>* graph;
+   SCIP* scip;
+   double eps;
+};
+
+
+#ifdef WITH_GSL
+TEST_F(GraphAlgorithmMCLTest, MCLmainTest) {
+   std::cout << "This is MST test..." << std::endl;
+   int inflate_fac = 2;
+   std::vector<int> labels = GraphAlgorithms<gcg::GraphGCG>::mcl(*graph, inflate_fac);
+   for(auto label: labels)
+   {
+      cout << "Label = " << label << endl;
+   }
+
+   /*std::cout << "Total nodes: " << graph->getNNodes() << std::endl;
+   for(int i = 0; i< graph->getNNodes(); i++)
+   {
+      auto ns = graph->getNeighborWeights(i);
+      std::cout << "Node " << i << ": ";
+      for(auto n: ns)
+      {
+         std::cout << n.first << ", ";
+      }
+      std::cout << "" << std::endl;
+   }
+   std::cout << "Now we print all the edges that are saved in the list...." << std::endl;
+   std::vector<void*> edges;
+   graph->getEdges(edges);
+   for(int i = 0 ; i < (int)edges.size(); i++)
+   {
+      gcg::EdgeGCG next_edge = *(gcg::EdgeGCG *)(edges[i]);
+      std::cout << "Edge: " << next_edge.src << ", " << next_edge.dest << std::endl;
+   }
+
+   std::cout << "Edges total: " << graph->getNEdges() << std::endl;*/
+}
+#endif

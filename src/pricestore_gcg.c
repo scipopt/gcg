@@ -702,4 +702,3 @@ SCIP_Real GCGpricestoreGetTime(
 
    return SCIPclockGetTime(pricestore->priceclock);
 }
-

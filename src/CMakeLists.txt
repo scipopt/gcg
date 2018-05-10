@@ -13,27 +13,56 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED on)
 
 set(gcgsources
-    graph/graph_tclique.cpp
-    graph/inst.cpp
-    graph/weights.cpp
     branch_empty.c
     branch_generic.c
     branch_orig.c
     branch_relpsprob.c
     branch_ryanfoster.c
-    branch_xyz.c
+    class_consclassifier.cpp
+    class_indexclassifier.cpp
+    class_miscvisualization.cpp
+    class_pricingtype.cpp
+    class_seeed.cpp
+    class_seeedpool.cpp
+    class_stabilization.cpp
+    class_varclassifier.cpp
     colpool.c
-    cons_decomp.c
+    cons_decomp.cpp
     cons_integralorig.c
     cons_masterbranch.c
     cons_origbranch.c
+    dec_colors.cpp
+    dec_compgreedily.cpp
     dec_connected.c
+    dec_connected_noNewLinkingVars.cpp
+    dec_connectedbase.cpp
+    dec_consclass.cpp
+    dec_consname.cpp
+    dec_constype.cpp
     dec_cutpacking.c
+    dec_dbscan.cpp
+    dec_densemasterconss.cpp
+    dec_generalmastersetcover.cpp
+    dec_generalmastersetpack.cpp
+    dec_generalmastersetpart.cpp
+    dec_hcgpartition.cpp
+    dec_hrcgpartition.cpp
+    dec_hrgpartition.cpp
+    dec_isomorph.cpp
+    dec_mastersetcover.cpp
+    dec_mastersetpack.cpp
+    dec_mastersetpart.cpp
+    dec_mcl.cpp
+    dec_mst.cpp
+    dec_postprocess.cpp
     dec_random.c
+    dec_staircase_lsp.cpp
     dec_staircase.c
-    dec_xyz.c
+    dec_stairheur.cpp
+    dec_varclass.cpp
     decomp.c
     dialog_gcg.c
+    dialog_graph.cpp
     dialog_master.c
     disp_gcg.c
     disp_master.c
@@ -49,6 +78,10 @@ set(gcgsources
     gcgpqueue.c
     gcgvar.c
     githash.c
+    graph/graph_gcg.cpp
+    graph/graph_tclique.cpp
+    graph/inst.cpp
+    graph/weights.cpp
     heur_gcgcoefdiving.c
     heur_gcgdins.c
     heur_gcgfeaspump.c
@@ -78,28 +111,24 @@ set(gcgsources
     masterplugins.c
     misc.c
     nodesel_master.c
+    objdialog.cpp
+    params_visu.c
+    presol_roundbound.c
+    pricer_gcg.cpp
     pricestore_gcg.c
-    reader_blk.c
-    reader_dec.c
-    reader_gp.c
+    reader_blk.cpp
+    reader_cls.cpp
+    reader_dec.cpp
+    reader_gp.cpp
     reader_ref.c
+    reader_tex.cpp
     relax_gcg.c
     scip_misc.c
     sepa_basis.c
     sepa_master.c
     solver_knapsack.c
     solver_mip.c
-    solver_xyz.c
     stat.c
-    class_pricingtype.cpp
-    class_stabilization.cpp
-    dec_arrowheur.cpp
-    dec_colors.cpp
-    dec_consname.cpp
-    dec_stairheur.cpp
-    dialog_graph.cpp
-    objdialog.cpp
-    pricer_gcg.cpp
 )
 
 set(gcgheaders
@@ -132,24 +161,48 @@ set(gcgheaders
     branch_orig.h
     branch_relpsprob.h
     branch_ryanfoster.h
-    branch_xyz.h
+    class_consclassifier.h
+    class_indexclassifier.h
+    class_miscvisualization.h
     class_pricingtype.h
+    class_seeed.h
+    class_seeedpool.h
     class_stabilization.h
+    class_varclassifier.h
     colpool.h
     cons_decomp.h
     cons_integralorig.h
     cons_masterbranch.h
     cons_origbranch.h
-    dec_arrowheur.h
     dec_colors.h
+    dec_compgreedily.h
     dec_connected.h
+    dec_connected_noNewLinkingVars.h
+    dec_connectedbase.h
+    dec_consclass.h
     dec_consname.h
+    dec_constype.h
     dec_cutpacking.h
+    dec_dbscan.h
+    dec_densemasterconss.h
+    dec_generalmastersetcover.h
+    dec_generalmastersetpack.h
+    dec_generalmastersetpart.h
+    dec_hcgpartition.h
+    dec_hrcgpartition.h
+    dec_hrgpartition.h
     dec_isomorph.h
+    dec_mastersetcover.h
+    dec_mastersetpack.h
+    dec_mastersetpart.h
+    dec_mcl.h
+    dec_mst.h
+    dec_postprocess.h
     dec_random.h
     dec_staircase.h
+    dec_staircase_lsp.h
     dec_stairheur.h
-    dec_xyz.h
+    dec_varclass.h
     decomp.h
     dialog_gcg.h
     dialog_graph.h
@@ -196,6 +249,7 @@ set(gcgheaders
     nodesel_master.h
     objdialog.h
     objpricer_gcg.h
+    presol_roundbound.h
     pricestore_gcg.h
     pricer_gcg.h
     pub_bliss.h
@@ -206,16 +260,17 @@ set(gcgheaders
     pub_gcgpqueue.h
     pub_gcgvar.h
     reader_blk.h
+    reader_cls.h
     reader_dec.h
     reader_gp.h
     reader_ref.h
+    reader_tex.h
     relax_gcg.h
     scip_misc.h
     sepa_basis.h
     sepa_master.h
     solver_knapsack.h
     solver_mip.h
-    solver_xyz.h
     stat.h
     struct_branchgcg.h
     struct_decomp.h

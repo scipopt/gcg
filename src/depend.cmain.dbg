@@ -109,9 +109,8 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \

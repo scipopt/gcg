@@ -42,6 +42,7 @@
 #include "gcgplugins.h"
 
 #include "scip/scip.h"
+#include "scip/misc.h"
 #include "scip/scipdefplugins.h"
 
 
