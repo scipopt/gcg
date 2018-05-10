@@ -56,6 +56,10 @@ if test ! -e results
 then
     mkdir results
 fi
+if test ! -e results/vbc && $STATISTICS = "true"
+then
+    mkdir results/vbc
+fi
 if test ! -e locks
 then
     mkdir locks
@@ -231,6 +235,10 @@ do
             echo set timing clocktype 1            >> $TMPFILE
             echo set display verblevel 4           >> $TMPFILE
             echo set display freq $DISPFREQ        >> $TMPFILE
+            if test $STATISTICS = "true"
+            then
+                echo set visual vbcfilename results/vbc/$NAME.$SETNAME.vbc >> $TMPFILE
+            fi
             echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
             if test "$LPS" = "none"
             then

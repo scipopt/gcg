@@ -149,8 +149,18 @@ endif
 soplex:
 		@$(MAKE) -C lib/soplex-git OPT=opt
 
+ifeq ($(BLISS),true)
+DEPS += bliss
+endif
+ifeq ($(CLIQUER),true)
+DEPS += cliquer
+endif
+ifeq ($(GTEST),true)
+DEPS += googletest
+endif
+
 .PHONY: deps
-deps:		bliss cliquer googletest soplex scip
+deps:		$(DEPS) soplex scip
 
 .PHONY: tests
 tests::		$(TESTOBJDIR) $(TESTFILE) $(TESTSHORTLINK) $(GCGLIBFILE)
