@@ -786,9 +786,12 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
    std::vector<int> blocksOfBlockvars; /** blocks with blockvars which can be found in the cons */
    std::vector<int> blocksOfOpenvar; /** blocks in which the open var can be found */
    bool hitsOpenCons;
+   bool hitsmastercons;
    std::vector<bool> isblockhit;
+   bool benders;
 
    changedHashvalue = true;
+   benders = seeedpool->isForBenders();
 
    /** set open var to linking if it can be found in one block and open constraint */
    for( size_t i = 0; i < openVars.size(); ++ i )
@@ -801,6 +804,13 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
       for( int c = 0; c < givenseeedpool->getNConssForVar( var ); ++ c )
       {
          cons = givenseeedpool->getConssForVar( var )[c];
+
+         if( benders && isConsMastercons( cons ) )
+         {
+            hitsmastercons = true;
+            continue;
+         }
+
          if( isConsOpencons( cons ) )
          {
             hitsOpenCons = true;
@@ -821,8 +831,12 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
 
       }
 
+//      if( benders && hitsmastercons )
+//      {
+//         bookAsLinkingVar( var );
+//      }
 
-      if( blocksOfOpenvar.size() == 1 && hitsOpenCons )
+      if( !benders && blocksOfOpenvar.size() == 1 && hitsOpenCons )
       {
          bookAsLinkingVar( var );
       }
@@ -923,6 +937,7 @@ SCIP_RETCODE Seeed::bookAsBlockCons(
    )
 {
    assert( consToBlock >= 0 && consToBlock < nConss );
+   assert( isconsopen[consToBlock] );
    if( block >= nBlocks )
       setNBlocks(block+1);
    assert( block >= 0 && block < nBlocks );
@@ -938,6 +953,7 @@ SCIP_RETCODE Seeed::bookAsBlockVar(
    )
 {
    assert( varToBlock >= 0 && varToBlock < nVars );
+   assert( isvaropen[varToBlock] );
    assert( block >= 0 && block < nBlocks );
    std::pair<int, int> pair( varToBlock, block );
    bookedAsBlockVars.push_back( pair );
@@ -950,6 +966,7 @@ SCIP_RETCODE Seeed::bookAsMasterCons(
    )
 {
    assert( consToMaster >= 0 && consToMaster < nConss );
+   assert(isconsopen[consToMaster]);
    bookedAsMasterConss.push_back( consToMaster );
    return SCIP_OKAY;
 }
@@ -960,6 +977,7 @@ SCIP_RETCODE Seeed::bookAsMasterVar(
    )
 {
    assert( varToMaster >= 0 && varToMaster < nVars );
+   assert( isvaropen[varToMaster]);
    bookedAsMasterVars.push_back( varToMaster );
    return SCIP_OKAY;
 }
@@ -970,6 +988,7 @@ SCIP_RETCODE Seeed::bookAsLinkingVar(
    )
 {
    assert( varToLinking >= 0 && varToLinking < nVars );
+   assert( isvaropen[varToLinking]);
    bookedAsLinkingVars.push_back( varToLinking );
    return SCIP_OKAY;
 }
@@ -980,6 +999,7 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
    int firstBlock
    )
 {
+   assert( isvaropen[varToStairlinking]);
    assert( varToStairlinking >= 0 && varToStairlinking < nVars );
    assert( firstBlock >= 0 && firstBlock < ( nBlocks - 1 ) );
    std::pair<int, int> pair( varToStairlinking, firstBlock );
@@ -3063,7 +3083,6 @@ SCIP_RETCODE Seeed::considerImplicits(
       {
          var = givenseeedpool->getVarsForCons( cons )[v];
 
-
          if( isVarMastervar( var ) )
          {
             master = true;
@@ -3093,10 +3112,10 @@ SCIP_RETCODE Seeed::considerImplicits(
       if ( benders && blocksOfBlockvars.size() == 1 && !master )
          bookAsBlockCons( cons, blocksOfBlockvars[0] );
 
-      if( benders && master )
-         bookAsMasterCons( cons );
+//      if( benders && master )
+//         bookAsMasterCons( cons );
 
-      if( blocksOfBlockvars.size() > 1 )
+      if( !benders && blocksOfBlockvars.size() > 1 )
          bookAsMasterCons( cons );
 
       /* also assign open constraints that only have vars assigned to one single block and no open vars*/
@@ -3209,6 +3228,7 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks(
    )
 {
    bool emptyBlocks = true;
+   bool benders = false;
    int block = - 1;
    int b;
 
@@ -3217,6 +3237,8 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks(
    assert( (int) conssForBlocks.size() == nBlocks );
    assert( (int) varsForBlocks.size() == nBlocks );
    assert( (int) stairlinkingVars.size() == nBlocks );
+
+   benders =  seeedpool->isForBenders();
 
    while( emptyBlocks )
    {
@@ -3228,6 +3250,12 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks(
             emptyBlocks = true;
             block = b;
          }
+         if( benders && ( conssForBlocks[b].size() == 0 ||  varsForBlocks[b].size() == 0) )
+         {
+            emptyBlocks = true;
+            block = b;
+         }
+
       }
       if( emptyBlocks )
       {
@@ -3243,6 +3271,12 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks(
          it = conssForBlocks.begin();
          for( b = 0; b < block; ++ b )
             it ++;
+         for( size_t j = 0; j < conssForBlocks[block].size(); ++j )
+         {
+            masterConss.push_back(conssForBlocks[block][j]);
+            isconsmaster[conssForBlocks[block][j]] = true;
+         }
+         std::sort( masterConss.begin(), masterConss.end() );
          conssForBlocks.erase( it );
 
          it = varsForBlocks.begin();
@@ -3250,10 +3284,11 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks(
             it ++;
          for( size_t j = 0; j < varsForBlocks[block].size(); ++ j )
          {
-            openVars.push_back( varsForBlocks[block][j] );
-            isvaropen[varsForBlocks[block][j]] = true;
+            masterVars.push_back( varsForBlocks[block][j] );
+            isvarmaster[varsForBlocks[block][j]] = true;
          }
          varsForBlocks.erase( it );
+         std::sort( masterVars.begin(), masterVars.end() );
 
          //set stairlinkingvars of the previous block to block vars
          if( block != 0 && (int) stairlinkingVars[block - 1].size() != 0 )

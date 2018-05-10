@@ -1455,6 +1455,8 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             for( int seeed = 0; seeed < seeedPropData->nNewSeeeds; ++ seeed )
             {
                SCIP_Bool noduplicate;
+               if( seeedPropData->newSeeeds[seeed]->isComplete() )
+                  seeedPropData->newSeeeds[seeed]->deleteEmptyBlocks(false);
 #pragma omp critical ( seeedptrstore )
                noduplicate = seeedIsNoDuplicate( seeedPropData->newSeeeds[seeed], nextSeeeds, finishedSeeeds, false );
                if( ! seeedPropData->newSeeeds[seeed]->isTrivial() && noduplicate )
@@ -1541,6 +1543,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++ finished )
             {
                SeeedPtr seeed = seeedPropData->newSeeeds[finished];
+               seeed->deleteEmptyBlocks(false);
 #pragma omp critical ( seeedcount )
                seeed->setID( getNewIdForSeeed() );
                seeed->sort();
@@ -1624,6 +1627,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
          for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++ finished )
          {
             SeeedPtr seeed = seeedPropData->newSeeeds[finished];
+            seeed->deleteEmptyBlocks(false);
 #pragma omp critical ( seeedcount )
             seeed->setID( getNewIdForSeeed() );
 
@@ -2839,7 +2843,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->setFinishedByFinisher( otherseeed->getFinishedByFinisher() );
       newseeed->sort();
       newseeed->considerImplicits( this );
-      newseeed->deleteEmptyBlocks();
+      newseeed->deleteEmptyBlocks(benders);
       newseeed->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
 
       if( newseeed->checkConsistency( this ) )

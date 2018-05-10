@@ -1639,7 +1639,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectSelect(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIPdialogMessage(scip, NULL, "Please specify the id of the decomposition to be visualized:\n", conshdlrdata->selectvisulength );
+   SCIPdialogMessage(scip, NULL, "Please specify the id of the decomposition to be selected:\n", conshdlrdata->selectvisulength );
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
    commandlen = strlen(ntovisualize);
 
@@ -1658,7 +1658,9 @@ SCIP_RETCODE SCIPconshdlrDecompSelectSelect(
    }
    else
    {
+      std::cout << "is selected !!!!!!!!" << toselect->isSelected() <<std::endl;
       conshdlrdata->selected->push_back(idtovisu);
+      assert(toselect->isSelected());
    }
 
    conshdlrdata->selectedexists = (conshdlrdata->selected->size() > 0);
@@ -1764,7 +1766,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
       int commandlen;
 
       /** update list of interesting seeeds */
-      SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+  //    SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
 
       SCIP_CALL( SCIPconshdlrDecompShowListExtractHeader(scip) );
 
