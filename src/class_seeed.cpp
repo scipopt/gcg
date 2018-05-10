@@ -987,6 +987,114 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
    return SCIP_OKAY;
 }
 
+/**
+ * prepare the seeed such that all predecessors have the folloing property:
+ * all variables in the master problem are binary variables
+ * thus all other variables are assigned to a block
+ *
+ * reuirement: all constraints and variables are open when this method is called
+ */
+void Seeed::initOnlyBinMaster(){
+
+   std::vector<int> constoblocks = std::vector<int>(nConss, -1);
+   std::vector<int> vartoblocks = std::vector<int>(nVars, -1);
+   std::vector<int> mergeblocks = std::vector< int>(0);
+   int potentialnewblocks = 0;
+
+
+   for( int openvar = 0; openvar < getNVars(); ++openvar )
+   {
+      /** check if var is NOT a binary variable */
+      if( SCIPvarGetType(seeedpool->getScipVar(openvar) ) != SCIP_VARTYPE_BINARY )
+      {
+         int blockid = -1;
+         std::vector<bool> hitblock = std::vector<bool>(potentialnewblocks, false);
+         std::vector<int> hittenblocks = std::vector<int>(0);
+         for( int c = 0; c < seeedpool->getNConssForVar(openvar); ++c )
+         {
+            int cons = seeedpool->getConssForVar(openvar)[c];
+            if( constoblocks[cons] != -1 )
+            {
+               if( !hitblock[constoblocks[cons]] )
+               {
+                  hitblock[constoblocks[cons]] = true;
+                  hittenblocks.push_back(constoblocks[cons]);
+               }
+            }
+         }
+
+         if( hittenblocks.size() == 0 )
+         {
+            ++potentialnewblocks;
+            blockid = potentialnewblocks - 1;
+            mergeblocks.push_back(blockid);
+            vartoblocks[openvar] = blockid;
+         }
+
+         if( hittenblocks.size() == 1 )
+         {
+            blockid = hittenblocks[0];
+            vartoblocks[openvar] = hittenblocks[0];
+         }
+
+         if( hittenblocks.size() > 1 )
+         {
+            int minblock = hittenblocks[0];
+            for( size_t i = 1; i < hittenblocks.size(); ++i )
+            {
+               if( hittenblocks[i] < minblock )
+                  minblock = hittenblocks[i];
+            }
+            int mergeto = mergeblocks[minblock];
+            for( size_t i = 0; i < hittenblocks.size(); ++i )
+            {
+               mergeblocks[hittenblocks[i]] = mergeto;
+            }
+            blockid = minblock;
+            vartoblocks[openvar] = blockid;
+         }
+
+         assert(blockid != -1);
+         for( int c = 0; c < seeedpool->getNConssForVar(openvar); ++c )
+         {
+            int cons = seeedpool->getConssForVar(openvar)[c];
+            constoblocks[cons] = blockid;
+         }
+      }
+   }
+
+
+   int nnewblocks = 0;
+   std::vector<int> currblocks = std::vector<int>(mergeblocks.size(), -1);
+   for( int b = 0; b < potentialnewblocks; ++b )
+      if( mergeblocks[b] == b )
+      {
+         currblocks[b] = nnewblocks;
+         ++nnewblocks;
+      }
+      else
+         currblocks[b] = currblocks[mergeblocks[b]];
+
+   setNBlocks(nnewblocks);
+
+   for( int openvar = 0; openvar < getNVars(); ++openvar )
+   {
+      if( vartoblocks[openvar] != -1)
+         bookAsBlockVar(openvar, currblocks[vartoblocks[openvar]]  );
+   }
+
+   for( int cons = 0; cons < getNConss(); ++cons )
+   {
+      if( constoblocks[cons] != -1)
+         bookAsBlockCons(cons, currblocks[constoblocks[cons]]);
+   }
+
+   flushBooked();
+
+   return;
+
+}
+
 SCIP_Bool Seeed::isAgginfoToExpensive()
 {
    if( isagginfoalreadytoexpensive )

@@ -1069,6 +1069,19 @@ Seeedpool::Seeedpool(
 
    /*  init  seeedpool with empty seeed */
    SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), this );
+   SCIP_Bool onlybinmaster;
+   SCIP_Bool onlycontsubpr;
+
+   SCIPgetBoolParam(scip, "detection/benders/onlybinmaster", &onlybinmaster);
+   SCIPgetBoolParam(scip, "detection/benders/onlycontsubpr", &onlycontsubpr);
+   std::cout << " before init only bin master " << std::endl;
+   if( onlybinmaster )
+   {
+      std::cout << " start only bin master " << std::endl;
+      emptyseeed->initOnlyBinMaster();
+      emptyseeed->considerImplicits(this);
+   }
+
 
    addSeeedToCurr( emptyseeed );
    addSeeedToAncestor(emptyseeed);
@@ -2818,7 +2831,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->setFinishedByFinisher( otherseeed->getFinishedByFinisher() );
       newseeed->sort();
       newseeed->considerImplicits( this );
-      newseeed->deleteEmptyBlocks(false);
+      newseeed->deleteEmptyBlocks();
       newseeed->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
 
       if( newseeed->checkConsistency( this ) )
@@ -4663,8 +4676,8 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
    SCIP_Bool onlycontsub;
    SCIP_Bool onlybinmaster;
 
-   SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/onlycontsubpr", &onlycontsub);
-   SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/onlybinmaster", &onlybinmaster);
+   SCIPgetBoolParam(scip, "detection/benders/onlycontsubpr", &onlycontsub);
+   SCIPgetBoolParam(scip, "detection/benders/onlybinmaster", &onlybinmaster);
 
    /** firstly, assign all variables to classindices */
    for( int i = 0; i < getNVars(); ++ i )

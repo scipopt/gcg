@@ -880,6 +880,8 @@ public:
       int block
    );
 
+   void initOnlyBinMaster();
+
    SCIP_Bool isAgginfoToExpensive();
 
 
