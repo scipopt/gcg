@@ -82,7 +82,8 @@
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
-#define DEFAULT_MODE 0  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition) */
+//#define DEFAULT_MODE 0  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition) */
+#define DEFAULT_MODE 1  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition) */
 #define DELVARS
 
 /*
@@ -1482,6 +1483,12 @@ SCIP_RETCODE createMasterProblem(
       SCIP_CALL( SCIPsetIntParam(masterscip, "heuristics/trysol/freq", 1) );
       SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benders/active", TRUE) );
       SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benderslp/active", TRUE) );
+      SCIP_CALL( SCIPsetBoolParam(masterscip, "benders/gcg/lnscheck", FALSE) );
+
+      /* the trysol heuristic must have a high priority to ensure the solutions found by the relaxator are added to the
+       * original problem
+       */
+      SCIP_CALL( SCIPsetIntParam(GCGgetOriginalprob(masterscip), "heuristics/trysol/freq", 1) );
    }
 
    return SCIP_OKAY;
@@ -2424,10 +2431,10 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->convconss), relaxdata->npricingprobs);
 
    /* free master problem */
-   //if( relaxdata->masterprob != NULL )
-   //{
-      //SCIP_CALL( SCIPfreeProb(relaxdata->masterprob) );
-   //}
+   if( relaxdata->masterprob != NULL )
+   {
+      SCIP_CALL( SCIPfreeProb(relaxdata->masterprob) );
+   }
 
    /* free pricing problems */
    for( i = relaxdata->npricingprobs - 1; i >= 0 ; i-- )
@@ -2609,6 +2616,11 @@ SCIP_RETCODE solveMasterProblem(
 
    SCIPdebugMessage("  update lower bound (value = %g).\n", *lowerbound);
 
+   /* NOTE: All other points when result is set, the function is exited immediately. Ensure that this is checked for
+    * future changes to this function
+    */
+   *result = SCIP_SUCCESS;
+
    return SCIP_OKAY;
 }
 
@@ -2698,9 +2710,6 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
       SCIPdebugMessage("Problem has been already solved at this node\n");
    }
 
-
-   *result = SCIP_SUCCESS;
-
    return SCIP_OKAY;
 }
 
@@ -2747,12 +2756,17 @@ SCIP_RETCODE relaxExecGcgBendersDecomposition(
    SCIP_CALL( solveMasterProblem(scip, masterprob, relaxdata, nodelimit, lowerbound, result) );
 
    /* set the lower bound pointer */
-   if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVED && GCGmasterIsCurrentSolValid(masterprob) )
+   if( GCGmasterIsCurrentSolValid(masterprob) )
    {
       *lowerbound = SCIPgetDualbound(masterprob);
    }
 
-   *result = SCIP_SUCCESS;
+   /* if the result pointer is DIDNOTRUN, this implies that the master problem was interrupted during solving. Since
+    * Benders' decomposition uses a one-tree approach, then the user limits must be adhered to. This means, the if a
+    * limit is exceeded, this is still a success for the solving.
+    */
+   if( (*result) == SCIP_DIDNOTRUN )
+      (*result) = SCIP_SUCCESS;
 
    return SCIP_OKAY;
 }
