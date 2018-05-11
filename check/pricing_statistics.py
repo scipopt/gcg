@@ -469,8 +469,15 @@ def make_complete_plot(data, info):
     start_time = time.time()
 
     # draw a legend, but do not include more than 25 pricing problems
-    patches = [mpatches.Patch(color = cmapping[p], label = 'Pricing Problem ' + str(p)) for p in cmapping]
-    patches[0].set_label('Master LP Time')
+    if -2 in data.pricing_prob.values:
+        patches = [mpatches.Patch(color = cmapping[p], label = 'Pricing Problem ' + str(p)) for p in cmapping]
+        patches[0].set_label('Master LP Time')
+        if params['aggregate']:
+            patches[1].set_label('Pricing Problems')
+    else:
+        patches = [mpatches.Patch(color = cmapping[p], label = 'Pricing Problem ' + str(p)) for p in cmapping]
+        if params['aggregate']:
+            patches[0].set_label('Pricing Problems')
     if len(patches) > 31:
         patches = patches[:31] + [mpatches.Patch(color = 'white', alpha = 0, label = '...')]
     handles = patches + [lines.Line2D([0,0], [0,1], color = 'red', linewidth = 2., label = 'pricing round'), lines.Line2D([0,0], [0,1], color = 'orange', linestyle = '--', linewidth = 1.6, label = 'stabilization round'), cp_scatter]
