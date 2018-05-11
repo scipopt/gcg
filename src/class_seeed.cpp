@@ -788,7 +788,6 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
    std::vector<int> blocksOfBlockvars; /** blocks with blockvars which can be found in the cons */
    std::vector<int> blocksOfOpenvar; /** blocks in which the open var can be found */
    bool hitsOpenCons;
-   bool hitsmastercons;
    std::vector<bool> isblockhit;
    bool benders;
 
@@ -809,7 +808,6 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
 
          if( benders && isConsMastercons( cons ) )
          {
-            hitsmastercons = true;
             continue;
          }
 
@@ -6885,11 +6883,23 @@ void Seeed::calcbenderareascore()
 {
    unsigned long nrelevantconss;
    unsigned long nrelevantvars;
-   unsigned long benderborderarea;
+
+   unsigned long nrelevantconss2;
+   unsigned long nrelevantvars2;
+
+   unsigned long badblockvararea;
+
+
+   long benderborderarea;
    unsigned long totalarea;
 
    nrelevantconss = 0;
    nrelevantvars = 0;
+
+   nrelevantconss2 = 0;
+   nrelevantvars2 = 0;
+
+   badblockvararea = 0;
 
    for( int  c = 0; c < getNMasterconss(); ++c )
    {
@@ -6921,6 +6931,11 @@ void Seeed::calcbenderareascore()
             if( isConsMastercons(cons) || isConsOpencons(cons)  )
             {
                relevant  = false;
+               for( int b2 = 0; b2 < getNBlocks(); ++b2 )
+               {
+                  if( b2 != b )
+                     badblockvararea += getNConssForBlock(b2);
+               }
                break;
             }
          }
@@ -6929,8 +6944,48 @@ void Seeed::calcbenderareascore()
       }
    }
 
+   for( int  v = 0; v < getNLinkingvars(); ++v )
+   {
+      bool relevant = true;
+      int var = getLinkingvars()[v];
+      for( int c = 0; c < seeedpool->getNConssForVar(var); ++c )
+      {
+         int cons = seeedpool->getConssForVar(var)[c];
+         if ( isConsOpencons(cons) || isConsMastercons(cons) )
+         {
+            relevant = false;
+            break;
+         }
 
-   benderborderarea = ( nrelevantconss * nrelevantvars  );
+      }
+      if( relevant )
+         ++nrelevantvars2;
+   }
+
+
+   for( int b = 0; b < getNBlocks(); ++b )
+   {
+      for(int c = 0; c < getNConssForBlock(b); ++c )
+      {
+         bool relevant = true;
+         int cons = getConssForBlock(b)[c];
+         for( int v = 0; v < seeedpool->getNVarsForCons(cons); ++v )
+         {
+            int var = seeedpool->getVarsForCons(cons)[v];
+            if( isVarLinkingvar(var) || isVarOpenvar(var)  )
+            {
+               relevant  = false;
+               break;
+            }
+         }
+         if( relevant )
+            ++nrelevantconss2;
+      }
+   }
+
+
+
+   benderborderarea = ( nrelevantconss * nrelevantvars  ) + ( nrelevantconss2 * nrelevantvars2  ) - badblockvararea;
    totalarea = ( (unsigned long) getNConss() * (unsigned long) getNVars() );
    benderareascore =  ( SCIP_Real) benderborderarea / totalarea;
 
