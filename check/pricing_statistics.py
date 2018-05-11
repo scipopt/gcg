@@ -81,8 +81,9 @@ def parse_arguments(args):
                         default="nipy_spectral",
                         help='name of the color-map, that is used for the bars (see matplotlib documentation for maps, default is nipy_spectral)')
 
-    parser.add_argument('--lines', action='store_true',
-                        help='enforce lines between pricing-rounds on the plots (default is to not draw lines for rounds, that are too short)')
+    parser.add_argument('--lines', type=int, choices = range(0,3),
+                        default=1,
+                        help='draw lines between pricing-rounds on the plots (0=never, 1=only for rounds that are not too short, 2=always)')
 
     parser.add_argument('--no-text', action='store_true',
                         help='do not write any text on the plots (such as node or round numbers)')
@@ -409,7 +410,7 @@ def make_complete_plot(data, info):
     for pos,rnd,far in zip(data.drop_duplicates(['pricing_round','stab_round']).starting_time, data.drop_duplicates(['pricing_round','stab_round']).pricing_round, data.drop_duplicates(['pricing_round','stab_round']).farkas):
         if rnd > prev_rnd:
             # bold line for a new pricing round
-            if params['lines'] or (pos - prev_x_drawn)/totalTime > 0.002 or (not farkasLine and not far):
+            if params['lines'] == 2 or (params['lines'] == 1 and ((pos - prev_x_drawn)/totalTime > 0.002 or (not farkasLine and not far))):
                 line = lines.Line2D([pos,pos],[0,1],color='r',linewidth=1.0, transform = trans)
                 # blue line at the end of farkas pricing
                 if not farkasLine and not far:
@@ -429,7 +430,7 @@ def make_complete_plot(data, info):
             prev_x = pos
         else:
             # dashed line for a new stabilization round
-            if params['lines'] or (pos - prev_x_drawn)/totalTime > 0.0005:
+            if params['lines'] == 2 or (params['lines'] == 1 and (pos - prev_x_drawn)/totalTime > 0.0005):
                 line = lines.Line2D([pos,pos],[0,1],color='orange',linestyle='--',linewidth=0.8, transform = trans)
                 ax.add_line(line)
                 prev_x_drawn = pos
