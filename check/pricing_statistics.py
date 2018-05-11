@@ -85,6 +85,9 @@ def parse_arguments(args):
                         default=1,
                         help='draw lines between pricing-rounds on the plots (0=never, 1=only for rounds that are not too short, 2=always)')
 
+    parser.add_argument('--aggregate', action = 'store_true',
+                        help='for each pricing round, draw only one aggregated bar in the summary plot')
+
     parser.add_argument('--no-text', action='store_true',
                         help='do not write any text on the plots (such as node or round numbers)')
 
@@ -466,7 +469,7 @@ def make_complete_plot(data, info):
     start_time = time.time()
 
     # draw a legend, but do not include more than 25 pricing problems
-    patches = [mpatches.Patch(color = cmapping[p], label = 'pricing problem ' + str(p)) for p in cmapping]
+    patches = [mpatches.Patch(color = cmapping[p], label = 'Pricing Problem ' + str(p)) for p in cmapping]
     patches[0].set_label('Master LP Time')
     if len(patches) > 31:
         patches = patches[:31] + [mpatches.Patch(color = 'white', alpha = 0, label = '...')]
@@ -1534,6 +1537,8 @@ def parse_files(files):
                         pricing_round += 1
                         round_counter += 1
                         stab_round = 0
+                        aggr_time = 0.0
+                        aggr_nVars = 0
                         round_begin = True
                     except ValueError:
                         print '    ended abruptly'
@@ -1561,6 +1566,18 @@ def parse_files(files):
                                 val_farkas.append(val_farkas[-1])
                             round_begin = False
                         else:
+                            if params['aggregate']:
+                                # store all indices
+                                ind_node.append(node)
+                                ind_pricing_round.append(pricing_round)
+                                ind_stab_round.append(stab_round)
+                                ind_round.append(round_counter)
+                                ind_pricing_prob.append(pricing_prob)
+                                # store the data
+                                val_time.append(aggr_time)
+                                val_nVars.append(aggr_nVars)
+                                val_farkas.append(not farkasDone)
+
                             lptime_end = float(message.split()[-1])
                             if lptime_end - lptime_begin > 0.005:
                                 print 'It seems, that the LP time is not constant during a pricing round. Delta t is', lptime_end - lptime_begin
@@ -1573,6 +1590,20 @@ def parse_files(files):
 
                 elif message.startswith("Stabilization round ") or message.startswith("Sr "):
                     try:
+                        if params['aggregate']:
+                            # store all indices
+                            ind_node.append(node)
+                            ind_pricing_round.append(pricing_round)
+                            ind_stab_round.append(stab_round)
+                            ind_round.append(round_counter)
+                            ind_pricing_prob.append(pricing_prob)
+                            # store the data
+                            val_time.append(aggr_time)
+                            val_nVars.append(aggr_nVars)
+                            val_farkas.append(not farkasDone)
+                            aggr_time = 0.0
+                            aggr_nVars = 0
+
                         stab_round = int(message.split()[-1])
                         round_counter += 1
                     except ValueError:
@@ -1610,26 +1641,37 @@ def parse_files(files):
 
                 elif message.startswith("Pricing prob ") or message.startswith("P p "):
                     try:
-                        pricing_prob = int(message.split()[2])
+                        if params['aggregate']:
+                            pricing_prob = 0
+                        else:
+                            pricing_prob = int(message.split()[2])
 
                         # check if the pricing prob should be included in the data
                         if node < params['minnode'] or (0 < params['maxnode'] < node) or pricing_round < params['minround'] or (0 < params['maxround'] < pricing_round):
                             continue
 
-                        # store all indices
-                        ind_node.append(node)
-                        ind_pricing_round.append(pricing_round)
-                        ind_stab_round.append(stab_round)
-                        ind_round.append(round_counter)
-                        ind_pricing_prob.append(pricing_prob)
-
-                        # store the data
-                        val_time.append(float(message.split()[-1]))
-                        if message.startswith("P p "):
-                            val_nVars.append(int(message.split()[-3]))
+                        if params['aggregate']:
+                            # sum up the data over all pricing problems
+                            aggr_time += float(message.split()[-1])
+                            if message.startswith("P p "):
+                                aggr_nVars += int(message.split()[-3])
+                            else:
+                                aggr_nVars += int(message.split()[5])
                         else:
-                            val_nVars.append(int(message.split()[5]))
-                        val_farkas.append(not farkasDone)
+                            # store all indices
+                            ind_node.append(node)
+                            ind_pricing_round.append(pricing_round)
+                            ind_stab_round.append(stab_round)
+                            ind_round.append(round_counter)
+                            ind_pricing_prob.append(pricing_prob)
+
+                            # store the data
+                            val_time.append(float(message.split()[-1]))
+                            if message.startswith("P p "):
+                                val_nVars.append(int(message.split()[-3]))
+                            else:
+                                val_nVars.append(int(message.split()[5]))
+                            val_farkas.append(not farkasDone)
                     except ValueError:
                         print '    ended abruptly'
                         collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
