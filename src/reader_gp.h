@@ -28,10 +28,11 @@
 /**@file   reader_gp.h
  * @brief  GP file reader writing gnuplot files
  * @author Martin Bergner
+ * @author Michael Feldmeier
  * @ingroup FILEREADERS
  *
  * This file reader will write the decomposed or original matrix to a file usuable by gnuplot. You can use this writer
- * like and other writer.
+ * like and other writer. The filereader is also able to generate a gnuplot plot of a quadratic programming instance.
  *
  * To display your decomposition, you can write the following in the interactive shell
  * \verbatim
@@ -70,6 +71,26 @@ SCIP_RETCODE SCIPwriteGp(
    DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
    SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
    );
+
+/** writes gnuplot code to the specific file to plot QP instance*/
+SCIP_RETCODE SCIPwriteQpGp(
+   SCIP*                 scip,                     /** SCIP data structure */
+   FILE*                 file,                     /** File pointer to write to */
+   SCIP_CONS**           linearConstraints,        /** Array of linear constraints */
+   int                   nLinearConstraints,       /** Number of linear constraints */
+   SCIP_CONS**           quadraticConstraints,     /** Array of quadratic constraints */
+   int                   nQuadraticConstraints,    /** Number of quadratic constraints */
+   int*                  variablePosition,         /** Array indicating at which position the variable at [i] is to be plot */
+   int                   nVariables,               /** Number of variables */
+   SCIP_Bool             writeReorderedVariables   /** Use standard order of the variables or reposition as indicated in variablePosition? */
+);
+
+/** Compiles a given gnuplot file */
+SCIP_RETCODE GCGcompileGpFile(
+   SCIP*                  scip,          /**< SCIP data structure */
+   char*                  filename       /** path to .gp file */
+);
+
 
 #ifdef __cplusplus
 }
