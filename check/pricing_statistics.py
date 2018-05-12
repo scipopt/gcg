@@ -86,7 +86,10 @@ def parse_arguments(args):
                         help='draw lines between pricing-rounds on the plots (0=never, 1=only for rounds that are not too short, 2=always)')
 
     parser.add_argument('--aggregate', action = 'store_true',
-                        help='for each pricing round, draw only one aggregated bar in the summary plot')
+                        help='for each pricing round, draw only one aggregated bar in the complete plot')
+
+    parser.add_argument('--gapincomplete', action = 'store_true',
+                        help='draw the gaps in the complete plot')
 
     parser.add_argument('--no-text', action='store_true',
                         help='do not write any text on the plots (such as node or round numbers)')
@@ -295,11 +298,64 @@ def save_plot(fig, plotname, info):
         plt.savefig(filename + dot + str(n) + '.png')
     return
 
-def make_complete_plot(data, info):
+def collect_gap_data(data, root_bounds):
+    """
+    Collect primal/dual bound and gap data per pricing round and problem, in preparation for gap and complete plots
+    :param data: collected pricing data as dataframe
+    :param root_bounds: collected root bounds data; necessary for the calculation of the gap at each round
+    :return: The gap data
+    """
+
+    start_time = time.time()
+
+    # calculate the gap data as combination of pricing statistics and root bounds data
+    if params['gapperround']:
+        gap_data = data.query('(farkas == False) & (node == 1) & (pricing_prob >= 0)').drop(['farkas', 'nVars'], axis = 1).groupby('pricing_round').sum()
+    else:
+        gap_data = data.query('(farkas == False) & (node == 1) & (pricing_prob >= 0)').drop(['farkas', 'nVars'], axis = 1).groupby(['pricing_round','pricing_prob']).sum()
+    rb = root_bounds.copy()
+    rb.iter += gap_data.reset_index().pricing_round.min()
+    rb = rb.rename(columns = {'iter': 'pricing_round'})[['pricing_round','pb','db']].set_index('pricing_round')
+    gap_data = rb.join(gap_data, how = 'inner', lsuffix = '_rb')
+    #gap_data.db = gap_data.db.expanding().max()
+
+    if params['dualoptdiff']:
+        # check if the primal bound is the upper bound
+        primal_is_upper = None
+        if not gap_data.pb.dropna().empty and not gap_data.db.dropna().empty:
+            if gap_data.pb.dropna().iloc[0] > gap_data.db.dropna().iloc[0]:
+                primal_is_upper = True
+            else:
+                primal_is_upper = False
+
+        # calculate the gap itself (normalized to 1 as the largest gap)
+        if primal_is_upper is None:
+            print '    cannot calculate dualoptdiff, since it is not clear if the primal bound is the upper or lower'
+            gap_data['gap'] = abs(gap_data.pb - gap_data.db)
+        elif primal_is_upper:
+            gap_data['gap'] = gap_data.pb.min() - gap_data.db
+        elif not primal_is_upper:
+            gap_data['gap'] = gap_data.db - gap_data.pb.max()
+
+    else:
+        gap_data['gap'] = abs(gap_data.pb - gap_data.db)
+
+    # normalize all finite gaps and set all infinite gaps to one
+    max_gap = gap_data.gap.dropna()[is_fin(gap_data.pb) & is_fin(gap_data.db)].max()
+    gap_data.gap = gap_data.gap / max_gap
+    gap_data.loc[gap_data.gap > 1., 'gap'] = 1.
+    gap_data.loc[gap_data.gap < 0., 'gap'] = 0.
+
+    print '    extracted gap data:', time.time() - start_time
+
+    return gap_data
+
+def make_complete_plot(data, info, gap_data):
     """
     Make a complete plot from the structured data
     :param data: dataframe with the collected data
     :param info: dictionary containing information about the data like the name of the instance, the settings & the scip_status
+    :param gap data: collected gap data as dataframe
     :return:
     """
     start_time = time.time()
@@ -314,8 +370,18 @@ def make_complete_plot(data, info):
     # the column pool has no bar and therefore gets no time shift
     data.loc[data.pricing_prob <> -1, 'time'] = data[data.pricing_prob <> -1].time + 0.01
 
-    # calculate the starting time of each round
+    # calculate the starting and ending time of each round
     data['starting_time'] = data.time.cumsum() - data.time
+    data['ending_time'] = data.time.cumsum()
+
+    if params['gapincomplete']:
+        # calculate data for the gap plot
+        if params['gapperround']:
+            gap_rounds = [x for x in gap_data.index.values]
+        else:
+            gap_rounds = [x[0] for x in gap_data.index.values]
+        x_gap = data[data['pricing_round'].isin(gap_rounds)].drop_duplicates('pricing_round', 'last').ending_time.values
+        y_gap = gap_data.groupby('pricing_round').first()['gap'].values
 
     # set the height of the LP time bars to a maximum value
     data.loc[data.pricing_prob == -2, 'nVars'] = data.nVars.max() * 10
@@ -349,6 +415,11 @@ def make_complete_plot(data, info):
     # add the column pool data as a scatter plot
     cp_scatter = ax.scatter(x_colpool, y_colpool, color = 'green', marker = 'o', s = 100, zorder = 10, label = 'column pool')
 
+    if params['gapincomplete']:
+        # add the gap plot
+        ax2 = ax.twinx()
+        gap_plot = ax2.plot(x_gap, y_gap, 'k--', color = 'red', linewidth = 10.0, label = 'gap')
+
     print '    data plotted:', time.time() - start_time
     start_time = time.time()
 
@@ -378,6 +449,8 @@ def make_complete_plot(data, info):
     ax.set_xlabel('Time / s', size = 1.15*textsize)
     ax.set_ylabel('\# of variables', size = 1.15*textsize)
     trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+    if params['gapincomplete']:
+        ax2.set_ylabel('Gap', size = 1.15*textsize)
 
     print '    data formatted:', time.time() - start_time
     start_time = time.time()
@@ -933,65 +1006,26 @@ def make_time_plot(data, info):
     print '    close time plot:', time.time() - start_time
     start_time = time.time()
 
-def make_gap_plot(data, info, root_bounds):
+def make_gap_plot(gap_data, info):
     """
     For each instance create a plot, comparing the solving time of a pricing problem with the size of the gap in the root node
-    :param data: collected pricing data as dataframe
+    :param gap data: collected gap data as dataframe
     :param info: dictionary containing information about the data like the name of the instance, the settings & the scip_status
-    :param root_bounds: collected root bounds data; necessary for the calculation of the gap at each round
     :return:
     """
     start_time = time.time()
 
-    # calculate the gap data as combination of pricing statistics and root bounds data
-    if params['gapperround']:
-        gap_data = data.query('(farkas == False) & (node == 1) & (pricing_prob >= 0)').drop(['farkas', 'nVars'], axis = 1).groupby('pricing_round').sum()
-    else:
-        gap_data = data.query('(farkas == False) & (node == 1) & (pricing_prob >= 0)').drop(['farkas', 'nVars'], axis = 1).groupby(['pricing_round','pricing_prob']).sum()
-    rb = root_bounds.copy()
-    rb.iter += gap_data.reset_index().pricing_round.min()
-    rb = rb.rename(columns = {'iter': 'pricing_round'})[['pricing_round','pb','db']].set_index('pricing_round')
-    gap_data = rb.join(gap_data, how = 'inner', lsuffix = '_rb')
-    #gap_data.db = gap_data.db.expanding().max()
-
-    if params['dualoptdiff']:
-        # check if the primal bound is the upper bound
-        primal_is_upper = None
-        if not gap_data.pb.dropna().empty and not gap_data.db.dropna().empty:
-            if gap_data.pb.dropna().iloc[0] > gap_data.db.dropna().iloc[0]:
-                primal_is_upper = True
-            else:
-                primal_is_upper = False
-
-        # calculate the gap itself (normalized to 1 as the largest gap)
-        if primal_is_upper is None:
-            print '    cannot calculate dualoptdiff, since it is not clear if the primal bound is the upper or lower'
-            gap_data['gap'] = abs(gap_data.pb - gap_data.db)
-        elif primal_is_upper:
-            gap_data['gap'] = gap_data.pb.min() - gap_data.db
-        elif not primal_is_upper:
-            gap_data['gap'] = gap_data.db - gap_data.pb.max()
-
-    else:
-        gap_data['gap'] = abs(gap_data.pb - gap_data.db)
-
-    # normalize all finite gaps and set all infinite gaps to one
-    max_gap = gap_data.gap.dropna()[is_fin(gap_data.pb) & is_fin(gap_data.db)].max()
-    gap_data.gap = gap_data.gap / max_gap
-    gap_data.loc[gap_data.gap > 1., 'gap'] = 1.
-    gap_data.loc[gap_data.gap < 0., 'gap'] = 0.
-
-    gap_data = gap_data.sort_values('time')
-    mean_data = gap_data['gap'].groupby(gap_data.time.apply(lambda x: round(x,2))).mean()
+    time_gap_data = gap_data.sort_values('time')
+    mean_data = time_gap_data['gap'].groupby(time_gap_data.time.apply(lambda x: round(x,2))).mean()
     if len(mean_data) >= 20:
         mean_data = mean_data.rolling(max(int(.08 * len(mean_data)), 5), center = True).mean()
 
-    print '    extracted gap data:', time.time() - start_time
+    print '    sorted gap data:', time.time() - start_time
     start_time = time.time()
 
     # set x and y values
-    x = gap_data.time.values
-    y = (1 - gap_data.gap).values
+    x = time_gap_data.time.values
+    y = (1 - time_gap_data.gap).values
     x_mean = mean_data.index.values
     y_mean = (1 - mean_data).values
 
@@ -1017,7 +1051,7 @@ def make_gap_plot(data, info, root_bounds):
         color = 'k'
     else:
         ax.set_xlabel('Time of one pricing problem', size = 'large')
-        color = get_colmap(gap_data.index.get_level_values('pricing_prob').tolist())[0]
+        color = get_colmap(time_gap_data.index.get_level_values('pricing_prob').tolist())[0]
     ax.set_ylabel('Gap closed', size = 'large')
     ax.set_ylim([-0.04,1.04])
     ax.tick_params(axis='both', labelsize='large')
@@ -1039,6 +1073,8 @@ def make_gap_plot(data, info, root_bounds):
 
     print '    saved gap plot:', time.time() - start_time
     start_time = time.time()
+
+    del time_gap_data
 
     return
 
@@ -1249,9 +1285,15 @@ def plots(data, info, root_bounds = None):
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
 
+    # prepare gap data, if necessary
+    if not (root_bounds is None or params['no_gap']) or (not params['no_complete'] and params['gapincomplete']):
+        gap_data = collect_gap_data(data, root_bounds)
+    else:
+        gap_data = None
+
     # plot everything involving root bounds and the b&b-tree if possible and requested
     if not (root_bounds is None or params['no_gap']):
-        make_gap_plot(data, info, root_bounds)
+        make_gap_plot(gap_data, info)
     if not params['no_depth']:
         make_depth_plot(info)
     if not params['no_nodeID']:
@@ -1296,7 +1338,7 @@ def plots(data, info, root_bounds = None):
             make_time_plot(data, info)
         if not params['no_complete']:
             # do not build the complete plot
-            make_complete_plot(data, info)
+            make_complete_plot(data, info, gap_data)
     else:
         # split the plots by rounds
         fromRnd = minRnd - 1
@@ -1318,7 +1360,7 @@ def plots(data, info, root_bounds = None):
                 make_time_plot(data, info)
             if not params['no_complete']:
                 # do not build the complete plot
-                make_complete_plot(data, info)
+                make_complete_plot(data, info, gap_data)
             fromRnd = toRnd
 
     return
