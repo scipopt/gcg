@@ -28,6 +28,7 @@
 /**@file   reader_gp.c
  * @brief  GP file reader writing gnuplot files
  * @author Martin Bergner
+ * @author Michael Feldmeier
  * @todo change output file type based on parameter
  */
 
