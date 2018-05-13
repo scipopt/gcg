@@ -1,6 +1,6 @@
 detection/benders/enabled = TRUE
 detection/benders/onlybinmaster = TRUE
-detection/maxrounds = 2
+detection/maxrounds = 1
 detection/scoretype = 7
 detection/origprob/enabled  = TRUE
 detection/origprob/classificationenabled = TRUE
