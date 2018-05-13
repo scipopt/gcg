@@ -8,6 +8,7 @@ import os
 import argparse
 import time
 import datetime
+from collections import Counter
 from collections import OrderedDict
 
 import pandas as pd
@@ -33,7 +34,8 @@ plotnames = ['complete',
              'time',
              'gap',
              'depth',
-             'nodeID']
+             'nodeID',
+             'vartimes']
 
 def parse_arguments(args):
     """
@@ -350,7 +352,7 @@ def collect_gap_data(data, root_bounds):
 
     return gap_data
 
-def make_complete_plot(data, info, gap_data):
+def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
     """
     Make a complete plot from the structured data
     :param data: dataframe with the collected data
@@ -397,6 +399,16 @@ def make_complete_plot(data, info, gap_data):
     widths = data.time.values
     colors, cmapping = get_colmap(data.pricing_prob.values, consider_masterlptime = False)
 
+    # define positions for incumbent and root lp solution plots
+    rootlpsol_times_cnt = Counter(rootlpsol_times)
+    incumbent_times_cnt = Counter(incumbent_times)
+    incumbent_times_bottoms = list()
+    for t in incumbent_times_cnt.keys():
+        if t in rootlpsol_times_cnt.keys():
+            incumbent_times_bottoms.append(ymin + rootlpsol_times_cnt[t])
+        else:
+            incumbent_times_bottoms.append(ymin)
+
     # sometimes we need just the height of the bars of the pricing problems
     y_pricers = (data[data.pricing_prob >= 0].nVars - ymin).values
 
@@ -414,6 +426,9 @@ def make_complete_plot(data, info, gap_data):
 
     # add the column pool data as a scatter plot
     cp_scatter = ax.scatter(x_colpool, y_colpool, color = 'green', marker = 'o', s = 100, zorder = 10, label = 'column pool')
+
+    ax.bar(rootlpsol_times_cnt.keys(), width=lw, height=rootlpsol_times_cnt.values(), bottom = ymin, align = 'edge', color = 'blue', label='root lp solution vars')
+    ax.bar(incumbent_times_cnt.keys(), width=lw, height=incumbent_times_cnt.values(), bottom = incumbent_times_bottoms, align = 'edge', color = 'green', label='incumbent solution vars')
 
     if params['gapincomplete']:
         # add the gap plot
@@ -1273,7 +1288,54 @@ def make_depth_plot(info):
 
     return
 
-def plots(data, info, root_bounds = None):
+def make_vartimes_plot(settings, incumbent_times_tot, rootlpsol_times_tot):
+    """
+    Plot a distribution of relative creation times of master variables that are present in incumbent and root lp solutions
+    """
+
+    print 'summarize variable creation times'
+
+    start_time = time.time()
+
+    # make the histogram
+    fig = plt.gcf()
+    ax = plt.gca()
+    if not params['png']:
+        lw = 0.01
+    else:
+        lw = 1.0
+
+    ax.hist([rootlpsol_times_tot, incumbent_times_tot], 10, stacked=True, color = ['blue', 'green'], edgecolor = 'white', alpha=0.75, label = ['root LP solution', 'incumbent solution'])
+
+    # set parameters
+    if not params['png']:
+        fig.set_size_inches(8*11.7,8*8.3)
+        textsize = ax.get_window_extent().height * 0.013
+    else:
+        fig.set_size_inches(11.7,8.3)
+        textsize = 12
+
+    # formatting
+#    ax.set_ylim([0.0, 1.0])
+    ax.set_xlim([0.0, 1.0])
+#    ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True, nbins = 15))
+    ax.tick_params(axis = 'both', length = textsize/2, width = textsize/40, labelsize = textsize*0.9, pad = 15)
+    ax.set_xlabel('Relative solution time', size = 1.15*textsize)
+    ax.set_ylabel('\% of variables', size = 1.15*textsize)
+    trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+
+    # save the figure
+    plt.tight_layout()
+#    fig.subplots_adjust(top = 0.98/text_height, right = 0.85, left = 0.03)
+    save_plot(fig, 'vartimes', {'instance': "all", 'settings': settings, 'status': "None"})
+    plt.close()
+
+    print '    save:', time.time() - start_time
+    print '    saved figure'
+
+    return
+
+def plots(data, info, incumbent_times, rootlpsol_times, root_bounds = None):
     """
     Master-function for plotting. Splits the data if necessary and calls all plotting functions (or a subset, according to the params)
     :param data: collected data as dataframe
@@ -1338,7 +1400,7 @@ def plots(data, info, root_bounds = None):
             make_time_plot(data, info)
         if not params['no_complete']:
             # do not build the complete plot
-            make_complete_plot(data, info, gap_data)
+            make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times)
     else:
         # split the plots by rounds
         fromRnd = minRnd - 1
@@ -1360,10 +1422,19 @@ def plots(data, info, root_bounds = None):
                 make_time_plot(data, info)
             if not params['no_complete']:
                 # do not build the complete plot
-                make_complete_plot(data, info, gap_data)
+                make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times)
             fromRnd = toRnd
 
     return
+
+def collect_vartimes(data, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot):
+    """
+    Collects variable creation times of incumbent and root lp solutions over all instances
+    """
+    total_time = data.time.sum()
+
+    incumbent_times_tot += [min(x / total_time, 1.0) for x in incumbent_times]
+    rootlpsol_times_tot += [min(x / total_time, 1.0) for x in rootlpsol_times]
 
 def load_data(files):
     """
@@ -1371,6 +1442,12 @@ def load_data(files):
     :param files: the pickle files, from which the dataframes are to load (one file per instance)
     :return:
     """
+
+    # global statistics over all files
+    settings_global = 'default'
+    incumbent_times_tot = list()
+    rootlpsol_times_tot = list()
+
     for file in files:
         # check if the file exists
         if not os.path.exists(file):
@@ -1393,6 +1470,8 @@ def load_data(files):
         objects = pickle.load(pkl_file)
         df = objects['pricing_data']
         info = objects['info']
+        incumbent_times = objects['incumbent_times']
+        rootlpsol_times = objects['rootlpsol_times']
         if 'root_bounds' in objects and not objects['root_bounds'].empty:
             root_bounds = objects['root_bounds']
         else:
@@ -1404,14 +1483,20 @@ def load_data(files):
         if df.empty:
             print '    no data found'
         else:
+            settings_global = info['settings']
+            collect_vartimes(df, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
             start_time = time.time()
             # call the plotting master method
-            plots(df, info, root_bounds)
+            plots(df, info, incumbent_times, rootlpsol_times, root_bounds)
             print '    total plotting:', time.time() - start_time
         print '    leaving', info['instance']
+
+    if not params['no_vartimes']:
+        make_vartimes_plot(settings_global, incumbent_times_tot, rootlpsol_times_tot)
+
     return
 
-def collect_data(info, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, root_bounds = None):
+def collect_data(info, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot, root_bounds = None):
     """
     Take lists containing the parsed data and structure them in a multiindex dataframe; then save or plot the data.
     All lists have to be of equal length (representing columns in a table)
@@ -1440,14 +1525,15 @@ def collect_data(info, ind_node, ind_pricing_round, ind_stab_round, ind_round, i
         start_time = time.time()
         output = open(params['outdir'] + '/' + info['instance'] + '.' + info['settings'] + '.pkl', 'wb')
         if root_bounds is None:
-            pickle.dump({'pricing_data': df, 'info': info}, output, -1)
+            pickle.dump({'pricing_data': df, 'info': info, 'incumbent_times': incumbent_times, 'rootlpsol_times': rootlpsol_times}, output, -1)
         else:
-            pickle.dump({'pricing_data': df, 'info': info, 'root_bounds': root_bounds}, output, -1)
+            pickle.dump({'pricing_data': df, 'info': info, 'incumbent_times': incumbent_times, 'rootlpsol_times': rootlpsol_times, 'root_bounds': root_bounds}, output, -1)
         output.close()
         print '    total saving:', time.time() - start_time
     else:
+        collect_vartimes(df, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
         start_time = time.time()
-        plots(df, info, root_bounds)
+        plots(df, info, incumbent_times, rootlpsol_times, root_bounds)
         print '    total plotting:', time.time() - start_time
     return
 
@@ -1457,6 +1543,12 @@ def parse_files(files):
     :param files: List of files to be parsed
     :return:
     """
+
+    # global statistics over all files
+    settings_global = 'default'
+    incumbent_times_tot = list()
+    rootlpsol_times_tot = list()
+
     for file in files:
         with open(file) as _file:
             first_line_of_file = True
@@ -1473,7 +1565,7 @@ def parse_files(files):
                                 done = True
                                 continue
                             print '    ended abruptly'
-                            collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                            collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                             print '    leaving', problemFileName
                             done = True
 
@@ -1511,6 +1603,8 @@ def parse_files(files):
                         lptime_begin = 0
                         lptime_end = 0
                         root_bounds_data = pd.DataFrame()
+                        incumbent_times = list()
+                        rootlpsol_times = list()
                     else:
                         # ignore lines, where the output ends abrubtly (e.g. when the hard limit of the check-script is reached)
                         continue
@@ -1524,6 +1618,7 @@ def parse_files(files):
                     settings = line.split()[-1]
                     settings = settings.split("/")[-1]
                     settings = os.path.splitext(settings)[0]
+                    settings_global = settings
 
                 elif not problemFileName and line.startswith("read problem "):
                     # get the problem name from the file name as in "check.awk"
@@ -1553,18 +1648,28 @@ def parse_files(files):
                     scip_status = line.split(':')[1].split('[')[1].split(']')[0].replace(' ','_')
                     continue
 
+                # read variable creation times of incumbent and root solution
+                elif line.startswith("VAR:"):
+                    tmparray = line.split()
+                    time = tmparray[3]
+                    if time == 'time':
+                        continue
+                    solval = float(tmparray[8])
+                    rootlpsolval = float(tmparray[9])
+                    if time == 'time':
+                        continue
+                    if solval > 0.0:
+                        incumbent_times.append(float(time))
+                    if rootlpsolval > 0.0:
+                        rootlpsol_times.append(float(time))
+
                 # read the root bounds table
                 elif line.startswith("Root bounds"):
                     root_bounds = True
 
                 elif root_bounds:
                     if line.startswith('Pricing Summary:'):
-                        # end of the root bounds table; nothing more to read for this instance
-                        root_bounds_data.iter = root_bounds_data.iter.astype('int')
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, root_bounds = root_bounds_data)
                         root_bounds = False
-                        done = True
-                        print '    leaving', problemFileName
                     elif line.startswith('iter	pb	db	time	dualdiff	dualoptdiff'):
                         # create a dataframe to store the table
                         root_bounds_data = pd.DataFrame(columns = line.split())
@@ -1572,6 +1677,14 @@ def parse_files(files):
                     else:
                         root_bounds_data.loc[root_bounds_ind] = [float(s) for s in line.split()]
                         root_bounds_ind += 1
+
+                elif line.startswith("Pricing time in colpool"):
+                    # nothing more to read for this instance
+                    root_bounds_data.iter = root_bounds_data.iter.astype('int')
+                    collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot, root_bounds = root_bounds_data)
+                    done = True
+                    print '    leaving', problemFileName
+                    continue
 
                 # ignore all other lines, that do not contain pricer statistics messages
                 elif not line.startswith("[src/pricer_gcg.cpp:"):
@@ -1591,7 +1704,7 @@ def parse_files(files):
                         round_begin = True
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -1632,7 +1745,7 @@ def parse_files(files):
                                 print 'It seems, that the LP time is not constant during a pricing round. Delta t is', lptime_end - lptime_begin
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -1657,7 +1770,7 @@ def parse_files(files):
                         round_counter += 1
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -1683,7 +1796,7 @@ def parse_files(files):
                             val_farkas.append(not farkasDone)
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -1723,13 +1836,16 @@ def parse_files(files):
                             val_farkas.append(not farkasDone)
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print '    leaving', problemFileName
                         done = True
                         continue
 
             if not done:
-                collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
+
+    if not params['no_vartimes']:
+        make_vartimes_plot(settings_global, incumbent_times_tot, rootlpsol_times_tot)
 
 def main():
     """Entry point when calling this script"""
