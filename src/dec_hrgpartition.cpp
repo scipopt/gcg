@@ -105,6 +105,10 @@ using gcg::Weights;
 #define DEFAULT_DUMMYNODES        0.2        /**< percentage of dummy vertices*/
 #define DEFAULT_CONSWEIGHT_SETPPC 5          /**< weight for constraint hyperedges that are setpartitioning or covering
                                                   constraints */
+
+#define DEFAULT_LIMITNCONSSNVARSDEFAULT  10000  /**< limit for sum of nvars and nconss for enabling this detector in default */
+#define DEFAULT_ENABLEDFORLARGEPROBLEMS  FALSE  /** should this detector be enabled even the limit nconssnvars is exceeded */
+
 #define DEFAULT_MINBLOCKS         2          /**< value for the minimum number of blocks to be considered */
 #define DEFAULT_MAXBLOCKS         20         /**< value for the maximum number of blocks to be considered */
 #define DEFAULT_MAXNBLOCKCANDIDATES 3          /**< number of block number candidates to be considered */
@@ -143,6 +147,9 @@ struct DEC_DetectorData
    /* general parameters */
    SCIP_Real dummynodes;      /**< percent of dummy nodes */
    SCIP_Bool tidy;            /**< whether tempory metis files should be cleaned up */
+   int       limitnconssnvarsdefault;       /**<  limit for sum of nvars and nconss for enabling this detector in default*/
+   SCIP_Bool enabledforlargeproblems;
+
    int       maxnblockcandidates;       /**< maximal number of block canddidates to test */
    int       maxblocks;       /**< maximal number of blocks to test */
    int       minblocks;       /**< minimal number of blocks to test */
@@ -206,6 +213,8 @@ DEC_DECL_INITDETECTOR(initHrgpartition)
 
    nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
+
+
 
    return SCIP_OKAY;
 }
@@ -807,7 +816,21 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    gcg::Seeed* seeed;
    seeed = seeedPropagationData->seeedToPropagate;
 
+   SCIP_Bool enabledforlarge;
+   int limit;
+
+   SCIPgetBoolParam(scip, "detection/detectors/hrgpartition/enabledforlargeproblems", &enabledforlarge);
+   SCIPgetIntParam(scip, "detection/detectors/hrgpartition/limitnconssnvarsdefault", &limit);
+
+   if ( !enabledforlarge && (SCIPgetNConss(scip) + SCIPgetNVars(scip) > limit) )
+   {
+      seeedPropagationData->nNewSeeeds = 0;
+      *result = SCIP_SUCCESS;
+      return SCIP_OKAY;
+   }
+
    SCIPdebugMessage("Started propagate seeed of detector %s and partial decomp %d \n", DEC_DETECTORNAME, seeed->getID() );
+
 
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->refineToMaster(seeedPropagationData->seeedpool);
@@ -1049,8 +1072,11 @@ SCIP_RETCODE SCIPincludeDetectorHrgpartition(
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectAndBuildArrowhead, freeHrgpartition, initHrgpartition, exitHrgpartition, propagateSeeedHrgpartition, propagateFromToolboxHrgpartition, finishFromToolboxHrgpartition, finishSeeedHrgpartition, detectorPostprocessSeeedHrgpartition, setParamAggressiveHrgpartition, setParamDefaultHrgpartition, setParamFastHrgpartition) );
 
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrgpartition/limitnconssnvarsdefault", "limit for sum of nvars and nconss for enabling this detector in default", &detectordata->limitnconssnvarsdefault, TRUE, DEFAULT_LIMITNCONSSNVARSDEFAULT, 0, INT_MAX, NULL, NULL) );
 
-   /* add hrgpartition presolver parameters */
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hrgpartition/enabledforlargeproblems", "should this detector be enabled even the limit nconssnvars is exceeded",&detectordata->enabledforlargeproblems, TRUE, DEFAULT_ENABLEDFORLARGEPROBLEMS, NULL, NULL) );
+
+     /* add hrgpartition presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrgpartition/maxnblockcandidates", "The maximal number of block number candidates", &detectordata->maxnblockcandidates, FALSE, DEFAULT_MAXNBLOCKCANDIDATES, 0, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrgpartition/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrgpartition/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
