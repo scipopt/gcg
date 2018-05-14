@@ -129,28 +129,12 @@ googletest:
 bliss:
 		@$(MAKE) -C lib/bliss
 
-.PHONY: cliquer
-cliquer: cliquerobj cliquerlib
-
-.PHONY: cliquerobj
-cliquerobj:
-		@$(MAKE) -C lib/cliquer
-
-.PHONY: cliquerlib
-cliquerlib:
-		@echo "-> generating library lib/cliquer/libcliquer.a"
-		@-rm -f lib/cliquer/libcliquer.a
-		@$(LIBBUILD) $(LIBBUILDFLAGS) lib/cliquer/libcliquer.a lib/cliquer/*.o
-ifneq ($(RANLIB),)
-		@$(RANLIB) lib/cliquer/libcliquer.a
-endif
-
 .PHONY: soplex
 soplex:
 		@$(MAKE) -C lib/soplex-git OPT=opt
 
 .PHONY: deps
-deps:		bliss cliquer googletest soplex scip
+deps:		bliss googletest soplex scip
 
 .PHONY: tests
 tests::		$(TESTOBJDIR) $(TESTFILE) $(TESTSHORTLINK) $(GCGLIBFILE)
@@ -198,8 +182,6 @@ coverage: tests
 		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/scip/*" > gcov/gcg.capture
 		mv gcov/gcg.capture gcov/gcg.capture.tmp
 		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/blissinc/*" > gcov/gcg.capture
-		mv gcov/gcg.capture gcov/gcg.capture.tmp
-		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/cliquerinc/*" > gcov/gcg.capture
 		mv gcov/gcg.capture gcov/gcg.capture.tmp
 		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/gtest/*" > gcov/gcg.capture
 		mv gcov/gcg.capture gcov/gcg.capture.tmp

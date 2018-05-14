@@ -11,8 +11,6 @@ doc/html/
 gcg-*.*.*
 gcg-metis*
 lib/blissinc
-lib/cliquer
-lib/cliquerinc
 lib/cpxinc
 lib/gtest
 lib/lib*

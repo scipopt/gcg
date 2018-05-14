@@ -133,7 +133,6 @@
 #include "scip/debug.h"
 #include "dialog_master.h"
 #include "disp_master.h"
-#include "solver_cliquer.h"
 #include "solver_knapsack.h"
 #include "solver_mip.h"
 #include "event_bestsol.h"
@@ -151,10 +150,6 @@
 #include "heur_relaxcolsel.h"
 #include "heur_restmaster.h"
 #include "heur_setcover.h"
-
-#ifndef NCLIQUER
-#include "solver_cliquer.h"
-#endif
 
 #ifndef NCPLEXSOLVER
 #include "solver_cplex.h"
@@ -276,10 +271,6 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
    SCIP_CALL( GCGincludeSolverKnapsack(scip) );
    SCIP_CALL( GCGincludeSolverMip(scip) );
-
-#ifndef NCLIQUER
-   SCIP_CALL( GCGincludeSolverCliquer(scip) );
-#endif
 
 #ifndef NCPLEXSOLVER
    SCIP_CALL( GCGincludeSolverCplex(scip) );
