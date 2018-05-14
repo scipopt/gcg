@@ -70,9 +70,10 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -94,14 +95,15 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -128,9 +130,8 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -145,14 +146,16 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -248,9 +251,10 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -273,14 +277,15 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -307,9 +312,8 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -324,14 +328,16 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -433,9 +439,10 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -458,14 +465,15 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -492,9 +500,8 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -509,14 +516,16 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -617,9 +626,10 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -642,14 +652,15 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -676,9 +687,8 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -693,14 +703,16 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -801,9 +813,10 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -826,14 +839,15 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -860,9 +874,8 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -877,14 +890,16 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -985,9 +1000,10 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -1010,14 +1026,15 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -1044,9 +1061,8 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -1061,14 +1077,16 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -1164,9 +1182,10 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -1189,14 +1208,15 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -1223,9 +1243,8 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -1240,14 +1259,16 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -1342,9 +1363,10 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -1367,14 +1389,15 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -1401,9 +1424,8 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -1418,14 +1440,16 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -1524,9 +1548,10 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -1549,14 +1574,15 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -1583,9 +1609,8 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -1600,14 +1625,16 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -1708,9 +1735,10 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -1733,14 +1761,15 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -1767,9 +1796,8 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -1784,14 +1812,16 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -1892,9 +1922,10 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -1917,14 +1948,15 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -1951,9 +1983,8 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -1968,14 +1999,16 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -2071,9 +2104,10 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -2096,14 +2130,15 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -2130,9 +2165,8 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -2147,14 +2181,16 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -2251,9 +2287,10 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -2276,14 +2313,15 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -2310,9 +2348,8 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -2327,14 +2364,16 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -2431,9 +2470,10 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -2456,14 +2496,15 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -2490,9 +2531,8 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -2507,14 +2547,16 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -2613,9 +2655,10 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -2638,14 +2681,15 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -2672,9 +2716,8 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -2689,14 +2732,16 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -2798,9 +2843,10 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -2823,14 +2869,15 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -2857,9 +2904,8 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -2874,14 +2920,16 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -2982,9 +3030,10 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -3007,14 +3056,15 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -3041,9 +3091,8 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualcomp.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualagg.h \
+ lib/scip/src/scip/presol_dualcomp.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
@@ -3058,14 +3107,16 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
