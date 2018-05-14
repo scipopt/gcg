@@ -292,8 +292,10 @@ SCIP_RETCODE writeGpNonzeros(
 
    radius *= radiusscale;
 
-   if ( plotmiplib && radius < 0.01 )
+   if ( radius < 0.01 )
       radius = 0.01;
+
+   std::cout << "radius for file: " << radius << std::endl;
 
    /* start writing dots */
    if ( plotmiplib )

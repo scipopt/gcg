@@ -638,6 +638,16 @@ SCIP_Bool cmpSeeedsPPCaggFWhite(
 }
 
 
+/** returns TRUE if seeed i has a greater score than seeed j */
+SCIP_Bool cmpSeeedsBenders(
+   SeeedPtr i,
+   SeeedPtr j
+   )
+{
+   return ( i->getScore( BENDERS )  > j->getScore( BENDERS ) );
+}
+
+
 /* method to thin out the vector of given seeeds */
 std::vector<SeeedPtr> thinout(
    std::vector<SeeedPtr> finishedseeeds,
@@ -827,11 +837,12 @@ SCIP_Bool seeedIsNoDuplicate(
 Seeedpool::Seeedpool(
    SCIP* givenScip,
    const char* conshdlrName,
-   SCIP_Bool _transformed
+   SCIP_Bool _transformed,
+   SCIP_Bool _benders
    ) :
    scip( givenScip ), incompleteSeeeds( 0 ), currSeeeds( 0 ), ancestorseeeds( 0 ), unpresolvedfixedtozerovars(0),
    nVars( SCIPgetNVars( givenScip ) ), nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ),
-   nFinishingDetectors( 0 ), nPostprocessingDetectors(0), nnonzeros( 0 ), candidatesNBlocks( 0 ),   dualvalsrandom(std::vector<SCIP_Real>(0)), dualvalsoptimaloriglp(std::vector<SCIP_Real>(0)) , dualvalsrandomset(FALSE), dualvalsoptimaloriglpcalculated(FALSE), transformed( _transformed ),
+   nFinishingDetectors( 0 ), nPostprocessingDetectors(0), nnonzeros( 0 ), candidatesNBlocks( 0 ),   dualvalsrandom(std::vector<SCIP_Real>(0)), dualvalsoptimaloriglp(std::vector<SCIP_Real>(0)) , dualvalsrandomset(FALSE), dualvalsoptimaloriglpcalculated(FALSE), transformed( _transformed ), benders(_benders),
    classificationtime(0.), nblockscandidatescalctime(0.), postprocessingtime(0.), scorecalculatingtime(0.), translatingtime(0.)
 {
    SCIP_CONS** conss;
@@ -1069,6 +1080,19 @@ Seeedpool::Seeedpool(
 
    /*  init  seeedpool with empty seeed */
    SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), this );
+   SCIP_Bool onlybinmaster;
+   SCIP_Bool onlycontsubpr;
+
+   SCIPgetBoolParam(scip, "detection/benders/onlybinmaster", &onlybinmaster);
+   SCIPgetBoolParam(scip, "detection/benders/onlycontsubpr", &onlycontsubpr);
+   std::cout << " before init only bin master " << std::endl;
+   if( onlybinmaster )
+   {
+      std::cout << " start only bin master " << std::endl;
+      emptyseeed->initOnlyBinMaster();
+      emptyseeed->considerImplicits(this);
+   }
+
 
    addSeeedToCurr( emptyseeed );
    addSeeedToAncestor(emptyseeed);
@@ -1442,6 +1466,8 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             for( int seeed = 0; seeed < seeedPropData->nNewSeeeds; ++ seeed )
             {
                SCIP_Bool noduplicate;
+               if( seeedPropData->newSeeeds[seeed]->isComplete() )
+                  seeedPropData->newSeeeds[seeed]->deleteEmptyBlocks(false);
 #pragma omp critical ( seeedptrstore )
                noduplicate = seeedIsNoDuplicate( seeedPropData->newSeeeds[seeed], nextSeeeds, finishedSeeeds, false );
                if( ! seeedPropData->newSeeeds[seeed]->isTrivial() && noduplicate )
@@ -1528,6 +1554,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++ finished )
             {
                SeeedPtr seeed = seeedPropData->newSeeeds[finished];
+               seeed->deleteEmptyBlocks(false);
 #pragma omp critical ( seeedcount )
                seeed->setID( getNewIdForSeeed() );
                seeed->sort();
@@ -1611,6 +1638,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
          for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++ finished )
          {
             SeeedPtr seeed = seeedPropData->newSeeeds[finished];
+            seeed->deleteEmptyBlocks(false);
 #pragma omp critical ( seeedcount )
             seeed->setID( getNewIdForSeeed() );
 
@@ -1834,6 +1862,10 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::SETPART_AGG_FWHITE )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsPPCaggFWhite);
 
+   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::BENDERS )
+      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsBenders);
+
+
 }
 
  /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
@@ -2010,14 +2042,29 @@ void Seeedpool::addSeeedToIncomplete(
    SCIP_Bool* success
    )
 {
+   *success = FALSE;
    if( seeedIsNoDuplicateOfSeeeds(seeed, incompleteSeeeds, false) )
    {
       incompleteSeeeds.push_back( seeed );
       *success = TRUE;
    }
-   *success = FALSE;
    return;
 }
+
+SCIP_Bool Seeedpool::isSeeedDuplicateofIncomplete(
+   SeeedPtr seeed
+   )
+{
+   return !(seeedIsNoDuplicateOfSeeeds(seeed, incompleteSeeeds, false));
+}
+
+SCIP_Bool Seeedpool::isSeeedDuplicateofFinished(
+   SeeedPtr seeed
+   )
+{
+   return !(seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false));
+}
+
 SCIP_Bool Seeedpool::areThereContinuousVars(){
 
    for( int v = 0; v < getNVars(); ++v )
@@ -2448,6 +2495,13 @@ bool Seeedpool::hasDuplicate(
 }
 
 
+/** returns whether or not this seeedpool is for detectiong decompositions for benders */
+  SCIP_Bool Seeedpool::isForBenders()
+  {
+        return benders;
+  }
+
+
 
 
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
@@ -2804,7 +2858,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->setFinishedByFinisher( otherseeed->getFinishedByFinisher() );
       newseeed->sort();
       newseeed->considerImplicits( this );
-      newseeed->deleteEmptyBlocks(false);
+      newseeed->deleteEmptyBlocks(benders);
       newseeed->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
 
       if( newseeed->checkConsistency( this ) )
@@ -3658,7 +3712,7 @@ void Seeedpool::addConsClassifier(
          consclassescollection.push_back( givenClassifier );
       else
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " consclassifier %s is not considered since it offers the same structure as  %s  consclassifier\n ", givenClassifier->getName(), equiv->getName() );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " consclassifier \"%s\" is not considered since it offers the same structure as \"%s\" consclassifier\n ", givenClassifier->getName(), equiv->getName() );
          delete givenClassifier;
       }
    }
@@ -3759,7 +3813,7 @@ ConsClassifier* Seeedpool::createConsClassifierForSCIPConstypes()
       classifier->assignConsToClass( i, classForCons[i] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier %s yields a classification with %d  different constraint classes \n", classifier->getName(), (int) foundConstypes.size() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), (int) foundConstypes.size() );
    return classifier;
 }
 
@@ -4191,7 +4245,7 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
 
 
    classifier->removeEmptyClasses();
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier %s yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
 
    return classifier;
 }
@@ -4266,7 +4320,7 @@ ConsClassifier* Seeedpool::createConsClassifierForConsnamesDigitFreeIdentical()
       classifier->assignConsToClass( i, classForCons[i] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier %s yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
 
    return classifier;
 }
@@ -4436,7 +4490,7 @@ ConsClassifier* Seeedpool::createConsClassifierForNNonzeros()
    {
       classifier->assignConsToClass( i, classForCons[i] );
    }
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier %s yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
 
    return classifier;
 }
@@ -4519,7 +4573,7 @@ void Seeedpool::addVarClassifier(
          varclassescollection.push_back( givenClassifier );
       else
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier %s not considered since it offers the same structure as  %s.\n", givenClassifier->getName(), equiv->getName() );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" not considered since it offers the same structure as \"%s\".\n", givenClassifier->getName(), equiv->getName() );
          delete givenClassifier;
       }
 
@@ -4585,7 +4639,7 @@ VarClassifier* Seeedpool::createVarClassifierForObjValues()
       classifier->assignVarToClass( v, classforvars[v] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier %s yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
 
    return classifier;
 }
@@ -4633,7 +4687,7 @@ VarClassifier* Seeedpool::createVarClassifierForObjValueSigns()
    /* remove a class if there is no variable with the respective sign */
    classifier->removeEmptyClasses();
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier %s yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
 
    return classifier;
 }
@@ -4649,8 +4703,8 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
    SCIP_Bool onlycontsub;
    SCIP_Bool onlybinmaster;
 
-   SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/onlycontsubpr", &onlycontsub);
-   SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/onlybinmaster", &onlybinmaster);
+   SCIPgetBoolParam(scip, "detection/benders/onlycontsubpr", &onlycontsub);
+   SCIPgetBoolParam(scip, "detection/benders/onlybinmaster", &onlybinmaster);
 
    /** firstly, assign all variables to classindices */
    for( int i = 0; i < getNVars(); ++ i )
@@ -4737,7 +4791,7 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
       classifier->assignVarToClass( i, classForVars[i] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier %s yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
 
 
 

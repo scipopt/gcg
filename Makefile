@@ -209,6 +209,7 @@ LIBOBJ		=	reader_tex.o \
 			event_relaxsol.o \
 			event_solvingstats.o \
 			event_display.o \
+			solver.o \
 			solver_mip.o \
 			solver_knapsack.o \
 			cons_decomp.o \
@@ -241,6 +242,7 @@ LIBOBJ		=	reader_tex.o \
 			gcgheur.o \
 			gcgvar.o \
 			class_pricingtype.o \
+			class_pricingcontroller.o \
 			class_stabilization.o \
 			graph/weights.o \
 			graph/inst.o \
@@ -274,7 +276,9 @@ LIBOBJ		=	reader_tex.o \
 			class_varclassifier.o \
 			presol_roundbound.o \
 			colpool.o \
-			pricestore_gcg.o
+			pricestore_gcg.o \
+			pricingjob.o \
+			pricingprob.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \

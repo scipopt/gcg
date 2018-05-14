@@ -72,6 +72,8 @@ struct DEC_Detector {
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)); /**< structure detection method of detector */
    DEC_DECL_EXITDETECTOR((*exitDetection));  /**< deinitialization method of detector */
    DEC_DECL_PROPAGATESEEED((*propagateSeeed));
+   DEC_DECL_PROPAGATEFROMTOOLBOX((*propagateFromToolbox));
+   DEC_DECL_FINISHFROMTOOLBOX((*finishFromToolbox));
    DEC_DECL_FINISHSEEED((*finishSeeed));
    DEC_DECL_POSTPROCESSSEEED((*postprocessSeeed));
    DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressive));

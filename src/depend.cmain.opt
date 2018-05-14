@@ -1,5 +1,6 @@
 $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
  lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
@@ -31,7 +32,6 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
  lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
@@ -162,5 +162,5 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
  src/gcgplugins.h src/cons_decomp.h src/type_detector.h src/type_decomp.h \
  src/gcggithash.h src/relax_gcg.h src/type_branchgcg.h src/gcg.h \
- src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h \
- src/pub_gcgvar.h src/pub_decomp.h
+ src/type_solver.h src/type_gcgcol.h src/struct_gcgcol.h \
+ src/type_pricingstatus.h src/pub_gcgvar.h src/pub_decomp.h

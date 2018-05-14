@@ -54,7 +54,14 @@ enum scoretype {
    MAX_FORESSEEING_WHITE,
    SETPART_FWHITE,
    MAX_FORESSEEING_AGG_WHITE,
-   SETPART_AGG_FWHITE
+   SETPART_AGG_FWHITE,
+   BENDERS
+};
+
+enum toolboxtype {
+   PROPAGATE,
+   FINISH,
+   POSTPROCESS
 };
 
 typedef enum scoretype SCORETYPE;
@@ -158,6 +165,8 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_INITDETECTOR((*initDetector)),   /**< initialization method of detector (or NULL)                        */
    DEC_DECL_EXITDETECTOR((*exitDetector)),    /**< deinitialization method of detector (or NULL)                      */
    DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),
+   DEC_DECL_PROPAGATEFROMTOOLBOX((*propagateFromToolboxDetector)),
+   DEC_DECL_FINISHFROMTOOLBOX((*finishFromToolboxDetector)),
    DEC_DECL_FINISHSEEED((*finishSeeedDetector)),
    DEC_DECL_POSTPROCESSSEEED((*postprocessSeeedDetector)),
    DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),
@@ -235,6 +244,18 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    );
 
 SCIP_RETCODE SCIPconshdlrDecompExecSelect(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   );
+
+SCIP_RETCODE SCIPconshdlrDecompExecToolboxModify(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   );
+
+SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
    SCIP_DIALOG*            dialog
@@ -382,6 +403,10 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    SCIP* scip,
    SCIP_RESULT result
+   );
+
+SCIP_Bool SCIPconshdlrDecompDetectBenders(
+   SCIP*                   scip
    );
 
 
