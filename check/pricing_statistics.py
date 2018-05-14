@@ -376,7 +376,7 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
     data['starting_time'] = data.time.cumsum() - data.time
     data['ending_time'] = data.time.cumsum()
 
-    if params['gapincomplete']:
+    if (not gap_data is None) and params['gapincomplete']:
         # calculate data for the gap plot
         if params['gapperround']:
             gap_rounds = [x for x in gap_data.index.values]
@@ -430,7 +430,7 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
     ax.bar(rootlpsol_times_cnt.keys(), width=lw, height=rootlpsol_times_cnt.values(), bottom = ymin, align = 'edge', color = 'blue', label='root lp solution vars')
     ax.bar(incumbent_times_cnt.keys(), width=lw, height=incumbent_times_cnt.values(), bottom = incumbent_times_bottoms, align = 'edge', color = 'green', label='incumbent solution vars')
 
-    if params['gapincomplete']:
+    if (not gap_data is None) and params['gapincomplete']:
         # add the gap plot
         ax2 = ax.twinx()
         gap_plot = ax2.plot(x_gap, y_gap, 'k--', color = 'red', linewidth = 10.0, label = 'gap')
@@ -464,7 +464,7 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
     ax.set_xlabel('Time / s', size = 1.15*textsize)
     ax.set_ylabel('\# of variables', size = 1.15*textsize)
     trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
-    if params['gapincomplete']:
+    if (not gap_data is None) and params['gapincomplete']:
         ax2.set_ylabel('Gap', size = 1.15*textsize)
 
     print '    data formatted:', time.time() - start_time
@@ -1348,7 +1348,7 @@ def plots(data, info, incumbent_times, rootlpsol_times, root_bounds = None):
     plt.rc('font', family='serif')
 
     # prepare gap data, if necessary
-    if not (root_bounds is None or params['no_gap']) or (not params['no_complete'] and params['gapincomplete']):
+    if (not root_bounds is None) and (params['no_gap'] or (not params['no_complete'] and params['gapincomplete'])):
         gap_data = collect_gap_data(data, root_bounds)
     else:
         gap_data = None
