@@ -48,7 +48,7 @@
 #define SEPA_DESC         "separator for separating cuts in the original problem, called in the master"
 #define SEPA_PRIORITY     1000
 
-#define SEPA_FREQ         -1
+#define SEPA_FREQ         1
 #define SEPA_MAXBOUNDDIST 1.0
 #define SEPA_USESSUBSCIP  FALSE
 #define SEPA_DELAY        FALSE /**< should separation method be delayed, if other separators found cuts? */
