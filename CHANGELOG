@@ -30,6 +30,7 @@ bug fixes
 - fix a bug in the automatic update of the stabilization parameter alpha
 - fix issue with pricing problem initialization in CPLEX pricing solver
 - fix memory management in set covering heuristic
+- fix a bug in GCG feasibility pump concerning wrong SCIP instances.
 
 
 GCG Version 2.1.4

@@ -215,7 +215,7 @@ SCIP_RETCODE getDivingLPSol(
       subvar = (SCIP_VAR*) SCIPhashmapGetImage(varmapfw, vars[i]);
       assert(subvar != NULL);
 
-      SCIP_CALL( SCIPsetSolVal(scip, lpsol, vars[i], SCIPgetSolVal(scip, subsol, subvar)) );
+      SCIP_CALL( SCIPsetSolVal(scip, lpsol, vars[i], SCIPgetSolVal(divingscip, subsol, subvar)) );
    }
 
    return SCIP_OKAY;
