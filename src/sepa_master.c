@@ -69,6 +69,7 @@ struct SCIP_SepaData
    int                   ncuts;          /**< number of cuts in the original problem */
    int                   maxcuts;            /**< maximal number of allowed cuts */
    SCIP_Bool             enable;             /**< parameter returns if master separator is enabled */
+   int                   separationsetting;  /**< parameter returns which parameter setting is used for separation */
 };
 
 
@@ -187,9 +188,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIP_VAR** rowvars;
    SCIP_SEPADATA* sepadata;
 
-   SCIP_SEPA** sepas;
-   int nsepas;
-
    SCIP_VAR** mastervars;
    SCIP_Real* mastervals;
    int nmastervars;
@@ -201,6 +199,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    int i;
    int j;
    SCIP_Bool feasible;
+
+   SCIP_Bool isroot;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -234,6 +234,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       return SCIP_OKAY;
    }
 
+   /* ensure to separate current sol */
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
+
    if( GCGrelaxIsOrigSolFeasible(origscip) )
    {
       SCIPdebugMessage("Current solution is feasible, no separation necessary!\n");
@@ -241,34 +244,35 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
+   isroot = SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip);
 
-   SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_DEFAULT, TRUE) );
-
-   sepas = SCIPgetSepas(origscip);
-   nsepas = SCIPgetNSepas(origscip);
-
-   for( i = 0; i < nsepas; ++i )
-   {
-      const char* sepaname;
-      char paramname[SCIP_MAXSTRLEN];
-
-      sepaname = SCIPsepaGetName(sepas[i]);
-
-      /* get frequency parameter of separator */
-      (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "separating/%s/freq", sepaname);
-
-      if( strcmp(sepaname, "intobj") == 0 || strcmp(sepaname, "closecuts") == 0
-         || (strcmp(sepaname, "cgmip") == 0))
-         SCIP_CALL( SCIPsetIntParam(origscip, paramname, -1) );
-      else
-         SCIP_CALL( SCIPsetIntParam(origscip, paramname, 0) );
-   }
+   /* set parameter setting for separation */
+   SCIP_CALL( SCIPsetSeparating(origscip, (SCIP_PARAMSETTING) sepadata->separationsetting, TRUE) );
 
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
-         FALSE, FALSE, TRUE, &delayed, &cutoff) );
+         isroot, TRUE, FALSE, &delayed, &cutoff) );
 
    SCIPdebugMessage("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(origscip));
+
+   if( delayed && !cutoff )
+   {
+      SCIPdebugMessage("call delayed separators\n");
+
+      SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
+            isroot, TRUE, TRUE, &delayed, &cutoff) );
+   }
+
+   /* if cut off is detected set result pointer and return SCIP_OKAY */
+   if( cutoff )
+   {
+      *result = SCIP_CUTOFF;
+      SCIP_CALL( SCIPendProbing(origscip) );
+
+      /* disable separating again */
+      SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_OFF, TRUE) );
+
+      return SCIP_OKAY;
+   }
 
    cuts = SCIPgetCuts(origscip);
    ncuts = SCIPgetNCuts(origscip);
@@ -378,8 +382,11 @@ SCIP_RETCODE SCIPincludeSepaMaster(
          sepaExeclpMaster, sepaExecsolMaster,
          sepadata) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/master/enable", "enable master separator",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enable", "enable master separator",
          &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/paramsetting", "parameter returns which parameter setting is used for "
+      "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 1, 0, 2, NULL, NULL) );
 
    return SCIP_OKAY;
 }
