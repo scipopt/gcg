@@ -529,8 +529,6 @@ SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
    bendersdata = SCIPbendersGetData(benders);
    assert(bendersdata != NULL);
 
-   (*merged) = FALSE;
-
    /* creates a solution to the original problem */
 #ifdef SCIP_DEBUG
    SCIPdebugMessage("The master problem solution.\n");

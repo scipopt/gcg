@@ -4874,7 +4874,7 @@ SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
    dualvalsrandom = std::vector<SCIP_Real>(getNConss(), 0.);
 
    /* create random number generator */
-   SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, DEFAULT_RANDSEED) );
+   SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, DEFAULT_RANDSEED, TRUE) );
 
 
    /** shuffle dual multipliers of constraints*/

@@ -2200,7 +2200,7 @@ SCIP_RETCODE initRelaxator(
    {
       SCIP_RANDNUMGEN* randnumgen;
 
-      SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, (unsigned int) permutationseed) );
+      SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, (unsigned int) permutationseed, TRUE) );
       SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, randnumgen) );
       SCIPfreeRandom(scip, &randnumgen);
    }
