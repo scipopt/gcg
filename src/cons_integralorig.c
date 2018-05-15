@@ -164,13 +164,13 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
 
    *result = SCIP_FEASIBLE;
 
-   /* if we use the discretization approach, we do not have to check for integrality of the solution in the
+   /* if we use the discretization without continuous variables, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
-//   if( discretization && SCIPgetNContVars(origprob) == 0 )
-//   {
-//      return SCIP_OKAY;
-//   }
+   if( discretization && SCIPgetNContVars(origprob) == 0 )
+   {
+      return SCIP_OKAY;
+   }
 
    /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
    if( GCGrelaxIsOrigSolFeasible(origprob) )
@@ -229,7 +229,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
    *result = SCIP_FEASIBLE;
    i = 0;
 
-   /* if we use the discretization approach, we do not have to check for integrality of the solution in the
+   /* if we use the discretization without continuous variables, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( discretization && SCIPgetNContVars(origprob) == 0 )
@@ -282,7 +282,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
 
    *result = SCIP_FEASIBLE;
 
-   /* if we use the discretization approach, we do not have to check for integrality of the solution in the
+   /* if we use the discretization without continuous variables, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( discretization && SCIPgetNContVars(origprob) == 0 )

@@ -799,7 +799,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingProblemLimits(
    /** @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
    if( !optimal && pricetype->getType() == GCG_PRICETYPE_REDCOST )
    {
-      if(SCIPisLE(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob], SCIPgetObjlimit(pricerdata->pricingprobs[prob])))
+      if( SCIPisLE(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob], SCIPgetObjlimit(pricerdata->pricingprobs[prob])) )
       {
          SCIPdebugMessage("Set objective limit of prob %d in stage %d to %f\n", prob, SCIPgetStage(pricerdata->pricingprobs[prob]),pricerdata->dualsolconv[prob]);
          SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );

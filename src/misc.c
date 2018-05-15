@@ -70,7 +70,7 @@ SCIP_Real getGeneratorEntry(
       }
    }
 
-   return 0;
+   return 0.0;
 }
 
 /** comparefunction for lexicographical sort */
@@ -114,7 +114,7 @@ GCG_DECL_SORTPTRCOMP(mastervarcomp)
          return 1;
    }
 
-   return 0;
+   return 0.0;
 }
 
 /** transforms given solution of the master problem into solution of the original problem
