@@ -1047,9 +1047,6 @@ SCIP_RETCODE Separate(
 
       if( !SCIPisFeasIntegral(scip, alpha[k]) )
       {
-//         SCIP_Real mu_F;
-//         SCIP_Bool even = TRUE;
-
          SCIPdebugMessage("alpha[%d] = %g\n", k, alpha[k]);
          found = TRUE;
 
@@ -1080,32 +1077,6 @@ SCIP_RETCODE Separate(
          median = GetMedian(scip, compvalues, Fsize, min);
          SCIPfreeBufferArray(scip, &compvalues);
          compvalues = NULL;
-
-         /** @todo mb: this is a fix for an issue that Marcel claims need fixing */
-//         j = 0;
-//
-//         do
-//         {
-//            mu_F = 0.0;
-//            if( even )
-//            {
-//               median = median+j;
-//               even = FALSE;
-//            }
-//            else
-//            {
-//               median = median-j;
-//               even = TRUE;
-//            }
-//
-//            for( l = 0; l < Fsize; ++l )
-//            {
-//               if( SCIPisGE(scip, getGeneratorEntry(F[l], origvar), median) )
-//                  mu_F += SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[l]);
-//            }
-//            ++j;
-//
-//         }while( SCIPisFeasIntegral(scip, mu_F) );
 
          SCIPdebugMessage("new median is %g, comp=%s, Ssize=%d\n", median, SCIPvarGetName(origvar), Ssize);
 
@@ -1551,30 +1522,14 @@ SCIP_RETCODE Explore(
    if( !SCIPisFeasIntegral(scip, alpha_i) )
    {
       int l;
-//      SCIP_Real nu_F = 0.0;
 
       found = TRUE;
-      /* SCIPdebugMessage("fractional alpha(%s) = %g\n", SCIPvarGetName(origvar), alpha_i); */
-
-      /* ******************************************* *
-       * compute nu_F                                *
-       * ******************************************* */
-
-//      for( l = 0; l < Fsize; ++l )
-//      {
-//         if( (isense == GCG_COMPSENSE_GE && SCIPisGE(scip, getGeneratorEntry(F[l], origvar), ivalue) )
-//            || (isense == GCG_COMPSENSE_LT && SCIPisLT(scip, getGeneratorEntry(F[l], origvar), ivalue)) )
-//         {
-//               nu_F += SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[l]);
-//         }
-//      }
+       SCIPdebugMessage("fractional alpha(%s) = %g\n", SCIPvarGetName(origvar), alpha_i);
 
       /* ******************************************* *
        * add to record                               *
        * ******************************************* */
 
-//      if( SCIPisGT(scip, nu_F - SCIPfloor(scip, nu_F), 0.0) )
-//      {
          SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, (size_t)*Ssize+1) );
          for( l = 0; l < *Ssize; ++l )
          {
@@ -1584,11 +1539,6 @@ SCIP_RETCODE Explore(
          copyS[*Ssize].sense = isense;
          copyS[*Ssize].bound = ivalue;
          SCIP_CALL( addToRecord(scip, record, copyS, *Ssize+1) );
-//      }
-//      else
-//      {
-//         found = FALSE;
-//      }
    }
 
    if( found )
