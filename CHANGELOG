@@ -1,4 +1,5 @@
 GCG Version 3.0.0
+=================
 
 features
 - new detection scheme:
@@ -34,6 +35,7 @@ features
 - artificial variables can now be added in the first Farkas pricing iteration to make the restricted master problem
   feasible (including various options on setting the big M objective coefficients of these variables)
 - new pricing solver that solves independent set problems heuristically using the cliquer library
+- enable discretization when original problem is a mixed integer program; continuous variables are convexified
 
 performance improvements:
 [] - which coeffmatrix dimensions are doable by detection for default, fast now?

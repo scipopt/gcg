@@ -251,6 +251,7 @@ LIBOBJ		=	reader_tex.o \
 			stat.o \
 			objdialog.o \
 			dialog_graph.o \
+			gcgsort.o \
 			gcgpqueue.o \
 			gcgcol.o \
 			class_seeed.o \
