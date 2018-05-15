@@ -37,6 +37,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
+/* #define PRINTDUALSOLS */
 
 #include <cassert>
 #include <cstring>
@@ -101,6 +102,7 @@ using namespace scip;
 #define DEFAULT_HYBRIDASCENT             FALSE      /**< should hybridization of smoothing with an ascent method be enabled */
 #define DEFAULT_HYBRIDASCENT_NOAGG       FALSE      /**< should hybridization of smoothing with an ascent method be enabled
                                                      *   if pricing problems cannot be aggregation */
+
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
 #define DEFAULT_USECOLPOOL               TRUE       /**< should the colpool be checked for negative redcost cols before solving the pricing problems? */
 #define DEFAULT_COLPOOL_AGELIMIT         100        /**< default age limit for columns in column pool */
@@ -111,6 +113,11 @@ using namespace scip;
 #define DEFAULT_PRICE_MINCOLORTH 0.0
 #define DEFAULT_PRICE_EFFICIACYCHOICE 0
 
+#define DEFAULT_USEARTIFICIALVARS        FALSE      /**< add artificial vars to master (instead of using Farkas pricing) */
+#define DEFAULT_USEMAXOBJ                TRUE       /**< default value for using maxobj for big M objective of artificial variables */
+#define DEFAULT_ONLYRELIABLEBIGM         TRUE       /**< default value for only using maxobj for big M objective of artificial variables if it is reliable */
+#define DEFAULT_FACTORUNRELIABLE         1000       /**< default factor to use for objective of unbounded variables */
+#define DEFAULT_BIGMARTIFICIAL           1000       /**< default value for big M objective of artificial variables (if maxobj is not used)*/
 
 #define EVENTHDLR_NAME         "probdatavardeleted"
 #define EVENTHDLR_DESC         "event handler for variable deleted event"
@@ -152,6 +159,10 @@ struct SCIP_PricerData
    int                   npricedvars;        /**< number of priced variables */
    int                   maxpricedvars;      /**< maximal number of priced variables */
 
+   SCIP_VAR**            artificialvars;     /**< array of artificial variables */
+   int                   nartificialvars;    /**< number of artificial variables */
+   SCIP_Bool             artificialused;     /**< returns if artificial variables are used in current node's LP solution */
+
    SCIP_Real**           realdualvalues;     /**< real dual values for pricing variables */
 
    /** variables used for statistics */
@@ -182,10 +193,15 @@ struct SCIP_PricerData
    SCIP_Real             abortpricinggap;    /**< gap between dual bound and RMP objective at which pricing is aborted */
    SCIP_Bool             stabilization;      /**< should stabilization be used */
    SCIP_Bool             usecolpool;         /**< should the colpool be checked for negative redcost cols before solving the pricing problems? */
+   SCIP_Bool             useartificialvars;  /**< use artificial variables to make RMP feasible (instead of applying Farkas pricing) */
+   SCIP_Real             maxobj;             /**< maxobj bound that can be used for big M objective of artificial variables */
+   SCIP_Bool             usemaxobj;          /**< use maxobj for big M objective of artificial variables */
+   SCIP_Bool             onlyreliablebigm;   /**< only use maxobj for big M objective of artificial variables if it is reliable */
+   SCIP_Real             factorunreliable;   /**< factor to use for objective of unbounded variables */
+   SCIP_Real             bigmartificial;     /**< value for for big M objective of artificial variables (if maxobj is not used) */
    SCIP_Bool             hybridascent;       /**< should hybridization of smoothing with an ascent method be enabled */
    SCIP_Bool             hybridascentnoagg;  /**< should hybridization of smoothing with an ascent method be enabled
                                               *   if pricing problems cannot be aggregation */
-   int                   colpoolsize;        /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
    int                   colpoolagelimit;    /**< agelimit of columns in colpool */
    int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
 
@@ -999,7 +1015,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
       SCIP_VAR* pricingvar = GCGlinkingVarGetPricingVars(GCGmasterVarGetOrigvars(linkvar)[0])[block];
       assert(GCGvarIsPricing(pricingvar));
-
       if( stabilize )
       {
          dualsol = stabilization->linkingconsGetDual(i);
@@ -1015,6 +1030,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[block], pricingvar, dualsol) );
       assert(SCIPvarGetProbindex(pricingvar) >= 0 && SCIPvarGetProbindex(pricingvar) < SCIPgetNVars(pricerdata->pricingprobs[block]));
       pricerdata->realdualvalues[block][SCIPvarGetProbindex(pricingvar)] +=  pricetype->consGetDual(scip_, linkcons);
+
 #ifdef PRINTDUALSOLS
       SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n", SCIPvarGetName(pricingvar), dualsol, pricetype->consGetDual(scip_, linkcons));
 #endif
@@ -1059,8 +1075,10 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
                pricerdata->realdualvalues[blocknr][SCIPvarGetProbindex(GCGoriginalVarGetPricingVar(consvars[j]))] += -1.0 * consvals[j] * pricetype->consGetDual(scip_, masterconss[i]);
 
-          /*     SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n",
-                     SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j]* pricetype->consGetDual(scip_, masterconss[i]));*/
+#ifdef PRINTDUALSOLS
+               SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n",
+                     SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j]* pricetype->consGetDual(scip_, masterconss[i]));
+#endif
             }
          }
       }
@@ -1116,8 +1134,10 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
                pricerdata->realdualvalues[blocknr][SCIPvarGetProbindex(GCGoriginalVarGetPricingVar(consvars[j]))] += -1.0 *consvals[j]* pricetype->rowGetDual(mastercuts[i]);
 
-               /*SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n",
-                                   SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j]* pricetype->consGetDual(scip_, masterconss[i]));*/
+#ifdef PRINTDUALSOLS
+               SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n",
+                                   SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j]* pricetype->consGetDual(scip_, masterconss[i]));
+#endif
             }
          }
          SCIPfreeMemoryArray(scip_, &consvars);
@@ -1135,6 +1155,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       }
 
       pricerdata->dualsolconv[i] = pricetype->consGetDual(scip_, GCGgetConvCons(origprob, i));
+
 #ifdef PRINTDUALSOLS
       if( GCGisPricingprobRelevant(origprob, i) )
       {
@@ -1352,7 +1373,7 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
 
    if( GCGcolGetInitializedCoefs(gcgcol) )
    {
-      SCIPdebugMessage("Coeffictions already computed, nmastercoefs = %d\n", GCGcolGetNMastercoefs(gcgcol));
+      SCIPdebugMessage("Coefficients already computed, nmastercoefs = %d\n", GCGcolGetNMastercoefs(gcgcol));
       return SCIP_OKAY;
    }
 
@@ -1447,8 +1468,8 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMastercuts(
 
    assert(scip_ != NULL);
    assert(newvar != NULL);
-   assert(solvars != NULL);
-   assert(solvals != NULL);
+   assert(solvars != NULL || nsolvars == 0);
+   assert(solvals != NULL || nsolvars == 0);
 
    /* get the cuts of the master problem and the corresponding cuts in the original problem */
    mastercuts = GCGsepaGetMastercuts(scip_);
@@ -1823,10 +1844,8 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
 
    SCIP_CALL_ABORT( GCGcolUpdateRedcost(gcgcol, redcost, FALSE) );
 
-   /* compute reduced cost of variable (i.e. subtract dual solution of convexity constraint, if solution corresponds to a point) */
    return redcost;
 }
-
 
 /* computes the objective value of the current (stabilized) dual variables) in the dual program */
  SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
@@ -2180,8 +2199,8 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    int i;
 
    assert(scip != NULL);
-   assert(solvars != NULL);
-   assert(solvals != NULL);
+   assert(solvars != NULL || nsolvars == 0);
+   assert(solvals != NULL || nsolvars == 0);
    assert(nsolvars >= 0);
    assert(pricerdata != NULL);
    assert((pricetype == NULL) == (force));
@@ -3665,7 +3684,9 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    {
       double degeneracy = 0.0;
 
-      SCIP_CALL( computeCurrentDegeneracy(&degeneracy) );
+      /* only compute degeneracy if current solution is basic */
+      if( SCIPisLPSolBasic(scip_) )
+         SCIP_CALL( computeCurrentDegeneracy(&degeneracy) );
 
       pricerdata->rootnodedegeneracy = degeneracy;
 
@@ -3775,9 +3796,13 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    pricerdata->currnodenr = -1;
    pricerdata->eagerage = 0;
+   pricerdata->artificialused = FALSE;
 
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
+
+   pricerdata->artificialvars = NULL;
+   pricerdata->nartificialvars = 0;
 
    /* init array containing all pricing problems */
    pricerdata->npricingprobs = GCGgetNPricingprobs(origprob);
@@ -3892,6 +3917,48 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    SCIP_CALL( solversInitsol() );
 
+   /* if maxobj should be used, compute it */
+   if( pricerdata->usemaxobj )
+   {
+      SCIP_Bool reliable;
+      pricerdata->maxobj = 0.0;
+      reliable = TRUE;
+      for( i = 0; i < SCIPgetNVars(origprob); ++i )
+      {
+         SCIP_VAR* var;
+         SCIP_Real obj;
+         SCIP_Real ub;
+         SCIP_Real lb;
+
+         var = SCIPgetVars(origprob)[i];
+         obj = SCIPvarGetObj(var);
+         ub = SCIPvarGetUbGlobal(var);
+         lb = SCIPvarGetLbGlobal(var);
+
+         /* check if influence of variable on objective is bounded */
+         if( (SCIPisInfinity(origprob, ub) && SCIPisPositive(origprob, obj))
+          || (SCIPisInfinity(origprob, -lb) && SCIPisNegative(origprob, obj)) )
+         {
+            /* if it is not bounded, maxobj is not reliable; use large, heuristic value */
+            pricerdata->maxobj += pricerdata->factorunreliable* ABS(obj);
+            reliable = FALSE;
+         }
+         else
+            /* if it is bounded, add maximum difference to maxobj */
+            pricerdata->maxobj += MAX(ub * obj, lb * obj) - MIN(ub * obj, lb * obj);
+      }
+      if( !reliable && pricerdata->onlyreliablebigm )
+      {
+         pricerdata->useartificialvars = FALSE;
+         pricerdata->maxobj = SCIPinfinity(origprob);
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Big M to be used for artificial variables not reliable; use regular Farkas pricing instead.\n");
+      }
+      else if( !reliable && !pricerdata->onlyreliablebigm )
+         SCIPwarningMessage(scip, "Big M used for artificial variables not reliable. This might lead to wrong solutions.\n");
+   }
+   else
+      pricerdata->maxobj = SCIPinfinity(origprob);
+
    createStabilization();
    SCIP_CALL( stabilization->setNLinkingconsvals(GCGgetNVarLinkingconss(origprob)) );
    SCIP_CALL( stabilization->setNConvconsvals(GCGgetNPricingprobs(origprob)) );
@@ -3955,6 +4022,16 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    pricerdata->nodetimehist = NULL;
    pricerdata->foundvarshist = NULL;
 
+   for( i = 0; i < pricerdata->nartificialvars; i++ )
+   {
+//      SCIP_CALL( SCIPdropVarEvent(scip, pricerdata->artificialvars[i], SCIP_EVENTTYPE_VARDELETED,
+//            pricerdata->eventhdlr, NULL, -1) );
+
+      SCIP_CALL( SCIPreleaseVar(scip, &pricerdata->artificialvars[i]) );
+   }
+   SCIPfreeMemoryArrayNull(scip, &(pricerdata->artificialvars));
+   pricerdata->nartificialvars = 0;
+
    for( i = 0; i < pricerdata->npricedvars; i++ )
    {
       SCIP_CALL( SCIPdropVarEvent(scip, pricerdata->pricedvars[i], SCIP_EVENTTYPE_VARDELETED,
@@ -4016,6 +4093,19 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
       }
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
    }
+
+   if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && GCGsepaGetNCuts(scip) == 0 && reducedcostpricing->getCalls() > 0
+      && GCGmasterIsCurrentSolValid(scip) && pricerdata->artificialused )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing without artificial variables...\n");
+   }
+
+   if( !GCGmasterIsCurrentSolValid(scip) )
+      pricerdata->artificialused = TRUE;
+   else
+      pricerdata->artificialused = FALSE;
+
+
    /* update number of reduced cost pricing rounds at the current node */
    if( SCIPgetNNodes(scip) == pricerdata->currnodenr )
    {
@@ -4058,6 +4148,90 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    }
 #endif
    return retcode;
+}
+
+/** add artificial vars */
+SCIP_RETCODE ObjPricerGcg::addArtificialVars(
+   )
+{
+   SCIP_CONS** masterconss;
+   int nmasterconss;
+   int nconvconss;
+   char varname[SCIP_MAXSTRLEN];
+   int i;
+   SCIP_Real bigm;
+
+   assert(pricerdata != NULL);
+   assert(pricerdata->pricedvars != NULL);
+
+   masterconss = GCGgetMasterConss(origprob);
+   nmasterconss = GCGgetNMasterConss(origprob);
+
+   nconvconss = GCGgetNPricingprobs(origprob);
+
+   /* if bigmartificial is negative, use maxobj */
+   if( pricerdata->usemaxobj )
+      bigm = pricerdata->maxobj;
+   else
+      bigm = pricerdata->bigmartificial;
+
+   for( i = 0; i < nmasterconss; ++i )
+   {
+      if( !SCIPisInfinity(scip_, -1.0*GCGconsGetLhs(scip_, masterconss[i]) ))
+      {
+         (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "art_lhs_%s", SCIPconsGetName(masterconss[i]));
+         SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->artificialvars), pricerdata->nartificialvars + 1 ) );
+         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname, bigm) );
+         SCIP_CALL( SCIPaddCoefLinear(scip_, masterconss[i], pricerdata->artificialvars[pricerdata->nartificialvars], 1.0) );
+         SCIP_CALL( SCIPaddVar(scip_, pricerdata->artificialvars[pricerdata->nartificialvars]) );
+         ++(pricerdata->nartificialvars);
+      }
+
+      if( !SCIPisInfinity(scip_, GCGconsGetRhs(scip_, masterconss[i]) ))
+      {
+         (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "art_rhs_%s", SCIPconsGetName(masterconss[i]));
+         SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->artificialvars), pricerdata->nartificialvars + 1 ) );
+         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname, bigm) );
+         SCIP_CALL( SCIPaddCoefLinear(scip_, masterconss[i], pricerdata->artificialvars[pricerdata->nartificialvars], -1.0) );
+         SCIP_CALL( SCIPaddVar(scip_, pricerdata->artificialvars[pricerdata->nartificialvars]) );
+         ++(pricerdata->nartificialvars);
+      }
+   }
+
+   for( i = 0; i < nconvconss; ++i )
+   {
+      SCIP_CONS* convcons;
+
+      if( !GCGisPricingprobRelevant(origprob, i) )
+         continue;
+
+      convcons = GCGgetConvCons(origprob, i);
+
+      if( !SCIPisInfinity(scip_, -1.0*GCGconsGetLhs(scip_, convcons) ))
+      {
+         (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "art_lhs_%s", SCIPconsGetName(convcons));
+         SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->artificialvars), pricerdata->nartificialvars + 1 ) );
+         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname, bigm) );
+         SCIP_CALL( SCIPaddCoefLinear(scip_, convcons, pricerdata->artificialvars[pricerdata->nartificialvars], 1.0) );
+         SCIP_CALL( SCIPaddVar(scip_, pricerdata->artificialvars[pricerdata->nartificialvars]) );
+         ++(pricerdata->nartificialvars);
+      }
+
+      if( !SCIPisInfinity(scip_, GCGconsGetRhs(scip_, convcons) ))
+      {
+         (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "art_rhs_%s", SCIPconsGetName(convcons));
+         SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->artificialvars), pricerdata->nartificialvars + 1) );
+         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname, bigm) );
+         SCIP_CALL( SCIPaddCoefLinear(scip_, convcons, pricerdata->artificialvars[pricerdata->nartificialvars], -1.0) );
+         SCIP_CALL( SCIPaddVar(scip_, pricerdata->artificialvars[pricerdata->nartificialvars]) );
+         ++(pricerdata->nartificialvars);
+      }
+
+   }
+
+   pricerdata->artificialused = TRUE;
+
+   return SCIP_OKAY;
 }
 
 /** farcas pricing method of variable pricer for infeasible LPs */
@@ -4110,6 +4284,14 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
 #endif
          return SCIP_OKAY;
       }
+   }
+
+   if( pricerdata->useartificialvars && farkaspricing->getCalls() == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Add artificial variables ensuring the restricted master problem is feasible.\n");
+      SCIP_CALL( addArtificialVars() );
+      farkaspricing->incCalls();
+      return SCIP_OKAY;
    }
 
    GCGpricestoreStartFarkas(pricestore);
@@ -4252,6 +4434,26 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/stabilization/hybridascentnoagg",
          "should hybridization of smoothing with an ascent method be enabled if pricing problems cannot be aggregation?",
          &pricerdata->hybridascentnoagg, FALSE, DEFAULT_HYBRIDASCENT_NOAGG, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/useartificialvars",
+         "should artificial variables be used to make the RMP feasible (instead of applying Farkas pricing)?",
+         &pricerdata->useartificialvars, FALSE, DEFAULT_USEARTIFICIALVARS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/usemaxobj",
+         "use maxobj for big M objective of artificial variables",
+         &pricerdata->usemaxobj, FALSE, DEFAULT_USEMAXOBJ, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/onlyreliablebigm",
+         "only use maxobj for big M objective of artificial variables if it is reliable",
+         &pricerdata->onlyreliablebigm, FALSE, DEFAULT_ONLYRELIABLEBIGM, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/factorunreliable",
+         "factor to use for objective of unbounded variables",
+         &pricerdata->factorunreliable, FALSE, DEFAULT_FACTORUNRELIABLE, 0.0, SCIPinfinity(origprob), NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/bigmartificial",
+         "value for for big M objective of artificial variables (negative if max obj should be used)",
+         &pricerdata->bigmartificial, FALSE, DEFAULT_BIGMARTIFICIAL, 0.0, SCIPinfinity(origprob), NULL, NULL) );
 
    SCIP_CALL( SCIPsetIntParam(scip, "lp/disablecutoff", DEFAULT_DISABLECUTOFF) );
 
@@ -5007,6 +5209,113 @@ SCIP_Real GCGmasterGetDegeneracy(
    else
       return SCIPinfinity(scip);
 }
+
+/** check if current sol is valid */
+extern "C"
+SCIP_Bool GCGmasterIsCurrentSolValid(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+   SCIP_SOL* sol;
+   int i;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   if( pricerdata->nartificialvars == 0 )
+      return TRUE;
+
+   if( SCIPgetStage(scip) == SCIP_STAGE_SOLVING )
+      sol = NULL;
+   else if( SCIPgetStatus(scip) == SCIP_STATUS_OPTIMAL )
+      sol = SCIPgetBestSol(scip);
+   else
+      return TRUE;
+
+   for( i = 0; i < pricerdata->nartificialvars; ++i )
+   {
+      SCIP_Real solval;
+      solval = SCIPgetSolVal(scip, sol, pricerdata->artificialvars[i]);
+
+      if( SCIPisPositive(scip, solval) )
+         return FALSE;
+   }
+
+   return TRUE;
+}
+
+extern "C"
+SCIP_Bool GCGmasterIsBestsolValid(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+   SCIP_SOL* sol;
+   int i;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   sol = SCIPgetBestSol(scip);
+
+   if( sol == NULL )
+      return TRUE;
+
+   for( i = 0; i < pricerdata->nartificialvars; ++i )
+   {
+      SCIP_Real solval;
+      solval = SCIPgetSolVal(scip, sol, pricerdata->artificialvars[i]);
+
+      if( SCIPisPositive(scip, solval) )
+         return FALSE;
+   }
+
+   return TRUE;
+}
+
+extern "C"
+SCIP_Bool GCGmasterIsSolValid(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL*             mastersol           /**< solution of the master problem, or NULL for current LP solution */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+   int i;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   for( i = 0; i < pricerdata->nartificialvars; ++i )
+   {
+      SCIP_Real solval;
+      solval = SCIPgetSolVal(scip, mastersol, pricerdata->artificialvars[i]);
+
+      if( SCIPisPositive(scip, solval) )
+         return FALSE;
+   }
+
+   return TRUE;
+}
+
 
 /* get number of iterations in pricing problems */
 extern "C"
