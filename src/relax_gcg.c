@@ -1479,6 +1479,7 @@ SCIP_RETCODE createMasterProblem(
    {
       SCIP_CALL( SCIPsetSeparating(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
       SCIP_CALL( SCIPsetPresolving(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
+      SCIP_CALL( SCIPsetIntParam(masterscip, "presolving/maxrestarts", 0) );
       SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxroundsroot", 0) );
       SCIP_CALL( SCIPsetIntParam(masterscip, "heuristics/trysol/freq", 1) );
       SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benders/active", TRUE) );
@@ -1594,6 +1595,13 @@ SCIP_RETCODE createMasterprobConss(
  //  assert(SCIPhashmapGetNElements(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
    for( c = 0; c < nmasterconss; ++c )
    {
+      int nconsvars;
+      int consvarssize;
+      SCIP_VAR** consvars;
+      SCIP_Real* consvals;
+      SCIP_Bool* releasevars;
+      int i;
+
       if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[c])), "origbranch") == 0 )
          continue;
 
@@ -1607,9 +1615,72 @@ SCIP_RETCODE createMasterprobConss(
             FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, &success) );
       assert(success);
 
+      /* in the Benders' decomposition mode, all variables from the linking constraints need to be added to the master
+       * problem.
+       */
+      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+      {
+         nconsvars = GCGconsGetNVars(scip, newcons);
+         consvarssize = nconsvars;
+
+         SCIP_CALL( SCIPallocBufferArray(scip, &consvars, consvarssize) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &consvals, consvarssize) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &releasevars, consvarssize) );
+
+         SCIP_CALL( GCGconsGetVars(scip, newcons, consvars, nconsvars) );
+         SCIP_CALL( GCGconsGetVals(scip, newcons, consvals, nconsvars) );
+
+         for( i = 0; i < nconsvars; i++ )
+         {
+            SCIP_VAR* origvar;
+
+            /* if the variable is a linking variable, then it is not added to the constraint. This is because the
+             * linking variables are added later.
+             */
+            while( i < nconsvars && GCGoriginalVarIsLinking(consvars[i]) )
+            {
+               consvars[i] = consvars[nconsvars - 1];
+               consvals[i] = consvals[nconsvars - 1];
+               nconsvars--;
+            }
+
+            if( i >= nconsvars )
+               break;
+
+            /* assigning the origvar to the next variables that is not a linking variable */
+            origvar = consvars[i];
+
+            assert(GCGoriginalVarGetNMastervars(origvar) <= 1);
+
+            /* if the original has already has a copy in the master problem, then this is used. Otherwise, the master
+             * problem variable is created.
+             */
+            if( GCGoriginalVarGetNMastervars(origvar) > 0 )
+            {
+               consvars[i] = GCGoriginalVarGetMastervars(origvar)[0];
+               releasevars[i] = FALSE;
+            }
+            else
+            {
+               SCIP_CALL( GCGcreateInitialMasterVar(relaxdata->masterprob, consvars[i], &consvars[i]) );
+               SCIP_CALL( SCIPaddVar(relaxdata->masterprob, consvars[i]) );
+
+               SCIP_CALL( GCGoriginalVarAddMasterVar(scip, origvar, consvars[i], 1.0) );
+
+               releasevars[i] = TRUE;
+            }
+         }
+      }
+      else
+      {
+         nconsvars = 0;
+         consvars = NULL;
+         consvals = NULL;
+      }
+
       /* create and add corresponding linear constraint in the master problem */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "m_%s", SCIPconsGetName(masterconss[c]));
-      SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &mastercons, name, 0, NULL, NULL,
+      SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &mastercons, name, nconsvars, consvars, consvals,
             SCIPgetLhsLinear(scip, newcons), SCIPgetRhsLinear(scip, newcons),
             TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
 
@@ -1622,6 +1693,22 @@ SCIP_RETCODE createMasterprobConss(
       relaxdata->linearmasterconss[relaxdata->nmasterconss] = newcons;
       relaxdata->masterconss[relaxdata->nmasterconss] = mastercons;
       relaxdata->nmasterconss++;
+
+      /* in the Benders' decomposition mode, the consvars and consvals arrays need to be freed */
+      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+      {
+         for( i = 0; i < nconsvars; i++ )
+         {
+            if( releasevars[i] )
+            {
+               SCIP_CALL( SCIPreleaseVar(relaxdata->masterprob, &consvars[i]) );
+            }
+         }
+
+         SCIPfreeBufferArray(scip, &releasevars);
+         SCIPfreeBufferArray(scip, &consvals);
+         SCIPfreeBufferArray(scip, &consvars);
+      }
    }
    assert(relaxdata->nmasterconss == nmasterconss);
    SCIP_CALL( saveOriginalVarMastercoeffs(scip, SCIPgetVars(scip), SCIPgetNVars(scip), relaxdata->nmasterconss, relaxdata->linearmasterconss, relaxdata->masterconss) );
@@ -1798,6 +1885,7 @@ SCIP_RETCODE createMaster(
    /* check for identity of blocks */
    SCIP_CALL( checkIdenticalBlocks(scip, relaxdata, hashorig2pricingvar) );
 
+   /* the convexity constraints are only added in the Dantzig-Wolfe mode */
    if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
    {
       for( i = 0; i < relaxdata->npricingprobs; i++ )

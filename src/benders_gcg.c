@@ -474,10 +474,13 @@ SCIP_DECL_BENDERSGETVAR(bendersGetvarGcg)
       /* getting the original variable for the given pricing variable */
       origvar = GCGpricingVarGetOrigvars(var)[0];
 
-      /* checking whether the original variable is a linking variable.
-       * If this is the case, then the corresponding master variable is added to the generated cut.
-       * If the pricing variable is not a linking variable, then the farkas dual value is added to the lhs */
-      if( GCGoriginalVarIsLinking(origvar) )
+      /* checking whether the original variable is associated with any master problem variables. This is identified by
+       * retrieving the number of master variables for the given original variable
+       * NOTE: previously, only the linking variables were master variables. As such, the following check was to find
+       * only the original variables corresponding to linking variables. Since linking constraints, and their associated
+       * variables, are also added to the master problem, then the previous check is not valid.
+       */
+      if( GCGoriginalVarGetNMastervars(origvar) > 0 )
       {
          (*mappedvar) = GCGoriginalVarGetMastervars(origvar)[0];
       }
@@ -489,12 +492,26 @@ SCIP_DECL_BENDERSGETVAR(bendersGetvarGcg)
       /* getting the original variable for the given pricing variable */
       origvar = GCGmasterVarGetOrigvars(var)[0];
 
-      /* checking whether the original variable is a linking variable.
-       * If this is the case, then the corresponding master variable is added to the generated cut.
-       * If the pricing variable is not a linking variable, then the farkas dual value is added to the lhs */
-      if( GCGoriginalVarIsLinking(origvar) )
+      /* checking whether the original variable is associated with any master problem variables. This is identified by
+       * retrieving the number of master variables for the given original variable
+       * NOTE: previously, only the linking variables were master variables. As such, the following check was to find
+       * only the original variables corresponding to linking variables. Since linking constraints, and their associated
+       * variables, are also added to the master problem, then the previous check is not valid.
+       */
+      /* checking whether the original variable is associated with any master problem variables. This is identified by
+       * retrieving the number of master variables for the given original variable.
+       *
+       * If the pricing variable is requested, then there are two options. The first is that the pricing variable is a
+       * linking variable. The second is that the pricing variable has been directly copied to the master problem since
+       * it was part of the linking constraints.
+       */
+      if( GCGoriginalVarGetNMastervars(origvar) > 0 )
       {
-         (*mappedvar) = GCGlinkingVarGetPricingVars(origvar)[probnumber];
+         /* if the original variable is a linking variable, then the linking pricing variable is retrieved */
+         if( GCGoriginalVarIsLinking(origvar) )
+            (*mappedvar) = GCGlinkingVarGetPricingVars(origvar)[probnumber];
+         else
+            (*mappedvar) = GCGoriginalVarGetPricingVar(origvar);
       }
    }
 
@@ -512,16 +529,20 @@ SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
    bendersdata = SCIPbendersGetData(benders);
    assert(bendersdata != NULL);
 
+   (*merged) = FALSE;
+
    /* creates a solution to the original problem */
 #ifdef SCIP_DEBUG
    SCIPdebugMessage("The master problem solution.\n");
    SCIP_CALL( SCIPprintSol(scip, sol, NULL, FALSE) );
 #endif
-   if( type == SCIP_BENDERSENFOTYPE_LP && !infeasible )
+
+   if( !infeasible )
    {
       /* if the problem was found to be infeasible, then an artificial solution is created. */
       SCIP_CALL( createOriginalProblemSolution(scip, benders, sol, infeasible) );
-      SCIP_CALL( GCGrelaxUpdateCurrentSol(bendersdata->origprob) );
+      if( type == SCIP_BENDERSENFOTYPE_LP )
+         SCIP_CALL( GCGrelaxUpdateCurrentSol(bendersdata->origprob) );
    }
 
    return SCIP_OKAY;

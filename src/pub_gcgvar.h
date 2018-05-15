@@ -101,6 +101,16 @@ void GCGoriginalVarSetPricingVar(
    SCIP_VAR*             pricingvar          /**< SCIP variable structure */
    );
 
+/** copies the pricing variable data to a master problem variable. This is used in the Benders' decomposition mode when
+ * subproblems are merged into the master problem.
+ */
+extern
+SCIP_RETCODE GCGcopyPricingvarDataToMastervar(
+   SCIP*                 scip,               /**< master SCIP data structure */
+   SCIP_VAR*             pricingvar,         /**< the pricing problem variable is copied from */
+   SCIP_VAR*             mastervar           /**< the master variable that the vardata is copied to */
+   );
+
 /** returns the pricing variables of an linking variable */
 extern
 SCIP_VAR** GCGlinkingVarGetPricingVars(

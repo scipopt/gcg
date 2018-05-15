@@ -314,6 +314,42 @@ SCIP_RETCODE GCGorigVarCreateData(
    return SCIP_OKAY;
 }
 
+/** copies the pricing variable data to a master problem variable. This is used in the Benders' decomposition mode when
+ * subproblems are merged into the master problem.
+ */
+SCIP_RETCODE GCGcopyPricingvarDataToMastervar(
+   SCIP*                 scip,               /**< master SCIP data structure */
+   SCIP_VAR*             pricingvar,         /**< the pricing problem variable is copied from */
+   SCIP_VAR*             mastervar           /**< the master variable that the vardata is copied to */
+   )
+{
+   SCIP_VARDATA* targetvardata;
+   assert(pricingvar != NULL);
+   assert(mastervar != NULL);
+   assert(GCGvarIsPricing(pricingvar));
+   /* we can't assert that mastervar is a master variable because it may not have the appropriate vardata yet */
+
+   assert(GCGpricingVarGetNOrigvars(pricingvar) == 1);
+
+   /* create vardata */
+   SCIP_CALL( SCIPallocBlockMemory(scip, &targetvardata) );
+   targetvardata->vartype = GCG_VARTYPE_MASTER;
+   targetvardata->blocknr = -1;
+   targetvardata->data.mastervardata.isray = FALSE;
+   targetvardata->data.mastervardata.isartificial = FALSE;
+   targetvardata->data.mastervardata.norigvars = 1;
+
+   /* save corresoponding origvar */
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(targetvardata->data.mastervardata.origvars), 1) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(targetvardata->data.mastervardata.origvals), 1) ); /*lint !e506*/
+   targetvardata->data.mastervardata.origvars[0] = GCGpricingVarGetOrigvars(pricingvar)[0];
+   targetvardata->data.mastervardata.origvals[0] = 1.0;
+
+   SCIPvarSetData(mastervar, targetvardata);
+   SCIPvarSetDeltransData(mastervar, gcgvardeltrans);
+
+   return SCIP_OKAY;
+}
 
 /** returns the pricing variables of an linking variable */
 SCIP_VAR** GCGlinkingVarGetPricingVars(
@@ -1296,7 +1332,7 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    int blocknr;
 
    blocknr = GCGvarGetBlock(var);
-   assert( blocknr == -1 || blocknr == -2);
+   assert( blocknr == -1 || blocknr == -2 || GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS);
 
    if( blocknr == -1 )
    {
