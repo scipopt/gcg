@@ -8,8 +8,7 @@ bin/
 check/results
 doc/gcg.tag
 doc/html/
-gcg-*.*.*
-gcg-metis*
+gcg-*.metis*
 lib/include/bliss
 lib/include/cliquer
 lib/static/bliss
