@@ -65,9 +65,10 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_lookahead.h lib/scip/src/scip/branch_mostinf.h \
+ lib/scip/src/scip/branch_multaggr.h lib/scip/src/scip/branch_nodereopt.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -90,14 +91,15 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/event_softtimelimit.h \
  lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_bound.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_completesol.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_completesol.h \
+ lib/scip/src/scip/heur_conflictdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
  lib/scip/src/scip/heur_distributiondiving.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_gins.h lib/scip/src/scip/heur_guideddiving.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_farkasdiving.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h lib/scip/src/scip/heur_gins.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_alns.h \
@@ -141,14 +143,16 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
  lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_diff.h \
- lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
- lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
- lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_mst.h \
- lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
- lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
- lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_cor.h \
+ lib/scip/src/scip/reader_diff.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_mst.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_smps.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_sto.h \
+ lib/scip/src/scip/reader_tim.h lib/scip/src/scip/reader_wbo.h \
  lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_eccuts.h \
  lib/scip/src/scip/sepa_cgmip.h lib/scip/src/scip/sepa_clique.h \
  lib/scip/src/scip/sepa_closecuts.h lib/scip/src/scip/sepa_aggregation.h \
@@ -163,5 +167,5 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
  src/gcgplugins.h src/cons_decomp.h src/type_detector.h src/type_decomp.h \
  src/gcggithash.h src/relax_gcg.h src/type_branchgcg.h src/gcg.h \
- src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h \
- src/pub_gcgvar.h src/pub_decomp.h
+ src/type_solver.h src/type_gcgcol.h src/struct_gcgcol.h \
+ src/type_pricingstatus.h src/pub_gcgvar.h src/pub_decomp.h

@@ -146,6 +146,7 @@ private:
 
    SCIP_Bool transformed;                                /**< corresponds the matrix datastructure to the transformed
                                                          *< problem */
+   SCIP_Bool benders;                                    /**< is this supposed to finde decomposiotions for benders decomposition */
 
    std::vector<SeeedPtr> seeedstopopulate;               /**< seeeds that are translated seeeds from found ones for the
                                                          *< original problem */
@@ -169,7 +170,8 @@ public:
    Seeedpool(
       SCIP* scip,                /**< SCIP data structure */
       const char* conshdlrName,  /**< name of the conshandler maintaining the seeedpool */
-      SCIP_Bool transformed      /**< true if the seeedpool is created for the presolved version of the problem */
+      SCIP_Bool transformed,      /**< true if the seeedpool is created for the presolved version of the problem */
+      SCIP_Bool benders           /**< true if the seeedpool is created for for detecting benders decompositions*/
       );
 
    /** destructor */
@@ -229,6 +231,14 @@ public:
    void addSeeedToIncomplete(
       SeeedPtr seeed,
       SCIP_Bool* success
+      );
+
+   SCIP_Bool isSeeedDuplicateofIncomplete(
+      SeeedPtr seeed
+      );
+
+   SCIP_Bool isSeeedDuplicateofFinished(
+      SeeedPtr seeed
       );
 
    /** calculates the strong decomposition score of a seeed */
@@ -298,6 +308,9 @@ public:
    bool hasDuplicate(
       SeeedPtr seeed
       );
+
+   /** returns whether or not this seeedpool is for detectiong decompositions for benders */
+   SCIP_Bool isForBenders();
 
 
 

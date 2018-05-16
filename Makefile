@@ -225,6 +225,7 @@ LIBOBJ = \
 			gcgheur.o \
 			gcgplugins.o \
 			gcgpqueue.o \
+			gcgsort.o \
 			gcgvar.o \
 			graph/graph_gcg.o \
 			graph/graph_tclique.o \

@@ -109,7 +109,7 @@ char* MiscVisualization::GCGgetFilePath(
    FILE* file        /**< file */
    )
 {
-   char* pfile = '\0';
+   char* pfile = {};
    char sympath[SCIP_MAXSTRLEN];
    int filedesc;
 

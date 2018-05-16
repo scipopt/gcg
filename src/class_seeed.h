@@ -171,9 +171,14 @@ private:
    bool isfromlegacymode;                             /**< true if this seeed stems from a detector operating in legacy mode */
    SCIP_Real score;                                   /**< score to evaluate the seeeds */
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
+   SCIP_Real bendersscore;                           /**< score to evaluate the seeeds */
+   SCIP_Real benderareascore;                          /**< 1 - fraction of white area iin master constraints to complete area */
+
    SCIP_Real strongdecompositionscore;                /**< strong decomposition score  */
 
    SCIP_Real borderareascore;                         /**< 1 - fraction of border area to complete area */
+
+
    SCIP_Real maxwhitescoreagg;                        /**< score corresponding to the max white measure according to aggregated blocks */
 
    SCIP_Real blockareascore;                          /**< 1 - fraction of block area to complete area */
@@ -676,6 +681,10 @@ public:
    /** returns the "maximum white score" */
    SCIP_Real getMaxWhiteScore();
 
+   /** returns the "maximum white score" */
+   SCIP_Real getBendersScore();
+
+
    /** returns the number of nonzero coeffs in a certain block */
    int  getNCoeffsForBlock(
       gcg::Seeedpool* seeedpool,
@@ -879,6 +888,8 @@ public:
       int varid,
       int block
    );
+
+   void initOnlyBinMaster();
 
    SCIP_Bool isAgginfoToExpensive();
 
@@ -1229,6 +1240,8 @@ private:
 
    void calcmaxwhitescore();
 
+   void calcbendersscore();
+
    SCIP_RETCODE calcclassicscore();
 
    void calcborderareascore();
@@ -1240,6 +1253,8 @@ private:
    void calcsetpartfwhitescore();
 
    void calcsetpartfwhitescoreagg();
+
+   void calcbenderareascore();
 
    void calcblockareascore();
 

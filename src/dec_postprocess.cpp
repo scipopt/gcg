@@ -171,7 +171,10 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
    SCIP_Bool conssadjcalculated;
 
    gcg::Seeed* seeed;
+
+   assert(seeedPropagationData->seeedToPropagate->getSeeedpool() == seeedPropagationData->seeedpool);
    seeed  = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
+   assert(scip == seeedPropagationData->seeedpool->getScip() );
 
    SCIPgetBoolParam(scip, "detection/detectors/postprocess/useconssadj", &byconssadj);
    SCIPgetBoolParam(scip, "detection/conssadjcalculated", &conssadjcalculated);
@@ -182,7 +185,7 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
       seeed->postprocessMasterToBlocksConssAdjacency(seeedPropagationData->seeedpool, &success );
    else
       seeed->postprocessMasterToBlocks(seeedPropagationData->seeedpool, &success );
-
+  
 
    if ( !success )
    {
@@ -308,7 +311,7 @@ SCIP_RETCODE SCIPincludeDetectorPostprocess(
    detectordata->useconssadj = TRUE;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectPostprocess, freePostprocess,
-      initPostprocess, exitPostprocess, propagateSeeedPostprocess, finishSeeedPostprocess,
+      initPostprocess, exitPostprocess, propagateSeeedPostprocess, NULL, NULL, finishSeeedPostprocess,
       postprocessSeeedPostprocess, setParamAggressivePostprocess, setParamDefaultPostprocess, setParamFastPostprocess) );
 
    /* add consname detector parameters */
