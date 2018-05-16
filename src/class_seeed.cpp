@@ -1220,7 +1220,7 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
               continue;
 
 
-           SCIP_CALL_ABORT( SCIPhashmapCreate(&varmap2,
+           SCIP_CALL_ABORT( SCIPhashmapCreate(  &varmap2,
                           SCIPblkmem(givenseeedpool->getScip()),
                           5 * getNVarsForBlock(b1)+1) ); /* +1 to deal with empty subproblems */
 
@@ -2032,6 +2032,8 @@ void Seeed::checkIdenticalBlocksBliss(
    }
    else
       *identical = FALSE;
+
+   SCIPhashmapFree(&consmap);
 
    return;
 
