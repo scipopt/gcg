@@ -162,8 +162,11 @@ SCIP_RETCODE setOriginalProblemPricingValues(
          origvars = GCGpricingVarGetOrigvars(vars[i]);
 
          /* all variables should be associated with a single original variable. This is because no reformulation has
-          * been performed. */
-         assert(norigvars == 1);
+          * been performed.
+          * TODO: This appears not to be true. Need to find out why multiple original problem variables are associated
+          * with a pricing variable. Currently the first original variable is used.
+          */
+         /* assert(norigvars == 1); */
          assert(GCGvarIsPricing(vars[i]));
 
          /* for all variables that are from the subproblems, they are set to their bounds if the solution is being

@@ -2470,6 +2470,17 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
     */
    SCIP_CALL( SCIPfixParam(scip, "relaxing/gcg/mode") );
 
+   /* Informing the user of the decomposition technique that is being used to solve the original problem */
+   SCIPinfoMessage(scip, NULL, "\n");
+   if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
+   {
+      SCIPinfoMessage(scip, NULL, "Dantzig-Wolfe reformulation is being used to solve the original problem.\n");
+   }
+   else if( relaxdata->mode == DEC_DECMODE_BENDERS )
+   {
+      SCIPinfoMessage(scip, NULL, "Benders' decomposition is being used to solve the original problem.\n");
+   }
+
    return SCIP_OKAY;
 }
 
