@@ -253,7 +253,7 @@ SCIP_RETCODE setOriginalProblemMasterValues(
          assert(GCGvarIsMaster(vars[i]));
          assert(!SCIPisInfinity(origprob, vals[i]));
 
-         SCIPdebugMsg(masterprob, "setting the value of <%s> (dw variable <%s>) to %g in the original solution.\n",
+         SCIPdebugMsg(masterprob, "setting the value of <%s> (master variable <%s>) to %g in the original solution.\n",
             SCIPvarGetName(origvars[0]), SCIPvarGetName(vars[i]), vals[i]);
 
          /* only update the solution value of master variables. */
@@ -351,6 +351,10 @@ SCIP_RETCODE createOriginalProblemSolution(
          SCIPfreeBufferArray(subproblem, &vals);
       }
    }
+
+#ifdef SCIP_DEBUG
+   SCIP_CALL( SCIPprintSol(origprob, origsol, NULL, FALSE) );
+#endif
 
    /* if the solution is NULL, then the solution comes from the relaxation. Thus, it should be stored in the
     * bendersdata. When it is not NULL, then solution comes from a heuristic. So this solution should be passed to the

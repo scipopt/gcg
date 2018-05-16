@@ -82,8 +82,7 @@
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
-//#define DEFAULT_MODE 0  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition) */
-#define DEFAULT_MODE 1  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition) */
+#define DEFAULT_MODE 0  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition) */
 #define DELVARS
 
 /*
@@ -1634,10 +1633,11 @@ SCIP_RETCODE createMasterprobConss(
          {
             SCIP_VAR* origvar;
 
-            /* if the variable is a linking variable, then it is not added to the constraint. This is because the
-             * linking variables are added later.
+            /* if the variable is a linking variable or is directly transferred to the master problem, then it is not
+             * added to the constraint. This is because the linking variables and the transferred variables are added
+             * later in GCGmasterCreateInitialMastervars().
              */
-            while( i < nconsvars && GCGoriginalVarIsLinking(consvars[i]) )
+            while( i < nconsvars && (GCGoriginalVarIsLinking(consvars[i]) || GCGoriginalVarIsTransVar(consvars[i])) )
             {
                consvars[i] = consvars[nconsvars - 1];
                consvals[i] = consvals[nconsvars - 1];
@@ -1669,6 +1669,8 @@ SCIP_RETCODE createMasterprobConss(
 
                releasevars[i] = TRUE;
             }
+
+            assert(GCGoriginalVarGetNMastervars(origvar) <= 1);
          }
       }
       else
