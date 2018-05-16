@@ -7,7 +7,6 @@
 [submodule "lib/bliss-git"]
 	path = lib/bliss-git
 	url = git@git.or.rwth-aachen.de:gcg/bliss.git
-[submodule "lib/googletest"]
-	path = lib/googletest
+[submodule "lib/googletest-git"]
+	path = lib/googletest-git
 	url = git@git.or.rwth-aachen.de:gcg/googletest.git
-
