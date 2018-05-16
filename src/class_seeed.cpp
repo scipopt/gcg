@@ -836,13 +836,14 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
 //         bookAsLinkingVar( var );
 //      }
 
-      if( !benders && blocksOfOpenvar.size() == 1 && hitsOpenCons )
+      if(  blocksOfOpenvar.size() == 1 && hitsOpenCons )
       {
          bookAsLinkingVar( var );
       }
    }
 
    flushBooked();
+
 
    return SCIP_OKAY;
 }
