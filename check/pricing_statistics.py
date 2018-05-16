@@ -83,6 +83,9 @@ def parse_arguments(args):
                         default="nipy_spectral",
                         help='name of the color-map, that is used for the bars (see matplotlib documentation for maps, default is nipy_spectral)')
 
+    parser.add_argument('--no-farkasline', action='store_true',
+                        help='do not draw the blue line which marks the end of Farkas pricing')
+
     parser.add_argument('--lines', type=int, choices = range(0,3),
                         default=1,
                         help='draw lines between pricing-rounds on the plots (0=never, 1=only for rounds that are not too short, 2=always)')
@@ -503,19 +506,21 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
     for pos,rnd,far in zip(data.drop_duplicates(['pricing_round','stab_round']).starting_time, data.drop_duplicates(['pricing_round','stab_round']).pricing_round, data.drop_duplicates(['pricing_round','stab_round']).farkas):
         if rnd > prev_rnd:
             # bold line for a new pricing round
-            if params['lines'] == 2 or (params['lines'] == 1 and ((pos - prev_x_drawn)/totalTime > 0.002 or (not farkasLine and not far))):
+            if params['lines'] == 2 or (params['lines'] == 1 and (pos - prev_x_drawn)/totalTime > 0.002) or (not params['no_farkasline'] and not farkasLine and not far):
                 line = lines.Line2D([pos,pos],[0,1],color='r',linewidth=1.0, transform = trans)
                 # blue line at the end of farkas pricing
                 if not farkasLine and not far:
                     line.set_color('blue')
-                    if pos <= (xmax + xmin) / 2:
-                        align = 'left'
-                    else:
-                        align = 'right'
-                    ax.text(pos, .99, "\it{End of initial Farkas Pricing}", va = 'top', ha = align, rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = trans, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
-                    farkasLine = True
                 ax.add_line(line)
                 prev_x_drawn = pos
+            # text for initial Farkas pricing
+            if not farkasLine and not far:
+                if pos <= (xmax + xmin) / 2:
+                    align = 'left'
+                else:
+                    align = 'right'
+                ax.text(pos, .99, "\it{End of initial Farkas Pricing}", va = 'top', ha = align, rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = trans, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
+                farkasLine = True
             # write the round number, if there is space for it
             if len(texts) == 0 or get_x1_in_data(texts[-1], fig) < prev_x:
                 texts.append(ax.text(prev_x, 1.01, str(prev_rnd), rotation='vertical',va='bottom', ha='left', size = textsize, transform = trans))
