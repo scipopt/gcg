@@ -335,8 +335,10 @@ def collect_gap_data(data, root_bounds):
             print '    cannot calculate dualoptdiff, since it is not clear if the primal bound is the upper or lower'
             gap_data['gap'] = abs(gap_data.pb - gap_data.db)
         elif primal_is_upper:
+            gap_data.db = gap_data.db.cummax()
             gap_data['gap'] = gap_data.pb.min() - gap_data.db
         elif not primal_is_upper:
+            gap_data.db = gap_data.db.cummin()
             gap_data['gap'] = gap_data.db - gap_data.pb.max()
 
     else:
