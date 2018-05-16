@@ -1670,7 +1670,7 @@ def parse_files(files):
                 elif root_bounds:
                     if line.startswith('Pricing Summary:'):
                         root_bounds = False
-                    elif line.startswith('iter	pb	db	time	dualdiff	dualoptdiff'):
+                    elif line.startswith('iter') or line.startswith(' iter'):
                         # create a dataframe to store the table
                         root_bounds_data = pd.DataFrame(columns = line.split())
                         root_bounds_ind = 0

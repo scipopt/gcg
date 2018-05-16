@@ -4629,7 +4629,8 @@ void GCGpricerPrintStatistics(
    }
 
 #ifdef SCIP_STATISTIC
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Root bounds \niter\tpb\tdb\ttime\tdualdiff\tdualoptdiff\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Root bounds \n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " iter            pb            db            time        dualdiff     dualoptdiff\n");
 
    for( i = 0; i < pricerdata->nrootbounds; i++ )
    {
@@ -4645,7 +4646,7 @@ void GCGpricerPrintStatistics(
       dualdiff = pricerdata->rootdualdiffs[i];
       pricer->computeDualDiff(pricerdata->dualvalues[i], pricerdata->dualsolconvs[i], pricerdata->dualvalues[pricerdata->nrootbounds - 1], pricerdata->dualsolconvs[pricerdata->nrootbounds - 1], &dualoptdiff);
 
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\n", i, pb, db, time, dualdiff, dualoptdiff);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%5d %13.6e %13.6e %15.5f %15.5f %15.5f\n", i, pb, db, time, dualdiff, dualoptdiff);
    }
 #endif
 
