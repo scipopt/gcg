@@ -76,6 +76,7 @@ set(gcgsources
     gcgheur.c
     gcgplugins.c
     gcgpqueue.c
+    gcgsort.c
     gcgvar.c
     githash.c
     graph/graph_gcg.cpp
@@ -222,6 +223,7 @@ set(gcgheaders
     graph/rowgraph.h
     graph/rowgraph_def.h
     graph/weights.h
+    gcg_sort.h
     heur_gcgcoefdiving.h
     heur_gcgdins.h
     heur_gcgfeaspump.h
