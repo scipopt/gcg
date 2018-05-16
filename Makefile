@@ -30,6 +30,7 @@
 #@author  Gerald Gamrath
 #@author  Martin Bergner
 #@author  Christian Puchert
+#@author  Matthias Walter
 
 #-----------------------------------------------------------------------------
 # paths
@@ -97,7 +98,7 @@ else
 FLAGS		+=	-I$(LIBDIR)/include
 endif
 SOFTLINKS	+=	$(LIBDIR)/include/bliss
-SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
+SOFTLINKS	+=	$(LIBDIR)/static/libbliss.$(STATICLIBEXT)
 LINKMSG		+=	"bliss graph isomorphism framework (disable by compiling with \"make BLISS=false\"):\n"
 LINKMSG		+=	" -> bliss is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
 LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"bliss-0.72/libbliss.$(STATICLIBEXT)\"\n"
@@ -116,7 +117,7 @@ else
 FLAGS		+=	-I$(LIBDIR)/include
 endif
 SOFTLINKS	+=	$(LIBDIR)/include/cliquer
-SOFTLINKS	+=	$(LIBDIR)/libcliquer.$(STATICLIBEXT)
+SOFTLINKS	+=	$(LIBDIR)/static/libcliquer.$(STATICLIBEXT)
 LINKMSG		+=	"cliquer library (disable by compiling with \"make CLIQUER=false\"):\n"
 LINKMSG		+=	" -> cliquer is the path to the cliquer include files, e.g., \"cliquer-1.21\"\n"
 LINKMSG		+=	" -> \"libcliquer.$(STATICLIBEXT)\" is the path to the cliquer library, e.g., \"cliquerinc/libcliquer.$(STATICLIBEXT)\"\n"
