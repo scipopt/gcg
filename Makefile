@@ -160,19 +160,75 @@ endif
 
 MAINNAME	=	gcg
 
-LIBOBJ		=	reader_tex.o \
-			reader_blk.o \
-			reader_dec.o \
-			reader_ref.o \
-			gcgplugins.o \
-			relax_gcg.o \
-			pricer_gcg.o \
-			branch_orig.o \
-			branch_ryanfoster.o \
+LIBOBJ = \
+			branch_empty.o \
 			branch_generic.o \
-			cons_origbranch.o \
-			cons_masterbranch.o \
+			branch_orig.o \
+			branch_relpsprob.o \
+			branch_ryanfoster.o \
+			class_consclassifier.o \
+			class_indexclassifier.o \
+			class_miscvisualization.o \
+			class_pricingcontroller.o \
+			class_pricingtype.o \
+			class_seeed.o \
+			class_seeedpool.o \
+			class_stabilization.o \
+			class_varclassifier.o \
+			colpool.o \
+			cons_decomp.o \
 			cons_integralorig.o \
+			cons_masterbranch.o \
+			cons_origbranch.o \
+			dec_colors.o \
+			dec_compgreedily.o \
+			dec_connected.o \
+			dec_connected_noNewLinkingVars.o \
+			dec_connectedbase.o \
+			dec_consclass.o \
+			dec_consname.o \
+			dec_constype.o \
+			dec_cutpacking.o \
+			dec_dbscan.o \
+			dec_densemasterconss.o \
+			dec_generalmastersetcover.o \
+			dec_generalmastersetpack.o \
+			dec_generalmastersetpart.o \
+			dec_hcgpartition.o \
+			dec_hrcgpartition.o \
+			dec_hrgpartition.o \
+			dec_mastersetcover.o \
+			dec_mastersetpack.o \
+			dec_mastersetpart.o \
+			dec_mcl.o \
+			dec_mst.o \
+			dec_postprocess.o \
+			dec_random.o \
+			dec_staircase.o \
+			dec_staircase_lsp.o \
+			dec_stairheur.o \
+			dec_varclass.o \
+			decomp.o \
+			dialog_gcg.o \
+			dialog_graph.o \
+			dialog_master.o \
+			disp_gcg.o \
+			disp_master.o \
+			event_bestsol.o \
+			event_display.o \
+			event_mastersol.o \
+			event_relaxsol.o \
+			event_solvingstats.o \
+			gcgcol.o \
+			gcggithash.o \
+			gcgheur.o \
+			gcgplugins.o \
+			gcgpqueue.o \
+			gcgvar.o \
+			graph/graph_gcg.o \
+			graph/graph_tclique.o \
+			graph/inst.o \
+			graph/weights.o \
 			heur_gcgcoefdiving.o \
 			heur_gcgdins.o \
 			heur_gcgfeaspump.o \
@@ -183,13 +239,13 @@ LIBOBJ		=	reader_tex.o \
 			heur_gcgrens.o \
 			heur_gcgrins.o \
 			heur_gcgrounding.o \
-			heur_gcgsimplerounding.o \
 			heur_gcgshifting.o \
+			heur_gcgsimplerounding.o \
 			heur_gcgveclendiving.o \
 			heur_gcgzirounding.o \
 			heur_greedycolsel.o \
-			heur_masterdiving.o \
 			heur_mastercoefdiving.o \
+			heur_masterdiving.o \
 			heur_masterfracdiving.o \
 			heur_masterlinesdiving.o \
 			heur_mastervecldiving.o \
@@ -199,91 +255,30 @@ LIBOBJ		=	reader_tex.o \
 			heur_setcover.o \
 			heur_xpcrossover.o \
 			heur_xprins.o \
-			branch_empty.o \
-			branch_relpsprob.o \
 			masterplugins.o \
-			nodesel_master.o \
-			sepa_master.o \
-			sepa_basis.o \
-			disp_gcg.o \
-			disp_master.o \
-			dialog_gcg.o \
-			dialog_master.o \
-			event_bestsol.o \
-			event_mastersol.o \
-			event_relaxsol.o \
-			event_solvingstats.o \
-			event_display.o \
-			solver.o \
-			solver_mip.o \
-			solver_knapsack.o \
-			cons_decomp.o \
-			decomp.o \
-			dec_constype.o \
-			dec_stairheur.o \
-			dec_connected.o \
-			dec_consname.o \
-			dec_cutpacking.o \
-			dec_densemasterconss.o \
-			dec_staircase.o \
-			dec_staircase_lsp.o \
-			dec_random.o \
-			dec_colors.o \
-			dec_dbscan.o \
-			dec_mst.o \
-			dec_mcl.o \
-			dec_postprocess.o \
-			dec_compgreedily.o \
-			dec_mastersetcover.o \
-			dec_mastersetpack.o \
-			dec_mastersetpart.o \
-			dec_varclass.o \
-			gcggithash.o \
-			reader_gp.o \
-			reader_tex.o \
-			reader_cls.o \
-			scip_misc.o \
 			misc.o \
-			gcgheur.o \
-			gcgvar.o \
-			class_pricingtype.o \
-			class_pricingcontroller.o \
-			class_stabilization.o \
-			graph/weights.o \
-			graph/inst.o \
-			graph/graph_tclique.o \
-			graph/graph_gcg.o \
-			stat.o \
+			nodesel_master.o \
 			objdialog.o \
-			dialog_graph.o \
-			gcgpqueue.o \
-			gcgcol.o \
-			class_seeed.o \
-			class_seeedpool.o \
-			class_miscvisualization.o \
 			params_visu.o \
-			dec_compgreedily.o \
-			dec_postprocess.o \
-			dec_mastersetcover.o \
-			dec_mastersetpack.o \
-			dec_mastersetpart.o \
-			dec_hcgpartition.o \
-			dec_hrgpartition.o \
-			dec_hrcgpartition.o \
-			dec_connectedbase.o \
-			dec_consclass.o \
-			dec_connected_noNewLinkingVars.o \
-			dec_generalmastersetpack.o \
-			dec_generalmastersetpart.o \
-			dec_generalmastersetcover.o \
-			class_indexclassifier.o \
-			class_consclassifier.o \
-			class_varclassifier.o \
 			presol_roundbound.o \
-			colpool.o \
+			pricer_gcg.o \
 			pricestore_gcg.o \
 			pricingjob.o \
-			pricingprob.o
+			pricingprob.o \
+			reader_blk.o \
+			reader_cls.o \
+			reader_dec.o \
+			reader_gp.o \
+			reader_ref.o \
+			reader_tex.o \
+			relax_gcg.o \
+			scip_misc.o \
+			sepa_basis.o \
+			sepa_master.o \
+			solver.o \
+			solver_knapsack.o \
+			solver_mip.o \
+			stat.o \
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \

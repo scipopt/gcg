@@ -49,7 +49,6 @@ set(gcgsources
     dec_hcgpartition.cpp
     dec_hrcgpartition.cpp
     dec_hrgpartition.cpp
-    dec_isomorph.cpp
     dec_mastersetcover.cpp
     dec_mastersetpack.cpp
     dec_mastersetpart.cpp
@@ -57,8 +56,8 @@ set(gcgsources
     dec_mst.cpp
     dec_postprocess.cpp
     dec_random.c
-    dec_staircase_lsp.cpp
     dec_staircase.c
+    dec_staircase_lsp.cpp
     dec_stairheur.cpp
     dec_varclass.cpp
     decomp.c
@@ -136,30 +135,6 @@ set(gcgsources
 )
 
 set(gcgheaders
-    graph/bipartitegraph.h
-    graph/bipartitegraph_def.h
-    graph/bridge.h
-    graph/columngraph.h
-    graph/columngraph_def.h
-    graph/graph.h
-    graph/graph_def.h
-    graph/graph_interface.h
-    graph/graph_tclique.h
-    graph/graphalgorithms.h
-    graph/graphalgorithms_def.h
-    graph/hypercolgraph.h
-    graph/hypercolgraph_def.h
-    graph/hypergraph.h
-    graph/hypergraph_def.h
-    graph/hyperrowcolgraph.h
-    graph/hyperrowcolgraph_def.h
-    graph/hyperrowgraph.h
-    graph/hyperrowgraph_def.h
-    graph/matrixgraph.h
-    graph/matrixgraph_def.h
-    graph/rowgraph.h
-    graph/rowgraph_def.h
-    graph/weights.h
     branch_empty.h
     branch_generic.h
     branch_orig.h
@@ -196,7 +171,6 @@ set(gcgheaders
     dec_hcgpartition.h
     dec_hrcgpartition.h
     dec_hrgpartition.h
-    dec_isomorph.h
     dec_mastersetcover.h
     dec_mastersetpack.h
     dec_mastersetpart.h
@@ -224,6 +198,30 @@ set(gcgheaders
     gcggithash.h
     gcgplugins.h
     gcgpqueue.h
+    graph/bipartitegraph.h
+    graph/bipartitegraph_def.h
+    graph/bridge.h
+    graph/columngraph.h
+    graph/columngraph_def.h
+    graph/graph.h
+    graph/graph_def.h
+    graph/graph_interface.h
+    graph/graph_tclique.h
+    graph/graphalgorithms.h
+    graph/graphalgorithms_def.h
+    graph/hypercolgraph.h
+    graph/hypercolgraph_def.h
+    graph/hypergraph.h
+    graph/hypergraph_def.h
+    graph/hyperrowcolgraph.h
+    graph/hyperrowcolgraph_def.h
+    graph/hyperrowgraph.h
+    graph/hyperrowgraph_def.h
+    graph/matrixgraph.h
+    graph/matrixgraph_def.h
+    graph/rowgraph.h
+    graph/rowgraph_def.h
+    graph/weights.h
     heur_gcgcoefdiving.h
     heur_gcgdins.h
     heur_gcgfeaspump.h
@@ -254,9 +252,10 @@ set(gcgheaders
     nodesel_master.h
     objdialog.h
     objpricer_gcg.h
+    params_visu.h
     presol_roundbound.h
-    pricestore_gcg.h
     pricer_gcg.h
+    pricestore_gcg.h
     pricingjob.h
     pricingprob.h
     pub_bliss.h
@@ -266,6 +265,9 @@ set(gcgheaders
     pub_gcgheur.h
     pub_gcgpqueue.h
     pub_gcgvar.h
+    pub_pricingjob.h
+    pub_pricingprob.h
+    pub_solver.h
     reader_blk.h
     reader_cls.h
     reader_dec.h
@@ -277,34 +279,49 @@ set(gcgheaders
     sepa_basis.h
     sepa_master.h
     solver.h
+    solver_cliquer.h
     solver_knapsack.h
     solver_mip.h
+    solver_xyz.h
     stat.h
     struct_branchgcg.h
+    struct_colpool.h
     struct_decomp.h
     struct_detector.h
     struct_gcgcol.h
     struct_gcgpqueue.h
+    struct_pricestore_gcg.h
+    struct_pricingjob.h
+    struct_pricingprob.h
     struct_solver.h
     struct_vardata.h
     type_branchgcg.h
+    type_colpool.h
     type_decomp.h
     type_detector.h
     type_gcgcol.h
     type_gcgpqueue.h
     type_masterdiving.h
     type_origdiving.h
+    type_pricestore_gcg.h
+    type_pricingjob.h
+    type_pricingprob.h
+    type_pricingstatus.h
     type_solver.h
+    wrapper_seeed.h
 )
 
-set(symsources
-    ${sym}
-)
-
-set(symheaders
-    bliss_automorph.h
-    dec_isomorph.h
-)
+if(BLISS_FOUND AND SYM STREQUAL "bliss")
+   set(gcgsources ${gcgsources}
+      bliss.cpp
+      bliss_automorph.cpp
+      dec_isomorph.cpp
+   )
+   set(gcgheaders ${gcgheaders} 
+      bliss_automorph.h
+      dec_isomorph.h
+   )
+endif()
 
 if(CLIQUER_FOUND)
    set(gcgsources ${gcgsources}
@@ -329,7 +346,7 @@ endif()
 
 # all source files should be compiled with a c++ compiler
 if(CXXONLY)
-    set_source_files_properties(main.c ${gcgsources} ${symsources} PROPERTIES LANGUAGE CXX)
+    set_source_files_properties(main.c ${gcgsources} PROPERTIES LANGUAGE CXX)
 
     # for the clang compiler this suppresses the warnings about treating 'c' input as 'c++' when CXXONLY is enabled
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -337,14 +354,14 @@ if(CXXONLY)
     endif()
 endif()
 
-add_library(libgcg ${gcgsources} ${symsources})
+add_library(libgcg ${gcgsources})
 setLibProperties(libgcg "gcg")
 
 target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
 
 if(SHARED)
     target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES} ${CLIQUER_PIC_LIBRARIES} ${CPLEX_PIC_LIBRARIES} ${GSL_PIC_LIBRARIES})
-    add_executable(gcg main.c ${gcgsources} ${symsources})
+    add_executable(gcg main.c ${gcgsources})
 else()
     target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES})
     add_executable(gcg main.c)
@@ -375,7 +392,6 @@ set_target_properties(gcg PROPERTIES
 
 # install the header files of gcg
 install(FILES ${gcgheaders} DESTINATION include/gcg)
-install(FILES ${symheaders} DESTINATION include/gcg)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmetis.h DESTINATION include/gcg)
 
 # install the binary and the library to appropriate locations and add them to an export group
