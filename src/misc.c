@@ -39,11 +39,84 @@
 #include "benders_gcg.h"
 #include "pub_gcgvar.h"
 #include "cons_decomp.h"
+#include "gcgsort.h"
+#include <string.h>
 #include <unistd.h>
 
+/** computes the generator of mastervar for the entry in origvar
+ * @return entry of the generator corresponding to origvar */
+static
+SCIP_Real getGeneratorEntry(
+   SCIP_VAR*             mastervar,          /**< current mastervariable */
+   SCIP_VAR*             origvar             /**< corresponding origvar */
+   )
+{
+   int i;
+   SCIP_VAR** origvars;
+   SCIP_Real* origvals;
+   int norigvars;
 
-#include <string.h>
+   assert(mastervar != NULL);
+   assert(origvar != NULL);
 
+   origvars = GCGmasterVarGetOrigvars(mastervar);
+   norigvars = GCGmasterVarGetNOrigvars(mastervar);
+   origvals = GCGmasterVarGetOrigvals(mastervar);
+
+   for( i = 0; i < norigvars; ++i )
+   {
+      if( origvars[i] == origvar )
+      {
+         return origvals[i];
+      }
+   }
+
+   return 0.0;
+}
+
+/** comparefunction for lexicographical sort */
+static
+GCG_DECL_SORTPTRCOMP(mastervarcomp)
+{
+   SCIP* origprob = (SCIP *) userdata; /* TODO: continue here */
+   SCIP_VAR* mastervar1;
+   SCIP_VAR* mastervar2;
+   SCIP_VAR** origvars;
+   int norigvars;
+   int i;
+
+   mastervar1 = elem1;
+   mastervar2 = elem2;
+
+   assert(mastervar1 != NULL);
+   assert(mastervar2 != NULL);
+
+   if( GCGvarGetBlock(mastervar1) < 0 )
+   {
+      SCIPdebugMessage("linkingvar or directy transferred var\n");
+   }
+   if( GCGvarGetBlock(mastervar2) < 0 )
+   {
+      SCIPdebugMessage("linkingvar or directy transferred var\n");
+   }
+
+   /* TODO: get all original variables (need scip...maybe from pricer via function and scip_ */
+   origvars = SCIPgetVars(origprob);
+   norigvars = SCIPgetNVars(origprob);
+
+   for( i = 0; i < norigvars; ++i )
+   {
+      if( SCIPvarGetType(origvars[i]) > SCIP_VARTYPE_INTEGER )
+         continue;
+
+      if( SCIPisFeasGT(origprob, getGeneratorEntry(mastervar1, origvars[i]), getGeneratorEntry(mastervar2, origvars[i])) )
+         return -1;
+      if( SCIPisFeasLT(origprob, getGeneratorEntry(mastervar1, origvars[i]), getGeneratorEntry(mastervar2, origvars[i])) )
+         return 1;
+   }
+
+   return 0.0;
+}
 
 /** transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method
@@ -60,11 +133,14 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP_Real* blockvalue;
    SCIP_Real increaseval;
    SCIP_VAR** mastervars;
+   SCIP_VAR** mastervarsall;
    SCIP_Real* mastervals;
+   int nmastervarsall;
    int nmastervars;
    SCIP_VAR** vars;
    int nvars;
    SCIP_Real feastol;
+   SCIP_Bool discretization;
    int i;
    int j;
 
@@ -96,13 +172,55 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );
    SCIP_CALL( SCIPallocBufferArray(scip, &blocknrs, npricingprobs) );
 
-   /* get variables of the master problem and their solution values */
-   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
-   assert(mastervars != NULL);
-   assert(nmastervars >= 0);
+   SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &discretization) );
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
-   SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervars, mastervars, mastervals) );
+   if( discretization && (SCIPgetNContVars(scip) > 0) )
+   {
+      /* get variables of the master problem and their solution values */
+      SCIP_CALL( SCIPgetVarsData(masterprob, &mastervarsall, &nmastervarsall, NULL, NULL, NULL, NULL) );
+
+      assert(mastervarsall != NULL);
+      assert(nmastervarsall >= 0);
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervars, nmastervarsall) );
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervarsall) );
+
+      SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervarsall, mastervarsall, mastervals) );
+
+      nmastervars = 0;
+
+      for( i = 0; i < nmastervarsall; ++i )
+      {
+         SCIP_Real solval;
+
+         assert( i >= nmastervars );
+         solval = mastervals[i];
+
+         if( SCIPisPositive(scip, solval) )
+         {
+            mastervars[nmastervars] = mastervarsall[i];
+            mastervals[nmastervars] = solval;
+
+            ++nmastervars;
+         }
+      }
+
+      /* sort mastervariables lexicographically */
+      GCGsortPtrPtr((void**)mastervars, (void**) mastervals, mastervarcomp, scip, nmastervars );
+   }
+   else
+   {
+      /* get variables of the master problem and their solution values */
+      SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+
+      assert(mastervars != NULL);
+      assert(nmastervars >= 0);
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
+
+      SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervars, mastervars, mastervals) );
+   }
 
    /* initialize the block values for the pricing problems */
    for( i = 0; i < npricingprobs; i++ )
@@ -231,6 +349,8 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       assert(!SCIPisFeasNegative(masterprob, mastervals[i]));
    }
 
+   /* TODO: Change order of mastervars */
+
    /* loop over all given master variables */
    for( i = 0; i < nmastervars; i++ )
    {
@@ -310,6 +430,12 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    }
 
    SCIPfreeBufferArray(scip, &mastervals);
+
+   if( discretization && (SCIPgetNContVars(scip) > 0) )
+   {
+      SCIPfreeBufferArray(scip, &mastervars);
+   }
+
    SCIPfreeBufferArray(scip, &blocknrs);
    SCIPfreeBufferArray(scip, &blockvalue);
 

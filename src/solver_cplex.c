@@ -853,7 +853,7 @@ SCIP_RETCODE solveCplex(
    /* iterate over all CPLEX solutions and check for negative reduced costs; the first solution should always be the
     * incumbent, all other solutions are unsorted
     */
-   for( s = 0; s < nsolscplex && *ncols < maxcols; ++s )
+   for( s = 0; s < nsolscplex; ++s )
    {
       SCIP_SOL* sol;
       SCIP_Bool feasible;

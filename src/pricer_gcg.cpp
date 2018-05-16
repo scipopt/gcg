@@ -683,6 +683,37 @@ SCIP_RETCODE ObjPricerGcg::setPricingProblemMemorylimit(
 }
 
 #if 0
+/** set all pricing problem limits */
+SCIP_RETCODE ObjPricerGcg::setPricingProblemLimits(
+   int                   prob,               /**< index of the pricing problem */
+   PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
+   SCIP_Bool             optimal             /**< heuristic or optimal pricing */
+   )
+{
+   assert(pricerdata != NULL);
+   assert(prob >= 0 && prob < pricerdata->npricingprobs);
+
+   /** @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
+   if( !optimal && pricetype->getType() == GCG_PRICETYPE_REDCOST )
+   {
+      if( SCIPisLE(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob], SCIPgetObjlimit(pricerdata->pricingprobs[prob])) )
+      {
+         SCIPdebugMessage("Set objective limit of prob %d in stage %d to %f\n", prob, SCIPgetStage(pricerdata->pricingprobs[prob]),pricerdata->dualsolconv[prob]);
+         SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
+      }
+   }
+   else if( SCIPgetStage(pricerdata->pricingprobs[prob]) < SCIP_STAGE_TRANSFORMED )
+   {
+      SCIPdebugMessage("Set objective limit of prob %d in stage %d to %f\n", prob, SCIPgetStage(pricerdata->pricingprobs[prob]), SCIPinfinity(pricerdata->pricingprobs[prob]));
+      SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], SCIPinfinity(pricerdata->pricingprobs[prob])) );
+   }
+
+   SCIP_CALL( setPricingProblemTimelimit(pricerdata->pricingprobs[prob]) );
+   SCIP_CALL( setPricingProblemMemorylimit(pricerdata->pricingprobs[prob]) );
+
+   return SCIP_OKAY;
+}
+
 /** solves a specific pricing problem
  * @todo simplify
  * @note This method has to be threadsafe!
@@ -2883,7 +2914,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_CALL( SCIPgetLPI(scip_, &lpi) );
 
    /* check preliminary conditions for stabilization */
-   enablestab = pricerdata->stabilization 
+   enablestab = pricerdata->stabilization
       && (pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST)
       && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
@@ -3609,8 +3640,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    int nmasterconss;
    int origverblevel;
 
-   int maxcols = MAX(MAX(farkaspricing->getMaxcolsprob(),reducedcostpricing->getMaxcolsprob()),reducedcostpricing->getMaxcolsprobroot()); /*lint !e666*/
-
    assert(scip == scip_);
    assert(pricer != NULL);
    assert(pricerdata != NULL);
@@ -3699,7 +3728,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    /* set variable type for master variables */
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
-   if( discretization )
+   if( discretization && SCIPgetNContVars(origprob) == 0 )
    {
       pricerdata->vartype = SCIP_VARTYPE_INTEGER;
    }
@@ -3739,7 +3768,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->avgrootnodedegeneracy = 0.0;
    pricerdata->ndegeneracycalcs = 0;
 
-   SCIP_CALL( pricingcontroller->initSol(maxcols) );
+   SCIP_CALL( pricingcontroller->initSol() );
 
    /* sort solvers by priority */
    SCIPsortPtr((void**)pricerdata->solvers, GCGsolverComp, pricerdata->nsolvers);

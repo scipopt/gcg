@@ -222,6 +222,12 @@ SCIP_Bool GCGmasterVarIsLinking(
    SCIP_VAR*             var                 /**< variable data structure */
    );
 
+/** returns scip instance corresponding to master variable */
+extern
+SCIP* GCGmasterVarGetProb(
+   SCIP_VAR*             var                 /**< variable data structure */
+   );
+
 /** returns whether the master variable is a ray */
 extern
 SCIP_Bool GCGmasterVarIsRay(

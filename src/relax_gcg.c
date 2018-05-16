@@ -1905,7 +1905,8 @@ SCIP_RETCODE createMaster(
    }
 
    /* set integral objective status in the extended problem, if possible */
-   if( SCIPisObjIntegral(scip) && relaxdata->discretization && relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
+   if( SCIPisObjIntegral(scip) && relaxdata->discretization && SCIPgetNContVars(scip) == 0
+      && relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
    {
       SCIP_CALL( SCIPsetObjIntegral(relaxdata->masterprob) );
    }
@@ -2209,8 +2210,7 @@ SCIP_RETCODE initRelaxator(
 
    if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Discretization with continuous variables is currently not supported. The parameter setting will be ignored.\n");
-      relaxdata->discretization = FALSE;
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Warning: Discretization with continuous variables is only an experimental feature.\n");
    }
 
    SCIP_CALL( createMaster(scip, relaxdata) );

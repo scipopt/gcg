@@ -18,10 +18,8 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
  lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
  lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
  lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
- lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
  lib/scip/src/scip/pub_cons.h lib/scip/src/scip/pub_cutpool.h \
  lib/scip/src/scip/type_cutpool.h lib/scip/src/scip/pub_dialog.h \
@@ -33,8 +31,7 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/pub_nlp.h \
  lib/scip/src/scip/pub_message.h lib/scip/src/scip/pub_misc.h \
  lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
- lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
- lib/scip/src/scip/cons_setppc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_nodesel.h \
  lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
  lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
@@ -59,9 +56,7 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
- lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/type_pricestore.h \
- lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -72,9 +67,9 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/cons_nonlinear.h lib/scip/src/scip/cons_or.h \
  lib/scip/src/scip/cons_orbisack.h lib/scip/src/scip/cons_orbitope.h \
  lib/scip/src/scip/cons_pseudoboolean.h \
- lib/scip/src/scip/cons_quadratic.h lib/scip/src/scip/cons_soc.h \
- lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
- lib/scip/src/scip/cons_superindicator.h \
+ lib/scip/src/scip/cons_quadratic.h lib/scip/src/scip/cons_setppc.h \
+ lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_sos1.h \
+ lib/scip/src/scip/cons_sos2.h lib/scip/src/scip/cons_superindicator.h \
  lib/scip/src/scip/cons_symresack.h lib/scip/src/scip/cons_varbound.h \
  lib/scip/src/scip/cons_xor.h lib/scip/src/scip/cons_components.h \
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/event_solvingphase.h \
@@ -152,10 +147,9 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/sepa_rapidlearning.h lib/scip/src/scip/sepa_strongcg.h \
  lib/scip/src/scip/sepa_zerohalf.h lib/scip/src/scip/scipshell.h \
  lib/scip/src/scip/table_default.h lib/scip/src/scip/concsolver_scip.h \
- lib/scip/src/scip/benders_default.h lib/scip/src/nlpi/nlpi_ipopt.h \
- lib/scip/src/nlpi/nlpi_filtersqp.h lib/scip/src/nlpi/nlpi_worhp.h \
- lib/scip/src/nlpi/nlpi_all.h src/gcgplugins.h src/cons_decomp.h \
- src/type_detector.h src/type_decomp.h src/gcggithash.h src/relax_gcg.h \
- src/type_branchgcg.h src/gcg.h src/type_solver.h src/type_gcgcol.h \
- src/struct_gcgcol.h src/type_pricingstatus.h src/pub_gcgvar.h \
- src/pub_decomp.h
+ lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ src/gcgplugins.h src/cons_decomp.h src/type_detector.h src/type_decomp.h \
+ src/gcggithash.h src/relax_gcg.h src/type_branchgcg.h src/gcg.h \
+ src/type_solver.h src/type_gcgcol.h src/struct_gcgcol.h \
+ src/type_pricingstatus.h src/pub_gcgvar.h src/pub_decomp.h
