@@ -1792,7 +1792,7 @@ SCIP_RETCODE callMetis(
    assert(adjlists != NULL);
    assert(constopos != NULL);
 
-   (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-XXXXXX.metis");
+   (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg.metis.XXXXXX");
    temp_filedes = mkstemp(tempfile);
    if( temp_filedes < 0 )
    {

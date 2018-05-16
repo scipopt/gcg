@@ -351,11 +351,11 @@ SCIP_RETCODE createMetisFile(
 
    if( !detectordata->realname )
    {
-      (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-%c-%d-XXXXXX.metis", DEC_DECCHAR, seeedID );
+      (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-%c-%d.metis.XXXXXX", DEC_DECCHAR, seeedID );
    }
    else
    {
-      (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-%s-%c-%d-XXXXXX.metis", SCIPgetProbName(scip), DEC_DECCHAR, seeedID);
+      (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-%s-%c-%d.metis.XXXXXX", SCIPgetProbName(scip), DEC_DECCHAR, seeedID);
    }
 
    fd = mkstemp(tempfile);
