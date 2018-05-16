@@ -374,6 +374,7 @@ SCIP_RETCODE createOriginalProblemSolution(
 
          SCIP_CALL( SCIPcheckSolOrig(origprob, origsol, &stored, TRUE, TRUE) );
       }
+
       /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
        *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
        */
