@@ -410,9 +410,11 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
     incumbent_times_bottoms = list()
     for t in incumbent_times_cnt.keys():
         if t in rootlpsol_times_cnt.keys():
-            incumbent_times_bottoms.append(ymin + rootlpsol_times_cnt[t])
+            incumbent_times_bottoms.append(-rootlpsol_times_cnt[t])
         else:
             incumbent_times_bottoms.append(ymin)
+            incumbent_times_cnt[t] += ymin
+    ymin_ncols = min([s-t for (s,t) in zip(incumbent_times_bottoms, incumbent_times_cnt.values())])
 
     # sometimes we need just the height of the bars of the pricing problems
     y_pricers = (data[data.pricing_prob >= 0].nVars - ymin).values
@@ -432,8 +434,8 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
     # add the column pool data as a scatter plot
     cp_scatter = ax.scatter(x_colpool, y_colpool, color = 'green', marker = 'o', s = 100, zorder = 10, label = 'column pool')
 
-    ax.bar(rootlpsol_times_cnt.keys(), width=lw, height=rootlpsol_times_cnt.values(), bottom = ymin, align = 'edge', color = 'blue', label='root lp solution vars')
-    ax.bar(incumbent_times_cnt.keys(), width=lw, height=incumbent_times_cnt.values(), bottom = incumbent_times_bottoms, align = 'edge', color = 'green', label='incumbent solution vars')
+    ax.bar(rootlpsol_times_cnt.keys(), width=lw, height=[-t-ymin for t in rootlpsol_times_cnt.values()], bottom = ymin, align = 'edge', color = 'blue', label='root lp solution vars')
+    ax.bar(incumbent_times_cnt.keys(), width=lw, height=[-t for t in incumbent_times_cnt.values()], bottom = incumbent_times_bottoms, align = 'edge', color = 'green', label='incumbent solution vars')
 
     if (not gap_data is None) and params['gapincomplete']:
         # add the gap plot
@@ -462,7 +464,7 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
     xmax = x[-1]+widths[-1]
 
     # formatting
-    ax.set_ylim([ymin,ymax])
+    ax.set_ylim([ymin_ncols,ymax])
     ax.set_xlim([xmin,xmax])
     ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True, nbins = 15))
     ax.tick_params(axis = 'both', length = textsize/2, width = textsize/40, labelsize = textsize*0.9, pad = 15)
@@ -470,6 +472,8 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
     ax.set_ylabel('\# of variables', size = 1.15*textsize)
     trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
     if (not gap_data is None) and params['gapincomplete']:
+        ax2.set_ylim([ymin_ncols/ymax-0.01, 1.01])
+        ax2.tick_params(axis = 'both', length = textsize/2, width = textsize/40, labelsize = textsize*0.9, pad = 15)
         ax2.set_ylabel('Gap', size = 1.15*textsize)
 
     print '    data formatted:', time.time() - start_time
