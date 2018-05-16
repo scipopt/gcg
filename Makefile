@@ -316,16 +316,23 @@ GCGLIBNAME	=	$(GCGLIBSHORTNAME)-$(VERSION)
 
 GCGLIBOBJ	=	${LIBOBJ}
 GCGLIB		=	$(GCGLIBNAME).$(BASE)
-GCGLIBFILE	=	$(LIBDIR)/lib$(GCGLIB).$(LIBEXT)
+ifeq ($(SHARED),true)
+GCGLIBFILE	=	$(LIBDIR)/shared/lib$(GCGLIB).$(LIBEXT)
+GCGLIBLINK	=	$(LIBDIR)/shared/lib$(GCGLIBSHORTNAME).$(BASE).$(LIBEXT)
+GCGLIBSHORTLINK = 	$(LIBDIR)/shared/lib$(GCGLIBSHORTNAME).$(LIBEXT)
+LDFLAGS		+=	$(LINKCXX_L)$(LIBDIR)/shared/
+else
+GCGLIBFILE	=	$(LIBDIR)/static/lib$(GCGLIB).$(LIBEXT)
+GCGLIBLINK	=	$(LIBDIR)/static/lib$(GCGLIBSHORTNAME).$(BASE).$(LIBEXT)
+GCGLIBSHORTLINK = 	$(LIBDIR)/static/lib$(GCGLIBSHORTNAME).$(LIBEXT)
+LDFLAGS		+=	$(LINKCXX_L)$(LIBDIR)/static/
+endif
 GCGLIBOBJFILES	=	$(addprefix $(LIBOBJDIR)/,$(GCGLIBOBJ))
 GCGLIBSRC	=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
 GCGLIBSRC	+=	$(filter $(wildcard $(SRCDIR)/*/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard */*/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
 GCGLIBDEP	=	$(SRCDIR)/depend.gcglib.$(OPT)
-GCGLIBLINK	=	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(BASE).$(LIBEXT)
-GCGLIBSHORTLINK = 	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(LIBEXT)
 
 ALLSRC		=	$(MAINSRC) $(GCGLIBSRC)
-LDFLAGS		+=	$(LINKCXX_L)$(LIBDIR)
 SPLINT		=       splint
 #SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -preproc -formatcode +skip-sys-headers -weak +relaxtypes
 SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -which-lib -warn-posix-headers +skip-sys-headers -preproc -formatcode -weak \
