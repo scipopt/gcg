@@ -13,10 +13,10 @@ http://www.or.rwth-aachen.de/gcg.
 In order to compile GCG, you need
 
  * SCIP Optimization Suite >= 3.1.0
- * bliss >= 0.72 ([Direct download](http://www.tcs.hut.fi/Software/bliss/bliss-0.72.zip))
 
 and optionally
 
+ * bliss >= 0.72 ([Direct download](http://www.tcs.hut.fi/Software/bliss/bliss-0.72.zip))
  * readline-devel
  * zlib-devel
  * CPLEX >= 12.4.1
@@ -37,13 +37,41 @@ Install the required system libraries and tools for your Linux distribution:
 
     ?
 
-### Creating softlinks
+### Installation with CMake
+
+In order to create a build directory, type
+
+    mkdir build
+
+enter it via
+
+    cd build
+
+and configure it:
+
+    cmake ..
+
+After a successful configuration, you can compile it:
+
+    make
+
+Installation is done with
+
+    make install
+
+If a dependency such as SCIP is not found by `cmake`, you have to provide its
+directory, by adding a `-DSCIP_DIR=/path/to/scip/build/or/install` argument
+to the `cmake` call above.
+
+### Installation with shipped Makefile
+
+#### Creating softlinks
 
 In order to create all necessary links, type
 
     make links
 
-### Compilation
+#### Compilation
 
 You can compile GCG with
 
@@ -55,8 +83,9 @@ options, consult the Makefile.
 
 ### Usage
 
-The GCG binary can be found under `bin/gcg`. An elaborate example can be found
-in the official documentation [here](http://www.or.rwth-aachen.de/gcg/EXAMPLE.html).
+The GCG binary can be found under `bin/gcg` (relative to where it was built).
+An elaborate example can be found in the official documentation
+[here](http://www.or.rwth-aachen.de/gcg/EXAMPLE.html).
 
 ### Creating the documentation
 
