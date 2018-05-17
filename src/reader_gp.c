@@ -424,7 +424,7 @@ SCIP_RETCODE writeLinearConstraints(
       SCIP_CALL( writeLinearConstraint(scip, file, linearconstraints[i], variableposition, nvariables,  tempvars, writereorderedvariables, yoffset+i) );
    }
 
-   SCIP_CALL( SCIPfreeBlockMemoryArray(scip, &tempvars, nvariables) );
+   SCIPfreeBlockMemoryArray(scip, &tempvars, nvariables);
 
    return SCIP_OKAY;
 }
