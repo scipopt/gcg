@@ -2776,6 +2776,8 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
 
       otherseeed = origseeeds[s];
 
+      std::vector<int> probvarismatchedinfo = std::vector<int>(getNVars(), -1);
+
       SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL, " transform seeed %d \n", otherseeed->getID() );
 
       newseeed = new Seeed( scip, this->getNewIdForSeeed(), this );
@@ -2809,22 +2811,35 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
 
       /** set linking and master vars according to their representatives in the unpresolved seeed */
 
+
       for( int j = 0; j < otherseeed->getNLinkingvars(); j ++ )
       {
          int thisvar = colothertothis[otherseeed->getLinkingvars()[j]];
-         if( thisvar != - 1 )
+         if( thisvar != - 1 && probvarismatchedinfo[thisvar] == -1 )
          {
+            probvarismatchedinfo[thisvar] = 1;
             newseeed->bookAsLinkingVar(thisvar);
          }
+         else
+            if(  thisvar != - 1 )
+            {
+               assert( probvarismatchedinfo[thisvar] == 1 ); /** if this not fulfilled this probvar was assigned as master only variable but should be linking var*/
+            }
       }
 
       for( int j = 0; j < otherseeed->getNMastervars(); j ++ )
       {
          int thisvar = colothertothis[otherseeed->getMastervars()[j]];
-         if( thisvar != - 1 )
+         if( thisvar != - 1 && probvarismatchedinfo[thisvar] == -1 )
          {
+            probvarismatchedinfo[thisvar] = 2;
             newseeed->bookAsMasterVar( thisvar );
          }
+         else
+            if(  thisvar != - 1 )
+            {
+               assert( probvarismatchedinfo[thisvar] == 2 ); /** if this not fulfilled this probvar was assigned as linking only variable but should be master var*/
+            }
       }
 
       newseeed->flushBooked();

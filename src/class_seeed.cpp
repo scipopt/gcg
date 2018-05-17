@@ -1950,7 +1950,7 @@ bool Seeed::checkConsistency(
                partofblock = FALSE;
 
                SCIPwarningMessage( scip,
-                  "WARNING! Variable %d is not part of block %d or linking or open as constraint %d suggests! \n ", varid, b,
+                  "This should only happen during translation of (partial) decompositions from orginal to transformed problem, and means that translation has failed for this particaluar partial decomposition. Variable %d is not part of block %d or linking or open as constraint %d suggests! \n ", varid, b,
                   getConssForBlock( b )[c] );
 
                for( int b2 = 0; b2 < getNBlocks(); ++b2 )
