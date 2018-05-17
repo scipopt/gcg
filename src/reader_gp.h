@@ -76,13 +76,13 @@ SCIP_RETCODE SCIPwriteGp(
 SCIP_RETCODE SCIPwriteQpGp(
    SCIP*                 scip,                     /** SCIP data structure */
    FILE*                 file,                     /** File pointer to write to */
-   SCIP_CONS**           linearConstraints,        /** Array of linear constraints */
-   int                   nLinearConstraints,       /** Number of linear constraints */
-   SCIP_CONS**           quadraticConstraints,     /** Array of quadratic constraints */
-   int                   nQuadraticConstraints,    /** Number of quadratic constraints */
-   int*                  variablePosition,         /** Array indicating at which position the variable at [i] is to be plot */
-   int                   nVariables,               /** Number of variables */
-   SCIP_Bool             writeReorderedVariables   /** Use standard order of the variables or reposition as indicated in variablePosition? */
+   SCIP_CONS**           linearconstraints,        /** Array of linear constraints */
+   int                   nLinearconstraints,       /** Number of linear constraints */
+   SCIP_CONS**           quadraticconstraints,     /** Array of quadratic constraints */
+   int                   nQuadraticconstraints,    /** Number of quadratic constraints */
+   int*                  variableposition,         /** Array indicating at which position the variable at [i] is to be plot */
+   int                   ncariables,               /** Number of variables */
+   SCIP_Bool             writereorderedVariables   /** Use standard order of the variables or reposition as indicated in variablePosition? */
 );
 
 /** Compiles a given gnuplot file */

@@ -180,10 +180,10 @@ SCIP_RETCODE writeData(
    if( decdecomp != NULL )
    {
       assert(decdecomp->type == DEC_DECTYPE_ARROWHEAD
-               || decdecomp->type == DEC_DECTYPE_BORDERED
-               || decdecomp->type == DEC_DECTYPE_DIAGONAL
-               || decdecomp->type == DEC_DECTYPE_UNKNOWN
-               || decdecomp->type == DEC_DECTYPE_STAIRCASE);
+         || decdecomp->type == DEC_DECTYPE_BORDERED
+         || decdecomp->type == DEC_DECTYPE_DIAGONAL
+         || decdecomp->type == DEC_DECTYPE_UNKNOWN
+         || decdecomp->type == DEC_DECTYPE_STAIRCASE);
 
       /* if we don't have staicase, but something else, go through the blocks and create the indices */
       if( decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED || decdecomp->type == DEC_DECTYPE_DIAGONAL )
@@ -280,7 +280,7 @@ SCIP_RETCODE writeData(
             SCIPinfoMessage(scip, file, "%d %d 0.5\n",
                SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])),
                SCIPhashmapGetImage(consindexmap, conss[i])
-               );
+            );
          }
       }
 
@@ -354,178 +354,190 @@ SCIP_RETCODE writeFileHeaderQp(
    SCIP*                 scip,                       /** SCIP data structure */
    FILE*                 file,                       /** File pointer to write to */
    const char*           outname,                    /** Name of the .pdf output file containing the plot  */
-   int                   nVariables,                 /** Number of variables */
-   int                   nLinearConstraints,         /** Number of linear constraints */
-   int                   nQuadraticConstraints       /** Number of quadratic constraints */
+   int                   nvariables,                 /** Number of variables */
+   int                   nlinearconstraints,         /** Number of linear constraints */
+   int                   nquadraticconstraints       /** Number of quadratic constraints */
    )
 {
-	SCIPinfoMessage(scip, file, READERGP_GNUPLOT_HEADER(outname));
-	SCIPinfoMessage(scip, file, READERGP_GNUPLOT_RANGES(nVariables+1, nLinearConstraints + nQuadraticConstraints * nVariables + 1));
-	return SCIP_OKAY;
+   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_HEADER(outname));
+   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_RANGES(nvariables+1, nlinearconstraints + nquadraticconstraints * nvariables + 1));
+   return SCIP_OKAY;
 }
 
 
 /** writes gnuplot code for a single linear constraint */
+static
 SCIP_RETCODE writeLinearConstraint(
    SCIP*                 scip,                        /** SCIP data structure */
    FILE*                 file,                        /** File pointer to write to */
-   SCIP_CONS*            linearConstraint,            /** Linear constraint */
-   int*                  variablePosition,            /** Array indicating at which position the variable at [i] is to be plot */
-   int                   nVariables,                  /** Number of variables */
-   SCIP_VAR**            tempVars,                    /** Allocated array to be used as temporary storage*/
-   SCIP_Bool             writeReorderedVariables,     /** Use standard order of the variables or reposition as indicated in variablePosition? */
-   int                   yOffset                      /** y-coordinate in the plot */
-
+   SCIP_CONS*            linearconstraint,            /** Linear constraint */
+   int*                  variableposition,            /** Array indicating at which position the variable at [i] is to be plot */
+   int                   nvariables,                  /** Number of variables */
+   SCIP_VAR**            tempvars,                    /** Allocated array to be used as temporary storage*/
+   SCIP_Bool             writereorderedvariables,     /** Use standard order of the variables or reposition as indicated in variablePosition? */
+   int                   yoffset                      /** y-coordinate in the plot */
    )
 {
-	int nConsVars;
-	int i;
+   int nconsvars;
+   int i;
 
-	nConsVars = GCGconsGetNVars( scip, linearConstraint );
-	GCGconsGetVars( scip, linearConstraint, tempVars, nConsVars );
+   nconsvars = GCGconsGetNVars( scip, linearconstraint );
+   GCGconsGetVars( scip, linearconstraint, tempvars, nconsvars );
 
-	for(i=0; i < nConsVars; i++) {
-	   int position;
-	   if(writeReorderedVariables) {
-		  position = variablePosition[SCIPvarGetIndex( tempVars[i])];
-	   } else {
-		   position = SCIPvarGetIndex( tempVars[i]);
-	   }
-	   SCIPinfoMessage(scip, file, "%d %d 0.5\n",position, yOffset);
-	}
+   for( i = 0; i < nconsvars; i++ )
+   {
+      int position;
+      if( writereorderedvariables )
+      {
+         position = variableposition[SCIPvarGetIndex( tempvars[i])];
+      }
+      else
+      {
+         position = SCIPvarGetIndex( tempvars[i]);
+      }
+      SCIPinfoMessage(scip, file, "%d %d 0.5\n",position, yoffset);
+   }
    return SCIP_OKAY;
 }
 
 /** writes gnuplot code for all linear constraints */
+static
 SCIP_RETCODE writeLinearConstraints(
    SCIP*                 scip,                       /** SCIP data structure */
    FILE*                 file,                       /** File pointer to write to */
-   SCIP_CONS**           linearConstraints,          /** Array of linear constraints */
-   int                   nLinearConstraints,         /** Number of linear constraints */
-   int*                  variablePosition,           /** Array indicating at which position the variable at [i] is to be plot */
-   int                   nVariables,                 /** Number of variables */
-   SCIP_Bool             writeReorderedVariables,    /** Use standard order of the variables or reposition as indicated in variablePosition? */
-   int                   yOffset                     /** y-coordinate in the plot */
+   SCIP_CONS**           linearconstraints,          /** Array of linear constraints */
+   int                   nlinearconstraints,         /** Number of linear constraints */
+   int*                  variableposition,           /** Array indicating at which position the variable at [i] is to be plot */
+   int                   nvariables,                 /** Number of variables */
+   SCIP_Bool             writereorderedvariables,    /** Use standard order of the variables or reposition as indicated in variablePosition? */
+   int                   yoffset                     /** y-coordinate in the plot */
    )
 {
-   SCIP_VAR** tempVars;
-   SCIP_Bool* success;
+   SCIP_VAR** tempvars;
    int i;
 
-   SCIPallocBlockMemory(scip, &success);
-   SCIPallocBlockMemoryArray(scip, &tempVars, nVariables);
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &tempvars, nvariables) );
 
-   for(i=0; i < nLinearConstraints; i++) {
-	   assert(strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(linearConstraints[i])), "linear") == 0);
-	   SCIP_CALL( writeLinearConstraint(scip, file, linearConstraints[i], variablePosition, nVariables,  tempVars, writeReorderedVariables, yOffset+i));
+   for(i=0; i < nlinearconstraints; i++)
+   {
+      assert(strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(linearconstraints[i])), "linear") == 0);
+      SCIP_CALL( writeLinearConstraint(scip, file, linearconstraints[i], variableposition, nvariables,  tempvars, writereorderedvariables, yoffset+i) );
    }
 
-   SCIPfreeBlockMemory(scip, &success);
-   SCIPfreeBlockMemoryArray(scip, &tempVars, nVariables);
+   SCIP_CALL( SCIPfreeBlockMemoryArray(scip, &tempvars, nvariables) );
 
    return SCIP_OKAY;
 }
 
 /** writes gnuplot code for a quadratic term */
+static
 SCIP_RETCODE writeQuadraticConstraintQuadraticTerm(
    SCIP*                 scip,                        /** SCIP data structure */
    FILE*                 file,                        /** File pointer to write to */
-   SCIP_CONS*            quadraticConstraint,         /** Quadratic constraint */
-   SCIP_QUADVARTERM*     quadraticTerm,               /** Quadratic term to plot */
-   int*                  variablePosition,            /** Array indicating at which position the variable at [i] is to be plot */
-   SCIP_Bool             writeReorderedVariables,     /** Use standard order of the variables or reposition as indicated in variablePosition? */
-   int                   yOffset                      /** y-coordinate in the plot */
+   SCIP_CONS*            quadraticconstraint,         /** Quadratic constraint */
+   SCIP_QUADVARTERM*     quadraticterm,               /** Quadratic term to plot */
+   int*                  variableposition,            /** Array indicating at which position the variable at [i] is to be plot */
+   SCIP_Bool             writereorderedvariables,     /** Use standard order of the variables or reposition as indicated in variablePosition? */
+   int                   yoffset                      /** y-coordinate in the plot */
    )
 {
    int position;
-   SCIPfindQuadVarTermQuadratic(scip, quadraticConstraint, quadraticTerm->var, &position);
-   if(writeReorderedVariables) {
-	   position = variablePosition[position];
+   SCIPfindQuadVarTermQuadratic(scip, quadraticconstraint, quadraticterm->var, &position);
+   if( writereorderedvariables )
+   {
+      position = variableposition[position];
    }
-   SCIPinfoMessage(scip, file, "%d %d 0.5\n",position, yOffset + position);
+   SCIPinfoMessage(scip, file, "%d %d 0.5\n",position, yoffset + position);
 
    return SCIP_OKAY;
 }
 
 /** writes gnuplot code for a bilinear term */
+static
 SCIP_RETCODE writeQuadraticConstraintBilinearTerm(
    SCIP*                 scip,                         /** SCIP data structure */
    FILE*                 file,                         /** File pointer to write to */
-   SCIP_CONS*            quadraticConstraint,          /** Quadratic constraint */
-   SCIP_BILINTERM*       bilinearTerm,                 /** Bilinear term to plot */
-   int*                  variablePosition,             /** Array indicating at which position the variable at [i] is to be plot */
-   SCIP_Bool             writeReorderedVariables,      /** Use standard order of the variables or reposition as indicated in variablePosition? */
-   int                   yOffset                       /** y-coordinate in the plot */
+   SCIP_CONS*            quadraticconstraint,          /** Quadratic constraint */
+   SCIP_BILINTERM*       bilinearterm,                 /** Bilinear term to plot */
+   int*                  variableposition,             /** Array indicating at which position the variable at [i] is to be plot */
+   SCIP_Bool             writereorderedvariables,      /** Use standard order of the variables or reposition as indicated in variablePosition? */
+   int                   yoffset                       /** y-coordinate in the plot */
    )
 {
    int positionVar1;
    int positionVar2;
-   SCIPfindQuadVarTermQuadratic(scip, quadraticConstraint, bilinearTerm->var1, &positionVar1);
-   SCIPfindQuadVarTermQuadratic(scip, quadraticConstraint, bilinearTerm->var2, &positionVar2);
-   if(writeReorderedVariables) {
-      positionVar1 = variablePosition[positionVar1];
-      positionVar2 = variablePosition[positionVar2];
+   SCIPfindQuadVarTermQuadratic(scip, quadraticconstraint, bilinearterm->var1, &positionVar1);
+   SCIPfindQuadVarTermQuadratic(scip, quadraticconstraint, bilinearterm->var2, &positionVar2);
+   if( writereorderedvariables )
+   {
+      positionVar1 = variableposition[positionVar1];
+      positionVar2 = variableposition[positionVar2];
    }
-   SCIPinfoMessage(scip, file, "%d %d 0.5\n",positionVar1, yOffset + positionVar2);
-   SCIPinfoMessage(scip, file, "%d %d 0.5\n",positionVar2, yOffset + positionVar1);
+   SCIPinfoMessage(scip, file, "%d %d 0.5\n",positionVar1, yoffset + positionVar2);
+   SCIPinfoMessage(scip, file, "%d %d 0.5\n",positionVar2, yoffset + positionVar1);
 
    return SCIP_OKAY;
 }
 
 /** writes gnuplot code for a single quadratic constraint */
+static
 SCIP_RETCODE writeQuadraticConstraint(
    SCIP*                 scip,                       /** SCIP data structure */
    FILE*                 file,                       /** File pointer to write to */
-   SCIP_CONS*            quadraticConstraint,        /** Quadratic constraint */
-   int*                  variablePosition,           /** Array indicating at which position the variable at [i] is to be plot */
-   int                   nVariables,                 /** Number of variables */
-   SCIP_Bool             writeReorderedVariables,    /** Use standard order of the variables or reposition as indicated in variablePosition? */
-   int                   yOffset                     /** y-coordinate in the plot*/
+   SCIP_CONS*            quadraticconstraint,        /** Quadratic constraint */
+   int*                  variableposition,           /** Array indicating at which position the variable at [i] is to be plot */
+   int                   nvariables,                 /** Number of variables */
+   SCIP_Bool             writereorderedvariables,    /** Use standard order of the variables or reposition as indicated in variablePosition? */
+   int                   yoffset                     /** y-coordinate in the plot*/
    )
 {
-   SCIP_BILINTERM* bilinearTerms;
-   SCIP_QUADVARTERM* quadraticTerms;
-   int nBilinearTerms;
-   int nQuadraticTerms;
+   SCIP_BILINTERM* bilinearterms;
+   SCIP_QUADVARTERM* quadraticterms;
+   int nbilinearterms;
+   int nquadraticterms;
    int i;
 
-   SCIPsortQuadVarTermsQuadratic(scip, quadraticConstraint);
+   SCIPsortQuadVarTermsQuadratic(scip, quadraticconstraint);
 
-   bilinearTerms = SCIPgetBilinTermsQuadratic(scip, quadraticConstraint);
-   quadraticTerms = SCIPgetQuadVarTermsQuadratic(scip, quadraticConstraint);
-   nBilinearTerms = SCIPgetNBilinTermsQuadratic(scip, quadraticConstraint);
-   nQuadraticTerms = SCIPgetNQuadVarTermsQuadratic(scip, quadraticConstraint);
+   bilinearterms = SCIPgetBilinTermsQuadratic(scip, quadraticconstraint);
+   quadraticterms = SCIPgetQuadVarTermsQuadratic(scip, quadraticconstraint);
+   nbilinearterms = SCIPgetNBilinTermsQuadratic(scip, quadraticconstraint);
+   nquadraticterms = SCIPgetNQuadVarTermsQuadratic(scip, quadraticconstraint);
 
    /* write quadratic Terms */
-   for(i=0; i < nQuadraticTerms; i++) {
-	   SCIP_CALL( writeQuadraticConstraintQuadraticTerm(scip, file, quadraticConstraint, &quadraticTerms[i], variablePosition, writeReorderedVariables, yOffset));
+   for( i = 0; i < nquadraticterms; i++ )
+   {
+      SCIP_CALL( writeQuadraticConstraintQuadraticTerm(scip, file, quadraticconstraint, &quadraticterms[i], variableposition, writereorderedvariables, yoffset) );
    }
 
    /* write bilinear Terms */
-   for(i=0; i < nBilinearTerms; i++) {
-	   SCIP_CALL( writeQuadraticConstraintBilinearTerm(scip, file, quadraticConstraint, &bilinearTerms[i], variablePosition, writeReorderedVariables, yOffset));
+   for( i = 0; i < nbilinearterms; i++)
+   {
+      SCIP_CALL( writeQuadraticConstraintBilinearTerm(scip, file, quadraticconstraint, &bilinearterms[i], variableposition, writereorderedvariables, yoffset) );
    }
 
    return SCIP_OKAY;
 }
 
 /** writes gnuplot code for all quadratic constraints */
+static
 SCIP_RETCODE writeQuadraticConstraints(
    SCIP*                 scip,                       /** SCIP data structure */
    FILE*                 file,                       /** File pointer to write to */
-   SCIP_CONS**           quadraticConstraints,       /** Array of quadratic constraints */
-   int                   nQuadraticConstraints,      /** Number of quadratic constraints */
-   int*                  variablePosition,           /** Array indicating at which position the variable at [i] is to be plot */
-   int                   nVariables,                 /** Number of variables */
-   SCIP_Bool             writeReorderedVariables,    /** Use standard order of the variables or reposition as indicated in variablePosition? */
-   int                   yOffset                     /** y-coordinate in the plot */
+   SCIP_CONS**           quadraticconstraints,       /** Array of quadratic constraints */
+   int                   nquadraticconstraints,      /** Number of quadratic constraints */
+   int*                  variableposition,           /** Array indicating at which position the variable at [i] is to be plot */
+   int                   nvariables,                 /** Number of variables */
+   SCIP_Bool             writereorderedvariables,    /** Use standard order of the variables or reposition as indicated in variablePosition? */
+   int                   yoffset                     /** y-coordinate in the plot */
    )
 {
    int i;
-   int offset = yOffset;
-   for(i=0; i < nQuadraticConstraints; i++) {
-	  assert(strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(quadraticConstraints[i])), "quadratic") == 0);
-	  SCIP_CALL( writeQuadraticConstraint(scip, file, quadraticConstraints[i], variablePosition, nVariables, writeReorderedVariables, yOffset + nVariables * i));
+   int offset = yoffset;
+   for( i = 0; i < nquadraticconstraints; i++ )
+   {
+      assert(strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(quadraticconstraints[i])), "quadratic") == 0);
+      SCIP_CALL( writeQuadraticConstraint(scip, file, quadraticconstraints[i], variableposition, nvariables, writereorderedvariables, yoffset + nvariables * i) );
    }
    return SCIP_OKAY;
 }
@@ -539,13 +551,13 @@ SCIP_RETCODE writeQuadraticConstraints(
 SCIP_RETCODE SCIPwriteQpGp(
    SCIP*                 scip,                     /** SCIP data structure */
    FILE*                 file,                     /** File pointer to write to */
-   SCIP_CONS**           linearConstraints,        /** Array of linear constraints */
-   int                   nLinearConstraints,       /** Number of linear constraints */
-   SCIP_CONS**           quadraticConstraints,     /** Array of quadratic constraints */
-   int                   nQuadraticConstraints,    /** Number of quadratic constraints */
-   int*                  variablePosition,         /** Array indicating at which position the variable at [i] is to be plot */
-   int                   nVariables,               /** Number of variables */
-   SCIP_Bool             writeReorderedVariables   /** Use standard order of the variables or reposition as indicated in variablePosition? */
+   SCIP_CONS**           linearconstraints,        /** Array of linear constraints */
+   int                   nlinearconstraints,       /** Number of linear constraints */
+   SCIP_CONS**           quadraticconstraints,     /** Array of quadratic constraints */
+   int                   nquadraticconstraints,    /** Number of quadratic constraints */
+   int*                  variableposition,         /** Array indicating at which position the variable at [i] is to be plot */
+   int                   nvariables,               /** Number of variables */
+   SCIP_Bool             writereorderedvariables   /** Use standard order of the variables or reposition as indicated in variablePosition? */
    )
 {
    char probname[SCIP_MAXSTRLEN];
@@ -555,9 +567,10 @@ SCIP_RETCODE SCIPwriteQpGp(
    assert(scip != NULL);
    assert(file != NULL);
 
-   if( writeReorderedVariables && variablePosition == NULL) {
+   if( writereorderedvariables && variableposition == NULL )
+   {
       SCIPwarningMessage(scip, "Cannot write reordered structure if position array is empty!");
-      writeReorderedVariables = FALSE;
+      writereorderedvariables = FALSE;
    }
 
    /* sanitize filename */
@@ -566,16 +579,16 @@ SCIP_RETCODE SCIPwriteQpGp(
    (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
 
    /* write header */
-   SCIP_CALL( writeFileHeaderQp(scip, file, outname, nVariables, nLinearConstraints, nQuadraticConstraints) );
+   SCIP_CALL( writeFileHeaderQp(scip, file, outname, nvariables, nlinearconstraints, nquadraticconstraints) );
 
    /* write the plot header*/
    SCIP_CALL( writePlotCommands(scip, file) );
 
    /* write linear constraints */
-   SCIP_CALL( writeLinearConstraints(scip, file, linearConstraints, nLinearConstraints, variablePosition, nVariables, writeReorderedVariables, 0));
+   SCIP_CALL( writeLinearConstraints(scip, file, linearconstraints, nlinearconstraints, variableposition, nvariables, writereorderedvariables, 0) );
 
    /* write quadratic constraints */
-   SCIP_CALL( writeQuadraticConstraints(scip, file, quadraticConstraints, nQuadraticConstraints, variablePosition, nVariables, writeReorderedVariables, nLinearConstraints));
+   SCIP_CALL( writeQuadraticConstraints(scip, file, quadraticconstraints, nquadraticconstraints, variableposition, nvariables, writereorderedvariables, nlinearconstraints) );
 
    return SCIP_OKAY;
 }
@@ -636,7 +649,7 @@ SCIP_RETCODE SCIPincludeReaderGp(
 {
    /* include gp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
-         readerCopyGp, readerFreeGp, readerReadGp, readerWriteGp, NULL) );
+      readerCopyGp, readerFreeGp, readerReadGp, readerWriteGp, NULL) );
 
    return SCIP_OKAY;
 }
