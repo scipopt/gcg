@@ -121,28 +121,28 @@ $(TESTOBJDIR):	$(OBJDIR)
 
 .PHONY: googletest
 googletest:
-		-mkdir lib/googletest/build
-		cd lib/googletest/build && cmake ../
-		cd lib/googletest/build && make
+		-mkdir lib/googletest-git/build
+		cd lib/googletest-git/build && cmake ../
+		cd lib/googletest-git/build && make
 
 .PHONY: bliss
 bliss:
-		@$(MAKE) -C lib/bliss
+		@$(MAKE) -C lib/bliss-git
 
 .PHONY: cliquer
 cliquer: cliquerobj cliquerlib
 
 .PHONY: cliquerobj
 cliquerobj:
-		@$(MAKE) -C lib/cliquer
+		@$(MAKE) -C lib/cliquer-git
 
 .PHONY: cliquerlib
 cliquerlib:
 		@echo "-> generating library lib/cliquer/libcliquer.a"
-		@-rm -f lib/cliquer/libcliquer.a
-		@$(LIBBUILD) $(LIBBUILDFLAGS) lib/cliquer/libcliquer.a lib/cliquer/*.o
+		@-rm -f lib/cliquer-git/libcliquer.a
+		@$(LIBBUILD) $(LIBBUILDFLAGS) lib/cliquer-git/libcliquer.a lib/cliquer/*.o
 ifneq ($(RANLIB),)
-		@$(RANLIB) lib/cliquer/libcliquer.a
+		@$(RANLIB) lib/cliquer-git/libcliquer.a
 endif
 
 .PHONY: soplex
