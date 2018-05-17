@@ -370,6 +370,14 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
     # set the height of the zero bars
     ymin = -0.15
 
+    # set some colors
+    pricinground_linecolor = 'red'
+    stabround_linecolor = 'orange'
+    farkas_linecolor = 'blue'
+    gap_color = 'red'
+    rootlpsol_color = 'blue'
+    incumbent_color = 'green'
+
     # flat out the data again
     data = data.reset_index()
 
@@ -429,18 +437,18 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
         lw = 0.01
     else:
         lw = 1.0
-    ax.bar(x, y, widths, bottom = ymin, align = 'edge', linewidth = lw, edgecolor = 'white', color = colors, label='pricing problems')
+    ax.bar(x, y, widths, bottom = ymin, align = 'edge', linewidth = lw, edgecolor = 'white', color = colors, label='Pricing problems')
 
     # add the column pool data as a scatter plot
-    cp_scatter = ax.scatter(x_colpool, y_colpool, color = 'green', marker = 'o', s = 100, zorder = 10, label = 'column pool')
+    cp_scatter = ax.scatter(x_colpool, y_colpool, color = 'green', marker = 'o', s = 100, zorder = 10, label = 'Column Pool')
 
-    ax.bar(rootlpsol_times_cnt.keys(), width=lw, height=[-t-ymin for t in rootlpsol_times_cnt.values()], bottom = ymin, align = 'edge', color = 'blue', label='root lp solution vars')
-    ax.bar(incumbent_times_cnt.keys(), width=lw, height=[-t for t in incumbent_times_cnt.values()], bottom = incumbent_times_bottoms, align = 'edge', color = 'green', label='incumbent solution vars')
+    ax.bar(rootlpsol_times_cnt.keys(), width=lw, height=[-t-ymin for t in rootlpsol_times_cnt.values()], bottom = ymin, align = 'edge', color = rootlpsol_color, label='Root LP Sol')
+    ax.bar(incumbent_times_cnt.keys(), width=lw, height=[-t for t in incumbent_times_cnt.values()], bottom = incumbent_times_bottoms, align = 'edge', color = incumbent_color, label='Incumbent')
 
     if (not gap_data is None) and params['gapincomplete']:
         # add the gap plot
         ax2 = ax.twinx()
-        gap_plot = ax2.plot(x_gap, y_gap, 'k--', color = 'red', linewidth = 10.0, label = 'gap')
+        gap_plot = ax2.plot(x_gap, y_gap, 'k--', color = gap_color, linewidth = 10.0, label = 'Gap')
 
     print '    data plotted:', time.time() - start_time
     start_time = time.time()
@@ -491,10 +499,10 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
 
     # special cases: no or only (initial) farkas pricing in the plot
     if data.farkas.all():
-        ax.text(.991, .99, "\it{Initial Farkas Pricing did not end}", va = 'top', ha = 'right', rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = ax.transAxes, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
+        ax.text(.991, .99, "\it{Initial Farkas Pricing did not end}", va = 'top', ha = 'right', rotation = 0, color = farkas_linecolor, zorder = 11, size = textsize * .95, transform = ax.transAxes, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
         farkasLine = True
     elif not data.farkas.any():
-        ax.text(.009, .99, "\it{No initial Farkas Pricing}", va = 'top', ha = 'left', rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = ax.transAxes, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
+        ax.text(.009, .99, "\it{No initial Farkas Pricing}", va = 'top', ha = 'left', rotation = 0, color = farkas_linecolor, zorder = 11, size = textsize * .95, transform = ax.transAxes, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
         farkasLine = True
     else:
         # add a line at the end of farkas pricing in the loop below
@@ -511,10 +519,10 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
         if rnd > prev_rnd:
             # bold line for a new pricing round
             if params['lines'] == 2 or (params['lines'] == 1 and (pos - prev_x_drawn)/totalTime > 0.002) or (not params['no_farkasline'] and not farkasLine and not far):
-                line = lines.Line2D([pos,pos],[0,1],color='r',linewidth=1.0, transform = trans)
+                line = lines.Line2D([pos,pos],[0,1],color=pricinground_linecolor,linewidth=1.0, transform = trans)
                 # blue line at the end of farkas pricing
                 if not farkasLine and not far:
-                    line.set_color('blue')
+                    line.set_color(farkas_linecolor)
                 ax.add_line(line)
                 prev_x_drawn = pos
             # text for initial Farkas pricing
@@ -523,7 +531,7 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
                     align = 'left'
                 else:
                     align = 'right'
-                ax.text(pos, .99, "\it{End of initial Farkas Pricing}", va = 'top', ha = align, rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = trans, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
+                ax.text(pos, .99, "\it{End of initial Farkas Pricing}", va = 'top', ha = align, rotation = 0, color = farkas_linecolor, zorder = 11, size = textsize * .95, transform = trans, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
                 farkasLine = True
             # write the round number, if there is space for it
             if len(texts) == 0 or get_x1_in_data(texts[-1], fig) < prev_x:
@@ -533,7 +541,7 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
         else:
             # dashed line for a new stabilization round
             if params['lines'] == 2 or (params['lines'] == 1 and (pos - prev_x_drawn)/totalTime > 0.0005):
-                line = lines.Line2D([pos,pos],[0,1],color='orange',linestyle='--',linewidth=0.8, transform = trans)
+                line = lines.Line2D([pos,pos],[0,1],color=stabround_linecolor,linestyle='--',linewidth=0.8, transform = trans)
                 ax.add_line(line)
                 prev_x_drawn = pos
     if len(texts) == 0 or get_x1_in_data(texts[-1], fig) < prev_x:
@@ -579,7 +587,12 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
             patches[0].set_label('Pricing Problems')
     if len(patches) > 31:
         patches = patches[:31] + [mpatches.Patch(color = 'white', alpha = 0, label = '...')]
-    handles = patches + [lines.Line2D([0,0], [0,1], color = 'red', linewidth = 2., label = 'pricing round'), lines.Line2D([0,0], [0,1], color = 'orange', linestyle = '--', linewidth = 1.6, label = 'stabilization round'), cp_scatter]
+    handles = patches + [cp_scatter]
+    if params['lines'] > 0:
+        handles += [lines.Line2D([0,0], [0,1], color = pricinground_linecolor, linewidth = 2., label = 'Pricing Round'), lines.Line2D([0,0], [0,1], color = stabround_linecolor, linestyle = '--', linewidth = 1.6, label = 'Mis-price Iteration')]
+    if params['gapincomplete']:
+        handles += [lines.Line2D([0,0], [0,1], color = gap_color, linestyle = '--', linewidth = 6., label = 'Gap')]
+    handles += [lines.Line2D([0,0], [0,1], color = rootlpsol_color, linewidth = 4., label = 'Root LP Sol'), lines.Line2D([0,0], [0,1], color = incumbent_color, linewidth = 4., label = 'Incumbent')]
     plt.legend(handles = handles, bbox_to_anchor = (1.02, .915), loc = 2, fontsize = textsize)
 
     # add other information
@@ -1304,6 +1317,10 @@ def make_vartimes_plot(settings, incumbent_times_tot, rootlpsol_times_tot):
     Plot a distribution of relative creation times of master variables that are present in incumbent and root lp solutions
     """
 
+    # set some colors
+    rootlpsol_color = 'blue'
+    incumbent_color = 'green'
+
     print 'summarize variable creation times'
 
     start_time = time.time()
@@ -1316,7 +1333,7 @@ def make_vartimes_plot(settings, incumbent_times_tot, rootlpsol_times_tot):
     else:
         lw = 1.0
 
-    ax.hist([rootlpsol_times_tot, incumbent_times_tot], 10, stacked=True, color = ['blue', 'green'], edgecolor = 'white', alpha=0.75, label = ['root LP solution', 'incumbent solution'])
+    ax.hist([rootlpsol_times_tot, incumbent_times_tot], 10, stacked=True, color = [rootlpsol_color, incumbent_color], edgecolor = 'white', alpha=0.75, label = ['Root LP Sol', 'Incumbent'])
 
     # set parameters
     if not params['png']:
@@ -1332,12 +1349,16 @@ def make_vartimes_plot(settings, incumbent_times_tot, rootlpsol_times_tot):
 #    ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True, nbins = 15))
     ax.tick_params(axis = 'both', length = textsize/2, width = textsize/40, labelsize = textsize*0.9, pad = 15)
     ax.set_xlabel('Relative solution time', size = 1.15*textsize)
-    ax.set_ylabel('\% of variables', size = 1.15*textsize)
+    ax.set_ylabel('\# of variables', size = 1.15*textsize)
     trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+
+    # draw a legend
+    handles = [lines.Line2D([0,0], [0,1], color = rootlpsol_color, linewidth = 4., label = 'Root LP Sol'), lines.Line2D([0,0], [0,1], color = incumbent_color, linewidth = 4., label = 'Incumbent')]
+    plt.legend(handles = handles, bbox_to_anchor = (1.02, .915), loc = 2, fontsize = textsize)
 
     # save the figure
     plt.tight_layout()
-#    fig.subplots_adjust(top = 0.98/text_height, right = 0.85, left = 0.03)
+    fig.subplots_adjust(top = 0.98, right = 0.85, left = 0.04)
     save_plot(fig, 'vartimes', {'instance': "all", 'settings': settings, 'status': "None"})
     plt.close()
 
