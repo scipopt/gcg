@@ -2056,7 +2056,7 @@ SCIP_RETCODE initRelaxator(
       }
    }
 
-   SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks, %d linking vars and %d linking constraints.\n", DECdecompGetNBlocks(relaxdata->decdecomp), DECdecompGetNLinkingvars(relaxdata->decdecomp), DECdecompGetNLinkingconss(relaxdata->decdecomp));
+   SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks, %d linking vars, %d master-only (base) variables and %d linking constraints.\n", DECdecompGetNBlocks(relaxdata->decdecomp), DECdecompGetNLinkingvars(relaxdata->decdecomp), DECdecompGetNMastervars(relaxdata->decdecomp), DECdecompGetNLinkingconss(relaxdata->decdecomp));
    SCIPinfoMessage(scip, NULL, "This decomposition has a maxwhite score of %f .\n", DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
 
 
