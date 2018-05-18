@@ -55,6 +55,12 @@
 #include "pub_decomp.h"
 #include "scip_misc.h"
 
+#ifdef HMETIS_HEADER
+#include "hmetis.h"
+#else
+#define HMETIS_EXECUTABLE "hmetis"
+#endif
+
 #define DEC_DETECTORNAME         "cutpacking"   /**< name of the detector */
 #define DEC_DESC                 "detects staircase matrices via graph partioning and cutpacking" /**< detector description */
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
@@ -1786,7 +1792,7 @@ SCIP_RETCODE callMetis(
    assert(adjlists != NULL);
    assert(constopos != NULL);
 
-   (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
+   (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg.metis.XXXXXX");
    temp_filedes = mkstemp(tempfile);
    if( temp_filedes < 0 )
    {
@@ -1836,7 +1842,7 @@ SCIP_RETCODE callMetis(
       return SCIP_WRITEERROR;
    }
 
-   (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"", tempfile, 2,
+   (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"" HMETIS_EXECUTABLE " %s %d -seed %d -ptype %s -ufactor %f %s\"", tempfile, 2,
       detectordata->randomseed, detectordata->metisuseptyperb ? "rb" : "kway", detectordata->metisubfactor,
       detectordata->metisverbose ? "" : "> /dev/null");
 

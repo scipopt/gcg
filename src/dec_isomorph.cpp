@@ -49,7 +49,7 @@
 #include "class_seeedpool.h"
 #include "scip/clock.h"
 
-#include "graph.hh"
+#include "bliss/graph.hh"
 #include "pub_gcgvar.h"
 #include <cstring>
 #include <cassert>

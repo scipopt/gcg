@@ -35,15 +35,12 @@
 #ifndef GCG_GRAPH_GCG_H_
 #define GCG_GRAPH_GCG_H_
 
-//#define GSL
-
 #include <map>
 #include "bridge.h"
 
-
-#ifdef GSL
-   #include "gsl/gsl_spmatrix.h"
-   #include "gsl/gsl_spblas.h"
+#ifdef WITH_GSL
+   #include <gsl/gsl_spmatrix.h>
+   #include <gsl/gsl_spblas.h>
 #endif
 
 namespace gcg {
@@ -64,7 +61,7 @@ private:
    bool locked;           // true if we are not allowed to change the graph anymore
    bool initialized;      // true if at least 1 node
    std::vector<int> nodes;
-#ifdef GSL
+#ifdef WITH_GSL
    gsl_spmatrix* adj_matrix_sparse;
    gsl_spmatrix* working_adj_matrix;      // this one is used ONLY during MCL algorithm!
 #else
@@ -83,7 +80,7 @@ public:
    virtual int getNNodes();
    virtual int getNEdges();
 
-#ifdef GSL
+#ifdef WITH_GSL
    virtual gsl_spmatrix* getAdjMatrix();
    virtual void expand(int factor);
    virtual void inflate(double factor);

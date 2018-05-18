@@ -323,7 +323,7 @@ double Graph<T>::getEdgeWeightPercentile(double q)
 
 
 
-#ifdef GSL
+#ifdef WITH_GSL
 
 template <class T>
 void Graph<T>::expand(int factor)

@@ -465,7 +465,7 @@ protected:
 };
 
 
-#ifdef GSL
+#ifdef WITH_GSL
 TEST_F(GraphAlgorithmMCLTest, MCLmainTest) {
    std::cout << "This is MST test..." << std::endl;
    int inflate_fac = 2;

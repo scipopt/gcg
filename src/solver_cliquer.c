@@ -44,7 +44,7 @@
 #include "pub_gcgcol.h"
 #include "pub_gcgvar.h"
 
-#include "cliquer.h"
+#include "cliquer/cliquer.h"
 
 
 #define SOLVER_NAME          "cliquer"
