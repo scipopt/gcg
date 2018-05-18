@@ -362,6 +362,7 @@ SCIP_RETCODE createOriginalProblemSolution(
    }
 
 #ifdef SCIP_DEBUG
+   SCIPdebugMsg(masterprob, "Original Solution\n");
    SCIP_CALL( SCIPprintSol(origprob, origsol, NULL, FALSE) );
 #endif
 
