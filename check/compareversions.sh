@@ -123,26 +123,30 @@ do
 	SCIPTAG=$(git describe --tags)
 	TAGFRAG=${SCIPTAG#v} # remove v in front of tag
 	first=${TAGFRAG:0:1}
-	isoldversion=false
+	oldsoplexlinks=false
+	zimpllinks=false
 
 	# the linking differences appear for < v310-6000-[...]
 	if [ ${first} -gt 2 ]; then
 		if [ $first = 3 ]; then
 			TAGFRAG=${TAGFRAG#${first}}
 			if [ ${TAGFRAG:0:1} -lt 1 ]; then
-				isoldversion=true
+				oldsoplexlinks=true
+				zimpllinks=true
 			else
 				TAGFRAG=${TAGFRAG#*-}
 				TAGFRAG=${TAGFRAG%-*}
 				if [ "$TAGFRAG" -lt 6000 ]; then
-					isoldversion=true
+					oldsoplexlinks=true
+				fi
+				if [ "$TAGFRAG" -lt 10000 ]; then
+					zimpllinks=true
 				fi
 			fi
 		fi
 	else
-		echo le 2
-		isoldversion=true
-		#TODO zimpl for which tag numbers?
+		oldsoplexlinks=true
+		zimpllinks=true
 	fi
 
 	# remove old soplex linking
@@ -153,15 +157,22 @@ do
 
 	# make links
 	cd lib/
-	if $isoldversion ; then
+	if $oldsoplexlinks ; then
 		ln -s ../../soplex-git/src/ spxinc
 		ln -s ../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
+		ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/lib/libzimpl.linux.x86_64.gnu.opt.a libzimpl.linux.x86_64.gnu.opt.a
+		cd zimplinc/
+		ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/src/ zimpl
+		cd ..
 	else
 		cd include/
 		ln -s ../../../soplex-git/src/ spxinc
 		cd ../static/
 		ln -s ../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
 		cd ..
+		if $zimpllinks ; then
+			echo TODO
+		fi
 	fi
 	cd ../../.. # exit to gcg folder (was in gcg/lib/scip-git/lib/ before)
 
