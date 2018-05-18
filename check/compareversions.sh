@@ -149,13 +149,20 @@ do
 		zimpllinks=true
 	fi
 
-	# remove old soplex linking
-	rm -f lib/spxinc
-	rm -f lib/libsoplex.linux.x86_64.gnu.opt.a
-	rm -f lib/include/spxinc
-	rm -f lib/static/libsoplex.linux.x86_64.gnu.opt.a
+	# function to remove old linking, assumes to be in gcg/lib/scip-git
+	function removeoldlinking {
+		rm -f lib/spxinc
+		rm -f lib/libsoplex.linux.x86_64.gnu.opt.a
+		rm -f lib/zimplinc/zimpl
+		rm -f lib/libzimpl.linux.x86_64.gnu.opt.a
+		rm -f lib/include/spxinc
+		rm -f lib/static/libsoplex.linux.x86_64.gnu.opt.a
+		rm -f lib/include/zimplinc/zimpl
+		rm -f lib/static/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
+	}
 
 	# make links
+	removeoldlinking
 	cd lib/
 	if $oldsoplexlinks ; then
 		ln -s ../../soplex-git/src/ spxinc
@@ -171,7 +178,10 @@ do
 		ln -s ../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
 		cd ..
 		if $zimpllinks ; then
-			echo TODO
+			cd /include/zimplinc/
+			ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/src/ zimpl
+			cd ../../static/
+			ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/lib/libzimpl.linux.x86_64.gnu.opt.a libzimpl.linux.x86_64.gnu.opt.a
 		fi
 	fi
 	cd ../../.. # exit to gcg folder (was in gcg/lib/scip-git/lib/ before)
@@ -245,7 +255,9 @@ rm "$TESTNAME"_comparecopy.test
 cd ..
 
 # Recover SCIP linkings (current dir is gcg/check/)
-cd ../lib/scip-git/lib/include/
+cd ../lib/scip-git/
+removeoldlinking
+cd lib/include/
 ln -sf ../../../soplex-git/src/ spxinc
 cd ../static/
 ln -sf ../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
