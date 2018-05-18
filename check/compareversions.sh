@@ -168,6 +168,7 @@ do
 		ln -s ../../soplex-git/src/ spxinc
 		ln -s ../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
 		ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/lib/libzimpl.linux.x86_64.gnu.opt.a libzimpl.linux.x86_64.gnu.opt.a
+		mkdir -p zimplinc
 		cd zimplinc/
 		ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/src/ zimpl
 		cd ..
@@ -178,7 +179,8 @@ do
 		ln -s ../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
 		cd ..
 		if $zimpllinks ; then
-			cd /include/zimplinc/
+			mkdir -p include/zimplinc/
+			cd include/zimplinc/
 			ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/src/ zimpl
 			cd ../../static/
 			ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/lib/libzimpl.linux.x86_64.gnu.opt.a libzimpl.linux.x86_64.gnu.opt.a
