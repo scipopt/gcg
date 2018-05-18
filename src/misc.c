@@ -605,6 +605,12 @@ SCIP_RETCODE GCGprintStatistics(
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program statistics:\n");
       SCIP_CALL( SCIPprintStatistics(scip, file) );
    }
+   else
+   {
+      assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program Solution statistics:\n");
+      SCIPprintSolutionStatistics(scip, file);
+   }
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
    if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE
       && SCIPgetStage(scip) >= SCIP_STAGE_SOLVING )

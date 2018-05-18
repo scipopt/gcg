@@ -322,36 +322,42 @@ SCIP_RETCODE createOriginalProblemSolution(
    /* looping through all subproblems */
    for( i = 0; i < nsubproblems; i++ )
    {
-      subproblem = SCIPbendersSubproblem(benders, i);
+      /* it is only possible to use the subproblem solutions if the subproblems are enabled. The subproblems are
+       * disabled if they have been merged into the master problem.
+       */
+      if( SCIPbendersSubprobIsEnabled(benders, i) )
+      {
+         subproblem = SCIPbendersSubproblem(benders, i);
 
-      /* getting the variable data for the master variables */
-      SCIP_CALL( SCIPgetVarsData(subproblem, &vars, &nvars, NULL, NULL, NULL, NULL) );
-      assert(vars != NULL);
+         /* getting the variable data for the master variables */
+         SCIP_CALL( SCIPgetVarsData(subproblem, &vars, &nvars, NULL, NULL, NULL, NULL) );
+         assert(vars != NULL);
 
-      /* getting the best solution from the master problem */
-      bestsol = SCIPgetBestSol(subproblem);
+         /* getting the best solution from the master problem */
+         bestsol = SCIPgetBestSol(subproblem);
 #ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPprintSol(subproblem, bestsol, NULL, FALSE) );
+         SCIP_CALL( SCIPprintSol(subproblem, bestsol, NULL, FALSE) );
 #endif
 
-      /* the branching candidates come from the master problem solution. However, we need a full solution to pass to the
-       * original problem to find the branching candidate. So the subproblem variables are set to their bounds, creating
-       * a possibly infeasible solution, but with the fractional master problem variables. */
-      if( artificial )
-      {
-         /* setting the values of the subproblem variables to their bounds. */
-         SCIP_CALL( setOriginalProblemPricingValues(origprob, masterprob, benders, origsol, vars, NULL, nvars) );
-      }
-      else
-      {
-         SCIP_CALL( SCIPallocBufferArray(subproblem, &vals, nvars) );
-         SCIP_CALL( SCIPgetSolVals(subproblem, bestsol, nvars, vars, vals) );
+         /* the branching candidates come from the master problem solution. However, we need a full solution to pass to the
+          * original problem to find the branching candidate. So the subproblem variables are set to their bounds, creating
+          * a possibly infeasible solution, but with the fractional master problem variables. */
+         if( artificial )
+         {
+            /* setting the values of the subproblem variables to their bounds. */
+            SCIP_CALL( setOriginalProblemPricingValues(origprob, masterprob, benders, origsol, vars, NULL, nvars) );
+         }
+         else
+         {
+            SCIP_CALL( SCIPallocBufferArray(subproblem, &vals, nvars) );
+            SCIP_CALL( SCIPgetSolVals(subproblem, bestsol, nvars, vars, vals) );
 
-         /* setting the values using the master problem solution */
-         SCIP_CALL( setOriginalProblemPricingValues(origprob, masterprob, benders, origsol, vars, vals, nvars) );
+            /* setting the values using the master problem solution */
+            SCIP_CALL( setOriginalProblemPricingValues(origprob, masterprob, benders, origsol, vars, vals, nvars) );
 
-         /* freeing the values buffer array for use for the pricing problems */
-         SCIPfreeBufferArray(subproblem, &vals);
+            /* freeing the values buffer array for use for the pricing problems */
+            SCIPfreeBufferArray(subproblem, &vals);
+         }
       }
    }
 
@@ -391,6 +397,94 @@ SCIP_RETCODE createOriginalProblemSolution(
       }
 
       bendersdata->relaxsol = origsol;
+   }
+
+   return SCIP_OKAY;
+}
+
+/** merge a single subproblem into the master problem */
+static
+SCIP_RETCODE mergeSubproblemIntoMaster(
+   SCIP*                 masterprob,         /**< the Benders' master problem */
+   SCIP_BENDERS*         benders,            /**< the Benders' decomposition structure */
+   int                   probnumber          /**< the index of the subproblem that will be merged */
+   )
+{
+   SCIP* subproblem;
+   SCIP_HASHMAP* varmap;
+   SCIP_HASHMAP* consmap;
+   SCIP_VAR** vars;
+   int nvars;
+   int i;
+
+   assert(masterprob != NULL);
+   assert(benders != NULL);
+
+   subproblem = SCIPbendersSubproblem(benders, probnumber);
+
+   /* allocating the memory for the variable and constraint hashmaps */
+   SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(masterprob), SCIPgetNVars(subproblem)) );
+   SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(masterprob), SCIPgetNConss(subproblem)) );
+
+   SCIP_CALL( SCIPmergeBendersSubprobIntoMaster(masterprob, benders, varmap, consmap, probnumber) );
+
+   SCIP_CALL( SCIPgetVarsData(subproblem, &vars, &nvars, NULL, NULL, NULL, NULL) );
+   /* copying the variable data from the pricing variables to the newly created master variables */
+   for( i = 0; i < nvars; i++ )
+   {
+      SCIP_VAR* mastervar;
+
+      mastervar = (SCIP_VAR*) SCIPhashmapGetImage(varmap, vars[i]);
+      SCIP_CALL( GCGcopyPricingvarDataToMastervar(masterprob, vars[i], mastervar) );
+   }
+
+   /* freeing the variable and constraint hashmaps */
+   SCIPhashmapFree(&varmap);
+   SCIPhashmapFree(&consmap);
+
+   return SCIP_OKAY;
+}
+
+/** performs a merge of subproblems into the master problem. The subproblems are merged into the master problem if the
+ * infeasibility can not be resolved through the addition of cuts. This could be because the appropriate cuts are not
+ * available in the Benders' decomposition framework, or that the subproblem has been infeasible for a set number of
+ * iterations.
+ */
+static
+SCIP_RETCODE mergeSubproblemsIntoMaster(
+   SCIP*                 masterprob,         /**< the Benders' master problem */
+   SCIP_BENDERS*         benders,            /**< the Benders' decomposition structure */
+   int*                  mergecands,         /**< the subproblems that are merge candidates */
+   int                   npriomergecands,    /**< the priority merge candidates, these should be merged */
+   int                   nmergecands,        /**< the total number of merge candidates */
+   SCIP_Bool*            merged              /**< flag to indicate whether a subproblem has been merged into the master */
+   )
+{
+   int i;
+
+   assert(masterprob != NULL);
+   assert(benders != NULL);
+
+   (*merged) = FALSE;
+
+   /* adding the priority merge candidates. If there are no priority candidates, then the first merge candidate is
+    * added.
+    */
+   for( i = 0; i < npriomergecands; i++ )
+   {
+      SCIP_CALL( mergeSubproblemIntoMaster(masterprob, benders, mergecands[i]) );
+      (*merged) = TRUE;
+   }
+
+   /* if there were no priority candidates and there is a merge candidate, then only a single merge candidate is
+    * merged.
+    */
+   if( !(*merged) && nmergecands > 0 )
+   {
+      assert(npriomergecands == 0);
+
+      SCIP_CALL( mergeSubproblemIntoMaster(masterprob, benders, mergecands[0]) );
+      (*merged) = TRUE;
    }
 
    return SCIP_OKAY;
@@ -537,13 +631,23 @@ SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
    bendersdata = SCIPbendersGetData(benders);
    assert(bendersdata != NULL);
 
+   (*merged) = FALSE;
+
    /* creates a solution to the original problem */
 #ifdef SCIP_DEBUG
    SCIPdebugMessage("The master problem solution.\n");
    SCIP_CALL( SCIPprintSol(scip, sol, NULL, FALSE) );
 #endif
 
-   if( !infeasible )
+   /* if there are merge candidates, then they will be merged into the master problem.
+    * TODO: maybe check to see whether the merge could be avoided
+    */
+   if( nmergecands > 0 )
+   {
+      SCIP_CALL( mergeSubproblemsIntoMaster(scip, benders, mergecands, npriomergecands, nmergecands, merged) );
+   }
+
+   if( !infeasible && !(*merged) )
    {
       /* if the problem was found to be infeasible, then an artificial solution is created. */
       SCIP_CALL( createOriginalProblemSolution(scip, benders, sol, infeasible) );

@@ -2058,6 +2058,7 @@ SCIP_RETCODE solveDiagonalBlocks(
    /* solve pricing problems one after the other */
    for( i = 0; i < relaxdata->npricingprobs; ++i )
    {
+      SCIP_Bool infeasible;
 #ifdef SCIP_DEBUG
       char name[SCIP_MAXSTRLEN];
 #endif
@@ -2100,7 +2101,16 @@ SCIP_RETCODE solveDiagonalBlocks(
       SCIP_CALL( SCIPwriteOrigProblem(relaxdata->pricingprobs[i], name, "lp", FALSE) );
 #endif
 
-      SCIP_CALL( SCIPsolve(relaxdata->pricingprobs[i]) );
+      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE )
+      {
+         SCIP_CALL( SCIPsolve(relaxdata->pricingprobs[i]) );
+      }
+      else
+      {
+         assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS);
+         SCIP_CALL( SCIPsolveBendersSubproblem(scip, SCIPfindBenders(relaxdata->masterprob, "gcg"), NULL, i,
+            &infeasible, SCIP_BENDERSENFOTYPE_CHECK, TRUE, NULL) );
+      }
 
       switch( SCIPgetStatus(relaxdata->pricingprobs[i]) )
       {
@@ -2463,6 +2473,11 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
       SCIP_CALL( SCIPsetIntParam(scip, "display/sumlpiterations/active", 0) );
       SCIP_CALL( SCIPsetIntParam(scip, "display/lpiterations/active", 0) );
       SCIP_CALL( SCIPsetIntParam(scip, "display/degeneracy/active", 0) );
+
+      /* setting the total node limit to 1 for the original SCIP instance. This is because Benders' decomposition solves
+       * the MIP within the relaxator of the root node. So no branching in the original problem is required.
+       */
+      SCIP_CALL( SCIPsetLongintParam(scip, "limits/totalnodes", 1) );
    }
 
    /* fixing the GCG mode parameter. This ensure that the user does not change this during the solution process. If the
@@ -2653,7 +2668,7 @@ SCIP_RETCODE solveMasterProblem(
       if( DECdecompGetType(relaxdata->decdecomp) == DEC_DECTYPE_DIAGONAL )
       {
          SCIP_CALL( solveDiagonalBlocks(scip, relaxdata, result, lowerbound) );
-         if( *result == SCIP_SUCCESS )
+         if( *result == SCIP_SUCCESS || *result == SCIP_CUTOFF )
          {
             *result = SCIP_CUTOFF;
             return SCIP_OKAY;
@@ -2856,8 +2871,12 @@ SCIP_RETCODE relaxExecGcgBendersDecomposition(
    /* solving the master problem */
    SCIP_CALL( solveMasterProblem(scip, masterprob, relaxdata, nodelimit, lowerbound, result) );
 
+   /* if the master problem has been detected as infeasible, then the result must be set to SCIP_CUTOFF. */
+   if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE )
+      (*result) = SCIP_CUTOFF;
+
    /* set the lower bound pointer */
-   if( GCGmasterIsCurrentSolValid(masterprob) )
+   if( GCGmasterIsCurrentSolValid(masterprob) && SCIPgetStage(masterprob) == SCIP_STAGE_SOLVED )
    {
       *lowerbound = SCIPgetDualbound(masterprob);
    }
