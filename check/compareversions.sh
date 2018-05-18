@@ -110,13 +110,62 @@ do
 		echo "Warning: Additional setting file ${SETTINGSNAME}.set not found! GCG will use default settings instead."
 	fi
 
-	# get version
+	# get submodules
 	git submodule foreach --recursive git clean -f
 	git submodule foreach git reset --hard
 	git checkout "${VERSION[$index]}"
 	git submodule init
 	git submodule sync
 	git submodule update
+
+	# set scip links depending on scip tags
+	cd lib/scip-git
+	SCIPTAG=$(git describe --tags)
+	TAGFRAG=${SCIPTAG#v} # remove v in front of tag
+	first=${TAGFRAG:0:1}
+	isoldversion=false
+
+	# the linking differences appear for < v310-6000-[...]
+	if [ ${first} -gt 2 ]; then
+		if [ $first = 3 ]; then
+			TAGFRAG=${TAGFRAG#${first}}
+			if [ ${TAGFRAG:0:1} -lt 1 ]; then
+				isoldversion=true
+			else
+				TAGFRAG=${TAGFRAG#*-}
+				TAGFRAG=${TAGFRAG%-*}
+				if [ "$TAGFRAG" -lt 6000 ]; then
+					isoldversion=true
+				fi
+			fi
+		fi
+	else
+		echo le 2
+		isoldversion=true
+		#TODO zimpl for which tag numbers?
+	fi
+
+	# remove old soplex linking
+	rm -f lib/spxinc
+	rm -f lib/libsoplex.linux.x86_64.gnu.opt.a
+	rm -f lib/include/spxinc
+	rm -f lib/static/libsoplex.linux.x86_64.gnu.opt.a
+
+	# make links
+	cd lib/
+	if $isoldversion ; then
+		ln -s ../../soplex-git/src/ spxinc
+		ln -s ../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
+	else
+		cd include/
+		ln -s ../../../soplex-git/src/ spxinc
+		cd ../static/
+		ln -s ../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
+		cd ..
+	fi
+	cd ../../.. # exit to gcg folder (was in gcg/lib/scip-git/lib/ before)
+
+	# building
 	make soplex	# in some older versions not sufficient
 	cd lib/soplex-git
 	make
@@ -153,7 +202,6 @@ do
 		done
 	fi
 	
-	
 	# move the resulting files to the result directory of this comparison run
 	OLDout=$(find . -type f -name "*.out"  -printf "%p\n" | sort -n | head -n 1)
 	mv "$OLDout" "../${RESDIR}/${VERSIONNAME}.out"
@@ -184,6 +232,14 @@ git checkout "${CURRENTBRANCH}"
 cd check/testset
 rm "$TESTNAME"_comparecopy.test
 cd ..
+
+# Recover SCIP linkings (current dir is gcg/check/)
+cd ../lib/scip-git/lib/include/
+ln -sf ../../../soplex-git/src/ spxinc
+cd ../static/
+ln -sf ../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
+cd ../../../../check/
+
 
 # 3) do sth with the output:
 echo "Start plotting..."
