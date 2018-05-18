@@ -92,7 +92,7 @@ TEST_F(RowWeightedTest, test_createFromMatrix) {
 }
 
 
-#ifdef GSL
+#ifdef WITH_GSL
 TEST_F(RowWeightedTest, GraphGCG_test) {
 
    gcg::GraphGCG graph;

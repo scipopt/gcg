@@ -57,7 +57,7 @@
 #include <fstream>
 #include <stdlib.h>
 
-#ifndef NBLISS
+#ifdef WITH_BLISS
 #include "pub_bliss.h"
 #include "bliss_automorph.h"
 #endif
@@ -1233,7 +1233,7 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
            {
               checkIdenticalBlocksBrute(givenseeedpool, b1, b2, varmap, varmap2, &identical);
 
-#ifndef NBLISS
+#ifdef WITH_BLISS
               if( !tooexpensive && !identical )
                  checkIdenticalBlocksBliss(givenseeedpool, b1, b2, varmap, varmap2, &identical);
 #endif
@@ -1983,7 +1983,7 @@ bool Seeed::checkConsistency(
 }
 
 
-#ifndef NBLISS
+#ifdef WITH_BLISS
 /** checks blocks for identity by graph automorphism check done by bliss, identity is only found if variables are in correct order */
 void Seeed::checkIdenticalBlocksBliss(
    Seeedpool*           givenseeedpool,

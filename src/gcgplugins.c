@@ -176,7 +176,7 @@
 #include "reader_tex.h"
 #include "reader_cls.h"
 
-#ifndef NBLISS
+#ifdef WITH_BLISS
 #include "dec_isomorph.h"
 #endif
 
@@ -234,7 +234,7 @@
 /* Igor's detection with clustering */
 #include "dec_dbscan.h"
 #include "dec_mst.h"
-#ifdef GSL
+#ifdef WITH_GSL
 #include "dec_mcl.h"
 #endif
 
@@ -378,8 +378,10 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircaseLsp(scip) );
    SCIP_CALL( SCIPincludeDetectorColors(scip) );
+#ifdef WITH_HMETIS
    SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
-#ifdef GSL
+#endif
+#ifdef WITH_GSL
    SCIP_CALL( SCIPincludeDetectorDBSCAN(scip) );
    SCIP_CALL( SCIPincludeDetectorMST(scip) );
    SCIP_CALL( SCIPincludeDetectorMCL(scip) );
@@ -399,8 +401,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorVarclass(scip) );
 
 
-
-#ifndef NBLISS
+#ifdef WITH_BLISS
    SCIP_CALL( SCIPincludeDetectorIsomorphism(scip) );
 #endif
 

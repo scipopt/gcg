@@ -37,7 +37,7 @@
 #include <set>
 #include "graph_gcg.h"
 
-#ifdef GSL
+#ifdef WITH_GSL
 #include <gsl/gsl_errno.h>
 #endif
 
@@ -52,7 +52,7 @@ GraphGCG::GraphGCG()
    locked = false;
    initialized = false;
    nodes = vector<int>(0);
-#ifdef GSL
+#ifdef WITH_GSL
    adj_matrix_sparse = gsl_spmatrix_alloc(1,1);
    working_adj_matrix = NULL;
 #endif
@@ -66,7 +66,7 @@ GraphGCG::GraphGCG(int _n_nodes, bool _undirected)
    initialized = true;
    assert(_n_nodes >= 0);
    nodes = vector<int>(_n_nodes, 0);
-#ifdef GSL
+#ifdef WITH_GSL
    adj_matrix_sparse = gsl_spmatrix_alloc(_n_nodes, _n_nodes);
    working_adj_matrix = NULL;
 #else
@@ -77,7 +77,7 @@ GraphGCG::GraphGCG(int _n_nodes, bool _undirected)
 GraphGCG::~GraphGCG()
 {
    vector<int>().swap(this->nodes);
-#ifndef GSL
+#ifndef WITH_GSL
    vector<vector<double>>().swap(adj_matrix);
    assert((int)adj_matrix.size() == 0);
 #else
@@ -99,7 +99,7 @@ SCIP_RETCODE GraphGCG::addNNodes(int _n_nodes)
    {
       return SCIP_ERROR;
    }
-#ifdef GSL
+#ifdef WITH_GSL
    if(adj_matrix_sparse == NULL)
       adj_matrix_sparse = gsl_spmatrix_alloc(_n_nodes, _n_nodes);
    // add diagonal because of MCL algorithm
@@ -128,7 +128,7 @@ SCIP_RETCODE GraphGCG::addNNodes(int _n_nodes, vector<int> weights)
 int GraphGCG::getNNodes()
 {
    if(!initialized) return 0;
-#ifdef GSL
+#ifdef WITH_GSL
    assert(nodes.size() == adj_matrix_sparse->size1);
    assert(adj_matrix_sparse->size1 == adj_matrix_sparse->size2);
    return adj_matrix_sparse->size1;
@@ -139,7 +139,7 @@ int GraphGCG::getNNodes()
 }
 
 
-#ifdef GSL
+#ifdef WITH_GSL
 gsl_spmatrix* GraphGCG::getAdjMatrix()
 {
    cout << "Return adj_matrix_sparse..." << endl;
@@ -409,7 +409,7 @@ vector<vector<double>> GraphGCG::getAdjMatrix()
 int GraphGCG::getNEdges()
 {
    int n_edges = 0;
-#ifdef GSL
+#ifdef WITH_GSL
    if(initialized)
       n_edges = adj_matrix_sparse->nz - adj_matrix_sparse->size1;
    else
@@ -433,7 +433,7 @@ SCIP_Bool GraphGCG::isEdge(int node_i, int node_j)
 {
    assert(node_i >= 0);
    assert(node_j >= 0);
-#ifdef GSL
+#ifdef WITH_GSL
    if(gsl_spmatrix_get(adj_matrix_sparse, node_i, node_j) != 0.0)
    {
       return 1;
@@ -451,7 +451,7 @@ int GraphGCG::getNNeighbors(int node)
 {
    assert(node >= 0);
    int n_neighbors;
-#ifdef GSL
+#ifdef WITH_GSL
    if(!initialized) return 0;
    assert(adj_matrix_sparse->sptype == (size_t)1);
    assert(node < (int)adj_matrix_sparse->size2);
@@ -477,7 +477,7 @@ int GraphGCG::getNNeighbors(int node)
 vector<int> GraphGCG::getNeighbors(int node)
 {
    vector<int> res;
-#ifdef GSL
+#ifdef WITH_GSL
    if(!initialized || !locked) return res;
    assert(adj_matrix_sparse->sptype == (size_t)1);
    assert(node < (int)adj_matrix_sparse->size2);
@@ -509,7 +509,7 @@ vector<int> GraphGCG::getNeighbors(int node)
 vector<pair<int, double> > GraphGCG::getNeighborWeights(int node)
 {
    vector<pair<int, double> > res;
-#ifdef GSL
+#ifdef WITH_GSL
    if(!initialized || !locked) return res;
    assert(adj_matrix_sparse->sptype == (size_t)1);
    assert(node < (int)adj_matrix_sparse->size2);
@@ -560,7 +560,7 @@ SCIP_RETCODE GraphGCG::addNode(int node, int weight)
    int next_id = (int)nodes.size();
    assert(node == next_id);
 
-#ifdef GSL
+#ifdef WITH_GSL
    if(adj_matrix_sparse == NULL)
       adj_matrix_sparse = gsl_spmatrix_alloc(1, 1);
    // add diagonal because of MCL algorithm
@@ -588,7 +588,7 @@ SCIP_RETCODE GraphGCG::addNode(int node, int weight)
 
 SCIP_RETCODE GraphGCG::addNode()
 {
-#ifdef GSL
+#ifdef WITH_GSL
    return addNode((int)adj_matrix_sparse->size2, 0);
 #else
    return addNode((int)adj_matrix.size(), 0);
@@ -620,7 +620,7 @@ SCIP_RETCODE GraphGCG::addEdge(int node_i, int node_j, double weight)
    assert(weight >= 0.0);
    assert(node_i >= 0);
    assert(node_j >= 0);
-#ifdef GSL
+#ifdef WITH_GSL
    assert(node_i < (int)adj_matrix_sparse->size2);
    assert(node_j < (int)adj_matrix_sparse->size2);
    if (gsl_spmatrix_get(adj_matrix_sparse, node_i, node_j) != 0.0)
@@ -666,7 +666,7 @@ SCIP_RETCODE GraphGCG::setEdge(int node_i, int node_j, double weight)
    assert(weight >= 0.0);
    assert(node_i >= 0);
    assert(node_j >= 0);
-#ifdef GSL
+#ifdef WITH_GSL
    assert(node_i < (int)adj_matrix_sparse->size2);
    assert(node_j < (int)adj_matrix_sparse->size2);
    gsl_spmatrix_set(adj_matrix_sparse, node_i, node_j, weight);
@@ -709,7 +709,7 @@ double GraphGCG::getEdgeWeight(int node_i, int node_j)
    assert(node_i >= 0);
    assert(node_j >= 0);
    double weight;
-#ifdef GSL
+#ifdef WITH_GSL
    assert(node_i < (int)adj_matrix_sparse->size1);
    assert(node_j < (int)adj_matrix_sparse->size1);
    weight = gsl_spmatrix_get(adj_matrix_sparse, node_i, node_j);
@@ -725,7 +725,7 @@ double GraphGCG::getEdgeWeight(int node_i, int node_j)
 SCIP_RETCODE GraphGCG::flush()
 {
    locked = true;
-#ifdef GSL
+#ifdef WITH_GSL
    gsl_spmatrix *adj_matrix_sparse_tmp = gsl_spmatrix_compcol(adj_matrix_sparse);
    gsl_spmatrix_free(adj_matrix_sparse);
    adj_matrix_sparse = adj_matrix_sparse_tmp;
@@ -736,7 +736,7 @@ SCIP_RETCODE GraphGCG::flush()
 SCIP_RETCODE GraphGCG::normalize()
 {
    double scaler = 0.0;
-#ifdef GSL
+#ifdef WITH_GSL
    double min, max;
    gsl_spmatrix_minmax(adj_matrix_sparse, &min, &max);
    scaler = max;
@@ -770,7 +770,7 @@ double GraphGCG::getEdgeWeightPercentile(double q)
 {
    double res = -1;
    vector<double> all_weights;
-#ifdef GSL
+#ifdef WITH_GSL
    all_weights = vector<double>(adj_matrix_sparse->data, adj_matrix_sparse->data + adj_matrix_sparse->nz);
 #else
    for(int i = 0; i < (int)adj_matrix.size(); i++)

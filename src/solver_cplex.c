@@ -44,7 +44,6 @@
 #include "pub_solver.h"
 #include "pub_gcgcol.h"
 
-#ifdef CPLEXSOLVER
 #include "pricer_gcg.h"
 #include "scip_misc.h"
 
@@ -1157,13 +1156,12 @@ GCG_DECL_SOLVERSOLVE(solverSolveCplex)
  TERMINATE:
    return retval;
 }
-#endif
+
 /** creates the CPLEX pricing solver and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverCplex(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-#ifdef CPLEXSOLVER
    GCG_SOLVERDATA* solverdata;
 
    SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
@@ -1205,6 +1203,5 @@ SCIP_RETCODE GCGincludeSolverCplex(
    SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/cplex/sollimitfac",
          "factor by which to increase solution limit for heuristic pricing",
          &solverdata->sollimitfac, TRUE, DEFAULT_SOLLIMITFAC, 1.0, SCIPinfinity(solverdata->origprob), NULL, NULL) );
-#endif
    return SCIP_OKAY;
 }
