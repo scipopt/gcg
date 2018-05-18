@@ -3227,7 +3227,7 @@ SCIP_RETCODE Seeed::copyClassifierStatistics(
 
 /** deletes empty blocks */
 SCIP_RETCODE Seeed::deleteEmptyBlocks(
-   bool variables
+   bool variables                            /* if TRUE a block is only considered to be empty if it contains neither constraints or variables */
    )
 {
    bool emptyBlocks = true;

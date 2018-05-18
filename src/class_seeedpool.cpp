@@ -3013,6 +3013,7 @@ SCIP_RETCODE Seeedpool::prepareSeeed(
    )
 {
    seeed->considerImplicits( this );
+   seeed->deleteEmptyBlocks(true);
    seeed->calcHashvalue();
    seeed->setSeeedpool(this);
    //seeed->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) );
