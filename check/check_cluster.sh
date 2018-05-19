@@ -30,6 +30,7 @@
 # @author Martin Bergner
 # @author Gerald Gamrath
 # @author Christian Puchert
+# @author Benedikt Meier
 #
 # Call with "make testcluster"
 #
@@ -230,5 +231,15 @@ do
 
 	    bsub -J "$TSTNAME[1-$COUNT]" -q $QUEUE -o error/out_$TSTNAME_%I_%J.txt $PROJFLAG < runcluster_tmp.sh
     fi
+
+    # queue type on RWTH Aachen cluster OR is condor
+    if test  "$QUEUETYPE" = "condor"
+    then
+        # save temp in the home directorie
+        cp runclustor.sub ~/runclustor_tmp.sub
+        condor_sumit ~/runclustor_tmp.sub
+        rm ~/runclustor_tmp.sub
+    fi
+
 
 done # end for PERMUTE
