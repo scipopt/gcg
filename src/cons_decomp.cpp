@@ -952,6 +952,10 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->userblocknrcandidates = new std::vector<int>(0);
    conshdlrdata->seeedtowrite = NULL;
 
+   conshdlrdata->writemiplib2017featurefilepath = NULL;
+   conshdlrdata->writemiplib2017matrixfilepath = NULL;
+   conshdlrdata->writemiplib2017decompfilepath = NULL;
+
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->completedetectionclock) );
    /* include constraint handler */
@@ -3330,6 +3334,9 @@ DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
+   int decompcounter;
+
+   decompcounter = 0;
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert( conshdlr != NULL );
@@ -3337,6 +3344,26 @@ DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &conshdlrdata->decdecomps, SCIPconshdlrDecompGetNDecdecomps(scip) ) );
+
+   if( conshdlrdata->seeedpoolunpresolved != NULL )
+   {
+      for( int i = 0; i <  conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
+      {
+         gcg::Seeed* seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed(i);
+         conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(seeed, &conshdlrdata->decdecomps[decompcounter] );
+         ++decompcounter;
+      }
+   }
+   if( conshdlrdata->seeedpool != NULL )
+   {
+      for( int i = 0; i <  conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
+      {
+         gcg::Seeed* seeed = conshdlrdata->seeedpool->getFinishedSeeed(i);
+         conshdlrdata->seeedpool->createDecompFromSeeed(seeed, &conshdlrdata->decdecomps[decompcounter] );
+         ++decompcounter;
+      }
+   }
    return conshdlrdata->decdecomps;
 }
 
@@ -3347,12 +3374,26 @@ int SCIPconshdlrDecompGetNDecdecomps(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
+   int ndecomps;
+
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert( conshdlr != NULL );
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+
+   ndecomps = 0;
+
+   if( conshdlrdata->seeedpoolunpresolved != NULL )
+      ndecomps += conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds();
+
+   if( conshdlrdata->seeedpool != NULL )
+      ndecomps += conshdlrdata->seeedpool->getNFinishedSeeeds();
+
+   //SCIPinfoMessage
+
+   conshdlrdata->ndecomps = ndecomps;
 
    return conshdlrdata->ndecomps;
 }
@@ -5555,10 +5596,18 @@ SCIP_RETCODE DECdetectStructure(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   conshdlrdata->seeedpool = NULL;
+   if( conshdlrdata->seeedpool != NULL )
+   {
+      delete conshdlrdata->seeedpool;
+      conshdlrdata->seeedpool = NULL;
+   }
+
 
 
    *result = SCIP_DIDNOTRUN;
+
+   if( SCIPgetNOrigVars(scip) == 0 && SCIPgetNOrigConss(scip) == 0 )
+      return SCIP_OKAY;
 
    SCIP_CALL(SCIPresetClock(scip, conshdlrdata->completedetectionclock));
    SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));

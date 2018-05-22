@@ -148,6 +148,17 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    visudata = NULL;
    SCIP_CALL( SCIPallocMemory(scip, &visudata) );
 
+   /* init string params with NULL pointer */
+   visudata->pdfreader = NULL;
+   visudata->mancolormastervars = NULL;
+   visudata->mancolormasterconss = NULL;
+   visudata->mancolorlinking = NULL;
+   visudata->mancolorstairlinking = NULL;
+   visudata->mancolorblock = NULL;
+   visudata->mancoloropen = NULL;
+   visudata->mancolornonzero = NULL;
+   visudata->mancolorline = NULL;
+
    /* add general parameters */
 
    SCIP_CALL( SCIPaddBoolParam(scip,
