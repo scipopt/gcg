@@ -372,6 +372,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorConstype(scip) );
    SCIP_CALL( SCIPincludeDetectorPostprocess(scip) );
    SCIP_CALL( SCIPincludeDetectorConsclass(scip) );
+   SCIP_CALL( SCIPincludeDetectorConsname(scip) );
    SCIP_CALL( SCIPincludeDetectorDensemasterconss(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
