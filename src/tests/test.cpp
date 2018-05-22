@@ -168,7 +168,6 @@ class GcgLibTest : public ::testing::Test {
 
 SCIP* GcgLibTest::scip = NULL;
 
-/* working, but too slow, so just removed it :)
 TEST_F(GcgLibTest, FreeTransformTest) {
    SCIP_RESULT result;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
@@ -235,7 +234,7 @@ TEST_F(GcgLibTest, FreeSolveTest) {
 
    ASSERT_EQ(SCIP_STATUS_OPTIMAL, SCIPgetStatus(scip));
    ASSERT_EQ(nconss+1, SCIPgetNConss(scip));
-}*/
+}
 
 class GcgDecTest : public ::testing::Test {
  protected:
