@@ -222,7 +222,7 @@ set(gcgheaders
     graph/rowgraph.h
     graph/rowgraph_def.h
     graph/weights.h
-    gcg_sort.h
+    gcgsort.h
     heur_gcgcoefdiving.h
     heur_gcgdins.h
     heur_gcgfeaspump.h
