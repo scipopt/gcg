@@ -79,9 +79,9 @@ class GcgResultTest : public ::testing::Test {
      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
      SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/arrowheur/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/dbscan/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/random/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/staircase/enabled", FALSE) );
 
      SCIP_CALL_ABORT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
@@ -245,8 +245,9 @@ class GcgDecTest : public ::testing::Test {
      SCIP_CALL_ABORT( SCIPcreate(&scip) );
      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/arrowheur/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/random/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/staircase/enabled", FALSE) );
    }
 
