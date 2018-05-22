@@ -1,0 +1,142 @@
+# SCIP version 5.0.1.4
+
+# should conflict analysis be enabled?
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+conflict/enable = FALSE fix
+
+# frequency for solving LP at the nodes (-1: never; 0: only root LP)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 1]
+lp/solvefreq = -1
+
+# should SCIP calculate the primal dual integral value?
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+misc/calcintegral = FALSE
+
+# maximal number of restarts (-1: unlimited)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+presolving/maxrestarts = 0
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/linear/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 10]
+constraints/indicator/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/knapsack/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/logicor/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/setppc/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/varbound/sepafreq = -1
+
+# frequency for calling primal heuristic <clique> (-1: never, 0: only at depth freqofs)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+heuristics/clique/freq = -1 fix
+
+# frequency for calling separator <clique> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+separating/clique/freq = -1
+
+# frequency for calling separator <gomory> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 10]
+separating/gomory/freq = -1
+
+# frequency for calling separator <impliedbounds> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 10]
+separating/impliedbounds/freq = -1
+
+# frequency for calling separator <mcf> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+separating/mcf/freq = -1
+
+# frequency for calling separator <strongcg> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 10]
+separating/strongcg/freq = -1
+
+# frequency for calling separator <zerohalf> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 10]
+separating/zerohalf/freq = -1
+
+# indicates whether detection should only consist of legacy mode detection
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/legacymode/onlylegacymode = TRUE
+
+# indicates whether detection consist of legacy mode detection
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/legacymode/enabled = TRUE
+
+# flag to indicate whether (old) DETECTSTRUCTURE method of detector <connected> should also be used for detection
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/connected/legacymode = FALSE
+
+# flag to indicate whether detector <consclass> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/consclass/enabled = FALSE
+
+# flag to indicate whether detector <consclass> is enabled for detecting in the original problem
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/consclass/origenabled = FALSE
+
+# flag to indicate whether detector <consname> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/consname/enabled = TRUE
+
+# flag to indicate whether (old) DETECTSTRUCTURE method of detector <consname> should also be used for detection
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/consname/legacymode = TRUE
+
+# All cons whose name match this regular expression will be mastercons
+# [type: string, advanced: FALSE, default: "(consname)(.*)"]
+detection/detectors/consname/regex = "(CONSNAME)(.*)"
+
+# flag to indicate whether detector <densemasterconss> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/densemasterconss/enabled = FALSE
+
+# flag to indicate whether detector <densemasterconss> is enabled for detecting in the original problem
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/densemasterconss/origenabled = FALSE
+
+# flag to indicate whether (old) DETECTSTRUCTURE method of detector <staircase> should also be used for detection
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/staircase/legacymode = FALSE
+
+# the maximal number of blocks, -1 defaults to avgconsperblock
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+detection/detectors/random/maxblocks = 0
+
+# flag to indicate whether detector <hrgpartition> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/hrgpartition/enabled = FALSE
+
+# flag to indicate whether detector <hrgpartition> is enabled for detecting in the original problem
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/hrgpartition/origenabled = FALSE
+
+# flag to indicate whether (old) DETECTSTRUCTURE method of detector <hrcgpartition> should also be used for detection
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/hrcgpartition/legacymode = FALSE
+
+# flag to indicate whether detector <varclass> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/varclass/enabled = FALSE
+
+# flag to indicate whether detector <varclass> is enabled for detecting in the original problem
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/varclass/origenabled = FALSE
+
+# flag to indicate whether (old) DETECTSTRUCTURE method of detector <isomorph> should also be used for detection
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/isomorph/legacymode = FALSE
+
