@@ -103,7 +103,7 @@ SOFTLINKS	+=	$(LIBDIR)/include/gtest
 SOFTLINKS	+=	$(LIBDIR)/static/libgtest.$(STATICLIBEXT)
 
 LINKMSG		+=	"googletest testing framework links:\n"
-LINKMSG		+=	" -> gtest is the path to the googletest include files, e.g., \"googletest-1.7.0/include\"\n"
+LINKMSG		+=	" -> gtest is the path to the googletest include files, e.g., \"googletest-1.7.0/include/gtest\"\n"
 LINKMSG		+=	" -> \"libgtest.$(STATICLIBEXT)\" is the path to the googletest library, e.g., \"googletest-1.7.0/build/libgtest.$(STATICLIBEXT)\"\n"
 endif
 
