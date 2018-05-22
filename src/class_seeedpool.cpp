@@ -1085,7 +1085,6 @@ Seeedpool::Seeedpool(
 
    SCIPgetBoolParam(scip, "detection/benders/onlybinmaster", &onlybinmaster);
    SCIPgetBoolParam(scip, "detection/benders/onlycontsubpr", &onlycontsubpr);
-   std::cout << " before init only bin master " << std::endl;
    if( onlybinmaster )
    {
       std::cout << " start only bin master " << std::endl;

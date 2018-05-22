@@ -372,6 +372,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorConstype(scip) );
    SCIP_CALL( SCIPincludeDetectorPostprocess(scip) );
    SCIP_CALL( SCIPincludeDetectorConsclass(scip) );
+   SCIP_CALL( SCIPincludeDetectorConsname(scip) );
    SCIP_CALL( SCIPincludeDetectorDensemasterconss(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
@@ -428,9 +429,9 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPsetSeparating(scip, SCIP_PARAMSETTING_OFF, TRUE) );
 
    /* disable conflict analysis since adding constraints after structure detection may destroy symmetries */
-    SCIP_CALL( SCIPsetBoolParam(scip, "conflict/enable", FALSE) );
+    SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useprop", FALSE) );
     SCIP_CALL( SCIPsetIntParam(scip, "heuristics/clique/freq", -1) );
-    SCIP_CALL( SCIPfixParam(scip, "conflict/enable") );
+    SCIP_CALL( SCIPfixParam(scip, "conflict/useprop") );
     SCIP_CALL( SCIPfixParam(scip, "heuristics/clique/freq") );
 
 
