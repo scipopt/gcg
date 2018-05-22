@@ -78,7 +78,6 @@ set(gcgsources
     gcgpqueue.c
     gcgsort.c
     gcgvar.c
-    githash.c
     graph/graph_gcg.cpp
     graph/graph_tclique.cpp
     graph/inst.cpp
