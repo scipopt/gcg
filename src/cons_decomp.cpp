@@ -6514,23 +6514,27 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
 
    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decomps, ndecomps) );
 
-   for( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
+   if ( conshdlrdata->seeedpool != NULL )
    {
-      DEC_DECOMP* decomp;
-      SCIP_CALL_ABORT(conshdlrdata->seeedpool->createDecompFromSeeed(conshdlrdata->seeedpool->getFinishedSeeed( i ), &decomp ) );
+      for( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
+      {
+         DEC_DECOMP* decomp;
+         SCIP_CALL_ABORT(conshdlrdata->seeedpool->createDecompFromSeeed(conshdlrdata->seeedpool->getFinishedSeeed( i ), &decomp ) );
 
-      decomps[i] = decomp;
+         decomps[i] = decomp;
+      }
    }
-
-/**  atm presolved decomposition are allowed (for visualization, by family tree, write all decomps etc)*/
-   for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
+   if ( conshdlrdata->seeedpoolunpresolved != NULL )
    {
-      DEC_DECOMP* decomp;
-      conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ), &decomp );
+      /**  atm presolved decomposition are allowed (for visualization, by family tree, write all decomps etc)*/
+      for( int i = 0; i <  conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
+      {
+         DEC_DECOMP* decomp;
+         conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ), &decomp );
 
-      decomps[i + conshdlrdata->seeedpool->getNFinishedSeeeds()] = decomp;
+         decomps[i + conshdlrdata->seeedpool->getNFinishedSeeeds()] = decomp;
+      }
    }
-
    return decomps;
 }
 
@@ -6571,6 +6575,7 @@ int SCIPconshdlrDecompGetNSeeeds(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
+   int nseeeds;
 
    assert(scip != NULL);
 
@@ -6580,18 +6585,22 @@ int SCIPconshdlrDecompGetNSeeeds(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   if( conshdlrdata->seeedpool == NULL )
-      return (int) conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds() +
+   nseeeds = 0;
+   if( conshdlrdata->seeedpoolunpresolved != NULL )
+      nseeeds += (int)
+         conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds() +
          conshdlrdata->seeedpoolunpresolved->getNCurrentSeeeds() +
          conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds();
 
 
-   return (int) conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds() +
-      conshdlrdata->seeedpoolunpresolved->getNCurrentSeeeds() +
-      conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() +
+
+   if( conshdlrdata->seeedpool != NULL )
+      nseeeds += (int)
       conshdlrdata->seeedpool->getNAncestorSeeeds() +
       conshdlrdata->seeedpool->getNCurrentSeeeds() +
       conshdlrdata->seeedpool->getNFinishedSeeeds();
+
+   return nseeeds;
 }
 
 /** display statistics about detectors */
