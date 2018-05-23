@@ -43,7 +43,7 @@ SCIPDIR         =   lib/scip
 # necessary information
 #-----------------------------------------------------------------------------
 LIBDIR          =	lib
-DIRECTORIES     =	$(LIBDIR) $(LIBDIR)/shared $(LIBDIR)/static $(LIBOBJDIR) $(LIBOBJSUBDIRS)
+DIRECTORIES     =	$(LIBDIR) $(LIBDIR)/shared $(LIBDIR)/include $(LIBDIR)/static $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 SOFTLINKS	=
 MAKESOFTLINKS	=	true
 
@@ -633,7 +633,7 @@ endif
 		@echo "LAST_STATISTICS=$(STATISTICS)" >> $(LASTSETTINGS)
 
 .PHONY: $(SOFTLINKS)
-$(SOFTLINKS): $(LIBDIR)/static $(LIBDIR)/shared
+$(SOFTLINKS): $(LIBDIR)/static $(LIBDIR)/shared $(LIBDIR)/include
 ifeq ($(MAKESOFTLINKS), true)
 		@$(SHELL) -ec 'if test ! -e $@ ; \
 			then \
