@@ -108,7 +108,7 @@ public:
 
    virtual double getEdgeWeightPercentile(double q) = 0;
 
-#ifdef GSL
+#ifdef WITH_GSL
    /** function needed for MST clustering */
    virtual void expand(int factor) = 0;
 

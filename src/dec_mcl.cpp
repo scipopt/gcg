@@ -57,7 +57,7 @@ using gcg::GraphGCG;
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              910         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'L'         /**< display character of detector */
-#ifdef GSL
+#ifdef WITH_GSL
 #define DEC_ENABLED               TRUE        /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
 #else

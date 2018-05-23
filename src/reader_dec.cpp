@@ -747,8 +747,9 @@ SCIP_RETCODE readBlockconss(
 
       if( !conshasvar )
       {
-         assert(!SCIPhashmapExists(readerdata->constoblock, cons));
-         SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving, skipping.\n",  SCIPconsGetName(cons));
+//         SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (blockid+1)) );
+//         SCIP_CALL(SCIPconshdlrDecompUserSeeedSetConsToBlock(scip, decinput->token, blockid) );
+         SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving or has no variable at all, skipped.\n",  SCIPconsGetName(cons) );
          continue;
       }
       /*

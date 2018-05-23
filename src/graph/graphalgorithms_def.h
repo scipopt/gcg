@@ -439,7 +439,7 @@ std::vector<int> GraphAlgorithms<T>::mcl(
    int expandfac             /**< expand factor, should be always set to 2 */
 )
 {
-#ifdef GSL
+#ifdef WITH_GSL
    //std::cout << " Running MCL with inflate_factor = " << inflatefac << std::endl;
    graph.initMCL();
    graph.colL1Norm();

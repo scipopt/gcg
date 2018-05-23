@@ -68,7 +68,7 @@
 
 #include "gcg.h"
 
-#ifndef NBLISS
+#ifdef WITH_BLISS
 #include "pub_bliss.h"
 #include "bliss_automorph.h"
 #endif
@@ -556,7 +556,7 @@ SCIP_RETCODE checkSetppcStructure(
    return SCIP_OKAY;
 }
 
-#ifdef NBLISS
+#ifndef WITH_BLISS
 /** checks whether two arrays of SCIP_Real's are identical */
 static
 SCIP_Bool realArraysAreEqual(
@@ -826,7 +826,7 @@ SCIP_RETCODE pricingprobsAreIdentical(
    SCIP* scip1;
    SCIP* scip2;
 
-#ifndef NBLISS
+#ifdef WITH_BLISS
    SCIP_RESULT result;
    SCIP_HASHMAP* consmap;
 #endif
@@ -844,7 +844,7 @@ SCIP_RETCODE pricingprobsAreIdentical(
 
    *identical = FALSE;
 
-#ifdef NBLISS
+#ifndef WITH_BLISS
    checkIdentical(scip, relaxdata, probnr1, probnr2, varmap, identical, scip1, scip2);
 #else
    SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1)+1) );
@@ -2974,7 +2974,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 {
    SCIP_RELAXDATA* relaxdata;
 
-#ifndef NBLISS
+#ifdef WITH_BLISS
    {
       char name[SCIP_MAXSTRLEN];
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "bliss %s", GCGgetBlissVersion());
@@ -2982,7 +2982,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    }
 #endif
 
-#ifndef NCLIQUER
+#ifdef WITH_CLIQUER
       SCIP_CALL( SCIPincludeExternalCodeInformation(scip, "Cliquer", "A set of C routines for finding cliques in an arbitrary weighted graph by S. Niskanen and P. Ostergard (https://users.aalto.fi/~pat/cliquer.html)") );
 #endif
 

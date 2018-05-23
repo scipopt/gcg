@@ -74,7 +74,7 @@ public:
    virtual SCIP_RETCODE normalize();
    virtual double getEdgeWeightPercentile(double q);
 
-#ifdef GSL
+#ifdef WITH_GSL
    void expand(int factor) {return;}
    void inflate(double factor) {return;}
    void colL1Norm() {return;}

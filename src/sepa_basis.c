@@ -48,7 +48,7 @@
 #include "pub_gcgvar.h"
 
 
-#ifdef GSL
+#ifdef WITH_GSL
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_linalg.h>
@@ -492,7 +492,7 @@ SCIP_RETCODE chgProbingObjUsingRows(
    return SCIP_OKAY;
 }
 
-#ifdef GSL
+#ifdef WITH_GSL
 /**< Get matrix (including nrows and ncols) of rows that are satisfied with equality by sol */
 static
 SCIP_RETCODE getEqualityMatrixGsl(
@@ -990,7 +990,7 @@ SCIP_RETCODE initGenconv(
    SCIP_Real*           convex              /**< pointer to store convex combination coefficient */
 )
 {  /*lint --e{715}*/
-#ifdef GSL
+#ifdef WITH_GSL
    int rank;
 
 
