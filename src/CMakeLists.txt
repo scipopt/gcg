@@ -78,7 +78,6 @@ set(gcgsources
     gcgpqueue.c
     gcgsort.c
     gcgvar.c
-    githash.c
     graph/graph_gcg.cpp
     graph/graph_tclique.cpp
     graph/inst.cpp
@@ -223,7 +222,7 @@ set(gcgheaders
     graph/rowgraph.h
     graph/rowgraph_def.h
     graph/weights.h
-    gcg_sort.h
+    gcgsort.h
     heur_gcgcoefdiving.h
     heur_gcgdins.h
     heur_gcgfeaspump.h
