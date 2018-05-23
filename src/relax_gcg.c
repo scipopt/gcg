@@ -2026,8 +2026,11 @@ SCIP_RETCODE setPricingObjsOriginal(
           */
          if( SCIPgetStage(probs[i]) != SCIP_STAGE_PROBLEM )
          {
-            assert(SCIPinProbing(probs[i]));
-            SCIP_CALL( SCIPendProbing(probs[i]) );
+            if( SCIPinProbing(probs[i]) )
+            {
+               SCIP_CALL( SCIPendProbing(probs[i]) );
+            }
+
             SCIP_CALL( SCIPfreeTransform(probs[i]) );
          }
       }
