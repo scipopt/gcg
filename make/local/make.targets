@@ -103,14 +103,14 @@ SOFTLINKS	+=	$(LIBDIR)/include/gtest
 SOFTLINKS	+=	$(LIBDIR)/static/libgtest.$(STATICLIBEXT)
 
 LINKMSG		+=	"googletest testing framework links:\n"
-LINKMSG		+=	" -> gtest is the path to the googletest include files, e.g., \"googletest-1.7.0/include\"\n"
+LINKMSG		+=	" -> gtest is the path to the googletest include files, e.g., \"googletest-1.7.0/include/gtest\"\n"
 LINKMSG		+=	" -> \"libgtest.$(STATICLIBEXT)\" is the path to the googletest library, e.g., \"googletest-1.7.0/build/libgtest.$(STATICLIBEXT)\"\n"
 endif
 
 .PHONY: testdepend
 testdepend::
 ifeq ($(GTEST),true)
-		$(SHELL) -ec '$(DCC) $(subst isystem,I,$(FLAGS)) -Ilib/gtest $(DFLAGS) $(TESTSRC) \
+		$(SHELL) -ec '$(DCC) $(subst isystem,I,$(FLAGS)) -Ilib/include $(DFLAGS) $(TESTSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(TESTSRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(TESTOBJDIR\)/\2.o: $(TESTSRCDIR)/\2.c|g'\'' \
 		>$(TESTDEP)'
 endif
@@ -182,9 +182,9 @@ $(TESTFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) libs $(LPILIBFILE) $(NLPILIBFILE
 
 ifeq ($(GTEST),true)
 ifeq ($(COMP),gnu)
-FLAGS+=-isystem$(LIBDIR)/gtest/
+FLAGS+=-isystem$(LIBDIR)/include/
 else
-FLAGS+=-I$(LIBDIR)/gtest/
+FLAGS+=-I$(LIBDIR)/include/
 endif
 endif
 

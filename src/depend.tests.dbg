@@ -168,7 +168,22 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/table_default.h lib/scip/src/scip/concsolver_scip.h \
  lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
  lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
- src/gcgplugins.h
+ src/gcgplugins.h lib/include/gtest/gtest.h \
+ lib/include/gtest/internal/gtest-internal.h \
+ lib/include/gtest/internal/gtest-port.h \
+ lib/include/gtest/gtest-message.h \
+ lib/include/gtest/internal/gtest-string.h \
+ lib/include/gtest/internal/gtest-filepath.h \
+ lib/include/gtest/internal/gtest-type-util.h \
+ lib/include/gtest/gtest-death-test.h \
+ lib/include/gtest/internal/gtest-death-test-internal.h \
+ lib/include/gtest/gtest-param-test.h \
+ lib/include/gtest/internal/gtest-param-util.h \
+ lib/include/gtest/internal/gtest-linked_ptr.h \
+ lib/include/gtest/gtest-printers.h \
+ lib/include/gtest/internal/gtest-param-util-generated.h \
+ lib/include/gtest/gtest_prod.h lib/include/gtest/gtest-test-part.h \
+ lib/include/gtest/gtest-typed-test.h lib/include/gtest/gtest_pred_impl.h
 $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  src/tests/test.h lib/scip/src/objscip/objscip.h \
  lib/scip/src/objscip/objbranchrule.h lib/scip/src/scip/scip.h \
@@ -336,7 +351,23 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/table_default.h lib/scip/src/scip/concsolver_scip.h \
  lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
  lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
- src/gcgplugins.h src/graph/graph_tclique.h src/graph/bridge.h \
+ src/gcgplugins.h lib/include/gtest/gtest.h \
+ lib/include/gtest/internal/gtest-internal.h \
+ lib/include/gtest/internal/gtest-port.h \
+ lib/include/gtest/gtest-message.h \
+ lib/include/gtest/internal/gtest-string.h \
+ lib/include/gtest/internal/gtest-filepath.h \
+ lib/include/gtest/internal/gtest-type-util.h \
+ lib/include/gtest/gtest-death-test.h \
+ lib/include/gtest/internal/gtest-death-test-internal.h \
+ lib/include/gtest/gtest-param-test.h \
+ lib/include/gtest/internal/gtest-param-util.h \
+ lib/include/gtest/internal/gtest-linked_ptr.h \
+ lib/include/gtest/gtest-printers.h \
+ lib/include/gtest/internal/gtest-param-util-generated.h \
+ lib/include/gtest/gtest_prod.h lib/include/gtest/gtest-test-part.h \
+ lib/include/gtest/gtest-typed-test.h lib/include/gtest/gtest_pred_impl.h \
+ src/graph/graph_tclique.h src/graph/bridge.h \
  lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
  src/graph/graph_gcg.h
 $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
@@ -505,7 +536,22 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/table_default.h lib/scip/src/scip/concsolver_scip.h \
  lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
  lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
- src/gcgplugins.h
+ src/gcgplugins.h lib/include/gtest/gtest.h \
+ lib/include/gtest/internal/gtest-internal.h \
+ lib/include/gtest/internal/gtest-port.h \
+ lib/include/gtest/gtest-message.h \
+ lib/include/gtest/internal/gtest-string.h \
+ lib/include/gtest/internal/gtest-filepath.h \
+ lib/include/gtest/internal/gtest-type-util.h \
+ lib/include/gtest/gtest-death-test.h \
+ lib/include/gtest/internal/gtest-death-test-internal.h \
+ lib/include/gtest/gtest-param-test.h \
+ lib/include/gtest/internal/gtest-param-util.h \
+ lib/include/gtest/internal/gtest-linked_ptr.h \
+ lib/include/gtest/gtest-printers.h \
+ lib/include/gtest/internal/gtest-param-util-generated.h \
+ lib/include/gtest/gtest_prod.h lib/include/gtest/gtest-test-part.h \
+ lib/include/gtest/gtest-typed-test.h lib/include/gtest/gtest_pred_impl.h
 $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
@@ -672,8 +718,24 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/table_default.h lib/scip/src/scip/concsolver_scip.h \
  lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
  lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
- src/gcgplugins.h src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h \
- src/gcg.h src/type_detector.h src/type_solver.h src/type_gcgcol.h \
+ src/gcgplugins.h lib/include/gtest/gtest.h \
+ lib/include/gtest/internal/gtest-internal.h \
+ lib/include/gtest/internal/gtest-port.h \
+ lib/include/gtest/gtest-message.h \
+ lib/include/gtest/internal/gtest-string.h \
+ lib/include/gtest/internal/gtest-filepath.h \
+ lib/include/gtest/internal/gtest-type-util.h \
+ lib/include/gtest/gtest-death-test.h \
+ lib/include/gtest/internal/gtest-death-test-internal.h \
+ lib/include/gtest/gtest-param-test.h \
+ lib/include/gtest/internal/gtest-param-util.h \
+ lib/include/gtest/internal/gtest-linked_ptr.h \
+ lib/include/gtest/gtest-printers.h \
+ lib/include/gtest/internal/gtest-param-util-generated.h \
+ lib/include/gtest/gtest_prod.h lib/include/gtest/gtest-test-part.h \
+ lib/include/gtest/gtest-typed-test.h lib/include/gtest/gtest_pred_impl.h \
+ src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/gcg.h \
+ src/type_detector.h src/type_solver.h src/type_gcgcol.h \
  src/struct_gcgcol.h src/type_pricingstatus.h src/pub_gcgvar.h \
  src/pub_decomp.h src/pub_decomp.h src/cons_decomp.h
 $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
@@ -842,7 +904,23 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/table_default.h lib/scip/src/scip/concsolver_scip.h \
  lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
  lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
- src/gcgplugins.h src/pub_decomp.h src/type_decomp.h src/type_detector.h
+ src/gcgplugins.h lib/include/gtest/gtest.h \
+ lib/include/gtest/internal/gtest-internal.h \
+ lib/include/gtest/internal/gtest-port.h \
+ lib/include/gtest/gtest-message.h \
+ lib/include/gtest/internal/gtest-string.h \
+ lib/include/gtest/internal/gtest-filepath.h \
+ lib/include/gtest/internal/gtest-type-util.h \
+ lib/include/gtest/gtest-death-test.h \
+ lib/include/gtest/internal/gtest-death-test-internal.h \
+ lib/include/gtest/gtest-param-test.h \
+ lib/include/gtest/internal/gtest-param-util.h \
+ lib/include/gtest/internal/gtest-linked_ptr.h \
+ lib/include/gtest/gtest-printers.h \
+ lib/include/gtest/internal/gtest-param-util-generated.h \
+ lib/include/gtest/gtest_prod.h lib/include/gtest/gtest-test-part.h \
+ lib/include/gtest/gtest-typed-test.h lib/include/gtest/gtest_pred_impl.h \
+ src/pub_decomp.h src/type_decomp.h src/type_detector.h
 $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
@@ -1009,7 +1087,23 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/table_default.h lib/scip/src/scip/concsolver_scip.h \
  lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
  lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
- src/gcgplugins.h src/pub_decomp.h src/type_decomp.h src/type_detector.h \
+ src/gcgplugins.h lib/include/gtest/gtest.h \
+ lib/include/gtest/internal/gtest-internal.h \
+ lib/include/gtest/internal/gtest-port.h \
+ lib/include/gtest/gtest-message.h \
+ lib/include/gtest/internal/gtest-string.h \
+ lib/include/gtest/internal/gtest-filepath.h \
+ lib/include/gtest/internal/gtest-type-util.h \
+ lib/include/gtest/gtest-death-test.h \
+ lib/include/gtest/internal/gtest-death-test-internal.h \
+ lib/include/gtest/gtest-param-test.h \
+ lib/include/gtest/internal/gtest-param-util.h \
+ lib/include/gtest/internal/gtest-linked_ptr.h \
+ lib/include/gtest/gtest-printers.h \
+ lib/include/gtest/internal/gtest-param-util-generated.h \
+ lib/include/gtest/gtest_prod.h lib/include/gtest/gtest-test-part.h \
+ lib/include/gtest/gtest-typed-test.h lib/include/gtest/gtest_pred_impl.h \
+ src/pub_decomp.h src/type_decomp.h src/type_detector.h \
  src/struct_decomp.h
 $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
@@ -1177,7 +1271,23 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/table_default.h lib/scip/src/scip/concsolver_scip.h \
  lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
  lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
- src/gcgplugins.h src/pub_decomp.h src/type_decomp.h src/type_detector.h \
+ src/gcgplugins.h lib/include/gtest/gtest.h \
+ lib/include/gtest/internal/gtest-internal.h \
+ lib/include/gtest/internal/gtest-port.h \
+ lib/include/gtest/gtest-message.h \
+ lib/include/gtest/internal/gtest-string.h \
+ lib/include/gtest/internal/gtest-filepath.h \
+ lib/include/gtest/internal/gtest-type-util.h \
+ lib/include/gtest/gtest-death-test.h \
+ lib/include/gtest/internal/gtest-death-test-internal.h \
+ lib/include/gtest/gtest-param-test.h \
+ lib/include/gtest/internal/gtest-param-util.h \
+ lib/include/gtest/internal/gtest-linked_ptr.h \
+ lib/include/gtest/gtest-printers.h \
+ lib/include/gtest/internal/gtest-param-util-generated.h \
+ lib/include/gtest/gtest_prod.h lib/include/gtest/gtest-test-part.h \
+ lib/include/gtest/gtest-typed-test.h lib/include/gtest/gtest_pred_impl.h \
+ src/pub_decomp.h src/type_decomp.h src/type_detector.h \
  src/struct_decomp.h
 $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
@@ -1345,11 +1455,27 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/table_default.h lib/scip/src/scip/concsolver_scip.h \
  lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
  lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
- src/gcgplugins.h src/pub_gcgvar.h src/struct_vardata.h \
- lib/scip/src/scip/struct_var.h src/relax_gcg.h src/type_branchgcg.h \
- src/type_decomp.h src/gcg.h src/type_detector.h src/type_solver.h \
- src/type_gcgcol.h src/struct_gcgcol.h src/type_pricingstatus.h \
- src/pub_gcgvar.h src/pub_decomp.h
+ src/gcgplugins.h lib/include/gtest/gtest.h \
+ lib/include/gtest/internal/gtest-internal.h \
+ lib/include/gtest/internal/gtest-port.h \
+ lib/include/gtest/gtest-message.h \
+ lib/include/gtest/internal/gtest-string.h \
+ lib/include/gtest/internal/gtest-filepath.h \
+ lib/include/gtest/internal/gtest-type-util.h \
+ lib/include/gtest/gtest-death-test.h \
+ lib/include/gtest/internal/gtest-death-test-internal.h \
+ lib/include/gtest/gtest-param-test.h \
+ lib/include/gtest/internal/gtest-param-util.h \
+ lib/include/gtest/internal/gtest-linked_ptr.h \
+ lib/include/gtest/gtest-printers.h \
+ lib/include/gtest/internal/gtest-param-util-generated.h \
+ lib/include/gtest/gtest_prod.h lib/include/gtest/gtest-test-part.h \
+ lib/include/gtest/gtest-typed-test.h lib/include/gtest/gtest_pred_impl.h \
+ src/pub_gcgvar.h src/struct_vardata.h lib/scip/src/scip/struct_var.h \
+ src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/gcg.h \
+ src/type_detector.h src/type_solver.h src/type_gcgcol.h \
+ src/struct_gcgcol.h src/type_pricingstatus.h src/pub_gcgvar.h \
+ src/pub_decomp.h
 $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
@@ -1516,7 +1642,23 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/table_default.h lib/scip/src/scip/concsolver_scip.h \
  lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
  lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
- src/gcgplugins.h src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h \
+ src/gcgplugins.h lib/include/gtest/gtest.h \
+ lib/include/gtest/internal/gtest-internal.h \
+ lib/include/gtest/internal/gtest-port.h \
+ lib/include/gtest/gtest-message.h \
+ lib/include/gtest/internal/gtest-string.h \
+ lib/include/gtest/internal/gtest-filepath.h \
+ lib/include/gtest/internal/gtest-type-util.h \
+ lib/include/gtest/gtest-death-test.h \
+ lib/include/gtest/internal/gtest-death-test-internal.h \
+ lib/include/gtest/gtest-param-test.h \
+ lib/include/gtest/internal/gtest-param-util.h \
+ lib/include/gtest/internal/gtest-linked_ptr.h \
+ lib/include/gtest/gtest-printers.h \
+ lib/include/gtest/internal/gtest-param-util-generated.h \
+ lib/include/gtest/gtest_prod.h lib/include/gtest/gtest-test-part.h \
+ lib/include/gtest/gtest-typed-test.h lib/include/gtest/gtest_pred_impl.h \
+ src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h \
  lib/scip/src/scip/struct_var.h src/gcg.h src/type_branchgcg.h \
  src/type_decomp.h src/type_detector.h src/type_solver.h \
  src/type_pricingstatus.h src/pub_gcgvar.h src/pub_decomp.h \
@@ -1689,9 +1831,25 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/table_default.h lib/scip/src/scip/concsolver_scip.h \
  lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
  lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
- src/gcgplugins.h lib/scip/src/scip/struct_var.h src/gcg.h \
- src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
- src/type_solver.h src/type_pricingstatus.h src/pub_gcgvar.h \
- src/pub_decomp.h src/gcgpqueue.h src/struct_gcgpqueue.h \
- src/type_gcgpqueue.h src/pub_gcgpqueue.h src/pub_colpool.h \
- src/type_colpool.h src/type_pricestore_gcg.h
+ src/gcgplugins.h lib/include/gtest/gtest.h \
+ lib/include/gtest/internal/gtest-internal.h \
+ lib/include/gtest/internal/gtest-port.h \
+ lib/include/gtest/gtest-message.h \
+ lib/include/gtest/internal/gtest-string.h \
+ lib/include/gtest/internal/gtest-filepath.h \
+ lib/include/gtest/internal/gtest-type-util.h \
+ lib/include/gtest/gtest-death-test.h \
+ lib/include/gtest/internal/gtest-death-test-internal.h \
+ lib/include/gtest/gtest-param-test.h \
+ lib/include/gtest/internal/gtest-param-util.h \
+ lib/include/gtest/internal/gtest-linked_ptr.h \
+ lib/include/gtest/gtest-printers.h \
+ lib/include/gtest/internal/gtest-param-util-generated.h \
+ lib/include/gtest/gtest_prod.h lib/include/gtest/gtest-test-part.h \
+ lib/include/gtest/gtest-typed-test.h lib/include/gtest/gtest_pred_impl.h \
+ lib/scip/src/scip/struct_var.h src/gcg.h src/type_branchgcg.h \
+ src/type_decomp.h src/type_detector.h src/type_solver.h \
+ src/type_pricingstatus.h src/pub_gcgvar.h src/pub_decomp.h \
+ src/gcgpqueue.h src/struct_gcgpqueue.h src/type_gcgpqueue.h \
+ src/pub_gcgpqueue.h src/pub_colpool.h src/type_colpool.h \
+ src/type_pricestore_gcg.h
