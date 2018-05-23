@@ -2879,6 +2879,12 @@ SCIP_RETCODE relaxExecGcgBendersDecomposition(
    if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE )
       (*result) = SCIP_CUTOFF;
 
+   /* if the master problem has been solved to optimality, the we cutoff the root node. This informs that original
+    * problem that no further processing is required.
+    */
+   if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
+      (*result) = SCIP_CUTOFF;
+
    /* set the lower bound pointer */
    if( GCGmasterIsCurrentSolValid(masterprob)
       && (SCIPgetStage(masterprob) == SCIP_STAGE_SOLVED || SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING) )
