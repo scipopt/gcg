@@ -2004,6 +2004,7 @@ SCIP_RETCODE setPricingObjsOriginal(
    int v;
    int nvars;
    SCIP_VAR** vars;
+   int i;
 
    assert(scip != NULL);
    assert(probs != NULL);
@@ -2011,6 +2012,26 @@ SCIP_RETCODE setPricingObjsOriginal(
 
    nvars = SCIPgetNVars(scip);
    vars = SCIPgetVars(scip);
+
+   /* if the Benders' decomposition is used, then the transformed problem of the subproblems must be freed.
+    * This is because the within the create subproblem stage, if the subproblem is an LP, then the SCIP instance is put
+    * into probing mode.
+    */
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+   {
+      for( i = 0; i < nprobs; i++ )
+      {
+         /* if the problem is not in SCIP_STAGE_PROBLEM, then the transformed problem must be freed. The subproblem
+          * should also be in probing mode.
+          */
+         if( SCIPgetStage(probs[i]) != SCIP_STAGE_PROBLEM )
+         {
+            assert(SCIPinProbing(probs[i]));
+            SCIP_CALL( SCIPendProbing(probs[i]) );
+            SCIP_CALL( SCIPfreeTransform(probs[i]) );
+         }
+      }
+   }
 
    for( v = 0; v < nvars; ++v )
    {
@@ -2028,7 +2049,8 @@ SCIP_RETCODE setPricingObjsOriginal(
       assert(pricingvar != NULL);
 
       objvalue = SCIPvarGetObj(origvar);
-      /* SCIPinfoMessage(scip, NULL, "%s: %f\n", SCIPvarGetName(origvar), SCIPvarGetObj(origvar));*/
+      /* SCIPinfoMessage(scip, NULL, "%s: %f block %d\n", SCIPvarGetName(origvar), SCIPvarGetObj(origvar),
+         GCGvarGetBlock(origvar)); */
       SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(pricingvar)], pricingvar, objvalue) );
    }
    return SCIP_OKAY;
