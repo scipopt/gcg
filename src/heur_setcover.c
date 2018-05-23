@@ -40,7 +40,6 @@
 #include "pricer_gcg.h"
 #include "scip/clock.h"
 #include "scip/cons_linear.h"
-#include "scip/misc.h"
 #include "heur_setcover.h"
 
 
@@ -3094,7 +3093,7 @@ SCIP_DECL_HEURINIT(heurInitSetcover)
 
    /* create random number generator */
    SCIP_CALL( SCIPcreateRandom(scip, &heurdata->randnumgen,
-         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED), TRUE) );
+         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
 
    return SCIP_OKAY;
 }
