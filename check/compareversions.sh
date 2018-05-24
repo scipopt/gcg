@@ -168,7 +168,9 @@ do
 	if $oldsoplexlinks ; then
 		ln -s ../../soplex-git/src/ spxinc
 		ln -s ../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
+		ln -s ../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.so
 		ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/lib/libzimpl.linux.x86_64.gnu.opt.a libzimpl.linux.x86_64.gnu.opt.a
+		ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/lib/libzimpl.linux.x86_64.gnu.opt.a libzimpl.linux.x86_64.gnu.opt.so
 		mkdir -p zimplinc
 		cd zimplinc/
 		ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/src/ zimpl
