@@ -44,7 +44,7 @@
 #endif
 
 //#define WRITE_ORIG_CONSTYPES
- //#define SCIP_DEBUG
+// #define SCIP_DEBUG
 
 #include "scip/scipdefplugins.h"
 #include "gcg.h"

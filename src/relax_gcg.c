@@ -2246,7 +2246,10 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    assert(relaxdata != NULL);
 
    if( relaxdata->decdecomp != NULL )
+   {
       SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
+      relaxdata->decdecomp = NULL;
+   }
 
    /* free array for branchrules*/
    if( relaxdata->nbranchrules > 0 )
@@ -2308,7 +2311,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->markedmasterconss));
    relaxdata->markedmasterconss = NULL;
 
-
    /* free arrays for constraints */
    for( i = 0; i < relaxdata->nmasterconss; i++ )
    {
@@ -2356,6 +2358,13 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    {
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->storedorigsol) );
    }
+
+   if( relaxdata->decdecomp != NULL )
+   {
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
+      relaxdata->decdecomp = NULL;
+   }
+
 
    relaxdata->relaxisinitialized = FALSE;
 
