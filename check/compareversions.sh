@@ -263,6 +263,8 @@ cd ..
 # Recover SCIP linkings (current dir is gcg/check/)
 cd ../lib/scip-git/
 removeoldlinking
+mkdir -p lib/include/
+mkdir -p lib/static/
 cd lib/include/
 ln -sf ../../../soplex-git/src/ spxinc
 cd ../static/
