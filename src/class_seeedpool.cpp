@@ -5450,15 +5450,14 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    }
 
 
-   //SCIP_CALL( DECevaluateDecomposition( scip, * newdecomp, & scores ) );
-
    std::cout <<" seeed maxwhitescore: " << seeed->getMaxWhiteScore() << std::endl;
 
    DECsetMaxWhiteScore(scip, *newdecomp, seeed->getMaxWhiteScore() );
 
- //  SCIP_CALL(DECdecompRemoveDeletedConss(scip, *newdecomp) );
+   if( transformed )
+      SCIP_CALL(DECdecompAddRemainingConss(scip, *newdecomp) );
 
-   SCIP_CALL(DECdecompAddRemainingConss(scip, *newdecomp) );
+
 
    assert(DECdecompCheckConsistency(scip, *newdecomp) );
    /**there might be some remaining constraints assert( DECdecompCheckConsistency( scip, ( * newdecomp ) ) ); hence we do not check this here */
