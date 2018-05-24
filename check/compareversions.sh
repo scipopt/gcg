@@ -105,6 +105,7 @@ ln -s /opt/cplex/cplex/lib/x86-64_linux/static_pic/libcplex.a libcplex.linux.x86
 ln -s /opt/cplex/cplex/lib/x86-64_linux/static_pic/libcplex.a libcplex.linux.x86_64.gnu.so
 ln -s googletest/include/ gtest
 ln -s googletest/build/libgtest.a libgtest.a
+cd ..
 
 index=0
 while [ $index -lt $nversions ]
