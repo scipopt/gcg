@@ -163,6 +163,7 @@ do
 
 	# make links
 	removeoldlinking
+	mkdir -p lib/
 	cd lib/
 	if $oldsoplexlinks ; then
 		ln -s ../../soplex-git/src/ spxinc
@@ -202,6 +203,7 @@ do
 	make test ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
 	# change name of output files: sort by last modified and take the first one
+	mkdir -p check/results
 	cd check/results
 	
 	# establish VERSIONNAME as a name safe to use as a filename
