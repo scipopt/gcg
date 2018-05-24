@@ -153,8 +153,10 @@ do
 	function removeoldlinking {
 		rm -f lib/spxinc
 		rm -f lib/libsoplex.linux.x86_64.gnu.opt.a
+		rm -f lib/libsoplex.linux.x86_64.gnu.opt.so
 		rm -f lib/zimplinc/zimpl
 		rm -f lib/libzimpl.linux.x86_64.gnu.opt.a
+		rm -f lib/libzimpl.linux.x86_64.gnu.opt.so
 		rm -f lib/include/spxinc
 		rm -f lib/static/libsoplex.linux.x86_64.gnu.opt.a
 		rm -f lib/include/zimplinc/zimpl
