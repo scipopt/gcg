@@ -4978,7 +4978,14 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       }
       else {
 //         SCIPdebugMessagePrint(scip, " unpresolved complete seeed did not translate to complete presolved one \n");
-         SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, *seeediter ) );
+         (*seeediter)->completeByConnected(seeedpool);
+         if ( (*seeediter)->isComplete() )
+         {
+            SCIP_CALL(SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, *seeediter ) );
+            *success = TRUE;
+         }
+         else
+            SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, *seeediter ) );
       }
    }
 
