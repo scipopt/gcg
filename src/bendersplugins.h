@@ -25,45 +25,26 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   type_decomp.h
- * @ingroup TYPEDEFINITIONS
- * @brief  type definitions for decomposition information in GCG projects
- * @author Martin Bergner
+/**@file   bendersplugins.h
+ * @brief  SCIP plugins for the master problem running in Benders' decomposition mode
+ * @author Stephen J. Maher
  */
 
-/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_TYPE_DECOMP_H__
-#define GCG_TYPE_DECOMP_H__
+#ifndef GCG_BENDERSPLUGINS_H__
+#define GCG_BENDERSPLUGINS_H__
+
+#include "scip/scip.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct DecDecomp DEC_DECOMP; /**< decomposition structure */
-
-/** type of the decomposition */
-enum Dectype
-{
-   DEC_DECTYPE_UNKNOWN   = 0,                /**< unknown structure (used for initialization) */
-   DEC_DECTYPE_ARROWHEAD = 1,                /**< arrowhead structure (linking variables and constraints) */
-   DEC_DECTYPE_STAIRCASE = 2,                /**< staircase structure (linking variables between consecutive blocks) */
-   DEC_DECTYPE_DIAGONAL  = 3,                /**< block diagonal structure (no linking variables and constraints) */
-   DEC_DECTYPE_BORDERED  = 4                 /**< bordered block diagonal structure (linking constraints only) */
-};
-
-typedef enum Dectype DEC_DECTYPE; /**< decomposition type */
-
-/** the decomposition mode */
-enum Decmode
-{
-   DEC_DECMODE_DANTZIGWOLFE = 0,             /**< Datizig-Wolfe reformulation */
-   DEC_DECMODE_BENDERS      = 1,             /**< Benders' decomposition */
-   DEC_DECMODE_AUTO         = 2,             /**< the best of either Dantzig-Wolfe or Benders' will be applied */
-   DEC_DECMODE_UNKNOWN      = 3              /**< the mode can not be determined from the given information */
-};
-
-typedef enum Decmode DEC_DECMODE; /**< decomposition mode */
+extern
+SCIP_RETCODE GCGincludeBendersPlugins(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
 
 #ifdef __cplusplus
 }

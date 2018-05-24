@@ -164,6 +164,7 @@ MAINNAME	=	gcg
 LIBOBJ = \
 			branch_empty.o \
 			branch_generic.o \
+			benders_gcg.o \
 			branch_orig.o \
 			branch_relpsprob.o \
 			branch_ryanfoster.o \
@@ -258,6 +259,7 @@ LIBOBJ = \
 			heur_xpcrossover.o \
 			heur_xprins.o \
 			masterplugins.o \
+			bendersplugins.o \
 			misc.o \
 			nodesel_master.o \
 			objdialog.o \

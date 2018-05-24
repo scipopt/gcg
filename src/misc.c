@@ -36,6 +36,7 @@
 #include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
+#include "benders_gcg.h"
 #include "pub_gcgvar.h"
 #include "cons_decomp.h"
 #include "gcgsort.h"
@@ -150,6 +151,18 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    npricingprobs = GCGgetNPricingprobs(scip);
 
    assert( !SCIPisInfinity(scip, SCIPgetSolOrigObj(masterprob, mastersol)) );
+
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+   {
+      SCIP_SOL* relaxsol;
+
+      relaxsol = GCGgetBendersRelaxationSol(scip);
+
+      SCIP_CALL( SCIPcreateSolCopy(scip, origsol, relaxsol) );
+      SCIP_CALL( SCIPunlinkSol(scip, *origsol) );
+
+      return SCIP_OKAY;
+   }
 
    SCIP_CALL( SCIPcreateSol(scip, origsol, GCGrelaxGetProbingheur(scip)) );
 
@@ -581,15 +594,26 @@ SCIP_RETCODE GCGprintStatistics(
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\nMaster Program statistics:\n");
    SCIP_CALL( SCIPprintStatistics(GCGgetMasterprob(scip), file) );
-   if( SCIPgetStage(GCGgetMasterprob(scip)) > SCIP_STAGE_PRESOLVED )
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE
+      && SCIPgetStage(GCGgetMasterprob(scip)) > SCIP_STAGE_PRESOLVED )
    {
       GCGpricerPrintPricingStatistics(GCGgetMasterprob(scip), file);
    }
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program statistics:\n");
-   SCIP_CALL( SCIPprintStatistics(scip, file) );
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program statistics:\n");
+      SCIP_CALL( SCIPprintStatistics(scip, file) );
+   }
+   else
+   {
+      assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program Solution statistics:\n");
+      SCIPprintSolutionStatistics(scip, file);
+   }
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
-   if( SCIPgetStage(scip) >= SCIP_STAGE_SOLVING )
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE
+      && SCIPgetStage(scip) >= SCIP_STAGE_SOLVING )
    {
       SCIP_CALL( GCGmasterPrintSimplexIters(GCGgetMasterprob(scip), file) );
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");

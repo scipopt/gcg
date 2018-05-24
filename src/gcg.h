@@ -157,6 +157,11 @@ SCIP_Bool GCGisConsGCGCons(
    );
 
 
+/** returns the original problem for the given master problem */
+SCIP* GCGgetOriginalprob(
+   SCIP*                 masterprob          /**< the SCIP data structure for the master problem */
+   );
+
 /** returns the master problem */
 extern
 SCIP* GCGgetMasterprob(
@@ -315,6 +320,19 @@ extern
 int GCGgetNTransvars(
    SCIP*                 scip                /**< SCIP data structure */
   );
+
+/** returns the auxiliary variable for the given pricing probblem */
+extern
+SCIP_VAR* GCGgetAuxiliaryVariable(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   );
+
+/** returns the relaxation solution from the Benders' decomposition */
+extern
+SCIP_SOL* GCGgetBendersRelaxationSol(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
 
 #ifdef __cplusplus
 }

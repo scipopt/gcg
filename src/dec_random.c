@@ -195,7 +195,7 @@ DEC_DECL_INITDETECTOR(detectorInitRandom)
 
    /* create random number generator */
    SCIP_CALL( SCIPcreateRandom(scip, &detectordata->randnumgen,
-         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
+         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED), TRUE) );
 
    return SCIP_OKAY;
 }

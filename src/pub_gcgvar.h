@@ -101,6 +101,16 @@ void GCGoriginalVarSetPricingVar(
    SCIP_VAR*             pricingvar          /**< SCIP variable structure */
    );
 
+/** copies the pricing variable data to a master problem variable. This is used in the Benders' decomposition mode when
+ * subproblems are merged into the master problem.
+ */
+extern
+SCIP_RETCODE GCGcopyPricingvarDataToMastervar(
+   SCIP*                 scip,               /**< master SCIP data structure */
+   SCIP_VAR*             pricingvar,         /**< the pricing problem variable is copied from */
+   SCIP_VAR*             mastervar           /**< the master variable that the vardata is copied to */
+   );
+
 /** returns the pricing variables of an linking variable */
 extern
 SCIP_VAR** GCGlinkingVarGetPricingVars(
@@ -160,7 +170,8 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< var that is added to a block */
    int                   newblock,           /**< the new block the variable will be in */
-   int                   nblocks             /**< total number of pricing problems */
+   int                   nblocks,            /**< total number of pricing problems */
+   int                   mode                /**< the decomposition mode */
    );
 
 
@@ -334,11 +345,18 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
 /** creates the corresponding pricing variable for the given original variable */
 extern
 SCIP_RETCODE GCGlinkingVarCreatePricingVar(
-   SCIP*                 masterscip,         /**< msater problem SCIP data structure */
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
    int                   pricingprobnr,      /**< number of the pricing problem */
    SCIP_VAR*             origvar,            /**< original variable */
-   SCIP_VAR**            var,                /**< pointer to store new pricing variable */
+   SCIP_VAR**            var                 /**< pointer to store new pricing variable */
+   );
+
+/** creates the corresponding constraint in the master problem for the linking variable */
+extern
+SCIP_RETCODE GCGlinkingVarCreateMasterCons(
+   SCIP*                 masterscip,         /**< master problem SCIP data structure */
+   int                   pricingprobnr,      /**< number of the pricing problem */
+   SCIP_VAR*             origvar,            /**< original variable */
    SCIP_CONS**           linkcons            /**< constraint linking pricing variables */
    );
 
@@ -356,7 +374,8 @@ SCIP_RETCODE GCGcreateMasterVar(
    int                   prob,               /**< number of pricing problem that created this variable */
    int                   nsolvars,           /**< number of variables in the solution */
    SCIP_Real*            solvals,            /**< values of variables in the solution */
-   SCIP_VAR**            solvars             /**< variables with non zero coefficient in the solution */
+   SCIP_VAR**            solvars,            /**< variables with non zero coefficient in the solution */
+   SCIP_Bool             auxiliaryvar        /**< is new variable an Benders' auxiliary variables? */
    );
 
 /** creates initial master variables and the vardata */
@@ -372,6 +391,14 @@ SCIP_RETCODE GCGcreateArtificialVar(
    SCIP_VAR**            newvar,              /**< pointer to store new variable */
    const char*           name,               /**< name of variable, or NULL for automatic name creation */
    SCIP_Real             objcoef             /**< objective coefficient of artificial variable */
+   );
+
+/* adds the vardata to the auxiliary variable */
+extern
+SCIP_RETCODE GCGaddDataAuxiliaryVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             auxiliaryvar,       /**< the auxiliary variable */
+   int                   probnumber          /**< the subproblem number */
    );
 
 /** sets the creation node of this var */

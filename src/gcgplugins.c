@@ -430,9 +430,9 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    /* disable conflict analysis since adding constraints after structure detection may destroy symmetries */
     SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useprop", FALSE) );
-    SCIP_CALL( SCIPsetIntParam(scip, "heuristics/clique/freq", -1) );
+   SCIP_CALL( SCIPsetIntParam(scip, "heuristics/clique/freq", -1) );
     SCIP_CALL( SCIPfixParam(scip, "conflict/useprop") );
-    SCIP_CALL( SCIPfixParam(scip, "heuristics/clique/freq") );
+   SCIP_CALL( SCIPfixParam(scip, "heuristics/clique/freq") );
 
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );
