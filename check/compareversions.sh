@@ -178,9 +178,12 @@ do
 		ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/src/ zimpl
 		cd ..
 	else
+		mkdir -p include/
 		cd include/
 		ln -s ../../../soplex-git/src/ spxinc
-		cd ../static/
+		cd ..
+		mkdir -p static/
+		cd static/
 		ln -s ../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
 		cd ..
 		if $zimpllinks ; then
