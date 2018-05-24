@@ -189,6 +189,7 @@ do
 			ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/src/ zimpl
 			cd ../../static/
 			ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/lib/libzimpl.linux.x86_64.gnu.opt.a libzimpl.linux.x86_64.gnu.opt.a
+			cd ..
 		fi
 	fi
 	cd ../../.. # exit to gcg folder (was in gcg/lib/scip-git/lib/ before)
