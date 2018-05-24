@@ -299,12 +299,16 @@ SCIP_RETCODE solveKnapsack(
    assert(k == nitems);
 
    /* Compute knapsack capacity, and set weights */
+   SCIPdebugMessage("Compute knapsack capacity, current capacity = %"SCIP_LONGINT_FORMAT"\n", capacity);
    for( i = 0; i < nconsvars; i++ )
    {
       if( SCIPisEQ(pricingprob, SCIPvarGetUbLocal(consvars[i]), 0.0) )
          continue;
       if( SCIPisGE(pricingprob, SCIPvarGetLbLocal(consvars[i]), 1.0) )
       {
+         SCIPdebugMessage("  -> variable <%s> has coeff %"SCIP_LONGINT_FORMAT" and lb %f --> increase capacity by %"SCIP_LONGINT_FORMAT"\n",
+            SCIPvarGetName(consvars[i]), consvals[i], SCIPvarGetLbLocal(consvars[i]),
+            (SCIP_Longint)SCIPfloor(pricingprob, SCIPvarGetLbLocal(consvars[i]) * consvals[i]));
          capacity -= (SCIP_Longint)SCIPfloor(pricingprob, SCIPvarGetLbLocal(consvars[i])) * consvals[i];
       }
    }
