@@ -94,6 +94,18 @@ mkdir -p $RESDIR
 
 # Script is in check, so switch to gcg main folder
 cd ..
+
+# make sure all relevant GCG linkings exist
+cd lib/
+ln -s scip-git/ scip
+ln -s bliss/ blissinc
+ln -s bliss/libbliss.a libbliss.a
+ln -s /opt/cplex/cplex/include/ilcplex/ cpxinc
+ln -s /opt/cplex/cplex/lib/x86-64_linux/static_pic/libcplex.a libcplex.linux.x86_64.gnu.a
+ln -s /opt/cplex/cplex/lib/x86-64_linux/static_pic/libcplex.a libcplex.linux.x86_64.gnu.so
+ln -s googletest/include/ gtest
+ln -s googletest/build/libgtest.a libgtest.a
+
 index=0
 while [ $index -lt $nversions ]
 do
