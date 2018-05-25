@@ -15,16 +15,21 @@ features
 - add price store similar to SCIP's sepa store for better column management
 - restructure column pool similar to SCIP's cut pool
 - added parameter heuristics/restmaster/pbheur to use restricted master heuristic as price-and-branch heuristic
+- imitate SCIP's separation procedure in the basis separator by storing the number separation rounds in probing per node
 - artificial variables can now be added in the first Farkas pricing iteration to make the restricted master problem
   feasible (including various options on setting the big M objective coefficients of these variables)
 
 code cleanup
 - use SCIP_STATISTIC for pricing statistics and add compiler flag STATISTICS; if STATISTICS is set to true,
   SCIP_STATISTIC will be defined
+- add parameter in basis separator specifying the emphasis setting used for separation in probing; remove unnecessary
+  distinctions on objective direction
 
 bug fixes
 - fix a bug in the automatic update of the stabilization parameter alpha
 - fix issue with pricing problem initialization in CPLEX pricing solver
+- fix memory management in set covering heuristic
+- fix a bug in GCG feasibility pump concerning wrong SCIP instances.
 
 
 GCG Version 2.1.4
