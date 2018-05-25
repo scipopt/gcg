@@ -356,6 +356,9 @@ ifeq ($(COMP),gnu)
 CXXFLAGS	+=	-Wno-variadic-macros
 endif
 
+# WORKAROUND for missing DCXXFLAGS (C++ flags for dependency calls):
+DCXXFLAGS=$(CXXFLAGS)
+
 #-----------------------------------------------------------------------------
 # Rules
 #-----------------------------------------------------------------------------
@@ -496,7 +499,7 @@ depend:		gcglibdepend testdepend | $(SCIPDIR)
 
 .PHONY: gcglibdepend
 gcglibdepend:
-		$(SHELL) -ec '$(DCC) $(subst isystem,I,$(FLAGS)) $(DFLAGS) $(GCGLIBSRC) \
+		$(SHELL) -ec '$(DCXX) $(DCXXFLAGS) $(subst isystem,I,$(FLAGS)) $(DFLAGS) $(GCGLIBSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(SRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(LIBOBJDIR\)/\2.o: $(SRCDIR)/\2.c|g'\'' \
 		>$(GCGLIBDEP)'
 -include	$(GCGLIBDEP)
