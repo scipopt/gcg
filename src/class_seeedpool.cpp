@@ -5172,7 +5172,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    for( int c = 0; c < seeed->getNMasterconss(); ++c )
    {
       int consid = seeed->getMasterconss()[c];
-      SCIP_CONS* scipcons = consToScipCons[consid];
+      SCIP_CONS* scipcons = ( transformed ? consToScipCons[consid] : SCIPconsGetTransformed(consToScipCons[consid]) ) ;
       if( SCIPconsIsDeleted( scipcons) || scipcons == NULL || SCIPconsIsObsolete(scipcons))
       {
          --nlinkingconss;
@@ -5191,6 +5191,8 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       DECdecompSetLinkingconss( scip, * newdecomp, linkingconss, nlinkingconss );
    else
       linkingconss = NULL;
+
+
    /* set block constraints */
    for( int b = 0; b < seeed->getNBlocks(); ++ b )
    {
@@ -5202,7 +5204,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       for( int c = 0; c < seeed->getNConssForBlock( b ); ++c )
       {
          int consid = seeed->getConssForBlock( b )[c];
-         SCIP_CONS* scipcons = consToScipCons[consid];
+         SCIP_CONS* scipcons = ( transformed ? consToScipCons[consid] : SCIPconsGetTransformed( consToScipCons[consid] ) ) ;
 
          if( SCIPconsIsDeleted( scipcons) || scipcons == NULL )
             {
@@ -5586,16 +5588,12 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 
    seeed->setIsFromUnpresolved( false );
 
-//   SCIPdebugMessagePrint(scip, "Check. DEC: %f, seeed: %f\n", DECgetMaxWhiteScore( scip, decomp ), seeed->getMaxWhiteScore() );
-
-//   assert( DECgetMaxWhiteScore( scip, decomp ) == seeed->getMaxWhiteScore() );
 
    assert( seeed->checkConsistency( this ) );
 
    seeed->calcStairlinkingVars( this );
 
 //   SCIPdebugMessagePrint( scip, "Reassigned %d of %d linking vars to stairlinking.\n",
-//      seeed->getNTotalStairlinkingvars(), seeed->getNTotalStairlinkingvars() + seeed->getNLinkingvars() );
 
    *newseeed = seeed;
 
