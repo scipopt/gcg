@@ -54,6 +54,9 @@
 static
 SCIP_DECL_VARDELORIG(GCGvarDelOrig)
 {
+   if( *vardata == NULL )
+      return SCIP_OKAY;
+
    /*lint -e715 */
    if( (*vardata)->vartype == GCG_VARTYPE_ORIGINAL )
    {
@@ -257,6 +260,40 @@ SCIP_RETCODE GCGcreateOrigVarsData(
    {
       assert(vars[i] != NULL);
       SCIP_CALL( GCGorigVarCreateData(scip, vars[i]) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** frees the data for all variables of the original program */
+SCIP_RETCODE GCGfreeOrigVarsData(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_VAR** vars;
+   int nvars;
+   int i;
+
+   assert(scip != NULL);
+
+   vars = SCIPgetOrigVars(scip);
+   nvars = SCIPgetNOrigVars(scip);
+
+   /* loop over the variables in the original problem */
+   for( i = 0; i < nvars; i++ )
+   {
+      SCIP_VAR* var;
+      assert(vars[i] != NULL);
+      var = vars[i];
+
+      if( SCIPvarGetData(var) != NULL )
+      {
+         SCIP_VARDATA* oldvardata;
+         oldvardata = SCIPvarGetData(var);
+
+         SCIP_CALL( GCGvarDelOrig(scip, var, &oldvardata) );
+         SCIPvarSetData(var, NULL);
+      }
    }
 
    return SCIP_OKAY;

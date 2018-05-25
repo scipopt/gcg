@@ -277,9 +277,11 @@ SCIP_RETCODE convertStructToGCG(
    assert(DECdecompGetLinkingconss(decdecomp) != NULL || DECdecompGetNLinkingconss(decdecomp) == 0);
    assert(DECdecompGetNSubscipvars(decdecomp) != NULL || DECdecompGetSubscipvars(decdecomp) == NULL);
 
-   //SCIP_CALL( DECdecompRemoveDeletedConss(scip, decdecomp) );
+
    SCIP_CALL( DECdecompAddRemainingConss(scip, decdecomp) );
    SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
+
+
 
    origvars = SCIPgetOrigVars(scip);
    nvars = SCIPgetNOrigVars(scip);
@@ -2604,6 +2606,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       relaxdata->decdecomp = NULL;
    }
 
+   SCIP_CALL( GCGfreeOrigVarsData(scip) );
 
    relaxdata->relaxisinitialized = FALSE;
 

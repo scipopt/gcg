@@ -5172,7 +5172,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    for( int c = 0; c < seeed->getNMasterconss(); ++c )
    {
       int consid = seeed->getMasterconss()[c];
-      SCIP_CONS* scipcons = consToScipCons[consid];
+      SCIP_CONS* scipcons = ( transformed ? consToScipCons[consid] : SCIPconsGetTransformed(consToScipCons[consid]) ) ;
       if( SCIPconsIsDeleted( scipcons) || scipcons == NULL || SCIPconsIsObsolete(scipcons))
       {
          --nlinkingconss;
@@ -5191,6 +5191,8 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       DECdecompSetLinkingconss( scip, * newdecomp, linkingconss, nlinkingconss );
    else
       linkingconss = NULL;
+
+
    /* set block constraints */
    for( int b = 0; b < seeed->getNBlocks(); ++ b )
    {
@@ -5202,7 +5204,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       for( int c = 0; c < seeed->getNConssForBlock( b ); ++c )
       {
          int consid = seeed->getConssForBlock( b )[c];
-         SCIP_CONS* scipcons = consToScipCons[consid];
+         SCIP_CONS* scipcons = ( transformed ? consToScipCons[consid] : SCIPconsGetTransformed( consToScipCons[consid] ) ) ;
 
          if( SCIPconsIsDeleted( scipcons) || scipcons == NULL )
             {
@@ -5450,15 +5452,14 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    }
 
 
-   //SCIP_CALL( DECevaluateDecomposition( scip, * newdecomp, & scores ) );
-
    std::cout <<" seeed maxwhitescore: " << seeed->getMaxWhiteScore() << std::endl;
 
    DECsetMaxWhiteScore(scip, *newdecomp, seeed->getMaxWhiteScore() );
 
- //  SCIP_CALL(DECdecompRemoveDeletedConss(scip, *newdecomp) );
+   if( transformed )
+      SCIP_CALL(DECdecompAddRemainingConss(scip, *newdecomp) );
 
-   SCIP_CALL(DECdecompAddRemainingConss(scip, *newdecomp) );
+
 
    assert(DECdecompCheckConsistency(scip, *newdecomp) );
    /**there might be some remaining constraints assert( DECdecompCheckConsistency( scip, ( * newdecomp ) ) ); hence we do not check this here */
@@ -5579,6 +5580,14 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 
    if ( DECdecompGetDetectorChainString( scip, decomp ) != NULL )
       seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
+   else
+   {
+      char decchaininfo[SCIP_MAXSTRLEN];
+      char str1[2] = "\0"; /* gives {\0, \0} */
+      str1[0] = 'U';
+      (void) strncat( decchaininfo, str1, 1 );
+      seeed->setDetectorChainString( decchaininfo );
+   }
 
    /* detectorchaininfo cannot be set in the seeed as the detectors do not store the corresponding strings */
 
@@ -5587,16 +5596,12 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 
    seeed->setIsFromUnpresolved( false );
 
-//   SCIPdebugMessagePrint(scip, "Check. DEC: %f, seeed: %f\n", DECgetMaxWhiteScore( scip, decomp ), seeed->getMaxWhiteScore() );
-
-//   assert( DECgetMaxWhiteScore( scip, decomp ) == seeed->getMaxWhiteScore() );
 
    assert( seeed->checkConsistency( this ) );
 
    seeed->calcStairlinkingVars( this );
 
 //   SCIPdebugMessagePrint( scip, "Reassigned %d of %d linking vars to stairlinking.\n",
-//      seeed->getNTotalStairlinkingvars(), seeed->getNTotalStairlinkingvars() + seeed->getNLinkingvars() );
 
    *newseeed = seeed;
 

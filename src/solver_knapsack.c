@@ -111,8 +111,8 @@ SCIP_RETCODE solveKnapsack(
 
    assert(SCIPgetObjsense(pricingprob) == SCIP_OBJSENSE_MINIMIZE);
 
-   pricingprobvars = SCIPgetVars(pricingprob);
-   npricingprobvars = SCIPgetNVars(pricingprob);
+   pricingprobvars = SCIPgetOrigVars(pricingprob);
+   npricingprobvars = SCIPgetNOrigVars(pricingprob);
 
    SCIPdebugMessage("Knapsack solver -- checking prerequisites\n");
 
@@ -122,19 +122,28 @@ SCIP_RETCODE solveKnapsack(
     * - all variables are nonnegative integer variables
     * - there is only one constraint, which has infinite lhs and integer rhs
     */
-   if( SCIPgetNBinVars(pricingprob) + SCIPgetNIntVars(pricingprob) < npricingprobvars )
+   if( SCIPgetNOrigBinVars(pricingprob) + SCIPgetNOrigIntVars(pricingprob) < npricingprobvars )
+   {
+      SCIPdebugMessage("  -> pricing problem has continuous variables\n");
       return SCIP_OKAY;
-   for( i = SCIPgetNBinVars(pricingprob); i < SCIPgetNBinVars(pricingprob) + SCIPgetNIntVars(pricingprob); ++i )
+   }
+   for( i = SCIPgetNOrigBinVars(pricingprob); i < SCIPgetNOrigBinVars(pricingprob) + SCIPgetNOrigIntVars(pricingprob); ++i )
    {
       if( SCIPisNegative(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i])) )
+      {
+         SCIPdebugMessage("  -> pricing problem has variables with negative lower bounds\n");
          return SCIP_OKAY;
+      }
    }
 
-   nconss = SCIPgetNConss(pricingprob);
+   nconss = SCIPgetNOrigConss(pricingprob);
    if( nconss != 1 )
+   {
+      SCIPdebugMessage("  -> pricing problem has more than one constraint\n");
       return SCIP_OKAY;
+   }
 
-   cons = SCIPgetConss(pricingprob)[0];
+   cons = SCIPgetOrigConss(pricingprob)[0];
    assert(cons != NULL);
 
    conshdlr = SCIPconsGetHdlr(cons);
@@ -149,6 +158,10 @@ SCIP_RETCODE solveKnapsack(
     * @note The constraint may be either of type 'linear' or 'knapsack';
     * the latter might be the case if the pricing problem has already been treated before in the loop
     * and if the constraint has therefore already been upgraded
+    *
+    * @todo Currently, the solver uses only the original pricing problem because of issues with deleted variables;
+    * either keep it like that and remove the following case distinction or find a way to transform columns for
+    * the transformed problem to the original problem
     */
    if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
    {
@@ -156,7 +169,10 @@ SCIP_RETCODE solveKnapsack(
 
       if( !SCIPisIntegral(pricingprob, SCIPgetRhsLinear(pricingprob, cons)) ||
          !SCIPisInfinity(pricingprob, - SCIPgetLhsLinear(pricingprob, cons)) )
+      {
+         SCIPdebugMessage("  -> pricing constraint is bounded from below or has fractional rhs\n");
          return SCIP_OKAY;
+      }
 
       consvars = SCIPgetVarsLinear(pricingprob, cons);
       realconsvals = SCIPgetValsLinear(pricingprob, cons);
@@ -169,6 +185,7 @@ SCIP_RETCODE solveKnapsack(
       {
          if( !SCIPisIntegral(pricingprob, realconsvals[i]) )
          {
+            SCIPdebugMessage("  -> pricing constraint has fractional coefficient\n");
             SCIPfreeBufferArray(pricingprob, &consvals);
             return SCIP_OKAY;
          }
@@ -189,23 +206,15 @@ SCIP_RETCODE solveKnapsack(
 
          if( consvals[i] < 0 )
          {
-            /* Handle the cases where the transformation is not clear:
-             *
-             * a column with infinite upper bound (capacity not deducible) or
-             * a column with negative weight and negative cost (should we add it?)
-             */
+            /* If a variable has an infinite upper bound, the capacity is not deducible */
             if( SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])) )
             {
-               SCIPfreeBufferArray(pricingprob, &consvals);
-               return SCIP_OKAY;
-            }
-            else if( SCIPisNegative(pricingprob, SCIPvarGetObj(consvars[i])) )
-            {
+               SCIPdebugMessage("  -> variable with negative coefficient has no upper bound\n");
                SCIPfreeBufferArray(pricingprob, &consvals);
                return SCIP_OKAY;
             }
 
-            /* Variable has negative weight and nonnegative cost -> increase capacity */
+            /* increase capacity */
             prelcapacity -= (SCIP_Longint) SCIPfloor(pricingprob, consvals[i] * SCIPvarGetUbLocal(consvars[i]));
          }
       }
@@ -255,7 +264,10 @@ SCIP_RETCODE solveKnapsack(
       }
    }
    else
+   {
+      SCIPdebugMessage("  -> constraint is of unknown type\n");
       return SCIP_OKAY;
+   }
 
    *status = GCG_PRICINGSTATUS_UNKNOWN;
 
@@ -299,12 +311,16 @@ SCIP_RETCODE solveKnapsack(
    assert(k == nitems);
 
    /* Compute knapsack capacity, and set weights */
+   SCIPdebugMessage("Compute knapsack capacity, current capacity = %"SCIP_LONGINT_FORMAT"\n", capacity);
    for( i = 0; i < nconsvars; i++ )
    {
       if( SCIPisEQ(pricingprob, SCIPvarGetUbLocal(consvars[i]), 0.0) )
          continue;
       if( SCIPisGE(pricingprob, SCIPvarGetLbLocal(consvars[i]), 1.0) )
       {
+         SCIPdebugMessage("  -> variable <%s> has coeff %"SCIP_LONGINT_FORMAT" and lb %f --> increase capacity by %"SCIP_LONGINT_FORMAT"\n",
+            SCIPvarGetName(consvars[i]), consvals[i], SCIPvarGetLbLocal(consvars[i]),
+            (SCIP_Longint)SCIPfloor(pricingprob, SCIPvarGetLbLocal(consvars[i]) * consvals[i]));
          capacity -= (SCIP_Longint)SCIPfloor(pricingprob, SCIPvarGetLbLocal(consvars[i])) * consvals[i];
       }
    }
@@ -321,8 +337,6 @@ SCIP_RETCODE solveKnapsack(
       }
       else
       {
-         assert(!SCIPisPositive(pricingprob, profits[k]));
-
          capacity -= consvals[i];
          weights[k] = -consvals[i];
          profits[k] *= -1.0;
@@ -407,6 +421,7 @@ SCIP_RETCODE solveKnapsack(
 
       if( consvals[nonsolitems[i]] < 0 || SCIPvarIsNegated(consvars[nonsolitems[i]]) )
       {
+         /* @todo: If we decide to use only the original pricing problem, this case distinction can be removed */
          SCIP_VAR* solvar = SCIPvarIsNegated(consvars[nonsolitems[i]]) ? SCIPvarGetNegatedVar(consvars[nonsolitems[i]]) : consvars[nonsolitems[i]];
 
          for( j = 0; j < nsolvars; ++j )

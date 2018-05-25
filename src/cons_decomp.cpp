@@ -288,6 +288,38 @@ SCIP_Real calcLogarithm(SCIP_Real val)
 }
 
 
+SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
+   SCIP*          scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+     conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   std::vector<int>::const_iterator selectediter = conshdlrdata->selected->begin();
+   std::vector<int>::const_iterator selectediterend = conshdlrdata->selected->end();
+
+   for( ; selectediter != selectediterend; ++selectediter )
+   {
+      conshdlrdata->listall->at(*selectediter)->setSelected(false);
+   }
+
+   conshdlrdata->selected->clear();
+
+   conshdlrdata->selectedexists = FALSE;
+
+   return SCIP_OKAY;
+}
 
 
 SCORETYPE SCIPconshdlrdataGetScoretype(
@@ -561,16 +593,17 @@ SCIP_RETCODE  SCIPconshdlrDecompAddSeeed(
      SeeedPtr  seeed
    ){
 
+
       if( seeed->isComplete() )
       {
-         if( seeed->isFromUnpresolved())
+         if( seeed->isFromUnpresolved() )
             SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(scip, seeed);
          else
             SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, seeed);
       }
       else
       {
-         if( seeed->isFromUnpresolved())
+         if( seeed->isFromUnpresolved() )
             SCIPconshdlrDecompAddPartialSeeedForUnpresolved(scip, seeed);
          else
             SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, seeed);
@@ -785,6 +818,20 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       SCIP_CALL( DECdecompFree(scip, &conshdlrdata->useddecomp) );
 
 
+   if( conshdlrdata->ndecomps > 0 && conshdlrdata->decdecomps != NULL )
+   {
+      for( int dec = 0; dec < conshdlrdata->ndecomps; ++dec )
+      {
+
+         DECdecompFree(scip, &conshdlrdata->decdecomps[conshdlrdata->ndecomps - dec - 1]);
+      }
+
+      SCIPfreeBlockMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps);
+      conshdlrdata->ndecomps = 0;
+      conshdlrdata->decdecomps = NULL;
+   }
+
+
    conshdlrdata->hasrun = FALSE;
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
@@ -811,6 +858,10 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
          delete conshdlrdata->seeedpoolunpresolved;
       conshdlrdata->seeedpoolunpresolved = NULL;
    }
+
+   SCIPconshdlrdataDecompUnselectAll(scip);
+   conshdlrdata->listall->clear();
+
 
    return SCIP_OKAY;
 }
@@ -927,6 +978,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->priorities = NULL;
    conshdlrdata->detectors = NULL;
    conshdlrdata->hasrun = FALSE;
+   conshdlrdata->decdecomps = NULL;
+   conshdlrdata->ndecomps = 0;
    conshdlrdata->maxndetectionrounds = 0;
    conshdlrdata->maxnclassesperclassifier = 0;
    conshdlrdata->maxnclassesperclassifierforlargeprobs = 0;
@@ -1224,9 +1277,16 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
 
    SeeedPtr seeed;
 
+   if( conshdlrdata->seeedpool == NULL )
+      SCIPconshdlrDecompCreateSeeedpool(scip);
+
+   DECdecompSetPresolved(decdecomp, TRUE);
+
    SCIP_CALL( conshdlrdata->seeedpool->createSeeedFromDecomp(decdecomp, &seeed) );
 
    SCIP_CALL( SCIPconshdlrDecompAddSeeed(scip, seeed) );
+
+   DECdecompFree(scip, &decdecomp);
 
    return SCIP_OKAY;
 }
@@ -3344,7 +3404,17 @@ DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+
+   for( int i = 0; i < conshdlrdata->ndecomps; ++i )
+   {
+      DECdecompFree(scip, &conshdlrdata->decdecomps[conshdlrdata->ndecomps - i - 1]);
+   }
+
+   SCIPfreeBlockMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps);
+
    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &conshdlrdata->decdecomps, SCIPconshdlrDecompGetNDecdecomps(scip) ) );
+
+   conshdlrdata->ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip) ;
 
    if( conshdlrdata->seeedpoolunpresolved != NULL )
    {
@@ -3393,10 +3463,8 @@ int SCIPconshdlrDecompGetNDecdecomps(
 
    //SCIPinfoMessage
 
-   conshdlrdata->ndecomps = ndecomps;
-
-   return conshdlrdata->ndecomps;
-}
+   return ndecomps;
+   }
 
 /** returns the data of the provided detector */
 DEC_DETECTORDATA* DECdetectorGetData(
@@ -4106,38 +4174,6 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
 
 
 
-SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
-   SCIP*          scip
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-     conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-      return SCIP_ERROR;
-   }
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   std::vector<int>::const_iterator selectediter = conshdlrdata->selected->begin();
-   std::vector<int>::const_iterator selectediterend = conshdlrdata->selected->end();
-
-   for( ; selectediter != selectediterend; ++selectediter )
-   {
-      conshdlrdata->listall->at(*selectediter)->setSelected(false);
-   }
-
-   conshdlrdata->selected->clear();
-
-   conshdlrdata->selectedexists = FALSE;
-
-   return SCIP_OKAY;
-}
 
 SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
    SCIP*       scip
@@ -4978,7 +5014,14 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       }
       else {
 //         SCIPdebugMessagePrint(scip, " unpresolved complete seeed did not translate to complete presolved one \n");
-         SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, *seeediter ) );
+         (*seeediter)->completeByConnected(seeedpool);
+         if ( (*seeediter)->isComplete() )
+         {
+            SCIP_CALL(SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, *seeediter ) );
+            *success = TRUE;
+         }
+         else
+            SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, *seeediter ) );
       }
    }
 
@@ -5497,7 +5540,7 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
 
    if( (size_t) selectedcounter != conshdlrdata->selected->size() )
    {
-      SCIPwarningMessage(scip, "Warning: there are selected seeeds not part of the list  \n" );
+      SCIPwarningMessage(scip, "Warning: there are selected seeeds not part of the list (selectedcounter: %d, nselected list> %d) \n", selectedcounter, (int) conshdlrdata->selected->size() );
       return FALSE;
    }
 
@@ -5602,9 +5645,8 @@ SCIP_RETCODE DECdetectStructure(
       conshdlrdata->seeedpool = NULL;
    }
 
-
-
    *result = SCIP_DIDNOTRUN;
+
 
    if( SCIPgetNOrigVars(scip) == 0 && SCIPgetNOrigConss(scip) == 0 )
       return SCIP_OKAY;

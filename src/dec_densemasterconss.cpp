@@ -184,10 +184,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedDensemasterconss)
   }
 
 
-  assert(seeed->getNOpenconss() < 2 || maxdiff >= 0);
-
-  assert(seeed->getNOpenconss() < 2 || maxdiff == 0 || maxdiffindex != -1 );
-
   for( int i = 0; i < maxdiffindex; ++i )
   {
      seeed->bookAsMasterCons(seeed->getOpenconss()[nnonzeros[i].second]);
