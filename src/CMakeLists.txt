@@ -13,6 +13,8 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED on)
 
 set(gcgsources
+    benders_gcg.c
+    bendersplugins.c
     branch_empty.c
     branch_generic.c
     branch_orig.c
