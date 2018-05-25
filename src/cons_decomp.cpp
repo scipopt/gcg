@@ -6418,7 +6418,12 @@ DEC_DECOMP* DECgetBestDecomp(
  //  DECconshdlrDecompSortDecompositionsByScore(scip);
 
    if( conshdlrdata->candidates->size() == 0 && conshdlrdata->useddecomp == NULL)
-      return NULL;
+   {
+      SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
+      if (conshdlrdata->candidates->size() == 0)
+         return NULL;
+   }
+
 
    if( conshdlrdata->useddecomp != NULL )
       return conshdlrdata->useddecomp;
@@ -6436,6 +6441,12 @@ DEC_DECOMP* DECgetBestDecomp(
       seeedpool->translateSeeeds(seeedpoolunpresolved, seeedtotranslate, translatedseeeds);
       seeed = translatedseeeds[0];
    }
+
+
+   assert(seeed->getNLinkingvars() == 0);
+
+   assert(seeed->getNMastervars() == 0);
+
 
    seeedpool->createDecompFromSeeed(seeed, &decomp);
 

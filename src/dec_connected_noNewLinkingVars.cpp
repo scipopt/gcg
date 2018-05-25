@@ -177,8 +177,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
 
    detection(scip, seeedPropagationData);
 
-   seeedPropagationData->newSeeeds[0]->setDetectorPropagated( detector );
-
 
    *result = SCIP_SUCCESS;
 
@@ -191,7 +189,6 @@ DEC_DECL_FINISHSEEED(finishSeeedConnected_noNewLinkingVars)
    *result = SCIP_DIDNOTFIND;
 
    detection(scip, seeedPropagationData);
-   seeedPropagationData->newSeeeds[0]->setFinishingDetectorPropagated( detector );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;

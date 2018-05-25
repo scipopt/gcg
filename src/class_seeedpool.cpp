@@ -1420,6 +1420,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                prepareSeeed( seeedPropData->newSeeeds[j] );
                assert( seeedPropData->newSeeeds[j]->checkConsistency( this ) );
                seeedPropData->newSeeeds[j]->addDecChangesFromAncestor( seeedPtr );
+               seeedPropData->newSeeeds[j]->setDetectorPropagated(detectorToScipDetector[d]);
             }
 
             SCIP_CALL_ABORT( SCIPstopClock( scip, detectorclock ) );
@@ -1510,6 +1511,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                   seeedPropData->newSeeeds[seeed] = NULL;
                }
             }
+
             /** cleanup propagation data structure */
             delete seeedPropData->seeedToPropagate;
             SCIPfreeMemoryArrayNull( scip, & seeedPropData->newSeeeds );
@@ -1561,6 +1563,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                seeed->setSeeedpool(this);
                seeed->addDecChangesFromAncestor( seeedPtr );
                seeed->setFinishedByFinisher( true );
+               seeed->setFinishingDetectorPropagated(detectorToFinishingScipDetector[d]);
 #pragma omp critical ( seeedptrstore )
                {
                   SCIP_Bool success;
@@ -1645,6 +1648,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             seeed->addDecChangesFromAncestor( seeedPtr );
             seeed->setFinishedByFinisher( true );
             seeed->setSeeedpool(this);
+            seeed->setFinishingDetectorPropagated(detectorToFinishingScipDetector[d] );
 
             if( seeedIsNoDuplicateOfSeeeds( seeed, finishedSeeeds, false ) )
             {
@@ -1796,6 +1800,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             seeed->addDecChangesFromAncestor( seeedPtr );
             seeed->setFinishedByFinisher( true );
             seeed->setSeeedpool(this);
+            seeed->setDetectorPropagated(detectorToPostprocessingScipDetector[d]);
 
             if( seeedIsNoDuplicateOfSeeeds( seeed, finishedSeeeds, false ) && seeedIsNoDuplicateOfSeeeds( seeed, postprocessed, false )  )
             {

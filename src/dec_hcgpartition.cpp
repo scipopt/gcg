@@ -809,6 +809,11 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    gcg::Seeed* seeed;
    seeed = seeedPropagationData->seeedToPropagate;
 
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
+
   //assert( seeed->checkConsistency( seeedPropagationData->seeedpool ));
 
    seeed->considerImplicits(seeedPropagationData->seeedpool);
@@ -825,8 +830,16 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, result);
 
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+
+
    for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-      seeedPropagationData->newSeeeds[s]->setDetectorPropagated(detector);
+   {
+      seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   }
+
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
 
    return SCIP_OKAY;
 }
@@ -846,6 +859,12 @@ DEC_DECL_FINISHFROMTOOLBOX(finishFromToolboxHcgpartition)
 static
 DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
 {
+
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
+
    gcg::Seeed* seeed = seeedPropagationData->seeedToPropagate;
 
    seeed->considerImplicits(seeedPropagationData->seeedpool);
@@ -858,13 +877,21 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, FALSE, result);
 
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+
+
    for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
    {
       seeedPropagationData->newSeeeds[s]->considerImplicits(seeedPropagationData->seeedpool);
       seeedPropagationData->newSeeeds[s]->refineToBlocks(seeedPropagationData->seeedpool);
+      seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(temporaryClock )  );
       assert(seeedPropagationData->newSeeeds[s]->getNOpenconss() == 0);
       assert(seeedPropagationData->newSeeeds[s]->getNOpenvars() == 0);
    }
+
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
+
    return SCIP_OKAY;
 }
 

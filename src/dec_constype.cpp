@@ -169,7 +169,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   std::vector<int> constypesIndices(0);
 
   seeedOrig = seeedPropagationData->seeedToPropagate;
-  seeedOrig->setDetectorPropagated(detector);
 
 
 

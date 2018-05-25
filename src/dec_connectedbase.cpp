@@ -183,7 +183,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
-   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "connected");
    seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
@@ -224,7 +223,6 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
-   seeedPropagationData->newSeeeds[0]->setFinishingDetectorPropagated(detector);
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "connected");
    seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 

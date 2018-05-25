@@ -37,6 +37,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+//#define SCIP_DEBUG
 
 #include "decomp.h"
 #include "gcg.h"
@@ -2347,9 +2348,14 @@ SCIP_RETCODE DECcreateBasicDecomp(
    )
 {
    SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* vartoblock;
    SCIP_CONS** conss;
+   SCIP_VAR**  vars;
+   SCIP_Bool haslinking;
    int nconss;
+   int nvars;
    int c;
+   int v;
 
    assert(scip != NULL);
    assert(decomp != NULL);
@@ -2357,18 +2363,33 @@ SCIP_RETCODE DECcreateBasicDecomp(
    SCIP_CALL( DECdecompCreate(scip, decomp) );
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
 
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nvars) );
+   haslinking = FALSE;
+
 
    for( c = 0; c < nconss; ++c )
    {
       if( GCGisConsGCGCons(conss[c]) )
          continue;
-
       SCIP_CALL( SCIPhashmapInsert(constoblock, conss[c], (void*) (size_t) 1 ) );
    }
 
-   SCIP_CALL( DECfilloutDecompFromConstoblock(scip, *decomp, constoblock, 0, FALSE) );
+   for( v = 0; v < nvars; ++v )
+   {
+      SCIP_VAR* probvar = SCIPvarGetProbvar(vars[v]);
+
+      if( SCIPvarGetStatus(probvar) == SCIP_VARSTATUS_FIXED )
+         continue;
+      SCIP_CALL( SCIPhashmapInsert(vartoblock, probvar, (void*) (size_t) 1 ) );
+      }
+
+   DECfilloutDecompFromHashmaps(scip, *decomp, vartoblock, constoblock, 1, haslinking);
+
+   DECdecompSetPresolved(*decomp, TRUE);
 
    return SCIP_OKAY;
 }

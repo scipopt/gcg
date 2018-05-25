@@ -281,8 +281,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
        seeed->flushBooked();
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
        seeed->addDetectorChainInfo(decinfo);
-       seeed->setDetectorPropagated(detector);
-       seeed->setVarClassifierStatistics( seeed->getNDetectors() - 1, classifier, curlinkingclasses,
+       seeed->setVarClassifierStatistics( seeed->getNDetectors(), classifier, curlinkingclasses,
           varclassindices_master );
 
        foundseeeds.push_back(seeed);
@@ -615,7 +614,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
    seeed->addDetectorChainInfo(decinfo);
    seeed->setDetectorPropagated(detector);
-   seeed->setVarClassifierStatistics( seeed->getNDetectors() - 1, selectedclassifier, curlinkingclasses,
+   seeed->setVarClassifierStatistics( seeed->getNDetectors(), selectedclassifier, curlinkingclasses,
       varclassindices_master );
 
    foundseeeds.push_back(seeed);

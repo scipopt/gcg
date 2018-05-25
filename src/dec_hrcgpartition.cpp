@@ -631,7 +631,7 @@ SCIP_RETCODE detection(
    else
    {
       for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[2*s] );
+         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
    }
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
    *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
@@ -861,8 +861,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, result);
 
-   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-      seeedPropagationData->newSeeeds[s]->setDetectorPropagated(detector);
 
    return SCIP_OKAY;
 

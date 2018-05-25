@@ -122,6 +122,7 @@ TEST_F(GcgTest, isGcgTest) {
    EXPECT_TRUE(GCGisMaster(GCGgetMasterprob(scip)));
 }
 
+
 TEST_F(GcgTest, emptyProblem) {
    SCIP_SOL* bestsol;
    ASSERT_EQ(SCIP_OKAY, SCIPsolve(scip));
@@ -321,7 +322,7 @@ TEST_F(GcgDecTest, ReadBlkTest) {
 TEST_F(GcgDecTest, NoDecTest) {
    DEC_DECOMP* decomp;
 
-   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/miplib/noswot.mps", "mps") );
    ASSERT_EQ(0, SCIPconshdlrDecompGetNDecdecomps(scip));
    SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
    SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "constraints/decomp/createbasicdecomp", 1) );

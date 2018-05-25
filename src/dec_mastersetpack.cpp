@@ -145,9 +145,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpack)
 
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
-   seeed->setDetectorPropagated(detector);
-
-   /** set open setpacking constraints to Master */
+     /** set open setpacking constraints to Master */
    for( int i = 0; i < seeed->getNOpenconss(); ++i )
       {
          cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);

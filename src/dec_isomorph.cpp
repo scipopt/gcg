@@ -1685,7 +1685,6 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedIsomorph)
 
    for( int i = 0; i < seeedPropagationData->nNewSeeeds; ++i )
    {
-      seeedPropagationData->newSeeeds[i]->setDetectorPropagated(detector);
       seeedPropagationData->newSeeeds[i]->refineToMaster(seeedPropagationData->seeedpool);
    }
 

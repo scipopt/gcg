@@ -2098,7 +2098,7 @@ SCIP_RETCODE solveDiagonalBlocks(
          continue;
 
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Solving block %i.\n", i+1);
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", (int)SCIP_VERBLEVEL_NORMAL) );
 
       /* give the pricing problem 2% more time then the original scip has left */
       if( SCIPgetStage(relaxdata->pricingprobs[i]) > SCIP_STAGE_PROBLEM )
@@ -2228,8 +2228,35 @@ SCIP_RETCODE initRelaxator(
          relaxdata->decdecomp = DECgetBestDecomp(scip);
          if( relaxdata->decdecomp == NULL )
          {
-            SCIPerrorMessage("No decomposition specified!\n");
-            return SCIP_ERROR;
+            SCIP_Bool createbasicdecomp;
+            SCIPgetBoolParam(scip, "constraints/decomp/createbasicdecomp", &createbasicdecomp);
+            if( createbasicdecomp )
+            {
+               DEC_DECOMP* decomp;
+               SCIP_RETCODE retcode;
+               SCIPinfoMessage(scip, NULL, " CREATE BASIC DECOMP!\n");
+               retcode = DECcreateBasicDecomp(scip, &decomp);
+               assert(retcode == SCIP_OKAY);
+               if( retcode != SCIP_OKAY )
+               {
+                  SCIPerrorMessage("Could not add decomp to cons_decomp!\n");
+                  return SCIP_ERROR;
+               }
+
+
+               assert(decomp != NULL );
+
+               retcode = SCIPconshdlrDecompAddDecdecomp(scip, decomp);
+               relaxdata->decdecomp = DECgetBestDecomp(scip);
+
+            }
+            else
+            {
+               SCIPerrorMessage("No decomposition specified!\n");
+               return SCIP_ERROR;
+            }
+
+            assert( relaxdata->decdecomp != NULL );
          }
       }
    }
