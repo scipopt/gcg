@@ -42,28 +42,26 @@
 
 /* color defaults to build default color layout with */
 #define COLOR_WHITE     "#FFFFFF"   /**< standard white */
-#define COLOR_BLUE      "#00549F"   /**< darker blue */
-#define COLOR_LBLUE     "#8EBAE5"   /**< lighter blue */
-#define COLOR_PURPLE    "#7A6FAC"   /**< purple */
-#define COLOR_VIOLET    "#612158"   /**< violet */
-#define COLOR_CARMINE   "#A11035"   /**< darker red */
-#define COLOR_RED       "#CC071E"   /**< lighter red */
-#define COLOR_MAGENTA   "#E30066"   /**< pink */
-#define COLOR_ORANGE    "#F6A800"   /**< orange */
-#define COLOR_YELLOW    "#FFED00"   /**< yellow */
-#define COLOR_GRASS     "#BDAB27"   /**< lighter green */
-#define COLOR_GREEN     "#57AB27"   /**< darker green */
-#define COLOR_CYAN      "#0098A1"   /**< lighter cyan */
-#define COLOR_TEAL      "#006165"   /**< darker, muddy cyan */
+#define COLOR_BLUE1     "#ACBCE9"   /**< very light blue */
+#define COLOR_BLUE2     "#718CDB"   /**< light blue */
+#define COLOR_BLUE3     "#3C64DD"   /**< middle blue */
+#define COLOR_BLUE4     "#1340C7"   /**< dark blue */
+#define COLOR_BLUE5     "#1F377D"   /**< very dark blue */
+#define COLOR_ORANGE1   "#FFD88F"   /**< very light orange */
+#define COLOR_ORANGE2   "#FFCB69"   /**< light orange */
+#define COLOR_ORANGE3   "#FFB72D"   /**< orange */
+#define COLOR_BROWN1    "#B38208"   /**< light brown */
+#define COLOR_BROWN2    "#886100"   /**< brown */
+#define COLOR_BROWN3    "#443000"   /**< dark brown */
 #define COLOR_BLACK     "#000000"   /**< standard black */
 
 /* default colors (use defines above for changes) */
-#define DEFAULT_COLOR_MASTERVARS   COLOR_BLUE      /**< for mastervars (in block area) */
-#define DEFAULT_COLOR_MASTERCONSS  COLOR_BLUE      /**< for masterconss */
-#define DEFAULT_COLOR_LINKING      COLOR_PURPLE    /**< for linking areas */
-#define DEFAULT_COLOR_STAIRLINKING COLOR_MAGENTA   /**< for stairlinking areas */
-#define DEFAULT_COLOR_BLOCK        COLOR_TEAL      /**< for finished blocks */
-#define DEFAULT_COLOR_OPEN         COLOR_GREEN     /**< for open (not assigned) elements */
+#define DEFAULT_COLOR_MASTERVARS   COLOR_BLUE4     /**< for mastervars (in block area) */
+#define DEFAULT_COLOR_MASTERCONSS  COLOR_BLUE4     /**< for masterconss */
+#define DEFAULT_COLOR_LINKING      COLOR_ORANGE3   /**< for linking areas */
+#define DEFAULT_COLOR_STAIRLINKING COLOR_BROWN2    /**< for stairlinking areas */
+#define DEFAULT_COLOR_BLOCK        COLOR_BLUE2     /**< for finished blocks */
+#define DEFAULT_COLOR_OPEN         COLOR_ORANGE1   /**< for open (not assigned) elements */
 #define DEFAULT_COLOR_NONZERO      COLOR_BLACK     /**< for nonzero dots */
 #define DEFAULT_COLOR_LINE         COLOR_BLACK     /**< for outlines of blocks */
 
