@@ -1484,10 +1484,6 @@ SCIP_RETCODE createMasterProblem(
       SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benders/active", TRUE) );
       SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benderslp/active", TRUE) );
       SCIP_CALL( SCIPsetBoolParam(masterscip, "benders/gcg/lnscheck", FALSE) );
-#if 0 /* there is a merge request open regarding presolving for Benders' decomposition */
-      SCIP_CALL( SCIPsetIntParam(masterscip, "presolving/maxrounds", 1) );
-      SCIP_CALL( SCIPsetIntParam(masterscip, "constraints/benders/maxprerounds", 1) );
-#endif
 
       /* the trysol heuristic must have a high priority to ensure the solutions found by the relaxator are added to the
        * original problem
