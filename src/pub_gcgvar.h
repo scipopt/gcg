@@ -289,6 +289,12 @@ SCIP_RETCODE GCGcreateOrigVarsData(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** frees the data for all variables of the original program */
+extern
+SCIP_RETCODE GCGfreeOrigVarsData(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 /** creates the data for a variable of the original program */
 extern
 SCIP_RETCODE GCGorigVarCreateData(

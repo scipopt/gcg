@@ -2637,6 +2637,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       relaxdata->decdecomp = NULL;
    }
 
+   SCIP_CALL( GCGfreeOrigVarsData(scip) );
 
    relaxdata->relaxisinitialized = FALSE;
 
