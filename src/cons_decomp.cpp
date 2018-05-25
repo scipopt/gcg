@@ -593,16 +593,17 @@ SCIP_RETCODE  SCIPconshdlrDecompAddSeeed(
      SeeedPtr  seeed
    ){
 
+
       if( seeed->isComplete() )
       {
-         if( seeed->isFromUnpresolved())
+         if( seeed->isFromUnpresolved() )
             SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(scip, seeed);
          else
             SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, seeed);
       }
       else
       {
-         if( seeed->isFromUnpresolved())
+         if( seeed->isFromUnpresolved() )
             SCIPconshdlrDecompAddPartialSeeedForUnpresolved(scip, seeed);
          else
             SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, seeed);
@@ -5508,7 +5509,7 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
 
    if( (size_t) selectedcounter != conshdlrdata->selected->size() )
    {
-      SCIPwarningMessage(scip, "Warning: there are selected seeeds not part of the list  \n" );
+      SCIPwarningMessage(scip, "Warning: there are selected seeeds not part of the list (selectedcounter: %d, nselected list> %d) \n", selectedcounter, (int) conshdlrdata->selected->size() );
       return FALSE;
    }
 
