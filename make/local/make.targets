@@ -110,7 +110,7 @@ endif
 .PHONY: testdepend
 testdepend::
 ifeq ($(GTEST),true)
-		$(SHELL) -ec '$(DCC) $(subst isystem,I,$(FLAGS)) -Ilib/include $(DFLAGS) $(TESTSRC) \
+		$(SHELL) -ec '$(DCXX) $(DCXXFLAGS) $(subst isystem,I,$(FLAGS)) -Ilib/include $(DFLAGS) $(TESTSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(TESTSRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(TESTOBJDIR\)/\2.o: $(TESTSRCDIR)/\2.c|g'\'' \
 		>$(TESTDEP)'
 endif
