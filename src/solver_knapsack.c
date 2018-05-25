@@ -123,16 +123,25 @@ SCIP_RETCODE solveKnapsack(
     * - there is only one constraint, which has infinite lhs and integer rhs
     */
    if( SCIPgetNOrigBinVars(pricingprob) + SCIPgetNOrigIntVars(pricingprob) < npricingprobvars )
+   {
+      SCIPdebugMessage("  -> pricing problem has continuous variables\n");
       return SCIP_OKAY;
+   }
    for( i = SCIPgetNOrigBinVars(pricingprob); i < SCIPgetNOrigBinVars(pricingprob) + SCIPgetNOrigIntVars(pricingprob); ++i )
    {
       if( SCIPisNegative(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i])) )
+      {
+         SCIPdebugMessage("  -> pricing problem has variables with negative lower bounds\n");
          return SCIP_OKAY;
+      }
    }
 
    nconss = SCIPgetNOrigConss(pricingprob);
    if( nconss != 1 )
+   {
+      SCIPdebugMessage("  -> pricing problem has more than one constraint\n");
       return SCIP_OKAY;
+   }
 
    cons = SCIPgetOrigConss(pricingprob)[0];
    assert(cons != NULL);
@@ -160,7 +169,10 @@ SCIP_RETCODE solveKnapsack(
 
       if( !SCIPisIntegral(pricingprob, SCIPgetRhsLinear(pricingprob, cons)) ||
          !SCIPisInfinity(pricingprob, - SCIPgetLhsLinear(pricingprob, cons)) )
+      {
+         SCIPdebugMessage("  -> pricing constraint is bounded from below or has fractional rhs\n");
          return SCIP_OKAY;
+      }
 
       consvars = SCIPgetVarsLinear(pricingprob, cons);
       realconsvals = SCIPgetValsLinear(pricingprob, cons);
@@ -173,6 +185,7 @@ SCIP_RETCODE solveKnapsack(
       {
          if( !SCIPisIntegral(pricingprob, realconsvals[i]) )
          {
+            SCIPdebugMessage("  -> pricing constraint has fractional coefficient\n");
             SCIPfreeBufferArray(pricingprob, &consvals);
             return SCIP_OKAY;
          }
@@ -193,23 +206,15 @@ SCIP_RETCODE solveKnapsack(
 
          if( consvals[i] < 0 )
          {
-            /* Handle the cases where the transformation is not clear:
-             *
-             * a column with infinite upper bound (capacity not deducible) or
-             * a column with negative weight and negative cost (should we add it?)
-             */
+            /* If a variable has an infinite upper bound, the capacity is not deducible */
             if( SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])) )
             {
-               SCIPfreeBufferArray(pricingprob, &consvals);
-               return SCIP_OKAY;
-            }
-            else if( SCIPisNegative(pricingprob, SCIPvarGetObj(consvars[i])) )
-            {
+               SCIPdebugMessage("  -> variable with negative coefficient has no upper bound\n");
                SCIPfreeBufferArray(pricingprob, &consvals);
                return SCIP_OKAY;
             }
 
-            /* Variable has negative weight and nonnegative cost -> increase capacity */
+            /* increase capacity */
             prelcapacity -= (SCIP_Longint) SCIPfloor(pricingprob, consvals[i] * SCIPvarGetUbLocal(consvars[i]));
          }
       }
@@ -259,7 +264,10 @@ SCIP_RETCODE solveKnapsack(
       }
    }
    else
+   {
+      SCIPdebugMessage("  -> constraint is of unknown type\n");
       return SCIP_OKAY;
+   }
 
    *status = GCG_PRICINGSTATUS_UNKNOWN;
 
@@ -329,8 +337,6 @@ SCIP_RETCODE solveKnapsack(
       }
       else
       {
-         assert(!SCIPisPositive(pricingprob, profits[k]));
-
          capacity -= consvals[i];
          weights[k] = -consvals[i];
          profits[k] *= -1.0;
