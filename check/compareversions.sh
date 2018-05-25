@@ -97,6 +97,8 @@ cd ..
 
 # make sure all relevant GCG linkings exist
 cd lib/
+mkdir -p include
+mkdir -p static
 ln -s scip-git/ scip
 ln -s bliss/ blissinc
 ln -s bliss/libbliss.a libbliss.a
@@ -105,6 +107,10 @@ ln -s /opt/cplex/cplex/lib/x86-64_linux/static_pic/libcplex.a libcplex.linux.x86
 ln -s /opt/cplex/cplex/lib/x86-64_linux/static_pic/libcplex.a libcplex.linux.x86_64.gnu.so
 ln -s googletest/include/ gtest
 ln -s googletest/build/libgtest.a libgtest.a
+ln -s ../bliss-git/ include/bliss
+ln -s ../bliss-git/libbliss.a static/libbliss.a
+ln -s ../googletest-git/include/gtest include/gtest
+ln -s ../googletest-git/build/libgtest.a static/libgtest.a
 cd ..
 
 index=0
