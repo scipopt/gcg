@@ -111,8 +111,8 @@ SCIP_RETCODE solveKnapsack(
 
    assert(SCIPgetObjsense(pricingprob) == SCIP_OBJSENSE_MINIMIZE);
 
-   pricingprobvars = SCIPgetOrigVars(pricingprob);
-   npricingprobvars = SCIPgetNOrigVars(pricingprob);
+   pricingprobvars = SCIPgetVars(pricingprob);
+   npricingprobvars = SCIPgetNVars(pricingprob);
 
    SCIPdebugMessage("Knapsack solver -- checking prerequisites\n");
 
@@ -122,12 +122,12 @@ SCIP_RETCODE solveKnapsack(
     * - all variables are nonnegative integer variables
     * - there is only one constraint, which has infinite lhs and integer rhs
     */
-   if( SCIPgetNOrigBinVars(pricingprob) + SCIPgetNOrigIntVars(pricingprob) < npricingprobvars )
+   if( SCIPgetNBinVars(pricingprob) + SCIPgetNIntVars(pricingprob) < npricingprobvars )
    {
       SCIPdebugMessage("  -> pricing problem has continuous variables\n");
       return SCIP_OKAY;
    }
-   for( i = SCIPgetNOrigBinVars(pricingprob); i < SCIPgetNOrigBinVars(pricingprob) + SCIPgetNOrigIntVars(pricingprob); ++i )
+   for( i = SCIPgetNBinVars(pricingprob); i < SCIPgetNBinVars(pricingprob) + SCIPgetNIntVars(pricingprob); ++i )
    {
       if( SCIPisNegative(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i])) )
       {
@@ -136,14 +136,14 @@ SCIP_RETCODE solveKnapsack(
       }
    }
 
-   nconss = SCIPgetNOrigConss(pricingprob);
+   nconss = SCIPgetNConss(pricingprob);
    if( nconss != 1 )
    {
       SCIPdebugMessage("  -> pricing problem has more than one constraint\n");
       return SCIP_OKAY;
    }
 
-   cons = SCIPgetOrigConss(pricingprob)[0];
+   cons = SCIPgetConss(pricingprob)[0];
    assert(cons != NULL);
 
    conshdlr = SCIPconsGetHdlr(cons);
@@ -158,10 +158,6 @@ SCIP_RETCODE solveKnapsack(
     * @note The constraint may be either of type 'linear' or 'knapsack';
     * the latter might be the case if the pricing problem has already been treated before in the loop
     * and if the constraint has therefore already been upgraded
-    *
-    * @todo Currently, the solver uses only the original pricing problem because of issues with deleted variables;
-    * either keep it like that and remove the following case distinction or find a way to transform columns for
-    * the transformed problem to the original problem
     */
    if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
    {
@@ -421,7 +417,6 @@ SCIP_RETCODE solveKnapsack(
 
       if( consvals[nonsolitems[i]] < 0 || SCIPvarIsNegated(consvars[nonsolitems[i]]) )
       {
-         /* @todo: If we decide to use only the original pricing problem, this case distinction can be removed */
          SCIP_VAR* solvar = SCIPvarIsNegated(consvars[nonsolitems[i]]) ? SCIPvarGetNegatedVar(consvars[nonsolitems[i]]) : consvars[nonsolitems[i]];
 
          for( j = 0; j < nsolvars; ++j )
