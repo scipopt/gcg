@@ -590,5 +590,6 @@ void GCGVisuFreeParams(
    SCIP* scip     /**< SCIP data structure */
    )
 {
-   SCIPfreeMemory(scip, &visudata);
+   if ( visudata != NULL )
+      SCIPfreeMemory(scip, &visudata);
 }

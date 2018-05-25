@@ -818,6 +818,20 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       SCIP_CALL( DECdecompFree(scip, &conshdlrdata->useddecomp) );
 
 
+   if( conshdlrdata->ndecomps > 0 && conshdlrdata->decdecomps != NULL )
+   {
+      for( int dec = 0; dec < conshdlrdata->ndecomps; ++dec )
+      {
+
+         DECdecompFree(scip, &conshdlrdata->decdecomps[conshdlrdata->ndecomps - dec - 1]);
+      }
+
+      SCIPfreeBlockMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps);
+      conshdlrdata->ndecomps = 0;
+      conshdlrdata->decdecomps = NULL;
+   }
+
+
    conshdlrdata->hasrun = FALSE;
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
@@ -964,6 +978,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->priorities = NULL;
    conshdlrdata->detectors = NULL;
    conshdlrdata->hasrun = FALSE;
+   conshdlrdata->decdecomps = NULL;
+   conshdlrdata->ndecomps = 0;
    conshdlrdata->maxndetectionrounds = 0;
    conshdlrdata->maxnclassesperclassifier = 0;
    conshdlrdata->maxnclassesperclassifierforlargeprobs = 0;
@@ -1261,9 +1277,16 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
 
    SeeedPtr seeed;
 
+   if( conshdlrdata->seeedpool == NULL )
+      SCIPconshdlrDecompCreateSeeedpool(scip);
+
+   DECdecompSetPresolved(decdecomp, TRUE);
+
    SCIP_CALL( conshdlrdata->seeedpool->createSeeedFromDecomp(decdecomp, &seeed) );
 
    SCIP_CALL( SCIPconshdlrDecompAddSeeed(scip, seeed) );
+
+   DECdecompFree(scip, &decdecomp);
 
    return SCIP_OKAY;
 }
@@ -3381,7 +3404,17 @@ DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+
+   for( int i = 0; i < conshdlrdata->ndecomps; ++i )
+   {
+      DECdecompFree(scip, &conshdlrdata->decdecomps[conshdlrdata->ndecomps - i - 1]);
+   }
+
+   SCIPfreeBlockMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps);
+
    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &conshdlrdata->decdecomps, SCIPconshdlrDecompGetNDecdecomps(scip) ) );
+
+   conshdlrdata->ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip) ;
 
    if( conshdlrdata->seeedpoolunpresolved != NULL )
    {
@@ -3430,10 +3463,8 @@ int SCIPconshdlrDecompGetNDecdecomps(
 
    //SCIPinfoMessage
 
-   conshdlrdata->ndecomps = ndecomps;
-
-   return conshdlrdata->ndecomps;
-}
+   return ndecomps;
+   }
 
 /** returns the data of the provided detector */
 DEC_DETECTORDATA* DECdetectorGetData(
