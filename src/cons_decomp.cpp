@@ -288,6 +288,38 @@ SCIP_Real calcLogarithm(SCIP_Real val)
 }
 
 
+SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
+   SCIP*          scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+     conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   std::vector<int>::const_iterator selectediter = conshdlrdata->selected->begin();
+   std::vector<int>::const_iterator selectediterend = conshdlrdata->selected->end();
+
+   for( ; selectediter != selectediterend; ++selectediter )
+   {
+      conshdlrdata->listall->at(*selectediter)->setSelected(false);
+   }
+
+   conshdlrdata->selected->clear();
+
+   conshdlrdata->selectedexists = FALSE;
+
+   return SCIP_OKAY;
+}
 
 
 SCORETYPE SCIPconshdlrdataGetScoretype(
@@ -811,6 +843,10 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
          delete conshdlrdata->seeedpoolunpresolved;
       conshdlrdata->seeedpoolunpresolved = NULL;
    }
+
+   SCIPconshdlrdataDecompUnselectAll(scip);
+   conshdlrdata->listall->clear();
+
 
    return SCIP_OKAY;
 }
@@ -4106,38 +4142,6 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
 
 
 
-SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
-   SCIP*          scip
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-     conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-      return SCIP_ERROR;
-   }
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   std::vector<int>::const_iterator selectediter = conshdlrdata->selected->begin();
-   std::vector<int>::const_iterator selectediterend = conshdlrdata->selected->end();
-
-   for( ; selectediter != selectediterend; ++selectediter )
-   {
-      conshdlrdata->listall->at(*selectediter)->setSelected(false);
-   }
-
-   conshdlrdata->selected->clear();
-
-   conshdlrdata->selectedexists = FALSE;
-
-   return SCIP_OKAY;
-}
 
 SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
    SCIP*       scip
@@ -5609,9 +5613,8 @@ SCIP_RETCODE DECdetectStructure(
       conshdlrdata->seeedpool = NULL;
    }
 
-
-
    *result = SCIP_DIDNOTRUN;
+
 
    if( SCIPgetNOrigVars(scip) == 0 && SCIPgetNOrigConss(scip) == 0 )
       return SCIP_OKAY;
