@@ -8,6 +8,7 @@ import os
 import argparse
 import time
 import datetime
+from collections import Counter
 from collections import OrderedDict
 
 import pandas as pd
@@ -33,7 +34,8 @@ plotnames = ['complete',
              'time',
              'gap',
              'depth',
-             'nodeID']
+             'nodeID',
+             'vartimes']
 
 def parse_arguments(args):
     """
@@ -81,8 +83,18 @@ def parse_arguments(args):
                         default="nipy_spectral",
                         help='name of the color-map, that is used for the bars (see matplotlib documentation for maps, default is nipy_spectral)')
 
-    parser.add_argument('--lines', action='store_true',
-                        help='enforce lines between pricing-rounds on the plots (default is to not draw lines for rounds, that are too short)')
+    parser.add_argument('--no-farkasline', action='store_true',
+                        help='do not draw the blue line which marks the end of Farkas pricing')
+
+    parser.add_argument('--lines', type=int, choices = range(0,3),
+                        default=1,
+                        help='draw lines between pricing-rounds on the plots (0=never, 1=only for rounds that are not too short, 2=always)')
+
+    parser.add_argument('--aggregate', action = 'store_true',
+                        help='for each pricing round, draw only one aggregated bar in the complete plot')
+
+    parser.add_argument('--gapincomplete', action = 'store_true',
+                        help='draw the gaps in the complete plot')
 
     parser.add_argument('--no-text', action='store_true',
                         help='do not write any text on the plots (such as node or round numbers)')
@@ -291,17 +303,80 @@ def save_plot(fig, plotname, info):
         plt.savefig(filename + dot + str(n) + '.png')
     return
 
-def make_complete_plot(data, info):
+def collect_gap_data(data, root_bounds):
+    """
+    Collect primal/dual bound and gap data per pricing round and problem, in preparation for gap and complete plots
+    :param data: collected pricing data as dataframe
+    :param root_bounds: collected root bounds data; necessary for the calculation of the gap at each round
+    :return: The gap data
+    """
+
+    start_time = time.time()
+
+    # calculate the gap data as combination of pricing statistics and root bounds data
+    if params['gapperround']:
+        gap_data = data.query('(farkas == False) & (node == 1) & (pricing_prob >= 0)').drop(['farkas', 'nVars'], axis = 1).groupby('pricing_round').sum()
+    else:
+        gap_data = data.query('(farkas == False) & (node == 1) & (pricing_prob >= 0)').drop(['farkas', 'nVars'], axis = 1).groupby(['pricing_round','pricing_prob']).sum()
+    rb = root_bounds.copy()
+    rb.iter += gap_data.reset_index().pricing_round.min()
+    rb = rb.rename(columns = {'iter': 'pricing_round'})[['pricing_round','pb','db']].set_index('pricing_round')
+    gap_data = rb.join(gap_data, how = 'inner', lsuffix = '_rb')
+    #gap_data.db = gap_data.db.expanding().max()
+
+    if params['dualoptdiff']:
+        # check if the primal bound is the upper bound
+        primal_is_upper = None
+        if not gap_data.pb.dropna().empty and not gap_data.db.dropna().empty:
+            if gap_data.pb.dropna().iloc[0] > gap_data.db.dropna().iloc[0]:
+                primal_is_upper = True
+            else:
+                primal_is_upper = False
+
+        # calculate the gap itself (normalized to 1 as the largest gap)
+        if primal_is_upper is None:
+            print '    cannot calculate dualoptdiff, since it is not clear if the primal bound is the upper or lower'
+            gap_data['gap'] = abs(gap_data.pb - gap_data.db)
+        elif primal_is_upper:
+            gap_data.db = gap_data.db.cummax()
+            gap_data['gap'] = gap_data.pb.min() - gap_data.db
+        elif not primal_is_upper:
+            gap_data.db = gap_data.db.cummin()
+            gap_data['gap'] = gap_data.db - gap_data.pb.max()
+
+    else:
+        gap_data['gap'] = abs(gap_data.pb - gap_data.db)
+
+    # normalize all finite gaps and set all infinite gaps to one
+    max_gap = gap_data.gap.dropna()[is_fin(gap_data.pb) & is_fin(gap_data.db)].max()
+    gap_data.gap = gap_data.gap / max_gap
+    gap_data.loc[gap_data.gap > 1., 'gap'] = 1.
+    gap_data.loc[gap_data.gap < 0., 'gap'] = 0.
+
+    print '    extracted gap data:', time.time() - start_time
+
+    return gap_data
+
+def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
     """
     Make a complete plot from the structured data
     :param data: dataframe with the collected data
     :param info: dictionary containing information about the data like the name of the instance, the settings & the scip_status
+    :param gap data: collected gap data as dataframe
     :return:
     """
     start_time = time.time()
 
     # set the height of the zero bars
     ymin = -0.15
+
+    # set some colors
+    pricinground_linecolor = 'red'
+    stabround_linecolor = 'orange'
+    farkas_linecolor = 'blue'
+    gap_color = 'red'
+    rootlpsol_color = 'blue'
+    incumbent_color = 'green'
 
     # flat out the data again
     data = data.reset_index()
@@ -310,8 +385,18 @@ def make_complete_plot(data, info):
     # the column pool has no bar and therefore gets no time shift
     data.loc[data.pricing_prob <> -1, 'time'] = data[data.pricing_prob <> -1].time + 0.01
 
-    # calculate the starting time of each round
+    # calculate the starting and ending time of each round
     data['starting_time'] = data.time.cumsum() - data.time
+    data['ending_time'] = data.time.cumsum()
+
+    if (not gap_data is None) and params['gapincomplete']:
+        # calculate data for the gap plot
+        if params['gapperround']:
+            gap_rounds = [x for x in gap_data.index.values]
+        else:
+            gap_rounds = [x[0] for x in gap_data.index.values]
+        x_gap = data[data['pricing_round'].isin(gap_rounds)].drop_duplicates('pricing_round', 'last').ending_time.values
+        y_gap = gap_data.groupby('pricing_round').first()['gap'].values
 
     # set the height of the LP time bars to a maximum value
     data.loc[data.pricing_prob == -2, 'nVars'] = data.nVars.max() * 10
@@ -327,6 +412,18 @@ def make_complete_plot(data, info):
     widths = data.time.values
     colors, cmapping = get_colmap(data.pricing_prob.values, consider_masterlptime = False)
 
+    # define positions for incumbent and root lp solution plots
+    rootlpsol_times_cnt = Counter(rootlpsol_times)
+    incumbent_times_cnt = Counter(incumbent_times)
+    incumbent_times_bottoms = list()
+    for t in incumbent_times_cnt.keys():
+        if t in rootlpsol_times_cnt.keys():
+            incumbent_times_bottoms.append(-rootlpsol_times_cnt[t])
+        else:
+            incumbent_times_bottoms.append(ymin)
+            incumbent_times_cnt[t] += ymin
+    ymin_ncols = min([s-t for (s,t) in zip(incumbent_times_bottoms, incumbent_times_cnt.values())])
+
     # sometimes we need just the height of the bars of the pricing problems
     y_pricers = (data[data.pricing_prob >= 0].nVars - ymin).values
 
@@ -340,10 +437,18 @@ def make_complete_plot(data, info):
         lw = 0.01
     else:
         lw = 1.0
-    ax.bar(x, y, widths, bottom = ymin, align = 'edge', linewidth = lw, edgecolor = 'white', color = colors, label='pricing problems')
+    ax.bar(x, y, widths, bottom = ymin, align = 'edge', linewidth = lw, edgecolor = 'white', color = colors, label='Pricing problems')
 
     # add the column pool data as a scatter plot
-    cp_scatter = ax.scatter(x_colpool, y_colpool, color = 'green', marker = 'o', s = 100, zorder = 10, label = 'column pool')
+    cp_scatter = ax.scatter(x_colpool, y_colpool, color = 'green', marker = 'o', s = 100, zorder = 10, label = 'Column Pool')
+
+    ax.bar(rootlpsol_times_cnt.keys(), width=lw, height=[-t-ymin for t in rootlpsol_times_cnt.values()], bottom = ymin, align = 'edge', color = rootlpsol_color, label='Root LP Sol')
+    ax.bar(incumbent_times_cnt.keys(), width=lw, height=[-t for t in incumbent_times_cnt.values()], bottom = incumbent_times_bottoms, align = 'edge', color = incumbent_color, label='Incumbent')
+
+    if (not gap_data is None) and params['gapincomplete']:
+        # add the gap plot
+        ax2 = ax.twinx()
+        gap_plot = ax2.plot(x_gap, y_gap, 'k--', color = gap_color, linewidth = 10.0, label = 'Gap')
 
     print '    data plotted:', time.time() - start_time
     start_time = time.time()
@@ -367,13 +472,17 @@ def make_complete_plot(data, info):
     xmax = x[-1]+widths[-1]
 
     # formatting
-    ax.set_ylim([ymin,ymax])
+    ax.set_ylim([ymin_ncols,ymax])
     ax.set_xlim([xmin,xmax])
     ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True, nbins = 15))
     ax.tick_params(axis = 'both', length = textsize/2, width = textsize/40, labelsize = textsize*0.9, pad = 15)
     ax.set_xlabel('Time / s', size = 1.15*textsize)
     ax.set_ylabel('\# of variables', size = 1.15*textsize)
     trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+    if (not gap_data is None) and params['gapincomplete']:
+        ax2.set_ylim([ymin_ncols/ymax-0.01, 1.01])
+        ax2.tick_params(axis = 'both', length = textsize/2, width = textsize/40, labelsize = textsize*0.9, pad = 15)
+        ax2.set_ylabel('Gap', size = 1.15*textsize)
 
     print '    data formatted:', time.time() - start_time
     start_time = time.time()
@@ -390,10 +499,10 @@ def make_complete_plot(data, info):
 
     # special cases: no or only (initial) farkas pricing in the plot
     if data.farkas.all():
-        ax.text(.991, .99, "\it{Initial Farkas Pricing did not end}", va = 'top', ha = 'right', rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = ax.transAxes, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
+        ax.text(.991, .99, "\it{Initial Farkas Pricing did not end}", va = 'top', ha = 'right', rotation = 0, color = farkas_linecolor, zorder = 11, size = textsize * .95, transform = ax.transAxes, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
         farkasLine = True
     elif not data.farkas.any():
-        ax.text(.009, .99, "\it{No initial Farkas Pricing}", va = 'top', ha = 'left', rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = ax.transAxes, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
+        ax.text(.009, .99, "\it{No initial Farkas Pricing}", va = 'top', ha = 'left', rotation = 0, color = farkas_linecolor, zorder = 11, size = textsize * .95, transform = ax.transAxes, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
         farkasLine = True
     else:
         # add a line at the end of farkas pricing in the loop below
@@ -409,19 +518,21 @@ def make_complete_plot(data, info):
     for pos,rnd,far in zip(data.drop_duplicates(['pricing_round','stab_round']).starting_time, data.drop_duplicates(['pricing_round','stab_round']).pricing_round, data.drop_duplicates(['pricing_round','stab_round']).farkas):
         if rnd > prev_rnd:
             # bold line for a new pricing round
-            if params['lines'] or (pos - prev_x_drawn)/totalTime > 0.002 or (not farkasLine and not far):
-                line = lines.Line2D([pos,pos],[0,1],color='r',linewidth=1.0, transform = trans)
+            if params['lines'] == 2 or (params['lines'] == 1 and (pos - prev_x_drawn)/totalTime > 0.002) or (not params['no_farkasline'] and not farkasLine and not far):
+                line = lines.Line2D([pos,pos],[0,1],color=pricinground_linecolor,linewidth=1.0, transform = trans)
                 # blue line at the end of farkas pricing
                 if not farkasLine and not far:
-                    line.set_color('blue')
-                    if pos <= (xmax + xmin) / 2:
-                        align = 'left'
-                    else:
-                        align = 'right'
-                    ax.text(pos, .99, "\it{End of initial Farkas Pricing}", va = 'top', ha = align, rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = trans, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
-                    farkasLine = True
+                    line.set_color(farkas_linecolor)
                 ax.add_line(line)
                 prev_x_drawn = pos
+            # text for initial Farkas pricing
+            if not farkasLine and not far:
+                if pos <= (xmax + xmin) / 2:
+                    align = 'left'
+                else:
+                    align = 'right'
+                ax.text(pos, .99, "\it{End of initial Farkas Pricing}", va = 'top', ha = align, rotation = 0, color = farkas_linecolor, zorder = 11, size = textsize * .95, transform = trans, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
+                farkasLine = True
             # write the round number, if there is space for it
             if len(texts) == 0 or get_x1_in_data(texts[-1], fig) < prev_x:
                 texts.append(ax.text(prev_x, 1.01, str(prev_rnd), rotation='vertical',va='bottom', ha='left', size = textsize, transform = trans))
@@ -429,8 +540,8 @@ def make_complete_plot(data, info):
             prev_x = pos
         else:
             # dashed line for a new stabilization round
-            if params['lines'] or (pos - prev_x_drawn)/totalTime > 0.0005:
-                line = lines.Line2D([pos,pos],[0,1],color='orange',linestyle='--',linewidth=0.8, transform = trans)
+            if params['lines'] == 2 or (params['lines'] == 1 and (pos - prev_x_drawn)/totalTime > 0.0005):
+                line = lines.Line2D([pos,pos],[0,1],color=stabround_linecolor,linestyle='--',linewidth=0.8, transform = trans)
                 ax.add_line(line)
                 prev_x_drawn = pos
     if len(texts) == 0 or get_x1_in_data(texts[-1], fig) < prev_x:
@@ -465,11 +576,23 @@ def make_complete_plot(data, info):
     start_time = time.time()
 
     # draw a legend, but do not include more than 25 pricing problems
-    patches = [mpatches.Patch(color = cmapping[p], label = 'pricing problem ' + str(p)) for p in cmapping]
-    patches[0].set_label('Master LP Time')
+    if -2 in data.pricing_prob.values:
+        patches = [mpatches.Patch(color = cmapping[p], label = 'Pricing Problem ' + str(p)) for p in cmapping]
+        patches[0].set_label('Master LP Time')
+        if params['aggregate']:
+            patches[1].set_label('Pricing Problems')
+    else:
+        patches = [mpatches.Patch(color = cmapping[p], label = 'Pricing Problem ' + str(p)) for p in cmapping]
+        if params['aggregate']:
+            patches[0].set_label('Pricing Problems')
     if len(patches) > 31:
         patches = patches[:31] + [mpatches.Patch(color = 'white', alpha = 0, label = '...')]
-    handles = patches + [lines.Line2D([0,0], [0,1], color = 'red', linewidth = 2., label = 'pricing round'), lines.Line2D([0,0], [0,1], color = 'orange', linestyle = '--', linewidth = 1.6, label = 'stabilization round'), cp_scatter]
+    handles = patches + [cp_scatter]
+    if params['lines'] > 0:
+        handles += [lines.Line2D([0,0], [0,1], color = pricinground_linecolor, linewidth = 2., label = 'Pricing Round'), lines.Line2D([0,0], [0,1], color = stabround_linecolor, linestyle = '--', linewidth = 1.6, label = 'Mis-price Iteration')]
+    if params['gapincomplete']:
+        handles += [lines.Line2D([0,0], [0,1], color = gap_color, linestyle = '--', linewidth = 6., label = 'Gap')]
+    handles += [lines.Line2D([0,0], [0,1], color = rootlpsol_color, linewidth = 4., label = 'Root LP Sol'), lines.Line2D([0,0], [0,1], color = incumbent_color, linewidth = 4., label = 'Incumbent')]
     plt.legend(handles = handles, bbox_to_anchor = (1.02, .915), loc = 2, fontsize = textsize)
 
     # add other information
@@ -922,65 +1045,26 @@ def make_time_plot(data, info):
     print '    close time plot:', time.time() - start_time
     start_time = time.time()
 
-def make_gap_plot(data, info, root_bounds):
+def make_gap_plot(gap_data, info):
     """
     For each instance create a plot, comparing the solving time of a pricing problem with the size of the gap in the root node
-    :param data: collected pricing data as dataframe
+    :param gap data: collected gap data as dataframe
     :param info: dictionary containing information about the data like the name of the instance, the settings & the scip_status
-    :param root_bounds: collected root bounds data; necessary for the calculation of the gap at each round
     :return:
     """
     start_time = time.time()
 
-    # calculate the gap data as combination of pricing statistics and root bounds data
-    if params['gapperround']:
-        gap_data = data.query('(farkas == False) & (node == 1) & (pricing_prob >= 0)').drop(['farkas', 'nVars'], axis = 1).groupby('pricing_round').sum()
-    else:
-        gap_data = data.query('(farkas == False) & (node == 1) & (pricing_prob >= 0)').drop(['farkas', 'nVars'], axis = 1).groupby(['pricing_round','pricing_prob']).sum()
-    rb = root_bounds.copy()
-    rb.iter += gap_data.reset_index().pricing_round.min()
-    rb = rb.rename(columns = {'iter': 'pricing_round'})[['pricing_round','pb','db']].set_index('pricing_round')
-    gap_data = rb.join(gap_data, how = 'inner', lsuffix = '_rb')
-    #gap_data.db = gap_data.db.expanding().max()
-
-    if params['dualoptdiff']:
-        # check if the primal bound is the upper bound
-        primal_is_upper = None
-        if not gap_data.pb.dropna().empty and not gap_data.db.dropna().empty:
-            if gap_data.pb.dropna().iloc[0] > gap_data.db.dropna().iloc[0]:
-                primal_is_upper = True
-            else:
-                primal_is_upper = False
-
-        # calculate the gap itself (normalized to 1 as the largest gap)
-        if primal_is_upper is None:
-            print '    cannot calculate dualoptdiff, since it is not clear if the primal bound is the upper or lower'
-            gap_data['gap'] = abs(gap_data.pb - gap_data.db)
-        elif primal_is_upper:
-            gap_data['gap'] = gap_data.pb.min() - gap_data.db
-        elif not primal_is_upper:
-            gap_data['gap'] = gap_data.db - gap_data.pb.max()
-
-    else:
-        gap_data['gap'] = abs(gap_data.pb - gap_data.db)
-
-    # normalize all finite gaps and set all infinite gaps to one
-    max_gap = gap_data.gap.dropna()[is_fin(gap_data.pb) & is_fin(gap_data.db)].max()
-    gap_data.gap = gap_data.gap / max_gap
-    gap_data.loc[gap_data.gap > 1., 'gap'] = 1.
-    gap_data.loc[gap_data.gap < 0., 'gap'] = 0.
-
-    gap_data = gap_data.sort_values('time')
-    mean_data = gap_data['gap'].groupby(gap_data.time.apply(lambda x: round(x,2))).mean()
+    time_gap_data = gap_data.sort_values('time')
+    mean_data = time_gap_data['gap'].groupby(time_gap_data.time.apply(lambda x: round(x,2))).mean()
     if len(mean_data) >= 20:
         mean_data = mean_data.rolling(max(int(.08 * len(mean_data)), 5), center = True).mean()
 
-    print '    extracted gap data:', time.time() - start_time
+    print '    sorted gap data:', time.time() - start_time
     start_time = time.time()
 
     # set x and y values
-    x = gap_data.time.values
-    y = (1 - gap_data.gap).values
+    x = time_gap_data.time.values
+    y = (1 - time_gap_data.gap).values
     x_mean = mean_data.index.values
     y_mean = (1 - mean_data).values
 
@@ -1006,7 +1090,7 @@ def make_gap_plot(data, info, root_bounds):
         color = 'k'
     else:
         ax.set_xlabel('Time of one pricing problem', size = 'large')
-        color = get_colmap(gap_data.index.get_level_values('pricing_prob').tolist())[0]
+        color = get_colmap(time_gap_data.index.get_level_values('pricing_prob').tolist())[0]
     ax.set_ylabel('Gap closed', size = 'large')
     ax.set_ylim([-0.04,1.04])
     ax.tick_params(axis='both', labelsize='large')
@@ -1028,6 +1112,8 @@ def make_gap_plot(data, info, root_bounds):
 
     print '    saved gap plot:', time.time() - start_time
     start_time = time.time()
+
+    del time_gap_data
 
     return
 
@@ -1226,7 +1312,62 @@ def make_depth_plot(info):
 
     return
 
-def plots(data, info, root_bounds = None):
+def make_vartimes_plot(settings, incumbent_times_tot, rootlpsol_times_tot):
+    """
+    Plot a distribution of relative creation times of master variables that are present in incumbent and root lp solutions
+    """
+
+    # set some colors
+    rootlpsol_color = 'blue'
+    incumbent_color = 'green'
+
+    print 'summarize variable creation times'
+
+    start_time = time.time()
+
+    # make the histogram
+    fig = plt.gcf()
+    ax = plt.gca()
+    if not params['png']:
+        lw = 0.01
+    else:
+        lw = 1.0
+
+    ax.hist([rootlpsol_times_tot, incumbent_times_tot], 10, stacked=True, color = [rootlpsol_color, incumbent_color], edgecolor = 'white', alpha=0.75, label = ['Root LP Sol', 'Incumbent'])
+
+    # set parameters
+    if not params['png']:
+        fig.set_size_inches(8*11.7,8*8.3)
+        textsize = ax.get_window_extent().height * 0.013
+    else:
+        fig.set_size_inches(11.7,8.3)
+        textsize = 12
+
+    # formatting
+#    ax.set_ylim([0.0, 1.0])
+    ax.set_xlim([0.0, 1.0])
+#    ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True, nbins = 15))
+    ax.tick_params(axis = 'both', length = textsize/2, width = textsize/40, labelsize = textsize*0.9, pad = 15)
+    ax.set_xlabel('Relative solution time', size = 1.15*textsize)
+    ax.set_ylabel('\# of variables', size = 1.15*textsize)
+    trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+
+    # draw a legend
+    handles = [lines.Line2D([0,0], [0,1], color = rootlpsol_color, linewidth = 4., label = 'Root LP Sol'), lines.Line2D([0,0], [0,1], color = incumbent_color, linewidth = 4., label = 'Incumbent')]
+    plt.legend(handles = handles, bbox_to_anchor = (1.02, .915), loc = 2, fontsize = textsize)
+
+    # save the figure
+    plt.tight_layout()
+    fig.subplots_adjust(top = 0.98, right = 0.85, left = 0.04)
+    save_plot(fig, 'vartimes', {'instance': "all", 'settings': settings, 'status': "None"})
+    plt.close()
+
+    print '    save:', time.time() - start_time
+    print '    saved figure'
+
+    return
+
+def plots(data, info, incumbent_times, rootlpsol_times, root_bounds = None):
     """
     Master-function for plotting. Splits the data if necessary and calls all plotting functions (or a subset, according to the params)
     :param data: collected data as dataframe
@@ -1238,9 +1379,15 @@ def plots(data, info, root_bounds = None):
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
 
+    # prepare gap data, if necessary
+    if (not root_bounds is None) and (params['no_gap'] or (not params['no_complete'] and params['gapincomplete'])):
+        gap_data = collect_gap_data(data, root_bounds)
+    else:
+        gap_data = None
+
     # plot everything involving root bounds and the b&b-tree if possible and requested
     if not (root_bounds is None or params['no_gap']):
-        make_gap_plot(data, info, root_bounds)
+        make_gap_plot(gap_data, info)
     if not params['no_depth']:
         make_depth_plot(info)
     if not params['no_nodeID']:
@@ -1285,7 +1432,7 @@ def plots(data, info, root_bounds = None):
             make_time_plot(data, info)
         if not params['no_complete']:
             # do not build the complete plot
-            make_complete_plot(data, info)
+            make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times)
     else:
         # split the plots by rounds
         fromRnd = minRnd - 1
@@ -1307,10 +1454,19 @@ def plots(data, info, root_bounds = None):
                 make_time_plot(data, info)
             if not params['no_complete']:
                 # do not build the complete plot
-                make_complete_plot(data, info)
+                make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times)
             fromRnd = toRnd
 
     return
+
+def collect_vartimes(data, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot):
+    """
+    Collects variable creation times of incumbent and root lp solutions over all instances
+    """
+    total_time = data.time.sum()
+
+    incumbent_times_tot += [min(x / total_time, 1.0) for x in incumbent_times]
+    rootlpsol_times_tot += [min(x / total_time, 1.0) for x in rootlpsol_times]
 
 def load_data(files):
     """
@@ -1318,6 +1474,12 @@ def load_data(files):
     :param files: the pickle files, from which the dataframes are to load (one file per instance)
     :return:
     """
+
+    # global statistics over all files
+    settings_global = 'default'
+    incumbent_times_tot = list()
+    rootlpsol_times_tot = list()
+
     for file in files:
         # check if the file exists
         if not os.path.exists(file):
@@ -1340,6 +1502,8 @@ def load_data(files):
         objects = pickle.load(pkl_file)
         df = objects['pricing_data']
         info = objects['info']
+        incumbent_times = objects['incumbent_times']
+        rootlpsol_times = objects['rootlpsol_times']
         if 'root_bounds' in objects and not objects['root_bounds'].empty:
             root_bounds = objects['root_bounds']
         else:
@@ -1351,14 +1515,20 @@ def load_data(files):
         if df.empty:
             print '    no data found'
         else:
+            settings_global = info['settings']
+            collect_vartimes(df, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
             start_time = time.time()
             # call the plotting master method
-            plots(df, info, root_bounds)
+            plots(df, info, incumbent_times, rootlpsol_times, root_bounds)
             print '    total plotting:', time.time() - start_time
         print '    leaving', info['instance']
+
+    if not params['no_vartimes']:
+        make_vartimes_plot(settings_global, incumbent_times_tot, rootlpsol_times_tot)
+
     return
 
-def collect_data(info, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, root_bounds = None):
+def collect_data(info, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot, root_bounds = None):
     """
     Take lists containing the parsed data and structure them in a multiindex dataframe; then save or plot the data.
     All lists have to be of equal length (representing columns in a table)
@@ -1387,14 +1557,15 @@ def collect_data(info, ind_node, ind_pricing_round, ind_stab_round, ind_round, i
         start_time = time.time()
         output = open(params['outdir'] + '/' + info['instance'] + '.' + info['settings'] + '.pkl', 'wb')
         if root_bounds is None:
-            pickle.dump({'pricing_data': df, 'info': info}, output, -1)
+            pickle.dump({'pricing_data': df, 'info': info, 'incumbent_times': incumbent_times, 'rootlpsol_times': rootlpsol_times}, output, -1)
         else:
-            pickle.dump({'pricing_data': df, 'info': info, 'root_bounds': root_bounds}, output, -1)
+            pickle.dump({'pricing_data': df, 'info': info, 'incumbent_times': incumbent_times, 'rootlpsol_times': rootlpsol_times, 'root_bounds': root_bounds}, output, -1)
         output.close()
         print '    total saving:', time.time() - start_time
     else:
+        collect_vartimes(df, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
         start_time = time.time()
-        plots(df, info, root_bounds)
+        plots(df, info, incumbent_times, rootlpsol_times, root_bounds)
         print '    total plotting:', time.time() - start_time
     return
 
@@ -1404,6 +1575,12 @@ def parse_files(files):
     :param files: List of files to be parsed
     :return:
     """
+
+    # global statistics over all files
+    settings_global = 'default'
+    incumbent_times_tot = list()
+    rootlpsol_times_tot = list()
+
     for file in files:
         with open(file) as _file:
             first_line_of_file = True
@@ -1420,7 +1597,7 @@ def parse_files(files):
                                 done = True
                                 continue
                             print '    ended abruptly'
-                            collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                            collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                             print '    leaving', problemFileName
                             done = True
 
@@ -1458,6 +1635,8 @@ def parse_files(files):
                         lptime_begin = 0
                         lptime_end = 0
                         root_bounds_data = pd.DataFrame()
+                        incumbent_times = list()
+                        rootlpsol_times = list()
                     else:
                         # ignore lines, where the output ends abrubtly (e.g. when the hard limit of the check-script is reached)
                         continue
@@ -1471,6 +1650,7 @@ def parse_files(files):
                     settings = line.split()[-1]
                     settings = settings.split("/")[-1]
                     settings = os.path.splitext(settings)[0]
+                    settings_global = settings
 
                 elif not problemFileName and line.startswith("read problem "):
                     # get the problem name from the file name as in "check.awk"
@@ -1500,25 +1680,43 @@ def parse_files(files):
                     scip_status = line.split(':')[1].split('[')[1].split(']')[0].replace(' ','_')
                     continue
 
+                # read variable creation times of incumbent and root solution
+                elif line.startswith("VAR:"):
+                    tmparray = line.split()
+                    time = tmparray[3]
+                    if time == 'time':
+                        continue
+                    solval = float(tmparray[8])
+                    rootlpsolval = float(tmparray[9])
+                    if time == 'time':
+                        continue
+                    if solval > 0.0:
+                        incumbent_times.append(float(time))
+                    if rootlpsolval > 0.0:
+                        rootlpsol_times.append(float(time))
+
                 # read the root bounds table
                 elif line.startswith("Root bounds"):
                     root_bounds = True
 
                 elif root_bounds:
                     if line.startswith('Pricing Summary:'):
-                        # end of the root bounds table; nothing more to read for this instance
-                        root_bounds_data.iter = root_bounds_data.iter.astype('int')
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, root_bounds = root_bounds_data)
                         root_bounds = False
-                        done = True
-                        print '    leaving', problemFileName
-                    elif line.startswith('iter	pb	db	time	dualdiff	dualoptdiff'):
+                    elif line.startswith('iter') or line.startswith(' iter'):
                         # create a dataframe to store the table
                         root_bounds_data = pd.DataFrame(columns = line.split())
                         root_bounds_ind = 0
                     else:
                         root_bounds_data.loc[root_bounds_ind] = [float(s) for s in line.split()]
                         root_bounds_ind += 1
+
+                elif line.startswith("Pricing time in colpool"):
+                    # nothing more to read for this instance
+                    root_bounds_data.iter = root_bounds_data.iter.astype('int')
+                    collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot, root_bounds = root_bounds_data)
+                    done = True
+                    print '    leaving', problemFileName
+                    continue
 
                 # ignore all other lines, that do not contain pricer statistics messages
                 elif not line.startswith("[src/pricer_gcg.cpp:"):
@@ -1533,10 +1731,12 @@ def parse_files(files):
                         pricing_round += 1
                         round_counter += 1
                         stab_round = 0
+                        aggr_time = 0.0
+                        aggr_nVars = 0
                         round_begin = True
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -1560,23 +1760,49 @@ def parse_files(files):
                                 val_farkas.append(val_farkas[-1])
                             round_begin = False
                         else:
+                            if params['aggregate']:
+                                # store all indices
+                                ind_node.append(node)
+                                ind_pricing_round.append(pricing_round)
+                                ind_stab_round.append(stab_round)
+                                ind_round.append(round_counter)
+                                ind_pricing_prob.append(pricing_prob)
+                                # store the data
+                                val_time.append(aggr_time)
+                                val_nVars.append(aggr_nVars)
+                                val_farkas.append(not farkasDone)
+
                             lptime_end = float(message.split()[-1])
                             if lptime_end - lptime_begin > 0.005:
                                 print 'It seems, that the LP time is not constant during a pricing round. Delta t is', lptime_end - lptime_begin
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print '    leaving', problemFileName
                         done = True
                         continue
 
                 elif message.startswith("Stabilization round ") or message.startswith("Sr "):
                     try:
+                        if params['aggregate']:
+                            # store all indices
+                            ind_node.append(node)
+                            ind_pricing_round.append(pricing_round)
+                            ind_stab_round.append(stab_round)
+                            ind_round.append(round_counter)
+                            ind_pricing_prob.append(pricing_prob)
+                            # store the data
+                            val_time.append(aggr_time)
+                            val_nVars.append(aggr_nVars)
+                            val_farkas.append(not farkasDone)
+                            aggr_time = 0.0
+                            aggr_nVars = 0
+
                         stab_round = int(message.split()[-1])
                         round_counter += 1
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -1602,42 +1828,56 @@ def parse_files(files):
                             val_farkas.append(not farkasDone)
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print '    leaving', problemFileName
                         done = True
                         continue
 
                 elif message.startswith("Pricing prob ") or message.startswith("P p "):
                     try:
-                        pricing_prob = int(message.split()[2])
+                        if params['aggregate']:
+                            pricing_prob = 0
+                        else:
+                            pricing_prob = int(message.split()[2])
 
                         # check if the pricing prob should be included in the data
                         if node < params['minnode'] or (0 < params['maxnode'] < node) or pricing_round < params['minround'] or (0 < params['maxround'] < pricing_round):
                             continue
 
-                        # store all indices
-                        ind_node.append(node)
-                        ind_pricing_round.append(pricing_round)
-                        ind_stab_round.append(stab_round)
-                        ind_round.append(round_counter)
-                        ind_pricing_prob.append(pricing_prob)
-
-                        # store the data
-                        val_time.append(float(message.split()[-1]))
-                        if message.startswith("P p "):
-                            val_nVars.append(int(message.split()[-3]))
+                        if params['aggregate']:
+                            # sum up the data over all pricing problems
+                            aggr_time += float(message.split()[-1])
+                            if message.startswith("P p "):
+                                aggr_nVars += int(message.split()[-3])
+                            else:
+                                aggr_nVars += int(message.split()[5])
                         else:
-                            val_nVars.append(int(message.split()[5]))
-                        val_farkas.append(not farkasDone)
+                            # store all indices
+                            ind_node.append(node)
+                            ind_pricing_round.append(pricing_round)
+                            ind_stab_round.append(stab_round)
+                            ind_round.append(round_counter)
+                            ind_pricing_prob.append(pricing_prob)
+
+                            # store the data
+                            val_time.append(float(message.split()[-1]))
+                            if message.startswith("P p "):
+                                val_nVars.append(int(message.split()[-3]))
+                            else:
+                                val_nVars.append(int(message.split()[5]))
+                            val_farkas.append(not farkasDone)
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print '    leaving', problemFileName
                         done = True
                         continue
 
             if not done:
-                collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
+
+    if not params['no_vartimes']:
+        make_vartimes_plot(settings_global, incumbent_times_tot, rootlpsol_times_tot)
 
 def main():
     """Entry point when calling this script"""
