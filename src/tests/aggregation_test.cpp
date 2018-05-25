@@ -49,7 +49,9 @@ class GcgAggregationTest : public ::testing::Test {
      SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
      SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "propagating/maxrounds", 0) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/arrowheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/random/enabled", FALSE) );
      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/staircase/enabled", FALSE) );
      SCIP_CALL_ABORT( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
@@ -123,8 +125,6 @@ TEST_F(GcgAggregationTest, WrongObjTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: <x1>[I] +<x3>[I] == 1") );
 
    SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
-   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detection/detectors/dbscan/enabled", FALSE) );
-   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detection/detectors/mst/enabled", FALSE) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    ASSERT_EQ(SCIP_SUCCESS, result);
 
