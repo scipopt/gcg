@@ -5580,6 +5580,14 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 
    if ( DECdecompGetDetectorChainString( scip, decomp ) != NULL )
       seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
+   else
+   {
+      char decchaininfo[SCIP_MAXSTRLEN];
+      char str1[2] = "\0"; /* gives {\0, \0} */
+      str1[0] = 'U';
+      (void) strncat( decchaininfo, str1, 1 );
+      seeed->setDetectorChainString( decchaininfo );
+   }
 
    /* detectorchaininfo cannot be set in the seeed as the detectors do not store the corresponding strings */
 
