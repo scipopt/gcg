@@ -101,7 +101,7 @@ SCIP_RETCODE GCGpricingjobSetup(
       pricingjob->score = dualsolconv;
       break;
    case 'r':
-      pricingjob->score = 0.2 * npointsprob + nraysprob;
+      pricingjob->score = -(0.2 * npointsprob + nraysprob);
       break;
    case 'l':
       pricingjob->score = (SCIP_Real) GCGpricingprobGetNColsLastRounds(pricingprob, nroundscol);
