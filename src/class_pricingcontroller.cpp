@@ -195,7 +195,13 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
          return 1;
    }
 
-   if( GCGpricingjobGetScore(pricingjob1) >= GCGpricingjobGetScore(pricingjob2) )
+   if( GCGpricingjobGetScore(pricingjob1) > GCGpricingjobGetScore(pricingjob2) )
+      return -1;
+   else if( GCGpricingjobGetScore(pricingjob1) < GCGpricingjobGetScore(pricingjob2) )
+      return 1;
+
+   // @todo: preliminary tie breaking by pricing problem index
+   if( GCGpricingprobGetProbnr(pricingprob1) < GCGpricingprobGetProbnr(pricingprob2) )
       return -1;
    else
       return 1;
