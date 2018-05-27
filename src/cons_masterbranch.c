@@ -1896,7 +1896,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 
    if( !GCGrelaxIsInitialized(scip) )
    {
-      assert(SCIPvarGetData(var) == NULL);
+//      assert(SCIPvarGetData(var) == NULL);
       SCIPdebugMessage("Ignoring since in presolving / propagating.\n");
       return SCIP_OKAY;
    }

@@ -200,7 +200,6 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
-   seeedPropagationData->newSeeeds[0]->setFinishingDetectorPropagated(detector);
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "postprocess");
    seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
@@ -215,7 +214,6 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
    return SCIP_OKAY;
 }
 
-#define detectorPostprocessSeeedPostprocess NULL
 
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressivePostprocess)

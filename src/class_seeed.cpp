@@ -6146,7 +6146,13 @@ void Seeed::setConsClassifierStatistics(
    std::vector<int> consclassesmaster
    )
 {
-   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedClassifier.size() );
+   assert( 0 <= detectorchainindex  );
+
+   if( detectorchainindex >= (int) usedClassifier.size() )
+   {
+      usedClassifier.resize(detectorchainindex + 1);
+      classesToMaster.resize(detectorchainindex + 1);
+   }
 
    usedClassifier[detectorchainindex] = classifier;
    classesToMaster[detectorchainindex] = consclassesmaster;
@@ -6337,7 +6343,15 @@ void Seeed::setVarClassifierStatistics(
    std::vector<int> varclassesmaster
    )
 {
-   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedClassifier.size() );
+   assert( 0 <= detectorchainindex );
+
+   if( detectorchainindex >= (int) usedClassifier.size() )
+    {
+       usedClassifier.resize(detectorchainindex + 1);
+       classesToMaster.resize(detectorchainindex + 1);
+       classesToLinking.resize(detectorchainindex + 1);
+    }
+
 
    usedClassifier[detectorchainindex] = classifier;
    classesToLinking[detectorchainindex] = varclasseslinking;

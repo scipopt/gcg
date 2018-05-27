@@ -262,8 +262,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
        seeed->flushBooked();
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
        seeed->addDetectorChainInfo(decinfo);
-       seeed->setDetectorPropagated(detector);
-       seeed->setConsClassifierStatistics( seeed->getNDetectors() - 1, classifier, curmasterclasses );
+       seeed->setConsClassifierStatistics( seeed->getNDetectors(), classifier, curmasterclasses );
 
        foundseeeds.push_back(seeed);
     }
@@ -563,7 +562,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
    seeed->addDetectorChainInfo(decinfo);
    seeed->setDetectorPropagated(detector);
-   seeed->setConsClassifierStatistics( seeed->getNDetectors() - 1, selectedclassifier, curmasterclasses );
+   seeed->setConsClassifierStatistics( seeed->getNDetectors(), selectedclassifier, curmasterclasses );
 
    foundseeeds.push_back(seeed);
 

@@ -150,7 +150,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
 
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
-   seeed->setDetectorPropagated(detector);
 
    for( int i = 0; i < seeed->getNOpenconss(); ++i)
    {

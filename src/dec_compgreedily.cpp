@@ -1,3 +1,4 @@
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
@@ -159,7 +160,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
 
-   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
@@ -190,7 +190,6 @@ DEC_DECL_FINISHSEEED(finishSeeedCompgreedily)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
-   seeedPropagationData->newSeeeds[0]->setFinishingDetectorPropagated(detector);
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "compgreed");
    seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
@@ -217,10 +216,10 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveCompgreedily)
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
 
    return SCIP_OKAY;

@@ -893,6 +893,12 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
 {
 
    DEC_DETECTORDATA* detectordata;
+   char decinfo[SCIP_MAXSTRLEN];
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
+
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
@@ -908,7 +914,15 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    *result = SCIP_DIDNOTFIND;
 
    detection(scip, detectordata, seeedPropagationData);
-   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
+
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "staircase-lsp");
+   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
+
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
+
 
    delete detectordata->newToOld;
    delete detectordata->oldToNew;
@@ -924,6 +938,12 @@ static
 DEC_DECL_FINISHSEEED(detectorFinishSeeedStaircaseLsp)
 {
    DEC_DETECTORDATA* detectordata;
+   char decinfo[SCIP_MAXSTRLEN];
+
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
@@ -940,6 +960,15 @@ DEC_DECL_FINISHSEEED(detectorFinishSeeedStaircaseLsp)
    *result = SCIP_DIDNOTFIND;
 
    detection(scip, detectordata, seeedPropagationData);
+
+
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "staircase-lsp");
+    seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
+
+    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
 
    delete detectordata->newToOld;
    delete detectordata->oldToNew;

@@ -599,7 +599,7 @@ SCIP_RETCODE detection(
    else
    {
       for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[2*s] );
+         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
    }
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
 
@@ -854,8 +854,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, result);
 
-   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-      seeedPropagationData->newSeeeds[s]->setDetectorPropagated(detector);
 
    return SCIP_OKAY;
 }
@@ -892,6 +890,8 @@ DEC_DECL_FINISHSEEED(finishSeeedHrgpartition)
    {
       seeedPropagationData->newSeeeds[s]->considerImplicits(seeedPropagationData->seeedpool);
       seeedPropagationData->newSeeeds[s]->refineToBlocks(seeedPropagationData->seeedpool);
+      if( seeedPropagationData->newSeeeds[s]->getNOpenconss() != 0 )
+         seeedPropagationData->newSeeeds[s]->completeByConnected(seeedPropagationData->seeedpool);
       assert(seeedPropagationData->newSeeeds[s]->getNOpenconss() == 0);
       assert(seeedPropagationData->newSeeeds[s]->getNOpenvars() == 0);
    }
