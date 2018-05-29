@@ -230,7 +230,7 @@ SCIP_RETCODE GCGincludeBendersPlugins(
    SCIP_CALL( SCIPincludeConcurrentScipSolvers(scip) );
    SCIP_CALL( SCIPincludeBendersDefault(scip) );
 
-   SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
+   //SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
 
    /* including the dialog and display used for the master problem */
    SCIP_CALL( SCIPincludeDialogMaster(scip) );

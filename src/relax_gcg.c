@@ -2085,7 +2085,6 @@ SCIP_RETCODE solveDiagonalBlocks(
    /* solve pricing problems one after the other */
    for( i = 0; i < relaxdata->npricingprobs; ++i )
    {
-      SCIP_Bool infeasible;
 #ifdef SCIP_DEBUG
       char name[SCIP_MAXSTRLEN];
 #endif
@@ -2128,16 +2127,15 @@ SCIP_RETCODE solveDiagonalBlocks(
       SCIP_CALL( SCIPwriteOrigProblem(relaxdata->pricingprobs[i], name, "lp", FALSE) );
 #endif
 
-      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE )
+      /* In Benders' decomposition mode, the subproblems are initialized in SCIP. So the transformed problem must be
+       * freed so that they can be solved as independent subproblems.
+       */
+      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
       {
-         SCIP_CALL( SCIPsolve(relaxdata->pricingprobs[i]) );
+         SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
       }
-      else
-      {
-         assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS);
-         SCIP_CALL( SCIPsolveBendersSubproblem(scip, SCIPfindBenders(relaxdata->masterprob, "gcg"), NULL, i,
-            &infeasible, SCIP_BENDERSENFOTYPE_CHECK, TRUE, NULL) );
-      }
+
+      SCIP_CALL( SCIPsolve(relaxdata->pricingprobs[i]) );
 
       switch( SCIPgetStatus(relaxdata->pricingprobs[i]) )
       {
@@ -2931,6 +2929,15 @@ SCIP_RETCODE relaxExecGcgBendersDecomposition(
     * the execution of the relaxator.
     */
    SCIP_CALL( SCIPgetLongintParam(scip, "limits/nodes", &nodelimit) );
+
+   /* it is possible that the decomposition results in no subproblems. If this occurs, the Benders' decomposition
+    * constraint handlers are disabled
+    */
+   if( relaxdata->npricingprobs == 0 )
+   {
+      SCIP_CALL( SCIPsetBoolParam(masterprob, "constraints/benders/active", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(masterprob, "constraints/benderslp/active", FALSE) );
+   }
 
    /* solving the master problem */
    SCIP_CALL( solveMasterProblem(scip, masterprob, relaxdata, nodelimit, lowerbound, result) );
