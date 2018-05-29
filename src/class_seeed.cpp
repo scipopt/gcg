@@ -4675,6 +4675,7 @@ SCIP_RETCODE Seeed::flushBooked()
 
    bookedIter = bookedAsMasterVars.begin();
    bookedIterEnd = bookedAsMasterVars.end();
+
    for( ; bookedIter != bookedIterEnd; ++ bookedIter )
    {
       setVarToMaster( * bookedIter );

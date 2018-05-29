@@ -893,7 +893,7 @@ SCIP_RETCODE fillDecompStruct(
       }
    }
 
-   SCIPinfoMessage(scip, NULL, "just read blk file:");
+   SCIPinfoMessage(scip, NULL, "just read blk file:\n");
    SCIPconshdlrDecompUserSeeedFlush(scip);
 
 
@@ -1175,9 +1175,20 @@ SCIP_RETCODE SCIPreadBlk(
    SCIP_READER* reader;
    BLKINPUT blkinput;
    int i;
+   char* ext;
+   char  copyfilename[SCIP_MAXSTRLEN];
 
    reader = SCIPfindReader(scip, READER_NAME);
    assert(reader != NULL);
+
+
+   (void) SCIPsnprintf(copyfilename, SCIP_MAXSTRLEN, "%s", filename);
+   SCIPsplitFilename(copyfilename, NULL, NULL, &ext, NULL);
+
+   if ( strcmp(ext, "blk") != 0 )
+   {
+      return SCIP_READERROR;
+   }
 
    /* initialize BLK input data */
    blkinput.file = NULL;

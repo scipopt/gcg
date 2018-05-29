@@ -6442,12 +6442,6 @@ DEC_DECOMP* DECgetBestDecomp(
       seeed = translatedseeeds[0];
    }
 
-
-   assert(seeed->getNLinkingvars() == 0);
-
-   assert(seeed->getNMastervars() == 0);
-
-
    seeedpool->createDecompFromSeeed(seeed, &decomp);
 
 
