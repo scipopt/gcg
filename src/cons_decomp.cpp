@@ -1688,7 +1688,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxChoose(
 }
 
 
-SCIP_RETCODE SCIPconshdlrDecompSelectSelect(
+SCIP_RETCODE SCIPconshdlrDecompExploreSelect(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
    SCIP_DIALOG*            dialog
@@ -1847,7 +1847,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
 
 
 
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please enter selection command or decomposition id to select (or \"h\" for help) : \nGCG/select> ", &command, &endoffile) );
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please enter command or decomposition id to select (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
 
       commandlen = strlen(command);
 
@@ -1921,23 +1921,26 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
 
       if( strncmp( command, "select", commandlen) == 0 )
       {
-         SCIP_CALL(SCIPconshdlrDecompSelectSelect(scip, dialoghdlr, dialog ) );
+         SCIP_CALL(SCIPconshdlrDecompExploreSelect(scip, dialoghdlr, dialog ) );
          continue;
       }
 
       if( strncmp( command, "toolbox", commandlen) == 0 )
       {
          SCIP_CALL( SCIPconshdlrDecompExecToolbox(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
          continue;
       }
       if( strncmp( command, "modify", commandlen) == 0 )
       {
          SCIP_CALL( SCIPconshdlrDecompExecToolboxModify(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
          continue;
       }
       if( strncmp( command, "create", commandlen) == 0 )
       {
          SCIP_CALL( SCIPconshdlrDecompExecToolboxCreate(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
          continue;
       }
    }
@@ -6441,12 +6444,6 @@ DEC_DECOMP* DECgetBestDecomp(
       seeedpool->translateSeeeds(seeedpoolunpresolved, seeedtotranslate, translatedseeeds);
       seeed = translatedseeeds[0];
    }
-
-
-   assert(seeed->getNLinkingvars() == 0);
-
-   assert(seeed->getNMastervars() == 0);
-
 
    seeedpool->createDecompFromSeeed(seeed, &decomp);
 

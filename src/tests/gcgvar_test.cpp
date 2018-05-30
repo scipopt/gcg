@@ -640,7 +640,7 @@ TEST_F(GcgVarTest, LinkingVarCreatePricingVar)
    SCIPvarSetData(ovar, &ovardata);
 
    SCIP_CALL_EXPECT(GCGlinkingVarCreatePricingVar(scip, 0, ovar, &pricingvar));
-
+   GCGlinkingVarCreateMasterCons(scip,0, ovar, &linkcons);
    ASSERT_NE((SCIP_VAR*) NULL, pricingvar);
    ASSERT_NE((SCIP_CONS*) NULL, linkcons);
    ASSERT_EQ(0, SCIPgetNVarsLinear(scip, linkcons));
