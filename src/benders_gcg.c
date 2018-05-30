@@ -325,7 +325,7 @@ SCIP_RETCODE createOriginalProblemSolution(
       /* it is only possible to use the subproblem solutions if the subproblems are enabled. The subproblems are
        * disabled if they have been merged into the master problem.
        */
-      if( SCIPbendersSubprobIsEnabled(benders, i) )
+      if( SCIPbendersSubproblemIsEnabled(benders, i) )
       {
          subproblem = SCIPbendersSubproblem(benders, i);
 
