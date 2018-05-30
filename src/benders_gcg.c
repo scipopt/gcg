@@ -427,7 +427,7 @@ SCIP_RETCODE mergeSubproblemIntoMaster(
    SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(masterprob), SCIPgetNVars(subproblem)) );
    SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(masterprob), SCIPgetNConss(subproblem)) );
 
-   SCIP_CALL( SCIPmergeBendersSubprobIntoMaster(masterprob, benders, varmap, consmap, probnumber) );
+   SCIP_CALL( SCIPmergeBendersSubproblemIntoMaster(masterprob, benders, varmap, consmap, probnumber) );
 
    SCIP_CALL( SCIPgetVarsData(subproblem, &vars, &nvars, NULL, NULL, NULL, NULL) );
    /* copying the variable data from the pricing variables to the newly created master variables */
