@@ -1486,6 +1486,8 @@ SCIP_RETCODE createMasterProblem(
       SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benders/active", TRUE) );
       SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benderslp/active", TRUE) );
       SCIP_CALL( SCIPsetBoolParam(masterscip, "benders/gcg/lnscheck", FALSE) );
+      SCIP_CALL( SCIPsetIntParam(masterscip, "presolving/maxrounds", 1) );
+      SCIP_CALL( SCIPsetIntParam(masterscip, "constraints/benders/maxprerounds", 1) );
 
       /* the trysol heuristic must have a high priority to ensure the solutions found by the relaxator are added to the
        * original problem
@@ -2127,15 +2129,31 @@ SCIP_RETCODE solveDiagonalBlocks(
       SCIP_CALL( SCIPwriteOrigProblem(relaxdata->pricingprobs[i], name, "lp", FALSE) );
 #endif
 
-      /* In Benders' decomposition mode, the subproblems are initialized in SCIP. So the transformed problem must be
-       * freed so that they can be solved as independent subproblems.
-       */
-      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE )
       {
-         SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
+         SCIP_CALL( SCIPsolve(relaxdata->pricingprobs[i]) );
+      }
+      else
+      {
+         SCIP_BENDERS* benders;
+         SCIP_Bool infeasible;
+
+         assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS);
+
+         /* retrieving the Benders' decomposition */
+         benders = SCIPfindBenders(relaxdata->masterprob, "gcg");
+
+         /* since the diagonal blocks are being solved, this indicates that the subproblems are independent. As such, we
+          * can declare this in the Benders' decomposition framework. This allows us to call
+          * SCIPsolveBendersSubproblem() without setting up the problem
+          */
+         SCIPbendersSetSubproblemIsIndependent(benders, i, TRUE);
+
+         /* solving the Benders' decomposition subproblem */
+         SCIP_CALL( SCIPsolveBendersSubproblem(relaxdata->masterprob, benders, NULL, i, &infeasible,
+               SCIP_BENDERSENFOTYPE_CHECK, TRUE, NULL) );
       }
 
-      SCIP_CALL( SCIPsolve(relaxdata->pricingprobs[i]) );
 
       switch( SCIPgetStatus(relaxdata->pricingprobs[i]) )
       {
@@ -2183,7 +2201,23 @@ SCIP_RETCODE solveDiagonalBlocks(
       if( relaxdata->pricingprobs[i] == NULL )
          continue;
 
-      SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
+      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE )
+      {
+         SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
+      }
+      else
+      {
+         SCIP_BENDERS* benders;
+
+         assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS);
+
+         /* retrieving the Benders' decomposition */
+         benders = SCIPfindBenders(relaxdata->masterprob, "gcg");
+
+         /* freeing the Benders' decomposition subproblems */
+         SCIP_CALL( SCIPfreeBendersSubproblem(relaxdata->masterprob, benders, i) );
+      }
+
    }
 
    *result = SCIP_SUCCESS;
