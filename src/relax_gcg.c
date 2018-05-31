@@ -2984,7 +2984,35 @@ SCIP_RETCODE relaxExecGcgBendersDecomposition(
     * problem that no further processing is required.
     */
    if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
+   {
       (*result) = SCIP_CUTOFF;
+
+      /* if there is no primal solution for the original problem, then the master solution is transferred */
+      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && SCIPgetBestSol(scip) == NULL )
+      {
+         SCIP_SOL* newsol;
+         SCIP_Bool stored;
+
+         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, SCIPgetBestSol(relaxdata->masterprob), &newsol) );
+   #ifdef SCIP_DEBUG
+         SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
+   #else
+         SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
+   #endif
+         /* only check failed solution if best master solution is valid */
+         if( !stored && GCGmasterIsBestsolValid(relaxdata->masterprob) )
+         {
+            SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
+         }
+         /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
+          *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
+          */
+         SCIP_CALL( SCIPfreeSol(scip, &newsol) );
+
+         if( stored )
+            SCIPdebugMessage("  updated current best primal feasible solution.\n");
+      }
+   }
 
    /* set the lower bound pointer */
    if( GCGmasterIsCurrentSolValid(masterprob)
