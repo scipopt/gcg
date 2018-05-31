@@ -465,7 +465,7 @@ SCIP_RETCODE GCGprintStatistics(
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
    }
    SCIP_CALL( GCGprintDetectorStatistics(scip, file) );
-   if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING )
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING && GCGgetNPricingprobs(scip) > 0 )
    {
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
       SCIP_CALL( GCGprintDecompStatistics(scip, file) );
