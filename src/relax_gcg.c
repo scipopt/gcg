@@ -1486,10 +1486,8 @@ SCIP_RETCODE createMasterProblem(
       SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benders/active", TRUE) );
       SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benderslp/active", TRUE) );
       SCIP_CALL( SCIPsetBoolParam(masterscip, "benders/gcg/lnscheck", FALSE) );
-#if 0 /* there is a merge request open regarding presolving for Benders' decomposition */
       SCIP_CALL( SCIPsetIntParam(masterscip, "presolving/maxrounds", 1) );
       SCIP_CALL( SCIPsetIntParam(masterscip, "constraints/benders/maxprerounds", 1) );
-#endif
 
       /* the trysol heuristic must have a high priority to ensure the solutions found by the relaxator are added to the
        * original problem
@@ -2089,7 +2087,6 @@ SCIP_RETCODE solveDiagonalBlocks(
    /* solve pricing problems one after the other */
    for( i = 0; i < relaxdata->npricingprobs; ++i )
    {
-      SCIP_Bool infeasible;
 #ifdef SCIP_DEBUG
       char name[SCIP_MAXSTRLEN];
 #endif
@@ -2138,10 +2135,25 @@ SCIP_RETCODE solveDiagonalBlocks(
       }
       else
       {
+         SCIP_BENDERS* benders;
+         SCIP_Bool infeasible;
+
          assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS);
-         SCIP_CALL( SCIPsolveBendersSubproblem(scip, SCIPfindBenders(relaxdata->masterprob, "gcg"), NULL, i,
-            &infeasible, SCIP_BENDERSENFOTYPE_CHECK, TRUE, NULL) );
+
+         /* retrieving the Benders' decomposition */
+         benders = SCIPfindBenders(relaxdata->masterprob, "gcg");
+
+         /* since the diagonal blocks are being solved, this indicates that the subproblems are independent. As such, we
+          * can declare this in the Benders' decomposition framework. This allows us to call
+          * SCIPsolveBendersSubproblem() without setting up the problem
+          */
+         SCIPbendersSetSubproblemIsIndependent(benders, i, TRUE);
+
+         /* solving the Benders' decomposition subproblem */
+         SCIP_CALL( SCIPsolveBendersSubproblem(relaxdata->masterprob, benders, NULL, i, &infeasible,
+               SCIP_BENDERSENFOTYPE_CHECK, TRUE, NULL) );
       }
+
 
       switch( SCIPgetStatus(relaxdata->pricingprobs[i]) )
       {
@@ -2189,7 +2201,23 @@ SCIP_RETCODE solveDiagonalBlocks(
       if( relaxdata->pricingprobs[i] == NULL )
          continue;
 
-      SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
+      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE )
+      {
+         SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
+      }
+      else
+      {
+         SCIP_BENDERS* benders;
+
+         assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS);
+
+         /* retrieving the Benders' decomposition */
+         benders = SCIPfindBenders(relaxdata->masterprob, "gcg");
+
+         /* freeing the Benders' decomposition subproblems */
+         SCIP_CALL( SCIPfreeBendersSubproblem(relaxdata->masterprob, benders, i) );
+      }
+
    }
 
    *result = SCIP_SUCCESS;
@@ -2936,6 +2964,15 @@ SCIP_RETCODE relaxExecGcgBendersDecomposition(
     */
    SCIP_CALL( SCIPgetLongintParam(scip, "limits/nodes", &nodelimit) );
 
+   /* it is possible that the decomposition results in no subproblems. If this occurs, the Benders' decomposition
+    * constraint handlers are disabled
+    */
+   if( relaxdata->npricingprobs == 0 )
+   {
+      SCIP_CALL( SCIPsetBoolParam(masterprob, "constraints/benders/active", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(masterprob, "constraints/benderslp/active", FALSE) );
+   }
+
    /* solving the master problem */
    SCIP_CALL( solveMasterProblem(scip, masterprob, relaxdata, nodelimit, lowerbound, result) );
 
@@ -2947,7 +2984,35 @@ SCIP_RETCODE relaxExecGcgBendersDecomposition(
     * problem that no further processing is required.
     */
    if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
+   {
       (*result) = SCIP_CUTOFF;
+
+      /* if there is no primal solution for the original problem, then the master solution is transferred */
+      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && SCIPgetBestSol(scip) == NULL )
+      {
+         SCIP_SOL* newsol;
+         SCIP_Bool stored;
+
+         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, SCIPgetBestSol(relaxdata->masterprob), &newsol) );
+   #ifdef SCIP_DEBUG
+         SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
+   #else
+         SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
+   #endif
+         /* only check failed solution if best master solution is valid */
+         if( !stored && GCGmasterIsBestsolValid(relaxdata->masterprob) )
+         {
+            SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
+         }
+         /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
+          *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
+          */
+         SCIP_CALL( SCIPfreeSol(scip, &newsol) );
+
+         if( stored )
+            SCIPdebugMessage("  updated current best primal feasible solution.\n");
+      }
+   }
 
    /* set the lower bound pointer */
    if( GCGmasterIsCurrentSolValid(masterprob)
