@@ -543,7 +543,7 @@ $(OBJDIR)/%.o:	$(SRCDIR)/%.cpp | $(OBJDIR) $(LIBOBJSUBDIRS)
 .PHONY: makegcglibfile
 makegcglibfile:  touchexternal $(GCGLIBFILE)
 
-$(GCGLIBFILE):	$(GCGLIBOBJFILES)
+$(GCGLIBFILE):	$(LIBDIR) $(LIBDIR)/static $(LIBDIR)/shared $(GCGLIBOBJFILES)
 		@echo "-> generating library $@"
 		-rm -f $@
 		$(LIBBUILD) $(LIBBUILDFLAGS) $(LIBBUILD_o)$@ $(GCGLIBOBJFILES)
