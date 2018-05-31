@@ -45,15 +45,27 @@
 #include "cons_decomp.h"
 #include "pub_decomp.h"
 #include "scip/clock.h"
+#include "scip/misc.h"
 #include <string.h>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "random"    /**< name of detector */
-#define DEC_DESC                 "Random structure detection" /**< description of detector */
-#define DEC_PRIORITY             -10         /**< priority of the constraint handler for separation */
-#define DEC_DECCHAR              'r'         /**< display character of detector */
-#define DEC_ENABLED              FALSE       /**< should the detection be enabled */
-#define DEC_SKIP                 FALSE       /**< should detector be skipped if others found detections */
+#define DEC_DETECTORNAME          "random"    /**< name of detector */
+#define DEC_DESC                  "Random structure detection" /**< description of detector */
+#define DEC_PRIORITY              -10         /**< priority of the constraint handler for separation */
+#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_DECCHAR               'R'         /**< display character of detector */
+#define DEC_ENABLED               FALSE       /**< should the detection be enabled */
+#define DEC_ENABLEDORIGINAL       FALSE       /**< should the detection of the original problem be enabled */
+#define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
+#define DEC_SKIP                  FALSE       /**< should detector be skipped if others found detections */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 #define DEFAULT_MAXBLOCKS        -1          /**< the maximal number of blocks, -1 defaults to average number of constraints */
 #define DEFAULT_AVGCONSPERBLOCK  100         /**< average constraints per block to limit the maximal block number */
@@ -183,7 +195,7 @@ DEC_DECL_INITDETECTOR(detectorInitRandom)
 
    /* create random number generator */
    SCIP_CALL( SCIPcreateRandom(scip, &detectordata->randnumgen,
-         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
+         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED), TRUE) );
 
    return SCIP_OKAY;
 }
@@ -203,6 +215,7 @@ DEC_DECL_EXITDETECTOR(detectorExitRandom)
    assert(detectordata != NULL);
 
    /* free random number generator */
+
    SCIPfreeRandom(scip, &detectordata->randnumgen);
 
    return SCIP_OKAY;
@@ -230,20 +243,34 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectRandom)
       SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[0])) );
 
       SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[0], detectordata->constoblock, detectordata->nblocks, FALSE) );
+
+      /* delete, debugging */
+      SCIP_CALL( DECdecompCheckConsistency( scip, (*decdecomps)[0] ) );
+
       *ndecdecomps = 1;
 
-      detectordata->constoblock = NULL;
       *result = SCIP_SUCCESS;
    }
    else
    {
-      SCIPhashmapFree(&detectordata->constoblock);
-      detectordata->constoblock = NULL;
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
    }
 
+   /* do not free hashmap since this would also delete assignments in decdecomps */
+   // SCIPhashmapFree(&detectordata->constoblock);
+   detectordata->constoblock = NULL;
+
    return SCIP_OKAY;
 }
+
+#define detectorPropagateSeeedRandom NULL
+#define detectorFinishSeeedRandom NULL
+#define detectorPostprocessSeeedRandom NULL
+
+
+#define setParamAggressiveRandom NULL
+#define setParamDefaultRandom NULL
+#define setParamFastRandom NULL
 
 /*
  * detector specific interface methods
@@ -261,12 +288,13 @@ SCIP_RETCODE SCIPincludeDetectorRandom(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectorDetectRandom, detectorFreeRandom, detectorInitRandom, detectorExitRandom) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
+      detectordata, detectorDetectRandom, detectorFreeRandom, detectorInitRandom, detectorExitRandom, detectorPropagateSeeedRandom, NULL, NULL, detectorFinishSeeedRandom, detectorPostprocessSeeedRandom, setParamAggressiveRandom, setParamDefaultRandom, setParamFastRandom) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/maxblocks", "the maximal number of blocks, -1 defaults to avgconsperblock",
+
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/random/maxblocks", "the maximal number of blocks, -1 defaults to avgconsperblock",
       &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, -1, INT_MAX, NULL, NULL ) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/avgconsperblock", "average constraints per block",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/random/avgconsperblock", "average constraints per block",
       &detectordata->avgconsperblock, FALSE, DEFAULT_AVGCONSPERBLOCK, 1, 10000, NULL, NULL ) );
 
    return SCIP_OKAY;

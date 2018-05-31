@@ -69,6 +69,48 @@ SCIP_RETCODE GCGprintStatistics(
    FILE*                 file                /**< output file or NULL for standard output */
 );
 
+/** print out complete detection statistics */
+SCIP_RETCODE GCGprintCompleteDetectionStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+);
+
+
+SCIP_RETCODE GCGprintInstanceName(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+);
+
+SCIP_RETCODE GCGprintMiplibStructureInformation(
+   SCIP*                scip,
+   SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */
+   );
+
+
+
+SCIP_RETCODE GCGprintBlockcandidateInformation(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+);
+
+SCIP_RETCODE GCGprintCompleteDetectionTime(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+);
+
+
+SCIP_RETCODE GCGprintClassifierInformation(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+);
+
+SCIP_RETCODE GCGprintDecompInformation(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+);
+
+
+
 /** gets the total memory used after problem creation stage for all pricingproblems */
 extern
 SCIP_Real GCGgetPricingprobsMemUsed(
@@ -114,6 +156,11 @@ SCIP_Bool GCGisConsGCGCons(
    SCIP_CONS*            cons                /**< constraint to check */
    );
 
+
+/** returns the original problem for the given master problem */
+SCIP* GCGgetOriginalprob(
+   SCIP*                 masterprob          /**< the SCIP data structure for the master problem */
+   );
 
 /** returns the master problem */
 extern
@@ -219,11 +266,24 @@ void GCGsetStructDecdecomp(
    DEC_DECOMP*           decdecomp           /**< decomposition data structure */
    );
 
+/** sets the filename information*/
+SCIP_RETCODE GCGsetFilename(
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           filename           /**< input file name */
+   );
+
+
 /** gets the structure information */
 extern
 DEC_DECOMP* GCGgetStructDecdecomp(
    SCIP*                 scip                /**< SCIP data structure */
    );
+
+/** sets the filename information*/
+const char* GCGgetFilename(
+   SCIP*                 scip               /**< SCIP data structure */
+   );
+
 
 /** returns whether the relaxator has been initialized */
 extern
@@ -260,6 +320,19 @@ extern
 int GCGgetNTransvars(
    SCIP*                 scip                /**< SCIP data structure */
   );
+
+/** returns the auxiliary variable for the given pricing probblem */
+extern
+SCIP_VAR* GCGgetAuxiliaryVariable(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   );
+
+/** returns the relaxation solution from the Benders' decomposition */
+extern
+SCIP_SOL* GCGgetBendersRelaxationSol(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
 
 #ifdef __cplusplus
 }

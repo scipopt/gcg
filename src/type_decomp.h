@@ -54,6 +54,17 @@ enum Dectype
 
 typedef enum Dectype DEC_DECTYPE; /**< decomposition type */
 
+/** the decomposition mode */
+enum Decmode
+{
+   DEC_DECMODE_DANTZIGWOLFE = 0,             /**< Datizig-Wolfe reformulation */
+   DEC_DECMODE_BENDERS      = 1,             /**< Benders' decomposition */
+   DEC_DECMODE_AUTO         = 2,             /**< the best of either Dantzig-Wolfe or Benders' will be applied */
+   DEC_DECMODE_UNKNOWN      = 3              /**< the mode can not be determined from the given information */
+};
+
+typedef enum Decmode DEC_DECMODE; /**< decomposition mode */
+
 #ifdef __cplusplus
 }
 #endif

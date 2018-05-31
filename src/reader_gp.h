@@ -28,27 +28,16 @@
 /**@file   reader_gp.h
  * @brief  GP file reader writing gnuplot files
  * @author Martin Bergner
+ * @author Hanna Franzen
  * @ingroup FILEREADERS
  *
- * This file reader will write the decomposed or original matrix to a file usuable by gnuplot. You can use this writer
- * like and other writer.
- *
- * To display your decomposition, you can write the following in the interactive shell
- * \verbatim
-GCG> write problem "prob.gp"
-\endverbatim
- * If you use this command before reading in a decomposition, you will get a picture of the original matrix. If you
- * call the writer after a decomposition was specified or detected, it will write out a picture of the structured,
- * reordered matrix  where the structure is further highlighted indicated by boxes. You can create a PDF file by then
- * calling <code>gnuplot prob.gp</code> from your systems command line. This will create a pdf file in your current
- * directory which contains the image.
+ * This reader can write visualizations of seeeds to a .gp file.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #ifndef GCG_READER_GP_H__
 #define GCG_READER_GP_H__
-
 
 #include "scip/scip.h"
 #include "type_decomp.h"
@@ -57,18 +46,25 @@ GCG> write problem "prob.gp"
 extern "C" {
 #endif
 
+
 /** includes the gp file reader into SCIP */
 extern
 SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** writes the decomposition to the specific file */
-SCIP_RETCODE SCIPwriteGp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
-   SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
+/** writes a visualization for the given seeed */
+extern SCIP_RETCODE GCGwriteGpVisualization(
+   SCIP* scip,             /**< SCIP data structure */
+   char* filename,         /**< filename (including path) to write to */
+   char* outputname,       /**< filename for compiled output file */
+   int seeedid             /**< id of seeed to visualize */
+   );
+
+/** makes a new makefile and readme for the given .gp file */
+extern SCIP_RETCODE GCGgpWriteMakefileAndReadme(
+   SCIP* scip,       /**< SCIP data structure */
+   FILE* file        /**< File for which the makefile & readme are generated */
    );
 
 #ifdef __cplusplus

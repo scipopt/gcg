@@ -88,7 +88,7 @@
 
 #include "scip/presol_implics.h"
 #include "scip/presol_inttobinary.h"
-#include "scip/presol_trivial.h"
+#include "presol_roundbound.h"
 #include "scip/presol_boundshift.h"
 
 #if USEPROP
@@ -152,11 +152,11 @@
 #include "heur_restmaster.h"
 #include "heur_setcover.h"
 
-#ifndef NCLIQUER
+#ifdef WITH_CLIQUER
 #include "solver_cliquer.h"
 #endif
 
-#ifndef NCPLEXSOLVER
+#ifdef WITH_CPLEXSOLVER
 #include "solver_cplex.h"
 #endif
 
@@ -185,7 +185,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludePresolBoundshift(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
-   SCIP_CALL( SCIPincludePresolTrivial(scip) );
+   SCIP_CALL( SCIPincludePresolRoundbound(scip) );
 
 #if USEPROP
    SCIP_CALL( SCIPincludePropDualfix(scip) );
@@ -277,11 +277,11 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( GCGincludeSolverKnapsack(scip) );
    SCIP_CALL( GCGincludeSolverMip(scip) );
 
-#ifndef NCLIQUER
+#ifdef WITH_CLIQUER
    SCIP_CALL( GCGincludeSolverCliquer(scip) );
 #endif
 
-#ifndef NCPLEXSOLVER
+#ifdef WITH_CPLEXSOLVER
    SCIP_CALL( GCGincludeSolverCplex(scip) );
 #endif
 

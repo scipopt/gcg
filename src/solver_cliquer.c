@@ -38,18 +38,18 @@
 #include "solver_cliquer.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_varbound.h"
-#include "type_solver.h"
+#include "pub_solver.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 #include "pub_gcgcol.h"
 #include "pub_gcgvar.h"
 
-#include "cliquer.h"
+#include "cliquer/cliquer.h"
 
 
 #define SOLVER_NAME          "cliquer"
 #define SOLVER_DESC          "heuristic solver for pricing problems that solves independent set problems with cliquer"
-#define SOLVER_PRIORITY      500
+#define SOLVER_PRIORITY      150
 
 #define SOLVER_ENABLED       TRUE            /**< indicates whether the solver should be enabled */
 
@@ -460,19 +460,16 @@ SCIP_Real scaleRelativeToMax(
 static
 SCIP_RETCODE solveCliquer(
    SCIP_Bool             exactly,            /**< should the pricing problem be solved to optimality or heuristically? */
+   SCIP*                 scip,               /**< master problem SCIP data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    GCG_SOLVERDATA*       solver,             /**< solver data structure */
    int                   probnr,             /**< problem number */
    SCIP_Real*            lowerbound,         /**< pointer to store lower bound */
-   GCG_COL**             cols,               /**< array of columns corresponding to solutions */
-   int                   maxcols,            /**< size of preallocated array */
-   int*                  ncols,              /**< pointer to store number of columns */
-   SCIP_STATUS*          result              /**< pointer to store pricing problem status */
+   GCG_PRICINGSTATUS*    status              /**< pointer to store pricing problem status */
    )
 { /*lint -e715 */
    SCIP_CONS**    constraints;
    SCIP_CONS**    markedconstraints;
-   SCIP_CONS**    couplingcons;
    SCIP_CONSHDLR* conshdlr;
    SCIP_VAR**     lconsvars;
    SCIP_VAR**     vconsvars;
@@ -497,14 +494,17 @@ SCIP_RETCODE solveCliquer(
    int            nodeindex0;
    int            nodeindex1;
    int            coefindex;
-   int            i,j,k;
+   GCG_COL*       col;
 
+   int            i;
+   int            j;
+   int            k;
+
+   assert(scip != NULL);
    assert(pricingprob != NULL);
    assert(solver != NULL);
    assert(lowerbound != NULL);
-   assert(cols != NULL);
-   assert(ncols != NULL);
-   assert(result != NULL);
+   assert(status != NULL);
 
    pricingprobvars = SCIPgetVars(pricingprob);
    npricingprobvars = SCIPgetNVars(pricingprob);
@@ -516,7 +516,7 @@ SCIP_RETCODE solveCliquer(
    if( SCIPgetNBinVars(pricingprob) < npricingprobvars )
    {
       SCIPdebugMessage("Exit: Nonbinary variables.\n");
-      *result = SCIP_STATUS_UNKNOWN;
+      *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
       return SCIP_OKAY;
    }
 
@@ -537,7 +537,6 @@ SCIP_RETCODE solveCliquer(
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&indsetvars,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&solvals,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&vconsvars,2) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&couplingcons,nconss) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkedvars,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkmatrix,npricingprobvars) );
    for( i = 0; i < npricingprobvars; ++i )
@@ -723,7 +722,7 @@ SCIP_RETCODE solveCliquer(
                   {
                      /* More than one variable has a coefficient unequal to 1 */
                      SCIPdebugMessage("Exit: More than one coefficient unequal 1.\n");
-                     *result = SCIP_STATUS_UNKNOWN;
+                     *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
                      goto TERMINATE;
                   }
                }
@@ -815,7 +814,7 @@ SCIP_RETCODE solveCliquer(
                   {
                      /* Coupling coefficient is between 1 and npricingprobvars. */
                      SCIPdebugMessage("Exit: Coupling coefficient unhandled, coef: %g.\n",consvals[coefindex]);
-                     *result = SCIP_STATUS_UNKNOWN;
+                     *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
                      goto TERMINATE;
                   }
                }
@@ -823,7 +822,7 @@ SCIP_RETCODE solveCliquer(
                {
                   /* Constraint is neither a coupling nor a clique constraint */ 
                   SCIPdebugMessage("Exit: Unhandled linear constraint.\n");
-                  *result = SCIP_STATUS_UNKNOWN;
+                  *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
                   goto TERMINATE;
                }
             }
@@ -832,7 +831,7 @@ SCIP_RETCODE solveCliquer(
          {
             /* Constraint is a linear equality constraint */ 
             SCIPdebugMessage("Exit: Unhandled linear constraint: Equality constraint.\n");
-            *result = SCIP_STATUS_UNKNOWN;
+            *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
             goto TERMINATE;
          }
       }
@@ -873,7 +872,7 @@ SCIP_RETCODE solveCliquer(
                {
                   /* Coefficient c of varbound is > -1 and we do not have an IS constraint*/ 
                   SCIPdebugMessage("Exit: Coefficient of Varbound unhandled Rhs: %g, Coeff: %g.\n",SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]));
-                  *result = SCIP_STATUS_UNKNOWN;
+                  *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
                   goto TERMINATE;
                }
             }
@@ -927,7 +926,7 @@ SCIP_RETCODE solveCliquer(
             {
                /* Rhs of varbound unequal to 0 and no IS constraint*/ 
                SCIPdebugMessage("Exit: Rhs of Varbound unhandled, Rhs: %g, Coeff:%g.\n",SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]));
-               *result = SCIP_STATUS_UNKNOWN;
+               *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
                goto TERMINATE;
             }
          }
@@ -939,7 +938,7 @@ SCIP_RETCODE solveCliquer(
             {
                /* RHS is unequal 0 and unequal 1 */
                SCIPdebugMessage("Exit: Unhandled equality constraint, c: %g, rhs: %g.\n", SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]));
-               *result = SCIP_STATUS_UNKNOWN;
+               *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
                goto TERMINATE;
             }
          }
@@ -948,7 +947,7 @@ SCIP_RETCODE solveCliquer(
             /* We have a varbound of type lhs <= x + c*y */
             SCIPdebugMessage("Exit: Varbound of type lhs <= x+c*y, c: %g, rhs: %g.\n", SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]));
             SCIPdebugMessage("Constraint handler: %s\n", SCIPconshdlrGetName(conshdlr));
-            *result = SCIP_STATUS_UNKNOWN;
+            *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
             goto TERMINATE; 
          }
       }
@@ -956,7 +955,7 @@ SCIP_RETCODE solveCliquer(
       {
          /* Constraint handler neither linear nor varbound */
          SCIPdebugMessage("Exit: Unhandled constraint handler: %s \n", SCIPconshdlrGetName(conshdlr));
-         *result = SCIP_STATUS_UNKNOWN;
+         *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
          goto TERMINATE;        
       }
    }
@@ -983,7 +982,7 @@ SCIP_RETCODE solveCliquer(
    if( SCIPisLT(pricingprob, (float)nedges/((float)(g->n - 1) * (g->n) / 2), solver->density) )
    {
       SCIPdebugMessage("Exit: Density criteria not met,density: %g.\n",(float)nedges / ((float)(g->n - 1) * (g->n) / 2));
-      *result = SCIP_STATUS_UNKNOWN;
+      *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
       goto TERMINATE;
    }
 
@@ -1105,9 +1104,9 @@ SCIP_RETCODE solveCliquer(
    }
 
    /* Create a column corresponding to our clique result */
-   SCIP_CALL( GCGcreateGcgCol(pricingprob,&cols[0],probnr,pricingprobvars,solvals,npricingprobvars,FALSE,SCIPinfinity(pricingprob)) );
-   *ncols = 1;
-   *result = SCIP_STATUS_OPTIMAL;
+   SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, pricingprobvars, solvals, npricingprobvars, FALSE, SCIPinfinity(pricingprob)) );
+   SCIP_CALL( GCGpricerAddCol(scip, col) );
+   *status = GCG_PRICINGSTATUS_UNKNOWN;
    set_free(clique); /* clique can only be freed if non-empty */ 
 
  TERMINATE:
@@ -1117,7 +1116,6 @@ SCIP_RETCODE solveCliquer(
    }
    SCIPfreeBufferArray(pricingprob,&linkmatrix);
    SCIPfreeBufferArray(pricingprob,&linkedvars);
-   SCIPfreeBufferArray(pricingprob,&couplingcons);
    SCIPfreeBufferArray(pricingprob,&vconsvars);
    SCIPfreeBufferArray(pricingprob,&solvals);
    SCIPfreeBufferArray(pricingprob,&indsetvars);
@@ -1140,12 +1138,12 @@ GCG_DECL_SOLVERFREE(solverFreeCliquer)
    assert(scip != NULL);
    assert(solver != NULL);
 
-   solverdata = GCGsolverGetSolverdata(solver);
+   solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
    SCIPfreeMemory(scip, &solverdata);
 
-   GCGsolverSetSolverdata(solver, NULL);
+   GCGsolverSetData(solver, NULL);
 
    return SCIP_OKAY;
 }
@@ -1154,6 +1152,7 @@ GCG_DECL_SOLVERFREE(solverFreeCliquer)
 #define solverExitsolCliquer NULL
 #define solverInitCliquer NULL
 #define solverExitCliquer NULL
+#define solverUpdateCliquer NULL
 #define solverSolveCliquer NULL
 
 /** heuristic solving method of independent set solver */
@@ -1162,10 +1161,11 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCliquer)
 {  /*lint --e{715}*/
    GCG_SOLVERDATA* solverdata;
 
-   solverdata = GCGsolverGetSolverdata(solver);
+   solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
+
    /* solve the independent set problem approximately */
-   SCIP_CALL( solveCliquer(FALSE, pricingprob, solverdata, probnr, lowerbound, cols, maxcols, ncols, result) );
+   SCIP_CALL( solveCliquer(FALSE, scip, pricingprob, solverdata, probnr, lowerbound, status) );
 
    return SCIP_OKAY;
 }
@@ -1179,10 +1179,13 @@ SCIP_RETCODE GCGincludeSolverCliquer(
    GCG_SOLVERDATA* solverdata;
 
    origprob = GCGmasterGetOrigprob(scip);
+   assert(origprob != NULL);
+
    SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
 
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED, solverSolveCliquer,
-         solverSolveHeurCliquer, solverFreeCliquer, solverInitCliquer, solverExitCliquer,
+   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
+         solverUpdateCliquer, solverSolveCliquer, solverSolveHeurCliquer,
+         solverFreeCliquer, solverInitCliquer, solverExitCliquer,
          solverInitsolCliquer, solverExitsolCliquer, solverdata) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/density",

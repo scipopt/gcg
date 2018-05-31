@@ -117,7 +117,7 @@ fi
 # call routines for creating the result directory, checking for existence
 # of passed settings, etc
 VALGRIND="false" # change this to "true" for using valgrind
-. ./configuration_set.sh $BINNAME $TSTNAME $SETNAME $MSETNAME $TIMELIMIT $TIMEFORMAT $MEMLIMIT $MEMFORMAT $VALGRIND
+. ./configuration_set.sh $BINNAME $TSTNAME $SETNAME $MSETNAME $TIMELIMIT $TIMEFORMAT $MEMLIMIT $MEMFORMAT $VALGRIND $STATISTICS
 
 # for RWTH computing projects
 if test "$PROJECT" = "none"

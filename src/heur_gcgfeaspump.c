@@ -42,8 +42,11 @@
 #include "relax_gcg.h"
 #include "gcgplugins.h"
 
+
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
+#include "scip/misc.h"
+
 
 #define HEUR_NAME             "gcgfeaspump"
 #define HEUR_DESC             "objective feasibility pump 2.0"
@@ -600,7 +603,7 @@ SCIP_DECL_HEURINIT(heurInitGcgfeaspump)
 
    /* create random number generator */
    SCIP_CALL( SCIPcreateRandom(scip, &heurdata->randnumgen,
-      SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
+      SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED), TRUE) );
 
    return SCIP_OKAY;
 }

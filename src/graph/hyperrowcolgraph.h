@@ -37,6 +37,8 @@
 
 #include "matrixgraph.h"
 #include "hypergraph.h"
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 
 namespace gcg {
 template <class T>
@@ -50,11 +52,18 @@ public:
          Weights               w                  /**< weights for the given graph */
       );
    virtual ~HyperrowcolGraph();
+
    SCIP_RETCODE createFromMatrix(
       SCIP_CONS**           conss,              /**< constraints for which graph should be created */
       SCIP_VAR**            vars,               /**< variables for which graph should be created */
       int                   nconss,             /**< number of constraints */
       int                   nvars               /**< number of variables */
+      );
+
+   /** creates a graph with open constraints and open variables of the seeed */
+   virtual SCIP_RETCODE createFromPartialMatrix(
+      Seeedpool*           seeedpool,
+      Seeed*               seeed
       );
 
    /** writes the graph to the given file.
@@ -68,6 +77,21 @@ public:
 
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      );
+
+   /** creates a new seeed by dint of a graph created with all constraints and variables */
+   virtual SCIP_RETCODE createSeeedFromPartition(
+      Seeed**      firstSeeed,         /**< pointer to buffer the new seeed created by dint of the graph */
+      Seeed**      secondSeeed,        /**< pointer to buffer the new seeed whose border is amplified by dint of the graph */
+      Seeedpool*   seeedpool
+      );
+
+   /** amplifies a seeed by dint of a graph created with open constraints and open variables of the seeed */
+   virtual SCIP_RETCODE createSeeedFromPartition(
+      Seeed*      oldSeeed,            /**< seeed which should be amplifies */
+      Seeed**     firstSeeed,          /**< pointer to buffer the new seeed amplified by dint of the graph */
+      Seeed**     secondSeeed,         /**< pinter to buffer the new seeed whose border is amplified by dint of the graph */
+      Seeedpool*  seeedpool
       );
 
    /**

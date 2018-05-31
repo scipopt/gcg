@@ -465,7 +465,7 @@ SCIP_RETCODE GCGcolpoolUpdateRedcost(
 
       redcost = GCGcomputeRedCostGcgCol(colpool->scip, colpool->infarkas, col, NULL);
 
-      SCIP_CALL( GCGcolUpdateRedcost(col, redcost, FALSE) );
+      GCGcolUpdateRedcost(col, redcost, FALSE);
    }
 
    return SCIP_OKAY;
@@ -547,4 +547,3 @@ SCIP_Longint GCGcolpoolGetNColsFound(
 
    return colpool->ncolsfound;
 }
-

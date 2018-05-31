@@ -29,6 +29,7 @@
  * @brief  SCIP plugins for generic column generation
  * @author Gerald Gamrath
  * @author Martin Bergner
+ * @author Michael Bastubbe
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -43,12 +44,14 @@
 /* include header files here, such that the user only has to include
  * gcgplugins.h
  */
+#include "scip/cons_indicator.h"
 #include "scip/cons_integral.h"
 #include "scip/cons_knapsack.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_logicor.h"
 #include "scip/cons_setppc.h"
 #include "scip/cons_varbound.h"
+
 
 #if USEHEURS
 #include "scip/heur_actconsdiving.h"
@@ -149,7 +152,6 @@
 #endif
 
 
-
 #include "scip/scipshell.h"
 #include "reader_blk.h"
 #include "reader_dec.h"
@@ -165,20 +167,45 @@
 #include "event_mastersol.h"
 
 /* Martin's detection stuff */
-#include "reader_gp.h"
 #include "cons_decomp.h"
 #include "dec_connected.h"
 
-#ifndef NBLISS
+/* visualization */
+#include "params_visu.h"
+#include "reader_gp.h"
+#include "reader_tex.h"
+#include "reader_cls.h"
+
+#ifdef WITH_BLISS
 #include "dec_isomorph.h"
 #endif
 
-#include "dec_arrowheur.h"
+/* new detection stuff */
+#include "dec_constype.h"
+#include "dec_consclass.h"
+#include "dec_densemasterconss.h"
 #include "dec_stairheur.h"
 #include "dec_staircase.h"
 #include "dec_random.h"
 #include "dec_colors.h"
+#include "dec_compgreedily.h"
+#include "dec_staircase_lsp.h"
 #include "dec_consname.h"
+#include "dec_postprocess.h"
+#include "dec_mastersetpack.h"
+#include "dec_mastersetpart.h"
+#include "dec_mastersetcover.h"
+#include "dec_hrcgpartition.h"
+#include "dec_hrgpartition.h"
+#include "dec_hcgpartition.h"
+#include "dec_connectedbase.h"
+#include "dec_connected_noNewLinkingVars.h"
+#include "dec_generalmastersetcover.h"
+#include "dec_generalmastersetpack.h"
+#include "dec_generalmastersetpart.h"
+#include "dec_staircase_lsp.h"
+#include "dec_varclass.h"
+
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -204,6 +231,12 @@
 #include "scip_misc.h"
 #include "scip/table_default.h"
 
+/* Igor's detection with clustering */
+#include "dec_dbscan.h"
+#include "dec_mst.h"
+#ifdef WITH_GSL
+#include "dec_mcl.h"
+#endif
 
 /** includes default plugins for generic column generation into SCIP */
 SCIP_RETCODE SCIPincludeGcgPlugins(
@@ -211,6 +244,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    )
 {
    SCIP_CALL( SCIPincludeConshdlrLinear(scip) ); /* linear must be first due to constraint upgrading */
+   SCIP_CALL( SCIPincludeConshdlrIndicator(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegral(scip) );
    SCIP_CALL( SCIPincludeConshdlrKnapsack(scip) );
    SCIP_CALL( SCIPincludeConshdlrLogicor(scip) );
@@ -326,20 +360,49 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
    SCIP_CALL( SCIPincludeEventHdlrMastersol(scip) );
 
-   /* Detectors and decompositions */
+   /* Visualizations */
+   SCIP_CALL( SCIPincludeParamsVisu(scip) );
    SCIP_CALL( SCIPincludeReaderGp(scip) );
+   SCIP_CALL( SCIPincludeReaderTex(scip) );
+   SCIP_CALL( SCIPincludeReaderCls(scip) );
+
+   /* Detectors and decompositions */
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectorConnected(scip) );
-   SCIP_CALL( SCIPincludeDetectorArrowheur(scip) );
+   SCIP_CALL( SCIPincludeDetectorConstype(scip) );
+   SCIP_CALL( SCIPincludeDetectorPostprocess(scip) );
+   SCIP_CALL( SCIPincludeDetectorConsclass(scip) );
+   SCIP_CALL( SCIPincludeDetectorConsname(scip) );
+   SCIP_CALL( SCIPincludeDetectorDensemasterconss(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );
+   SCIP_CALL( SCIPincludeDetectorStaircaseLsp(scip) );
    SCIP_CALL( SCIPincludeDetectorColors(scip) );
+#ifdef WITH_HMETIS
    SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
-   SCIP_CALL( SCIPincludeDetectorConsname(scip) );
+#endif
+#ifdef WITH_GSL
+   SCIP_CALL( SCIPincludeDetectorDBSCAN(scip) );
+   SCIP_CALL( SCIPincludeDetectorMST(scip) );
+   SCIP_CALL( SCIPincludeDetectorMCL(scip) );
+#endif
+   SCIP_CALL( SCIPincludeDetectorCompgreedily(scip) );
+   SCIP_CALL( SCIPincludeDetectorMastersetcover(scip) );
+   SCIP_CALL( SCIPincludeDetectorMastersetpack(scip) );
+   SCIP_CALL( SCIPincludeDetectorMastersetpart(scip) );
+   SCIP_CALL( SCIPincludeDetectorHcgpartition(scip) );
+   SCIP_CALL( SCIPincludeDetectorHrgpartition(scip) );
+   SCIP_CALL( SCIPincludeDetectorHrcgpartition(scip) );
+   SCIP_CALL( SCIPincludeDetectorConnectedbase(scip) );
+   SCIP_CALL( SCIPincludeDetectorConnected_noNewLinkingVars(scip) );
+   SCIP_CALL( SCIPincludeDetectorGeneralmastersetpack(scip) );
+   SCIP_CALL( SCIPincludeDetectorGeneralmastersetpart(scip) );
+   SCIP_CALL( SCIPincludeDetectorGeneralmastersetcover(scip) );
+   SCIP_CALL( SCIPincludeDetectorVarclass(scip) );
 
 
-#ifndef NBLISS
+#ifdef WITH_BLISS
    SCIP_CALL( SCIPincludeDetectorIsomorphism(scip) );
 #endif
 
@@ -364,6 +427,13 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    /* Jonas' stuff */
    SCIP_CALL( SCIPsetSeparating(scip, SCIP_PARAMSETTING_OFF, TRUE) );
+
+   /* disable conflict analysis since adding constraints after structure detection may destroy symmetries */
+    SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useprop", FALSE) );
+   SCIP_CALL( SCIPsetIntParam(scip, "heuristics/clique/freq", -1) );
+    SCIP_CALL( SCIPfixParam(scip, "conflict/useprop") );
+   SCIP_CALL( SCIPfixParam(scip, "heuristics/clique/freq") );
+
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );
    SCIP_CALL( SCIPincludeDialogGcg(scip) );

@@ -55,6 +55,7 @@ struct Dec_Scores
    SCIP_Real             densityscore;       /**< score of block densities */
    SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
    SCIP_Real             totalscore;         /**< accumulated score */
+   SCIP_Real             maxwhitescore;      /** score related to max white measure (i.e. fraction of white (nonblock and nonborder) matrix area ) */
 };
 typedef struct Dec_Scores DEC_SCORES;
 
@@ -89,6 +90,19 @@ extern
 DEC_DECTYPE DECdecompGetType(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
+
+extern
+SCIP_Real DECdecompGetMaxwhiteScore(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+extern
+void DECsetMaxWhiteScore(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition data structure */
+   SCIP_Real             maxwhitescore
+   );
+
 
 /** sets the presolved flag for decomposition */
 extern
@@ -185,7 +199,8 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            linkingvars,        /**< linkingvars array  */
-   int                   nlinkingvars        /**< number of linkingvars per block */
+   int                   nlinkingvars,       /**< number of linkingvars per block */
+   int                   nmastervars         /**< number of linkingvars that are purely master variables */
    );
 
 /** returns the linkingvars array of the given decomposition */
@@ -193,6 +208,13 @@ extern
 SCIP_VAR** DECdecompGetLinkingvars(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
+
+/** returns the number of master variables of the given decomposition */
+extern
+int DECdecompGetNMastervars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
 
 /** returns the nlinkingvars array of the given decomposition */
 extern
@@ -220,6 +242,12 @@ extern
 int* DECdecompGetNStairlinkingvars(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
+
+/** returns the total number of stairlinkingvars array of the given decomposition */
+int DECdecompGetNTotalStairlinkingvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
 
 /** sets the vartoblock hashmap of the given decomposition */
 extern
@@ -303,6 +331,164 @@ extern
 DEC_DETECTOR* DECdecompGetDetector(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
+
+/** gets the detectors for the given decomposition */
+extern
+DEC_DETECTOR** DECdecompGetDetectorChain(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** gets the number of detectors for the given decomposition */
+extern
+int DECdecompGetDetectorChainSize(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the id of the original seeed */
+extern
+void DECdecompSetSeeedID(
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   int                   seeedID
+   );
+
+/** gets the id of the original seeed */
+extern
+int DECdecompGetSeeedID(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+
+/** sets the detector clock times of the detectors of the detector chain */
+extern
+void DECdecompSetDetectorClockTimes(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            detectorClockTimes
+   );
+
+/** gets the detector clock times of the detectors of the detector chain */
+extern
+SCIP_Real* DECdecompGetDetectorClockTimes(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the detector clock times of the detectors of the detector chain */
+extern
+SCIP_RETCODE DECdecompSetDetectorChainString(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   char*                 detectorchainstring
+   );
+
+
+extern
+char* DECdecompGetDetectorChainString(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+
+/** sets the percentages of variables assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetDetectorPctVarsToBorder(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctVarsToBorder
+   );
+
+/** gets the percentages of variables assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctVarsToBorder(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the percentages of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetDetectorPctConssToBorder(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctConssToBorder
+   );
+
+/** gets the percentages of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctConssToBorder(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetDetectorPctVarsToBlock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctVarsToBlock
+   );
+
+/** gets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctVarsToBlock(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetDetectorPctConssToBlock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctConssToBlock
+   );
+
+/** gets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctConssToBlock(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+
+/** sets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetDetectorPctVarsFromOpen(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctVarsFromOpen
+   );
+
+/** gets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctVarsFromOpen(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetDetectorPctConssFromOpen(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctConssToBorder
+   );
+
+/** gets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctConssFromOpen(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the number of new blocks of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetNNewBlocks(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   int*                  nNewBlocks
+   );
+
+/** gets the number of new blocks corresponding detectors (of the detector chain) on this decomposition */
+extern
+int* DECdecompGetNNewBlocks(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+
+
 
 /** transforms all constraints and variables, updating the arrays */
 extern
@@ -422,6 +608,14 @@ SCIP_RETCODE DECgetVarLockData(
    int*                  masterlocksdown,    /**< pointer to array to store the down locks for the master */
    int*                  masterlocksup       /**< pointer to array to store the down locks for the master */
    );
+
+/**
+ * returns the maximum white score ( if it is not calculated yet is decdecomp is evaluated)
+ */
+SCIP_Real DECgetMaxWhiteScore(
+      SCIP*                 scip,               /**< SCIP data structure */
+      DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+      );
 
 
 /** computes the score of the given decomposition based on the border, the average density score and the ratio of

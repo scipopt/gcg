@@ -42,6 +42,7 @@
 #include "gcgplugins.h"
 
 #include "scip/scip.h"
+#include "scip/misc.h"
 #include "scip/scipdefplugins.h"
 
 
@@ -1319,7 +1320,7 @@ SCIP_DECL_HEURINIT(heurInitXpcrossover)
 
    /* create random number generator */
    SCIP_CALL( SCIPcreateRandom(scip, &heurdata->randnumgen,
-         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
+         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED), TRUE) );
 
    /* initialize hash table */
    SCIP_CALL( SCIPhashtableCreate(&heurdata->hashtable, SCIPblkmem(scip), HASHSIZE_POINTS,

@@ -12,4 +12,44 @@ presolving/maxrounds = 0
 # [type: int, range: [-1,2147483647], default: -1]
 presolving/maxrestarts = 0
 
-detectors/arrowheur/enabled = FALSE
+# flag to indicate whether detector <connected> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/connected/enabled = FALSE
+
+# Type of the graph: 'c' column hypergraph, 'r' row hypergraph, 'a' column-row hypergraph
+# [type: char, range: {cra}, default: r]
+detection/detectors/arrowheur/type = a
+detection/detectors/arrowheur/enabled = FALSE
+
+# flag to indicate whether detector <staircase> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/staircase/enabled = FALSE
+
+# flag to indicate whether detector <random> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/random/enabled = FALSE
+
+# flag to indicate whether detector <isomorph> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/isomorph/enabled = FALSE
+
+
+# flag to indicate whether detector <colors> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/colors/enabled = FALSE
+
+# flag to indicate whether detector <cutpacking> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/cutpacking/enabled = FALSE
+
+# flag to indicate whether detector <stairheur> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/stairheur/enabled = FALSE
+
+detection/detectors/dbscan/enabled = FALSE
+
+detection/detectors/mst/niterations = 71
+detection/detectors/dbscan/johson = TRUE
+detection/detectors/mst/jaccard = TRUE
+detection/detectors/dbscan/cosine = TRUE
+detection/detectors/mst/simpson = TRUE

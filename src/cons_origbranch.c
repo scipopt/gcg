@@ -774,14 +774,14 @@ void GCGconsOrigbranchCheckConsistency(
       assert(consdata->node != NULL);
       assert((consdata->parentcons == NULL) == (SCIPnodeGetDepth(consdata->node) == 0));
       /** todo assertions for all nchildcons */
-      if( consdata->nchildcons == 2 )
-         assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->childcons[0] == conss[i]
-            || SCIPconsGetData(consdata->parentcons)->childcons[1] == conss[i]
+      if( consdata->nchildconss == 2 )
+         assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->childconss[0] == conss[i]
+            || SCIPconsGetData(consdata->parentcons)->childconss[1] == conss[i]
             || ( SCIPinProbing(scip) && SCIPconsGetData(consdata->parentcons)->probingtmpcons == conss[i]));
-      if( consdata->nchildcons == 2 )
-         assert(consdata->childcons[0] == NULL || SCIPconsGetData(consdata->childcons[0])->parentcons == conss[i]);
-      if( consdata->nchildcons == 2 )
-         assert(consdata->childcons[1] == NULL || SCIPconsGetData(consdata->childcons[1])->parentcons == conss[i]);
+      if( consdata->nchildconss == 2 )
+         assert(consdata->childconss[0] == NULL || SCIPconsGetData(consdata->childconss[0])->parentcons == conss[i]);
+      if( consdata->nchildconss == 2 )
+         assert(consdata->childconss[1] == NULL || SCIPconsGetData(consdata->childconss[1])->parentcons == conss[i]);
       assert(consdata->probingtmpcons == NULL || SCIPinProbing(scip));
       assert(consdata->probingtmpcons == NULL || SCIPconsGetData(consdata->probingtmpcons)->parentcons == conss[i]);
       assert(consdata->mastercons == NULL || GCGconsMasterbranchGetOrigcons(consdata->mastercons) == conss[i]);
