@@ -31,8 +31,8 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
  lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
@@ -49,17 +49,17 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
