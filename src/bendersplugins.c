@@ -31,21 +31,16 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define USEHEURS 1
-#define USESEPA 0
-#define USEPROP 1
 
 #include "bendersplugins.h"
 #include "scip/scipdefplugins.h"
+#include "scip/debug.h"
 
 /* GCG specific stuff */
 #include "dialog_master.h"
 #include "disp_master.h"
 #include "dialog_gcg.h"
 #include "disp_gcg.h"
-
-/* Benders' decomposition specific plugins */
-#include "scip/cons_benders.h"
 
 /** includes default GCG Benders' decomposition plugins */
 SCIP_RETCODE GCGincludeBendersPlugins(
