@@ -166,7 +166,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
 
    SCIP_CALL( SCIPcreateSol(scip, origsol, GCGrelaxGetProbingheur(scip)) );
 
-   if( !GCGmasterIsSolValid(masterprob, mastersol) )
+   if( GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL && !GCGmasterIsSolValid(masterprob, mastersol) )
       return SCIP_OKAY;
 
    SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );
@@ -607,7 +607,8 @@ SCIP_RETCODE GCGprintStatistics(
    }
    else
    {
-      assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS);
+      assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS
+         || GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL);
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program Solution statistics:\n");
       SCIPprintSolutionStatistics(scip, file);
    }
@@ -618,7 +619,10 @@ SCIP_RETCODE GCGprintStatistics(
       SCIP_CALL( GCGmasterPrintSimplexIters(GCGgetMasterprob(scip), file) );
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
    }
-   SCIP_CALL( GCGprintDetectorStatistics(scip, file) );
+   if( GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL )
+   {
+      SCIP_CALL( GCGprintDetectorStatistics(scip, file) );
+   }
    if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING && GCGgetNPricingprobs(scip) > 0 )
    {
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");

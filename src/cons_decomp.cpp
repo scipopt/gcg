@@ -86,6 +86,7 @@
 #include "wrapper_seeed.h"
 #include "reader_tex.h"
 #include "scip_misc.h"
+#include "relax_gcg.h"
 
 typedef gcg::Seeed* SeeedPtr;
 
@@ -5652,6 +5653,10 @@ SCIP_RETCODE DECdetectStructure(
 
 
    if( SCIPgetNOrigVars(scip) == 0 && SCIPgetNOrigConss(scip) == 0 )
+      return SCIP_OKAY;
+
+   /* if the original problem should be solved, then no decomposition will be performed */
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
       return SCIP_OKAY;
 
    SCIP_CALL(SCIPresetClock(scip, conshdlrdata->completedetectionclock));

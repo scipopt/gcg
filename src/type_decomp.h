@@ -59,8 +59,9 @@ enum Decmode
 {
    DEC_DECMODE_DANTZIGWOLFE = 0,             /**< Datizig-Wolfe reformulation */
    DEC_DECMODE_BENDERS      = 1,             /**< Benders' decomposition */
-   DEC_DECMODE_AUTO         = 2,             /**< the best of either Dantzig-Wolfe or Benders' will be applied */
-   DEC_DECMODE_UNKNOWN      = 3              /**< the mode can not be determined from the given information */
+   DEC_DECMODE_ORIGINAL     = 2,             /**< the original problem will be solved without decomposition */
+   DEC_DECMODE_AUTO         = 3,             /**< the best of either Dantzig-Wolfe or Benders' will be applied */
+   DEC_DECMODE_UNKNOWN      = 4              /**< the mode can not be determined from the given information */
 };
 
 typedef enum Decmode DEC_DECMODE; /**< decomposition mode */

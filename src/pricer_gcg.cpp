@@ -5086,10 +5086,10 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 /** create initial master variables */
 extern "C"
 SCIP_RETCODE GCGmasterCreateInitialMastervars(
-   SCIP*                 scip                /**< master SCIP data structure */
+   SCIP*                 scip,               /**< master SCIP data structure */
+   SCIP*                 origprob            /**< the SCIP instance of the original problem */
    )
 {
-   SCIP* origprob;
    int i;
    SCIP_VAR** vars;
    int nvars;
@@ -5097,8 +5097,6 @@ SCIP_RETCODE GCGmasterCreateInitialMastervars(
    int v;
 
    assert(scip != NULL);
-
-   origprob = GCGgetOriginalprob(scip);
    assert(origprob != NULL);
 
    npricingprobs = GCGgetNPricingprobs(origprob);
@@ -5207,7 +5205,7 @@ SCIP_Bool GCGmasterIsCurrentSolValid(
    assert(scip != NULL);
 
    /* checking the decomposition mode. If Benders' is used, then the solution is assumed to be valid. */
-   if( GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS )
+   if( GCGgetMasterDecompMode(scip) != DEC_DECMODE_DANTZIGWOLFE )
       return TRUE;
 
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
@@ -5251,7 +5249,7 @@ SCIP_Bool GCGmasterIsBestsolValid(
    assert(scip != NULL);
 
    /* checking the decomposition mode. If Benders' is used, then the solution is assumed to be valid. */
-   if( GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS )
+   if( GCGgetMasterDecompMode(scip) != DEC_DECMODE_DANTZIGWOLFE )
       return TRUE;
 
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
@@ -5290,7 +5288,7 @@ SCIP_Bool GCGmasterIsSolValid(
    assert(scip != NULL);
 
    /* checking the decomposition mode. If Benders' is used, then the solution is assumed to be valid. */
-   if( GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS )
+   if( GCGgetMasterDecompMode(scip) != DEC_DECMODE_DANTZIGWOLFE )
       return TRUE;
 
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
