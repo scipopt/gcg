@@ -1,11 +1,11 @@
 ################################
 # 
 ################################
+Universe = vanilla
+# Universe = standard
 
-Universe = standard
-
-# should_transfer_files = no
-# when_to_transfer_output = ON_EXIT_OR_EVICT
+should_transfer_files = IF_NEEDED
+when_to_transfer_output = ON_EXIT_OR_EVICT
 
 Executable = $GCGPATH/../check/runcluster_or.sh
 Arguments  = "$ARGUMENTS $(process)"
