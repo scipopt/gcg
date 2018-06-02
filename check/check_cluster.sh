@@ -239,7 +239,8 @@ do
 		cp runcluster_submit_or.sub runcluster_tmp.sub
         TLIMIT=`echo $HARDTIMELIMIT | awk '{ n = split($0,a,":"); print 60*a[1]+a[2];}'`
 		ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
-
+        chmod 777 $SOLVERPATH
+        chmod 777 $SOLVERPATH/results/
         AGUMENTS=`echo "$CLIENTTMPDIR $CONTINUE $BINNAME $TLIMIT $EVALFILE $JOBFILE $HARDMEMLIMIT $ULIMITMEMLIMIT $SOLVERPATH"`
         sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sub
         sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.sub
