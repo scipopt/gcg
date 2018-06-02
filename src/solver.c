@@ -331,16 +331,19 @@ SCIP_RETCODE GCGsolverSolve(
 
    if( *status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
    {
-      #pragma omp atomic
       if( redcost )
          if( heuristic )
+            #pragma omp atomic
             ++solver->heurredcostcalls;
          else
+            #pragma omp atomic
             ++solver->optredcostcalls;
       else
          if( heuristic )
+            #pragma omp atomic
             ++solver->heurfarkascalls;
          else
+            #pragma omp atomic
             ++solver->optfarkascalls;
    }
 
