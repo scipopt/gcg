@@ -88,7 +88,7 @@ date                                >> $OUTFILE
 date                                >> $ERRFILE
 echo -----------------------------  >> $OUTFILE
 date +"@03 %s"                      >> $OUTFILE
-$SOLVERPATH/../$BINNAME < $TMPFILE  >> $OUTFILE 2>>$ERRFILE
+$SOLVERPATH/../$BINNAME < $TMPFILE   >> $OUTFILE 2>>$ERRFILE
 date +"@04 %s"                      >> $OUTFILE
 echo -----------------------------  >> $OUTFILE
 date                                >> $OUTFILE
