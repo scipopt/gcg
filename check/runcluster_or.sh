@@ -29,38 +29,36 @@
 # @author Martin Bergner
 # @author Benedikt Meier
 
-Universe = vanilla
-should_transfer_files = Yes
+CLIENTTMPDIR=$1
+CONTINUE=$2
+BINNAME=$3
+TLIMIT=$4
+EVALFILE=$5
+JOBFILE=$6
+HARDMEMLIMIT=$7
+ULIMITMEMLIMIT=$8
+SOLVERPATH=$9
+Process=${10}
+Process=$(( $Process + 1 ))
 
 # check if tmp-path exists
 if test ! -d $CLIENTTMPDIR
 then
-    echo Skipping test since the path for the tmp-dir does not exist.
+    echo "Skipping test since the path for the tmp-dir does not exist."
     exit
 fi
 
 ulimit -v $ULIMITMEMLIMIT
 ulimit -m $ULIMITMEMLIMIT
 
-# TODO: Weiß ich nicht was dass soll???????????????????
-#export ILOG_LICENSE_FILE=$HOME/access.ilm
+export ILOG_LICENSE_FILE=$HOME/access.ilm
 
-# TODO: ich Weiß nicht wo her der $EVALFILE kommt 
-#BASENAME=`awk "NR==$LSB_JOBINDEX" $EVALFILE`
-#BASENAME=`basename $BASENAME`
-BASENAME="$(Cluster).$(process)"
-
-
-
-
+BASENAME=`awk "NR==$Process" $EVALFILE`
+BASENAME=`basename $BASENAME`
 OUTFILE=$CLIENTTMPDIR/$BASENAME.out
 ERRFILE=$CLIENTTMPDIR/$BASENAME.err
 TMPFILE=$SOLVERPATH/results/$BASENAME.tmp
-
-# TODO: Weiß ich nicht was dass soll???????????????????
-#FILENAME=`awk "NR==$LSB_JOBINDEX" $JOBFILE`
-FILENAME="$(Cluster).$(process)"
-
+FILENAME=`awk "NR==$Process" $JOBFILE`
 #if test ! -f $CLIENTTMPDIR/hmetis
 #then
 #    cp $HOME/bin/hmetis $CLIENTTMPDIR/
@@ -69,8 +67,6 @@ if test -f $CLIENTTMPDIR/hmetis
 then
      rm $CLIENTTMPDIR/hmetis
 fi
-
-
 
 # check if we want to continue
 if test "$CONTINUE" = "true"

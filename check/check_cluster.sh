@@ -236,20 +236,17 @@ do
     if test  "$QUEUETYPE" = "condor"
     then
         # save temp in the home directorie
-		cp runcluster_or.sh runcluster_tmp.sh
+		cp runcluster_submit_or.sub runcluster_tmp.sub
         TLIMIT=`echo $HARDTIMELIMIT | awk '{ n = split($0,a,":"); print 60*a[1]+a[2];}'`
 		ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
-		sed -i 's,\$CLIENTTMPDIR,$TMP,' runcluster_tmp.sh
-		sed -i "s,\$CONTINUE,$CONTINUE," runcluster_tmp.sh
-		sed -i "s,\$BINNAME,$BINNAME," runcluster_tmp.sh
-		sed -i "s,\$TLIMIT,$TLIMIT," runcluster_tmp.sh
-		sed -i "s,\$EVALFILE,$EVALFILE," runcluster_tmp.sh
-		sed -i "s,\$JOBFILE,$JOBFILE," runcluster_tmp.sh
-		sed -i "s,\$HARDMEMLIMIT,$HARDMEMLIMIT," runcluster_tmp.sh
-		sed -i "s,\$ULIMITMEMLIMIT,$ULIMITMEMLIMIT," runcluster_tmp.sh
-		sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sh
-        condor_sumit runcluster_tmp.sh
-        rm runcluster_tmp.sh
+
+        AGUMENTS="$CLIENTTMPDIR $CONTINUE $BINNAME $TLIMIT $EVALFILE $JOBFILE $HARDMEMLIMIT $ULIMITMEMLIMIT $SOLVERPATH"
+        sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sub
+        sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.sub
+        sed -i "s,\$AGUMENTS,$AGUMENTS," runcluster_tmp.sub
+        sed -i "s,\$COUNT,$COUNT," runcluster_tmp.sub
+        condor_sumit runcluster_tmp.sub
+        rm runcluster_tmp.sub
     fi
 
 
