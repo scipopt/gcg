@@ -27,6 +27,6 @@
 QUEUETYPE      =   condor
 QUEUE		      =	 normal
 PPN	      	=	 1
-CLIENTTMPDIR	=	 /tmp
+CLIENTTMPDIR	=	 /tmp/
 EXCLUSIVE      =   notneeded
 NOWAITCLUSTER  =   1
