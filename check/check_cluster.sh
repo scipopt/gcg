@@ -240,7 +240,7 @@ do
         TLIMIT=`echo $HARDTIMELIMIT | awk '{ n = split($0,a,":"); print 60*a[1]+a[2];}'`
 		ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
 
-        AGUMENTS=`echo"$CLIENTTMPDIR $CONTINUE $BINNAME $TLIMIT $EVALFILE $JOBFILE $HARDMEMLIMIT $ULIMITMEMLIMIT $SOLVERPATH"`
+        AGUMENTS=`echo "$CLIENTTMPDIR $CONTINUE $BINNAME $TLIMIT $EVALFILE $JOBFILE $HARDMEMLIMIT $ULIMITMEMLIMIT $SOLVERPATH"`
         sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sub
         sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.sub
         sed -i "s,\$AGUMENTS,$AGUMENTS," runcluster_tmp.sub
