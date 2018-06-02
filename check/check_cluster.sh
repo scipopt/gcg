@@ -245,7 +245,7 @@ do
         sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.sub
         sed -i "s,\$AGUMENTS,$AGUMENTS," runcluster_tmp.sub
         sed -i "s,\$COUNT,$COUNT," runcluster_tmp.sub
-        condor_sumit runcluster_tmp.sub
+        condor_submit runcluster_tmp.sub
         rm runcluster_tmp.sub
     fi
 
