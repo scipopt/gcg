@@ -43,6 +43,7 @@ Process=$(( $Process + 1 ))
 
 # check if tmp-path exists
 echo "$CLIENTTMPDIR $CONTINUE $BINNAME $Process"
+
 if test ! -d $CLIENTTMPDIR
 then
     echo "Skipping test since the path for the tmp-dir does not exist."
