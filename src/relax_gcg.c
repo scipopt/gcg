@@ -2107,6 +2107,42 @@ SCIP_RETCODE setPricingObjsOriginal(
    return SCIP_OKAY;
 }
 
+/** sets the master objective function to what is necessary */
+static
+SCIP_RETCODE setPricingObjsOriginal(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 masterprob          /**< master problem SCIP instance*/
+   )
+{
+   int v;
+   int nvars;
+   SCIP_VAR** vars;
+   int i;
+
+   assert(scip != NULL);
+   assert(masterprob != NULL);
+
+   nvars = SCIPgetNVars(scip);
+   vars = SCIPgetVars(scip);
+
+   for( v = 0; v < nvars; ++v )
+   {
+      SCIP_VAR* pricingvar;
+      SCIP_VAR* origvar;
+      SCIP_Real objvalue;
+
+      assert(GCGvarIsOriginal(vars[v]));
+      origvar = SCIPvarGetProbvar(vars[v]);
+
+      mastervar = GCGoriginalVarGetMastervars(origvar)[0];
+      assert(mastervar != NULL);
+
+      objvalue = SCIPvarGetObj(origvar);
+      SCIP_CALL( SCIPchgVarObj(masterprob, mastervar, objvalue) );
+   }
+   return SCIP_OKAY;
+}
+
 /** solve a block problem when the decomposition is diagonal */
 static
 SCIP_RETCODE solveBlockProblem(
