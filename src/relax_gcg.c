@@ -82,7 +82,7 @@
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
-#define DEFAULT_MODE 0  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition) */
+#define DEFAULT_MODE 2  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition) */
 #define DELVARS
 
 /*
@@ -2236,16 +2236,16 @@ SCIP_RETCODE solveBlockProblem(
    case SCIP_STATUS_UNBOUNDED:
    case SCIP_STATUS_INFORUNBD:
    case SCIP_STATUS_INFEASIBLE:
+      /* no other blocks should be solved. */
       *result = SCIP_CUTOFF;
-      return SCIP_OKAY;
    case SCIP_STATUS_BESTSOLLIMIT:
    case SCIP_STATUS_MEMLIMIT:
    case SCIP_STATUS_STALLNODELIMIT:
    case SCIP_STATUS_NODELIMIT:
    case SCIP_STATUS_SOLLIMIT:
    case SCIP_STATUS_TIMELIMIT:
+      /* no other blocks should be solved. */
       *result = SCIP_DIDNOTRUN;
-      return SCIP_OKAY;
    case SCIP_STATUS_GAPLIMIT:
    case SCIP_STATUS_OPTIMAL:
       (*objvalue) += SCIPgetDualbound(blockprob);
@@ -2329,6 +2329,9 @@ SCIP_RETCODE solveDiagonalBlocks(
       for( i = 0; i < relaxdata->npricingprobs; ++i )
       {
          SCIP_CALL( solveBlockProblem(scip, relaxdata->pricingprobs[i], relaxdata, timelimit, i, result, &objvalue) );
+
+         if( (*result) == SCIP_CUTOFF || (*result) == SCIP_DIDNOTRUN )
+            return SCIP_OKAY;
       }
    }
 
