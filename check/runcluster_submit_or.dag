@@ -29,13 +29,8 @@
 #
 # @author Benedikt Meier
 # 
-# File name: diamond.dag
+# File name: runcluster_submit_or.dag
 #
 
 JOB  A  runcluster_tmp.sub
 SCRIPT POST  A  $GCGPATH/../check/evalcheck_cluster.sh $EVALFILE
-SCRIPT POST  A  rm runcluster_tmp.sub
-
-output       = $SOLVERPATH/results/diamond.out.$(cluster)
-error        = $SOLVERPATH/results/diamond.err.$(cluster)
-log          = $SOLVERPATH/results/diamond_condor.log
