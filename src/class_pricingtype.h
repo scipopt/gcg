@@ -162,19 +162,19 @@ public:
       SCIP*                 p_scip
       );
 
-    /** destructor */
-    virtual ~ReducedCostPricing() {}
+   /** destructor */
+   virtual ~ReducedCostPricing() {}
 
-    virtual SCIP_RETCODE addParameters();
+   virtual SCIP_RETCODE addParameters();
 
-    virtual SCIP_Real consGetDual(
-      SCIP*                 scip, 
-      SCIP_CONS*            cons
-      ) const;
+   virtual SCIP_Real consGetDual(
+     SCIP*                 scip,
+     SCIP_CONS*            cons
+     ) const;
 
-    virtual SCIP_Real rowGetDual(
-      SCIP_ROW*             row
-      ) const;
+   virtual SCIP_Real rowGetDual(
+     SCIP_ROW*             row
+     ) const;
 
    virtual SCIP_Real varGetObj(
      SCIP_VAR*             var

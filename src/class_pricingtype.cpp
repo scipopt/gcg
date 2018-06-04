@@ -113,29 +113,29 @@ SCIP_Real PricingType::getClockTime() const
 }
 
 FarkasPricing::FarkasPricing(
-      SCIP* scip
+   SCIP*                 scip
    ) : PricingType(scip)
 {
    type = GCG_PRICETYPE_FARKAS;
 }
 
 SCIP_Real FarkasPricing::consGetDual(
-      SCIP* scip,
-      SCIP_CONS* cons
+   SCIP*                 scip,
+   SCIP_CONS*            cons
    ) const
 {
    return SCIPgetDualfarkasLinear(scip, cons);
 }
 
 SCIP_Real FarkasPricing::rowGetDual(
-      SCIP_Row* row
+   SCIP_ROW*             row
    ) const
 {
    return SCIProwGetDualfarkas(row);
 }
 
 SCIP_Real FarkasPricing::varGetObj(
-      SCIP_VAR* var
+   SCIP_VAR*             var
    ) const
 {
    assert(var != NULL);
@@ -173,28 +173,28 @@ SCIP_RETCODE FarkasPricing::addParameters()
 }
 
 SCIP_Real ReducedCostPricing::consGetDual(
-      SCIP* scip,
-      SCIP_CONS* cons
+   SCIP*                 scip,
+   SCIP_CONS*            cons
    ) const
 {
    return SCIPgetDualsolLinear(scip, cons);
 }
 SCIP_Real ReducedCostPricing::rowGetDual(
-      SCIP_ROW* row
+   SCIP_ROW*             row
    ) const
 {
    return SCIProwGetDualsol(row);
 }
 
 ReducedCostPricing::ReducedCostPricing(
-      SCIP* p_scip
+   SCIP*                 p_scip
    ) : PricingType(p_scip)
 {
    type = GCG_PRICETYPE_REDCOST;
 }
 
 SCIP_Real ReducedCostPricing::varGetObj(
-      SCIP_VAR* var
+   SCIP_VAR*             var
    ) const
 {
    SCIP_VAR* origvar;
