@@ -237,6 +237,7 @@ do
     then
         # save temp in the home directorie
 		cp runcluster_submit_or.sub runcluster_tmp.sub
+		cp runcluster_submit_or.dag runcluster_tmp.dag
         TLIMIT=`echo $HARDTIMELIMIT | awk '{ n = split($0,a,":"); print 60*a[1]+a[2];}'`
 		ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
         chmod 777 $SOLVERPATH
@@ -246,8 +247,13 @@ do
         sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.sub
         sed -i "s,\$AGUMENTS,$AGUMENTS," runcluster_tmp.sub
         sed -i "s,\$COUNT,$COUNT," runcluster_tmp.sub
-        condor_submit runcluster_tmp.sub
-        rm runcluster_tmp.sub
+        # dag file
+        sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.dag
+        sed -i "s,\$EVALFILE,$EVALFILE," runcluster_tmp.dag
+
+        #condor_submit runcluster_tmp.sub
+        condor_submit_dag runcluster_tmp.dag
+        #rm runcluster_tmp.sub
     fi
 
 

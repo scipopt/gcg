@@ -5,6 +5,7 @@ Universe = vanilla
 # Universe = standard
 
 should_transfer_files = IF_NEEDED
+when_to_transfer_output = ON_EXIT
 # when_to_transfer_output = ON_EXIT_OR_EVICT
 
 Executable = $GCGPATH/../check/runcluster_or.sh
