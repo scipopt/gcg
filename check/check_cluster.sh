@@ -249,6 +249,7 @@ do
         sed -i "s,\$COUNT,$COUNT," runcluster_tmp.sub
         # dag file
         sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.dag
+        sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.dag
         sed -i "s,\$EVALFILE,$EVALFILE," runcluster_tmp.dag
 
         #condor_submit runcluster_tmp.sub
