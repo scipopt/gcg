@@ -594,10 +594,9 @@ SCIP_Bool Pricingcontroller::checkNextChunk()
 
 /** decide whether the pricing loop can be aborted */
 SCIP_Bool Pricingcontroller::canPricingloopBeAborted(
-   PricingType*          pricetype,          /**< type of pricing (reduced cost or Farkas) */
+   PricingType*          pricingtype,        /**< type of pricing (reduced cost or Farkas) */
    int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-   int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-   SCIP_Bool             optimal             /**< optimal or heuristic pricing */
+   int                   nsuccessfulprobs    /**< number of pricing problems solved successfully so far */
    ) const
 {
    int nrelpricingprobs = GCGgetNRelPricingprobs(GCGmasterGetOrigprob(scip_));
@@ -605,10 +604,10 @@ SCIP_Bool Pricingcontroller::canPricingloopBeAborted(
    if( eagerage == eagerfreq )
       return FALSE;
 
-   if( optimal )
-      return pricetype->canOptimalPricingBeAborted(nfoundcols, nsolvedprobs, nsuccessfulprobs, relmaxsuccessfulprobs, nrelpricingprobs);
-   else
-      return pricetype->canHeuristicPricingBeAborted(nfoundcols, nsolvedprobs, nsuccessfulprobs, relmaxsuccessfulprobs, nrelpricingprobs);
+   return !((nfoundcols < pricingtype->getMaxcolsround())
+         && nsuccessfulprobs < pricingtype->getMaxsuccessfulprobs()
+         && nsuccessfulprobs < relmaxsuccessfulprobs * nrelpricingprobs
+         && (nfoundcols == 0 || nsolvedprobs < pricingtype->getRelmaxprobs() * nrelpricingprobs));
 }
 
 void Pricingcontroller::resetEagerage()

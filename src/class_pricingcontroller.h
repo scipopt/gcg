@@ -154,10 +154,9 @@ public:
 
    /** decide whether the pricing loop can be aborted */
    SCIP_Bool canPricingloopBeAborted(
-      PricingType*          pricetype,          /**< type of pricing (reduced cost or Farkas) */
+      PricingType*          pricingtype,        /**< type of pricing (reduced cost or Farkas) */
       int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-      int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-      SCIP_Bool             optimal             /**< optimal or heuristic pricing */
+      int                   nsuccessfulprobs    /**< number of pricing problems solved successfully so far */
       ) const;
 
    void resetEagerage();

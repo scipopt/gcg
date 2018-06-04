@@ -142,6 +142,17 @@ SCIP_Real FarkasPricing::varGetObj(
    return 0.0;
 }
 
+/** returns the maximal number of columns per pricing round */
+int FarkasPricing::getMaxcolsround() const
+{
+   return maxcolsround;
+}
+/** returns the maximal percentage of pricing problems that are solved if variables have already been found */
+SCIP_Real FarkasPricing::getRelmaxprobs() const
+{
+   return relmaxprobs;
+}
+
 SCIP_RETCODE FarkasPricing::addParameters()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
@@ -197,6 +208,18 @@ SCIP_Real ReducedCostPricing::varGetObj(
       return SCIPvarGetObj(origvar);
 }
 
+/** returns the maximal number of columns per pricing round */
+int ReducedCostPricing::getMaxcolsround() const
+{
+   return GCGisRootNode(scip_) ? maxcolsroundroot : maxcolsround;
+}
+
+/** returns the maximal percentage of pricing problems that are solved if variables have already been found */
+SCIP_Real ReducedCostPricing::getRelmaxprobs() const
+{
+   return GCGisRootNode(scip_) ? relmaxprobsroot : relmaxprobs;
+}
+
 SCIP_RETCODE ReducedCostPricing::addParameters()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
@@ -238,56 +261,4 @@ SCIP_RETCODE ReducedCostPricing::addParameters()
          &relmaxprobs, FALSE, DEFAULT_RELMAXPROBSREDCOST, 0.0, 1.0, NULL, (SCIP_PARAMDATA*) NULL) );
 
    return SCIP_OKAY;
-}
-
-SCIP_Bool FarkasPricing::canOptimalPricingBeAborted(
-   int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-   int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-   int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-   SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-   int                   npricingprobsnotnull /**< number of relevant pricing problems */
-   ) const
-{ /*lint -esym(715,successfulprobs,successfulrelmaxprobs) */
-   return !((nfoundcols < maxcolsround)
-            && (nfoundcols == 0 || nsolvedprobs < relmaxprobs * npricingprobsnotnull));
-}
-
-SCIP_Bool FarkasPricing::canHeuristicPricingBeAborted(
-   int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-   int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-   int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-   SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-   int                   npricingprobsnotnull /**< number of relevant pricing problems */
-   ) const
-{
-   return canOptimalPricingBeAborted(nfoundcols, nsolvedprobs, nsuccessfulprobs, relmaxsuccessfulprobs, npricingprobsnotnull);
-}
-
-SCIP_Bool ReducedCostPricing::canOptimalPricingBeAborted(
-   int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-   int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-   int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-   SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-   int                   npricingprobsnotnull /**< number of relevant pricing problems */
-   ) const
-{
-   return !((((nfoundcols < maxcolsroundroot) || !GCGisRootNode(scip_)) && ((nfoundcols < maxcolsround) || GCGisRootNode(scip_)))
-               && nsuccessfulprobs < maxsuccessfulprobs
-               && nsuccessfulprobs < relmaxsuccessfulprobs * npricingprobsnotnull
-               && (nfoundcols == 0 || ((GCGisRootNode(scip_) || nsolvedprobs < relmaxprobs * npricingprobsnotnull)
-                     && (!GCGisRootNode(scip_) || nsolvedprobs < relmaxprobsroot * npricingprobsnotnull))));
-}
-
-SCIP_Bool ReducedCostPricing::canHeuristicPricingBeAborted(
-   int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-   int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-   int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-   SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-   int                   npricingprobsnotnull /**< number of relevant pricing problems */
-  ) const
-{
-   return !((nfoundcols < maxcolsround)
-            && nsuccessfulprobs < maxsuccessfulprobs
-            && nsuccessfulprobs < relmaxsuccessfulprobs * npricingprobsnotnull
-            && (nfoundcols == 0 || nsolvedprobs < relmaxprobs * npricingprobsnotnull));
 }

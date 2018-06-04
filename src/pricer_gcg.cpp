@@ -356,10 +356,7 @@ int ObjPricerGcg::getMaxColsRound() const
 {
    assert(pricingtype != NULL);
 
-   if( pricingtype->getType() == GCG_PRICETYPE_FARKAS || SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_) )
-      return pricingtype->getMaxcolsround();
-   else
-      return pricingtype->getMaxcolsroundroot();
+   return pricingtype->getMaxcolsround();
 }
 
 /** get the number of columns per pricing problem to be added to the master LP in the current pricing round */
@@ -3050,7 +3047,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             goto done;
 
          #pragma omp flush(nfoundvars, nsuccessfulprobs)
-         if( (pricingcontroller->canPricingloopBeAborted(pricetype, nfoundvars, nsuccessfulprobs, !GCGpricingjobIsHeuristic(pricingjob)) || infeasible) && !stabilized )
+         if( (pricingcontroller->canPricingloopBeAborted(pricetype, nfoundvars, nsuccessfulprobs) || infeasible) && !stabilized )
          {
             SCIPdebugMessage("*** Abort pricing loop, infeasible = %u, stabilized = %u\n", infeasible, stabilized);
             goto done;
