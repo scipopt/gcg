@@ -246,10 +246,11 @@ do
         sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.sub
         sed -i "s,\$AGUMENTS,$AGUMENTS," runcluster_tmp.sub
         sed -i "s,\$COUNT,$COUNT," runcluster_tmp.sub
+        # whitch out evalcheck
         condor_submit runcluster_tmp.sub
         rm runcluster_tmp.sub
 
-        # evalcheck include 
+        # evalcheck include (commtents the last line befor out.)
 		#cp runcluster_submit_or.dag runcluster_tmp.dag
         #sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.dag
         #sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.dag
