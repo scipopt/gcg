@@ -1,5 +1,4 @@
-
-
+#!/usr/bin/env zsh
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
 #*                  This file is part of the program                         *
@@ -28,11 +27,15 @@
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #
 # @author Benedikt Meier
-# 
-# File name: runcluster_submit_or.dag
-#
 
-JOB  A  runcluster_tmp.sub
-SCRIPT POST  A  $GCGPATH/../check/evalcheck_cluster.sh $EVALFILE
-SCRIPT POST  A  $GCGPATH/../check/runcluster_or_clean.sh
 
+rm -rf runcluster_tmp.dag.condor.sub
+rm -rf runcluster_tmp.dag.lib.out
+rm -rf runcluster_tmp.dag.lib.err
+rm -rf runcluster_tmp.dag.dagman.log
+rm -rf runcluster_tmp.dag.dagman.out
+rm -rf runcluster_tmp.dag.nodes.log
+rm -rf runcluster_tmp.dag.metrics
+
+rm -rf runcluster_tmp.dag
+rm -rf runcluster_tmp.sub
