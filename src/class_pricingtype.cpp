@@ -224,7 +224,7 @@ SCIP_RETCODE ReducedCostPricing::addParameters()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
 
-   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/maxroundsredcost",
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxroundsredcost",
          "maximal number of pricing rounds per node after the root node",
          &maxrounds, FALSE, DEFAULT_MAXROUNDSREDCOST, 0, INT_MAX, NULL, (SCIP_PARAMDATA*) NULL) );
 
