@@ -253,7 +253,7 @@ do
         sed -i "s,\$EVALFILE,$EVALFILE," runcluster_tmp.dag
 
         #condor_submit runcluster_tmp.sub
-        condor_submit_dag runcluster_tmp.dag
+        condor_submit_dag -f runcluster_tmp.dag
         #rm runcluster_tmp.sub
     fi
 

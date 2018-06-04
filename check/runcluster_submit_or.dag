@@ -34,5 +34,5 @@
 
 JOB  A  runcluster_tmp.sub
 SCRIPT POST  A  $GCGPATH/../check/evalcheck_cluster.sh $EVALFILE
-SCRIPT POST  A  $GCGPATH/../check/runcluster_or_clean.sh
+# SCRIPT POST  A  $GCGPATH/../check/runcluster_or_clean.sh
 
