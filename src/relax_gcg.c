@@ -1470,7 +1470,9 @@ SCIP_RETCODE createMasterProblem(
     * are not required
     */
    if( mode == DEC_DECMODE_ORIGINAL )
+   {
       return SCIP_OKAY;
+   }
 
    if( mode == DEC_DECMODE_DANTZIGWOLFE )
       SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
@@ -1868,6 +1870,7 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPsetMessagehdlr(relaxdata->origmasterprob, SCIPgetMessagehdlr(scip)) );
       SCIP_CALL( SCIPsetIntParam(relaxdata->origmasterprob, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->origmasterprob, "display/relevantstats", FALSE) );
+      SCIP_CALL( SCIPsetIntParam(relaxdata->origmasterprob, "constraints/components/maxprerounds", 0) );
 
       /* disabling unnecessary display columns */
       SCIP_CALL( SCIPsetIntParam(scip, "display/sumlpiterations/active", 0) );
@@ -2109,7 +2112,7 @@ SCIP_RETCODE setPricingObjsOriginal(
 
 /** sets the master objective function to what is necessary */
 static
-SCIP_RETCODE setPricingObjsOriginal(
+SCIP_RETCODE setMasterObjsOriginal(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 masterprob          /**< master problem SCIP instance*/
    )
@@ -2117,7 +2120,6 @@ SCIP_RETCODE setPricingObjsOriginal(
    int v;
    int nvars;
    SCIP_VAR** vars;
-   int i;
 
    assert(scip != NULL);
    assert(masterprob != NULL);
@@ -2127,7 +2129,7 @@ SCIP_RETCODE setPricingObjsOriginal(
 
    for( v = 0; v < nvars; ++v )
    {
-      SCIP_VAR* pricingvar;
+      SCIP_VAR* mastervar;
       SCIP_VAR* origvar;
       SCIP_Real objvalue;
 
@@ -2311,6 +2313,12 @@ SCIP_RETCODE solveDiagonalBlocks(
    {
       SCIP_CALL( setPricingObjsOriginal(scip, relaxdata->pricingprobs, relaxdata->npricingprobs) );
    }
+   //else
+   //{
+      ///* freeing the transformed problem of the master problem. This allows us to modify the objective function */
+      //SCIP_CALL( SCIPfreeTransform(relaxdata->masterprob) );
+      //SCIP_CALL( setMasterObjsOriginal(scip, relaxdata->masterprob) );
+   //}
 
    SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
 
@@ -2322,6 +2330,9 @@ SCIP_RETCODE solveDiagonalBlocks(
    if( GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
    {
       SCIP_CALL( solveBlockProblem(scip, relaxdata->masterprob, relaxdata, timelimit, -1, result, &objvalue) );
+
+      if( (*result) == SCIP_CUTOFF || (*result) == SCIP_DIDNOTRUN )
+         return SCIP_OKAY;
    }
    else
    {
@@ -3161,32 +3172,32 @@ SCIP_RETCODE solveMasterProblemAndEvaluate(
    if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
    {
       (*result) = SCIP_CUTOFF;
+   }
 
-      /* if there is no primal solution for the original problem, then the master solution is transferred */
-      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && SCIPgetBestSol(scip) == NULL )
+   /* if there is no primal solution for the original problem, then the master solution is transferred */
+   if( SCIPgetBestSol(relaxdata->masterprob) != NULL && SCIPgetBestSol(scip) == NULL )
+   {
+      SCIP_SOL* newsol;
+      SCIP_Bool stored;
+
+      SCIP_CALL( GCGtransformMastersolToOrigsol(scip, SCIPgetBestSol(relaxdata->masterprob), &newsol) );
+#ifdef SCIP_DEBUG
+      SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
+#else
+      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
+#endif
+      /* only check failed solution if best master solution is valid */
+      if( !stored && GCGmasterIsBestsolValid(relaxdata->masterprob) )
       {
-         SCIP_SOL* newsol;
-         SCIP_Bool stored;
-
-         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, SCIPgetBestSol(relaxdata->masterprob), &newsol) );
-   #ifdef SCIP_DEBUG
-         SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
-   #else
-         SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
-   #endif
-         /* only check failed solution if best master solution is valid */
-         if( !stored && GCGmasterIsBestsolValid(relaxdata->masterprob) )
-         {
-            SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
-         }
-         /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
-          *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
-          */
-         SCIP_CALL( SCIPfreeSol(scip, &newsol) );
-
-         if( stored )
-            SCIPdebugMessage("  updated current best primal feasible solution.\n");
+         SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
       }
+      /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
+       *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
+       */
+      SCIP_CALL( SCIPfreeSol(scip, &newsol) );
+
+      if( stored )
+         SCIPdebugMessage("  updated current best primal feasible solution.\n");
    }
 
    /* set the lower bound pointer */

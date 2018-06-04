@@ -176,17 +176,27 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
 
    if( discretization && (SCIPgetNContVars(scip) > 0) )
    {
+      SCIP_VAR** fixedvars;
+      SCIP_Real* fixedvals;
+      int nfixedvars;
+
       /* get variables of the master problem and their solution values */
       SCIP_CALL( SCIPgetVarsData(masterprob, &mastervarsall, &nmastervarsall, NULL, NULL, NULL, NULL) );
+
+      /* getting the fixed variables */
+      fixedvars = SCIPgetFixedVars(masterprob);
+      nfixedvars = SCIPgetNFixedVars(masterprob);
 
       assert(mastervarsall != NULL);
       assert(nmastervarsall >= 0);
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &mastervars, nmastervarsall) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervars, nmastervarsall + nfixedvars) );
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervarsall) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervarsall + nfixedvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &fixedvals, nfixedvars) );
 
       SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervarsall, mastervarsall, mastervals) );
+      SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nfixedvars, fixedvars, fixedvals) );
 
       nmastervars = 0;
 
@@ -197,7 +207,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
          assert( i >= nmastervars );
          solval = mastervals[i];
 
-         if( SCIPisPositive(scip, solval) )
+         if( !SCIPisZero(scip, solval) )
          {
             mastervars[nmastervars] = mastervarsall[i];
             mastervals[nmastervars] = solval;
@@ -206,20 +216,85 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
          }
       }
 
+      /* adding the fixed variables to the mastervars array */
+      for( i = 0; i < nfixedvars; i++ )
+      {
+         SCIP_Real solval;
+
+         solval = fixedvals[i];
+
+         if( !SCIPisZero(scip, solval) )
+         {
+            mastervars[nmastervars] = fixedvars[i];
+            mastervals[nmastervars] = solval;
+
+            ++nmastervars;
+         }
+      }
+
+      SCIPfreeBufferArray(scip, &fixedvals);
+
       /* sort mastervariables lexicographically */
       GCGsortPtrPtr((void**)mastervars, (void**) mastervals, mastervarcomp, scip, nmastervars );
    }
    else
    {
+      SCIP_VAR** fixedvars;
+      SCIP_Real* fixedvals;
+      int nfixedvars;
+
       /* get variables of the master problem and their solution values */
-      SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+      SCIP_CALL( SCIPgetVarsData(masterprob, &mastervarsall, &nmastervarsall, NULL, NULL, NULL, NULL) );
+
+      /* getting the fixed variables */
+      fixedvars = SCIPgetFixedVars(masterprob);
+      nfixedvars = SCIPgetNFixedVars(masterprob);
 
       assert(mastervars != NULL);
       assert(nmastervars >= 0);
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervars, nmastervarsall + nfixedvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervarsall + nfixedvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &fixedvals, nfixedvars) );
 
-      SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervars, mastervars, mastervals) );
+      SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervarsall, mastervarsall, mastervals) );
+      SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nfixedvars, fixedvars, fixedvals) );
+
+      nmastervars = 0;
+
+      for( i = 0; i < nmastervarsall; ++i )
+      {
+         SCIP_Real solval;
+
+         assert( i >= nmastervars );
+         solval = mastervals[i];
+
+         if( !SCIPisZero(scip, solval) )
+         {
+            mastervars[nmastervars] = mastervarsall[i];
+            mastervals[nmastervars] = solval;
+
+            ++nmastervars;
+         }
+      }
+
+      /* adding the fixed variables to the mastervars array */
+      for( i = 0; i < nfixedvars; i++ )
+      {
+         SCIP_Real solval;
+
+         solval = fixedvals[i];
+
+         if( !SCIPisZero(scip, solval) )
+         {
+            mastervars[nmastervars] = fixedvars[i];
+            mastervals[nmastervars] = solval;
+
+            ++nmastervars;
+         }
+      }
+
+      SCIPfreeBufferArray(scip, &fixedvals);
    }
 
    /* initialize the block values for the pricing problems */
@@ -238,7 +313,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       SCIP_Bool isray;
       int blocknr;
 
-      if( !SCIPisPositive(masterprob, mastervals[i]) )
+      if( SCIPisZero(masterprob, mastervals[i]) )
          continue;
 
       origvars = GCGmasterVarGetOrigvars(mastervars[i]);
