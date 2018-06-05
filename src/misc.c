@@ -505,11 +505,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    }
 
    SCIPfreeBufferArray(scip, &mastervals);
-
-   if( discretization && (SCIPgetNContVars(scip) > 0) )
-   {
-      SCIPfreeBufferArray(scip, &mastervars);
-   }
+   SCIPfreeBufferArray(scip, &mastervars);
 
    SCIPfreeBufferArray(scip, &blocknrs);
    SCIPfreeBufferArray(scip, &blockvalue);

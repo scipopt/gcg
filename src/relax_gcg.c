@@ -95,7 +95,6 @@ struct SCIP_RelaxData
    /* problems and convexity constraints */
    SCIP*                 masterprob;         /**< the master problem */
    SCIP*                 altmasterprob;      /**< the master problem for the alternate decomposition algorithm */
-   SCIP*                 origmasterprob;     /**< the SCIP instance for the original problem in the master */
    SCIP**                pricingprobs;       /**< the array of pricing problems */
    int                   npricingprobs;      /**< the number of pricing problems */
    int                   nrelpricingprobs;   /**< the number of relevant pricing problems */
@@ -1851,10 +1850,11 @@ SCIP_RETCODE createMaster(
    /* if there are no pricing problems, then the original problem will be solved directly. */
    if( relaxdata->npricingprobs == 0 )
    {
-      SCIP* tmpscip;
+      int origmode;
 
       /* setting the mode to ORIGINAL */
       SCIP_CALL( SCIPunfixParam(scip, "relaxing/gcg/mode") );
+      SCIP_CALL( SCIPgetIntParam(scip, "relaxing/gcg/mode", &origmode) );
       SCIP_CALL( SCIPsetIntParam(scip, "relaxing/gcg/mode", (int) DEC_DECMODE_ORIGINAL) );
       SCIP_CALL( SCIPfixParam(scip, "relaxing/gcg/mode") );
 
@@ -1862,25 +1862,26 @@ SCIP_RETCODE createMaster(
        * SCIP instance
        */
 
-      /* creating the master problem */
-      SCIP_CALL( SCIPcreate(&relaxdata->origmasterprob) );
+      if( origmode == DEC_DECMODE_DANTZIGWOLFE )
+      {
+         SCIP* tmpscip;
 
-      /* initialising the master problem */
-      SCIP_CALL( SCIPincludeDefaultPlugins(relaxdata->origmasterprob) );
-      SCIP_CALL( SCIPsetMessagehdlr(relaxdata->origmasterprob, SCIPgetMessagehdlr(scip)) );
-      SCIP_CALL( SCIPsetIntParam(relaxdata->origmasterprob, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
-      SCIP_CALL( SCIPsetBoolParam(relaxdata->origmasterprob, "display/relevantstats", FALSE) );
-      SCIP_CALL( SCIPsetIntParam(relaxdata->origmasterprob, "constraints/components/maxprerounds", 0) );
+         /* initialising the master problem */
+         SCIP_CALL( GCGincludeBendersPlugins(relaxdata->altmasterprob) );
+         SCIP_CALL( SCIPsetMessagehdlr(relaxdata->altmasterprob, SCIPgetMessagehdlr(scip)) );
+         SCIP_CALL( SCIPsetIntParam(relaxdata->altmasterprob, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+         SCIP_CALL( SCIPsetBoolParam(relaxdata->altmasterprob, "display/relevantstats", FALSE) );
 
-      /* disabling unnecessary display columns */
-      SCIP_CALL( SCIPsetIntParam(scip, "display/sumlpiterations/active", 0) );
-      SCIP_CALL( SCIPsetIntParam(scip, "display/lpiterations/active", 0) );
-      SCIP_CALL( SCIPsetIntParam(scip, "display/degeneracy/active", 0) );
+         /* disabling unnecessary display columns */
+         SCIP_CALL( SCIPsetIntParam(scip, "display/sumlpiterations/active", 0) );
+         SCIP_CALL( SCIPsetIntParam(scip, "display/lpiterations/active", 0) );
+         SCIP_CALL( SCIPsetIntParam(scip, "display/degeneracy/active", 0) );
 
-      /* swapping the master problem with the original master problem */
-      tmpscip = relaxdata->origmasterprob;
-      relaxdata->origmasterprob = relaxdata->masterprob;
-      relaxdata->masterprob = tmpscip;
+         /* swapping the master problem with the original master problem */
+         tmpscip = relaxdata->altmasterprob;
+         relaxdata->altmasterprob = relaxdata->masterprob;
+         relaxdata->masterprob = tmpscip;
+      }
    }
 
 
@@ -2652,12 +2653,6 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( SCIPfree(&(relaxdata->altmasterprob)) );
    }
 
-   /* free the original master problem */
-   if( relaxdata->origmasterprob != NULL )
-   {
-      SCIP_CALL( SCIPfree(&(relaxdata->origmasterprob)) );
-   }
-
    /* free used decomposition */
    if( relaxdata->decdecomp != NULL )
    {
@@ -3175,10 +3170,12 @@ SCIP_RETCODE solveMasterProblemAndEvaluate(
    }
 
    /* if there is no primal solution for the original problem, then the master solution is transferred */
-   if( SCIPgetBestSol(relaxdata->masterprob) != NULL && SCIPgetBestSol(scip) == NULL )
+   if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
    {
       SCIP_SOL* newsol;
       SCIP_Bool stored;
+
+      relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
 
       SCIP_CALL( GCGtransformMastersolToOrigsol(scip, SCIPgetBestSol(relaxdata->masterprob), &newsol) );
 #ifdef SCIP_DEBUG
@@ -3331,7 +3328,6 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->branchrules = NULL;
    relaxdata->masterprob = NULL;
    relaxdata->altmasterprob = NULL;
-   relaxdata->origmasterprob = NULL;
 
    initRelaxdata(relaxdata);
 
@@ -3777,7 +3773,8 @@ SCIP* GCGgetOriginalprob(
    if( benders != NULL && pricer == NULL )
    {
       origprob = GCGbendersGetOrigprob(masterprob);
-      assert(GCGgetDecompositionMode(origprob) == DEC_DECMODE_BENDERS);
+      assert((SCIPgetNActiveBenders(masterprob) > 0 && GCGgetDecompositionMode(origprob) == DEC_DECMODE_BENDERS)
+         || (SCIPgetNActiveBenders(masterprob) == 0 && GCGgetDecompositionMode(origprob) == DEC_DECMODE_ORIGINAL));
    }
    else if( pricer != NULL && benders == NULL )
    {
@@ -5063,15 +5060,18 @@ DEC_DECMODE GCGgetMasterDecompMode(
     * master problem. If there are both, then an error is returned */
    benders = SCIPfindBenders(masterprob, "gcg");
    pricer = SCIPfindPricer(masterprob, "gcg");
-   assert((benders != NULL && pricer == NULL) || (pricer != NULL && benders == NULL)
-      || (pricer == NULL && benders == NULL));
+   assert((benders != NULL && pricer == NULL) || (pricer != NULL && benders == NULL));
 
    if( benders != NULL )
-      mode = DEC_DECMODE_BENDERS;
+   {
+      /* both the Benders' master and the original master have the Benders' decomposition included. */
+      if( SCIPgetNActiveBenders(masterprob) > 0 )
+         mode = DEC_DECMODE_BENDERS;
+      else
+         mode = DEC_DECMODE_ORIGINAL;
+   }
    else if( pricer != NULL )
       mode = DEC_DECMODE_DANTZIGWOLFE;
-   else if( pricer == NULL && benders == NULL )
-      mode = DEC_DECMODE_ORIGINAL;
    else
    {
       mode = DEC_DECMODE_UNKNOWN;
