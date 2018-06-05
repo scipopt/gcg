@@ -1465,6 +1465,10 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/lpfeastol", lpfeastol) );
    SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/dualfeastol", dualfeastol) );
 
+   /* disable aggregation and multiaggregation of variables, as this might lead to issues with copied original variables */
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotaggr", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
+
    /* the following settings are for decomposition, so if the original problem is solved directly, then these settings
     * are not required
     */
@@ -1867,8 +1871,6 @@ SCIP_RETCODE createMaster(
          SCIP* tmpscip;
 
          /* initialising the master problem */
-         SCIP_CALL( GCGincludeBendersPlugins(relaxdata->altmasterprob) );
-         SCIP_CALL( SCIPsetMessagehdlr(relaxdata->altmasterprob, SCIPgetMessagehdlr(scip)) );
          SCIP_CALL( SCIPsetIntParam(relaxdata->altmasterprob, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
          SCIP_CALL( SCIPsetBoolParam(relaxdata->altmasterprob, "display/relevantstats", FALSE) );
 
@@ -1877,11 +1879,19 @@ SCIP_RETCODE createMaster(
          SCIP_CALL( SCIPsetIntParam(scip, "display/lpiterations/active", 0) );
          SCIP_CALL( SCIPsetIntParam(scip, "display/degeneracy/active", 0) );
 
+         /* setting the total node limit to 1 for the original SCIP instance. This is because Benders' decomposition solves
+          * the MIP within the relaxator of the root node. So no branching in the original problem is required.
+          */
+         SCIP_CALL( SCIPsetLongintParam(scip, "limits/totalnodes", 1) );
+
          /* swapping the master problem with the original master problem */
          tmpscip = relaxdata->altmasterprob;
          relaxdata->altmasterprob = relaxdata->masterprob;
          relaxdata->masterprob = tmpscip;
       }
+
+      SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "constraints/components/maxprerounds", 0) );
+      SCIP_CALL( SCIPsetBoolParam(scip, "relaxing/gcg/discretization", FALSE) );
    }
 
 
@@ -3773,8 +3783,8 @@ SCIP* GCGgetOriginalprob(
    if( benders != NULL && pricer == NULL )
    {
       origprob = GCGbendersGetOrigprob(masterprob);
-      assert((SCIPgetNActiveBenders(masterprob) > 0 && GCGgetDecompositionMode(origprob) == DEC_DECMODE_BENDERS)
-         || (SCIPgetNActiveBenders(masterprob) == 0 && GCGgetDecompositionMode(origprob) == DEC_DECMODE_ORIGINAL));
+      assert(GCGgetDecompositionMode(origprob) == DEC_DECMODE_BENDERS
+         || GCGgetDecompositionMode(origprob) == DEC_DECMODE_ORIGINAL);
    }
    else if( pricer != NULL && benders == NULL )
    {
