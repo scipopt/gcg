@@ -1,4 +1,4 @@
-#!/usr/bin/awk -f
+#!/usr/bin/env zsh
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
 #*                  This file is part of the program                         *
@@ -25,19 +25,17 @@
 #* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+#
+# @author Benedikt Meier
 
-BEGIN {
-   lastprob = "";
-}
-#
-# problem name
-#
-/^@01/ {
-   probfile = $2;
-}
-/^=ready=/ {
-   lastprob = probfile;
-}
-END {
-   printf(lastprob);
-}
+
+rm -rf runcluster_tmp.dag.condor.sub
+rm -rf runcluster_tmp.dag.lib.out
+rm -rf runcluster_tmp.dag.lib.err
+rm -rf runcluster_tmp.dag.dagman.log
+rm -rf runcluster_tmp.dag.dagman.out
+rm -rf runcluster_tmp.dag.nodes.log
+rm -rf runcluster_tmp.dag.metrics
+
+rm -rf runcluster_tmp.dag
+rm -rf runcluster_tmp.sub

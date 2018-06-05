@@ -3110,7 +3110,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
          relaxExitGcg, relaxInitsolGcg, relaxExitsolGcg, relaxExecGcg, relaxdata) );
 
    /* inform the main scip, that no LPs should be solved */
-   SCIP_CALL( SCIPsetIntParam(scip, "lp/solvefreq", -1) );
+   SCIP_CALL( SCIPsetIntParam(scip, "lp/solvefreq", 0) );
 
    /* Disable restarts */
    SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrestarts", 0) );

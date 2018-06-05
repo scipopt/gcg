@@ -2882,6 +2882,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    int i;
    int j;
    int nfoundvars;
+   SCIP_Bool optimal;
 
 #ifdef SCIP_STATISTIC
    SCIP_Real** olddualvalues;
@@ -2906,6 +2907,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    nfoundvars = 0;
    infeasible = FALSE;
    stabilized = FALSE;
+   optimal = FALSE;
    if( lowerbound != NULL )
       *lowerbound = -SCIPinfinity(scip_);
 
@@ -2983,8 +2985,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    /* stabilization loop */
    do
    {
-      SCIP_Bool optimal = FALSE;
-
+      optimal = FALSE;
 #ifndef NDEBUG
       if( nextchunk )
       {
@@ -3293,7 +3294,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
    if( infeasible )
       *result = SCIP_SUCCESS;
-   else if( *pnfoundvars > 0 )
+   else if( *pnfoundvars > 0 || optimal )
       *result = SCIP_SUCCESS;
    else
       *result = SCIP_DIDNOTRUN;
