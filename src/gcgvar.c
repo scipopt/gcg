@@ -1369,7 +1369,8 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    int blocknr;
 
    blocknr = GCGvarGetBlock(var);
-   assert( blocknr == -1 || blocknr == -2 || GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS);
+   assert( blocknr == -1 || blocknr == -2
+      || GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS || GCGgetMasterDecompMode(scip) == DEC_DECMODE_ORIGINAL);
 
    if( blocknr == -1 )
    {

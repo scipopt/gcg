@@ -82,7 +82,8 @@
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
-#define DEFAULT_MODE 2  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition) */
+#define DEFAULT_MODE 0  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default),
+                             1: Benders' decomposition, 2: solve original problem) */
 #define DELVARS
 
 /*
@@ -2121,41 +2122,6 @@ SCIP_RETCODE setPricingObjsOriginal(
    return SCIP_OKAY;
 }
 
-/** sets the master objective function to what is necessary */
-static
-SCIP_RETCODE setMasterObjsOriginal(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP*                 masterprob          /**< master problem SCIP instance*/
-   )
-{
-   int v;
-   int nvars;
-   SCIP_VAR** vars;
-
-   assert(scip != NULL);
-   assert(masterprob != NULL);
-
-   nvars = SCIPgetNVars(scip);
-   vars = SCIPgetVars(scip);
-
-   for( v = 0; v < nvars; ++v )
-   {
-      SCIP_VAR* mastervar;
-      SCIP_VAR* origvar;
-      SCIP_Real objvalue;
-
-      assert(GCGvarIsOriginal(vars[v]));
-      origvar = SCIPvarGetProbvar(vars[v]);
-
-      mastervar = GCGoriginalVarGetMastervars(origvar)[0];
-      assert(mastervar != NULL);
-
-      objvalue = SCIPvarGetObj(origvar);
-      SCIP_CALL( SCIPchgVarObj(masterprob, mastervar, objvalue) );
-   }
-   return SCIP_OKAY;
-}
-
 /** solve a block problem when the decomposition is diagonal */
 static
 SCIP_RETCODE solveBlockProblem(
@@ -2181,7 +2147,11 @@ SCIP_RETCODE solveBlockProblem(
    if( blockprob == NULL )
       return SCIP_OKAY;
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Solving block %i.\n", blocknum+1);
+   if( GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Solving block %i.\n", blocknum+1);
+   }
+
    SCIP_CALL( SCIPsetIntParam(blockprob, "display/verblevel", (int)SCIP_VERBLEVEL_NORMAL) );
 
    /* give the pricing problem 2% more time then the original scip has left */
@@ -2324,18 +2294,15 @@ SCIP_RETCODE solveDiagonalBlocks(
    {
       SCIP_CALL( setPricingObjsOriginal(scip, relaxdata->pricingprobs, relaxdata->npricingprobs) );
    }
-   //else
-   //{
-      ///* freeing the transformed problem of the master problem. This allows us to modify the objective function */
-      //SCIP_CALL( SCIPfreeTransform(relaxdata->masterprob) );
-      //SCIP_CALL( setMasterObjsOriginal(scip, relaxdata->masterprob) );
-   //}
 
    SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
 
    objvalue = 0.0;
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Block diagonal structure detected, solving blocks individually.\n");
+   if( GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Block diagonal structure detected, solving blocks individually.\n");
+   }
 
    /* if the original problem is solved directly, then we call  solveBlockProblem with the master problem */
    if( GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
@@ -2426,7 +2393,6 @@ SCIP_RETCODE initRelaxator(
 
       assert(relaxdata->decdecomp == NULL);
 
-      SCIPinfoMessage(scip, NULL, " CREATE BASIC DECOMP!\n");
       retcode = DECcreateBasicDecomp(scip, &decomp, TRUE);
       assert(retcode == SCIP_OKAY);
       if( retcode != SCIP_OKAY )
@@ -2437,8 +2403,7 @@ SCIP_RETCODE initRelaxator(
 
       assert(decomp != NULL );
 
-      retcode = SCIPconshdlrDecompAddDecdecomp(scip, decomp);
-      relaxdata->decdecomp = DECgetBestDecomp(scip);
+      relaxdata->decdecomp = decomp;
    }
 
    if( relaxdata->decdecomp == NULL )
@@ -2750,7 +2715,6 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
        * was collected previously, the user may have changed this in the mean time.
        */
       SCIP_CALL( SCIPgetIntParam(scip, "display/verblevel", &relaxdata->origverblevel) );
-      SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
 
       /* deactivating display columns */
       SCIP_CALL( SCIPsetIntParam(scip, "display/sumlpiterations/active", 0) );
@@ -2780,7 +2744,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    }
    else if( relaxdata->mode == DEC_DECMODE_ORIGINAL )
    {
-      SCIPinfoMessage(scip, NULL, "No decomposition will be performed. The original problem will be solved directly.\n");
+      SCIPinfoMessage(scip, NULL, "Original mode has been selected. No decomposition will be performed.\n");
    }
 
    return SCIP_OKAY;
