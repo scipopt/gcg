@@ -154,7 +154,9 @@ BEGIN {
    prob = b[1];
    if( b[m] == "gz" || b[m] == "z" || b[m] == "GZ" || b[m] == "Z" )
       m--;
-   for( i = 2; i < m; ++i )
+   if( b[m] == "lp" || b[m] == "mps" )
+      m--;
+   for( i = 2; i <= m; ++i )
       prob = prob "." b[i];
 
    if( useshortnames && length(prob) > namelength )
