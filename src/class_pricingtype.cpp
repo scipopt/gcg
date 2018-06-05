@@ -147,6 +147,13 @@ int FarkasPricing::getMaxcolsround() const
 {
    return maxcolsround;
 }
+
+/** returns the maximal number of columns per problem to be generated during pricing */
+int FarkasPricing::getMaxcolsprob() const
+{
+   return maxcolsprob;
+}
+
 /** returns the maximal percentage of pricing problems that are solved if variables have already been found */
 SCIP_Real FarkasPricing::getRelmaxprobs() const
 {
@@ -179,6 +186,7 @@ SCIP_Real ReducedCostPricing::consGetDual(
 {
    return SCIPgetDualsolLinear(scip, cons);
 }
+
 SCIP_Real ReducedCostPricing::rowGetDual(
    SCIP_ROW*             row
    ) const
@@ -212,6 +220,12 @@ SCIP_Real ReducedCostPricing::varGetObj(
 int ReducedCostPricing::getMaxcolsround() const
 {
    return GCGisRootNode(scip_) ? maxcolsroundroot : maxcolsround;
+}
+
+/** returns the maximal number of columns per problem to be generated during pricing */
+int ReducedCostPricing::getMaxcolsprob() const
+{
+   return GCGisRootNode(scip_) ? maxcolsprobroot : maxcolsprob;
 }
 
 /** returns the maximal percentage of pricing problems that are solved if variables have already been found */

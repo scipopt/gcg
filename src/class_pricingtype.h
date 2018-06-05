@@ -103,17 +103,8 @@ public:
    /** returns the maximal number of columns per pricing round */
    virtual int getMaxcolsround() const = 0;
 
-   /** returns the maximal number of columns per problem to be generated during pricing at root node */
-   int getMaxcolsprobroot() const
-   {
-      return maxcolsprobroot;
-   }
-
    /** returns the maximal number of columns per problem to be generated during pricing */
-   int getMaxcolsprob() const
-   {
-      return maxcolsprob;
-   }
+   virtual int getMaxcolsprob() const = 0;
 
    /** returns the maximal number of successfully solved pricing problems */
    int getMaxsuccessfulprobs() const
@@ -183,6 +174,9 @@ public:
    /** returns the maximal number of columns per pricing round */
    virtual int getMaxcolsround() const;
 
+   /** returns the maximal number of columns per problem to be generated during pricing */
+   virtual int getMaxcolsprob() const;
+
    /** returns the maximal percentage of pricing problems that are solved if variables have already been found */
    virtual SCIP_Real getRelmaxprobs() const;
 };
@@ -217,6 +211,9 @@ public:
 
    /** returns the maximal number of columns per pricing round */
    virtual int getMaxcolsround() const;
+
+   /** returns the maximal number of columns per problem to be generated during pricing */
+   virtual int getMaxcolsprob() const;
 
    /** returns the maximal percentage of pricing problems that are solved if variables have already been found */
    virtual SCIP_Real getRelmaxprobs() const;

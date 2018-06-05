@@ -364,10 +364,7 @@ int ObjPricerGcg::getMaxColsProb() const
 {
    assert(pricingtype != NULL);
 
-   if( pricingtype->getType() == GCG_PRICETYPE_FARKAS || SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_) )
-      return pricingtype->getMaxcolsprob();
-   else
-      return pricingtype->getMaxcolsprobroot();
+   return pricingtype->getMaxcolsprob();
 }
 
 /** ensures size of pricedvars array */
@@ -2699,7 +2696,6 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
 SCIP_RETCODE ObjPricerGcg::performPricingjob(
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
-   int                   maxcols,            /**< size of the cols array to indicate maximum columns */
    GCG_PRICINGSTATUS*    status,             /**< pointer to store pricing status */
    SCIP_Real*            lowerbound          /**< pointer to store the obtained lower bound */
    )
@@ -2840,7 +2836,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_Bool enableppcuts;
    SCIP_Bool enablestab;
    int nsuccessfulprobs;
-   int maxcols;
    int i;
    int j;
    int nfoundvars;
@@ -2870,8 +2865,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    stabilized = FALSE;
    if( lowerbound != NULL )
       *lowerbound = -SCIPinfinity(scip_);
-
-   maxcols = MAX(MAX(farkaspricing->getMaxcolsprob(),reducedcostpricing->getMaxcolsprob()),reducedcostpricing->getMaxcolsprobroot()); /*lint !e666*/
 
    SCIP_CALL( SCIPgetLPI(scip_, &lpi) );
 
@@ -3027,7 +3020,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       pricingcontroller->setupPriorityQueue(pricerdata->dualsolconv);
 
       /* perform all pricing jobs */
-      #pragma omp parallel for ordered firstprivate(pricingjob) private(oldnfoundvars) shared(retcode, optimal, maxcols, pricetype, bestredcost, beststabobj, bestredcostvalid, nfoundvars, nsuccessfulprobs) reduction(+:nsolvedprobs) schedule(static,1)
+      #pragma omp parallel for ordered firstprivate(pricingjob) private(oldnfoundvars) shared(retcode, optimal, pricetype, bestredcost, beststabobj, bestredcostvalid, nfoundvars, nsuccessfulprobs) reduction(+:nsolvedprobs) schedule(static,1)
       /* @todo: check abortion criterion here; pricingjob must be private? */
       while( (pricingjob = pricingcontroller->getNextPricingjob()) != NULL )
       {
@@ -3067,7 +3060,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 #endif
 
          /* solve the pricing problem */
-         private_retcode = performPricingjob(pricingjob, pricetype, maxcols, &status, &problowerbound);
+         private_retcode = performPricingjob(pricingjob, pricetype, &status, &problowerbound);
 
 #ifdef SCIP_STATISTIC
          pricingtime = pricetype->getClockTime() - pricingtime;
