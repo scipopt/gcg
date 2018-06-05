@@ -60,7 +60,7 @@ public:
    PricingType();
 
    PricingType(
-      SCIP                  *p_scip
+      SCIP*                  p_scip
       );
 
    /** destructor */
