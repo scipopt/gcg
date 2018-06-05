@@ -2403,7 +2403,7 @@ SCIP_RETCODE initRelaxator(
 
       assert(decomp != NULL );
 
-      relaxdata->decdecomp = decomp;
+      GCGsetStructDecdecomp(scip, decomp);
    }
 
    if( relaxdata->decdecomp == NULL )
