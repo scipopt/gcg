@@ -14,13 +14,13 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/type_compr.h lib/scip/src/scip/type_history.h \
  lib/scip/src/scip/type_nodesel.h lib/scip/src/scip/type_presol.h \
  lib/scip/src/scip/type_pricer.h lib/scip/src/scip/type_reader.h \
- lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_sepa.h \
- lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
- lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
- lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
- lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
- lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
- lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_reopt.h \
+ lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
+ lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
+ lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
+ lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
+ lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -32,35 +32,37 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -117,8 +119,7 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -244,13 +245,13 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/type_compr.h lib/scip/src/scip/type_history.h \
  lib/scip/src/scip/type_nodesel.h lib/scip/src/scip/type_presol.h \
  lib/scip/src/scip/type_pricer.h lib/scip/src/scip/type_reader.h \
- lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_sepa.h \
- lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
- lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
- lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
- lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
- lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
- lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_reopt.h \
+ lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
+ lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
+ lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
+ lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
+ lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -262,35 +263,37 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -341,8 +344,7 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -473,12 +475,13 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
  lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
+ lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
+ lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -490,35 +493,37 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -579,8 +584,7 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -709,12 +713,13 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
  lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
+ lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
+ lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -726,35 +731,37 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -815,8 +822,7 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -945,12 +951,13 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
  lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
+ lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
+ lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -962,35 +969,37 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -1051,8 +1060,7 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -1181,12 +1189,13 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
  lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
+ lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
+ lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -1198,35 +1207,37 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -1287,8 +1298,7 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -1416,12 +1426,13 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
  lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
+ lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
+ lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -1433,35 +1444,37 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -1512,8 +1525,7 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -1640,12 +1652,13 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
  lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
+ lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
+ lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -1657,35 +1670,37 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -1736,8 +1751,7 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -1868,12 +1882,13 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
  lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
+ lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
+ lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -1885,35 +1900,37 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -1964,8 +1981,7 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -2093,13 +2109,13 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/type_compr.h lib/scip/src/scip/type_history.h \
  lib/scip/src/scip/type_nodesel.h lib/scip/src/scip/type_presol.h \
  lib/scip/src/scip/type_pricer.h lib/scip/src/scip/type_reader.h \
- lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_sepa.h \
- lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
- lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
- lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
- lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
- lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
- lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_reopt.h \
+ lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
+ lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
+ lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
+ lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
+ lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -2111,35 +2127,37 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -2200,8 +2218,7 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -2329,13 +2346,13 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/type_compr.h lib/scip/src/scip/type_history.h \
  lib/scip/src/scip/type_nodesel.h lib/scip/src/scip/type_presol.h \
  lib/scip/src/scip/type_pricer.h lib/scip/src/scip/type_reader.h \
- lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_sepa.h \
- lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
- lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
- lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
- lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
- lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
- lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_reopt.h \
+ lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
+ lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
+ lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
+ lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
+ lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -2347,35 +2364,37 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -2436,8 +2455,7 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -2565,12 +2583,13 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
  lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
+ lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
+ lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -2582,35 +2601,37 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -2661,8 +2682,7 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -2791,12 +2811,13 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
  lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
+ lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
+ lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -2808,35 +2829,37 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -2887,8 +2910,7 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -3017,12 +3039,13 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
  lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
+ lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
+ lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -3034,35 +3057,37 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -3113,8 +3138,7 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -3245,12 +3269,13 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
  lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
+ lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
+ lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -3262,35 +3287,37 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -3341,8 +3368,7 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -3483,12 +3509,13 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
  lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
+ lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
+ lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -3500,35 +3527,37 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -3579,8 +3608,7 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
@@ -3710,13 +3738,13 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/type_compr.h lib/scip/src/scip/type_history.h \
  lib/scip/src/scip/type_nodesel.h lib/scip/src/scip/type_presol.h \
  lib/scip/src/scip/type_pricer.h lib/scip/src/scip/type_reader.h \
- lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_sepa.h \
- lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
- lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
- lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
- lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
- lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
- lib/scip/src/scip/pub_bandit_epsgreedy.h \
+ lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_reopt.h \
+ lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
+ lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
+ lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
+ lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
+ lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
  lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
  lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
  lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
@@ -3728,35 +3756,37 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/struct_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/struct_implics.h lib/scip/src/scip/pub_lp.h \
- lib/scip/src/scip/type_set.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/struct_message.h \
- lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_misc_select.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/pub_misc_sort.h \
- lib/scip/src/scip/pub_misc_linear.h lib/scip/src/scip/struct_misc.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
- lib/scip/src/scip/pub_sol.h lib/scip/src/scip/struct_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/struct_tree.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/struct_lp.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
+ lib/scip/src/scip/struct_matrix.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
+ lib/scip/src/scip/struct_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_reopt.h \
+ lib/scip/src/scip/struct_reopt.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/struct_sol.h lib/scip/src/scip/pub_table.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/struct_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/struct_var.h \
  lib/scip/src/scip/implics.h lib/scip/src/scip/history.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/set.h \
- lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/debug.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/struct_cuts.h lib/scip/src/scip/dbldblarith.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
+ lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
- lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h \
@@ -3809,8 +3839,7 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_benders.h \
- lib/scip/src/scip/benders.h lib/scip/src/scip/cons_benderslp.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_benderslp.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_cardinality.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \

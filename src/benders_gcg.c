@@ -341,8 +341,12 @@ SCIP_RETCODE createOriginalProblemSolution(
 
          /* the branching candidates come from the master problem solution. However, we need a full solution to pass to the
           * original problem to find the branching candidate. So the subproblem variables are set to their bounds, creating
-          * a possibly infeasible solution, but with the fractional master problem variables. */
-         if( artificial )
+          * a possibly infeasible solution, but with the fractional master problem variables.
+          *
+          * It may occur that the subproblem has not been solved yet, this can happen if the subproblem is independent.
+          * In this case, an artificial solution is created.
+          */
+         if( artificial || SCIPgetStage(subproblem) == SCIP_STAGE_PROBLEM )
          {
             /* setting the values of the subproblem variables to their bounds. */
             SCIP_CALL( setOriginalProblemPricingValues(origprob, masterprob, benders, origsol, vars, NULL, nvars) );
@@ -378,7 +382,6 @@ SCIP_RETCODE createOriginalProblemSolution(
 #endif
       if( !stored )
       {
-
          SCIP_CALL( SCIPcheckSolOrig(origprob, origsol, &stored, TRUE, TRUE) );
       }
 
