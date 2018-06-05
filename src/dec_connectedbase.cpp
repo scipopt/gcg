@@ -176,7 +176,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
    if( byconssadj )
       seeed->completeByConnectedConssAdjacency(seeedPropagationData->seeedpool );
    else
-      seeed->completeByConnected(seeedPropagationData->seeedpool );
+      seeed->completeByConnected();
 
   // seeed->showScatterPlot(seeedPropagationData->seeedpool);
 
@@ -215,10 +215,10 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
    SCIPgetBoolParam(scip, "detection/conssadjcalculated", &conssadjcalculated);
    //complete the seeed by bfs
 
-   if( byconssadj &&  conssadjcalculated)
+   if( byconssadj && conssadjcalculated )
       seeed->completeByConnectedConssAdjacency(seeedPropagationData->seeedpool );
    else
-      seeed->completeByConnected(seeedPropagationData->seeedpool );
+      seeed->completeByConnected( );
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;

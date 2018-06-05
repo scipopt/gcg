@@ -5050,7 +5050,7 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       }
       else {
 //         SCIPdebugMessagePrint(scip, " unpresolved complete seeed did not translate to complete presolved one \n");
-         (*seeediter)->completeByConnected(seeedpool);
+         (*seeediter)->completeByConnected();
          if ( (*seeediter)->isComplete() )
          {
             SCIP_CALL(SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, *seeediter ) );

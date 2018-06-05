@@ -685,7 +685,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createSeeedFromPartition(
       (*firstSeeed) = new Seeed(oldSeeed);
       SCIP_CALL( (*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
       (*secondSeeed) = new Seeed(oldSeeed);
-      SCIP_CALL( (*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIP_CALL( (*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks) );
       SCIPhashmapFree(&constoblock);
    }
    else {

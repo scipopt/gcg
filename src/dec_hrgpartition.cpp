@@ -891,7 +891,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHrgpartition)
       seeedPropagationData->newSeeeds[s]->considerImplicits(seeedPropagationData->seeedpool);
       seeedPropagationData->newSeeeds[s]->refineToBlocks(seeedPropagationData->seeedpool);
       if( seeedPropagationData->newSeeeds[s]->getNOpenconss() != 0 )
-         seeedPropagationData->newSeeeds[s]->completeByConnected(seeedPropagationData->seeedpool);
+         seeedPropagationData->newSeeeds[s]->completeByConnected();
       assert(seeedPropagationData->newSeeeds[s]->getNOpenconss() == 0);
       assert(seeedPropagationData->newSeeeds[s]->getNOpenvars() == 0);
    }

@@ -156,7 +156,7 @@ SCIP_RETCODE detection(
    seeed->refineToBlocks(seeedPropagationData->seeedpool);
 
    //complete the seeed by bfs
-   seeed->completeByConnected(seeedPropagationData->seeedpool);
+   seeed->completeByConnected();
 
    seeedPropagationData->nNewSeeeds = 1;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );

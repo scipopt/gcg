@@ -846,17 +846,9 @@ SCIP_RETCODE detection(
 
    SCIP_CALL( currseeed->assignSeeedFromConstoblock(detectordata->constoblock, nblocks, seeedpool) );
 
-  // currseeed->showScatterPlot(seeedpool);
-
-
-   currseeed->assignCurrentStairlinking(seeedpool);
-   //currseeed->showScatterPlot(seeedpool);
+   currseeed->assignCurrentStairlinking();
    currseeed->considerImplicits(seeedpool);
    currseeed->sort();
-
-
- //  currseeed->showScatterPlot(seeedpool);
-
 
    if( detectordata->constoblock != NULL )
       SCIPhashmapFree(&detectordata->constoblock);
@@ -865,8 +857,6 @@ SCIP_RETCODE detection(
 
 
    assert(currseeed->checkConsistency( seeedpool ) );
-
-  // currseeed->showScatterPlot(seeedpool);
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = currseeed;

@@ -208,14 +208,18 @@ private:
    bool isFinishedByFinisherUnpresolved;  /**< was the ancestor seeed for the unpresolved problem finished by the
                                             *< finishseeed() method of a detector */
    DEC_DETECTOR* finishedUnpresolvedBy;   /**< index of finishing detector of unpresolved ancestor seeed */
+   Seeedpool*    seeedpool;               /**< seeedpool for the corresponding problem , corresponds either to the presolved or the unpresolved problem*/
 
-   Seeedpool*    seeedpool;               /**< seeedpool for the corresponding problem */
-
-   /*!
+   /**
+    *
     * \brief checks blocks for identity by graph automorphism check, done by bliss, identity is only found if variables are in correct order
-    * */
-   void checkIdenticalBlocksBliss(
-      Seeedpool*           seeedpool,              /**< corresponding seeedpool */
+    * @param b1 block id of first block
+    * @param b2 block id of second block
+    * @param varmap maps variable indices (corresponding to  seeedpool indices) of block 2 to block 1
+    * @param varmap2 maps variable pointers of block 2 to those of block 1 if both blocks (problems) are identical
+    * @param identical pointer to store if the subproblems are identical
+    */
+      void checkIdenticalBlocksBliss(
       int                  b1,                     /**< block id of first block */
       int                  b2,                     /**< block id of second block */
       std::vector<int>&    varmap,                 /**< maps variable indices (corresponding to  seeedpool indices) of block 2 to block 1 */
@@ -224,11 +228,15 @@ private:
       );
 
 
-   /*!
-    * \brief checks blocks for identity by brute force, identity is only found if variables are in correct order
-    */
+      /**
+       * \brief checks blocks for identity by brute force, identity is only found if variables are in correct order
+       * @param b1 block id of first block
+       * @param b2 block id of second block
+       * @param varmap maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1
+       * @param varmap2 maps variable pointers of block 2 to those of block 1 if both blocks (problems) are identical
+       * @param identical pointer to store if the subproblems are identical
+       */
    void checkIdenticalBlocksBrute(
-      Seeedpool*           seeedpool,              /**< corresponding seeedpool */
       int                  b1,                     /**< block id of first block */
       int                  b2,                     /**< block id of second block */
       std::vector<int>&    varmap,                 /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
@@ -236,12 +244,15 @@ private:
       SCIP_Bool*           identical               /**< pointer to store if the subproblems are identical  */
       );
 
-   /*!
-    * \brief check some necessary conditions for two blocks to be identical
-    */
 
+   /**
+    * \brief check some necessary conditions for two blocks to be identical
+    * @param b1 block id of first block
+    * @param b2 block id of second block
+    * @param notidentical pointer to store whether or not the non-identity is proven
+    * @return scip return code
+    */
    SCIP_RETCODE checkIdenticalBlocksTrivial(
-      Seeedpool*           givenseeedpool,         /**< corresponding seeedpool */
       int                  b1,                     /**< block id of first block */
       int                  b2,                     /**< block id of second block */
       SCIP_Bool*           notidentical            /**< pointer to store whether or not the non-identity is proven */
@@ -249,129 +260,153 @@ private:
 
 public:
 
-   /*! constructor
-    *  initially, all conss and vars are open
-    *  */
+   /**
+    * constructor
+    * @param scip data structure
+    * @param id that is given to this seeed
+    * @param seeedpool this seeed is created for
+    */
    Seeed(
       SCIP* scip,                                  /**< scip data structure */
       int id,                                      /**< id that is given to this seeed */
       Seeedpool* seeedpool                         /**< seeedpool this seeed is created for */
       );
 
-   /*!
-    * \brief copy constructor
+   /**
+    * copy constructor
+    * @param seeedToCopy seeed to be copied
     */
    Seeed(
       const Seeed *seeedToCopy /**< seeed to be copied */
       );
 
-   /*!
+   /**
     *  destructor
     */
    ~Seeed();
 
 
-    /*!
+    /**
+     *
      * \brief adds a block, returns the number of the new block
      * */
    int addBlock();
 
 
-   /*!
-    * \brief incorporates the needed time of a certain detector in the detector chain */
+   /**
+    * \brief incorporates the needed time of a certain detector in the detector chain
+    * @param clocktime time to add
+    */
    void addClockTime(
       SCIP_Real clocktime /**< time to be added */
       );
 
-   /*!
+   /**
     * \brief incorporates the changes from ancestor seeed into the statistical data structures
+    * @param ancestor seeed whose propagation yielded to the current seeed
     */
-   void addDecChangesFromAncestor(
-      Seeed* ancestor
+  void addDecChangesFromAncestor(
+      Seeed* ancestor                  /**< seeed whose propagation yielded to the current seeed */
       );
 
-   /*!
-    * \brief adds a detectorchain information string to the corresponding vector (that carries information for each detector call)*/
+   /**
+    * \brief adds a detectorchain information string to the corresponding vector (that carries information for each detector call)
+    * @param decinfo information string (about the detector call) to add
+    * */
    void addDetectorChainInfo(
-      const char* decinfo
+      const char* decinfo              /**< information string (about the detector call) to add  */
       );
 
-   /*!
+   /**
+    *
     * \brief bookkeeping information: adds number of new blocks created by a detector added to detector chain
+    * @param nnewblocks number of new added blocks by latest detector call
     */
    void addNNewBlocks(
-      int nnewblocks
+      int nnewblocks                   /**< number of new added blocks by latest detector call */
       );
 
-   /*!
+   /**
     * \brief bookkeeping information: fraction of constraints that are not longer open for a detector added to detector chain
+    * @param pct fraction of constraints that are not longer open
     */
    void addPctConssFromFree(
-      SCIP_Real pct
+      SCIP_Real pct                    /**< fraction of constraints that are not longer open */
       );
 
-   /*!
-    *  \brief bookkeeping information: adds fraction of constraints assigned to a block for a detector added to detector chain */
+   /**
+    *  \brief bookkeeping information: adds fraction of constraints assigned to a block for a detector added to detector chain
+    * @param pct fraction of constraints assigned to a block
+    *  */
    void addPctConssToBlock(
-      SCIP_Real pct
+      SCIP_Real pct                    /**< fraction of constraints assigned to a block */
       );
 
-   /*!
-    *  brief bookkeeping information: adds fraction of constraints assigned to the border for a detector added to detector chain
+   /**
+    *  \brief bookkeeping information: adds fraction of constraints assigned to the border for a detector added to detector chain
+    * @param pct constraints assigned to the border
     */
    void addPctConssToBorder(
-      SCIP_Real pct
+      SCIP_Real pct                    /**< fraction constraints assigned to the border */
       );
 
-   /*!
-    *  brief bookkeeping information: adds fraction of variables that are not longer open for a detector added to detector chain
+   /**
+    *  \brief bookkeeping information: adds fraction of variables that are not longer open for a detector added to detector chain
+    *  @param pct fraction of variables that are not longer open
     */
    void addPctVarsFromFree(
-      SCIP_Real pct
+      SCIP_Real pct                    /**< fraction of variables that are not longer open */
       );
 
 
-   /*!
-    *  brief bookkeeping information: adds fraction of variables assigned to a block for a detector added to detector chain
+   /**
+    *  \brief bookkeeping information: adds fraction of variables assigned to a block for a detector added to detector chain
+    *  @param pct fraction of variables assigned to a block
     *  */
    void addPctVarsToBlock(
-      SCIP_Real pct
+      SCIP_Real pct                     /**< fraction of variables assigned to a block */
       );
 
-   /*!
-    * brief bookkeeping information: adds fraction of variables assigned to the border for a detector added to detector chain
+   /**
+    * \brief bookkeeping information: adds fraction of variables assigned to the border for a detector added to detector chain
+    * @param pct fraction of variables assigned to a block
     */
    void addPctVarsToBorder(
-      SCIP_Real pct
+      SCIP_Real pct                    /**< fraction of variables assigned to a block */
       );
 
-   /*!
+   /**
     * \brief method to check if at leas one constraint is assigned to some block
-    *  @returns true if at least one constraint is assigned to a block
+    * @returns true if at least one constraint is assigned to a block
     *  */
    bool alreadyAssignedConssToBlocks();
 
-   /*!
+
+   /**
+    *
+    */
+   /**
     * \brief assigns open conss to master according to the cons assignment information given in constoblock hashmap,
+    * @param constoblock hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
+    * @param givenNBlocks number of blocks the hashmap contains
+    * @return
     * \note for conss assigned to blocks according to constoblock there is no assignment \see assignSeeedFromConstoblock
     * */
    SCIP_RETCODE assignBorderFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
                                    *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
-      int givenNBlocks,          /**< number of blocks the hashmap contains */
-      Seeedpool* seeedpool       /**< a seeedpool that uses this seeed */
-      );
+      int givenNBlocks          /**< number of blocks the hashmap contains */
+       );
 
 
-   /*!
-    * \brief assigns open vars to stairlinking if they can be found in exactly two consecutive blocks, returns true if at least one stairlinkingvar
-    *  was assigned
+   /**
+    * \brief assigns open vars to stairlinking if they can be found in exactly two consecutive blocks, returns
+    * @return true iff at least one stairlinkingvar  was assigned
     */
    bool assignCurrentStairlinking(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
-   /*!
+   /**
     * \brief adds blocks and assigns open conss to such a new block or to master
     *  according to the cons assignment information given in constoblock hashmap
     *  \see assignSeeedFromConstoblockVector
@@ -508,7 +543,6 @@ public:
      *  strategy: assigns all conss and vars to the same block if they are connected
      *  a cons and a var are adjacent if the var appears in the cons */
    SCIP_RETCODE completeByConnected(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
    /** assigns all open constraints and open variables
