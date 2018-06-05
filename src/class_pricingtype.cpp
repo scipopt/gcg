@@ -51,6 +51,7 @@
 #define DEFAULT_MAXSUCCESSFULPROBSREDCOST INT_MAX   /**< maximal number of successfully solved red. cost pricing problems */
 #define DEFAULT_RELMAXPROBSREDCOSTROOT   1.0        /**< maximal percentage of red. cost pricing problems that are solved at root node if variables have already been found */
 #define DEFAULT_RELMAXPROBSREDCOST       1.0        /**< maximal percentage of red. cost pricing problems that are solved if variables have already been found */
+#define DEFAULT_RELMAXSUCCESSFULPROBSREDCOST 1.0    /**< maximal percentage of pricing problems that need to be solved successfully in reduced cost pricing */
 
 #define DEFAULT_MAXCOLSROUNDFARKAS        10        /**< maximal number of columns per Farkas pricing round */
 #define DEFAULT_MAXCOLSPROBFARKAS         10        /**< maximal number of columns per problem to be generated during Farkas pricing */
@@ -84,6 +85,7 @@ PricingType::PricingType(
    maxsuccessfulprobs = INT_MAX;
    relmaxprobsroot = 1.0;
    relmaxprobs = 1.0;
+   relmaxsuccessfulprobs = 1.0;
 
    SCIP_CALL_EXC( SCIPcreateCPUClock(scip, &(clock)) );
 }
@@ -273,6 +275,10 @@ SCIP_RETCODE ReducedCostPricing::addParameters()
    SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/relmaxprobsredcost",
          "maximal percentage of red. cost pricing problems that are solved if variables have already been found",
          &relmaxprobs, FALSE, DEFAULT_RELMAXPROBSREDCOST, 0.0, 1.0, NULL, (SCIP_PARAMDATA*) NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/relmaxsuccessfulprobsredcost",
+         "maximal percentage of pricing problems that need to be solved successfully in reduced cost pricing",
+         &relmaxsuccessfulprobs, FALSE, DEFAULT_RELMAXSUCCESSFULPROBSREDCOST, 0.0, 1.0, NULL, NULL) );
 
    return SCIP_OKAY;
 }

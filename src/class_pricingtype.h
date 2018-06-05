@@ -41,19 +41,20 @@
 class PricingType
 {
 protected:
-  SCIP*                 scip_;
-  GCG_PRICETYPE         type;
-  SCIP_CLOCK*           clock;
+   SCIP*                 scip_;
+   GCG_PRICETYPE         type;
+   SCIP_CLOCK*           clock;
 
-  int                   calls;
-  int                   maxrounds;
-  int                   maxcolsroundroot;
-  int                   maxcolsround;
-  int                   maxcolsprobroot;
-  int                   maxcolsprob;
-  int                   maxsuccessfulprobs;
-  SCIP_Real             relmaxprobsroot;
-  SCIP_Real             relmaxprobs;
+   int                   calls;
+   int                   maxrounds;
+   int                   maxcolsroundroot;
+   int                   maxcolsround;
+   int                   maxcolsprobroot;
+   int                   maxcolsprob;
+   int                   maxsuccessfulprobs;
+   SCIP_Real             relmaxprobsroot;
+   SCIP_Real             relmaxprobs;
+   SCIP_Real             relmaxsuccessfulprobs; /**< maximal percentage of pricing problems that need to be solved successfully */
 
 public:
    /** constructor */
@@ -114,6 +115,12 @@ public:
 
    /** returns the maximal percentage of pricing problems that are solved if variables have already been found */
    virtual SCIP_Real getRelmaxprobs() const = 0;
+
+   /** returns the maximal percentage of pricing problems that need to be solved successfully */
+   SCIP_Real getRelmaxsuccessfulprobs() const
+   {
+      return relmaxsuccessfulprobs;
+   }
 
    /** returns the type of this pricing type */
    GCG_PRICETYPE getType() const

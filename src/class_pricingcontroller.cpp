@@ -60,7 +60,6 @@
                                                      *    reliability from the 'l'ast nroundscol rounds
                                                      */
 #define DEFAULT_NROUNDSCOL               15
-#define DEFAULT_RELMAXSUCCESSFULPROBS    1.0        /**< maximal percentage of pricing problems that need to be solved successfully */
 #define DEFAULT_CHUNKSIZE                INT_MAX    /**< maximal number of pricing problems to be solved during one pricing loop */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
 #define DEFAULT_JOBTIMELIMIT             1e+20      /**< time limit per iteration of a pricing job */
@@ -91,7 +90,6 @@ Pricingcontroller::Pricingcontroller(
 
    sorting = DEFAULT_SORTING;
    nroundscol = DEFAULT_NROUNDSCOL;
-   relmaxsuccessfulprobs = DEFAULT_RELMAXSUCCESSFULPROBS;
    chunksize = DEFAULT_CHUNKSIZE;
    eagerfreq = DEFAULT_EAGERFREQ;
 
@@ -128,10 +126,6 @@ SCIP_RETCODE Pricingcontroller::addParameters()
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/nroundscol",
          "number of previous pricing rounds for which the number of improving columns should be counted",
          &nroundscol, TRUE, DEFAULT_NROUNDSCOL, 1, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/relmaxsuccessfulprobs",
-         "maximal percentage of pricing problems that need to be solved successfully",
-         &relmaxsuccessfulprobs, FALSE, DEFAULT_RELMAXSUCCESSFULPROBS, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/chunksize",
          "maximal number of pricing problems to be solved during one pricing loop",
@@ -606,7 +600,7 @@ SCIP_Bool Pricingcontroller::canPricingloopBeAborted(
 
    return !((nfoundcols < pricingtype->getMaxcolsround())
          && nsuccessfulprobs < pricingtype->getMaxsuccessfulprobs()
-         && nsuccessfulprobs < relmaxsuccessfulprobs * nrelpricingprobs
+         && nsuccessfulprobs < pricingtype->getRelmaxsuccessfulprobs() * nrelpricingprobs
          && (nfoundcols == 0 || nsolvedprobs < pricingtype->getRelmaxprobs() * nrelpricingprobs));
 }
 
