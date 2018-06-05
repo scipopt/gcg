@@ -61,31 +61,35 @@ enum USERGIVEN
 
 class Seeedpool;
 
+
+/*!
+ * \brief class to manage partial decompositions
+ */
 class Seeed
 {
 private:
    SCIP* scip;                                                 /**< SCIP data structure */
-   int id;                                                     /**< id of the seeed */
-   int nBlocks;                                                /**< number of blocks the decomposition currently has */
+   int id;                                                     /**< id of the seeed, for each run the id is unique */
+   int nBlocks;                                                /**< number of blocks the partial decomposition currently has */
    int nVars;                                                  /**< number of variables */
    int nConss;                                                 /**< number of constraints */
    std::vector<int> masterConss;                               /**< vector containing indices of master constraints */
-   std::vector<int> masterVars;                                /**< vector containing indices of master variables */
+   std::vector<int> masterVars;                                /**< vector containing indices of master variables (these variables are supposed to have all nonzero entries in master constraints) */
    std::vector<std::vector<int>> conssForBlocks;               /**< conssForBlocks[k] contains a vector of indices of all
                                                                  *< constraints assigned to block k */
    std::vector<std::vector<int>> varsForBlocks;                /**< varsForBlocks[k] contains a vector of indices of all
                                                                  *< variables assigned to block k */
    std::vector<int> linkingVars;                               /**< vector containing indices of linking variables */
    std::vector<std::vector<int>> stairlinkingVars;             /**< vector containing indices of staircase linking variables
-                                                                 *< of the blocks (stairlinking variables can be found only
-                                                                 *< in the vector of their first block) */
+                                                                 *< of the blocks (stair-linking variables are registered only
+                                                                 *< in their first block) */
    std::vector<int> openVars;                                  /**< vector containing indices of variables that are not
                                                                  *< assigned yet*/
    std::vector<int> openConss;                                 /**< vector containing indices of constraints that are not
                                                                  *< assigned yet*/
-   std::vector<bool> isvaropen;
-   std::vector<bool> isconsopen;
-   std::vector<bool> isvarmaster;
+   std::vector<bool> isvaropen;                                /**< help vector for fast query if a variable is still open */
+   std::vector<bool> isconsopen;                               /**< help vector for fast query if a constraint is still open */
+   std::vector<bool> isvarmaster;                              /**< help vector for fast query if a variable is assigned to be a only-master vatiable */
    std::vector<bool> isconsmaster;
 
    std::vector<int>  ncoeffsforblock;                          /**< number of coeffs per block */

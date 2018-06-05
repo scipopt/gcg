@@ -5304,7 +5304,7 @@ SCIP_Real Seeed::getScore(
       return maxforeseeingwhitescore;
    }
 
-   if( type == scoretype::MAX_FORESSEEING_AGG_WHITE )
+   if( type == scoretype::MAX_FORESEEING_AGG_WHITE )
    {
       if( maxforeseeingwhitescoreagg == -1. )
          calcmaxforeseeingwhitescoreagg();

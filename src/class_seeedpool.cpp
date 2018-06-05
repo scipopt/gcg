@@ -615,7 +615,7 @@ SCIP_Bool cmpSeeedsAggFWhite(
    SeeedPtr j
    )
 {
-   return ( i->getScore( MAX_FORESSEEING_AGG_WHITE )  > j->getScore( MAX_FORESSEEING_AGG_WHITE ) );
+   return ( i->getScore( MAX_FORESEEING_AGG_WHITE )  > j->getScore( MAX_FORESEEING_AGG_WHITE ) );
 }
 
 
@@ -1857,7 +1857,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_FORESSEEING_WHITE )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsFWhite);
 
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_FORESSEEING_AGG_WHITE )
+   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_FORESEEING_AGG_WHITE )
          std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsAggFWhite);
 
    if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::SETPART_FWHITE )
