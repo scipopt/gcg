@@ -619,13 +619,13 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
       case SCIP_STATUS_NODELIMIT:
          if( solverdata->nodelimitfac > 1.0 )
          {
-            solverdata->curnodelimit[probnr] *= solverdata->nodelimitfac;
+            solverdata->curnodelimit[probnr] += solverdata->startnodelimit;
             break;
          }
       case SCIP_STATUS_STALLNODELIMIT:
          if( solverdata->stallnodelimitfac > 1.0 )
          {
-            solverdata->curstallnodelimit[probnr] *= solverdata->stallnodelimitfac;
+            solverdata->curstallnodelimit[probnr] += solverdata->startstallnodelimit;
             break;
          }
       case SCIP_STATUS_GAPLIMIT:
@@ -637,7 +637,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
       case SCIP_STATUS_SOLLIMIT:
          if( solverdata->sollimitfac > 1.0 )
          {
-            solverdata->cursollimit[probnr] *= solverdata->sollimitfac;
+            solverdata->cursollimit[probnr] += solverdata->startsollimit;
             break;
          }
       default:
