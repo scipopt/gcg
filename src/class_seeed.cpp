@@ -213,35 +213,6 @@ Seeed::~Seeed()
       SCIPfreeBlockMemoryArrayNull( scip, & detectorchainstring, SCIP_MAXSTRLEN );
 }
 
-SCIP_Bool Seeed::isconshittingblockca(
-   gcg::Seeedpool* givenseeedpool,
-   int masterconsid,
-   int b
-   )
-{
-   int neighborc = 0;
-   int blockc = 0;
-   const int* conssforblock = getConssForBlock(b);
-   const int* conssforcons = givenseeedpool->getConssForCons(masterconsid);
-
-   int nconssforblock = getNConssForBlock(b);
-   int nconssforcons = givenseeedpool->getNConssForCons(masterconsid);
-   while ( blockc < nconssforblock && neighborc < nconssforcons )
-   {
-      int diff = conssforblock[blockc] - conssforcons[neighborc];
-      if ( diff < 0 )
-         ++blockc;
-      else if( diff > 0 )
-         ++neighborc;
-      else
-      {
-         assert(diff == 0);
-         return TRUE;
-      }
-   }
-   return FALSE;
-}
-
 
 /** checks whether two arrays of SCIP_Real's are identical */
 static

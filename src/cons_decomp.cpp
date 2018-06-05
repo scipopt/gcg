@@ -6431,15 +6431,11 @@ DEC_DECOMP* DECgetBestDecomp(
    assert(conshdlrdata != NULL);
 
 
-   //seeedpool = ( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) ? conshdlrdata->seeedpoolunpresolved :  conshdlrdata->seeedpool );
-
    if( conshdlrdata->seeedpool == NULL )
       conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
 
    seeedpool = conshdlrdata->seeedpool;
    seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved;
-
- //  DECconshdlrDecompSortDecompositionsByScore(scip);
 
    if( conshdlrdata->candidates->size() == 0 && conshdlrdata->useddecomp == NULL)
    {

@@ -5303,12 +5303,10 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       if( isblockdeleted[b] )
          continue;
 
-
-
       if( seeed->getNVarsForBlock( b ) > 0 )
          SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & subscipvars[b -ndeletedblocksbefore[b]], seeed->getNVarsForBlock( b ) ) );
       else
-         subscipvars[b] = NULL;
+         subscipvars[b-ndeletedblocksbefore[b]] = NULL;
 
       if( seeed->getNStairlinkingvars( b ) > 0 )
          SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & stairlinkingvars[b-ndeletedblocksbefore[b]], seeed->getNStairlinkingvars( b ) ) );

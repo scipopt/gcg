@@ -51,25 +51,28 @@
 namespace gcg {
 
 
+/*!
+ * enumeration to display if a decomposition was given by the user and if so, how it was processed after adding
+ */
 enum USERGIVEN
 {
-   NOT = 0,
-   PARTIAL = - 1,
-   COMPLETE = - 2,
-   COMPLETED_CONSTOMASTER = - 3
+   NOT = 0,                            /**< this seeed was not given by the user */
+   PARTIAL = - 1,                      /**< this partial seeed was given by the user as it is*/
+   COMPLETE = - 2,                     /**< this complete seeed was given by the user as it is*/
+   COMPLETED_CONSTOMASTER = - 3        /**< this seeed was partially given by the user and then completed by setting all missing constraints to the master*/
 };
 
 class Seeedpool;
 
 
 /*!
- * \brief class to manage partial decompositions
+ * \brief class to manage partial decompositions (aka seeed), each seeed corresponds to one seeedpool which contains the problem information, there is one seeedpool for the original and the transformed problem.
  */
 class Seeed
 {
 private:
    SCIP* scip;                                                 /**< SCIP data structure */
-   int id;                                                     /**< id of the seeed, for each run the id is unique */
+   int id;                                                     /**< unique id of the seeed, unique */
    int nBlocks;                                                /**< number of blocks the partial decomposition currently has */
    int nVars;                                                  /**< number of variables */
    int nConss;                                                 /**< number of constraints */
@@ -89,20 +92,21 @@ private:
                                                                  *< assigned yet*/
    std::vector<bool> isvaropen;                                /**< help vector for fast query if a variable is still open */
    std::vector<bool> isconsopen;                               /**< help vector for fast query if a constraint is still open */
-   std::vector<bool> isvarmaster;                              /**< help vector for fast query if a variable is assigned to be a only-master vatiable */
-   std::vector<bool> isconsmaster;
+   std::vector<bool> isvarmaster;                              /**< help vector for fast query if a variable is assigned to be a only-master variable */
+   std::vector<bool> isconsmaster;                             /**< help vector for fast query if a constraint is assigned to be a master constraint */
 
    std::vector<int>  ncoeffsforblock;                          /**< number of coeffs per block */
 
-   SCIP_Bool         calculatedncoeffsforblock;                        /**< is the  number of coeff per block already calculated*/
-   int               ncoeffsformaster;                                    /**< number of master coefficients */
+   SCIP_Bool         calculatedncoeffsforblock;                /**< is the  number of coeff per block already calculated*/
+   int               ncoeffsformaster;                         /**< number of master coefficients */
+   std::vector<std::vector<int>> ncoeffsforblockformastercons; /**< number of coeffs a block has in a certain master constraint */
 
-   bool varsforblocksorted;
-   bool stairlinkingvarsforblocksorted;
-   bool conssforblocksorted;
-   bool linkingvarssorted;
-   bool mastervarssorted;
-   bool masterconsssorted;
+   bool varsforblocksorted;                                    /**< bool to store if the varsforblocks datastructure is sorted atm */
+   bool stairlinkingvarsforblocksorted;                        /**< bool to store if the stairlinkingvarsforblock datastructure is sorted atm */
+   bool conssforblocksorted;                                   /**< bool to store if the conssforblock datastructure is sorted atm */
+   bool linkingvarssorted;                                     /**< bool to store if the linkingvars datastructure is sorted atm */
+   bool mastervarssorted;                                      /**< bool to store if the mastervars datastructure is sorted atm */
+   bool masterconsssorted;                                     /**< bool to store if the masterconsssorted datastructure is sorted atm */
 
 
    std::vector<int> bookedAsMasterConss;                       /**< vector containing indices of constraints that are not
@@ -118,20 +122,18 @@ private:
    std::vector<std::pair<int, int>> bookedAsStairlinkingVars;  /**< vector containing indices of variables that are not
                                                                  *< assigned yet but booked as stairlinking vars and the
                                                                  *< first block of the stairlinking var */
-   long hashvalue;
+   long hashvalue;                                             /**< hash value of this partial decomposition, decompositions with same has value are considered to be identical */
    bool changedHashvalue;                                      /**< are there any changes concerning the hash value since it
                                                                  *< was calculated last time */
 
    bool isselected;                                            /**< is this seeed selected */
 
-   bool isagginfoalreadytoexpensive;                            /** is agginfo already known to be to expensive */
+   bool isagginfoalreadytoexpensive;                            /**< is agginfo already known to be to expensive to calculate*/
 
-   const static int primes[];
-   const static int nPrimes;
+   const static int primes[];                                   /**< an array of prime numbers to calculate the hashvalue */
+   const static int nPrimes;                                    /**< size of the array of prime numbers */
 
-   bool isFinishedByFinisher;                         /**< was this seeed finished by the finishseeed() method of a detector */
-
-   std::vector<std::vector<int>>    ncoeffsforblockformastercons;    /**< number of coeffs a block has in a certain master constraint */
+   bool isFinishedByFinisher;                                   /**< was this seeed finished by the finishseeed() method of a detector */
 
    /** aggregation information */
    SCIP_Bool            agginfocalculated;                             /**< is aggregation information for the blocks already calculated */
@@ -170,13 +172,15 @@ private:
                                                          *< to linking by the classifier used by a detector
                                                          *< (empty vector if no classifier was used) */
 
-   std::vector<int> listofancestorids;                /**< vector containing detector indices that worked on that seeed */
+   std::vector<int> listofancestorids;                /**< vector containing decomposition indices that are ancestors of this seeed */
+
+
    USERGIVEN usergiven;                               /**< is this seeed partially or completely given by user */
    bool isfromlegacymode;                             /**< true if this seeed stems from a detector operating in legacy mode */
-   SCIP_Real score;                                   /**< score to evaluate the seeeds */
+   SCIP_Real score;                                   /**< classc score to evaluate the partial */
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
-   SCIP_Real bendersscore;                           /**< score to evaluate the seeeds */
-   SCIP_Real benderareascore;                          /**< 1 - fraction of white area iin master constraints to complete area */
+   SCIP_Real bendersscore;                            /**< score to evaluate the seeeds */
+   SCIP_Real benderareascore;                         /**< 1 - fraction of white area in master constraints to complete area */
 
    SCIP_Real strongdecompositionscore;                /**< strong decomposition score  */
 
@@ -207,115 +211,150 @@ private:
 
    Seeedpool*    seeedpool;               /**< seeedpool for the corresponding problem */
 
-   /** checks blocks for identity by graph automorphism check done by bliss, identity is only found if variables are in correct order */
+   /*!
+    * \brief checks blocks for identity by graph automorphism check, done by bliss, identity is only found if variables are in correct order
+    * */
    void checkIdenticalBlocksBliss(
-      Seeedpool*           seeedpool,
-      int                  b1,
-      int                  b2,
-      std::vector<int>&    varmap,         /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
-      SCIP_HASHMAP*        varmap2,
-      SCIP_Bool*           identical
+      Seeedpool*           seeedpool,              /**< corresponding seeedpool */
+      int                  b1,                     /**< block id of first block */
+      int                  b2,                     /**< block id of second block */
+      std::vector<int>&    varmap,                 /**< maps variable indices (corresponding to  seeedpool indices) of block 2 to block 1 */
+      SCIP_HASHMAP*        varmap2,                /**< maps variable pointers of block 2 to those of block 1 if both blocks (problems) are identical*/
+      SCIP_Bool*           identical               /**< pointer to store if the subproblems are identical  */
       );
 
 
-   /** checks blocks for identity by brute force, identity is only found if variables are in correct order */
+   /*!
+    * \brief checks blocks for identity by brute force, identity is only found if variables are in correct order
+    */
    void checkIdenticalBlocksBrute(
-      Seeedpool*           seeedpool,
-      int                  b1,
-      int                  b2,
-      std::vector<int>&    varmap,         /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
-      SCIP_HASHMAP*        varmap2,
-      SCIP_Bool*           identical
+      Seeedpool*           seeedpool,              /**< corresponding seeedpool */
+      int                  b1,                     /**< block id of first block */
+      int                  b2,                     /**< block id of second block */
+      std::vector<int>&    varmap,                 /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
+      SCIP_HASHMAP*        varmap2,                /**< maps variable pointers of block 2 to those of block 1 if both blocks (problems) are identical*/
+      SCIP_Bool*           identical               /**< pointer to store if the subproblems are identical  */
       );
+
+   /*!
+    * \brief check some necessary conditions for two blocks to be identical
+    */
 
    SCIP_RETCODE checkIdenticalBlocksTrivial(
-      Seeedpool*           givenseeedpool,
-      int                  b1,
-      int                  b2,
-      SCIP_Bool*           notidentical
+      Seeedpool*           givenseeedpool,         /**< corresponding seeedpool */
+      int                  b1,                     /**< block id of first block */
+      int                  b2,                     /**< block id of second block */
+      SCIP_Bool*           notidentical            /**< pointer to store whether or not the non-identity is proven */
       );
 
 public:
 
-   /** constructor
-    *  initially, all conss and vars are open */
+   /*! constructor
+    *  initially, all conss and vars are open
+    *  */
    Seeed(
-      SCIP* scip,       /**< scip data structure */
-      int id,           /**< id that is given to this seeed */
-      Seeedpool* seeedpool
+      SCIP* scip,                                  /**< scip data structure */
+      int id,                                      /**< id that is given to this seeed */
+      Seeedpool* seeedpool                         /**< seeedpool this seeed is created for */
       );
 
-   /** copy constructor */
+   /*!
+    * \brief copy constructor
+    */
    Seeed(
       const Seeed *seeedToCopy /**< seeed to be copied */
       );
 
-   /** destructor */
+   /*!
+    *  destructor
+    */
    ~Seeed();
 
-   SCIP_Bool isconshittingblockca(
-      gcg::Seeedpool* seeedpool,
-      int masterconsid,
-      int b
-      );
 
-   /** adds a block, returns the number of the new block */
+    /*!
+     * \brief adds a block, returns the number of the new block
+     * */
    int addBlock();
 
-   /** incorporates the needed time of a certain detector in the detector chain */
+
+   /*!
+    * \brief incorporates the needed time of a certain detector in the detector chain */
    void addClockTime(
       SCIP_Real clocktime /**< time to be added */
       );
 
-   /** incorporates the changes from ancestor seeed */
+   /*!
+    * \brief incorporates the changes from ancestor seeed into the statistical data structures
+    */
    void addDecChangesFromAncestor(
       Seeed* ancestor
       );
 
-   /** adds a detector chain info */
+   /*!
+    * \brief adds a detectorchain information string to the corresponding vector (that carries information for each detector call)*/
    void addDetectorChainInfo(
       const char* decinfo
       );
 
-   /** adds number of new blocks created by a detector added to detector chain */
+   /*!
+    * \brief bookkeeping information: adds number of new blocks created by a detector added to detector chain
+    */
    void addNNewBlocks(
       int nnewblocks
       );
 
-   /** adds fraction of constraints that are not longer open for a detector added to detector chain */
+   /*!
+    * \brief bookkeeping information: fraction of constraints that are not longer open for a detector added to detector chain
+    */
    void addPctConssFromFree(
       SCIP_Real pct
       );
 
-   /** adds fraction of constraints assigned to a block for a detector added to detector chain */
+   /*!
+    *  \brief bookkeeping information: adds fraction of constraints assigned to a block for a detector added to detector chain */
    void addPctConssToBlock(
       SCIP_Real pct
       );
 
-   /** adds fraction of constraints assigned to the border for a detector added to detector chain */
+   /*!
+    *  brief bookkeeping information: adds fraction of constraints assigned to the border for a detector added to detector chain
+    */
    void addPctConssToBorder(
       SCIP_Real pct
       );
 
-   /** adds fraction of variables that are not longer open for a detector added to detector chain */
+   /*!
+    *  brief bookkeeping information: adds fraction of variables that are not longer open for a detector added to detector chain
+    */
    void addPctVarsFromFree(
       SCIP_Real pct
       );
 
-   /** adds fraction of variables assigned to a block for a detector added to detector chain */
+
+   /*!
+    *  brief bookkeeping information: adds fraction of variables assigned to a block for a detector added to detector chain
+    *  */
    void addPctVarsToBlock(
       SCIP_Real pct
       );
 
-   /** adds fraction of variables assigned to the border for a detector added to detector chain */
+   /*!
+    * brief bookkeeping information: adds fraction of variables assigned to the border for a detector added to detector chain
+    */
    void addPctVarsToBorder(
       SCIP_Real pct
       );
 
-   /** returns true if at least one constraint is assigned to a block */
+   /*!
+    * \brief method to check if at leas one constraint is assigned to some block
+    *  @returns true if at least one constraint is assigned to a block
+    *  */
    bool alreadyAssignedConssToBlocks();
 
-   /** assigns open conss to master according to the cons assignment information given in constoblock hashmap */
+   /*!
+    * \brief assigns open conss to master according to the cons assignment information given in constoblock hashmap,
+    * \note for conss assigned to blocks according to constoblock there is no assignment \see assignSeeedFromConstoblock
+    * */
    SCIP_RETCODE assignBorderFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
                                    *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
@@ -323,14 +362,20 @@ public:
       Seeedpool* seeedpool       /**< a seeedpool that uses this seeed */
       );
 
-   /** assigns open vars to stairlinking if they can be found in two consecutive blocks, returns true if stairlinkingvars
-    *  are assigned */
+
+   /*!
+    * \brief assigns open vars to stairlinking if they can be found in exactly two consecutive blocks, returns true if at least one stairlinkingvar
+    *  was assigned
+    */
    bool assignCurrentStairlinking(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
-   /** adds blocks and assigns open conss to such a new block or to master
-    *  according to the cons assignment information given in constoblock hashmap */
+   /*!
+    * \brief adds blocks and assigns open conss to such a new block or to master
+    *  according to the cons assignment information given in constoblock hashmap
+    *  \see assignSeeedFromConstoblockVector
+    *  */
    SCIP_RETCODE assignSeeedFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
                                    *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
@@ -338,8 +383,10 @@ public:
       Seeedpool* seeedpool       /**< a seeedpool that uses this seeed */
       );
 
-   /** adds blocks and assigns open conss to such a new block or to master
-    *  according to the cons assignment information given in constoblock vector */
+   /*!
+    * \brief adds blocks and assigns open conss to such a new block or to master
+    *  according to the cons assignment information given in constoblock vector
+    *  \see  assignSeeedFromConstoblock()  */
    SCIP_RETCODE assignSeeedFromConstoblockVector(
       std::vector<int> constoblock, /**< vector containing an assignment of conss to a block or to master
                                       *< (master is indicated by assigning cons to index additionalNBlocks) */
@@ -347,53 +394,77 @@ public:
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
       );
 
-   /** books a constraint to be added to the block constraints of the given block (after calling flushBooked) */
+   /*!
+    * \brief books a constraint to be added to the block constraints of the given block (by calling flushBooked all bookings are in fact performed)
+    *  \see flushBooked()
+    */
    SCIP_RETCODE bookAsBlockCons(
       int consToBlock,
       int block
       );
 
-   /** books a variable to be added to the block constraints of the given block (after calling flushBooked) */
+   /*!
+    * \brief books a variable to be added to the block constraints of the given block (by calling flushBooked all bookings are in fact performed)
+    * \see flushBooked()
+    */
    SCIP_RETCODE bookAsBlockVar(
       int varToBlock,
       int block
       );
 
-   /** books a constraint to be added to the master constraints (after calling flushBooked) */
+   /*!
+    * \brief  books a constraint to be added to the master constraints (by calling flushBooked all bookings are in fact performed)
+    * \see flushBooked()
+    * */
    SCIP_RETCODE bookAsMasterCons(
          int consToMaster /*< this index can be computed by the function Seeedpool::getIndexForCons */
       );
 
-   /** books a variable to be added to the master variables (after calling flushBooked) */
+   /*!
+    * \brief books a variable to be added to the master variables (by calling flushBooked all bookings are in fact performed)
+    * \see flushBooked()
+    */
    SCIP_RETCODE bookAsMasterVar(
       int varToMaster
       );
 
-   /** books a variable to be added to the linking variables (after calling flushBooked) */
+   /*!
+    * \brief books a variable to be added to the linking variables (by calling flushBooked all bookings are in fact performed)
+    * \see flushBooked()
+    *  */
    SCIP_RETCODE bookAsLinkingVar(
       int varToLinking
       );
 
-   /** books a variable to be added to the stairlinking variables of the given block and the following block (after calling
-    *  flushBooked) */
+   /**
+    * \brief books a variable to be added to the stairlinking variables of the given block and the following block (after calling
+    *  flushBooked)
+    * \see flushBooked()
+    *  */
    SCIP_RETCODE bookAsStairlinkingVar(
       int varToStairlinking,
       int firstBlock
       );
 
-   /** checks if aggregation of sub problems is possible and stores the corresponding aggreagtion information */
+   /*!
+    * \brief checks if aggregation of sub problems is possible and stores the corresponding aggregation information
+    */
    void calcAggregationInformation(
       Seeedpool*  seeedpool
       );
 
-   /** calculates the hash value of the seeed for comparing */
+   /*!
+    * \brief calculates the hash value of the seeed for comparing
+    */
    void calcHashvalue();
 
-   /** reassigns linking vars stairlinkingvars if possible
+   /*!
+    *  reassigns linking vars to stairlinkingvars if possible
     *  potentially reorders blocks for making a maximum number of linking vars stairlinking
     *  if all vars that connect exactly two blocks have a staircase structure, all of them become stairlinkingvars
     *  otherwise, the stairlinking assignment is done greedily
-    *  precondition: seeed does not have any stairlinking vars */
+    *  precondition: seeed does not have any stairlinking vars
+    */
    void calcStairlinkingVars(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
