@@ -51,7 +51,6 @@
 #include "scip/branch_pscost.h"
 #include "scip/branch_random.h"
 #include "scip/branch_relpscost.h"
-#include "pricer_gcg.h"
 #include "scip/cons_varbound.h"
 #include "type_branchgcg.h"
 

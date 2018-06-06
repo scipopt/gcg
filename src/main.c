@@ -48,8 +48,8 @@
 #include "relax_gcg.h"
 #include "gcg.h"
 
-#if SCIP_VERSION < 500
-#error GCG 3.0.0 can only be compiled with SCIP version 5.0.0 or higher
+#if SCIP_VERSION < 600
+#error GCG 3.0.0 can only be compiled with SCIP version 6.0.0 or higher
 #endif
 
 /** returns GCG major version */
@@ -70,7 +70,7 @@ int GCGminorVersion(void)
 static
 int GCGtechVersion(void)
 {
-   return GCG_VERSION % 10;
+   return GCG_VERSION % 10; /*lint !e778*/
 }
 #if GCG_SUBVERSION > 0
 /** returns GCG sub version number */
@@ -136,7 +136,7 @@ SCIP_RETCODE fromCommandLine(
    SCIPinfoMessage(scip, NULL, "============\n\n");
    SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
    SCIP_CALL( SCIPtransformProb(scip) );
-   GCGsetFilename(scip, filename);
+   SCIP_CALL( GCGsetFilename(scip, filename) );
 
    if( decname != NULL )
    {
