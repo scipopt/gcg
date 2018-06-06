@@ -803,8 +803,8 @@ public:
 
    /**
     * @brief calculates potential stair linking variables with their blocks
-    * @return a vector of pairs of var indices and vectors of (two) block indices
-    *  the related linking variable hits exactly the two blocks given in the related vector
+    * @return a vector of pairs of var index and vector of (two) block indices
+    *  the related linking variable hits exactly these two blocks given in the related vector
     */
    std::vector< std::pair< int, std::vector< int > > > findLinkingVarsPotentiallyStairlinking(
       );
@@ -848,46 +848,94 @@ public:
     * adds ancestor id to back of list
     * @param ancestor id of ancestor that is to be added
     */
-      void addAncestorID(
+   void addAncestorID(
       int ancestor
       );
 
-   const std::vector<int> & getBlocksForRep(int repid);
 
-   /** returns detectorchainstring */
+   /**
+    * @brief get a vector of block ids that are identical to block with id repid
+    * @param repid id of the representative block
+    * @return vector of block ids that are identical to block with id repid
+    */
+   const std::vector<int> & getBlocksForRep(
+      int  repid
+      );
+
+
+   /**
+    * @brief the detectorchainstring contains the chars of all detectors that worked on this seeed in this order
+    * @return detectorchainstring (containing the chars of all detectors that worked on this seeed in this order)
+    */
    char* getDetectorChainString();
 
-   /** returns detectorchain info of detector related to given detectorchain index */
+
+   /**
+    * @brief returns detectorchain info of detector related to given detectorchain index
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @return detectorchaininfo of the detector with the given index in the detector chain
+    */
    std::string getDetectorchainInfo(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
-   /** returns the time that the detector related to the given detectorchainindex needed for detecting */
+
+   /**
+    * @brief returns the time that the detector related to the given detectorchainindex needed for detecting
+    * @param detectorchainindex index of the detector the time that should be returned
+    * @return the clock time for the corresponding detector in the chain
+    */
    SCIP_Real getDetectorClockTime(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
-   /** returns the time that the detectors needed for detecting */
+   /**
+    * @brief returns a vector of the clock times that each detector needed that was involved in this seeed
+    * @return vector of the clock times
+    */
    std::vector<SCIP_Real> getDetectorClockTimes();
 
 
+   /**
+    * @brief returns a string containing statistical data of the numbers of constraints and variables in the components:
+    * in particular: ncomponents, percentage_min_nconss, percentage_max_nconss, percentage_median_nconss,
+    * percentage_mean_nconss , percentage_min_nvars, percentage_max_nvars, percentage_median_nvars, percentage_mean_nvars
+    * @return returns string with statistical data
+    * @note used for features for miplib 2017
+    */
    std::string getComponentInformation(
-            );
+   );
 
-   /** returns the data of the consclassifier that the given detector made use of */
+   /**
+    * @brief returns the data of the consclassifier that the given detector made use of
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @param classifier a pointer to the used consclassifier (set by method)
+    * @param consclassesmaster  a vector containing all indices of the consclasses assigned to master (set by method)
+    * @return scip return code
+    */
    SCIP_RETCODE getConsClassifierData(
       int detectorchainindex, /**< index of the detector in the detectorchain */
       ConsClassifier** classifier, /**< a pointer to the used consclassifier */
       std::vector<int>& consclassesmaster /**< a vector containing all indices of the consclasses assigned to master */
       );
 
-   /** returns array containing constraints assigned to a block */
+   /**
+    * @brief returns array containing constraints assigned to a block
+    * @param block id of the block the constraint indices are returned
+    * @return array containing constraints assigned to a block
+    */
    const int* getConssForBlock(
       int block
       );
 
-   /** returns the detectorchain */
+
+   /**
+    * @brief returns detector chain as array of detector pointers
+    * @return detector chain as array of detector pointers
+    */
    DEC_DETECTOR** getDetectorchain();
+
+
 
    /** returns the detectorchain as a vector */
    std::vector<DEC_DETECTOR*> getDetectorchainVector();
