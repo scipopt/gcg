@@ -3030,7 +3030,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       pricingcontroller->setupPriorityQueue(pricerdata->dualsolconv);
 
       /* perform all pricing jobs */
-      #pragma omp parallel for ordered firstprivate(pricingjob) shared(retcode, optimal, maxcols, pricetype, bestredcost, beststabobj, bestredcostvalid, nfoundvars, nsuccessfulprobs) schedule(static,1)
+      #pragma omp parallel for ordered firstprivate(pricingjob) shared(retcode, pricetype, nfoundvars, nsuccessfulprobs) schedule(static,1)
       /* @todo: check abortion criterion here; pricingjob must be private? */
       while( (pricingjob = pricingcontroller->getNextPricingjob()) != NULL )
       {
@@ -3080,7 +3080,10 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          SCIPdebugMessage("  -> problowerbound: %.4g\n", problowerbound);
 
          /* update pricing problem results, store columns */
-         pricingcontroller->updatePricingprob(pricingprob, status, problowerbound, GCGpricestoreGetNEfficaciousCols(pricestore) - oldnimpcols);
+         #pragma omp critical (update)
+         {
+            pricingcontroller->updatePricingprob(pricingprob, status, problowerbound, GCGpricestoreGetNEfficaciousCols(pricestore) - oldnimpcols);
+         }
 
          /* update solving statistics, needed for checking the abortion criterion */
          #pragma omp ordered
@@ -3103,7 +3106,10 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 #endif
          }
 
-         pricingcontroller->evaluatePricingjob(pricingjob, status);
+         #pragma omp critical (update)
+         {
+            pricingcontroller->evaluatePricingjob(pricingjob, status);
+         }
 
       done:
          ;
