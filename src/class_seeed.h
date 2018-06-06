@@ -520,9 +520,9 @@ public:
    void calcStairlinkingVars(
         );
 
-/**
- * \brief counts for each pair of block and master constraint, how many nonzero entries the variables of the blocks have in the master constraint
- */
+   /**
+    * \brief counts for each pair of block and master constraint, how many nonzero entries the variables of the blocks have in the master constraint
+    */
    void calcNCoeffsForBlockForMastercons(
         );
 
@@ -543,7 +543,7 @@ public:
     * \brief changes the block order in a way such that some linking vars that are potentially stairlinking
     *  may be reassigned to stairlinking using a greedy method
     *  \param g graph with blocks as nodes and weighted edges for the number of
-                       potentially stairlinkingvars connecting two blocks
+    *                   potentially stairlinkingvars connecting two blocks
     */
    void changeBlockOrderGreedily(
       GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
@@ -644,7 +644,7 @@ public:
         );
 
    /**
-    * returns true if the given detector used a consclassifier
+    * \brief returns true if the given detector used a consclassifier
     * @param detectorchainindex index of the detector in the detectorchain
     * @return true iff the given detector used a consclassifier
     */
@@ -652,114 +652,203 @@ public:
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
-   /** assigns every open cons/var
+   /**
+    * \brief: assigns every open cons/var in the following manner:
     *  - to the respective block if it hits exactly one blockvar/blockcons and no open vars/conss
     *  - to master/linking if it hits blockvars/blockconss assigned to different blocks
     *  - and every cons to master that hits a master var
-    *  - and every var to master if it does not hit any blockcons and has no open cons */
+    *  - and every var to master if it does not hit any blockcons and has no open cons
+    *  - leave the cons/variableopen if nothing from the above holds
+    *  @return scip return code
+    *  */
    SCIP_RETCODE considerImplicits(
         );
 
-   /** copies the given seeed's classifier statistics */
+
+   /**
+    * \brief copies the given seeed's classifier statistics
+    * @param otherseeed seeed whose classifier statistics are to be copied
+    * @return scip return code
+    */
    SCIP_RETCODE copyClassifierStatistics(
       const Seeed* otherseeed
       );
 
-   /** deletes empty blocks */
+   /**
+    * \brief deletes empty blocks and sets nblocks accordingly, a block is considered to be empty if no constraint is assigned to it, variables in blocks with no constraints become open
+    * @param variables if true, then blocks with no constraints but at least one variable are considered to be nonempty
+    * @return scip return code
+    */
    SCIP_RETCODE deleteEmptyBlocks(
       bool variables
    );
 
-   /** deletes a cons from list of open conss */
+   /**
+    * \brief deletes a cons from list of open conss
+    * @param opencons id of the cons that is not considered open anymore
+    * @return scip return code
+    */
    SCIP_RETCODE deleteOpencons(
       int opencons
       );
 
-   /** deletes a var from the list of open vars */
+   /**
+    * \brief deletes a var from the list of open vars
+    * @param openvar id of the var that is not considered open anymore
+    * @return scip return code
+    */
+   /** d */
    SCIP_RETCODE deleteOpenvar(
       int openvar
       );
 
+   /**
+    * \brief prints out the aggregation information that is calculated yet, i.e. if there has been identified identical blocks
+    * @return scip return code
+    */
    SCIP_RETCODE displayAggregationInformation();
 
-   /** displays the assignments of the conss */
+   /**
+    * \brief displays the assignments of the conss to blocks and master
+    * @return scip return code
+    */
    SCIP_RETCODE displayConss();
 
-   /** displays the relevant information of the seeed */
+
+   /**
+    * \brief displays the relevant information of the seeed
+    * @param detailLevel pass a value that indicates how detailed the output should be:
+    *                         0: brief overview
+    *                         1: block and detector info
+    *                         2: cons and var assignments
+    * @return scip return code
+    */
    SCIP_RETCODE displayInfo(
-      int detailLevel /**< pass a value that indicates how detailed the output should be:
-                              0: brief overview
-                              1: block and detector info
-                              2: cons and var assignments */
+      int detailLevel
       );
 
-   /*@todo is initialization in declaration necessary? */
-   /** displays the relevant information of the seeed */
+   /**
+    * \brief displays the relevant information of the seeed
+    * @return scip return code
+    */
    SCIP_RETCODE displaySeeed(
       );
 
-   /*@todo is initialization in declaration necessary? */
-   /** displays the assignments of the vars */
+   /**
+    * \brief displays the assignments of the vars
+    * @return scip return code
+    */
    SCIP_RETCODE displayVars(
       );
 
-   /** computes the score of the given seeed based on the border, the average density score and the ratio of linking
-    * variables */
+   /**
+    *\brief computes and returns the score of the given type of the seeed
+    * @param type the scoretype that should be calculated
+    * @return the score value (usually in [0,1] with 1 best poosible )
+    * \see enum scoretype in cons_decomp.h for a list of scoretypes
+    */
+   /**  */
    SCIP_Real evaluate(
       SCORETYPE  type
       );
 
-   /** assigns all conss to master or declares them to be open (and declares all vars to be open)
+   /**
+    * @brief every constraint is either assigned to master or open
     *  according to the cons assignment information given in constoblock hashmap
-    *  precondition: no cons or var is already assigned to a block */
+    *  variables are set accordingly
+    * @note precondition: no constraint or variable is already assigned to a block
+    * @param constoblock hashmap assigning cons indices (not SCIP_Cons* !!) to block indices (master assignment is indicated by assigning cons to index additionalNBlocks)
+    * @param givenNBlocks number of blocks the hashmap contains
+    * @return scip return code
+    */
    SCIP_RETCODE filloutBorderFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
                                    *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
       int givenNBlocks          /**< number of blocks the hashmap contains */
       );
 
-   /** assigns all conss to master or a block
+
+   /**
+    * \brief  assigns all conss to master or a block
     *  according to the cons assignment information given in constoblock hashmap
-    *  calculates implicit variable assignment through cons assignment
-    *  precondition: no cons or var is already assigned to a block and constoblock contains information for every cons */
+    * @param constoblock hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
+                                   *< (master assignment is indicated by assigning cons to index additionalNBlocks)
+    * @param givenNBlocks number of blocks the hashmap contains
+    * @return scip return code
+  *  calculates implicit variable assignment through cons assignment
+    * @note precondition: no cons or var is already assigned to a block and constoblock contains information for every cons */
+
    SCIP_RETCODE filloutSeeedFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
                                    *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
       int givenNBlocks          /**< number of blocks the hashmap contains */
       );
 
-   /** reassigns variables classified as linking to master if the variable only hits master conss */
+
+   /**
+    * @brief reassigns variables classified as linking to master if the variable only hits master conss
+    * @return scip return code
+    */
    SCIP_RETCODE findVarsLinkingToMaster(
       );
 
-   /** reassigns variables classified as linking to stairlinking if the variable hits conss in exactly two consecutive
-    * blocks */
+
+   /**
+    * @brief reassigns variables classified as linking to stairlinking if the variable hits conss in exactly two consecutive
+    * blocks
+    * @return scip return code
+    */
    SCIP_RETCODE findVarsLinkingToStairlinking(
       );
 
-   /** returns a vector of pairs of var indices and vectors of (two) block indices
-    *  the related linking variable hits exactly the two blocks given in the related vector */
+   /**
+    * @brief calculates potential stair linking variables with their blocks
+    * @return a vector of pairs of var indices and vectors of (two) block indices
+    *  the related linking variable hits exactly the two blocks given in the related vector
+    */
    std::vector< std::pair< int, std::vector< int > > > findLinkingVarsPotentiallyStairlinking(
       );
 
-   /** assigns all booked constraints and variables and deletes them from list of open cons and open vars */
+   /**
+    * @brief assigns all booked constraints and variables and deletes them from list of open cons and open vars
+    * @return scip return code
+    */
    SCIP_RETCODE flushBooked();
 
-   /** returns ancestor id of given ancestor */
+
+   /**
+    * @brief gets seeed id of given ancestor id
+    * @param ancestorindex index of ancestor seeed in ancestor list
+    * @return seeed id of given ancestor id
+    */
    int getAncestorID(
       int ancestorindex /**< index of ancestor in listofancestorids data structure */
       );
 
-   /** returns ancestor id of given ancestor */
+
+
+   /**
+    * @brief get ancestor ids as vector
+    * @return vector of ids of all ancestors id
+    */
    std::vector<int> getAncestorList(
       );
 
+
+   /**
+    * set ancestor list directly
+    * @param newlist new list of ancestor ids
+    */
    void setAncestorList(
       std::vector<int> newlist
       );
 
-   /** adds ancestor id of given ancestor */
-   void addAncestorID(
+
+   /**
+    * adds ancestor id to back of list
+    * @param ancestor id of ancestor that is to be added
+    */
+      void addAncestorID(
       int ancestor
       );
 
