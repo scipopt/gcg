@@ -292,7 +292,7 @@ SCIP_RETCODE GCGsolverSolve(
 
          #pragma omp critical (clock)
          {
-            SCIP_CALL( SCIPstartClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
          }
 
          SCIP_CALL( solver->solversolveheur(scip, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
@@ -300,7 +300,7 @@ SCIP_RETCODE GCGsolverSolve(
 
          #pragma omp critical (clock)
          {
-            SCIP_CALL( SCIPstopClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
          }
       }
    }
@@ -315,7 +315,7 @@ SCIP_RETCODE GCGsolverSolve(
 
          #pragma omp critical (clock)
          {
-            SCIP_CALL( SCIPstartClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
          }
 
          SCIP_CALL( solver->solversolve(scip, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
@@ -323,7 +323,7 @@ SCIP_RETCODE GCGsolverSolve(
 
          #pragma omp critical (clock)
          {
-            SCIP_CALL( SCIPstopClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
          }
 
       }

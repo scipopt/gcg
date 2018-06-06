@@ -3060,9 +3060,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             GCGpricingprobGetProbnr(pricingprob), GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)), stabilized,
             GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
 
-         #pragma omp critical (limits)
          /* @todo: this should be done by the pricing solvers */
-         SCIP_CALL( pricingcontroller->setPricingjobTimelimit(pricingjob) );
+         #pragma omp critical (limits)
+         SCIP_CALL_ABORT( pricingcontroller->setPricingjobTimelimit(pricingjob) );
 
 #ifdef SCIP_STATISTIC
          /* @todo: this can interfere with parallelization */
