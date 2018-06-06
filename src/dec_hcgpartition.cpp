@@ -816,16 +816,16 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
 
   //assert( seeed->checkConsistency( seeedPropagationData->seeedpool ));
 
-   seeed->considerImplicits(seeedPropagationData->seeedpool);
+   seeed->considerImplicits();
   //assert( seeed->checkConsistency( seeedPropagationData->seeedpool ));
 
-   seeed->refineToMaster(seeedPropagationData->seeedpool);
+   seeed->refineToMaster();
 
    //assert( seeed->checkConsistency( seeedPropagationData->seeedpool ));
 
    if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
-      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
+      seeed->assignSmallestComponentsButOneConssAdjacency();
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, result);
@@ -867,12 +867,12 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
 
    gcg::Seeed* seeed = seeedPropagationData->seeedToPropagate;
 
-   seeed->considerImplicits(seeedPropagationData->seeedpool);
-   seeed->refineToBlocks(seeedPropagationData->seeedpool);
+   seeed->considerImplicits();
+   seeed->refineToBlocks();
 
    if( !connected(seeedPropagationData->seeedpool, seeed ) )
    {
-      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
+      seeed->assignSmallestComponentsButOneConssAdjacency();
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, FALSE, result);
@@ -882,8 +882,8 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
 
    for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
    {
-      seeedPropagationData->newSeeeds[s]->considerImplicits(seeedPropagationData->seeedpool);
-      seeedPropagationData->newSeeeds[s]->refineToBlocks(seeedPropagationData->seeedpool);
+      seeedPropagationData->newSeeeds[s]->considerImplicits();
+      seeedPropagationData->newSeeeds[s]->refineToBlocks();
       seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(temporaryClock )  );
       assert(seeedPropagationData->newSeeeds[s]->getNOpenconss() == 0);
       assert(seeedPropagationData->newSeeeds[s]->getNOpenvars() == 0);

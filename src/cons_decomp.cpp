@@ -1229,9 +1229,9 @@ SCIP_RETCODE SCIPconshdlrDecompShowCurrUserSeeedInfo
    assert(conshdlrdata != NULL);
 
    if ( conshdlrdata->curruserseeed->isFromUnpresolved() )
-      conshdlrdata->curruserseeed->displaySeeed(conshdlrdata->seeedpoolunpresolved);
+      conshdlrdata->curruserseeed->displaySeeed();
    else
-      conshdlrdata->curruserseeed->displaySeeed(conshdlrdata->seeedpool);
+      conshdlrdata->curruserseeed->displaySeeed();
 
 
    return SCIP_OKAY;
@@ -1263,8 +1263,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtract(
 
       seeed = conshdlrdata->listall->at(i);
 
-      assert( seeed->checkConsistency( seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved
-                                                                  : conshdlrdata->seeedpool ) );
+      assert( seeed->checkConsistency( ) );
 
       SCIPdialogMessage(scip, NULL, " %4d   ", i );
       SCIPdialogMessage(scip, NULL, "%5d  ", seeed->getNBlocks() );
@@ -1651,7 +1650,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
    {
       gcg::Seeedpool* seeedpool = ( conshdlrdata->listall->at( idtoinspect )->isFromUnpresolved() ?
          conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
-      conshdlrdata->listall->at( idtoinspect )->displayInfo( seeedpool, detaillevel );
+      conshdlrdata->listall->at( idtoinspect )->displayInfo( detaillevel );
    }
    else
    {
@@ -2438,7 +2437,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
             for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
             {
                assert(seeedPropData->newSeeeds[i] != NULL);
-               seeedPropData->newSeeeds[i]->considerImplicits( seeedPropData->seeedpool ); //There may be open vars/cons left that were not matched
+               seeedPropData->newSeeeds[i]->considerImplicits( ); //There may be open vars/cons left that were not matched
             }
             
             SCIPinfoMessage(scip, NULL, "\nSeeed was successfully %s, %d potentially new seeed(s) found.\n", actiontype, seeedPropData->nNewSeeeds);
@@ -2468,7 +2467,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
             {
                for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
                {
-                  seeedPropData->newSeeeds[i]->displayInfo( seeedPropData->seeedpool, 0 );
+                  seeedPropData->newSeeeds[i]->displayInfo( 0 );
                }
             }
 
@@ -2781,8 +2780,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxModify(
          if( conshdlrdata->lastuserseeed != NULL)
             delete conshdlrdata->lastuserseeed;
          conshdlrdata->lastuserseeed = new gcg::Seeed( conshdlrdata->curruserseeed) ;
-         conshdlrdata->curruserseeed->considerImplicits(seeedpool);
-         //SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
+         conshdlrdata->curruserseeed->considerImplicits();
          continue;
       }
 
@@ -2796,9 +2794,9 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxModify(
          if( seeedpool == NULL )
 
          conshdlrdata->curruserseeed->sort();
-         conshdlrdata->curruserseeed->considerImplicits(seeedpool);
+         conshdlrdata->curruserseeed->considerImplicits();
          conshdlrdata->curruserseeed->calcHashvalue();
-         assert( conshdlrdata->curruserseeed->checkConsistency(seeedpool) );
+         assert( conshdlrdata->curruserseeed->checkConsistency() );
 
 
 
@@ -2995,7 +2993,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
          if( conshdlrdata->lastuserseeed != NULL)
             delete conshdlrdata->lastuserseeed;
          conshdlrdata->lastuserseeed = new gcg::Seeed( conshdlrdata->curruserseeed) ;
-         conshdlrdata->curruserseeed->considerImplicits(seeedpool);
+         conshdlrdata->curruserseeed->considerImplicits();
          //SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
          continue;
       }
@@ -3009,9 +3007,9 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
          if( seeedpool == NULL )
 
          conshdlrdata->curruserseeed->sort();
-         conshdlrdata->curruserseeed->considerImplicits(seeedpool);
+         conshdlrdata->curruserseeed->considerImplicits();
          conshdlrdata->curruserseeed->calcHashvalue();
-         assert( conshdlrdata->curruserseeed->checkConsistency(seeedpool) );
+         assert( conshdlrdata->curruserseeed->checkConsistency() );
 
 
 
@@ -3337,7 +3335,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
          if( conshdlrdata->lastuserseeed != NULL)
             delete conshdlrdata->lastuserseeed;
          conshdlrdata->lastuserseeed = new gcg::Seeed( conshdlrdata->curruserseeed) ;
-         conshdlrdata->curruserseeed->considerImplicits(seeedpool);
+         conshdlrdata->curruserseeed->considerImplicits();
          //SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
          continue;
       }
@@ -3349,12 +3347,12 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
             SCIPconshdlrDecompCreateSeeedpool(scip);
 
          seeedpool = ( conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool);
-         if( seeedpool == NULL )
+         assert( seeedpool != NULL );
 
          conshdlrdata->curruserseeed->sort();
-         conshdlrdata->curruserseeed->considerImplicits(seeedpool);
+         conshdlrdata->curruserseeed->considerImplicits();
          conshdlrdata->curruserseeed->calcHashvalue();
-         assert( conshdlrdata->curruserseeed->checkConsistency(seeedpool) );
+         assert( conshdlrdata->curruserseeed->checkConsistency() );
 
 
 
@@ -3976,10 +3974,12 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
       currseeedpool = conshdlrdata->seeedpoolunpresolved;
    }
 
+   assert(currseeedpool == seeed->getSeeedpool() );
+
    if( seeed->getNReps() == 0 )
    {
       SCIPdebugMessage("calc aggregation information for seeed!\n");
-      seeed->calcAggregationInformation(currseeedpool);
+      seeed->calcAggregationInformation();
    }
 
    assert(seeed != NULL);
@@ -4840,10 +4840,10 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       seeed->flushBooked();
    }
 
-   seeed->considerImplicits(currseeedpool);
+   seeed->considerImplicits();
    currseeedpool->prepareSeeed(conshdlrdata->curruserseeed);
 
-   if( !seeed->checkConsistency(currseeedpool) )
+   if( !seeed->checkConsistency() )
    {
       SCIPconshdlrDecompUserSeeedReject(scip);
       SCIPwarningMessage(scip, "seeed that was given by the user was rejected because of inconsistencies! \n");
@@ -4921,8 +4921,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       conshdlrdata->curruserseeed->addNNewBlocks(conshdlrdata->curruserseeed->getNBlocks());
    }
 
-   conshdlrdata->curruserseeed->findVarsLinkingToMaster(currseeedpool);
-   conshdlrdata->curruserseeed->findVarsLinkingToStairlinking(currseeedpool);
+   conshdlrdata->curruserseeed->findVarsLinkingToMaster();
+   conshdlrdata->curruserseeed->findVarsLinkingToStairlinking();
 
 
    if( conshdlrdata->curruserseeed->getUsergiven() == gcg::USERGIVEN::PARTIAL )
@@ -5027,7 +5027,7 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       SeeedPtr finseeed = seeedpoolunpresolved->getFinishedSeeed(i);
       if( finseeed->isComplete() )
       {
-         assert( finseeed->checkConsistency( seeedpoolunpresolved ) );
+         assert( finseeed->checkConsistency( ) );
          seeedstotranslate.push_back(finseeed);
       }
    }
@@ -7298,7 +7298,7 @@ SCIP_RETCODE GCGprintDecompInformation(
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getScore(scoretype::CLASSIC) );
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getScore(scoretype::MAX_FORESSEEING_WHITE) );
 
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->hasSetppccardMaster(seeedpool) );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->hasSetppccardMaster() );
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (int) seeed->getDetectorchainVector( ).size() );
 
@@ -7307,7 +7307,7 @@ SCIP_RETCODE GCGprintDecompInformation(
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n",
             DECdetectorGetName(seeed->getDetectorchainVector( )[detector]) );
       }
-      seeed->printClassifierInformation(scip, seeedpool, file);
+      seeed->printClassifierInformation(scip, file);
    }
 
    return SCIP_OKAY;

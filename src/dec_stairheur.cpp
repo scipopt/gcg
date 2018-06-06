@@ -2147,7 +2147,7 @@ SCIP_RETCODE blocking(
             }
 
             (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed);
-            SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
+            SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks) );
             (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking();
 
     //        detectordata->constoblock = NULL;
@@ -2169,7 +2169,7 @@ SCIP_RETCODE blocking(
          if( detectordata->blocks > 1 )
          {
             (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed);
-            SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
+            SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks) );
             (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking();
  //           detectordata->constoblock = NULL;
 
@@ -2201,7 +2201,7 @@ SCIP_RETCODE blocking(
       if( detectordata->blocks > 1 )
       {
          (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed);
-         SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
+         SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks) );
          (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking();
 //         detectordata->constoblock = NULL;
 
@@ -2240,7 +2240,7 @@ SCIP_RETCODE blocking(
             }
 
             (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed);
-            SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
+            SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks) );
             (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking();
  //           detectordata->constoblock = NULL;
 
@@ -2260,7 +2260,7 @@ SCIP_RETCODE blocking(
          if( detectordata->blocks > 1)
          {
             (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed);
-            SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
+            SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks) );
             (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking();
             if( detectordata->constoblock != NULL )
                SCIPhashmapFree( &detectordata->constoblock );
@@ -2464,7 +2464,7 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
-   seeed->refineToMaster(seeedPropagationData->seeedpool);
+   seeed->refineToMaster();
 
 #ifdef WRITEALLOUTPUT
    int ROC_iterations;

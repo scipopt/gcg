@@ -1072,10 +1072,10 @@ SCIP_RETCODE createSeeedFromMasterconss(
       SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(seeedpool->getConsForIndex(cons)));
    }
    (*newSeeed) = new gcg::Seeed(seeed);
-   SCIP_CALL( (*newSeeed)->assignSeeedFromConstoblockVector(newconstoblock, nblocks, seeedpool) );
+   SCIP_CALL( (*newSeeed)->assignSeeedFromConstoblockVector(newconstoblock, nblocks) );
 
-   (*newSeeed)->considerImplicits(seeedpool);
-   (*newSeeed)->refineToBlocks(seeedpool);
+   (*newSeeed)->considerImplicits();
+   (*newSeeed)->refineToBlocks();
 
    if( exact )
       (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "isomorph\\_exact");
@@ -1685,7 +1685,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedIsomorph)
 
    for( int i = 0; i < seeedPropagationData->nNewSeeeds; ++i )
    {
-      seeedPropagationData->newSeeeds[i]->refineToMaster(seeedPropagationData->seeedpool);
+      seeedPropagationData->newSeeeds[i]->refineToMaster();
    }
 
    return SCIP_OKAY;

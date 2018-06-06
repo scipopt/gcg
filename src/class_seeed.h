@@ -51,8 +51,8 @@
 namespace gcg {
 
 
-/*!
- * enumeration to display if a decomposition was given by the user and if so, how it was processed after adding
+/**
+ * @brief enumeration to display if a decomposition was given by the user and if so, how it was processed after adding
  */
 enum USERGIVEN
 {
@@ -389,7 +389,7 @@ public:
     * \brief assigns open conss to master according to the cons assignment information given in constoblock hashmap,
     * @param constoblock hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
     * @param givenNBlocks number of blocks the hashmap contains
-    * @return
+    * @return  scip return code
     * \note for conss assigned to blocks according to constoblock there is no assignment \see assignSeeedFromConstoblock
     * */
    SCIP_RETCODE assignBorderFromConstoblock(
@@ -409,28 +409,35 @@ public:
    /**
     * \brief adds blocks and assigns open conss to such a new block or to master
     *  according to the cons assignment information given in constoblock hashmap
+    *  @param constoblock hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
+    *  @param additionalNBlocks number of (additional) blocks the hashmap contains
+    *  @return scip return code
     *  \see assignSeeedFromConstoblockVector
     *  */
    SCIP_RETCODE assignSeeedFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
                                    *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
-      int additionalNBlocks,     /**< number of (additional) blocks the hashmap contains */
-      Seeedpool* seeedpool       /**< a seeedpool that uses this seeed */
-      );
+      int additionalNBlocks     /**< number of (additional) blocks the hashmap contains */
+       );
 
    /*!
     * \brief adds blocks and assigns open conss to such a new block or to master
     *  according to the cons assignment information given in constoblock vector
+    *  @param constoblock vector containing an assignment of conss to a block or to master
+    *  @param additionalNBlocks number of (additional) blocks the vector contains
+    *  @return scip return code
     *  \see  assignSeeedFromConstoblock()  */
    SCIP_RETCODE assignSeeedFromConstoblockVector(
       std::vector<int> constoblock, /**< vector containing an assignment of conss to a block or to master
                                       *< (master is indicated by assigning cons to index additionalNBlocks) */
-      int additionalNBlocks,        /**< number of (additional) blocks the vector contains */
-      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
+      int additionalNBlocks        /**< number of (additional) blocks the vector contains */
       );
 
-   /*!
+   /**
     * \brief books a constraint to be added to the block constraints of the given block (by calling flushBooked all bookings are in fact performed)
+    * @param consToBlock constraint index to assign
+    * @param block index of block cons is assigned to
+    * @return scip return code
     *  \see flushBooked()
     */
    SCIP_RETCODE bookAsBlockCons(
@@ -438,8 +445,11 @@ public:
       int block
       );
 
-   /*!
+   /**
     * \brief books a variable to be added to the block constraints of the given block (by calling flushBooked all bookings are in fact performed)
+    * @param varToBlock variable index to be booked for block assignment
+    * @param block index of block variables is assigned to
+    * @return  scip return code
     * \see flushBooked()
     */
    SCIP_RETCODE bookAsBlockVar(
@@ -447,25 +457,31 @@ public:
       int block
       );
 
-   /*!
+   /**
     * \brief  books a constraint to be added to the master constraints (by calling flushBooked all bookings are in fact performed)
+    * @param consToMaster index of the constraint to be booked for master assignment
+    * @return  scip return code
     * \see flushBooked()
     * */
    SCIP_RETCODE bookAsMasterCons(
          int consToMaster /*< this index can be computed by the function Seeedpool::getIndexForCons */
       );
 
-   /*!
+   /**
     * \brief books a variable to be added to the master variables (by calling flushBooked all bookings are in fact performed)
+    * @param varToMaster index index of the variable to be booked for master assignment
+    * @return  scip return code
     * \see flushBooked()
     */
    SCIP_RETCODE bookAsMasterVar(
       int varToMaster
       );
 
-   /*!
+   /**
     * \brief books a variable to be added to the linking variables (by calling flushBooked all bookings are in fact performed)
-    * \see flushBooked()
+    * @param varToLinking index of variable that is booked for assigning to linking
+    * @return scip return code
+     * \see flushBooked()
     *  */
    SCIP_RETCODE bookAsLinkingVar(
       int varToLinking
@@ -474,118 +490,164 @@ public:
    /**
     * \brief books a variable to be added to the stairlinking variables of the given block and the following block (after calling
     *  flushBooked)
-    * \see flushBooked()
+    * @param varToStairlinking index of variables to be assigned as stairlinking variable
+    * @param firstBlock stairlinking variables hit exactly two consecutive blocks, this is the indwex of the first of these blocks
+    * @return scip return code
+     * \see flushBooked()
     *  */
    SCIP_RETCODE bookAsStairlinkingVar(
       int varToStairlinking,
       int firstBlock
       );
 
-   /*!
+   /**
     * \brief checks if aggregation of sub problems is possible and stores the corresponding aggregation information
     */
-   void calcAggregationInformation(
-      Seeedpool*  seeedpool
-      );
+   void calcAggregationInformation( );
 
-   /*!
+   /**
     * \brief calculates the hash value of the seeed for comparing
     */
    void calcHashvalue();
 
-   /*!
-    *  reassigns linking vars to stairlinkingvars if possible
+   /**
+    * \brief reassigns linking vars to stairlinkingvars if possible
     *  potentially reorders blocks for making a maximum number of linking vars stairlinking
     *  if all vars that connect exactly two blocks have a staircase structure, all of them become stairlinkingvars
     *  otherwise, the stairlinking assignment is done greedily
     *  precondition: seeed does not have any stairlinking vars
     */
    void calcStairlinkingVars(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
-      );
+        );
 
-
+/**
+ * \brief counts for each pair of block and master constraint, how many nonzero entries the variables of the blocks have in the master constraint
+ */
    void calcNCoeffsForBlockForMastercons(
-      Seeedpool*           givenseeedpool
-      );
+        );
 
 
-   /** changes the block order in a way such that all linking vars that are potentially stairlinking
+   /**
+    *  \brief changes the block order in a way such that all linking vars that are potentially stairlinking
     *  may be reassigned to stairlinking
-    *  precondition: all potentially stairlinking vars have a staircase structure */
+    * @param g graph with blocks as nodes and weighted edges for the number of
+                         potentially stairlinkingvars connecting two blocks
+    * @note precondition: all potentially stairlinking vars have a staircase structure */
    void changeBlockOrderStaircase(
         GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
                          potentially stairlinkingvars connecting two blocks */
         );
 
-   /** changes the block order in a way such that some linking vars that are potentially stairlinking
-    *  may be reassigned to stairlinking using a greedy method */
+
+   /**
+    * \brief changes the block order in a way such that some linking vars that are potentially stairlinking
+    *  may be reassigned to stairlinking using a greedy method
+    *  \param g graph with blocks as nodes and weighted edges for the number of
+                       potentially stairlinkingvars connecting two blocks
+    */
    void changeBlockOrderGreedily(
       GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
                        potentially stairlinkingvars connecting two blocks */
         );
 
-   /** changes the order of the blocks according to the given mapping
-    *  precondition: given mapping needs to be an adequately sized permutation */
+   /**
+    * \brief changes the order of the blocks according to the given mapping
+    * \param oldToNewBlockIndex the mapping from old to new block indices
+    * \note precondition: given mapping needs to be an adequately sized permutation */
    void changeBlockOrder(
         std::vector<int> oldToNewBlockIndex /**< the mapping from old to new block indices */
         );
 
-   /** returns true if all constraints are assigned and deletes the vector open conss if so */
+   /**
+    * \brief returns true iff all constraints are assigned and deletes the vector open conss if so
+    * @return true iff all constraints are assigned
+    * */
    bool checkAllConssAssigned();
 
-   /** returns true if the assignments in the seeed are consistent */
+
+
+   /**
+    * \brief returns true if the assignments in the seeed are consistent
+    * the following checks are performed:
+    * 1) check if nblocks is set appropriately
+    * 2) check for empty (row- and col-wise) blocks
+    * 3) every variable is assigned at most once
+    * 4) check if all not assigned variables are open vars
+    * 5) check if all open vars are not assigned
+    * 6) every constraint is assigned at most once
+    * 7) check if all not assigned constraints are open cons
+    * 8) check if all open conss are not assigned
+    * 9) check if the datastructures are sorted
+    * 10) check if variables hitting a cons are either in the cons's block or border or still open
+    * @return true if the seeed seems to be consistent
+    * */
    bool checkConsistency(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
-   /** assigns all open constraints and open variables
-     *  strategy: assigns all conss and vars to the same block if they are connected
-     *  a cons and a var are adjacent if the var appears in the cons */
+   /**
+    * \brief assigns all open constraints and open variables
+    *  strategy: assigns all conss and vars to the same block if they are connected
+    *  a cons and a var are adjacent if the var appears in the cons
+    *  @return scip return code
+    */
    SCIP_RETCODE completeByConnected(
       );
 
-   /** assigns all open constraints and open variables
-     *  strategy: assigns all conss and vars to the same block if they are connected
-     *  a cons and a var are adjacent if the var appears in the cons */
+
+   /**
+    * \brief computes components corresponding to connectedness of conss and vars as in @see completeByConnectedConssAdjacency
+    * and assigns them accordingly but one of largest components
+    * \see completeByConnected
+    *  @return scip return code
+    */
    SCIP_RETCODE assignSmallestComponentsButOneConssAdjacency(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
-      );
+        );
 
 
-   /** try to reassign each  mastercons to one block without inducing conflicts  */
+   /**
+    * \brief try to reassign each mastercons to one block without inducing conflicts
+    * @param success pointer to store whether at least one master constraint was reassigned
+    * @return scip return code
+    */
    SCIP_RETCODE postprocessMasterToBlocks(
-      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
-      SCIP_Bool* success
+        SCIP_Bool* success
       );
 
 
-   /** try to reassign each  mastercons to one block without inducing conflicts  */
+   /**
+    * \brief try to reassign each mastercons to one block without inducing conflicts using the cons adjacency data structure
+    * @param success pointer to store whether at least one master constraint was reassigned
+    * @return scip return code
+    */
    SCIP_RETCODE postprocessMasterToBlocksConssAdjacency(
-      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
-      SCIP_Bool* success
+        SCIP_Bool* success
       );
 
-
-   /** assigns all open constraints and open variables
-     *  strategy: assigns all conss same block if they are connected
-     *  two constraints are adjacent if there is a common variable
-     *  this relies on the consadjacency structure of the seeedpool
-     *  hence it cannot be applied in presence of linking variables */
+   /**
+      * \brief assigns all open constraints and open variables
+      *  strategy: assigns all conss and vars to the same block if they are connected
+      *  a cons and a var are adjacent if the var appears in the cons
+      *  \note   this relies on the consadjacency structure of the seeedpool
+      *  hence it cannot be applied in presence of linking variables
+      *  @return scip return code
+      */
     SCIP_RETCODE completeByConnectedConssAdjacency(
-       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
-       );
+         );
 
-
-
-   /** assigns all open constraints and open variables
-    *  strategy: assigns a cons (and related vars) to any block if possible by means of prior var assignments
-    *  and to master, if there does not exist such a block */
+   /**
+    * \brief assigns all open constraints and open variables
+    *  strategy: assigns a cons (and related vars) to a new block if possible, if not to an existing block if possible (by means of prior var assignments)
+    *  and finally to master, if there does not exist such a block
+    *  @return scip return code
+    */
    SCIP_RETCODE completeGreedily(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
-      );
+        );
 
-   /** returns true if the given detector used a consclassifier */
+   /**
+    * returns true if the given detector used a consclassifier
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @return true iff the given detector used a consclassifier
+    */
    bool consClassifierUsed(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
@@ -596,8 +658,7 @@ public:
     *  - and every cons to master that hits a master var
     *  - and every var to master if it does not hit any blockcons and has no open cons */
    SCIP_RETCODE considerImplicits(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
-      );
+        );
 
    /** copies the given seeed's classifier statistics */
    SCIP_RETCODE copyClassifierStatistics(
@@ -622,11 +683,10 @@ public:
    SCIP_RETCODE displayAggregationInformation();
 
    /** displays the assignments of the conss */
-   SCIP_RETCODE displayConss(Seeedpool* seeedpool);
+   SCIP_RETCODE displayConss();
 
    /** displays the relevant information of the seeed */
    SCIP_RETCODE displayInfo(
-      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
       int detailLevel /**< pass a value that indicates how detailed the output should be:
                               0: brief overview
                               1: block and detector info
@@ -636,19 +696,16 @@ public:
    /*@todo is initialization in declaration necessary? */
    /** displays the relevant information of the seeed */
    SCIP_RETCODE displaySeeed(
-      Seeedpool* seeedpool = NULL /**< a seeedpool that uses this seeed */
       );
 
    /*@todo is initialization in declaration necessary? */
    /** displays the assignments of the vars */
    SCIP_RETCODE displayVars(
-      Seeedpool* seeedpool = NULL /**< a seeedpool that uses this seeed */
       );
 
    /** computes the score of the given seeed based on the border, the average density score and the ratio of linking
     * variables */
    SCIP_Real evaluate(
-      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
       SCORETYPE  type
       );
 
@@ -658,8 +715,7 @@ public:
    SCIP_RETCODE filloutBorderFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
                                    *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
-      int givenNBlocks,          /**< number of blocks the hashmap contains */
-      Seeedpool* seeedpool       /**< a seeedpool that uses this seeed */
+      int givenNBlocks          /**< number of blocks the hashmap contains */
       );
 
    /** assigns all conss to master or a block
@@ -669,25 +725,21 @@ public:
    SCIP_RETCODE filloutSeeedFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
                                    *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
-      int givenNBlocks,          /**< number of blocks the hashmap contains */
-      Seeedpool* seeedpool       /**< a seeedpool that uses this seeed */
+      int givenNBlocks          /**< number of blocks the hashmap contains */
       );
 
    /** reassigns variables classified as linking to master if the variable only hits master conss */
    SCIP_RETCODE findVarsLinkingToMaster(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
    /** reassigns variables classified as linking to stairlinking if the variable hits conss in exactly two consecutive
     * blocks */
    SCIP_RETCODE findVarsLinkingToStairlinking(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
    /** returns a vector of pairs of var indices and vectors of (two) block indices
     *  the related linking variable hits exactly the two blocks given in the related vector */
    std::vector< std::pair< int, std::vector< int > > > findLinkingVarsPotentiallyStairlinking(
-      Seeedpool* seeedpool
       );
 
    /** assigns all booked constraints and variables and deletes them from list of open cons and open vars */
@@ -758,7 +810,6 @@ public:
 
    /** returns a string displaying classifier information if such a classifier was used */
    std::string getDetectorClassifierInfo(
-      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
       int detectorchainindex, /**< index of the detector in the detectorchain */
       bool displayConssVars /**< pass true if constraints and variables of the respective classes should be displayed */
       );
@@ -796,13 +847,11 @@ public:
 
    /** returns the number of nonzero coeffs in a certain block */
    int  getNCoeffsForBlock(
-      gcg::Seeedpool* seeedpool,
       int blockid
       );
 
    /** returns the number of nonzero coeffs in master */
    int  getNCoeffsForMaster(
-      gcg::Seeedpool* seeedpool
       );
 
 
@@ -814,21 +863,16 @@ public:
 
    /* Are all master constraints set partitioning, set packing, set cover, or cardinality constraints */
    SCIP_Bool hasSetppccardMaster(
-      gcg::Seeedpool* seeedpool
    );
 
    /* Are all master constraints set partitioning, set packing, or set cover constraints */
    SCIP_Bool hasSetppcMaster(
-      gcg::Seeedpool* seeedpool
    );
 
 
    /* Are all master constraints set partitioning, or set packing constraints */
    SCIP_Bool hasSetppMaster(
-      gcg::Seeedpool* seeedpool
    );
-
-
 
    /** returns whether this seeed is usergiven */
    USERGIVEN getUsergiven();
@@ -1087,7 +1131,6 @@ public:
 
    SCIP_RETCODE printClassifierInformation(
       SCIP*                scip,
-      gcg::Seeedpool*      seeedpool,
       FILE*                file);
 
 
@@ -1095,13 +1138,11 @@ public:
    /** refine seeed with focus on blocks: assigns open conss and vars if they can be found
     *  in blocks without respect to open vars and conss (assignHittingOpenconss(), assignHittingOpenvars()) */
    SCIP_RETCODE refineToBlocks(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
    /** refine seeed with focus on master: do obvious (considerImplicits()) assignments and
     *  assign other conss and vars to master if possible (assignOpenPartialHittingToMaster()) */
    SCIP_RETCODE refineToMaster(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
    /** registers statistics for a used consclassifier */
@@ -1291,8 +1332,7 @@ public:
 
    SCIP_RETCODE writeAsDec(
       FILE* file,
-      //GCG_PROBLEM_TRANSFORMED_STATUS transformed,
-      Seeedpool*   seeedpool,
+      Seeedpool*   seeedpooltowriteto,
       SCIP_RESULT* result
       );
 
@@ -1313,7 +1353,6 @@ private:
     *    assigned to
     *  returns true if there is a cons that has been assigned */
    bool assignHittingOpenconss(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
    /** assigns every open var
@@ -1321,29 +1360,24 @@ private:
     *  - to linking if it hits blockconss of more than one different blocks
     *  returns true if there is a var that has been assigned */
    bool assignHittingOpenvars(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
    /** assigns every open cons to master that hits
     *  - exactly one block var and at least one open var or
     *  - a master var */
    SCIP_RETCODE assignOpenPartialHittingConsToMaster(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
    /** assigns open conss/vars that hit exactly one block and at least one open var/cons to border */
    SCIP_RETCODE assignOpenPartialHittingToMaster(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
    /** assigns every open var to linking that hits
     *  - exactly one block cons and at least one open cons */
    SCIP_RETCODE assignOpenPartialHittingVarsToMaster(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
    /** calculates the number of nonzero coefficients for the blocks */
    SCIP_RETCODE calcNCoeffsForBlocks(
-   Seeedpool*   seeedpool
    );
 
 
