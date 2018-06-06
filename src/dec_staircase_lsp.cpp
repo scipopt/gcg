@@ -779,7 +779,7 @@ SCIP_RETCODE detection(
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-   currseeed->refineToMaster(seeedpool);
+   currseeed->refineToMaster();
 
    currseeed->sort();
 
@@ -844,10 +844,10 @@ SCIP_RETCODE detection(
       SCIPfreeMemoryArray(scip, &(detectordata->components));
    }
 
-   SCIP_CALL( currseeed->assignSeeedFromConstoblock(detectordata->constoblock, nblocks, seeedpool) );
+   SCIP_CALL( currseeed->assignSeeedFromConstoblock(detectordata->constoblock, nblocks) );
 
    currseeed->assignCurrentStairlinking();
-   currseeed->considerImplicits(seeedpool);
+   currseeed->considerImplicits();
    currseeed->sort();
 
    if( detectordata->constoblock != NULL )
@@ -856,7 +856,7 @@ SCIP_RETCODE detection(
       SCIPhashmapFree(&detectordata->vartoblock);
 
 
-   assert(currseeed->checkConsistency( seeedpool ) );
+   assert(currseeed->checkConsistency( ) );
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = currseeed;

@@ -174,7 +174,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
    //complete the seeed by bfs
 
    if( byconssadj )
-      seeed->completeByConnectedConssAdjacency(seeedPropagationData->seeedpool );
+      seeed->completeByConnectedConssAdjacency( );
    else
       seeed->completeByConnected();
 
@@ -216,7 +216,7 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
    //complete the seeed by bfs
 
    if( byconssadj && conssadjcalculated )
-      seeed->completeByConnectedConssAdjacency(seeedPropagationData->seeedpool );
+      seeed->completeByConnectedConssAdjacency( );
    else
       seeed->completeByConnected( );
 

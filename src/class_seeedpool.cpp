@@ -1089,7 +1089,7 @@ Seeedpool::Seeedpool(
    {
       std::cout << " start only bin master " << std::endl;
       emptyseeed->initOnlyBinMaster();
-      emptyseeed->considerImplicits(this);
+      emptyseeed->considerImplicits();
    }
 
 
@@ -1418,7 +1418,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
                seeedPropData->newSeeeds[j]->setID( getNewIdForSeeed() );
                prepareSeeed( seeedPropData->newSeeeds[j] );
-               assert( seeedPropData->newSeeeds[j]->checkConsistency( this ) );
+               assert( seeedPropData->newSeeeds[j]->checkConsistency( ) );
                seeedPropData->newSeeeds[j]->addDecChangesFromAncestor( seeedPtr );
                seeedPropData->newSeeeds[j]->setDetectorPropagated(detectorToScipDetector[d]);
             }
@@ -1693,7 +1693,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    /** count the successful refinement calls for each detector */
    for( size_t i = 0; i < finishedSeeeds.size(); ++ i )
    {
-      assert( finishedSeeeds[i]->checkConsistency( this ) );
+      assert( finishedSeeeds[i]->checkConsistency( ) );
       assert( finishedSeeeds[i]->getNOpenconss() == 0 );
       assert( finishedSeeeds[i]->getNOpenvars() == 0 );
 
@@ -2876,11 +2876,11 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
 
       newseeed->setFinishedByFinisher( otherseeed->getFinishedByFinisher() );
       newseeed->sort();
-      newseeed->considerImplicits( this );
+      newseeed->considerImplicits( );
       newseeed->deleteEmptyBlocks(benders);
       newseeed->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
 
-      if( newseeed->checkConsistency( this ) )
+      if( newseeed->checkConsistency(  ) )
          newseeeds.push_back( newseeed );
       else
       {
@@ -3016,11 +3016,10 @@ SCIP_RETCODE Seeedpool::prepareSeeed(
    SeeedPtr seeed
    )
 {
-   seeed->considerImplicits( this );
+   seeed->setSeeedpool(this);
+   seeed->considerImplicits( );
    seeed->deleteEmptyBlocks(true);
    seeed->calcHashvalue();
-   seeed->setSeeedpool(this);
-   //seeed->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) );
 
    return SCIP_OKAY;
 }
@@ -5102,7 +5101,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    int modifier;
    int nlinkingconss;
 
-   assert( seeed->checkConsistency( this ) );
+   assert( seeed->checkConsistency( ) );
    int ndeletedblocks;
    int nmastervarsfromdeleted;
    ndeletedblocks = 0;
@@ -5600,9 +5599,9 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    seeed->setIsFromUnpresolved( false );
 
 
-   assert( seeed->checkConsistency( this ) );
+   assert( seeed->checkConsistency( ) );
 
-   seeed->calcStairlinkingVars( this );
+   seeed->calcStairlinkingVars( );
 
 //   SCIPdebugMessagePrint( scip, "Reassigned %d of %d linking vars to stairlinking.\n",
 
