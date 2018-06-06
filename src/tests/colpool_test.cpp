@@ -66,5 +66,5 @@ TEST_F(ColpoolTest, CreateEmptyColpoolTest) {
 
    SCIP_CALL_EXPECT( GCGcolpoolCreate(scip, &colpool, 5) );
 
-   GCGcolpoolFree(scip, &colpool);
+   SCIP_CALL_ABORT( GCGcolpoolFree(scip, &colpool) );
 }

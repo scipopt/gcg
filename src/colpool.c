@@ -192,7 +192,7 @@ SCIP_RETCODE GCGcolpoolCreate(
 }
 
 /** frees col pool */
-void GCGcolpoolFree(
+SCIP_RETCODE GCGcolpoolFree(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_COLPOOL**        colpool             /**< pointer to store col pool */
    )
@@ -207,13 +207,15 @@ void GCGcolpoolFree(
    SCIPinfoMessage(scip, NULL, "Pricing time in colpool = %f sec\n", GCGcolpoolGetTime(*colpool));
 
    /* free clock */
-   SCIPfreeClock(scip, &(*colpool)->poolclock);
+   SCIP_CALL( SCIPfreeClock(scip, &(*colpool)->poolclock) );
 
    /* free hash table */
    SCIPhashtableFree(&(*colpool)->hashtable);
 
    SCIPfreeMemoryArrayNull(scip, &(*colpool)->cols);
    SCIPfreeMemory(scip, colpool);
+
+   return SCIP_OKAY;
 }
 
 /** removes the col from the col pool */
@@ -221,7 +223,7 @@ static
 SCIP_RETCODE colpoolDelCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_COL*              col,                /**< col to remove */
-   SCIP_Bool             free                /**< should the col be freed? */
+   SCIP_Bool             freecol             /**< should the col be freed? */
    )
 {
    int pos;
@@ -240,7 +242,7 @@ SCIP_RETCODE colpoolDelCol(
    SCIP_CALL( SCIPhashtableRemove(colpool->hashtable, (void*)col) );
 
    /* free the col */
-   if( free )
+   if( freecol )
       GCGfreeGcgCol(&colpool->cols[pos]);
 
    /* move the last col of the pool to the free position */
@@ -257,7 +259,7 @@ SCIP_RETCODE colpoolDelCol(
 
 
 /** removes all rows from the col pool */
-void GCGcolpoolClear(
+SCIP_RETCODE GCGcolpoolClear(
    GCG_COLPOOL*          colpool             /**< col pool */
    )
 {
@@ -268,7 +270,7 @@ void GCGcolpoolClear(
    /* free cols (in reverse order!) */
    for( i = colpool->ncols - 1; i >= 0; --i )
    {
-      colpoolDelCol(colpool, colpool->cols[i], TRUE);
+      SCIP_CALL( colpoolDelCol(colpool, colpool->cols[i], TRUE) );
    }
    colpool->ncols = 0;
 }
@@ -324,7 +326,7 @@ SCIP_RETCODE GCGcolpoolAddNewCol(
 SCIP_RETCODE GCGcolpoolDelCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_COL*              col,                /**< col to remove */
-   SCIP_Bool             free                /**< should the col be freed? */
+   SCIP_Bool             freecol             /**< should the col be freed? */
    )
 {
    assert(colpool != NULL);
@@ -338,7 +340,7 @@ SCIP_RETCODE GCGcolpoolDelCol(
       return SCIP_INVALIDDATA;
    }
 
-   SCIP_CALL( colpoolDelCol(colpool, col, free) );
+   SCIP_CALL( colpoolDelCol(colpool, col, freecol) );
 
    return SCIP_OKAY;
 }

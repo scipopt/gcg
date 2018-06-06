@@ -47,8 +47,6 @@
 
 #include "branch_relpsprob.h"
 #include "relax_gcg.h"
-#include "cons_origbranch.h"
-#include "cons_masterbranch.h"
 #include "cons_integralorig.h"
 #include "pricer_gcg.h"
 #include "gcg.h"

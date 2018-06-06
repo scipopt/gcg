@@ -3852,7 +3852,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    stabilization = NULL;
 
    if( pricerdata->usecolpool )
-      GCGcolpoolFree(scip_, &colpool);
+      SCIP_CALL( GCGcolpoolFree(scip_, &colpool) );
 
    GCGpricestoreFree(scip_, &pricestore);
 
