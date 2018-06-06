@@ -2844,6 +2844,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_Bool enablestab;
    int nsuccessfulprobs;
    int maxcols;
+   int niters;
    int i;
    int j;
    int nfoundvars;
@@ -3029,10 +3030,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
       pricingcontroller->setupPriorityQueue(pricerdata->dualsolconv);
 
-      /* perform all pricing jobs */
+      /* actual pricing loop: perform the pricing jobs until none are left or an abortion criterion is met */
       #pragma omp parallel for ordered firstprivate(pricingjob) shared(retcode, pricetype, nfoundvars, nsuccessfulprobs) schedule(static,1)
-      /* @todo: check abortion criterion here; pricingjob must be private? */
-      while( (pricingjob = pricingcontroller->getNextPricingjob()) != NULL )
+      for( niters = 0; niters < INT_MAX; ++niters )
       {
          GCG_PRICINGPROB* pricingprob;
          GCG_PRICINGSTATUS status;
@@ -3047,6 +3047,14 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
           */
          #pragma omp flush(retcode)
          if( retcode != SCIP_OKAY )
+            goto done;
+
+         /* retrieve the next pricing job from the queue */
+         #pragma omp critical (update)
+         {
+            pricingjob = pricingcontroller->getNextPricingjob();
+         }
+         if( pricingjob == NULL )
             goto done;
 
          #pragma omp flush(nfoundvars, nsuccessfulprobs)
