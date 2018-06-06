@@ -5087,10 +5087,10 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 /** create initial master variables */
 extern "C"
 SCIP_RETCODE GCGmasterCreateInitialMastervars(
-   SCIP*                 scip,               /**< master SCIP data structure */
-   SCIP*                 origprob            /**< the SCIP instance of the original problem */
+   SCIP*                 scip                /**< master SCIP data structure */
    )
 {
+   SCIP* origprob;
    int i;
    SCIP_VAR** vars;
    int nvars;
@@ -5098,6 +5098,8 @@ SCIP_RETCODE GCGmasterCreateInitialMastervars(
    int v;
 
    assert(scip != NULL);
+
+   origprob = GCGgetOriginalprob(scip);
    assert(origprob != NULL);
 
    npricingprobs = GCGgetNPricingprobs(origprob);
