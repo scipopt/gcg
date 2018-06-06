@@ -657,8 +657,6 @@ SCIP_RETCODE setuparraysnewdetection(
    {
       int block = blocks[b];
 
-      //SCIP_CONS** conss = SCIPgetConss(scip);
-     // SCIP_VAR** vars = SCIPgetVars(scip);
       SCIPdebugMessage("Handling block %i (id %d %d x %d)\n", b, block, seeed->getNConssForBlock(blocks[b]), seeed->getNVarsForBlock(blocks[b]));
       //save the properties of variables in a struct array and in a sorted pointer array
       for( i = 0; i < nvars; i++ )

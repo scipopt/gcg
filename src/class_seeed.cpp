@@ -1954,10 +1954,6 @@ void Seeed::checkIdenticalBlocksBliss(
    SCIP_HASHMAP* consmap;
    SCIP_Result result;
 
-
-
-
-
    varmap = std::vector<int>(getNVarsForBlock(b1), -1);
 
    SCIP_CALL_ABORT( SCIPhashmapCreate(&consmap,
