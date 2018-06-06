@@ -344,7 +344,7 @@ public:
 
    /**
     *  \brief bookkeeping information: adds fraction of constraints assigned to the border for a detector added to detector chain
-    * @param pct constraints assigned to the border
+    * @param pct fraction of constraints assigned to the border
     */
    void addPctConssToBorder(
       SCIP_Real pct                    /**< fraction constraints assigned to the border */
