@@ -2829,7 +2829,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_Bool*            bestredcostvalid    /**< pointer to store if bestredcost are valid (pp solvedoptimal) */
    )
 {
-   GCG_PRICINGJOB* pricingjob;
+   GCG_PRICINGJOB* pricingjob = NULL;
    GCG_COL** bestcols;
    SCIP_LPI* lpi;
    SCIP_Real* bestobjvals = NULL;
@@ -3034,9 +3034,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       /* @todo: check abortion criterion here; pricingjob must be private? */
       while( (pricingjob = pricingcontroller->getNextPricingjob()) != NULL )
       {
-         GCG_PRICINGPROB* pricingprob = GCGpricingjobGetPricingprob(pricingjob);
-         GCG_PRICINGSTATUS status = GCG_PRICINGSTATUS_UNKNOWN;
-         SCIP_Real problowerbound = -SCIPinfinity(scip_);
+         GCG_PRICINGPROB* pricingprob;
+         GCG_PRICINGSTATUS status;
+         SCIP_Real problowerbound;
          SCIP_RETCODE private_retcode;
 
          int oldnimpcols = GCGpricestoreGetNEfficaciousCols(pricestore);
@@ -3055,6 +3055,11 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             SCIPdebugMessage("*** Abort pricing loop, infeasible = %u, stabilized = %u\n", infeasible, stabilized);
             goto done;
          }
+
+         /* initializations */
+         pricingprob = GCGpricingjobGetPricingprob(pricingjob);
+         status = GCG_PRICINGSTATUS_UNKNOWN;
+         problowerbound = -SCIPinfinity(scip_);
 
          SCIPdebugMessage("*** Solve pricing problem %d, solver <%s>, stabilized = %u, %s\n",
             GCGpricingprobGetProbnr(pricingprob), GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)), stabilized,
