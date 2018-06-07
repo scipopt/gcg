@@ -3050,13 +3050,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
          int oldnimpcols = GCGpricestoreGetNEfficaciousCols(pricestore);
 
-         /* @todo: re-organize:
-          *  * abortion criteria will be checked above
-          *  * replace the 'goto' statements by an 'if'
-          */
          #pragma omp flush(retcode)
          if( retcode != SCIP_OKAY )
-            goto done;
+            continue;
 
          /* retrieve the next pricing job from the queue */
          #pragma omp critical (update)
@@ -3064,13 +3060,13 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             pricingjob = pricingcontroller->getNextPricingjob();
          }
          if( pricingjob == NULL )
-            goto done;
+            continue;
 
          #pragma omp flush(nfoundvars, nsuccessfulprobs)
          if( (pricingcontroller->canPricingloopBeAborted(pricetype, nfoundvars, nsuccessfulprobs, !GCGpricingjobIsHeuristic(pricingjob)) || infeasible) && !stabilized )
          {
             SCIPdebugMessage("*** Abort pricing loop, infeasible = %u, stabilized = %u\n", infeasible, stabilized);
-            goto done;
+            continue;
          }
 
          /* initializations */
@@ -3132,9 +3128,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          {
             pricingcontroller->evaluatePricingjob(pricingjob, status);
          }
-
-      done:
-         ;
       }
 
       SCIP_CALL( retcode );
