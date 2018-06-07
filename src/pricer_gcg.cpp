@@ -2850,6 +2850,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_Bool enablestab;
    int nsuccessfulprobs;
    int maxcols;
+   int maxniters;
    int niters;
    int i;
    int j;
@@ -2880,6 +2881,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    stabilized = FALSE;
    if( lowerbound != NULL )
       *lowerbound = -SCIPinfinity(scip_);
+
+   maxniters = pricingcontroller->getMaxNIters();
 
    maxcols = MAX(MAX(farkaspricing->getMaxcolsprob(),reducedcostpricing->getMaxcolsprob()),reducedcostpricing->getMaxcolsprobroot()); /*lint !e666*/
 
@@ -2949,8 +2952,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    nstabrounds = 0;
 #endif
 
-   SCIPdebugMessage("***** New pricing round at node %" SCIP_LONGINT_FORMAT " (depth = %d)\n",
-      SCIPgetNNodes(scip_), SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)));
+   SCIPdebugMessage("***** New pricing round at node %" SCIP_LONGINT_FORMAT " (depth = %d), maxniters = %d\n",
+      SCIPgetNNodes(scip_), SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)), maxniters);
 
    /* stabilization loop */
    do
@@ -3038,7 +3041,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
       /* actual pricing loop: perform the pricing jobs until none are left or an abortion criterion is met */
       #pragma omp parallel for ordered firstprivate(pricingjob) shared(retcode, pricetype, nfoundvars, nsuccessfulprobs) schedule(static,1)
-      for( niters = 0; niters < INT_MAX; ++niters )
+      for( niters = 0; niters < maxniters; ++niters )
       {
          GCG_PRICINGPROB* pricingprob;
          GCG_PRICINGSTATUS status;

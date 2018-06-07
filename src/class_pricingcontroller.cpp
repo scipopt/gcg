@@ -96,6 +96,7 @@ Pricingcontroller::Pricingcontroller(
    eagerfreq = DEFAULT_EAGERFREQ;
 
    pqueue = NULL;
+   maxniters = INT_MAX;
    nchunks = 1;
    curchunk = 0;
 
@@ -346,6 +347,11 @@ SCIP_RETCODE Pricingcontroller::initPricing(
       GCGpricingprobInitPricing(pricingprobs[i]);
 
    SCIP_CALL( getGenericBranchconss() );
+
+   /* calculate maximal possible number of pricing iterations per mis-pricing iteration */
+   maxniters = 0;
+   for( int i = 0; i < npricingprobs; ++i )
+      maxniters += GCGpricerGetNSolvers(scip_) * (heurpricingiters + 1) * (GCGpricingprobGetNGenericBranchconss(pricingprobs[i]) + 1);
 
    SCIPdebugMessage("initialize pricing, chunk = %d/%d\n", curchunk+1, nchunks);
 
@@ -632,6 +638,12 @@ GCG_PRICINGPROB* Pricingcontroller::getPricingprob(
          return pricingprobs[i];
 
    return NULL;
+}
+
+/** get maximal possible number of pricing iterations */
+int Pricingcontroller::getMaxNIters() const
+{
+   return maxniters;
 }
 
 } /* namespace gcg */
