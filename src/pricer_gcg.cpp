@@ -2915,7 +2915,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
 #ifdef _OPENMP
    if( threads > 0 )
-      omp_set_num_threads(threads);
+      omp_set_num_threads(MIN(threads, GCGgetNRelPricingprobs(origprob)));
+   else
+      omp_set_num_threads(GCGgetNRelPricingprobs(origprob));
 #endif
 
    /* todo: We avoid checking for feasibility of the columns using this hack */
@@ -3226,10 +3228,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    while( nextchunk || (stabilized && nfoundvars == 0) );
 
    SCIPdebugMessage("*** Pricing loop finished, found %d improving columns.\n", nfoundvars);
-
-#ifdef _OPENMP
-   SCIPdebugMessage("Parallel pricing: used %d threads.\n", omp_get_num_threads());
-#endif
 
    /* Add new columns as variables to the master problem or move them to the column pool */
    SCIP_CALL( GCGpricestoreApplyCols(pricestore, colpool, pricerdata->usecolpool, &nfoundvars) );
