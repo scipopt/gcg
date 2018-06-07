@@ -974,7 +974,7 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
  * all variables in the master problem are binary variables
  * thus all other variables are assigned to a block
  *
- * reuirement: all constraints and variables are open when this method is called
+ * reqirement: all constraints and variables are open when this method is called
  */
 void Seeed::initOnlyBinMaster(){
 
@@ -1079,8 +1079,17 @@ void Seeed::initOnlyBinMaster(){
 
 SCIP_Bool Seeed::isAgginfoToExpensive()
 {
+
+   int limitfornconss;
+   int limitfornvars;
+
    if( isagginfoalreadytoexpensive )
       return TRUE;
+
+   SCIPgetIntParam(seeedpool->getScip(), "detection/aggregation/limitnconssperblock", &limitfornconss);
+   SCIPgetIntParam(seeedpool->getScip(), "detection/aggregation/limitnvarsperblock", &limitfornvars);
+
+
 
    /** check if calculating aggregation information is too expensive */
    for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
@@ -1094,7 +1103,7 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
             continue;
 
          SCIPdebugMessage("Checking  if agg info is too expensive for blocks %d and %d, nconss: %d, nvars: %d . \n", b1, b2, getNConssForBlock(b2), getNVarsForBlock(b2) );
-         if( getNConssForBlock(b2) >= 300 || getNVarsForBlock(b2) >= 300 )
+         if( getNConssForBlock(b2) >= limitfornconss || getNVarsForBlock(b2) >= limitfornvars )
          {
             SCIPdebugMessage("Calculating agg info is too expensive, nconss: %d, nvars: %d . \n", getNConssForBlock(b2), getNVarsForBlock(b2) );
             isagginfoalreadytoexpensive = true;
@@ -6949,7 +6958,7 @@ void Seeed::calcbendersscore(){
    if( borderareascore == -1. )
       calcborderareascore();
 
-   /** maxwhitescore = 1 - ( 1 - blockareascore + (1 - borderareascore - benderborderscore ) ) */
+   /** bendersscore = 1 - ( 1 - blockareascore + (1 - borderareascore - benderborderscore ) ) */
    bendersscore = blockareascore + benderareascore + borderareascore - 1.;
 
     if( bendersscore < 0. )

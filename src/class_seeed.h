@@ -66,7 +66,7 @@ class Seeedpool;
 
 
 /*!
- * \brief class to manage partial decompositions (aka seeed), each seeed corresponds to one seeedpool which contains the problem information, there is one seeedpool for the original and the transformed problem.
+ * @brief class to manage partial decompositions (aka seeed), each seeed corresponds to one seeedpool which contains the problem information, there is one seeedpool for the original and the transformed problem.
  */
 class Seeed
 {
@@ -212,7 +212,7 @@ private:
 
    /**
     *
-    * \brief checks blocks for identity by graph automorphism check, done by bliss, identity is only found if variables are in correct order
+    * @brief checks blocks for identity by graph automorphism check, done by bliss, identity is only found if variables are in correct order
     * @param b1 block id of first block
     * @param b2 block id of second block
     * @param varmap maps variable indices (corresponding to  seeedpool indices) of block 2 to block 1
@@ -229,7 +229,7 @@ private:
 
 
       /**
-       * \brief checks blocks for identity by brute force, identity is only found if variables are in correct order
+       * @brief checks blocks for identity by brute force, identity is only found if variables are in correct order
        * @param b1 block id of first block
        * @param b2 block id of second block
        * @param varmap maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1
@@ -246,7 +246,7 @@ private:
 
 
    /**
-    * \brief check some necessary conditions for two blocks to be identical
+    * @brief check some necessary conditions for two blocks to be identical
     * @param b1 block id of first block
     * @param b2 block id of second block
     * @param notidentical pointer to store whether or not the non-identity is proven
@@ -288,13 +288,13 @@ public:
 
     /**
      *
-     * \brief adds a block, returns the number of the new block
+     * @brief adds a block, returns the number of the new block
      * */
    int addBlock();
 
 
    /**
-    * \brief incorporates the needed time of a certain detector in the detector chain
+    * @brief incorporates the needed time of a certain detector in the detector chain
     * @param clocktime time to add
     */
    void addClockTime(
@@ -302,7 +302,7 @@ public:
       );
 
    /**
-    * \brief incorporates the changes from ancestor seeed into the statistical data structures
+    * @brief incorporates the changes from ancestor seeed into the statistical data structures
     * @param ancestor seeed whose propagation yielded to the current seeed
     */
   void addDecChangesFromAncestor(
@@ -310,7 +310,7 @@ public:
       );
 
    /**
-    * \brief adds a detectorchain information string to the corresponding vector (that carries information for each detector call)
+    * @brief adds a detectorchain information string to the corresponding vector (that carries information for each detector call)
     * @param decinfo information string (about the detector call) to add
     * */
    void addDetectorChainInfo(
@@ -319,7 +319,7 @@ public:
 
    /**
     *
-    * \brief bookkeeping information: adds number of new blocks created by a detector added to detector chain
+    * @brief bookkeeping information: adds number of new blocks created by a detector added to detector chain
     * @param nnewblocks number of new added blocks by latest detector call
     */
    void addNNewBlocks(
@@ -327,7 +327,7 @@ public:
       );
 
    /**
-    * \brief bookkeeping information: fraction of constraints that are not longer open for a detector added to detector chain
+    * @brief bookkeeping information: fraction of constraints that are not longer open for a detector added to detector chain
     * @param pct fraction of constraints that are not longer open
     */
    void addPctConssFromFree(
@@ -335,7 +335,7 @@ public:
       );
 
    /**
-    *  \brief bookkeeping information: adds fraction of constraints assigned to a block for a detector added to detector chain
+    *  @brief bookkeeping information: adds fraction of constraints assigned to a block for a detector added to detector chain
     * @param pct fraction of constraints assigned to a block
     *  */
    void addPctConssToBlock(
@@ -343,7 +343,7 @@ public:
       );
 
    /**
-    *  \brief bookkeeping information: adds fraction of constraints assigned to the border for a detector added to detector chain
+    *  @brief bookkeeping information: adds fraction of constraints assigned to the border for a detector added to detector chain
     * @param pct fraction of constraints assigned to the border
     */
    void addPctConssToBorder(
@@ -351,7 +351,7 @@ public:
       );
 
    /**
-    *  \brief bookkeeping information: adds fraction of variables that are not longer open for a detector added to detector chain
+    *  @brief bookkeeping information: adds fraction of variables that are not longer open for a detector added to detector chain
     *  @param pct fraction of variables that are not longer open
     */
    void addPctVarsFromFree(
@@ -360,7 +360,7 @@ public:
 
 
    /**
-    *  \brief bookkeeping information: adds fraction of variables assigned to a block for a detector added to detector chain
+    *  @brief bookkeeping information: adds fraction of variables assigned to a block for a detector added to detector chain
     *  @param pct fraction of variables assigned to a block
     *  */
    void addPctVarsToBlock(
@@ -368,7 +368,7 @@ public:
       );
 
    /**
-    * \brief bookkeeping information: adds fraction of variables assigned to the border for a detector added to detector chain
+    * @brief bookkeeping information: adds fraction of variables assigned to the border for a detector added to detector chain
     * @param pct fraction of variables assigned to a block
     */
    void addPctVarsToBorder(
@@ -376,7 +376,7 @@ public:
       );
 
    /**
-    * \brief method to check if at leas one constraint is assigned to some block
+    * @brief method to check if at leas one constraint is assigned to some block
     * @returns true if at least one constraint is assigned to a block
     *  */
    bool alreadyAssignedConssToBlocks();
@@ -386,7 +386,7 @@ public:
     *
     */
    /**
-    * \brief assigns open conss to master according to the cons assignment information given in constoblock hashmap,
+    * @brief assigns open conss to master according to the cons assignment information given in constoblock hashmap,
     * @param constoblock hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
     * @param givenNBlocks number of blocks the hashmap contains
     * @return  scip return code
@@ -400,14 +400,14 @@ public:
 
 
    /**
-    * \brief assigns open vars to stairlinking if they can be found in exactly two consecutive blocks, returns
+    * @brief assigns open vars to stairlinking if they can be found in exactly two consecutive blocks, returns
     * @return true iff at least one stairlinkingvar  was assigned
     */
    bool assignCurrentStairlinking(
       );
 
    /**
-    * \brief adds blocks and assigns open conss to such a new block or to master
+    * @brief adds blocks and assigns open conss to such a new block or to master
     *  according to the cons assignment information given in constoblock hashmap
     *  @param constoblock hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
     *  @param additionalNBlocks number of (additional) blocks the hashmap contains
@@ -421,7 +421,7 @@ public:
        );
 
    /*!
-    * \brief adds blocks and assigns open conss to such a new block or to master
+    * @brief adds blocks and assigns open conss to such a new block or to master
     *  according to the cons assignment information given in constoblock vector
     *  @param constoblock vector containing an assignment of conss to a block or to master
     *  @param additionalNBlocks number of (additional) blocks the vector contains
@@ -434,7 +434,7 @@ public:
       );
 
    /**
-    * \brief books a constraint to be added to the block constraints of the given block (by calling flushBooked all bookings are in fact performed)
+    * @brief books a constraint to be added to the block constraints of the given block (by calling flushBooked all bookings are in fact performed)
     * @param consToBlock constraint index to assign
     * @param block index of block cons is assigned to
     * @return scip return code
@@ -446,7 +446,7 @@ public:
       );
 
    /**
-    * \brief books a variable to be added to the block constraints of the given block (by calling flushBooked all bookings are in fact performed)
+    * @brief books a variable to be added to the block constraints of the given block (by calling flushBooked all bookings are in fact performed)
     * @param varToBlock variable index to be booked for block assignment
     * @param block index of block variables is assigned to
     * @return  scip return code
@@ -458,7 +458,7 @@ public:
       );
 
    /**
-    * \brief  books a constraint to be added to the master constraints (by calling flushBooked all bookings are in fact performed)
+    * @brief  books a constraint to be added to the master constraints (by calling flushBooked all bookings are in fact performed)
     * @param consToMaster index of the constraint to be booked for master assignment
     * @return  scip return code
     * \see flushBooked()
@@ -468,7 +468,7 @@ public:
       );
 
    /**
-    * \brief books a variable to be added to the master variables (by calling flushBooked all bookings are in fact performed)
+    * @brief books a variable to be added to the master variables (by calling flushBooked all bookings are in fact performed)
     * @param varToMaster index index of the variable to be booked for master assignment
     * @return  scip return code
     * \see flushBooked()
@@ -478,7 +478,7 @@ public:
       );
 
    /**
-    * \brief books a variable to be added to the linking variables (by calling flushBooked all bookings are in fact performed)
+    * @brief books a variable to be added to the linking variables (by calling flushBooked all bookings are in fact performed)
     * @param varToLinking index of variable that is booked for assigning to linking
     * @return scip return code
      * \see flushBooked()
@@ -488,7 +488,7 @@ public:
       );
 
    /**
-    * \brief books a variable to be added to the stairlinking variables of the given block and the following block (after calling
+    * @brief books a variable to be added to the stairlinking variables of the given block and the following block (after calling
     *  flushBooked)
     * @param varToStairlinking index of variables to be assigned as stairlinking variable
     * @param firstBlock stairlinking variables hit exactly two consecutive blocks, this is the indwex of the first of these blocks
@@ -501,17 +501,17 @@ public:
       );
 
    /**
-    * \brief checks if aggregation of sub problems is possible and stores the corresponding aggregation information
+    * @brief checks if aggregation of sub problems is possible and stores the corresponding aggregation information
     */
    void calcAggregationInformation( );
 
    /**
-    * \brief calculates the hash value of the seeed for comparing
+    * @brief calculates the hash value of the seeed for comparing
     */
    void calcHashvalue();
 
    /**
-    * \brief reassigns linking vars to stairlinkingvars if possible
+    * @brief reassigns linking vars to stairlinkingvars if possible
     *  potentially reorders blocks for making a maximum number of linking vars stairlinking
     *  if all vars that connect exactly two blocks have a staircase structure, all of them become stairlinkingvars
     *  otherwise, the stairlinking assignment is done greedily
@@ -521,14 +521,14 @@ public:
         );
 
    /**
-    * \brief counts for each pair of block and master constraint, how many nonzero entries the variables of the blocks have in the master constraint
+    * @brief counts for each pair of block and master constraint, how many nonzero entries the variables of the blocks have in the master constraint
     */
    void calcNCoeffsForBlockForMastercons(
         );
 
 
    /**
-    *  \brief changes the block order in a way such that all linking vars that are potentially stairlinking
+    *  @brief changes the block order in a way such that all linking vars that are potentially stairlinking
     *  may be reassigned to stairlinking
     * @param g graph with blocks as nodes and weighted edges for the number of
                          potentially stairlinkingvars connecting two blocks
@@ -540,7 +540,7 @@ public:
 
 
    /**
-    * \brief changes the block order in a way such that some linking vars that are potentially stairlinking
+    * @brief changes the block order in a way such that some linking vars that are potentially stairlinking
     *  may be reassigned to stairlinking using a greedy method
     *  \param g graph with blocks as nodes and weighted edges for the number of
     *                   potentially stairlinkingvars connecting two blocks
@@ -551,7 +551,7 @@ public:
         );
 
    /**
-    * \brief changes the order of the blocks according to the given mapping
+    * @brief changes the order of the blocks according to the given mapping
     * \param oldToNewBlockIndex the mapping from old to new block indices
     * \note precondition: given mapping needs to be an adequately sized permutation */
    void changeBlockOrder(
@@ -559,7 +559,7 @@ public:
         );
 
    /**
-    * \brief returns true iff all constraints are assigned and deletes the vector open conss if so
+    * @brief returns true iff all constraints are assigned and deletes the vector open conss if so
     * @return true iff all constraints are assigned
     * */
    bool checkAllConssAssigned();
@@ -567,7 +567,7 @@ public:
 
 
    /**
-    * \brief returns true if the assignments in the seeed are consistent
+    * @brief returns true if the assignments in the seeed are consistent
     * the following checks are performed:
     * 1) check if nblocks is set appropriately
     * 2) check for empty (row- and col-wise) blocks
@@ -585,7 +585,7 @@ public:
       );
 
    /**
-    * \brief assigns all open constraints and open variables
+    * @brief assigns all open constraints and open variables
     *  strategy: assigns all conss and vars to the same block if they are connected
     *  a cons and a var are adjacent if the var appears in the cons
     *  @return scip return code
@@ -595,7 +595,7 @@ public:
 
 
    /**
-    * \brief computes components corresponding to connectedness of conss and vars as in @see completeByConnectedConssAdjacency
+    * @brief computes components corresponding to connectedness of conss and vars as in @see completeByConnectedConssAdjacency
     * and assigns them accordingly but one of largest components
     * \see completeByConnected
     *  @return scip return code
@@ -605,7 +605,7 @@ public:
 
 
    /**
-    * \brief try to reassign each mastercons to one block without inducing conflicts
+    * @brief try to reassign each mastercons to one block without inducing conflicts
     * @param success pointer to store whether at least one master constraint was reassigned
     * @return scip return code
     */
@@ -615,7 +615,7 @@ public:
 
 
    /**
-    * \brief try to reassign each mastercons to one block without inducing conflicts using the cons adjacency data structure
+    * @brief try to reassign each mastercons to one block without inducing conflicts using the cons adjacency data structure
     * @param success pointer to store whether at least one master constraint was reassigned
     * @return scip return code
     */
@@ -624,7 +624,7 @@ public:
       );
 
    /**
-      * \brief assigns all open constraints and open variables
+      * @brief assigns all open constraints and open variables
       *  strategy: assigns all conss and vars to the same block if they are connected
       *  a cons and a var are adjacent if the var appears in the cons
       *  \note   this relies on the consadjacency structure of the seeedpool
@@ -635,7 +635,7 @@ public:
          );
 
    /**
-    * \brief assigns all open constraints and open variables
+    * @brief assigns all open constraints and open variables
     *  strategy: assigns a cons (and related vars) to a new block if possible, if not to an existing block if possible (by means of prior var assignments)
     *  and finally to master, if there does not exist such a block
     *  @return scip return code
@@ -644,7 +644,7 @@ public:
         );
 
    /**
-    * \brief returns true if the given detector used a consclassifier
+    * @brief returns true if the given detector used a consclassifier
     * @param detectorchainindex index of the detector in the detectorchain
     * @return true iff the given detector used a consclassifier
     */
@@ -653,7 +653,7 @@ public:
       );
 
    /**
-    * \brief: assigns every open cons/var in the following manner:
+    * @brief: assigns every open cons/var in the following manner:
     *  - to the respective block if it hits exactly one blockvar/blockcons and no open vars/conss
     *  - to master/linking if it hits blockvars/blockconss assigned to different blocks
     *  - and every cons to master that hits a master var
@@ -666,7 +666,7 @@ public:
 
 
    /**
-    * \brief copies the given seeed's classifier statistics
+    * @brief copies the given seeed's classifier statistics
     * @param otherseeed seeed whose classifier statistics are to be copied
     * @return scip return code
     */
@@ -675,7 +675,7 @@ public:
       );
 
    /**
-    * \brief deletes empty blocks and sets nblocks accordingly, a block is considered to be empty if no constraint is assigned to it, variables in blocks with no constraints become open
+    * @brief deletes empty blocks and sets nblocks accordingly, a block is considered to be empty if no constraint is assigned to it, variables in blocks with no constraints become open
     * @param variables if true, then blocks with no constraints but at least one variable are considered to be nonempty
     * @return scip return code
     */
@@ -684,7 +684,7 @@ public:
    );
 
    /**
-    * \brief deletes a cons from list of open conss
+    * @brief deletes a cons from list of open conss
     * @param opencons id of the cons that is not considered open anymore
     * @return scip return code
     */
@@ -693,7 +693,7 @@ public:
       );
 
    /**
-    * \brief deletes a var from the list of open vars
+    * @brief deletes a var from the list of open vars
     * @param openvar id of the var that is not considered open anymore
     * @return scip return code
     */
@@ -703,20 +703,20 @@ public:
       );
 
    /**
-    * \brief prints out the aggregation information that is calculated yet, i.e. if there has been identified identical blocks
+    * @brief prints out the aggregation information that is calculated yet, i.e. if there has been identified identical blocks
     * @return scip return code
     */
    SCIP_RETCODE displayAggregationInformation();
 
    /**
-    * \brief displays the assignments of the conss to blocks and master
+    * @brief displays the assignments of the conss to blocks and master
     * @return scip return code
     */
    SCIP_RETCODE displayConss();
 
 
    /**
-    * \brief displays the relevant information of the seeed
+    * @brief displays the relevant information of the seeed
     * @param detailLevel pass a value that indicates how detailed the output should be:
     *                         0: brief overview
     *                         1: block and detector info
@@ -728,21 +728,21 @@ public:
       );
 
    /**
-    * \brief displays the relevant information of the seeed
+    * @brief displays the relevant information of the seeed
     * @return scip return code
     */
    SCIP_RETCODE displaySeeed(
       );
 
    /**
-    * \brief displays the assignments of the vars
+    * @brief displays the assignments of the vars
     * @return scip return code
     */
    SCIP_RETCODE displayVars(
       );
 
    /**
-    *\brief computes and returns the score of the given type of the seeed
+    *@brief computes and returns the score of the given type of the seeed
     * @param type the scoretype that should be calculated
     * @return the score value (usually in [0,1] with 1 best poosible )
     * \see enum scoretype in cons_decomp.h for a list of scoretypes
@@ -769,7 +769,7 @@ public:
 
 
    /**
-    * \brief  assigns all conss to master or a block
+    * @brief  assigns all conss to master or a block
     *  according to the cons assignment information given in constoblock hashmap
     * @param constoblock hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
                                    *< (master assignment is indicated by assigning cons to index additionalNBlocks)
@@ -936,231 +936,514 @@ public:
    DEC_DETECTOR** getDetectorchain();
 
 
-
-   /** returns the detectorchain as a vector */
+   /**
+    * @brief returns the detectorchain as a vector of detector pointers
+    * @return the detectorchain as a vector of detector pointers
+    */
    std::vector<DEC_DETECTOR*> getDetectorchainVector();
 
+
+   /**
+    * @brief returns a string displaying all detector-related information, i.e. clock times and assignment data
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @return string displaying all detector-related information, i.e. clock times and assignment data
+    */
    /** returns a string displaying all detector-related information, i.e. clock times and assignment data */
    std::string getDetectorStatistics(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
-   /** returns a string displaying classifier information if such a classifier was used */
+
+   /**
+    * @brief returns a string displaying classifier information if such a classifier was used
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @param displayConssVars pass true if constraints and variables of the respective classes should be displayed
+    * @return string displaying classifier information if such a classifier was used
+    */
    std::string getDetectorClassifierInfo(
       int detectorchainindex, /**< index of the detector in the detectorchain */
       bool displayConssVars /**< pass true if constraints and variables of the respective classes should be displayed */
       );
 
-   /** returns true if this seeed was finished by finishSeeed() method of a detector */
+
+
+   /**
+    * @brief returns true iff this seeed was finished by finishSeeed() method of a detector
+    * @return true iff this seeed was finished by finishSeeed() method of a detector
+    */
    bool getFinishedByFinisher();
 
-   /** returns true if the seeed is finished by a finisher in the unpresolved problem */
+
+   /**
+    * @brief returns true if the seeed is finished by a finisher in the unpresolved problem
+    * @return true if the seeed is finished by a finisher in the unpresolved problem
+    */
    bool getFinishedByFinisherUnpresolved();
 
-   /** returns the detector that finished this seeed in the unpresolved problem if there exists one, NULL otherwise */
+
+   /**
+    * @brief returns the detector that finished this seeed in the unpresolved problem if there exists one, NULL otherwise
+    * @return the detector that finished this seeed in the unpresolved problem if there exists one, NULL otherwise
+    * @note after finihed for unpresolved problem the transformed seeed (for the presolved problem) might be not completed
+    */
    DEC_DETECTOR* getFinishedUnpresolvedBy();
 
+
+   /**
+    * @brief returns the calculated hash value of this seeed
+    * @return the calculated hash value of this seeed
+    */
    /** returns the calculated hash value of this seeed */
    long getHashValue();
 
-   /** returns the id of the seeed */
+
+   /**
+    * @brief returns the unique id of the seeed
+    * @return the unique id of the seeed
+    */
    int getID();
 
-   /** returns array containing all linking vars */
+
+   /**
+    * @brief returns array containing all linking vars indices
+    * @return array containing all linking vars indices
+    * @note when accessed it is suppossed to be sorted
+    */
    const int* getLinkingvars();
 
-   /** returns array containing all master conss */
+
+   /**
+    * returns array containing all master conss indices
+    * @return array containing all master conss indices
+    * @note when accessed it is suppossed to be sorted
+    */
    const int* getMasterconss();
 
-   /** returns array containing all master vars (hitting only constraints in the master) */
+
+   /**
+    * returns array containing all master vars (hitting only constraints in the master, aka static variables) indices
+    * @return array containing all master vars (hitting only constraints in the master, aka static variables) indices
+    */
    const int* getMastervars();
 
-   /** returns the "maximum white score" */
+
+   /**
+    * @brief returns the "maximum white score"
+    * @return  returns the "maximum white score"
+    * @note "maximum white score" is fraction of the area of the decomposed matrix that is neither block or border
+    */
    SCIP_Real getMaxWhiteScore();
 
+
+   /**
+    * @brief returns the experimental benders score
+    * in detail:
+    * bendersscore = max ( 0., 1 - ( 1 - blockareascore + (1 - borderareascore - bendersareascore ) ) ) with
+    * blockareascore = blockarea / totalarea
+    * borderareascore = borderarea / totalarea
+    * bendersareascore = bendersarea /totalarea with
+    * bendersarea = A + B - PENALTY with
+    * A = nmasterconshittingonlyblockvars * nblockvarshittngNOmasterconss
+    * B = nlinkingvarshittingonlyblockconss * nblockconsshittingonlyblockvars
+    * PENALTY = \sum_{b=1}^(nblocks) \sum_{blockvars bv of block b hitting a master constraint} \sum_{all blocks b2 != b} nblockcons(b2)
+    * @return experimaental benders score
+    */
    /** returns the "maximum white score" */
    SCIP_Real getBendersScore();
 
 
-   /** returns the number of nonzero coeffs in a certain block */
+   /**
+    * @brief returns the number of nonzero coeffs in a certain block
+    * @param blockid of the block the number of nozerors are requested for
+    * @return number of nonzero coeffs in a certain block
+    */
    int  getNCoeffsForBlock(
       int blockid
       );
 
-   /** returns the number of nonzero coeffs in master */
+
+   /**
+    * returns the number of nonzero coeffs in master
+    * @return the number of nonzero coeffs in master
+    */
    int  getNCoeffsForMaster(
       );
 
 
-   /** returns the score of the seeed (depending on used scoretype) */
+   /**
+    * @brief returns the score of the seeed (depending on used scoretype)
+    * @param type the scoretype
+    * @return the score
+    * @see enum scoretype in cons_decomp.h
+    */
    SCIP_Real getScore(
       SCORETYPE type
       );
 
 
-   /* Are all master constraints set partitioning, set packing, set cover, or cardinality constraints */
+   /**
+    * @brief checks if all master constraints set partitioning, set packing, set cover, or cardinality constraints
+    * @return TRUE iff all master constraints set partitioning, set packing, set cover, or cardinality constraints
+    */
    SCIP_Bool hasSetppccardMaster(
    );
 
-   /* Are all master constraints set partitioning, set packing, or set cover constraints */
+
+   /**
+    * @brief checks iff all master constraints set partitioning, set packing, or set cover constraints
+    * @return TRUE iff all master constraints set partitioning, set packing, or set cover
+    */
    SCIP_Bool hasSetppcMaster(
    );
 
 
-   /* Are all master constraints set partitioning, or set packing constraints */
+   /**
+    * @brief checks iff all master constraints set partitioning, or set packing constraints
+    * @return TRUE iff all master constraints set partitioning, or set packing constraints
+    */
    SCIP_Bool hasSetppMaster(
    );
 
-   /** returns whether this seeed is usergiven */
+
+   /**
+    * @brief returns the USERGIVEN status of this seeeds
+    * @return the USERGIVEN status of this seeeds
+    * @see enum USERGIVEN
+    */
    USERGIVEN getUsergiven();
 
-   /** returns number of ancestor seeeds */
+
+   /**
+    * @brief returns number of ancestor seeeds
+    * @return number of ancestor seeeds
+    */
    int getNAncestors();
 
-   /** returns number of blocks */
+
+   /**
+    * @brief returns the number of blocks
+    * @return number of blocks
+    */
    int getNBlocks();
 
-   /** returns number of conss */
+
+   /**
+    * @brief returns the number of constraints
+    * @return number of constraints
+    */
    int getNConss();
 
-   /** returns size of the vector containing conss assigned to a block */
+
+   /**
+    * @brief returns size of the vector containing conss assigned to a block
+    * @param block id of the block the number of constraints is asked for
+    * @return size of the vector containing conss assigned to a block
+    */
    int getNConssForBlock(
       int block
       );
 
-   /** returns size of the detectorchain info vector */
+
+   /**
+    * @brief returns size of the detectorchain info vector
+    * @return size of the detectorchain info vector
+    */
    int getNDetectorchainInfo();
 
-   /** returns the number of detectors the seeed is propagated by */
+   /**
+    * @brief returns the number of detectors the seeed is propagated by
+    * @return  number of detectors the seeed is propagated by
+    */
    int getNDetectors();
 
-   /** returns the number used classifiers */
+   /**
+    * @brief returns the number used classifiers
+    * @return number used classifiers
+    */
    int getNUsedClassifier();
 
-   /** returns size of the vector containing linking vars */
+   /**
+    * @brief returns size of the vector containing linking vars
+    * @return size of the vector containing linking vars
+    */
    int getNLinkingvars();
 
-   /** returns size of the vector containing master conss */
+
+   /**
+    * @brief returns size of the vector containing master conss
+    * @return
+    */
    int getNMasterconss();
 
-   /** returns size of the vector containing master vars (hitting only constraints in the master) */
+
+   /**
+    * @brief returns size of the vector containing master vars (hitting only constraints in the master)
+    * @return size of the vector containing master vars (hitting only constraints in the master)
+    */
    int getNMastervars();
 
-   /** returns number of blocks a detector added */
+
+   /**
+    * @brief returns number of blocks a detector added
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @return number of blocks a detector added
+    */
    int getNNewBlocks(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
-   /** returns number of blocks the detectors in the detectorchain added */
+
+   /**
+    * @brief number of blocks the detectors in the detectorchain added
+    * @return number of blocks the detectors in the detectorchain added
+    */
    std::vector<int> getNNewBlocksVector();
 
-   /** returns total number of stairlinking vars */
+
+   /**
+    * @brief returns total number of stairlinking vars
+    * @return total number of stairlinking vars
+    */
    int getNTotalStairlinkingvars();
 
-   /** returns size of vector containing constraints not assigned yet */
+
+   /**
+    * @brief returns size of vector containing constraints not assigned yet
+    * @return returns size of vector containing constraints not assigned yet
+    */
    int getNOpenconss();
 
-   /** returns size of vector containing variables not assigned yet */
+
+   /**
+    * @brief returns size of vector containing variables not assigned yet
+    * @return size of vector containing variables not assigned yet
+    */
    int getNOpenvars();
 
-   /** returns the number of blockrepresentatives */
+
+   /**
+    * @brief returns the number of blockrepresentatives
+    * @return the number of blockrepresentatives
+    */
    int getNReps();
 
-   /** returns size of the vector containing stairlinking vars */
+
+
+   /**
+    * @brief returns size of the vector containing stairlinking vars
+    * @param block id of the block the size of the stairlinking vector is asked for
+    * @return size of the vector containing stairlinking vars
+    */
    int getNStairlinkingvars(
       int block
       );
 
-   /** returns number of vars */
+
+   /**
+    * @brief returns number of vars
+    * @return number of vars
+    */
    int getNVars();
 
-   /** returns size of the vector containing vars assigned to a block */
+
+
+   /**
+    * @brief returns size of the vector containing vars assigned to a block
+    * @param block id of the block the number of variables is asked for
+    * @return size of the vector containing vars assigned to a block
+    */
    int getNVarsForBlock(
       int block
       );
 
-   /** returns array containing constraints not assigned yet */
+
+   /**
+    * @brief returns array containing constraints not assigned yet
+    * @return array containing constraints not assigned yet
+    */
    const int* getOpenconss();
 
-   /** returns array containing constraints not assigned yet  as vector*/
+
+   /**
+    * @brief returns a vector containing constraint ids not assigned yet as vector
+    * @return returns a vector containing constraint ids not assigned yet as vector
+    */
    std::vector<int> getOpenconssVec();
 
-   /** returns array containing variables not assigned yet */
+
+
+   /**
+    * @brief returns array containing variables not assigned yet
+    * @return returns array containing variables not assigned yet
+    */
    const int* getOpenvars();
 
-   /** returns array containing variables not assigned yet as vector*/
+   /**
+    * returns array containing variables not assigned yet as vector
+    * @return array containing variables not assigned yet as vector
+    */
    std::vector<int> getOpenvarsVec();
 
-   /** returns fraction of variables assigned to the border for a detector */
+
+   /**
+    * @brief returns fraction of variables assigned to the border for a detector
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @return fraction of variables assigned to the border for a detector
+    */
    SCIP_Real getPctVarsToBorder(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
-   /** returns fraction of variables assigned to the border for detectors in detectorchain */
+
+
+   /**
+    * @brief returns fraction of variables assigned to the border for detectors in detectorchain
+    * @return vector of fractions of variables assigned to the border for detectors in detectorchain
+    */
    std::vector<SCIP_Real> getPctVarsToBorderVector();
 
-   /** returns fraction of variables assigned to a block for a detector */
+
+   /**
+    * @brief returns fraction of variables assigned to a block for a detector
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @return fraction of variables assigned to a block for a detector
+    */
    SCIP_Real getPctVarsToBlock(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
-   /** returns fraction of variables assigned to a block for detectors in detectorchain */
+
+   /**
+    * @brief returns fraction of variables assigned to a block for detectors in detectorchain
+    * @return vector of fractions of variables assigned to a block for detectors in detectorchain
+    */
    std::vector<SCIP_Real> getPctVarsToBlockVector();
 
-   /** returns fraction of variables that are not longer open for a detector */
+
+   /**
+    * \brief returns fraction of variables that are not longer open for a detector
+    * @param detectorchainindex  index of the detector in the detectorchain
+    * @return index of the detector in the detectorchain
+    */
    SCIP_Real getPctVarsFromFree(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
-   /** returns fraction of variables that are not longer open for detectors in detectorchain */
+
+   /**
+    * @brief returns fraction of variables that are not longer open for detectors in detectorchain
+    * @return vecort or fractions of variables that are not longer open for detectors in detectorchain
+    */
    std::vector<SCIP_Real> getPctVarsFromFreeVector();
 
-   /** returns fraction of constraints assigned to the border for a detector */
+
+   /**
+    * @brief returns fraction of constraints assigned to the border for a detector
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @return returns fraction of constraints assigned to the border for a detector
+    */
+   /**  */
    SCIP_Real getPctConssToBorder(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
-   /** returns fraction of constraints assigned to the border for detectors in detectorchain */
+
+   /**
+    * @brief returns fraction of constraints assigned to the border for detectors in detectorchain
+    * @return vector of fractions of constraints assigned to the border for detectors in detectorchain
+    */
    std::vector<SCIP_Real> getPctConssToBorderVector();
 
-   /** returns fraction of constraints assigned to a block for a detector */
+
+   /**
+    * @brief returns fraction of constraints assigned to a block for a detector
+    * @param detectorchainindex  index of the detector in the detectorchain
+    * @return fraction of constraints assigned to a block for a detector
+    */
    SCIP_Real getPctConssToBlock(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
-   /** returns fraction of constraints assigned to a block for detectors in detectorchain */
+
+   /**
+    * @brief returns fraction of constraints assigned to a block for detectors in detectorchain
+    * @return vector of fractions of constraints assigned to a block for detectors in detectorchain
+    */
    std::vector<SCIP_Real> getPctConssToBlockVector();
 
-   /** returns fraction of constraints that are not longer open for a detector */
+
+   /**
+    * @brief returns fraction of constraints that are not longer open for a detector
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @return fraction of constraints that are not longer open for a detector
+    */
    SCIP_Real getPctConssFromFree(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
-   /** returns fraction of constraints that are not longer open for detectors in detectorchain */
+
+   /**
+    * @brief returns fraction of constraints that are not longer open for detectors in detectorchain
+    * @return vector of fractions of constraints that are not longer open for detectors in detectorchain
+    */
    std::vector<SCIP_Real> getPctConssFromFreeVector();
 
-   /** returns index of the representative block */
+
+   /**
+    * @brief  returns index of the representative block for a block, this might be blockid itself
+    * @param blockid id of the block the representative is asked for
+    * @return index of the representative block for a block, this might be blockid itself
+    */
    int getRepForBlock(
       int blockid
       );
+
+   /**
+    * @brief returns the represenation varmap as vector for represenative repid and the blockrepid-th block that is represented by repid
+    * @param repid
+    * @param blockrepid
+    * @return the represenation varmap as vector for represenative repid and the blockrepid-th block that is represented by repid
+    */
 
    std::vector<int> & getRepVarmap(
       int repid,
       int blockrepid
       );
 
-   /** returns the corresponding seeedpool */
+
+   /**
+    * @brief returns the corresponding seeedpool
+    * @return corresponding seeedpool
+    */
    Seeedpool* getSeeedpool();
 
-   /** returns array containing stairlinking vars */
+
+   /**
+    * @brief returns array containing stairlinking vars,
+    * @note if a stairlinking variable links block i and i+1 it is only stored in vector of block i
+    * @param block id of the block the stairlinking variable varctor is asked for
+    * @return array containing stairlinking vars,
+    */
    const int* getStairlinkingvars(
       int block
       );
 
-   /** returns true if this seeed stems from the unpresolved problem */
+
+   /**
+    * @brief returns true if this seeed stems from the unpresolved problem
+    * @return  TRUE iff seeed stems from the unpresolved problem
+    */
    bool getStemsFromUnpresolved();
 
-   /** returns the data of the varclassifier that the given detector made use of */
+
+   /**
+    * @brief returns the data of the varclassifier that the given detector made use of
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @param classifier a pointer to the used varclassifier, , to be set by method
+    * @param varclasseslinking a vector containing all indices of the varclasses assigned to linking, to be filled by method
+    * @param varclassesmaster a vector containing all indices of the varclasses assigned to master, to be filled by method
+    * @return data of the varclassifier that the given detector made use of
+    */
    SCIP_RETCODE getVarClassifierData(
       int detectorchainindex, /**< index of the detector in the detectorchain */
       VarClassifier** classifier, /**< a pointer to the used varclassifier */
@@ -1168,19 +1451,41 @@ public:
       std::vector<int>& varclassesmaster /**< a vector containing all indices of the varclasses assigned to master */
       );
 
-   /** returns array containing vars of a block */
+
+   /**
+    * @brief returns array containing vars of a block
+    * @param block id of the block the vars are requested for
+    * @return returns array containing vars of a block
+    */
    const int* getVarsForBlock(
       int block
       );
 
-   /** returns array containing vars of a block */
+
+   /**
+    * @brief  returns index in variables array of a block for a variable
+    * @param varid the id of the variable the index
+    * @param block the corresponding block id
+    * @return  returns index in variables array of a block for a variable
+    */
    int getVarProbindexForBlock(
       int varid,
       int block
    );
 
+
+   /**
+    * @brief prepare the seeed such that all predecessors have the folloing property:
+    * all variables in the master problem are binary variables
+    * thus all other variables are assigned to a block
+    * reqirement: all constraints and variables are open when this method is called
+    */
    void initOnlyBinMaster();
 
+   /**
+    *
+    * @return
+    */
    SCIP_Bool isAgginfoToExpensive();
 
 

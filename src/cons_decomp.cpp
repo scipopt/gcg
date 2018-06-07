@@ -119,6 +119,10 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED         TRUE        /**< indicates whether constraint classifier for scipconstype is enabled */
 #define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG     TRUE       /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
 
+#define DEFAULT_AGGREGATIONLIMITNCONSSPERBLOCK        300        /**< if this limit on the number of constraints of a block is exceeded the aggregation information for this block is not calculated */
+#define DEFAULT_AGGREGATIONLIMITNVARSPERBLOCK         300        /**< if this limit on the number of variables of a block is exceeded the aggregation information for this block is not calculated */
+
+
 #define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLED         TRUE      /**< indicates whether constraint classifier for miplib consstype is enabled */
 #define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLEDORIG     TRUE     /**< indicates whether constraint classifier for miplib consstype is enabled for the original problem */
 
@@ -185,6 +189,8 @@ struct SCIP_ConshdlrData
    int                   maxnclassesperclassifier;                /** maximum number of classes allowed for detectors, classifier with more classes are reduced to the meximum number of classes */
    int                   maxnclassesperclassifierforlargeprobs;   /** maximum number of classes allowed for large (nvars+nconss > 50000) MIPs for detectors, classifier with more classes are reduced to the meximum number of classes */
    int                   weightinggpresolvedoriginaldecomps;      /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
+   int                   aggregationlimitnconssperblock;          /**< if this limit on the number of constraints of a block is exceeded the aggregation information for this block is not calculated */
+   int                   aggregationlimitnvarsperblock;           /**< if this limit on the number of variables of a block is exceeded the aggregation information for this block is not calculated */
    SCIP_Bool             createbasicdecomp;                       /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    SCIP_Bool             allowclassifierduplicates;               /**< indicates whether classifier duplicates are allowed (for statistical reasons) */
    SCIP_Bool             conssadjcalculated;                      /**< indicates whether conss adjacency datastructures should be calculated, this might slow down initlization, but accelareting refinement methods*/
@@ -1018,6 +1024,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->maxndetectionrounds = 0;
    conshdlrdata->maxnclassesperclassifier = 0;
    conshdlrdata->maxnclassesperclassifierforlargeprobs = 0;
+   conshdlrdata->aggregationlimitnconssperblock = 0;
+   conshdlrdata->aggregationlimitnvarsperblock = 0;
    conshdlrdata->enableorigdetection = FALSE;
    conshdlrdata->seeedpoolunpresolved = NULL;
    conshdlrdata->seeedpool = NULL;
@@ -1113,6 +1121,15 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxnclassesperclassifier",
       "Maximum number of classes per classifier", &conshdlrdata->maxnclassesperclassifier, FALSE,
       DEFAULT_MAXNCLASSES, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/aggregation/limitnconssperblock",
+      "if this limit on the number of constraints of a block is exceeded the aggregation information for this block is not calculated ", &conshdlrdata->aggregationlimitnconssperblock, FALSE,
+      DEFAULT_AGGREGATIONLIMITNCONSSPERBLOCK, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/aggregation/limitnvarsperblock",
+      "if this limit on the number of variables of a block is exceeded the aggregation information for this block is not calculated ", &conshdlrdata->aggregationlimitnvarsperblock, FALSE,
+      DEFAULT_AGGREGATIONLIMITNVARSPERBLOCK, 0, INT_MAX, NULL, NULL) );
+
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs",
       "Maximum number of classes per classifier for large problems (nconss + nvars >= 50000)", &conshdlrdata->maxnclassesperclassifierforlargeprobs, FALSE,
