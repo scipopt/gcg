@@ -1754,6 +1754,8 @@ SCIP_RETCODE ObjPricerGcg::addColToPricestore(
    GCG_COL*              col                 /**< priced col */
    )
 {
+   SCIP_RETCODE retcode;
+
    assert(col != NULL);
    assert(pricingtype != NULL);
 
@@ -1762,7 +1764,11 @@ SCIP_RETCODE ObjPricerGcg::addColToPricestore(
 
    SCIPdebugMessage("  -> new column <%p>, reduced cost = %g\n", (void*) col, redcost);
 
-   SCIP_CALL( GCGpricestoreAddCol(scip_, pricestore, col, FALSE) );
+   #pragma omp critical (update)
+   {
+      retcode = GCGpricestoreAddCol(scip_, pricestore, col, FALSE);
+   }
+   SCIP_CALL( retcode );
 
    return SCIP_OKAY;
 }
