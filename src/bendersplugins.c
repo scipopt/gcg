@@ -39,8 +39,6 @@
 /* GCG specific stuff */
 #include "dialog_master.h"
 #include "disp_master.h"
-#include "dialog_gcg.h"
-#include "disp_gcg.h"
 
 /** includes default GCG Benders' decomposition plugins */
 SCIP_RETCODE GCGincludeBendersPlugins(

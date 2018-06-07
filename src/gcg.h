@@ -261,7 +261,7 @@ SCIP_Bool GCGisMasterSetPartitioning(
 
 
 /** sets the structure information */
-void GCGsetStructDecdecomp(
+SCIP_RETCODE GCGsetStructDecdecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp           /**< decomposition data structure */
    );
