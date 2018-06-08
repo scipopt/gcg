@@ -474,6 +474,7 @@ bool Seeed::assignCurrentStairlinking(
  *  - to the respective block if it hits a blockvar of exactly one block and no stairlinking var
  *  - to master if it hits a stairlinking var but there is no block the cons may be assigned to
  *  - to the block with the lowest number of conss if it hits a stairlinking var and there are blocks the cons may be assigned to
+ *  - leave it open if cannot be found in any block
  *  returns true if there is a cons that has been assigned */
 bool Seeed::assignHittingOpenconss(
    )

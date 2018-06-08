@@ -1046,9 +1046,8 @@ public:
     * A = nmasterconshittingonlyblockvars * nblockvarshittngNOmasterconss
     * B = nlinkingvarshittingonlyblockconss * nblockconsshittingonlyblockvars
     * PENALTY = \sum_{b=1}^(nblocks) \sum_{blockvars bv of block b hitting a master constraint} \sum_{all blocks b2 != b} nblockcons(b2)
-    * @return experimaental benders score
+    * @return experimental benders score
     */
-   /** returns the "maximum white score" */
    SCIP_Real getBendersScore();
 
 
@@ -1321,7 +1320,7 @@ public:
 
 
    /**
-    * \brief returns fraction of variables that are not longer open for a detector
+    * @brief returns fraction of variables that are not longer open for a detector
     * @param detectorchainindex  index of the detector in the detectorchain
     * @return index of the detector in the detectorchain
     */
@@ -1478,205 +1477,387 @@ public:
     * @brief prepare the seeed such that all predecessors have the folloing property:
     * all variables in the master problem are binary variables
     * thus all other variables are assigned to a block
-    * reqirement: all constraints and variables are open when this method is called
+    * requirement: all constraints and variables are open when this method is called
     */
    void initOnlyBinMaster();
 
    /**
-    *
-    * @return
+    * @brief checks if calculation of aggregation information is considered to be to expansive
+    * @return TRUE iff calculation of aggregation information is considered to be to expansive
     */
    SCIP_Bool isAgginfoToExpensive();
 
 
-   /** returns true if this seeed is complete,
-    *  i.e. it has no more open constraints and variables */
+
+   /**
+    * @brief   returns true if this seeed is complete,
+    *  i.e. it has no more open constraints and variables
+    * @return TRUE iff this seeed is complete
+    */
    bool isComplete();
 
-   /** returns true if the cons is a cons of the block */
+
+   /**
+    * @brief returns true if the cons is a cons of the block
+    * @param cons id of constraint to check
+    * @param block id of the blocks
+    * @return true iff the cons is a cons of the block
+    */
+   /**  */
    bool isConsBlockconsOfBlock(
       int cons,
       int block
       );
 
-   /** returns true if the cons is a master cons */
+   /**
+    * @brief returns true if the cons is a master cons
+    * @param cons id of ccons to check if it is master constraint
+    * @return true iff the cons is a master cons
+    */
    bool isConsMastercons(
       int cons
       );
 
-   /** returns true if the cons is an open cons */
+
+   /**
+    * @brief returns true if the cons is an open cons
+    * @param cons id of cons to check
+    * @return true iff the cons is an open cons
+    */
    bool isConsOpencons(
       int cons
       );
 
-   /** returns true if the seeed is from a detector operating in legacymode */
+
+   /**
+    * @brief returns true if the seeed is from a detector operating in legacymode
+    * @return retruns true iff this partial decomposition is found during legacy mode
+    */
    bool isFromLegacymode();
 
-   /** returns true if the seeed is from the unpresolved problem */
+
+   /**
+    * @brief returns true if the seeed is from the unpresolved problem
+    * @return true iff the seeed is from the unpresolved problem
+    */
    bool isFromUnpresolved();
 
-   /** returns true if the seeed is selected */
+
+   /**
+    * returns true if the seeed is currently selected in explore menue
+    * @return  true iff the seeed is currently selected in explore menue
+    */
    bool isSelected();
 
-   /* method to check whether this seeed is equal to a given other seeed (calls isEqual(Seeed*)) */
+
+   /**
+    * @brief method to check whether this seeed is equal to a given other seeed ( \see  isEqual(Seeed*))
+    * @param otherseeed seeed to check euality with
+    * @param isequal pointer to store whether seeeds are identical
+    * @param sortseeeds should conss and vars be sorted before comparing the seeeds?
+    * @return
+    */
    SCIP_RETCODE isEqual(
       Seeed* otherseeed,   /**< other seeed */
       SCIP_Bool* isequal,  /**< pointer to store whether seeeds are identical */
       bool sortseeeds      /**< should conss and vars be sorted before comparing the seeeds? */
       );
 
-   /* method to check whether this seeed is equal to a given other seeed */
+   /**
+    * @brief method to check whether this seeed is equal to a given other seeed
+    * @param other seed to check equality with
+    * @return true iff seeeds are equal
+    */
    bool isEqual(
       Seeed* other /**< other seeed */
       );
 
-   /** returns true if this seeed was propagated by a detector */
+   /**
+    * @brief returns true if this seeed was propagated by specified detector
+    * @param detectorID pointer to detector to check for
+    * @return true iff this seeed was propagated by  detectorID
+    */
    bool isPropagatedBy(
       DEC_DETECTOR* detectorID
       );
 
-   /** returns true if this seeed is trivial,
-    *  i.e. all conss are in one block, all conss are in border, all variables linking or mastervars */
+
+   /**
+    * @brief returns true if this seeed is considered to be trivial,
+    *  i.e. all conss are in one block, all conss are in border, all variables linking or mastervars, or all constraints and variables are open
+    * @return true iff this seeed is considered to be trivial
+    */
    bool isTrivial();
 
-   /** returns true if the var is assigned to the block */
+
+   /**
+    * @brief returns true if the var is assigned to the block
+    * @param var id of var to check
+    * @param block id of block to check
+    * @return true iff the var is assigned to the block
+    */
    bool isVarBlockvarOfBlock(
       int var,
       int block
       );
 
-   /** returns true if the var is a linking var */
+
+   /**
+    * @brief returns true if the var is a linking var
+    * @param var id of var to check
+    * @return true iff the var is a linking var
+    */
    bool isVarLinkingvar(
       int var
       );
 
-   /** returns true if the var is a master var */
+
+   /**
+    * @brief  returns true if the var is a master var
+    * @param var id of var to check
+    * @return  true iff the var is a master var
+    */
    bool isVarMastervar(
       int var
       );
 
-   /** returns true if the var is an open var */
+
+
+   /**
+    * @brief returns true if the var is an open var
+    * @param var id of var to check
+    * @return  true iff the var is an open var
+    */
+   /**  */
    bool isVarOpenvar(
       int var
       );
 
-   /** returns true if the var is a stairlinking var */
+
+   /**
+    * @brief returns true if the var is a stairlinking var
+    * @param var id of var to check
+    * @return true if the var is a stairlinking var
+    */
    bool isVarStairlinkingvar(
       int var
       );
 
-   /** returns true if the var is a stairlinkingvar of the block */
+
+   /**
+    * @brief returns true if the var is a stairlinkingvar of a speciefied block
+    * @param var id of var to check if it is a stairlinking variable hitting specified block
+    * @param block id of block to check
+    * @return true iff the var is a stairlinkingvar of a speciefied block
+    */
    bool isVarStairlinkingvarOfBlock(
       int var,
       int block
       );
 
+
+   /**
+    * @brief prints classifier information as described in \see cls reader
+    * @param scip scip data structure
+    * @param file output file
+    * @return scip return code
+    */
    SCIP_RETCODE printClassifierInformation(
       SCIP*                scip,
       FILE*                file);
 
 
 
-   /** refine seeed with focus on blocks: assigns open conss and vars if they can be found
-    *  in blocks without respect to open vars and conss (assignHittingOpenconss(), assignHittingOpenvars()) */
+   /**
+    * @brief refine seeed with focus on blocks: assigns open conss and vars if they can be found in blocks (without respect to open vars and conss  @see assignHittingOpenconss(), @see assignHittingOpenvars())
+    * @note seeed is might be not complete
+    * @return scip return code
+    */
    SCIP_RETCODE refineToBlocks(
       );
 
-   /** refine seeed with focus on master: do obvious (considerImplicits()) assignments and
-    *  assign other conss and vars to master if possible (assignOpenPartialHittingToMaster()) */
+   /**
+    * @brief refine seeed with focus on master: do obvious ( @see considerImplicits()) assignments and
+    *  assign other conss and vars to master if possible (@see assignOpenPartialHittingToMaster())
+    * @return scip return code
+    */
+   /**  */
    SCIP_RETCODE refineToMaster(
       );
 
-   /** registers statistics for a used consclassifier */
+
+   /**
+    * @brief registers statistics for a used consclassifier
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @param classifier the used consclassifier
+    * @param consclassesmaster vector of classindices that were assigned to master
+    */
    void setConsClassifierStatistics(
       int detectorchainindex, /**< index of the detector in the detectorchain */
       ConsClassifier* classifier, /**< the used consclassifier */
       std::vector<int> consclassesmaster /**< vector of classindices that were assigned to master */
       );
 
-   /** directly adds a constraint to a block
-    *  does not delete this cons from list of open conss */
+
+   /**
+    * @brief adds a constraint to a block, does not delete this cons from list of open conss
+    * @param consToBlock id of cons to add
+    * @param block id of block to add
+    * @return scip return code
+    */
    SCIP_RETCODE setConsToBlock(
       int consToBlock,
       int block
       );
 
-   /** directly adds a constraint to the master constraints
-    *  does not delete this cons from list of open conss */
+
+   /**
+    * @brief adds a constraint to the master constraints, does not delete this cons from list of open conss
+    * @param consToMaster id of cons to add
+    * @return scip return code
+    */
    SCIP_RETCODE setConsToMaster(
       int consToMaster
       );
 
-   /** sets the whole detectorchain */
+
+   /**
+    *  sets the detectorchain with the given vetcor of detector pointers
+    * @param detectorChain vetcor of detector pointers
+    */
    void setDetectorchain(
       std::vector<DEC_DETECTOR*> detectorChain
       );
 
-   /** sets seeed to be propagated by a detector */
+
+   /**
+    * @brief sets seeed to be propagated by a detector
+    * @param detector pointer to detector that is registered for this seeed
+    * @return scip return code
+    */
    SCIP_RETCODE setDetectorPropagated(
-      DEC_DETECTOR* detectorID
+      DEC_DETECTOR* detector
       );
 
-   /** sets seeed to be propagated by a finishing detector */
+
+   /**
+    * @brief sets seeed to be finished by a detector
+    * @param detector pointer to detector that has finished this seeeds
+    * @return scip return code
+    */
    SCIP_RETCODE setFinishingDetectorPropagated(
-      DEC_DETECTOR* detectorID
+      DEC_DETECTOR* detector
       );
 
-   /** sets whether this seeed was finished by a detector */
+
+   /**
+    * @brief sets whether this seeed was finished by a finishing detector
+    * @param finished is this seeds finished by a finishing detector
+    */
    void setFinishedByFinisher(
       bool finished
       );
 
-   /** sets whether this seeed is finished by a finisher in the unpresolved problem */
+
+   /**
+    * @brief sets whether this seeed is finished by a finisher in the unpresolved problem
+    * @param finishedByFinisherUnpresolved is this seeed finished by a finisher in the unpresolved problem
+    *
+    */
    void setFinishedByFinisherUnpresolved(
       bool finishedByFinisherUnpresolved
       );
 
-   /** sets the detector that finished the seeed in the unpresolved problem */
+   /**
+    * @brief  sets the detector that finished the seeed in the unpresolved problem
+    * @param detector pointe of detector that has finished this seeed in unpresolved problem
+    */
    void setFinishedUnpresolvedBy(
       DEC_DETECTOR* detector
       );
 
-   /** sets whether this seeed stems from a detector operating in legacymode */
+
+   /**
+    * @brief sets whether this seeed stems from a detector operating in legacymode
+    * @param legacymode true iff this seeed stems from legacy mode detection
+    */
    void setLegacymode(
       bool legacymode
       );
 
-   /** sets number of blocks, only increasing number allowed */
+
+   /**
+    * @brief sets number of blocks, only increasing number allowed
+    * @param nBlocks new number of blocks
+    * @return scip return code
+    */
    SCIP_RETCODE setNBlocks(
       int nBlocks
       );
 
-   /** sets the id of this seeed */
+   /**
+    * @brief sets the id of the seeed
+    * @param id id to be set
+    * @return scip return code
+    */
    SCIP_RETCODE setID(
       int id
       );
 
-   /** sets whether this seeed is from the unpresolved problem */
+
+   /**
+    * @brief sets whether this seeed is from the unpresolved problem
+    * @param unpresolved is the seeed from unpresolved problem
+    */
    void setIsFromUnpresolved(
       bool unpresolved
       );
 
+
+   /**
+    * @brief set if selection status of this seeeds
+    * @param selected
+    */
    /** sets whether this seeed is selected */
    void setSelected(
       bool selected
       );
 
-   /** set the corresponding seeedpool */
+
+   /**
+    * @brief set the corresponding seeedpool of this seeeds
+    * @param seeedpool pointer seeedpool to be set
+    */
    void setSeeedpool(
       Seeedpool* seeedpool
       );
 
-   /** sets whether this seeed stems from an unpresolved problem seeed */
+
+   /**
+    * @brief sets whether this seeed stems from an unpresolved problem seeed
+    * @param stemsfromunpresolved has this seeed ancestors from the unpresolved probelm
+    */
    void setStemsFromUnpresolved(
       bool stemsfromunpresolved
       );
 
-   /** sets whether this seeed is usergiven */
+
+   /**
+    * @brief sets whether this seeed is usergiven
+    * @param usergiven is this seeed user given
+    */
    void setUsergiven(
       USERGIVEN usergiven
       );
 
+
+   /**
+    * @brief registers statistics for a used varclassifier
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @param classifier the used varclassifier
+    * @param varclasseslinking vector of classindices that were assigned to linking
+    * @param varclassesmaster  vector of classindices that were assigned to master
+    */
    /** registers statistics for a used varclassifier */
    void setVarClassifierStatistics(
       int detectorchainindex, /**< index of the detector in the detectorchain */
@@ -1685,18 +1866,29 @@ public:
       std::vector<int> varclassesmaster /**< vector of classindices that were assigned to master */
       );
 
-   /** directly adds a variable to the linking variables
-    *  does not delete this var from list of open vars */
+
+   /**
+    * @brief adds a variable to the linking variables,  does not delete this var from list of open vars
+    * @param varToBlock id of var to be added
+    * @param block id of block to be added
+    * @return scip return code
+    */
    SCIP_RETCODE setVarToBlock(
       int varToBlock,
       int block
       );
 
-   /** directly adds a variable to the linking variables
-    *  does not delete this var from list of open vars */
+
+   /**
+    * @brief adds a variable to the linking variables, does not delete this var from list of open vars
+    * @param varToLinking if of var to be set to linking
+    * @return scip return code
+    */
    SCIP_RETCODE setVarToLinking(
       int varToLinking
       );
+
+
 
    /** directly adds a variable to the master variables (hitting only constraints in the master)
     *  does not delete this var from list of open vars */
@@ -1704,74 +1896,147 @@ public:
       int varToMaster
       );
 
-   /** directly adds a variable to the stairlinking variables
-    *  does not delete this var from list of open vars */
+   /**
+    * @brief adds a variable to the stairlinking variabl, does not delete this var from list of open vars
+    * @param varToStairLinking id of variable to be added
+    * @param block1 id of block one
+    * @param block2 id of block two
+    * @note stairlinking variables are only registered in block with smalller index
+    * @return scip return code
+    */
    SCIP_RETCODE setVarToStairlinking(
       int varToStairLinking,
       int block1,
       int block2
       );
 
-   /** generates and opens a gp visualization of the seeed */
+
+   /**
+    * @brief generates and opens a gp visualization of the seeed
+    * @see visual/pdfreader and
+    */
    void showVisualisation();
 
-   /** returns true if this seeed is a userseeed that should be completed by setting unspecified constraints to master */
+
+   /**
+    * @brief returns true if this seeed is a userseeed that should be completed by setting unspecified constraints to master
+    * @return TRUE iff this seeed is a userseeed that should be completed by setting unspecified constraints to master
+    */
    SCIP_Bool shouldCompletedByConsToMaster();
 
-   /** sorts the vars and conss by their indices */
+
+   /**
+    * @brief sorts the vars and conss datat structures  by their indices
+    */
    void sort();
 
-   /** returns a short caption for this seeed */
+
+   /**
+    * @brief returns a short caption for this seeed
+    * @return short caption for this seeed
+    */
    const char* getShortCaption();
 
-   /** sets the detector chain short string */
+
+
+   /**
+    * @brief sets the detector chain short string
+    * @param detectorchainstring the detector chain string to set
+    * @return scip return code
+    */
    SCIP_RETCODE setDetectorChainString(
       char* detectorchainstring
       );
 
+
+   /**
+    * @brief set statistical vector of numbers of newly assigned blocks per involved detector
+    * @param newvector vector of numbers of newly assigned blocks per involved detector
+    */
    void setNNewBlocksVector(
       std::vector<int>  newvector
 );
 
+
+   /**
+    * @brief set statistical vector of fractions of constraints set to blocks per involved detector
+    * @param newvector vector of fractions of constraints set to blocks per involved detector
+    */
    void setPctConssToBlockVector(
       std::vector<SCIP_Real> newvector
       );
 
-   /** returns fraction of constraints that are not longer open for detectors in detectorchain */
+
+   /**
+    * @brief set statistical vector of fractions of constraints that are not longer open  per involved detector
+    * @param newvector vector of fractions of constraints that are not longer open  per involved detector
+    */
    void setPctConssFromFreeVector(
       std::vector<SCIP_Real> newvector
-      );
+   );
 
-   /** returns fraction of constraints assigned to the border for detectors in detectorchain */
+   /**
+    * @brief set statistical vector of fractions of constraints assigned to the border per involved detector
+    * @param newvector vector of fractions of constraints assigned to the border per involved detector
+    */
    void setPctConssToBorderVector(
       std::vector<SCIP_Real> newvector
       );
 
-   /** returns fraction of variables assigned to the border for detectors in detectorchain */
+
+   /**
+    * @brief set statistical vector of fraction sof variables assigned to the border per involved detector
+    * @param newvector vector of fractions of variables assigned to the border per involved detector
+    */
    void setPctVarsToBorderVector(
       std::vector<SCIP_Real> newvector
       );
 
-   /** returns fraction of variables assigned to a block for detectors in detectorchain */
+
+   /**
+    * @brief set statistical vector of fractions of variables assigned to a block per involved detector
+    * @param newvector vector of fractions of variables assigned to a block per involved detector
+    */
    void setPctVarsToBlockVector(
       std::vector<SCIP_Real> newvector
    );
 
-   /** returns fraction of variables that are not longer open for detectors in detectorchain */
+
+
+   /**
+    * @brief set statistical vector of variables that are not longer open per involved detector
+    * @param newvector vector of fractions of variables that are not longer open per involved detector
+    */
    void setPctVarsFromFreeVector(
       std::vector<SCIP_Real> newvector
       );
 
-   /** returns the time that the detectors needed for detecting */
+   /**
+    * @brief set statistical vector of the times that the detectors needed for detecting per involved detector
+    * @param newvector vector of the times that the detectors needed for detecting per involved detector
+    */
    void setDetectorClockTimes(
       std::vector<SCIP_Real> newvector
       );
 
-   /** returns true if the given detector used a varclassifier */
+
+   /**
+    * @brief returns true if the given detector used a varclassifier
+    * @param detectorchainindex index of the detector in the detectorchain
+    * @return true if the given detector used a varclassifier
+    */
    bool varClassifierUsed(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
+
+   /**
+    * @brief write this seeed to file in dec format for the corresponding seeedpool
+    * @param file pointer to file to write to
+    * @param seeedpooltowriteto if this is not the seeedpool of the seeed, the seeed is tried to be transformed
+    * @param result will be set to SCIP_SUCCESS if writeing (including possible transformation) was successful
+    * @return scip return code
+    */
    SCIP_RETCODE writeAsDec(
       FILE* file,
       Seeedpool*   seeedpooltowriteto,
@@ -1779,72 +2044,178 @@ public:
       );
 
 
+
+   /**
+    * @brief creates and sets a detector chain short string for this seeed, is built from detector chain
+    * @return scip return code
+    */
    /** creates and sets a detector chain short string for this seeed */
    SCIP_RETCODE buildDecChainString();
 
 private:
 
-   /** adds empty entries for all classifier statistics for a detector added to the detector chain */
+
+   /**
+    * @brief  adds empty entries for all classifier statistics for a detector added to the detector chain
+    */
    void addEmptyClassifierStatistics();
 
-   /** assigns every open cons
+
+   /** assigns open cons
     *  - to master if it hits blockvars of different blocks
     *  - to the respective block if it hits a blockvar of exactly one block and no stairlinking var
     *  - to master if it hits a stairlinking var but there is no block the cons may be assigned to
     *  - to the block with the lowest number of conss if it hits a stairlinking var and there are blocks the cons may be
     *    assigned to
-    *  returns true if there is a cons that has been assigned */
+    *  - leave it open if it hits no blocks yet
+    *  @return true iff some assignment was made by the method
+    */
    bool assignHittingOpenconss(
       );
 
-   /** assigns every open var
+
+
+   /** @brief assigns every open var
     *  - to the respective block if it hits blockconss of exactly one block
     *  - to linking if it hits blockconss of more than one different blocks
-    *  returns true if there is a var that has been assigned */
+    *  - leave the var open otherwise
+    *  @return true iff there is a var that has been assigned in this call*/
    bool assignHittingOpenvars(
       );
 
-   /** assigns every open cons to master that hits
+
+   /**
+    * @brief assigns every open cons to master that hits
     *  - exactly one block var and at least one open var or
-    *  - a master var */
+    *  - a master var
+    *  - or leave it open elsewise
+    *  @return scip return code
+    */
    SCIP_RETCODE assignOpenPartialHittingConsToMaster(
       );
 
-   /** assigns open conss/vars that hit exactly one block and at least one open var/cons to border */
+
+
+   /**
+    * @brief assigns open conss/vars that hit exactly one block and at least one open var/cons to border
+    * @return scip return code
+    */
    SCIP_RETCODE assignOpenPartialHittingToMaster(
       );
-   /** assigns every open var to linking that hits
-    *  - exactly one block cons and at least one open cons */
+
+
+
+   /**
+    * @brief assigns every open var to linking that hits
+    *  - exactly one block cons and at least one open cons
+    *  - leave it open otherwise
+    *  @return scip return code
+    */
    SCIP_RETCODE assignOpenPartialHittingVarsToMaster(
       );
 
-   /** calculates the number of nonzero coefficients for the blocks */
+
+   /**
+    * @brief calculates the number of nonzero coefficients for the blocks
+    * @return scip return code
+    */
    SCIP_RETCODE calcNCoeffsForBlocks(
    );
 
 
+
+   /**
+    * @brief calc maximum white score for this seeed
+    * @note "maximum white score" is fraction of the area of the decomposed matrix that is neither block or border
+    */
    void calcmaxwhitescore();
 
+
+   /**
+    * @brief calculates the experimental benders score
+    * in detail:
+    * bendersscore = max ( 0., 1 - ( 1 - blockareascore + (1 - borderareascore - bendersareascore ) ) ) with
+    * blockareascore = blockarea / totalarea
+    * borderareascore = borderarea / totalarea
+    * bendersareascore = bendersarea /totalarea with
+    * bendersarea = A + B - PENALTY with
+    * A = nmasterconshittingonlyblockvars * nblockvarshittngNOmasterconss
+    * B = nlinkingvarshittingonlyblockconss * nblockconsshittingonlyblockvars
+    * PENALTY = \sum_{b=1}^(nblocks) \sum_{blockvars bv of block b hitting a master constraint} \sum_{all blocks b2 != b} nblockcons(b2)
+    */
    void calcbendersscore();
 
+   /**
+    * @brief calculates classical score
+    * classical score = (0.6 * ( borderscore ) + 0.2 * ( linkingscore ) + 0.2 * ( densityscore ) ) with
+    * borderarescore = 1 - (borderarea / matrixarea)
+    * densityscore = min_{b \in blocks} blockdensity(b) , blockdensity = nonzeros(b)/(nvars(b)*nconss(b))
+    * linkingscore = 1 - ( 0.5 + 0.5 * varratio ) with
+    * varratio = \prod_{b \in blocks} nlinkingvarshittingblock(b) / (ntotalinkingvars + mastervars)
+    * @return scip return code
+    */
    SCIP_RETCODE calcclassicscore();
 
+   /**
+    * @brief calculates borderareascore
+    * borderareascore = = 1 - (borderarea / matrixarea)
+    */
    void calcborderareascore();
 
+   /**
+    * @brief calculates max foreseeeing white score
+    * \see calcmaxwhitescore() for matrix with this adaptions: (to apply DW decomposition)
+    * linking vars are copied for each pricing prob they occur and new constraints assuring equality of the copies are added to master problem
+    */
    void calcmaxforeseeingwhitescore();
 
+
+   /**
+    * @brief calculates max foreseeing white score aggregated
+    * \see calcmaxforeseeingwhitescore(), but identical blocks are only considered once for block area
+    */
    void calcmaxforeseeingwhitescoreagg();
 
+   /**
+    * @brief calculates setpartfwhitescore
+    * setpartfwhitescore = 0.5 * setpartindicator + 0.5
+    * setpartindicator = 1 if master problem contains only setppc or cardianlity cosntraints = 0, otherwise
+    * \see calcmaxforeseeingwhitescore()
+    * \see hasSetppccardMaster()
+    */
    void calcsetpartfwhitescore();
 
+
+   /**
+    * @brief calculates setpartfwhitescoreagg
+    * \same as \see calcsetpartfwhitescore but identical blocks are only considered once for block area
+    */
    void calcsetpartfwhitescoreagg();
 
+   /**
+    * @brief calculates the bendersarea score
+    * \see calcbendersscore()
+    * in detail:
+    * bendersareascore = bendersarea /totalarea with
+    * bendersarea = A + B - PENALTY with
+    * A = nmasterconshittingonlyblockvars * nblockvarshittngNOmasterconss
+    * B = nlinkingvarshittingonlyblockconss * nblockconsshittingonlyblockvars
+    * PENALTY = \sum_{b=1}^(nblocks) \sum_{blockvars bv of block b hitting a master constraint} \sum_{all blocks b2 != b} nblockcons(b2)
+    */
    void calcbenderareascore();
 
+   /**
+    * @brief calculates block area score
+    * blockareascore = (blockarea/totalarea)
+    */
    void calcblockareascore();
 
-   void calcblockareascoreagg();
 
+   /**
+    * @brief calculates block area score aggregated
+    * blockareascoreagg is the same as @see calcblockareascore but identical blocks are only considered once for blockarea
+    */
+   void calcblockareascoreagg();
 
 };
 
