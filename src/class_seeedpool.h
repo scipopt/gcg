@@ -49,12 +49,16 @@
 #include "class_consclassifier.h"
 #include "class_varclassifier.h"
 
+
+/**
+ * \brief interface datatstructre for the detector calling methods
+ */
 struct Seeed_Propagation_Data
 {
-   gcg::Seeedpool* seeedpool;
-   gcg::Seeed* seeedToPropagate;
-   gcg::Seeed** newSeeeds;
-   int nNewSeeeds;
+   gcg::Seeedpool* seeedpool;                /**< current seeedpool to consider */
+   gcg::Seeed* seeedToPropagate;             /**< seeed (aka partial decomposition) to be propagted in next detector call */
+   gcg::Seeed** newSeeeds;                   /**< array of new seeeds to filled by the detetcor methods */
+   int nNewSeeeds;                           /**< number of new neeed, set by the detector methods */
 };
 
 
@@ -70,11 +74,14 @@ enum GCG_PROBLEM_TRANSFORMED_STATUS
 
 
 
-//typedef boost::shared_ptr<Seeed> SeeedPtr;
+/** forward declaration */
 typedef Seeed* SeeedPtr;
 
-// Only for pairs of std::hash-able types for simplicity.
-// You can of course template this struct to allow other hash functions
+
+
+/**
+ *  @brief combine two hash function of objects of a pair to get a vaulue for the pair
+ */
 struct pair_hash
 {
    template<class T1, class T2>
@@ -84,11 +91,15 @@ struct pair_hash
       auto h1 = std::hash<T1>{}( p.first );
       auto h2 = std::hash<T2>{}( p.second );
 
-      // overly simple hash combination
+      /* overly simple hash combination */
       return h1 ^ h2;
    }
 };
 
+
+/**
+ * class to manage the detectorion process and data for one coeeficient matrix of a MIP, usually tehre is one seedpool for the original and one seeedpool for the transformed problem
+ */
 class Seeedpool
 { /*lint -esym(1712,Seeedpool)*/
 
@@ -123,7 +134,7 @@ private:
    std::tr1::unordered_map<std::pair<int, int>, SCIP_Real, pair_hash> valsMap;   /**< maps an entry of the matrix to its
                                                                                    *< value, zeros are omitted */
 
-   std::vector<SCIP_VAR*> unpresolvedfixedtozerovars;
+   std::vector<SCIP_VAR*> unpresolvedfixedtozerovars;                            /**< helping data structure to collect SCIP_VAR* that are fixed to yero in transformed problem*/
 
    int nVars;                    /**< number of variables */
    int nConss;                   /**< number of constraints */
@@ -132,27 +143,34 @@ private:
    int nPostprocessingDetectors; /**< number of postprocessing detectors */
    int nnonzeros;                /**< number of nonzero entries in the coefficient matrix */
 
-//   DEC_DECOMP** decompositions;  /**< decompositions found by the detectors */
-//   int ndecompositions;          /**< number of decompositions found by the detectors */
 
    /** oracle data */
    std::vector<int> usercandidatesnblocks;               /**< candidate for the number of blocks that were given by the user and thus will be handled priorized */
    std::vector<std::pair<int, int>> candidatesNBlocks;   /**< candidate for the number of blocks  */
 
-   std::vector<SCIP_Real>        dualvalsrandom;
-   std::vector<SCIP_Real>        dualvalsoptimaloriglp;
-   SCIP_Bool                     dualvalsrandomset;
-   SCIP_Bool                     dualvalsoptimaloriglpcalculated;
+   std::vector<SCIP_Real>        dualvalsrandom;                                      /**< vector of random dual values, used for strong detection scores */
+   std::vector<SCIP_Real>        dualvalsoptimaloriglp;                               /**< vector of dual values of the optimal solved original lp */
+   SCIP_Bool                     dualvalsrandomset;                                   /**< are the random dual values set */
+   SCIP_Bool                     dualvalsoptimaloriglpcalculated;                     /**< are the optimal dual values from original lp calulated? */
 
-   SCIP_Bool transformed;                                /**< corresponds the matrix datastructure to the transformed
+   SCIP_Bool transformed;                                /**< corresponds the matrix data structure to the transformed
                                                          *< problem */
-   SCIP_Bool benders;                                    /**< is this supposed to finde decomposiotions for benders decomposition */
+   SCIP_Bool benders;                                    /**< is this supposed to find decompositions for benders decomposition */
 
    std::vector<SeeedPtr> seeedstopopulate;               /**< seeeds that are translated seeeds from found ones for the
                                                          *< original problem */
 
+
+   /**
+    * @brief method to calculate and set the optimal dual values from original lp, used for strong detection score
+    * @return scip return code
+    */
    SCIP_RETCODE calculateDualvalsOptimalOrigLP();
 
+   /**
+    * @brief method that shuffles randomly and set dual variable values, used for strong detection score
+    * @return scip return code
+    */
    SCIP_RETCODE shuffleDualvalsRandom();
 
 public:
@@ -160,12 +178,20 @@ public:
    std::vector<ConsClassifier*> consclassescollection;   /**< collection of different constraint class distributions  */
    std::vector<VarClassifier*> varclassescollection;     /**< collection of different variable class distributions   */
 
-   SCIP_Real classificationtime;
-   SCIP_Real nblockscandidatescalctime;
-   SCIP_Real postprocessingtime;
-   SCIP_Real scorecalculatingtime;
-   SCIP_Real translatingtime;
+   SCIP_Real classificationtime;                         /**< time that was consumed by the classification of the constraint and variables classifiers */
+   SCIP_Real nblockscandidatescalctime;                  /**< time that was used to calulate the candidates of te block number */
+   SCIP_Real postprocessingtime;                         /**< time that was spent in postproceesing decomposigtions */
+   SCIP_Real scorecalculatingtime;                       /**< time that was spent by calculating scores */
+   SCIP_Real translatingtime;                            /**< time that was spent by transforming seeeds between presolved and unpresolved problem */
 
+
+   /**
+    * @brief constructor
+    * @param scip SCIP data structure
+    * @param conshdlrName  name of the conshandler maintaining the seeedpool, should be "decomp"
+    * @param transformed true if the seeedpool is created for the presolved version of the problem
+    * @param benders true if the seeedpool is created for for detecting benders decompositions
+    */
    /** constructor */
    Seeedpool(
       SCIP* scip,                /**< SCIP data structure */
@@ -174,73 +200,146 @@ public:
       SCIP_Bool benders           /**< true if the seeedpool is created for for detecting benders decompositions*/
       );
 
-   /** destructor */
+   /**
+    * destructor
+    */
    ~Seeedpool();
 
-   /** creates constraint and variable classifiers, and deduces block number candidates */
+
+   /**
+    * @brief creates constraint and variable classifiers, and deduces block number candidates
+    * @param givenScip SCIP data structure
+    * @return scip return code
+    */
    SCIP_RETCODE calcClassifierAndNBlockCandidates(
       SCIP* givenScip /**< SCIP data structure */
       );
 
+
+   /**
+    * @brief create the constraint adjacency datastructure that is used (if created) for some methods to faster access the constarints that have variables in common
+    */
    void createConssAdjacency();
 
 
-   /** constructs seeeds using the registered detectors
-    *  @return user has to free seeeds */
+
+   /**
+    * @brief  constructs seeeds using the registered detectors
+    * @return vector of found seeeds, that has to be freed by the caller of findSeeeds()
+    */
    std::vector<SeeedPtr> findSeeeds();
 
-   /* sorts seeeds in finished seeeds data structure according to their score */
+
+
+   /**
+    * @brief sorts seeeds in finished seeeds data structure according to the scoretype that is currently used
+    */
    void sortFinishedForScore();
 
-   /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
-    *  @return set of completed decomposition */
+
+   /**
+    * @brief method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
+    * @param incompleteseeeds the set of incompleted seeeds
+    * @return  vector of completed decompositions, has to be freed by the caller
+    */
    std::vector<SeeedPtr> finishIncompleteSeeeds(
       std::vector<SeeedPtr> incompleteseeeds /**< the set of incompleted seeeds */
       );
 
-   /** calls findSeeeds method and translates the resulting seeeds into decompositions */
+
+   /**
+    * @brief calls findSeeeds method and sort the finished decompositions by score
+    */
    void findDecompositions();
 
-   /** returns seeed with the corresponding id */
+
+
+   /**
+    * @brief  returns seeed with the corresponding id or NULL if it is not found in this seeedpool
+    * @param seeedid id of seed is looked for
+    * @return a seeed with id as id or NULL no such seeed exists
+    */
    gcg::Seeed* findFinishedSeeedByID(
       int      seeedid
       );
 
-   /** adds a seeed to ancestor seeeds */
+
+
+   /**
+    * @brief adds a seeed to ancestor seeeds
+    * @param seeed taht is added to the ancesotr seeeds
+    */
    void addSeeedToAncestor(
       SeeedPtr seeed
       );
 
-   /** adds a seeed to current seeeds */
+   /**
+    * @brief adds a seeed to current seeeds (data structure for seeeds that are goin to processed in the propagation rounds)
+    * @param seeed pointer of seeed to be added
+    */
    void addSeeedToCurr(
       SeeedPtr seeed
       );
 
-   /** adds a seeed to finished seeeds */
+
+   /**
+    * @brief adds a seeed to finished seeeds
+    * @param seeed pointer of seeed that is going to be added to the finished seeeds (data structure to carry finished decompositions)
+    * @param success pointer that is set to TRUE iff the the seeeds was successfully added (i.e. it is no duplicate of a known seeed)
+    * @see addSeeedToFinishedUnchecked()
+    */
    void addSeeedToFinished(
       SeeedPtr seeed,
       SCIP_Bool* success
       );
 
-   /** adds a seeed to finished seeeds without checking for duplicates, dev has to check this on his own*/
+
+   /**
+    * @brief adds a seeed to finished seeeds without checking for duplicates, dev has to check this on his own
+    * @param seeed pointer of seeed that is going to be added unchecked to the finished seeeds (data structure to carry finished decompositions)
+    * @see addSeeedToFinished()
+    */
    void addSeeedToFinishedUnchecked(
       SeeedPtr seeed
       );
 
-   /** adds a seeed to incomplete seeeds */
+   /**
+    * @brief adds a seeed to incomplete seeeds
+    * @param seeed to be added
+    * @param success set in method to TRUE iff the seeeds was added successfully (i.e. it is no duplicate of the existing seeeds)
+    */
    void addSeeedToIncomplete(
       SeeedPtr seeed,
       SCIP_Bool* success
       );
 
+
+   /**
+    * @brief check if seeed is a duplicate of an existing incomplete seeed
+    * @param seeed seeed to be checked
+    * @return TRUE iff seeed is a duplicate of an existing incomplete seeed
+    */
    SCIP_Bool isSeeedDuplicateofIncomplete(
       SeeedPtr seeed
       );
 
+
+   /**
+    * @brief check if seeed is a duplicate of an existing finished seeed
+    * @param seeed seeed to be checked
+    * @return TRUE iff seeed is a duplicate of an existing finished seeed
+    */
    SCIP_Bool isSeeedDuplicateofFinished(
       SeeedPtr seeed
       );
 
+
+   /**
+    * @brief calculates the strong decomposition score of a seeed
+    * @param seeed pointer of seeed the score is calculated for
+    * @param score pointer to store the calculated score
+    * @return scip return code
+    */
    /** calculates the strong decomposition score of a seeed */
    SCIP_RETCODE calcStrongDecompositionScore(
       SeeedPtr seeed,
@@ -248,74 +347,161 @@ public:
       );
 
 
+
+   /**
+    * @brief checks if there are continouos variables
+    * @return TRUE iff there are continouos variables
+    */
    SCIP_Bool areThereContinuousVars();
 
 
-   /** clears ancestor seeed data structure */
+
+   /**
+    * @brief clears ancestor seeed data structure,
+    * @note does not free the seeeds themselves
+    */
    void clearAncestorSeeeds();
 
-   /** clears current seeed data structure */
+
+   /**
+    * @brief clears current seeed data structure
+    * @note does not free the seeeds themselves
+    */
    void clearCurrentSeeeds();
 
-   /** clears finished seeed data structure */
+
+   /**
+    * @brief clears finished seeed data structure
+    * @note does not free the seeeds themselves
+    */
    void clearFinishedSeeeds();
 
-   /** clears incomplete seeed data structure */
+
+   /**
+    * @brief clears incomplete seeed data structure
+    * @note does not free the seeeds themselves
+    */
    void clearIncompleteSeeeds();
 
-   /** returns a seeed from ancestor seeed data structure */
+
+   /**
+    * @brief returns a seeed from ancestor seeed data structure with given index
+    * @param seeedindex index of seeed in ancestor seeed data structure
+    * @return seeed from ancestor seeed data structure
+    */
    SeeedPtr getAncestorSeeed(
       int seeedindex /**< index of seeed in ancestor seeed data structure */
       );
 
-   /** returns a seeed from current (open) seeed data structure */
+
+   /**
+    * returns a seeed from current (open) seeed data structure
+    * @param seeedindex index of seeed in current seeed data structure
+    * @return  index of seeed in current (open) seeed data structure
+    */
+   /**  */
    SeeedPtr getCurrentSeeed(
       int seeedindex /**< index of seeed in current (open) seeed data structure */
       );
 
+
+   /**
+    * @brief returns a seeed from finished seeed data structure
+    * @param seeedindex index of seeed in finished seeed data structure
+    * @return  seeed from finished seeed data structure
+    */
    /** returns a seeed from finished seeed data structure */
    SeeedPtr getFinishedSeeed(
       int seeedindex /**< index of seeed in finished seeed data structure */
       );
 
-   /** returns a seeed from incomplete seeed data structure */
+
+   /**
+    * @brief returns a seeed from incomplete seeed data structure
+    * @param seeedindex index of seeed in incomplete seeed data structure
+    * @return  a seeed from incomplete seeed data structure
+    */
    SeeedPtr getIncompleteSeeed(
       int seeedindex /**< index of seeed in incomplete seeed data structure */
       );
 
-   /** returns size of ancestor seeed data structure */
+
+   /**
+    * @brief returns size of ancestor seeed data structure
+    * @return size of ancestor seeed data structure
+    */
    int getNAncestorSeeeds();
 
-   /** returns size of current (open) seeed data structure */
+
+
+   /**
+    * @brief returns size of current (open) seeed data structure
+    * @return size of current (open) seeed data structure
+    */
    int getNCurrentSeeeds();
 
-   /** returns size of finished seeed data structure */
+
+
+   /**
+    * returns size of finished seeed data structure
+    * @return  size of finished seeed data structure
+    */
    int getNFinishedSeeeds();
 
-   /** returns size of incomplete seeed data structure */
+
+   /**
+    * returns size of incomplete seeed data structure
+    * @return size of incomplete seeed data structure
+    */
    int getNIncompleteSeeeds();
 
-   /** returns total number of constraints where ranged constraints are counted twice */
+
+   /**
+    * returns total number of constraints ( ranged constraints (lb \neq ub) are counted twice )
+    * @return total number of constraints where ranged constraints are counted twice
+    */
    int getNTotalConss(
    );
 
-   /** returns the number of nonzero entries in the coefficient matrix */
+
+
+   /**
+    * @brief returns the number of nonzero entries in the coefficient matrix
+    * @return the number of nonzero entries in the coefficient matrix
+    */
    long getNTotalNonzeros();
 
 
-   /** returns true if the given seeed is a duplicate of a seeed that is already contained in
-    *  finished seeeds or current seeeds data structure */
+
+   /**
+    * @brief returns true if the given seeed is a duplicate of a seeed that is already contained in finished seeeds or current seeeds data structure
+    * @param seeed pointer of seeed that is to check
+    * @return true iff the given seeed is a duplicate of a seeed that is already contained in
+    *  finished seeeds or current seeeds data structure
+    */
    bool hasDuplicate(
       SeeedPtr seeed
       );
 
-   /** returns whether or not this seeedpool is for detectiong decompositions for benders */
+
+   /**
+    * @brief returns whether or not this seeedpool is for detectiong decompositions for benders
+    * @return whether or not this seeedpool is for detectiong decompositions for benders
+    */
    SCIP_Bool isForBenders();
 
 
-
-   /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
-   void translateSeeedData(
+   /**
+    * @brief  translates seeeds and classifiers if the index structure  of the problem has changed, e.g. due to presolving
+    * @param otherpool old seeedpool
+    * @param otherseeeds vector of seeeds to be translated
+    * @param newseeeds translated seeeds (caller should pass empty vector)
+    * @param otherconsclassifiers consclassifiers to be translated
+    * @param newconsclassifiers ranslated consclassifiers (pass empty vector)
+    * @param othervarclassifiers varclassifiers to be translated
+    * @param newvarclassifiers translated varclassifiers (pass empty vector)
+    */
+    void translateSeeedData(
       Seeedpool* otherpool,                              /**< old seeedpool */
       std::vector<Seeed*> otherseeeds,                   /**< seeeds to be translated */
       std::vector<Seeed*>& newseeeds,                    /**< translated seeeds (pass empty vector) */
@@ -325,6 +511,13 @@ public:
       std::vector<VarClassifier*>& newvarclassifiers     /**< translated varclassifiers (pass empty vector) */
       );
 
+
+    /**
+     * @brief translates seeeds if the index structure of the problem has changed, e.g. due to presolving
+     * @param otherpool old seeedpool
+     * @param otherseeeds seeeds to be translated
+     * @param newseeeds  translated seeeds (pass empty vector)
+     */
    /** translates seeeds if the index structure of the problem has changed, e.g. due to presolving */
    void translateSeeeds(
       Seeedpool* otherpool,            /**< old seeedpool */
@@ -332,76 +525,140 @@ public:
       std::vector<Seeed*>& newseeeds   /**< translated seeeds (pass empty vector) */
       );
 
-   /** registers translated seeeds from the original problem */
+
+   /**
+    * @brief registers seeeds, e.g. done with translated seeeds from the original problem
+    * @param seeeds vector of seeeds that are about to be populated
+    */
    void populate(
       std::vector<SeeedPtr> seeeds
       );
 
-   /** sorts the seeed and calculates its implicit assignments, hashvalue and evaluation */
+   /**
+    * @brief registers a seeed for a seeedpool, sets it up by and calculates its hash value
+    * @param seeed pointer f seeed to be prepared
+    * @return scip return code
+    */
    SCIP_RETCODE prepareSeeed(
       SeeedPtr seeed
       );
 
-   /** @todo revise comment and probably rename! sorts seeeds in allrelevantseeeds data structure by ascending id */
+   /**
+    * @brief sorts seeeds in allrelevantseeeds data structure by ascending id
+    * @note needed for fast access to ancestors
+    */
    void sortAllRelevantSeeeds();
 
 
+   /**
+    * @brief returns whether a constraint is a cardinality constraint, i.e. of the \sum){i} x_i == b
+    * @param consindexd index of constraint that is be checked
+    * @return returns whether a constraint is a cardinality constraint
+    */
    bool isConsCardinalityCons(
          int  consindexd
          );
 
- /** is cons with specified indec partitioning packing, or covering constraint?*/
+   /**
+    * @brief is cons with specified index partitioning packing, or covering constraint?
+    * @param consindex indec of cons to be checked
+    * @return  whether a constraint  is partitioning packing, or covering constraint?
+    */
    bool isConsSetppc(
       int  consindexd
       );
 
-   /** is cons with specified indec partitioning, or packing covering constraint?*/
+
+   /**
+    * @brief is cons with specified indec partitioning, or packing covering constraint?
+    * @param consindexd index of the given cons
+    * @return is cons with specified indec partitioning, or packing covering constraint
+    */
    bool isConsSetpp(
       int  consindexd
       );
 
 
-
+   /**
+    * @brief returns the variable indices of the coefficient matrix for a constraint
+    * @param consIndex index of the constraint to be considered
+    * @return the variable indices of the coefficient matrix for a constraint
+    */
    /** returns the variable indices of the coefficient matrix for a constraint */
    const int* getVarsForCons(
       int consIndex /**< index of the constraint to be considered */
       );
 
-   /** returns the coefficients of the coefficient matrix for a constraint */
+   /**
+    * @brief returns the nonzero coefficients of the coefficient matrix for a constraint
+    * @param consIndex  index of the constraint to be considered
+    * @return array of coefficients of in matrix for constraints
+    * @note same order as in @see getVarsForCons()
+    */
    const SCIP_Real* getValsForCons(
       int consIndex /**< index of the constraint to be considered */
       );
 
-   /** returns the constraint indices of the coefficient matrix for a variable */
+
+   /**
+    * \brief returns the constraint indices of the coefficient matrix for a variable
+    * @param varIndex index of the variable to be considered
+    * @return vector of constraint indices that have a nonzero entry with this variable
+    */
    const int* getConssForVar(
       int varIndex /**< index of the variable to be considered */
       );
 
-   /** returns the value of the optimal lp relaxation dual value of the given constrainr rid correspondoning problem of the seeedpool; if it is not calculated yet it will be calculated */
+
+/**
+ * @brief returns the value of the optimal lp relaxation dual value of the given constrainr rid correspondoning problem of the seeedpool; if it is not calculated yet it will be calculated
+ * @param consindex index of constraint the value is asked for
+ * @return the value of the optimal lp relaxation dual value of the given constrainr rid correspondoning problem of the seeedpool
+ */
    SCIP_Real  getDualvalOptimalLP(
       int  consindex
       );
 
-   /** return the a random value of the dual variable of the corresponding ; if it is not calculated yet it will be calculated */
+   /**
+    * @brief return the a random value of the dual variable of the corresponding ; if it is not calculated yet it will be calculated
+    * @param consindex  index of constraint the value is asked for
+    * @return  the a random value of the dual variable of the corresponding
+    */
    SCIP_Real  getDualvalRandom(
       int  consindex
    );
 
 
-
+   /**
+    * @brief returns the number of variables for a given constraint
+    * @param consIndex  index of the constraint to be considered
+    * @return the number of variables for a given constraint
+    */
    /** returns the number of variables for a given constraint */
    int getNVarsForCons(
       int consIndex /**< index of the constraint to be considered */
       );
 
+   /**
+    * returns the number of constraints for a given variable where the var has a nonzero entry in
+    * @param varIndex index of the variable to be considered
+    * @return the number of constraints for a given variable
+    */
    /** returns the number of constraints for a given variable */
    int getNConssForVar(
       int varIndex /**< index of the variable to be considered */
       );
 
+   /**
+    * return array of constraint indices that have a common variable with the given constraint
+    * @param consIndex index of the constraint the neighboring constraints are
+    * @return return array of constraint indices that have a common variable with the given constraint
+    * @note constraint adjacency data structure has to initilized
+    */
    const int* getConssForCons(
       int consIndex /**< index of the constraint to be considered */
       );
+
 
    /** returns the number of constraints for a given constraint */
    int getNConssForCons(
