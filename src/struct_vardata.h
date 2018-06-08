@@ -84,7 +84,6 @@ struct GCG_PricingVarData
 typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 
 
-/** @todo don't copy the pointers to the original vars for each master variable, store them in a central place */
 /** data for master variables */
 struct GCG_MasterVarData
 {

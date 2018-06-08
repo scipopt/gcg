@@ -41,6 +41,7 @@ class GcgDecompTest : public ::testing::Test {
    virtual void SetUp() {
       decomp = NULL;
       SCIP_CALL_ABORT( SCIPcreate(&scip) );
+      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
    }
 
    virtual void TearDown() {

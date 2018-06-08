@@ -95,7 +95,8 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
     * or if discretization is used
     */
    if( SCIPgetStage(scip) > SCIP_STAGE_TRANSFORMED && SCIPgetStage(masterprob) > SCIP_STAGE_TRANSFORMED &&
-      (SCIPsolGetHeur(sol) != NULL || (discretization && SCIPgetStage(masterprob) != SCIP_STAGE_SOLVED)) )
+      (SCIPsolGetHeur(sol) != NULL || (discretization && SCIPgetStage(masterprob) != SCIP_STAGE_SOLVED)) &&
+    GCGgetDecompositionMode(scip) != DEC_DECMODE_BENDERS )
    {
       SCIPdebugMessage("Original feasible solution found by <%s> -- transferring to master problem\n",
          SCIPsolGetHeur(sol) == NULL ? "relaxation" : SCIPheurGetName(SCIPsolGetHeur(sol)));

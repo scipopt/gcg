@@ -8,12 +8,14 @@ bin/
 check/results
 doc/gcg.tag
 doc/html/
-gcg-*.*.*
-gcg-metis*
-lib/blissinc
+gcg-*.metis*
+lib/include/bliss
+lib/include/cliquer
+lib/static/bliss
+lib/static/cliquer
 lib/cpxinc
-lib/gtest
-lib/lib*
+lib/include/gtest
+lib/static/lib*
 lib/linkscreated.*
 lib/scip
 lint.out
@@ -21,5 +23,4 @@ obj/
 release
 src/TAGS
 src/githash.c
-.lvimrc
-*.swp
+build*

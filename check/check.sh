@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -55,6 +55,10 @@ SETDIR=../settings
 if test ! -e results
 then
     mkdir results
+fi
+if test ! -e results/vbc && $STATISTICS = "true"
+then
+    mkdir results/vbc
 fi
 if test ! -e locks
 then
@@ -231,6 +235,10 @@ do
             echo set timing clocktype 1            >> $TMPFILE
             echo set display verblevel 4           >> $TMPFILE
             echo set display freq $DISPFREQ        >> $TMPFILE
+            if test $STATISTICS = "true"
+            then
+                echo set visual vbcfilename results/vbc/$NAME.$SETNAME.vbc >> $TMPFILE
+            fi
             echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
             if test "$LPS" = "none"
             then
@@ -263,10 +271,164 @@ do
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
                 echo display statistics            >> $TMPFILE
-                #if test $STATISTICS = "true"
-                #then
-                echo display additionalstatistics  >> $TMPFILE
-                #fi
+                if test $STATISTICS = "true"
+                then
+                    echo display additionalstatistics  >> $TMPFILE
+                fi
+            elif test $MODE = "miplibfeaturesoriginal"
+            then
+		if test ! -e results/features_original
+		then
+		    mkdir results/features_original
+		fi
+		echo set detection consclassifier consnamelevenshtein enabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamelevenshtein origenabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamenonumbers enabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamenonumbers origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevalues origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevalues enabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevaluesigns origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevaluesigns enabled FALSE    >> $TMPFILE
+		echo set detection varclassifier scipvartype origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier scipvartype enabled FALSE    >> $TMPFILE
+		echo set write miplib2017features TRUE  >> $TMPFILE
+		echo set write miplib2017featurefilepath results/features_original/featurefile >> $TMPFILE
+		echo change instancename $PROB     >> $TMPFILE
+                echo detect                        >> $TMPFILE
+		echo quit                          >> $TMPFILE
+            elif test $MODE = "miplibfeaturespresolved"
+            then
+		if test ! -e results/features_presolved
+		then
+		    mkdir results/features_presolved
+		fi
+		echo set detection consclassifier consnamelevenshtein enabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamelevenshtein origenabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamenonumbers enabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamenonumbers origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevalues origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevalues enabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevaluesigns origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevaluesigns enabled FALSE    >> $TMPFILE
+		echo set detection varclassifier scipvartype origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier scipvartype enabled FALSE    >> $TMPFILE
+
+		echo set write miplib2017features TRUE  >> $TMPFILE
+		echo set write miplib2017featurefilepath results/features_presolved/featurefile >> $TMPFILE
+		echo change instancename $PROB     >> $TMPFILE
+                echo presolve                      >> $TMPFILE
+                echo detect                        >> $TMPFILE
+		echo quit                          >> $TMPFILE
+            elif test $MODE = "miplibfeaturesplotsoriginal"
+            then
+		if test ! -e $DIR/features_original
+		then
+		    mkdir $DIR/features_original
+		fi
+		if test ! -e $DIR/features_original/decs
+		then
+		    mkdir $DIR/features_original/decs
+		fi
+		if test ! -e $DIR/features_original/matrix
+		then
+		    mkdir $DIR/features_original/matrix
+		fi
+		echo set detection consclassifier consnamelevenshtein enabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamelevenshtein origenabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamenonumbers enabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamenonumbers origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevalues origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevalues enabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevaluesigns origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevaluesigns enabled FALSE    >> $TMPFILE
+		echo set detection varclassifier scipvartype origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier scipvartype enabled FALSE    >> $TMPFILE
+		echo set presolving maxrounds 0    >> $TMPFILE
+		echo set write miplib2017features TRUE  >> $TMPFILE
+		echo set write miplib2017plotsanddecs TRUE  >> $TMPFILE
+		echo set write miplib2017shortbasefeatures TRUE  >> $TMPFILE
+#		echo set display verblevel 5 >> $TMPFILE
+
+		echo set write miplib2017featurefilepath $DIR/features_original/featurefile >> $TMPFILE
+		echo set write miplib2017matrixfilepath $DIR/features_original/matrix >> $TMPFILE
+		echo set write miplib2017decompfilepath $DIR/features_original/decs >> $TMPFILE
+		echo set visual colorscheme 1 >> $TMPFILE
+		echo change instancename $PROB     >> $TMPFILE
+                echo detect                        >> $TMPFILE
+		echo write problem  $DIR/features_original/decs/$NAME.dec     >> $TMPFILE
+		echo write problem  $DIR/features_original/decs/$NAME.gp      >> $TMPFILE
+		echo quit                          >> $TMPFILE
+            elif test $MODE = "miplibfeaturesplotspresolved"
+            then
+		if test ! -e $DIR/features_presolved
+		then
+		    mkdir $DIR/features_presolved
+		fi
+		if test ! -e $DIR/features_presolved/decs
+		then
+		    mkdir $DIR/features_presolved/decs
+		fi
+		if test ! -e $DIR/features_presolved/matrix
+		then
+		    mkdir $DIR/features_presolved/matrix
+		fi
+
+		echo set detection consclassifier consnamelevenshtein enabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamelevenshtein origenabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamenonumbers enabled FALSE    >> $TMPFILE
+		echo set detection consclassifier consnamenonumbers origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevalues origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevalues enabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevaluesigns origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier objectivevaluesigns enabled FALSE    >> $TMPFILE
+		echo set detection varclassifier scipvartype origenabled FALSE    >> $TMPFILE
+		echo set detection varclassifier scipvartype enabled FALSE    >> $TMPFILE
+
+		echo set write miplib2017features TRUE  >> $TMPFILE
+		echo set write miplib2017plotsanddecs TRUE  >> $TMPFILE
+		echo set write miplib2017shortbasefeatures TRUE  >> $TMPFILE
+
+		echo set write miplib2017featurefilepath $DIR/features_presolved/featurefile >> $TMPFILE
+		echo set write miplib2017matrixfilepath $DIR/features_presolved/matrix >> $TMPFILE
+		echo set write miplib2017decompfilepath $DIR/features_presolved/decs >> $TMPFILE
+		echo set visual colorscheme 1 >> $TMPFILE
+		echo change instancename $PROB     >> $TMPFILE
+		echo presolve                      >> $TMPFILE
+                echo detect                        >> $TMPFILE
+		echo write trans  $DIR/features_presolved/decs/$NAME.dec     >> $TMPFILE
+		echo write trans  $DIR/features_presolved/decs/$NAME.gp      >> $TMPFILE
+		echo quit                          >> $TMPFILE
+
+	    elif test $MODE = "detectionstatistics"
+	    then
+		echo change instancename $PROB     >> $TMPFILE
+		echo set detection allowclassifier enabled TRUE >> $TMPFILE
+		echo presolve                      >> $TMPFILE
+		echo detect                        >> $TMPFILE
+                echo display detectionst           >> $TMPFILE
+	    elif test $MODE = "checkexistence"
+	    then
+		echo change instancename $PROB     >> $TMPFILE
+		echo set presolving maxrounds 0    >> $TMPFILE
+		echo presolve                      >> $TMPFILE
+		echo detect                        >> $TMPFILE
+		if test -f $DECFILE
+                    then
+                        BLKFILE=$DECFILE
+                    fi
+                    if test -f $BLKFILE
+                    then
+                        EXT=${BLKFILE##*.}
+                        if test "$EXT" = "gz"
+                        then
+                            presol=`zgrep -A1 PRESOLVE $BLKFILE`
+                        else
+                            presol=`grep -A1 PRESOLVE $BLKFILE`
+                        fi
+                        echo $presol
+                        # If the decomposition contains presolving information ...
+                        echo read $BLKFILE         >> $TMPFILE
+                    fi
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE
@@ -283,8 +445,8 @@ do
                 echo detect                        >> $TMPFILE
                 mkdir -p decs/$TSTNAME.$SETNAME
                 mkdir -p images/$TSTNAME.$SETNAME
-                echo write all decs\/$TSTNAME.$SETNAME dec >> $TMPFILE
-                echo write all images\/$TSTNAME.$SETNAME gp >> $TMPFILE
+                echo write alld decs\/$TSTNAME.$SETNAME dec >> $TMPFILE
+                echo write alld images\/$TSTNAME.$SETNAME gp >> $TMPFILE
             else
                 if test $MODE = "readdec"
                 then
@@ -316,6 +478,10 @@ EOF
                         echo read $BLKFILE         >> $TMPFILE
                     fi
                 fi
+                GP_BASE=`basename $DECFILE .dec`
+#                echo detect                        >> $TMPFILE
+#                echo write problem $HOME\/results\/gpsBench\/$GP_BASE.gp >> $TMPFILE
+#                echo write problem $HOME\/results\/decsBench\/$GP_BASE.dec >> $TMPFILE
                 echo optimize                      >> $TMPFILE
                 echo display statistics            >> $TMPFILE
                 if test $STATISTICS = "true"

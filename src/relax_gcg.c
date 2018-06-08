@@ -31,6 +31,7 @@
  * @author  Gerald Gamrath
  * @author  Martin Bergner
  * @author  Alexander Gross
+ * @author  Michael Bastubbe
  *
  * \bug
  * - The memory limit is not strictly enforced
@@ -40,13 +41,15 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include <assert.h>
+/*#define SCIP_DEBUG*/
+
 #include <string.h>
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
+#include "scip/misc.h"
 
 #include "relax_gcg.h"
 
@@ -55,15 +58,16 @@
 #include "cons_origbranch.h"
 #include "cons_masterbranch.h"
 #include "pricer_gcg.h"
+#include "benders_gcg.h"
 #include "masterplugins.h"
+#include "bendersplugins.h"
 #include "nodesel_master.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
 
-#include "scip/struct_set.h"
 #include "gcg.h"
 
-#ifndef NBLISS
+#ifdef WITH_BLISS
 #include "pub_bliss.h"
 #include "bliss_automorph.h"
 #endif
@@ -77,6 +81,7 @@
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
+#define DEFAULT_MODE 0  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition) */
 #define DELVARS
 
 /*
@@ -88,6 +93,7 @@ struct SCIP_RelaxData
 {
    /* problems and convexity constraints */
    SCIP*                 masterprob;         /**< the master problem */
+   SCIP*                 altmasterprob;      /**< the master problem for the alternate decomposition algorithm */
    SCIP**                pricingprobs;       /**< the array of pricing problems */
    int                   npricingprobs;      /**< the number of pricing problems */
    int                   nrelpricingprobs;   /**< the number of relevant pricing problems */
@@ -131,6 +137,8 @@ struct SCIP_RelaxData
    SCIP_Bool             masterissetpart;    /**< is the master a set partitioning problem? */
    SCIP_Bool             masterissetcover;   /**< is the master a set covering problem? */
    SCIP_Bool             dispinfos;          /**< should additional information be displayed? */
+   int                   mode;               /**< the decomposition mode for GCG. 0: Dantzig-Wolfe (default), 1: Benders' decomposition, 2: automatic */
+   int                   origverblevel;      /**< the verbosity level of the original problem */
 
    /* data for probing */
    SCIP_Bool             masterinprobing;    /**< is the master problem in probing mode? */
@@ -144,15 +152,15 @@ struct SCIP_RelaxData
 
    /* statistical information */
    SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
-   SCIP_CLOCK*           rootnodetime;       /**< time in root node */
-   SCIP_RealList*        degeneracy;         /**< degeneracy list */
-   SCIP_RealList*        dualbounds;         /**< dual bounds list */
+
+   /* filename information */
+   const char*           filename;
 };
+
 
 /*
  * Local methods
  */
-
 
 /** sets the number of the block, the given original variable belongs to */
 static
@@ -187,7 +195,7 @@ SCIP_RETCODE setOriginalVarBlockNr(
    /* if var already belongs to another block, it is a linking variable */
    else if( blocknr != newblock )
    {
-      SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock, relaxdata->npricingprobs) );
+      SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock, relaxdata->npricingprobs, relaxdata->mode) );
       assert(GCGisLinkingVarInBlock(var, newblock));
       assert(GCGoriginalVarIsLinking(var));
    }
@@ -268,9 +276,11 @@ SCIP_RETCODE convertStructToGCG(
    assert(DECdecompGetLinkingconss(decdecomp) != NULL || DECdecompGetNLinkingconss(decdecomp) == 0);
    assert(DECdecompGetNSubscipvars(decdecomp) != NULL || DECdecompGetSubscipvars(decdecomp) == NULL);
 
-   SCIP_CALL( DECdecompRemoveDeletedConss(scip, decdecomp) );
+
    SCIP_CALL( DECdecompAddRemainingConss(scip, decdecomp) );
    SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
+
+
 
    origvars = SCIPgetOrigVars(scip);
    nvars = SCIPgetNOrigVars(scip);
@@ -360,6 +370,8 @@ SCIP_RETCODE convertStructToGCG(
          {
             SCIP_VAR** curvars;
             int        ncurvars;
+            if( SCIPconsIsDeleted(subscipconss[j][k]) )
+               continue;
             ncurvars = GCGconsGetNVars(scip, subscipconss[j][k]);
             curvars = NULL;
             if( ncurvars > 0 )
@@ -545,7 +557,7 @@ SCIP_RETCODE checkSetppcStructure(
    return SCIP_OKAY;
 }
 
-#ifdef NBLISS
+#ifndef WITH_BLISS
 /** checks whether two arrays of SCIP_Real's are identical */
 static
 SCIP_Bool realArraysAreEqual(
@@ -752,6 +764,56 @@ SCIP_RETCODE checkIdentical(
 
 /* checks whether two pricingproblems represent identical blocks */
 static
+SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
+   SCIP_HASHMAP**        hashorig2pricingvar,/**< mapping from orig to pricingvar  */
+   int                   probnr1,            /**< number of the first pricingproblem */
+   int                   probnr2,            /**< number of the second pricingproblem */
+   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
+                                              *   to those of the first pricing problem */
+   SCIP_Bool*            identical           /**< return value: are blocks identical */
+   )
+{
+   SCIP* scip1;
+   SCIP* scip2;
+   int seeedid;
+
+
+   assert(relaxdata != NULL);
+   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
+   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
+   assert(varmap != NULL);
+   assert(identical != NULL);
+
+   scip1 = relaxdata->pricingprobs[probnr1];
+   scip2 = relaxdata->pricingprobs[probnr2];
+   assert(scip1 != NULL);
+   assert(scip2 != NULL);
+
+   *identical = FALSE;
+
+   /* 1) find seeed number */
+
+   seeedid = DECdecompGetSeeedID(relaxdata->decdecomp);
+
+   /* 2) are pricingproblems identical for this seeed? */
+   SCIP_CALL(SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(scip, seeedid, probnr2, probnr1, identical) );
+
+   /* 3) create varmap if pricing probs are identical */
+   if( *identical )
+   {
+      SCIP_CALL(SCIPconshdlrDecompCreateVarmapForSeeedId(scip, hashorig2pricingvar, seeedid, probnr2, probnr1, scip2, scip1, varmap) );
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
+
+
+static
 SCIP_RETCODE pricingprobsAreIdentical(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
@@ -765,7 +827,7 @@ SCIP_RETCODE pricingprobsAreIdentical(
    SCIP* scip1;
    SCIP* scip2;
 
-#ifndef NBLISS
+#ifdef WITH_BLISS
    SCIP_RESULT result;
    SCIP_HASHMAP* consmap;
 #endif
@@ -783,11 +845,11 @@ SCIP_RETCODE pricingprobsAreIdentical(
 
    *identical = FALSE;
 
-#ifdef NBLISS
+#ifndef WITH_BLISS
    checkIdentical(scip, relaxdata, probnr1, probnr2, varmap, identical, scip1, scip2);
 #else
    SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1)+1) );
-   SCIP_CALL( cmpGraphPair(scip, scip1, scip2, probnr1, probnr2, &result, varmap, consmap) );
+   SCIP_CALL( cmpGraphPair(scip, scip2, scip1, probnr2, probnr1, &result, varmap, consmap) );
 
    *identical = (result == SCIP_SUCCESS);
 
@@ -801,7 +863,8 @@ SCIP_RETCODE pricingprobsAreIdentical(
 static
 SCIP_RETCODE checkIdenticalBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RELAXDATA*       relaxdata           /**< the relaxator data data structure*/
+   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator data data structure*/
+   SCIP_HASHMAP**         hashorig2pricingvar /**< mapping from orig to pricingvar for each block */
    )
 {
    SCIP_HASHMAP* varmap;
@@ -826,14 +889,24 @@ SCIP_RETCODE checkIdenticalBlocks(
       relaxdata->blockrepresentative[i] = i;
       relaxdata->nblocksidentical[i] = 1;
    }
+
    relaxdata->nrelpricingprobs = relaxdata->npricingprobs;
    nrelevant = 0;
 
-   if( !relaxdata->discretization || !relaxdata->aggregation )
+   if(  ( !relaxdata->discretization || !relaxdata->aggregation ) )
    {
       SCIPdebugMessage("discretization is off, aggregation is off\n");
       return SCIP_OKAY;
    }
+
+
+   if(  relaxdata->nlinkingvars != 0 )
+      {
+         SCIPdebugMessage("aggregation is off in presence of linking vars\n");
+         return SCIP_OKAY;
+      }
+
+
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {
@@ -846,7 +919,26 @@ SCIP_RETCODE checkIdenticalBlocks(
                SCIPblkmem(scip),
                5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /* +1 to deal with empty subproblems */
 
-         SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
+         /** if (possibly deactive) conss has been added since structure detecting we need to reevaluate identity of subproblems */
+         if( SCIPgetNConss(scip) != SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ) )
+         {
+            SCIPdebugMessage("nconss: %d; ndetectionconss: %d -> using classical identity test \n", SCIPgetNConss(scip), SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ));
+            SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
+         }
+         else
+         {
+            SCIPdebugMessage( "nconss: %d; ndetectionconss: %d -> using seeed information for identity test \n", SCIPgetNConss(scip), SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ) );
+            SCIP_CALL( pricingprobsAreIdenticalFromDetectionInfo( scip, relaxdata, hashorig2pricingvar, i, j, varmap, &identical ) );
+         }
+
+
+/**
+ *  new method of cons_decomp that uses seeed information
+ * 1) check varmap
+ * 2) build varmap for seeeds in seeed datatstructures
+ * 3) translate varmap when transforming seeed to decomp (store varmap in decomp or seeed?)
+ * 4) write method in cons_decomp using seeed agg info and varmap*/
+
 
          if( identical )
          {
@@ -857,7 +949,7 @@ SCIP_RETCODE checkIdenticalBlocks(
             nvars = SCIPgetNVars(relaxdata->pricingprobs[i]);
 
             /*
-             * quick check whether some of the variables are linking in which case we can not aggregate
+             * quick check whether some of the variables are linking in which case we cannot aggregate
              * this is suboptimal but we use bliss anyway
              */
 
@@ -962,6 +1054,7 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/maxprerounds", 0) );
    SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/freq") );
    SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );
+
 
    /* disable solution storage ! */
    SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
@@ -1077,15 +1170,19 @@ SCIP_RETCODE createLinkingPricingVars(
       int count;
 
       linkconss = GCGlinkingVarGetLinkingConss(origvar);
-      count = 0;
-      for( i = 0; i < relaxdata->npricingprobs; i++ )
+      /* the linking constraints could be NULL if the Benders' decomposition is used. */
+      if( linkconss != NULL )
       {
-         assert(linkconss[i] == NULL);
+         count = 0;
+         for( i = 0; i < relaxdata->npricingprobs; i++ )
+         {
+            assert(linkconss[i] == NULL);
 
-         if( pricingvars[i] != NULL )
-            count++;
+            if( pricingvars[i] != NULL )
+               count++;
+         }
+         assert(nblocks == count);
       }
-      assert(nblocks == count);
    }
 #endif
 
@@ -1094,21 +1191,27 @@ SCIP_RETCODE createLinkingPricingVars(
       if( pricingvars[i] == NULL )
          continue;
 
-      SCIP_CALL( GCGlinkingVarCreatePricingVar(relaxdata->masterprob,
-            relaxdata->pricingprobs[i], i, origvar, &var, &linkcons) );
+      SCIP_CALL( GCGlinkingVarCreatePricingVar(relaxdata->pricingprobs[i], i, origvar, &var) );
 
       GCGlinkingVarSetPricingVar(origvar, i, var);
-      GCGlinkingVarSetLinkingCons(origvar, linkcons, i);
 
       assert(GCGvarIsPricing(var));
       SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[i], var) );
-      SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &relaxdata->varlinkconss, relaxdata->nvarlinkconss, (size_t)relaxdata->nvarlinkconss+1) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &relaxdata->varlinkconsblock, relaxdata->nvarlinkconss, (size_t)relaxdata->nvarlinkconss+1) );
 
-      relaxdata->varlinkconss[relaxdata->nvarlinkconss] = linkcons;
-      relaxdata->varlinkconsblock[relaxdata->nvarlinkconss] = i;
-      relaxdata->nvarlinkconss++;
+
+      if( relaxdata->mode != DEC_DECMODE_BENDERS )
+      {
+         SCIP_CALL( GCGlinkingVarCreateMasterCons(relaxdata->masterprob, i, origvar, &linkcons) );
+         GCGlinkingVarSetLinkingCons(origvar, linkcons, i);
+         SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
+
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &relaxdata->varlinkconss, relaxdata->nvarlinkconss, (size_t)relaxdata->nvarlinkconss+1) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &relaxdata->varlinkconsblock, relaxdata->nvarlinkconss, (size_t)relaxdata->nvarlinkconss+1) );
+
+         relaxdata->varlinkconss[relaxdata->nvarlinkconss] = linkcons;
+         relaxdata->varlinkconsblock[relaxdata->nvarlinkconss] = i;
+         relaxdata->nvarlinkconss++;
+      }
 
       /* because the variable was added to the problem,
        * it is captured by SCIP and we can safely release it right now
@@ -1122,19 +1225,23 @@ SCIP_RETCODE createLinkingPricingVars(
       int count;
 
       linkconss = GCGlinkingVarGetLinkingConss(origvar);
-      count = 0;
-      for( i = 0; i < relaxdata->npricingprobs; i++ )
+      /* the linking constraints could be NULL if the Benders' decomposition is used. */
+      if( linkconss != NULL )
       {
-         if( pricingvars[i] != NULL )
+         count = 0;
+         for( i = 0; i < relaxdata->npricingprobs; i++ )
          {
-            count++;
-            assert(GCGvarIsPricing(pricingvars[i]));
-            assert(linkconss[i] != NULL);
+            if( pricingvars[i] != NULL )
+            {
+               count++;
+               assert(GCGvarIsPricing(pricingvars[i]));
+               assert(relaxdata->mode == DEC_DECMODE_BENDERS || linkconss[i] != NULL);
+            }
+            else
+               assert(linkconss[i] == NULL);
          }
-         else
-            assert(linkconss[i] == NULL);
+         assert(nblocks == count);
       }
-      assert(nblocks == count);
    }
 #endif
 
@@ -1178,12 +1285,13 @@ SCIP_RETCODE createPricingVariables(
       {
          int tempblock;
          tempblock = (int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar)-1; /*lint !e507*/
-         if( tempblock == DECdecompGetNBlocks(relaxdata->decdecomp) )
+         if( tempblock >= DECdecompGetNBlocks(relaxdata->decdecomp) )
          {
             blocknr = -1;
          }
          else
          {
+            SCIPinfoMessage(scip, NULL, " changed block number to %d \n", tempblock );
             blocknr = tempblock; /*lint !e806*/
          }
       }
@@ -1336,14 +1444,17 @@ SCIP_RETCODE createMasterProblem(
    SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the master problem */
    SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the master problem */
    SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the master problem */
-   SCIP_Real             dualfeastol         /**< feasibility tolerance for reduced costs in LP solution in the master problem */
+   SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the master problem */
+   int                   mode                /**< the decomposition mode */
    )
 {
    assert(masterscip != NULL);
    assert(name != NULL);
 
    SCIP_CALL( SCIPcreateProb(masterscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
-   SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
+
+   if( mode == DEC_DECMODE_DANTZIGWOLFE )
+      SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
 
    /* set clocktype */
    SCIP_CALL( SCIPsetIntParam(masterscip, "timing/clocktype", clocktype) );
@@ -1362,6 +1473,26 @@ SCIP_RETCODE createMasterProblem(
    /* disable aggregation and multiaggregation of variables, as this might lead to issues with copied original variables */
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotaggr", TRUE) );
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
+
+   /* for Benders' decomposition, some additional parameter settings are required for the master problem. */
+   if( mode == DEC_DECMODE_BENDERS )
+   {
+      SCIP_CALL( SCIPsetSeparating(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
+      SCIP_CALL( SCIPsetPresolving(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
+      SCIP_CALL( SCIPsetIntParam(masterscip, "presolving/maxrestarts", 0) );
+      SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxroundsroot", 0) );
+      SCIP_CALL( SCIPsetIntParam(masterscip, "heuristics/trysol/freq", 1) );
+      SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benders/active", TRUE) );
+      SCIP_CALL( SCIPsetBoolParam(masterscip, "constraints/benderslp/active", TRUE) );
+      SCIP_CALL( SCIPsetBoolParam(masterscip, "benders/gcg/lnscheck", FALSE) );
+      SCIP_CALL( SCIPsetIntParam(masterscip, "presolving/maxrounds", 1) );
+      SCIP_CALL( SCIPsetIntParam(masterscip, "constraints/benders/maxprerounds", 1) );
+
+      /* the trysol heuristic must have a high priority to ensure the solutions found by the relaxator are added to the
+       * original problem
+       */
+      SCIP_CALL( SCIPsetIntParam(GCGgetOriginalprob(masterscip), "heuristics/trysol/freq", 1) );
+   }
 
    return SCIP_OKAY;
 }
@@ -1463,12 +1594,21 @@ SCIP_RETCODE createMasterprobConss(
    nmasterconss = DECdecompGetNLinkingconss(relaxdata->decdecomp);
    newcons = NULL;
 
-   assert(SCIPhashmapGetNElements(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
+ //  assert(SCIPhashmapGetNElements(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
    for( c = 0; c < nmasterconss; ++c )
    {
+      int nconsvars;
+      int consvarssize;
+      SCIP_VAR** consvars;
+      SCIP_Real* consvals;
+      SCIP_Bool* releasevars;
+      int i;
+
       if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[c])), "origbranch") == 0 )
          continue;
 
+      /* TODO: In the Benders' decomposition case the copy of the constraint could be used.
+       * Current implementation creates the constraints with the master variables. */
       success = FALSE;
       /* copy the constraint (dirty trick, we only need lhs and rhs, because variables are added later) */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "linear_%s", SCIPconsGetName(masterconss[c]));
@@ -1477,9 +1617,75 @@ SCIP_RETCODE createMasterprobConss(
             FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, &success) );
       assert(success);
 
+      /* in the Benders' decomposition mode, all variables from the linking constraints need to be added to the master
+       * problem.
+       */
+      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+      {
+         nconsvars = GCGconsGetNVars(scip, newcons);
+         consvarssize = nconsvars;
+
+         SCIP_CALL( SCIPallocBufferArray(scip, &consvars, consvarssize) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &consvals, consvarssize) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &releasevars, consvarssize) );
+
+         SCIP_CALL( GCGconsGetVars(scip, newcons, consvars, nconsvars) );
+         SCIP_CALL( GCGconsGetVals(scip, newcons, consvals, nconsvars) );
+
+         for( i = 0; i < nconsvars; i++ )
+         {
+            SCIP_VAR* origvar;
+
+            /* if the variable is a linking variable or is directly transferred to the master problem, then it is not
+             * added to the constraint. This is because the linking variables and the transferred variables are added
+             * later in GCGmasterCreateInitialMastervars().
+             */
+            while( i < nconsvars && (GCGoriginalVarIsLinking(consvars[i]) || GCGoriginalVarIsTransVar(consvars[i])) )
+            {
+               consvars[i] = consvars[nconsvars - 1];
+               consvals[i] = consvals[nconsvars - 1];
+               nconsvars--;
+            }
+
+            if( i >= nconsvars )
+               break;
+
+            /* assigning the origvar to the next variables that is not a linking variable */
+            origvar = consvars[i];
+
+            assert(GCGoriginalVarGetNMastervars(origvar) <= 1);
+
+            /* if the original has already has a copy in the master problem, then this is used. Otherwise, the master
+             * problem variable is created.
+             */
+            if( GCGoriginalVarGetNMastervars(origvar) > 0 )
+            {
+               consvars[i] = GCGoriginalVarGetMastervars(origvar)[0];
+               releasevars[i] = FALSE;
+            }
+            else
+            {
+               SCIP_CALL( GCGcreateInitialMasterVar(relaxdata->masterprob, consvars[i], &consvars[i]) );
+               SCIP_CALL( SCIPaddVar(relaxdata->masterprob, consvars[i]) );
+
+               SCIP_CALL( GCGoriginalVarAddMasterVar(scip, origvar, consvars[i], 1.0) );
+
+               releasevars[i] = TRUE;
+            }
+
+            assert(GCGoriginalVarGetNMastervars(origvar) <= 1);
+         }
+      }
+      else
+      {
+         nconsvars = 0;
+         consvars = NULL;
+         consvals = NULL;
+      }
+
       /* create and add corresponding linear constraint in the master problem */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "m_%s", SCIPconsGetName(masterconss[c]));
-      SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &mastercons, name, 0, NULL, NULL,
+      SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &mastercons, name, nconsvars, consvars, consvals,
             SCIPgetLhsLinear(scip, newcons), SCIPgetRhsLinear(scip, newcons),
             TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
 
@@ -1492,6 +1698,22 @@ SCIP_RETCODE createMasterprobConss(
       relaxdata->linearmasterconss[relaxdata->nmasterconss] = newcons;
       relaxdata->masterconss[relaxdata->nmasterconss] = mastercons;
       relaxdata->nmasterconss++;
+
+      /* in the Benders' decomposition mode, the consvars and consvals arrays need to be freed */
+      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+      {
+         for( i = 0; i < nconsvars; i++ )
+         {
+            if( releasevars[i] )
+            {
+               SCIP_CALL( SCIPreleaseVar(relaxdata->masterprob, &consvars[i]) );
+            }
+         }
+
+         SCIPfreeBufferArray(scip, &releasevars);
+         SCIPfreeBufferArray(scip, &consvals);
+         SCIPfreeBufferArray(scip, &consvars);
+      }
    }
    assert(relaxdata->nmasterconss == nmasterconss);
    SCIP_CALL( saveOriginalVarMastercoeffs(scip, SCIPgetVars(scip), SCIPgetNVars(scip), relaxdata->nmasterconss, relaxdata->linearmasterconss, relaxdata->masterconss) );
@@ -1550,6 +1772,8 @@ SCIP_RETCODE createPricingprobConss(
          assert(success);
 
          SCIP_CALL( SCIPaddCons(relaxdata->pricingprobs[b], newcons) );
+
+
 #ifndef NDEBUG
          {
             SCIP_VAR** curvars;
@@ -1566,7 +1790,10 @@ SCIP_RETCODE createPricingprobConss(
 
                for( i = 0; i < ncurvars; ++i )
                {
-                  assert(GCGvarIsPricing(curvars[i]));
+                  if( SCIPisFeasEQ( scip, SCIPvarGetLbGlobal(curvars[i]), SCIPvarGetUbGlobal(curvars[i]) ) && SCIPisFeasEQ( scip, SCIPvarGetUbGlobal(curvars[i]), 0. )  )
+                     continue;
+
+                  assert(GCGvarIsPricing(curvars[i]) || ( SCIPvarIsNegated(curvars[i]) && GCGvarIsPricing(SCIPvarGetNegatedVar(curvars[i]) ) ) );
                }
 
                SCIPfreeBufferArrayNull(scip, &curvars);
@@ -1607,6 +1834,7 @@ SCIP_RETCODE createMaster(
 
    assert(relaxdata->decdecomp != NULL);
 
+
    SCIP_CALL( convertStructToGCG(scip, relaxdata, relaxdata->decdecomp) );
 
    npricingprobs = relaxdata->npricingprobs;
@@ -1634,7 +1862,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( SCIPgetRealParam(scip, "numerics/dualfeastol", &dualfeastol) );
 
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
-   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol) );
+   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, relaxdata->mode) );
 
    enableppcuts = FALSE;
    SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
@@ -1660,23 +1888,28 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
 
    /* check for identity of blocks */
-   SCIP_CALL( checkIdenticalBlocks(scip, relaxdata) );
+   SCIP_CALL( checkIdenticalBlocks(scip, relaxdata, hashorig2pricingvar) );
 
-   for( i = 0; i < relaxdata->npricingprobs; i++ )
+   /* the convexity constraints are only added in the Dantzig-Wolfe mode */
+   if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
    {
-      if( relaxdata->blockrepresentative[i] != i )
-         continue;
+      for( i = 0; i < relaxdata->npricingprobs; i++ )
+      {
+         if( relaxdata->blockrepresentative[i] != i )
+            continue;
 
-      /* create the corresponding convexity constraint */
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "conv_block_%d", i);
-      SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &(relaxdata->convconss[i]), name, 0, NULL, NULL,
-            relaxdata->nblocksidentical[i]*1.0, relaxdata->nblocksidentical[i]*1.0,
-            TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
-      SCIP_CALL( SCIPaddCons(relaxdata->masterprob, relaxdata->convconss[i]) );
+         /* create the corresponding convexity constraint */
+         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "conv_block_%d", i);
+         SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &(relaxdata->convconss[i]), name, 0, NULL, NULL,
+               relaxdata->nblocksidentical[i]*1.0, relaxdata->nblocksidentical[i]*1.0,
+               TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
+         SCIP_CALL( SCIPaddCons(relaxdata->masterprob, relaxdata->convconss[i]) );
+      }
    }
 
    /* set integral objective status in the extended problem, if possible */
-   if( SCIPisObjIntegral(scip) && relaxdata->discretization )
+   if( SCIPisObjIntegral(scip) && relaxdata->discretization && SCIPgetNContVars(scip) == 0
+      && relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
    {
       SCIP_CALL( SCIPsetObjIntegral(relaxdata->masterprob) );
    }
@@ -1770,6 +2003,7 @@ SCIP_RETCODE setPricingObjsOriginal(
    int v;
    int nvars;
    SCIP_VAR** vars;
+   int i;
 
    assert(scip != NULL);
    assert(probs != NULL);
@@ -1777,6 +2011,29 @@ SCIP_RETCODE setPricingObjsOriginal(
 
    nvars = SCIPgetNVars(scip);
    vars = SCIPgetVars(scip);
+
+   /* if the Benders' decomposition is used, then the transformed problem of the subproblems must be freed.
+    * This is because the within the create subproblem stage, if the subproblem is an LP, then the SCIP instance is put
+    * into probing mode.
+    */
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+   {
+      for( i = 0; i < nprobs; i++ )
+      {
+         /* if the problem is not in SCIP_STAGE_PROBLEM, then the transformed problem must be freed. The subproblem
+          * should also be in probing mode.
+          */
+         if( SCIPgetStage(probs[i]) != SCIP_STAGE_PROBLEM )
+         {
+            if( SCIPinProbing(probs[i]) )
+            {
+               SCIP_CALL( SCIPendProbing(probs[i]) );
+            }
+
+            SCIP_CALL( SCIPfreeTransform(probs[i]) );
+         }
+      }
+   }
 
    for( v = 0; v < nvars; ++v )
    {
@@ -1794,7 +2051,8 @@ SCIP_RETCODE setPricingObjsOriginal(
       assert(pricingvar != NULL);
 
       objvalue = SCIPvarGetObj(origvar);
-      /* SCIPinfoMessage(scip, NULL, "%s: %f\n", SCIPvarGetName(origvar), SCIPvarGetObj(origvar));*/
+      /* SCIPinfoMessage(scip, NULL, "%s: %f block %d\n", SCIPvarGetName(origvar), SCIPvarGetObj(origvar),
+         GCGvarGetBlock(origvar)); */
       SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(pricingvar)], pricingvar, objvalue) );
    }
    return SCIP_OKAY;
@@ -1836,7 +2094,7 @@ SCIP_RETCODE solveDiagonalBlocks(
          continue;
 
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Solving block %i.\n", i+1);
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", (int)SCIP_VERBLEVEL_NORMAL) );
 
       /* give the pricing problem 2% more time then the original scip has left */
       if( SCIPgetStage(relaxdata->pricingprobs[i]) > SCIP_STAGE_PROBLEM )
@@ -1870,7 +2128,33 @@ SCIP_RETCODE solveDiagonalBlocks(
       SCIP_CALL( SCIPwriteOrigProblem(relaxdata->pricingprobs[i], name, "lp", FALSE) );
 #endif
 
-      SCIP_CALL( SCIPsolve(relaxdata->pricingprobs[i]) );
+      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE )
+      {
+         SCIP_CALL( SCIPsolve(relaxdata->pricingprobs[i]) );
+      }
+      else
+      {
+         SCIP_BENDERS* benders;
+         SCIP_Bool infeasible;
+
+         assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS);
+
+         /* retrieving the Benders' decomposition */
+         benders = SCIPfindBenders(relaxdata->masterprob, "gcg");
+
+         /* since the diagonal blocks are being solved, this indicates that the subproblems are independent. As such, we
+          * can declare this in the Benders' decomposition framework. This allows us to call
+          * SCIPsolveBendersSubproblem() without setting up the problem
+          */
+#if 0 /* there is a merge request in SCIP for this function */
+         SCIPbendersSetSubproblemIsIndependent(benders, i, TRUE);
+#endif
+
+         /* solving the Benders' decomposition subproblem */
+         SCIP_CALL( SCIPsolveBendersSubproblem(relaxdata->masterprob, benders, NULL, i, &infeasible,
+               SCIP_BENDERSENFOTYPE_CHECK, TRUE, NULL) );
+      }
+
 
       switch( SCIPgetStatus(relaxdata->pricingprobs[i]) )
       {
@@ -1918,7 +2202,23 @@ SCIP_RETCODE solveDiagonalBlocks(
       if( relaxdata->pricingprobs[i] == NULL )
          continue;
 
-      SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
+      if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE )
+      {
+         SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
+      }
+      else
+      {
+         SCIP_BENDERS* benders;
+
+         assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS);
+
+         /* retrieving the Benders' decomposition */
+         benders = SCIPfindBenders(relaxdata->masterprob, "gcg");
+
+         /* freeing the Benders' decomposition subproblems */
+         SCIP_CALL( SCIPfreeBendersSubproblem(relaxdata->masterprob, benders, i) );
+      }
+
    }
 
    *result = SCIP_SUCCESS;
@@ -1953,10 +2253,46 @@ SCIP_RETCODE initRelaxator(
       relaxdata->decdecomp = DECgetBestDecomp(scip);
       if( relaxdata->decdecomp == NULL )
       {
-         SCIPerrorMessage("No decomposition specified!\n");
-         return SCIP_ERROR;
+         SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE) );
+         relaxdata->decdecomp = DECgetBestDecomp(scip);
+         if( relaxdata->decdecomp == NULL )
+         {
+            SCIP_Bool createbasicdecomp;
+            SCIPgetBoolParam(scip, "constraints/decomp/createbasicdecomp", &createbasicdecomp);
+            if( createbasicdecomp )
+            {
+               DEC_DECOMP* decomp;
+               SCIP_RETCODE retcode;
+               SCIPinfoMessage(scip, NULL, " CREATE BASIC DECOMP!\n");
+               retcode = DECcreateBasicDecomp(scip, &decomp);
+               assert(retcode == SCIP_OKAY);
+               if( retcode != SCIP_OKAY )
+               {
+                  SCIPerrorMessage("Could not add decomp to cons_decomp!\n");
+                  return SCIP_ERROR;
+               }
+
+
+               assert(decomp != NULL );
+
+               retcode = SCIPconshdlrDecompAddDecdecomp(scip, decomp);
+               relaxdata->decdecomp = DECgetBestDecomp(scip);
+
+            }
+            else
+            {
+               SCIPerrorMessage("No decomposition specified!\n");
+               return SCIP_ERROR;
+            }
+
+            assert( relaxdata->decdecomp != NULL );
+         }
       }
    }
+
+   SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks, %d linking vars, %d master-only (base) variables and %d linking constraints.\n", DECdecompGetNBlocks(relaxdata->decdecomp), DECdecompGetNLinkingvars(relaxdata->decdecomp), DECdecompGetNMastervars(relaxdata->decdecomp), DECdecompGetNLinkingconss(relaxdata->decdecomp));
+   SCIPinfoMessage(scip, NULL, "This decomposition has a maxwhite score of %f .\n", DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
+
 
    /* permute the decomposition if the permutation seed is set */
    SCIP_CALL( SCIPgetIntParam(scip, "randomization/permutationseed", &permutationseed) );
@@ -1964,18 +2300,24 @@ SCIP_RETCODE initRelaxator(
    {
       SCIP_RANDNUMGEN* randnumgen;
 
-      SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, (unsigned int) permutationseed) );
+      SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, (unsigned int) permutationseed, TRUE) );
       SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, randnumgen) );
       SCIPfreeRandom(scip, &randnumgen);
    }
 
    if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Discretization with continuous variables is currently not supported. The parameter setting will be ignored.\n");
-      relaxdata->discretization = FALSE;
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Warning: Discretization with continuous variables is only an experimental feature.\n");
    }
 
    SCIP_CALL( createMaster(scip, relaxdata) );
+
+   /* for Benders' decomposition, the Benders' plugin must be activated */
+   if( relaxdata->mode == DEC_DECMODE_BENDERS )
+   {
+      SCIP_CALL( SCIPactivateBenders(relaxdata->masterprob, SCIPfindBenders(relaxdata->masterprob, "gcg"),
+            relaxdata->npricingprobs) );
+   }
 
    masterprob = relaxdata->masterprob;
    assert(masterprob != NULL);
@@ -2021,13 +2363,17 @@ SCIP_RETCODE initRelaxator(
          int j;
          SCIP_CONS** linkconss;
          linkconss = GCGlinkingVarGetLinkingConss(vars[i]);
-         for( j = 0; j < relaxdata->npricingprobs; ++j )
+         /* the linking constraints could be NULL if the Benders' decomposition is used. */
+         if( linkconss != NULL )
          {
-            if( linkconss[j] != NULL )
+            for( j = 0; j < relaxdata->npricingprobs; ++j )
             {
-               SCIP_CONS* tempcons;
-               SCIP_CALL( SCIPtransformCons(masterprob, linkconss[j], &(tempcons)) );
-               GCGlinkingVarSetLinkingCons(vars[i], tempcons, j);
+               if( linkconss[j] != NULL )
+               {
+                  SCIP_CONS* tempcons;
+                  SCIP_CALL( SCIPtransformCons(masterprob, linkconss[j], &(tempcons)) );
+                  GCGlinkingVarSetLinkingCons(vars[i], tempcons, j);
+               }
             }
          }
       }
@@ -2095,11 +2441,8 @@ void initRelaxdata(
    relaxdata->pricingprobsmemused = 0.0;
 
    relaxdata->simplexiters = 0;
-   relaxdata->rootnodetime = NULL;
-   relaxdata->degeneracy = NULL;
-   relaxdata->dualbounds = NULL;
 
-   relaxdata->relaxisinitialized = FALSE;
+   relaxdata->filename = NULL;
 }
 
 /*
@@ -2121,6 +2464,19 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
    }
 
+   /* free the alternate master problem */
+   if( relaxdata->altmasterprob != NULL )
+   {
+      SCIP_CALL( SCIPfree(&(relaxdata->altmasterprob)) );
+   }
+
+   /* free used decomposition */
+   if( relaxdata->decdecomp != NULL )
+   {
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
+   }
+
+   SCIPfreeBlockMemoryArrayNull( scip, & relaxdata->filename, SCIP_MAXSTRLEN);
    SCIPfreeMemory(scip, &relaxdata);
 
    return SCIP_OKAY;
@@ -2137,6 +2493,12 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   if( relaxdata->decdecomp != NULL )
+   {
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
+      relaxdata->decdecomp = NULL;
+   }
 
    /* free array for branchrules*/
    if( relaxdata->nbranchrules > 0 )
@@ -2180,6 +2542,56 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    relaxdata->dualbounds->data = 0.;
    relaxdata->dualbounds->depth= 0;
    relaxdata->dualbounds->next= NULL;
+
+   /* if the master problem decomposition mode is the same as the original SCIP instance mode, then the master problem
+    * must be swapped with the alternate master problem.
+    */
+   if( GCGgetMasterDecompMode(relaxdata->masterprob) != GCGgetDecompositionMode(scip) )
+   {
+      SCIP* tmpscip;
+
+      tmpscip = relaxdata->masterprob;
+      relaxdata->masterprob = relaxdata->altmasterprob;
+      relaxdata->altmasterprob = tmpscip;
+   }
+
+   /* alternative verbosity levels are used for the Benders' decomposition mode compared to the Dantzig-Wolfe
+    * decomposition mode.
+    */
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+   {
+      /* first getting the verbosity level for the original problem before setting it to none. While the verbosity level
+       * was collected previously, the user may have changed this in the mean time.
+       */
+      SCIP_CALL( SCIPgetIntParam(scip, "display/verblevel", &relaxdata->origverblevel) );
+      SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+
+      /* deactivating display columns */
+      SCIP_CALL( SCIPsetIntParam(scip, "display/sumlpiterations/active", 0) );
+      SCIP_CALL( SCIPsetIntParam(scip, "display/lpiterations/active", 0) );
+      SCIP_CALL( SCIPsetIntParam(scip, "display/degeneracy/active", 0) );
+
+      /* setting the total node limit to 1 for the original SCIP instance. This is because Benders' decomposition solves
+       * the MIP within the relaxator of the root node. So no branching in the original problem is required.
+       */
+      SCIP_CALL( SCIPsetLongintParam(scip, "limits/totalnodes", 1) );
+   }
+
+   /* fixing the GCG mode parameter. This ensure that the user does not change this during the solution process. If the
+    * mode parameter were to change, the behaviour is unknown.
+    */
+   SCIP_CALL( SCIPfixParam(scip, "relaxing/gcg/mode") );
+
+   /* Informing the user of the decomposition technique that is being used to solve the original problem */
+   SCIPinfoMessage(scip, NULL, "\n");
+   if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
+   {
+      SCIPinfoMessage(scip, NULL, "Dantzig-Wolfe reformulation is being used to solve the original problem.\n");
+   }
+   else if( relaxdata->mode == DEC_DECMODE_BENDERS )
+   {
+      SCIPinfoMessage(scip, NULL, "Benders' decomposition is being used to solve the original problem.\n");
+   }
 
    return SCIP_OKAY;
 }
@@ -2257,27 +2669,13 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->storedorigsol) );
    }
 
-   /* free root node clock */
-   if( relaxdata->rootnodetime != NULL )
+   if( relaxdata->decdecomp != NULL )
    {
-      SCIP_CALL( SCIPfreeClock(scip, &(relaxdata->rootnodetime)) );
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
+      relaxdata->decdecomp = NULL;
    }
 
-   /* free lists */
-   current = relaxdata->degeneracy;
-   while( current != NULL )
-   {
-      next = current->next;
-      SCIPfreeMemory(scip, &current);
-      current = next;
-   }
-   current = relaxdata->dualbounds;
-   while( current != NULL )
-   {
-      next = current->next;
-      SCIPfreeMemory(scip, &current);
-      current = next;
-   }
+   SCIP_CALL( GCGfreeOrigVarsData(scip) );
 
    relaxdata->relaxisinitialized = FALSE;
 
@@ -2285,30 +2683,25 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
 }
 
 
-/** execution method of relaxator */
+/** initialize the relaxator and master problem for solving the original problem by Dantzig-Wolfe reformulation and
+ * Benders' decomposition
+ */
 static
-SCIP_DECL_RELAXEXEC(relaxExecGcg)
+SCIP_RETCODE initializeMasterProblemSolve(
+   SCIP*                 scip,               /**< the SCIP data structure */
+   SCIP_RELAX*           relax               /**< the relaxator */
+   )
 {
-   SCIP* masterprob;
    SCIP_RELAXDATA* relaxdata;
    SCIP_Bool cutoff;
-   SCIP_Longint oldnnodes;
-   SCIP_Real timelimit;
-   SCIP_Real memorylimit;
-   SCIP_Bool stored;
-   SCIP_RealList* current_deg;
-   SCIP_RealList* current_db;
-   SCIP_RealList* next_deg;
-   SCIP_RealList* next_db;
 
    assert(scip != NULL);
    assert(relax != NULL);
-   assert(result != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   *result = SCIP_DIDNOTRUN;
 
+   /* the relaxator is initialised if it has not been previously initialised */
    if( !relaxdata->relaxisinitialized )
    {
       SCIP_CALL( initRelaxator(scip, relax) );
@@ -2317,180 +2710,188 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       assert(relaxdata->decdecomp != NULL);
    }
 
-   masterprob = relaxdata->masterprob;
-   assert(masterprob != NULL);
-
    /* construct the LP in the original problem */
    SCIP_CALL( SCIPconstructLP(scip, &cutoff) );
    assert(!cutoff);
    SCIP_CALL( SCIPflushLP(scip) );
 
-   /* solve the next node in the master problem */
-   SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
+   return SCIP_OKAY;
+}
 
-   /* get current degeneracy and dualbounds */
-   SCIPdebugMessage("****NIKLAS**** start updating list ...\n");
-   SCIPdebugMessage("****NIKLAS**** ... initialize with relaxdata ...\n");
-   current_deg = relaxdata->degeneracy;
-   current_db = relaxdata->dualbounds;
-   SCIPdebugMessage("****NIKLAS**** ... look for latest list entry ...\n");
-   while( current_deg->next != NULL )
+
+/** method to solve the master problem that is used by Dantzig-Wolfe and Benders' decomposition */
+static
+SCIP_RETCODE solveMasterProblem(
+   SCIP*                 scip,               /**< the SCIP data structure */
+   SCIP*                 masterprob,         /**< the master problem SCIP instance */
+   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator data */
+   SCIP_Longint          nodelimit,          /**< the number of nodes the will be solved in this master problem */
+   SCIP_Real*            lowerbound,         /**< the lowerbound computed by the relaxator for the current node */
+   SCIP_RESULT*          result              /**< the result of the relaxation call */
+   )
+{
+   SCIP_Real timelimit;
+   SCIP_Real memorylimit;
+
+   assert(scip != NULL);
+   assert(masterprob != NULL);
+   assert(relaxdata != NULL);
+
+   /* update the number of the last solved node */
+   relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
+
+   /* increase the node limit for the master problem by 1 */
+   SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes", nodelimit) );
+
+   /* loop to solve the master problem, this is a workaround and does not fix any problem */
+   while( !SCIPisStopped(scip) )
    {
-      current_deg = current_deg->next;
-   }
-   while( current_db->next != NULL )
-   {
-      current_db = current_db->next;
-   }
-   SCIPdebugMessage("****NIKLAS**** ... allocate new memory ...\n");
-   SCIP_CALL( SCIPallocMemory(scip, &next_deg) );
-   SCIP_CALL( SCIPallocMemory(scip, &next_db) );
-   SCIPdebugMessage("****NIKLAS**** ... insert into list ...\n");
-   current_deg->next = next_deg;
-   current_deg->next->data = GCGgetDegeneracy(scip);
-   current_deg->next->depth = SCIPgetDepth(scip);
-   current_deg->next->next = NULL;
-   current_db->next = next_db;
-   current_db->next->data = SCIPgetDualbound(scip);
-   current_db->next->depth = SCIPgetDepth(scip);
-   current_db->next->next = NULL;
-   SCIPdebugMessage("****NIKLAS**** ... finished for current node.\n");
-   
-   /* only solve the relaxation if it was not yet solved at the current node */
-   if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
-   {
-      /* start the root node time clock */
-      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+      SCIP_Real mastertimelimit = SCIPinfinity(scip);
+
+      /* set memorylimit for master */
+      SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
+      if( !SCIPisInfinity(scip, memorylimit) )
+         memorylimit -= SCIPgetMemUsed(scip)/1048576.0;
+
+      SCIP_CALL( SCIPsetRealParam(masterprob, "limits/memory", memorylimit) );
+
+      SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
+      if( !SCIPisInfinity(scip, timelimit) )
       {
-         SCIP_CALL( SCIPstartClock(scip, relaxdata->rootnodetime) );
-         SCIPdebugMessage("  Root Node Time clock started");
+
+         /* give the master 2% more time then the original scip has left */
+         mastertimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
+         SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit) );
+
+         SCIPdebugMessage("  time limit for master: %f, left: %f, left for original problem: %f\n",
+               mastertimelimit,
+               mastertimelimit - SCIPgetSolvingTime(masterprob),
+               timelimit - SCIPgetSolvingTime(scip));
       }
 
-      /* update the number of the last solved node */
-      relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
-
-      /* increase the node limit for the master problem by 1 */
-      SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
-      SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes",
-            ( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) ? 1 : oldnnodes+1)) );
-
-
-      /* loop to solve the master problem, this is a workaround and does not fix any problem */
-      while( !SCIPisStopped(scip) )
+      /* if we have a blockdetection, see whether the node is block diagonal */
+      if( DECdecompGetType(relaxdata->decdecomp) == DEC_DECTYPE_DIAGONAL )
       {
-         SCIP_Real mastertimelimit = SCIPinfinity(scip);
-
-         /* set memorylimit for master */
-         SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
-         if( !SCIPisInfinity(scip, memorylimit) )
-            memorylimit -= SCIPgetMemUsed(scip)/1048576.0;
-
-         SCIP_CALL( SCIPsetRealParam(masterprob, "limits/memory", memorylimit) );
-
-         SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-         if( !SCIPisInfinity(scip, timelimit) )
+         SCIP_CALL( solveDiagonalBlocks(scip, relaxdata, result, lowerbound) );
+         if( *result == SCIP_SUCCESS || *result == SCIP_CUTOFF )
          {
-            /* give the master 2% more time then the original scip has left */
-            mastertimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
-            SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit) );
-
-            SCIPdebugMessage("  time limit for master: %f, left: %f, left for original problem: %f\n",
-                  mastertimelimit,
-                  mastertimelimit - SCIPgetSolvingTime(masterprob),
-                  timelimit - SCIPgetSolvingTime(scip));
+            *result = SCIP_CUTOFF;
+            return SCIP_OKAY;
          }
+      }
+      /* We are solving the masterproblem regularly */
+      else
+      {
+         SCIP_CALL( SCIPsolve(masterprob) );
+      }
 
-         /* if we have a blockdetection, see whether the node is block diagonal */
-         if( DECdecompGetType(relaxdata->decdecomp) == DEC_DECTYPE_DIAGONAL )
+
+      if( SCIPgetStatus(masterprob) != SCIP_STATUS_TIMELIMIT )
+      {
+         break;
+      }
+
+      if( !SCIPisInfinity(scip, timelimit) && !SCIPisStopped(scip) )
+         SCIPinfoMessage(scip, NULL, "time for master problem was too short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
+   }
+   if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
+   {
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
+   /* set the lower bound pointer */
+   if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING && GCGmasterIsCurrentSolValid(masterprob) )
+   {
+      *lowerbound = SCIPgetLocalDualbound(masterprob);
+   }
+   else
+   {
+      SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
+      assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
+         if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL && GCGmasterIsCurrentSolValid(masterprob) )
+         *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
+         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || !GCGmasterIsCurrentSolValid(masterprob) )
+      {
+         SCIP_Real tilim;
+         SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
+         if( tilim-SCIPgetSolvingTime(masterprob) < 0 )
          {
-            SCIP_CALL( solveDiagonalBlocks(scip, relaxdata, result, lowerbound) );
-            if( *result == SCIP_SUCCESS )
+            *result = SCIP_DIDNOTRUN;
+            if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
             {
-               *result = SCIP_CUTOFF;
-               if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
-               {
-                  SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
-                  SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
-               }
-               return SCIP_OKAY;
+               SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+               SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
             }
+            return SCIP_OKAY;
          }
-         /* We are solving the masterproblem regularly */
-         else
-         {
-            SCIP_CALL( SCIPsolve(masterprob) );
-         }
-
-         if( SCIPgetStatus(masterprob) != SCIP_STATUS_TIMELIMIT )
-         {
-            break;
-         }
-
-         if( !SCIPisInfinity(scip, timelimit) && !SCIPisStopped(scip) )
-            SCIPinfoMessage(scip, NULL, "time for master problem was too short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
+         *lowerbound = SCIPinfinity(scip);
       }
-      if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
+      else if( SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN )
       {
          *result = SCIP_DIDNOTRUN;
-         if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
-         {
-            SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
-            SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
-         }
          return SCIP_OKAY;
-      }
-
-      /* set the lower bound pointer */
-      if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING && GCGmasterIsCurrentSolValid(masterprob) )
-      {
-         *lowerbound = SCIPgetLocalDualbound(masterprob);
       }
       else
       {
-         SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
-         assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
-         if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL && GCGmasterIsCurrentSolValid(masterprob) )
-            *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
-         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || !GCGmasterIsCurrentSolValid(masterprob) )
-         {
-            SCIP_Real tilim;
-            SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
-            if( tilim-SCIPgetSolvingTime(masterprob) < 0 )
-            {
-               *result = SCIP_DIDNOTRUN;
-               if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
-               {
-                  SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
-                  SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
-               }
-               return SCIP_OKAY;
-            }
-            *lowerbound = SCIPinfinity(scip);
-         }
-         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN )
-         {
-            *result = SCIP_DIDNOTRUN;
-            if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
-            {
-               SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
-               SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
-            }
-            return SCIP_OKAY;
-         }
-         else
-         {
-            SCIPwarningMessage(scip, "Stage <%d> is not handled!\n", SCIPgetStage(masterprob));
-            *result = SCIP_DIDNOTRUN;
-            if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
-            {
-               SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
-               SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
-            }
-            return SCIP_OKAY;
-         }
+         SCIPwarningMessage(scip, "Stage <%d> is not handled!\n", SCIPgetStage(masterprob));
+         *result = SCIP_DIDNOTRUN;
+         return SCIP_OKAY;
       }
+   }
 
-      SCIPdebugMessage("  update lower bound (value = %g).\n", *lowerbound);
+   SCIPdebugMessage("  update lower bound (value = %g).\n", *lowerbound);
+
+   /* NOTE: All other points when result is set, the function is exited immediately. Ensure that this is checked for
+    * future changes to this function
+    */
+   *result = SCIP_SUCCESS;
+
+   return SCIP_OKAY;
+}
+
+
+
+
+/** execution method of the relaxator for Dantzig-Wolfe reformulation */
+static
+SCIP_RETCODE relaxExecGcgDantzigWolfe(
+   SCIP*                 scip,               /**< the SCIP data structure */
+   SCIP_RELAX*           relax,              /**< the relaxator */
+   SCIP_Real*            lowerbound,         /**< the lowerbound computed by the relaxator for the current node */
+   SCIP_RESULT*          result              /**< the result of the relaxation call */
+   )
+{
+   SCIP* masterprob;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_Longint oldnnodes;
+   SCIP_Longint nodelimit;
+   SCIP_Bool stored;
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+   assert(result != NULL);
+   assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+   *result = SCIP_DIDNOTRUN;
+
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
+
+   /* solve the next node in the master problem */
+   SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
+
+   /* only solve the relaxation if it was not yet solved at the current node */
+   if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
+   {
+      /* increase the node limit for the master problem by 1 */
+      SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
+
+      nodelimit = (SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) ? 1 : oldnnodes + 1);
+      /* solving the master problem */
+      SCIP_CALL( solveMasterProblem(scip, masterprob, relaxdata, nodelimit, lowerbound, result) );
 
       if( relaxdata->currentorigsol != NULL )
       {
@@ -2535,8 +2936,146 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       SCIPdebugMessage("Problem has been already solved at this node\n");
    }
 
+   return SCIP_OKAY;
+}
 
-   *result = SCIP_SUCCESS;
+/** execution method of the relaxator for Benders' decomposition */
+static
+SCIP_RETCODE relaxExecGcgBendersDecomposition(
+   SCIP*                 scip,               /**< the SCIP data structure */
+   SCIP_RELAX*           relax,              /**< the relaxator */
+   SCIP_Real*            lowerbound,         /**< the lowerbound computed by the relaxator for the current node */
+   SCIP_RESULT*          result              /**< the result of the relaxation call */
+   )
+{
+   SCIP* masterprob;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_Longint nodelimit;
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+   assert(result != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+   *result = SCIP_DIDNOTRUN;
+
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
+
+   /* solve the next node in the master problem */
+   SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
+
+   /* prior to performing the decomposition the original problem verbosity is changed to NONE. This avoids output from
+    * the original problem before the decomposition output. Once the decomposition has been performed, then the
+    * verbosity level of the original problem is returned to the original verbosity level.
+    */
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", relaxdata->origverblevel) );
+   SCIP_CALL( SCIPsetIntParam(masterprob, "display/verblevel", relaxdata->origverblevel) );
+
+   /* getting the node limit from the original problem. This is because the master problem is solved to optimality in
+    * the execution of the relaxator.
+    */
+   SCIP_CALL( SCIPgetLongintParam(scip, "limits/nodes", &nodelimit) );
+
+   /* it is possible that the decomposition results in no subproblems. If this occurs, the Benders' decomposition
+    * constraint handlers are disabled
+    */
+   if( relaxdata->npricingprobs == 0 )
+   {
+      SCIP_CALL( SCIPsetBoolParam(masterprob, "constraints/benders/active", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(masterprob, "constraints/benderslp/active", FALSE) );
+   }
+
+   /* solving the master problem */
+   SCIP_CALL( solveMasterProblem(scip, masterprob, relaxdata, nodelimit, lowerbound, result) );
+
+   /* if the master problem has been detected as infeasible, then the result must be set to SCIP_CUTOFF. */
+   if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE )
+      (*result) = SCIP_CUTOFF;
+
+   /* if the master problem has been solved to optimality, the we cutoff the root node. This informs that original
+    * problem that no further processing is required.
+    */
+   if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
+   {
+      (*result) = SCIP_CUTOFF;
+
+      /* if there is no primal solution for the original problem, then the master solution is transferred */
+      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && SCIPgetBestSol(scip) == NULL )
+      {
+         SCIP_SOL* newsol;
+         SCIP_Bool stored;
+
+         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, SCIPgetBestSol(relaxdata->masterprob), &newsol) );
+   #ifdef SCIP_DEBUG
+         SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
+   #else
+         SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
+   #endif
+         /* only check failed solution if best master solution is valid */
+         if( !stored && GCGmasterIsBestsolValid(relaxdata->masterprob) )
+         {
+            SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
+         }
+         /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
+          *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
+          */
+         SCIP_CALL( SCIPfreeSol(scip, &newsol) );
+
+         if( stored )
+            SCIPdebugMessage("  updated current best primal feasible solution.\n");
+      }
+   }
+
+   /* set the lower bound pointer */
+   if( GCGmasterIsCurrentSolValid(masterprob)
+      && (SCIPgetStage(masterprob) == SCIP_STAGE_SOLVED || SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING) )
+   {
+      *lowerbound = SCIPgetDualbound(masterprob);
+   }
+
+   /* if the result pointer is DIDNOTRUN, this implies that the master problem was interrupted during solving. Since
+    * Benders' decomposition uses a one-tree approach, then the user limits must be adhered to. This means, the if a
+    * limit is exceeded, this is still a success for the solving.
+    */
+   if( (*result) == SCIP_DIDNOTRUN )
+      (*result) = SCIP_SUCCESS;
+
+   return SCIP_OKAY;
+}
+
+/** execution method of relaxator */
+static
+SCIP_DECL_RELAXEXEC(relaxExecGcg)
+{
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+   assert(result != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* checking whether the relaxator needs to be initialised. If so, then the master problem and pricing problems will
+    * be created.
+    */
+   SCIP_CALL( initializeMasterProblemSolve(scip, relax) );
+
+   /* selecting the solving algorithm based upon the decomposition mode selected by the user */
+   if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
+   {
+      SCIP_CALL( relaxExecGcgDantzigWolfe(scip, relax, lowerbound, result) );
+   }
+   else if( relaxdata->mode == DEC_DECMODE_BENDERS )
+   {
+      SCIP_CALL( relaxExecGcgBendersDecomposition(scip, relax, lowerbound, result) );
+   }
+   else
+   {
+      SCIPinfoMessage(scip, NULL, "Sorry, the automatic selection is not currently available\n");
+   }
 
    return SCIP_OKAY;
 }
@@ -2555,10 +3094,17 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    )
 {
    SCIP_RELAXDATA* relaxdata;
-#ifndef NBLISS
-   char name[SCIP_MAXSTRLEN];
-   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "bliss %s", GCGgetBlissVersion());
-   SCIP_CALL( SCIPincludeExternalCodeInformation(scip, name, "A Tool for Computing Automorphism Groups of Graphs by T. Junttila and P. Kaski (http://www.tcs.hut.fi/Software/bliss/)") );
+
+#ifdef WITH_BLISS
+   {
+      char name[SCIP_MAXSTRLEN];
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "bliss %s", GCGgetBlissVersion());
+      SCIP_CALL( SCIPincludeExternalCodeInformation(scip, name, "A Tool for Computing Automorphism Groups of Graphs by T. Junttila and P. Kaski (http://www.tcs.hut.fi/Software/bliss/)") );
+   }
+#endif
+
+#ifdef WITH_CLIQUER
+      SCIP_CALL( SCIPincludeExternalCodeInformation(scip, "Cliquer", "A set of C routines for finding cliques in an arbitrary weighted graph by S. Niskanen and P. Ostergard (https://users.aalto.fi/~pat/cliquer.html)") );
 #endif
 
    /* create GCG relaxator data */
@@ -2576,16 +3122,22 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
          relaxExitGcg, relaxInitsolGcg, relaxExitsolGcg, relaxExecGcg, relaxdata) );
 
    /* inform the main scip, that no LPs should be solved */
-   SCIP_CALL( SCIPsetIntParam(scip, "lp/solvefreq", -1) );
+   SCIP_CALL( SCIPsetIntParam(scip, "lp/solvefreq", 0) );
 
    /* Disable restarts */
    SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrestarts", 0) );
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
-   /* initialize the scip data structure for the master problem */
+
+   /* initialize the scip data structure for the master problem. The master problem is initialized as the Dantzig-Wolfe
+    * master problem. The alternate master problem is initialized as the Benders' decomposition master problem.
+    */
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
    SCIP_CALL( SCIPsetMessagehdlr(relaxdata->masterprob, SCIPgetMessagehdlr(scip)) );
+
+   /* getting the verbosity level of the original problem */
+   SCIP_CALL( SCIPgetIntParam(scip, "display/verblevel", &relaxdata->origverblevel) );
 
    /* disable display output in the master problem */
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
@@ -2603,6 +3155,17 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "lp/cleanupcolsroot", TRUE) );
 #endif
 
+   /* initializing the alternate master problem. The alternate master problem is initially the Benders' decomposition
+    * master problem
+    */
+   SCIP_CALL( SCIPcreate(&(relaxdata->altmasterprob)) );
+   SCIP_CALL( SCIPincludeBendersGcg(relaxdata->altmasterprob, scip) );
+   SCIP_CALL( GCGincludeBendersPlugins(relaxdata->altmasterprob) );
+   SCIP_CALL( SCIPsetMessagehdlr(relaxdata->altmasterprob, SCIPgetMessagehdlr(scip)) );
+
+   SCIP_CALL( SCIPsetIntParam(relaxdata->altmasterprob, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+   SCIP_CALL( SCIPsetBoolParam(relaxdata->altmasterprob, "display/relevantstats", FALSE) );
+
    /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
          "should discretization (TRUE) or convexification (FALSE) approach be used?",
@@ -2613,6 +3176,9 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/dispinfos",
          "should additional information about the blocks be displayed?",
          &(relaxdata->dispinfos), FALSE, DEFAULT_DISPINFOS, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/mode",
+            "the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition)",
+            &(relaxdata->mode), FALSE, DEFAULT_MODE, 0, 1, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -2970,6 +3536,42 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    *transcons = mastercons;
 
    return SCIP_OKAY;
+}
+
+/** returns the original problem for the given master problem */
+SCIP* GCGgetOriginalprob(
+   SCIP*                 masterprob          /**< the SCIP data structure for the master problem */
+   )
+{
+   SCIP* origprob;
+   SCIP_BENDERS* benders;
+   SCIP_PRICER* pricer;
+
+   assert(masterprob != NULL);
+
+   /* retrieving the Benders' decomposition and the pricer plugins. There should only be one or the other for a given
+    * master problem. If there are both, then an error is returned */
+   benders = SCIPfindBenders(masterprob, "gcg");
+   pricer = SCIPfindPricer(masterprob, "gcg");
+   assert((benders != NULL && pricer == NULL) || (pricer != NULL && benders == NULL));
+
+   origprob = NULL;
+   if( benders != NULL && pricer == NULL )
+   {
+      origprob = GCGbendersGetOrigprob(masterprob);
+      assert(GCGgetDecompositionMode(origprob) == DEC_DECMODE_BENDERS);
+   }
+   else if( pricer != NULL && benders == NULL )
+   {
+      origprob = GCGmasterGetOrigprob(masterprob);
+      assert(GCGgetDecompositionMode(origprob) == DEC_DECMODE_DANTZIGWOLFE);
+   }
+   else
+   {
+      SCIPerrorMessage("There must exist either a pricer or a benders, not both.\n");
+   }
+
+   return origprob;
 }
 
 /** returns the master problem */
@@ -3752,6 +4354,36 @@ SCIP_RETCODE GCGrelaxEndProbing(
 }
 
 
+/** checks whether a variable shoudl be added as an external branching candidate, if so it is added */
+static
+SCIP_RETCODE checkAndAddExternalBranchingCandidate(
+   SCIP*                 scip,               /**< the SCIP data structure */
+   SCIP_VAR*             var                 /**< the variable to check whether to add as a branching candidate */
+   )
+{
+   assert(scip != NULL);
+   assert(var != NULL);
+
+   if( SCIPvarGetType(var) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, var)) )
+   {
+      if( SCIPisEQ(scip, SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var)) )
+      {
+         SCIPdebugMessage("lblocal = %g, ublocal = %g\n", SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var));
+         SCIPdebugMessage("var = %s, vartype = %d, val = %g\n", SCIPvarGetName(var), SCIPvarGetType(var),
+            SCIPgetRelaxSolVal(scip, var));
+      }
+
+      assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var)));
+
+      SCIP_CALL( SCIPaddExternBranchCand(scip, var, SCIPgetRelaxSolVal(scip, var) -
+            SCIPfloor(scip, SCIPgetRelaxSolVal(scip, var)), SCIPgetRelaxSolVal(scip, var)) );
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
 /** transforms the current solution of the master problem into the original problem's space
  *  and saves this solution as currentsol in the relaxator's data
  */
@@ -3822,6 +4454,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) && GCGmasterIsSolValid(relaxdata->masterprob, mastersol) )
       {
          int i;
+         int j;
 
          /* transform the master solution to the original variable space */
          SCIP_CALL( GCGtransformMastersolToOrigsol(scip, mastersol, &(relaxdata->currentorigsol)) );
@@ -3830,7 +4463,10 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol, RELAX_INCLUDESLP) );
          assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, relaxdata->currentorigsol)));
 
-         SCIP_CALL( SCIPcheckSolOrig(scip, relaxdata->currentorigsol, &stored, FALSE, TRUE) );
+         if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+            SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
+         else
+            SCIP_CALL( SCIPcheckSolOrig(scip, relaxdata->currentorigsol, &stored, FALSE, TRUE) );
 
          SCIPdebugMessage("updated current original LP solution, %s feasible in the original problem!\n",
             (stored ? "" : "not"));
@@ -3838,22 +4474,39 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          if( stored )
             relaxdata->origsolfeasible = TRUE;
 
-         /* store branching candidates */
-         for( i = 0; i < norigvars; i++ )
-            if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
+         /* in the case of Benders decomposition, only the master variables can be added as branching candidates */
+         if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+         {
+            SCIP* masterprob;
+            SCIP_VAR** mastervars;
+            SCIP_VAR** masterorigvars;
+            int nmastervars;
+            int nmasterorigvars;
+
+            /* retrieving the master problem */
+            masterprob = GCGgetMasterprob(scip);
+
+            /* get variables of the master problem and their solution values */
+            SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+
+            /* looping over all master variables to get the original variable for branching candidates */
+            for( i = 0; i < nmastervars; i++ )
             {
-               if( SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])) )
-               {
-                  SCIPdebugMessage("lblocal = %g, ublocal = %g\n", SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i]));
-                  SCIPdebugMessage("var = %s, vartype = %d, val = %g\n", SCIPvarGetName(origvars[i]), SCIPvarGetType(origvars[i]), SCIPgetRelaxSolVal(scip, origvars[i]));
-               }
+               masterorigvars = GCGmasterVarGetOrigvars(mastervars[i]);
+               nmasterorigvars = GCGmasterVarGetNOrigvars(mastervars[i]);
 
-               assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])));
-
-               SCIP_CALL( SCIPaddExternBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip,
-                        origvars[i]) - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, origvars[i])),
-                     SCIPgetRelaxSolVal(scip, origvars[i])) );
+               for( j = 0; j < nmasterorigvars; j++ )
+                  SCIP_CALL( checkAndAddExternalBranchingCandidate(scip, masterorigvars[j]) );
             }
+         }
+         else
+         {
+            assert( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE );
+            /* store branching candidates */
+            for( i = 0; i < norigvars; i++ )
+               SCIP_CALL( checkAndAddExternalBranchingCandidate(scip, origvars[i]) );
+         }
+
          SCIPdebugMessage("updated relaxation branching candidates\n");
       }
    }
@@ -3879,8 +4532,38 @@ void GCGsetStructDecdecomp(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
+   if( relaxdata->decdecomp != NULL )
+      DECdecompFree(scip, &relaxdata->decdecomp );
+
    relaxdata->decdecomp = decdecomp;
 }
+
+/** sets the structure information */
+SCIP_RETCODE GCGsetFilename(
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           filename           /**< input file name */
+ )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+   assert(filename != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+   if (relaxdata->filename != NULL)
+      SCIPfreeBlockMemoryArray(scip, &(relaxdata->filename), SCIP_MAXSTRLEN);
+
+   SCIP_CALL( SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, filename, SCIP_MAXSTRLEN ) );
+
+   return SCIP_OKAY;
+}
+
+
 
 /** gets the structure information */
 DEC_DECOMP* GCGgetStructDecdecomp(
@@ -3899,6 +4582,33 @@ DEC_DECOMP* GCGgetStructDecdecomp(
    assert(relaxdata != NULL);
 
    return relaxdata->decdecomp;
+}
+
+/** gets the filename information if exists*/
+const char* GCGgetFilename(
+   SCIP*                 scip               /**< SCIP data structure */
+)
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   if( relaxdata->filename == NULL )
+   {
+      char help[SCIP_MAXSTRLEN];
+      (void) strncat( help, "unknown", 7 );
+      SCIP_CALL_ABORT(SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, help, SCIP_MAXSTRLEN ) );
+   }
+
+   return relaxdata->filename;
+
 }
 
 /** gets the total memory used after problem creation stage for all pricingproblems */
@@ -4076,59 +4786,77 @@ int GCGgetNTransvars(
    return relaxdata->ntransvars;
 }
 
-/** return clock clocking root node time */
-SCIP_CLOCK* GCGgetRootNodeTime(
+/** returns the relaxation solution from the Benders' decomposition */
+SCIP_SOL* GCGgetBendersRelaxationSol(
    SCIP*                 scip                /**< SCIP data structure */
-  )
+   )
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
+   SCIP_BENDERS* benders;
 
    assert(scip != NULL);
-   
+
    relax = SCIPfindRelax(scip, RELAX_NAME);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   return relaxdata->rootnodetime;
+   benders = SCIPfindBenders(relaxdata->masterprob, "gcg");
+   assert(benders != NULL);
+
+   return SCIPbendersGetRelaxSol(benders);
 }
 
-/** return degeneracy list */
-SCIP_RealList* GCGgetDegeneracyList(
+/** returns the decomposition mode */
+DEC_DECMODE GCGgetDecompositionMode(
    SCIP*                 scip                /**< SCIP data structure */
-  )
+   )
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
 
    assert(scip != NULL);
-   
+
    relax = SCIPfindRelax(scip, RELAX_NAME);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   return relaxdata->degeneracy;
+   return (DEC_DECMODE)relaxdata->mode;
 }
 
-/** return dual bounds list */
-SCIP_RealList* GCGgetDualboundsList(
-   SCIP*                 scip                /**< SCIP data structure */
-  )
+/** returns the decomposition mode of the master problem. The mode is given by the existence of either the GCG pricer or
+ * the GCG Benders' decomposition plugins.
+ */
+DEC_DECMODE GCGgetMasterDecompMode(
+   SCIP*                 masterprob          /**< the master problem SCIP instance */
+   )
 {
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
+   SCIP_BENDERS* benders;
+   SCIP_PRICER* pricer;
+   DEC_DECMODE mode;
 
-   assert(scip != NULL);
-   
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
+   assert(masterprob != NULL);
 
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
+   /* retrieving the Benders' decomposition and the pricer plugins. There should only be one or the other for a given
+    * master problem. If there are both, then an error is returned */
+   benders = SCIPfindBenders(masterprob, "gcg");
+   pricer = SCIPfindPricer(masterprob, "gcg");
+   assert((benders != NULL && pricer == NULL) || (pricer != NULL && benders == NULL));
 
-   return relaxdata->dualbounds;
+   if( benders != NULL )
+      mode = DEC_DECMODE_BENDERS;
+   else if( pricer != NULL )
+      mode = DEC_DECMODE_DANTZIGWOLFE;
+   else
+   {
+      mode = DEC_DECMODE_UNKNOWN;
+      SCIPerrorMessage("Sorry, the decomposition mode of the master problem is invalid. This should not happen.");
+      SCIPABORT();
+   }
+
+   return mode;
 }

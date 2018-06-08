@@ -8,7 +8,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -30,6 +30,7 @@
 # @author Martin Bergner
 # @author Gerald Gamrath
 # @author Christian Puchert
+# @author Benedikt Meier
 #
 # Call with "make testcluster"
 #
@@ -117,7 +118,7 @@ fi
 # call routines for creating the result directory, checking for existence
 # of passed settings, etc
 VALGRIND="false" # change this to "true" for using valgrind
-. ./configuration_set.sh $BINNAME $TSTNAME $SETNAME $MSETNAME $TIMELIMIT $TIMEFORMAT $MEMLIMIT $MEMFORMAT $VALGRIND
+. ./configuration_set.sh $BINNAME $TSTNAME $SETNAME $MSETNAME $TIMELIMIT $TIMEFORMAT $MEMLIMIT $MEMFORMAT $VALGRIND $STATISTICS
 
 # for RWTH computing projects
 if test "$PROJECT" = "none"
@@ -230,5 +231,32 @@ do
 
 	    bsub -J "$TSTNAME[1-$COUNT]" -q $QUEUE -o error/out_$TSTNAME_%I_%J.txt $PROJFLAG < runcluster_tmp.sh
     fi
+
+    # queue type on RWTH Aachen cluster OR is condor
+    if test  "$QUEUETYPE" = "condor"
+    then
+        # save temp in the home directorie
+		cp runcluster_submit_or.sub runcluster_tmp.sub
+        TLIMIT=`echo $HARDTIMELIMIT | awk '{ n = split($0,a,":"); print 60*a[1]+a[2];}'`
+		ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
+        chmod 777 $SOLVERPATH
+        chmod 777 $SOLVERPATH/results/
+        AGUMENTS=`echo "$CLIENTTMPDIR $CONTINUE $BINNAME $TLIMIT $EVALFILE $JOBFILE $HARDMEMLIMIT $ULIMITMEMLIMIT $SOLVERPATH"`
+        sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sub
+        sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.sub
+        sed -i "s,\$AGUMENTS,$AGUMENTS," runcluster_tmp.sub
+        sed -i "s,\$COUNT,$COUNT," runcluster_tmp.sub
+        # whitch out evalcheck
+        condor_submit runcluster_tmp.sub
+        rm runcluster_tmp.sub
+
+        # evalcheck include (commtents the last line befor out.)
+		#cp runcluster_submit_or.dag runcluster_tmp.dag
+        #sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.dag
+        #sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.dag
+        #sed -i "s,\$EVALFILE,$EVALFILE," runcluster_tmp.dag
+        #condor_submit_dag -f runcluster_tmp.dag
+    fi
+
 
 done # end for PERMUTE

@@ -754,15 +754,15 @@ constraints/decomp/delaypresol = TRUE
 
 # flag to indicate whether detector <connected> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/connected/enabled = TRUE
+detection/detectors/connected/enabled = TRUE
 
 # priority of detector <connected>
 # [type: int, range: [-2147483648,2147483647], default: 0]
-detectors/connected/priority = 0
+detection/detectors/connected/priority = 0
 
 # Controls whether SETPPC constraints chould be ignored while detecting and be directly placed in the master
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/connected/setppcinmaster = TRUE
+detection/detectors/connected/setppcinmaster = TRUE
 
 # priority of heuristic <gcgcoefdiving>
 # [type: int, range: [-536870912,536870911], default: -1001000]

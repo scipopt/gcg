@@ -1,0 +1,3 @@
+detection/legacymode/onlylegacymode = TRUE
+detection/legacymode/enabled = TRUE
+detection/scoretype = 2

@@ -4,10 +4,9 @@
 [submodule "lib/soplex-git"]
 	path = lib/soplex-git
 	url = git@git.or.rwth-aachen.de:gcg/soplex.git
-[submodule "lib/bliss"]
-	path = lib/bliss
+[submodule "lib/bliss-git"]
+	path = lib/bliss-git
 	url = git@git.or.rwth-aachen.de:gcg/bliss.git
-[submodule "lib/googletest"]
-	path = lib/googletest
+[submodule "lib/googletest-git"]
+	path = lib/googletest-git
 	url = git@git.or.rwth-aachen.de:gcg/googletest.git
-

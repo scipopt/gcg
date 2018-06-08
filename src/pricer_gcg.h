@@ -109,9 +109,10 @@ extern
 SCIP_RETCODE GCGpricerIncludeSolver(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           name,               /**< name of solver */
-   const char*           description,        /**< description of solver */
+   const char*           desc,               /**< description of solver */
    int                   priority,           /**< priority of solver */
    SCIP_Bool             enabled,            /**< flag to indicate whether the solver is enabled */
+   GCG_DECL_SOLVERUPDATE((*solverupdate)),   /**< update method for solver */
    GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
    GCG_DECL_SOLVERSOLVEHEUR((*solveheur)),   /**< heuristic solving method for solver */
    GCG_DECL_SOLVERFREE   ((*solverfree)),    /**< free method of solver */
@@ -119,21 +120,20 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    GCG_DECL_SOLVEREXIT   ((*solverexit)),    /**< exit method of solver */
    GCG_DECL_SOLVERINITSOL((*solverinitsol)), /**< initsol method of solver */
    GCG_DECL_SOLVEREXITSOL((*solverexitsol)), /**< exitsol method of solver */
-   GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
+   GCG_SOLVERDATA*       solverdata          /**< pricing solver data */
    );
 
 
-/** returns the solverdata of a solver */
+/** returns the available pricing solvers */
 extern
-GCG_SOLVERDATA* GCGsolverGetSolverdata(
-   GCG_SOLVER*           solver              /**< pointer so solver */
+GCG_SOLVER** GCGpricerGetSolvers(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** sets solver data of specific solver */
+/** returns the number of available pricing solvers */
 extern
-void GCGsolverSetSolverdata(
-   GCG_SOLVER*           solver,             /**< pointer to solver  */
-   GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
+int GCGpricerGetNSolvers(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** writes out a list of all pricing problem solvers */
@@ -158,10 +158,42 @@ void GCGpricerPrintStatistics(
 /** method to get existence of rays */
 extern
 SCIP_RETCODE GCGpricerExistRays(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< master SCIP data structure */
    SCIP_Bool*            exist               /**< pointer to store if there exists any ray */
    );
 
+/** get the number of extreme points that a pricing problem has generated so far */
+extern
+int GCGpricerGetNPointsProb(
+   SCIP*                 scip,               /**< master SCIP data structure */
+   int                   probnr              /**< index of pricing problem */
+   );
+
+/** get the number of extreme rays that a pricing problem has generated so far */
+extern
+int GCGpricerGetNRaysProb(
+   SCIP*                 scip,               /**< master SCIP data structure */
+   int                   probnr              /**< index of pricing problem */
+   );
+
+/** get the number of columns to be added to the master LP in the current pricing round */
+extern
+int GCGpricerGetMaxColsRound(
+   SCIP*                 scip                /**< master SCIP data structure */
+   );
+
+/** get the number of columns per pricing problem to be added to the master LP in the current pricing round */
+extern
+int GCGpricerGetMaxColsProb(
+   SCIP*                 scip                /**< master SCIP data structure */
+   );
+
+/** add a new column to the pricing storage */
+extern
+SCIP_RETCODE GCGpricerAddCol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_COL*              col                 /**< priced col */
+   );
 
 /** transfers a primal solution of the original problem into the master variable space,
  *  i.e. creates one master variable for each block and adds the solution to the master problem  */

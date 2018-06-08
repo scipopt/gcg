@@ -54,6 +54,9 @@
 static
 SCIP_DECL_VARDELORIG(GCGvarDelOrig)
 {
+   if( *vardata == NULL )
+      return SCIP_OKAY;
+
    /*lint -e715 */
    if( (*vardata)->vartype == GCG_VARTYPE_ORIGINAL )
    {
@@ -79,6 +82,9 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
             SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.origvardata.linkingvardata->linkconss), nblocks);
             SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.origvardata.linkingvardata->pricingvars), nblocks);
          }
+         else if( (*vardata)->data.origvardata.linkingvardata->pricingvars != NULL )
+            SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.origvardata.linkingvardata->pricingvars), nblocks);
+
          SCIPfreeBlockMemory(scip, &((*vardata)->data.origvardata.linkingvardata));
          (*vardata)->data.origvardata.linkingvardata = NULL;
       }
@@ -114,8 +120,8 @@ SCIP_DECL_VARDELTRANS(gcgvardeltrans)
 {
    /*lint -e715 */
    assert((*vardata)->vartype == GCG_VARTYPE_MASTER);
-   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.norigvars);
-   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.norigvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
 
    SCIPfreeBlockMemory(scip, vardata);
 
@@ -259,6 +265,40 @@ SCIP_RETCODE GCGcreateOrigVarsData(
    return SCIP_OKAY;
 }
 
+/** frees the data for all variables of the original program */
+SCIP_RETCODE GCGfreeOrigVarsData(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_VAR** vars;
+   int nvars;
+   int i;
+
+   assert(scip != NULL);
+
+   vars = SCIPgetOrigVars(scip);
+   nvars = SCIPgetNOrigVars(scip);
+
+   /* loop over the variables in the original problem */
+   for( i = 0; i < nvars; i++ )
+   {
+      SCIP_VAR* var;
+      assert(vars[i] != NULL);
+      var = vars[i];
+
+      if( SCIPvarGetData(var) != NULL )
+      {
+         SCIP_VARDATA* oldvardata;
+         oldvardata = SCIPvarGetData(var);
+
+         SCIP_CALL( GCGvarDelOrig(scip, var, &oldvardata) );
+         SCIPvarSetData(var, NULL);
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
 /** creates the data for a variable of the original program */
 SCIP_RETCODE GCGorigVarCreateData(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -311,6 +351,42 @@ SCIP_RETCODE GCGorigVarCreateData(
    return SCIP_OKAY;
 }
 
+/** copies the pricing variable data to a master problem variable. This is used in the Benders' decomposition mode when
+ * subproblems are merged into the master problem.
+ */
+SCIP_RETCODE GCGcopyPricingvarDataToMastervar(
+   SCIP*                 scip,               /**< master SCIP data structure */
+   SCIP_VAR*             pricingvar,         /**< the pricing problem variable is copied from */
+   SCIP_VAR*             mastervar           /**< the master variable that the vardata is copied to */
+   )
+{
+   SCIP_VARDATA* targetvardata;
+   assert(pricingvar != NULL);
+   assert(mastervar != NULL);
+   assert(GCGvarIsPricing(pricingvar));
+   /* we can't assert that mastervar is a master variable because it may not have the appropriate vardata yet */
+
+   assert(GCGpricingVarGetNOrigvars(pricingvar) == 1);
+
+   /* create vardata */
+   SCIP_CALL( SCIPallocBlockMemory(scip, &targetvardata) );
+   targetvardata->vartype = GCG_VARTYPE_MASTER;
+   targetvardata->blocknr = -1;
+   targetvardata->data.mastervardata.isray = FALSE;
+   targetvardata->data.mastervardata.isartificial = FALSE;
+   targetvardata->data.mastervardata.norigvars = 1;
+
+   /* save corresoponding origvar */
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(targetvardata->data.mastervardata.origvars), 1) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(targetvardata->data.mastervardata.origvals), 1) ); /*lint !e506*/
+   targetvardata->data.mastervardata.origvars[0] = GCGpricingVarGetOrigvars(pricingvar)[0];
+   targetvardata->data.mastervardata.origvals[0] = 1.0;
+
+   SCIPvarSetData(mastervar, targetvardata);
+   SCIPvarSetDeltransData(mastervar, gcgvardeltrans);
+
+   return SCIP_OKAY;
+}
 
 /** returns the pricing variables of an linking variable */
 SCIP_VAR** GCGlinkingVarGetPricingVars(
@@ -618,7 +694,8 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< var that is added to a block */
    int                   newblock,           /**< the new block the variable will be in */
-   int                   nblocks             /**< total number of pricing problems */
+   int                   nblocks,            /**< total number of pricing problems */
+   int                   mode                /**< the decomposition mode */
    )
 {
    SCIP_VARDATA* vardata;
@@ -638,9 +715,15 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    {
       SCIP_CALL( SCIPallocBlockMemory(scip, &vardata->data.origvardata.linkingvardata) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->pricingvars, nblocks) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->linkconss, nblocks) );
       BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->pricingvars, nblocks);
-      BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->linkconss, nblocks);
+
+      if( mode != DEC_DECMODE_BENDERS )
+      {
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->linkconss, nblocks) );
+         BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->linkconss, nblocks);
+      }
+      else
+         vardata->data.origvardata.linkingvardata->linkconss = NULL;
 
       /* store old block; store the original variable, it will be exchanged for the correct pricing variable later */
       vardata->data.origvardata.linkingvardata->pricingvars[blocknr] = var;
@@ -653,7 +736,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    /* store new block */
    if( vardata->data.origvardata.linkingvardata->pricingvars[newblock] == NULL )
    {
-      assert(vardata->data.origvardata.linkingvardata->linkconss[newblock] == NULL);
+      assert(mode == DEC_DECMODE_BENDERS || vardata->data.origvardata.linkingvardata->linkconss[newblock] == NULL);
       vardata->data.origvardata.linkingvardata->pricingvars[newblock] = var;
       vardata->data.origvardata.linkingvardata->nblocks++;
    }
@@ -676,7 +759,7 @@ SCIP_CONS** GCGlinkingVarGetLinkingConss(
    assert(vardata != NULL);
 
    assert(vardata->data.origvardata.linkingvardata != NULL);
-   assert(vardata->data.origvardata.linkingvardata->linkconss != NULL);
+   //assert(vardata->data.origvardata.linkingvardata->linkconss != NULL);
    return vardata->data.origvardata.linkingvardata->linkconss;
 }
 
@@ -1061,24 +1144,20 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
 
 /** creates the corresponding pricing variable for the given original variable */
 SCIP_RETCODE GCGlinkingVarCreatePricingVar(
-   SCIP*                 masterscip,         /**< master problem SCIP data structure */
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
    int                   pricingprobnr,      /**< number of the pricing problem */
    SCIP_VAR*             origvar,            /**< original variable */
-   SCIP_VAR**            var,                /**< pointer to store new pricing variable */
-   SCIP_CONS**           linkcons            /**< constraint linking pricing variables */
+   SCIP_VAR**            var                 /**< pointer to store new pricing variable */
    )
 {
    SCIP_VARDATA* vardata;
    char name[SCIP_MAXSTRLEN];
 
-   assert(masterscip != NULL);
    assert(pricingscip != NULL);
    assert(pricingprobnr >= 0);
    assert(origvar != NULL);
    assert(GCGoriginalVarIsLinking(origvar));
    assert(var != NULL);
-   assert(linkcons != NULL);
 
    /* create variable data */
    SCIP_CALL( SCIPallocBlockMemory(pricingscip, &vardata) );
@@ -1094,6 +1173,25 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    SCIP_CALL( SCIPcreateVar(pricingscip, var, name, SCIPvarGetLbGlobal(origvar),
          SCIPvarGetUbGlobal(origvar), 0.0, SCIPvarGetType(origvar),
          TRUE, FALSE, GCGvarDelOrig, NULL, NULL, NULL, vardata) );
+
+   return SCIP_OKAY;
+}
+
+/** creates the corresponding constraint in the master problem for the linking variable */
+SCIP_RETCODE GCGlinkingVarCreateMasterCons(
+   SCIP*                 masterscip,         /**< msater problem SCIP data structure */
+   int                   pricingprobnr,      /**< number of the pricing problem */
+   SCIP_VAR*             origvar,            /**< original variable */
+   SCIP_CONS**           linkcons            /**< constraint linking pricing variables */
+   )
+{
+   char name[SCIP_MAXSTRLEN];
+
+   assert(masterscip != NULL);
+   assert(pricingprobnr >= 0);
+   assert(origvar != NULL);
+   assert(GCGoriginalVarIsLinking(origvar));
+   assert(linkcons != NULL);
 
    /* add corresponding linking constraint to the master problem */
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "l_%s_%d", SCIPvarGetName(origvar), pricingprobnr);
@@ -1116,10 +1214,12 @@ SCIP_RETCODE GCGcreateMasterVar(
    int                   prob,               /**< number of pricing problem that created this variable */
    int                   nsolvars,           /**< number of variables in the solution */
    SCIP_Real*            solvals,            /**< values of variables in the solution */
-   SCIP_VAR**            solvars             /**< variables with non zero coefficient in the solution */
+   SCIP_VAR**            solvars,            /**< variables with non zero coefficient in the solution */
+   SCIP_Bool             auxiliaryvar        /**< is new variable an Benders' auxiliary variables? */
    )
 {
    SCIP_VARDATA* newvardata;
+   SCIP_Real lb;
    int i;
    int j;
    SCIP_Bool trivialsol;
@@ -1137,6 +1237,10 @@ SCIP_RETCODE GCGcreateMasterVar(
 
    trivialsol = FALSE;
 
+   lb = 0.0;
+   if( auxiliaryvar )
+      lb = -SCIPinfinity(scip);
+
    /* create data for the new variable in the master problem */
    SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
    newvardata->vartype = GCG_VARTYPE_MASTER;
@@ -1147,7 +1251,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    newvardata->data.mastervardata.isartificial = FALSE;
 
    /* create variable in the master problem */
-   SCIP_CALL( SCIPcreateVar(scip, newvar, varname, 0.0, SCIPinfinity(scip), /* GCGrelaxGetNIdenticalBlocks(origprob, prob) */
+   SCIP_CALL( SCIPcreateVar(scip, newvar, varname, lb, SCIPinfinity(scip), /* GCGrelaxGetNIdenticalBlocks(origprob, prob) */
          objcoeff, vartype, TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
 
    /* count number of non-zeros */
@@ -1169,7 +1273,7 @@ SCIP_RETCODE GCGcreateMasterVar(
     * if we have not added any original variable to the mastervariable, all coefficients were 0.
     * In that case, we will add all variables in the pricing problem
     */
-   if( newvardata->data.mastervardata.norigvars == 0 )
+   if( newvardata->data.mastervardata.norigvars == 0 && !auxiliaryvar )
    {
       newvardata->data.mastervardata.norigvars = SCIPgetNOrigVars(pricingscip);
       trivialsol = TRUE;
@@ -1265,7 +1369,7 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    int blocknr;
 
    blocknr = GCGvarGetBlock(var);
-   assert( blocknr == -1 || blocknr == -2);
+   assert( blocknr == -1 || blocknr == -2 || GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS);
 
    if( blocknr == -1 )
    {
@@ -1323,6 +1427,41 @@ SCIP_RETCODE GCGcreateArtificialVar(
    SCIP_CALL( SCIPcreateVar(scip, newvar, name,
          0.0, SCIPinfinity(scip), objcoef, SCIP_VARTYPE_IMPLINT,
          TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
+
+   return SCIP_OKAY;
+}
+
+/* adds the vardata to the auxiliary variable */
+SCIP_RETCODE GCGaddDataAuxiliaryVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             auxiliaryvar,       /**< the auxiliary variable */
+   int                   probnumber          /**< the subproblem number */
+   )
+{
+   SCIP_VARDATA* newvardata;
+
+   assert(scip != NULL);
+   assert(auxiliaryvar != NULL);
+
+   /* create data for the new variable in the master problem */
+   SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
+   newvardata->vartype = GCG_VARTYPE_MASTER;
+   newvardata->blocknr = probnumber;
+
+   /* store whether the variable represents a ray */
+   newvardata->data.mastervardata.isray = FALSE;
+
+   /* count number of non-zeros */
+   newvardata->data.mastervardata.norigvars = 0;
+
+   newvardata->data.mastervardata.origvars = NULL;
+   newvardata->data.mastervardata.origvals = NULL;
+
+   /* setting the variable data */
+   SCIPvarSetData(auxiliaryvar, newvardata);
+
+   /* setting the deltrans callback */
+   SCIPvarSetDeltransData(auxiliaryvar, gcgvardeltrans);
 
    return SCIP_OKAY;
 }

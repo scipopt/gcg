@@ -41,7 +41,7 @@
 extern "C" {
 #endif
 
-/** creates the xyz solver for pricing problems and includes it in GCG */
+/** creates the Xyz pricing solver and includes it in GCG */
 extern
 SCIP_RETCODE GCGincludeSolverXyz(
    SCIP*                 scip                /**< SCIP data structure */

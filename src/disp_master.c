@@ -40,7 +40,7 @@
 
 #include "disp_master.h"
 #include "scip/disp_default.h"
-#include "pricer_gcg.h"
+#include "gcg.h"
 
 #define DISP_NAME_ORIGINAL         "original"
 #define DISP_DESC_ORIGINAL         "display column printing a display line of the original SCIP instance"
@@ -75,7 +75,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputOriginal)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_ORIGINAL) == 0);
    assert(scip != NULL);
 
-   SCIP_CALL( SCIPprintDisplayLine(GCGmasterGetOrigprob(scip), file, SCIP_VERBLEVEL_HIGH, FALSE) );
+   SCIP_CALL( SCIPprintDisplayLine(GCGgetOriginalprob(scip), file, SCIP_VERBLEVEL_HIGH, FALSE) );
 
    return SCIP_OKAY;
 }

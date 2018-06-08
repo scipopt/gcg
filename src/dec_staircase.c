@@ -47,13 +47,23 @@
 #include "tclique/tclique.h"
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "staircase"    /**< name of detector */
-#define DEC_DESC                 "Staircase detection via shortest paths" /**< description of detector */
-#define DEC_PRIORITY             200            /**< priority of the detector */
-#define DEC_DECCHAR              'S'            /**< display character of detector */
-#define DEC_ENABLED              TRUE           /**< should the detection be enabled */
-#define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
-
+#define DEC_DETECTORNAME          "staircase"    /**< name of detector */
+#define DEC_DESC                  "Staircase detection via shortest paths" /**< description of detector */
+#define DEC_PRIORITY              200            /**< priority of the detector */
+#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_DECCHAR               'S'            /**< display character of detector */
+#define DEC_ENABLED               FALSE           /**< should the detection be enabled */
+#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
+#define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_LEGACYMODE            TRUE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 #define TCLIQUE_CALL(x) do                                                                                    \
                        {                                                                                      \
@@ -141,7 +151,7 @@ SCIP_RETCODE createGraph(
       if( ncurvars1 == 0 )
          continue;
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &curvars1, ncurvars1) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &curvars1, ncurvars1) );
 
       SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars1, ncurvars1) );
 
@@ -166,7 +176,7 @@ SCIP_RETCODE createGraph(
          if( ncurvars2 == 0 )
             continue;
 
-         SCIP_CALL( SCIPallocBufferArray(scip, &curvars2, ncurvars2) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars2, ncurvars2) );
 
          SCIP_CALL( GCGconsGetVars(scip, conss[j], curvars2, ncurvars2) );
 
@@ -187,10 +197,10 @@ SCIP_RETCODE createGraph(
                break;
             }
          }
-         SCIPfreeBufferArray(scip, &curvars2);
+         SCIPfreeMemoryArray(scip, &curvars2);
       }
 
-      SCIPfreeBufferArray(scip, &curvars1);
+      SCIPfreeMemoryArray(scip, &curvars1);
    }
 
    TCLIQUE_CALL( tcliqueFlush(*graph) );
@@ -252,12 +262,12 @@ SCIP_RETCODE findDiameter(
    graph = detectordata->graph;
    nnodes = tcliqueGetNNodes(graph);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &queue, nnodes) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &marked, nnodes) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &eccentricity, nnodes) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &dist, nnodes) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &degree, nnodes) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &degreepos, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &queue, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &marked, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &eccentricity, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &dist, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &degree, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &degreepos, nnodes) );
 
    /* get degrees of vertices and initialize all eccentricities of vertices to values representing upper bounds */
    origdegree = tcliqueGetDegrees(graph);
@@ -370,12 +380,12 @@ SCIP_RETCODE findDiameter(
       }
    }
 
-   SCIPfreeBufferArray(scip, &degreepos);
-   SCIPfreeBufferArray(scip, &degree);
-   SCIPfreeBufferArray(scip, &dist);
-   SCIPfreeBufferArray(scip, &eccentricity);
-   SCIPfreeBufferArray(scip, &marked);
-   SCIPfreeBufferArray(scip, &queue);
+   SCIPfreeMemoryArray(scip, &degreepos);
+   SCIPfreeMemoryArray(scip, &degree);
+   SCIPfreeMemoryArray(scip, &dist);
+   SCIPfreeMemoryArray(scip, &eccentricity);
+   SCIPfreeMemoryArray(scip, &marked);
+   SCIPfreeMemoryArray(scip, &queue);
 
    return SCIP_OKAY;
 }
@@ -407,14 +417,14 @@ SCIP_RETCODE findConnectedComponents(
 
    /* for each vertex the 'component' array contains a number from [0, ncomponents) */
    assert(detectordata->components == NULL);
-   SCIP_CALL( SCIPallocBufferArray(scip, &(detectordata->components), nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(detectordata->components), nnodes) );
    component = detectordata->components;
 
    /* component[i] == -1 if and only if vertex i has not been assigned to a component yet */
    for( i = 0; i < nnodes; ++i )
       component[i] = -1;
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &queue, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &queue, nnodes) );
 
    for( i = 0; i < nnodes; ++i )
    {
@@ -459,7 +469,7 @@ SCIP_RETCODE findConnectedComponents(
    detectordata->ncomponents = ncomps;
    SCIPdebugMessage("found %i components\n", ncomps);
 
-   SCIPfreeBufferArray(scip, &queue);
+   SCIPfreeMemoryArray(scip, &queue);
    return SCIP_OKAY;
 }
 
@@ -546,7 +556,7 @@ DEC_DECL_EXITDETECTOR(detectorExitStaircase)
 
    if( detectordata->components != NULL )
    {
-      SCIPfreeBufferArray(scip, &detectordata->components);
+      SCIPfreeMemoryArray(scip, &detectordata->components);
    }
 
    return SCIP_OKAY;
@@ -578,9 +588,9 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircase)
       /* find connected components of the graph. the result will be stored in 'detectordata->components' */
       SCIP_CALL( findConnectedComponents(scip, detectordata) );
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &nodes, nnodes) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &distances, nnodes) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &blocks, nnodes) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &nodes, nnodes) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &distances, nnodes) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &blocks, nnodes) );
 
       for( i = 0; i < nnodes; ++i)
          blocks[i] = -1;
@@ -629,10 +639,10 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircase)
          *result = SCIP_SUCCESS;
       }
 
-      SCIPfreeBufferArray(scip, &blocks);
-      SCIPfreeBufferArray(scip, &nodes);
-      SCIPfreeBufferArray(scip, &distances);
-      SCIPfreeBufferArray(scip, &(detectordata->components));
+      SCIPfreeMemoryArray(scip, &blocks);
+      SCIPfreeMemoryArray(scip, &nodes);
+      SCIPfreeMemoryArray(scip, &distances);
+      SCIPfreeMemoryArray(scip, &(detectordata->components));
    }
 
    if( *result != SCIP_SUCCESS )
@@ -648,6 +658,14 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircase)
 
    return SCIP_OKAY;
 }
+
+#define detectorPropagateSeeedStaircase NULL
+#define detectorFinishSeeedStaircase NULL
+#define detectorPostprocessSeeedStaircase NULL
+
+#define setParamAggressiveStaircase NULL
+#define setParamDefaultStaircase NULL
+#define setParamFastStaircase NULL
 
 
 /*
@@ -666,9 +684,16 @@ SCIP_RETCODE SCIPincludeDetectorStaircase(
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
+   detectordata->graph = NULL;
+   detectordata->constoblock = NULL;
+   detectordata->vartoblock = NULL;
+   detectordata->nblocks = 0;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectorDetectStaircase, detectorFreeStaircase, detectorInitStaircase, detectorExitStaircase) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
+      DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
+      DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING,
+      DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectorDetectStaircase, detectorFreeStaircase, detectorInitStaircase, detectorExitStaircase, detectorPropagateSeeedStaircase, NULL, NULL, detectorFinishSeeedStaircase,
+      detectorPostprocessSeeedStaircase, setParamAggressiveStaircase, setParamDefaultStaircase, setParamFastStaircase) );
 
    return SCIP_OKAY;
 }

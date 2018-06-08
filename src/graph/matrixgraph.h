@@ -42,6 +42,8 @@
 #include "pub_decomp.h"
 #include "bridge.h"
 #include "graph_interface.h"
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 #include <exception>
 #include <vector>
 #include <string>
@@ -83,12 +85,27 @@ public:
       return SCIP_OKAY;
    }
 
+
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
    )
    {
       return SCIP_ERROR;
    }
+
+
+
+   /** amplifies a seeed by dint of a graph created with open constraints and open variables of the seeed */
+   virtual SCIP_RETCODE createSeeedFromPartition(
+      Seeed*      oldSeeed,            /**< seeed which should be amplifies */
+      Seeed**     firstSeeed,          /**< pointer to buffer the new seeed amplified by dint of the graph */
+      Seeed**     secondSeeed,         /**< pinter to buffer the new seeed whose border is amplified by dint of the graph */
+      Seeedpool*  seeedpool
+      )
+   {
+      return SCIP_ERROR;
+   }
+
    /**
     * reads the partition from the given file.
     * The format is graph dependent. The default is a file with one line for each node a
@@ -123,6 +140,12 @@ public:
       SCIP_VAR**            vars,               /**< variables for which graph should be created */
       int                   nconss_,             /**< number of constraints */
       int                   nvars_               /**< number of variables */
+      ) { return SCIP_ERROR; }
+
+   /** creates a graph with open constraints and open variables of the seeed */
+   virtual SCIP_RETCODE createFromPartialMatrix(
+      Seeedpool*           seeedpool,
+      Seeed*               seeed
       ) { return SCIP_ERROR; }
 
 

@@ -1,29 +1,137 @@
-GCG Version
+GCG Version 3.0.0
 =================
 
 features
+- new detection scheme:
+	- detection is roundwise (new parameter detection/maxrounds)
+	- detectors can implement three optional methods:
+		- propagateSeeed : given a partial decomposition d the detector returns a set of decompositions that are a refinement of d
+		- finsishSeeed: given a partial decomposition d the detector returns a set of decompositions that are a refinement of d and complete
+	        - postprocessSeeed: given a complete decomposition d the detector returns a set of complete decompositions
+	- further new paramters for each detector: detector/*/{usefullrecall, freqcallround, maxcallround, mincallround}:
+		-  it useful to call this detector on a descendant of the propagated seeed
+		- frequency the detector gets called (is active) in detection loop ,ie it is called in round r if and only if mincallround <= r <= maxcallround AND  (r - mincallround) mod freqcallround == 0
+		- last round the detector gets called
+		- first round the detector gets called (offset in detection loop)
+	- there is a current pool of partial decompositions (i.e. some conss and vars are open, initilized by empty decomposition (all vars and conss are open) )
+	- in every detection round each active detector is called on each current partial detection and returns (possibly empty set) of decomposition (possibly still partial but but strictly more refined)
 - solve the problem with one single block if no decomposition is available ('SCIP mode')
 - extended isomorph detector by the possibility to identify blocks which are identical
   w.r.t. signs (but not necessarily values) of coefficients.
 - extended backtracking mechanism in diving heuristics:
   single backtracking in addition to limited discrepancy search in master variable diving;
   added branching on another variable and limited disc. search to original variable diving
+- added menu item "write reportdecompositions" that creates a report of all decompositions in form of a .tex file
+- Benders' decomposition mode has been added. The Benders' decomposition mode is activated by setting
+  "relaxing/gcg/mode" to 1. When using the Benders' decomposition mode, the decompositions found by the detectors are
+  used as the master and subproblems.
+
 - add additional pricing and variable statistics
 - add check/bounds_script.py, which plots some information on the reduced cost pricing
   iterations in the root node (using additional statistics and given as input an *.out file)
 - add hybridization of dual variable smoothing with an ascent method
 - add price store similar to SCIP's sepa store for better column management
 - restructure column pool similar to SCIP's cut pool
+- parametrize pricing solver priorities
 - added parameter heuristics/restmaster/pbheur to use restricted master heuristic as price-and-branch heuristic
 - imitate SCIP's separation procedure in the basis separator by storing the number separation rounds in probing per node
 - artificial variables can now be added in the first Farkas pricing iteration to make the restricted master problem
   feasible (including various options on setting the big M objective coefficients of these variables)
+- new pricing solver that solves independent set problems heuristically using the cliquer library
+- enable discretization when original problem is a mixed integer program; continuous variables are convexified
+- solve original LP relaxation in the root node to get a first dual bound and to run some heuristics in the original problem
+
+performance improvements:
+[] - which coeffmatrix dimensions are doable by detection for default, fast now?
+
+data structures:
+[] - seeed
+[] - seeedpool
+[] - constraint classifier
+[] - variable classifier
+
+deleted and modified API functions:
+[] - detector callback DETECTSTRUCTURE
+
+new API fuctions:
+[] - detector callback PROPAGATESEEED
+[] - detector callback FINISHSEEED
+[] - detector callback POSTPROCESSSEEED
+
+command line interface:
+[] - modify decomposition
+[] - select
+[] - write decomp
+[] - write alldecomps
+[] - write report
+[] - write family tree
+
+interfaces to external software:
+[] - is there any?
+
+deleted and modified parameters:
+[] - complete list
+- modified parameter "detectors/*/priority"
+
+
+new parameters:
+[] rearrange
+- new parameter "constraints/decomp/createbasicdecomp" indicates whether to create a decomposition with all constraints in the master if no other specified (useful to have included comparison)
+- new parameter "detection/allowclassifierduplicates/enabled" indicates whether classifier duplicates are allowed (for statistical reasons)
+- new parameter "detection/consclassifier/*/enabled" indicates whether corresponding constraint classifier is enabled
+- new parameter "detection/consclassifier/*/origenabled" indicates whether corresponding constraint classifier is enabled for original problem (no effect if "detection/origprob/classificationenabled" is FALSE )
+- new parameter "detection/emphfast/enabled" indicates whether emphasis settings are set to fast, needed for make test"
+- new parameter "detection/legacymode/enabled" indicates whether detection should additionally do legacy mode detection
+- new parameter "detection/legacymode/onlylegacymode" indicates whether detection should only consist of legacy mode detection
+- new parameter "detection/maxnclassesperclassifier" to specify the maximum number of classes per classifier (if this number is exceeed two smallest classes are merged until it is reached, both classifier are kept) 
+- new parameter "detection/maxnclassesperclassifierforlargeprobs" same as "detection/maxnclassesperclassifier" but for problems with nvars + nconss >= 50000  
+- new parameter "detection/maxrounds" to specifiy the number of refinement rounds during detection
+- new parameter "detection/origprob/classificationenabled" indicates whether constraint and variable classification is also enabeled for opriginal problem
+- new parameter "detection/origprob/enabled" indicates whether to detect structures in original problem found decomps are tried to translate to transformed problem; only useful if presolving is enabled
+- new parameter "detection/origprob/weightinggpresolvedoriginaldecomps" weighting method when comparing decompositions for presolved and unpresolved problem: 0: NO_MODIF, 1: FRACTION_OF_NNONZEROS, 2: FRACTION_OF_NROWS, 3: FAVOUR_PRESOLVED
+- new parameter "detection/scoretype" indicates which score should be used for comparing (partial) decompositions (0: max white, 1: border area, 2: classic, 3: max foreseeing white, 4: ppc-max-white, 5: max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info)
+- new parameter "detectors/*/enabled" is this detector enabled when detecting in the transformed problem
+- new parameter "detectors/*/finishingenabled" is this detector enabled when finishing partial decompsositions in the original and transformed problem
+- new parameter "detectors/*/freqcallround" frequency the detector gets called in detection loop ,ie it is called in round r if and only if mincallround <= r <= maxcallround AND  (r - mincallround) mod freqCallRound == 0 
+- new paramater "detectors/*/legacymode" flag to indicate whether (old) DETECTSTRUCTURE method of detector should be used
+- new parameter "detectors/*/maxcallround" maximum round the detector gets called in detection loop
+- new parameter "detectors/*/mincallround" minimum  round the detector gets called in detection loop
+- new parameter "detectors/*/origenabled" is this detector enabled when detecting in the original problem (overruled by "detection/origprob/enabled" )
+- new parameter "detectors/*/origfreqcallround" same as "detectors/*/freqcallround" for original problem
+- new parameter "detectors/*/origmaxcallround" same as "detectors/*/maxcallround" for original problem
+- new parameter "detectors/*/origmincallround" same as "detectors/*/mincallround" for original problem 
+- new parameter "detectors/*/overruleemphasis" flag to indicate whether emphasis settings for detector <%s> should be overruled by normal settings
+- new parameter "detectors/*/postprocessingenabled" is this detector enabled when postprocessing in the original and the transformed problem
+- new parameter "detectors/*/usefulrecall" indicates whether this detector is called on descendants of a partial decomposition
+- new parameter "detectors/connectedbase/useconssadj" should the constraint adjacency datastructure  be used (and not the constraint-variable-incidency)
+- new parameter "relaxing/gcg/mode" is used to set the the Dantzig-Wolfe or Benders' decomposition mode of GCG.
+- new parameter "set/visual/colorscheme" sets the color scheme of visualizations produced by the gp and tex reader
+- new parameter "set/visual/draftmode" sets whether nonzeros are shown in visualizations produced by the gp and tex reader
+- new parameter "set/visual/nonzeroradius" sets the radius of nonzeros in visualizations produced by the gp and tex reader
+- new parameter "set/visual/pdfreader" sets a PDF reader that is used for opening visualizations
+- new parameter "set/visual/nmaxdecompstowrite" sets maximum number of decompositions to write
+- new parameter "set/visual/colors/colorblock" sets color for blocks in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/colorlines" sets color for lines in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/colorlinking" sets color for linking variables in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/colormasterconss" sets color for master constraints in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/colormastervars" sets color for master variables in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/colornonzeros" sets color for nonzeros in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/coloropen" sets color for open areas in visualizations produced by the gp and tex reader
+- new parameter "set/visual/colors/colorstairlinking" sets color for stairlinking variables in visualizations produced by the gp and tex reader
+- new parameter "set/visual/famtree/maxndecomps" sets maximum number of finished decompositions in family tree
+- new parameter "set/visual/report/maxndecomps" sets maximum number of decompositions shown in report
+- new parameter "set/visual/report/showstatistics" sets whether statistics for each decomposition are included in report
+- new parameter "set/visual/report/showtitle" sets whether a title page is included in report
+- new parameter "set/visual/report/showtoc" sets whether a table of contents is included in report
+- new parameter "set/visual/report/showtype" sets whether only decompositions of a certain type are included in report
+- new parameter "set/visual/report/usegp" sets whether the report uses gnuplot or LaTeX/Tikz images in report
 
 code cleanup
 - use SCIP_STATISTIC for pricing statistics and add compiler flag STATISTICS; if STATISTICS is set to true,
   SCIP_STATISTIC will be defined
 - add parameter in basis separator specifying the emphasis setting used for separation in probing; remove unnecessary
   distinctions on objective direction
+- introduce new module solver.c for managing pricing solvers, to be compliant to how SCIP plugins are designed
 
 bug fixes
 - fix a bug in the automatic update of the stabilization parameter alpha
@@ -36,7 +144,6 @@ GCG Version 2.1.4
 =================
 
 - use SCIPaddRow() instead of deprecated SCIPaddCut()
-
 
 GCG Version 2.1.3
 =================

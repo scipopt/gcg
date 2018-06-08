@@ -59,13 +59,23 @@
                        while( FALSE )
 
 
-
 namespace gcg {
 
 GraphTclique::GraphTclique()
 {
    TCLIQUE_CALL_EXC( tcliqueCreate(&graph) );
 }
+
+SCIP_RETCODE GraphTclique::addNNodes(int _n_nodes)
+{
+   return SCIP_INVALIDCALL;
+}
+
+SCIP_RETCODE GraphTclique::addNNodes(int _n_nodes, std::vector<int> weights)
+{
+   return SCIP_INVALIDCALL;
+}
+
 
 GraphTclique::~GraphTclique()
 {
@@ -81,6 +91,12 @@ int GraphTclique::getNEdges()
 {
    return tcliqueGetNEdges(graph);
 }
+
+SCIP_RETCODE GraphTclique::getEdges(std::vector<void*>& edges)
+{
+   return SCIP_INVALIDCALL;
+}
+
 
 SCIP_Bool GraphTclique::isEdge(int i, int j)
 {
@@ -110,6 +126,11 @@ SCIP_RETCODE GraphTclique::addNode(int i, int weight)
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE GraphTclique::addNode()
+{
+   return SCIP_INVALIDCALL;
+}
+
 SCIP_RETCODE GraphTclique::deleteNode(int i)
 { /*lint -e715*/
    return SCIP_ERROR;
@@ -125,6 +146,26 @@ SCIP_RETCODE GraphTclique::addEdge(int i, int j)
    TCLIQUE_CALL( tcliqueAddEdge(graph,i,j) );
    return SCIP_OKAY;
 
+}
+
+SCIP_RETCODE GraphTclique::addEdge(int i, int j, double weight)
+{
+   return SCIP_INVALIDCALL;
+}
+
+SCIP_RETCODE GraphTclique::setEdge(int i, int j, double weight)
+{
+   return SCIP_INVALIDCALL;
+}
+
+double GraphTclique::getEdgeWeight(int i, int j)
+{
+   return 0.0;
+}
+
+std::vector<std::pair<int, double> > GraphTclique::getNeighborWeights(int i)
+{
+   return std::vector<std::pair<int, double> >();
 }
 
 SCIP_RETCODE GraphTclique::deleteEdge(int i, int j)
@@ -148,4 +189,16 @@ int GraphTclique::graphGetWeights(int i)
    weights = tcliqueGetWeights(graph);
    return weights[i];
 }
+
+SCIP_RETCODE GraphTclique::normalize(){
+   // this function is used only in GraphGCG
+   return SCIP_INVALIDCALL;
+}
+
+double GraphTclique::getEdgeWeightPercentile(double q)
+{
+   return 0.0;
+}
+
+
 } /* namespace gcg */

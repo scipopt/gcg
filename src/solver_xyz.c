@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   solver_xyz.c
- * @brief  xyz solver for pricing problem
+ * @brief  xyz solver for pricing problems
  * @author Gerald Gamrath
  */
 
@@ -35,8 +35,8 @@
 #include <assert.h>
 
 #include "solver_xyz.h"
-#include "type_solver.h"
 #include "pricer_gcg.h"
+#include "pub_solver.h"
 
 #define SOLVER_NAME          "xyz"
 #define SOLVER_DESC          "xyz solver for pricing problems"
@@ -50,7 +50,7 @@
 
 /* TODO: fill in the necessary propagator data */
 
-/** branching data for branching decisions */
+/** pricing solver data */
 struct GCG_SolverData
 {
 };
@@ -149,7 +149,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveXyz)
    return SCIP_OKAY;
 }
 
-
+/* solving method for pricing solver using heuristic pricing only */
 static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurXyz)
 {  /*lint --e{715}*/
@@ -159,7 +159,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurXyz)
    return SCIP_OKAY;
 }
 
-/** creates the most infeasible LP braching rule and includes it in SCIP */
+/** creates the Xyz pricing solver and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverXyz(
    SCIP*                 scip                /**< SCIP data structure */
    )

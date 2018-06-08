@@ -55,12 +55,29 @@
 #include "pub_decomp.h"
 #include "scip_misc.h"
 
-#define DEC_DETECTORNAME      "cutpacking"   /**< name of the detector */
-#define DEC_DESC              "detects staircase matrices via graph partioning and cutpacking" /**< detector description */
-#define DEC_PRIORITY          1100           /**< priority of the detector */
-#define DEC_DECCHAR           'c'            /**< display character of detector */
-#define DEC_ENABLED           FALSE          /**< should detector be called by default */
-#define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
+#ifdef HMETIS_HEADER
+#include "hmetis.h"
+#else
+#define HMETIS_EXECUTABLE "hmetis"
+#endif
+
+#define DEC_DETECTORNAME         "cutpacking"   /**< name of the detector */
+#define DEC_DESC                 "detects staircase matrices via graph partioning and cutpacking" /**< detector description */
+#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_PRIORITY              1100           /**< priority of the detector */
+#define DEC_DECCHAR               'c'            /**< display character of detector */
+#define DEC_ENABLED               FALSE          /**< should detector be called by default */
+#define DEC_ENABLEDORIGINAL       FALSE  /**< should the detection of the original problem be enabled */
+#define DEC_ENABLEDFINISHING      FALSE          /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
+#define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 /* Default parameter settings */
 #define DEFAULT_RANDSEED              1      /**< random seed for the hmetis call */
@@ -233,7 +250,7 @@ SCIP_RETCODE initData(
       ncurvars = GCGconsGetNVars(scip, conss[i]);
       if( ncurvars > 0 )
       {
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
 
          ishandled = FALSE;
@@ -247,7 +264,7 @@ SCIP_RETCODE initData(
             k++;
          }
 
-         SCIPfreeBlockMemoryArrayNull(scip, &curvars, ncurvars);
+         SCIPfreeMemoryArrayNull(scip, &curvars);
       }
    }
 
@@ -289,7 +306,7 @@ SCIP_RETCODE initData(
       ncurvars = GCGconsGetNVars(scip, detectordata->graphs[0]->conss[i]);
       if( ncurvars > 0 )
       {
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip,detectordata->graphs[0]->conss[i], curvars, ncurvars) );
 
          for( j = 0; j < ncurvars; ++j )
@@ -305,7 +322,7 @@ SCIP_RETCODE initData(
             }
          }
 
-         SCIPfreeBlockMemoryArrayNull(scip, &curvars, ncurvars);
+         SCIPfreeMemoryArrayNull(scip, &curvars);
       }
    }
 
@@ -369,11 +386,11 @@ SCIP_RETCODE createAdjlist(
    int* weights;
    int size;
 
-   SCIP_CALL( SCIPallocBlockMemory(scip, adjlist) );
+   SCIP_CALL( SCIPallocMemory(scip, adjlist) );
 
    size = SCIPcalcMemGrowSize(scip, 1);
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &conss, size) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &weights, size) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &conss, size) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &weights, size) );
 
    BMSclearMemoryArray(conss, size);
    BMSclearMemoryArray(weights, size);
@@ -393,9 +410,9 @@ SCIP_RETCODE freeAdjlist(
    ADJLIST**             adjlist
    )
 {
-   SCIPfreeBlockMemoryArray(scip, &((*adjlist)->weights), (*adjlist)->maxconss );
-   SCIPfreeBlockMemoryArray(scip, &((*adjlist)->conss), (*adjlist)->maxconss );
-   SCIPfreeBlockMemory(scip, adjlist);
+   SCIPfreeMemoryArray(scip, &((*adjlist)->weights) );
+   SCIPfreeMemoryArray(scip, &((*adjlist)->conss) );
+   SCIPfreeMemory(scip, adjlist);
    *adjlist = NULL;
 
    return SCIP_OKAY;
@@ -425,8 +442,8 @@ SCIP_RETCODE adjlistIncreaseEntry(
    {
       int newsize = SCIPcalcMemGrowSize(scip, adjlist->maxconss+1);
       assert(newsize > adjlist->maxconss);
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(adjlist->conss), adjlist->maxconss, newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(adjlist->weights), adjlist->maxconss, newsize) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(adjlist->conss), newsize) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(adjlist->weights), newsize) );
       adjlist->maxconss = newsize;
    }
 
@@ -504,8 +521,8 @@ SCIP_RETCODE copyAdjlist(
    {
       int newsize = SCIPcalcMemGrowSize(scip, source->nconss);
       assert(newsize > target->maxconss);
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(target->conss), target->maxconss, newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(target->weights), target->maxconss, newsize) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(target->conss), newsize) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(target->weights), newsize) );
       target->maxconss = newsize;
    }
 
@@ -925,7 +942,7 @@ SCIP_RETCODE buildNewGraphs(
     * count the number of constraints and linking constraints;
     * also, find the indices of cons1 and cons2, respectively in the graph
     */
-   SCIP_CALL( SCIPallocBufferArray(scip, &consslink, graph->nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &consslink, graph->nconss) );
    BMSclearMemoryArray(consslink, graph->nconss);
    nconsslink1 = 0;
    nconsslink2 = 0;
@@ -992,7 +1009,7 @@ SCIP_RETCODE buildNewGraphs(
          SCIP_CALL( copyConss(scip, detectordata, graph, NULL, -1) );
          SCIP_CALL( freeGraph(scip, detectordata, detectordata->position, graph->nconss) );
          detectordata->ngraphs--;
-         SCIPfreeBufferArray(scip, &consslink);
+         SCIPfreeMemoryArray(scip, &consslink);
          return SCIP_OKAY;
       }
 
@@ -1078,7 +1095,7 @@ SCIP_RETCODE buildNewGraphs(
    SCIP_CALL( freeGraph(scip, detectordata, detectordata->position, graph->nconss) );
    detectordata->ngraphs--;
 
-   SCIPfreeBufferArray(scip, &consslink);
+   SCIPfreeMemoryArray(scip, &consslink);
 
    return SCIP_OKAY;
 }
@@ -1367,7 +1384,7 @@ SCIP_RETCODE getLinkingVars(
 #endif
 
    SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
-   SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
+   SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars, 0) );
    DECdecompSetVartoblock(decdecomp, vartoblock);
 
    for( i = 0; i < detectordata->nblocks; ++i )
@@ -1498,12 +1515,12 @@ SCIP_RETCODE applyStoerWagner(
 
    cut = NULL;
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &merged, graph->nconss) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &tightness, graph->nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &merged, graph->nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &tightness, graph->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &mincut, graph->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &nmergedconss, graph->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &mergedconss, graph->nconss) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &adjlists, graph->nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &adjlists, graph->nconss) );
    for( i = 0; i < graph->nconss; ++i )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &(mergedconss[i]), graph->nconss) ); /*lint !e866*/
@@ -1718,14 +1735,14 @@ SCIP_RETCODE applyStoerWagner(
    for( i = 0; i < nmincut; ++i )
       detectordata->partition[(int) (size_t) SCIPhashmapGetImage(graph->constopos, mincut[i])] = 1; /*lint !e507*/
 
-   SCIPfreeBufferArray(scip, &tightness);
-   SCIPfreeBufferArray(scip, &merged);
+   SCIPfreeMemoryArray(scip, &tightness);
+   SCIPfreeMemoryArray(scip, &merged);
    for( i = 0; i < graph->nconss; ++i )
    {
       SCIP_CALL( freeAdjlist(scip, &adjlists[i]) );
       SCIPfreeMemoryArray(scip, &(mergedconss[i]));
    }
-   SCIPfreeBlockMemoryArrayNull(scip, &adjlists, graph->nconss);
+   SCIPfreeMemoryArrayNull(scip, &adjlists);
    SCIPhashmapFree(&represconss);
    SCIPfreeMemoryArray(scip, &mincut);
    SCIPfreeMemoryArray(scip, &nmergedconss);
@@ -1775,7 +1792,7 @@ SCIP_RETCODE callMetis(
    assert(adjlists != NULL);
    assert(constopos != NULL);
 
-   (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
+   (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg.metis.XXXXXX");
    temp_filedes = mkstemp(tempfile);
    if( temp_filedes < 0 )
    {
@@ -1825,7 +1842,7 @@ SCIP_RETCODE callMetis(
       return SCIP_WRITEERROR;
    }
 
-   (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"", tempfile, 2,
+   (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"" HMETIS_EXECUTABLE " %s %d -seed %d -ptype %s -ufactor %f %s\"", tempfile, 2,
       detectordata->randomseed, detectordata->metisuseptyperb ? "rb" : "kway", detectordata->metisubfactor,
       detectordata->metisverbose ? "" : "> /dev/null");
 
@@ -2034,6 +2051,18 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectCutpacking)
 }
 #endif
 
+#define detectorPropagateSeeedCutpacking NULL
+#define detectorFinishSeeedCutpacking NULL
+#define detectorExitCutpacking NULL
+
+#define detectorPostprocessSeeedCutpacking NULL
+
+#define setParamAggressiveCutpacking NULL
+#define setParamDefaultCutpacking NULL
+#define setParamFastCutpacking NULL
+
+
+
 /** creates the cutpacking detector and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectorCutpacking(
    SCIP*                 scip                /**< SCIP data structure */
@@ -2049,32 +2078,33 @@ SCIP_RETCODE SCIPincludeDetectorCutpacking(
 
    /* include structure detector */
    SCIP_CALL( DECincludeDetector(scip,
-      DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, detectorInitCutpacking, NULL) );
+      DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
+      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, detectorInitCutpacking, detectorExitCutpacking, detectorPropagateSeeedCutpacking, NULL, NULL, detectorFinishSeeedCutpacking, detectorPostprocessSeeedCutpacking, setParamAggressiveCutpacking, setParamDefaultCutpacking, setParamFastCutpacking) );
+
 
    /* add cutpacking detector parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/algorithm",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/cutpacking/algorithm",
       "should the Stoer-Wagner algorithm or metis be used for finding a minimal cut",
       &detectordata->usemetis, FALSE, DEFAULT_USEMETIS, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/fixedblocks",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/cutpacking/fixedblocks",
       "Should the blocks consist of a certain number of constraints",
       &detectordata->fixedblocks, FALSE, DEFAULT_FIXEDBLOCKS, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/cutpacking/blocksize",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/cutpacking/blocksize",
       "number of constraints per block",
       &detectordata->blocksize, FALSE, DEFAULT_BLOCKSIZE, 1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/tidy",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/cutpacking/tidy",
       "Whether to clean up temporary files",
       &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/cutpacking/randomseed",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/cutpacking/randomseed",
       "random seed for hmetis",
       &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detectors/cutpacking/ubfactor",
+   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/cutpacking/ubfactor",
       "Unbalance factor for metis",
       &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/metisverbose",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/cutpacking/metisverbose",
       "Should the metis output be displayed",
       &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/metisuseptyperb",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/cutpacking/metisuseptyperb",
       "Should the rb or kway method be used for partitioning by metis",
       &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
 #endif

@@ -1,0 +1,7 @@
+# SCIP version 3.0.2.1
+
+detection/emphfast/enabled = TRUE
+detection/smartscore/enabled = FALSE
+detection/detectors/isomorph/overruleemphasis = TRUE
+detection/detectors/isomorph/maxdecompsexact = 1
+detection/detectors/isomorph/maxdecompsextend = 0

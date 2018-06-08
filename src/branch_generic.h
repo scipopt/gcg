@@ -111,10 +111,10 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP*                 masterscip,         /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    SCIP_RESULT*          result,             /**< pointer to store the result of the branching call */
-   int*                  checkedblocks,      /**< blocks that have been checked */
-   int                   ncheckedblocks,     /**< number of checked blocks */
-   GCG_STRIP***          checkedblockssortstrips, /**< sorted strips of checked blocks */
-   int*                  checkedblocksnsortstrips /**< sizes of the strips */
+   int**                 checkedblocks,      /**< blocks that have been checked */
+   int*                  ncheckedblocks,     /**< number of checked blocks */
+   GCG_STRIP****         checkedblockssortstrips, /**< sorted strips of checked blocks */
+   int**                 checkedblocksnsortstrips /**< sizes of the strips */
    );
 
 /** returns true when the branch rule is the generic branchrule */

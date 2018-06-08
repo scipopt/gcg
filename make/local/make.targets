@@ -99,18 +99,18 @@ TESTLDFLAGS	+=	$(LINKCXX_L)$(LIBDIR) $(LINKCXX_l)pthread
 
 ifeq ($(GTEST),true)
 TESTLDFLAGS	+=	$(LINKCXX_l)gtest
-SOFTLINKS	+=	$(LIBDIR)/gtest
-SOFTLINKS	+=	$(LIBDIR)/libgtest.$(STATICLIBEXT)
+SOFTLINKS	+=	$(LIBDIR)/include/gtest
+SOFTLINKS	+=	$(LIBDIR)/static/libgtest.$(STATICLIBEXT)
 
 LINKMSG		+=	"googletest testing framework links:\n"
-LINKMSG		+=	" -> gtest is the path to the googletest include files, e.g., \"googletest-1.7.0/include\"\n"
+LINKMSG		+=	" -> gtest is the path to the googletest include files, e.g., \"googletest-1.7.0/include/gtest\"\n"
 LINKMSG		+=	" -> \"libgtest.$(STATICLIBEXT)\" is the path to the googletest library, e.g., \"googletest-1.7.0/build/libgtest.$(STATICLIBEXT)\"\n"
 endif
 
 .PHONY: testdepend
 testdepend::
 ifeq ($(GTEST),true)
-		$(SHELL) -ec '$(DCC) $(subst isystem,I,$(FLAGS)) -Ilib/gtest $(DFLAGS) $(TESTSRC) \
+		$(SHELL) -ec '$(DCXX) $(DCXXFLAGS) $(subst isystem,I,$(FLAGS)) -Ilib/include $(DFLAGS) $(TESTSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(TESTSRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(TESTOBJDIR\)/\2.o: $(TESTSRCDIR)/\2.c|g'\'' \
 		>$(TESTDEP)'
 endif
@@ -121,13 +121,29 @@ $(TESTOBJDIR):	$(OBJDIR)
 
 .PHONY: googletest
 googletest:
-		-mkdir lib/googletest/build
-		cd lib/googletest/build && cmake ../
-		cd lib/googletest/build && make
+		-mkdir lib/googletest-git/build
+		cd lib/googletest-git/build && cmake ../
+		cd lib/googletest-git/build && make
 
 .PHONY: bliss
 bliss:
-		@$(MAKE) -C lib/bliss
+		@$(MAKE) -C lib/bliss-git
+
+.PHONY: cliquer
+cliquer: cliquerobj cliquerlib
+
+.PHONY: cliquerobj
+cliquerobj:
+		@$(MAKE) -C lib/cliquer-git
+
+.PHONY: cliquerlib
+cliquerlib:
+		@echo "-> generating library lib/cliquer/libcliquer.a"
+		@-rm -f lib/cliquer-git/libcliquer.a
+		@$(LIBBUILD) $(LIBBUILDFLAGS) lib/cliquer-git/libcliquer.a lib/cliquer/*.o
+ifneq ($(RANLIB),)
+		@$(RANLIB) lib/cliquer-git/libcliquer.a
+endif
 
 .PHONY: soplex
 soplex:
@@ -166,9 +182,9 @@ $(TESTFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) libs $(LPILIBFILE) $(NLPILIBFILE
 
 ifeq ($(GTEST),true)
 ifeq ($(COMP),gnu)
-FLAGS+=-isystem$(LIBDIR)/gtest/
+FLAGS+=-isystem$(LIBDIR)/include/
 else
-FLAGS+=-I$(LIBDIR)/gtest/
+FLAGS+=-I$(LIBDIR)/include/
 endif
 endif
 
@@ -191,7 +207,9 @@ coverage: tests
 		mv gcov/gcg.capture gcov/gcg.capture.tmp
 		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/scip/*" > gcov/gcg.capture
 		mv gcov/gcg.capture gcov/gcg.capture.tmp
-		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/blissinc/*" > gcov/gcg.capture
+		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/include/bliss/*" > gcov/gcg.capture
+		mv gcov/gcg.capture gcov/gcg.capture.tmp
+		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/include/cliquer/*" > gcov/gcg.capture
 		mv gcov/gcg.capture gcov/gcg.capture.tmp
 		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/gtest/*" > gcov/gcg.capture
 		mv gcov/gcg.capture gcov/gcg.capture.tmp

@@ -1,0 +1,6 @@
+# SCIP version 3.0.2.1
+
+detection/emphfast/enabled = TRUE
+detection/smartscore/enabled = FALSE
+detection/maxnclassesperclassifier = 5
+detection/maxnclassesperclassifierforlargeprobs = 2

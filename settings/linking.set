@@ -2,21 +2,21 @@
 
 # flag to indicate whether detector <connected> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/connected/enabled = FALSE
+detection/detectors/connected/enabled = FALSE
 
 # Type of the graph: 'c' column hypergraph, 'r' row hypergraph, 'a' column-row hypergraph
 # [type: char, range: {cra}, default: r]
-detectors/arrowheur/type = c
-detectors/arrowheur/enabled = TRUE
+detection/detectors/arrowheur/type = c
+detection/detectors/arrowheur/enabled = TRUE
 
 # flag to indicate whether detector <staircase> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/staircase/enabled = FALSE
+detection/detectors/staircase/enabled = FALSE
 
 # flag to indicate whether detector <random> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/random/enabled = FALSE
+detection/detectors/random/enabled = FALSE
 
 # flag to indicate whether detector <isomorph> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/isomorph/enabled = FALSE
+detection/detectors/isomorph/enabled = FALSE

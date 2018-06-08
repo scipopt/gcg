@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -68,7 +68,7 @@ ERRFILE=results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME.$MSETNAME.err
 if test $PERMUTE -gt 0
 then
     EVALFILE=$GCGPATH/results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME.$MSETNAME"#p"$p.eval
-	JOBFILE=$GCGPATH/results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME.$MSETNAME"#p"$p.job
+    JOBFILE=$GCGPATH/results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME.$MSETNAME"#p"$p.job
 else
     EVALFILE=$GCGPATH/results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME.$MSETNAME.eval
     JOBFILE=$GCGPATH/results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME.$MSETNAME.job

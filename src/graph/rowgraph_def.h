@@ -83,13 +83,29 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
    for( i = 0; i < this->nconss; i++ )
    {
       int block = partition[i];
-      SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
-      ++(nsubscipconss[block]);
+
+      if(block == -1)
+      {
+         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (nblocks +1)) );
+      }
+      else
+      {  assert(block >= 0);
+         assert(block < nblocks);
+         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
+         ++(nsubscipconss[block]);
+      }
+
    }
+
+
+   // TODO: remove- FOR DEBUG ONLY!!!
+   std::vector<int> nsubscipconss_dbg(nblocks);
 
    /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
    for( i = 0; i < nblocks; ++i )
    {
+      // TODO: remove- FOR DEBUG ONLY!!!
+      nsubscipconss_dbg[i] = nsubscipconss[i];
       if( nsubscipconss[i] == 0 )
       {
          SCIPdebugMessage("Block %d does not have any constraints!\n", i);
@@ -105,6 +121,111 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
    else {
       SCIPhashmapFree(&constoblock);
       *decomp = NULL;
+   }
+
+   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE RowGraph<T>::createSeeedFromPartition(
+   Seeed*      oldSeeed,
+   Seeed**     firstSeeed,
+   Seeed**     secondSeeed,
+   Seeedpool*  seeedpool
+   )
+{
+   int nblocks;
+   SCIP_HASHMAP* constoblock;
+
+   int *nsubscipconss;
+   int i;
+   SCIP_Bool emptyblocks = FALSE;
+
+   //fillout conssForGraph
+   std::vector<int> conssForGraph; /** stores the conss included by the graph */
+   std::vector<bool> conssBool(oldSeeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+   bool found;
+
+   for(int c = 0; c < oldSeeed->getNOpenconss(); ++c)
+   {
+      int cons = oldSeeed->getOpenconss()[c];
+      found = false;
+      for(int v = 0; v < oldSeeed->getNOpenvars() && !found; ++v)
+      {
+         int var = oldSeeed->getOpenvars()[v];
+         for(i = 0; i < seeedpool->getNVarsForCons(cons) && !found; ++i)
+         {
+            if(var == seeedpool->getVarsForCons(cons)[i])
+            {
+               conssBool[cons] = true;
+               found = true;
+            }
+         }
+      }
+   }
+
+   for(int c = 0; c < oldSeeed->getNOpenconss(); ++c)
+   {
+      int cons = oldSeeed->getOpenconss()[c];
+      if(conssBool[cons])
+         conssForGraph.push_back(cons);
+   }
+
+   std::vector<int> partition = graph.getPartition();
+   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
+
+   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   BMSclearMemoryArray(nsubscipconss, nblocks);
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+
+   /* assign constraints to partition */
+   for( i = 0; i < this->nconss; i++ )
+   {
+      int block = partition[i];
+
+      if(block == -1)
+      {
+         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) conssForGraph[i], (void*) (size_t) (nblocks +1)) );
+      }
+      else
+      {  assert(block >= 0);
+         assert(block < nblocks);
+         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) conssForGraph[i], (void*) (size_t) (block +1)) );
+         ++(nsubscipconss[block]);
+      }
+
+   }
+
+
+   // TODO: remove- FOR DEBUG ONLY!!!
+   std::vector<int> nsubscipconss_dbg(nblocks);
+
+   /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
+   for( i = 0; i < nblocks; ++i )
+   {
+      // TODO: remove- FOR DEBUG ONLY!!!
+      nsubscipconss_dbg[i] = nsubscipconss[i];
+      if( nsubscipconss[i] == 0 )
+      {
+         SCIPdebugMessage("Block %d does not have any constraints!\n", i);
+         emptyblocks = TRUE;
+      }
+   }
+
+   if( !emptyblocks )
+   {
+      (*firstSeeed) = new Seeed(oldSeeed);
+      SCIP_CALL( (*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
+      (*secondSeeed) = new Seeed(oldSeeed);
+      SCIP_CALL( (*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIPhashmapFree(&constoblock);
+   }
+   else {
+      SCIPhashmapFree(&constoblock);
+      (*firstSeeed) = NULL;
+      (*secondSeeed) = NULL;
    }
 
    SCIPfreeBufferArray(this->scip_, &nsubscipconss);
@@ -136,7 +257,7 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
    this->nvars = nvars_;
    this->nconss = nconss_;
 
-   /* go through all variables */
+   /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
       TCLIQUE_WEIGHT weight;

@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # For release versions, only use VERSION="x.x.x".
 # For development versions, use VERSION="x.x.x.x" with subversion number.
-VERSION="2.1.4"
+VERSION="3.0.0"
 NAME="gcg-$VERSION"
 rm -f $NAME
 ln -s . $NAME
@@ -14,12 +14,10 @@ fi
 # run git status to clean the dirty git hash
 git status
 
-echo generating default setting files
-make LPS=none OPT=opt READLINE=false ZLIB=false ZIMPL=false scip -j4
-make LPS=none OPT=opt READLINE=false ZLIB=false ZIMPL=false BLISS=false GTEST=false -j4
-bin/gcg -c "set default set save doc/inc/parameters.set quit"
-
-sed -i '$ d' doc/inc/parameters.set
+#echo generating default setting files
+#make LPS=none OPT=opt READLINE=false ZLIB=false ZIMPL=false BLISS=false GTEST=false -j4
+#bin/gcg -c "set default set save doc/inc/parameters.set quit"
+#sed -i '$ d' doc/inc/parameters.set
 
 # Before we create a tarball change the director and file rights in a command way
 echo adjust file modes

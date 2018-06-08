@@ -1,0 +1,6 @@
+# SCIP version 3.0.2.1
+
+detection/emphfast/enabled = TRUE
+detection/smartscore/enabled = FALSE
+detection/detectors/hrcgpartition/overruleemphasis = TRUE
+detection/detectors/hrcgpartition/maxnblockcandidates = 1

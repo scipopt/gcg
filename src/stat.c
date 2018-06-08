@@ -107,15 +107,9 @@ SCIP_RETCODE GCGwriteSolvingDetails(
       SCIPinfoMessage(scip, NULL, "  %d: %6.2f\n", current->depth, current->data);
       current = current->next;
    }
-   SCIPinfoMessage(scip, NULL, "Dual Bounds:\n");
-   current = GCGgetDualboundsList(scip);
-   current = current->next;
-   while( current != NULL )
-   {
-      SCIPinfoMessage(scip, NULL, "  %d: %f\n", current->depth, current->data);
-      current = current->next;
-   }
-   
+
+   DECdecompFree(scip, &decomposition);
+
    return SCIP_OKAY;
 }
 

@@ -1,0 +1,66 @@
+# SCIP version 4.0.1
+
+# frequency for solving LP at the nodes (-1: never; 0: only root LP)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 1]
+lp/solvefreq = -1
+
+# should SCIP calculate the primal dual integral value?
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+misc/calcintegral = FALSE
+
+# maximal number of restarts (-1: unlimited)
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
+presolving/maxrestarts = 0
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/linear/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/knapsack/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/logicor/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/setppc/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/varbound/sepafreq = -1
+
+# frequency for calling separator <clique> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+separating/clique/freq = -1
+
+# frequency for calling separator <cmir> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+separating/cmir/freq = -1
+
+# frequency for calling separator <flowcover> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+separating/flowcover/freq = -1
+
+# frequency for calling separator <gomory> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+separating/gomory/freq = -1
+
+# frequency for calling separator <impliedbounds> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+separating/impliedbounds/freq = -1
+
+# frequency for calling separator <mcf> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+separating/mcf/freq = -1
+
+# frequency for calling separator <strongcg> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+separating/strongcg/freq = -1
+
+# maximal number of pricing problems to be solved during one pricing loop
+# [type: int, advanced: TRUE, range: [1,2147483647], default: 2147483647]
+pricing/masterpricer/chunksize = 2
+

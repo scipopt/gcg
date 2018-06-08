@@ -51,18 +51,39 @@ public:
    GraphTclique();
 
    virtual ~GraphTclique();
+   virtual SCIP_RETCODE addNNodes(int _n_nodes);
+   virtual SCIP_RETCODE addNNodes(int _n_nodes, std::vector<int> weights);
    virtual int getNNodes();
    virtual int getNEdges();
+   virtual SCIP_RETCODE getEdges(std::vector<void*>& edges);
    virtual SCIP_Bool isEdge(int i, int j);
    virtual int getNNeighbors(int i);
    virtual std::vector<int> getNeighbors(int i);
    virtual SCIP_RETCODE addNode(int i, int weight);
+   virtual SCIP_RETCODE addNode();
    virtual SCIP_RETCODE deleteNode(int i);
    virtual SCIP_RETCODE addEdge(int i, int j);
+   virtual SCIP_RETCODE addEdge(int i, int j, double weight);
+   virtual SCIP_RETCODE setEdge(int i, int j, double weight);
+   virtual double getEdgeWeight(int i, int j);
+   virtual std::vector<std::pair<int, double> > getNeighborWeights(int i);
    virtual SCIP_RETCODE deleteEdge(int i, int j);
    virtual int graphGetWeights(int i);
 
    virtual SCIP_RETCODE flush();
+   virtual SCIP_RETCODE normalize();
+   virtual double getEdgeWeightPercentile(double q);
+
+#ifdef WITH_GSL
+   void expand(int factor) {return;}
+   void inflate(double factor) {return;}
+   void colL1Norm() {return;}
+   void prune() {return;}
+   bool stopMCL(int iter) {return true;}
+   std::vector<int> getClustersMCL() {return std::vector<int>();}
+   virtual void initMCL() {return;}
+   virtual void clearMCL() {return;}
+#endif
 };
 
 } /* namespace gcg */

@@ -70,6 +70,7 @@ public:
       SCIP_Bool          writeweights        /**< whether to write weights */
     ) = 0;
 
+
    /**
     * reads the partition from the given file.
     * The format is graph dependent. The default is a file with one line for each node a

@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -99,6 +99,10 @@ echo set display freq $DISPFREQ        >> $TMPFILE
 # avoid switching to dfs - better abort with memory error
 echo set memory savefac 1.0            >> $TMPFILE
 echo set save $SETFILE                 >> $TMPFILE
+if test "$STATISTICS" = "true"
+then
+    echo set visual vbcfilename $GCGPATH/results/vbc/$SHORTPROBNAME.$SETNAME.vbc >> $TMPFILE
+fi
 
 if test "$REOPT" = false
 then
@@ -145,7 +149,7 @@ EOF
 		fi
 		echo optimize                      >> $TMPFILE
 		echo display statistics            >> $TMPFILE
-      if test $STATISTICS = "true"
+      if test "$STATISTICS" = "true"
       then
          echo display additionalstatistics  >> $TMPFILE
       fi

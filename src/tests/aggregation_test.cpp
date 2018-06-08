@@ -49,9 +49,11 @@ class GcgAggregationTest : public ::testing::Test {
      SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
      SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "propagating/maxrounds", 0) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/random/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/staircase/enabled", FALSE) );
      SCIP_CALL_ABORT( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
      SCIP_CALL_ABORT( SCIPcreateProbBasic(scip, "prob") );
    }
@@ -110,7 +112,6 @@ TEST_F(GcgAggregationTest, AggregateTest) {
    ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
 }
 
-
 TEST_F(GcgAggregationTest, WrongObjTest) {
    SCIP_RESULT result;
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
@@ -134,20 +135,23 @@ TEST_F(GcgAggregationTest, WrongObjTest) {
    ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
 }
 
+
+
 TEST_F(GcgAggregationTest, WrongTypeTest) {
    DEC_DECOMP* decomp;
    SCIP_CONS* mastercons;
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,1]") );
-   SCIP_CALL_EXPECT( createVar("[continuous] <x4>: obj=1.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[continuous] <x4>: obj=2.0, original bounds=[0,3]") );
 
    SCIP_CALL_EXPECT( createCons("[linear] <c1>: 2<x1>[I] +2<x2>[I] <= 5") );
    SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x3>[I] +2<x4>[I] <= 5") );
-   SCIP_CALL_EXPECT( createCons("[linear] <c3>: <x1>[I] +<x2>[C] == 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: <x1>[I] +<x3>[C] == 1") );
 
    SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
    mastercons = SCIPfindCons(scip, "c3");
+   assert(mastercons != NULL);
    SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, &(mastercons), 1) );
    SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );

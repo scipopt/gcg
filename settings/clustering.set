@@ -1,0 +1,64 @@
+# SCIP version 3.0.0
+
+# frequency for solving LP at the nodes (-1: never; 0: only root LP)
+# [type: int, range: [-1,2147483647], default: 1]
+lp/solvefreq = -1
+
+# flag to indicate whether detector <connected> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/connected/enabled = TRUE
+
+# Type of the graph: 'c' column hypergraph, 'r' row hypergraph, 'a' column-row hypergraph
+# [type: char, range: {cra}, default: r]
+detection/detectors/arrowheur/type = a
+detection/detectors/arrowheur/enabled = TRUE
+
+# flag to indicate whether detector <staircase> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/staircase/enabled = FALSE
+
+# flag to indicate whether detector <random> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/random/enabled = FALSE
+
+# flag to indicate whether detector <isomorph> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/isomorph/enabled = FALSE
+
+
+# flag to indicate whether detector <colors> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/colors/enabled = FALSE
+
+# flag to indicate whether detector <cutpacking> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/cutpacking/enabled = FALSE
+
+# flag to indicate whether detector <stairheur> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/stairheur/enabled = FALSE
+
+# setting for the clustering algorithms
+detection/detectors/dbscan/enabled = TRUE
+detection/detectors/dbscan/niterations = 81
+detection/detectors/dbscan/johson = TRUE
+detection/detectors/dbscan/jaccard = TRUE
+detection/detectors/dbscan/cosine = TRUE
+detection/detectors/dbscan/simpson = TRUE
+detection/detectors/dbscan/postprocenable = TRUE
+
+detection/detectors/mst/enabled = TRUE
+detection/detectors/mst/niterations = 31
+detection/detectors/mst/johson = TRUE
+detection/detectors/mst/jaccard = TRUE
+detection/detectors/mst/cosine = TRUE
+detection/detectors/mst/simpson = TRUE
+detection/detectors/mst/postprocenable = TRUE
+
+detection/detectors/mcl/enabled = TRUE
+detection/detectors/mcl/niterations = 13
+detection/detectors/mcl/johson = FALSE
+detection/detectors/mcl/jaccard = FALSE
+detection/detectors/mcl/cosine = FALSE
+detection/detectors/mcl/simpson = TRUE
+detection/detectors/mcl/postprocenable = TRUE

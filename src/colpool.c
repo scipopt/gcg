@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -465,7 +465,7 @@ SCIP_RETCODE GCGcolpoolUpdateRedcost(
 
       redcost = GCGcomputeRedCostGcgCol(colpool->scip, colpool->infarkas, col, NULL);
 
-      SCIP_CALL( GCGcolUpdateRedcost(col, redcost, FALSE) );
+      GCGcolUpdateRedcost(col, redcost, FALSE);
    }
 
    return SCIP_OKAY;
@@ -547,4 +547,3 @@ SCIP_Longint GCGcolpoolGetNColsFound(
 
    return colpool->ncolsfound;
 }
-

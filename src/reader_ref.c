@@ -715,6 +715,9 @@ SCIP_RETCODE writeREFFile(
       SCIPinfoMessage(scip, file, "\n", nblocks);
    }
    SCIPhashmapFree(&cons2origindex);
+
+   DECdecompFree(scip, &decomp);
+
    return SCIP_OKAY;
 }
 

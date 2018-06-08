@@ -120,9 +120,7 @@ public:
    void updateAlphaMisprice();
 
    /** updates the alpha after successful pricing */
-   void updateAlpha(
-      GCG_COL**            pricingcols         /**< columns of the pricing problems */
-   );
+   void updateAlpha();
 
    /** returns whether the stabilization is active */
    SCIP_Bool isStabilized();

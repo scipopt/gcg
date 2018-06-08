@@ -36,10 +36,88 @@
 #include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
+#include "benders_gcg.h"
 #include "pub_gcgvar.h"
 #include "cons_decomp.h"
-
+#include "gcgsort.h"
 #include <string.h>
+#include <unistd.h>
+
+/** computes the generator of mastervar for the entry in origvar
+ * @return entry of the generator corresponding to origvar */
+static
+SCIP_Real getGeneratorEntry(
+   SCIP_VAR*             mastervar,          /**< current mastervariable */
+   SCIP_VAR*             origvar             /**< corresponding origvar */
+   )
+{
+   int i;
+   SCIP_VAR** origvars;
+   SCIP_Real* origvals;
+   int norigvars;
+
+   assert(mastervar != NULL);
+   assert(origvar != NULL);
+
+   origvars = GCGmasterVarGetOrigvars(mastervar);
+   norigvars = GCGmasterVarGetNOrigvars(mastervar);
+   origvals = GCGmasterVarGetOrigvals(mastervar);
+
+   for( i = 0; i < norigvars; ++i )
+   {
+      if( origvars[i] == origvar )
+      {
+         return origvals[i];
+      }
+   }
+
+   return 0.0;
+}
+
+/** comparefunction for lexicographical sort */
+static
+GCG_DECL_SORTPTRCOMP(mastervarcomp)
+{
+   SCIP* origprob = (SCIP *) userdata; /* TODO: continue here */
+   SCIP_VAR* mastervar1;
+   SCIP_VAR* mastervar2;
+   SCIP_VAR** origvars;
+   int norigvars;
+   int i;
+
+   mastervar1 = elem1;
+   mastervar2 = elem2;
+
+   assert(mastervar1 != NULL);
+   assert(mastervar2 != NULL);
+
+   if( GCGvarGetBlock(mastervar1) < 0 )
+   {
+      SCIPdebugMessage("linkingvar or directy transferred var\n");
+   }
+   if( GCGvarGetBlock(mastervar2) < 0 )
+   {
+      SCIPdebugMessage("linkingvar or directy transferred var\n");
+   }
+
+   /* TODO: get all original variables (need scip...maybe from pricer via function and scip_ */
+   origvars = SCIPgetVars(origprob);
+   norigvars = SCIPgetNVars(origprob);
+
+   for( i = 0; i < norigvars; ++i )
+   {
+      if( SCIPvarGetType(origvars[i]) > SCIP_VARTYPE_INTEGER )
+         continue;
+
+      if( SCIPisFeasGT(origprob, getGeneratorEntry(mastervar1, origvars[i]), getGeneratorEntry(mastervar2, origvars[i])) )
+         return -1;
+      if( SCIPisFeasLT(origprob, getGeneratorEntry(mastervar1, origvars[i]), getGeneratorEntry(mastervar2, origvars[i])) )
+         return 1;
+   }
+
+   return 0.0;
+}
+
 /** transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method
  */
@@ -55,11 +133,14 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP_Real* blockvalue;
    SCIP_Real increaseval;
    SCIP_VAR** mastervars;
+   SCIP_VAR** mastervarsall;
    SCIP_Real* mastervals;
+   int nmastervarsall;
    int nmastervars;
    SCIP_VAR** vars;
    int nvars;
    SCIP_Real feastol;
+   SCIP_Bool discretization;
    int i;
    int j;
 
@@ -71,6 +152,18 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
 
    assert( !SCIPisInfinity(scip, SCIPgetSolOrigObj(masterprob, mastersol)) );
 
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+   {
+      SCIP_SOL* relaxsol;
+
+      relaxsol = GCGgetBendersRelaxationSol(scip);
+
+      SCIP_CALL( SCIPcreateSolCopy(scip, origsol, relaxsol) );
+      SCIP_CALL( SCIPunlinkSol(scip, *origsol) );
+
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( SCIPcreateSol(scip, origsol, GCGrelaxGetProbingheur(scip)) );
 
    if( !GCGmasterIsSolValid(masterprob, mastersol) )
@@ -79,13 +172,55 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );
    SCIP_CALL( SCIPallocBufferArray(scip, &blocknrs, npricingprobs) );
 
-   /* get variables of the master problem and their solution values */
-   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
-   assert(mastervars != NULL);
-   assert(nmastervars >= 0);
+   SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &discretization) );
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
-   SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervars, mastervars, mastervals) );
+   if( discretization && (SCIPgetNContVars(scip) > 0) )
+   {
+      /* get variables of the master problem and their solution values */
+      SCIP_CALL( SCIPgetVarsData(masterprob, &mastervarsall, &nmastervarsall, NULL, NULL, NULL, NULL) );
+
+      assert(mastervarsall != NULL);
+      assert(nmastervarsall >= 0);
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervars, nmastervarsall) );
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervarsall) );
+
+      SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervarsall, mastervarsall, mastervals) );
+
+      nmastervars = 0;
+
+      for( i = 0; i < nmastervarsall; ++i )
+      {
+         SCIP_Real solval;
+
+         assert( i >= nmastervars );
+         solval = mastervals[i];
+
+         if( SCIPisPositive(scip, solval) )
+         {
+            mastervars[nmastervars] = mastervarsall[i];
+            mastervals[nmastervars] = solval;
+
+            ++nmastervars;
+         }
+      }
+
+      /* sort mastervariables lexicographically */
+      GCGsortPtrPtr((void**)mastervars, (void**) mastervals, mastervarcomp, scip, nmastervars );
+   }
+   else
+   {
+      /* get variables of the master problem and their solution values */
+      SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+
+      assert(mastervars != NULL);
+      assert(nmastervars >= 0);
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
+
+      SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervars, mastervars, mastervals) );
+   }
 
    /* initialize the block values for the pricing problems */
    for( i = 0; i < npricingprobs; i++ )
@@ -214,6 +349,8 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       assert(!SCIPisFeasNegative(masterprob, mastervals[i]));
    }
 
+   /* TODO: Change order of mastervars */
+
    /* loop over all given master variables */
    for( i = 0; i < nmastervars; i++ )
    {
@@ -293,6 +430,12 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    }
 
    SCIPfreeBufferArray(scip, &mastervals);
+
+   if( discretization && (SCIPgetNContVars(scip) > 0) )
+   {
+      SCIPfreeBufferArray(scip, &mastervars);
+   }
+
    SCIPfreeBufferArray(scip, &blocknrs);
    SCIPfreeBufferArray(scip, &blockvalue);
 
@@ -451,27 +594,128 @@ SCIP_RETCODE GCGprintStatistics(
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\nMaster Program statistics:\n");
    SCIP_CALL( SCIPprintStatistics(GCGgetMasterprob(scip), file) );
-   if( SCIPgetStage(GCGgetMasterprob(scip)) > SCIP_STAGE_PRESOLVED )
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE
+      && SCIPgetStage(GCGgetMasterprob(scip)) > SCIP_STAGE_PRESOLVED )
    {
       GCGpricerPrintPricingStatistics(GCGgetMasterprob(scip), file);
    }
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program statistics:\n");
-   SCIP_CALL( SCIPprintStatistics(scip, file) );
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program statistics:\n");
+      SCIP_CALL( SCIPprintStatistics(scip, file) );
+   }
+   else
+   {
+      assert(GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program Solution statistics:\n");
+      SCIPprintSolutionStatistics(scip, file);
+   }
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
-   if( SCIPgetStage(scip) >= SCIP_STAGE_SOLVING )
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE
+      && SCIPgetStage(scip) >= SCIP_STAGE_SOLVING )
    {
       SCIP_CALL( GCGmasterPrintSimplexIters(GCGgetMasterprob(scip), file) );
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
    }
    SCIP_CALL( GCGprintDetectorStatistics(scip, file) );
-   if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING )
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING && GCGgetNPricingprobs(scip) > 0 )
    {
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
       SCIP_CALL( GCGprintDecompStatistics(scip, file) );
    }
    return SCIP_OKAY;
 }
+
+SCIP_RETCODE GCGprintInstanceName(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "filename: %s \n", GCGgetFilename(scip) );
+   return SCIP_OKAY;
+}
+
+
+SCIP_RETCODE GCGprintMiplibStructureInformation(
+   SCIP*                scip,
+   SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */
+   )
+{
+   FILE* file;
+
+   char* filepath;
+   char completefilepath[SCIP_MAXSTRLEN];
+
+   SCIPgetStringParam(scip, "write/miplib2017featurefilepath", &filepath);
+
+   (void) SCIPsnprintf(completefilepath, SCIP_MAXSTRLEN, "%s%s", filepath, ".csv");
+
+
+   file = fopen(completefilepath, "w");
+   if( file == NULL )
+   {
+      SCIPdialogMessage(scip, NULL, "error creating file <%s>\n", completefilepath);
+      SCIPprintSysError(completefilepath);
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( GCGprintMiplibBaseInformationHeader(scip, file) );
+
+
+   SCIP_CALL( GCGprintMiplibBaseInformation(scip, file) );
+
+   SCIP_CALL( GCGprintMiplibConnectedInformation(scip, file) );
+
+   SCIP_CALL( GCGprintMiplibDecompInformation(scip, file) );
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n, " );
+
+
+   fclose(file);
+
+   return SCIP_OKAY;
+}
+
+
+
+
+/** print out complete detection statistics */
+SCIP_RETCODE GCGprintCompleteDetectionStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   assert(scip != NULL);
+
+   if( !GCGdetectionTookPlace(scip) )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nDetection did not take place so far\n");
+      return SCIP_OKAY;
+   }
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nStart writing complete detection information:\n");
+
+   SCIP_CALL( GCGprintInstanceName(scip, file) );
+
+
+
+   GCGprintBlockcandidateInformation(scip, file);
+
+   GCGprintCompleteDetectionTime(scip, file);
+
+   GCGprintClassifierInformation(scip, file);
+
+   GCGprintDecompInformation(scip, file);
+
+//   GCGprintMiplibStructureInformation(scip, file);
+
+   return SCIP_OKAY;
+}
+
+
 
 /** returns whether the constraint belongs to GCG or not */
 SCIP_Bool GCGisConsGCGCons(

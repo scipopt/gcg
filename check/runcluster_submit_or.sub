@@ -1,0 +1,18 @@
+################################
+# 
+################################
+Universe = vanilla
+# Universe = standard
+
+should_transfer_files = IF_NEEDED
+when_to_transfer_output = ON_EXIT
+# when_to_transfer_output = ON_EXIT_OR_EVICT
+
+Executable = $GCGPATH/../check/runcluster_or.sh
+Arguments  = " $AGUMENTS $(process)"
+
+Log = $SOLVERPATH/results/condor_Log.$(Cluster).$(process).txt
+Output = $SOLVERPATH/results/condor_Out.$(Cluster).$(process).txt
+Error = $SOLVERPATH/results/condorErr.$(Cluster).$(process).txt
+
+Queue $COUNT

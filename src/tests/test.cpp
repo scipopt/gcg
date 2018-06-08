@@ -79,9 +79,15 @@ class GcgResultTest : public ::testing::Test {
      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
      SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrgpartition/origenabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/origenabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/origenabled", FALSE) );
+
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/staircase/enabled", FALSE) );
+
 
      SCIP_CALL_ABORT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
      SCIP_CALL_ABORT( SCIPpresolve(scip) );
@@ -97,7 +103,6 @@ class GcgResultTest : public ::testing::Test {
 };
 
 SCIP* GcgResultTest::scip = NULL;
-
 
 TEST_F(GcgTest, StatusTest) {
    ASSERT_EQ(SCIP_STATUS_UNKNOWN, SCIPgetStatus(scip));
@@ -115,6 +120,7 @@ TEST_F(GcgTest, isGcgTest) {
    EXPECT_TRUE(GCGisOriginal(scip));
    EXPECT_TRUE(GCGisMaster(GCGgetMasterprob(scip)));
 }
+
 
 TEST_F(GcgTest, emptyProblem) {
    SCIP_SOL* bestsol;
@@ -154,9 +160,13 @@ class GcgLibTest : public ::testing::Test {
    virtual void SetUp() {
       SCIP_CALL_ABORT( SCIPcreate(&scip) );
       SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
-      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
-      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
-      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
+      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrgpartition/enabled", FALSE) );
+       SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
+       SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
+       SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrgpartition/origenabled", FALSE) );
+        SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/origenabled", FALSE) );
+        SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/origenabled", FALSE) );
+
       SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
       SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
    }
@@ -168,11 +178,12 @@ class GcgLibTest : public ::testing::Test {
 
 SCIP* GcgLibTest::scip = NULL;
 
-
 TEST_F(GcgLibTest, FreeTransformTest) {
    SCIP_RESULT result;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
-   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+   SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrgpartition/enabled", FALSE) );
+    SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
+    SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
@@ -193,7 +204,9 @@ TEST_F(GcgLibTest, FreeTransformTest) {
 TEST_F(GcgLibTest, FreeProbTest) {
    SCIP_RESULT result;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
-   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+   SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrgpartition/enabled", FALSE) );
+    SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
+    SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
@@ -216,7 +229,9 @@ TEST_F(GcgLibTest, FreeSolveTest) {
    int nconss;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
    nconss = SCIPgetNConss(scip);
-   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+   SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrgpartition/enabled", FALSE) );
+    SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
+    SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
@@ -234,7 +249,6 @@ TEST_F(GcgLibTest, FreeSolveTest) {
    ASSERT_EQ(SCIP_STATUS_OPTIMAL, SCIPgetStatus(scip));
    ASSERT_EQ(nconss+1, SCIPgetNConss(scip));
 }
-
 class GcgDecTest : public ::testing::Test {
  protected:
   static SCIP *scip;
@@ -243,9 +257,10 @@ class GcgDecTest : public ::testing::Test {
      SCIP_CALL_ABORT( SCIPcreate(&scip) );
      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/staircase/enabled", FALSE) );
    }
 
    virtual void TearDown() {
@@ -254,6 +269,7 @@ class GcgDecTest : public ::testing::Test {
 };
 
 SCIP* GcgDecTest::scip = NULL;
+
 
 TEST_F(GcgDecTest, ReadDecTest) {
    SCIP_RESULT result;
@@ -306,7 +322,7 @@ TEST_F(GcgDecTest, ReadBlkTest) {
 TEST_F(GcgDecTest, NoDecTest) {
    DEC_DECOMP* decomp;
 
-   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPreadProb(scip, "lib/scip/check/instances/MIP/bell5.mps", "mps") );
    ASSERT_EQ(0, SCIPconshdlrDecompGetNDecdecomps(scip));
    SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
    SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "constraints/decomp/createbasicdecomp", 1) );
@@ -314,17 +330,15 @@ TEST_F(GcgDecTest, NoDecTest) {
 
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
    ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
-   ASSERT_NEAR(15.873333333333, SCIPgetLowerbound(scip), SCIPfeastol(scip));
+   ASSERT_NEAR(+8.96640649152000e+06, SCIPgetLowerbound(scip), SCIPfeastol(scip));
    SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "constraints/decomp/createbasicdecomp", 0) );
    ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
    SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
 
    decomp = SCIPconshdlrDecompGetDecdecomps(scip)[0];
    ASSERT_TRUE(decomp != NULL);
-   ASSERT_EQ(0, DECdecompGetNBlocks(decomp));
-   ASSERT_EQ(SCIPgetNOrigConss(scip), DECdecompGetNLinkingconss(decomp));
-   ASSERT_EQ(SCIPgetNOrigVars(scip), DECdecompGetNLinkingvars(decomp));
-   ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) == NULL);
+   ASSERT_EQ(1, DECdecompGetNBlocks(decomp));
+   ASSERT_EQ(DECdecompGetNLinkingconss(decomp), 0 );
 }
 
 TEST_F(GcgDecTest, WrongDecompTestBlk) {
@@ -531,6 +545,7 @@ TEST_F(GcgMultProbsTest, FreeTransformTest) {
    SCIP_CALL_EXPECT( DECdetectStructure(scipone, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scipone) );
 }
+
 
 
 int main(int argc, char** argv) {

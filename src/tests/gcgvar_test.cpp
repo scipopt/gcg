@@ -362,7 +362,7 @@ TEST_F(GcgVarTest, OriginalVarAddFirstBlock) {
    ORIGVAR(ovar, ovardata);
    ovardata.blocknr = 0;
 
-   SCIP_CALL_EXPECT(GCGoriginalVarAddBlock(scip, &ovar, 2, 4));
+   SCIP_CALL_EXPECT(GCGoriginalVarAddBlock(scip, &ovar, 2, 4, DEC_DECMODE_DANTZIGWOLFE));
    ASSERT_NE((GCG_LINKINGVARDATA*) NULL, ovardata.data.origvardata.linkingvardata);
 
    ASSERT_NE((SCIP_VAR**) NULL, ovardata.data.origvardata.linkingvardata->pricingvars);
@@ -389,7 +389,7 @@ TEST_F(GcgVarTest, OriginalVarAddSecondBlock) {
    linkingvardata.nblocks = 2;
    linkingvardata.linkconss = conss;
    lvardata.data.origvardata.linkingvardata = &linkingvardata;
-   SCIP_CALL_EXPECT(GCGoriginalVarAddBlock(scip, &lvar, 1, 3));
+   SCIP_CALL_EXPECT(GCGoriginalVarAddBlock(scip, &lvar, 1, 3, DEC_DECMODE_DANTZIGWOLFE));
    ASSERT_EQ(&lvar, linkingvardata.pricingvars[0]);
    ASSERT_EQ(&lvar, linkingvardata.pricingvars[1]);
    ASSERT_EQ(&lvar, linkingvardata.pricingvars[2]);
@@ -639,8 +639,8 @@ TEST_F(GcgVarTest, LinkingVarCreatePricingVar)
    SCIP_CALL_EXPECT(SCIPcreateVarBasic(scip, &ovar, "test", 0.0, 1.0, 2.0, SCIP_VARTYPE_BINARY));
    SCIPvarSetData(ovar, &ovardata);
 
-   SCIP_CALL_EXPECT(GCGlinkingVarCreatePricingVar(scip, scip, 0, ovar, &pricingvar, &linkcons));
-
+   SCIP_CALL_EXPECT(GCGlinkingVarCreatePricingVar(scip, 0, ovar, &pricingvar));
+   GCGlinkingVarCreateMasterCons(scip,0, ovar, &linkcons);
    ASSERT_NE((SCIP_VAR*) NULL, pricingvar);
    ASSERT_NE((SCIP_CONS*) NULL, linkcons);
    ASSERT_EQ(0, SCIPgetNVarsLinear(scip, linkcons));
@@ -694,7 +694,7 @@ TEST_F(GcgVarTest, CreateMasterVar)
    SCIPvarSetData(solvars[1], &(pvardata[1]));
    SCIP_CALL_EXPECT(SCIPincludeRelaxGcg(scip));
 
-   SCIP_CALL_EXPECT(GCGcreateMasterVar(scip, scip, scip, &newvar, "newname", 1.0, SCIP_VARTYPE_INTEGER, FALSE, 0, 2, solvals, solvars));
+   SCIP_CALL_EXPECT(GCGcreateMasterVar(scip, scip, scip, &newvar, "newname", 1.0, SCIP_VARTYPE_INTEGER, FALSE, 0, 2, solvals, solvars, DEC_DECMODE_DANTZIGWOLFE));
 
    ASSERT_NE((SCIP_VAR*)NULL, newvar);
    ASSERT_EQ(1.0, SCIPvarGetObj(newvar));

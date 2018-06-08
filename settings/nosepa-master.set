@@ -1,0 +1,78 @@
+# SCIP version 5.0.2
+
+# verbosity level of output
+# [type: int, advanced: FALSE, range: [0,5], default: 4]
+display/verblevel = 0
+
+# should new non-basic columns be removed after LP solving?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
+lp/cleanupcols = TRUE
+
+# should new non-basic columns be removed after root LP solving?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
+lp/cleanupcolsroot = TRUE
+
+# disable the cutoff bound in the LP solver? (0: enabled, 1: disabled, 2: auto)
+# [type: int, advanced: TRUE, range: [0,2], default: 2]
+lp/disablecutoff = 1
+
+# maximal number of variables priced in per pricing round
+# [type: int, advanced: FALSE, range: [1,2147483647], default: 100]
+pricing/maxvars = 2147483647
+
+# maximal number of priced variables at the root node
+# [type: int, advanced: FALSE, range: [1,2147483647], default: 2000]
+pricing/maxvarsroot = 2147483647
+
+# pricing is aborted, if fac * pricing/maxvars pricing candidates were found
+# [type: real, advanced: FALSE, range: [1,1.79769313486232e+308], default: 2]
+pricing/abortfac = 1
+
+# should variables created at the current node be deleted when the node is solved in case they are not present in the LP anymore?
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+pricing/delvars = TRUE
+
+# should variables created at the root node be deleted when the root is solved in case they are not present in the LP anymore?
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+pricing/delvarsroot = TRUE
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/linear/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 1]
+constraints/and/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/knapsack/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/logicor/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/or/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/setppc/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/varbound/sepafreq = -1
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+constraints/xor/sepafreq = -1
+
+# frequency for calling separator <master> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 1]
+separating/master/freq = -1
+
+# frequency for calling separator <basis> (-1: never, 0: only in root node)
+# [type: int, advanced: FALSE, range: [-1,65534], default: 0]
+separating/basis/freq = -1
+

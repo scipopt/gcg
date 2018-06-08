@@ -39,9 +39,12 @@
 #define GCG_HYPERCOLGRAPH_DEF_H_
 
 #include "hypercolgraph.h"
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 #include <set>
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 namespace gcg
 {
@@ -146,7 +149,7 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
    this->nvars = nvars_;
    this->nconss = nconss_;
 
-   /* go through all variables */
+   /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
       TCLIQUE_WEIGHT weight;
@@ -218,6 +221,97 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
 
    return SCIP_OKAY;
 }
+
+template <class T>
+SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
+      Seeedpool*        seeedpool,
+      Seeed*            seeed
+   )
+{
+   int i;
+   int j;
+   TCLIQUE_WEIGHT weight;
+   std::vector< std::vector<int> > hyperedges;
+   std::tr1::unordered_map<int, int> oldToNewConsIndex;
+   vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
+   vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+   vector<int> conssForGraph; /** stores the conss included by the graph */
+   vector<int> varsForGraph; /** stores the vars included by the graph */
+
+   //fillout conssForGraph and varsForGraph
+   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   {
+      int cons = seeed->getOpenconss()[c];
+      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      {
+         int var = seeed->getOpenvars()[v];
+         for(i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+         {
+            if(var == seeedpool->getVarsForCons(cons)[i])
+            {
+               varsBool[var] = true;
+               conssBool[cons] = true;
+            }
+         }
+      }
+   }
+
+   for(int v = 0; v < seeed->getNOpenvars(); ++v)
+   {
+      int var = seeed->getOpenvars()[v];
+      if(varsBool[var])
+         varsForGraph.push_back(var);
+   }
+   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   {
+      int cons = seeed->getOpenconss()[c];
+      if(conssBool[cons])
+         conssForGraph.push_back(cons);
+   }
+
+   this->nconss = (int)conssForGraph.size();
+   this->nvars = (int)varsForGraph.size();
+
+   /* go through all open constraints */
+   for( i = 0; i < this->nconss; ++i )
+   {
+      int oldConsId = conssForGraph[i];
+
+      /* calculate weight of node */
+      weight = this->weights.calculate(seeedpool->getConsForIndex(oldConsId));
+
+      oldToNewConsIndex.insert({oldConsId,i});
+
+      this->graph.addNode(i, weight);
+   }
+
+
+
+   /* go through all open variables */
+   for( i = 0; i < this->nvars; ++i )
+   {
+      std::vector<int> hyperedge;
+      int oldVarId = varsForGraph[i];
+
+      for( j = 0; j < seeedpool->getNConssForVar(oldVarId); ++j )
+      {
+         int oldConsId = seeedpool->getConssForVar(oldVarId)[j];
+         if(!conssBool[oldConsId])
+            continue;
+         hyperedge.insert(hyperedge.end(), oldToNewConsIndex[oldConsId]);
+      }
+      /* calculate weight of hyperedge */
+      weight = this->weights.calculate(seeedpool->getVarForIndex(oldVarId));
+      this->graph.addHyperedge(hyperedge, weight);
+   }
+
+
+   this->graph.flush();
+
+   return SCIP_OKAY;
+}
+
+
 template <class T>
 SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
    DEC_DECOMP**          decomp           /**< decomposition structure to generate */
@@ -245,6 +339,159 @@ SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
 
    SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
    SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+
+   return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
+   Seeed**     firstSeeed,
+   Seeed**     secondSeeed,
+   Seeedpool*  seeedpool
+   )
+{
+   SCIP_HASHMAP* constoblock;
+   SCIP_CONS** conss;
+   int nblocks;
+
+   std::vector<int> partition = this->getPartition();
+   conss = SCIPgetConss(this->scip_);
+   std::vector<bool> isEmptyBlock;
+   std::vector<int> nEmptyBlocksBefore;
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+
+   assert((size_t)SCIPgetNConss(this->scip_) == partition.size());
+   nblocks = 1+*std::max_element(partition.begin(), partition.end() );
+
+   /** add data structures to handle empty blocks */
+
+   isEmptyBlock = std::vector<bool>(nblocks, true);
+   nEmptyBlocksBefore = std::vector<int>(nblocks, 0);
+
+   for( int c = 0; c < this->nconss; ++c )
+   {
+      int consblock = partition[c]+1;
+      isEmptyBlock[consblock-1] = false;
+   }
+
+   for(int b1 = 0; b1 < nblocks; ++b1)
+   {
+       if (isEmptyBlock[b1] )
+       {
+           std::cout << "block  " << b1 << "  is an empty block " << std::endl;
+           for(int b2 = b1+1; b2 < nblocks; ++b2)
+               nEmptyBlocksBefore[b2]++;
+       }
+   }
+
+
+   for( int c = 0; c < this->nconss; ++c )
+   {
+       int consblock = partition[c]+1;
+       consblock -= nEmptyBlocksBefore[partition[c] ];
+       SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) seeedpool->getIndexForCons(conss[c]), (void*) (size_t) consblock) );
+   }
+
+   (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool);
+   SCIP_CALL((*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool));
+   (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool);
+   SCIP_CALL((*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool));
+   SCIPhashmapFree(&constoblock);
+
+   return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
+   Seeed*      oldSeeed,
+   Seeed**     firstSeeed,
+   Seeed**     secondSeeed,
+   Seeedpool*  seeedpool
+   )
+{
+   SCIP_HASHMAP* constoblock;
+   int nblocks;
+   std::vector<bool> isEmptyBlock;
+   std::vector<int> nEmptyBlocksBefore;
+   int nEmptyBlocks = 0;
+
+   if(this->nconss == 0)
+   {
+      (*firstSeeed) = NULL;
+      (*secondSeeed) = NULL;
+      return SCIP_OKAY;
+   }
+
+   std::vector<int> partition = this->getPartition();
+
+   //fillout conssForGraph
+   vector<int> conssForGraph; /** stores the conss included by the graph */
+   vector<bool> conssBool(oldSeeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+   bool found;
+
+   for(int c = 0; c < oldSeeed->getNOpenconss(); ++c)
+   {
+      int cons = oldSeeed->getOpenconss()[c];
+      found = false;
+      for(int v = 0; v < oldSeeed->getNOpenvars() && !found; ++v)
+      {
+         int var = oldSeeed->getOpenvars()[v];
+         for(int i = 0; i < seeedpool->getNVarsForCons(cons) && !found; ++i)
+         {
+            if(var == seeedpool->getVarsForCons(cons)[i])
+            {
+               conssBool[cons] = true;
+               found = true;
+            }
+         }
+      }
+   }
+
+   for(int c = 0; c < oldSeeed->getNOpenconss(); ++c)
+   {
+      int cons = oldSeeed->getOpenconss()[c];
+      if(conssBool[cons])
+         conssForGraph.push_back(cons);
+   }
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   nblocks = 1+*std::max_element(partition.begin(), partition.end() );
+   /** add data structures to handle empty blocks */
+
+   isEmptyBlock = std::vector<bool>(nblocks, true);
+   nEmptyBlocksBefore = std::vector<int>(nblocks, 0);
+
+   for( int c = 0; c < this->nconss; ++c )
+   {
+       int consblock = partition[c]+1;
+       isEmptyBlock[consblock-1] = false;
+   }
+
+   for(int b1 = 0; b1 < nblocks; ++b1)
+   {
+       if (isEmptyBlock[b1] )
+       {
+           nEmptyBlocks++;
+           for(int b2 = b1+1; b2 < nblocks; ++b2)
+               nEmptyBlocksBefore[b2]++;
+       }
+   }
+
+   for( int c = 0; c < this->nconss; ++c )
+   {
+       int consblock = partition[c]+1;
+       consblock -= nEmptyBlocksBefore[partition[c] ];
+       SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) conssForGraph[c], (void*) (size_t) consblock) );
+   }
+
+   nblocks -= nEmptyBlocks;
+
+   (*firstSeeed) = new Seeed(oldSeeed);
+   SCIP_CALL((*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks, seeedpool));
+   (*secondSeeed) = new Seeed(oldSeeed);
+   SCIP_CALL((*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks, seeedpool));
+   SCIPhashmapFree(&constoblock);
 
    return SCIP_OKAY;
 }

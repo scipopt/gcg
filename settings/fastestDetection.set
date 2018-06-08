@@ -1,0 +1,13 @@
+# SCIP version 3.0.2.1
+
+detection/detectors/hrcgpartition/maxcallround = 0
+detection/detectors/hcgpartition/maxcallround = 0
+detection/detectors/hrgpartition/maxcallround = 0
+detection/detectors/stairheur/maxcallround = 0
+detection/detectors/isomorph/maxcallround = 0
+detection/detectors/hrcgpartition/mincallround = 1
+detection/detectors/hcgpartition/mincallround = 1
+detection/detectors/hrgpartition/mincallround = 1
+detection/detectors/stairheur/mincallround = 1
+detection/detectors/isomorph/mincallround = 1
+limits/time = 10

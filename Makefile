@@ -6,7 +6,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -30,11 +30,12 @@
 #@author  Gerald Gamrath
 #@author  Martin Bergner
 #@author  Christian Puchert
+#@author  Matthias Walter
 
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	2.1.4
+VERSION         :=	3.0.0
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -42,7 +43,7 @@ SCIPDIR         =   lib/scip
 # necessary information
 #-----------------------------------------------------------------------------
 LIBDIR          =	lib
-DIRECTORIES     =	$(LIBDIR) $(LIBOBJDIR) $(LIBOBJSUBDIRS)
+DIRECTORIES     =	$(LIBDIR) $(LIBDIR)/shared $(LIBDIR)/include $(LIBDIR)/static $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 SOFTLINKS	=
 MAKESOFTLINKS	=	true
 
@@ -61,6 +62,8 @@ PROJECT		=	none
 GTEST		=	true
 PARASCIP	= 	true
 BLISS      	=   true
+CLIQUER     =   false
+HMETIS      =   true
 OPENMP      =   false
 GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
@@ -86,20 +89,46 @@ endif
 # BLISS
 #-----------------------------------------------------------------------------
 
-ifeq ($(BLISS),false)
-FLAGS		+=	-DNBLISS
-else
+ifeq ($(BLISS),true)
+FLAGS		+=	-DWITH_BLISS
 LDFLAGS		+= 	-lbliss
 ifeq ($(COMP),gnu)
-FLAGS		+=	-isystem$(LIBDIR)/blissinc
+FLAGS		+=	-isystem$(LIBDIR)/include
 else
-FLAGS		+=	-I$(LIBDIR)/blissinc
+FLAGS		+=	-I$(LIBDIR)/include
 endif
-SOFTLINKS	+=	$(LIBDIR)/blissinc
-SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
+SOFTLINKS	+=	$(LIBDIR)/include/bliss
+SOFTLINKS	+=	$(LIBDIR)/static/libbliss.$(STATICLIBEXT)
 LINKMSG		+=	"bliss graph isomorphism framework (disable by compiling with \"make BLISS=false\"):\n"
-LINKMSG		+=	" -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
-LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"blissinc/libbliss.$(STATICLIBEXT)\"\n"
+LINKMSG		+=	" -> bliss is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
+LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"bliss-0.72/libbliss.$(STATICLIBEXT)\"\n"
+endif
+
+#-----------------------------------------------------------------------------
+# Cliquer
+#-----------------------------------------------------------------------------
+
+ifeq ($(CLIQUER),true)
+FLAGS		+=	-DWITH_CLIQUER
+LDFLAGS		+= 	-lcliquer
+ifeq ($(COMP),gnu)
+FLAGS		+=	-isystem$(LIBDIR)/include
+else
+FLAGS		+=	-I$(LIBDIR)/include
+endif
+SOFTLINKS	+=	$(LIBDIR)/include/cliquer
+SOFTLINKS	+=	$(LIBDIR)/static/libcliquer.$(STATICLIBEXT)
+LINKMSG		+=	"cliquer library (disable by compiling with \"make CLIQUER=false\"):\n"
+LINKMSG		+=	" -> cliquer is the path to the cliquer include files, e.g., \"cliquer-1.21\"\n"
+LINKMSG		+=	" -> \"libcliquer.$(STATICLIBEXT)\" is the path to the cliquer library, e.g., \"cliquerinc/libcliquer.$(STATICLIBEXT)\"\n"
+endif
+
+#-----------------------------------------------------------------------------
+# hmetis
+#-----------------------------------------------------------------------------
+
+ifeq ($(HMETIS),true)
+FLAGS		+=	-DWITH_HMETIS
 endif
 
 #-----------------------------------------------------------------------------
@@ -107,7 +136,7 @@ endif
 #-----------------------------------------------------------------------------
 ifeq ($(GSL),true)
 LDFLAGS                +=      -lgsl -lgslcblas -lm
-FLAGS		           +=	   -DGSL
+FLAGS		           +=	   -DWITH_GSL
 endif
 
 #-----------------------------------------------------------------------------
@@ -115,9 +144,7 @@ endif
 #-----------------------------------------------------------------------------
 
 ifeq ($(CPLEXSOLVER),true)
-FLAGS		+=	-DCPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
-else
-FLAGS		+=	-DNCPLEXSOLVER
+FLAGS		+=	-DWITH_CPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
 endif
 
 #-----------------------------------------------------------------------------
@@ -134,18 +161,77 @@ endif
 
 MAINNAME	=	gcg
 
-LIBOBJ		=	reader_blk.o \
-			reader_dec.o \
-			reader_ref.o \
-			gcgplugins.o \
-			relax_gcg.o \
-			pricer_gcg.o \
-			branch_orig.o \
-			branch_ryanfoster.o \
+LIBOBJ = \
+			branch_empty.o \
 			branch_generic.o \
-			cons_origbranch.o \
-			cons_masterbranch.o \
+			benders_gcg.o \
+			branch_orig.o \
+			branch_relpsprob.o \
+			branch_ryanfoster.o \
+			class_consclassifier.o \
+			class_indexclassifier.o \
+			class_miscvisualization.o \
+			class_pricingcontroller.o \
+			class_pricingtype.o \
+			class_seeed.o \
+			class_seeedpool.o \
+			class_stabilization.o \
+			class_varclassifier.o \
+			colpool.o \
+			cons_decomp.o \
 			cons_integralorig.o \
+			cons_masterbranch.o \
+			cons_origbranch.o \
+			dec_colors.o \
+			dec_compgreedily.o \
+			dec_connected.o \
+			dec_connected_noNewLinkingVars.o \
+			dec_connectedbase.o \
+			dec_consclass.o \
+			dec_consname.o \
+			dec_constype.o \
+			dec_cutpacking.o \
+			dec_dbscan.o \
+			dec_densemasterconss.o \
+			dec_generalmastersetcover.o \
+			dec_generalmastersetpack.o \
+			dec_generalmastersetpart.o \
+			dec_hcgpartition.o \
+			dec_hrcgpartition.o \
+			dec_hrgpartition.o \
+			dec_mastersetcover.o \
+			dec_mastersetpack.o \
+			dec_mastersetpart.o \
+			dec_mcl.o \
+			dec_mst.o \
+			dec_postprocess.o \
+			dec_random.o \
+			dec_staircase.o \
+			dec_staircase_lsp.o \
+			dec_stairheur.o \
+			dec_varclass.o \
+			decomp.o \
+			dialog_gcg.o \
+			dialog_graph.o \
+			dialog_master.o \
+			disp_gcg.o \
+			disp_master.o \
+			event_bestsol.o \
+			event_display.o \
+			event_mastersol.o \
+			event_relaxsol.o \
+			event_solvingstats.o \
+			gcgcol.o \
+			gcggithash.o \
+			gcgheur.o \
+			gcgplugins.o \
+			gcgpqueue.o \
+			gcgsort.o \
+			gcgvar.o \
+			graph/graph_gcg.o \
+			graph/graph_tclique.o \
+			graph/inst.o \
+			graph/weights.o \
 			heur_gcgcoefdiving.o \
 			heur_gcgdins.o \
 			heur_gcgfeaspump.o \
@@ -156,13 +242,13 @@ LIBOBJ		=	reader_blk.o \
 			heur_gcgrens.o \
 			heur_gcgrins.o \
 			heur_gcgrounding.o \
-			heur_gcgsimplerounding.o \
 			heur_gcgshifting.o \
+			heur_gcgsimplerounding.o \
 			heur_gcgveclendiving.o \
 			heur_gcgzirounding.o \
 			heur_greedycolsel.o \
-			heur_masterdiving.o \
 			heur_mastercoefdiving.o \
+			heur_masterdiving.o \
 			heur_masterfracdiving.o \
 			heur_masterlinesdiving.o \
 			heur_mastervecldiving.o \
@@ -172,51 +258,31 @@ LIBOBJ		=	reader_blk.o \
 			heur_setcover.o \
 			heur_xpcrossover.o \
 			heur_xprins.o \
-			branch_empty.o \
-			branch_relpsprob.o \
 			masterplugins.o \
-			nodesel_master.o \
-			sepa_master.o \
-			sepa_basis.o \
-			disp_gcg.o \
-			disp_master.o \
-			dialog_gcg.o \
-			dialog_master.o \
-			event_bestsol.o \
-			event_mastersol.o \
-			event_relaxsol.o \
-			event_solvingstats.o \
-			event_display.o \
-			solver_mip.o \
-			solver_knapsack.o \
-			cons_decomp.o \
-			decomp.o \
-			dec_arrowheur.o \
-			dec_stairheur.o \
-			dec_connected.o \
-			dec_consname.o \
-			dec_cutpacking.o \
-			dec_staircase.o \
-			dec_random.o \
-			dec_colors.o \
-			gcggithash.o \
-			reader_gp.o \
-			scip_misc.o \
+			bendersplugins.o \
 			misc.o \
-			gcgheur.o \
-			gcgvar.o \
-			class_pricingtype.o \
-			class_stabilization.o \
-			graph/weights.o \
-			graph/inst.o \
-			graph/graph_tclique.o \
-			stat.o \
+			nodesel_master.o \
 			objdialog.o \
-			dialog_graph.o \
-			gcgpqueue.o \
-			gcgcol.o \
-			colpool.o \
-			pricestore_gcg.o
+			params_visu.o \
+			presol_roundbound.o \
+			pricer_gcg.o \
+			pricestore_gcg.o \
+			pricingjob.o \
+			pricingprob.o \
+			reader_blk.o \
+			reader_cls.o \
+			reader_dec.o \
+			reader_gp.o \
+			reader_ref.o \
+			reader_tex.o \
+			relax_gcg.o \
+			scip_misc.o \
+			sepa_basis.o \
+			sepa_master.o \
+			solver.o \
+			solver_knapsack.o \
+			solver_mip.o \
+			stat.o \
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
@@ -248,16 +314,23 @@ GCGLIBNAME	=	$(GCGLIBSHORTNAME)-$(VERSION)
 
 GCGLIBOBJ	=	${LIBOBJ}
 GCGLIB		=	$(GCGLIBNAME).$(BASE)
-GCGLIBFILE	=	$(LIBDIR)/lib$(GCGLIB).$(LIBEXT)
+ifeq ($(SHARED),true)
+GCGLIBFILE	=	$(LIBDIR)/shared/lib$(GCGLIB).$(LIBEXT)
+GCGLIBLINK	=	$(LIBDIR)/shared/lib$(GCGLIBSHORTNAME).$(BASE).$(LIBEXT)
+GCGLIBSHORTLINK = 	$(LIBDIR)/shared/lib$(GCGLIBSHORTNAME).$(LIBEXT)
+LDFLAGS		+=	$(LINKCXX_L)$(LIBDIR)/shared/
+else
+GCGLIBFILE	=	$(LIBDIR)/static/lib$(GCGLIB).$(LIBEXT)
+GCGLIBLINK	=	$(LIBDIR)/static/lib$(GCGLIBSHORTNAME).$(BASE).$(LIBEXT)
+GCGLIBSHORTLINK = 	$(LIBDIR)/static/lib$(GCGLIBSHORTNAME).$(LIBEXT)
+LDFLAGS		+=	$(LINKCXX_L)$(LIBDIR)/static/
+endif
 GCGLIBOBJFILES	=	$(addprefix $(LIBOBJDIR)/,$(GCGLIBOBJ))
 GCGLIBSRC	=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
 GCGLIBSRC	+=	$(filter $(wildcard $(SRCDIR)/*/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard */*/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
 GCGLIBDEP	=	$(SRCDIR)/depend.gcglib.$(OPT)
-GCGLIBLINK	=	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(BASE).$(LIBEXT)
-GCGLIBSHORTLINK = 	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(LIBEXT)
 
 ALLSRC		=	$(MAINSRC) $(GCGLIBSRC)
-LDFLAGS		+=	$(LINKCXX_L)$(LIBDIR)
 SPLINT		=       splint
 #SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -preproc -formatcode +skip-sys-headers -weak +relaxtypes
 SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -which-lib -warn-posix-headers +skip-sys-headers -preproc -formatcode -weak \
@@ -278,6 +351,9 @@ endif
 ifeq ($(COMP),gnu)
 CXXFLAGS	+=	-Wno-variadic-macros
 endif
+
+# WORKAROUND for missing DCXXFLAGS (C++ flags for dependency calls):
+DCXXFLAGS=$(CXXFLAGS)
 
 #-----------------------------------------------------------------------------
 # Rules
@@ -419,7 +495,7 @@ depend:		gcglibdepend testdepend | $(SCIPDIR)
 
 .PHONY: gcglibdepend
 gcglibdepend:
-		$(SHELL) -ec '$(DCC) $(subst isystem,I,$(FLAGS)) $(DFLAGS) $(GCGLIBSRC) \
+		$(SHELL) -ec '$(DCXX) $(DCXXFLAGS) $(subst isystem,I,$(FLAGS)) $(DFLAGS) $(GCGLIBSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(SRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(LIBOBJDIR\)/\2.o: $(SRCDIR)/\2.c|g'\'' \
 		>$(GCGLIBDEP)'
 -include	$(GCGLIBDEP)
@@ -463,7 +539,7 @@ $(OBJDIR)/%.o:	$(SRCDIR)/%.cpp | $(OBJDIR) $(LIBOBJSUBDIRS)
 .PHONY: makegcglibfile
 makegcglibfile:  touchexternal $(GCGLIBFILE)
 
-$(GCGLIBFILE):	$(GCGLIBOBJFILES)
+$(GCGLIBFILE):	$(LIBDIR) $(LIBDIR)/static $(LIBDIR)/shared $(GCGLIBOBJFILES)
 		@echo "-> generating library $@"
 		-rm -f $@
 		$(LIBBUILD) $(LIBBUILDFLAGS) $(LIBBUILD_o)$@ $(GCGLIBOBJFILES)
@@ -553,7 +629,7 @@ endif
 		@echo "LAST_STATISTICS=$(STATISTICS)" >> $(LASTSETTINGS)
 
 .PHONY: $(SOFTLINKS)
-$(SOFTLINKS):
+$(SOFTLINKS): $(LIBDIR)/static $(LIBDIR)/shared $(LIBDIR)/include
 ifeq ($(MAKESOFTLINKS), true)
 		@$(SHELL) -ec 'if test ! -e $@ ; \
 			then \
