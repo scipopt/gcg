@@ -2140,12 +2140,17 @@ SCIP_RETCODE solveBlockProblem(
    assert(result != NULL);
    assert(objvalue != NULL);
 
+   (*result) = SCIP_DIDNOTRUN;
+
 #ifdef SCIP_DEBUG
    char name[SCIP_MAXSTRLEN];
 #endif
 
    if( blockprob == NULL )
+   {
+      (*result) = SCIP_SUCCESS;
       return SCIP_OKAY;
+   }
 
    if( GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL )
    {
@@ -2179,6 +2184,13 @@ SCIP_RETCODE solveBlockProblem(
          blocktimelimit = MIN(SCIPinfinity(blockprob), blocktimelimit); /*lint !e666*/
       }
    }
+
+   if( blocktimelimit < 0 )
+   {
+      (*result) = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( SCIPsetRealParam(blockprob, "limits/time", blocktimelimit) );
 
 #ifdef SCIP_DEBUG
@@ -2214,25 +2226,28 @@ SCIP_RETCODE solveBlockProblem(
 
    switch( SCIPgetStatus(blockprob) )
    {
-   case SCIP_STATUS_UNBOUNDED:
-   case SCIP_STATUS_INFORUNBD:
-   case SCIP_STATUS_INFEASIBLE:
-      /* no other blocks should be solved. */
-      *result = SCIP_CUTOFF;
-   case SCIP_STATUS_BESTSOLLIMIT:
-   case SCIP_STATUS_MEMLIMIT:
-   case SCIP_STATUS_STALLNODELIMIT:
-   case SCIP_STATUS_NODELIMIT:
-   case SCIP_STATUS_SOLLIMIT:
-   case SCIP_STATUS_TIMELIMIT:
-      /* no other blocks should be solved. */
-      *result = SCIP_DIDNOTRUN;
-   case SCIP_STATUS_GAPLIMIT:
-   case SCIP_STATUS_OPTIMAL:
-      (*objvalue) += SCIPgetDualbound(blockprob);
-      break;
-   default:
-      break;
+      case SCIP_STATUS_UNBOUNDED:
+      case SCIP_STATUS_INFORUNBD:
+      case SCIP_STATUS_INFEASIBLE:
+         /* no other blocks should be solved. */
+         *result = SCIP_CUTOFF;
+         break;
+      case SCIP_STATUS_BESTSOLLIMIT:
+      case SCIP_STATUS_MEMLIMIT:
+      case SCIP_STATUS_STALLNODELIMIT:
+      case SCIP_STATUS_NODELIMIT:
+      case SCIP_STATUS_SOLLIMIT:
+      case SCIP_STATUS_TIMELIMIT:
+         /* no other blocks should be solved. */
+         *result = SCIP_DIDNOTRUN;
+         break;
+      case SCIP_STATUS_GAPLIMIT:
+      case SCIP_STATUS_OPTIMAL:
+         (*result) = SCIP_SUCCESS;
+         (*objvalue) += SCIPgetDualbound(blockprob);
+         break;
+      default:
+         break;
    } /*lint !e788*/
 
    return SCIP_OKAY;
@@ -2286,6 +2301,7 @@ SCIP_RETCODE solveDiagonalBlocks(
    SCIP_Real objvalue;
    SCIP_SOL *newsol;
    SCIP_Bool isfeasible;
+   SCIP_RESULT solveresult;
 
    /* set objective of pricing problems to original objective */
    if( GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL )
@@ -2305,20 +2321,26 @@ SCIP_RETCODE solveDiagonalBlocks(
    /* if the original problem is solved directly, then we call  solveBlockProblem with the master problem */
    if( GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
    {
-      SCIP_CALL( solveBlockProblem(scip, relaxdata->masterprob, relaxdata, timelimit, -1, result, &objvalue) );
+      SCIP_CALL( solveBlockProblem(scip, relaxdata->masterprob, relaxdata, timelimit, -1, &solveresult, &objvalue) );
 
-      if( (*result) == SCIP_CUTOFF || (*result) == SCIP_DIDNOTRUN )
+      if( solveresult == SCIP_CUTOFF || solveresult == SCIP_DIDNOTRUN )
+      {
+         (*result) = solveresult;
          return SCIP_OKAY;
+      }
    }
    else
    {
       /* solve pricing problems one after the other */
       for( i = 0; i < relaxdata->npricingprobs; ++i )
       {
-         SCIP_CALL( solveBlockProblem(scip, relaxdata->pricingprobs[i], relaxdata, timelimit, i, result, &objvalue) );
+         SCIP_CALL( solveBlockProblem(scip, relaxdata->pricingprobs[i], relaxdata, timelimit, i, &solveresult, &objvalue) );
 
-         if( (*result) == SCIP_CUTOFF || (*result) == SCIP_DIDNOTRUN )
+         if( solveresult == SCIP_CUTOFF || solveresult == SCIP_DIDNOTRUN )
+         {
+            (*result) = solveresult;
             return SCIP_OKAY;
+         }
       }
    }
 

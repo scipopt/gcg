@@ -250,8 +250,8 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       fixedvars = SCIPgetFixedVars(masterprob);
       nfixedvars = SCIPgetNFixedVars(masterprob);
 
-      assert(mastervars != NULL);
-      assert(nmastervars >= 0);
+      assert(mastervarsall != NULL);
+      assert(nmastervarsall >= 0);
 
       SCIP_CALL( SCIPallocBufferArray(scip, &mastervars, nmastervarsall + nfixedvars) );
       SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervarsall + nfixedvars) );
