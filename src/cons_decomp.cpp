@@ -6663,9 +6663,12 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
       for( int i = 0; i <  conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
       {
          DEC_DECOMP* decomp;
+         int offset = 0;
          conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ), &decomp );
 
-         decomps[i + conshdlrdata->seeedpool->getNFinishedSeeeds()] = decomp;
+         if( conshdlrdata->seeedpool != NULL )
+            offset = conshdlrdata->seeedpool->getNFinishedSeeeds();
+         decomps[i + offset] = decomp;
       }
    }
    return decomps;
