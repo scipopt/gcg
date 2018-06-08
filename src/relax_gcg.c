@@ -2184,6 +2184,13 @@ SCIP_RETCODE solveBlockProblem(
          blocktimelimit = MIN(SCIPinfinity(blockprob), blocktimelimit); /*lint !e666*/
       }
    }
+
+   if( blocktimelimit < 0 )
+   {
+      (*result) = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( SCIPsetRealParam(blockprob, "limits/time", blocktimelimit) );
 
 #ifdef SCIP_DEBUG
@@ -2209,9 +2216,7 @@ SCIP_RETCODE solveBlockProblem(
        * can declare this in the Benders' decomposition framework. This allows us to call
        * SCIPsolveBendersSubproblem() without setting up the problem
        */
-#if 0 /* there is a merge request in SCIP for this function */
-      SCIPbendersSetSubproblemIsIndependent(benders, i, TRUE);
-#endif
+      SCIPbendersSetSubproblemIsIndependent(benders, blocknum, TRUE);
 
       /* solving the Benders' decomposition subproblem */
       SCIP_CALL( SCIPsolveBendersSubproblem(relaxdata->masterprob, benders, NULL, blocknum, &infeasible,
