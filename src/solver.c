@@ -163,10 +163,10 @@ SCIP_RETCODE GCGsolverInit(
 
    if( resetstat )
    {
-      SCIPresetClock(scip, solver->optfarkasclock);
-      SCIPresetClock(scip, solver->optredcostclock);
-      SCIPresetClock(scip, solver->heurfarkasclock);
-      SCIPresetClock(scip, solver->heurredcostclock);
+      SCIP_CALL( SCIPresetClock(scip, solver->optfarkasclock) );
+      SCIP_CALL( SCIPresetClock(scip, solver->optredcostclock) );
+      SCIP_CALL( SCIPresetClock(scip, solver->heurfarkasclock) );
+      SCIP_CALL( SCIPresetClock(scip, solver->heurredcostclock) );
 
       solver->optfarkascalls = 0;
       solver->optredcostcalls = 0;
@@ -234,7 +234,6 @@ SCIP_RETCODE GCGsolverExitsol(
 }
 
 /** calls update method of GCG pricing solver */
-EXTERN
 SCIP_RETCODE GCGsolverUpdate(
    SCIP*                 pricingprob,
    GCG_SOLVER*           solver,

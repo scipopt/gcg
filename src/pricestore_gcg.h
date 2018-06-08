@@ -130,8 +130,7 @@ void GCGpricestoreClearCols(
 /** removes cols that are inefficacious w.r.t. the current LP solution from price storage without adding the cols to the LP */
 extern
 void GCGpricestoreRemoveInefficaciousCols(
-   GCG_PRICESTORE*       pricestore,         /**< price storage */
-   SCIP_Bool             root                /**< are we at the root node? */
+   GCG_PRICESTORE*       pricestore          /**< price storage */
    );
 
 /** get cols in the price storage */

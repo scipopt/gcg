@@ -45,7 +45,6 @@
 #include "gcg.h"
 #include "pricer_gcg.h"
 #include "pub_solver.h"
-#include "relax_gcg.h"
 #include "scip/scipdefplugins.h"
 #include "pub_gcgcol.h"
 
@@ -254,10 +253,10 @@ GCG_PRICINGSTATUS getPricingstatus(
           || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD);
 
    /* translate SCIP solution status to GCG pricing status */
-   switch( SCIPgetStatus(pricingprob) )
+   switch( SCIPgetStatus(pricingprob) ) 
    {
    case SCIP_STATUS_USERINTERRUPT:
-     SCIPdebugMessage("  -> interrupted, %d solutions found\n", SCIPgetNSols(pricingprob));
+     SCIPdebugMessage("  -> interrupted, %d solutions found\n", SCIPgetNSols(pricingprob)); /*lint -fallthrough*/
    case SCIP_STATUS_UNKNOWN:
    case SCIP_STATUS_TOTALNODELIMIT:
    case SCIP_STATUS_TIMELIMIT:
@@ -289,7 +288,7 @@ GCG_PRICINGSTATUS getPricingstatus(
 
 /** check whether a column contains an infinite solution value */
 static
-SCIP_RETCODE solutionHasInfiniteValue(
+SCIP_Bool solutionHasInfiniteValue(
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    SCIP_SOL*             sol                 /**< solution to be checked */
    )
@@ -315,8 +314,7 @@ SCIP_RETCODE getColumnsFromPricingprob(
    SCIP*                 scip,               /**< master problem SCIP data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    int                   probnr,             /**< problem number */
-   SCIP_Bool             checksols,          /**< should solutions be checked extensively */
-   int*                  ncols               /**< pointer to store number of found columns */
+   SCIP_Bool             checksols           /**< should solutions be checked extensively */
 )
 {
    SCIP_SOL** probsols;
@@ -356,7 +354,6 @@ SCIP_RETCODE getColumnsFromPricingprob(
       {
          SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &col, probnr, probsols[s], FALSE, SCIPinfinity(pricingprob)) );
          SCIP_CALL( GCGpricerAddCol(scip, col) );
-         ++(*ncols);
       }
       /* If the best solution has infinite values, try to repair it */
       else if( s == 0 )
@@ -375,7 +372,6 @@ SCIP_RETCODE getColumnsFromPricingprob(
 
          SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &col, probnr, newsol, FALSE, SCIPinfinity(pricingprob)) );
          SCIP_CALL( GCGpricerAddCol(scip, col) );
-         ++(*ncols);
       }
    }
 
@@ -395,7 +391,6 @@ SCIP_RETCODE solveProblem(
 {
    GCG_COL* col;
    SCIP_RETCODE retcode;
-   int ncols;
 
    assert(scip != NULL);
    assert(pricingprob != NULL);
@@ -403,8 +398,6 @@ SCIP_RETCODE solveProblem(
    assert(solverdata != NULL);
    assert(lowerbound != NULL);
    assert(status != NULL);
-
-   ncols = 0;
 
    /* solve the pricing SCIP */
    retcode = SCIPsolve(pricingprob);
@@ -417,6 +410,8 @@ SCIP_RETCODE solveProblem(
    SCIPdebugMessage("  -> nsols = %d\n", SCIPgetNSols(pricingprob));
 
    *status = getPricingstatus(pricingprob);
+
+   assert(*status != GCG_PRICINGSTATUS_NOTAPPLICABLE);
 
    switch( *status )
    {
@@ -436,7 +431,6 @@ SCIP_RETCODE solveProblem(
       SCIPdebugMessage("  -> unbounded, creating column from ray\n");
       SCIP_CALL( createColumnFromRay(pricingprob, probnr, &col) );
       SCIP_CALL( GCGpricerAddCol(scip, col) );
-      ++ncols;
 
       break;
 
@@ -450,16 +444,16 @@ SCIP_RETCODE solveProblem(
           && SCIPgetStatus(pricingprob) != SCIP_STATUS_SOLLIMIT));
 
       /* Transform at most maxcols many solutions from the pricing problem into columns */
-      SCIP_CALL( getColumnsFromPricingprob(scip, pricingprob, probnr, solverdata->checksols, &ncols) );
+      SCIP_CALL( getColumnsFromPricingprob(scip, pricingprob, probnr, solverdata->checksols) );
 
       *lowerbound = SCIPgetDualbound(pricingprob);
 
-      SCIPdebugMessage("  -> found %d columns, lowerbound = %.4g\n", ncols, *lowerbound);
+      SCIPdebugMessage("  -> lowerbound = %.4g\n", *lowerbound);
       break;
 
    default:
       SCIPerrorMessage("Pricing problem %d has invalid status: %d\n", probnr, SCIPgetStatus(pricingprob));
-      break;
+      break; /*lint !e788 */
    }
 
    return SCIP_OKAY;
@@ -614,7 +608,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    }
    else
    {
-      switch( SCIPgetStatus(pricingprob) )
+      switch( SCIPgetStatus(pricingprob) ) /*lint !e788 */
       {
       case SCIP_STATUS_NODELIMIT:
          if( solverdata->nodelimitfac > 1.0 )

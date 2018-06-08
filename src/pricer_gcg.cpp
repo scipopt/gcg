@@ -1345,11 +1345,11 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
       }
    }
 
-   GCGcolSetMastercoefs(gcgcol, mastercoefs, nmasterconss);
+   SCIP_CALL( GCGcolSetMastercoefs(gcgcol, mastercoefs, nmasterconss) );
 
-   GCGcolSetLinkvars(gcgcol, linkvars, nlinkvars);
+   SCIP_CALL( GCGcolSetLinkvars(gcgcol, linkvars, nlinkvars) );
 
-   GCGcolSetInitializedCoefs(gcgcol);
+   SCIP_CALL( GCGcolSetInitializedCoefs(gcgcol) );
 
    SCIPfreeBufferArray(pricingprob, &linkvars); /*lint !e530*/
 
@@ -1418,7 +1418,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMastercuts(
             for( k = 0; k < nsolvars; k++ )
                if( solvars[k] == GCGoriginalVarGetPricingVar(var) )
                {
-                  conscoef += ( consvals[j] * solvals[k] );
+                  conscoef += (consvals[j] * solvals[k]);
                   break;
                }
       }
@@ -1705,7 +1705,6 @@ SCIP_Real ObjPricerGcg::computeRedCost(
 }
 
 SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
-   PricingType*          pricetype,          /**< type of pricing */
    GCG_Col*              gcgcol,             /**< gcg column to compute reduced cost for */
    SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    ) const
@@ -1768,16 +1767,15 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
 
 /** for given columns, (re-)compute and update their reduced costs */
 void ObjPricerGcg::updateRedcosts(
-   PricingType*          pricetype,          /**< type of pricing */
    GCG_COL**             cols,               /**< columns to compute reduced costs for */
    int                   ncols               /**< number of columns */
-   )
+   ) const
 {
    SCIPdebugMessage("Update reduced costs\n");
 
    for( int i = 0; i < ncols; ++i )
    {
-      SCIP_Real redcost = computeRedCostGcgCol(pricetype, cols[i], NULL);
+      SCIP_Real redcost = computeRedCostGcgCol(cols[i], NULL);
       GCGcolUpdateRedcost(cols[i], redcost, FALSE);
 
       SCIPdebugMessage("  -> column %d/%d <%p>, reduced cost = %g\n", i+1, ncols, (void*) cols[i], redcost);
@@ -2324,7 +2322,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && pricetype != NULL && pricetype->getType() == GCG_PRICETYPE_REDCOST )
       GCGsetRootRedcostCall(origprob, newvar, pricerdata->nrootbounds );
 #else
-   GCGsetRootRedcostCall(origprob, newvar, -1);
+   GCGsetRootRedcostCall(origprob, newvar, -1LL);
 #endif
 
    SCIPdebugMessage("Added variable <%s>\n", varname);
@@ -2481,7 +2479,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && pricetype->getType() == GCG_PRICETYPE_REDCOST )
       GCGsetRootRedcostCall(origprob, newvar, pricerdata->nrootbounds );
 #else
-   GCGsetRootRedcostCall(origprob, newvar, -1);
+   GCGsetRootRedcostCall(origprob, newvar, -1LL);
 #endif
 
    SCIPdebugMessage("    added variable <%s>\n", varname);
@@ -3854,7 +3852,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    if( pricerdata->usecolpool )
       SCIP_CALL( GCGcolpoolFree(scip_, &colpool) );
 
-   GCGpricestoreFree(scip_, &pricestore);
+   SCIP_CALL( GCGpricestoreFree(scip_, &pricestore) );
 
    SCIPhashmapFree(&(pricerdata->mapcons2idx));
 

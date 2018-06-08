@@ -79,6 +79,9 @@ private:
 
 
 public:
+   /** default constructor */
+   Pricingcontroller();
+
    /** constructor */
    Pricingcontroller(SCIP* scip);
 

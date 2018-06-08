@@ -286,7 +286,7 @@ private:
       PricingType*          pricetype,          /**< type of pricing */
       GCG_COL**             cols,               /**< columns to compute reduced costs for */
       int                   ncols               /**< number of columns */
-      );
+      ) const;
 
    /** return TRUE or FALSE whether the master LP is solved to optimality */
    SCIP_Bool isMasterLPOptimal() const;
