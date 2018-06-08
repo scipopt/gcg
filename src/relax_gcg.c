@@ -2226,6 +2226,7 @@ SCIP_RETCODE solveBlockProblem(
       case SCIP_STATUS_INFEASIBLE:
          /* no other blocks should be solved. */
          *result = SCIP_CUTOFF;
+         break;
       case SCIP_STATUS_BESTSOLLIMIT:
       case SCIP_STATUS_MEMLIMIT:
       case SCIP_STATUS_STALLNODELIMIT:
@@ -2234,6 +2235,7 @@ SCIP_RETCODE solveBlockProblem(
       case SCIP_STATUS_TIMELIMIT:
          /* no other blocks should be solved. */
          *result = SCIP_DIDNOTRUN;
+         break;
       case SCIP_STATUS_GAPLIMIT:
       case SCIP_STATUS_OPTIMAL:
          (*result) = SCIP_SUCCESS;
