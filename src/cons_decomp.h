@@ -30,8 +30,8 @@
  * @author Martin Bergner
  * @author Michael Bastubbe
  *
- * This constraint handler will run all registered structure detectors in
- * increasing priority until the first detector finds a suitable structure.
+ * This constraint handler manages the structure detection process. It will run all registered structure detectors in an
+ * iterative refinement scheme. Afterwards some post-processing detectors might be called.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -47,38 +47,53 @@
 extern "C" {
 #endif
 
+/*!
+ * \brief possible scores to evaluate founds decompositions
+ * \sa SCIPconshdlrDecompGetScoretypeDescription for a description of this score
+ * \sa SCIPconshdlrDecompGetScoretypeShortName
+ * \sa class_seeed:getScore()
+ */
 enum scoretype {
    MAX_WHITE = 0,
    BORDER_AREA,
    CLASSIC,
    MAX_FORESSEEING_WHITE,
    SETPART_FWHITE,
-   MAX_FORESSEEING_AGG_WHITE,
+   MAX_FORESEEING_AGG_WHITE,
    SETPART_AGG_FWHITE,
    BENDERS
 };
+typedef enum scoretype SCORETYPE;
 
+
+/*!
+ * \brief help enum to avoid code duplication for the toolbox methods of the detectors
+ */
 enum toolboxtype {
    PROPAGATE,
    FINISH,
    POSTPROCESS
 };
 
-typedef enum scoretype SCORETYPE;
 
+
+/** forward declarations */
 struct seeedpool_wrapper;
-
 typedef struct seeedpool_wrapper SEEEDPOOL_WRAPPER ;
-
-
-SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
-   SCIP*          scip
-);
 
 struct Seeed_Wrapper;
 typedef struct Seeed_Wrapper SEEED_WRAPPER;
 
-/** creates the handler for decomp constraints and includes it in SCIP */
+
+/*!
+ * \brief sort the finished decompositions according to the currently chosen score in the according datastructures for the presolved and original problem
+ */
+SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
+   SCIP*          scip
+);
+
+
+/** creates the constraint handler for decomp and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP*                 scip                /**< SCIP data structure */

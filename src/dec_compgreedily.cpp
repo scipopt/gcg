@@ -151,7 +151,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
    //seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
    //assign open conss and vars greedily
-   seeed->completeGreedily(seeedPropagationData->seeedpool);
+   seeed->completeGreedily();
 
 
    seeed->setDetectorPropagated(detector);
@@ -185,7 +185,7 @@ DEC_DECL_FINISHSEEED(finishSeeedCompgreedily)
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
    //assign open conss and vars greedily
-   seeed->completeGreedily(seeedPropagationData->seeedpool);
+   seeed->completeGreedily();
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
