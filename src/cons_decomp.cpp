@@ -1665,8 +1665,6 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
    /* call displayInfo method according to chosen parameters */
    if( 0 <= idtoinspect && idtoinspect < (int)conshdlrdata->listall->size() )
    {
-      gcg::Seeedpool* seeedpool = ( conshdlrdata->listall->at( idtoinspect )->isFromUnpresolved() ?
-         conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
       conshdlrdata->listall->at( idtoinspect )->displayInfo( detaillevel );
    }
    else
@@ -2789,11 +2787,6 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxModify(
       }
       if( strncmp( command, "refine", commandlen2) == 0 )
       {
-         gcg::Seeedpool* seeedpool;
-         if( conshdlrdata->curruserseeed->isFromUnpresolved() )
-            seeedpool = conshdlrdata->seeedpoolunpresolved;
-         else
-            seeedpool = conshdlrdata->seeedpool;
          if( conshdlrdata->lastuserseeed != NULL)
             delete conshdlrdata->lastuserseeed;
          conshdlrdata->lastuserseeed = new gcg::Seeed( conshdlrdata->curruserseeed) ;
@@ -3344,16 +3337,10 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       }*/
       if( strncmp( command, "refine", commandlen2) == 0 )
       {
-         gcg::Seeedpool* seeedpool;
-         if( conshdlrdata->curruserseeed->isFromUnpresolved() )
-            seeedpool = conshdlrdata->seeedpoolunpresolved;
-         else
-            seeedpool = conshdlrdata->seeedpool;
          if( conshdlrdata->lastuserseeed != NULL)
             delete conshdlrdata->lastuserseeed;
          conshdlrdata->lastuserseeed = new gcg::Seeed( conshdlrdata->curruserseeed) ;
          conshdlrdata->curruserseeed->considerImplicits();
-         //SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
          continue;
       }
 
@@ -7274,7 +7261,6 @@ SCIP_RETCODE GCGprintDecompInformation(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* seeedpool;
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    std::vector<gcg::Seeed*>::const_iterator seeediter;
    std::vector<gcg::Seeed*>::const_iterator seeediterend;
@@ -7296,7 +7282,6 @@ SCIP_RETCODE GCGprintDecompInformation(
       int nblocks = (*seeediter)->getNBlocks();
 
       seeed = *seeediter;
-      seeedpool = ( seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool  );
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "NEWDECOMP  \n" );
 
