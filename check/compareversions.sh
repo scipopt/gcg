@@ -171,13 +171,17 @@ do
 	# function to remove old linking, assumes to be in gcg/lib/scip-git
 	function removeoldlinking {
 		rm -f lib/spxinc
+		rm -f lib/cpxinc
 		rm -f lib/libsoplex.linux.x86_64.gnu.opt.a
 		rm -f lib/libsoplex.linux.x86_64.gnu.opt.so
+		rm -f lib/libcplex.linux.x86_64.gnu.a
 		rm -f lib/zimplinc/zimpl
 		rm -f lib/libzimpl.linux.x86_64.gnu.opt.a
 		rm -f lib/libzimpl.linux.x86_64.gnu.opt.so
 		rm -f lib/include/spxinc
+		rm -f lib/include/cpxinc
 		rm -f lib/static/libsoplex.linux.x86_64.gnu.opt.a
+		rm -f lib/static/libcplex.linux.x86_64.gnu.a
 		rm -f lib/include/zimplinc/zimpl
 		rm -f lib/static/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
 	}
@@ -190,6 +194,8 @@ do
 		ln -s ../../soplex-git/src/ spxinc
 		ln -s ../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
 		ln -s ../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.so
+		ln -s /opt/cplex1271/cplex/include/ilcplex/ cpxinc
+		ln -s /opt/cplex1271/cplex/lib/x86-64_linux/static_pic/libcplex.a libcplex.linux.x86_64.gnu.a
 		ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/lib/libzimpl.linux.x86_64.gnu.opt.a libzimpl.linux.x86_64.gnu.opt.a
 		ln -s /opt/scipoptsuite-3.0.0/zimpl-3.3.0/lib/libzimpl.linux.x86_64.gnu.opt.a libzimpl.linux.x86_64.gnu.opt.so
 		mkdir -p zimplinc
@@ -200,10 +206,12 @@ do
 		mkdir -p include/
 		cd include/
 		ln -s ../../../soplex-git/src/ spxinc
+		ln -s /opt/cplex1271/cplex/include/ilcplex/ cpxinc
 		cd ..
 		mkdir -p static/
 		cd static/
 		ln -s ../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
+		ln -s /opt/cplex1271/cplex/lib/x86-64_linux/static_pic/libcplex.a libcplex.linux.x86_64.gnu.a
 		cd ..
 		if $zimpllinks ; then
 			mkdir -p include/zimplinc/
