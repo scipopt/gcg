@@ -2204,9 +2204,7 @@ SCIP_RETCODE solveBlockProblem(
        * can declare this in the Benders' decomposition framework. This allows us to call
        * SCIPsolveBendersSubproblem() without setting up the problem
        */
-#if 0 /* there is a merge request in SCIP for this function */
-      SCIPbendersSetSubproblemIsIndependent(benders, i, TRUE);
-#endif
+      SCIPbendersSetSubproblemIsIndependent(benders, blocknum, TRUE);
 
       /* solving the Benders' decomposition subproblem */
       SCIP_CALL( SCIPsolveBendersSubproblem(relaxdata->masterprob, benders, NULL, blocknum, &infeasible,
