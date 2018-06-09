@@ -182,9 +182,9 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
 
    //complete the seeed by bfs
    if ( byconssadj && conssadjcalculated)
-      seeed->postprocessMasterToBlocksConssAdjacency(seeedPropagationData->seeedpool, &success );
+      seeed->postprocessMasterToBlocksConssAdjacency( &success );
    else
-      seeed->postprocessMasterToBlocks(seeedPropagationData->seeedpool, &success );
+      seeed->postprocessMasterToBlocks( &success );
   
 
    if ( !success )
