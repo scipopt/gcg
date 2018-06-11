@@ -78,6 +78,11 @@
 #include "event_display.h"
 #include "pub_colpool.h"
 
+#ifdef SCIP_STATISTIC
+#include "scip/struct_scip.h"
+#include "scip/struct_stat.h"
+#endif
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
