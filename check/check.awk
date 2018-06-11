@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -154,7 +154,9 @@ BEGIN {
    prob = b[1];
    if( b[m] == "gz" || b[m] == "z" || b[m] == "GZ" || b[m] == "Z" )
       m--;
-   for( i = 2; i < m; ++i )
+   if( b[m] == "lp" || b[m] == "mps" )
+      m--;
+   for( i = 2; i <= m; ++i )
       prob = prob "." b[i];
 
    if( useshortnames && length(prob) > namelength )

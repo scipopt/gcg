@@ -39,6 +39,7 @@ features
   feasible (including various options on setting the big M objective coefficients of these variables)
 - new pricing solver that solves independent set problems heuristically using the cliquer library
 - enable discretization when original problem is a mixed integer program; continuous variables are convexified
+- solve original LP relaxation in the root node to get a first dual bound and to run some heuristics in the original problem
 
 performance improvements:
 [] - which coeffmatrix dimensions are doable by detection for default, fast now?
