@@ -3093,8 +3093,11 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             }
 
 #ifdef SCIP_STATISTIC
-            SCIPstatisticMessage("P p %d : %d in %g\n",
-               GCGpricingprobGetProbnr(pricingprob), GCGpricestoreGetNEfficaciousCols(pricestore) - oldnimpcols, pricingtime);
+            if( status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
+            {
+               SCIPstatisticMessage("P p %d : %d in %g\n",
+                  GCGpricingprobGetProbnr(pricingprob), GCGpricestoreGetNEfficaciousCols(pricestore) - oldnimpcols, pricingtime);
+            }
 #endif
          }
 
