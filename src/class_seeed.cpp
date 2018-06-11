@@ -4530,45 +4530,50 @@ std::vector< std::pair< int, std::vector< int > > > Seeed::findLinkingVarsPotent
 {
 	std::vector< std::pair< int, std::vector< int > > > blocksOfVars( 0 );
 	const int* varcons;
-	const int* lvars = getLinkingvars();
+	const int* lvars;
 	int blockcounter;
 
-	sort();
+   /* if there is at least one linking variable, then the blocks of vars must be created. */
+   if( getNLinkingvars() > 0 )
+   {
+      lvars = getLinkingvars();
+      sort();
 
-	/* check every linking var */
-	for ( int v = 0; v < getNLinkingvars(); ++v )
-	{
-		std::vector< int > blocksOfVar( 0 );
-		blockcounter = 0;
+      /* check every linking var */
+      for ( int v = 0; v < getNLinkingvars(); ++v )
+      {
+         std::vector< int > blocksOfVar( 0 );
+         blockcounter = 0;
 
-		varcons = seeedpool->getConssForVar( lvars[v] );
+         varcons = seeedpool->getConssForVar( lvars[v] );
 
-		/* find all blocks that are hit by this linking var */
-		for ( int c = 0; c < seeedpool->getNConssForVar( lvars[v] ) && blockcounter <= 2; ++c )
-		{
-			for ( int b = 0; b < nBlocks && blockcounter <= 2; ++b )
-			{
-				if ( std::binary_search( conssForBlocks[b].begin(),
-						conssForBlocks[b].end(), varcons[c] ) )
-				{
-					/* if the hit block is new, add it to blockOfVar vector */
-					if ( std::find( blocksOfVar.begin(), blocksOfVar.end(), b ) == blocksOfVar.end() )
-					{
-	               //std::cout << "Var " << lvars[v] << " hits block " << b << "\n" ;
-						++blockcounter;
-						blocksOfVar.push_back( b );
-					}
-				}
-			}
-		}
+         /* find all blocks that are hit by this linking var */
+         for ( int c = 0; c < seeedpool->getNConssForVar( lvars[v] ) && blockcounter <= 2; ++c )
+         {
+            for ( int b = 0; b < nBlocks && blockcounter <= 2; ++b )
+            {
+               if ( std::binary_search( conssForBlocks[b].begin(),
+                     conssForBlocks[b].end(), varcons[c] ) )
+               {
+                  /* if the hit block is new, add it to blockOfVar vector */
+                  if ( std::find( blocksOfVar.begin(), blocksOfVar.end(), b ) == blocksOfVar.end() )
+                  {
+                     //std::cout << "Var " << lvars[v] << " hits block " << b << "\n" ;
+                     ++blockcounter;
+                     blocksOfVar.push_back( b );
+                  }
+               }
+            }
+         }
 
-		/* if the var hits exactly two blocks, it is potentially stairlinking */
-		if ( blockcounter == 2 )
-		{
-			std::pair< int, std::vector< int > > pair( v, blocksOfVar );
-			blocksOfVars.push_back( pair );
-		}
-	}
+         /* if the var hits exactly two blocks, it is potentially stairlinking */
+         if ( blockcounter == 2 )
+         {
+            std::pair< int, std::vector< int > > pair( v, blocksOfVar );
+            blocksOfVars.push_back( pair );
+         }
+      }
+   }
 
 	return blocksOfVars;
 }
