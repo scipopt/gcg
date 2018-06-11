@@ -396,6 +396,9 @@ SCIP_RETCODE solveProblem(
    GCG_COL* col;
    SCIP_RETCODE retcode;
    int ncols;
+#ifdef SCIP_STATISTIC
+   SCIP_Longint oldnnodes;
+#endif
 
    assert(scip != NULL);
    assert(pricingprob != NULL);
@@ -405,6 +408,9 @@ SCIP_RETCODE solveProblem(
    assert(status != NULL);
 
    ncols = 0;
+#ifdef SCIP_STATISTIC
+   oldnnodes = SCIPgetNNodes(pricingprob);
+#endif
 
    /* solve the pricing SCIP */
    retcode = SCIPsolve(pricingprob);
@@ -413,8 +419,13 @@ SCIP_RETCODE solveProblem(
       SCIPwarningMessage(pricingprob, "Pricing problem %d terminated with retcode = %d, ignoring\n", probnr, retcode);
       return SCIP_OKAY;
    }
+
    SCIPdebugMessage("  -> status = %d\n", SCIPgetStatus(pricingprob));
    SCIPdebugMessage("  -> nsols = %d\n", SCIPgetNSols(pricingprob));
+
+#ifdef SCIP_STATISTIC
+   SCIPstatisticMessage("P p %d: %"SCIP_LONGINT_FORMAT" no\n", probnr, SCIPgetNNodes(pricingprob) - oldnnodes);
+#endif
 
    *status = getPricingstatus(pricingprob);
 
