@@ -4545,10 +4545,10 @@ std::vector< std::pair< int, std::vector< int > > > Seeed::findLinkingVarsPotent
          std::vector< int > blocksOfVar( 0 );
          blockcounter = 0;
 
-	 varcons = seeedpool->getConssForVar( lvars[v] );
+         varcons = seeedpool->getConssForVar( lvars[v] );
 
          /* find all blocks that are hit by this linking var */
-		for ( int c = 0; c < seeedpool->getNConssForVar( lvars[v] ) && blockcounter <= 2; ++c )
+         for ( int c = 0; c < seeedpool->getNConssForVar( lvars[v] ) && blockcounter <= 2; ++c )
          {
             for ( int b = 0; b < nBlocks && blockcounter <= 2; ++b )
             {
