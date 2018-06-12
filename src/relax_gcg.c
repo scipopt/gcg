@@ -548,12 +548,12 @@ SCIP_RETCODE checkSetppcStructure(
    if( relaxdata->masterissetcover )
    {
       assert(!relaxdata->masterissetpart);
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Master problem is a set covering problem!\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Master problem is a set covering problem.\n");
    }
    if( relaxdata->masterissetpart )
    {
       assert(!relaxdata->masterissetcover);
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Master problem is a set partitioning problem!\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Master problem is a set partitioning problem.\n");
    }
 
    return SCIP_OKAY;
@@ -1006,8 +1006,8 @@ SCIP_RETCODE checkIdenticalBlocks(
       }
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Matrix has %d blocks, using %d aggregated pricing problem%s!\n",
-      relaxdata->npricingprobs, nrelevant, (nrelevant == 1 ? "" : "s"));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Matrix has %d blocks, using %d%s pricing problem%s.\n",
+      relaxdata->npricingprobs, nrelevant, (relaxdata->npricingprobs == nrelevant ? "" : " aggregated"), (nrelevant == 1 ? "" : "s"));
 
    relaxdata->nrelpricingprobs = nrelevant;
 
@@ -2468,11 +2468,12 @@ SCIP_RETCODE initRelaxator(
       }
    }
 
-   SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks, %d linking vars, %d master-only (base) variables and %d linking constraints.\n", DECdecompGetNBlocks(relaxdata->decdecomp), DECdecompGetNLinkingvars(relaxdata->decdecomp), DECdecompGetNMastervars(relaxdata->decdecomp), DECdecompGetNLinkingconss(relaxdata->decdecomp));
-   SCIPinfoMessage(scip, NULL, "This decomposition has a maxwhite score of %f .\n", DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
+   SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks, %d linking vars, %d master-only (static) variables and %d linking constraints.\n", DECdecompGetNBlocks(relaxdata->decdecomp), DECdecompGetNLinkingvars(relaxdata->decdecomp), DECdecompGetNMastervars(relaxdata->decdecomp), DECdecompGetNLinkingconss(relaxdata->decdecomp));
+   SCIPinfoMessage(scip, NULL, "This decomposition has a maxwhite score of %f.\n", DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
 
    /* permute the decomposition if the permutation seed is set */
    SCIP_CALL( SCIPgetIntParam(scip, "randomization/permutationseed", &permutationseed) );
+
    if( permutationseed > 0 )
    {
       SCIP_RANDNUMGEN* randnumgen;
@@ -2756,15 +2757,15 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    SCIPinfoMessage(scip, NULL, "\n");
    if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
    {
-      SCIPinfoMessage(scip, NULL, "Dantzig-Wolfe reformulation is being used to solve the original problem.\n");
+      SCIPinfoMessage(scip, NULL, "A Dantzig-Wolfe reformulation is applied to solve the original problem.\n");
    }
    else if( relaxdata->mode == DEC_DECMODE_BENDERS )
    {
-      SCIPinfoMessage(scip, NULL, "Benders' decomposition is being used to solve the original problem.\n");
+      SCIPinfoMessage(scip, NULL, "A Benders' decomposition is applied to solve the original problem.\n");
    }
    else if( relaxdata->mode == DEC_DECMODE_ORIGINAL )
    {
-      SCIPinfoMessage(scip, NULL, "Original mode has been selected. No decomposition will be performed.\n");
+      SCIPinfoMessage(scip, NULL, "No reformulation will be performed. Solving the original model.\n");
    }
 
    return SCIP_OKAY;
