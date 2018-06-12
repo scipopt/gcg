@@ -46,6 +46,9 @@ def parse_arguments(args):
     parser.add_argument('-ss', '--stepsize', type=float, default=0.01,
                         help='Step size used in plot (note that creating the plot can take long when stepsize is too small)')
 
+    parser.add_argument('-l', '--log', type=bool, default=False,
+                        help='Should a logarithmic scale be used?')
+
     parser.add_argument('-o', '--out', type=str, default='perprof_plot.pdf',
                         help='Name of out file')
 
@@ -66,6 +69,7 @@ def set_params(args):
     params['status'] = args.status
     params['min'] = args.min
     params['stepsize'] = args.stepsize
+    params['log'] = args.log
     params['out'] = args.out
 
 def main():
@@ -94,9 +98,9 @@ def main():
     for resfile in resfiles:
         df = df[(df[resfile,"status"] == "ok") | (df[resfile,"status"] == "solved")]
         df[resfile,'time'] = df[resfile,'time'].apply(lambda x: max(x, params['min']))
-    
+
     df["best"] = df[[(resfile, 'time') for resfile in resfiles]].min(axis=1)
-    
+
     for resfile in resfiles:
         df[resfile,"performance"] = df[resfile,"time"]/df["best"]
 
@@ -105,18 +109,21 @@ def main():
 
     def perplot(resfile, t):
         return 1.0*len(df[df[resfile,"performance"] <= t]) / len(df)
-    
-    
+
+
     xx = np.arange(1.0,rmax+params['stepsize'],params['stepsize'])
-    
+
     f, ax = plt.subplots()
 
     for resfile in resfiles:
         setting = resfile.split(".")[-3]
-        
-        
+
         yy = np.array([perplot(resfile,x) for x in xx])
-        ax.plot(xx,yy,label=setting)
+        if params['log']:
+            ax.semilogx(xx,yy,label=setting)
+        else:
+            ax.plot(xx,yy,label=setting)
+
 #        ax = df.plot(kind='line',y=(resfile,"per"), ax=ax);
     plt.ylim([0.0, 1.01])
     plt.legend(loc='lower right')
