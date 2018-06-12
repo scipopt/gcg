@@ -1631,7 +1631,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
          if( ! detector->enabledFinishing )
             continue;
 
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "call finisher for detector %s \n ", DECdetectorGetName( detectorToFinishingScipDetector[d] ) );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "call finisher for detector %s \n", DECdetectorGetName( detectorToFinishingScipDetector[d] ) );
 
          SCIP_CALL_ABORT(
             detectorToFinishingScipDetector[d]->finishSeeed( scip, detectorToFinishingScipDetector[d], seeedPropData,
@@ -1757,7 +1757,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
    /** postprocess the finished seeeds */
    std::vector<SeeedPtr >postprocessed(0);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Started Postprocessing of decompositions...\n");
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Started postprocessing of decompositions...\n");
    SCIP_CALL_ABORT( SCIPstartClock( scip, postprocessingclock ) );
 #pragma omp parallel for schedule( static, 1 )
    for( size_t c = 0 ; c < finishedSeeeds.size(); ++c )
@@ -1784,7 +1784,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             continue;
 
 
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "call finisher for detector %s \n ", DECdetectorGetName( detectorToPostprocessingScipDetector[d] ) );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "call finisher for detector %s \n", DECdetectorGetName( detectorToPostprocessingScipDetector[d] ) );
 
          SCIP_CALL_ABORT(
             detectorToPostprocessingScipDetector[d]->postprocessSeeed( scip, detectorToPostprocessingScipDetector[d], seeedPropData,
@@ -3525,7 +3525,7 @@ void Seeedpool::addCandidatesNBlocks(
       }
       if( ! alreadyIn )
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "added block number candidate : %d \n ", candidate );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "added block number candidate: %d \n", candidate );
          candidatesNBlocks.push_back( std::pair<int, int>( candidate, 1 ) );
       }
    }
@@ -3551,7 +3551,7 @@ void Seeedpool::addCandidatesNBlocksNVotes(
       }
       if( ! alreadyIn )
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "added block number candidate : %d \n ", candidate );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "added block number candidate: %d \n", candidate );
          candidatesNBlocks.push_back( std::pair<int, int>( candidate, nvotes ) );
       }
    }
@@ -3569,13 +3569,13 @@ void Seeedpool::addUserCandidatesNBlocks(
    {
       if( usercandidatesnblocks[i] == candidate )
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "is already given by the user as a block number candidate, there is no advantage in adding it twice \n " );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "is already given by the user as a block number candidate, there is no advantage in adding it twice \n" );
          return;
       }
    }
    if( !alreadyIn )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "added user block number candidate : %d \n ", candidate );
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "added user block number candidate: %d \n", candidate );
       usercandidatesnblocks.push_back(candidate);
    }
 }
@@ -3610,7 +3610,7 @@ void Seeedpool::calcCandidatesNBlocks()
       /** check if there are too many classes in this distribution and skip it if so */
       if( consclassescollection[classifier]->getNClasses() > maximumnclasses )
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " the current consclass distribution includes %d classes but only %d are allowed for calcCandidatesNBlocks()\n ", consclassescollection[classifier]->getNClasses(), maximumnclasses );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " the current consclass distribution includes %d classes but only %d are allowed for calcCandidatesNBlocks()\n", consclassescollection[classifier]->getNClasses(), maximumnclasses );
          continue;
       }
 
@@ -3650,7 +3650,7 @@ void Seeedpool::calcCandidatesNBlocks()
       /** check if there are too many classes in this distribution and skip it if so */
       if( varclassescollection[classifier]->getNClasses() > maximumnclasses )
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " the current varclass distribution includes %d classes but only %d are allowed for calcCandidatesNBlocks()\n ", varclassescollection[classifier]->getNClasses(), maximumnclasses );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " the current varclass distribution includes %d classes but only %d are allowed for calcCandidatesNBlocks()\n", varclassescollection[classifier]->getNClasses(), maximumnclasses );
          continue;
       }
 
@@ -3731,7 +3731,7 @@ void Seeedpool::addConsClassifier(
          consclassescollection.push_back( givenClassifier );
       else
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " consclassifier \"%s\" is not considered since it offers the same structure as \"%s\" consclassifier\n ", givenClassifier->getName(), equiv->getName() );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" is not considered since it offers the same structure as \"%s\" consclassifier\n", givenClassifier->getName(), equiv->getName() );
          delete givenClassifier;
       }
    }
@@ -3832,7 +3832,7 @@ ConsClassifier* Seeedpool::createConsClassifierForSCIPConstypes()
       classifier->assignConsToClass( i, classForCons[i] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), (int) foundConstypes.size() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d different constraint classes \n", classifier->getName(), (int) foundConstypes.size() );
    return classifier;
 }
 
@@ -4264,7 +4264,7 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
 
 
    classifier->removeEmptyClasses();
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d different constraint classes \n", classifier->getName(), classifier->getNClasses() );
 
    return classifier;
 }
@@ -4339,7 +4339,7 @@ ConsClassifier* Seeedpool::createConsClassifierForConsnamesDigitFreeIdentical()
       classifier->assignConsToClass( i, classForCons[i] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d different constraint classes \n", classifier->getName(), classifier->getNClasses() );
 
    return classifier;
 }
@@ -4447,7 +4447,7 @@ ConsClassifier* Seeedpool::createConsClassifierForConsnamesLevenshteinDistanceCo
       classifier->assignConsToClass( i, classForCons[i] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " consclassifier levenshtein: connectivity of %d yields a classification with %d different constraint classes. \n", connectivity, currentClass + 1);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier levenshtein: connectivity of %d yields a classification with %d different constraint classes. \n", connectivity, currentClass + 1);
 
    return classifier;
 }
@@ -4592,7 +4592,7 @@ void Seeedpool::addVarClassifier(
          varclassescollection.push_back( givenClassifier );
       else
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" not considered since it offers the same structure as \"%s\".\n", givenClassifier->getName(), equiv->getName() );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" is not considered since it offers the same structure as \"%s\"\n", givenClassifier->getName(), equiv->getName() );
          delete givenClassifier;
       }
 
@@ -4658,7 +4658,7 @@ VarClassifier* Seeedpool::createVarClassifierForObjValues()
       classifier->assignVarToClass( v, classforvars[v] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses() ) ;
 
    return classifier;
 }
@@ -4706,7 +4706,7 @@ VarClassifier* Seeedpool::createVarClassifierForObjValueSigns()
    /* remove a class if there is no variable with the respective sign */
    classifier->removeEmptyClasses();
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses() ) ;
 
    return classifier;
 }
@@ -4810,7 +4810,7 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
       classifier->assignVarToClass( i, classForVars[i] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes.\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses() ) ;
 
 
 
@@ -4863,7 +4863,7 @@ void Seeedpool::reduceVarclasses()
 
       if( newclassifier != NULL )
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Added reduced version of varclassifier %s with %d different variable classes.\n", varclassescollection[classifierid]->getName(), maxnclasses ) ;
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Added reduced version of varclassifier %s with %d different variable classes\n", varclassescollection[classifierid]->getName(), maxnclasses ) ;
          addVarClassifier( newclassifier );
       }
    }
