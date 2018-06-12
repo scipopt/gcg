@@ -4174,7 +4174,7 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
 
 
 
-   classifier = new ConsClassifier( scip, "constypes according to miplip", (int) SCIP_CONSTYPE_GENERAL + 1, getNConss() );
+   classifier = new ConsClassifier( scip, "constypes according to miplib", (int) SCIP_CONSTYPE_GENERAL + 1, getNConss() );
 
 
    /** set class names and descriptions of every class */
