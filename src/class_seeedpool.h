@@ -51,7 +51,7 @@
 
 
 /**
- * \brief interface datatstructre for the detector calling methods
+ * \brief interface data structure for the detector calling methods
  */
 struct Seeed_Propagation_Data
 {
@@ -98,7 +98,7 @@ struct pair_hash
 
 
 /**
- * class to manage the detectorion process and data for one coeeficient matrix of a MIP, usually tehre is one seedpool for the original and one seeedpool for the transformed problem
+ * class to manage the detection process and data for one coefficient matrix of a MIP, usually there is one seeedpool for the original and one seeedpool for the transformed problem
  */
 class Seeedpool
 { /*lint -esym(1712,Seeedpool)*/
@@ -660,114 +660,223 @@ public:
       );
 
 
-   /** returns the number of constraints for a given constraint */
+   /**
+    * @brief returns the number of constraints for a given constraint
+    * @param consIndex index of the constraint to be considered
+    * @return the number of constraints for a given constraint
+    */
    int getNConssForCons(
       int consIndex /**< index of the constraint to be considered */
       );
 
-   /** returns the SCIP variable related to a variable index */
+
+   /**
+    * @brief returns SCIP variable related to a variable index
+    * @param varIndex index of the variable to be considered
+    * @return SCIP variable pointer related to a variable index
+    */
    SCIP_VAR* getVarForIndex(
       int varIndex /**< index of the variable to be considered */
       );
 
-   /** returns the SCIP constraint related to a constraint index */
+
+   /**
+    * @brief returns the SCIP constraint related to a constraint index
+    * @param consIndex index of the constraint to be considered
+    * @return the SCIP constraint related to a constraint index
+    */
    SCIP_CONS* getConsForIndex(
       int consIndex /**< index of the constraint to be considered */
       );
 
-   /** returns the detector related to a detector index */
+   /**
+    * @brief returns the detector related to a detector index
+    * @param detectorIndex index of the detector to be considered
+    * @return pointer to detector related to a detector index
+    */
    DEC_DETECTOR* getDetectorForIndex(
       int detectorIndex /**< index of the detector to be considered */
       );
 
-   /** returns the detector related to a finishing detector index */
+   /**
+    * @brief returns the detector related to a finishing detector index
+    * @param detectorIndex index of the finishing detector to be considered
+    * @return detector pointer related to a finishing detector index
+    */
    DEC_DETECTOR* getFinishingDetectorForIndex(
       int detectorIndex /**< index of the finishing detector to be considered */
       );
 
-   /** returns the detector related to a finishing detector index */
+
+   /**
+    * @brief returns the detector related to a finishing detector index
+    * @param detectorIndex index of the postprocessing detector to be considered
+    * @return detector pointer related to a postprocessing detector index
+    */
    DEC_DETECTOR* getPostprocessingDetectorForIndex(
       int detectorIndex /**< index of the postprocessing detector to be considered */
       );
 
 
-   /** returns a coefficient from the coefficient matrix */
+   /**
+    * @brief returns a coefficient from the coefficient matrix
+    * @param row index of the constraint to be considered
+    * @param col index of the variable to be considered
+    * @return a coefficient from the coefficient matrix
+    */
    SCIP_Real getVal(
       int row, /**< index of the constraint to be considered */
       int col  /**< index of the variable to be considered */
       );
 
-   /** returns the variable index related to a SCIP variable */
+   /**
+    * @brief returns the variable index related to a SCIP variable
+    * @param var variable pointer the index is asked for
+    * @return the variable index related to a SCIP variable
+    */
    int getIndexForVar(
       SCIP_VAR* var
       );
 
-   /** returns the constraint index related to a SCIP constraint */
+
+   /**
+    * @brief returns the constraint index related to a SCIP constraint
+    * @param cons the SCIP constraint pointer the index is asked for
+    * @return the constraint index related to a SCIP constraint
+    */
    int getIndexForCons(
       SCIP_CONS* cons
       );
 
-   /** returns the detector index related to a detector */
+
+   /**
+    * @brief the detector index related to a detector
+    * @param detector pointer of detector the index is asked for
+    * @return the detector index related to a detector
+    */
    int getIndexForDetector(
       DEC_DETECTOR* detector
       );
 
-   /** returns the finishing detector index related to a detector */
+
+   /**
+    * @brief returns the finishing detector index related to a detector
+    * @param detector pointer of finishing detector
+    * @return the finishing detector index
+    */
    int getIndexForFinishingDetector(
       DEC_DETECTOR* detector
       );
 
-   /** returns the postprocessing detector index related to a detector */
+
+   /**
+    * @brief returns the postprocessing detector index related to a detector
+    * @param detector pointer to the postprocessing detector
+    * @return the postprocessing detector index
+    */
    int getIndexForPostprocessingDetector(
       DEC_DETECTOR* detector
       );
 
 
-   /** returns a new unique id for a seeed */
+   /**
+    * @brief returns a new unique id for a new seeed
+    * @return  a new integer unique id for a seeed
+    */
    int getNewIdForSeeed();
 
-   /** returns the number of detectors used in the seeedpool */
+
+   /**
+    * @brief returns the number of propagating detectors used in the seeedpool
+    * @return number of detectors
+    */
    int getNDetectors();
 
-   /** returns the number of nonzero entries in the coefficient matrix */
+   /**
+    * @brief returns the number of nonzero entries in the coefficient matrix
+    * @return the number of nonzero entries in the coefficient matrix
+    */
    int getNNonzeros();
 
-   /** returns the number of finishing detectors used in the seeedpool */
+   /**
+    * @brief returns the number of finishing detectors used in the seeedpool
+    * @return  the number of finishing detectors used in the seeedpool
+    */
    int getNFinishingDetectors();
 
-   /** returns the number of postprocessing detectors used in the seeedpool */
+
+   /**
+    * @brief returns the number of postprocessing detectors used in the seeedpool
+    * @return the number of postprocessing detectors used in the seeedpool
+    */
    int getNPostprocessingDetectors();
 
-   /** returns the number of variables considered in the seeedpool */
+
+   /**
+    * @brief return the number of variables considered in the seeedpool
+    * @return the number of variables considered in the seeedpool
+    */
    int getNVars();
 
-   /** returns the number of constraints considered in the seeedpool */
+
+   /**
+    * @brief returns the number of variables considered in the seeedpool
+    * @return number of variables considered in the seeedpool
+    */
    int getNConss();
 
-   /* returns associated scip */
+
+   /**
+    * @brief returns the corresponding scip data structure
+    * @return the corresponding scip data structure
+    */
    SCIP* getScip();
 
-   /** returns scip cons for corresponing id */
+
+   /**
+    * @brief returns scip cons for corresponing id
+    * @param consid the index of the constraint
+    * @return pointer of constraint for the given index
+    */
    SCIP_CONS* getScipCons(
       int consid
       );
 
-   /** returns scip var for corresponing id */
+
+   /**
+    * @brief returns scip var for corresponding id
+    * @param varid the index of the variable
+    * @return returns scip var for corresponding id
+    */
    SCIP_VAR* getScipVar(
       int varid
    );
 
-   /** returns the candidates for block size sorted in descending order by how often a candidate was added */
+
+   /**
+    * @brief returns the candidates for number of blocks added by the user followed by the found ones sorted in descending order by how often a candidate was proposed  )
+    * @note @see getSortedCandidatesNBlocksFull()
+    * @return the candidates for number of blocks sorted in descending order by how often a candidate was added
+    */
    std::vector<int> getSortedCandidatesNBlocks();
 
-   /** returns the candidates for block size sorted in descending order by how often a candidate was added with nvotes information*/
+   /**
+    * @brief returns (candidate-nvotes) pair for candidates for number of blocks added by the user followed by the found ones sorted in descending order by how often a candidate was proposed, candidates are first   )
+    * @note @see getSortedCandidatesNBlocks()
+    * @return vector of (candidate-nvotes) pair  the candidates for block size sorted in descending order by how often a candidate was added with nvotes information*
+    */
     std::vector<std::pair<int, int>> getSortedCandidatesNBlocksFull();
 
 
-   /** adds a candidate for block size and counts how often a candidate is added */
+    /**
+     * @brief adds and counts how often added a candidate for block size and
+     * @param candidate number of candidate
+     */
    void addCandidatesNBlocks(
       int candidate /**< candidate for block size */
       );
+
+
 
    /** adds a candidate for block size and counts how often a candidate is added */
    void addCandidatesNBlocksNVotes(
