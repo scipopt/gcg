@@ -1087,7 +1087,6 @@ Seeedpool::Seeedpool(
    SCIPgetBoolParam(scip, "detection/benders/onlycontsubpr", &onlycontsubpr);
    if( onlybinmaster )
    {
-      std::cout << " start only bin master " << std::endl;
       emptyseeed->initOnlyBinMaster();
       emptyseeed->considerImplicits();
    }
@@ -5346,7 +5345,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    DECdecompSetSubscipvars( scip, * newdecomp, subscipvars, nsubscipvars );
    DECdecompSetStairlinkingvars( scip, * newdecomp, stairlinkingvars, nstairlinkingvars );
-   DECdecompSetLinkingvars( scip, * newdecomp, linkingvars, nlinkingvars, seeed->getNMastervars() + nmastervarsfromdeleted );
+   DECdecompSetLinkingvars( scip, * newdecomp, linkingvars, nlinkingvars, (int) unpresolvedfixedtozerovars.size(), seeed->getNMastervars() + nmastervarsfromdeleted );
    DECdecompSetVarindex( * newdecomp, varindex );
    DECdecompSetVartoblock( * newdecomp, vartoblock );
 

@@ -205,7 +205,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
 
    if( nlinkingvars > 0 )
    {
-      SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars, nmastervars) );
+      SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars, 0, nmastervars) );
       *haslinking = TRUE;
    }
 
@@ -984,8 +984,9 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            linkingvars,        /**< linkingvars array  */
-   int                   nlinkingvars,       /**< number of linkingvars */
-   int                   nmastervars         /**< number of linking variables thta are purely master variables */
+   int                   nlinkingvars,       /**< number of total linkingvars (including fixed linking vars,  ) */
+   int                   nfixedlinkingvars,  /**< number of fixed linking variables */
+   int                   nmastervars         /**< number of linking variables that are purely master variables */
    )
 {
    assert(scip != NULL);
@@ -997,6 +998,7 @@ SCIP_RETCODE DECdecompSetLinkingvars(
 
    decomp->nlinkingvars = nlinkingvars;
    decomp->nmastervars = nmastervars;
+   decomp->nfixedlinkingvars = nfixedlinkingvars;
 
    if( nlinkingvars > 0 )
    {

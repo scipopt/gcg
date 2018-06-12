@@ -33,7 +33,7 @@
  * @author Michael Bastubbe
  *
  * This constraint handler will run all registered structure detectors in
- * in an iterato=ive scheme increasing priority until the first detector finds a suitable structure.
+ * in an iterative scheme increasing priority until the first detector finds a suitable structure.
  *
  */
 
