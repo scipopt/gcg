@@ -223,6 +223,13 @@ int DECdecompGetNLinkingvars(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
+/** returns the nlinkingvars array of the given decomposition */
+extern
+int DECdecompGetNFixedLinkingvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+
 /** copies the input stairlinkingvars array to the given decomposition */
 extern
 SCIP_RETCODE DECdecompSetStairlinkingvars(

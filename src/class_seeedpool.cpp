@@ -5289,7 +5289,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
          var = unpresolvedfixedtozerovars[v];
 
          linkingvars[seeed->getNMastervars() + seeed->getNLinkingvars() + nmastervarsfromdeleted + v] = var;
-         SCIP_CALL_ABORT( SCIPhashmapInsert( vartoblock, var, (void*) ( size_t )( seeed->getNBlocks() + 2 - ndeletedblocks) ) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert( vartoblock, var, (void*) ( size_t )( seeed->getNBlocks() + 1 - ndeletedblocks) ) );
          SCIP_CALL_ABORT( SCIPhashmapInsert( varindex, var, (void*) (size_t) varcounter ) );
          varcounter ++;
       }

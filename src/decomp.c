@@ -491,6 +491,7 @@ SCIP_RETCODE DECdecompCreate(
    decomp->nlinkingconss = 0;
    decomp->linkingvars = NULL;
    decomp->nlinkingvars = 0;
+   decomp->nfixedlinkingvars = 0;
    decomp->stairlinkingvars = NULL;
    decomp->nstairlinkingvars = NULL;
    decomp->nblocks = 0;
@@ -1046,6 +1047,17 @@ int DECdecompGetNLinkingvars(
    assert(decomp->nlinkingvars >= 0);
 
    return decomp->nlinkingvars;
+}
+
+/** returns the nlinkingvars array of the given decomposition */
+int DECdecompGetNFixedLinkingvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   assert(decomp != NULL);
+   assert(decomp->nfixedlinkingvars >= 0);
+
+   return decomp->nfixedlinkingvars;
 }
 
 /** returns the number of linking variables that are purely master variables of the given decomposition */

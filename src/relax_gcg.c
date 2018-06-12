@@ -41,7 +41,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-/*#define SCIP_DEBUG*/
+//#define SCIP_DEBUG
 
 #include <string.h>
 
@@ -1331,6 +1331,7 @@ SCIP_RETCODE createPricingVariables(
          SCIP_CALL( createLinkingPricingVars(scip, relaxdata, probvar) );
          assert(GCGlinkingVarGetPricingVars(probvar) != NULL);
 
+
          pricingvars = GCGlinkingVarGetPricingVars(probvar);
 
          for( i = 0; i < npricingprobs; i++ )
@@ -2468,7 +2469,11 @@ SCIP_RETCODE initRelaxator(
       }
    }
 
-   SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks, %d linking vars, %d master-only (static) variables and %d linking constraints.\n", DECdecompGetNBlocks(relaxdata->decdecomp), DECdecompGetNLinkingvars(relaxdata->decdecomp), DECdecompGetNMastervars(relaxdata->decdecomp), DECdecompGetNLinkingconss(relaxdata->decdecomp));
+   if ( DECdecompGetNFixedLinkingvars(relaxdata->decdecomp) == 0 )
+      SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks, %d linking vars, %d master-only (static) variables and %d linking constraints.\n", DECdecompGetNBlocks(relaxdata->decdecomp), DECdecompGetNLinkingvars(relaxdata->decdecomp) - DECdecompGetNMastervars(relaxdata->decdecomp), DECdecompGetNMastervars(relaxdata->decdecomp), DECdecompGetNLinkingconss(relaxdata->decdecomp));
+   else
+      SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks, %d linking vars (including %d fixed linking variables), %d master-only (static) variables and %d linking constraints.\n", DECdecompGetNBlocks(relaxdata->decdecomp), DECdecompGetNLinkingvars(relaxdata->decdecomp) - DECdecompGetNMastervars(relaxdata->decdecomp), DECdecompGetNFixedLinkingvars(relaxdata->decdecomp), DECdecompGetNMastervars(relaxdata->decdecomp), DECdecompGetNLinkingconss(relaxdata->decdecomp));
+
    SCIPinfoMessage(scip, NULL, "This decomposition has a maxwhite score of %f.\n", DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
 
    /* permute the decomposition if the permutation seed is set */
