@@ -68,6 +68,7 @@ private:
    /* strategy */
    GCG_PQUEUE*           pqueue;             /**< priority queue containing the pricing jobs */
    SCIP_Real*            score;              /**< scores of the pricing problems */
+   int                   maxniters;          /**< maximal possible number of pricing iterations */
    int                   nchunks;            /**< number of pricing problem 'chunks' */
    int                   curchunk;           /**< index of current chunk of pricing problems */
    int                   startchunk;         /**< first chunk considered in a pricing call */
@@ -168,6 +169,9 @@ public:
    GCG_PRICINGPROB* getPricingprob(
       int                   probnr              /**< index of the pricing problem */
       );
+
+   /** get maximal possible number of pricing iterations */
+   int getMaxNIters() const;
 
 
 private:
