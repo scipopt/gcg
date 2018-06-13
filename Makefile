@@ -252,6 +252,7 @@ LIBOBJ = \
 			gcgcol.o \
 			gcggithash.o \
 			gcgheur.o \
+			gcgsepa.o \
 			gcgplugins.o \
 			gcgpqueue.o \
 			gcgsort.o \

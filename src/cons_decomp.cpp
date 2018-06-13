@@ -3996,7 +3996,6 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
    gcg::Seeed* seeed;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -4011,15 +4010,12 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
    assert(conshdlrdata != NULL);
 
    seeed = conshdlrdata->seeedpool->findFinishedSeeedByID(seeedid);
-   currseeedpool = conshdlrdata->seeedpool;
 
    if ( seeed == NULL )
    {
       seeed = conshdlrdata->seeedpoolunpresolved->findFinishedSeeedByID(seeedid);
-      currseeedpool = conshdlrdata->seeedpoolunpresolved;
    }
 
-   assert(currseeedpool == seeed->getSeeedpool() );
 
    if( seeed->getNReps() == 0 )
    {
@@ -6499,7 +6495,7 @@ DEC_DECOMP* DECgetBestDecomp(
 
    seeed = conshdlrdata->candidates->at( 0 ).first;
 
-   SCIPdialogMessage(scip, NULL, "In get bestdecomp\n");
+   SCIPdebugMessage("In get bestdecomp\n");
 
    if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
    {

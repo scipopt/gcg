@@ -91,6 +91,7 @@
  */
 
 /** relaxator data */
+
 struct SCIP_RelaxData
 {
    /* problems and convexity constraints */
@@ -2414,6 +2415,7 @@ SCIP_RETCODE initRelaxator(
    int i;
    int nvars;
    int permutationseed;
+   int oxfordcomma;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -2484,7 +2486,24 @@ SCIP_RETCODE initRelaxator(
       }
    }
 
-   SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks, %d linking vars, %d master-only (static) variables and %d linking constraints.\n", DECdecompGetNBlocks(relaxdata->decdecomp), DECdecompGetNLinkingvars(relaxdata->decdecomp), DECdecompGetNMastervars(relaxdata->decdecomp), DECdecompGetNLinkingconss(relaxdata->decdecomp));
+   oxfordcomma = 0;
+   SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks", DECdecompGetNBlocks(relaxdata->decdecomp));
+   /* every master-only variable internally also counts as linking, but should not be reported as linking variable */
+   if ( DECdecompGetNLinkingvars(relaxdata->decdecomp) - DECdecompGetNMastervars(relaxdata->decdecomp) > 0)
+   {
+      SCIPinfoMessage(scip, NULL, ", %d linking variables", DECdecompGetNLinkingvars(relaxdata->decdecomp) - DECdecompGetNMastervars(relaxdata->decdecomp));
+      ++oxfordcomma;
+   }
+   if ( DECdecompGetNMastervars(relaxdata->decdecomp) > 0 )
+   {
+      SCIPinfoMessage(scip, NULL, ", %d master-only (static) variables", DECdecompGetNMastervars(relaxdata->decdecomp));
+      ++oxfordcomma;
+   }
+   if ( oxfordcomma > 0 )
+   {
+      SCIPinfoMessage(scip, NULL, ",");
+   }
+   SCIPinfoMessage(scip, NULL, " and %d linking constraints.\n", DECdecompGetNLinkingconss(relaxdata->decdecomp));
    SCIPinfoMessage(scip, NULL, "This decomposition has a maxwhite score of %f.\n", DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
 
    /* permute the decomposition if the permutation seed is set */

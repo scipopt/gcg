@@ -1087,7 +1087,6 @@ Seeedpool::Seeedpool(
    SCIPgetBoolParam(scip, "detection/benders/onlycontsubpr", &onlycontsubpr);
    if( onlybinmaster )
    {
-      std::cout << " start only bin master " << std::endl;
       emptyseeed->initOnlyBinMaster();
       emptyseeed->considerImplicits();
    }
@@ -4174,7 +4173,7 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
 
 
 
-   classifier = new ConsClassifier( scip, "constypes according to miplip", (int) SCIP_CONSTYPE_GENERAL + 1, getNConss() );
+   classifier = new ConsClassifier( scip, "constypes according to miplib", (int) SCIP_CONSTYPE_GENERAL + 1, getNConss() );
 
 
    /** set class names and descriptions of every class */
@@ -5346,7 +5345,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    DECdecompSetSubscipvars( scip, * newdecomp, subscipvars, nsubscipvars );
    DECdecompSetStairlinkingvars( scip, * newdecomp, stairlinkingvars, nstairlinkingvars );
-   DECdecompSetLinkingvars( scip, * newdecomp, linkingvars, nlinkingvars, seeed->getNMastervars() + nmastervarsfromdeleted );
+   DECdecompSetLinkingvars( scip, * newdecomp, linkingvars, nlinkingvars, (int) unpresolvedfixedtozerovars.size(), seeed->getNMastervars() + nmastervarsfromdeleted );
    DECdecompSetVarindex( * newdecomp, varindex );
    DECdecompSetVartoblock( * newdecomp, vartoblock );
 
@@ -5454,7 +5453,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    }
 
 
-   std::cout <<" seeed maxwhitescore: " << seeed->getMaxWhiteScore() << std::endl;
+   SCIPdebugMessage(" seeed maxwhitescore: %f\n", seeed->getMaxWhiteScore());
 
    DECsetMaxWhiteScore(scip, *newdecomp, seeed->getMaxWhiteScore() );
 
