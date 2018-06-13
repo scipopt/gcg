@@ -72,10 +72,10 @@
 #define DEFAULT_STARTNODELIMIT       1000LL  /**< start node limit for heuristic pricing */
 #define DEFAULT_STARTGAPLIMIT        0.2     /**< start gap limit for heuristic pricing */
 #define DEFAULT_STARTSOLLIMIT        10LL    /**< start solution limit for heuristic pricing */
-#define DEFAULT_NODELIMITFAC         1.25    /**< factor by which to increase node limit for heuristic pricing */
+#define DEFAULT_NODELIMITFAC         1.25    /**< factor by which to increase node limit for heuristic pricing (1.0: add start limit) */
 #define DEFAULT_STALLNODELIMITFAC    1.25    /**< factor by which to increase stalling node limit for heuristic pricing */
-#define DEFAULT_GAPLIMITFAC          0.8     /**< factor by which to decrease gap limit for heuristic pricing */
-#define DEFAULT_SOLLIMITFAC          1.5     /**< factor by which to increase solution limit for heuristic pricing */
+#define DEFAULT_GAPLIMITFAC          0.8     /**< factor by which to decrease gap limit for heuristic pricing (1.0: subtract start limit) */
+#define DEFAULT_SOLLIMITFAC          1.5     /**< factor by which to increase solution limit for heuristic pricing (1.0: add start limit) */
 
 
 /** pricing solver data */
@@ -106,9 +106,9 @@ struct GCG_SolverData
    SCIP_Longint          startnodelimit;     /**< start node limit for heuristic pricing */
    SCIP_Real             startgaplimit;      /**< start gap limit for heuristic pricing */
    int                   startsollimit;      /**< start solution limit for heuristic pricing */
-   SCIP_Real             nodelimitfac;       /**< factor by which to increase node limit for heuristic pricing */
-   SCIP_Real             gaplimitfac;        /**< factor by which to decrease gap limit for heuristic pricing */
-   SCIP_Real             sollimitfac;        /**< factor by which to increase solution limit for heuristic pricing */
+   SCIP_Real             nodelimitfac;       /**< factor by which to increase node limit for heuristic pricing (1.0: add start limit) */
+   SCIP_Real             gaplimitfac;        /**< factor by which to decrease gap limit for heuristic pricing (1.0: subtract start limit) */
+   SCIP_Real             sollimitfac;        /**< factor by which to increase solution limit for heuristic pricing (1.0: add start limit) */
 };
 
 /*
@@ -777,7 +777,10 @@ SCIP_RETCODE solveCplex(
    /* @todo: CPXMIP_OPTIMAL_TOL = 102 seems to occur even if gaplimit is set to 0 */
    case CPXMIP_OPTIMAL_TOL: /* 102 */
       assert(nsolscplex > 0);
-      solverdata->curgaplimit[probnr] *= solverdata->gaplimitfac;
+      if( solverdata->gaplimitfac < 1.0 )
+         solverdata->curgaplimit[probnr] *= solverdata->gaplimitfac;
+      else
+         solverdata->curgaplimit[probnr] = MAX(solverdata->curgaplimit[probnr] - solverdata->startgaplimit, 0.0);
       SCIPdebugMessage("   -> gap limit reached, decreasing to %g\n", solverdata->curgaplimit[probnr]);
       *status = GCG_PRICINGSTATUS_SOLVERLIMIT;
       CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
@@ -785,7 +788,10 @@ SCIP_RETCODE solveCplex(
 
    case CPXMIP_NODE_LIM_FEAS: /* 105 */
       assert(nsolscplex > 0);
-      solverdata->curnodelimit[probnr] *= solverdata->nodelimitfac;
+      if( solverdata->nodelimitfac > 1.0 )
+         solverdata->curnodelimit[probnr] = (SCIP_Longint) (solverdata->curnodelimit[probnr] * solverdata->nodelimitfac);
+      else
+         solverdata->curnodelimit[probnr] += solverdata->startnodelimit;
       SCIPdebugMessage("   -> node limit reached, increasing to %"SCIP_LONGINT_FORMAT"\n", solverdata->curnodelimit[probnr]);
       *status = GCG_PRICINGSTATUS_SOLVERLIMIT;
       CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
@@ -793,7 +799,10 @@ SCIP_RETCODE solveCplex(
 
    case CPXMIP_SOL_LIM: /* 104 */
       assert(nsolscplex > 0);
-      solverdata->cursollimit[probnr] *= solverdata->sollimitfac;
+      if( solverdata->sollimitfac > 1.0 )
+         solverdata->cursollimit[probnr] = (int) (solverdata->cursollimit[probnr] * solverdata->sollimitfac);
+      else
+         solverdata->cursollimit[probnr] += solverdata->startsollimit;
       SCIPdebugMessage("   -> solution limit reached, increasing to %"SCIP_LONGINT_FORMAT"\n", solverdata->cursollimit[probnr]);
       *status = GCG_PRICINGSTATUS_SOLVERLIMIT;
       CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
@@ -1195,15 +1204,15 @@ SCIP_RETCODE GCGincludeSolverCplex(
          &solverdata->startsollimit, TRUE, DEFAULT_STARTSOLLIMIT, -1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/cplex/nodelimitfac",
-         "factor by which to increase node limit for heuristic pricing",
+         "factor by which to increase node limit for heuristic pricing (1.0: add start limit)",
          &solverdata->nodelimitfac, TRUE, DEFAULT_NODELIMITFAC, 1.0, SCIPinfinity(solverdata->origprob), NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/cplex/gaplimitfac",
-         "factor by which to decrease gap limit for heuristic pricing",
+         "factor by which to decrease gap limit for heuristic pricing (1.0: subtract start limit)",
          &solverdata->gaplimitfac, TRUE, DEFAULT_GAPLIMITFAC, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/cplex/sollimitfac",
-         "factor by which to increase solution limit for heuristic pricing",
+         "factor by which to increase solution limit for heuristic pricing (1.0: add start limit)",
          &solverdata->sollimitfac, TRUE, DEFAULT_SOLLIMITFAC, 1.0, SCIPinfinity(solverdata->origprob), NULL, NULL) );
 #endif
    return SCIP_OKAY;
