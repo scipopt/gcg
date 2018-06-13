@@ -177,7 +177,7 @@ SCIP_RETCODE setOriginalVarBlockNr(
 
    assert(scip != NULL);
    assert(var != NULL);
-   assert(newblock >= 0);
+   assert(newblock >= 0 || (GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS && newblock == -2));
 
    assert(SCIPvarIsOriginal(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_LOOSE || SCIPvarGetStatus(var) == SCIP_VARSTATUS_COLUMN);
    assert(relaxdata != NULL);
@@ -192,13 +192,14 @@ SCIP_RETCODE setOriginalVarBlockNr(
    /* var belongs to no block so far, just set the new block number */
    if( blocknr == -1 )
    {
+      assert(newblock >= 0);
       GCGvarSetBlock(var, newblock);
    }
    /* if var already belongs to another block, it is a linking variable */
    else if( blocknr != newblock )
    {
       SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock, relaxdata->npricingprobs, relaxdata->mode) );
-      assert(GCGisLinkingVarInBlock(var, newblock));
+      assert(newblock == -2 || GCGisLinkingVarInBlock(var, newblock));
       assert(GCGoriginalVarIsLinking(var));
    }
    blocknr = GCGvarGetBlock(var);
@@ -360,6 +361,8 @@ SCIP_RETCODE convertStructToGCG(
    SCIPdebugMessage("\tProcessing linking variables.\n");
    for( i = 0; i < nlinkingvars; ++i )
    {
+      int nfound = 0;
+
       if( GCGoriginalVarIsLinking(linkingvars[i]) )
          continue;
 
@@ -397,8 +400,21 @@ SCIP_RETCODE convertStructToGCG(
             }
 
             if( found )
+            {
+               nfound++;
                break;
+            }
+
          }
+      }
+
+      /* if the linking variable is only in one block, then it would not have been flagged as a linking variable. In
+       * the Benders' decomposition case, then linking variable needs to be flagged as linking so that it is added to
+       * the master problem.
+       */
+      if( nfound == 1 && GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+      {
+         SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, SCIPvarGetProbvar(linkingvars[i]), -2) );
       }
    }
 
