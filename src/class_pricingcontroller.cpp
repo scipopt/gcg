@@ -60,10 +60,8 @@
                                                      *    reliability from the 'l'ast nroundscol rounds
                                                      */
 #define DEFAULT_NROUNDSCOL               15
-#define DEFAULT_RELMAXSUCCESSFULPROBS    1.0        /**< maximal percentage of pricing problems that need to be solved successfully */
 #define DEFAULT_CHUNKSIZE                INT_MAX    /**< maximal number of pricing problems to be solved during one pricing loop */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
-#define DEFAULT_JOBTIMELIMIT             1e+20      /**< time limit per iteration of a pricing job */
 
 #define SCIP_CALL_EXC(x)   do                                                                                 \
                        {                                                                                      \
@@ -91,7 +89,6 @@ Pricingcontroller::Pricingcontroller(
 
    sorting = DEFAULT_SORTING;
    nroundscol = DEFAULT_NROUNDSCOL;
-   relmaxsuccessfulprobs = DEFAULT_RELMAXSUCCESSFULPROBS;
    chunksize = DEFAULT_CHUNKSIZE;
    eagerfreq = DEFAULT_EAGERFREQ;
 
@@ -130,10 +127,6 @@ SCIP_RETCODE Pricingcontroller::addParameters()
          "number of previous pricing rounds for which the number of improving columns should be counted",
          &nroundscol, TRUE, DEFAULT_NROUNDSCOL, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/relmaxsuccessfulprobs",
-         "maximal percentage of pricing problems that need to be solved successfully",
-         &relmaxsuccessfulprobs, FALSE, DEFAULT_RELMAXSUCCESSFULPROBS, 0.0, 1.0, NULL, NULL) );
-
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/chunksize",
          "maximal number of pricing problems to be solved during one pricing loop",
          &chunksize, TRUE, DEFAULT_CHUNKSIZE, 1, INT_MAX, NULL, NULL) );
@@ -141,10 +134,6 @@ SCIP_RETCODE Pricingcontroller::addParameters()
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/eagerfreq",
          "frequency at which all pricingproblems should be solved (0 to disable)",
          &eagerfreq, FALSE, DEFAULT_EAGERFREQ, 0, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/jobtimelimit",
-         "time limit per iteration of a pricing job",
-         &jobtimelimit, FALSE, DEFAULT_JOBTIMELIMIT, 0.0, 1e+20, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -445,12 +434,9 @@ SCIP_RETCODE Pricingcontroller::setPricingjobTimelimit(
 
    SCIP_CALL( SCIPgetRealParam(scip_, "limits/time", &mastertimelimit) );
 
-   /* The pricing job gets an additional solving time of 'jobtimelimit',
-    * but not more than is left for solving the master problem, and not less than zero
-    */
-   timelimit = MAX(0, MIN(SCIPgetSolvingTime(pricingscip) + jobtimelimit, mastertimelimit - SCIPgetSolvingTime(scip_)));
+   /* do not give pricing job more time than is left for solving the master problem */
+   timelimit = MAX(0, mastertimelimit - SCIPgetSolvingTime(scip_));
 
-//   SCIPdebugMessage("(Pricing prob %d) timelimit = %f\n", GCGpricingjobGetProbnr(pricingjob), timelimit);
    SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/time", timelimit) );
 
    return SCIP_OKAY;
@@ -600,10 +586,9 @@ SCIP_Bool Pricingcontroller::checkNextChunk()
 
 /** decide whether the pricing loop can be aborted */
 SCIP_Bool Pricingcontroller::canPricingloopBeAborted(
-   PricingType*          pricetype,          /**< type of pricing (reduced cost or Farkas) */
+   PricingType*          pricingtype,        /**< type of pricing (reduced cost or Farkas) */
    int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-   int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-   SCIP_Bool             optimal             /**< optimal or heuristic pricing */
+   int                   nsuccessfulprobs    /**< number of pricing problems solved successfully so far */
    ) const
 {
    int nrelpricingprobs = GCGgetNRelPricingprobs(GCGmasterGetOrigprob(scip_));
@@ -611,10 +596,10 @@ SCIP_Bool Pricingcontroller::canPricingloopBeAborted(
    if( eagerage == eagerfreq )
       return FALSE;
 
-   if( optimal )
-      return pricetype->canOptimalPricingBeAborted(nfoundcols, nsolvedprobs, nsuccessfulprobs, relmaxsuccessfulprobs, nrelpricingprobs);
-   else
-      return pricetype->canHeuristicPricingBeAborted(nfoundcols, nsolvedprobs, nsuccessfulprobs, relmaxsuccessfulprobs, nrelpricingprobs);
+   return !((nfoundcols < pricingtype->getMaxcolsround())
+         && nsuccessfulprobs < pricingtype->getMaxsuccessfulprobs()
+         && nsuccessfulprobs < pricingtype->getRelmaxsuccessfulprobs() * nrelpricingprobs
+         && (nfoundcols == 0 || nsolvedprobs < pricingtype->getRelmaxprobs() * nrelpricingprobs));
 }
 
 void Pricingcontroller::resetEagerage()

@@ -78,6 +78,11 @@
 #include "event_display.h"
 #include "pub_colpool.h"
 
+#ifdef SCIP_STATISTIC
+#include "scip/struct_scip.h"
+#include "scip/struct_stat.h"
+#endif
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -89,7 +94,6 @@ using namespace scip;
 #define PRICER_PRIORITY        5000000
 #define PRICER_DELAY           TRUE     /* only call pricer if all problem variables have non-negative reduced costs */
 
-#define DEFAULT_MAXVARSPROB              INT_MAX    /**< maximal number of variables per block to be added in a pricer call */
 #define DEFAULT_ABORTPRICINGINT          TRUE       /**< should the pricing be aborted when integral */
 #define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap between dual bound and RMP objective at which pricing is aborted */
 #define DEFAULT_DISPINFOS                FALSE      /**< should additional information be displayed */
@@ -177,7 +181,6 @@ struct SCIP_PricerData
 
    /** parameter values */
    SCIP_VARTYPE          vartype;            /**< vartype of created master variables */
-   int                   maxvarsprob;        /**< maximal number of variables per block to be added in a pricer call */
    int                   nroundsredcost;     /**< number of reduced cost rounds */
    SCIP_Bool             abortpricingint;    /**< should the pricing be aborted on integral solutions? */
    SCIP_Bool             dispinfos;          /**< should pricing information be displayed? */
@@ -356,10 +359,7 @@ int ObjPricerGcg::getMaxColsRound() const
 {
    assert(pricingtype != NULL);
 
-   if( pricingtype->getType() == GCG_PRICETYPE_FARKAS || SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_) )
-      return pricingtype->getMaxcolsround();
-   else
-      return pricingtype->getMaxcolsroundroot();
+   return pricingtype->getMaxcolsround();
 }
 
 /** get the number of columns per pricing problem to be added to the master LP in the current pricing round */
@@ -367,10 +367,7 @@ int ObjPricerGcg::getMaxColsProb() const
 {
    assert(pricingtype != NULL);
 
-   if( pricingtype->getType() == GCG_PRICETYPE_FARKAS || SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_) )
-      return pricingtype->getMaxcolsprob();
-   else
-      return pricingtype->getMaxcolsprobroot();
+   return pricingtype->getMaxcolsprob();
 }
 
 /** ensures size of pricedvars array */
@@ -2708,7 +2705,6 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
 SCIP_RETCODE ObjPricerGcg::performPricingjob(
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
-   int                   maxcols,            /**< size of the cols array to indicate maximum columns */
    GCG_PRICINGSTATUS*    status,             /**< pointer to store pricing status */
    SCIP_Real*            lowerbound          /**< pointer to store the obtained lower bound */
    )
@@ -2849,7 +2845,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_Bool enableppcuts;
    SCIP_Bool enablestab;
    int nsuccessfulprobs;
-   int maxcols;
    int maxniters;
    int niters;
    int i;
@@ -2883,8 +2878,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       *lowerbound = -SCIPinfinity(scip_);
 
    maxniters = pricingcontroller->getMaxNIters();
-
-   maxcols = MAX(MAX(farkaspricing->getMaxcolsprob(),reducedcostpricing->getMaxcolsprob()),reducedcostpricing->getMaxcolsprobroot()); /*lint !e666*/
 
    SCIP_CALL( SCIPgetLPI(scip_, &lpi) );
 
@@ -3065,7 +3058,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             continue;
 
          #pragma omp flush(nfoundvars, nsuccessfulprobs)
-         if( (pricingcontroller->canPricingloopBeAborted(pricetype, nfoundvars, nsuccessfulprobs, !GCGpricingjobIsHeuristic(pricingjob)) || infeasible) && !stabilized )
+         if( (pricingcontroller->canPricingloopBeAborted(pricetype, nfoundvars, nsuccessfulprobs) || infeasible) && !stabilized )
          {
             SCIPdebugMessage("*** Abort pricing loop, infeasible = %u, stabilized = %u\n", infeasible, stabilized);
             continue;
@@ -3090,7 +3083,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 #endif
 
          /* solve the pricing problem */
-         private_retcode = performPricingjob(pricingjob, pricetype, maxcols, &status, &problowerbound);
+         private_retcode = performPricingjob(pricingjob, pricetype, &status, &problowerbound);
 
 #ifdef SCIP_STATISTIC
          pricingtime = pricetype->getClockTime() - pricingtime;
@@ -3121,8 +3114,11 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             }
 
 #ifdef SCIP_STATISTIC
-            SCIPstatisticMessage("P p %d : %d in %g\n",
-               GCGpricingprobGetProbnr(pricingprob), GCGpricestoreGetNEfficaciousCols(pricestore) - oldnimpcols, pricingtime);
+            if( status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
+            {
+               SCIPstatisticMessage("P p %d : %d in %g\n",
+                  GCGpricingprobGetProbnr(pricingprob), GCGpricestoreGetNEfficaciousCols(pricestore) - oldnimpcols, pricingtime);
+            }
 #endif
          }
 
@@ -4251,10 +4247,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
          NULL) );
 
    pricerdata->eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
-
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxvarsprob",
-         "maximal number of variables per block to be added in a pricer call",
-         &pricerdata->maxvarsprob, FALSE, DEFAULT_MAXVARSPROB, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/abortpricingint",
          "should pricing be aborted due to integral objective function?",
