@@ -391,7 +391,6 @@ private:
    SCIP_RETCODE performPricingjob(
       GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
-      int                   maxcols,            /**< size of the cols array to indicate maximum columns */
       GCG_PRICINGSTATUS*    status,             /**< pointer to store pricing status */
       SCIP_Real*            lowerbound          /**< pointer to store the obtained lower bound */
       );
