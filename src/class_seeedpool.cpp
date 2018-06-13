@@ -5453,7 +5453,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    }
 
 
-   std::cout <<" seeed maxwhitescore: " << seeed->getMaxWhiteScore() << std::endl;
+   SCIPdebugMessage(" seeed maxwhitescore: %f\n", seeed->getMaxWhiteScore());
 
    DECsetMaxWhiteScore(scip, *newdecomp, seeed->getMaxWhiteScore() );
 

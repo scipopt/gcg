@@ -987,6 +987,7 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    int                   nlinkingvars,       /**< number of total linkingvars (including fixed linking vars,  ) */
    int                   nfixedlinkingvars,  /**< number of fixed linking variables */
    int                   nmastervars         /**< number of linking variables that are purely master variables */
+
    )
 {
    assert(scip != NULL);
@@ -1048,7 +1049,7 @@ int DECdecompGetNLinkingvars(
    return decomp->nlinkingvars;
 }
 
-/** returns the number of linking variables that are purely master variables of the given decomposition */
+/** returns the number of linking variables that are purely master ("static") variables of the given decomposition */
 int DECdecompGetNMastervars(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    )

@@ -6499,7 +6499,7 @@ DEC_DECOMP* DECgetBestDecomp(
 
    seeed = conshdlrdata->candidates->at( 0 ).first;
 
-   SCIPdialogMessage(scip, NULL, "In get bestdecomp\n");
+   SCIPdebugMessage("In get bestdecomp\n");
 
    if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
    {
