@@ -58,6 +58,7 @@ struct DecDecomp
    int                   nlinkingconss;      /**< number of linking constraints */
    SCIP_VAR**            linkingvars;        /**< array of variables linking the blocks */
    int                   nlinkingvars;       /**< number of linking variables */
+   int                   nfixedlinkingvars;       /**< number of fixed linking variables */
    int                   nmastervars;        /**< number of linking variables that are purelz master variables*/
    SCIP_VAR***           stairlinkingvars;   /**< array of variables staircaselinking the blocks */
    int*                  nstairlinkingvars;  /**< number of staircaselinking variables */
