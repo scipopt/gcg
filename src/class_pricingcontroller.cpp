@@ -62,7 +62,6 @@
 #define DEFAULT_NROUNDSCOL               15
 #define DEFAULT_CHUNKSIZE                INT_MAX    /**< maximal number of pricing problems to be solved during one pricing loop */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
-#define DEFAULT_JOBTIMELIMIT             1e+20      /**< time limit per iteration of a pricing job */
 
 #define SCIP_CALL_EXC(x)   do                                                                                 \
                        {                                                                                      \
@@ -134,10 +133,6 @@ SCIP_RETCODE Pricingcontroller::addParameters()
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/eagerfreq",
          "frequency at which all pricingproblems should be solved (0 to disable)",
          &eagerfreq, FALSE, DEFAULT_EAGERFREQ, 0, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/jobtimelimit",
-         "time limit per iteration of a pricing job",
-         &jobtimelimit, FALSE, DEFAULT_JOBTIMELIMIT, 0.0, 1e+20, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -433,12 +428,9 @@ SCIP_RETCODE Pricingcontroller::setPricingjobTimelimit(
 
    SCIP_CALL( SCIPgetRealParam(scip_, "limits/time", &mastertimelimit) );
 
-   /* The pricing job gets an additional solving time of 'jobtimelimit',
-    * but not more than is left for solving the master problem, and not less than zero
-    */
-   timelimit = MAX(0, MIN(SCIPgetSolvingTime(pricingscip) + jobtimelimit, mastertimelimit - SCIPgetSolvingTime(scip_)));
+   /* do not give pricing job more time than is left for solving the master problem */
+   timelimit = MAX(0, mastertimelimit - SCIPgetSolvingTime(scip_));
 
-//   SCIPdebugMessage("(Pricing prob %d) timelimit = %f\n", GCGpricingjobGetProbnr(pricingjob), timelimit);
    SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/time", timelimit) );
 
    return SCIP_OKAY;

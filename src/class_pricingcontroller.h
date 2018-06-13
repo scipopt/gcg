@@ -62,7 +62,6 @@ private:
    int                   nroundscol;         /**< number of previous pricing rounds for which the number of improving columns should be counted */
    int                   chunksize;          /**< maximal number of pricing problems to be solved during one pricing loop */
    int                   eagerfreq;          /**< frequency at which all pricing problems should be solved */
-   SCIP_Real             jobtimelimit;       /**< time limit per iteration of a pricing job */
 
    /* strategy */
    GCG_PQUEUE*           pqueue;             /**< priority queue containing the pricing jobs */
