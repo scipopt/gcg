@@ -51,6 +51,7 @@
 #include "pricer_gcg.h"
 #include "cons_decomp.h"
 #include "pub_gcgheur.h"
+#include "pub_gcgsepa.h"
 #include "stat.h"
 #include "reader_dec.h"
 #include "reader_tex.h"
@@ -1086,6 +1087,54 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsFast)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the set gcg separators default command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsDefault)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( GCGsetSeparators(scip, SCIP_PARAMSETTING_DEFAULT) );
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the set gcg separators aggressive command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsAggressive)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( GCGsetSeparators(scip, SCIP_PARAMSETTING_AGGRESSIVE) );
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the set gcg separators off command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsOff)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( GCGsetSeparators(scip, SCIP_PARAMSETTING_OFF) );
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the set gcg separators fast command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsFast)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( GCGsetSeparators(scip, SCIP_PARAMSETTING_FAST) );
+
+   return SCIP_OKAY;
+}
+
 /** creates a root dialog */
 SCIP_RETCODE GCGcreateRootDialog(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -1404,6 +1453,66 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPincludeDialog(scip, &dialog,
          NULL, GCGdialogExecSetHeuristicsOff, NULL, NULL,
          "off", "turns <off> all heuristics", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set heuristics */
+   if( !SCIPdialogHasEntry(setmenu, "sepa") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+         NULL,
+         SCIPdialogExecMenu, NULL, NULL,
+         "sepa", "change parameters for gcg separators", TRUE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+   }
+   if( SCIPdialogFindEntry(setmenu, "sepa", &submenu) != 1 )
+   {
+      SCIPerrorMessage("gcg separators sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
+
+   /* create set separators emphasis */
+   SCIP_CALL( createEmphasisSubmenu(scip, submenu, &emphasismenu) );
+   assert(emphasismenu != NULL);
+
+   /* set separators emphasis default */
+   if( !SCIPdialogHasEntry(emphasismenu, "default") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL, GCGdialogExecSetSeparatorsDefault, NULL, NULL,
+         "default", "sets separators <default>", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set separators emphasis aggressive */
+   if( !SCIPdialogHasEntry(emphasismenu, "aggressive") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL, GCGdialogExecSetSeparatorsAggressive, NULL, NULL,
+         "aggressive", "sets separators <aggressive>", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set separators emphasis fast */
+   if( !SCIPdialogHasEntry(emphasismenu, "fast") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL, GCGdialogExecSetSeparatorsFast, NULL, NULL,
+         "fast", "sets separators <fast>", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set separators emphasis off */
+   if( !SCIPdialogHasEntry(emphasismenu, "off") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL, GCGdialogExecSetSeparatorsOff, NULL, NULL,
+         "off", "turns <off> all separators", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
