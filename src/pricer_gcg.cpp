@@ -94,7 +94,6 @@ using namespace scip;
 #define PRICER_PRIORITY        5000000
 #define PRICER_DELAY           TRUE     /* only call pricer if all problem variables have non-negative reduced costs */
 
-#define DEFAULT_MAXVARSPROB              INT_MAX    /**< maximal number of variables per block to be added in a pricer call */
 #define DEFAULT_ABORTPRICINGINT          TRUE       /**< should the pricing be aborted when integral */
 #define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap between dual bound and RMP objective at which pricing is aborted */
 #define DEFAULT_DISPINFOS                FALSE      /**< should additional information be displayed */
@@ -182,7 +181,6 @@ struct SCIP_PricerData
 
    /** parameter values */
    SCIP_VARTYPE          vartype;            /**< vartype of created master variables */
-   int                   maxvarsprob;        /**< maximal number of variables per block to be added in a pricer call */
    int                   nroundsredcost;     /**< number of reduced cost rounds */
    SCIP_Bool             abortpricingint;    /**< should the pricing be aborted on integral solutions? */
    SCIP_Bool             dispinfos;          /**< should pricing information be displayed? */
@@ -4230,10 +4228,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
          NULL) );
 
    pricerdata->eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
-
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxvarsprob",
-         "maximal number of variables per block to be added in a pricer call",
-         &pricerdata->maxvarsprob, FALSE, DEFAULT_MAXVARSPROB, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/abortpricingint",
          "should pricing be aborted due to integral objective function?",
