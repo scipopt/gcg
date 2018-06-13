@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -172,7 +172,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
    else
       SCIPgetIntParam(scip, "detection/maxnclassesperclassifier", &maximumnclasses);
 
-  SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " in dec_consclass: there are %d many different constraintclasses   \n ", seeedPropagationData->seeedpool->getNConsClassifiers() );
+  SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " in dec_consclass: there are %d different constraint classes   \n ", seeedPropagationData->seeedpool->getNConsClassifiers() );
 
 
   for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNConsClassifiers(); ++classifierIndex )
@@ -186,7 +186,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
        continue;
     }
 
-    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " the current constraint classifier %s consists %d many different classes   \n ", classifier->getName(), classifier->getNClasses() );
+    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " the current constraint classifier \"%s\" consists of %d different classes   \n ", classifier->getName(), classifier->getNClasses() );
 
     seeedOrig = seeedPropagationData->seeedToPropagate;
 

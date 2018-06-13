@@ -985,7 +985,7 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            linkingvars,        /**< linkingvars array  */
    int                   nlinkingvars,       /**< number of linkingvars */
-   int                   nmastervars         /**< number of linking variables thta are purely master variables */
+   int                   nmastervars         /**< number of linking variables that are purely master ("static") variables */
    )
 {
    assert(scip != NULL);
@@ -1046,7 +1046,7 @@ int DECdecompGetNLinkingvars(
    return decomp->nlinkingvars;
 }
 
-/** returns the number of linking variables that are purely master variables of the given decomposition */
+/** returns the number of linking variables that are purely master ("static") variables of the given decomposition */
 int DECdecompGetNMastervars(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
@@ -2344,7 +2344,8 @@ SCIP_RETCODE DECdecompCheckConsistency(
 /** creates a decomposition with all constraints in the master */
 SCIP_RETCODE DECcreateBasicDecomp(
    SCIP*                 scip,                /**< SCIP data structure */
-   DEC_DECOMP**          decomp               /**< decomposition data structure */
+   DEC_DECOMP**          decomp,              /**< decomposition data structure */
+   SCIP_Bool             solveorigprob        /**< is the original problem being solved? */
    )
 {
    SCIP_HASHMAP* constoblock;
@@ -2352,6 +2353,7 @@ SCIP_RETCODE DECcreateBasicDecomp(
    SCIP_CONS** conss;
    SCIP_VAR**  vars;
    SCIP_Bool haslinking;
+   int nblocks;
    int nconss;
    int nvars;
    int c;
@@ -2387,7 +2389,12 @@ SCIP_RETCODE DECcreateBasicDecomp(
       SCIP_CALL( SCIPhashmapInsert(vartoblock, probvar, (void*) (size_t) 1 ) );
       }
 
-   DECfilloutDecompFromHashmaps(scip, *decomp, vartoblock, constoblock, 1, haslinking);
+   if( solveorigprob )
+      nblocks = 0;
+   else
+      nblocks = 1;
+
+   DECfilloutDecompFromHashmaps(scip, *decomp, vartoblock, constoblock, nblocks, haslinking);
 
    DECdecompSetPresolved(*decomp, TRUE);
 

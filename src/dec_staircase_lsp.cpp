@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -779,7 +779,7 @@ SCIP_RETCODE detection(
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-   currseeed->refineToMaster(seeedpool);
+   currseeed->refineToMaster();
 
    currseeed->sort();
 
@@ -844,19 +844,11 @@ SCIP_RETCODE detection(
       SCIPfreeMemoryArray(scip, &(detectordata->components));
    }
 
-   SCIP_CALL( currseeed->assignSeeedFromConstoblock(detectordata->constoblock, nblocks, seeedpool) );
+   SCIP_CALL( currseeed->assignSeeedFromConstoblock(detectordata->constoblock, nblocks) );
 
-  // currseeed->showScatterPlot(seeedpool);
-
-
-   currseeed->assignCurrentStairlinking(seeedpool);
-   //currseeed->showScatterPlot(seeedpool);
-   currseeed->considerImplicits(seeedpool);
+   currseeed->assignCurrentStairlinking();
+   currseeed->considerImplicits();
    currseeed->sort();
-
-
- //  currseeed->showScatterPlot(seeedpool);
-
 
    if( detectordata->constoblock != NULL )
       SCIPhashmapFree(&detectordata->constoblock);
@@ -864,9 +856,7 @@ SCIP_RETCODE detection(
       SCIPhashmapFree(&detectordata->vartoblock);
 
 
-   assert(currseeed->checkConsistency( seeedpool ) );
-
-  // currseeed->showScatterPlot(seeedpool);
+   assert(currseeed->checkConsistency( ) );
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = currseeed;

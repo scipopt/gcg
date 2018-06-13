@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -837,8 +837,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    SCIPdebugMessage("Started propagate seeed of detector %s and partial decomp %d \n", DEC_DETECTORNAME, seeed->getID() );
 
 
-   seeed->considerImplicits(seeedPropagationData->seeedpool);
-   seeed->refineToMaster(seeedPropagationData->seeedpool);
+   seeed->considerImplicits();
+   seeed->refineToMaster();
 
    if( seeed->alreadyAssignedConssToBlocks() )
    {
@@ -849,7 +849,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
 
    if( !connected(seeedPropagationData->seeedpool, seeed) )
    {
-      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
+      seeed->assignSmallestComponentsButOneConssAdjacency();
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, result);
@@ -876,22 +876,22 @@ DEC_DECL_FINISHSEEED(finishSeeedHrgpartition)
    gcg::Seeed* seeed;
    seeed = seeedPropagationData->seeedToPropagate;
 
-   seeed->considerImplicits(seeedPropagationData->seeedpool);
-   seeed->refineToBlocks(seeedPropagationData->seeedpool);
+   seeed->considerImplicits();
+   seeed->refineToBlocks();
 
    if(!connected(seeedPropagationData->seeedpool, seeed))
    {
-      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
+      seeed->assignSmallestComponentsButOneConssAdjacency();
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, FALSE, result);
 
    for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
    {
-      seeedPropagationData->newSeeeds[s]->considerImplicits(seeedPropagationData->seeedpool);
-      seeedPropagationData->newSeeeds[s]->refineToBlocks(seeedPropagationData->seeedpool);
+      seeedPropagationData->newSeeeds[s]->considerImplicits();
+      seeedPropagationData->newSeeeds[s]->refineToBlocks();
       if( seeedPropagationData->newSeeeds[s]->getNOpenconss() != 0 )
-         seeedPropagationData->newSeeeds[s]->completeByConnected(seeedPropagationData->seeedpool);
+         seeedPropagationData->newSeeeds[s]->completeByConnected();
       assert(seeedPropagationData->newSeeeds[s]->getNOpenconss() == 0);
       assert(seeedPropagationData->newSeeeds[s]->getNOpenvars() == 0);
    }

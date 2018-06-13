@@ -767,7 +767,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
             if( !success )
             {
-               SCIPinfoMessage(scip, NULL,"translatation was not successfull -> revoke presolving and use user given decomposition   \n");
+               SCIPinfoMessage(scip, NULL,"translatation was not successful -> revoke presolving and use user given decomposition   \n");
                /* @TODO experimental */
                SCIPconshdlrDecompNotifyNonFinalFreeTransform(scip);
                SCIPfreeTransform(scip);
@@ -779,7 +779,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
                assert(success);
             }
             else
-               SCIPinfoMessage(scip, NULL,"translation was successfull \n");
+               SCIPinfoMessage(scip, NULL,"translation was successful \n");
          }
       }
 

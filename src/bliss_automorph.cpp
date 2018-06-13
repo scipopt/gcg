@@ -649,16 +649,14 @@ SCIP_RETCODE setuparraysnewdetection(
    //allocate max n of coefarray, varsarray, and boundsarray in origscip
    nconss = seeed->getNConssForBlock(blocks[0]) ;
    nvars = seeed->getNVarsForBlock(blocks[0]) ;
-   ncoeffs = seeed->getNCoeffsForBlock(seeedpool, blocks[0]);
-   SCIP_CALL( allocMemoryNewDetection(seeedpool, colorinfo, nconss*nblocks+seeed->getNMasterconss(), nvars*nblocks, ncoeffs*nblocks + seeed->getNCoeffsForMaster(seeedpool) ) );
+   ncoeffs = seeed->getNCoeffsForBlock( blocks[0]);
+   SCIP_CALL( allocMemoryNewDetection(seeedpool, colorinfo, nconss*nblocks+seeed->getNMasterconss(), nvars*nblocks, ncoeffs*nblocks + seeed->getNCoeffsForMaster() ) );
    colorinfo->setOnlySign(FALSE);
 
    for( b = 0; b < nblocks && *result == SCIP_SUCCESS; ++b )
    {
       int block = blocks[b];
 
-      //SCIP_CONS** conss = SCIPgetConss(scip);
-     // SCIP_VAR** vars = SCIPgetVars(scip);
       SCIPdebugMessage("Handling block %i (id %d %d x %d)\n", b, block, seeed->getNConssForBlock(blocks[b]), seeed->getNVarsForBlock(blocks[b]));
       //save the properties of variables in a struct array and in a sorted pointer array
       for( i = 0; i < nvars; i++ )

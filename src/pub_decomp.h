@@ -526,7 +526,8 @@ SCIP_RETCODE DECdecompCheckConsistency(
 extern
 SCIP_RETCODE DECcreateBasicDecomp(
    SCIP*                 scip,                /**< SCIP data structure */
-   DEC_DECOMP**          decomp               /**< decomposition data structure */
+   DEC_DECOMP**          decomp,              /**< decomposition data structure */
+   SCIP_Bool             solveorigprob        /**< is the original problem being solved? */
    );
 
 /** creates a decomposition with provided constraints in the master

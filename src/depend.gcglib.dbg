@@ -8141,7 +8141,7 @@ $(LIBOBJDIR)/cons_decomp.o: src/cons_decomp.cpp src/cons_decomp.h \
  src/type_gcgcol.h src/struct_gcgcol.h src/type_pricingstatus.h \
  src/pub_gcgvar.h src/pub_decomp.h src/class_miscvisualization.h \
  src/wrapper_seeed.h src/reader_tex.h src/scip_misc.h \
- lib/scip/src/scip/cons_setppc.h
+ lib/scip/src/scip/cons_setppc.h src/relax_gcg.h
 $(LIBOBJDIR)/dec_colors.o: src/dec_colors.cpp src/dec_colors.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
