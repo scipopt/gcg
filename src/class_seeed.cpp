@@ -5320,7 +5320,10 @@ int Seeed::getNDetectorchainInfo()
 /** returns the number of detectors the seeed is propagated by */
 int Seeed::getNDetectors()
 {
-   return (int) detectorChain.size();
+   if ( usergiven == USERGIVEN::NOT )
+      return (int) detectorChain.size();
+   else
+      return 0;
 }
 
 /** returns the number used classifiers */

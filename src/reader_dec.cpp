@@ -1079,9 +1079,6 @@ SCIP_RETCODE readDECFile(
 
 
                assert(decinput->haspresolvesection);
-//               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
- //              retcode = SCIP_READERROR;
-       //        break;
             }
             /** call cons_decomp to create seeed (and correct seeedpool if necessary) seeed from the right seeedpool */
             if ( decinput->presolved )
