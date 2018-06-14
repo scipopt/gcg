@@ -76,6 +76,7 @@ set(gcgsources
     gcgcol.c
     gcggithash.c
     gcgheur.c
+    gcgsepa.c
     gcgplugins.c
     gcgpqueue.c
     gcgsort.c
