@@ -156,7 +156,7 @@ SCIP_RETCODE writeGpHeader(
    else
       ofs << "set terminal pngcairo" << std::endl;
 
-      ofs << "set output \"" << outputname << "\"" << std::endl;
+   ofs << "set output \"" << outputname << "\"" << std::endl;
 
    ofs.close();
 

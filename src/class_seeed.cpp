@@ -1126,8 +1126,9 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
   void Seeed::calcAggregationInformation(
      )
   {
-
+#ifdef WITH_BLISS
      SCIP_Bool tooexpensive;
+#endif
      SCIP_Bool aggisnotactive;
      SCIP_Bool discretization;
      SCIP_Bool aggregation;
@@ -1140,10 +1141,12 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
      if( !isComplete() )
         return;
 
+#ifdef WITH_BLISS
      if( isAgginfoToExpensive() )
         tooexpensive = TRUE;
      else
         tooexpensive = FALSE;
+#endif
 
      SCIPgetBoolParam(seeedpool->getScip(), "relaxing/gcg/aggregation", &aggregation);
      SCIPgetBoolParam(seeedpool->getScip(), "relaxing/gcg/discretization", &discretization);
@@ -6377,6 +6380,8 @@ SCIP_RETCODE Seeed::setVarToStairlinking(
 /** generates and opens a gp visualization of the seeed */
 void Seeed::showVisualisation()
 {
+   int returnvalue;
+
    MiscVisualization* miscvisu = new MiscVisualization();
 
    /* get names for gp file and output file */
@@ -6393,7 +6398,9 @@ void Seeed::showVisualisation()
    strcpy(command, "gnuplot ");
    strcat(command, filename);
    SCIPinfoMessage(seeedpool->getScip(), NULL, "%s\n", command);
-   system(command);
+   returnvalue = system(command);
+   if( returnvalue == -1 )
+      SCIPwarningMessage(scip, "Unable to write gnuplot file\n");
 
    /* open outputfile */
    strcpy(command, GCGVisuGetPdfReader());
@@ -6401,7 +6408,9 @@ void Seeed::showVisualisation()
    strcat(command, outname);
    strcat(command, " &");
    SCIPinfoMessage(seeedpool->getScip(), NULL, "%s\n", command);
-   system(command);
+   returnvalue = system(command);
+   if( returnvalue == -1 )
+      SCIPwarningMessage(scip, "Unable to open gnuplot file\n");
 
    return;
 }
