@@ -1705,6 +1705,7 @@ SCIP_Real ObjPricerGcg::computeRedCost(
 }
 
 SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
+   PricingType*          pricetype,          /**< type of pricing */
    GCG_Col*              gcgcol,             /**< gcg column to compute reduced cost for */
    SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    ) const
@@ -1767,6 +1768,7 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
 
 /** for given columns, (re-)compute and update their reduced costs */
 void ObjPricerGcg::updateRedcosts(
+   PricingType*          pricetype,          /**< type of pricing */
    GCG_COL**             cols,               /**< columns to compute reduced costs for */
    int                   ncols               /**< number of columns */
    ) const
@@ -1775,7 +1777,7 @@ void ObjPricerGcg::updateRedcosts(
 
    for( int i = 0; i < ncols; ++i )
    {
-      SCIP_Real redcost = computeRedCostGcgCol(cols[i], NULL);
+      SCIP_Real redcost = computeRedCostGcgCol(pricetype, cols[i], NULL);
       GCGcolUpdateRedcost(cols[i], redcost, FALSE);
 
       SCIPdebugMessage("  -> column %d/%d <%p>, reduced cost = %g\n", i+1, ncols, (void*) cols[i], redcost);

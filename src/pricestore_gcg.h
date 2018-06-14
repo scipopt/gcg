@@ -72,7 +72,7 @@ SCIP_RETCODE GCGpricestoreCreate(
 
 /** frees price storage */
 extern
-void GCGpricestoreFree(
+SCIP_RETCODE GCGpricestoreFree(
    SCIP*                 scip,                /**< SCIP data structure */
    GCG_PRICESTORE**      pricestore           /**< pointer to store price storage */
    );

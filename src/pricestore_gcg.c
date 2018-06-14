@@ -144,6 +144,8 @@ SCIP_RETCODE GCGpricestoreFree(
    SCIPfreeMemoryArrayNull(scip, &(*pricestore)->orthogonalities);
    SCIPfreeMemoryArrayNull(scip, &(*pricestore)->scores);
    SCIPfreeMemory(scip, pricestore);
+
+   return SCIP_OKAY;
 }
 
 /** informs price storage, that Farkas pricing starts now */
@@ -526,7 +528,6 @@ SCIP_RETCODE GCGpricestoreApplyCols(
    )
 {
    SCIP* scip;
-   SCIP_NODE* node;
    SCIP_Bool added;
    int* ncolsappliedprob;
    SCIP_Real mincolorthogonality;
@@ -543,9 +544,6 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 
    /* start timing */
    SCIP_CALL( SCIPstartClock(scip, pricestore->priceclock) );
-
-   node = SCIPgetCurrentNode(scip);
-   assert(node != NULL);
 
    /* get maximal number of cols to add to the LP */
    maxpricecols = GCGpricerGetMaxColsRound(scip);

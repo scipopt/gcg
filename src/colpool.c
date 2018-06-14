@@ -273,6 +273,8 @@ SCIP_RETCODE GCGcolpoolClear(
       SCIP_CALL( colpoolDelCol(colpool, colpool->cols[i], TRUE) );
    }
    colpool->ncols = 0;
+
+   return SCIP_OKAY;
 }
 
 /** if not already existing, adds col to col pool and captures it */
