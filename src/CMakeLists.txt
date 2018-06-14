@@ -267,6 +267,7 @@ set(gcgheaders
     pub_decomp.h
     pub_gcgcol.h
     pub_gcgheur.h
+    pub_gcgsepa.h
     pub_gcgpqueue.h
     pub_gcgvar.h
     pub_pricingjob.h
