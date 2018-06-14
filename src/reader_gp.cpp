@@ -156,7 +156,7 @@ SCIP_RETCODE writeGpHeader(
    else
       ofs << "set terminal pngcairo" << std::endl;
 
-      ofs << "set output \"" << outputname << "\"" << std::endl;
+   ofs << "set output \"" << outputname << "\"" << std::endl;
 
    ofs.close();
 
@@ -298,13 +298,8 @@ SCIP_RETCODE writeGpNonzeros(
    std::cout << "radius for file: " << radius << std::endl;
 
    /* start writing dots */
-   if ( plotmiplib )
-      ofs << "plot \"-\" using 1:2:(" << radius << ") notitle pt 7 ps " << radius << " lc rgb \"" << SCIPvisuGetColorNonzero()
-            << "\"  " << std::endl;
-   else
-      ofs << "plot \"-\" using 1:2:(" << radius << ") notitle pt 7 ps " << radius << " fc rgb \"" << SCIPvisuGetColorNonzero()
-      << "\"  " << std::endl;
-
+   ofs << "set style line 99 lc rgb \"" << SCIPvisuGetColorNonzero() << "\"  " << std::endl;
+   ofs << "plot \"-\" using 1:2:(" << radius << ") with dots ls 99 notitle " << std::endl;
    /* write scatter plot */
    for( int row = 0; row < seeed->getNConss(); ++row )
    {
