@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -174,9 +174,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
    //complete the seeed by bfs
 
    if( byconssadj )
-      seeed->completeByConnectedConssAdjacency(seeedPropagationData->seeedpool );
+      seeed->completeByConnectedConssAdjacency( );
    else
-      seeed->completeByConnected(seeedPropagationData->seeedpool );
+      seeed->completeByConnected();
 
   // seeed->showScatterPlot(seeedPropagationData->seeedpool);
 
@@ -215,10 +215,10 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
    SCIPgetBoolParam(scip, "detection/conssadjcalculated", &conssadjcalculated);
    //complete the seeed by bfs
 
-   if( byconssadj &&  conssadjcalculated)
-      seeed->completeByConnectedConssAdjacency(seeedPropagationData->seeedpool );
+   if( byconssadj && conssadjcalculated )
+      seeed->completeByConnectedConssAdjacency( );
    else
-      seeed->completeByConnected(seeedPropagationData->seeedpool );
+      seeed->completeByConnected( );
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;

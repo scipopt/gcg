@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -292,7 +292,7 @@ SCIP_RETCODE GCGsolverSolve(
 
          #pragma omp critical (clock)
          {
-            SCIP_CALL( SCIPstartClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
          }
 
          SCIP_CALL( solver->solversolveheur(scip, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
@@ -300,7 +300,7 @@ SCIP_RETCODE GCGsolverSolve(
 
          #pragma omp critical (clock)
          {
-            SCIP_CALL( SCIPstopClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
          }
       }
    }
@@ -315,7 +315,7 @@ SCIP_RETCODE GCGsolverSolve(
 
          #pragma omp critical (clock)
          {
-            SCIP_CALL( SCIPstartClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
          }
 
          SCIP_CALL( solver->solversolve(scip, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
@@ -323,7 +323,7 @@ SCIP_RETCODE GCGsolverSolve(
 
          #pragma omp critical (clock)
          {
-            SCIP_CALL( SCIPstopClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
          }
 
       }
@@ -331,16 +331,19 @@ SCIP_RETCODE GCGsolverSolve(
 
    if( *status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
    {
-      #pragma omp atomic
       if( redcost )
          if( heuristic )
+            #pragma omp atomic
             ++solver->heurredcostcalls;
          else
+            #pragma omp atomic
             ++solver->optredcostcalls;
       else
          if( heuristic )
+            #pragma omp atomic
             ++solver->heurfarkascalls;
          else
+            #pragma omp atomic
             ++solver->optfarkascalls;
    }
 

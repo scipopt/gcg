@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -150,13 +150,13 @@ SCIP_RETCODE detection(
    gcg::Seeed* seeed;
    seeed = seeedPropagationData->seeedToPropagate;
 
-   seeed->considerImplicits(seeedPropagationData->seeedpool);
+   seeed->considerImplicits();
 
    //assign all dependent open vars and conss
-   seeed->refineToBlocks(seeedPropagationData->seeedpool);
+   seeed->refineToBlocks();
 
    //complete the seeed by bfs
-   seeed->completeByConnected(seeedPropagationData->seeedpool);
+   seeed->completeByConnected();
 
    seeedPropagationData->nNewSeeeds = 1;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );

@@ -41,26 +41,27 @@
 class PricingType
 {
 protected:
-  SCIP*                 scip_;
-  GCG_PRICETYPE         type;
-  SCIP_CLOCK*           clock;
+   SCIP*                 scip_;
+   GCG_PRICETYPE         type;
+   SCIP_CLOCK*           clock;
 
-  int                   calls;
-  int                   maxrounds;
-  int                   maxcolsroundroot;
-  int                   maxcolsround;
-  int                   maxcolsprobroot;
-  int                   maxcolsprob;
-  int                   maxsuccessfulprobs;
-  SCIP_Real             relmaxprobsroot;
-  SCIP_Real             relmaxprobs;
+   int                   calls;
+   int                   maxrounds;
+   int                   maxcolsroundroot;
+   int                   maxcolsround;
+   int                   maxcolsprobroot;
+   int                   maxcolsprob;
+   int                   maxsuccessfulprobs;
+   SCIP_Real             relmaxprobsroot;
+   SCIP_Real             relmaxprobs;
+   SCIP_Real             relmaxsuccessfulprobs; /**< maximal percentage of pricing problems that need to be solved successfully */
 
 public:
    /** constructor */
    PricingType();
 
    PricingType(
-      SCIP                  *p_scip
+      SCIP*                  p_scip
       );
 
    /** destructor */
@@ -85,24 +86,6 @@ public:
    /** adds parameters to the SCIP data structure */
    virtual SCIP_RETCODE addParameters() = 0;
 
-   /** returns whether optimal pricing can be aborted */
-   virtual SCIP_Bool canOptimalPricingBeAborted(
-      int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-      int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-      int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-      SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-      int                   npricingprobsnotnull /**< number of relevant pricing problems */
-      ) const = 0;
-
-   /** returns whether heuristic pricing can be aborted */
-   virtual SCIP_Bool canHeuristicPricingBeAborted(
-      int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-      int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-      int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-      SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-      int                   npricingprobsnotnull /**< number of relevant pricing problems */
-      ) const = 0;
-
    /** starts the clock */
    virtual SCIP_RETCODE startClock();
 
@@ -113,34 +96,16 @@ public:
    virtual SCIP_Real getClockTime() const;
 
    /** returns the maximal number of rounds */
-   int getMaxrounds() const
+   virtual int getMaxrounds() const
    {
       return maxrounds;
    }
 
-   /** returns the maximal number of columns per pricing round at root node */
-   int getMaxcolsroundroot() const
-   {
-      return maxcolsroundroot;
-   }
-
    /** returns the maximal number of columns per pricing round */
-   int getMaxcolsround() const
-   {
-      return maxcolsround;
-   }
-
-   /** returns the maximal number of columns per problem to be generated during pricing at root node */
-   int getMaxcolsprobroot() const
-   {
-      return maxcolsprobroot;
-   }
+   virtual int getMaxcolsround() const = 0;
 
    /** returns the maximal number of columns per problem to be generated during pricing */
-   int getMaxcolsprob() const
-   {
-      return maxcolsprob;
-   }
+   virtual int getMaxcolsprob() const = 0;
 
    /** returns the maximal number of successfully solved pricing problems */
    int getMaxsuccessfulprobs() const
@@ -148,16 +113,13 @@ public:
       return maxsuccessfulprobs;
    }
 
-   /** returns the maximal percentage of pricing problems that are solved at root node if variables have already been found */
-   SCIP_Real getRelmaxprobsroot() const
-   {
-      return relmaxprobsroot;
-   }
-
    /** returns the maximal percentage of pricing problems that are solved if variables have already been found */
-   SCIP_Real getRelmaxprobs() const
+   virtual SCIP_Real getRelmaxprobs() const = 0;
+
+   /** returns the maximal percentage of pricing problems that need to be solved successfully */
+   SCIP_Real getRelmaxsuccessfulprobs() const
    {
-      return relmaxprobs;
+      return relmaxsuccessfulprobs;
    }
 
    /** returns the type of this pricing type */
@@ -198,41 +160,32 @@ public:
       SCIP*                 p_scip
       );
 
-    /** destructor */
-    virtual ~ReducedCostPricing() {}
+   /** destructor */
+   virtual ~ReducedCostPricing() {}
 
-    virtual SCIP_RETCODE addParameters();
+   virtual SCIP_RETCODE addParameters();
 
-    virtual SCIP_Real consGetDual(
-      SCIP*                 scip, 
-      SCIP_CONS*            cons
-      ) const;
+   virtual SCIP_Real consGetDual(
+     SCIP*                 scip,
+     SCIP_CONS*            cons
+     ) const;
 
-    virtual SCIP_Real rowGetDual(
-      SCIP_ROW*             row
-      ) const;
+   virtual SCIP_Real rowGetDual(
+     SCIP_ROW*             row
+     ) const;
 
-    virtual SCIP_Real varGetObj(
-      SCIP_VAR*             var
-      ) const ;
+   virtual SCIP_Real varGetObj(
+     SCIP_VAR*             var
+     ) const ;
 
-   /** returns whether optimal pricing can be aborted */
-   virtual SCIP_Bool canOptimalPricingBeAborted(
-      int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-      int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-      int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-      SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-      int                   npricingprobsnotnull /**< number of relevant pricing problems */
-      ) const;
+   /** returns the maximal number of columns per pricing round */
+   virtual int getMaxcolsround() const;
 
-   /** returns whether heuristic pricing can be aborted */
-   virtual SCIP_Bool canHeuristicPricingBeAborted(
-      int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-      int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-      int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-      SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-      int                   npricingprobsnotnull /**< number of relevant pricing problems */
-      ) const;
+   /** returns the maximal number of columns per problem to be generated during pricing */
+   virtual int getMaxcolsprob() const;
+
+   /** returns the maximal percentage of pricing problems that are solved if variables have already been found */
+   virtual SCIP_Real getRelmaxprobs() const;
 };
 
 class FarkasPricing : public PricingType
@@ -263,23 +216,14 @@ public:
       SCIP_VAR*             var
       ) const;
 
-   /** returns whether optimal pricing can be aborted */
-   virtual SCIP_Bool canOptimalPricingBeAborted(
-      int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-      int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-      int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-      SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-      int                   npricingprobsnotnull /**< number of relevant pricing problems */
-      ) const;
+   /** returns the maximal number of columns per pricing round */
+   virtual int getMaxcolsround() const;
 
-   /** returns whether heuristic pricing can be aborted */
-   virtual SCIP_Bool canHeuristicPricingBeAborted(
-      int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-      int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-      int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-      SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-      int                   npricingprobsnotnull /**< number of relevant pricing problems */
-      ) const;
+   /** returns the maximal number of columns per problem to be generated during pricing */
+   virtual int getMaxcolsprob() const;
+
+   /** returns the maximal percentage of pricing problems that are solved if variables have already been found */
+   virtual SCIP_Real getRelmaxprobs() const;
 };
 
 #endif /* CLASS_PRICINGTYPE_H_ */

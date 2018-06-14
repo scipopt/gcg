@@ -422,7 +422,10 @@ def make_complete_plot(data, info, gap_data, incumbent_times, rootlpsol_times):
         else:
             incumbent_times_bottoms.append(ymin)
             incumbent_times_cnt[t] += ymin
-    ymin_ncols = min([s-t for (s,t) in zip(incumbent_times_bottoms, incumbent_times_cnt.values())])
+    if len(incumbent_times) > 0:
+        ymin_ncols = min([s-t for (s,t) in zip(incumbent_times_bottoms, incumbent_times_cnt.values())])
+    else:
+        ymin_ncols = ymin
 
     # sometimes we need just the height of the bars of the pricing problems
     y_pricers = (data[data.pricing_prob >= 0].nVars - ymin).values
