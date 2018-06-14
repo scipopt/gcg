@@ -1,0 +1,20 @@
+Notes for GCG Release 3.0.0
+
+General
+================
+We are proud to release GCG in version 3.0.0. The major version number
+increase from 2.1.4 is justified, as we include major new features. Check
+both the feature list as well as the CHANGELOG for the changes
+
+Features
+================
+
+ * New detection scheme: @Micha describe new detection
+
+ * New pricing scheme: @Christian describe new pricing
+
+ * New Benders decomposition: @Steve describe new Benders feature
+
+ * Other features: We revisited and improved several other parts of the 
+   code such as an improved dual variable stabilization, improved
+   initialization, and aggregation of programs with continuous variables.
