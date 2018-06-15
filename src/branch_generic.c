@@ -2431,7 +2431,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
    /* in case original problem contains continuous variables, there are no branching cands */
-   assert(nbranchcands > 0 || (discretization && SCIPgetNContVars(origscip)) > 0);
+   assert(nbranchcands > 0 || (discretization && SCIPgetNContVars(origscip) > 0));
    mastervar = NULL;
 
    /** loop over all branching candidates */
@@ -2479,8 +2479,8 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          }
       }
    }
-   assert( foundblocknr || blocknr == -1  || (discretization && SCIPgetNContVars(origscip)) > 0 );
-   assert( i <= nbranchcands ); /* else all blocks has been checked and we can observe an integer solution */
+   assert(foundblocknr || blocknr == -1  || (discretization && SCIPgetNContVars(origscip) > 0));
+   assert(i <= nbranchcands); /* else all blocks has been checked and we can observe an integer solution */
 
    /* in case of continuous origvar look for "fractional" blocks using the representation (currentorigsol) in the original problem */
    if(discretization && SCIPgetNContVars(origscip) > 0)

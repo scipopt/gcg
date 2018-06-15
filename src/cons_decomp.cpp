@@ -5920,7 +5920,7 @@ SCIP_RETCODE DECdetectStructure(
 //   {
 //      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Chosen decomposition with %d blocks of type %s.\n",
 //         DECdecompGetNBlocks(conshdlrdata->decdecomps[0]), DECgetStrType(DECdecompGetType(conshdlrdata->decdecomps[0])));
-//  //    GCGsetStructDecdecomp(scip, conshdlrdata->decdecomps[0]);
+//  //    SCIP_CALL( GCGsetStructDecdecomp(scip, conshdlrdata->decdecomps[0]) );
 //      *result = SCIP_SUCCESS;
 //   }
 //   else

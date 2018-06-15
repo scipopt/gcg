@@ -39,7 +39,6 @@
 #include "heur_gcgcoefdiving.h"
 #include "heur_origdiving.h"
 #include "gcg.h"
-#include "relax_gcg.h"
 
 
 #define HEUR_NAME             "gcgcoefdiving"
