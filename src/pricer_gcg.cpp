@@ -2952,7 +2952,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
    /* todo: We avoid checking for feasibility of the columns using this hack */
    if( pricerdata->usecolpool )
-      GCGcolpoolUpdateNode(colpool);
+      SCIP_CALL( GCGcolpoolUpdateNode(colpool) );
 
    colpoolupdated = FALSE;
 
@@ -3057,7 +3057,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          foundvarscolpool = FALSE;
          oldnfoundcols = GCGpricestoreGetNCols(pricestore);
 
-         SCIP_CALL( GCGcolpoolPrice(scip_, colpool, pricestore, NULL, FALSE, TRUE, &foundvarscolpool) );
+         SCIP_CALL( GCGcolpoolPrice(scip_, colpool, pricestore, NULL, &foundvarscolpool) );
          SCIPstatisticMessage("cp: %d impr c\n", GCGpricestoreGetNCols(pricestore) - oldnfoundcols);
 
          if( foundvarscolpool )

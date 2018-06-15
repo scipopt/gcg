@@ -202,7 +202,7 @@ SCIP_RETCODE GCGcolpoolFree(
    assert(*colpool != NULL);
 
    /* remove all cols from the pool */
-   GCGcolpoolClear(*colpool);
+   SCIP_CALL( GCGcolpoolClear(*colpool) );
 
    SCIPinfoMessage(scip, NULL, "Pricing time in colpool = %f sec\n", GCGcolpoolGetTime(*colpool));
 
@@ -354,8 +354,6 @@ SCIP_RETCODE GCGcolpoolPrice(
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_PRICESTORE*       pricestore,         /**< GCG price storage */
    SCIP_SOL*             sol,                /**< solution to be separated (or NULL for LP-solution) */
-   SCIP_Bool             colpoolisdelayed,   /**< is the colpool delayed (count cols found)? */
-   SCIP_Bool             root,               /**< are we at the root node? */
    SCIP_Bool*            foundvars           /**< pointer to store the result of the separation call */
    )
 {
@@ -374,7 +372,7 @@ SCIP_RETCODE GCGcolpoolPrice(
    SCIPdebugMessage("separating%s col pool %p with %d cols, beginning with col %d\n", ( sol == NULL ) ? "" : " solution from", (void*)colpool, colpool->ncols, firstunproc);
 
    /* start timing */
-   SCIPstartClock(colpool->scip, colpool->poolclock);
+   SCIP_CALL( SCIPstartClock(colpool->scip, colpool->poolclock) );
 
    /* remember the current total number of found cols */
    oldncols = GCGpricestoreGetNCols(pricestore);
@@ -421,13 +419,13 @@ SCIP_RETCODE GCGcolpoolPrice(
       *foundvars = TRUE;
 
    /* stop timing */
-   SCIPstopClock(colpool->scip, colpool->poolclock);
+   SCIP_CALL( SCIPstopClock(colpool->scip, colpool->poolclock) );
 
    return SCIP_OKAY;
 }
 
 /** gets array of cols in the col pool */
-void GCGcolpoolUpdateNode(
+SCIP_RETCODE GCGcolpoolUpdateNode(
    GCG_COLPOOL*         colpool             /**< col pool */
    )
 {
@@ -439,10 +437,12 @@ void GCGcolpoolUpdateNode(
    }
    else if( colpool->nodenr != SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip)) )
    {
-      GCGcolpoolClear(colpool);
+      SCIP_CALL( GCGcolpoolClear(colpool) );
 
       colpool->nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip));
    }
+
+   return SCIP_OKAY;
 }
 
 /** update reduced cost and compute master coefs of columns in column pool */

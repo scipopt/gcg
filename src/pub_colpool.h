@@ -122,7 +122,7 @@ SCIP_RETCODE GCGcolpoolDelCol(
 
 /** gets array of cols in the col pool */
 EXTERN
-void GCGcolpoolUpdateNode(
+SCIP_RETCODE GCGcolpoolUpdateNode(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
@@ -151,8 +151,6 @@ SCIP_RETCODE GCGcolpoolPrice(
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_PRICESTORE*       pricestore,         /**< GCG price storage */
    SCIP_SOL*             sol,                /**< solution to be separated (or NULL for LP-solution) */
-   SCIP_Bool             colpoolisdelayed,   /**< is the colpool delayed (count cols found)? */
-   SCIP_Bool             root,               /**< are we at the root node? */
    SCIP_Bool*            foundvars           /**< pointer to store the result of the separation call */
    );
 
