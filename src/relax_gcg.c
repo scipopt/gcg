@@ -3426,7 +3426,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/mode",
             "the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition, "
             "2: no decomposition will be performed)",
-            &(relaxdata->mode), FALSE, DEFAULT_MODE, 0, 2, NULL, NULL) );
+            (int*)&(relaxdata->mode), FALSE, (int)DEFAULT_MODE, 0, 2, NULL, NULL) );
 
    return SCIP_OKAY;
 }
