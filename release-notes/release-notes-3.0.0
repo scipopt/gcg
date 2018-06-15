@@ -13,7 +13,19 @@ Features
 
  * New pricing scheme: @Christian describe new pricing
 
- * New Benders decomposition: @Steve describe new Benders feature
+ * Benders' decomposition mode: The available decomposition algorithms has been
+   extended to include Benders' decomposition. The Benders' decomposition mode
+   uses the problem structure found through the detection and forms a master
+   problem with a series of subproblems. The Benders' decomposition framework
+   included in SCIP 6.0.0 is used to manage the subproblem solving and Benders'
+   cut generation.
+   The Benders' decomposition mode is activated by setting "relaxing/gcg/mode"
+   to 1.
+   Detection settings are provided to form different decompositions suitable for
+   Benders' decomposition. These settings are: detect-benders,
+   detect-benders-bin_master and detect-benders-cont_subpr. These settings use a
+   new experimental scoring method that has been added for Benders'
+   decomposition.
 
  * Other features: We revisited and improved several other parts of the 
    code such as an improved dual variable stabilization, improved
