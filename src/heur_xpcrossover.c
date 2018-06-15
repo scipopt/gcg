@@ -975,6 +975,9 @@ SCIP_RETCODE fixVariables(
                if( SCIPvarGetType(origvars[k]) > SCIP_VARTYPE_INTEGER )
                   continue;
 
+               if( SCIPisFeasEQ(scip, SCIPvarGetLbGlobal(origvars[k]), SCIPvarGetUbGlobal(origvars[k]) ) )
+                  continue;
+
                /* get the corresponding pricing variable;
                 * check whether this is the first block in which this variable appears;
                 * search for the right original variable (in case of aggregation)

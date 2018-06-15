@@ -707,8 +707,10 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    assert(vardata != NULL);
 
    assert(nblocks >= 0);
-   assert(newblock >= 0 && newblock < nblocks);
+   assert((newblock >= 0 && newblock < nblocks)
+      || (GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS && newblock == -2));
    blocknr = GCGvarGetBlock(var);
+   assert(newblock >= 0 || (newblock == -2 && blocknr > -1));
    /* the variable was only in one block so far, so set up the linking variable data */
    if( blocknr > -1 )
    {
@@ -732,8 +734,11 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    }
    assert(GCGoriginalVarIsLinking(var));
 
-   /* store new block */
-   if( vardata->data.origvardata.linkingvardata->pricingvars[newblock] == NULL )
+   /* store new block. In the Benders' decomposition mode, it is possible to have linking variables that only correspond
+    * to a single block. In this case, we still want the variables in the master problem, but we need to ensure that the
+    * linking variables are added correctly
+    */
+   if( newblock >= 0 && vardata->data.origvardata.linkingvardata->pricingvars[newblock] == NULL )
    {
       assert(mode == DEC_DECMODE_BENDERS || vardata->data.origvardata.linkingvardata->linkconss[newblock] == NULL);
       vardata->data.origvardata.linkingvardata->pricingvars[newblock] = var;
@@ -1368,7 +1373,8 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    int blocknr;
 
    blocknr = GCGvarGetBlock(var);
-   assert( blocknr == -1 || blocknr == -2 || GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS);
+   assert( blocknr == -1 || blocknr == -2
+      || GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS || GCGgetMasterDecompMode(scip) == DEC_DECMODE_ORIGINAL);
 
    if( blocknr == -1 )
    {

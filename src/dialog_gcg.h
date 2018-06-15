@@ -132,6 +132,22 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsOff);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsAggressive);
 
+/** dialog execution method for the set separators default command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsDefault);
+
+/** dialog execution method for the set separators fast command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsFast);
+
+/** dialog execution method for the set separators off command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsOff);
+
+/** dialog execution method for the set separators aggressive command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsAggressive);
+
 /** creates a root dialog */
 extern
 SCIP_RETCODE GCGcreateRootDialog(
