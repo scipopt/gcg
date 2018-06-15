@@ -90,7 +90,7 @@ endif
 # supposed to be run.
 #-----------------------------------------------------------------------------
 -include $(SCIPDIR)/make/make.project
-ifdef BASE
+ifneq ($(wildcard $(SCIPDIR)/bin/scip.$(BASE).$(LPS).$(TPI)$(EXEEXTENSION)), )
 SCIPVERSION       :=$(shell $(SCIPDIR)/bin/scip.$(BASE).$(LPS).$(TPI)$(EXEEXTENSION) -v | sed -e 's/$$/@/')
 override ARCH     :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* ARCH=\([^@]*\).*/\1/')
 override EXPRINT  :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* EXPRINT=\([^@]*\).*/\1/')
@@ -433,7 +433,7 @@ endif
 
 .PHONY: scip
 scip:
-		@$(MAKE) -C $(SCIPDIR) $^ libs bin/scip
+		@$(MAKE) -C $(SCIPDIR) $^ all
 
 .PHONY: scip_clean
 scip_clean:
