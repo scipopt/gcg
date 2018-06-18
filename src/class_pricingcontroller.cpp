@@ -326,6 +326,8 @@ SCIP_RETCODE Pricingcontroller::initPricing(
    PricingType*          pricingtype         /**< type of pricing */
    )
 {
+   SCIP_Longint tmpmaxniters;
+
    pricingtype_ = pricingtype;
 
    /* move chunk index forward */
@@ -338,9 +340,10 @@ SCIP_RETCODE Pricingcontroller::initPricing(
    SCIP_CALL( getGenericBranchconss() );
 
    /* calculate maximal possible number of pricing iterations per mis-pricing iteration */
-   maxniters = 0;
+   tmpmaxniters = 0;
    for( int i = 0; i < npricingprobs; ++i )
-      maxniters += GCGpricerGetNSolvers(scip_) * (heurpricingiters + 1) * (GCGpricingprobGetNGenericBranchconss(pricingprobs[i]) + 1);
+      tmpmaxniters += GCGpricerGetNSolvers(scip_) * ((SCIP_Longint) heurpricingiters + 1) * (GCGpricingprobGetNGenericBranchconss(pricingprobs[i]) + 1);
+   maxniters = (int) MIN(tmpmaxniters, 16383);
 
    SCIPdebugMessage("initialize pricing, chunk = %d/%d\n", curchunk+1, nchunks);
 
