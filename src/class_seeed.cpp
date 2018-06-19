@@ -1151,7 +1151,7 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
      SCIPgetBoolParam(seeedpool->getScip(), "relaxing/gcg/aggregation", &aggregation);
      SCIPgetBoolParam(seeedpool->getScip(), "relaxing/gcg/discretization", &discretization);
 
-     if( discretization && aggregation && !seeedpool->areThereContinuousVars() )
+     if( discretization && aggregation )
         aggisnotactive = FALSE;
      else
         aggisnotactive = TRUE;
