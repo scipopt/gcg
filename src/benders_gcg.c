@@ -28,10 +28,8 @@
 #include "gcg.h"
 
 #include "relax_gcg.h"
-#include "struct_solver.h"
 #include "scip_misc.h"
 #include "pub_gcgvar.h"
-#include "cons_masterbranch.h"
 
 #include "scip/cons_linear.h"
 #include "scip/pub_var.h"
@@ -45,11 +43,6 @@
 #define BENDERS_CUTPSEUDO        TRUE   /**< should Benders' cut be generated for pseudo solutions */
 #define BENDERS_CUTRELAX         TRUE   /**< should Benders' cut be generated for relaxation solutions */
 #define BENDERS_SHAREAUXVARS    FALSE   /**< should this Benders' share the highest priority Benders' aux vars */
-
-#define SUBPROBLEM_STAT_ARRAYLEN_TIME 1024   /**< length of the array for Time histogram representation */
-#define SUBPROBLEM_STAT_BUCKETSIZE_TIME 10   /**< size of the buckets for Time histogram representation */
-#define SUBPROBLEM_STAT_ARRAYLEN_CUTS 1024   /**< length of the array for foundVars histogram representation */
-#define SUBPROBLEM_STAT_BUCKETSIZE_CUTS 1    /**< size of the buckets for foundVars histogram representation */
 
 #define LARGE_VALUE  10000    /**< a large value that is used to create an artificial solution */
 
@@ -706,7 +699,7 @@ SCIP_DECL_BENDERSCREATESUB(bendersCreatesubGcg)
 
    origprob = bendersdata->origprob;
 
-   SCIPaddBendersSubproblem(scip, benders, GCGgetPricingprob(origprob, probnumber));
+   SCIP_CALL( SCIPaddBendersSubproblem(scip, benders, GCGgetPricingprob(origprob, probnumber)) );
 
    /* setting the objective coefficients for the subproblems.
     * This is required because the variables are added to the pricing problems with a zero coefficient. In the DW

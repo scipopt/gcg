@@ -133,7 +133,6 @@
 #include "scip/debug.h"
 #include "dialog_master.h"
 #include "disp_master.h"
-#include "solver_cliquer.h"
 #include "solver_knapsack.h"
 #include "solver_mip.h"
 #include "event_bestsol.h"

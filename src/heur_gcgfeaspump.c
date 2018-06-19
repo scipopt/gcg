@@ -39,9 +39,6 @@
 
 #include "heur_gcgfeaspump.h"
 #include "gcg.h"
-#include "relax_gcg.h"
-#include "gcgplugins.h"
-
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"

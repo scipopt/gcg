@@ -38,8 +38,6 @@
 
 #include "heur_xpcrossover.h"
 #include "gcg.h"
-#include "relax_gcg.h"
-#include "gcgplugins.h"
 
 #include "scip/scip.h"
 #include "scip/misc.h"

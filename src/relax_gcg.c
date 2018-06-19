@@ -61,7 +61,6 @@
 #include "benders_gcg.h"
 #include "masterplugins.h"
 #include "bendersplugins.h"
-#include "nodesel_master.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
 
@@ -82,8 +81,8 @@
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
-#define DEFAULT_MODE 0  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default),
-                             1: Benders' decomposition, 2: solve original problem) */
+#define DEFAULT_MODE DEC_DECMODE_DANTZIGWOLFE  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default),
+                                                    1: Benders' decomposition, 2: solve original problem) */
 #define DELVARS
 
 /*
@@ -140,7 +139,7 @@ struct SCIP_RelaxData
    SCIP_Bool             masterissetpart;    /**< is the master a set partitioning problem? */
    SCIP_Bool             masterissetcover;   /**< is the master a set covering problem? */
    SCIP_Bool             dispinfos;          /**< should additional information be displayed? */
-   int                   mode;               /**< the decomposition mode for GCG. 0: Dantzig-Wolfe (default), 1: Benders' decomposition, 2: automatic */
+   DEC_DECMODE           mode;               /**< the decomposition mode for GCG. 0: Dantzig-Wolfe (default), 1: Benders' decomposition, 2: automatic */
    int                   origverblevel;      /**< the verbosity level of the original problem */
 
    /* data for probing */
@@ -1465,7 +1464,7 @@ SCIP_RETCODE createMasterProblem(
    SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the master problem */
    SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the master problem */
    SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the master problem */
-   int                   mode                /**< the decomposition mode */
+   DEC_DECMODE           mode                /**< the decomposition mode */
    )
 {
    assert(masterscip != NULL);
@@ -1660,7 +1659,7 @@ SCIP_RETCODE createMasterprobConss(
 
          SCIP_CALL( SCIPallocBufferArray(scip, &consvars, consvarssize) );
          SCIP_CALL( SCIPallocBufferArray(scip, &consvals, consvarssize) );
-         SCIP_CALL( SCIPallocBufferArray(scip, &releasevars, consvarssize) );
+         SCIP_CALL( SCIPallocClearBufferArray(scip, &releasevars, consvarssize) );
 
          SCIP_CALL( GCGconsGetVars(scip, newcons, consvars, nconsvars) );
          SCIP_CALL( GCGconsGetVals(scip, newcons, consvals, nconsvars) );
@@ -1714,6 +1713,7 @@ SCIP_RETCODE createMasterprobConss(
          nconsvars = 0;
          consvars = NULL;
          consvals = NULL;
+         releasevars = NULL;
       }
 
       /* create and add corresponding linear constraint in the master problem */
@@ -1735,6 +1735,8 @@ SCIP_RETCODE createMasterprobConss(
       /* in the Benders' decomposition mode, the consvars and consvals arrays need to be freed */
       if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS || GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
       {
+         assert(releasevars != NULL);
+         assert(consvars != NULL);
          for( i = 0; i < nconsvars; i++ )
          {
             if( releasevars[i] )
@@ -2455,24 +2457,24 @@ SCIP_RETCODE initRelaxator(
          if( relaxdata->decdecomp == NULL )
          {
             SCIP_Bool createbasicdecomp;
-            SCIPgetBoolParam(scip, "constraints/decomp/createbasicdecomp", &createbasicdecomp);
+            SCIP_CALL( SCIPgetBoolParam(scip, "constraints/decomp/createbasicdecomp", &createbasicdecomp) );
             if( createbasicdecomp )
             {
                DEC_DECOMP* decomp;
                SCIP_RETCODE retcode;
                SCIPinfoMessage(scip, NULL, " CREATE BASIC DECOMP!\n");
                retcode = DECcreateBasicDecomp(scip, &decomp, FALSE);
-               assert(retcode == SCIP_OKAY);
                if( retcode != SCIP_OKAY )
                {
                   SCIPerrorMessage("Could not add decomp to cons_decomp!\n");
+                  SCIPABORT();
                   return SCIP_ERROR;
                }
 
 
                assert(decomp != NULL );
 
-               retcode = SCIPconshdlrDecompAddDecdecomp(scip, decomp);
+               SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
                relaxdata->decdecomp = DECgetBestDecomp(scip);
 
             }
@@ -2604,9 +2606,9 @@ SCIP_RETCODE initRelaxator(
    }
 
    /* set objective limit in master problem if objective limit in original problem is finite */
-   if( !SCIPisInfinity(scip, SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) )
+   if( !SCIPisInfinity(scip, (int) SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) )
    {
-      SCIP_CALL( SCIPsetObjlimit(masterprob, SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) );
+      SCIP_CALL( SCIPsetObjlimit(masterprob, (int) SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) );
    }
 
    return SCIP_OKAY;
@@ -2781,7 +2783,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
       /* setting the total node limit to 1 for the original SCIP instance. This is because Benders' decomposition solves
        * the MIP within the relaxator of the root node. So no branching in the original problem is required.
        */
-      SCIP_CALL( SCIPsetLongintParam(scip, "limits/totalnodes", 1) );
+      SCIP_CALL( SCIPsetLongintParam(scip, "limits/totalnodes", 1LL) );
    }
 
    /* fixing the GCG mode parameter. This ensure that the user does not change this during the solution process. If the
@@ -3021,9 +3023,9 @@ SCIP_RETCODE solveMasterProblem(
    {
       SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
       assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
-         if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL && GCGmasterIsCurrentSolValid(masterprob) )
+      if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL && GCGmasterIsCurrentSolValid(masterprob) )
          *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
-         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || !GCGmasterIsCurrentSolValid(masterprob) )
+      else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || !GCGmasterIsCurrentSolValid(masterprob) )
       {
          SCIP_Real tilim;
          SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
@@ -3424,7 +3426,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/mode",
             "the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition, "
             "2: no decomposition will be performed)",
-            &(relaxdata->mode), FALSE, DEFAULT_MODE, 0, 2, NULL, NULL) );
+            (int*)&(relaxdata->mode), FALSE, (int)DEFAULT_MODE, 0, 2, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -4762,7 +4764,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 }
 
 /** sets the structure information */
-void GCGsetStructDecdecomp(
+SCIP_RETCODE GCGsetStructDecdecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp           /**< decomposition data structure */
    )
@@ -4780,9 +4782,11 @@ void GCGsetStructDecdecomp(
    assert(relaxdata != NULL);
 
    if( relaxdata->decdecomp != NULL )
-      DECdecompFree(scip, &relaxdata->decdecomp );
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp ) );
 
    relaxdata->decdecomp = decdecomp;
+
+   return SCIP_OKAY;
 }
 
 /** sets the structure information */
@@ -4850,7 +4854,7 @@ const char* GCGgetFilename(
    if( relaxdata->filename == NULL )
    {
       char help[SCIP_MAXSTRLEN];
-      (void) strncat( help, "unknown", 7 );
+      (void) strncat( help, "unknown", 8 );
       SCIP_CALL_ABORT(SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, help, SCIP_MAXSTRLEN ) );
    }
 

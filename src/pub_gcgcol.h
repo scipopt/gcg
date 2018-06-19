@@ -237,7 +237,7 @@ int GCGcolGetNMastercuts(
 
 /** get norm of column */
 extern
-int GCGcolGetNorm(
+SCIP_Real GCGcolGetNorm(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 

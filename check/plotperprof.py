@@ -87,16 +87,19 @@ def main():
         dftmp = pd.DataFrame()
         if len(files) > 0:
             print "res file    :", files[0]
+
             dftmp = pd.read_csv(
                     files[0],
                     skiprows=3, index_col = 0, delim_whitespace=True, skipfooter=10, usecols=[0,params['time'],params['status']], names=['instance',(resfile,'time'),(resfile,'status')], engine='python')
         else:
             failed = True
             print "WARNING      : No res-file", resfile
-        df = pd.merge(left=dftmp,right=df,how='left',left_index=True, right_index=True)
-        #df = df.merge(dftmp, left_index=True, right_index=True)
+        #df = pd.merge(left=dftmp,right=df,how='left',left_index=True, right_index=True)
+        df = pd.concat([dftmp,df], axis=1, join='outer')
+
     for resfile in resfiles:
         df = df[(df[resfile,"status"] == "ok") | (df[resfile,"status"] == "solved")]
+        #| (df[resfile,"status"] == "nodelimit")]
         df[resfile,'time'] = df[resfile,'time'].apply(lambda x: max(x, params['min']))
 
     df["best"] = df[[(resfile, 'time') for resfile in resfiles]].min(axis=1)
@@ -109,7 +112,6 @@ def main():
 
     def perplot(resfile, t):
         return 1.0*len(df[df[resfile,"performance"] <= t]) / len(df)
-
 
     xx = np.arange(1.0,rmax+params['stepsize'],params['stepsize'])
 
