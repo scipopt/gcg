@@ -350,6 +350,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIPdebugMessage("%d cuts are in the original sepastore!\n", SCIPgetNCuts(origscip));
    SCIPdebugMessage("%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
 
+   /* disable separation for original problem again */
+   SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_OFF, TRUE) );
+
    SCIPfreeBufferArray(scip, &mastervals);
 
    return SCIP_OKAY;
