@@ -55,6 +55,9 @@ def parse_arguments(args):
     parser.add_argument('-nl', '--nodelimits', type=bool, default=False,
                         help='Should node limits be counted?')
 
+    parser.add_argument('-ab', '--aborts', type=bool, default=False,
+                        help='Should aborts be counted?')
+
     parser.add_argument('-o', '--out', type=str, default='perprof_plot.pdf',
                         help='Name of out file')
 
@@ -78,6 +81,7 @@ def set_params(args):
     params['log'] = args.log
     params['timeouts'] = args.timeouts
     params['nodelimits'] = args.nodelimits
+    params['aborts'] = args.aborts
     params['out'] = args.out
 
 def main():
@@ -115,6 +119,8 @@ def main():
             statusfilter.append("timeout")
         if params["nodelimits"]:
             statusfilter.append("nodelimit")
+        if params["aborts"]:
+            statusfilter.append("abort")
 
         df = df[df[resfile,"status"].isin(statusfilter)]
 
