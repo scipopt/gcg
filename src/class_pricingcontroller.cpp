@@ -374,9 +374,11 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
 
    for( int i = 0; i < npricingjobs; ++i )
    {
+      int probnr = GCGpricingprobGetProbnr(GCGpricingjobGetPricingprob(pricingjobs[i]));
+
       SCIP_CALL_EXC( GCGpricingjobSetup(pricingjobs[i],
          (heurpricingiters > 0 && (maxheurdepth == -1 || SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)) <= maxheurdepth)),
-         sorting, nroundscol, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i)) );
+         sorting, nroundscol, dualsolconv[probnr], GCGpricerGetNPointsProb(scip_, probnr), GCGpricerGetNRaysProb(scip_, probnr)) );
 
       if( GCGpricingjobGetChunk(pricingjobs[i]) == curchunk )
       {
