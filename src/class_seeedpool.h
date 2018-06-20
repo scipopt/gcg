@@ -1122,7 +1122,15 @@ public:
 private:
 
 
-
+   /**
+    * @brief calculates necessary data for translating seeeds and classifiers
+    * @param origpool original seeedpool
+    * @param rowothertothis constraint index mapping from old to new seeedpool
+    * @param rowthistoother constraint index mapping new to old seeedpool
+    * @param colothertothis variable index mapping from old to new seeedpool
+    * @param colthistoother variable index mapping from new to old seeedpool
+    * @param missingrowinthis missing constraint indices in new seeedpool
+    */
    /** calculates necessary data for translating seeeds and classifiers */
    void calcTranslationMapping(
       Seeedpool* origpool, /** original seeedpool */
@@ -1133,8 +1141,17 @@ private:
       std::vector<int>& missingrowinthis  /** missing constraint indices in new seeedpool */
       );
 
-   /** returns translated Seeeds derived from given mapping data */
-   std::vector<Seeed*> getTranslatedSeeeds(
+
+   /**
+    * @brief returns translated eeeds derived from given mapping data
+    * @param otherseeeds seeeds to be translated
+    * @param rowothertothis constraint index mapping from old to new seeedpool
+    * @param rowthistoother constraint index mapping new to old seeedpool
+    * @param colothertothis variable index mapping from old to new seeedpool
+    * @param colthistoother variable index mapping from new to old seeedpool
+    * @return vector of translated seeed pointers
+    */
+    std::vector<Seeed*> getTranslatedSeeeds(
       std::vector<Seeed*>& otherseeeds,   /**< seeeds to be translated */
       std::vector<int>& rowothertothis,   /** constraint index mapping from old to new seeedpool */
       std::vector<int>& rowthistoother,   /** constraint index mapping new to old seeedpool */
@@ -1142,14 +1159,27 @@ private:
       std::vector<int>& colthistoother    /** variable index mapping from new to old seeedpool */
       );
 
-   /** returns translated ConsClassifiers derived from given mapping data */
+
+    /**
+     * @brief returns translated ConsClassifiers derived from given mapping data
+     * @param otherclassifiers consclassifiers to be translated
+     * @param rowothertothis constraint index mapping from old to new seeedpool
+     * @param rowthistoother constraint index mapping new to old seeedpool
+     * @return vector of translated ConsClassifier
+     */
    std::vector<ConsClassifier*> getTranslatedConsClassifiers(
       std::vector<ConsClassifier*>& otherclassifiers, /**< consclassifiers to be translated */
       std::vector<int>& rowothertothis,   /** constraint index mapping from old to new seeedpool */
       std::vector<int>& rowthistoother    /** constraint index mapping new to old seeedpool */
       );
 
-   /** returns translated VarClassifiers derived from given mapping data */
+   /**
+    * @brief returns translated VarClassifiers derived from given mapping data
+    * @param otherclassifiers varclassifiers to be translated
+    * @param colothertothis variable index mapping from old to new seeedpool
+    * @param colthistoother variable index mapping from new to old seeedpool
+    * @return vector of translated VarClassifier
+    */
    std::vector<VarClassifier*> getTranslatedVarClassifiers(
       std::vector<VarClassifier*>& otherclassifiers, /**< varclassifiers to be translated */
       std::vector<int>& colothertothis,   /** variable index mapping from old to new seeedpool */
