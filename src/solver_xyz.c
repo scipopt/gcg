@@ -42,7 +42,8 @@
 #define SOLVER_DESC          "xyz solver for pricing problems"
 #define SOLVER_PRIORITY      0
 
-#define SOLVER_ENABLED      TRUE  /**< indicates whether the solver should be enabled */
+#define SOLVER_HEURENABLED   TRUE            /**< indicates whether the heuristic solving method of the solver should be enabled */
+#define SOLVER_EXACTENABLED  TRUE            /**< indicates whether the exact solving method of the solver should be enabled */
 
 /*
  * Data structures
@@ -139,6 +140,20 @@ GCG_DECL_SOLVEREXIT(solverExitXyz)
 #define solverExitXyz NULL
 #endif
 
+/** update method for pricing solver, used to update solver specific pricing problem data */
+#if 0
+static
+GCG_DECL_SOLVERUPDATE(solverUpdateXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz pricing problem solver not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define solverUpdateXyz NULL
+#endif
+
 /** solving method for pricing solver which solves the pricing problem to optimality */
 static
 GCG_DECL_SOLVERSOLVE(solverSolveXyz)
@@ -171,8 +186,10 @@ SCIP_RETCODE GCGincludeSolverXyz(
    /* TODO: (optional) create pricing problem solver specific data here */
 
    /* include pricing problem solver */
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
-         solverSolveXyz, solverSolveHeurXyz, solverFreeXyz, solverInitXyz, solverExitXyz,
+   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+         SOLVER_HEURENABLED, SOLVER_EXACTENABLED,
+         solverUpdateXyz, solverSolveXyz, solverSolveHeurXyz,
+         solverFreeXyz, solverInitXyz, solverExitXyz,
          solverInitsolXyz, solverExitsolXyz, solverdata) );
 
    /* add xyz propagator parameters */

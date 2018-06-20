@@ -51,7 +51,8 @@
 #define SOLVER_DESC          "heuristic solver for pricing problems that solves independent set problems with cliquer"
 #define SOLVER_PRIORITY      150
 
-#define SOLVER_ENABLED       TRUE            /**< indicates whether the solver should be enabled */
+#define SOLVER_HEURENABLED   TRUE            /**< indicates whether the solver should be enabled */
+#define SOLVER_EXACTENABLED  FALSE           /**< indicates whether the solver should be enabled */
 
 #define DEFAULT_DENSITY      0.00
 
@@ -1183,7 +1184,8 @@ SCIP_RETCODE GCGincludeSolverCliquer(
 
    SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
 
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
+   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+         SOLVER_HEURENABLED, SOLVER_EXACTENABLED,
          solverUpdateCliquer, solverSolveCliquer, solverSolveHeurCliquer,
          solverFreeCliquer, solverInitCliquer, solverExitCliquer,
          solverInitsolCliquer, solverExitsolCliquer, solverdata) );

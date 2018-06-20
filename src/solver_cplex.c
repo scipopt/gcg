@@ -64,7 +64,8 @@
 #define SOLVER_NAME          "cplex"
 #define SOLVER_DESC          "cplex solver for pricing problems"
 #define SOLVER_PRIORITY       100
-#define SOLVER_ENABLED        TRUE  /**< indicates whether the solver should be enabled */
+#define SOLVER_HEURENABLED   TRUE            /**< indicates whether the heuristic solving method of the solver should be enabled */
+#define SOLVER_EXACTENABLED  TRUE            /**< indicates whether the exact solving method of the solver should be enabled */
 
 #define DEFAULT_CHECKSOLS     TRUE   /**< should solutions of the pricing MIPs be checked for duplicity? */
 #define DEFAULT_THREADS       1      /**< number of threads the CPLEX pricing solver is allowed to use (0: automatic) */
@@ -1177,7 +1178,8 @@ SCIP_RETCODE GCGincludeSolverCplex(
    solverdata->origprob = GCGmasterGetOrigprob(scip);
    solverdata->masterprob = scip;
 
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
+   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+         SOLVER_HEURENABLED, SOLVER_EXACTENABLED,
          solverUpdateCplex, solverSolveCplex, solverSolveHeurCplex, solverFreeCplex, solverInitCplex,
          solverExitCplex, solverInitsolCplex, solverExitsolCplex, solverdata));
 

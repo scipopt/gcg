@@ -47,7 +47,8 @@ struct GCG_Solver
    char*                 name;               /**< solver name */
    char*                 desc;               /**< solver description */
    int                   priority;           /**< solver priority */
-   SCIP_Bool             enabled;            /**< solver activation status */
+   SCIP_Bool             heurenabled;        /**< switch for heuristic solving method */
+   SCIP_Bool             exactenabled;       /**< switch for exact solving method */
    GCG_SOLVERDATA*       solverdata;         /**< private solver data structure */
 
    GCG_DECL_SOLVERFREE((*solverfree));       /**< destruction method */

@@ -288,7 +288,7 @@ SCIP_RETCODE Pricingcontroller::initSol()
 
          for( int j = 0; j < nsolvers; ++j )
          {
-            if( GCGsolverIsEnabled(solvers[j]) )
+            if( GCGsolverIsHeurEnabled(solvers[j]) || GCGsolverIsExactEnabled(solvers[j]) )
             {
                SCIP_CALL_EXC( GCGpricingjobCreate(scip_, &pricingjobs[npricingjobs], pricingprobs[npricingprobs], solvers[j], npricingprobs / actchunksize) );
                ++npricingjobs;
@@ -377,7 +377,9 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
       int probnr = GCGpricingprobGetProbnr(GCGpricingjobGetPricingprob(pricingjobs[i]));
 
       SCIP_CALL_EXC( GCGpricingjobSetup(pricingjobs[i],
-         (heurpricingiters > 0 && (maxheurdepth == -1 || SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)) <= maxheurdepth)),
+         (heurpricingiters > 0
+            && (maxheurdepth == -1 || SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)) <= maxheurdepth)
+            && GCGsolverIsHeurEnabled(GCGpricingjobGetSolver(pricingjobs[i]))),
          sorting, nroundscol, dualsolconv[probnr], GCGpricerGetNPointsProb(scip_, probnr), GCGpricerGetNRaysProb(scip_, probnr)) );
 
       if( GCGpricingjobGetChunk(pricingjobs[i]) == curchunk )
