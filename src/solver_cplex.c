@@ -105,7 +105,7 @@ struct GCG_SolverData
    int                   threads;            /**< number of threads the CPLEX pricing solver is allowed to use (0: automatic) */
    SCIP_Longint          startnodelimit;     /**< start node limit for heuristic pricing */
    SCIP_Real             startgaplimit;      /**< start gap limit for heuristic pricing */
-   int                   startsollimit;      /**< start solution limit for heuristic pricing */
+   SCIP_Longint          startsollimit;      /**< start solution limit for heuristic pricing */
    SCIP_Real             nodelimitfac;       /**< factor by which to increase node limit for heuristic pricing (1.0: add start limit) */
    SCIP_Real             gaplimitfac;        /**< factor by which to decrease gap limit for heuristic pricing (1.0: subtract start limit) */
    SCIP_Real             sollimitfac;        /**< factor by which to increase solution limit for heuristic pricing (1.0: add start limit) */
@@ -800,7 +800,7 @@ SCIP_RETCODE solveCplex(
    case CPXMIP_SOL_LIM: /* 104 */
       assert(nsolscplex > 0);
       if( solverdata->sollimitfac > 1.0 )
-         solverdata->cursollimit[probnr] = (int) (solverdata->cursollimit[probnr] * solverdata->sollimitfac);
+         solverdata->cursollimit[probnr] = (SCIP_Longint) (solverdata->cursollimit[probnr] * solverdata->sollimitfac);
       else
          solverdata->cursollimit[probnr] += solverdata->startsollimit;
       SCIPdebugMessage("   -> solution limit reached, increasing to %"SCIP_LONGINT_FORMAT"\n", solverdata->cursollimit[probnr]);
@@ -1193,15 +1193,15 @@ SCIP_RETCODE GCGincludeSolverCplex(
 
    SCIP_CALL( SCIPaddLongintParam(solverdata->origprob, "pricingsolver/cplex/startnodelimit",
          "start node limit for heuristic pricing",
-         &solverdata->startnodelimit, TRUE, DEFAULT_STARTNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
+         &solverdata->startnodelimit, TRUE, DEFAULT_STARTNODELIMIT, 0, CPX_LONG_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/cplex/startgaplimit",
          "start gap limit for heuristic pricing",
          &solverdata->startgaplimit, TRUE, DEFAULT_STARTGAPLIMIT, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(solverdata->origprob, "pricingsolver/cplex/startsollimit",
+   SCIP_CALL( SCIPaddLongintParam(solverdata->origprob, "pricingsolver/cplex/startsollimit",
          "start solution limit for heuristic pricing",
-         &solverdata->startsollimit, TRUE, DEFAULT_STARTSOLLIMIT, -1, INT_MAX, NULL, NULL) );
+         &solverdata->startsollimit, TRUE, DEFAULT_STARTSOLLIMIT, 0, CPX_LONG_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/cplex/nodelimitfac",
          "factor by which to increase node limit for heuristic pricing (1.0: add start limit)",
