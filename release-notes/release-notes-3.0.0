@@ -11,7 +11,17 @@ Features
 
  * New detection scheme: @Micha describe new detection
 
- * New pricing scheme: @Christian describe new pricing
+ * New pricing scheme: The pricing scheme has been restructured. The
+   pricing loop is now managed by a priority queue, which holds
+   so-called "pricing jobs" (i.e., pricing problems that are to be
+   solved with a certain solver, heuristically or exactly).
+   In particular, the new pricing scheme now allows heuristic MIP
+   pricing to be performed in multiple rounds, with increasing limits.
+   The pricing scheme furthermore offers several possibilities to limit
+   the pricing loop: These include a maximum number of columns to be
+   generated, separately for each problem as well as for the overall
+   loop, and a maximum percentage of pricing problems for which
+   improving columns need to be found.
 
  * Benders' decomposition mode: The available decomposition algorithms has been
    extended to include Benders' decomposition. The Benders' decomposition mode
@@ -27,6 +37,6 @@ Features
    new experimental scoring method that has been added for Benders'
    decomposition.
 
- * Other features: We revisited and improved several other parts of the 
+ * Other features: We revisited and improved several other parts of the
    code such as an improved dual variable stabilization, improved
    initialization, and aggregation of programs with continuous variables.
