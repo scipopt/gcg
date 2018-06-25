@@ -38,8 +38,6 @@
 
 #include "heur_gcgdins.h"
 #include "gcg.h"
-#include "relax_gcg.h"
-#include "gcgplugins.h"
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
@@ -751,7 +749,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
    fixingcounter = 0;
    zerocounter = 0;
 
-   SCIPstatisticMessage("gcgdins statistic: called at node %"SCIP_LONGINT_FORMAT"\n", SCIPgetNNodes(scip));
+   SCIPstatisticPrintf("gcgdins statistic: called at node %"SCIP_LONGINT_FORMAT"\n", SCIPgetNNodes(scip));
 
    /* create variables and rebound them if their bounds differ by more than 0.5 */
    SCIP_CALL( createSubproblem(scip, subscip, vars, subvars, nbinvars, nintvars, heurdata->uselprows, &fixingcounter, &zerocounter) );

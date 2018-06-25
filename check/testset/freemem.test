@@ -1,0 +1,7 @@
+instances/striplibn/binpacking/bison/bison2set/N1W2B2R8.BPP.lp.gz;instances/striplibn/binpacking/bison/bison2set/N1W2B2R8.BPP.dec.gz
+instances/striplibn/binpacking/bison/bison2set/N1W1B3R1.BPP.lp.gz;instances/striplibn/binpacking/bison/bison2set/N1W1B3R1.BPP.dec.gz
+instances/striplibn/binpacking/bison/bison2set/N1W2B3R8.BPP.lp.gz;instances/striplibn/binpacking/bison/bison2set/N1W2B3R8.BPP.dec.gz
+instances/striplibn/binpacking-eq/bison/bison1set/N1C2W4_I.BPP.lp.gz;instances/striplibn/binpacking-eq/bison/bison1set/N1C2W4_I.BPP.dec.gz
+instances/striplibn/binpacking/bison/bison1set/N1C2W4_I.BPP.lp.gz;instances/striplibn/binpacking/bison/bison1set/N1C2W4_I.BPP.dec.gz
+instances/striplibn/coloring/mixed/coloring-disagregiert/myciel3.col.lp.gz;instances/striplibn/coloring/mixed/coloring-disagregiert/myciel3.col.dec.gz
+instances/striplibn/coloring/mixed/coloring-bigM/myciel3.col.lp.gz;instances/striplibn/coloring/mixed/coloring-bigM/myciel3.col.dec.gz

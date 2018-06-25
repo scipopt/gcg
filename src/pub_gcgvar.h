@@ -37,7 +37,7 @@
 #ifndef GCG_PUB_GCGVAR_H__
 #define GCG_PUB_GCGVAR_H__
 
-
+#include "type_decomp.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus
@@ -171,7 +171,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    SCIP_VAR*             var,                /**< var that is added to a block */
    int                   newblock,           /**< the new block the variable will be in */
    int                   nblocks,            /**< total number of pricing problems */
-   int                   mode                /**< the decomposition mode */
+   DEC_DECMODE           mode                /**< the decomposition mode */
    );
 
 

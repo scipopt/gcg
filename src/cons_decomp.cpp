@@ -33,7 +33,7 @@
  * @author Michael Bastubbe
  *
  * This constraint handler will run all registered structure detectors in
- * in an iterato=ive scheme increasing priority until the first detector finds a suitable structure.
+ * in an iterative scheme increasing priority until the first detector finds a suitable structure.
  *
  */
 
@@ -86,6 +86,7 @@
 #include "wrapper_seeed.h"
 #include "reader_tex.h"
 #include "scip_misc.h"
+#include "relax_gcg.h"
 
 typedef gcg::Seeed* SeeedPtr;
 
@@ -1523,14 +1524,26 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIPdialogMessage(scip, NULL, "Please specify the id of the decomposition to be visualized:\n",
-      conshdlrdata->selectvisulength );
+   SCIPdialogMessage(scip, NULL, "Please specify the id of the decomposition to be visualized:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
    commandlen = strlen(ntovisualize);
 
-   idtovisu = conshdlrdata->selectvisulength;
-   if( commandlen != 0)
+   idtovisu = -1;
+   if( commandlen != 0 )
       idtovisu = atoi(ntovisualize);
+
+   /* check whether ID is in valid range */
+   if( (int)conshdlrdata->listall->size() == 0 )
+   {
+      SCIPinfoMessage(scip, NULL, "No decompositions available. Please detect first.\n");
+      return SCIP_OKAY;
+   }
+   if( commandlen == 0 || idtovisu < 0 || idtovisu >= (int)conshdlrdata->listall->size() )
+   {
+      SCIPdialogMessage( scip, NULL, "This id is out of range." );
+      return SCIP_OKAY;
+   }
+
 
 //   conshdlrdata->listall->at(idtovisu)->displaySeeed(seeedpool);
 //   conshdlrdata->listall->at(idtovisu)->displayConss(seeedpool);
@@ -1567,7 +1580,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectCalcStrongDecompositionScore
    assert( conshdlrdata != NULL );
 
    /* read the id of the decomposition to be calculate strong decomp score */
-   SCIPdialogMessage( scip, NULL, "Please specify the id of the decomposition that shpould be evaluated by strong decomposition score:\n" );
+   SCIPdialogMessage( scip, NULL, "Please specify the id of the decomposition that should be evaluated by strong decomposition score:\n" );
    SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ntocalcstrong, &endoffile ) );
    commandlen = strlen( ntocalcstrong );
 
@@ -1629,20 +1642,19 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
    assert( conshdlrdata != NULL );
 
    /* read the id of the decomposition to be inspected */
-   SCIPdialogMessage( scip, NULL, "Please specify the id of the decomposition to be inspected:\n" );
+   SCIPdialogMessage( scip, NULL, "Please specify the id of the decomposition to be inspected:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ntoinspect, &endoffile ) );
    commandlen = strlen( ntoinspect );
 
    idtoinspect = -1;
    if( commandlen != 0 )
-   {
-      std::stringstream convert( ntoinspect );
-      convert >> idtoinspect;
+      idtoinspect = atoi( ntoinspect );
 
-      if ( idtoinspect == 0 && ntoinspect[0] != '0' )
-      {
-         idtoinspect = -1;
-      }
+   /* check whether ID is in valid range */
+   if( idtoinspect < 0 || idtoinspect >= (int)conshdlrdata->listall->size() )
+   {
+      SCIPdialogMessage( scip, NULL, "This id is out of range." );
+      return SCIP_PARAMETERWRONGVAL;
    }
 
    /* read the desired detail level; for wrong input, it is set to 1 by default */
@@ -1663,14 +1675,8 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
    }
 
    /* call displayInfo method according to chosen parameters */
-   if( 0 <= idtoinspect && idtoinspect < (int)conshdlrdata->listall->size() )
-   {
-      conshdlrdata->listall->at( idtoinspect )->displayInfo( detaillevel );
-   }
-   else
-   {
-      SCIPdialogMessage( scip, NULL, "This is not an existing id." );
-   }
+   assert( 0 <= idtoinspect && idtoinspect < (int)conshdlrdata->listall->size() );
+   conshdlrdata->listall->at( idtoinspect )->displayInfo( detaillevel );
 
    return SCIP_OKAY;
 }
@@ -1725,6 +1731,12 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxChoose(
    idtochoose = conshdlrdata->selectvisulength;
    if( commandlen != 0)
       idtochoose = atoi(ntochoose);
+
+   if ( commandlen == 0 || idtochoose < 0 || idtochoose >= (int)conshdlrdata->listall->size() )
+   {
+      SCIPdialogMessage( scip, NULL, "This id is out of range." );
+      return SCIP_PARAMETERWRONGVAL;
+   }
 
    if( conshdlrdata->curruserseeed != NULL )
       delete conshdlrdata->curruserseeed;
@@ -1801,17 +1813,17 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "command", "description");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "-------", "-----------");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "select", "selects/unselects decomposition with given id");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "toolbox", "calls the decomposition toolbox to modify or create a decomposition");
+//   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "toolbox", "calls the decomposition toolbox to modify or create a decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "modify", "modify an existing decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "create", "create a new decomposition");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "back", "displays the preceding decompositions (if there are some)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "next", "displays the subsequent decompositions (if there are some)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "back", "displays the preceding decompositions (if there are any)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "next", "displays the subsequent decompositions (if there are any)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "top", "displays the first decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "end", "displays the last decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "legend", "displays the legend for table header and history abbreviations");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "help", "displays this help");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "dispNEntries", "modifies the number of displayed decompositions ");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "finishes selection and goes back to main menu");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "finishes decomposition explorer and goes back to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "experimental feature: visualizes the specified decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "calc_strong", "calculates and displays the strong decomposition score for this decomposition");
@@ -1974,6 +1986,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
 
       if( strncmp( command, "toolbox", commandlen) == 0 )
       {
+	 // deprecated, use create/modify instead
          SCIP_CALL( SCIPconshdlrDecompExecToolbox(scip, dialoghdlr, dialog) );
          SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
          continue;
@@ -2492,7 +2505,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxActOnSeeed(
                while( commandlen == 0 )
                {
                   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
-                     "Do you want to visualize the new Seeed (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
+                     "Do you want to visualize the new seeed (\"yes\"/\"no\")?\nGCG/toolbox> ", &command, &endoffile) );
                   commandlen = strlen(command);
                }
                if( strncmp( command, "yes", commandlen) == 0 )
@@ -2647,10 +2660,14 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxModify(
 
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT )
    {
-      SCIPinfoMessage(scip, NULL, "No problem is loaded. Please load a problem first.\n");
+      SCIPinfoMessage(scip, NULL, "No problem is loaded. Please read in a model first.\n");
       return SCIP_OKAY;
    }
-
+   if( (int)conshdlrdata->listall->size() == 0 )
+   {
+      SCIPinfoMessage(scip, NULL, "No decompositions available. Please detect first.\n");
+      return SCIP_OKAY;
+   }
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
    {
       SCIP_CALL( SCIPtransformProb(scip) );
@@ -2706,11 +2723,19 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxModify(
 
       if( strncmp( command, "choose", commandlen) == 0 )
       {
-         SCIP_CALL(SCIPconshdlrDecompToolboxChoose(scip, dialoghdlr, dialog ) );
-         finished = TRUE;
-         break;
+         SCIP_RETCODE retcode = SCIPconshdlrDecompToolboxChoose(scip, dialoghdlr, dialog );
+	 if (retcode != SCIP_OKAY) 
+	 {
+	    selectedsomeseeed = FALSE;
+	    continue;
+	 }
+	 else
+	 {
+	    selectedsomeseeed = TRUE;
+	    finished = TRUE;
+	    break;
+	 }
       }
-
 
       if( strncmp( command, "abort", commandlen) == 0 )
       {
@@ -2893,10 +2918,14 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
 
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT )
    {
-      SCIPinfoMessage(scip, NULL, "No problem is loaded. Please load a problem first.\n");
+      SCIPinfoMessage(scip, NULL, "No problem is loaded. Please read in a model first.\n");
       return SCIP_OKAY;
    }
-
+   if( (int)conshdlrdata->listall->size() == 0 )
+   {
+      SCIPinfoMessage(scip, NULL, "No decompositions available. Please detect first.\n");
+      return SCIP_OKAY;
+   }
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
    {
       SCIP_CALL( SCIPtransformProb(scip) );
@@ -3111,10 +3140,14 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
 
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT )
    {
-      SCIPinfoMessage(scip, NULL, "No problem is loaded. Please load a problem first.\n");
+      SCIPinfoMessage(scip, NULL, "No problem is loaded. Please read in a model first.\n");
       return SCIP_OKAY;
    }
-
+   if( (int)conshdlrdata->listall->size() == 0 )
+   {
+      SCIPinfoMessage(scip, NULL, "No decompositions available. Please detect first.\n");
+      return SCIP_OKAY;
+   }
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
    {
       SCIP_CALL( SCIPtransformProb(scip) );
@@ -3188,9 +3221,17 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
 
             if( strncmp( command, "choose", commandlen2) == 0 )
             {
-               SCIP_CALL(SCIPconshdlrDecompToolboxChoose(scip, dialoghdlr, dialog ) );
-               finished = TRUE;
-               break;
+               SCIP_RETCODE retcode = SCIPconshdlrDecompToolboxChoose(scip, dialoghdlr, dialog );
+	       if (retcode != SCIP_OKAY) 
+	       {
+		  selectedsomeseeed = FALSE;
+		  continue;
+	       }
+	       else
+	       {
+		  finished = TRUE;
+		  break;
+	       }
             }
 
 
@@ -3955,7 +3996,6 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
    gcg::Seeed* seeed;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -3970,15 +4010,12 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
    assert(conshdlrdata != NULL);
 
    seeed = conshdlrdata->seeedpool->findFinishedSeeedByID(seeedid);
-   currseeedpool = conshdlrdata->seeedpool;
 
    if ( seeed == NULL )
    {
       seeed = conshdlrdata->seeedpoolunpresolved->findFinishedSeeedByID(seeedid);
-      currseeedpool = conshdlrdata->seeedpoolunpresolved;
    }
 
-   assert(currseeedpool == seeed->getSeeedpool() );
 
    if( seeed->getNReps() == 0 )
    {
@@ -5679,6 +5716,10 @@ SCIP_RETCODE DECdetectStructure(
    if( SCIPgetNOrigVars(scip) == 0 && SCIPgetNOrigConss(scip) == 0 )
       return SCIP_OKAY;
 
+   /* if the original problem should be solved, then no decomposition will be performed */
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
+      return SCIP_OKAY;
+
    SCIP_CALL(SCIPresetClock(scip, conshdlrdata->completedetectionclock));
    SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
 
@@ -5736,7 +5777,7 @@ SCIP_RETCODE DECdetectStructure(
          SCIPdebugMessage("classification for orig problem enabled: calc classifier and nblock candidates \n" );
          conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
          candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocksFull();
-         if( conshdlrdata->seeedpoolunpresolved != NULL )
+         if( conshdlrdata->seeedpoolunpresolved != NULL && SCIPgetVerbLevel(scip) >= SCIP_VERBLEVEL_FULL )
                   conshdlrdata->seeedpoolunpresolved->printBlockcandidateInformation(scip, NULL);
       }
       else
@@ -5863,7 +5904,7 @@ SCIP_RETCODE DECdetectStructure(
    } /* end of if( !onlylegacy ) */
 
 
-   if( conshdlrdata->seeedpool != NULL )
+   if( conshdlrdata->seeedpool != NULL && SCIPgetVerbLevel(scip) >= SCIP_VERBLEVEL_FULL )
       conshdlrdata->seeedpool->printBlockcandidateInformation(scip, NULL);
 
    SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock) );
@@ -5879,7 +5920,7 @@ SCIP_RETCODE DECdetectStructure(
 //   {
 //      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Chosen decomposition with %d blocks of type %s.\n",
 //         DECdecompGetNBlocks(conshdlrdata->decdecomps[0]), DECgetStrType(DECdecompGetType(conshdlrdata->decdecomps[0])));
-//  //    GCGsetStructDecdecomp(scip, conshdlrdata->decdecomps[0]);
+//  //    SCIP_CALL( GCGsetStructDecdecomp(scip, conshdlrdata->decdecomps[0]) );
 //      *result = SCIP_SUCCESS;
 //   }
 //   else
@@ -6454,7 +6495,7 @@ DEC_DECOMP* DECgetBestDecomp(
 
    seeed = conshdlrdata->candidates->at( 0 ).first;
 
-   SCIPdialogMessage(scip, NULL, "In get bestdecomp\n");
+   SCIPdebugMessage("In get bestdecomp\n");
 
    if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
    {

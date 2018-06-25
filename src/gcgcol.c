@@ -43,7 +43,6 @@
 #include "scip/cons_linear.h"
 #include "scip_misc.h"
 #include "blockmemshell/memory.h"
-#include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "sepa_master.h"
 
@@ -446,7 +445,7 @@ void GCGcolComputeNorm(
    )
 {
    int i;
-   SCIP_Real norm = 0.0;
+   SCIP_Real norm;
 
    SCIP_Real* solvals;
    SCIP_Real* mastercoefs;
@@ -540,7 +539,7 @@ SCIP_RETCODE GCGcolSetLinkvars(
 
    assert(gcgcol->nlinkvars == 0);
 
-   SCIPallocMemoryArray(gcgcol->pricingprob, &(gcgcol->linkvars), nlinkvars);
+   SCIP_CALL( SCIPallocMemoryArray(gcgcol->pricingprob, &(gcgcol->linkvars), nlinkvars) );
 
    for( i = 0; i < nlinkvars; ++i )
    {
@@ -569,7 +568,7 @@ int GCGcolGetNMastercuts(
 }
 
 /** get norm of column */
-int GCGcolGetNorm(
+SCIP_Real GCGcolGetNorm(
    GCG_COL*             gcgcol              /**< gcg column structure */
    )
 {
@@ -586,9 +585,9 @@ SCIP_RETCODE GCGcolUpdateMastercuts(
    int i;
 
    if( gcgcol->nmastercuts > 0 )
-      SCIPreallocMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->mastercuts), gcgcol->nmastercuts + nnewmastercuts);
+      SCIP_CALL( SCIPreallocMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->mastercuts), gcgcol->nmastercuts + nnewmastercuts) );
    else
-      SCIPallocMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->mastercuts), nnewmastercuts);
+      SCIP_CALL( SCIPallocMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->mastercuts), nnewmastercuts) );
 
    for( i = 0; i < nnewmastercuts; ++i )
    {
@@ -643,7 +642,7 @@ SCIP_Real GCGcolComputeDualObjPara(
    GCG_COL*             gcgcol              /**< gcg column */
 )
 {
-   SCIP_Real para = 0.0;
+   SCIP_Real para;
 
    int i;
 
@@ -668,7 +667,6 @@ SCIP_Real GCGcolComputeDualObjPara(
    mastercoefs = GCGcolGetMastercoefs(gcgcol);
    nmastercuts = GCGcolGetNMastercuts(gcgcol);
    mastercuts = GCGcolGetMastercuts(gcgcol);
-   nmastercuts = GCGcolGetNMastercuts(gcgcol);
    masterconss = GCGgetMasterConss(GCGmasterGetOrigprob(scip));
    cuts = GCGsepaGetMastercuts(scip);
 
@@ -685,8 +683,6 @@ SCIP_Real GCGcolComputeDualObjPara(
       lhs = SCIPgetLhsLinear(scip, masterconss[i]);
       rhs = SCIPgetRhsLinear(scip, masterconss[i]);
 
-//      SCIPinfoMessage(scip, NULL, "mastercons %d <%s>: lhs = %f, rhs = %f\n", i, SCIPconsGetName(masterconss[i]), lhs, rhs);
-
       if( !SCIPisInfinity(scip, -lhs))
       {
          dualobjnorm += SQR(lhs);
@@ -701,8 +697,6 @@ SCIP_Real GCGcolComputeDualObjPara(
          if(SCIPisNegative(scip, mastercoefs[i] ) )
             para += mastercoefs[i] * rhs;
       }
-
-//      SCIPinfoMessage(scip, NULL, "para = %f\n", para);
    }
 
    for( i = 0; i < nmastercuts; ++i )
@@ -730,16 +724,12 @@ SCIP_Real GCGcolComputeDualObjPara(
          if(SCIPisNegative(scip, mastercuts[i] ) )
             para += mastercuts[i] * rhs;
       }
-
-//      SCIPinfoMessage(scip, NULL, "para = %f\n", para);
    }
 
    for( i = 0; i < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)); ++i )
-      dualobjnorm += SQR(GCGgetNIdenticalBlocks(GCGmasterGetOrigprob(scip), prob));
+      dualobjnorm += SQR(GCGgetNIdenticalBlocks(GCGmasterGetOrigprob(scip), i));
 
    para += SQR(GCGgetNIdenticalBlocks(GCGmasterGetOrigprob(scip), prob));
-
-//   SCIPinfoMessage(scip, NULL, "para = %f\n", para);
 
    assert(!SCIPisInfinity(scip, ABS(para)));
 
@@ -749,7 +739,6 @@ SCIP_Real GCGcolComputeDualObjPara(
    assert(SCIPisPositive(scip, gcgcol->norm));
 
    para = para / (dualobjnorm * gcgcol->norm);
-//   SCIPinfoMessage(scip, NULL, "para = %f\n", para);
 
    return para;
 }
@@ -798,7 +787,6 @@ SCIP_Real GCGcolComputeOrth(
    mastercoefs1 = GCGcolGetMastercoefs(gcgcol1);
    nmastercuts1 = GCGcolGetNMastercuts(gcgcol1);
    mastercuts1 = GCGcolGetMastercuts(gcgcol1);
-   nmastercuts1 = GCGcolGetNMastercuts(gcgcol1);
    nlinkvars1 = GCGcolGetNLinkvars(gcgcol1);
    linkvars1 = GCGcolGetLinkvars(gcgcol1);
 
@@ -875,7 +863,9 @@ SCIP_Real GCGcolComputeOrth(
    norm2 *= 1.0;
 
    norm1 = SQRT(norm1);
-   norm1 = SQRT(norm2);
+   norm2 = SQRT(norm2);
+
+   assert(SCIPisPositive(scip, norm1) && SCIPisPositive(scip, norm2));
 
    para = para/(norm1*norm2);
 

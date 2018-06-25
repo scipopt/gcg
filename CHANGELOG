@@ -25,6 +25,8 @@ features
 - Benders' decomposition mode has been added. The Benders' decomposition mode is activated by setting
   "relaxing/gcg/mode" to 1. When using the Benders' decomposition mode, the decompositions found by the detectors are
   used as the master and subproblems.
+- Original mode has been added. The original mode allows the user to solve the original problem directly without any
+  decomposition being performed. The original mode is selected by setting "relaxing/gcg/mode" to 2.
 
 - add additional pricing and variable statistics
 - add check/bounds_script.py, which plots some information on the reduced cost pricing

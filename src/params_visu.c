@@ -176,7 +176,7 @@ SCIP_RETCODE SCIPincludeParamsVisu(
       &visudata->nmaxdecompstowrite, FALSE, -1, -1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,
-      "visual/pdfreader", "pdf reader that opens visualizations in select menu",
+      "visual/pdfreader", "pdf reader that opens visualizations in decomposition explorer",
       &visudata->pdfreader, FALSE,
       DEFAULT_PDFREADER,
       NULL, NULL) );

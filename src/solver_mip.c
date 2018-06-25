@@ -45,25 +45,26 @@
 #include "gcg.h"
 #include "pricer_gcg.h"
 #include "pub_solver.h"
-#include "relax_gcg.h"
 #include "scip/scipdefplugins.h"
 #include "pub_gcgcol.h"
 
 #define SOLVER_NAME          "mip"
 #define SOLVER_DESC          "pricing solver solving the pricing problem as a sub-MIP, using SCIP"
 #define SOLVER_PRIORITY      0
-#define SOLVER_ENABLED      TRUE  /**< indicates whether the solver should be enabled */
+#define SOLVER_ENABLED       TRUE  /**< indicates whether the solver should be enabled */
 
 #define DEFAULT_CHECKSOLS            TRUE    /**< should solutions be checked extensively */
 #define DEFAULT_STARTNODELIMIT       1000LL  /**< start node limit for heuristic pricing */
 #define DEFAULT_STARTSTALLNODELIMIT  100LL   /**< start stalling node limit for heuristic pricing */
 #define DEFAULT_STARTGAPLIMIT        0.2     /**< start gap limit for heuristic pricing */
 #define DEFAULT_STARTSOLLIMIT        10      /**< start solution limit for heuristic pricing */
-#define DEFAULT_NODELIMITFAC         1.25    /**< factor by which to increase node limit for heuristic pricing */
-#define DEFAULT_STALLNODELIMITFAC    1.25    /**< factor by which to increase stalling node limit for heuristic pricing */
-#define DEFAULT_GAPLIMITFAC          0.8     /**< factor by which to decrease gap limit for heuristic pricing */
-#define DEFAULT_SOLLIMITFAC          1.5     /**< factor by which to increase solution limit for heuristic pricing */
+#define DEFAULT_NODELIMITFAC         1.0     /**< factor by which to increase node limit for heuristic pricing (1.0: add start limit) */
+#define DEFAULT_STALLNODELIMITFAC    1.0     /**< factor by which to increase stalling node limit for heuristic pricing (1.0: add start limit) */
+#define DEFAULT_GAPLIMITFAC          0.8     /**< factor by which to decrease gap limit for heuristic pricing (1.0: subtract start limit) */
+#define DEFAULT_SOLLIMITFAC          1.0     /**< factor by which to increase solution limit for heuristic pricing (1.0: add start limit) */
 #define DEFAULT_SETTINGSFILE         "-"     /**< settings file to be applied in pricing problems */
+
+
 
 /** pricing solver data */
 struct GCG_SolverData
@@ -74,10 +75,10 @@ struct GCG_SolverData
    SCIP_Longint          startstallnodelimit; /**< start stalling node limit for heuristic pricing */
    SCIP_Real             startgaplimit;       /**< start gap limit for heuristic pricing */
    int                   startsollimit;       /**< start solution limit for heuristic pricing */
-   SCIP_Real             nodelimitfac;        /**< factor by which to increase node limit for heuristic pricing */
-   SCIP_Real             stallnodelimitfac;   /**< factor by which to increase stalling node limit for heuristic pricing */
-   SCIP_Real             gaplimitfac;         /**< factor by which to decrease gap limit for heuristic pricing */
-   SCIP_Real             sollimitfac;         /**< factor by which to increase solution limit for heuristic pricing */
+   SCIP_Real             nodelimitfac;        /**< factor by which to increase node limit for heuristic pricing (1.0: add start limit) */
+   SCIP_Real             stallnodelimitfac;   /**< factor by which to increase stalling node limit for heuristic pricing (1.0: add start limit) */
+   SCIP_Real             gaplimitfac;         /**< factor by which to decrease gap limit for heuristic pricing (1.0: subtract start limit) */
+   SCIP_Real             sollimitfac;         /**< factor by which to increase solution limit for heuristic pricing (1.0: add start limit) */
    char*                 settingsfile;        /**< settings file to be applied in pricing problems */
 
    /* solver data */
@@ -254,10 +255,10 @@ GCG_PRICINGSTATUS getPricingstatus(
           || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD);
 
    /* translate SCIP solution status to GCG pricing status */
-   switch( SCIPgetStatus(pricingprob) )
+   switch( SCIPgetStatus(pricingprob) ) 
    {
    case SCIP_STATUS_USERINTERRUPT:
-     SCIPdebugMessage("  -> interrupted, %d solutions found\n", SCIPgetNSols(pricingprob));
+     SCIPdebugMessage("  -> interrupted, %d solutions found\n", SCIPgetNSols(pricingprob)); /*lint -fallthrough*/
    case SCIP_STATUS_UNKNOWN:
    case SCIP_STATUS_TOTALNODELIMIT:
    case SCIP_STATUS_TIMELIMIT:
@@ -289,7 +290,7 @@ GCG_PRICINGSTATUS getPricingstatus(
 
 /** check whether a column contains an infinite solution value */
 static
-SCIP_RETCODE solutionHasInfiniteValue(
+SCIP_Bool solutionHasInfiniteValue(
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    SCIP_SOL*             sol                 /**< solution to be checked */
    )
@@ -315,8 +316,7 @@ SCIP_RETCODE getColumnsFromPricingprob(
    SCIP*                 scip,               /**< master problem SCIP data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    int                   probnr,             /**< problem number */
-   SCIP_Bool             checksols,          /**< should solutions be checked extensively */
-   int*                  ncols               /**< pointer to store number of found columns */
+   SCIP_Bool             checksols           /**< should solutions be checked extensively */
 )
 {
    SCIP_SOL** probsols;
@@ -356,7 +356,6 @@ SCIP_RETCODE getColumnsFromPricingprob(
       {
          SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &col, probnr, probsols[s], FALSE, SCIPinfinity(pricingprob)) );
          SCIP_CALL( GCGpricerAddCol(scip, col) );
-         ++(*ncols);
       }
       /* If the best solution has infinite values, try to repair it */
       else if( s == 0 )
@@ -375,7 +374,6 @@ SCIP_RETCODE getColumnsFromPricingprob(
 
          SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &col, probnr, newsol, FALSE, SCIPinfinity(pricingprob)) );
          SCIP_CALL( GCGpricerAddCol(scip, col) );
-         ++(*ncols);
       }
    }
 
@@ -395,7 +393,9 @@ SCIP_RETCODE solveProblem(
 {
    GCG_COL* col;
    SCIP_RETCODE retcode;
-   int ncols;
+#ifdef SCIP_STATISTIC
+   SCIP_Longint oldnnodes;
+#endif
 
    assert(scip != NULL);
    assert(pricingprob != NULL);
@@ -404,8 +404,9 @@ SCIP_RETCODE solveProblem(
    assert(lowerbound != NULL);
    assert(status != NULL);
 
-   ncols = 0;
-
+#ifdef SCIP_STATISTIC
+   oldnnodes = SCIPgetNNodes(pricingprob);
+#endif
    /* solve the pricing SCIP */
    retcode = SCIPsolve(pricingprob);
    if( retcode != SCIP_OKAY )
@@ -413,10 +414,17 @@ SCIP_RETCODE solveProblem(
       SCIPwarningMessage(pricingprob, "Pricing problem %d terminated with retcode = %d, ignoring\n", probnr, retcode);
       return SCIP_OKAY;
    }
+
    SCIPdebugMessage("  -> status = %d\n", SCIPgetStatus(pricingprob));
    SCIPdebugMessage("  -> nsols = %d\n", SCIPgetNSols(pricingprob));
 
+#ifdef SCIP_STATISTIC
+   SCIPstatisticMessage("P p %d: %"SCIP_LONGINT_FORMAT" no\n", probnr, SCIPgetNNodes(pricingprob) - oldnnodes);
+#endif
+
    *status = getPricingstatus(pricingprob);
+
+   assert(*status != GCG_PRICINGSTATUS_NOTAPPLICABLE);
 
    switch( *status )
    {
@@ -436,7 +444,6 @@ SCIP_RETCODE solveProblem(
       SCIPdebugMessage("  -> unbounded, creating column from ray\n");
       SCIP_CALL( createColumnFromRay(pricingprob, probnr, &col) );
       SCIP_CALL( GCGpricerAddCol(scip, col) );
-      ++ncols;
 
       break;
 
@@ -450,16 +457,16 @@ SCIP_RETCODE solveProblem(
           && SCIPgetStatus(pricingprob) != SCIP_STATUS_SOLLIMIT));
 
       /* Transform at most maxcols many solutions from the pricing problem into columns */
-      SCIP_CALL( getColumnsFromPricingprob(scip, pricingprob, probnr, solverdata->checksols, &ncols) );
+      SCIP_CALL( getColumnsFromPricingprob(scip, pricingprob, probnr, solverdata->checksols) );
 
       *lowerbound = SCIPgetDualbound(pricingprob);
 
-      SCIPdebugMessage("  -> found %d columns, lowerbound = %.4g\n", ncols, *lowerbound);
+      SCIPdebugMessage("  -> lowerbound = %.4g\n", *lowerbound);
       break;
 
    default:
       SCIPerrorMessage("Pricing problem %d has invalid status: %d\n", probnr, SCIPgetStatus(pricingprob));
-      break;
+      break; /*lint !e788 */
    }
 
    return SCIP_OKAY;
@@ -614,33 +621,36 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    }
    else
    {
-      switch( SCIPgetStatus(pricingprob) )
+      if( SCIPgetStatus(pricingprob) == SCIP_STATUS_NODELIMIT )
       {
-      case SCIP_STATUS_NODELIMIT:
          if( solverdata->nodelimitfac > 1.0 )
-         {
-            solverdata->curnodelimit[probnr] *= solverdata->nodelimitfac;
-            break;
-         }
-      case SCIP_STATUS_STALLNODELIMIT:
+            solverdata->curnodelimit[probnr] = (SCIP_Longint) (solverdata->curnodelimit[probnr] * solverdata->nodelimitfac);
+         else
+            solverdata->curnodelimit[probnr] += solverdata->startnodelimit;
+      }
+      else if( SCIPgetStatus(pricingprob) == SCIP_STATUS_STALLNODELIMIT )
+      {
          if( solverdata->stallnodelimitfac > 1.0 )
-         {
-            solverdata->curstallnodelimit[probnr] *= solverdata->stallnodelimitfac;
-            break;
-         }
-      case SCIP_STATUS_GAPLIMIT:
+            solverdata->curstallnodelimit[probnr] = (SCIP_Longint) (solverdata->curstallnodelimit[probnr] * solverdata->stallnodelimitfac);
+         else
+            solverdata->curstallnodelimit[probnr] += solverdata->startstallnodelimit;
+      }
+      else if( SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT )
+      {
          if( solverdata->gaplimitfac < 1.0 )
-         {
             solverdata->curgaplimit[probnr] *= solverdata->gaplimitfac;
-            break;
-         }
-      case SCIP_STATUS_SOLLIMIT:
+         else
+            solverdata->curgaplimit[probnr] = MAX(solverdata->curgaplimit[probnr] - solverdata->startgaplimit, 0.0);
+      }
+      else if( SCIPgetStatus(pricingprob) == SCIP_STATUS_SOLLIMIT )
+      {
          if( solverdata->sollimitfac > 1.0 )
-         {
-            solverdata->cursollimit[probnr] *= solverdata->sollimitfac;
-            break;
-         }
-      default:
+            solverdata->cursollimit[probnr] = (int) (solverdata->cursollimit[probnr] * solverdata->sollimitfac);
+         else
+            solverdata->cursollimit[probnr] += solverdata->startsollimit;
+      }
+      else
+      {
          *status = GCG_PRICINGSTATUS_UNKNOWN;
          return SCIP_OKAY;
       }
@@ -693,26 +703,26 @@ SCIP_RETCODE GCGincludeSolverMip(
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/mip/startgaplimit",
          "start gap limit for heuristic pricing",
-         &solverdata->startgaplimit, TRUE, DEFAULT_STARTGAPLIMIT, 0.0, 1.0, NULL, NULL) );
+         &solverdata->startgaplimit, TRUE, DEFAULT_STARTGAPLIMIT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/mip/startsollimit",
          "start solution limit for heuristic pricing",
          &solverdata->startsollimit, TRUE, DEFAULT_STARTSOLLIMIT, -1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/mip/nodelimitfac",
-         "factor by which to increase node limit for heuristic pricing",
+         "factor by which to increase node limit for heuristic pricing (1.0: add start limit)",
          &solverdata->nodelimitfac, TRUE, DEFAULT_NODELIMITFAC, 1.0, SCIPinfinity(origprob), NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/mip/stallnodelimitfac",
-         "factor by which to increase stalling node limit for heuristic pricing",
+         "factor by which to increase stalling node limit for heuristic pricing (1.0: add start limit)",
          &solverdata->stallnodelimitfac, TRUE, DEFAULT_STALLNODELIMITFAC, 1.0, SCIPinfinity(origprob), NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/mip/gaplimitfac",
-         "factor by which to decrease gap limit for heuristic pricing",
+         "factor by which to decrease gap limit for heuristic pricing (1.0: subtract start limit)",
          &solverdata->gaplimitfac, TRUE, DEFAULT_GAPLIMITFAC, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/mip/sollimitfac",
-         "factor by which to increase solution limit for heuristic pricing",
+         "factor by which to increase solution limit for heuristic pricing (1.0: add start limit)",
          &solverdata->sollimitfac, TRUE, DEFAULT_SOLLIMITFAC, 1.0, SCIPinfinity(origprob), NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(origprob, "pricingsolver/mip/settingsfile",

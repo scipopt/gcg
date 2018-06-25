@@ -28,10 +28,8 @@
 #include "gcg.h"
 
 #include "relax_gcg.h"
-#include "struct_solver.h"
 #include "scip_misc.h"
 #include "pub_gcgvar.h"
-#include "cons_masterbranch.h"
 
 #include "scip/cons_linear.h"
 #include "scip/pub_var.h"
@@ -45,11 +43,6 @@
 #define BENDERS_CUTPSEUDO        TRUE   /**< should Benders' cut be generated for pseudo solutions */
 #define BENDERS_CUTRELAX         TRUE   /**< should Benders' cut be generated for relaxation solutions */
 #define BENDERS_SHAREAUXVARS    FALSE   /**< should this Benders' share the highest priority Benders' aux vars */
-
-#define SUBPROBLEM_STAT_ARRAYLEN_TIME 1024   /**< length of the array for Time histogram representation */
-#define SUBPROBLEM_STAT_BUCKETSIZE_TIME 10   /**< size of the buckets for Time histogram representation */
-#define SUBPROBLEM_STAT_ARRAYLEN_CUTS 1024   /**< length of the array for foundVars histogram representation */
-#define SUBPROBLEM_STAT_BUCKETSIZE_CUTS 1    /**< size of the buckets for foundVars histogram representation */
 
 #define LARGE_VALUE  10000    /**< a large value that is used to create an artificial solution */
 
@@ -138,7 +131,8 @@ SCIP_RETCODE setOriginalProblemPricingValues(
    SCIP_VAR**            vars,               /**< the variables from the decomposed problem */
    SCIP_Real*            vals,               /**< the solution values of the given problem, can be NULL for an
                                                   artificial solution */
-   int                   nvars               /**< the number of variables */
+   int                   nvars,              /**< the number of variables */
+   SCIP_Bool*            success             /**< were all values set successfully? */
    )
 {
    SCIP_VAR** origvars;
@@ -150,6 +144,8 @@ SCIP_RETCODE setOriginalProblemPricingValues(
    assert(masterprob != NULL);
    assert(benders != NULL);
    assert(vars != NULL);
+
+   (*success) = TRUE;
 
    /* looping through all variables to update the values in the original solution */
    for( i = 0; i < nvars; i++ )
@@ -195,7 +191,11 @@ SCIP_RETCODE setOriginalProblemPricingValues(
           */
          mastervar = NULL;
          SCIP_CALL( SCIPgetBendersMasterVar(masterprob, benders, vars[i], &mastervar) );
-         assert(!SCIPisInfinity(origprob, val));
+         if( SCIPisInfinity(origprob, val) || SCIPisInfinity(origprob, -val) )
+         {
+            (*success) = FALSE;
+            return SCIP_OKAY;
+         }
 
          SCIPdebugMsg(masterprob, "setting the value of <%s> (dw variable <%s>) to %g in the original solution.\n",
             SCIPvarGetName(origvars[0]), SCIPvarGetName(vars[i]), val);
@@ -287,6 +287,7 @@ SCIP_RETCODE createOriginalProblemSolution(
    int nvars;
    int i;
    SCIP_Bool stored;
+   SCIP_Bool success;
 
    assert(masterprob != NULL);
    assert(benders != NULL);
@@ -296,6 +297,8 @@ SCIP_RETCODE createOriginalProblemSolution(
    assert(bendersdata != NULL);
 
    origprob = bendersdata->origprob;
+
+   success = TRUE;
 
    /* creating the original problem */
    SCIP_CALL( SCIPcreateSol(origprob, &origsol, GCGrelaxGetProbingheur(origprob)) );
@@ -349,7 +352,7 @@ SCIP_RETCODE createOriginalProblemSolution(
          if( artificial || SCIPgetStage(subproblem) == SCIP_STAGE_PROBLEM )
          {
             /* setting the values of the subproblem variables to their bounds. */
-            SCIP_CALL( setOriginalProblemPricingValues(origprob, masterprob, benders, origsol, vars, NULL, nvars) );
+            SCIP_CALL( setOriginalProblemPricingValues(origprob, masterprob, benders, origsol, vars, NULL, nvars, &success) );
          }
          else
          {
@@ -357,12 +360,24 @@ SCIP_RETCODE createOriginalProblemSolution(
             SCIP_CALL( SCIPgetSolVals(subproblem, bestsol, nvars, vars, vals) );
 
             /* setting the values using the master problem solution */
-            SCIP_CALL( setOriginalProblemPricingValues(origprob, masterprob, benders, origsol, vars, vals, nvars) );
+            SCIP_CALL( setOriginalProblemPricingValues(origprob, masterprob, benders, origsol, vars, vals, nvars, &success) );
 
             /* freeing the values buffer array for use for the pricing problems */
             SCIPfreeBufferArray(subproblem, &vals);
+
+            if( !success )
+               break;
          }
       }
+   }
+
+   /* if the values were not set correctly, then the solution is not updated. This should only happen when the timelimit
+    * has been exceeded.
+    */
+   if( !success )
+   {
+      SCIP_CALL( SCIPfreeSol(origprob, &origsol) );
+      return SCIP_OKAY;
    }
 
 #ifdef SCIP_DEBUG
@@ -684,7 +699,7 @@ SCIP_DECL_BENDERSCREATESUB(bendersCreatesubGcg)
 
    origprob = bendersdata->origprob;
 
-   SCIPaddBendersSubproblem(scip, benders, GCGgetPricingprob(origprob, probnumber));
+   SCIP_CALL( SCIPaddBendersSubproblem(scip, benders, GCGgetPricingprob(origprob, probnumber)) );
 
    /* setting the objective coefficients for the subproblems.
     * This is required because the variables are added to the pricing problems with a zero coefficient. In the DW

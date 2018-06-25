@@ -288,17 +288,15 @@ void Seeed::addDecChangesFromAncestor(
    assert( ancestor != NULL );
 
    nNewBlocks.push_back( getNBlocks() - ancestor->getNBlocks() );
-   pctConssFromFree.push_back( ( ancestor->getNOpenconss() - getNOpenconss() ) / (SCIP_Real) getNConss() );
-   pctVarsFromFree.push_back( ( ancestor->getNOpenvars() - getNOpenvars() ) / (SCIP_Real) getNVars() );
-   pctConssToBlock.push_back(
-      ( - getNOpenconss() - getNMasterconss() + ancestor->getNOpenconss() + ancestor->getNMasterconss() ) / getNConss() );
-   pctVarsToBlock.push_back(
-      ( - getNOpenvars() - getNMastervars() - getNLinkingvars() - getNTotalStairlinkingvars() + ancestor->getNOpenvars()
-         + ancestor->getNMastervars() + ancestor->getNLinkingvars() + ancestor->getNTotalStairlinkingvars() ) / getNVars() );
-   pctConssToBorder.push_back( ( getNMasterconss() - ancestor->getNMasterconss() ) / (SCIP_Real) getNConss() );
-   pctVarsToBorder.push_back(
-      ( getNMastervars() + getNLinkingvars() + getNTotalStairlinkingvars() - ancestor->getNMastervars()
-         - ancestor->getNLinkingvars() - ancestor->getNTotalStairlinkingvars() ) / (SCIP_Real) getNVars() );
+   pctConssFromFree.push_back( getNConss() != 0 ? ( ancestor->getNOpenconss() - getNOpenconss() ) / (SCIP_Real) getNConss() : 0. );
+   pctVarsFromFree.push_back( getNVars() != 0 ? ( ancestor->getNOpenvars() - getNOpenvars() ) / (SCIP_Real) getNVars() : 0. );
+   pctConssToBlock.push_back( getNConss() != 0 ?
+      ( - getNOpenconss() - getNMasterconss() + ancestor->getNOpenconss() + ancestor->getNMasterconss() ) / getNConss() : 0. );
+   pctVarsToBlock.push_back( getNVars() != 0 ? ( - getNOpenvars() - getNMastervars() - getNLinkingvars() - getNTotalStairlinkingvars() + ancestor->getNOpenvars()
+         + ancestor->getNMastervars() + ancestor->getNLinkingvars() + ancestor->getNTotalStairlinkingvars() ) / getNVars() : 0. );
+   pctConssToBorder.push_back( getNConss() != 0 ? ( getNMasterconss() - ancestor->getNMasterconss() ) / (SCIP_Real) getNConss() : 0. );
+   pctVarsToBorder.push_back( getNVars() != 0 ? ( getNMastervars() + getNLinkingvars() + getNTotalStairlinkingvars() - ancestor->getNMastervars()
+         - ancestor->getNLinkingvars() - ancestor->getNTotalStairlinkingvars() ) / (SCIP_Real) getNVars() : 0. );
    listofancestorids.push_back( ancestor->getID() );
 }
 
@@ -1126,8 +1124,9 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
   void Seeed::calcAggregationInformation(
      )
   {
-
+#ifdef WITH_BLISS
      SCIP_Bool tooexpensive;
+#endif
      SCIP_Bool aggisnotactive;
      SCIP_Bool discretization;
      SCIP_Bool aggregation;
@@ -1140,15 +1139,17 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
      if( !isComplete() )
         return;
 
+#ifdef WITH_BLISS
      if( isAgginfoToExpensive() )
         tooexpensive = TRUE;
      else
         tooexpensive = FALSE;
+#endif
 
      SCIPgetBoolParam(seeedpool->getScip(), "relaxing/gcg/aggregation", &aggregation);
      SCIPgetBoolParam(seeedpool->getScip(), "relaxing/gcg/discretization", &discretization);
 
-     if( discretization && aggregation && !seeedpool->areThereContinuousVars() )
+     if( discretization && aggregation )
         aggisnotactive = FALSE;
      else
         aggisnotactive = TRUE;
@@ -4530,45 +4531,50 @@ std::vector< std::pair< int, std::vector< int > > > Seeed::findLinkingVarsPotent
 {
 	std::vector< std::pair< int, std::vector< int > > > blocksOfVars( 0 );
 	const int* varcons;
-	const int* lvars = getLinkingvars();
+	const int* lvars;
 	int blockcounter;
 
-	sort();
+   /* if there is at least one linking variable, then the blocks of vars must be created. */
+   if( getNLinkingvars() > 0 )
+   {
+      lvars = getLinkingvars();
+      sort();
 
-	/* check every linking var */
-	for ( int v = 0; v < getNLinkingvars(); ++v )
-	{
-		std::vector< int > blocksOfVar( 0 );
-		blockcounter = 0;
+      /* check every linking var */
+      for ( int v = 0; v < getNLinkingvars(); ++v )
+      {
+         std::vector< int > blocksOfVar( 0 );
+         blockcounter = 0;
 
-		varcons = seeedpool->getConssForVar( lvars[v] );
+         varcons = seeedpool->getConssForVar( lvars[v] );
 
-		/* find all blocks that are hit by this linking var */
-		for ( int c = 0; c < seeedpool->getNConssForVar( lvars[v] ) && blockcounter <= 2; ++c )
-		{
-			for ( int b = 0; b < nBlocks && blockcounter <= 2; ++b )
-			{
-				if ( std::binary_search( conssForBlocks[b].begin(),
-						conssForBlocks[b].end(), varcons[c] ) )
-				{
-					/* if the hit block is new, add it to blockOfVar vector */
-					if ( std::find( blocksOfVar.begin(), blocksOfVar.end(), b ) == blocksOfVar.end() )
-					{
-	               //std::cout << "Var " << lvars[v] << " hits block " << b << "\n" ;
-						++blockcounter;
-						blocksOfVar.push_back( b );
-					}
-				}
-			}
-		}
+         /* find all blocks that are hit by this linking var */
+         for ( int c = 0; c < seeedpool->getNConssForVar( lvars[v] ) && blockcounter <= 2; ++c )
+         {
+            for ( int b = 0; b < nBlocks && blockcounter <= 2; ++b )
+            {
+               if ( std::binary_search( conssForBlocks[b].begin(),
+                     conssForBlocks[b].end(), varcons[c] ) )
+               {
+                  /* if the hit block is new, add it to blockOfVar vector */
+                  if ( std::find( blocksOfVar.begin(), blocksOfVar.end(), b ) == blocksOfVar.end() )
+                  {
+                     //std::cout << "Var " << lvars[v] << " hits block " << b << "\n" ;
+                     ++blockcounter;
+                     blocksOfVar.push_back( b );
+                  }
+               }
+            }
+         }
 
-		/* if the var hits exactly two blocks, it is potentially stairlinking */
-		if ( blockcounter == 2 )
-		{
-			std::pair< int, std::vector< int > > pair( v, blocksOfVar );
-			blocksOfVars.push_back( pair );
-		}
-	}
+         /* if the var hits exactly two blocks, it is potentially stairlinking */
+         if ( blockcounter == 2 )
+         {
+            std::pair< int, std::vector< int > > pair( v, blocksOfVar );
+            blocksOfVars.push_back( pair );
+         }
+      }
+   }
 
 	return blocksOfVars;
 }
@@ -5315,7 +5321,10 @@ int Seeed::getNDetectorchainInfo()
 /** returns the number of detectors the seeed is propagated by */
 int Seeed::getNDetectors()
 {
-   return (int) detectorChain.size();
+   if ( usergiven == USERGIVEN::NOT )
+      return (int) detectorChain.size();
+   else
+      return 0;
 }
 
 /** returns the number used classifiers */
@@ -6369,6 +6378,8 @@ SCIP_RETCODE Seeed::setVarToStairlinking(
 /** generates and opens a gp visualization of the seeed */
 void Seeed::showVisualisation()
 {
+   int returnvalue;
+
    MiscVisualization* miscvisu = new MiscVisualization();
 
    /* get names for gp file and output file */
@@ -6385,7 +6396,9 @@ void Seeed::showVisualisation()
    strcpy(command, "gnuplot ");
    strcat(command, filename);
    SCIPinfoMessage(seeedpool->getScip(), NULL, "%s\n", command);
-   system(command);
+   returnvalue = system(command);
+   if( returnvalue == -1 )
+      SCIPwarningMessage(scip, "Unable to write gnuplot file\n");
 
    /* open outputfile */
    strcpy(command, GCGVisuGetPdfReader());
@@ -6393,7 +6406,9 @@ void Seeed::showVisualisation()
    strcat(command, outname);
    strcat(command, " &");
    SCIPinfoMessage(seeedpool->getScip(), NULL, "%s\n", command);
-   system(command);
+   returnvalue = system(command);
+   if( returnvalue == -1 )
+      SCIPwarningMessage(scip, "Unable to open gnuplot file\n");
 
    return;
 }

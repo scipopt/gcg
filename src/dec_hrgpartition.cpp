@@ -468,8 +468,6 @@ SCIP_RETCODE detection(
 
 
 
-   int nconss = seeedPropagationData->seeedpool->getNConss();
-   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/hrgpartition/maxnblockcandidates");
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &maxnblockcandidates) );
@@ -485,7 +483,6 @@ SCIP_RETCODE detection(
    nMaxSeeeds = detectordata->maxblocks-detectordata->minblocks+1;
 
    /* allocate space for output data */
-   assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
 
     /* build the hypergraph structure from the original problem */

@@ -3247,10 +3247,10 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/include/gtest/internal/gtest-param-util-generated.h \
  lib/include/gtest/gtest_prod.h lib/include/gtest/gtest-test-part.h \
  lib/include/gtest/gtest-typed-test.h lib/include/gtest/gtest_pred_impl.h \
- src/pub_gcgvar.h src/struct_vardata.h src/relax_gcg.h \
- src/type_branchgcg.h src/type_decomp.h src/gcg.h src/type_detector.h \
- src/type_solver.h src/type_gcgcol.h src/struct_gcgcol.h \
- src/type_pricingstatus.h src/pub_gcgvar.h src/pub_decomp.h
+ src/pub_gcgvar.h src/type_decomp.h src/struct_vardata.h src/relax_gcg.h \
+ src/type_branchgcg.h src/gcg.h src/type_detector.h src/type_solver.h \
+ src/type_gcgcol.h src/struct_gcgcol.h src/type_pricingstatus.h \
+ src/pub_gcgvar.h src/pub_decomp.h
 $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbenders.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \

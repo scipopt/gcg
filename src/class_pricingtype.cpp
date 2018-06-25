@@ -48,9 +48,10 @@
 #define DEFAULT_MAXCOLSROUNDREDCOST      100        /**< maximal number of columns per reduced cost pricing round */
 #define DEFAULT_MAXCOLSPROBREDCOSTROOT    10        /**< maximal number of columns per problem to be generated during red. cost pricing at root node */
 #define DEFAULT_MAXCOLSPROBREDCOST        10        /**< maximal number of columns per problem to be generated during red. cost pricing */
-#define DEFAULT_MAXSUCCESSFULPROBSREDCOST INT_MAX   /**< maximal number of successfully solved red. cost pricing problems */
+#define DEFAULT_MAXSUCCESSFULPROBSREDCOST INT_MAX   /**< maximal number of successfully solved red. cost pricing problems until pricing loop is aborted */
 #define DEFAULT_RELMAXPROBSREDCOSTROOT   1.0        /**< maximal percentage of red. cost pricing problems that are solved at root node if variables have already been found */
 #define DEFAULT_RELMAXPROBSREDCOST       1.0        /**< maximal percentage of red. cost pricing problems that are solved if variables have already been found */
+#define DEFAULT_RELMAXSUCCESSFULPROBSREDCOST 1.0    /**< maximal percentage of successfully solved red. cost pricing problems until pricing loop is aborted */
 
 #define DEFAULT_MAXCOLSROUNDFARKAS        10        /**< maximal number of columns per Farkas pricing round */
 #define DEFAULT_MAXCOLSPROBFARKAS         10        /**< maximal number of columns per problem to be generated during Farkas pricing */
@@ -72,18 +73,22 @@ PricingType::PricingType(
    SCIP*                 scip
    )
 {
-   scip_ = scip;
-   type  = GCG_PRICETYPE_UNKNOWN;
+   scip_ = scip;                             /**< SCIP instance (master problem) */
+   type  = GCG_PRICETYPE_UNKNOWN;            /**< type of pricing */
 
-   calls = 0;
-   maxrounds = INT_MAX;
-   maxcolsroundroot = INT_MAX;
-   maxcolsround = INT_MAX;
-   maxcolsprobroot = INT_MAX;
-   maxcolsprob = INT_MAX;
-   maxsuccessfulprobs = INT_MAX;
-   relmaxprobsroot = 1.0;
-   relmaxprobs = 1.0;
+   /* statistical values */
+   calls = 0;                                /**< number of times this type of pricing was called */
+
+   /* parameters */
+   maxrounds = INT_MAX;                      /**< maximal number of pricing rounds */
+   maxcolsroundroot = INT_MAX;               /**< maximal number of columns per pricing round at root node */
+   maxcolsround = INT_MAX;                   /**< maximal number of columns per pricing round */
+   maxcolsprobroot = INT_MAX;                /**< maximal number of columns per problem to be generated at root node */
+   maxcolsprob = INT_MAX;                    /**< maximal number of columns per problem to be generated */
+   maxsuccessfulprobs = INT_MAX;             /**< maximal number of successfully solved pricing problems until pricing loop is aborted */
+   relmaxprobsroot = 1.0;                    /**< maximal percentage of pricing problems that are solved at root node if variables have already been found */
+   relmaxprobs = 1.0;                        /**< maximal percentage of pricing problems that are solved if variables have already been found */
+   relmaxsuccessfulprobs = 1.0;              /**< maximal percentage of successfully solved pricing problems until pricing loop is aborted */
 
    SCIP_CALL_EXC( SCIPcreateCPUClock(scip, &(clock)) );
 }
@@ -113,33 +118,51 @@ SCIP_Real PricingType::getClockTime() const
 }
 
 FarkasPricing::FarkasPricing(
-      SCIP* scip
+   SCIP*                 scip
    ) : PricingType(scip)
 {
    type = GCG_PRICETYPE_FARKAS;
 }
 
 SCIP_Real FarkasPricing::consGetDual(
-      SCIP* scip,
-      SCIP_CONS* cons
+   SCIP*                 scip,
+   SCIP_CONS*            cons
    ) const
 {
    return SCIPgetDualfarkasLinear(scip, cons);
 }
 
 SCIP_Real FarkasPricing::rowGetDual(
-      SCIP_Row* row
+   SCIP_ROW*             row
    ) const
 {
    return SCIProwGetDualfarkas(row);
 }
 
 SCIP_Real FarkasPricing::varGetObj(
-      SCIP_VAR* var
+   SCIP_VAR*             var
    ) const
 {
    assert(var != NULL);
    return 0.0;
+}
+
+/** returns the maximal number of columns per pricing round */
+int FarkasPricing::getMaxcolsround() const
+{
+   return maxcolsround;
+}
+
+/** returns the maximal number of columns per problem to be generated during pricing */
+int FarkasPricing::getMaxcolsprob() const
+{
+   return maxcolsprob;
+}
+
+/** returns the maximal percentage of pricing problems that are solved if variables have already been found */
+SCIP_Real FarkasPricing::getRelmaxprobs() const
+{
+   return relmaxprobs;
 }
 
 SCIP_RETCODE FarkasPricing::addParameters()
@@ -162,28 +185,29 @@ SCIP_RETCODE FarkasPricing::addParameters()
 }
 
 SCIP_Real ReducedCostPricing::consGetDual(
-      SCIP* scip,
-      SCIP_CONS* cons
+   SCIP*                 scip,
+   SCIP_CONS*            cons
    ) const
 {
    return SCIPgetDualsolLinear(scip, cons);
 }
+
 SCIP_Real ReducedCostPricing::rowGetDual(
-      SCIP_ROW* row
+   SCIP_ROW*             row
    ) const
 {
    return SCIProwGetDualsol(row);
 }
 
 ReducedCostPricing::ReducedCostPricing(
-      SCIP* p_scip
+   SCIP*                 p_scip
    ) : PricingType(p_scip)
 {
    type = GCG_PRICETYPE_REDCOST;
 }
 
 SCIP_Real ReducedCostPricing::varGetObj(
-      SCIP_VAR* var
+   SCIP_VAR*             var
    ) const
 {
    SCIP_VAR* origvar;
@@ -197,11 +221,29 @@ SCIP_Real ReducedCostPricing::varGetObj(
       return SCIPvarGetObj(origvar);
 }
 
+/** returns the maximal number of columns per pricing round */
+int ReducedCostPricing::getMaxcolsround() const
+{
+   return GCGisRootNode(scip_) ? maxcolsroundroot : maxcolsround;
+}
+
+/** returns the maximal number of columns per problem to be generated during pricing */
+int ReducedCostPricing::getMaxcolsprob() const
+{
+   return GCGisRootNode(scip_) ? maxcolsprobroot : maxcolsprob;
+}
+
+/** returns the maximal percentage of pricing problems that are solved if variables have already been found */
+SCIP_Real ReducedCostPricing::getRelmaxprobs() const
+{
+   return GCGisRootNode(scip_) ? relmaxprobsroot : relmaxprobs;
+}
+
 SCIP_RETCODE ReducedCostPricing::addParameters()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
 
-   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/maxroundsredcost",
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxroundsredcost",
          "maximal number of pricing rounds per node after the root node",
          &maxrounds, FALSE, DEFAULT_MAXROUNDSREDCOST, 0, INT_MAX, NULL, (SCIP_PARAMDATA*) NULL) );
 
@@ -226,7 +268,7 @@ SCIP_RETCODE ReducedCostPricing::addParameters()
          NULL, (SCIP_PARAMDATA*) NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxsuccessfulprobsredcost",
-         "maximal number of successfully solved red. cost pricing problems",
+         "maximal number of successfully solved red. cost pricing problems until pricing loop is aborted",
          &maxsuccessfulprobs, FALSE, DEFAULT_MAXSUCCESSFULPROBSREDCOST, 1, INT_MAX, NULL, (SCIP_PARAMDATA*) NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/relmaxprobsredcostroot",
@@ -237,57 +279,9 @@ SCIP_RETCODE ReducedCostPricing::addParameters()
          "maximal percentage of red. cost pricing problems that are solved if variables have already been found",
          &relmaxprobs, FALSE, DEFAULT_RELMAXPROBSREDCOST, 0.0, 1.0, NULL, (SCIP_PARAMDATA*) NULL) );
 
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/relmaxsuccessfulprobsredcost",
+         "maximal percentage of successfully solved red. cost pricing problems until pricing loop is aborted",
+         &relmaxsuccessfulprobs, FALSE, DEFAULT_RELMAXSUCCESSFULPROBSREDCOST, 0.0, 1.0, NULL, NULL) );
+
    return SCIP_OKAY;
-}
-
-SCIP_Bool FarkasPricing::canOptimalPricingBeAborted(
-   int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-   int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-   int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-   SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-   int                   npricingprobsnotnull /**< number of relevant pricing problems */
-   ) const
-{ /*lint -esym(715,successfulprobs,successfulrelmaxprobs) */
-   return !((nfoundcols < maxcolsround)
-            && (nfoundcols == 0 || nsolvedprobs < relmaxprobs * npricingprobsnotnull));
-}
-
-SCIP_Bool FarkasPricing::canHeuristicPricingBeAborted(
-   int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-   int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-   int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-   SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-   int                   npricingprobsnotnull /**< number of relevant pricing problems */
-   ) const
-{
-   return canOptimalPricingBeAborted(nfoundcols, nsolvedprobs, nsuccessfulprobs, relmaxsuccessfulprobs, npricingprobsnotnull);
-}
-
-SCIP_Bool ReducedCostPricing::canOptimalPricingBeAborted(
-   int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-   int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-   int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-   SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-   int                   npricingprobsnotnull /**< number of relevant pricing problems */
-   ) const
-{
-   return !((((nfoundcols < maxcolsroundroot) || !GCGisRootNode(scip_)) && ((nfoundcols < maxcolsround) || GCGisRootNode(scip_)))
-               && nsuccessfulprobs < maxsuccessfulprobs
-               && nsuccessfulprobs < relmaxsuccessfulprobs * npricingprobsnotnull
-               && (nfoundcols == 0 || ((GCGisRootNode(scip_) || nsolvedprobs < relmaxprobs * npricingprobsnotnull)
-                     && (!GCGisRootNode(scip_) || nsolvedprobs < relmaxprobsroot * npricingprobsnotnull))));
-}
-
-SCIP_Bool ReducedCostPricing::canHeuristicPricingBeAborted(
-   int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
-   int                   nsolvedprobs,       /**< number of pricing problems solved so far */
-   int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
-   SCIP_Real             relmaxsuccessfulprobs, /**< maximal percentage of pricing problems that need to be solved successfully */
-   int                   npricingprobsnotnull /**< number of relevant pricing problems */
-  ) const
-{
-   return !((nfoundcols < maxcolsround)
-            && nsuccessfulprobs < maxsuccessfulprobs
-            && nsuccessfulprobs < relmaxsuccessfulprobs * npricingprobsnotnull
-            && (nfoundcols == 0 || nsolvedprobs < relmaxprobs * npricingprobsnotnull));
 }
