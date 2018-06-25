@@ -496,9 +496,6 @@ SCIP_RETCODE detection(
    if( numberOfBlocks.empty() )
       numberOfBlocks.push_back(8);
 
-   int nconss = seeedPropagationData->seeedpool->getNConss();
-   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/hrcgpartition/maxnblockcandidates");
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &maxnblockcandidates) );
 
@@ -513,7 +510,6 @@ SCIP_RETCODE detection(
    nMaxSeeeds = detectordata->maxblocks-detectordata->minblocks+1;
 
    /* allocate space for output data */
-   assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
 
 
