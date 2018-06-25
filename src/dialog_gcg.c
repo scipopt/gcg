@@ -523,6 +523,18 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the display block number candidates */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayNBlockcandidates)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   SCIP_CALL(GCGprintBlockcandidateInformation(scip, NULL) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
 
 /** dialog execution method for the display additionalstatistics command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
@@ -1235,6 +1247,16 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+   /* display nblockcandidates */
+   if( !SCIPdialogHasEntry(submenu, "blocknumbercandidates") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayNBlockcandidates, NULL, NULL,
+            "blocknumbercandidates", "display number of blocks candidates ", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
 
    /* display additionalstatistics */
    if( !SCIPdialogHasEntry(submenu, "additionalstatistics") )
