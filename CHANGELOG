@@ -1,20 +1,24 @@
 GCG Version 3.0.0
-=================
+*****************
 
-features
-- new detection scheme:
-	- detection is roundwise (new parameter detection/maxrounds)
-	- detectors can implement three optional methods:
-		- propagateSeeed : given a partial decomposition d the detector returns a set of decompositions that are a refinement of d
-		- finsishSeeed: given a partial decomposition d the detector returns a set of decompositions that are a refinement of d and complete
-	        - postprocessSeeed: given a complete decomposition d the detector returns a set of complete decompositions
-	- further new paramters for each detector: detector/*/{usefullrecall, freqcallround, maxcallround, mincallround}:
-		-  it useful to call this detector on a descendant of the propagated seeed
-		- frequency the detector gets called (is active) in detection loop ,ie it is called in round r if and only if mincallround <= r <= maxcallround AND  (r - mincallround) mod freqcallround == 0
-		- last round the detector gets called
-		- first round the detector gets called (offset in detection loop)
-	- there is a current pool of partial decompositions (i.e. some conss and vars are open, initilized by empty decomposition (all vars and conss are open) )
-	- in every detection round each active detector is called on each current partial detection and returns (possibly empty set) of decomposition (possibly still partial but but strictly more refined)
+	=================
+
+Features
+--------
+
+- new structure detection scheme:
+  - detection is roundwise (new parameter detection/maxrounds)
+  - detectors can implement three optional methods:
+    - propagateSeeed : given a partial decomposition d the detector returns a set of decompositions that are a refinement of d
+    - finsishSeeed: given a partial decomposition d the detector returns a set of decompositions that are a refinement of d and complete
+    - postprocessSeeed: given a complete decomposition d the detector returns a set of complete decompositions
+  - there is a current pool of partial decompositions (i.e. some conss and vars are open, initilized by empty decomposition (all vars and conss are open) )
+  - in every detection round the refinement method of each active detector is called on each current partial detection and returns a (possibly empty) set of decompositions (possibly still partial but strictly more refined); afterwards the finishing method of each detector is called on each partial decomposition
+  - after last round the postprocessing method of the corresponding detectors is called on each complete decomposition
+  - constraint and variable classification according to several criteria reveals more problem structure
+  - detection process can run parallelized in presence of multiple partial decompositions
+  - structure information concerning the original problem can be used when searching structure in the transformed problem
+  - more user interaction by command "explore"
 - solve the problem with one single block if no decomposition is available ('SCIP mode')
 - extended isomorph detector by the possibility to identify blocks which are identical
   w.r.t. signs (but not necessarily values) of coefficients.
@@ -43,13 +47,17 @@ features
 - enable discretization when original problem is a mixed integer program; continuous variables are convexified
 - solve original LP relaxation in the root node to get a first dual bound and to run some heuristics in the original problem
 
-performance improvements:
-[] - which coeffmatrix dimensions are doable by detection for default, fast now?
+Performance improvements:
+-------------------------
 
-data structures:
-[] - seeed
-[] - seeedpool
-[] - constraint classifier
+- structure detection (default) is now applicable to MIPs with much larger dimensions (150.000 x 500000)
+
+Data structures:
+----------------
+
+- new internal data structure to handle partial decompositions; see class_seeed.h for more details
+- new internal data structure to handle detection loops for different formulations (at the moment original and transformed formulation); see class_seeedpool.h for more information
+- new internal data structure to handle constraint classification, each constraint classification is a partition of the constraints according a given
 [] - variable classifier
 
 deleted and modified API functions:
