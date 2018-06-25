@@ -288,17 +288,15 @@ void Seeed::addDecChangesFromAncestor(
    assert( ancestor != NULL );
 
    nNewBlocks.push_back( getNBlocks() - ancestor->getNBlocks() );
-   pctConssFromFree.push_back( ( ancestor->getNOpenconss() - getNOpenconss() ) / (SCIP_Real) getNConss() );
-   pctVarsFromFree.push_back( ( ancestor->getNOpenvars() - getNOpenvars() ) / (SCIP_Real) getNVars() );
-   pctConssToBlock.push_back(
-      ( - getNOpenconss() - getNMasterconss() + ancestor->getNOpenconss() + ancestor->getNMasterconss() ) / getNConss() );
-   pctVarsToBlock.push_back(
-      ( - getNOpenvars() - getNMastervars() - getNLinkingvars() - getNTotalStairlinkingvars() + ancestor->getNOpenvars()
-         + ancestor->getNMastervars() + ancestor->getNLinkingvars() + ancestor->getNTotalStairlinkingvars() ) / getNVars() );
-   pctConssToBorder.push_back( ( getNMasterconss() - ancestor->getNMasterconss() ) / (SCIP_Real) getNConss() );
-   pctVarsToBorder.push_back(
-      ( getNMastervars() + getNLinkingvars() + getNTotalStairlinkingvars() - ancestor->getNMastervars()
-         - ancestor->getNLinkingvars() - ancestor->getNTotalStairlinkingvars() ) / (SCIP_Real) getNVars() );
+   pctConssFromFree.push_back( getNConss() != 0 ? ( ancestor->getNOpenconss() - getNOpenconss() ) / (SCIP_Real) getNConss() : 0. );
+   pctVarsFromFree.push_back( getNVars() != 0 ? ( ancestor->getNOpenvars() - getNOpenvars() ) / (SCIP_Real) getNVars() : 0. );
+   pctConssToBlock.push_back( getNConss() != 0 ?
+      ( - getNOpenconss() - getNMasterconss() + ancestor->getNOpenconss() + ancestor->getNMasterconss() ) / getNConss() : 0. );
+   pctVarsToBlock.push_back( getNVars() != 0 ? ( - getNOpenvars() - getNMastervars() - getNLinkingvars() - getNTotalStairlinkingvars() + ancestor->getNOpenvars()
+         + ancestor->getNMastervars() + ancestor->getNLinkingvars() + ancestor->getNTotalStairlinkingvars() ) / getNVars() : 0. );
+   pctConssToBorder.push_back( getNConss() != 0 ? ( getNMasterconss() - ancestor->getNMasterconss() ) / (SCIP_Real) getNConss() : 0. );
+   pctVarsToBorder.push_back( getNVars() != 0 ? ( getNMastervars() + getNLinkingvars() + getNTotalStairlinkingvars() - ancestor->getNMastervars()
+         - ancestor->getNLinkingvars() - ancestor->getNTotalStairlinkingvars() ) / (SCIP_Real) getNVars() : 0. );
    listofancestorids.push_back( ancestor->getID() );
 }
 
