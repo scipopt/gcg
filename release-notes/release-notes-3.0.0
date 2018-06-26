@@ -16,7 +16,9 @@ Features
    implement up to three callbacks: propagate, finish, and 
    postprocess. Constraint- and variable classification yield further
    problem knowledge resulting in decompositions for large problems
-   for which no structure was known before.
+   for which no structure was known before. Furthermore there are 
+   several new ways of user interaction (e.g., 'explore', 
+   and 'decomposition_toolbox') and visualization.
 
  * New pricing scheme: The pricing scheme has been restructured. The
    pricing loop is now managed by a priority queue, which holds
