@@ -31,12 +31,26 @@ Features
   used as the master and subproblems.
 - Original mode has been added. The original mode allows the user to solve the original problem directly without any
   decomposition being performed. The original mode is selected by setting "relaxing/gcg/mode" to 2.
+- new pricing scheme:
+	- the pricing loop is now managed by a new class, the 'pricing controller'
+	- pricing is now done by performing 'pricing jobs', which hold a pricing problem, a solver to be applied and some parameters (such as whether the solver is to be applied heuristically)
+	- pricing jobs are organized in a priority queue, which is maintained by the pricing controller
+	- the latter now also decides over premature abortion of the pricing loop
+- own data structure for pricing problems which also holds solving statistics and results
+- extension of heuristic pricing, which can now be performed in multiple rounds; in particular, the MIP and the CPLEX pricing solver can now be applied multiple times per pricing loop, with increasing node, solution limits or decreasing gap limts.
+- new possibility to sort pricing problems: reliability sorting based only on the last few pricing rounds
+- possibility to solve pricing problems 'chunk'-wise, i.e. to only regard a certain subset of pricing problems in a pricer call
+- add price store similar to SCIP's sepa store for better column management
+- interface change in pricing solvers:
+	- solvers now pass their columns directly to the pricing storage rather than returning an array
+	- GCG_DECL_SOLVERSOLVE and GCG_DECL_SOLVERSOLVEHEUR callbacks now also take the master SCIP instance as an input
+	- new callback GCG_DECL_SOLVERUPDATE, called by the pricer when constraint, bound or objective function changes occur on a pricing problem; also fixes a bug in the CPLEX pricing solver
+- new return type GCG_PRICINGSTATUS which replaces SCIP_STATUS in the pricing solvers
 
 - add additional pricing and variable statistics
 - add check/bounds_script.py, which plots some information on the reduced cost pricing
   iterations in the root node (using additional statistics and given as input an *.out file)
 - add hybridization of dual variable smoothing with an ascent method
-- add price store similar to SCIP's sepa store for better column management
 - restructure column pool similar to SCIP's cut pool
 - parametrize pricing solver priorities
 - added parameter heuristics/restmaster/pbheur to use restricted master heuristic as price-and-branch heuristic
@@ -84,7 +98,7 @@ deleted and modified parameters:
 - modified parameter "detectors/*/priority"
 
 
-new parameters:
+new/changed parameters:
 [] rearrange
 - new parameter "constraints/decomp/createbasicdecomp" indicates whether to create a decomposition with all constraints in the master if no other specified (useful to have included comparison)
 - new parameter "detection/allowclassifierduplicates/enabled" indicates whether classifier duplicates are allowed (for statistical reasons)
@@ -93,8 +107,8 @@ new parameters:
 - new parameter "detection/emphfast/enabled" indicates whether emphasis settings are set to fast, needed for make test"
 - new parameter "detection/legacymode/enabled" indicates whether detection should additionally do legacy mode detection
 - new parameter "detection/legacymode/onlylegacymode" indicates whether detection should only consist of legacy mode detection
-- new parameter "detection/maxnclassesperclassifier" to specify the maximum number of classes per classifier (if this number is exceeed two smallest classes are merged until it is reached, both classifier are kept) 
-- new parameter "detection/maxnclassesperclassifierforlargeprobs" same as "detection/maxnclassesperclassifier" but for problems with nvars + nconss >= 50000  
+- new parameter "detection/maxnclassesperclassifier" to specify the maximum number of classes per classifier (if this number is exceeed two smallest classes are merged until it is reached, both classifier are kept)
+- new parameter "detection/maxnclassesperclassifierforlargeprobs" same as "detection/maxnclassesperclassifier" but for problems with nvars + nconss >= 50000
 - new parameter "detection/maxrounds" to specifiy the number of refinement rounds during detection
 - new parameter "detection/origprob/classificationenabled" indicates whether constraint and variable classification is also enabeled for opriginal problem
 - new parameter "detection/origprob/enabled" indicates whether to detect structures in original problem found decomps are tried to translate to transformed problem; only useful if presolving is enabled
@@ -102,18 +116,29 @@ new parameters:
 - new parameter "detection/scoretype" indicates which score should be used for comparing (partial) decompositions (0: max white, 1: border area, 2: classic, 3: max foreseeing white, 4: ppc-max-white, 5: max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info)
 - new parameter "detectors/*/enabled" is this detector enabled when detecting in the transformed problem
 - new parameter "detectors/*/finishingenabled" is this detector enabled when finishing partial decompsositions in the original and transformed problem
-- new parameter "detectors/*/freqcallround" frequency the detector gets called in detection loop ,ie it is called in round r if and only if mincallround <= r <= maxcallround AND  (r - mincallround) mod freqCallRound == 0 
+- new parameter "detectors/*/freqcallround" frequency the detector gets called in detection loop ,ie it is called in round r if and only if mincallround <= r <= maxcallround AND  (r - mincallround) mod freqCallRound == 0
 - new paramater "detectors/*/legacymode" flag to indicate whether (old) DETECTSTRUCTURE method of detector should be used
 - new parameter "detectors/*/maxcallround" maximum round the detector gets called in detection loop
 - new parameter "detectors/*/mincallround" minimum  round the detector gets called in detection loop
 - new parameter "detectors/*/origenabled" is this detector enabled when detecting in the original problem (overruled by "detection/origprob/enabled" )
 - new parameter "detectors/*/origfreqcallround" same as "detectors/*/freqcallround" for original problem
 - new parameter "detectors/*/origmaxcallround" same as "detectors/*/maxcallround" for original problem
-- new parameter "detectors/*/origmincallround" same as "detectors/*/mincallround" for original problem 
+- new parameter "detectors/*/origmincallround" same as "detectors/*/mincallround" for original problem
 - new parameter "detectors/*/overruleemphasis" flag to indicate whether emphasis settings for detector <%s> should be overruled by normal settings
 - new parameter "detectors/*/postprocessingenabled" is this detector enabled when postprocessing in the original and the transformed problem
 - new parameter "detectors/*/usefulrecall" indicates whether this detector is called on descendants of a partial decomposition
 - new parameter "detectors/connectedbase/useconssadj" should the constraint adjacency datastructure  be used (and not the constraint-variable-incidency)
+- new parameters "pricing/masterpricer/maxcolsprob*" limit number of columns to be generated per pricing problem
+- new parameter "pricing/masterpricer/heurpricingiters" replaces old parameter "pricing/masterpricer/heurpricing" and sets maximum number of heuristic pricing rounds within the pricing loop
+- new parameter "pricing/masterpricer/maxheurdepth" limits maximum depth in the b&b tree at which heuristic pricing is performed
+- changed parameter "pricing/masterpricer/sorting" to type 'char' and add an option to sort by reliability based only on the last few rounds
+- new parameter "pricing/masterpricer/nroundscol" sets the number of pricing rounds considered in that case
+- new parameter "pricing/masterpricer/chunksize" sets the size of the subset ('chunk') of pricing problems to be considered in a pricing round
+- new parameter "pricing/masterpricer/stabilizationtree" to enable or disable stabilization beyond the root node
+- new parameter "pricing/masterpricer/useartificualvars" to use artificial variables to make the RMP feasible
+- new parameter "pricing/masterpricer/bigmartificial" to set big M objective of artificial variables
+- new parameter "pricing/masterpricer/factorunreliable" to set factor to be used for the objective of unbounded variables
+- new parameter "pricing/masterpricer/usemaxobj" to limit big M objective of artificial variables
 - new parameter "relaxing/gcg/mode" is used to set the the Dantzig-Wolfe or Benders' decomposition mode of GCG.
 - new parameter "set/visual/colorscheme" sets the color scheme of visualizations produced by the gp and tex reader
 - new parameter "set/visual/draftmode" sets whether nonzeros are shown in visualizations produced by the gp and tex reader
@@ -142,10 +167,12 @@ code cleanup
 - add parameter in basis separator specifying the emphasis setting used for separation in probing; remove unnecessary
   distinctions on objective direction
 - introduce new module solver.c for managing pricing solvers, to be compliant to how SCIP plugins are designed
+- re-structured solver_mip
 
 bug fixes
 - fix a bug in the automatic update of the stabilization parameter alpha
 - fix issue with pricing problem initialization in CPLEX pricing solver
+- fix detection of knapsack subproblems in knapsack pricing solver by also accepting negative weights
 - fix memory management in set covering heuristic
 - fix a bug in GCG feasibility pump concerning wrong SCIP instances.
 
