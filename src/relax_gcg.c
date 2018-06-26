@@ -4692,7 +4692,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
             SCIPdebugMessage("Masterproblem solved, no master sol present\n");
             return SCIP_OKAY;
          }
-         SCIPdebugMessage("Masterproblem solved, mastersol = %pd\n", (void*) mastersol);
+         SCIPdebugMessage("Masterproblem solved, mastersol = %p\n", (void*) mastersol);
       }
       else
       {
