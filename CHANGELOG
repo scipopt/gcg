@@ -1,7 +1,5 @@
 GCG Version 3.0.0
-*****************
-
-	=================
+=================
 
 Features
 --------
@@ -32,19 +30,19 @@ Features
 - Original mode has been added. The original mode allows the user to solve the original problem directly without any
   decomposition being performed. The original mode is selected by setting "relaxing/gcg/mode" to 2.
 - new pricing scheme:
-	- the pricing loop is now managed by a new class, the 'pricing controller'
-	- pricing is now done by performing 'pricing jobs', which hold a pricing problem, a solver to be applied and some parameters (such as whether the solver is to be applied heuristically)
-	- pricing jobs are organized in a priority queue, which is maintained by the pricing controller
-	- the latter now also decides over premature abortion of the pricing loop
+  - the pricing loop is now managed by a new class, the 'pricing controller'
+  - pricing is now done by performing 'pricing jobs', which hold a pricing problem, a solver to be applied and some parameters (such as whether the solver is to be applied heuristically)
+  - pricing jobs are organized in a priority queue, which is maintained by the pricing controller
+  - the latter now also decides over premature abortion of the pricing loop
 - own data structure for pricing problems which also holds solving statistics and results
 - extension of heuristic pricing, which can now be performed in multiple rounds; in particular, the MIP and the CPLEX pricing solver can now be applied multiple times per pricing loop, with increasing node, solution limits or decreasing gap limts.
 - new possibility to sort pricing problems: reliability sorting based only on the last few pricing rounds
 - possibility to solve pricing problems 'chunk'-wise, i.e. to only regard a certain subset of pricing problems in a pricer call
 - add price store similar to SCIP's sepa store for better column management
 - interface change in pricing solvers:
-	- solvers now pass their columns directly to the pricing storage rather than returning an array
-	- GCG_DECL_SOLVERSOLVE and GCG_DECL_SOLVERSOLVEHEUR callbacks now also take the master SCIP instance as an input
-	- new callback GCG_DECL_SOLVERUPDATE, called by the pricer when constraint, bound or objective function changes occur on a pricing problem; also fixes a bug in the CPLEX pricing solver
+  - solvers now pass their columns directly to the pricing storage rather than returning an array
+  - GCG_DECL_SOLVERSOLVE and GCG_DECL_SOLVERSOLVEHEUR callbacks now also take the master SCIP instance as an input
+  - new callback GCG_DECL_SOLVERUPDATE, called by the pricer when constraint, bound or objective function changes occur on a pricing problem; also fixes a bug in the CPLEX pricing solver
 - new return type GCG_PRICINGSTATUS which replaces SCIP_STATUS in the pricing solvers
 
 - add additional pricing and variable statistics
