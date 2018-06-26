@@ -65,6 +65,7 @@ SCIP_RETCODE SCIPincludeReaderGp(
    );
 
 /** writes the decomposition to the specific file */
+extern
 SCIP_RETCODE SCIPwriteGp(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
@@ -73,6 +74,7 @@ SCIP_RETCODE SCIPwriteGp(
    );
 
 /** writes gnuplot code to the specific file to plot QP instance*/
+extern
 SCIP_RETCODE SCIPwriteQpGp(
    SCIP*                 scip,                     /** SCIP data structure */
    FILE*                 file,                     /** File pointer to write to */
@@ -86,6 +88,7 @@ SCIP_RETCODE SCIPwriteQpGp(
 );
 
 /** Compiles a given gnuplot file */
+extern
 SCIP_RETCODE GCGcompileGpFile(
    SCIP*                  scip,          /**< SCIP data structure */
    char*                  filename       /** path to .gp file */

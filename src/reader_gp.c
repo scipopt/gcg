@@ -442,7 +442,7 @@ SCIP_RETCODE writeQuadraticConstraintQuadraticTerm(
    )
 {
    int position;
-   SCIPfindQuadVarTermQuadratic(scip, quadraticconstraint, quadraticterm->var, &position);
+   SCIP_CALL( SCIPfindQuadVarTermQuadratic(scip, quadraticconstraint, quadraticterm->var, &position) );
    if( writereorderedvariables )
    {
       position = variableposition[position];
@@ -466,8 +466,8 @@ SCIP_RETCODE writeQuadraticConstraintBilinearTerm(
 {
    int positionVar1;
    int positionVar2;
-   SCIPfindQuadVarTermQuadratic(scip, quadraticconstraint, bilinearterm->var1, &positionVar1);
-   SCIPfindQuadVarTermQuadratic(scip, quadraticconstraint, bilinearterm->var2, &positionVar2);
+   SCIP_CALL( SCIPfindQuadVarTermQuadratic(scip, quadraticconstraint, bilinearterm->var1, &positionVar1) );
+   SCIP_CALL( SCIPfindQuadVarTermQuadratic(scip, quadraticconstraint, bilinearterm->var2, &positionVar2) );
    if( writereorderedvariables )
    {
       positionVar1 = variableposition[positionVar1];
@@ -497,7 +497,7 @@ SCIP_RETCODE writeQuadraticConstraint(
    int nquadraticterms;
    int i;
 
-   SCIPsortQuadVarTermsQuadratic(scip, quadraticconstraint);
+   SCIP_CALL( SCIPsortQuadVarTermsQuadratic(scip, quadraticconstraint) );
 
    bilinearterms = SCIPgetBilinTermsQuadratic(scip, quadraticconstraint);
    quadraticterms = SCIPgetQuadVarTermsQuadratic(scip, quadraticconstraint);
