@@ -6,8 +6,7 @@ GCG Version 3.0.0
 Features
 --------
 
-- new structure detection scheme:
-  - detection is roundwise (new parameter detection/maxrounds)
+- new roundwise modular structure detection scheme:
   - detectors can implement three optional methods:
     - propagateSeeed : given a partial decomposition d the detector returns a set of decompositions that are a refinement of d
     - finsishSeeed: given a partial decomposition d the detector returns a set of decompositions that are a refinement of d and complete
@@ -15,10 +14,15 @@ Features
   - there is a current pool of partial decompositions (i.e. some conss and vars are open, initilized by empty decomposition (all vars and conss are open) )
   - in every detection round the refinement method of each active detector is called on each current partial detection and returns a (possibly empty) set of decompositions (possibly still partial but strictly more refined); afterwards the finishing method of each detector is called on each partial decomposition
   - after last round the postprocessing method of the corresponding detectors is called on each complete decomposition
-  - constraint and variable classification according to several criteria reveals more problem structure
-  - detection process can run parallelized in presence of multiple partial decompositions
+  - constraint and variable classification according to several criteria reveals more problem structure, and in particular yield candidates for the number of blocks, that are used by graph partitioning detectors
+  - detection process can run parallelized (in presence of multiple partial decompositions)
   - structure information concerning the original problem can be used when searching structure in the transformed problem
-  - more user interaction by command "explore"
+  - more user interaction:
+	- by command "explore" and inspecting found decompositions,
+	- give partial decompositions,
+	- directly modify found partial decompositions
+  - new visualization methods for decompositions
+  - new scores to evaluate found decompositions
 - solve the problem with one single block if no decomposition is available ('SCIP mode')
 - extended isomorph detector by the possibility to identify blocks which are identical
   w.r.t. signs (but not necessarily values) of coefficients.
@@ -57,11 +61,20 @@ Data structures:
 
 - new internal data structure to handle partial decompositions; see class_seeed.h for more details
 - new internal data structure to handle detection loops for different formulations (at the moment original and transformed formulation); see class_seeedpool.h for more information
-- new internal data structure to handle constraint classification, each constraint classification is a partition of the constraints according a given
-[] - variable classifier
+- new internal data structure to handle constraint classification, each constraint classification is a partition of the constraints according a given criteria, used constraint classifiers:
+	- number of nonzero entries
+	- constraint type according to SCIP constraint handlers
+	- constraint type according to MIPLIB2010 constraint classifiaction
+	- constraint name: identity for names with removed digits
+	- constraint name: levenshtein distance graph, for names according to nodes in the same connected component
+- new internal data structure to handle variable classification, each variable classifier is a partition of the variables according to some criteria
+	- SCIP variable type
+	- objective coefficient 
+	- objective sign
 
 deleted and modified API functions:
-[] - detector callback DETECTSTRUCTURE
+-----------------------------------
+/detector callback DETECTSTRUCTURE
 
 new API fuctions:
 [] - detector callback PROPAGATESEEED
