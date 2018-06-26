@@ -3237,6 +3237,16 @@ SCIP_RETCODE solveMasterProblemAndEvaluate(
       *lowerbound = SCIPgetDualbound(masterprob);
    }
 
+   /* if the time, memory or node limit is hit in the Original or Benders mode, then we need to interrupt the solve.
+    * This is required because the original problem is not solved in either of these modes, so it is not certain that
+    * the original SCIP will also exceed the limit (definitely not for the node limit).
+    */
+   if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetStatus(masterprob) == SCIP_STATUS_NODELIMIT
+      || SCIPgetStatus(masterprob) == SCIP_STATUS_MEMLIMIT )
+   {
+      SCIP_CALL( SCIPinterruptSolve(scip) );
+   }
+
    /* if the result pointer is DIDNOTRUN, this implies that the master problem was interrupted during solving. Since
     * Benders' decomposition uses a one-tree approach, then the user limits must be adhered to. This means, the if a
     * limit is exceeded, this is still a success for the solving.
