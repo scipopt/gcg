@@ -51,7 +51,7 @@
 
 
 /**
- * \brief interface datatstructre for the detector calling methods
+ * \brief interface data structure for the detector calling methods
  */
 struct Seeed_Propagation_Data
 {
@@ -98,7 +98,7 @@ struct pair_hash
 
 
 /**
- * class to manage the detectorion process and data for one coeeficient matrix of a MIP, usually tehre is one seedpool for the original and one seeedpool for the transformed problem
+ * class to manage the detection process and data for one coefficient matrix of a MIP, usually there is one seeedpool for the original and one seeedpool for the transformed problem
  */
 class Seeedpool
 { /*lint -esym(1712,Seeedpool)*/
@@ -660,242 +660,459 @@ public:
       );
 
 
-   /** returns the number of constraints for a given constraint */
+   /**
+    * @brief returns the number of constraints for a given constraint
+    * @param consIndex index of the constraint to be considered
+    * @return the number of constraints for a given constraint
+    */
    int getNConssForCons(
       int consIndex /**< index of the constraint to be considered */
       );
 
-   /** returns the SCIP variable related to a variable index */
+
+   /**
+    * @brief returns SCIP variable related to a variable index
+    * @param varIndex index of the variable to be considered
+    * @return SCIP variable pointer related to a variable index
+    */
    SCIP_VAR* getVarForIndex(
       int varIndex /**< index of the variable to be considered */
       );
 
-   /** returns the SCIP constraint related to a constraint index */
+
+   /**
+    * @brief returns the SCIP constraint related to a constraint index
+    * @param consIndex index of the constraint to be considered
+    * @return the SCIP constraint related to a constraint index
+    */
    SCIP_CONS* getConsForIndex(
       int consIndex /**< index of the constraint to be considered */
       );
 
-   /** returns the detector related to a detector index */
+   /**
+    * @brief returns the detector related to a detector index
+    * @param detectorIndex index of the detector to be considered
+    * @return pointer to detector related to a detector index
+    */
    DEC_DETECTOR* getDetectorForIndex(
       int detectorIndex /**< index of the detector to be considered */
       );
 
-   /** returns the detector related to a finishing detector index */
+   /**
+    * @brief returns the detector related to a finishing detector index
+    * @param detectorIndex index of the finishing detector to be considered
+    * @return detector pointer related to a finishing detector index
+    */
    DEC_DETECTOR* getFinishingDetectorForIndex(
       int detectorIndex /**< index of the finishing detector to be considered */
       );
 
-   /** returns the detector related to a finishing detector index */
+
+   /**
+    * @brief returns the detector related to a finishing detector index
+    * @param detectorIndex index of the postprocessing detector to be considered
+    * @return detector pointer related to a postprocessing detector index
+    */
    DEC_DETECTOR* getPostprocessingDetectorForIndex(
       int detectorIndex /**< index of the postprocessing detector to be considered */
       );
 
 
-   /** returns a coefficient from the coefficient matrix */
+   /**
+    * @brief returns a coefficient from the coefficient matrix
+    * @param row index of the constraint to be considered
+    * @param col index of the variable to be considered
+    * @return a coefficient from the coefficient matrix
+    */
    SCIP_Real getVal(
       int row, /**< index of the constraint to be considered */
       int col  /**< index of the variable to be considered */
       );
 
-   /** returns the variable index related to a SCIP variable */
+   /**
+    * @brief returns the variable index related to a SCIP variable
+    * @param var variable pointer the index is asked for
+    * @return the variable index related to a SCIP variable
+    */
    int getIndexForVar(
       SCIP_VAR* var
       );
 
-   /** returns the constraint index related to a SCIP constraint */
+
+   /**
+    * @brief returns the constraint index related to a SCIP constraint
+    * @param cons the SCIP constraint pointer the index is asked for
+    * @return the constraint index related to a SCIP constraint
+    */
    int getIndexForCons(
       SCIP_CONS* cons
       );
 
-   /** returns the detector index related to a detector */
+
+   /**
+    * @brief the detector index related to a detector
+    * @param detector pointer of detector the index is asked for
+    * @return the detector index related to a detector
+    */
    int getIndexForDetector(
       DEC_DETECTOR* detector
       );
 
-   /** returns the finishing detector index related to a detector */
+
+   /**
+    * @brief returns the finishing detector index related to a detector
+    * @param detector pointer of finishing detector
+    * @return the finishing detector index
+    */
    int getIndexForFinishingDetector(
       DEC_DETECTOR* detector
       );
 
-   /** returns the postprocessing detector index related to a detector */
+
+   /**
+    * @brief returns the postprocessing detector index related to a detector
+    * @param detector pointer to the postprocessing detector
+    * @return the postprocessing detector index
+    */
    int getIndexForPostprocessingDetector(
       DEC_DETECTOR* detector
       );
 
 
-   /** returns a new unique id for a seeed */
+   /**
+    * @brief returns a new unique id for a new seeed
+    * @return  a new integer unique id for a seeed
+    */
    int getNewIdForSeeed();
 
-   /** returns the number of detectors used in the seeedpool */
+
+   /**
+    * @brief returns the number of propagating detectors used in the seeedpool
+    * @return number of detectors
+    */
    int getNDetectors();
 
-   /** returns the number of nonzero entries in the coefficient matrix */
+   /**
+    * @brief returns the number of nonzero entries in the coefficient matrix
+    * @return the number of nonzero entries in the coefficient matrix
+    */
    int getNNonzeros();
 
-   /** returns the number of finishing detectors used in the seeedpool */
+   /**
+    * @brief returns the number of finishing detectors used in the seeedpool
+    * @return  the number of finishing detectors used in the seeedpool
+    */
    int getNFinishingDetectors();
 
-   /** returns the number of postprocessing detectors used in the seeedpool */
+
+   /**
+    * @brief returns the number of postprocessing detectors used in the seeedpool
+    * @return the number of postprocessing detectors used in the seeedpool
+    */
    int getNPostprocessingDetectors();
 
-   /** returns the number of variables considered in the seeedpool */
+
+   /**
+    * @brief return the number of variables considered in the seeedpool
+    * @return the number of variables considered in the seeedpool
+    */
    int getNVars();
 
-   /** returns the number of constraints considered in the seeedpool */
+
+   /**
+    * @brief returns the number of variables considered in the seeedpool
+    * @return number of variables considered in the seeedpool
+    */
    int getNConss();
 
-   /* returns associated scip */
+
+   /**
+    * @brief returns the corresponding scip data structure
+    * @return the corresponding scip data structure
+    */
    SCIP* getScip();
 
-   /** returns scip cons for corresponing id */
+
+   /**
+    * @brief returns scip cons for corresponing id
+    * @param consid the index of the constraint
+    * @return pointer of constraint for the given index
+    */
    SCIP_CONS* getScipCons(
       int consid
       );
 
-   /** returns scip var for corresponing id */
+
+   /**
+    * @brief returns scip var for corresponding id
+    * @param varid the index of the variable
+    * @return returns scip var for corresponding id
+    */
    SCIP_VAR* getScipVar(
       int varid
    );
 
-   /** returns the candidates for block size sorted in descending order by how often a candidate was added */
+
+   /**
+    * @brief returns the candidates for number of blocks added by the user followed by the found ones sorted in descending order by how often a candidate was proposed  )
+    * @note @see getSortedCandidatesNBlocksFull()
+    * @return the candidates for number of blocks sorted in descending order by how often a candidate was added
+    */
    std::vector<int> getSortedCandidatesNBlocks();
 
-   /** returns the candidates for block size sorted in descending order by how often a candidate was added with nvotes information*/
+   /**
+    * @brief returns (candidate-nvotes) pair for candidates for number of blocks added by the user followed by the found ones sorted in descending order by how often a candidate was proposed, candidates are first   )
+    * @note @see getSortedCandidatesNBlocks()
+    * @return vector of (candidate-nvotes) pair  the candidates for block size sorted in descending order by how often a candidate was added with nvotes information*
+    */
     std::vector<std::pair<int, int>> getSortedCandidatesNBlocksFull();
 
 
-   /** adds a candidate for block size and counts how often a candidate is added */
+    /**
+     * @brief adds and counts how often added a candidate for block size and
+     * @param candidate number of candidate
+     */
    void addCandidatesNBlocks(
       int candidate /**< candidate for block size */
       );
 
-   /** adds a candidate for block size and counts how often a candidate is added */
+
+   /**
+    * @brief adds a candidate for block size and counts how often a candidate is added
+    * @param candidate candidate for block size
+    * @param nvotes number of votes this candidates will get
+    */
    void addCandidatesNBlocksNVotes(
       int candidate, /**< candidate for block size */
       int nvotes     /**< number of votes this candidates will get */
       );
 
 
-   /** adds a candidate for block size given by the user */
+   /**
+    * @brief adds a candidate for block size given by the user
+    * @param candidate user candidate for block size
+    */
    void addUserCandidatesNBlocks(
       int candidate /**< candidate for block size */
       );
 
-   /** returns number of user-given block size candidates */
+
+   /**
+    * @brief returns number of user-given block size candidates
+    * @return number of user-given block size candidates
+    */
    int getNUserCandidatesNBlocks();
 
-   /** calculates and adds block size candidates using constraint classifications and variable classifications */
+
+   /**
+    * @brief calculates and adds block size candidates using constraint classifications and variable classifications
+    */
    void calcCandidatesNBlocks();
 
-   /** adds a constraint classifier if it is no duplicate of an existing constraint classifier */
+   /**
+    * @brief adds a constraint classifier if it is no duplicate of an existing constraint classifier
+    * @param classifier pointer to consclassifier to be added
+    */
    void addConsClassifier(
-      ConsClassifier* classifier /**< consclassifier to be added */
+      ConsClassifier* classifier /**< consclassifier to be added*/
       );
 
-   /** returns a new constraint classifier
-    *  where all constraints with identical SCIP constype are assigned to the same class */
+
+   /**
+    * @brief returns a new constraint classifier
+    *  where all constraints with identical SCIP constype are assigned to the same class
+    * @return pointer to constraint classifier
+    */
    ConsClassifier* createConsClassifierForSCIPConstypes();
 
-   /** returns a new constraint classifier
-    *  where all constraints with identical Miplib constype are assigned to the same class */
+
+   /**
+    * @brief returns a new constraint classifier
+    *  where all constraints with identical Miplib constype are assigned to the same class
+    * @return a new constraint classifier according to miplib 2010 constype
+    */
    ConsClassifier* createConsClassifierForMiplibConstypes();
 
 
-   /** returns a new constraint classifier
-    *  where all constraints with identical consname (ignoring digits) are assigned to the same class */
+   /**
+    * @brief returns a new constraint classifier
+    *  where all constraints with identical consname (ignoring digits) are assigned to the same class
+    * @return new constraint classifer according to consname (ignoring digits)
+    */
    ConsClassifier* createConsClassifierForConsnamesDigitFreeIdentical();
 
-   /** returns a new constraint classifier
-    *  where all constraints whose consnames do not a have levenshtein distance to each other
-    *  higher than a given connectivity are assigned to the same class */
+
+   /**
+    * @brief returns a new constraint classifier where all constraints whose consnames do not a have levenshtein distance to each other higher than a given connectivity are assigned to the same class
+    * @param connectivity minimum levenshtein distance for two consnames to be incident
+    * @return new constraint classifier according to levenshtein distance of consnames
+    */
    ConsClassifier* createConsClassifierForConsnamesLevenshteinDistanceConnectivity(
       int connectivity /**< given connectivity */
       );
 
-   /** returns a new constraint classifier
-    *  where all constraints with identical number of nonzero coefficients are assigned to the same class */
+
+   /**
+    * returns a new constraint classifier where all constraints with identical number of nonzero coefficients are assigned to the same class
+    * @return a new constraint classifier where all constraints with identical number of nonzero coefficients are assigned to the same class
+    */
    ConsClassifier* createConsClassifierForNNonzeros();
 
-   /** returns pointer to a constraint classifier */
+
+   /**
+    * @brief returns pointer to a constraint classifier
+    * @param classifierIndex index of constraint classifier
+    * @return pointer to a cosntraint classifier with the given index
+    */
    ConsClassifier* getConsClassifier(
       int classifierIndex /**< index of constraint classifier */
       );
 
-   /** returns the assignment of constraints to classes of a classifier as integer array */
+
+   /**
+    * @brief returns the assignment of constraints to classes of a classifier as integer array
+    * @param classifierIndex index of the constraint classifier the assignment i asked for
+    * @return array conatining for each constraint id the assigned class of the constraint for the classifier of the given index
+    */
    int* getConsClassifierArray(
       int classifierIndex /**< index of constraint classifier */
       );
 
-   /** returns number of different constraint classifiers */
+   /**
+    * @brief returns number of different constraint classifiers
+    * @return number of different constraint classifiers
+    */
    int getNConsClassifiers();
 
-   /** adds constraint classifiers with a reduced number of classes */
+
+   /**
+    * @brief adds constraint classifiers with a reduced number of classes
+    */
    void reduceConsclasses();
 
-   /** adds a variable classifier if it is no duplicate of an existing variable classifier */
+
+   /**
+    * @brief  adds a variable classifier if it is no duplicate of an existing variable classifier
+    * @param classifier varclassifier to be added
+    */
    void addVarClassifier(
-      VarClassifier* classifier /**< varclassifier to be added */
+      VarClassifier* classifier /**< */
       );
 
-   /** returns a new variable classifier
-    *  where all variables with identical objective function value are assigned to the same class */
+   /**
+    * @brief returns a new variable classifier where all variables with identical objective function value are assigned to the same class
+    * @return var classififier according to objective function coefficient
+    */
    VarClassifier* createVarClassifierForObjValues();
 
-   /** returns a new variable classifier
-    *  where all variables are assigned to class zero, positive or negative according to their objective function value sign
-    *  all class zero variables are assumed to be only master variables (set via DECOMPINFO)
-    *  @todo correct? */
+
+   /**
+    * @brief returns a new variable classifier where all variables are assigned to class zero, positive or negative according to their objective function value sign all class zero variables are assumed to be only master variables (set via DECOMPINFO)
+    * @return var classififier according to objective function coefficient sign
+    */
    VarClassifier* createVarClassifierForObjValueSigns();
 
-   /** returns a new variable classifier
-    *  where all variables with identical SCIP vartype are assigned to the same class */
+   /**
+    * @brief returns a new variable classifier where all variables with identical SCIP vartype are assigned to the same class
+    * @return variable classifier concerning SCIP vartype
+    */
    VarClassifier* createVarClassifierForSCIPVartypes();
 
-   /** returns number of different variable classifiers */
+   /**
+    * @brief returns number of different variable classifiers
+    * @return  number of different variable classifiers
+    */
    int getNVarClassifiers();
 
-   /** returns pointer to a variable classifier */
+   /**
+    * @brief returns pointer to a variable classifier with given index
+    * @param classifierIndex index of variable classifer
+    * @return pointer to a variable classifier with given index
+    */
    VarClassifier* getVarClassifier(
       int classifierIndex /**< index of variable classifier */
       );
 
-   /** returns the assignment of variables to classes of a classifier as integer array */
+
+   /**
+    * @brief  returns the assignment of variables to classes of a classifier as integer array
+    * @param classifierIndex index of the variables  classifier the assignment vector is requested for
+    * @return array of class indices for the variable indices
+    */
    int* getVarClassifierArray(
       int classifierIndex /**< index of constraint classifier */
       );
 
-   /** adds variable classifiers with a reduced number of classes */
+   /**
+    * @brief adds variable classifiers with a reduced number of classes
+    * this is done by greedliy merge two smallest classes into one new until limit from settings is requested
+    */
    void reduceVarclasses();
 
+
+   /**
+    * @brief returns a vector of seeeds such that all seeeds of given a vector of seeeds having only one block are removed except for the two seeeds with the lowest numbers of masterconss
+    * @param givenseeeds vector of seeeds to be reduced
+    * @return the reduced vector of seeeds
+    */
    /** returns a vector of seeeds where all seeeds of given seeeds having only one block are removed
     *  except for the two seeeds with the lowest numbers of masterconss */
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
       std::vector<SeeedPtr> givenseeeds
       );
 
-   /** creates a decomposition for a given seeed */
+
+   /**
+    * @brief creates a decomposition DEC_DECOMP structure for a given seeed
+    * @param seeed seeed the decomposition is created for
+    * @param newdecomp the new decomp created from the seeed
+    * @return scip return code
+    */
    SCIP_RETCODE createDecompFromSeeed(
       SeeedPtr seeed,         /** seeed the decomposition is created for */
       DEC_DECOMP** newdecomp  /** the new decomp created from the seeed */
       );
 
-   /** creates a seeed for a given decomposition
+
+   /**
+    *  creates a seeed for a given decomposition
     *  the resulting seeed will not have a detectorchaininfo or any ancestor or finishing detector data
     *  only use this method if the seeedpool is for the transformed problem
-    *  the resulting seeed may only be added to the seeedpool for the presolved problem */
-   SCIP_RETCODE createSeeedFromDecomp(
+    *  the resulting seeed may only be added to the seeedpool for the presolved problem
+    * @param decomp decomposition the seeed is created for
+    * @param newseeed the new seeed created from the decomp
+    * @return scip return code
+    */
+    SCIP_RETCODE createSeeedFromDecomp(
       DEC_DECOMP* decomp, /**< decomposition the seeed is created for */
       SeeedPtr* newseeed /**< the new seeed created from the decomp */
       );
 
-   /** returns true if the matrix structure corresponds to the transformed problem */
+    /**
+     * @brief returns true if the matrix structure corresponds to the transformed problem
+     * @return TRUE if the matrix structure corresponds to the transformed problem
+     */
    SCIP_Bool getTransformedInfo();
 
+
+   /**
+    * @brief output method for json file writer to write block candidate information
+    * @param scip SCIP data structure
+    * @param file  output file or NULL for standard output
+    * @return scip return code
+    */
    SCIP_RETCODE printBlockcandidateInformation(
     SCIP*                 scip,               /**< SCIP data structure */
     FILE*                 file                /**< output file or NULL for standard output */
    );
 
+
+   /**
+    * @brief output method for json file writer to write classifier candidate information
+    * @param scip SCIP data structure
+    * @param file output file or NULL for standard output
+    * @return scip return code
+    */
    SCIP_RETCODE printClassifierInformation(
     SCIP*                 scip,               /**< SCIP data structure */
     FILE*                 file                /**< output file or NULL for standard output */
@@ -904,6 +1121,16 @@ public:
 
 private:
 
+
+   /**
+    * @brief calculates necessary data for translating seeeds and classifiers
+    * @param origpool original seeedpool
+    * @param rowothertothis constraint index mapping from old to new seeedpool
+    * @param rowthistoother constraint index mapping new to old seeedpool
+    * @param colothertothis variable index mapping from old to new seeedpool
+    * @param colthistoother variable index mapping from new to old seeedpool
+    * @param missingrowinthis missing constraint indices in new seeedpool
+    */
    /** calculates necessary data for translating seeeds and classifiers */
    void calcTranslationMapping(
       Seeedpool* origpool, /** original seeedpool */
@@ -914,8 +1141,17 @@ private:
       std::vector<int>& missingrowinthis  /** missing constraint indices in new seeedpool */
       );
 
-   /** returns translated Seeeds derived from given mapping data */
-   std::vector<Seeed*> getTranslatedSeeeds(
+
+   /**
+    * @brief returns translated eeeds derived from given mapping data
+    * @param otherseeeds seeeds to be translated
+    * @param rowothertothis constraint index mapping from old to new seeedpool
+    * @param rowthistoother constraint index mapping new to old seeedpool
+    * @param colothertothis variable index mapping from old to new seeedpool
+    * @param colthistoother variable index mapping from new to old seeedpool
+    * @return vector of translated seeed pointers
+    */
+    std::vector<Seeed*> getTranslatedSeeeds(
       std::vector<Seeed*>& otherseeeds,   /**< seeeds to be translated */
       std::vector<int>& rowothertothis,   /** constraint index mapping from old to new seeedpool */
       std::vector<int>& rowthistoother,   /** constraint index mapping new to old seeedpool */
@@ -923,14 +1159,27 @@ private:
       std::vector<int>& colthistoother    /** variable index mapping from new to old seeedpool */
       );
 
-   /** returns translated ConsClassifiers derived from given mapping data */
+
+    /**
+     * @brief returns translated ConsClassifiers derived from given mapping data
+     * @param otherclassifiers consclassifiers to be translated
+     * @param rowothertothis constraint index mapping from old to new seeedpool
+     * @param rowthistoother constraint index mapping new to old seeedpool
+     * @return vector of translated ConsClassifier
+     */
    std::vector<ConsClassifier*> getTranslatedConsClassifiers(
       std::vector<ConsClassifier*>& otherclassifiers, /**< consclassifiers to be translated */
       std::vector<int>& rowothertothis,   /** constraint index mapping from old to new seeedpool */
       std::vector<int>& rowthistoother    /** constraint index mapping new to old seeedpool */
       );
 
-   /** returns translated VarClassifiers derived from given mapping data */
+   /**
+    * @brief returns translated VarClassifiers derived from given mapping data
+    * @param otherclassifiers varclassifiers to be translated
+    * @param colothertothis variable index mapping from old to new seeedpool
+    * @param colthistoother variable index mapping from new to old seeedpool
+    * @return vector of translated VarClassifier
+    */
    std::vector<VarClassifier*> getTranslatedVarClassifiers(
       std::vector<VarClassifier*>& otherclassifiers, /**< varclassifiers to be translated */
       std::vector<int>& colothertothis,   /** variable index mapping from old to new seeedpool */

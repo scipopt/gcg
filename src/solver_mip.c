@@ -703,7 +703,7 @@ SCIP_RETCODE GCGincludeSolverMip(
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/mip/startgaplimit",
          "start gap limit for heuristic pricing",
-         &solverdata->startgaplimit, TRUE, DEFAULT_STARTGAPLIMIT, 0.0, 1.0, NULL, NULL) );
+         &solverdata->startgaplimit, TRUE, DEFAULT_STARTGAPLIMIT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/mip/startsollimit",
          "start solution limit for heuristic pricing",

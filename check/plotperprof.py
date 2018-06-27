@@ -49,6 +49,15 @@ def parse_arguments(args):
     parser.add_argument('-l', '--log', type=bool, default=False,
                         help='Should a logarithmic scale be used?')
 
+    parser.add_argument('-to', '--timeouts', type=bool, default=False,
+                        help='Should time outs be counted?')
+
+    parser.add_argument('-nl', '--nodelimits', type=bool, default=False,
+                        help='Should node limits be counted?')
+
+    parser.add_argument('-ab', '--aborts', type=bool, default=False,
+                        help='Should aborts be counted?')
+
     parser.add_argument('-o', '--out', type=str, default='perprof_plot.pdf',
                         help='Name of out file')
 
@@ -70,6 +79,9 @@ def set_params(args):
     params['min'] = args.min
     params['stepsize'] = args.stepsize
     params['log'] = args.log
+    params['timeouts'] = args.timeouts
+    params['nodelimits'] = args.nodelimits
+    params['aborts'] = args.aborts
     params['out'] = args.out
 
 def main():
@@ -87,10 +99,14 @@ def main():
         dftmp = pd.DataFrame()
         if len(files) > 0:
             print "res file    :", files[0]
-
             dftmp = pd.read_csv(
                     files[0],
                     skiprows=3, index_col = 0, delim_whitespace=True, skipfooter=10, usecols=[0,params['time'],params['status']], names=['instance',(resfile,'time'),(resfile,'status')], engine='python')
+            # this is a workaround for a bug
+            if len(dftmp.columns) > 2:
+                dftmp = pd.read_csv(
+                    files[0],
+                    skiprows=3, index_col = 0, delim_whitespace=True, skipfooter=10, usecols=[params['time']-1,params['status']-1], names=[(resfile,'time'),(resfile,'status')], engine='python')
         else:
             failed = True
             print "WARNING      : No res-file", resfile
@@ -98,8 +114,16 @@ def main():
         df = pd.concat([dftmp,df], axis=1, join='outer')
 
     for resfile in resfiles:
-        df = df[(df[resfile,"status"] == "ok") | (df[resfile,"status"] == "solved")]
-        #| (df[resfile,"status"] == "nodelimit")]
+        statusfilter = ["ok","solved"]
+        if params["timeouts"]:
+            statusfilter.append("timeout")
+        if params["nodelimits"]:
+            statusfilter.append("nodelimit")
+        if params["aborts"]:
+            statusfilter.append("abort")
+
+        df = df[df[resfile,"status"].isin(statusfilter)]
+
         df[resfile,'time'] = df[resfile,'time'].apply(lambda x: max(x, params['min']))
 
     df["best"] = df[[(resfile, 'time') for resfile in resfiles]].min(axis=1)

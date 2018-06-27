@@ -79,6 +79,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplaySolvers);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition);
 
+/** dialog execution method for the display nblockscandidates command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayNBlockcandidates);
+
 /** dialog execution method for the master command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster);

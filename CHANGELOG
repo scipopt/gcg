@@ -1,20 +1,27 @@
 GCG Version 3.0.0
 =================
 
-features
-- new detection scheme:
-	- detection is roundwise (new parameter detection/maxrounds)
-	- detectors can implement three optional methods:
-		- propagateSeeed : given a partial decomposition d the detector returns a set of decompositions that are a refinement of d
-		- finsishSeeed: given a partial decomposition d the detector returns a set of decompositions that are a refinement of d and complete
-	        - postprocessSeeed: given a complete decomposition d the detector returns a set of complete decompositions
-	- further new paramters for each detector: detector/*/{usefullrecall, freqcallround, maxcallround, mincallround}:
-		-  it useful to call this detector on a descendant of the propagated seeed
-		- frequency the detector gets called (is active) in detection loop ,ie it is called in round r if and only if mincallround <= r <= maxcallround AND  (r - mincallround) mod freqcallround == 0
-		- last round the detector gets called
-		- first round the detector gets called (offset in detection loop)
-	- there is a current pool of partial decompositions (i.e. some conss and vars are open, initilized by empty decomposition (all vars and conss are open) )
-	- in every detection round each active detector is called on each current partial detection and returns (possibly empty set) of decomposition (possibly still partial but but strictly more refined)
+Features
+--------
+
+- new roundwise modular structure detection scheme:
+  - detectors can implement three optional methods:
+    - propagateSeeed : given a partial decomposition d the detector returns a set of decompositions that are a refinement of d
+    - finsishSeeed: given a partial decomposition d the detector returns a set of decompositions that are a refinement of d and complete
+    - postprocessSeeed: given a complete decomposition d the detector returns a set of complete decompositions
+  - there is a current pool of partial decompositions (i.e. some conss and vars are open, initilized by empty decomposition (all vars and conss are open) or user decomposition )
+  - in every detection round the refinement method of each active detector is called on each current partial detection and returns a (possibly empty) set of decompositions (possibly still partial but strictly more refined); afterwards the finishing method of each detector is called on each partial decomposition
+  - after last round the postprocessing method of the corresponding detectors is called on each complete decomposition
+  - duplicates of partial and complete are identified
+  - constraint and variable classification according to several criteria reveals more problem structure, and in particular yield candidates for the number of blocks, that are used by graph partitioning detectors
+  - detection process can run parallelized (in presence of multiple partial decompositions)
+  - structure information concerning the original problem can be used when searching structure in the transformed problem, e.g. by "detect presolve detect"
+  - more user interaction (see point "Command line interface" below for more information):
+	- by command "explore" and inspecting found decompositions,
+	- give partial decompositions,
+	- directly modify found partial decompositions
+  - new visualization methods for decompositions ('visualize' command in 'explore' submenu, family tree (experimental feature: finished decompositions can be seen as leaves in a forest, partial decompositions as inner nodes, ancestor descendant pairs are connected by edge ) )
+  - new scores to evaluate found decompositions
 - solve the problem with one single block if no decomposition is available ('SCIP mode')
 - extended isomorph detector by the possibility to identify blocks which are identical
   w.r.t. signs (but not necessarily values) of coefficients.
@@ -27,12 +34,26 @@ features
   used as the master and subproblems.
 - Original mode has been added. The original mode allows the user to solve the original problem directly without any
   decomposition being performed. The original mode is selected by setting "relaxing/gcg/mode" to 2.
+- new pricing scheme:
+  - the pricing loop is now managed by a new class, the 'pricing controller'
+  - pricing is now done by performing 'pricing jobs', which hold a pricing problem, a solver to be applied and some parameters (such as whether the solver is to be applied heuristically)
+  - pricing jobs are organized in a priority queue, which is maintained by the pricing controller
+  - the latter now also decides over premature abortion of the pricing loop
+- own data structure for pricing problems which also holds solving statistics and results
+- extension of heuristic pricing, which can now be performed in multiple rounds; in particular, the MIP and the CPLEX pricing solver can now be applied multiple times per pricing loop, with increasing node, solution limits or decreasing gap limts.
+- new possibility to sort pricing problems: reliability sorting based only on the last few pricing rounds
+- possibility to solve pricing problems 'chunk'-wise, i.e. to only regard a certain subset of pricing problems in a pricer call
+- add price store similar to SCIP's sepa store for better column management
+- interface change in pricing solvers:
+  - solvers now pass their columns directly to the pricing storage rather than returning an array
+  - GCG_DECL_SOLVERSOLVE and GCG_DECL_SOLVERSOLVEHEUR callbacks now also take the master SCIP instance as an input
+  - new callback GCG_DECL_SOLVERUPDATE, called by the pricer when constraint, bound or objective function changes occur on a pricing problem; also fixes a bug in the CPLEX pricing solver
+- new return type GCG_PRICINGSTATUS which replaces SCIP_STATUS in the pricing solvers
 
 - add additional pricing and variable statistics
 - add check/bounds_script.py, which plots some information on the reduced cost pricing
   iterations in the root node (using additional statistics and given as input an *.out file)
 - add hybridization of dual variable smoothing with an ascent method
-- add price store similar to SCIP's sepa store for better column management
 - restructure column pool similar to SCIP's cut pool
 - parametrize pricing solver priorities
 - added parameter heuristics/restmaster/pbheur to use restricted master heuristic as price-and-branch heuristic
@@ -43,70 +64,119 @@ features
 - enable discretization when original problem is a mixed integer program; continuous variables are convexified
 - solve original LP relaxation in the root node to get a first dual bound and to run some heuristics in the original problem
 
-performance improvements:
-[] - which coeffmatrix dimensions are doable by detection for default, fast now?
+Performance improvements:
+-------------------------
 
-data structures:
-[] - seeed
-[] - seeedpool
-[] - constraint classifier
-[] - variable classifier
+- structure detection (default) is now applicable to MIPs with much larger dimensions (150.000 x 500000)
 
-deleted and modified API functions:
-[] - detector callback DETECTSTRUCTURE
+Data structures:
+----------------
 
-new API fuctions:
-[] - detector callback PROPAGATESEEED
-[] - detector callback FINISHSEEED
-[] - detector callback POSTPROCESSSEEED
+- new internal data structure to handle partial decompositions; see class_seeed.h for more details
+- new internal data structure to handle detection loops for different formulations (at the moment original and transformed formulation); see class_seeedpool.h for more information
+- new internal data structure to handle constraint classification, each constraint classification is a partition of the constraints according a given criteria, used constraint classifiers:
+	- number of nonzero entries
+	- constraint type according to SCIP constraint handlers
+	- constraint type according to MIPLIB2010 constraint classifiaction
+	- constraint name: identity for names with removed digits
+	- constraint name: levenshtein distance graph, for names according to nodes in the same connected component
+- new internal data structure to handle variable classification, each variable classifier is a partition of the variables according to some criteria
+	- SCIP variable type
+	- objective coefficient
+	- objective sign
 
-command line interface:
-[] - modify decomposition
-[] - select
-[] - write decomp
-[] - write alldecomps
-[] - write report
-[] - write family tree
+Deleted and modified API functions:
+-----------------------------------
 
-interfaces to external software:
-[] - is there any?
+- detector callback DETECTSTRUCTURE is only called in optional legacy mode (legacy mode is detection of version 2.1.4 and completely indepedent from new detecion loop), detectors written by the user should be useable if their parameter detection/detectors/*/legacymode is set to TRUE
 
-deleted and modified parameters:
-[] - complete list
-- modified parameter "detectors/*/priority"
+New API fuctions:
+-----------------
+
+- detector callback PROPAGATESEEED, called during detection loop to refine partial decompositions, given a partial decomposition d the detector returns a set of decompositions that are a refinement of d
+- detector callback FINISHSEEED, called during detection loop to finish partial decompositions, given a partial decomposition d the detector returns a set of complete decompositions that are a refinement of d
+- detector callback POSTPROCESSSEEED, called after detection loop, to postprocess found finished  decompositions, given a complete decomposition this method returns a set of complete decompositions
+
+Command line interface:
+-----------------------
+
+- "explore" submenu to inspect and modify new decompositions
+- "explore inspect" get information about decomposition on different detail levels
+- "explore visualize" experimental feature, opens a gnuplot generated pdf visualization of specified decomposition, see /visual/pdfreader parametr
+- "explore modify"  modify known (partial) decompositions by applying specified detector callbacks or assign certain variables/constraints by name
+- "explore calc_strong" highly experimental feature, calculates a score that is based on strength and solving speed of the Dantzig-Wolfe subproblems
+- "decomposition_toolbox" creates an empty decomposition (and modify afterwards)
+- "write alloriginaldecompositions":  write all known original decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})
+- "write allpresolveddecompositions": write all known presolved decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})
+- "write familytree": experimental feature,  write all (partial) decompositions contained in family tree to files (.gp/.tex) and create family tree file (.tex), and corresponding makefile and docu
+- "write reportdecompositions":experimental feature,  write report of all finished decompositions to LaTeX format
+- "set detection addblocknr": add candidates for the number of blocks (as a white space separated list)
 
 
-new parameters:
-[] rearrange
+Deleted and modified parameters:
+--------------------------------
+
+- modified parameter "detectors/*/priority" (detection was aborted if high priority detector was successful)
+
+
+New/changed parameters:
+-----------------------
+
 - new parameter "constraints/decomp/createbasicdecomp" indicates whether to create a decomposition with all constraints in the master if no other specified (useful to have included comparison)
+- new parameter "detection/aggregation/limitnconssperblock" if this limit on the number of constraints of a block is exceeded the aggregation information for this block is not calculated
+- new parameter "detection/aggregation/limitnvarsperblock"  if this limit on the number of variables of a block is exceeded the aggregation information for this block is not calculated
 - new parameter "detection/allowclassifierduplicates/enabled" indicates whether classifier duplicates are allowed (for statistical reasons)
+- new parameter "detection/benders/enabled" indicates whether benders detection is enabled
+- new parameter "detection/benders/onlybinmaster" indicates whether only decompositions with only binary variables in the master should be searched if benders detection is enabled
+- new parameter "detection/benders/onlycontsubpr" indicates whether only decompositions with only continiuous variables in the subproblems should be searched if benders detection is enabled
 - new parameter "detection/consclassifier/*/enabled" indicates whether corresponding constraint classifier is enabled
 - new parameter "detection/consclassifier/*/origenabled" indicates whether corresponding constraint classifier is enabled for original problem (no effect if "detection/origprob/classificationenabled" is FALSE )
-- new parameter "detection/emphfast/enabled" indicates whether emphasis settings are set to fast, needed for make test"
-- new parameter "detection/legacymode/enabled" indicates whether detection should additionally do legacy mode detection
+- new parameter "detection/legacymode/enabled" indicates whether detection should additionally do legacy mode detection (detection of version 2.1.4)
 - new parameter "detection/legacymode/onlylegacymode" indicates whether detection should only consist of legacy mode detection
-- new parameter "detection/maxnclassesperclassifier" to specify the maximum number of classes per classifier (if this number is exceeed two smallest classes are merged until it is reached, both classifier are kept) 
-- new parameter "detection/maxnclassesperclassifierforlargeprobs" same as "detection/maxnclassesperclassifier" but for problems with nvars + nconss >= 50000  
+- new parameter "detection/maxnclassesfornblockcandidates" to specify the maximum number of classes per classifier (if this number is exceeed two smallest classes are merged until it is reached, both classifier are kept)
+- new parameter "detection/maxnclassesperclassifier" to specify the maximum number of classes per classifier (if this number is exceeed two smallest classes are merged until it is reached, both classifier are kept)
+- new parameter "detection/maxnclassesperclassifierforlargeprobs" same as "detection/maxnclassesperclassifier" but only for larger problems (atm with nvars + nconss >= 50000)
 - new parameter "detection/maxrounds" to specifiy the number of refinement rounds during detection
+
 - new parameter "detection/origprob/classificationenabled" indicates whether constraint and variable classification is also enabeled for opriginal problem
 - new parameter "detection/origprob/enabled" indicates whether to detect structures in original problem found decomps are tried to translate to transformed problem; only useful if presolving is enabled
 - new parameter "detection/origprob/weightinggpresolvedoriginaldecomps" weighting method when comparing decompositions for presolved and unpresolved problem: 0: NO_MODIF, 1: FRACTION_OF_NNONZEROS, 2: FRACTION_OF_NROWS, 3: FAVOUR_PRESOLVED
-- new parameter "detection/scoretype" indicates which score should be used for comparing (partial) decompositions (0: max white, 1: border area, 2: classic, 3: max foreseeing white, 4: ppc-max-white, 5: max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info)
-- new parameter "detectors/*/enabled" is this detector enabled when detecting in the transformed problem
-- new parameter "detectors/*/finishingenabled" is this detector enabled when finishing partial decompsositions in the original and transformed problem
-- new parameter "detectors/*/freqcallround" frequency the detector gets called in detection loop ,ie it is called in round r if and only if mincallround <= r <= maxcallround AND  (r - mincallround) mod freqCallRound == 0 
-- new paramater "detectors/*/legacymode" flag to indicate whether (old) DETECTSTRUCTURE method of detector should be used
-- new parameter "detectors/*/maxcallround" maximum round the detector gets called in detection loop
-- new parameter "detectors/*/mincallround" minimum  round the detector gets called in detection loop
-- new parameter "detectors/*/origenabled" is this detector enabled when detecting in the original problem (overruled by "detection/origprob/enabled" )
-- new parameter "detectors/*/origfreqcallround" same as "detectors/*/freqcallround" for original problem
-- new parameter "detectors/*/origmaxcallround" same as "detectors/*/maxcallround" for original problem
-- new parameter "detectors/*/origmincallround" same as "detectors/*/mincallround" for original problem 
-- new parameter "detectors/*/overruleemphasis" flag to indicate whether emphasis settings for detector <%s> should be overruled by normal settings
-- new parameter "detectors/*/postprocessingenabled" is this detector enabled when postprocessing in the original and the transformed problem
-- new parameter "detectors/*/usefulrecall" indicates whether this detector is called on descendants of a partial decomposition
-- new parameter "detectors/connectedbase/useconssadj" should the constraint adjacency datastructure  be used (and not the constraint-variable-incidency)
+- new parameter "detection/scoretype" indicates which score should be used for comparing (partial) decompositions (0: max white, 1: border area, 2: classic, 3: max foreseeing white, 4: ppc-max-white, 5: max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info, 7: experimental benders score)
+- new parameter "detection/detectors/*/enabled" is this detector enabled when detecting in the transformed problem
+- new parameter "detection/detectors/*/finishingenabled" is this detector enabled when finishing partial decompsositions in the original and transformed problem
+- new parameter "detection/detectors/*/freqcallround" frequency the detector gets called in detection loop ,ie it is called in round r if and only if mincallround <= r <= maxcallround AND  (r - mincallround) mod freqCallRound == 0
+- new paramater "detection/detectors/*/legacymode" flag to indicate whether (old) DETECTSTRUCTURE method of detector should be used
+- new parameter "detection/detectors/*/maxcallround" maximum round the detector gets called in detection loop
+- new parameter "detection/detectors/*/mincallround" minimum  round the detector gets called in detection loop
+- new parameter "detection/detectors/*/origenabled" is this detector enabled when detecting in the original problem (overruled by "detection/origprob/enabled" )
+- new parameter "detection/detectors/*/origfreqcallround" same as "detectors/*/freqcallround" for original problem
+- new parameter "detection/detectors/*/origmaxcallround" same as "detectors/*/maxcallround" for original problem
+- new parameter "detection/detectors/*/origmincallround" same as "detectors/*/mincallround" for original problem
+- new parameter "detection/detectors/*/overruleemphasis" flag to indicate whether emphasis settings for detector <%s> should be overruled by normal settings
+- new parameter "detection/detectors/*/postprocessingenabled" is this detector enabled when postprocessing in the original and the transformed problem
+- new parameter "detection/detectors/*/usefulrecall" indicates whether this detector is called on descendants of a partial decomposition
+- new parameter "detection/detectors/connectedbase/useconssadj" should the constraint adjacency datastructure  be used (and not the constraint-variable-incidency)
+- new parameter "detection/detectors/{hrgpartition,hrcgpartition,hcgpartition}/maxnblockcandidates" the maximal number of block number candidates that is used by this detector
+- new parameter "detection/strong_detection/coeffactororigvsrandom": convex coefficient for original dual values (1-this is factor for random dual value)
+- new parameter "detection/strong_detection/dualvalrandommethod": method for random dual values use for strong decomposition: 1) naive, 2) expected equality exponential distributed, 3) expected overestimation exponential distributed
+- new parameter "detection/varclassifier/*/enabled" indicates whether corresponding variable classifier is enabled
+- new parameter "detection/varclassifier/*/origenabled" indicates whether corresponding variable classifier is enabled for original problem (no effect if "detection/origprob/classificationenabled" is FALSE
+
+
+- new parameters "pricing/masterpricer/maxcolsprob*" limit number of columns to be generated per pricing problem
+- new parameter "pricing/masterpricer/heurpricingiters" replaces old parameter "pricing/masterpricer/heurpricing" and sets maximum number of heuristic pricing rounds within the pricing loop
+- new parameter "pricing/masterpricer/maxheurdepth" limits maximum depth in the b&b tree at which heuristic pricing is performed
+- changed parameter "pricing/masterpricer/sorting" to type 'char' and add an option to sort by reliability based only on the last few rounds
+- new parameter "pricing/masterpricer/nroundscol" sets the number of pricing rounds considered in that case
+- new parameter "pricing/masterpricer/chunksize" sets the size of the subset ('chunk') of pricing problems to be considered in a pricing round
+- new parameter "pricing/masterpricer/stabilizationtree" to enable or disable stabilization beyond the root node
+- new parameter "pricing/masterpricer/useartificualvars" to use artificial variables to make the RMP feasible
+- new parameter "pricing/masterpricer/bigmartificial" to set big M objective of artificial variables
+- new parameter "pricing/masterpricer/factorunreliable" to set factor to be used for the objective of unbounded variables
+- new parameter "pricing/masterpricer/usemaxobj" to limit big M objective of artificial variables
+
 - new parameter "relaxing/gcg/mode" is used to set the the Dantzig-Wolfe or Benders' decomposition mode of GCG.
+
 - new parameter "set/visual/colorscheme" sets the color scheme of visualizations produced by the gp and tex reader
 - new parameter "set/visual/draftmode" sets whether nonzeros are shown in visualizations produced by the gp and tex reader
 - new parameter "set/visual/nonzeroradius" sets the radius of nonzeros in visualizations produced by the gp and tex reader
@@ -128,16 +198,21 @@ new parameters:
 - new parameter "set/visual/report/showtype" sets whether only decompositions of a certain type are included in report
 - new parameter "set/visual/report/usegp" sets whether the report uses gnuplot or LaTeX/Tikz images in report
 
-code cleanup
+Code cleanup
+------------
+
 - use SCIP_STATISTIC for pricing statistics and add compiler flag STATISTICS; if STATISTICS is set to true,
   SCIP_STATISTIC will be defined
 - add parameter in basis separator specifying the emphasis setting used for separation in probing; remove unnecessary
   distinctions on objective direction
 - introduce new module solver.c for managing pricing solvers, to be compliant to how SCIP plugins are designed
+- re-structured solver_mip
 
-bug fixes
+Bug fixes
+---------
 - fix a bug in the automatic update of the stabilization parameter alpha
 - fix issue with pricing problem initialization in CPLEX pricing solver
+- fix detection of knapsack subproblems in knapsack pricing solver by also accepting negative weights
 - fix memory management in set covering heuristic
 - fix a bug in GCG feasibility pump concerning wrong SCIP instances.
 

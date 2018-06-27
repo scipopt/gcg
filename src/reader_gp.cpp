@@ -29,6 +29,7 @@
  * @brief  GP file reader writing seeeds to gnuplot files
  * @author Martin Bergner
  * @author Hanna Franzen
+ * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -295,8 +296,6 @@ SCIP_RETCODE writeGpNonzeros(
    if ( radius < 0.01 )
       radius = 0.01;
 
-   std::cout << "radius for file: " << radius << std::endl;
-
    /* start writing dots */
    ofs << "set style line 99 lc rgb \"" << SCIPvisuGetColorNonzero() << "\"  " << std::endl;
    ofs << "plot \"-\" using 1:2:(" << radius << ") with dots ls 99 notitle " << std::endl;
@@ -360,24 +359,13 @@ SCIP_RETCODE writeGpSeeed(
    {
       ofs << "set xrange [0:" << nvars << "]" << std::endl;
       ofs << "set yrange[" << nconss << ":0]" << std::endl;
-//      if( !writematrix )
-//      {
-//         ofs << " unset xtics " << std::endl;
-//         ofs << " unset ytics " << std::endl;
-//      }
-//      else
-//      {
+
       ofs << " set xtics nomirror " << std::endl;
       ofs << " set ytics nomirror" << std::endl;
       ofs << " set xtics out " << std::endl;
       ofs << " set ytics out" << std::endl;
-  //    }
    }
 
-//   if( noticsbutlabels )
-//   {
-//      ofs << "set tic scale 0" << std::endl;
-//   }
 
 
    /* --- draw boxes ---*/
