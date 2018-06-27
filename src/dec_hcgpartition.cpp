@@ -1063,10 +1063,10 @@ SCIP_RETCODE SCIPincludeDetectorHcgpartition(
 
    /* add hcgpartition detector parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/maxnblockcandidates", "The maximal number of block number candidates", &detectordata->maxnblockcandidates, FALSE, DEFAULT_MAXNBLOCKCANDIDATES, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/beta", "factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/alpha", "factor on how heavy the standard deviation of the coefficients is measured", &detectordata->alpha, FALSE, DEFAULT_ALPHA, 0.0, 1E20, NULL, NULL ) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/maxblocks", "The maximal number of blocks (only used in legacy mode; detector is called for all block numbers in [minblocks,maxblocks])", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/minblocks", "The minimal number of blocks (only used in legacy mode; detector is called for all block numbers in [minblocks,maxblocks])", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/beta", "Factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/alpha", "Factor on how heavy the standard deviation of the coefficients is measured", &detectordata->alpha, FALSE, DEFAULT_ALPHA, 0.0, 1E20, NULL, NULL ) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/varWeight", "Weight of a variable hyperedge", &detectordata->varWeight, FALSE, DEFAULT_VARWEIGHT, 0, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/varWeightBinary", "Weight of a binary variable hyperedge", &detectordata->varWeightBinary, FALSE, DEFAULT_VARWEIGHTBIN, 0, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/varWeightContinous", "Weight of a continuos variable hyperedge", &detectordata->varWeightContinous, FALSE, DEFAULT_VARWEIGHTCONT, 0, 1000000, NULL, NULL) );
@@ -1074,8 +1074,8 @@ SCIP_RETCODE SCIPincludeDetectorHcgpartition(
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/varWeightInteger", "Weight of a integer variable hyperedge", &detectordata->varWeightInteger, FALSE, DEFAULT_VARWEIGHTINT, 0, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/consWeight", "Weight of a constraint hyperedge", &detectordata->consWeight, FALSE, DEFAULT_CONSWEIGHT, 0, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hcgpartition/tidy", "Whether to clean up temporary files", &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/randomseed", "random seed for hmetis", &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/dummynodes", "percentage of dummy nodes for metis", &detectordata->dummynodes, FALSE, DEFAULT_DUMMYNODES, 0.0, 1.0, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/randomseed", "Random seed for hmetis", &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/dummynodes", "Percentage of dummy nodes for metis", &detectordata->dummynodes, FALSE, DEFAULT_DUMMYNODES, 0.0, 1.0, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/consWeightSetppc", "Weight for constraint hyperedges that are setpartitioning or covering constraints", &detectordata->consWeightSetppc, FALSE, DEFAULT_CONSWEIGHT_SETPPC, 0, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/ubfactor", "Unbalance factor for metis", &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hcgpartition/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );

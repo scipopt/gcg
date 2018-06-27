@@ -7191,11 +7191,14 @@ SCIP_RETCODE GCGprintBlockcandidateInformation(
 
    seeedpool = (conshdlrdata->seeedpool == NULL ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
 
-
-   seeedpool->printBlockcandidateInformation(scip, file);
+   if( seeedpool == NULL )
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "No block number candidates are calculated yet, consider detecting first..  \n" );
+   else
+      seeedpool->printBlockcandidateInformation(scip, file);
 
    return SCIP_OKAY;
 }
+
 
 SCIP_RETCODE GCGprintCompleteDetectionTime(
  SCIP*                 givenscip,               /**< SCIP data structure */
@@ -7211,7 +7214,7 @@ SCIP_RETCODE GCGprintCompleteDetectionTime(
 
 
 
-/** prints blockcandiateinformation in following format:
+/** prints classifier information in following format:
  * NCLASSIFIER
  * CLASSIFIERNAME  for each classifier
  * NCLASSES
