@@ -1074,9 +1074,9 @@ SCIP_RETCODE SCIPincludeDetectorHrgpartition(
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectAndBuildArrowhead, freeHrgpartition, initHrgpartition, exitHrgpartition, propagateSeeedHrgpartition, propagateFromToolboxHrgpartition, finishFromToolboxHrgpartition, finishSeeedHrgpartition, detectorPostprocessSeeedHrgpartition, setParamAggressiveHrgpartition, setParamDefaultHrgpartition, setParamFastHrgpartition) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrgpartition/limitnconssnvarsdefault", "limit for sum of nvars and nconss for enabling this detector in default", &detectordata->limitnconssnvarsdefault, TRUE, DEFAULT_LIMITNCONSSNVARSDEFAULT, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrgpartition/limitnconssnvarsdefault", "Limit for sum of nvars and nconss for enabling this detector in default", &detectordata->limitnconssnvarsdefault, TRUE, DEFAULT_LIMITNCONSSNVARSDEFAULT, 0, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hrgpartition/enabledforlargeproblems", "should this detector be enabled even the limit nconssnvars is exceeded",&detectordata->enabledforlargeproblems, TRUE, DEFAULT_ENABLEDFORLARGEPROBLEMS, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hrgpartition/enabledforlargeproblems", "Should this detector be enabled even the limit nconssnvars is exceeded",&detectordata->enabledforlargeproblems, TRUE, DEFAULT_ENABLEDFORLARGEPROBLEMS, NULL, NULL) );
 
      /* add hrgpartition presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrgpartition/maxnblockcandidates", "The maximal number of block number candidates", &detectordata->maxnblockcandidates, FALSE, DEFAULT_MAXNBLOCKCANDIDATES, 0, 1000000, NULL, NULL) );
