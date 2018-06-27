@@ -9,17 +9,18 @@ Features
     - propagateSeeed : given a partial decomposition d the detector returns a set of decompositions that are a refinement of d
     - finsishSeeed: given a partial decomposition d the detector returns a set of decompositions that are a refinement of d and complete
     - postprocessSeeed: given a complete decomposition d the detector returns a set of complete decompositions
-  - there is a current pool of partial decompositions (i.e. some conss and vars are open, initilized by empty decomposition (all vars and conss are open) )
+  - there is a current pool of partial decompositions (i.e. some conss and vars are open, initilized by empty decomposition (all vars and conss are open) or user decomposition )
   - in every detection round the refinement method of each active detector is called on each current partial detection and returns a (possibly empty) set of decompositions (possibly still partial but strictly more refined); afterwards the finishing method of each detector is called on each partial decomposition
   - after last round the postprocessing method of the corresponding detectors is called on each complete decomposition
+  - duplicates of partial and complete are identified
   - constraint and variable classification according to several criteria reveals more problem structure, and in particular yield candidates for the number of blocks, that are used by graph partitioning detectors
   - detection process can run parallelized (in presence of multiple partial decompositions)
-  - structure information concerning the original problem can be used when searching structure in the transformed problem
-  - more user interaction:
+  - structure information concerning the original problem can be used when searching structure in the transformed problem, e.g. by "detect presolve detect"
+  - more user interaction (see point "Command line interface" below for more information):
 	- by command "explore" and inspecting found decompositions,
 	- give partial decompositions,
 	- directly modify found partial decompositions
-  - new visualization methods for decompositions ('visualize' command in 'explore' submenu, family tree)
+  - new visualization methods for decompositions ('visualize' command in 'explore' submenu, family tree (experimental feature: finished decompositions can be seen as leaves in a forest, partial decompositions as inner nodes, ancestor descendant pairs are connected by edge ) )
   - new scores to evaluate found decompositions
 - solve the problem with one single block if no decomposition is available ('SCIP mode')
 - extended isomorph detector by the possibility to identify blocks which are identical
@@ -86,7 +87,8 @@ Data structures:
 
 Deleted and modified API functions:
 -----------------------------------
-- detector callback DETECTSTRUCTURE is only called in optional legacy mode (legacy mode is detection of version 2.1.4 and completely independent from new detecion loop a )
+
+- detector callback DETECTSTRUCTURE is only called in optional legacy mode (legacy mode is detection of version 2.1.4 and completely indepedent from new detecion loop), detectors written by the user should be useable if their parameter detection/detectors/*/legacymode is set to TRUE
 
 New API fuctions:
 -----------------
@@ -95,14 +97,15 @@ New API fuctions:
 - detector callback FINISHSEEED, called during detection loop to finish partial decompositions, given a partial decomposition d the detector returns a set of complete decompositions that are a refinement of d
 - detector callback POSTPROCESSSEEED, called after detection loop, to postprocess found finished  decompositions, given a complete decomposition this method returns a set of complete decompositions
 
-command line interface:
+Command line interface:
 -----------------------
 
-- create by hand decompositions (and modify afterwards) via command "'decomposition_toolbox"
 - "explore" submenu to inspect and modify new decompositions
 - "explore inspect" get information about decomposition on different detail levels
-- "explore visualize" experimantal feature, opens a gnuplot generated pdf visualization of specified decomposition, see /visual/pdfreader parametr
-- "explore calc_strong" highly experimental feature, calculates a score taht is based on strength and solving speed of the Dantzig-Wolfe subproblems
+- "explore visualize" experimental feature, opens a gnuplot generated pdf visualization of specified decomposition, see /visual/pdfreader parametr
+- "explore modify"  modify known (partial) decompositions by applying specified detector callbacks or assign certain variables/constraints by name
+- "explore calc_strong" highly experimental feature, calculates a score that is based on strength and solving speed of the Dantzig-Wolfe subproblems
+- "decomposition_toolbox" creates an empty decomposition (and modify afterwards)
 - "write alloriginaldecompositions":  write all known original decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})
 - "write allpresolveddecompositions": write all known presolved decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})
 - "write familytree": experimental feature,  write all (partial) decompositions contained in family tree to files (.gp/.tex) and create family tree file (.tex), and corresponding makefile and docu
@@ -112,14 +115,15 @@ command line interface:
 
 Deleted and modified parameters:
 --------------------------------
-- modified parameter "detectors/*/priority" detection is not aborted if high priority detector was successful
+
+- modified parameter "detectors/*/priority" (detection was aborted if high priority detector was successful)
 
 
 New/changed parameters:
 -----------------------
 
 - new parameter "constraints/decomp/createbasicdecomp" indicates whether to create a decomposition with all constraints in the master if no other specified (useful to have included comparison)
-- new parameter "detection/aggregation/limitnconssperblock" if this limit on the number of constraints of a block is exceeded the aggregation information for this block is not calculated"
+- new parameter "detection/aggregation/limitnconssperblock" if this limit on the number of constraints of a block is exceeded the aggregation information for this block is not calculated
 - new parameter "detection/aggregation/limitnvarsperblock"  if this limit on the number of variables of a block is exceeded the aggregation information for this block is not calculated
 - new parameter "detection/allowclassifierduplicates/enabled" indicates whether classifier duplicates are allowed (for statistical reasons)
 - new parameter "detection/benders/enabled" indicates whether benders detection is enabled
