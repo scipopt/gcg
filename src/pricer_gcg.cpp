@@ -2782,7 +2782,17 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
       pricerdata->solvedsubmipsheur++;
    }
 
-   // @todo: update statistics
+#ifdef SCIP_STATISTIC
+   #pragma omp critical (collectstats)
+   GCGpricerCollectStatistic(pricerdata, pricetype->getType(), probnr,
+      SCIPgetSolvingTime(pricingscip));
+#endif
+   /* @todo: This should actually be a MIP solver specific statistic */
+   if( SCIPgetStage(pricingscip) > SCIP_STAGE_SOLVING )
+   {
+      #pragma omp atomic
+      pricerdata->pricingiters += SCIPgetNLPIterations(pricingscip);
+   }
 
    return SCIP_OKAY;
 }
