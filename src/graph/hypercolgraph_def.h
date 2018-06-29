@@ -232,7 +232,7 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
    int j;
    TCLIQUE_WEIGHT weight;
    std::vector< std::vector<int> > hyperedges;
-   std::tr1::unordered_map<int, int> oldToNewConsIndex;
+   unordered_map<int, int> oldToNewConsIndex;
    vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
    vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
    vector<int> conssForGraph; /** stores the conss included by the graph */

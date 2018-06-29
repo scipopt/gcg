@@ -1039,7 +1039,7 @@ Seeedpool::Seeedpool(
       for( int currVar = 0; currVar < nCurrVars; ++ currVar )
       {
          int varIndex;
-         std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar;
+         unordered_map<SCIP_VAR*, int>::const_iterator iterVar;
 
          if( varIsFixedToZero(scip, currVars[currVar]) )
             continue;
@@ -3299,7 +3299,7 @@ SCIP_Real Seeedpool::getVal(
    int col
    )
 {
-   std::tr1::unordered_map<std::pair<int, int>, SCIP_Real, pair_hash>::const_iterator iter = valsMap.find(
+   unordered_map<std::pair<int, int>, SCIP_Real, pair_hash>::const_iterator iter = valsMap.find(
       std::pair<int, int>( row, col ) );
 
    if( iter == valsMap.end() )

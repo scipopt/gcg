@@ -155,8 +155,8 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
 
      int i;
      int j;
-     std::tr1::unordered_map<int, int> oldToNewVarIndex;
-     std::tr1::unordered_map<int, int> oldToNewConsIndex;
+     unordered_map<int, int> oldToNewVarIndex;
+     unordered_map<int, int> oldToNewConsIndex;
      std::vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
      std::vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
      std::vector<int> conssForGraph; /** stores the conss included by the graph */
