@@ -175,8 +175,8 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
 {
    int i;
    int j;
-   std::tr1::unordered_map<int, int> oldToNewConsIndex;
-   std::tr1::unordered_map<int, int> oldToNewVarIndex;
+   unordered_map<int, int> oldToNewConsIndex;
+   unordered_map<int, int> oldToNewVarIndex;
    vector<int> conssForGraph; /** stores the conss included by the graph */
    vector<int> varsForGraph; /** stores the vars included by the graph */
    vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */

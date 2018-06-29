@@ -234,8 +234,8 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromPartialMatrix(
    vector<int> varsForGraph; /** stores the vars included by the graph */
    vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
    vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
-   tr1::unordered_map<int, int> oldToNewConsIndex; /** stores new index of the conss */
-   tr1::unordered_map<int, int> oldToNewVarIndex; /** stores new index of the vars */
+   unordered_map<int, int> oldToNewConsIndex; /** stores new index of the conss */
+   unordered_map<int, int> oldToNewVarIndex; /** stores new index of the vars */
 
    for(int c = 0; c < seeed->getNOpenconss(); ++c)
    {
@@ -648,8 +648,8 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::Seeedpo
       vector<int> varsForGraph; /** stores the vars included by the graph */
       vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
       vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
-      tr1::unordered_map<int, int> oldToNewConsIndex; /** stores new index of the conss */
-      tr1::unordered_map<int, int> oldToNewVarIndex; /** stores new index of the vars */
+      unordered_map<int, int> oldToNewConsIndex; /** stores new index of the conss */
+      unordered_map<int, int> oldToNewVarIndex; /** stores new index of the vars */
 
       for(int c = 0; c < seeed->getNOpenconss(); ++c)
       {
@@ -1060,8 +1060,8 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSetForPartialGraph(gcg
       vector<int> varsForGraph; /** stores the vars included by the graph */
       vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
       vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
-      tr1::unordered_map<int, int> oldToNewConsIndex; /** stores new index of the conss */
-      tr1::unordered_map<int, int> oldToNewVarIndex; /** stores new index of the vars */
+      unordered_map<int, int> oldToNewConsIndex; /** stores new index of the conss */
+      unordered_map<int, int> oldToNewVarIndex; /** stores new index of the vars */
 
       for(int c = 0; c < seeed->getNOpenconss(); ++c)
       {
