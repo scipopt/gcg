@@ -60,7 +60,7 @@ endif()
 
 # GSL
 if(GSL)
-   find_package(GSL)
+   find_package(GSL 2.0)
    if(GSL_FOUND)
       include_directories(${GSL_INCLUDE_DIRS})
       add_definitions(-DWITH_GSL)
