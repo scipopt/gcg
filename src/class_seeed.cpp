@@ -6404,11 +6404,13 @@ void Seeed::showVisualisation()
    strcpy(command, GCGVisuGetPdfReader());
    strcat(command, " ");
    strcat(command, outname);
-   strcat(command, " &");
+   strcat(command, " && rm ");
+   strcat(command, filename);
    SCIPinfoMessage(seeedpool->getScip(), NULL, "%s\n", command);
    returnvalue = system(command);
    if( returnvalue == -1 )
       SCIPwarningMessage(scip, "Unable to open gnuplot file\n");
+   SCIPinfoMessage(seeedpool->getScip(), NULL, "Please note that the generated pdf file was not deleted automatically.  \n", command);
 
    return;
 }
