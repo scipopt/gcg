@@ -6288,7 +6288,7 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
    }
 
    /* fill the output array with relevant seeeds */
-   for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
+   for( int i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
       {
          if( conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i ) == NULL ||
             conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i )->getID() < 0  )
@@ -6306,7 +6306,7 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
             conshdlrdata->seeedpool->getAncestorSeeed( i );
       }
 
-   for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
+   for( int i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
       {
          if( conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ) == NULL ||
             conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID() < 0  )
