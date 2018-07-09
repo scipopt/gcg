@@ -36,7 +36,7 @@ tar --no-recursion --ignore-failed-read -cvzhf release/$NAME.tgz \
 --exclude="*~" \
 --exclude=".*" \
 $NAME/README.md $NAME/LICENSE $NAME/INSTALL $NAME/CHANGELOG $NAME/Makefile $NAME/doc/* \
-$NAME/CMakeLists.txt $NAME/check/CMakeLists.txt $NAME/src/CMakeLists.txt $NAME/gcg-config.cmake.in \
+$NAME/CMakeLists.txt $NAME/check/CMakeLists.txt $NAME/src/CMakeLists.txt $NAME/gcg-config.cmake.in $NAME/src/hmetis.h.in \
 $NAME/cmake/Modules/*.cmake \
 $NAME/release-notes/release-notes* \
 $NAME/check/check.sh $NAME/check/evalcheck.sh $NAME/check/check.awk $NAME/check/eval.sh \
