@@ -6410,7 +6410,7 @@ void Seeed::showVisualisation()
    returnvalue = system(command);
    if( returnvalue == -1 )
       SCIPwarningMessage(scip, "Unable to open gnuplot file\n");
-   SCIPinfoMessage(seeedpool->getScip(), NULL, "Please note that the generated pdf file was not deleted automatically.  \n", command);
+   SCIPinfoMessage(seeedpool->getScip(), NULL, "Please note that the generated pdf file was not deleted automatically!  \n", command);
 
    return;
 }
