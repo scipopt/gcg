@@ -682,7 +682,7 @@ int calcLevenshteinDistance(
    std::string t
    )
 {
-   // trivial cases
+   /* easy cases */
    if( s.compare( t ) == 0 )
       return 0;
    if( s.length() == 0 )
@@ -690,39 +690,34 @@ int calcLevenshteinDistance(
    if( t.length() == 0 )
       return s.length();
 
-   // create two work vectors of integer distances
-   std::vector<int> v0( t.length() + 1 );
-   std::vector<int> v1( t.length() + 1 );
+   /* vectors to store integer distances */
+   std::vector<int> prev( t.length() + 1 );
+   std::vector<int> curr( t.length() + 1 );
 
-   /* initialize v0 (the previous row of distances)
-    * this row is A[0][i]: edit distance for an empty s
-    * the distance is just the number of characters to delete from t */
-   for( size_t i = 0; i < v0.size(); i ++ )
+   /* initialize prev (previous row of distances) */
+   for( size_t i = 0; i < prev.size(); ++i )
    {
-      v0[i] = i;
+      prev[i] = i;
    }
-
-   for( size_t i = 0; i < s.length(); i ++ )
+   for( size_t i = 0; i < s.length(); ++i )
    {
-      // calculate v1 (current row distances) from the previous row v0
+      /* calculate curr (row distances) from the previous one */
 
-      /* first element of v1 is A[i+1][0]
-       * edit distance is delete (i+1) chars from s to match empty t */
-      v1[0] = i + 1;
+      curr[0] = i + 1;
 
-      // use formula to fill in the rest of the row
-      for( size_t j = 0; j < t.length(); j ++ )
+      /* fill remaining of row using 'Bellman' equality */
+      for( size_t j = 0; j < t.length(); ++j )
       {
          int cost = ( s[i] == t[j] ) ? 0 : 1;
-         v1[j + 1] = std::min( v1[j] + 1, std::min( v0[j + 1] + 1, v0[j] + cost ) );
+         curr[j + 1] = std::min( curr[j] + 1, std::min( prev[j + 1] + 1, prev[j] + cost ) );
       }
 
-      // copy v1 (current row) to v0 (previous row) for next iteration
-      for( size_t j = 0; j < v0.size(); j ++ )
-         v0[j] = v1[j];
+      /* copy curr to prev for next iteration */
+      for( size_t j = 0; j < prev.size(); ++j )
+         prev[j] = curr[j];
    }
 
-   return v1[t.length()];
+   return curr[t.length()];
 }
 
 
