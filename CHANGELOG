@@ -51,8 +51,6 @@ Features
 - new return type GCG_PRICINGSTATUS which replaces SCIP_STATUS in the pricing solvers
 
 - add additional pricing and variable statistics
-- add check/bounds_script.py, which plots some information on the reduced cost pricing
-  iterations in the root node (using additional statistics and given as input an *.out file)
 - add hybridization of dual variable smoothing with an ascent method
 - restructure column pool similar to SCIP's cut pool
 - parametrize pricing solver priorities

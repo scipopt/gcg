@@ -38,8 +38,6 @@
 
 #include "objscip/objscip.h"
 #include <vector>
-#include <tr1/unordered_map> //c++ hashmap
-#include <unordered_map>
 
 #if __cplusplus >= 201103L
 #include <unordered_map>
