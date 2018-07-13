@@ -73,6 +73,9 @@ for res in sumnames:
 # Get some statistics for each res file (first in temp dicts that will later be sorted)
 maxstringlen = 12 # TODO make this number flexible
 tempfails = {}
+tempaborts = {}
+tempmemlimits = {}
+temptimeouts = {}
 highestfails = 0
 tempruntime = {}
 highesttime = 0
@@ -88,9 +91,23 @@ for key in ordereddata.keys():
 			ninserts = ninserts - 1
 		croppedkey = ''.join(charlist)
 	# get amount of failed instances
-	tempfails[croppedkey] = sumsets['sum' + key].loc['Fail']
-	if tempfails[croppedkey] > highestfails:
-		highestfails = tempfails[croppedkey]
+	failamount = sumsets['sum' + key].loc['Fail']
+	if failamount > highestfails:
+		highestfails = failamount
+	# get fail types and their amounts
+	tempfails[croppedkey] = 0
+	tempaborts[croppedkey] = 0
+	tempmemlimits[croppedkey] = 0
+	temptimeouts[croppedkey] = 0
+	for status in ordereddata[key]['status']:
+		if status == 'fail':
+			tempfails[croppedkey] = tempfails[croppedkey] + 1
+		elif status == 'abort':
+			tempaborts[croppedkey] = tempaborts[croppedkey] + 1
+		elif status == 'memlimit':
+			tempmemlimits[croppedkey] = tempmemlimits[croppedkey] + 1
+		elif status == 'timeout':
+			temptimeouts[croppedkey] = temptimeouts[croppedkey] + 1 
 	# get runtime
 	tempruntime[croppedkey] = 0.0
 	for time in ordereddata[key]['TotalTime']:
@@ -100,6 +117,9 @@ for key in ordereddata.keys():
 
 # order statistics by keys
 fails = collections.OrderedDict(sorted(tempfails.items()))
+aborts = collections.OrderedDict(sorted(tempaborts.items()))
+memlimits = collections.OrderedDict(sorted(tempmemlimits.items()))
+timeouts = collections.OrderedDict(sorted(temptimeouts.items()))
 runtime = collections.OrderedDict(sorted(tempruntime.items()))
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -131,7 +151,6 @@ def setbarplotparams(highestbar):
 	ax.grid(True,axis='y')
 	plt.tight_layout()
 	plt.tick_params(axis='x', which='major', labelsize=7)
-	labelbars(bars, highestbar)
 	return;
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -144,11 +163,20 @@ ax = plt.axes()
 plt.title('Number of unsolved instances')
 plt.xlabel('GCG Version')
 
-bars = plt.bar(range(len(fails)), fails.values(), align='center')
+bars1 = plt.bar(range(len(fails)), fails.values(), align='center', color='r')
+bars2 = plt.bar(range(len(aborts)), aborts.values(), align='center', color='g')
+bars3 = plt.bar(range(len(memlimits)), memlimits.values(), align='center', color='b')
+bars4 = plt.bar(range(len(timeouts)), timeouts.values(), align='center', color='c')
+
 plt.xticks(range(len(fails)), fails.keys(), rotation=90)
 setbarplotparams(int(float(highestfails)))
+labelbars(bars1, highestfails)
+labelbars(bars2, highestfails)
+labelbars(bars3, highestfails)
+labelbars(bars4, highestfails)
+plt.legend((bars1[0],bars2[0],bars3[0],bars4[0]),('fails','aborts','memlimits','timeouts'))
 
-# if ninstances == -1 the number of instances differs
+# if the number of instances differs
 stringninstances = 'unknown or differed'
 if ninstances >= 0:
 	stringninstances = str(ninstances)
@@ -167,6 +195,7 @@ plt.ylabel('Runtime in seconds')
 bars = plt.bar(range(len(runtime)), runtime.values(), align='center')
 plt.xticks(range(len(runtime)), runtime.keys(), rotation=90)
 setbarplotparams(highesttime)
+labelbars(bars, highesttime)
 
 plt.savefig(outdir + '/runtimes.pdf')				# name of image
 
