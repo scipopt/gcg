@@ -397,7 +397,9 @@ set_target_properties(gcg PROPERTIES
 
 # install the header files of gcg
 install(FILES ${gcgheaders} DESTINATION include/gcg)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmetis.h DESTINATION include/gcg)
+if(HMETIS_FOUND)
+   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmetis.h DESTINATION include/gcg)
+endif()
 
 # install the binary and the library to appropriate locations and add them to an export group
 install(TARGETS gcg libgcg EXPORT gcg-targets
