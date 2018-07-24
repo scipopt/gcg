@@ -262,7 +262,7 @@ else:
 	bar1 = ax1.bar(range(len(runtimecomp)), runtimecomp.values(), color='b')
 	plt.xticks(range(len(runtimecomp)), runtimecomp.keys(), rotation=90)
 	plt.tick_params(axis='x', which='major', labelsize=5)
-	ax1.set_ylabel('Speedup in percent', color='b')
+	ax1.set_ylabel('Speedup factor', color='b')
 	ax1.tick_params('y', colors='b')
 
 	# make space far bar labels
@@ -277,7 +277,7 @@ else:
 	if len(items) > 2:
 		ax2 = ax1.twinx()
 		ax2.plot(range(len(runtimecomp)), cumulative.values(), 'r-')
-		ax2.set_ylabel('Cumulative Speedup in percent', color='r')
+		ax2.set_ylabel('Cumulative speedup factor', color='r')
 		ax2.tick_params('y', colors='r')
 		ax2.axhline(y=0, color='xkcd:orange')
 		ax2.set_ylim(ymin=axmin, ymax=axmax)
