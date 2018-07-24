@@ -32,6 +32,7 @@ echo "This script will run different versions of GCG using the test script for c
 echo ""
 
 # Store arguments
+ORIGINALPARAMS=$@
 ninputs=$#
 GLOBALFLAGS=$1
 ninputs=$((ninputs - 1))
@@ -91,6 +92,12 @@ fi
 # Add new folder for all files generated in the current run (we are currently in check directory)
 RESDIR="results/compareversions$(date '+%d-%m-%Y_%H-%M')"
 mkdir -p $RESDIR
+
+# Add readme with parameters
+if [ ! -e $RESDIR/readme.txt ]; then
+	echo "This directory contains the results of the GCG version comparison run with parameters:" > $RESDIR/readme.txt
+	echo "$ORIGINALPARAMS" >> $RESDIR/readme.txt
+fi
 
 # Script is in check, so switch to gcg main folder
 cd ..
@@ -303,7 +310,6 @@ ln -sf ../../../soplex-git/src/ spxinc
 cd ../static/
 ln -sf ../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a libsoplex.linux.x86_64.gnu.opt.a
 cd ../../../../check/
-
 
 # 3) do sth with the output:
 echo "Start plotting..."
