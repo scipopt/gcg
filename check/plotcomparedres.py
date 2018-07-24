@@ -6,6 +6,7 @@ import os
 import re
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import collections
 
 # check command line arguments
@@ -90,10 +91,6 @@ for key in ordereddata.keys():
 			charlist.insert(ninserts*maxstringlen, '\n')
 			ninserts = ninserts - 1
 		croppedkey = ''.join(charlist)
-	# get amount of failed instances
-	failamount = sumsets['sum' + key].loc['Fail']
-	if failamount > highestfails:
-		highestfails = failamount
 	# get fail types and their amounts
 	tempfails[croppedkey] = 0
 	tempaborts[croppedkey] = 0
@@ -108,6 +105,10 @@ for key in ordereddata.keys():
 			tempmemlimits[croppedkey] = tempmemlimits[croppedkey] + 1
 		elif status == 'timeout':
 			temptimeouts[croppedkey] = temptimeouts[croppedkey] + 1 
+	# get amount of failed instances (including limits)
+	failamount = sumsets['sum' + key].loc['Fail']
+	if int(failamount) + temptimeouts[croppedkey] + tempmemlimits[croppedkey] > highestfails:
+		highestfails = int(failamount) + temptimeouts[croppedkey] + tempmemlimits[croppedkey]
 	# get runtime
 	tempruntime[croppedkey] = 0.0
 	for time in ordereddata[key]['TotalTime']:
@@ -163,18 +164,21 @@ ax = plt.axes()
 plt.title('Number of unsolved instances')
 plt.xlabel('GCG Version')
 
-bars1 = plt.bar(range(len(fails)), fails.values(), align='center', color='r')
-bars2 = plt.bar(range(len(aborts)), aborts.values(), align='center', color='g')
-bars3 = plt.bar(range(len(memlimits)), memlimits.values(), align='center', color='b')
-bars4 = plt.bar(range(len(timeouts)), timeouts.values(), align='center', color='c')
+faildata = {'fails': fails.values(), 'aborts': aborts.values(), 'memlimits': memlimits.values(), 'timeouts': timeouts.values()}
+failbars = pd.DataFrame(data=faildata)
+failbars.plot(kind='bar', stacked=True)
+
+# label the stacked bars
+for (ind,row) in failbars.iterrows():
+	cumval = 0
+	for column in failbars:
+		val = row.loc[column]
+		if not val == 0:
+			cumval = cumval + val
+			plt.annotate( val, xy = (ind, cumval - .5), horizontalalignment='center', verticalalignment='top', fontsize=8 )
 
 plt.xticks(range(len(fails)), fails.keys(), rotation=90)
 setbarplotparams(int(float(highestfails)))
-labelbars(bars1, highestfails)
-labelbars(bars2, highestfails)
-labelbars(bars3, highestfails)
-labelbars(bars4, highestfails)
-plt.legend((bars1[0],bars2[0],bars3[0],bars4[0]),('fails','aborts','memlimits','timeouts'))
 
 # if the number of instances differs
 stringninstances = 'unknown or differed'
