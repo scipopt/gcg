@@ -1126,6 +1126,12 @@ public:
    );
 
 
+   SCIP_RETCODE writeMatrix(
+      const char*           filename,           /**< filename the output should be written to (including directory) */
+      const char*           workfolder          /**< directory in which should be worked */
+      );
+
+
 private:
 
 
