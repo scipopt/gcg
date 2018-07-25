@@ -817,6 +817,15 @@ public:
 
 
    /**
+       * @brief assigns all booked constraints and variables and deletes all cons and vars from open list
+       * assumptions: conss and vars are assigned in sorted order, and all conss and vars are assigned
+       * @return scip return code
+       */
+      SCIP_RETCODE    flushBookedCompleteSorted();
+
+
+
+   /**
     * @brief gets seeed id of given ancestor id
     * @param ancestorindex index of ancestor seeed in ancestor list
     * @return seeed id of given ancestor id

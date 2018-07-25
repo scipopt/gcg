@@ -4654,6 +4654,79 @@ SCIP_RETCODE Seeed::flushBooked()
    return SCIP_OKAY;
 }
 
+
+/** assigns all booked constraints and variables, assertions: all conss and vars are booked and are assigned in sorted order */
+SCIP_RETCODE Seeed::flushBookedCompleteSorted()
+{
+   std::vector<int>::const_iterator bookedIter;
+   std::vector<int>::const_iterator bookedIterEnd;
+   std::vector<std::pair<int, int>>::iterator bookedIter2;
+   std::vector<std::pair<int, int>>::iterator bookedIterEnd2;
+
+   std::vector < SCIP_Bool > varislinking( getNVars(), FALSE );
+
+   changedHashvalue = true;
+
+   bookedIter = bookedAsMasterConss.begin();
+   bookedIterEnd = bookedAsMasterConss.end();
+   for( ; bookedIter != bookedIterEnd; ++ bookedIter )
+   {
+      setConsToMaster( * bookedIter );
+   }
+   bookedAsMasterConss.clear();
+
+   bookedIter2 = bookedAsBlockConss.begin();
+   bookedIterEnd2 = bookedAsBlockConss.end();
+   for( ; bookedIter2 != bookedIterEnd2; ++ bookedIter2 )
+   {
+      setConsToBlock( ( * bookedIter2 ).first, ( * bookedIter2 ).second );
+   }
+   bookedAsBlockConss.clear();
+
+   bookedIter = bookedAsLinkingVars.begin();
+   bookedIterEnd = bookedAsLinkingVars.end();
+   for( ; bookedIter != bookedIterEnd; ++ bookedIter )
+   {
+      varislinking[ * bookedIter] = TRUE;
+      setVarToLinking( * bookedIter );
+   }
+   bookedAsLinkingVars.clear();
+
+   bookedIter = bookedAsMasterVars.begin();
+   bookedIterEnd = bookedAsMasterVars.end();
+
+   for( ; bookedIter != bookedIterEnd; ++ bookedIter )
+   {
+      setVarToMaster( * bookedIter );
+   }
+   bookedAsMasterVars.clear();
+
+   bookedIter2 = bookedAsBlockVars.begin();
+   bookedIterEnd2 = bookedAsBlockVars.end();
+   for( ; bookedIter2 != bookedIterEnd2; ++ bookedIter2 )
+   {
+      if( varislinking[( * bookedIter2 ).first] )
+         continue;
+      setVarToBlock( ( * bookedIter2 ).first, ( * bookedIter2 ).second );
+   }
+   bookedAsBlockVars.clear();
+
+   bookedIter2 = bookedAsStairlinkingVars.begin();
+   bookedIterEnd2 = bookedAsStairlinkingVars.end();
+   for( ; bookedIter2 != bookedIterEnd2; ++ bookedIter2 )
+   {
+      setVarToStairlinking( ( * bookedIter2 ).first, ( * bookedIter2 ).second, ( * bookedIter2 ).second + 1 );
+   }
+   bookedAsStairlinkingVars.clear();
+
+   openConss.clear();
+   openVars.clear();
+
+   return SCIP_OKAY;
+}
+
+
+
 /** returns ancestor id of given ancestor */
 int Seeed::getAncestorID(
    int ancestorindex

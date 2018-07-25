@@ -73,6 +73,7 @@
 /** needed for exponential distributed random dual variables */
 #include <random>
 
+#include "reader_gp.h"
 
 
 #ifdef _OPENMP
@@ -1007,7 +1008,7 @@ Seeedpool::Seeedpool(
    assert( (int) varToScipVar.size() == nVars );
    assert( (int) consToScipCons.size() == nConss );
 
-   /** assumption: now every relevant constraint and variable has its index
+    /** assumption: now every relevant constraint and variable has its index
     * and is stored in the corresponding unordered_map */
    /** find constraint <-> variable relationships and store them in both directions */
    for( int i = 0; i < (int) consToScipCons.size(); ++ i )
@@ -1064,6 +1065,7 @@ Seeedpool::Seeedpool(
 
    SCIPgetBoolParam(scip, "detection/conssadjcalculated", &createconssadj );
    createconssadj = createconssadj && (getNConss() < 1000);
+
 
    if( !createconssadj )
       SCIPsetBoolParam(scip, "detection/conssadjcalculated", FALSE );
@@ -3838,7 +3840,6 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
    std::vector<int> nfoundconstypesrangedsinglecount( (int) SCIP_CONSTYPE_GENERAL + 1, 0 );
    std::vector<int> nfoundconstypesrangeddoublecount( (int) SCIP_CONSTYPE_GENERAL + 1, 0 );
 
-//   std::vector<int> constypesIndices( 0 );
    std::vector<int> classforcons = std::vector<int>( getNConss(), -1 );
    ConsClassifier* classifier;
 
@@ -5696,6 +5697,50 @@ SCIP_RETCODE Seeedpool::printClassifierInformation(
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE Seeedpool::writeMatrix(
+   const char*           filename,           /**< filename the output should be written to (including directory) */
+   const char*           workfolder          /**< directory in which should be worked */
+   )
+{
+   char problemname[SCIP_MAXSTRLEN];
+   char* outputname;
+   char filename2[SCIP_MAXSTRLEN];
+
+   gcg::Seeed* matrixseeed;
+
+
+   matrixseeed = new gcg::Seeed(scip, -1, this);
+   matrixseeed->setNBlocks(1);
+
+   for( int i = 0; i < getNConss(); ++i )
+      matrixseeed->bookAsBlockCons(i,0);
+
+   for( int i = 0; i < getNVars(); ++i )
+      matrixseeed->bookAsBlockVar(i,0);
+
+   matrixseeed->flushBookedCompleteSorted();
+
+   addSeeedToFinishedUnchecked(matrixseeed);
+
+   /* get filename for compiled file */
+   (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+   SCIPsplitFilename(problemname, NULL, &outputname, NULL, NULL);
+
+   strcat(outputname, ".png");
+   strcpy(filename2, filename);
+
+   SCIPinfoMessage(scip, NULL, "filename for matrix plot is %s \n", filename );
+   SCIPinfoMessage(scip, NULL, "foldername for matrix plot is %s \n", workfolder );
+
+
+   /* actual writing */
+   GCGwriteGpVisualization(scip, filename2, outputname, matrixseeed->getID() );
+
+
+
+   return SCIP_OKAY;
+
+}
 
 
 

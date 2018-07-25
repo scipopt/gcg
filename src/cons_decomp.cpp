@@ -88,6 +88,8 @@
 #include "scip_misc.h"
 #include "relax_gcg.h"
 
+
+
 typedef gcg::Seeed* SeeedPtr;
 
 
@@ -6453,6 +6455,50 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
 
    return SCIP_OKAY;
 }
+
+SCIP_RETCODE SCIPconshdlrDecompWriteMatrix(
+   SCIP*                 scip,               /**< scip data structure */
+   const char*           filename,           /**< filename the output should be written to (including directory) */
+   const char*           workfolder,         /**< directory in which should be worked */
+   SCIP_Bool             originalmatrix      /**< should the original (or transformed) matrix be written */
+)
+{
+
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   Seeedpool* seeedpool;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   seeedpool = NULL;
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   SCIPinfoMessage(scip, NULL, "start creating seeedpool \n");
+   if( !originalmatrix )
+   {
+      if (conshdlrdata->seeedpool == NULL )
+         conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
+      seeedpool = conshdlrdata->seeedpool;
+   }
+   else
+   {
+      if (conshdlrdata->seeedpoolunpresolved == NULL )
+         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE, SCIPconshdlrDecompDetectBenders(scip));
+      seeedpool = conshdlrdata->seeedpoolunpresolved;
+   }
+
+   SCIPinfoMessage(scip, NULL, "finished creating seeedpool \n");
+   SCIP_CALL( seeedpool->writeMatrix(filename, workfolder ) );
+
+   return SCIP_OKAY;
+
+}
+
+
 
 /** returns the best known decomposition, if available and NULL otherwise, caller has to free returned DEC_DECOMP */
 DEC_DECOMP* DECgetBestDecomp(

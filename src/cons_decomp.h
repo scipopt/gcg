@@ -819,6 +819,15 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    SCIP_RESULT* result
    );
 
+extern
+SCIP_RETCODE SCIPconshdlrDecompWriteMatrix(
+   SCIP*                 scip,               /**< scip data structure */
+   const char*           filename,           /**< filename the output should be written to (including directory) */
+   const char*           workfolder,         /**< directory in which should be worked */
+   SCIP_Bool             originalmatrix      /**< should the original (or transformed) matrix be written */
+);
+
+
 /** returns the best known decomposition, if available and NULL otherwise */
 extern
 DEC_DECOMP* DECgetBestDecomp(
