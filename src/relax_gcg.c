@@ -4863,7 +4863,8 @@ const char* GCGgetFilename(
 
    if( relaxdata->filename == NULL )
    {
-      char help[SCIP_MAXSTRLEN];
+      char help[SCIP_MAXSTRLEN] = "";
+
       (void) strncat( help, "unknown", 8 );
       SCIP_CALL_ABORT(SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, help, SCIP_MAXSTRLEN ) );
    }

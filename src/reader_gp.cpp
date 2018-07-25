@@ -302,13 +302,17 @@ SCIP_RETCODE writeGpNonzeros(
    /* write scatter plot */
    for( int row = 0; row < seeed->getNConss(); ++row )
    {
-      for ( int col = 0; col < seeed->getNVars(); ++col )
+      int cons;
+      cons = orderToRows[row];
+      for( int v = 0; v < seeedpool->getNVarsForCons(cons); ++v )
       {
-         assert( orderToRows[row] != -1 );
-         assert( orderToCols[col] != -1 );
-         if( seeedpool->getVal( orderToRows[row], orderToCols[col] ) != 0 )
-            ofs << col + 0.5 << " " << row + 0.5 << std::endl;
+         int col;
+         int var;
+         var = seeedpool->getVarsForCons(cons)[v];
+         col = colsToOrder[var];
+         ofs << col + 0.5 << " " << row + 0.5 << std::endl;
       }
+
    }
 
    /* end writing dots */
