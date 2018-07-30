@@ -803,7 +803,7 @@ SCIP_RETCODE GCGwriteTexReport(
          SCIPinfoMessage(scip, file, "                                                                \n");
       }
 
-      seeedpool = misc->GCGgetSeeedpoolForSeeed(scip, tempindex);
+      seeedpool = seeed->getSeeedpool();
       if(!usegp)
       {
          writeTexSeeed(scip, file, seeed, seeedpool, FALSE);
@@ -841,6 +841,8 @@ SCIP_RETCODE GCGwriteTexReport(
    writeTexEnding(scip, file);
 
    GCGtexWriteMakefileAndReadme(scip, file, usegp, FALSE);
+
+   delete misc;
 
    return SCIP_OKAY;
 }
@@ -1078,6 +1080,8 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
 
    GCGtexWriteMakefileAndReadme(scip, file, TRUE, FALSE);
 
+   delete miscvisu;
+
    return SCIP_OKAY;
 }
 
@@ -1101,7 +1105,7 @@ SCIP_RETCODE GCGwriteTexVisualization(
    /* get seeed */
    GCGgetSeeedFromID(scip, &seeedid, &seeedwr);
    seeed = seeedwr.seeed;
-   seeedpool = misc->GCGgetSeeedpoolForSeeed(scip, seeedid);
+   seeedpool = seeed->getSeeedpool();
 
    /* write tex code into file */
    writeTexHeader(scip, file, FALSE);
@@ -1128,6 +1132,8 @@ SCIP_RETCODE GCGwriteTexVisualization(
       writeTexSeeedStatistics(scip, file, seeed);
 
    writeTexEnding(scip, file);
+
+   delete misc;
 
    return SCIP_OKAY;
 }
@@ -1265,6 +1271,9 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
 
    /* close readme file */
    fclose(readme);
+
+   delete miscvisu;
+
    return SCIP_OKAY;
 }
 
