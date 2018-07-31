@@ -232,6 +232,7 @@ LIBOBJ = \
 			dec_mastersetpart.o \
 			dec_mcl.o \
 			dec_mst.o \
+			dec_neighborhoodmaster.o \
 			dec_postprocess.o \
 			dec_random.o \
 			dec_staircase.o \
