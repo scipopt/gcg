@@ -3591,7 +3591,7 @@ void Seeedpool::calcCandidatesNBlocks()
    /* if  distribution of classes exceeds this number it is skipped */
    int maximumnclasses;
    /** used for nvars / medianofnvars per conss */
-   std::list<int> nvarspercons(0);
+   std::vector<int> nvarspercons(0);
    std::list<int>::iterator iter;
    int candidate = -1;
 
@@ -3684,17 +3684,11 @@ void Seeedpool::calcCandidatesNBlocks()
 
    for( int c = 0; c < getNConss(); ++c )
    {
-      int nvars = getNVarsForCons(c);
-      iter = std::lower_bound(nvarspercons.begin(), nvarspercons.end(), nvars);
-      nvarspercons.insert(iter, nvars);
+      nvarspercons.push_back(getNVarsForCons(c) );
    }
-   iter = nvarspercons.begin();
-   for( int c = 0; c < (int) 0.5 * getNConss(); ++c )
-      ++iter;
+   std::sort(nvarspercons.begin(), nvarspercons.end() );
 
-   if( *iter != 0 )
-      candidate = getNVars() / *iter;
-
+   candidate = (int) getNVars() / nvarspercons[(int)getNConss()/2];
 
    addCandidatesNBlocks(candidate);
 
