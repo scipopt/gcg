@@ -191,7 +191,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedNeighborhoodmaster)
   }
 
 
-  for( int i = 0; i < maxdiffindex; ++i )
+  for( int i = 0; i <= maxdiffindex; ++i )
   {
      seeed->bookAsMasterCons(seeed->getOpenconss()[neighborhoodsize[i].second]);
   }
