@@ -108,6 +108,8 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_DUALVALRANDOMMETHOD 1   /**< default value for method to dual initilization of dual values for strong decomposition: 1) naive, 2) expected equal, 3) expected overestimation */
 #define DEFAULT_COEFFACTORORIGVSRANDOM 0.5 /**< default value for convex coefficient for orig dual val (1-this coef is facor for random dual value)  */
 
+#define DEFAULT_BLOCKNUMBERCANDSMEDIANVARSPERCONS FALSE     /**< should for block number candidates calcluation the medianvarspercons calculation be considered */
+
 #define DEFAULT_ALLOWCLASSIFIERDUPLICATES FALSE       /** if false each new (conss- and vars-) classifer is checked for being a duplicate of an existing one, if so it is not added and NBOT statistically recognized*/
 #define DEFAULT_MAXDETECTIONROUNDS 1    /**< maximal number of detection rounds */
 #define DEFAULT_MAXNCLASSESLARGEPROBS 5   /** maximum number of classes allowed for large (nvars+nconss > 50000) MIPs for detectors, classifier with more classes are reduced to the meximum number of classes */
@@ -188,6 +190,7 @@ struct SCIP_ConshdlrData
    int                   maxndetectionrounds;                     /**< maximum number of detection loop rounds  */
    int                   strongdetectiondualvalrandommethod;      /**< method to dual initilization of dual values for strong decomposition: 1) naive, 2) expected equal, 3) expected overestimation */
    SCIP_Real             coeffactororigvsrandom;                  /**< convex coefficient for orig dual val (1-this coef is facor for random dual value)  */
+   SCIP_Bool             blocknumbercandsmedianvarspercons;       /**< should for block number candidates calcluation the medianvarspercons calculation be considered */
    int                   maxnclassesfornblockcandidates;          /** maximum number of classes a classifier can have to be used for voting nblockcandidates */
    int                   maxnclassesperclassifier;                /** maximum number of classes allowed for detectors, classifier with more classes are reduced to the meximum number of classes */
    int                   maxnclassesperclassifierforlargeprobs;   /** maximum number of classes allowed for large (nvars+nconss > 50000) MIPs for detectors, classifier with more classes are reduced to the meximum number of classes */
@@ -1086,7 +1089,10 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/consnamelevenshtein/origenabled", "indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem", &conshdlrdata->conssclasslevenshteinenabledorig, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/enabled", "indicates whether variable classifier for scipvartypes is enabled", &conshdlrdata->varclassvartypesenabled, FALSE, DEFAULT_VARCLASSSCIPVARTYPESENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/origenabled", "indicates whether variable classifier for scipvartypes is enabled for the original problem", &conshdlrdata->varclassvartypesenabledorig, FALSE, DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevalues/enabled", "indicates whether variable classifier for objective function values is enabled", &conshdlrdata->varclassobjvalsenabled, FALSE, DEFAULT_VARCLASSOBJVALSENABLED, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevalues/enabled", "indicates whether variable classifier for objective function values is enabled", &conshdlrdata->varclassobjvalsenabled,
+      FALSE, DEFAULT_VARCLASSOBJVALSENABLED, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/blocknumbercandidates/medianvarspercons", "should for block number candidates calcluation the medianvarspercons calculation be considered", &conshdlrdata->blocknumbercandsmedianvarspercons,
+      FALSE, DEFAULT_BLOCKNUMBERCANDSMEDIANVARSPERCONS, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/benders/onlycontsubpr", "indicates whether only decomposition with only continiuous variables in the subproblems should be searched", &conshdlrdata->bendersonlycontsubpr, FALSE, DEFAULT_BENDERSONLYCONTSUBPR, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/benders/onlybinmaster", "indicates whether only decomposition with only binary variables in the master should be searched", &conshdlrdata->bendersonlybinmaster, FALSE, DEFAULT_BENDERSONLYBINMASTER, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevalues/origenabled", "indicates whether variable classifier for objective function values is enabled for the original problem", &conshdlrdata->varclassobjvalsenabledorig, FALSE, DEFAULT_VARCLASSOBJVALSENABLEDORIG, NULL, NULL) );
