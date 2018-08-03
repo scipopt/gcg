@@ -70,9 +70,6 @@
 #include <queue>
 #include <fstream>
 #include <exception>
-/** needed for exponential distributed random dual variables */
-#include <random>
-
 #include "reader_gp.h"
 
 
@@ -4993,9 +4990,6 @@ SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
    /** expected equal and expected overestimated approach */
    if( usedmethod == GCG_RANDOM_DUAL_EXPECTED_EQUAL || usedmethod == GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE)
    {
-      std::default_random_engine generator (DEFAULT_RANDSEED);
-
-
       SCIP_Real largec  = 0.;
       for( int v = 0; v < getNVars(); ++v )
          largec += ABS( SCIPvarGetObj( getVarForIndex(v) ) );
@@ -5005,7 +4999,7 @@ SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
       {
          SCIP_Real dualval;
          SCIP_CONS* cons;
-         std::exponential_distribution<SCIP_Real> distribution (1.0);
+         double lambda;
 
          SCIP_Real divisor = 0.;
 
@@ -5020,9 +5014,15 @@ SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
             divisor *= getNConss();
 
          /** 1/lambda is the expected value of the distribution */
-         distribution = std::exponential_distribution<SCIP_Real>( divisor/largec);
+         lambda = divisor / largec;
 
-         randomval = distribution(generator);
+         /* formula for exponential distribution requires a uniform random number in (0,1). */
+         do
+         {
+            randomval = SCIPrandomGetReal(randnumgen, 0.0, 1.0);
+         }
+         while (randomval == 0.0 || randomval == 1.0);
+         randomval = -std::log(randomval) / lambda;
 
          cons = getConsForIndex(c);
          if( SCIPisInfinity( scip, -GCGconsGetLhs(scip, cons) ))
