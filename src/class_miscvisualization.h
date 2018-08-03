@@ -92,15 +92,6 @@ public:
       );
 
 
-   /** checks in which seeedpool the seeed with given ID is stored and returns that seeedpool
-    *
-    * @returns pool: Seeedpool* where the Seeed was found
-    */
-   Seeedpool* GCGgetSeeedpoolForSeeed(
-      SCIP* scip,       /**< SCIP data structure */
-      int seeedid       /**< ID of Seeed */
-      );
-
 }; /* class MiscVisualization */
 
 #endif /* SRC_CLASS_MISCVISUALIZATION_H_ */

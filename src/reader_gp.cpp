@@ -312,7 +312,6 @@ SCIP_RETCODE writeGpNonzeros(
          col = colsToOrder[var];
          ofs << col + 0.5 << " " << row + 0.5 << std::endl;
       }
-
    }
 
    /* end writing dots */
@@ -348,7 +347,8 @@ SCIP_RETCODE writeGpSeeed(
    writematrix = FALSE;
    noticsbutlabels = FALSE;
 
-   if ( seeed->getNBlocks() == 1 &&  seeed->isComplete() && seeed->getNMasterconss() == 0   && seeed->getNLinkingvars() == 0  && seeed->getNMastervars() == 0 )
+   if ( seeed->getNBlocks() == 1 && seeed->isComplete() && seeed->getNMasterconss() == 0
+      && seeed->getNLinkingvars() == 0  && seeed->getNMastervars() == 0 )
       writematrix = TRUE;
 
    SCIPgetBoolParam(seeedpool->getScip(), "write/miplib2017plotsanddecs", &noticsbutlabels);
@@ -369,8 +369,6 @@ SCIP_RETCODE writeGpSeeed(
       ofs << " set xtics out " << std::endl;
       ofs << " set ytics out" << std::endl;
    }
-
-
 
    /* --- draw boxes ---*/
 
@@ -408,7 +406,8 @@ SCIP_RETCODE writeGpSeeed(
       {
          ++objcounter;
          drawGpBox(filename, objcounter, colboxcounter, rowboxcounter,
-            colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b), SCIPvisuGetColorBlock());
+            colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b),
+            SCIPvisuGetColorBlock());
          colboxcounter += seeed->getNVarsForBlock(b);
 
          if( seeed->getNStairlinkingvars(b) != 0 )
@@ -416,7 +415,8 @@ SCIP_RETCODE writeGpSeeed(
             ++objcounter;
             drawGpBox( filename, objcounter, colboxcounter, rowboxcounter,
                colboxcounter + seeed->getNStairlinkingvars(b),
-               rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1), SCIPvisuGetColorStairlinking() );
+               rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1),
+               SCIPvisuGetColorStairlinking() );
          }
          colboxcounter += seeed->getNStairlinkingvars(b);
          rowboxcounter += seeed->getNConssForBlock(b);
@@ -443,7 +443,8 @@ SCIP_RETCODE writeGpSeeed(
          radiusscale = seeed->getNConss() / 200;
 
       radiusscale = 0.6;
-      writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), radiusscale) );
+      writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(),
+         radiusscale) );
    }
    else
    {
@@ -465,7 +466,6 @@ SCIP_RETCODE GCGwriteGpVisualization(
    int seeedid             /**< id of seeed to visualize */
    )
 {
-   MiscVisualization* misc = new MiscVisualization();
    SEEED_WRAPPER seeedwr;
    Seeedpool* seeedpool;
    SeeedPtr seeed;
@@ -474,7 +474,7 @@ SCIP_RETCODE GCGwriteGpVisualization(
    /* get seeed and seeedpool */
    GCGgetSeeedFromID(scip, &seeedid, &seeedwr);
    seeed = seeedwr.seeed;
-   seeedpool = misc->GCGgetSeeedpoolForSeeed(scip, seeedid);
+   seeedpool = seeed->getSeeedpool();
 
    if( seeed == NULL )
    {
@@ -498,6 +498,7 @@ SCIP_RETCODE GCGwriteGpVisualization(
 /*
  * reader include
  */
+
 /** includes the gp file reader into SCIP */
 SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
