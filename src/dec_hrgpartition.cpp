@@ -497,13 +497,13 @@ SCIP_RETCODE detection(
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
    SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-   for( j = 0, k = 0; k < maxnblockcandidates; ++k)
+   for( j = 0, k = 0; k < maxnblockcandidates; ++k )
    {
       int nblocks = numberOfBlocks[k] - seeed->getNBlocks();
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       SCIP_RETCODE retcode;
 
-      if(nblocks > seeed->getNOpenconss() || nblocks <= 0)
+      if( nblocks > seeed->getNOpenconss() || nblocks <= 1 )
       {
          SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
          SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
