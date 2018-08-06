@@ -503,7 +503,7 @@ SCIP_RETCODE detection(
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       SCIP_RETCODE retcode;
 
-      if( nblocks > seeed->getNOpenconss() || nblocks <= 1 )
+      if( nblocks > seeed->getNOpenvars() || nblocks <= 1 )
       {
          SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
          SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );

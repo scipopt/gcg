@@ -532,7 +532,7 @@ SCIP_RETCODE detection(
       SCIP_RETCODE retcode;
 
 
-      if( nblocks > seeed->getNOpenconss() || nblocks <= 1 )
+      if( nblocks > graph->getNNonzeroes() || nblocks <= 1 )
       {
          SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
          SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
@@ -575,7 +575,7 @@ SCIP_RETCODE detection(
    graph = NULL;
 
    assert(nNewSeeeds % 2 == 0);
-   if(border)
+   if( border )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds) );
       seeedPropagationData->nNewSeeeds = nNewSeeeds;
