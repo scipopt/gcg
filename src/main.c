@@ -46,11 +46,13 @@
 
 #include "gcggithash.h"
 #include "relax_gcg.h"
+#include "cons_decomp.h"
 #include "gcg.h"
 
 #if SCIP_VERSION < 600
 #error GCG 3.0.0 can only be compiled with SCIP version 6.0.0 or higher
 #endif
+
 
 /** returns GCG major version */
 static
@@ -101,6 +103,7 @@ void GCGprintVersion(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "                        Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)\n\n");
 }
 
+
 /** read in parameter file */
 static
 SCIP_RETCODE readParams(
@@ -135,6 +138,7 @@ SCIP_RETCODE fromCommandLine(
    SCIPinfoMessage(scip, NULL, "\nread problem <%s>\n", filename);
    SCIPinfoMessage(scip, NULL, "============\n\n");
    SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
+   SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
    SCIP_CALL( SCIPtransformProb(scip) );
    SCIP_CALL( GCGsetFilename(scip, filename) );
 

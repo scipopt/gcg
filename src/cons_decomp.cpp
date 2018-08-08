@@ -246,6 +246,7 @@ struct SCIP_ConshdlrData
    SeeedPtr              curruserseeed;                           /**< help pointer for reader and toolbox to iteratively build (partial) decomposition */
    SeeedPtr              lastuserseeed;                           /**< help pointer for toolbox to revoke last changes to curruserseeed */
 
+   SCIP_Bool             consnamesalreadyrepaired;               /**< stores whether or not    */
 
    SCIP_Bool             unpresolveduserseeedadded;               /**< stores whether or not an unpresolved user seeed was added */
 
@@ -1034,6 +1035,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->seeedpool = NULL;
    conshdlrdata->ncallscreatedecomp = 0;
 
+   conshdlrdata->consnamesalreadyrepaired = FALSE;
+
    conshdlrdata->curruserseeed = NULL;
    conshdlrdata->lastuserseeed = NULL;
    conshdlrdata->unpresolveduserseeedadded = FALSE;
@@ -1152,6 +1155,111 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
    return SCIP_OKAY;
 }
+
+
+/**
+ * finds a non duplicate constraint name of the form c_{a} with minimal natural number {a}
+ * @return non duplicate constraint name of the form c_{a} with minimal natural number {a}
+ */
+   static
+   int SCIPfindGenericConsname(
+      SCIP* scip,
+      int startcount,
+      char* consname,
+      int namelength
+      ){
+
+      while( TRUE )
+      {
+         char candidatename[SCIP_MAXSTRLEN] = "c_";
+         char number[20];
+         sprintf(number, "%d", startcount );
+         strcat(candidatename, number );
+
+         if ( SCIPfindCons( scip, candidatename ) == NULL )
+         {
+            strncpy(consname, candidatename, namelength - 1);
+            return startcount;
+         }
+         else
+            ++startcount;
+      }
+      return -1;
+   }
+
+
+   /**
+    * method to eliminate duplicate constraint names and name unnamed constraints
+    * @param scip
+    * @return SCIP return code
+    */
+SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
+   SCIP*                 scip
+   ){
+   long int startcount;
+   SCIP_CONS** conss;
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   startcount = 1;
+
+   if( conshdlrdata->consnamesalreadyrepaired )
+      return SCIP_OKAY;
+
+   unordered_map<std::string, int> consnamemap;
+
+   SCIPdebugMessage("start repair conss \n ");
+
+   conss = SCIPgetConss(scip);
+
+   for( int i = 0; i < (int) SCIPgetNConss(scip); ++i )
+   {
+      SCIP_CONS* cons = conss[i];
+
+      SCIPinfoMessage(scip, NULL, "cons name: %s\n ", SCIPconsGetName(cons));
+
+
+      if( SCIPconsGetName(cons) == NULL || strcmp(SCIPconsGetName(cons), "") == 0 || consnamemap[SCIPconsGetName(cons)] == 1 )
+      {
+         if( SCIPgetStage(scip) <= SCIP_STAGE_PROBLEM )
+         {
+            char newconsname[SCIP_MAXSTRLEN];
+            startcount = SCIPfindGenericConsname(scip, startcount, newconsname, sizeof(newconsname) ) + 1;
+            SCIPdebugMessage( "Change consname to %s\n", newconsname );
+            SCIPchgConsName(scip, cons, newconsname );
+            consnamemap[newconsname] = 1;
+         }
+         else
+         {
+            if ( SCIPconsGetName(cons) == NULL )
+               SCIPwarningMessage(scip, "Name of constraint is NULL \n");
+            else if ( strcmp(SCIPconsGetName(cons), "") == 0 )
+               SCIPwarningMessage(scip, "Name of constraint is not set \n");
+            else
+               SCIPwarningMessage(scip, "Constraint name duplicate: %s \n", SCIPconsGetName(cons) );
+         }
+      } else
+      {
+         consnamemap[SCIPconsGetName(cons)] = 1;
+      }
+
+      SCIPdebugMessage( " number of elements: %d \n " , (int) consnamemap.size() );
+   }
+
+   conshdlrdata->consnamesalreadyrepaired = TRUE;
+
+   return SCIP_OKAY;
+}
+
+
+
 
 SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
    SCIP*                   scip
