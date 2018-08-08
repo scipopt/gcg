@@ -1223,7 +1223,7 @@ SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
    {
       SCIP_CONS* cons = conss[i];
 
-      SCIPinfoMessage(scip, NULL, "cons name: %s\n ", SCIPconsGetName(cons));
+      SCIPdebugMessage( "cons name: %s\n ", SCIPconsGetName(cons));
 
 
       if( SCIPconsGetName(cons) == NULL || strcmp(SCIPconsGetName(cons), "") == 0 || consnamemap[SCIPconsGetName(cons)] == 1 )
