@@ -756,6 +756,33 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the transform command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecTransform)
+{  /*lint --e{715}*/
+
+   if( SCIPgetStage(scip) <= SCIP_STAGE_PROBLEM )
+         SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
+
+   SCIPdialogExecTransform(scip, dialog, dialoghdlr, nextdialog);
+
+   return SCIP_OKAY;
+}
+
+
+/** dialog execution method for the presolve command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecPresolve)
+{  /*lint --e{715}*/
+
+   if( SCIPgetStage(scip) <= SCIP_STAGE_PROBLEM )
+         SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
+
+   SCIPdialogExecPresolve(scip, dialog, dialoghdlr, nextdialog);
+
+   return SCIP_OKAY;
+}
+
+
+
 /** dialog execution method for the detect command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
@@ -764,6 +791,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
+
+   if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
+      SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
 
    if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
    {
@@ -839,6 +869,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       break;
 
    case SCIP_STAGE_PROBLEM:
+      SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
    case SCIP_STAGE_TRANSFORMED:
  //     SCIPdialogMessage(scip, NULL, "in transformed \n");
 
@@ -1414,6 +1445,29 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+   /* transform */
+   if( !SCIPdialogHasEntry(root, "transform") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL,
+         GCGdialogExecTransform, NULL, NULL,
+         "transform", "transform the problem", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* presolve */
+   if( !SCIPdialogHasEntry(root, "presolve") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL,
+         GCGdialogExecPresolve, NULL, NULL,
+         "presolve", "presolve the problem", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
 
    /* optimize */
    if( !SCIPdialogHasEntry(root, "optimize") )
