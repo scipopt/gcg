@@ -536,6 +536,8 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(
 
      conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
 
+     if( !success )
+        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
 
       return SCIP_OKAY;
    }
@@ -567,7 +569,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForPresolved(
      conshdlrdata->seeedpool->addSeeedToFinished(seeed, &success);
 
      if( !success )
-        SCIPinfoMessage(scip, NULL, " Added decomposition is already in!!!!!!!!!!!!!!!!!!!!!\n");
+        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
 
       return SCIP_OKAY;
    }
@@ -598,7 +600,10 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForUnpresolved(
 
      conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete(seeed, &success);
 
-      return SCIP_OKAY;
+     if( !success )
+        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
+
+     return SCIP_OKAY;
    }
 
 /** local method to handle store a seeed in the correct seeedpool */
@@ -627,7 +632,10 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForPresolved(
 
      conshdlrdata->seeedpool->addSeeedToIncomplete(seeed, &success);
 
-      return SCIP_OKAY;
+     if( !success )
+        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
+
+     return SCIP_OKAY;
    }
 
 
@@ -4906,9 +4914,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       /** stems from unpresolved problem */
       else
       {
-         SCIP_Bool success;
-         conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
-         conshdlrdata->unpresolveduserseeedadded = TRUE;
+
+         SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(scip, seeed) );
 
          if ( conshdlrdata->seeedpool != NULL ) /* seeedpool for presolved problem already exist try to translate seeed */
          {
@@ -4918,31 +4925,23 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
             conshdlrdata->seeedpool->translateSeeeds(conshdlrdata->seeedpoolunpresolved, seeedtotranslate, newseeeds);
             if( newseeeds.size() != 0 )
             {
-               SCIP_Bool successfullyadded;
-               conshdlrdata->seeedpool->addSeeedToFinished(newseeeds[0], &successfullyadded);
-               if ( !successfullyadded )
-                  SCIPinfoMessage(scip, NULL, "Given decomposition is already known to gcg! \n");
+               SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, newseeeds[0]) );
             }
          }
       }
-
    }
    else
    {
       assert( !seeed->shouldCompletedByConsToMaster() );
       conshdlrdata->curruserseeed->setUsergiven( gcg::USERGIVEN::PARTIAL );
-      SCIP_Bool success;
 
       if ( !conshdlrdata->curruserseeed->isFromUnpresolved() )
          SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, conshdlrdata->curruserseeed) );
       else
-         conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete( conshdlrdata->curruserseeed, &success );
-
+         SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForUnpresolved(scip, conshdlrdata->curruserseeed) );
    }
 
    /** set statistics */
-
-
    {
       int nvarstoblock = 0;
       int nconsstoblock = 0;
