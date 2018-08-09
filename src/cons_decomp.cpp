@@ -1162,27 +1162,33 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
  * @return non duplicate constraint name of the form c_{a} with minimal natural number {a}
  */
    static
-   int SCIPfindGenericConsname(
-      SCIP* scip,
-      int startcount,
-      char* consname,
-      int namelength
-      ){
+   int findGenericConsname(
+      SCIP* scip,                               /**< SCIP data structure */
+      int startcount,                           /**< natural number, lowest candidate number to test */
+      char* consname,                           /**< char pointer to store the new non-duplicate name */
+      int namelength                            /**< max length of the name */
+      )
+   {
 
+      int candidatenumber;
+
+      candidatenumber = startcount;
+
+      /** terminates since there are only finitely many constraints and i (for c_i) increases every iteration */
       while( TRUE )
       {
          char candidatename[SCIP_MAXSTRLEN] = "c_";
          char number[20];
-         sprintf(number, "%d", startcount );
+         sprintf(number, "%d", candidatenumber );
          strcat(candidatename, number );
 
          if ( SCIPfindCons( scip, candidatename ) == NULL )
          {
             strncpy(consname, candidatename, namelength - 1);
-            return startcount;
+            return candidatenumber;
          }
          else
-            ++startcount;
+            ++candidatenumber;
       }
       return -1;
    }
@@ -1194,8 +1200,9 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
     * @return SCIP return code
     */
 SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
-   SCIP*                 scip
-   ){
+   SCIP*                 scip                   /**< SCIP data structure */
+   )
+{
    long int startcount;
    SCIP_CONS** conss;
 
@@ -1213,7 +1220,7 @@ SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
    if( conshdlrdata->consnamesalreadyrepaired )
       return SCIP_OKAY;
 
-   unordered_map<std::string, int> consnamemap;
+   unordered_map<std::string, bool> consnamemap;
 
    SCIPdebugMessage("start repair conss \n ");
 
@@ -1225,16 +1232,15 @@ SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
 
       SCIPdebugMessage( "cons name: %s\n ", SCIPconsGetName(cons));
 
-
-      if( SCIPconsGetName(cons) == NULL || strcmp(SCIPconsGetName(cons), "") == 0 || consnamemap[SCIPconsGetName(cons)] == 1 )
+      if( SCIPconsGetName(cons) == NULL || strcmp(SCIPconsGetName(cons), "") == 0 || consnamemap[SCIPconsGetName(cons)] )
       {
          if( SCIPgetStage(scip) <= SCIP_STAGE_PROBLEM )
          {
             char newconsname[SCIP_MAXSTRLEN];
-            startcount = SCIPfindGenericConsname(scip, startcount, newconsname, sizeof(newconsname) ) + 1;
+            startcount = findGenericConsname(scip, startcount, newconsname, SCIP_MAXSTRLEN ) + 1;
             SCIPdebugMessage( "Change consname to %s\n", newconsname );
             SCIPchgConsName(scip, cons, newconsname );
-            consnamemap[newconsname] = 1;
+            consnamemap[newconsname] = true;
          }
          else
          {
@@ -1245,9 +1251,10 @@ SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
             else
                SCIPwarningMessage(scip, "Constraint name duplicate: %s \n", SCIPconsGetName(cons) );
          }
-      } else
+      }
+      else
       {
-         consnamemap[SCIPconsGetName(cons)] = 1;
+         consnamemap[SCIPconsGetName(cons)] = true;
       }
 
       SCIPdebugMessage( " number of elements: %d \n " , (int) consnamemap.size() );
