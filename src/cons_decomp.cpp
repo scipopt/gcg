@@ -1163,10 +1163,10 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
  */
    static
    int findGenericConsname(
-      SCIP* scip,                               /**< SCIP data structure */
-      int startcount,                           /**< natural number, lowest candidate number to test */
-      char* consname,                           /**< char pointer to store the new non-duplicate name */
-      int namelength                            /**< max length of the name */
+      SCIP*              scip,                  /**< SCIP data structure */
+      int                startcount,            /**< natural number, lowest candidate number to test */
+      char*              consname,              /**< char pointer to store the new non-duplicate name */
+      int                namelength             /**< max length of the name */
       )
    {
 
