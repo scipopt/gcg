@@ -2268,11 +2268,12 @@ SCIP_DIALOG*            dialog )
 
        varname = SCIPvarGetName(  seeedpool->getVarForIndex(seeed->getOpenvars()[oc] ) );
 
+       SCIPdebugMessage("check var %s for regex %s \n", varname, varregex);
 
        if( std::regex_match(varname, expr) )
        {
           matching = TRUE;
-          matchingvars.push_back(seeed->getOpenconss()[oc]);
+          matchingvars.push_back(seeed->getOpenvars()[oc]);
           SCIPdebugMessage( " varname %s matches regex %s \n", varname, varregex );
        } else
           SCIPdebugMessage(" varname %s does not match regex %s \n", varname, varregex);
@@ -2280,7 +2281,7 @@ SCIP_DIALOG*            dialog )
 
     if( !matching )
     {
-       SCIPdialogMessage(scip, NULL, " There are no unassigned constraints with names matching given regular expression. Return to toolbox main menu.\n");
+       SCIPdialogMessage(scip, NULL, " There are no unassigned variables with names matching given regular expression. Return to toolbox main menu.\n");
        return SCIP_OKAY;
     }
 
@@ -2290,17 +2291,20 @@ SCIP_DIALOG*            dialog )
 
 
     if( matchingvars.size() > 10 )
-       SCIPdialogMessage(scip, NULL, " There are %d unassigned constraints with names matching given regular expression. Showing the first 10:\n", matchingvars.size());
+       SCIPdialogMessage(scip, NULL, " There are %d unassigned variables with names matching given regular expression. Showing the first 10:\n", matchingvars.size());
     else
-       SCIPdialogMessage(scip, NULL, " There are %d unassigned constraints with names matching given regular expression: \n", matchingvars.size());
+       SCIPdialogMessage(scip, NULL, " There are %d unassigned variables with names matching given regular expression: \n", matchingvars.size());
 
     for( size_t mc = 0 ; mc < 10 && mc < matchingvars.size(); ++mc )
        SCIPdialogMessage(scip, NULL, " %s \n", SCIPvarGetName( seeedpool->getVarForIndex( matchingvars[mc] ) ));
 
-    SCIPdialogMessage(scip, NULL, "\n Should these constraints be added to: \n");
-    SCIPdialogMessage(scip, NULL, " master \n");
+    SCIPdialogMessage(scip, NULL, "\n Should these variables be added to: \n");
+    SCIPdialogMessage(scip, NULL, " master-only (static) \n");
+    SCIPdialogMessage(scip, NULL, " linking \n");
     SCIPdialogMessage(scip, NULL, " block (to be specified) \n");
     SCIPdialogMessage(scip, NULL, " nothing (return to toolbox main menu)? \n");
+
+
 
 
     SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify how to proceed: \nGCG/toolbox> ", &command, &endoffile) );
