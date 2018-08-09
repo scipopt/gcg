@@ -246,7 +246,7 @@ struct SCIP_ConshdlrData
    SeeedPtr              curruserseeed;                           /**< help pointer for reader and toolbox to iteratively build (partial) decomposition */
    SeeedPtr              lastuserseeed;                           /**< help pointer for toolbox to revoke last changes to curruserseeed */
 
-   SCIP_Bool             consnamesalreadyrepaired;               /**< stores whether or not    */
+   SCIP_Bool             consnamesalreadyrepaired;                /**< stores whether or not    */
 
    SCIP_Bool             unpresolveduserseeedadded;               /**< stores whether or not an unpresolved user seeed was added */
 
