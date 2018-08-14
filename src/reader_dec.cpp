@@ -517,7 +517,8 @@ SCIP_Bool isNewSection(
 
    }
 
-   if( strcasecmp(decinput->token, "MASTERVARS") == 0 || strcasecmp(decinput->token, "MASTERVAR") == 0 )
+   if( strcasecmp(decinput->token, "MASTERVARS") == 0 || strcasecmp(decinput->token, "MASTERVAR") == 0
+      || strcasecmp(decinput->token, "STATICVAR") == 0 || strcasecmp(decinput->token, "STATICVARS") == 0 )
    {
       decinput->section = DEC_MASTERVARS;
 
