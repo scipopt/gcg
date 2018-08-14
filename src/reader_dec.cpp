@@ -36,6 +36,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+/* #define SCIP_DEBUG */
+
 #include <assert.h>
 #include <string.h>
 #if defined(_WIN32) || defined(_WIN64)
@@ -430,11 +432,11 @@ SCIP_Bool isNewSection(
    swapTokenBuffer(decinput);
 
    if( strcasecmp(decinput->token, "INCOMPLETE") == 0 )
-      {
-         SCIPdebugMessage("(line %d) new section: INCOMPLETE\n", decinput->linenumber);
-         decinput->section = DEC_INCOMPLETE;
-         return TRUE;
-      }
+   {
+      SCIPdebugMessage("(line %d) new section: INCOMPLETE\n", decinput->linenumber);
+      decinput->section = DEC_INCOMPLETE;
+      return TRUE;
+   }
 
    if( strcasecmp(decinput->token, "PRESOLVED") == 0 )
    {
@@ -704,7 +706,10 @@ SCIP_RETCODE readBlockconss(
          break;
 
       /* the token must be the name of an existing cons */
-      cons = SCIPfindCons(scip, decinput->token);
+      if( decinput->presolved )
+         cons = SCIPfindCons(scip, decinput->token);
+      else
+         cons = SCIPfindOrigCons(scip, decinput->token);
       if( cons == NULL )
       {
          syntaxError(scip, decinput, "unknown constraint in block section");
@@ -712,9 +717,10 @@ SCIP_RETCODE readBlockconss(
          break;
       }
 
-      if( !SCIPconsIsActive(cons) )
+      if( !SCIPconsIsActive(cons) && decinput->presolved )
       {
          assert( !SCIPhashmapExists(readerdata->constoblock, cons));
+         SCIPdebugMessage("scic cons is not active, scip it \n");
          continue;
       }
 
@@ -741,14 +747,13 @@ SCIP_RETCODE readBlockconss(
          }
 
          conshasvar = TRUE;
+         break; /* found var */
       }
 
       SCIPfreeBufferArrayNull(scip, &curvars);
 
       if( !conshasvar )
       {
-//         SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (blockid+1)) );
-//         SCIP_CALL(SCIPconshdlrDecompUserSeeedSetConsToBlock(scip, decinput->token, blockid) );
          SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving or has no variable at all, skipped.\n",  SCIPconsGetName(cons) );
          continue;
       }
@@ -756,10 +761,10 @@ SCIP_RETCODE readBlockconss(
        * saving block <-> constraint
        */
 
-      if( SCIPhashmapGetImage(readerdata->constoblock, cons) != (void*)(size_t) LINKINGVALUE )
+      if( (SCIPhashmapGetImage(readerdata->constoblock, cons) != (void*)(size_t) LINKINGVALUE ) && ( SCIPhashmapGetImage(readerdata->constoblock, cons) != (void*) (size_t) (blockid+1) )  )
       {
          decinput->haserror = TRUE;
-         SCIPinfoMessage(scip,  NULL,"cons %s is already assigned\n", SCIPconsGetName(cons) );
+         SCIPwarningMessage(scip, "cons %s is already assigned to block %d but is supposed to assigned to %d\n", SCIPconsGetName(cons), SCIPhashmapGetImage(readerdata->constoblock, cons), (blockid+1)  );
          return SCIP_OKAY;
       }
 
@@ -843,7 +848,10 @@ SCIP_RETCODE readMasterconss(
          break;
 
       /* the token must be the name of an existing constraint */
-      cons = SCIPfindCons(scip, decinput->token);
+      if (decinput->presolved )
+         cons = SCIPfindCons(scip, decinput->token);
+      else
+         cons = SCIPfindOrigCons(scip, decinput->token);
       if( cons == NULL )
       {
          syntaxError(scip, decinput, "unknown constraint in masterconss section");
@@ -1090,13 +1098,22 @@ SCIP_RETCODE readDECFile(
                SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
             }
             /* cons -> block mapping */
-            conss = SCIPgetConss(scip);
-            nconss = SCIPgetNConss(scip);
+            if( decinput->presolved )
+            {
+               conss = SCIPgetConss(scip);
+               nconss = SCIPgetNConss(scip);
+            }
+            else
+            {
+               conss = SCIPgetOrigConss(scip);
+               nconss = SCIPgetNOrigConss(scip);
+            }
             SCIP_CALL( SCIPhashmapCreate(&readerdata->constoblock, SCIPblkmem(scip), nconss) );
             for( i = 0; i < nconss; i ++ )
             {
                assert( !SCIPhashmapExists(readerdata->constoblock, conss[i] ) );
                SCIP_CALL( SCIPhashmapInsert(readerdata->constoblock, conss[i], (void*) (size_t) LINKINGVALUE) );
+               SCIPdebugMessage("init cons block of %s to %ld\n", SCIPconsGetName(conss[i]), (long) SCIPhashmapGetImage(readerdata->constoblock, conss[i]) );
             }
 
             SCIPconshdlrDecompCreateUserSeeed(scip, decinput->presolved, decinput->incomplete);
@@ -1356,7 +1373,7 @@ SCIP_RETCODE writeData(
    }
 
 
-   /* if we don't have staicase, but something else, go through the blocks and create the indices */
+   /* if we don't have staircase, but something else, go through the blocks and create the indices */
    /* subscip conss */
    subscipconss = DECdecompGetSubscipconss(decdecomp);
    nsubscipconss = DECdecompGetNSubscipconss(decdecomp);
