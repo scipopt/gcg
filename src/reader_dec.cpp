@@ -689,10 +689,13 @@ SCIP_RETCODE readBlockconss(
    )
 {
    int blockid;
+   int currblock;
 
    SCIP_Bool success;
    assert(decinput != NULL);
    assert(readerdata != NULL);
+
+   currblock = 0;
 
    while( getNextToken(decinput) )
    {
@@ -755,7 +758,11 @@ SCIP_RETCODE readBlockconss(
 
       if( !conshasvar )
       {
-         SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving or has no variable at all, skipped.\n",  SCIPconsGetName(cons) );
+         SCIPdebugMessage("Cons <%s> has been deleted by presolving or has no variable at all, skipped.\n",  SCIPconsGetName(cons) );
+         SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (currblock+1)) );
+         SCIP_CALL(SCIPconshdlrDecompUserSeeedSetConsToBlock(scip, decinput->token, currblock) );
+         ++currblock;
+         currblock = currblock % decinput->nblocks;
          continue;
       }
       /*
@@ -907,7 +914,7 @@ SCIP_RETCODE readMastervars(
       {
          if( !SCIPvarIsActive(var) )
          {
-            SCIPwarningMessage(scip, "Var <%s> has been fixed or aggregated by presolving, skipping.\n", SCIPvarGetName(var));
+            SCIPdebugMessage("Var <%s> has been fixed or aggregated by presolving, skipping.\n", SCIPvarGetName(var));
             continue;
          }
 
