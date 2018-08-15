@@ -494,7 +494,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromPartialMatrix(
      ){
      int i;
      int j;
-     std::tr1::unordered_map<int, int> oldToNewVarIndex;
+     unordered_map<int, int> oldToNewVarIndex;
      TCLIQUE_WEIGHT weight;
 
      vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */

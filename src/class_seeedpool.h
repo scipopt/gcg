@@ -38,8 +38,15 @@
 
 #include "objscip/objscip.h"
 #include <vector>
-#include <tr1/unordered_map> //c++ hashmap
+
+#if __cplusplus >= 201103L
 #include <unordered_map>
+using std::unordered_map;
+#else
+#include <tr1/unordered_map>
+using std::tr1::unordered_map;
+#endif
+
 #include <functional>
 #include <string>
 #include <utility>
@@ -123,15 +130,15 @@ private:
    std::vector<DEC_DETECTOR*> detectorToFinishingScipDetector; /**< stores the corresponding finishing SCIP detector pointer*/
    std::vector<DEC_DETECTOR*> detectorToPostprocessingScipDetector; /**< stores the corresponding postprocessing SCIP detector pointer*/
    std::vector<std::vector<int>> conssadjacencies;
-   std::tr1::unordered_map<SCIP_CONS*, int> scipConsToIndex;   /**< maps SCIP_CONS* to the corresponding index */
-   std::tr1::unordered_map<SCIP_VAR*, int> scipVarToIndex;     /**< maps SCIP_VAR* to the corresponding index */
-   std::tr1::unordered_map<DEC_DETECTOR*, int> scipDetectorToIndex;        /**< maps SCIP_VAR* to the corresponding index */
-   std::tr1::unordered_map<DEC_DETECTOR*, int> scipFinishingDetectorToIndex;     /**< maps SCIP_VAR* to the corresponding
+   unordered_map<SCIP_CONS*, int> scipConsToIndex;   /**< maps SCIP_CONS* to the corresponding index */
+   unordered_map<SCIP_VAR*, int> scipVarToIndex;     /**< maps SCIP_VAR* to the corresponding index */
+   unordered_map<DEC_DETECTOR*, int> scipDetectorToIndex;        /**< maps SCIP_VAR* to the corresponding index */
+   unordered_map<DEC_DETECTOR*, int> scipFinishingDetectorToIndex;     /**< maps SCIP_VAR* to the corresponding
                                                                                    *< index */
-   std::tr1::unordered_map<DEC_DETECTOR*, int> scipPostprocessingDetectorToIndex;     /**< maps SCIP_VAR* to the corresponding
+   unordered_map<DEC_DETECTOR*, int> scipPostprocessingDetectorToIndex;     /**< maps SCIP_VAR* to the corresponding
                                                                                    *< index */
 
-   std::tr1::unordered_map<std::pair<int, int>, SCIP_Real, pair_hash> valsMap;   /**< maps an entry of the matrix to its
+   unordered_map<std::pair<int, int>, SCIP_Real, pair_hash> valsMap;   /**< maps an entry of the matrix to its
                                                                                    *< value, zeros are omitted */
 
    std::vector<SCIP_VAR*> unpresolvedfixedtozerovars;                            /**< helping data structure to collect SCIP_VAR* that are fixed to yero in transformed problem*/
@@ -1117,6 +1124,12 @@ public:
     SCIP*                 scip,               /**< SCIP data structure */
     FILE*                 file                /**< output file or NULL for standard output */
    );
+
+
+   SCIP_RETCODE writeMatrix(
+      const char*           filename,           /**< filename the output should be written to (including directory) */
+      const char*           workfolder          /**< directory in which should be worked */
+      );
 
 
 private:

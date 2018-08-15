@@ -300,6 +300,95 @@ SCIP_RETCODE writeFamilyTree(
    return SCIP_OKAY;
 }
 
+
+/** writes out all decompositions currently known to cons_decomp */
+static
+SCIP_RETCODE writeMatrix(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_DIALOG*          dialog,             /**< dialog menu */
+   SCIP_DIALOGHDLR*      dialoghdlr,         /**< dialog handler */
+   SCIP_DIALOG**         nextdialog,         /**< pointer to store next dialog to execute */
+   SCIP_Bool             originalmatrix      /**< should the original (or transformed matrix be written) */
+   )
+{
+   SCIP_Bool endoffile;
+   SCIP_RETCODE retcode;
+   char* probname;
+   char* tmpstring;
+   const char* extension = "gp";
+   char  dirname[SCIP_MAXSTRLEN];
+   char probnamepath[SCIP_MAXSTRLEN];
+   char filename[SCIP_MAXSTRLEN];
+   char outname[SCIP_MAXSTRLEN];
+
+   /* create the file path */
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,"Enter directory for output (e.g. ../path/to/directory):\n",
+      &tmpstring, &endoffile) );
+   if( endoffile )
+   {
+      *nextdialog = NULL;
+      return SCIP_OKAY;
+   }
+
+   strncpy(dirname, tmpstring, SCIP_MAXSTRLEN);
+
+   /* if no directory is specified, initialize it with a standard solution */
+   if( dirname[0] == '\0' )
+   {
+      strcpy(dirname, "./");
+   }
+
+   /* make sure directory exists */
+   if( dirname != NULL )
+   {
+      mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
+   }
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
+
+   (void) SCIPsnprintf(probnamepath, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+      SCIPsplitFilename(probnamepath, NULL, &probname, NULL, NULL);
+   (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "matrix-%s", probname);
+
+   /* make sure there are no dots in the pure filename */
+   for(size_t i = 0; i < strlen(filename); i++)
+   {
+      if(filename[i] == '.')
+         filename[i] = '-';
+   }
+
+   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", dirname, filename, extension);
+
+   /* call the creation of the family tree */
+   retcode = SCIPconshdlrDecompWriteMatrix( scip, outname, dirname, originalmatrix );
+
+   if( retcode == SCIP_FILECREATEERROR )
+   {
+      SCIPdialogMessage(scip, NULL, "error creating file\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+   }
+   else if( retcode == SCIP_WRITEERROR )
+   {
+      SCIPdialogMessage(scip, NULL, "error writing file\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+   }
+   else
+   {
+      /* check for unexpected errors */
+      SCIP_CALL( retcode );
+
+      /* print result message if writing was successful */
+      SCIPdialogMessage(scip, NULL,
+         "Matrix file is written to %s. \n ", outname);
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
+
+
 /** writes out visualizations of all decompositions currently known to cons_decomp to a PDF file
  * @TODO:   */
 static
@@ -523,6 +612,18 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the display block number candidates */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayNBlockcandidates)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   SCIP_CALL(GCGprintBlockcandidateInformation(scip, NULL) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
 
 /** dialog execution method for the display additionalstatistics command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
@@ -655,6 +756,33 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the transform command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecTransform)
+{  /*lint --e{715}*/
+
+   if( SCIPgetStage(scip) <= SCIP_STAGE_PROBLEM )
+         SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
+
+   SCIPdialogExecTransform(scip, dialog, dialoghdlr, nextdialog);
+
+   return SCIP_OKAY;
+}
+
+
+/** dialog execution method for the presolve command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecPresolve)
+{  /*lint --e{715}*/
+
+   if( SCIPgetStage(scip) <= SCIP_STAGE_PROBLEM )
+         SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
+
+   SCIPdialogExecPresolve(scip, dialog, dialoghdlr, nextdialog);
+
+   return SCIP_OKAY;
+}
+
+
+
 /** dialog execution method for the detect command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
@@ -663,6 +791,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
+
+   if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
+      SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
 
    if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
    {
@@ -738,6 +869,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       break;
 
    case SCIP_STAGE_PROBLEM:
+      SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
    case SCIP_STAGE_TRANSFORMED:
  //     SCIPdialogMessage(scip, NULL, "in transformed \n");
 
@@ -929,6 +1061,46 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteFamilyTree)
 
    return SCIP_OKAY;
 }
+
+
+
+
+/** dialog execution method for writing the original matrix */
+static
+SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteOrigMatrix)
+{
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
+   {
+      SCIP_CALL( writeMatrix(scip, dialog, dialoghdlr, nextdialog, TRUE) );
+   }
+   else
+      SCIPdialogMessage(scip, NULL, "no problem available\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for writing the transformed matrix */
+static
+SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteTransMatrix)
+{
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
+   {
+      SCIP_CALL( writeMatrix(scip, dialog, dialoghdlr, nextdialog, FALSE) );
+   }
+   else
+      SCIPdialogMessage(scip, NULL, "no problem available\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
 
 
 /** dialog execution method for reporting all known decompositions in a PDF file */
@@ -1236,6 +1408,16 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 
+   /* display nblockcandidates */
+   if( !SCIPdialogHasEntry(submenu, "blocknumbercandidates") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayNBlockcandidates, NULL, NULL,
+            "blocknumbercandidates", "display number of blocks candidates ", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+
    /* display additionalstatistics */
    if( !SCIPdialogHasEntry(submenu, "additionalstatistics") )
    {
@@ -1263,6 +1445,29 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+   /* transform */
+   if( !SCIPdialogHasEntry(root, "transform") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL,
+         GCGdialogExecTransform, NULL, NULL,
+         "transform", "transform the problem", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* presolve */
+   if( !SCIPdialogHasEntry(root, "presolve") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL,
+         GCGdialogExecPresolve, NULL, NULL,
+         "presolve", "presolve the problem", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
 
    /* optimize */
    if( !SCIPdialogHasEntry(root, "optimize") )
@@ -1576,6 +1781,31 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+
+   /* write orig matrix */
+   if( !SCIPdialogHasEntry(submenu, "matrix") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteOrigMatrix, NULL, NULL,
+            "matrix",
+            "write gnuplot file showing the nonzero structure of the original matrix",
+            FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+
+   /* write orig matrix */
+   if( !SCIPdialogHasEntry(submenu, "transmatrix") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteTransMatrix, NULL, NULL,
+            "transmatrix",
+            "write gnuplot file showing the nonzero structure of the transformed (presolved) matrix",
+            FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
 
    /* write reportdecompositions */
       if( !SCIPdialogHasEntry(submenu, "reportdecompositions") )

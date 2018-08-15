@@ -29,21 +29,37 @@
  * @brief  DEC file reader for structure information
  * @author Martin Bergner
  * @author Lukas Kirchhart
+ * @author Micahel Bastubbe
  * @ingroup FILEREADERS
 
- * This reader reads in a dec-file that defines the structur to be used for the decomposition.
- * The structure is defined constraint-wise, i.e., the number of blocks and the constraints belonging
- * to each block are  defined.  If needed, constraints can also be  forced into the master, even if
- * they could be transferred to one block.
+ * This reader reads and write files in .dec format. A data format to pass a (possibly partial) decomposition to GCG, prerequisite is a given MIP, whose constraints and variables are referred to by name
+ * – everything behind a backslash (“\”) is a comment and is ignored
+ * – information is given section-wise
+ * – sections are started by key words (ignoring the case of the characters) and finished by starting a new section or reaching end of file
+ * – each line in a section provides one value
+ * – key words for sections are:
+ *   – consdefaultmaster:
+ *     + optional; followed by line with possible values: {0, 1}; default: 1; description: if set to 1 then (directly after file is read) each unassigned constraint is assigned to the master (needed for backward compatibility)
+ * – presolved:
+ *   + mandatory; followed by line with possible values: {0, 1}; description: if set to 0 (1) then the decomposition is considered for the unpresolved (presolved) problem
+ * – nblocks
+ *   + mandatory; possible values: N; description: number of (possibly empty) blocks this decomposition file has information for
+ * – block (alternatives: blockconss or blockcons)
+ * + optional; directly followed by block index (starting with 1); each following line contains name of a constraint belonging to this block
+ * – masterconss (alternative: mastercons)
+ *   + optional; each following line contains name of a constraint belonging to the master
+ * – blockvars
+ *   + optional; directly followed by block index (starting with 1); each following line contains name of a variable belonging to this block
+ * – mastervars (alternative: mastervar)
+ *   + optional; each following line contains name of a master variable; (belongs explicitly only to master constraints)
+ * – linkingvars (alternative: linkingvar)
+ *   + optional; each following line contains name of a linking variable
+ * – decomposition is rejected if there are any inconsistencies
+ * – after reading (and and possibly assigning unassigned constraints because of consdefaultmaster, see above) implicit assignments are made:
+ *   – unassigned constraints hitting at least two blocks -> assign to master;
+ *   – unassigned variables hitting at least two blocks -> assign to linking ;
+ * – all constraints of an unassigned variable are master constraints -> variable is master variable;
  *
- * The keywords are:
- * - Presolved: to be followed by either 0 or 1 indicating that the decomposition is for the unpresolved or presolved problem
- * - NBlocks: to be followed by a line giving the number of blocks
- * - Block i with 1 <= i <= nblocks: to be followed by the names of the constraints belonging to block i,
-                  one per line.
- * - Masterconss: to be followed by names of constraints, one per line, that should go into the master,
- *                even if they only contain variables of one block and could thus be added to this block.
-
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

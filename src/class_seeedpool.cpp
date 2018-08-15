@@ -73,6 +73,7 @@
 /** needed for exponential distributed random dual variables */
 #include <random>
 
+#include "reader_gp.h"
 
 
 #ifdef _OPENMP
@@ -682,7 +683,7 @@ int calcLevenshteinDistance(
    std::string t
    )
 {
-   // trivial cases
+   /* easy cases */
    if( s.compare( t ) == 0 )
       return 0;
    if( s.length() == 0 )
@@ -690,39 +691,34 @@ int calcLevenshteinDistance(
    if( t.length() == 0 )
       return s.length();
 
-   // create two work vectors of integer distances
-   std::vector<int> v0( t.length() + 1 );
-   std::vector<int> v1( t.length() + 1 );
+   /* vectors to store integer distances */
+   std::vector<int> prev( t.length() + 1 );
+   std::vector<int> curr( t.length() + 1 );
 
-   /* initialize v0 (the previous row of distances)
-    * this row is A[0][i]: edit distance for an empty s
-    * the distance is just the number of characters to delete from t */
-   for( size_t i = 0; i < v0.size(); i ++ )
+   /* initialize prev (previous row of distances) */
+   for( size_t i = 0; i < prev.size(); ++i )
    {
-      v0[i] = i;
+      prev[i] = i;
    }
-
-   for( size_t i = 0; i < s.length(); i ++ )
+   for( size_t i = 0; i < s.length(); ++i )
    {
-      // calculate v1 (current row distances) from the previous row v0
+      /* calculate curr (row distances) from the previous one */
 
-      /* first element of v1 is A[i+1][0]
-       * edit distance is delete (i+1) chars from s to match empty t */
-      v1[0] = i + 1;
+      curr[0] = i + 1;
 
-      // use formula to fill in the rest of the row
-      for( size_t j = 0; j < t.length(); j ++ )
+      /* fill remaining of row using 'Bellman' equality */
+      for( size_t j = 0; j < t.length(); ++j )
       {
          int cost = ( s[i] == t[j] ) ? 0 : 1;
-         v1[j + 1] = std::min( v1[j] + 1, std::min( v0[j + 1] + 1, v0[j] + cost ) );
+         curr[j + 1] = std::min( curr[j] + 1, std::min( prev[j + 1] + 1, prev[j] + cost ) );
       }
 
-      // copy v1 (current row) to v0 (previous row) for next iteration
-      for( size_t j = 0; j < v0.size(); j ++ )
-         v0[j] = v1[j];
+      /* copy curr to prev for next iteration */
+      for( size_t j = 0; j < prev.size(); ++j )
+         prev[j] = curr[j];
    }
 
-   return v1[t.length()];
+   return curr[t.length()];
 }
 
 
@@ -1012,7 +1008,7 @@ Seeedpool::Seeedpool(
    assert( (int) varToScipVar.size() == nVars );
    assert( (int) consToScipCons.size() == nConss );
 
-   /** assumption: now every relevant constraint and variable has its index
+    /** assumption: now every relevant constraint and variable has its index
     * and is stored in the corresponding unordered_map */
    /** find constraint <-> variable relationships and store them in both directions */
    for( int i = 0; i < (int) consToScipCons.size(); ++ i )
@@ -1039,7 +1035,7 @@ Seeedpool::Seeedpool(
       for( int currVar = 0; currVar < nCurrVars; ++ currVar )
       {
          int varIndex;
-         std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar;
+         unordered_map<SCIP_VAR*, int>::const_iterator iterVar;
 
          if( varIsFixedToZero(scip, currVars[currVar]) )
             continue;
@@ -1069,6 +1065,7 @@ Seeedpool::Seeedpool(
 
    SCIPgetBoolParam(scip, "detection/conssadjcalculated", &createconssadj );
    createconssadj = createconssadj && (getNConss() < 1000);
+
 
    if( !createconssadj )
       SCIPsetBoolParam(scip, "detection/conssadjcalculated", FALSE );
@@ -3299,7 +3296,7 @@ SCIP_Real Seeedpool::getVal(
    int col
    )
 {
-   std::tr1::unordered_map<std::pair<int, int>, SCIP_Real, pair_hash>::const_iterator iter = valsMap.find(
+   unordered_map<std::pair<int, int>, SCIP_Real, pair_hash>::const_iterator iter = valsMap.find(
       std::pair<int, int>( row, col ) );
 
    if( iter == valsMap.end() )
@@ -3843,7 +3840,6 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
    std::vector<int> nfoundconstypesrangedsinglecount( (int) SCIP_CONSTYPE_GENERAL + 1, 0 );
    std::vector<int> nfoundconstypesrangeddoublecount( (int) SCIP_CONSTYPE_GENERAL + 1, 0 );
 
-//   std::vector<int> constypesIndices( 0 );
    std::vector<int> classforcons = std::vector<int>( getNConss(), -1 );
    ConsClassifier* classifier;
 
@@ -5701,6 +5697,50 @@ SCIP_RETCODE Seeedpool::printClassifierInformation(
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE Seeedpool::writeMatrix(
+   const char*           filename,           /**< filename the output should be written to (including directory) */
+   const char*           workfolder          /**< directory in which should be worked */
+   )
+{
+   char problemname[SCIP_MAXSTRLEN];
+   char* outputname;
+   char filename2[SCIP_MAXSTRLEN];
+
+   gcg::Seeed* matrixseeed;
+
+
+   matrixseeed = new gcg::Seeed(scip, -1, this);
+   matrixseeed->setNBlocks(1);
+
+   for( int i = 0; i < getNConss(); ++i )
+      matrixseeed->bookAsBlockCons(i,0);
+
+   for( int i = 0; i < getNVars(); ++i )
+      matrixseeed->bookAsBlockVar(i,0);
+
+   matrixseeed->flushBookedCompleteSorted();
+
+   addSeeedToFinishedUnchecked(matrixseeed);
+
+   /* get filename for compiled file */
+   (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
+   SCIPsplitFilename(problemname, NULL, &outputname, NULL, NULL);
+
+   strcat(outputname, ".png");
+   strcpy(filename2, filename);
+
+   SCIPinfoMessage(scip, NULL, "filename for matrix plot is %s \n", filename );
+   SCIPinfoMessage(scip, NULL, "foldername for matrix plot is %s \n", workfolder );
+
+
+   /* actual writing */
+   GCGwriteGpVisualization(scip, filename2, outputname, matrixseeed->getID() );
+
+
+
+   return SCIP_OKAY;
+
+}
 
 
 

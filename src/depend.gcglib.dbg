@@ -2213,19 +2213,19 @@ $(LIBOBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/s
  src/reader_ref.h src/event_bestsol.h src/event_mastersol.h \
  src/cons_decomp.h src/type_detector.h src/dec_connected.h \
  src/params_visu.h src/reader_gp.h src/reader_tex.h src/reader_cls.h \
- src/dec_isomorph.h src/dec_constype.h src/dec_consclass.h \
- src/dec_densemasterconss.h src/dec_stairheur.h src/dec_staircase.h \
- src/dec_random.h src/dec_colors.h src/dec_compgreedily.h \
- src/dec_staircase_lsp.h src/dec_consname.h src/dec_postprocess.h \
- src/dec_mastersetpack.h src/dec_mastersetpart.h src/dec_mastersetcover.h \
- src/dec_hrcgpartition.h src/dec_hrgpartition.h src/dec_hcgpartition.h \
- src/dec_connectedbase.h src/dec_connected_noNewLinkingVars.h \
- src/dec_generalmastersetcover.h src/dec_generalmastersetpack.h \
- src/dec_generalmastersetpart.h src/dec_varclass.h \
- src/heur_gcgcoefdiving.h src/heur_gcgdins.h src/heur_gcgfeaspump.h \
- src/heur_gcgfracdiving.h src/heur_gcgguideddiving.h \
- src/heur_gcglinesdiving.h src/heur_gcgpscostdiving.h src/heur_gcgrens.h \
- src/heur_gcgrins.h src/heur_gcgrounding.h src/heur_gcgshifting.h \
+ src/dec_constype.h src/dec_consclass.h src/dec_densemasterconss.h \
+ src/dec_stairheur.h src/dec_staircase.h src/dec_random.h \
+ src/dec_colors.h src/dec_compgreedily.h src/dec_staircase_lsp.h \
+ src/dec_consname.h src/dec_postprocess.h src/dec_mastersetpack.h \
+ src/dec_mastersetpart.h src/dec_mastersetcover.h src/dec_hrcgpartition.h \
+ src/dec_hrgpartition.h src/dec_hcgpartition.h src/dec_connectedbase.h \
+ src/dec_connected_noNewLinkingVars.h src/dec_generalmastersetcover.h \
+ src/dec_generalmastersetpack.h src/dec_generalmastersetpart.h \
+ src/dec_varclass.h src/heur_gcgcoefdiving.h src/heur_gcgdins.h \
+ src/heur_gcgfeaspump.h src/heur_gcgfracdiving.h \
+ src/heur_gcgguideddiving.h src/heur_gcglinesdiving.h \
+ src/heur_gcgpscostdiving.h src/heur_gcgrens.h src/heur_gcgrins.h \
+ src/heur_gcgrounding.h src/heur_gcgshifting.h \
  src/heur_gcgsimplerounding.h src/heur_gcgveclendiving.h \
  src/heur_gcgzirounding.h src/heur_origdiving.h src/type_origdiving.h \
  src/heur_xpcrossover.h src/heur_xprins.h src/dec_cutpacking.h \
@@ -6255,8 +6255,7 @@ $(LIBOBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/benderscut_int.h lib/scip/src/scip/benderscut_nogood.h \
  lib/scip/src/scip/benderscut_opt.h src/masterplugins.h \
  src/bendersplugins.h src/cons_decomp.h src/type_detector.h \
- src/scip_misc.h src/gcg.h src/pub_gcgvar.h src/pub_decomp.h \
- src/pub_bliss.h src/bliss_automorph.h
+ src/scip_misc.h src/gcg.h src/pub_gcgvar.h src/pub_decomp.h
 $(LIBOBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/type_message.h lib/scip/src/blockmemshell/memory.h \
@@ -7649,8 +7648,7 @@ $(LIBOBJDIR)/class_seeed.o: src/class_seeed.cpp src/class_seeed.h \
  src/type_pricingstatus.h src/pub_gcgvar.h src/pub_decomp.h \
  src/class_seeedpool.h lib/scip/src/scip/cons_setppc.h src/scip_misc.h \
  src/decomp.h src/struct_decomp.h src/params_visu.h \
- src/class_miscvisualization.h src/reader_gp.h src/pub_bliss.h \
- src/bliss_automorph.h
+ src/class_miscvisualization.h src/reader_gp.h
 $(LIBOBJDIR)/class_seeedpool.o: src/class_seeedpool.cpp \
  lib/scip/src/scip/scipdefplugins.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
@@ -11134,289 +11132,6 @@ $(LIBOBJDIR)/reader_tex.o: src/reader_tex.cpp src/reader_tex.h \
  lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
  src/graph/weights.h src/pub_decomp.h src/graph/graph_interface.h \
  src/wrapper_seeed.h
-$(LIBOBJDIR)/bliss_automorph.o: src/bliss_automorph.cpp lib/include/bliss/graph.hh \
- lib/include/bliss/kstack.hh lib/include/bliss/defs.hh \
- lib/include/bliss/kqueue.hh lib/include/bliss/heap.hh \
- lib/include/bliss/orbit.hh lib/include/bliss/partition.hh \
- lib/include/bliss/graph.hh lib/include/bliss/bignum.hh \
- lib/include/bliss/uintseqhash.hh src/bliss_automorph.h \
- lib/scip/src/scip/type_scip.h lib/scip/src/scip/type_result.h \
- lib/scip/src/scip/type_misc.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
- src/cons_decomp.h lib/scip/src/scip/scip.h \
- lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_clock.h \
- lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_paramset.h \
- lib/scip/src/scip/type_event.h lib/scip/src/scip/type_lp.h \
- lib/scip/src/scip/type_nlp.h lib/scip/src/scip/type_var.h \
- lib/scip/src/scip/type_prob.h lib/scip/src/scip/type_tree.h \
- lib/scip/src/scip/type_bandit.h lib/scip/src/scip/type_branch.h \
- lib/scip/src/scip/type_conflict.h lib/scip/src/scip/type_cons.h \
- lib/scip/src/scip/type_sol.h lib/scip/src/scip/type_heur.h \
- lib/scip/src/scip/type_dialog.h lib/scip/src/scip/type_disp.h \
- lib/scip/src/scip/type_compr.h lib/scip/src/scip/type_history.h \
- lib/scip/src/scip/type_nodesel.h lib/scip/src/scip/type_presol.h \
- lib/scip/src/scip/type_pricer.h lib/scip/src/scip/type_reader.h \
- lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_reopt.h \
- lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_table.h \
- lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
- lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/type_concsolver.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_syncstore.h \
- lib/scip/src/scip/type_benders.h lib/scip/src/scip/type_benderscut.h \
- lib/scip/src/scip/pub_bandit.h lib/scip/src/scip/pub_bandit_epsgreedy.h \
- lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
- lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
- lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
- lib/scip/src/scip/pub_cons.h lib/scip/src/scip/pub_cutpool.h \
- lib/scip/src/scip/type_cutpool.h lib/scip/src/scip/pub_dialog.h \
- lib/scip/src/scip/pub_disp.h lib/scip/src/scip/pub_event.h \
- lib/scip/src/scip/pub_fileio.h lib/scip/src/scip/pub_heur.h \
- lib/scip/src/scip/pub_compr.h lib/scip/src/scip/pub_history.h \
- lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
- lib/scip/src/scip/pub_lp.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/pub_misc.h \
- lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
- lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_reopt.h lib/scip/src/scip/pub_sepa.h \
- lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
- lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
- lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
- lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/heuristics.h lib/scip/src/scip/scip_bandit.h \
- lib/scip/src/scip/scip_benders.h lib/scip/src/scip/scip_branch.h \
- lib/scip/src/scip/scip_compr.h lib/scip/src/scip/scip_concurrent.h \
- lib/scip/src/scip/scip_conflict.h lib/scip/src/scip/scip_cons.h \
- lib/scip/src/scip/scip_copy.h lib/scip/src/scip/scip_cut.h \
- lib/scip/src/scip/scip_datastructures.h lib/scip/src/scip/scip_debug.h \
- lib/scip/src/scip/scip_dialog.h lib/scip/src/scip/scip_disp.h \
- lib/scip/src/scip/scip_event.h lib/scip/src/scip/scip_expr.h \
- lib/scip/src/scip/scip_general.h lib/scip/src/scip/scip_heur.h \
- lib/scip/src/scip/scip_lp.h lib/scip/src/scip/scip_mem.h \
- lib/scip/src/scip/scip_message.h lib/scip/src/scip/scip_nlp.h \
- lib/scip/src/scip/scip_nodesel.h lib/scip/src/scip/scip_nonlinear.h \
- lib/scip/src/scip/scip_numerics.h lib/scip/src/scip/scip_param.h \
- lib/scip/src/scip/scip_presol.h lib/scip/src/scip/scip_pricer.h \
- lib/scip/src/scip/scip_prob.h lib/scip/src/scip/scip_probing.h \
- lib/scip/src/scip/scip_prop.h lib/scip/src/scip/scip_randnumgen.h \
- lib/scip/src/scip/scip_reader.h lib/scip/src/scip/scip_relax.h \
- lib/scip/src/scip/scip_reopt.h lib/scip/src/scip/scip_sepa.h \
- lib/scip/src/scip/scip_sol.h lib/scip/src/scip/scip_solve.h \
- lib/scip/src/scip/scip_solvingstats.h lib/scip/src/scip/scip_table.h \
- lib/scip/src/scip/scip_timing.h lib/scip/src/scip/scip_tree.h \
- lib/scip/src/scip/scip_validation.h lib/scip/src/scip/scip_var.h \
- src/type_detector.h src/type_decomp.h src/scip_misc.h \
- lib/scip/src/scip/cons_setppc.h src/gcg.h src/type_branchgcg.h \
- src/type_solver.h src/type_gcgcol.h src/struct_gcgcol.h \
- src/type_pricingstatus.h src/pub_gcgvar.h src/pub_decomp.h \
- lib/scip/src/scip/cons_linear.h src/pub_bliss.h src/class_seeed.h \
- lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbenders.h \
- lib/scip/src/objscip/objcloneable.h \
- lib/scip/src/objscip/type_objcloneable.h \
- lib/scip/src/objscip/objbenderscut.h \
- lib/scip/src/objscip/objbranchrule.h lib/scip/src/objscip/objconshdlr.h \
- lib/scip/src/objscip/objprobcloneable.h \
- lib/scip/src/objscip/type_objprobcloneable.h \
- lib/scip/src/objscip/objdialog.h lib/scip/src/objscip/objdisp.h \
- lib/scip/src/objscip/objeventhdlr.h lib/scip/src/objscip/objheur.h \
- lib/scip/src/objscip/objmessagehdlr.h lib/scip/src/objscip/objnodesel.h \
- lib/scip/src/objscip/objpresol.h lib/scip/src/objscip/objpricer.h \
- lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
- lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
- lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- src/struct_detector.h src/class_consclassifier.h \
- src/class_indexclassifier.h src/class_varclassifier.h \
- src/graph/graph_gcg.h src/graph/bridge.h src/graph/graph.h \
- lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
- src/graph/weights.h src/pub_decomp.h src/graph/graph_interface.h \
- src/class_seeedpool.h
-$(LIBOBJDIR)/dec_isomorph.o: src/dec_isomorph.cpp src/dec_isomorph.h \
- lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
- lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
- lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
- lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
- lib/scip/src/scip/type_paramset.h lib/scip/src/scip/type_event.h \
- lib/scip/src/scip/type_lp.h lib/scip/src/scip/type_nlp.h \
- lib/scip/src/scip/type_var.h lib/scip/src/scip/type_prob.h \
- lib/scip/src/scip/type_tree.h lib/scip/src/scip/type_bandit.h \
- lib/scip/src/scip/type_branch.h lib/scip/src/scip/type_conflict.h \
- lib/scip/src/scip/type_cons.h lib/scip/src/scip/type_sol.h \
- lib/scip/src/scip/type_heur.h lib/scip/src/scip/type_dialog.h \
- lib/scip/src/scip/type_disp.h lib/scip/src/scip/type_compr.h \
- lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
- lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
- lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
- lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
- lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
- lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
- lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
- lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
- lib/scip/src/scip/pub_bandit_epsgreedy.h \
- lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
- lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
- lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
- lib/scip/src/scip/pub_cons.h lib/scip/src/scip/pub_cutpool.h \
- lib/scip/src/scip/type_cutpool.h lib/scip/src/scip/pub_dialog.h \
- lib/scip/src/scip/pub_disp.h lib/scip/src/scip/pub_event.h \
- lib/scip/src/scip/pub_fileio.h lib/scip/src/scip/pub_heur.h \
- lib/scip/src/scip/pub_compr.h lib/scip/src/scip/pub_history.h \
- lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
- lib/scip/src/scip/pub_lp.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/pub_misc.h \
- lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
- lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_reopt.h lib/scip/src/scip/pub_sepa.h \
- lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
- lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
- lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
- lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/heuristics.h lib/scip/src/scip/scip_bandit.h \
- lib/scip/src/scip/scip_benders.h lib/scip/src/scip/scip_branch.h \
- lib/scip/src/scip/scip_compr.h lib/scip/src/scip/scip_concurrent.h \
- lib/scip/src/scip/scip_conflict.h lib/scip/src/scip/scip_cons.h \
- lib/scip/src/scip/scip_copy.h lib/scip/src/scip/scip_cut.h \
- lib/scip/src/scip/scip_datastructures.h lib/scip/src/scip/scip_debug.h \
- lib/scip/src/scip/scip_dialog.h lib/scip/src/scip/scip_disp.h \
- lib/scip/src/scip/scip_event.h lib/scip/src/scip/scip_expr.h \
- lib/scip/src/scip/scip_general.h lib/scip/src/scip/scip_heur.h \
- lib/scip/src/scip/scip_lp.h lib/scip/src/scip/scip_mem.h \
- lib/scip/src/scip/scip_message.h lib/scip/src/scip/scip_nlp.h \
- lib/scip/src/scip/scip_nodesel.h lib/scip/src/scip/scip_nonlinear.h \
- lib/scip/src/scip/scip_numerics.h lib/scip/src/scip/scip_param.h \
- lib/scip/src/scip/scip_presol.h lib/scip/src/scip/scip_pricer.h \
- lib/scip/src/scip/scip_prob.h lib/scip/src/scip/scip_probing.h \
- lib/scip/src/scip/scip_prop.h lib/scip/src/scip/scip_randnumgen.h \
- lib/scip/src/scip/scip_reader.h lib/scip/src/scip/scip_relax.h \
- lib/scip/src/scip/scip_reopt.h lib/scip/src/scip/scip_sepa.h \
- lib/scip/src/scip/scip_sol.h lib/scip/src/scip/scip_solve.h \
- lib/scip/src/scip/scip_solvingstats.h lib/scip/src/scip/scip_table.h \
- lib/scip/src/scip/scip_timing.h lib/scip/src/scip/scip_tree.h \
- lib/scip/src/scip/scip_validation.h lib/scip/src/scip/scip_var.h \
- src/pub_decomp.h src/type_decomp.h src/type_detector.h src/cons_decomp.h \
- src/scip_misc.h lib/scip/src/scip/cons_setppc.h src/gcg.h \
- src/type_branchgcg.h src/type_solver.h src/type_gcgcol.h \
- src/struct_gcgcol.h src/type_pricingstatus.h src/pub_gcgvar.h \
- src/class_seeed.h lib/scip/src/objscip/objscip.h \
- lib/scip/src/objscip/objbenders.h lib/scip/src/objscip/objcloneable.h \
- lib/scip/src/objscip/type_objcloneable.h \
- lib/scip/src/objscip/objbenderscut.h \
- lib/scip/src/objscip/objbranchrule.h lib/scip/src/objscip/objconshdlr.h \
- lib/scip/src/objscip/objprobcloneable.h \
- lib/scip/src/objscip/type_objprobcloneable.h \
- lib/scip/src/objscip/objdialog.h lib/scip/src/objscip/objdisp.h \
- lib/scip/src/objscip/objeventhdlr.h lib/scip/src/objscip/objheur.h \
- lib/scip/src/objscip/objmessagehdlr.h lib/scip/src/objscip/objnodesel.h \
- lib/scip/src/objscip/objpresol.h lib/scip/src/objscip/objpricer.h \
- lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
- lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
- lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- src/struct_detector.h src/class_consclassifier.h \
- src/class_indexclassifier.h src/class_varclassifier.h \
- src/graph/graph_gcg.h src/graph/bridge.h src/graph/graph.h \
- lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
- src/graph/weights.h src/pub_decomp.h src/graph/graph_interface.h \
- src/class_seeedpool.h lib/scip/src/scip/clock.h \
- lib/include/bliss/graph.hh lib/include/bliss/kstack.hh \
- lib/include/bliss/defs.hh lib/include/bliss/kqueue.hh \
- lib/include/bliss/heap.hh lib/include/bliss/orbit.hh \
- lib/include/bliss/partition.hh lib/include/bliss/graph.hh \
- lib/include/bliss/bignum.hh lib/include/bliss/uintseqhash.hh \
- src/pub_bliss.h
-$(LIBOBJDIR)/bliss.o: src/bliss.cpp lib/include/bliss/graph.hh \
- lib/include/bliss/kstack.hh lib/include/bliss/defs.hh \
- lib/include/bliss/kqueue.hh lib/include/bliss/heap.hh \
- lib/include/bliss/orbit.hh lib/include/bliss/partition.hh \
- lib/include/bliss/graph.hh lib/include/bliss/bignum.hh \
- lib/include/bliss/uintseqhash.hh src/pub_bliss.h \
- lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
- lib/scip/src/scip/type_retcode.h lib/scip/src/scip/type_message.h \
- lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
- lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
- lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
- lib/scip/src/scip/type_paramset.h lib/scip/src/scip/type_event.h \
- lib/scip/src/scip/type_lp.h lib/scip/src/scip/type_nlp.h \
- lib/scip/src/scip/type_var.h lib/scip/src/scip/type_prob.h \
- lib/scip/src/scip/type_tree.h lib/scip/src/scip/type_bandit.h \
- lib/scip/src/scip/type_branch.h lib/scip/src/scip/type_conflict.h \
- lib/scip/src/scip/type_cons.h lib/scip/src/scip/type_sol.h \
- lib/scip/src/scip/type_heur.h lib/scip/src/scip/type_dialog.h \
- lib/scip/src/scip/type_disp.h lib/scip/src/scip/type_compr.h \
- lib/scip/src/scip/type_history.h lib/scip/src/scip/type_nodesel.h \
- lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
- lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
- lib/scip/src/scip/type_reopt.h lib/scip/src/scip/type_sepa.h \
- lib/scip/src/scip/type_table.h lib/scip/src/scip/type_prop.h \
- lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
- lib/scip/src/scip/type_concsolver.h lib/scip/src/scip/type_stat.h \
- lib/scip/src/scip/type_syncstore.h lib/scip/src/scip/type_benders.h \
- lib/scip/src/scip/type_benderscut.h lib/scip/src/scip/pub_bandit.h \
- lib/scip/src/scip/pub_bandit_epsgreedy.h \
- lib/scip/src/scip/pub_bandit_exp3.h lib/scip/src/scip/pub_bandit_ucb.h \
- lib/scip/src/scip/pub_benders.h lib/scip/src/scip/pub_benderscut.h \
- lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
- lib/scip/src/scip/pub_cons.h lib/scip/src/scip/pub_cutpool.h \
- lib/scip/src/scip/type_cutpool.h lib/scip/src/scip/pub_dialog.h \
- lib/scip/src/scip/pub_disp.h lib/scip/src/scip/pub_event.h \
- lib/scip/src/scip/pub_fileio.h lib/scip/src/scip/pub_heur.h \
- lib/scip/src/scip/pub_compr.h lib/scip/src/scip/pub_history.h \
- lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
- lib/scip/src/scip/pub_lp.h lib/scip/src/lpi/type_lpi.h \
- lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/pub_matrix.h lib/scip/src/scip/type_matrix.h \
- lib/scip/src/scip/pub_message.h lib/scip/src/scip/pub_misc.h \
- lib/scip/src/scip/pub_misc_select.h lib/scip/src/scip/type_misc.h \
- lib/scip/src/scip/pub_misc_sort.h lib/scip/src/scip/pub_misc_linear.h \
- lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
- lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
- lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
- lib/scip/src/scip/pub_reopt.h lib/scip/src/scip/pub_sepa.h \
- lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
- lib/scip/src/scip/pub_table.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
- lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
- lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/cuts.h lib/scip/src/scip/struct_cuts.h \
- lib/scip/src/scip/dbldblarith.h lib/scip/src/scip/type_cuts.h \
- lib/scip/src/scip/heuristics.h lib/scip/src/scip/scip_bandit.h \
- lib/scip/src/scip/scip_benders.h lib/scip/src/scip/scip_branch.h \
- lib/scip/src/scip/scip_compr.h lib/scip/src/scip/scip_concurrent.h \
- lib/scip/src/scip/scip_conflict.h lib/scip/src/scip/scip_cons.h \
- lib/scip/src/scip/scip_copy.h lib/scip/src/scip/scip_cut.h \
- lib/scip/src/scip/scip_datastructures.h lib/scip/src/scip/scip_debug.h \
- lib/scip/src/scip/scip_dialog.h lib/scip/src/scip/scip_disp.h \
- lib/scip/src/scip/scip_event.h lib/scip/src/scip/scip_expr.h \
- lib/scip/src/scip/scip_general.h lib/scip/src/scip/scip_heur.h \
- lib/scip/src/scip/scip_lp.h lib/scip/src/scip/scip_mem.h \
- lib/scip/src/scip/scip_message.h lib/scip/src/scip/scip_nlp.h \
- lib/scip/src/scip/scip_nodesel.h lib/scip/src/scip/scip_nonlinear.h \
- lib/scip/src/scip/scip_numerics.h lib/scip/src/scip/scip_param.h \
- lib/scip/src/scip/scip_presol.h lib/scip/src/scip/scip_pricer.h \
- lib/scip/src/scip/scip_prob.h lib/scip/src/scip/scip_probing.h \
- lib/scip/src/scip/scip_prop.h lib/scip/src/scip/scip_randnumgen.h \
- lib/scip/src/scip/scip_reader.h lib/scip/src/scip/scip_relax.h \
- lib/scip/src/scip/scip_reopt.h lib/scip/src/scip/scip_sepa.h \
- lib/scip/src/scip/scip_sol.h lib/scip/src/scip/scip_solve.h \
- lib/scip/src/scip/scip_solvingstats.h lib/scip/src/scip/scip_table.h \
- lib/scip/src/scip/scip_timing.h lib/scip/src/scip/scip_tree.h \
- lib/scip/src/scip/scip_validation.h lib/scip/src/scip/scip_var.h \
- src/pub_gcgvar.h src/type_decomp.h src/scip_misc.h \
- lib/scip/src/scip/cons_setppc.h
 $(LIBOBJDIR)/graph/graph_gcg.o: src/graph/graph_gcg.cpp src/graph/graph_gcg.h \
  src/graph/bridge.h lib/scip/src/objscip/objscip.h \
  lib/scip/src/objscip/objbenders.h lib/scip/src/scip/scip.h \

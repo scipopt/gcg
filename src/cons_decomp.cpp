@@ -88,6 +88,8 @@
 #include "scip_misc.h"
 #include "relax_gcg.h"
 
+
+
 typedef gcg::Seeed* SeeedPtr;
 
 
@@ -244,6 +246,7 @@ struct SCIP_ConshdlrData
    SeeedPtr              curruserseeed;                           /**< help pointer for reader and toolbox to iteratively build (partial) decomposition */
    SeeedPtr              lastuserseeed;                           /**< help pointer for toolbox to revoke last changes to curruserseeed */
 
+   SCIP_Bool             consnamesalreadyrepaired;                /**< stores whether or not    */
 
    SCIP_Bool             unpresolveduserseeedadded;               /**< stores whether or not an unpresolved user seeed was added */
 
@@ -534,6 +537,8 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(
 
      conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
 
+     if( !success )
+        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
 
       return SCIP_OKAY;
    }
@@ -565,7 +570,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForPresolved(
      conshdlrdata->seeedpool->addSeeedToFinished(seeed, &success);
 
      if( !success )
-        SCIPinfoMessage(scip, NULL, " Added decomposition is already in!!!!!!!!!!!!!!!!!!!!!\n");
+        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
 
       return SCIP_OKAY;
    }
@@ -596,7 +601,10 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForUnpresolved(
 
      conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete(seeed, &success);
 
-      return SCIP_OKAY;
+     if( !success )
+        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
+
+     return SCIP_OKAY;
    }
 
 /** local method to handle store a seeed in the correct seeedpool */
@@ -625,7 +633,10 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForPresolved(
 
      conshdlrdata->seeedpool->addSeeedToIncomplete(seeed, &success);
 
-      return SCIP_OKAY;
+     if( !success )
+        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
+
+     return SCIP_OKAY;
    }
 
 
@@ -1032,6 +1043,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->seeedpool = NULL;
    conshdlrdata->ncallscreatedecomp = 0;
 
+   conshdlrdata->consnamesalreadyrepaired = FALSE;
+
    conshdlrdata->curruserseeed = NULL;
    conshdlrdata->lastuserseeed = NULL;
    conshdlrdata->unpresolveduserseeedadded = FALSE;
@@ -1150,6 +1163,118 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
    return SCIP_OKAY;
 }
+
+
+/**
+ * finds a non duplicate constraint name of the form c_{a} with minimal natural number {a}
+ * @return non duplicate constraint name of the form c_{a} with minimal natural number {a}
+ */
+   static
+   int findGenericConsname(
+      SCIP*              scip,                  /**< SCIP data structure */
+      int                startcount,            /**< natural number, lowest candidate number to test */
+      char*              consname,              /**< char pointer to store the new non-duplicate name */
+      int                namelength             /**< max length of the name */
+      )
+   {
+
+      int candidatenumber;
+
+      candidatenumber = startcount;
+
+      /** terminates since there are only finitely many constraints and i (for c_i) increases every iteration */
+      while( TRUE )
+      {
+         char candidatename[SCIP_MAXSTRLEN] = "c_";
+         char number[20];
+         sprintf(number, "%d", candidatenumber );
+         strcat(candidatename, number );
+
+         if ( SCIPfindCons( scip, candidatename ) == NULL )
+         {
+            strncpy(consname, candidatename, namelength - 1);
+            return candidatenumber;
+         }
+         else
+            ++candidatenumber;
+      }
+      return -1;
+   }
+
+
+   /**
+    * method to eliminate duplicate constraint names and name unnamed constraints
+    * @param scip
+    * @return SCIP return code
+    */
+SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
+   SCIP*                 scip                   /**< SCIP data structure */
+   )
+{
+   long int startcount;
+   SCIP_CONS** conss;
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   startcount = 1;
+
+   if( conshdlrdata->consnamesalreadyrepaired )
+      return SCIP_OKAY;
+
+   unordered_map<std::string, bool> consnamemap;
+
+   SCIPdebugMessage("start repair conss \n ");
+
+   conss = SCIPgetConss(scip);
+
+   for( int i = 0; i < (int) SCIPgetNConss(scip); ++i )
+   {
+      SCIP_CONS* cons = conss[i];
+
+      SCIPdebugMessage( "cons name: %s\n ", SCIPconsGetName(cons));
+
+      if( SCIPconsGetName(cons) == NULL || strcmp(SCIPconsGetName(cons), "") == 0 || consnamemap[SCIPconsGetName(cons)] )
+      {
+         if( SCIPgetStage(scip) <= SCIP_STAGE_PROBLEM )
+         {
+            char newconsname[SCIP_MAXSTRLEN];
+            startcount = findGenericConsname(scip, startcount, newconsname, SCIP_MAXSTRLEN ) + 1;
+            SCIPdebugMessage( "Change consname to %s\n", newconsname );
+            SCIPchgConsName(scip, cons, newconsname );
+            consnamemap[newconsname] = true;
+         }
+         else
+         {
+            if ( SCIPconsGetName(cons) == NULL )
+               SCIPwarningMessage(scip, "Name of constraint is NULL \n");
+            else if ( strcmp(SCIPconsGetName(cons), "") == 0 )
+               SCIPwarningMessage(scip, "Name of constraint is not set \n");
+            else
+               SCIPwarningMessage(scip, "Constraint name duplicate: %s \n", SCIPconsGetName(cons) );
+         }
+      }
+      else
+      {
+         consnamemap[SCIPconsGetName(cons)] = true;
+      }
+
+      SCIPdebugMessage( " number of elements: %d \n " , (int) consnamemap.size() );
+   }
+
+   conshdlrdata->consnamesalreadyrepaired = TRUE;
+
+   return SCIP_OKAY;
+}
+
+
+
 
 SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
    SCIP*                   scip
@@ -2258,11 +2383,12 @@ SCIP_DIALOG*            dialog )
 
        varname = SCIPvarGetName(  seeedpool->getVarForIndex(seeed->getOpenvars()[oc] ) );
 
+       SCIPdebugMessage("check var %s for regex %s \n", varname, varregex);
 
        if( std::regex_match(varname, expr) )
        {
           matching = TRUE;
-          matchingvars.push_back(seeed->getOpenconss()[oc]);
+          matchingvars.push_back(seeed->getOpenvars()[oc]);
           SCIPdebugMessage( " varname %s matches regex %s \n", varname, varregex );
        } else
           SCIPdebugMessage(" varname %s does not match regex %s \n", varname, varregex);
@@ -2270,7 +2396,7 @@ SCIP_DIALOG*            dialog )
 
     if( !matching )
     {
-       SCIPdialogMessage(scip, NULL, " There are no unassigned constraints with names matching given regular expression. Return to toolbox main menu.\n");
+       SCIPdialogMessage(scip, NULL, " There are no unassigned variables with names matching given regular expression. Return to toolbox main menu.\n");
        return SCIP_OKAY;
     }
 
@@ -2280,17 +2406,20 @@ SCIP_DIALOG*            dialog )
 
 
     if( matchingvars.size() > 10 )
-       SCIPdialogMessage(scip, NULL, " There are %d unassigned constraints with names matching given regular expression. Showing the first 10:\n", matchingvars.size());
+       SCIPdialogMessage(scip, NULL, " There are %d unassigned variables with names matching given regular expression. Showing the first 10:\n", matchingvars.size());
     else
-       SCIPdialogMessage(scip, NULL, " There are %d unassigned constraints with names matching given regular expression: \n", matchingvars.size());
+       SCIPdialogMessage(scip, NULL, " There are %d unassigned variables with names matching given regular expression: \n", matchingvars.size());
 
     for( size_t mc = 0 ; mc < 10 && mc < matchingvars.size(); ++mc )
        SCIPdialogMessage(scip, NULL, " %s \n", SCIPvarGetName( seeedpool->getVarForIndex( matchingvars[mc] ) ));
 
-    SCIPdialogMessage(scip, NULL, "\n Should these constraints be added to: \n");
-    SCIPdialogMessage(scip, NULL, " master \n");
+    SCIPdialogMessage(scip, NULL, "\n Should these variables be added to: \n");
+    SCIPdialogMessage(scip, NULL, " master-only (static) \n");
+    SCIPdialogMessage(scip, NULL, " linking \n");
     SCIPdialogMessage(scip, NULL, " block (to be specified) \n");
     SCIPdialogMessage(scip, NULL, " nothing (return to toolbox main menu)? \n");
+
+
 
 
     SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify how to proceed: \nGCG/toolbox> ", &command, &endoffile) );
@@ -4904,9 +5033,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       /** stems from unpresolved problem */
       else
       {
-         SCIP_Bool success;
-         conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
-         conshdlrdata->unpresolveduserseeedadded = TRUE;
+
+         SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(scip, seeed) );
 
          if ( conshdlrdata->seeedpool != NULL ) /* seeedpool for presolved problem already exist try to translate seeed */
          {
@@ -4916,31 +5044,23 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
             conshdlrdata->seeedpool->translateSeeeds(conshdlrdata->seeedpoolunpresolved, seeedtotranslate, newseeeds);
             if( newseeeds.size() != 0 )
             {
-               SCIP_Bool successfullyadded;
-               conshdlrdata->seeedpool->addSeeedToFinished(newseeeds[0], &successfullyadded);
-               if ( !successfullyadded )
-                  SCIPinfoMessage(scip, NULL, "Given decomposition is already known to gcg! \n");
+               SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, newseeeds[0]) );
             }
          }
       }
-
    }
    else
    {
       assert( !seeed->shouldCompletedByConsToMaster() );
       conshdlrdata->curruserseeed->setUsergiven( gcg::USERGIVEN::PARTIAL );
-      SCIP_Bool success;
 
       if ( !conshdlrdata->curruserseeed->isFromUnpresolved() )
          SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, conshdlrdata->curruserseeed) );
       else
-         conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete( conshdlrdata->curruserseeed, &success );
-
+         SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForUnpresolved(scip, conshdlrdata->curruserseeed) );
    }
 
    /** set statistics */
-
-
    {
       int nvarstoblock = 0;
       int nconsstoblock = 0;
@@ -6288,7 +6408,7 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
    }
 
    /* fill the output array with relevant seeeds */
-   for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
+   for( int i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
       {
          if( conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i ) == NULL ||
             conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i )->getID() < 0  )
@@ -6306,7 +6426,7 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
             conshdlrdata->seeedpool->getAncestorSeeed( i );
       }
 
-   for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
+   for( int i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
       {
          if( conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ) == NULL ||
             conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID() < 0  )
@@ -6453,6 +6573,50 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
 
    return SCIP_OKAY;
 }
+
+SCIP_RETCODE SCIPconshdlrDecompWriteMatrix(
+   SCIP*                 scip,               /**< scip data structure */
+   const char*           filename,           /**< filename the output should be written to (including directory) */
+   const char*           workfolder,         /**< directory in which should be worked */
+   SCIP_Bool             originalmatrix      /**< should the original (or transformed) matrix be written */
+)
+{
+
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   Seeedpool* seeedpool;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   seeedpool = NULL;
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   SCIPinfoMessage(scip, NULL, "start creating seeedpool \n");
+   if( !originalmatrix )
+   {
+      if (conshdlrdata->seeedpool == NULL )
+         conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
+      seeedpool = conshdlrdata->seeedpool;
+   }
+   else
+   {
+      if (conshdlrdata->seeedpoolunpresolved == NULL )
+         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE, SCIPconshdlrDecompDetectBenders(scip));
+      seeedpool = conshdlrdata->seeedpoolunpresolved;
+   }
+
+   SCIPinfoMessage(scip, NULL, "finished creating seeedpool \n");
+   SCIP_CALL( seeedpool->writeMatrix(filename, workfolder ) );
+
+   return SCIP_OKAY;
+
+}
+
+
 
 /** returns the best known decomposition, if available and NULL otherwise, caller has to free returned DEC_DECOMP */
 DEC_DECOMP* DECgetBestDecomp(
@@ -7191,11 +7355,14 @@ SCIP_RETCODE GCGprintBlockcandidateInformation(
 
    seeedpool = (conshdlrdata->seeedpool == NULL ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
 
-
-   seeedpool->printBlockcandidateInformation(scip, file);
+   if( seeedpool == NULL )
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "No block number candidates are calculated yet, consider detecting first..  \n" );
+   else
+      seeedpool->printBlockcandidateInformation(scip, file);
 
    return SCIP_OKAY;
 }
+
 
 SCIP_RETCODE GCGprintCompleteDetectionTime(
  SCIP*                 givenscip,               /**< SCIP data structure */
@@ -7211,7 +7378,7 @@ SCIP_RETCODE GCGprintCompleteDetectionTime(
 
 
 
-/** prints blockcandiateinformation in following format:
+/** prints classifier information in following format:
  * NCLASSIFIER
  * CLASSIFIERNAME  for each classifier
  * NCLASSES

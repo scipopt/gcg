@@ -2659,7 +2659,6 @@ void initRelaxdata(
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
 
-   relaxdata->filename = NULL;
 }
 
 /*
@@ -2693,7 +2692,8 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
    }
 
-   SCIPfreeBlockMemoryArrayNull( scip, & relaxdata->filename, SCIP_MAXSTRLEN);
+   SCIPfreeBlockMemoryArrayNull(scip, &relaxdata->filename, SCIP_MAXSTRLEN);
+
    SCIPfreeMemory(scip, &relaxdata);
 
    return SCIP_OKAY;
@@ -2729,6 +2729,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       }
       SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
    }
+
 
    relaxdata->nbranchrules = 0;
    relaxdata->relaxisinitialized = FALSE;
@@ -3237,6 +3238,16 @@ SCIP_RETCODE solveMasterProblemAndEvaluate(
       *lowerbound = SCIPgetDualbound(masterprob);
    }
 
+   /* if the time, memory or node limit is hit in the Original or Benders mode, then we need to interrupt the solve.
+    * This is required because the original problem is not solved in either of these modes, so it is not certain that
+    * the original SCIP will also exceed the limit (definitely not for the node limit).
+    */
+   if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetStatus(masterprob) == SCIP_STATUS_NODELIMIT
+      || SCIPgetStatus(masterprob) == SCIP_STATUS_MEMLIMIT )
+   {
+      SCIP_CALL( SCIPinterruptSolve(scip) );
+   }
+
    /* if the result pointer is DIDNOTRUN, this implies that the master problem was interrupted during solving. Since
     * Benders' decomposition uses a one-tree approach, then the user limits must be adhered to. This means, the if a
     * limit is exceeded, this is still a success for the solving.
@@ -3361,6 +3372,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->branchrules = NULL;
    relaxdata->masterprob = NULL;
    relaxdata->altmasterprob = NULL;
+   relaxdata->filename = NULL;
 
    initRelaxdata(relaxdata);
 
@@ -4806,8 +4818,8 @@ SCIP_RETCODE GCGsetFilename(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   if (relaxdata->filename != NULL)
-      SCIPfreeBlockMemoryArray(scip, &(relaxdata->filename), SCIP_MAXSTRLEN);
+
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->filename), SCIP_MAXSTRLEN);
 
    SCIP_CALL( SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, filename, SCIP_MAXSTRLEN ) );
 
@@ -4853,7 +4865,8 @@ const char* GCGgetFilename(
 
    if( relaxdata->filename == NULL )
    {
-      char help[SCIP_MAXSTRLEN];
+      char help[SCIP_MAXSTRLEN] = "";
+
       (void) strncat( help, "unknown", 8 );
       SCIP_CALL_ABORT(SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, help, SCIP_MAXSTRLEN ) );
    }
