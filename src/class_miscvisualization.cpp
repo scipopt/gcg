@@ -97,6 +97,12 @@ SCIP_RETCODE MiscVisualization::GCGgetVisualizationFilename(
    {
       if(filename[i] == '.')
          filename[i] = '-';
+
+      if(filename[i] == '(')
+         filename[i] = '-';
+
+      if(filename[i] == ')')
+        filename[i] = '-';
    }
 
    return SCIP_OKAY;
