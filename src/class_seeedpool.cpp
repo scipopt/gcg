@@ -3587,13 +3587,15 @@ void Seeedpool::calcCandidatesNBlocks()
 
    /* if  distribution of classes exceeds this number it is skipped */
    int maximumnclasses;
+   SCIP_Bool medianvarspercons;
+
    /** used for nvars / medianofnvars per conss */
-   std::list<int> nvarspercons(0);
+   std::vector<int> nvarspercons(0);
    std::list<int>::iterator iter;
    int candidate = -1;
 
 
-
+   SCIPgetBoolParam(scip, "detection/blocknumbercandidates/medianvarspercons", &medianvarspercons);
    SCIPgetIntParam(scip, "detection/maxnclassesfornblockcandidates", &maximumnclasses);
 
    /** firstly, iterate over all consclassifiers */
@@ -3677,23 +3679,19 @@ void Seeedpool::calcCandidatesNBlocks()
       }
    }
 
-   /** block number candidate could be nvars / median of nvarsinconss  */
 
-   for( int c = 0; c < getNConss(); ++c )
+   /** block number candidate could be nvars / median of nvarsinconss  only calculate if desired*/
+   if( medianvarspercons )
    {
-      int nvars = getNVarsForCons(c);
-      iter = std::lower_bound(nvarspercons.begin(), nvarspercons.end(), nvars);
-      nvarspercons.insert(iter, nvars);
+      for( int c = 0; c < getNConss(); ++c )
+      {
+         nvarspercons.push_back(getNVarsForCons(c) );
+      }
+      std::sort(nvarspercons.begin(), nvarspercons.end() );
+      candidate = (int) getNVars() / nvarspercons[(int)getNConss()/2];
+
+      addCandidatesNBlocks(candidate);
    }
-   iter = nvarspercons.begin();
-   for( int c = 0; c < (int) 0.5 * getNConss(); ++c )
-      ++iter;
-
-   if( *iter != 0 )
-      candidate = getNVars() / *iter;
-
-
-   addCandidatesNBlocks(candidate);
 
 }
 
