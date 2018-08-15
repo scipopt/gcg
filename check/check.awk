@@ -227,6 +227,7 @@ BEGIN {
    maxw = 0.0
    detector = "--"
    linkvars = 0
+   staticvars = 0
    linkconss = 0
    pricetime = 0.0
    pricevars = 0
@@ -443,8 +444,9 @@ BEGIN {
 }
 
 /^  master           :/ {
-   linkconss = $8;
+   linkconss = $9;
    linkvars = $3;
+   staticvars = $4
 }
 
 /^  detector         :/ {
@@ -633,9 +635,9 @@ BEGIN {
       tablehead2 = sprintf("Name%*s", namelength-4, " ");
       tablehead3 = hyphenstr;
 
-      tablehead1 = tablehead1"+----+--- Original --+-- Presolved --+----------+------- Decomposition -------+--------------+--------------+------+-------- Pricing ------+---- Master ----+-------+-------+";
-      tablehead2 = tablehead2"|Type| Conss |  Vars | Conss |  Vars | Detector |Blocks| MaxW | MConss| MVars |  Dual Bound  | Primal Bound | Gap%% | Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
-      tablehead3 = tablehead3"+----+-------+-------+-------+-------+----------+------+------+-------+-------+--------------+--------------+------+-------+-------+-------+-------+--------+-------+-------+";
+      tablehead1 = tablehead1"+----+--- Original --+-- Presolved --+------------------- Decomposition -----------+---------------------------+------+------- Pricing -------+---- Master ----+-------+-------+";
+      tablehead2 = tablehead2"|Type| Conss |  Vars | Conss |  Vars | Det| Blks| Agg | MWhi | MConss| LVars| SVars|  Dual Bound | Primal Bound| Gap% | Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
+      tablehead3 = tablehead3"+----+-------+-------+-------+-------+----+-----+-----+------+-------+------+------+-------------+-------------+------+-------+-------+-------+-------+--------+-------+-------+";
 
       if( printsoltimes == 1 ) {
          tablehead1 = tablehead1"----------+---------+";
@@ -1036,8 +1038,8 @@ BEGIN {
                printf(" & %7.1f & %7.1f", timetofirst, timetobest) > TEXFILE;
             printf("\\\\\n") > TEXFILE;
          }
-         printf("%-*s %-4s %7d %7d %7d %7d %-10s %6d %6.3g %7d %7d %14.9g %14.9g %6s %7d %7d %7.1f %7.1f %8d %7d %7.1f ",
-                namelength, shortprob, probtype, origcons, origvars, cons, vars, detector, blocks, maxw, linkconss, linkvars, db, pb, gapstr,
+         printf("%-*s %-4s %7d %7d %7d %7d %-4s %5d %5d %6.3g %7d %6d %6d %13.9g %13.9g %6s %7d %7d %7.1f %7.1f %8d %7d %7.1f ",
+                namelength, shortprob, probtype, origcons, origvars, cons, vars, detector, blocks, rel, maxw, linkconss, linkvars, staticvars, db, pb, gapstr,
                 pricecall, pricevars, pricetime, lptime, simpiters, bbnodes, tottime);
          if( printsoltimes )
             printf("%9.1f %9.1f ", timetofirst, timetobest);

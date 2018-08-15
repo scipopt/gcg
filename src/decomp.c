@@ -3770,6 +3770,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    int nblocks;
    int nblocksrelevant;
    int nlinkvars;
+   int nstaticvars;
    int nlinkbinvar;
    int nlinkintvars;
    int nlinkimplvars;
@@ -3839,6 +3840,9 @@ SCIP_RETCODE GCGprintDecompStatistics(
 
    DECgetSubproblemVarsData(scip, decomp, nallvars, nbinvars, nintvars, nimplvars, ncontvars, nblocks);
    DECgetLinkingVarsData(scip, decomp, &nlinkvars, &nlinkbinvar, &nlinkintvars, &nlinkimplvars, &nlinkcontvars);
+   nlinkvars = nlinkvars - DECdecompGetNMastervars(decomp);
+   nstaticvars = DECdecompGetNMastervars(decomp);
+
    SCIP_CALL( DECgetDensityData(scip, decomp, vars, nvars, conss, nconss, varprobdensity, varmasterdensity, consprobsensity, consmasterdensity) );
 
    SCIP_CALL( computeVarDensities(scip, decomp, varprobdensity, varmasterdensity, vars, nvars, blockvardensities, &mastervardensity, nblocks) );
@@ -3860,8 +3864,8 @@ SCIP_RETCODE GCGprintDecompStatistics(
    }
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  aggr. blocks     : %10d\n", nblocksrelevant);
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Master statistics  :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss   nonzeros  intnzeros    bnzeros bintnzeros  min(dens)  max(dens) medi(dens) mean(dens)\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  master           : %10d %10d %10d %10d %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f\n", nlinkvars,
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Master statistics  :  nlinkvars  nstatvars  nbinvars  nintvars nimplvars  ncontvars   nconss  nonzeros intnzeros   bnzeros bintnzeros min(dens) max(dens) medi(dens) mean(dens)\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  master           : %10d %10d %9d %9d %9d %10d %8d %9d %9d %9d %10d %9.3f %9.3f %10.3f %9.3f\n", nlinkvars, nstaticvars,
          nlinkbinvar, nlinkintvars, nlinkimplvars, nlinkcontvars, DECdecompGetNLinkingconss(decomp),
          mnzeros, mintnzeros, lnzeros, lintnzeros, mastervardensity.min, mastervardensity.max, mastervardensity.median, mastervardensity.mean);
 
