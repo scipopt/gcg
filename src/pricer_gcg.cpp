@@ -4746,6 +4746,18 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    origprob = GCGgetOriginalprob(scip);
    assert(origprob != NULL);
 
+   /*
+    * Due to global domain changes, it might happen that the solution is not feasible for the
+    * transformed original problem anymore; in that case, do not tranfer it to the master
+    */
+   SCIP_CALL( SCIPcheckSol(origprob, origsol, FALSE, FALSE, TRUE, TRUE, TRUE, &added) );
+   if( !added )
+   {
+      if( stored != NULL)
+         *stored = FALSE;
+      return SCIP_OKAY;
+   }
+
    pricerdata = NULL;   /* the pricerdata is set to NULL when the Benders' decomposition mode is used. */
    if( GCGgetDecompositionMode(origprob) == DEC_DECMODE_DANTZIGWOLFE )
    {
