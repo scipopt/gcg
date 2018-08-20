@@ -6825,6 +6825,15 @@ SCIP_RETCODE Seeed::writeAsDec(
       SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpooltowriteto->getConsForIndex( helpseeed->masterConss[mc])) );
    }
 
+
+   if( helpseeed->isComplete() )
+   {
+      if( this != helpseeed )
+         delete helpseeed;
+      *result = SCIP_SUCCESS;
+      return SCIP_OKAY;
+   }
+
    SCIPinfoMessage(scip, file, "LINKINGVARS\n" );
    for( int lv = 0; lv < helpseeed->getNLinkingvars(); ++lv )
    {
@@ -6838,13 +6847,7 @@ SCIP_RETCODE Seeed::writeAsDec(
    }
 
 
-   if( helpseeed->isComplete() )
-   {
-      if( this != helpseeed )
-         delete helpseeed;
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
-   }
+
    for( int b = 0; b < helpseeed->getNBlocks(); ++b )
    {
       SCIPinfoMessage(scip, file, "BLOCKVARS %d\n", b+1 );
