@@ -1714,10 +1714,10 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
 }
 
 /* computes the objective value of the current (stabilized) dual variables) in the dual program */
- SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
-    PricingType*         pricetype,          /**< type of pricing */
-    SCIP_Real*           stabdualval,        /**< pointer to store stabilized dual objective value */
-    SCIP_Bool            stabilize           /**< stabilize? */
+SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
+   PricingType*          pricetype,          /**< type of pricing */
+   SCIP_Real*            stabdualval,        /**< pointer to store stabilized dual objective value */
+   SCIP_Bool             stabilize           /**< stabilize? */
 )
 {
    SCIP_VAR** mastervars = NULL;
