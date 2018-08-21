@@ -464,8 +464,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
    SCIP_VAR**         zilpcands;
    SCIP_VAR**         slackvars;
    SCIP_ROW**         rows;
-   SCIP_Real*         lpcandssol;
-   SCIP_Real*         solarray;
    SCIP_Real*         upslacks;
    SCIP_Real*         downslacks;
    SCIP_Real*         activities;
@@ -523,7 +521,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
    heurdata->lastlp = nlps;
 
    /* get fractional variables */
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, NULL, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
 
    /* make sure that there is at least one fractional variable that should be integral */
    if( nlpcands == 0 )
@@ -531,7 +529,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
 
    assert(nlpcands > 0);
    assert(lpcands != NULL);
-   assert(lpcandssol != NULL);
 
    /* get the working solution from heuristic's local data */
    sol = heurdata->sol;
@@ -539,11 +536,9 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
 
    /* copy the current LP solution to the working solution and allocate memory for local data */
    SCIP_CALL( SCIPlinkRelaxSol(scip, sol) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &solarray, nlpcands) );
    SCIP_CALL( SCIPallocBufferArray(scip, &zilpcands, nlpcands) );
 
    /* copy necessary data to local arrays */
-   BMScopyMemoryArray(solarray, lpcandssol, nlpcands);
    BMScopyMemoryArray(zilpcands, lpcands, nlpcands);
 
    /* get LP rows data */
@@ -743,11 +738,25 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
 
          DIRECTION direction;
 
-         /* get values from local data */
-         oldsolval = solarray[c];
          var = zilpcands[c];
+         oldsolval = SCIPgetSolVal(scip, sol, var);
 
-         assert(!SCIPisFeasIntegral(scip, oldsolval));
+         /* It may be that external branching candidates are stored double,
+          * so the variable may have already been considered;
+          * in that case, ignore it
+          */
+         if( SCIPisFeasIntegral(scip, oldsolval) )
+         {
+            zilpcands[c] = zilpcands[currentlpcands - 1];
+            currentlpcands--;
+
+            /* counter is decreased if end of candidates array has not been reached yet */
+            if( c < currentlpcands )
+               c--;
+
+            continue;
+         }
+
          assert(SCIPvarGetStatus(var) == SCIP_VARSTATUS_COLUMN);
 
          /* calculate bounds for variable and make sure that there are no numerical inconsistencies */
@@ -795,8 +804,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
             shiftval = (direction == DIRECTION_UP ? up - oldsolval : down - oldsolval);
 
             /* update the solution */
-            solarray[c] = oldsolval + shiftval;
-            SCIP_CALL( SCIPsetSolVal(scip, sol, var, solarray[c]) );
+            SCIP_CALL( SCIPsetSolVal(scip, sol, var, oldsolval + shiftval) );
 
             /* update the rows activities and slacks */
             SCIP_CALL( updateSlacks(scip, sol, var, shiftval, upslacks,
@@ -812,10 +820,9 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
          /* if solution value of variable has become feasibly integral due to rounding step,
           * variable is put at the end of remaining candidates array so as not to be considered in future loops
           */
-         if( SCIPisFeasIntegral(scip, solarray[c]) )
+         if( SCIPisFeasIntegral(scip, oldsolval + shiftval) )
          {
             zilpcands[c] = zilpcands[currentlpcands - 1];
-            solarray[c] = solarray[currentlpcands - 1];
             currentlpcands--;
 
             /* counter is decreased if end of candidates array has not been reached yet */
@@ -856,7 +863,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
    SCIPfreeBufferArray(scip, &downslacks);
    SCIPfreeBufferArray(scip, &upslacks);
    SCIPfreeBufferArray(scip, &zilpcands);
-   SCIPfreeBufferArray(scip, &solarray);
 
    return SCIP_OKAY;
 }
