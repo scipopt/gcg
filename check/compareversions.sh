@@ -252,7 +252,12 @@ do
 	VERSIONNAME="${VERSION[$index]//\/}"		# remove slashs
 	VERSIONNAME="${VERSIONNAME//.}"			# remove points
 
-	# if the file name exist add add a number until the name is unique
+	# if the version name is empty add a name
+	if [ -z "$VERSIONNAME" ] ; then
+		VERSIONNAME="head"
+	fi
+
+	# if the file name exist add a number until the name is unique
 	lastchar=""
 	if [ -f "../${RESDIR}/${VERSIONNAME}.res" ] ; then
 		echo ${VERSIONNAME} exists
