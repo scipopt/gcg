@@ -200,6 +200,7 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            linkingvars,        /**< linkingvars array  */
    int                   nlinkingvars,       /**< number of linkingvars per block */
+   int                   nfixedlinkingvars,  /**< number of linking variables that are fixed */
    int                   nmastervars         /**< number of linkingvars that are purely master variables */
    );
 
@@ -221,6 +222,13 @@ extern
 int DECdecompGetNLinkingvars(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
+
+/** returns the nlinkingvars array of the given decomposition */
+extern
+int DECdecompGetNFixedLinkingvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
 
 /** copies the input stairlinkingvars array to the given decomposition */
 extern
@@ -526,7 +534,8 @@ SCIP_RETCODE DECdecompCheckConsistency(
 extern
 SCIP_RETCODE DECcreateBasicDecomp(
    SCIP*                 scip,                /**< SCIP data structure */
-   DEC_DECOMP**          decomp               /**< decomposition data structure */
+   DEC_DECOMP**          decomp,              /**< decomposition data structure */
+   SCIP_Bool             solveorigprob        /**< is the original problem being solved? */
    );
 
 /** creates a decomposition with provided constraints in the master

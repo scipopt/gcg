@@ -150,13 +150,13 @@ SCIP_RETCODE detection(
    gcg::Seeed* seeed;
    seeed = seeedPropagationData->seeedToPropagate;
 
-   seeed->considerImplicits(seeedPropagationData->seeedpool);
+   seeed->considerImplicits();
 
    //assign all dependent open vars and conss
-   seeed->refineToBlocks(seeedPropagationData->seeedpool);
+   seeed->refineToBlocks();
 
    //complete the seeed by bfs
-   seeed->completeByConnected(seeedPropagationData->seeedpool);
+   seeed->completeByConnected();
 
    seeedPropagationData->nNewSeeeds = 1;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );

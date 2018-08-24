@@ -265,9 +265,9 @@ SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
    if( !emptyblocks )
    {
       (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool);
-      SCIP_CALL( (*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIP_CALL( (*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks) );
       (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool);
-      SCIP_CALL( (*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIP_CALL( (*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks) );
       SCIPhashmapFree(&constoblock);
    }
    else {
@@ -381,9 +381,9 @@ SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
    if( !emptyblocks )
    {
       (*firstSeeed) = new Seeed(oldSeeed);
-      SCIP_CALL( (*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIP_CALL( (*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks) );
       (*secondSeeed) = new Seeed(oldSeeed);
-      SCIP_CALL( (*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIP_CALL( (*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks) );
       SCIPhashmapFree(&constoblock);
    }
    else {
@@ -494,7 +494,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromPartialMatrix(
      ){
      int i;
      int j;
-     std::tr1::unordered_map<int, int> oldToNewVarIndex;
+     unordered_map<int, int> oldToNewVarIndex;
      TCLIQUE_WEIGHT weight;
 
      vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */

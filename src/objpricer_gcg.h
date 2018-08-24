@@ -286,7 +286,7 @@ private:
       PricingType*          pricetype,          /**< type of pricing */
       GCG_COL**             cols,               /**< columns to compute reduced costs for */
       int                   ncols               /**< number of columns */
-      );
+      ) const;
 
    /** return TRUE or FALSE whether the master LP is solved to optimality */
    SCIP_Bool isMasterLPOptimal() const;
@@ -391,7 +391,6 @@ private:
    SCIP_RETCODE performPricingjob(
       GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
-      int                   maxcols,            /**< size of the cols array to indicate maximum columns */
       GCG_PRICINGSTATUS*    status,             /**< pointer to store pricing status */
       SCIP_Real*            lowerbound          /**< pointer to store the obtained lower bound */
       );

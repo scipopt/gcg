@@ -38,8 +38,6 @@
 
 #include "heur_xpcrossover.h"
 #include "gcg.h"
-#include "relax_gcg.h"
-#include "gcgplugins.h"
 
 #include "scip/scip.h"
 #include "scip/misc.h"
@@ -975,6 +973,9 @@ SCIP_RETCODE fixVariables(
                SCIP_Bool firstblock;
 
                if( SCIPvarGetType(origvars[k]) > SCIP_VARTYPE_INTEGER )
+                  continue;
+
+               if( SCIPisFeasEQ(scip, SCIPvarGetLbGlobal(origvars[k]), SCIPvarGetUbGlobal(origvars[k]) ) )
                   continue;
 
                /* get the corresponding pricing variable;

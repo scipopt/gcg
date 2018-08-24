@@ -1,0 +1,10 @@
+instances/striplibn/binpacking/bison/bison1set/N1C1W2_T.BPP.lp.gz;instances/striplibn/binpacking/bison/bison1set/N1C1W2_T.BPP.dec.gz
+instances/striplibn/coloring/mixed/coloring-disagregiert/DSJC250.9.col.lp.gz;instances/striplibn/coloring/mixed/coloring-disagregiert/DSJC250.9.col.dec.gz
+instances/striplibn/cuttingstock-ge/18classes/testsetClass02/TEST0045-02.lp.gz;instances/striplibn/cuttingstock-ge/18classes/testsetClass02/TEST0045-02.dec.gz
+instances/striplibn/cuttingstock-ge/18classes/testsetClass02/TEST0032-02.lp.gz;instances/striplibn/cuttingstock-ge/18classes/testsetClass02/TEST0032-02.dec.gz
+instances/striplibn/cuttingstock-ge/18classes/testsetClass02/TEST0095-02.lp.gz;instances/striplibn/cuttingstock-ge/18classes/testsetClass02/TEST0095-02.dec.gz
+instances/striplibn/cuttingstock-ge/18classes/testsetClass02/TEST0074-02.lp.gz;instances/striplibn/cuttingstock-ge/18classes/testsetClass02/TEST0074-02.dec.gz
+instances/striplibn/cuttingstock-ge/18classes/testsetClass01/TEST0012-01.lp.gz;instances/striplibn/cuttingstock-ge/18classes/testsetClass01/TEST0012-01.dec.gz
+instances/striplibn/cuttingstock-ge/18classes/testsetClass02/TEST0020-02.lp.gz;instances/striplibn/cuttingstock-ge/18classes/testsetClass02/TEST0020-02.dec.gz
+instances/striplibn/cvrp/symmetric/E200-16b.cvrp.lp.gz;instances/striplibn/cvrp/symmetric/E200-16b.cvrp.dec.gz
+instances/striplibn/cvrp/fisher/F-n135-k7.cvrp.lp.gz;instances/striplibn/cvrp/fisher/F-n135-k7.cvrp.dec.gz

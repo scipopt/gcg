@@ -37,7 +37,6 @@
 #include "heur_greedycolsel.h"
 #include "gcg.h"
 #include "pricer_gcg.h"
-#include "relax_gcg.h"
 
 
 #define HEUR_NAME             "greedycolsel"
@@ -194,7 +193,7 @@ SCIP_RETCODE getBestMastervar(
        */
       if( blocknr[block] < GCGgetNIdenticalBlocks(origprob, block )
             && !ignored[i]
-            && SCIPvarGetStatus(mastervar) != SCIP_VARSTATUS_FIXED
+            && !SCIPisEQ(scip, SCIPvarGetLbLocal(mastervar), SCIPvarGetUbLocal(mastervar))
             && SCIPisFeasGE(scip, SCIPgetSolVal(scip, mastersol, mastervar), SCIPvarGetUbLocal(mastervar)) )
       {
          tmpviolchange = getViolationChange(scip, activities, mastervar);

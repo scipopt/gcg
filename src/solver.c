@@ -163,10 +163,10 @@ SCIP_RETCODE GCGsolverInit(
 
    if( resetstat )
    {
-      SCIPresetClock(scip, solver->optfarkasclock);
-      SCIPresetClock(scip, solver->optredcostclock);
-      SCIPresetClock(scip, solver->heurfarkasclock);
-      SCIPresetClock(scip, solver->heurredcostclock);
+      SCIP_CALL( SCIPresetClock(scip, solver->optfarkasclock) );
+      SCIP_CALL( SCIPresetClock(scip, solver->optredcostclock) );
+      SCIP_CALL( SCIPresetClock(scip, solver->heurfarkasclock) );
+      SCIP_CALL( SCIPresetClock(scip, solver->heurredcostclock) );
 
       solver->optfarkascalls = 0;
       solver->optredcostcalls = 0;
@@ -234,7 +234,6 @@ SCIP_RETCODE GCGsolverExitsol(
 }
 
 /** calls update method of GCG pricing solver */
-EXTERN
 SCIP_RETCODE GCGsolverUpdate(
    SCIP*                 pricingprob,
    GCG_SOLVER*           solver,
@@ -292,7 +291,7 @@ SCIP_RETCODE GCGsolverSolve(
 
          #pragma omp critical (clock)
          {
-            SCIP_CALL( SCIPstartClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
          }
 
          SCIP_CALL( solver->solversolveheur(scip, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
@@ -300,7 +299,7 @@ SCIP_RETCODE GCGsolverSolve(
 
          #pragma omp critical (clock)
          {
-            SCIP_CALL( SCIPstopClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
          }
       }
    }
@@ -315,7 +314,7 @@ SCIP_RETCODE GCGsolverSolve(
 
          #pragma omp critical (clock)
          {
-            SCIP_CALL( SCIPstartClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
          }
 
          SCIP_CALL( solver->solversolve(scip, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
@@ -323,7 +322,7 @@ SCIP_RETCODE GCGsolverSolve(
 
          #pragma omp critical (clock)
          {
-            SCIP_CALL( SCIPstopClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
          }
 
       }
@@ -331,16 +330,19 @@ SCIP_RETCODE GCGsolverSolve(
 
    if( *status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
    {
-      #pragma omp atomic
       if( redcost )
          if( heuristic )
+            #pragma omp atomic
             ++solver->heurredcostcalls;
          else
+            #pragma omp atomic
             ++solver->optredcostcalls;
       else
          if( heuristic )
+            #pragma omp atomic
             ++solver->heurfarkascalls;
          else
+            #pragma omp atomic
             ++solver->optfarkascalls;
    }
 

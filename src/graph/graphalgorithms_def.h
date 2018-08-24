@@ -272,7 +272,7 @@ std::vector<int> GraphAlgorithms<T>::mst(
 
    vector<EdgeGCG> resultMST(nnodes-1);
    int e = 0;  // An index variable, used for resultMST
-   int j = 0;  // An index variable, used for sorted edges
+   unsigned int j = 0;  // An index variable, used for sorted edges
 
    // Step 1:  Sort all the edges in non-decreasing order of their weight
    // If we are not allowed to change the given graph, we can create a copy of
@@ -335,7 +335,7 @@ std::vector<int> GraphAlgorithms<T>::mst(
 
 
    // iterate all the edges and assign its nodes to the root node of the set
-   for(int edge_it = 0; edge_it < resultMST.size(); edge_it++)
+   for(unsigned int edge_it = 0; edge_it < resultMST.size(); edge_it++)
    {
       auto edge = resultMST[edge_it];
       /*if(!(edge.src < graph.getNNodes()) || !(edge.dest < graph.getNNodes())){

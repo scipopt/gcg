@@ -192,7 +192,7 @@ SCIP_RETCODE GCGcolpoolCreate(
 }
 
 /** frees col pool */
-void GCGcolpoolFree(
+SCIP_RETCODE GCGcolpoolFree(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_COLPOOL**        colpool             /**< pointer to store col pool */
    )
@@ -202,18 +202,20 @@ void GCGcolpoolFree(
    assert(*colpool != NULL);
 
    /* remove all cols from the pool */
-   GCGcolpoolClear(*colpool);
+   SCIP_CALL( GCGcolpoolClear(*colpool) );
 
    SCIPinfoMessage(scip, NULL, "Pricing time in colpool = %f sec\n", GCGcolpoolGetTime(*colpool));
 
    /* free clock */
-   SCIPfreeClock(scip, &(*colpool)->poolclock);
+   SCIP_CALL( SCIPfreeClock(scip, &(*colpool)->poolclock) );
 
    /* free hash table */
    SCIPhashtableFree(&(*colpool)->hashtable);
 
    SCIPfreeMemoryArrayNull(scip, &(*colpool)->cols);
    SCIPfreeMemory(scip, colpool);
+
+   return SCIP_OKAY;
 }
 
 /** removes the col from the col pool */
@@ -221,7 +223,7 @@ static
 SCIP_RETCODE colpoolDelCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_COL*              col,                /**< col to remove */
-   SCIP_Bool             free                /**< should the col be freed? */
+   SCIP_Bool             freecol             /**< should the col be freed? */
    )
 {
    int pos;
@@ -240,7 +242,7 @@ SCIP_RETCODE colpoolDelCol(
    SCIP_CALL( SCIPhashtableRemove(colpool->hashtable, (void*)col) );
 
    /* free the col */
-   if( free )
+   if( freecol )
       GCGfreeGcgCol(&colpool->cols[pos]);
 
    /* move the last col of the pool to the free position */
@@ -257,7 +259,7 @@ SCIP_RETCODE colpoolDelCol(
 
 
 /** removes all rows from the col pool */
-void GCGcolpoolClear(
+SCIP_RETCODE GCGcolpoolClear(
    GCG_COLPOOL*          colpool             /**< col pool */
    )
 {
@@ -268,9 +270,11 @@ void GCGcolpoolClear(
    /* free cols (in reverse order!) */
    for( i = colpool->ncols - 1; i >= 0; --i )
    {
-      colpoolDelCol(colpool, colpool->cols[i], TRUE);
+      SCIP_CALL( colpoolDelCol(colpool, colpool->cols[i], TRUE) );
    }
    colpool->ncols = 0;
+
+   return SCIP_OKAY;
 }
 
 /** if not already existing, adds col to col pool and captures it */
@@ -324,7 +328,7 @@ SCIP_RETCODE GCGcolpoolAddNewCol(
 SCIP_RETCODE GCGcolpoolDelCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_COL*              col,                /**< col to remove */
-   SCIP_Bool             free                /**< should the col be freed? */
+   SCIP_Bool             freecol             /**< should the col be freed? */
    )
 {
    assert(colpool != NULL);
@@ -338,7 +342,7 @@ SCIP_RETCODE GCGcolpoolDelCol(
       return SCIP_INVALIDDATA;
    }
 
-   SCIP_CALL( colpoolDelCol(colpool, col, free) );
+   SCIP_CALL( colpoolDelCol(colpool, col, freecol) );
 
    return SCIP_OKAY;
 }
@@ -350,8 +354,6 @@ SCIP_RETCODE GCGcolpoolPrice(
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_PRICESTORE*       pricestore,         /**< GCG price storage */
    SCIP_SOL*             sol,                /**< solution to be separated (or NULL for LP-solution) */
-   SCIP_Bool             colpoolisdelayed,   /**< is the colpool delayed (count cols found)? */
-   SCIP_Bool             root,               /**< are we at the root node? */
    SCIP_Bool*            foundvars           /**< pointer to store the result of the separation call */
    )
 {
@@ -370,7 +372,7 @@ SCIP_RETCODE GCGcolpoolPrice(
    SCIPdebugMessage("separating%s col pool %p with %d cols, beginning with col %d\n", ( sol == NULL ) ? "" : " solution from", (void*)colpool, colpool->ncols, firstunproc);
 
    /* start timing */
-   SCIPstartClock(colpool->scip, colpool->poolclock);
+   SCIP_CALL( SCIPstartClock(colpool->scip, colpool->poolclock) );
 
    /* remember the current total number of found cols */
    oldncols = GCGpricestoreGetNCols(pricestore);
@@ -417,13 +419,13 @@ SCIP_RETCODE GCGcolpoolPrice(
       *foundvars = TRUE;
 
    /* stop timing */
-   SCIPstopClock(colpool->scip, colpool->poolclock);
+   SCIP_CALL( SCIPstopClock(colpool->scip, colpool->poolclock) );
 
    return SCIP_OKAY;
 }
 
 /** gets array of cols in the col pool */
-void GCGcolpoolUpdateNode(
+SCIP_RETCODE GCGcolpoolUpdateNode(
    GCG_COLPOOL*         colpool             /**< col pool */
    )
 {
@@ -435,10 +437,12 @@ void GCGcolpoolUpdateNode(
    }
    else if( colpool->nodenr != SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip)) )
    {
-      GCGcolpoolClear(colpool);
+      SCIP_CALL( GCGcolpoolClear(colpool) );
 
       colpool->nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip));
    }
+
+   return SCIP_OKAY;
 }
 
 /** update reduced cost and compute master coefs of columns in column pool */

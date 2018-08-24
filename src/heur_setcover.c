@@ -36,7 +36,6 @@
 #include <assert.h>
 #include <string.h>
 #include "gcg.h"
-#include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "scip/clock.h"
 #include "scip/cons_linear.h"
@@ -673,7 +672,6 @@ void clearSolution(
 /** checks if the row at position 'rowpos' is covered by fixed variables of 'inst' */
 static
 SCIP_Bool isRowCovered(
-   SCP_CORE*             core,               /**< SCP core data structure                                         */
    SCP_INSTANCE*         inst,               /**< SCP instance                                                    */
    int                   rowpos              /**< position of the row within 'core'                               */
    )
@@ -686,7 +684,6 @@ SCIP_Bool isRowCovered(
 /** marks the row at position 'rowpos' as covered within instance 'inst' */
 static
 void markRowAsCovered(
-   SCP_CORE*             core,               /**< SCP core data structure                                         */
    SCP_INSTANCE*         inst,               /**< SCP instance                                                    */
    int                   rowpos              /**< position of the row within 'core'                               */
    )
@@ -1417,8 +1414,8 @@ SCIP_RETCODE markRowsCoveredByFixedVariables(
          {
             int rowidx = core->columns[corevar][j];
 
-            if( !isRowCovered(core, inst, rowidx) )
-               markRowAsCovered(core, inst, rowidx);
+            if( !isRowCovered(inst, rowidx) )
+               markRowAsCovered(inst, rowidx);
          }
       }
    }
@@ -1442,8 +1439,8 @@ SCIP_RETCODE markRowsCoveredByFixedVariables(
          {
             if( isFixedVariable(inst, vars[j]) )
             {
-               if( !isRowCovered(core, inst, i) )
-                  markRowAsCovered(core, inst, i);
+               if( !isRowCovered(inst, i) )
+                  markRowAsCovered(inst, i);
 
                break;
             }
@@ -1599,7 +1596,7 @@ SCIP_RETCODE computeDelta(
       {
          int rowpos = core->columns[i][j];
 
-         if( isRowCovered(core, inst, rowpos) )
+         if( isRowCovered(inst, rowpos) )
             continue;
 
          delta[i] += lagrangiancosts[rowpos] * (nvarcovering[rowpos] - 1) / ((SCIP_Real) nvarcovering[rowpos]);
@@ -1817,8 +1814,8 @@ SCIP_RETCODE greedySetCover(
       if( success == FALSE )
          continue;
 
-      if( isRowCovered(core, inst, i) )
-         markRowAsCovered(core, greedyinst, i);
+      if( isRowCovered(inst, i) )
+         markRowAsCovered(greedyinst, i);
       else
          nrowsuncovered++;
    }
@@ -1858,7 +1855,7 @@ SCIP_RETCODE greedySetCover(
 
       for( j = 0; j < core->nvarconss[varpos]; j++ )
       {
-         if( !isRowCovered(core, greedyinst, core->columns[varpos][j]) )
+         if( !isRowCovered(greedyinst, core->columns[varpos][j]) )
          {
             gamma -= mult->u[core->columns[varpos][j]];
             mu++;
@@ -1898,9 +1895,9 @@ SCIP_RETCODE greedySetCover(
       {
          int columnpos = core->columns[mincolumn][j];
 
-         if( !isRowCovered(core, greedyinst, columnpos) )
+         if( !isRowCovered(greedyinst, columnpos) )
          {
-            markRowAsCovered(core, greedyinst, columnpos);
+            markRowAsCovered(greedyinst, columnpos);
             nrowsuncovered--;
 
             /* update scores of columns covering this row */
@@ -1973,7 +1970,7 @@ SCIP_RETCODE computeLocalLagrangianCosts(
          if( SCIPconsIsActive(core->conss[i]) == FALSE )
             continue;
 
-         if( isRowCovered(core, inst, i) )
+         if( isRowCovered(inst, i) )
             continue;
 
          for( j = 0; j < core->nrowvars[i]; j++ )
@@ -1990,7 +1987,7 @@ SCIP_RETCODE computeLocalLagrangianCosts(
          SCIP_Bool success;
 
          /* skip rows that are not part of the reduced instance */
-         if( isRowCovered(core, inst, i) )
+         if( isRowCovered(inst, i) )
             continue;
 
          SCIP_CALL( getConsVars(scip, core, i, vars, &nvars, &success) );
@@ -2110,7 +2107,7 @@ SCIP_RETCODE computeOptimalSolution(
          if( SCIPconsIsActive(core->conss[i]) == FALSE )
             continue;
 
-         if( isRowCovered(core, inst, i) )
+         if( isRowCovered(inst, i) )
             continue;
 
          if( core->nrowvars[i] == 0 )
@@ -2139,7 +2136,7 @@ SCIP_RETCODE computeOptimalSolution(
       {
          mult->subgradient[i] = 0.0;
 
-         if( isRowCovered(core, inst, i) )
+         if( isRowCovered(inst, i) )
             continue;
 
          SCIP_CALL( getConsVars(scip, core, i, vars, &nvars, &success) );
@@ -2201,7 +2198,7 @@ SCIP_RETCODE subgradientOptimization(
    /* permutate best u by multiplying each entry with a uniformly random value in the range [0.9, 1.1] */
    for( i = 0; i < core->nconss; i++ )
    {
-      if( !isRowCovered(core, inst, i) )
+      if( !isRowCovered(inst, i) )
          last_mult.u[i] = SCIPrandomGetReal(heurdata->randnumgen, 0.9, 1.1) * last_mult.u[i];
       else
          last_mult.u[i] = 0.0;
@@ -2343,7 +2340,7 @@ SCIP_RETCODE computeInitialLagrangeMultiplier(
                continue;
 
             /* skip covered rows */
-            if( isRowCovered(core, inst, colpos) )
+            if( isRowCovered(inst, colpos) )
                continue;
 
             nuncovered++;
@@ -2360,7 +2357,7 @@ SCIP_RETCODE computeInitialLagrangeMultiplier(
                int colpos = core->columns[i][j];
                SCIP_Bool success = FALSE;
 
-               if( isRowCovered(core, inst, colpos) )
+               if( isRowCovered(inst, colpos) )
                   continue;
 
                if( SCIPconsIsActive(core->conss[colpos]) == FALSE )
@@ -2392,7 +2389,7 @@ SCIP_RETCODE computeInitialLagrangeMultiplier(
       {
          SCIP_Bool success = FALSE;
 
-         if( isRowCovered(core, inst, i) )
+         if( isRowCovered(inst, i) )
             continue;
 
          SCIP_CALL( getConsVars(scip, core, i, vars, &nvars, &success) );
@@ -2417,7 +2414,7 @@ SCIP_RETCODE computeInitialLagrangeMultiplier(
          SCIP_Bool found = FALSE;
          SCIP_Bool success = FALSE;
 
-         if( isRowCovered(core, inst, i) )
+         if( isRowCovered(inst, i) )
          {
             mult->u[i] = 0.0;
             continue;
@@ -2502,7 +2499,7 @@ SCIP_RETCODE exploreNeighborhood(
             if( SCIPconsIsActive(core->conss[i]) == FALSE )
                continue;
 
-            if( isRowCovered(core, subinst, i) )
+            if( isRowCovered(subinst, i) )
                continue;
 
             if( core->nrowvars[i] == 0 )
@@ -2525,7 +2522,7 @@ SCIP_RETCODE exploreNeighborhood(
          {
             mult.subgradient[i] = 0.0;
 
-            if( isRowCovered(core, subinst, i) )
+            if( isRowCovered(subinst, i) )
                continue;
 
             SCIP_CALL( getConsVars(scip, core, i, vars, &nvars, &success) );

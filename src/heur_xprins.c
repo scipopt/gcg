@@ -38,8 +38,6 @@
 
 #include "heur_xprins.h"
 #include "gcg.h"
-#include "relax_gcg.h"
-#include "gcgplugins.h"
 
 #include "scip/scip.h"
 #include "scip/misc.h"
@@ -302,19 +300,19 @@ SCIP_RETCODE selectExtremePoints(
          /* check if the extreme point is good enough to be inserted in the selection
           * by looking for a position where it may be inserted
           */
-         for( j = (identblock[block] * nusedpts) + nactualpts[identblock[block]] - 1;
-            j >= identblock[block] * nusedpts && SCIPisGT(scip, value, selvalue[j]); --j )
+         for( j = (identblock[block] * nusedpts) + nactualpts[identblock[block]];
+            j > identblock[block] * nusedpts && SCIPisGT(scip, value, selvalue[j]); --j )
          {
-            if( j < (identblock[block] + 1) * nusedpts - 1 )
+            if( j < (identblock[block] + 1) * nusedpts )
             {
-               selection[j+1] = selection[j];
-               selvalue[j+1] = selvalue[j];
+               selection[j] = selection[j-1];
+               selvalue[j] = selvalue[j-1];
             }
          }
-         if( j < (identblock[block] * nusedpts) + nusedpts - 1 )
+         if( j < (identblock[block] * nusedpts) + nusedpts )
          {
-            selection[j+1] = i;
-            selvalue[j+1] = value;
+            selection[j] = i;
+            selvalue[j] = value;
 
             if( nactualpts[identblock[block]] < nusedpts )
                ++nactualpts[identblock[block]];

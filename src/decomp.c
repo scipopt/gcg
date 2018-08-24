@@ -205,7 +205,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
 
    if( nlinkingvars > 0 )
    {
-      SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars, nmastervars) );
+      SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars, 0, nmastervars) );
       *haslinking = TRUE;
    }
 
@@ -491,6 +491,7 @@ SCIP_RETCODE DECdecompCreate(
    decomp->nlinkingconss = 0;
    decomp->linkingvars = NULL;
    decomp->nlinkingvars = 0;
+   decomp->nfixedlinkingvars = 0;
    decomp->stairlinkingvars = NULL;
    decomp->nstairlinkingvars = NULL;
    decomp->nblocks = 0;
@@ -984,8 +985,10 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            linkingvars,        /**< linkingvars array  */
-   int                   nlinkingvars,       /**< number of linkingvars */
-   int                   nmastervars         /**< number of linking variables thta are purely master variables */
+   int                   nlinkingvars,       /**< number of total linkingvars (including fixed linking vars,  ) */
+   int                   nfixedlinkingvars,  /**< number of fixed linking variables */
+   int                   nmastervars         /**< number of linking variables that are purely master variables */
+
    )
 {
    assert(scip != NULL);
@@ -997,6 +1000,7 @@ SCIP_RETCODE DECdecompSetLinkingvars(
 
    decomp->nlinkingvars = nlinkingvars;
    decomp->nmastervars = nmastervars;
+   decomp->nfixedlinkingvars = nfixedlinkingvars;
 
    if( nlinkingvars > 0 )
    {
@@ -1046,7 +1050,19 @@ int DECdecompGetNLinkingvars(
    return decomp->nlinkingvars;
 }
 
-/** returns the number of linking variables that are purely master variables of the given decomposition */
+/** returns the nlinkingvars array of the given decomposition */
+int DECdecompGetNFixedLinkingvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   assert(decomp != NULL);
+   assert(decomp->nfixedlinkingvars >= 0);
+
+   return decomp->nfixedlinkingvars;
+}
+
+
+/** returns the number of linking variables that are purely master ("static") variables of the given decomposition */
 int DECdecompGetNMastervars(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
@@ -2344,7 +2360,8 @@ SCIP_RETCODE DECdecompCheckConsistency(
 /** creates a decomposition with all constraints in the master */
 SCIP_RETCODE DECcreateBasicDecomp(
    SCIP*                 scip,                /**< SCIP data structure */
-   DEC_DECOMP**          decomp               /**< decomposition data structure */
+   DEC_DECOMP**          decomp,              /**< decomposition data structure */
+   SCIP_Bool             solveorigprob        /**< is the original problem being solved? */
    )
 {
    SCIP_HASHMAP* constoblock;
@@ -2352,6 +2369,7 @@ SCIP_RETCODE DECcreateBasicDecomp(
    SCIP_CONS** conss;
    SCIP_VAR**  vars;
    SCIP_Bool haslinking;
+   int nblocks;
    int nconss;
    int nvars;
    int c;
@@ -2387,7 +2405,12 @@ SCIP_RETCODE DECcreateBasicDecomp(
       SCIP_CALL( SCIPhashmapInsert(vartoblock, probvar, (void*) (size_t) 1 ) );
       }
 
-   DECfilloutDecompFromHashmaps(scip, *decomp, vartoblock, constoblock, 1, haslinking);
+   if( solveorigprob )
+      nblocks = 0;
+   else
+      nblocks = 1;
+
+   DECfilloutDecompFromHashmaps(scip, *decomp, vartoblock, constoblock, nblocks, haslinking);
 
    DECdecompSetPresolved(*decomp, TRUE);
 
@@ -3747,6 +3770,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    int nblocks;
    int nblocksrelevant;
    int nlinkvars;
+   int nstaticvars;
    int nlinkbinvar;
    int nlinkintvars;
    int nlinkimplvars;
@@ -3816,6 +3840,9 @@ SCIP_RETCODE GCGprintDecompStatistics(
 
    DECgetSubproblemVarsData(scip, decomp, nallvars, nbinvars, nintvars, nimplvars, ncontvars, nblocks);
    DECgetLinkingVarsData(scip, decomp, &nlinkvars, &nlinkbinvar, &nlinkintvars, &nlinkimplvars, &nlinkcontvars);
+   nlinkvars = nlinkvars - DECdecompGetNMastervars(decomp);
+   nstaticvars = DECdecompGetNMastervars(decomp);
+
    SCIP_CALL( DECgetDensityData(scip, decomp, vars, nvars, conss, nconss, varprobdensity, varmasterdensity, consprobsensity, consmasterdensity) );
 
    SCIP_CALL( computeVarDensities(scip, decomp, varprobdensity, varmasterdensity, vars, nvars, blockvardensities, &mastervardensity, nblocks) );
@@ -3837,8 +3864,8 @@ SCIP_RETCODE GCGprintDecompStatistics(
    }
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  aggr. blocks     : %10d\n", nblocksrelevant);
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Master statistics  :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss   nonzeros  intnzeros    bnzeros bintnzeros  min(dens)  max(dens) medi(dens) mean(dens)\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  master           : %10d %10d %10d %10d %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f\n", nlinkvars,
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Master statistics  :  nlinkvars  nstatvars  nbinvars  nintvars nimplvars  ncontvars   nconss  nonzeros intnzeros   bnzeros bintnzeros min(dens) max(dens) medi(dens) mean(dens)\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  master           : %10d %10d %9d %9d %9d %10d %8d %9d %9d %9d %10d %9.3f %9.3f %10.3f %9.3f\n", nlinkvars, nstaticvars,
          nlinkbinvar, nlinkintvars, nlinkimplvars, nlinkcontvars, DECdecompGetNLinkingconss(decomp),
          mnzeros, mintnzeros, lnzeros, lintnzeros, mastervardensity.min, mastervardensity.max, mastervardensity.median, mastervardensity.mean);
 

@@ -175,8 +175,8 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
 {
    int i;
    int j;
-   std::tr1::unordered_map<int, int> oldToNewConsIndex;
-   std::tr1::unordered_map<int, int> oldToNewVarIndex;
+   unordered_map<int, int> oldToNewConsIndex;
+   unordered_map<int, int> oldToNewVarIndex;
    vector<int> conssForGraph; /** stores the conss included by the graph */
    vector<int> varsForGraph; /** stores the vars included by the graph */
    vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
@@ -568,9 +568,9 @@ SCIP_RETCODE HyperrowcolGraph<T>::createSeeedFromPartition(
    if( !emptyblocks )
    {
       (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool);
-      SCIP_CALL( (*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIP_CALL( (*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks) );
       (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool);
-      SCIP_CALL( (*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIP_CALL( (*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks) );
       for (int col = 0; col < (*firstSeeed)->getNLinkingvars(); ++col)
       {
          (*secondSeeed)->setVarToLinking((*firstSeeed)->getLinkingvars()[col] );
@@ -683,9 +683,9 @@ SCIP_RETCODE HyperrowcolGraph<T>::createSeeedFromPartition(
    if( !emptyblocks )
    {
       (*firstSeeed) = new Seeed(oldSeeed);
-      SCIP_CALL( (*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIP_CALL( (*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks) );
       (*secondSeeed) = new Seeed(oldSeeed);
-      SCIP_CALL( (*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIP_CALL( (*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks) );
       SCIPhashmapFree(&constoblock);
    }
    else {

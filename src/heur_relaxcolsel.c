@@ -37,7 +37,6 @@
 #include "heur_relaxcolsel.h"
 #include "gcg.h"
 #include "pricer_gcg.h"
-#include "relax_gcg.h"
 
 
 #define HEUR_NAME             "relaxcolsel"
