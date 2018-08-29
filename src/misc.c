@@ -544,8 +544,9 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
 }
 
 
-/** transforms given values of the given original variables into values of the given master variables */
-void GCGtransformOrigvalsToMastervals(
+/* transforms given values of the given original variables into values of the given master variables
+ * @returns the sum of the values of the corresponding master variables that are fixed */
+SCIP_Real GCGtransformOrigvalsToMastervals(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            origvars,           /**< array with (subset of the) original variables */
    SCIP_Real*            origvals,           /**< array with values (coefs) for the given original variables */
@@ -558,6 +559,7 @@ void GCGtransformOrigvalsToMastervals(
    int i;
    int j;
    int k;
+   SCIP_Real sum;
 
    assert(scip != NULL);
    assert(origvars != NULL);
@@ -565,6 +567,8 @@ void GCGtransformOrigvalsToMastervals(
    assert(mastervars != NULL);
    assert(mastervals != NULL);
    assert(nmastervars >= 0);
+
+   sum = 0.0;
 
    /* set all values to 0 initially */
    for( i = 0; i < nmastervars; i++ )
@@ -583,7 +587,7 @@ void GCGtransformOrigvalsToMastervals(
       blocknr = GCGvarGetBlock(origvars[i]);
 
       /* variable belongs to no block (or is a linking variable), so it was transferred directly to the master problem,
-       * hence, we transfer the value directly to the corresponding master variabe
+       * hence, we transfer the value directly to the corresponding master variable
        */
       if( blocknr < 0 )
       {
@@ -599,7 +603,29 @@ void GCGtransformOrigvalsToMastervals(
                break;
             }
          }
-         assert(k < nmastervars);
+
+         if ( k >= nmastervars )
+         {
+            // inactive variable, check whether it is fixed
+            if ( SCIPisFeasEQ(scip, SCIPvarGetLbGlobal(varmastervars[0]), SCIPvarGetUbGlobal(varmastervars[0])) )
+            {
+               // variable is fixed in the master problem
+               sum += (SCIPvarGetLbGlobal(varmastervars[0]) * varmastervals[0] * origvals[i]);
+            }
+            else
+            {
+#ifdef SCIP_DEBUG
+               SCIP* masterprob = GCGgetMasterprob(scip);
+               SCIP_VAR** vars = SCIPgetVars(masterprob);
+
+               SCIPdebugMessage("OrigVar %s [%f,%f]\n", SCIPvarGetName(origvars[i]), SCIPvarGetLbGlobal(origvars[i]),
+                     SCIPvarGetUbGlobal(origvars[i]));
+               SCIPdebugMessage("MasterVar %s [%f,%f]\n", SCIPvarGetName(varmastervars[0]),
+                     SCIPvarGetLbGlobal(varmastervars[0]), SCIPvarGetUbGlobal(varmastervars[0]));
+#endif
+               assert(FALSE);
+            }
+         }
       }
       /* variable belongs to exactly one block, so we have to look at all master variables and increase their values
        * if they contain the original variable
@@ -635,6 +661,7 @@ void GCGtransformOrigvalsToMastervals(
       }
 
    }
+   return sum;
 }
 
 /** returns whether the scip is the original scip instance */
