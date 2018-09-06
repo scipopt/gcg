@@ -6825,6 +6825,7 @@ SCIP_RETCODE Seeed::writeAsDec(
       SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpooltowriteto->getConsForIndex( helpseeed->masterConss[mc])) );
    }
 
+
    if( helpseeed->isComplete() )
    {
       if( this != helpseeed )
@@ -6832,6 +6833,21 @@ SCIP_RETCODE Seeed::writeAsDec(
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
    }
+
+   SCIPinfoMessage(scip, file, "LINKINGVARS\n" );
+   for( int lv = 0; lv < helpseeed->getNLinkingvars(); ++lv )
+   {
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpooltowriteto->getVarForIndex( helpseeed->linkingVars[lv])) );
+   }
+
+   SCIPinfoMessage(scip, file, "MASTERVARS\n%s%s aka STATICVARS\n", commentchars, commentchars );
+   for( int mv = 0; mv < helpseeed->getNMastervars(); ++mv )
+   {
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpooltowriteto->getVarForIndex( helpseeed->masterVars[mv])) );
+   }
+
+
+
    for( int b = 0; b < helpseeed->getNBlocks(); ++b )
    {
       SCIPinfoMessage(scip, file, "BLOCKVARS %d\n", b+1 );
@@ -6841,17 +6857,6 @@ SCIP_RETCODE Seeed::writeAsDec(
       }
    }
 
-   SCIPinfoMessage(scip, file, "LINKINGVARS\n" );
-   for( int lv = 0; lv < helpseeed->getNLinkingvars(); ++lv )
-   {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpooltowriteto->getVarForIndex( helpseeed->linkingVars[lv])) );
-   }
-
-   SCIPinfoMessage(scip, file, "MASTERVARS\n" );
-   for( int mv = 0; mv < helpseeed->getNMastervars(); ++mv )
-   {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpooltowriteto->getVarForIndex( helpseeed->masterVars[mv])) );
-   }
 
    if( this != helpseeed )
       delete helpseeed;
