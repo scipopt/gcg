@@ -77,11 +77,11 @@ for res in sumnames:
 # Get some statistics for each res file (first in temp dicts that will later be sorted)
 maxstringlen = 12 # TODO make this number flexible
 
-tempfails = {}
-tempaborts = {}
-tempmemlimits = {}
-temptimeouts = {}
-tempreaderrors = {}
+fails = {}
+aborts = {}
+memlimits = {}
+timeouts = {}
+readerrors = {}
 
 timefails = {}
 timeaborts = {}
@@ -105,26 +105,26 @@ for key in ordereddata.keys():
 			ninserts = ninserts - 1
 		croppedkey = ''.join(charlist)
 	# get fail types and their amounts
-	tempfails[croppedkey] = 0
-	tempaborts[croppedkey] = 0
-	tempmemlimits[croppedkey] = 0
-	temptimeouts[croppedkey] = 0
-	tempreaderrors[croppedkey] = 0
+	fails[croppedkey] = 0
+	aborts[croppedkey] = 0
+	memlimits[croppedkey] = 0
+	timeouts[croppedkey] = 0
+	readerrors[croppedkey] = 0
 	for status in ordereddata[key]['status']:
 		if status == 'fail':
-			tempfails[croppedkey] = tempfails[croppedkey] + 1
+			fails[croppedkey] = fails[croppedkey] + 1
 		elif status == 'abort':
-			tempaborts[croppedkey] = tempaborts[croppedkey] + 1
+			aborts[croppedkey] = aborts[croppedkey] + 1
 		elif status == 'memlimit':
-			tempmemlimits[croppedkey] = tempmemlimits[croppedkey] + 1
+			memlimits[croppedkey] = memlimits[croppedkey] + 1
 		elif status == 'timeout':
-			temptimeouts[croppedkey] = temptimeouts[croppedkey] + 1 
+			timeouts[croppedkey] = timeouts[croppedkey] + 1 
 		elif status == 'readerror':
-			tempreaderrors[croppedkey] = tempreaderrors[croppedkey] + 1
+			readerrors[croppedkey] = readerrors[croppedkey] + 1
 	# get amount of failed instances (including limits)
 	failamount = sumsets['sum' + key].loc['Fail']
-	if int(failamount) + temptimeouts[croppedkey] + tempmemlimits[croppedkey] > highestfails:
-		highestfails = int(failamount) + temptimeouts[croppedkey] + tempmemlimits[croppedkey]
+	if int(failamount) + timeouts[croppedkey] + memlimits[croppedkey] > highestfails:
+		highestfails = int(failamount) + timeouts[croppedkey] + memlimits[croppedkey]
 	# get runtime
 	tempruntime[croppedkey] = 0.0
 	for time in ordereddata[key]['TotalTime']:
@@ -161,11 +161,11 @@ for key in ordereddata.keys():
 	timesolved[croppedkey] = math.ceil(timesolved[croppedkey])
 
 # order statistics by keys
-fails = collections.OrderedDict(sorted(tempfails.items()))
-aborts = collections.OrderedDict(sorted(tempaborts.items()))
-memlimits = collections.OrderedDict(sorted(tempmemlimits.items()))
-timeouts = collections.OrderedDict(sorted(temptimeouts.items()))
-readerrors = collections.OrderedDict(sorted(tempreaderrors.items()))
+fails = collections.OrderedDict(sorted(fails.items()))
+aborts = collections.OrderedDict(sorted(aborts.items()))
+memlimits = collections.OrderedDict(sorted(memlimits.items()))
+timeouts = collections.OrderedDict(sorted(timeouts.items()))
+readerrors = collections.OrderedDict(sorted(readerrors.items()))
 runtime = collections.OrderedDict(sorted(tempruntime.items()))
 
 timefails = collections.OrderedDict(sorted(timefails.items()))
