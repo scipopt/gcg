@@ -90,7 +90,7 @@ if [[ $GLOBALFLAGS = *"SETTINGS="* ]]; then
 fi
 
 # Add new folder for all files generated in the current run (we are currently in check directory)
-RESDIR="results/compareversions$(date '+%d-%m-%Y_%H-%M')"
+RESDIR="results/compareversions$(date '+%d-%m-%Y_%H-%M')_${TESTNAME}"
 mkdir -p $RESDIR
 
 # Add readme with parameters
