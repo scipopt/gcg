@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # Comparison plots for res files. 
 # Takes res files in pickles format (aquired by parseres.py).
+# Python 2.7
+
 import sys
 import os
 import re
@@ -77,6 +79,7 @@ tempfails = {}
 tempaborts = {}
 tempmemlimits = {}
 temptimeouts = {}
+tempreaderrors = {}
 highestfails = 0
 tempruntime = {}
 highesttime = 0
@@ -96,6 +99,7 @@ for key in ordereddata.keys():
 	tempaborts[croppedkey] = 0
 	tempmemlimits[croppedkey] = 0
 	temptimeouts[croppedkey] = 0
+	tempreaderrors[croppedkey] = 0
 	for status in ordereddata[key]['status']:
 		if status == 'fail':
 			tempfails[croppedkey] = tempfails[croppedkey] + 1
@@ -105,6 +109,8 @@ for key in ordereddata.keys():
 			tempmemlimits[croppedkey] = tempmemlimits[croppedkey] + 1
 		elif status == 'timeout':
 			temptimeouts[croppedkey] = temptimeouts[croppedkey] + 1 
+		elif status == 'readerror':
+			tempreaderrors[croppedkey] = tempreaderrors[croppedkey] + 1
 	# get amount of failed instances (including limits)
 	failamount = sumsets['sum' + key].loc['Fail']
 	if int(failamount) + temptimeouts[croppedkey] + tempmemlimits[croppedkey] > highestfails:
@@ -121,6 +127,7 @@ fails = collections.OrderedDict(sorted(tempfails.items()))
 aborts = collections.OrderedDict(sorted(tempaborts.items()))
 memlimits = collections.OrderedDict(sorted(tempmemlimits.items()))
 timeouts = collections.OrderedDict(sorted(temptimeouts.items()))
+readerrors = collections.OrderedDict(sorted(tempreaderrors.items()))
 runtime = collections.OrderedDict(sorted(tempruntime.items()))
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -164,7 +171,7 @@ ax = plt.axes()
 plt.title('Number of unsolved instances')
 plt.xlabel('GCG Version')
 
-faildata = {'fails': fails.values(), 'aborts': aborts.values(), 'memlimits': memlimits.values(), 'timeouts': timeouts.values()}
+faildata = {'fails': fails.values(), 'aborts': aborts.values(), 'memlimits': memlimits.values(), 'timeouts': timeouts.values(), 'readerrors': readerrors.values()}
 failbars = pd.DataFrame(data=faildata)
 failbars.plot(kind='bar', stacked=True)
 
@@ -179,6 +186,9 @@ for (ind,row) in failbars.iterrows():
 
 plt.xticks(range(len(fails)), fails.keys(), rotation=90)
 setbarplotparams(int(float(highestfails)))
+
+ax1 = plt.subplot(111)
+ax1.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=5, fancybox=False, prop={'size': 'small'}, framealpha=1.0)
 
 # if the number of instances differs
 stringninstances = 'unknown or differed'
