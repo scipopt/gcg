@@ -10,6 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import collections
+import math
 
 # check command line arguments
 if len(sys.argv) < 2:
@@ -75,11 +76,20 @@ for res in sumnames:
 
 # Get some statistics for each res file (first in temp dicts that will later be sorted)
 maxstringlen = 12 # TODO make this number flexible
+
 tempfails = {}
 tempaborts = {}
 tempmemlimits = {}
 temptimeouts = {}
 tempreaderrors = {}
+
+timefails = {}
+timeaborts = {}
+timememlimits = {}
+timetimeouts = {}
+timereaderrors = {}
+timesolved = {}
+
 highestfails = 0
 tempruntime = {}
 highesttime = 0
@@ -121,6 +131,34 @@ for key in ordereddata.keys():
 		tempruntime[croppedkey] = tempruntime[croppedkey] + float(time)
 		if highesttime < tempruntime[croppedkey]:
 			highesttime = tempruntime[croppedkey]
+	# get runtime per status
+	timefails[croppedkey] = 0
+	timeaborts[croppedkey] = 0
+	timememlimits[croppedkey] = 0
+	timetimeouts[croppedkey] = 0
+	timereaderrors[croppedkey] = 0
+	timesolved[croppedkey] = 0
+	tablelength = len(ordereddata[key].index)
+	for i in range(0, tablelength-1):
+		if ordereddata[key]['status'][i] == 'fail':
+			timefails[croppedkey] = timefails[croppedkey] + float(ordereddata[key]['TotalTime'][i])
+		elif ordereddata[key]['status'][i] == 'abort':
+			timeaborts[croppedkey] = timeaborts[croppedkey] + float(ordereddata[key]['TotalTime'][i])
+		elif ordereddata[key]['status'][i] == 'memlimit':
+			timememlimits[croppedkey] = timememlimits[croppedkey] + float(ordereddata[key]['TotalTime'][i])
+		elif ordereddata[key]['status'][i] == 'timeout':
+			timetimeouts[croppedkey] = timetimeouts[croppedkey] + float(ordereddata[key]['TotalTime'][i])
+		elif ordereddata[key]['status'][i] == 'readerror':
+			timereaderrors[croppedkey] = timereaderrors[croppedkey] + float(ordereddata[key]['TotalTime'][i])
+		else:
+			timesolved[croppedkey] = timesolved[croppedkey] + float(ordereddata[key]['TotalTime'][i])
+	# round up runtime per status
+	timefails[croppedkey] = math.ceil(timefails[croppedkey])
+	timeaborts[croppedkey] = math.ceil(timeaborts[croppedkey])
+	timememlimits[croppedkey] = math.ceil(timememlimits[croppedkey])
+	timetimeouts[croppedkey] = math.ceil(timetimeouts[croppedkey])
+	timereaderrors[croppedkey] = math.ceil(timereaderrors[croppedkey])
+	timesolved[croppedkey] = math.ceil(timesolved[croppedkey])
 
 # order statistics by keys
 fails = collections.OrderedDict(sorted(tempfails.items()))
@@ -129,6 +167,13 @@ memlimits = collections.OrderedDict(sorted(tempmemlimits.items()))
 timeouts = collections.OrderedDict(sorted(temptimeouts.items()))
 readerrors = collections.OrderedDict(sorted(tempreaderrors.items()))
 runtime = collections.OrderedDict(sorted(tempruntime.items()))
+
+timefails = collections.OrderedDict(sorted(timefails.items()))
+timeaborts = collections.OrderedDict(sorted(timeaborts.items()))
+timememlimits = collections.OrderedDict(sorted(timememlimits.items()))
+timetimeouts = collections.OrderedDict(sorted(timetimeouts.items()))
+timereaderrors = collections.OrderedDict(sorted(timereaderrors.items()))
+timesolved = collections.OrderedDict(sorted(timesolved.items()))
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Add functions for often used parts of the plots
@@ -171,7 +216,8 @@ ax = plt.axes()
 plt.title('Number of unsolved instances')
 plt.xlabel('GCG Version')
 
-faildata = {'fails': fails.values(), 'aborts': aborts.values(), 'memlimits': memlimits.values(), 'timeouts': timeouts.values(), 'readerrors': readerrors.values()}
+faildata = {'fails': fails.values(), 'aborts': aborts.values(), 'memlimits': memlimits.values(), 
+	'timeouts': timeouts.values(), 'readerrors': readerrors.values()}
 failbars = pd.DataFrame(data=faildata)
 failbars.plot(kind='bar', stacked=True)
 
@@ -182,7 +228,8 @@ for (ind,row) in failbars.iterrows():
 		val = row.loc[column]
 		if not val == 0:
 			cumval = cumval + val
-			plt.annotate( val, xy = (ind, cumval - .5), horizontalalignment='center', verticalalignment='top', fontsize=8 )
+			plt.annotate( val, xy = (ind, cumval - .5), horizontalalignment='center', verticalalignment='top',
+				fontsize=8 )
 
 plt.xticks(range(len(fails)), fails.keys(), rotation=90)
 setbarplotparams(int(float(highestfails)))
@@ -195,7 +242,8 @@ stringninstances = 'unknown or differed'
 if ninstances >= 0:
 	stringninstances = str(ninstances)
 
-plt.figtext(.01,.01,'The total number of instances in the test (per version) was ' + stringninstances + '.', size='x-small')
+plt.figtext(.01,.01,'The total number of instances in the test (per version) was ' + stringninstances + '.', 
+	size='x-small')
 
 plt.savefig(outdir + '/failcomparison.pdf')			# name of image
 
@@ -296,3 +344,52 @@ else:
 	plt.title('Version-to-version runtime comparison')
 
 	plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image
+
+# 4) Plot time per status category (fail categories and solved)
+fig = plt.figure()
+ax = plt.axes()        
+plt.title('Runtime per solving status')
+plt.xlabel('GCG Version')
+plt.ylabel('Runtime in seconds')
+
+faildata = {'fails': timefails.values(), 'aborts': timeaborts.values(), 'memlimits': timememlimits.values(), 
+	'timeouts': timetimeouts.values(), 'readerrors': timereaderrors.values(), 'solved': timesolved.values()}
+failbars = pd.DataFrame(data=faildata)
+failbars.plot(kind='bar', stacked=True, width=0.4)
+
+# label the stacked bars
+labelscale = 0.02 
+for (ind,row) in failbars.iterrows():
+	cumval = 0
+	lastleft = True
+	for column in failbars:
+		val = row.loc[column]
+		if not val == 0:
+			cumval = cumval + val
+			if val < highesttime * labelscale and not lastleft:
+				plt.annotate( int(val), xy = (ind+0.2, cumval - .5), horizontalalignment='left', 
+					verticalalignment='top', fontsize=6 )
+				lastleft = True
+			elif val < highesttime * labelscale:
+				plt.annotate( int(val), xy = (ind-0.2, cumval - .5), horizontalalignment='right', 
+					verticalalignment='top', fontsize=6 )
+				lastleft = False
+			else:
+				plt.annotate( int(val), xy = (ind, cumval - .5), horizontalalignment='center', 
+					verticalalignment='top', fontsize=6 )
+
+plt.xticks(range(len(fails)), fails.keys(), rotation=90)
+setbarplotparams(int(float(highesttime)))
+
+ax1 = plt.subplot(111)
+ax1.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, fancybox=False, prop={'size': 'small'}, framealpha=1.0)
+
+# if the number of instances differs
+stringninstances = 'unknown or differed'
+if ninstances >= 0:
+	stringninstances = str(ninstances)
+
+plt.figtext(.01,.01,'The total number of instances in the test (per version) was ' + stringninstances + '.', 
+	size='x-small')
+
+plt.savefig(outdir + '/timecomparisonperstatus.pdf')			# name of image
