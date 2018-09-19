@@ -232,11 +232,11 @@ do
 	cd ../../.. # exit to gcg folder (was in gcg/lib/scip-git/lib/ before)
 
 	# building
-	make soplex	# in some older versions not sufficient
+	make soplex ${GLOBALFLAGS} ${ADDFLAGS[$index]}	# in some older versions not sufficient
 	cd lib/soplex-git
-	make
+	make ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 	cd ../..
-	make scip
+	make scip ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 	make deps ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 	make -j ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
