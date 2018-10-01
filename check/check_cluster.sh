@@ -235,28 +235,32 @@ do
     # queue type on RWTH Aachen cluster OR is condor
     if test  "$QUEUETYPE" = "condor"
     then
-        # save temp in the home directorie
-		cp runcluster_submit_or.sub runcluster_tmp.sub
         TLIMIT=`echo $HARDTIMELIMIT | awk '{ n = split($0,a,":"); print 60*a[1]+a[2];}'`
-		ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
-        chmod 777 $SOLVERPATH
-        chmod 777 $SOLVERPATH/results/
+        ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
         AGUMENTS=`echo "$CLIENTTMPDIR $CONTINUE $BINNAME $TLIMIT $EVALFILE $JOBFILE $HARDMEMLIMIT $ULIMITMEMLIMIT $SOLVERPATH"`
-        sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sub
-        sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.sub
-        sed -i "s,\$AGUMENTS,$AGUMENTS," runcluster_tmp.sub
-        sed -i "s,\$COUNT,$COUNT," runcluster_tmp.sub
-        # whitch out evalcheck
-        condor_submit runcluster_tmp.sub
-        rm runcluster_tmp.sub
+        condor_submit <<EOF
+################################
+#
+################################
+Universe = vanilla
+# Universe = standard
 
-        # evalcheck include (commtents the last line befor out.)
-		#cp runcluster_submit_or.dag runcluster_tmp.dag
-        #sed -i "s,\$GCGPATH,$GCGPATH," runcluster_tmp.dag
-        #sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.dag
-        #sed -i "s,\$EVALFILE,$EVALFILE," runcluster_tmp.dag
-        #condor_submit_dag -f runcluster_tmp.dag
+should_transfer_files = IF_NEEDED
+when_to_transfer_output = ON_EXIT
+# when_to_transfer_output = ON_EXIT_OR_EVICT
+
+Executable = $GCGPATH/../check/runcluster_or.sh
+Arguments  = " ${AGUMENTS} \$(process)"
+
+Log = $SOLVERPATH/results/condor_Log.\$(Cluster).\$(process).txt
+Output = $SOLVERPATH/results/condor_Out.\$(Cluster).\$(process).txt
+Error = $SOLVERPATH/results/condorErr.\$(Cluster).\$(process).txt
+
+Queue $COUNT
+EOF
+
     fi
+
 
 
 done # end for PERMUTE
