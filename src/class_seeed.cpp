@@ -7277,6 +7277,7 @@ void Seeed::calcmaxforeseeingwhitescore(){
    SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
    SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
 
+   /* store for each cons to which block it is assigned (or -1 if border or unassigned) */
    for( int b = 0; b < getNBlocks(); ++b )
    {
       const int* blockconss = getConssForBlock(b);
@@ -7296,6 +7297,7 @@ void Seeed::calcmaxforeseeingwhitescore(){
 
       std::vector<bool> hitblock(getNBlocks(), false);
 
+      /* find out which blocks the linking var is hitting */
       for ( int hittingcons = 0; hittingcons < nhittingconss; ++hittingcons )
       {
          int blockforcons = blockforconss[hittingconss[hittingcons]];
@@ -7303,10 +7305,12 @@ void Seeed::calcmaxforeseeingwhitescore(){
             hitblock[blockforcons] = true;
       }
 
+      /* count for each block and each linking var how many linking vars or blocks, respectively, they hit */
       for( int b = 0; b < getNBlocks(); ++b )
       {
          if ( hitblock[b] )
          {
+            /** linking var hits block, so count it */
             ++nlinkingvarsforblock[b];
             ++nblocksforlinkingvar[lv];
          }
