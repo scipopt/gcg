@@ -7289,6 +7289,7 @@ void Seeed::calcmaxforeseeingwhitescore(){
    }
 
 
+   /* iterate linking vars and corresponding conss to recognize hitten blocks */
    for( int lv = 0; lv < getNLinkingvars(); ++lv )
    {
       int linkingvarid = getLinkingvars()[lv];
