@@ -7271,30 +7271,53 @@ void Seeed::calcmaxforeseeingwhitescore(){
    unsigned long newmasterarea;
    unsigned long newblockarea;
 
+   std::vector<int> blockforconss(seeedpool->getNConss(), -1);
    SCIP_CLOCK* clock;
 
    SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
    SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
 
+   /* store for each cons to which block it is assigned (or -1 if border or unassigned) */
+   for( int b = 0; b < getNBlocks(); ++b )
+   {
+      const int* blockconss = getConssForBlock(b);
+      for ( int blc = 0; blc < getNConssForBlock(b); ++blc )
+      {
+         int blockcons = blockconss[blc];
+         blockforconss[blockcons] = b;
+      }
+   }
+
+
+   /* iterate linking vars and corresponding conss to recognize hitten blocks */
    for( int lv = 0; lv < getNLinkingvars(); ++lv )
    {
       int linkingvarid = getLinkingvars()[lv];
+      int nhittingconss = seeedpool->getNConssForVar(linkingvarid);
+      const int* hittingconss = seeedpool->getConssForVar(linkingvarid);
 
+      std::vector<bool> hitblock(getNBlocks(), false);
+
+      /* find out which blocks the linking var is hitting */
+      for ( int hittingcons = 0; hittingcons < nhittingconss; ++hittingcons )
+      {
+         int blockforcons = blockforconss[hittingconss[hittingcons]];
+         if( blockforcons != -1 )
+            hitblock[blockforcons] = true;
+      }
+
+      /* count for each block and each linking var how many linking vars or blocks, respectively, they hit */
       for( int b = 0; b < getNBlocks(); ++b )
       {
-         for ( int blc = 0; blc < getNConssForBlock(b); ++blc )
+         if ( hitblock[b] )
          {
-            int blockcons = getConssForBlock(b)[blc];
-            if( !SCIPisZero( seeedpool->getScip(), seeedpool->getVal(blockcons, linkingvarid) ) )
-            {
-               /** linking var hits block */
-               ++nlinkingvarsforblock[b];
-               ++nblocksforlinkingvar[lv];
-               break;
-            }
+            /** linking var hits block, so count it */
+            ++nlinkingvarsforblock[b];
+            ++nblocksforlinkingvar[lv];
          }
       }
    }
+
 
    for( int b = 0; b < getNBlocks(); ++b)
    {
@@ -7327,12 +7350,12 @@ void Seeed::calcmaxforeseeingwhitescore(){
    newheight = getNConss() + sumblockshittinglinkingvar;
    newwidth = getNVars() + sumlinkingvarshittingblock;
 
-   newmasterarea = ( getNMasterconss() + sumblockshittinglinkingvar) * ( getNVars() + sumlinkingvarshittingblock );
+   newmasterarea = ( (SCIP_Real) getNMasterconss() + sumblockshittinglinkingvar) * ( (SCIP_Real) getNVars() + sumlinkingvarshittingblock );
    newblockarea = 0;
 
    for( int b = 0; b < getNBlocks(); ++b )
    {
-      newblockarea += getNConssForBlock(b) * ( getNVarsForBlock(b) + nlinkingvarsforblock[b] );
+      newblockarea += ((SCIP_Real) getNConssForBlock(b) ) * ( (SCIP_Real) getNVarsForBlock(b) + nlinkingvarsforblock[b] );
    }
 
    maxforeseeingwhitescore = ((SCIP_Real ) newblockarea + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
