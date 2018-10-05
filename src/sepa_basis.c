@@ -1100,6 +1100,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    int nlprows;
    int maxrounds;
    SCIP_ROW** lprows;
+   int nviolatedcuts;
 
    SCIP_Bool isroot;
 
@@ -1355,6 +1356,14 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       nmastervars = SCIPgetNVars(scip);
       SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
 
+      /* using nviolated cuts is a workaround for a SCIP issue:
+       * it might happen that non-violated cuts are added to the sepastore,
+       * which could lead to an infinite loop
+       */
+      /** initialize nviolated counting the number of cuts in the sepastore
+       * that are violated by the current LP solution */
+      nviolatedcuts = 0;
+
       /** loop over cuts and transform cut to master problem (and safe cuts) if it seperates origsol */
       for( i = 0; i < ncuts; i++ )
       {
@@ -1362,6 +1371,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          colvarused = FALSE;
          origcut = cuts[i];
+
+         /** if cut is violated by LP solution, increase nviolatedcuts */
+         if( SCIPisCutEfficacious(origscip, NULL, origcut) )
+         {
+            ++nviolatedcuts;
+         }
 
          /* get columns and vals of the cut */
          ncols = SCIProwGetNNonz(origcut);
@@ -1439,7 +1454,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIPfreeBufferArray(scip, &mastervals);
          break;
       }
-      else if( SCIPgetNCuts(origscip) == 0 )
+      /** use nviolated cuts instead of number of cuts in sepastore,
+       * because non-violated might be added to the sepastore */
+      else if( /*SCIPgetNCuts(origscip)*/ nviolatedcuts == 0 )
       {
          SCIPfreeBufferArray(scip, &mastervals);
          break;

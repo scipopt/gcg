@@ -156,44 +156,8 @@ DEC_DECL_INITDETECTOR(initConnectedbase)
 
 #define detectConnectedbase NULL
 
-static
-DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
-{
-   *result = SCIP_DIDNOTFIND;
-   char decinfo[SCIP_MAXSTRLEN];
-   SCIP_Bool byconssadj;
+#define propagateSeeedConnectedbase NULL
 
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-
-   gcg::Seeed* seeed;
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
-
-   SCIPgetBoolParam(scip, "detection/detectors/connectedbase/useconssadj", &byconssadj);
-   //complete the seeed by bfs
-
-   if( byconssadj )
-      seeed->completeByConnectedConssAdjacency( );
-   else
-      seeed->completeByConnected();
-
-  // seeed->showScatterPlot(seeedPropagationData->seeedpool);
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-   seeedPropagationData->newSeeeds[0] = seeed;
-   seeedPropagationData->nNewSeeeds = 1;
-   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "connected");
-   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-
-   *result = SCIP_SUCCESS;
-
-   return SCIP_OKAY;
-}
 
 static
 DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
@@ -239,7 +203,7 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
 static
 DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConnectedbase)
 {
-   return propagateSeeedConnectedbase(scip, detector, seeedPropagationData, result);
+   return finishSeeedConnectedbase(scip, detector, seeedPropagationData, result);
 }
 
 static
@@ -257,11 +221,6 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConnectedbase)
 
    const char* name = DECdetectorGetName(detector);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );

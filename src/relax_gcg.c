@@ -2659,7 +2659,6 @@ void initRelaxdata(
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
 
-   relaxdata->filename = NULL;
 }
 
 /*
@@ -2693,7 +2692,8 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
    }
 
-   SCIPfreeBlockMemoryArrayNull( scip, & relaxdata->filename, SCIP_MAXSTRLEN);
+   SCIPfreeBlockMemoryArrayNull(scip, &relaxdata->filename, SCIP_MAXSTRLEN);
+
    SCIPfreeMemory(scip, &relaxdata);
 
    return SCIP_OKAY;
@@ -2729,6 +2729,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       }
       SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
    }
+
 
    relaxdata->nbranchrules = 0;
    relaxdata->relaxisinitialized = FALSE;
@@ -3371,6 +3372,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->branchrules = NULL;
    relaxdata->masterprob = NULL;
    relaxdata->altmasterprob = NULL;
+   relaxdata->filename = NULL;
 
    initRelaxdata(relaxdata);
 
@@ -4702,7 +4704,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
             SCIPdebugMessage("Masterproblem solved, no master sol present\n");
             return SCIP_OKAY;
          }
-         SCIPdebugMessage("Masterproblem solved, mastersol = %pd\n", (void*) mastersol);
+         SCIPdebugMessage("Masterproblem solved, mastersol = %p\n", (void*) mastersol);
       }
       else
       {
@@ -4816,8 +4818,8 @@ SCIP_RETCODE GCGsetFilename(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   if (relaxdata->filename != NULL)
-      SCIPfreeBlockMemoryArray(scip, &(relaxdata->filename), SCIP_MAXSTRLEN);
+
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->filename), SCIP_MAXSTRLEN);
 
    SCIP_CALL( SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, filename, SCIP_MAXSTRLEN ) );
 
