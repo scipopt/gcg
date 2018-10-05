@@ -72,6 +72,10 @@ if [[ $GLOBALFLAGS = *"TEST="* ]]; then
 	mkdir -p testset
 	cd testset
 	cp "$TESTNAME".test "$TESTNAME"_comparecopy.test
+	# Store solu file if one exists
+	if [ -f "$TESTNAME".solu ]; then
+		cp "$TESTNAME".solu "$TESTNAME"_comparecopy.solu
+	fi
 	cd ..
 
 	# Replace testset name in global flags by copy
@@ -303,6 +307,9 @@ git checkout "${CURRENTBRANCH}"
 # Remove copy of global testset
 cd check/testset
 rm "$TESTNAME"_comparecopy.test
+if [ -f "$TESTNAME"_comparecopy.solu ]; then
+	rm "$TESTNAME"_comparecopy.solu
+fi
 cd ..
 
 # Recover SCIP linkings (current dir is gcg/check/)
