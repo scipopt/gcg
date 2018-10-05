@@ -24,9 +24,7 @@
 /* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-/**
- * @file   stat.h
+/**@file   stat.h
  * @brief  Prints information about the best decomposition
  * @author Alexander Gross
  * @author Martin Bergner
@@ -47,18 +45,14 @@ extern "C" {
 extern
 SCIP_RETCODE GCGwriteDecompositionData(
    SCIP*                 scip                /**< SCIP data structure */
-);
-
-/** prints out information about solving process */
-SCIP_RETCODE GCGwriteSolvingDetails(
-   SCIP*                 scip                /**< SCIP data structure */
-);
+   );
 
 /** prints information about the creation of the Vars*/
 extern
 SCIP_RETCODE GCGwriteVarCreationDetails(
    SCIP*                 scip                /**< SCIP data structure */
 );
+
 
 #ifdef __cplusplus
 }

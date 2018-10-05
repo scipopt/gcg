@@ -51,13 +51,6 @@
 extern "C" {
 #endif
 
-typedef struct SCIP_RealList
-{
-   SCIP_Real data;
-   int depth;
-   struct SCIP_RealList* next;
-} SCIP_RealList;
-
 /** returns whether the scip is the original scip instance */
 extern
 SCIP_Bool GCGisOriginal(

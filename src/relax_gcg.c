@@ -64,6 +64,7 @@
 #include "cons_decomp.h"
 #include "scip_misc.h"
 
+
 #include "gcg.h"
 
 #ifdef WITH_BLISS
@@ -2655,6 +2656,7 @@ void initRelaxdata(
    relaxdata->varlinkconsblock = NULL;
    relaxdata->pricingprobsmemused = 0.0;
 
+   relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
 
    relaxdata->filename = NULL;
@@ -2698,6 +2700,7 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
 }
 
 /** deinitialization method of relaxator (called before transformed problem is freed) */
+
 static
 SCIP_DECL_RELAXEXIT(relaxExitGcg)
 {
@@ -2748,15 +2751,6 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    assert(relaxdata->masterprob != NULL);
 
    initRelaxdata(relaxdata);
-   SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
-   SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->degeneracy)) );
-   SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->dualbounds)) );
-   relaxdata->degeneracy->data = 0.;
-   relaxdata->degeneracy->depth = 0;
-   relaxdata->degeneracy->next= NULL;
-   relaxdata->dualbounds->data = 0.;
-   relaxdata->dualbounds->depth= 0;
-   relaxdata->dualbounds->next= NULL;
 
    /* if the master problem decomposition mode is the same as the original SCIP instance mode, then the master problem
     * must be swapped with the alternate master problem.
@@ -2822,8 +2816,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
 {
    SCIP_RELAXDATA* relaxdata;
    int i;
-   SCIP_RealList* current;
-   SCIP_RealList* next;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -2962,6 +2954,7 @@ SCIP_RETCODE solveMasterProblem(
    /* increase the node limit for the master problem by 1 */
    SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes", nodelimit) );
 
+
    /* loop to solve the master problem, this is a workaround and does not fix any problem */
    while( !SCIPisStopped(scip) )
    {
@@ -3039,11 +3032,6 @@ SCIP_RETCODE solveMasterProblem(
          if( tilim-SCIPgetSolvingTime(masterprob) < 0 )
          {
             *result = SCIP_DIDNOTRUN;
-            if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
-            {
-               SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
-               SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
-            }
             return SCIP_OKAY;
          }
          *lowerbound = SCIPinfinity(scip);

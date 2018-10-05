@@ -89,7 +89,7 @@ void GraphTest::parseFile(
    for( size_t i = 0; i < array.size(); ++i )
    {
       ASSERT_FALSE(stream.eof());
-      ASSERT_TRUE(stream >> input);
+      ASSERT_TRUE(static_cast<bool>(stream >> input));
       ASSERT_EQ(array[i], input);
    }
    stream.close();

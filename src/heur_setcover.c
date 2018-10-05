@@ -58,7 +58,7 @@
 #define DEF_LAMBDA              0.1          /**< initial step size for the subgradient phase                                                         */
 #define DEF_STOP_CRIT_ITER      300          /**< number of iterations of the subgradient phase after which the stopping criterion is tested again    */
 #define DEF_STOP_CRIT_DIFF      1.0          /**< stop if absolute difference between best lower and upper bound is less than SCP_STOP_CRIT_DIFF, and */
-#define DEF_STOP_CRIT_RATIO     0.99         /**<     the relative ratio between best lower and upper bound is less than DEF_STOP_CRIT_RATIO          */
+#define DEF_STOP_CRIT_RATIO     0.99         /**< the relative ratio between best lower and upper bound is less than DEF_STOP_CRIT_RATIO          */
 #define DEF_PI_MIN              0.3          /**< percentage of rows to be removed after fixing columns                                               */
 #define DEF_PI_ALPHA            1.1          /**< increase of pi when no improvement was made, i.e. more columns will be fixed                        */
 #define DEF_BETA                1.025        /**< allowed gap between lowerbound and upper bound during the subgradient phase                         */
@@ -77,114 +77,114 @@
 
 typedef struct
 {
-   int size;                        /**< actual number of elements stored in the queue    */
-   int reserved;                    /**< number of elements for which memory is allocated */
-   SCIP_Real *keys;                 /**< array of keys                                    */
-   int *data;                       /**< array of values                                  */
-   int **positions;                 /**< array of pointers to save positions of elements  */
+   int                   size;               /**< actual number of elements stored in the queue    */
+   int                   reserved;           /**< number of elements for which memory is allocated */
+   SCIP_Real*            keys;               /**< array of keys                                    */
+   int*                  data;               /**< array of values                                  */
+   int**                 positions;          /**< array of pointers to save positions of elements  */
 } PQUEUE;
 
 typedef struct
 {
-   SCIP_Bool* varsfixed;            /**< boolean array that indicates which variables are fixed                      */
-   int nvarsfixed;                  /**< number of fixed variables                                                   */
-   SCIP_Bool* rowscovered;          /**< boolean array that indicates which rows are covered by the fixed variables  */
-   int nrowscovered;                /**< number of rows that are covered by the fixed variables                      */
-   SCIP_Real costsfixed;            /**< total costs of variables that are fixed                                     */
+   SCIP_Bool*            varsfixed;          /**< boolean array that indicates which variables are fixed                      */
+   int                   nvarsfixed;         /**< number of fixed variables                                                   */
+   SCIP_Bool*            rowscovered;        /**< boolean array that indicates which rows are covered by the fixed variables  */
+   int                   nrowscovered;       /**< number of rows that are covered by the fixed variables                      */
+   SCIP_Real             costsfixed;         /**< total costs of variables that are fixed                                     */
 } SCP_INSTANCE;
 
 typedef struct
 {
-   SCIP_Bool* varincore;            /**< boolean array that indicates whether a variable is in the core */
-   int *listcorevariables;          /**< array of indices of core variables */
-   int ncorevariables;              /**< number of core variables */
-   SCIP_HASHMAP *mapvariables;      /**< maps variables-indices to [0, nvariables) in array 'variables' */
-   SCIP_VAR **variables;            /**< all variables of the problem */
-   int *nvarconss;                  /**< array that contains for each variable the number of constraints it is part of */
-   int nvariables;                  /**< total number of variables  */
-   SCIP_Bool columnsavailable;      /**< if set then 'columns' contains the columns for all core variables */
-   int **columns;                   /**< columns of core variables, NULL if not a core variable */
-   SCIP_Bool rowsavailable;         /**< if set then 'rows' contains all rows reduced to core variables */
-   int **rows;                      /**< rows that only contain core variables */
-   int *nrowvars;                   /**< number of core variables a row contains */
-   int nconss;                      /**< total number of constraints (including inactive ones) */
-   int nactiveconss;                /**< total number of active constraints for which the variables can be retrieved */
-   int maxconstraintvariables;      /**< greatest number of variables some constraint contains */
-   SCIP_CONS **conss;               /**< all constraints of the problem */
-   int *constraintid;               /**< unique id for each constraint */
-   SCIP_Real *delta;                /**< delta values of variables */
-   int *delta_pos;
-   int *solgreedy;
-   int nsolgreedy;
+   SCIP_Bool*            varincore;          /**< boolean array that indicates whether a variable is in the core */
+   int*                  listcorevariables;  /**< array of indices of core variables */
+   int                   ncorevariables;     /**< number of core variables */
+   SCIP_HASHMAP*         mapvariables;       /**< maps variables-indices to [0, nvariables) in array 'variables' */
+   SCIP_VAR**            variables;          /**< all variables of the problem */
+   int*                  nvarconss;          /**< array that contains for each variable the number of constraints it is part of */
+   int                   nvariables;         /**< total number of variables  */
+   SCIP_Bool             columnsavailable;   /**< if set then 'columns' contains the columns for all core variables */
+   int**                 columns;            /**< columns of core variables, NULL if not a core variable */
+   SCIP_Bool             rowsavailable;      /**< if set then 'rows' contains all rows reduced to core variables */
+   int**                 rows;               /**< rows that only contain core variables */
+   int*                  nrowvars;           /**< number of core variables a row contains */
+   int                   nconss;             /**< total number of constraints (including inactive ones) */
+   int                   nactiveconss;       /**< total number of active constraints for which the variables can be retrieved */
+   int                   maxconstraintvariables; /**< greatest number of variables some constraint contains */
+   SCIP_CONS**           conss;              /**< all constraints of the problem */
+   int*                  constraintid;       /**< unique id for each constraint */
+   SCIP_Real*            delta;              /**< delta values of variables */
+   int*                  delta_pos;
+   int*                  solgreedy;
+   int                   nsolgreedy;
 } SCP_CORE;
 
 typedef struct
 {
-   SCIP_Bool* xgreedylocal;               /**< contains variables that are part of a greedy solution, this is not necessarily a global solution */
-   SCIP_Real *u;                          /**< lagrange multipliers for the rows                                                                */
-   SCIP_Real *subgradient;
-   SCIP_Real *lagrangiancostslocal;       /**< lagrangian costs (for a certain instance) when only uncovered rows are considered                */
-   SCIP_Real *lagrangiancostsglobal;      /**< lagrangian costs for the whole instance when all rows and columns are considered                 */
-   SCIP_Real ubgreedylocal;               /**< bound computed by the greedy set cover algorithm for the restricted instance                     */
-   SCIP_Real lblagrangelocal;             /**< lower bound by lagrange relaxation for the restricted instance                                   */
-   SCIP_Real lblagrangeglobal;            /**< lower bound by lagrange relaxation for the unrestricted instance                                 */
+   SCIP_Bool*            xgreedylocal;       /**< contains variables that are part of a greedy solution, this is not necessarily a global solution */
+   SCIP_Real*            u;                  /**< lagrange multipliers for the rows                                                                */
+   SCIP_Real*            subgradient;
+   SCIP_Real*            lagrangiancostslocal;  /**< lagrangian costs (for a certain instance) when only uncovered rows are considered                */
+   SCIP_Real*            lagrangiancostsglobal; /**< lagrangian costs for the whole instance when all rows and columns are considered                 */
+   SCIP_Real             ubgreedylocal;      /**< bound computed by the greedy set cover algorithm for the restricted instance                     */
+   SCIP_Real             lblagrangelocal;    /**< lower bound by lagrange relaxation for the restricted instance                                   */
+   SCIP_Real             lblagrangeglobal;   /**< lower bound by lagrange relaxation for the unrestricted instance                                 */
 } SCP_Lagrange_Sol;
 
 struct SCIP_HeurData
 {
-   int param_core_tent_size;              /**< number of columns covering each row that are added to the tentative core at the beginning           */
-   SCIP_Bool param_lambda_adjustments;    /**< adjust step size during the subgradient phase                                                       */
-   int param_lambda_p;                    /**< number of iterations after which lambda is adjusted                                                 */
-   SCIP_Real param_lambda;                /**< initial step size for the subgradient phase                                                         */
-   int param_stop_crit_iter;              /**< number of iterations of the subgradient phase after which the stopping criterion is tested again    */
-   SCIP_Real param_stop_crit_diff;        /**< stop if absolute difference between best lower and upper bound is less than SCP_STOP_CRIT_DIFF, and */
-   SCIP_Real param_stop_crit_ratio;       /**<     the relative gap between best lower and upper bound is less than (1 - SCP_STOP_CRIT_PER         */
-   SCIP_Real param_pi_min;                /**< percentage of rows to be removed after fixing columns                                               */
-   SCIP_Real param_pi_alpha;              /**< increase of pi when no improvement was made, i.e. more columns will be fixed                        */
-   SCIP_Real param_beta;                  /**< allowed a gap between lowerbound and upper bound during the subgradient phase                       */
-   int param_max_iter;                    /**< maximum number of iterations of three-phase                                                         */
-   int param_max_iter_no_imp;             /**< stop of no improvements during the last X iterations of three-phase                                 */
-   int param_threephase_max_iter;         /**< maximum number of iterations inside three-phase                                                     */
-   int param_greedy_max_iter;             /**< number of multipliers that are used for computing greedy solutions during each iteration            */
-   int param_min_prob_size;               /**< minimum number of variables the master problem needs to contain before the heuristic starts at all  */
+   int                   param_core_tent_size; /**< number of columns covering each row that are added to the tentative core at the beginning           */
+   SCIP_Bool             param_lambda_adjustments; /**< adjust step size during the subgradient phase                                                       */
+   int                   param_lambda_p;     /**< number of iterations after which lambda is adjusted                                                 */
+   SCIP_Real             param_lambda;       /**< initial step size for the subgradient phase                                                         */
+   int                   param_stop_crit_iter; /**< number of iterations of the subgradient phase after which the stopping criterion is tested again    */
+   SCIP_Real             param_stop_crit_diff; /**< stop if absolute difference between best lower and upper bound is less than SCP_STOP_CRIT_DIFF, and */
+   SCIP_Real             param_stop_crit_ratio; /**<     the relative gap between best lower and upper bound is less than (1 - SCP_STOP_CRIT_PER         */
+   SCIP_Real             param_pi_min;       /**< percentage of rows to be removed after fixing columns                                               */
+   SCIP_Real             param_pi_alpha;     /**< increase of pi when no improvement was made, i.e. more columns will be fixed                        */
+   SCIP_Real             param_beta;         /**< allowed a gap between lowerbound and upper bound during the subgradient phase                       */
+   int                   param_max_iter;     /**< maximum number of iterations of three-phase                                                         */
+   int                   param_max_iter_no_imp; /**< stop of no improvements during the last X iterations of three-phase                                 */
+   int                   param_threephase_max_iter; /**< maximum number of iterations inside three-phase                                                     */
+   int                   param_greedy_max_iter; /**< number of multipliers that are used for computing greedy solutions during each iteration            */
+   int                   param_min_prob_size; /**< minimum number of variables the master problem needs to contain before the heuristic starts at all  */
 
-   SCP_CORE core;                         /**< core (subcollection of columns) of the problem covering all rows */
-   SCP_INSTANCE inst;                     /**< reduced instance where some variables may be fixed and some rows be covered */
-   SCP_INSTANCE subinst;                  /**< reduced instance of 'inst', used during the three-phase */
+   SCP_CORE              core;               /**< core (subcollection of columns) of the problem covering all rows */
+   SCP_INSTANCE          inst;               /**< reduced instance where some variables may be fixed and some rows be covered */
+   SCP_INSTANCE          subinst;            /**< reduced instance of 'inst', used during the three-phase */
 
-   SCP_Lagrange_Sol multbestlbtotal;      /**< lagrange multiplier that gives the best lower bound for the complete problem */
-   SCP_Lagrange_Sol multbestlbinst;       /**< best multiplier for instance 'inst' */
-   SCP_Lagrange_Sol multbestlbsubinst;    /**< best multiplier for instance 'subinst' */
+   SCP_Lagrange_Sol      multbestlbtotal;    /**< lagrange multiplier that gives the best lower bound for the complete problem */
+   SCP_Lagrange_Sol      multbestlbinst;     /**< best multiplier for instance 'inst' */
+   SCP_Lagrange_Sol      multbestlbsubinst;  /**< best multiplier for instance 'subinst' */
 
-   SCIP_Real bestub;                      /**< best upper bound that could be obtained so far */
-   SCIP_Bool* bestubsol;                  /**< actual solution that gives the best upper bound */
-   SCIP_Real bestubinst;                  /**< best upper bound for the reduced instance 'inst' (including fixed costs) */
-   SCIP_Bool* bestubinst_sol;             /**< actual solution for the instance 'inst' (including fixed variables) */
-   SCIP_Real bestubsubinst;               /**< best upper bound for the reduced instance 'subinst' (including fixed costs) */
-   SCIP_Bool* bestubsubinstsol;           /**< actual solution for the instance 'subinst' (including fixed variables) */
+   SCIP_Real             bestub;             /**< best upper bound that could be obtained so far */
+   SCIP_Bool*            bestubsol;          /**< actual solution that gives the best upper bound */
+   SCIP_Real             bestubinst;         /**< best upper bound for the reduced instance 'inst' (including fixed costs) */
+   SCIP_Bool*            bestubinst_sol;     /**< actual solution for the instance 'inst' (including fixed variables) */
+   SCIP_Real             bestubsubinst;      /**< best upper bound for the reduced instance 'subinst' (including fixed costs) */
+   SCIP_Bool*            bestubsubinstsol;   /**< actual solution for the instance 'subinst' (including fixed variables) */
 
    /* local data that is used by (most) local procedures */
-   SCIP_VAR **vars;                       /**< used to iterate through the variables of a constraint */
+   SCIP_VAR**            vars;               /**< used to iterate through the variables of a constraint */
 
    /* memory that is used locally by 'threephase' */
-   SCP_Lagrange_Sol tpmultlbsubinst;      /**< lagrange multiplier */
-   SCIP_Bool useinitialmultiplier;        /**< compute an own initial lagrange multiplier instead of using the best known */
+   SCP_Lagrange_Sol      tpmultlbsubinst;    /**< lagrange multiplier */
+   SCIP_Bool             useinitialmultiplier; /**< compute an own initial lagrange multiplier instead of using the best known */
 
    /* memory that is used locally by 'greedysetcover' */
-   PQUEUE greedyqueue;                    /**< priority queue used by the greedy algorithm */
-   int *greedycolpos;                     /**< stores position of a variable within the priority queue */
-   int *greedycolmu;                      /**< value mu for each variable */
-   SCIP_Real *greedycolgamma;             /**< value gamma for each variable */
-   SCIP_Real *greedycolscore;             /**< score of each variable */
-   SCP_INSTANCE greedyinst;               /**< instance that is used to hold covered rows */
+   PQUEUE                greedyqueue;        /**< priority queue used by the greedy algorithm */
+   int*                  greedycolpos;       /**< stores position of a variable within the priority queue */
+   int*                  greedycolmu;        /**< value mu for each variable */
+   SCIP_Real*            greedycolgamma;     /**< value gamma for each variable */
+   SCIP_Real*            greedycolscore;     /**< score of each variable */
+   SCP_INSTANCE          greedyinst;         /**< instance that is used to hold covered rows */
 
    /* memory that is used locally by redefineCore */
-   int *rccols;                           /**< stores columns covering some row sorted by increasing costs */
-   SCIP_Real *rccoldelta;                 /**< delta values of the columns stored in 'rccols' */
+   int*                  rccols;             /**< stores columns covering some row sorted by increasing costs */
+   SCIP_Real*            rccoldelta;         /**< delta values of the columns stored in 'rccols' */
 
    /* memory that is used locally by subgradientOptimization */
-   SCIP_Real *sglastlb;                   /**< stores lower bounds of the last iterations */
-   SCIP_RANDNUMGEN* randnumgen;           /**< random number generator */
+   SCIP_Real*            sglastlb;           /**< stores lower bounds of the last iterations */
+   SCIP_RANDNUMGEN*      randnumgen;         /**< random number generator */
 };
 
 /*
@@ -225,14 +225,9 @@ void pqueue_destroy(
    PQUEUE*               queue               /**< priority queue instance                                         */
    )
 {
-   if( queue->keys != NULL )
-      SCIPfreeBufferArray(scip, &queue->keys);
-
-   if( queue->data != NULL )
-      SCIPfreeBufferArray(scip, &queue->data);
-
-   if( queue->positions != NULL )
-      SCIPfreeBufferArray(scip, &queue->positions);
+   SCIPfreeBufferArrayNull(scip, &queue->positions);
+   SCIPfreeBufferArrayNull(scip, &queue->data);
+   SCIPfreeBufferArrayNull(scip, &queue->keys);
 }
 
 /** inserts an element with key 'key' and value 'elem' into the queue.
@@ -293,14 +288,14 @@ SCIP_RETCODE pqueue_insert(
 /** decreases the key to 'key' of the element that is currently at position 'pos' */
 static
 void pqueue_decrease_key(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   PQUEUE *queue,                            /**< priority queue instance                                         */
-   int pos,                                  /**< position of the item within the queue that is to be changed     */
-   SCIP_Real key                             /**< new key of the item, needs to be greater than the old key       */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   PQUEUE*               queue,              /**< priority queue instance                                         */
+   int                   pos,                /**< position of the item within the queue that is to be changed     */
+   SCIP_Real             key                 /**< new key of the item, needs to be greater than the old key       */
    )
 {
    int parent;
-   int *positionptr;
+   int* positionptr;
    int elem;
 
    if( pos >= queue->size )
@@ -336,14 +331,14 @@ void pqueue_decrease_key(
 /** increases the key to 'key' of the element that is currently at position 'pos' */
 static
 void pqueue_increase_key(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   PQUEUE *queue,                            /**< priority queue instance                                         */
-   int pos,                                  /**< position of the item within the queue that is to be changed     */
-   SCIP_Real key                             /**< new key of the item, needs to be smaller than the old one       */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   PQUEUE*               queue,              /**< priority queue instance                                         */
+   int                   pos,                /**< position of the item within the queue that is to be changed     */
+   SCIP_Real             key                 /**< new key of the item, needs to be smaller than the old one       */
    )
 {
    int elem;
-   int *positionptr;
+   int* positionptr;
    int left;
    int right;
 
@@ -442,9 +437,9 @@ void pqueue_increase_key(
 /** returns the value of a minimum element in 'elem'. Sets 'elem' to -1 if the queue is empty */
 static
 void pqueue_get_min(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   PQUEUE *queue,                            /**< priority queue instance                                         */
-   int *elem                                 /**< address where the value of a minimum key item will be stored    */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   PQUEUE*               queue,              /**< priority queue instance                                         */
+   int*                  elem                /**< address where the value of a minimum key item will be stored    */
    )
 {
    *elem = -1;
@@ -473,7 +468,7 @@ void pqueue_get_min(
 /** allocates memory for a lagrange multiplier and a set covering solution */
 static
 SCIP_RETCODE allocateMemoryForSolution(
-   SCIP*                 scip,               /**< master SCIP data structure                                    */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
    SCP_CORE*             core,               /**< core data structure                                             */
    SCP_Lagrange_Sol*     mult                /**< uninitialized solution data structure                           */
    )
@@ -484,7 +479,7 @@ SCIP_RETCODE allocateMemoryForSolution(
    SCIP_CALL( SCIPallocBufferArray(scip, &mult->subgradient, core->nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &mult->lagrangiancostslocal, core->nvariables) );
    SCIP_CALL( SCIPallocBufferArray(scip, &mult->lagrangiancostsglobal, core->nvariables) );
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &mult->xgreedylocal, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &mult->xgreedylocal, SCIPgetNVars(scip)) );
 
    for( i = 0; i < core->nvariables; i++ )
    {
@@ -508,7 +503,7 @@ SCIP_RETCODE allocateMemoryForSolution(
 /** checks if 'var' is a core variable */
 static
 SCIP_Bool isCoreVariable(
-   SCP_CORE*             core,               /**< initialized core data structure                                 */
+   SCP_CORE*             core,                /**< initialized core data structure                                 */
    SCIP_VAR*             var                  /**< SCIP variable                                                   */
    )
 {
@@ -602,8 +597,8 @@ void fixVariable(
 /** adds variable 'var' to 'solution' */
 static
 void addVarToSolution(
-   SCIP_Bool*            solution,                 /**< solution represented as a boolean array                         */
-   SCIP_VAR*             var                       /**< SCIP variable                                                   */
+   SCIP_Bool*            solution,           /**< solution represented as a boolean array                         */
+   SCIP_VAR*             var                 /**< SCIP variable                                                   */
    )
 {
    int varidx;
@@ -637,8 +632,8 @@ void removeVarsFromCore(
 /** removes a 'var' from 'solution' */
 static
 void removeVarFromSolution(
-   SCIP_Bool*            solution,                 /**< solution represented as a boolean array                         */
-   SCIP_VAR*             var                       /**< SCIP variable                                                   */
+   SCIP_Bool*            solution,           /**< solution represented as a boolean array                         */
+   SCIP_VAR*             var                 /**< SCIP variable                                                   */
    )
 {
    int varidx;
@@ -698,10 +693,10 @@ void markRowAsCovered(
 /** returns the position of 'variable' within the array core->variables */
 static
 SCIP_RETCODE getVarIndex(
-   SCIP *scip,                               /**< master SCIP data structure                                      */
-   SCP_CORE *core,                           /**< SCP core data structure                                         */
-   SCIP_VAR *variable,                       /**< SCIP variable                                                   */
-   int *pos                                  /**< address where the position is to be stored                      */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_CORE*             core,               /**< SCP core data structure                                         */
+   SCIP_VAR*             variable,           /**< SCIP variable                                                   */
+   int*                  pos                 /**< address where the position is to be stored                      */
    )
 {
    int varidx;
@@ -720,12 +715,12 @@ SCIP_RETCODE getVarIndex(
 /** get all variables that are part of the constraint at position 'pos' (within SCIP) and saves them into 'vars' */
 static
 SCIP_RETCODE getConsVars(
-   SCIP *scip,                               /**< master SCIP data structure                                      */
-   SCP_CORE *core,                           /**< SCP core data structure                                         */
-   int pos,                                  /**< position of the constraint within SCIP                          */
-   SCIP_VAR **vars,                          /**< allocated memory that can hold all variables                    */
-   int *nvars,                               /**< address where the number of variables will be stored            */
-   SCIP_Bool *success                        /**< address where the result of the operation will be stored        */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_CORE*             core,               /**< SCP core data structure                                         */
+   int                   pos,                /**< position of the constraint within SCIP                          */
+   SCIP_VAR**            vars,               /**< allocated memory that can hold all variables                    */
+   int*                  nvars,              /**< address where the number of variables will be stored            */
+   SCIP_Bool*            success             /**< address where the result of the operation will be stored        */
    )
 {
    *success = FALSE;
@@ -746,15 +741,15 @@ SCIP_RETCODE getConsVars(
 /** releases all memory of a lagrange multiplier */
 static
 void freeMemoryForSolution(
-   SCIP *scip,                               /**< master SCIP data structure                                      */
-   SCP_Lagrange_Sol *mult                    /**< initialized SCP lagrange multiplier that is to be freed         */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_Lagrange_Sol*     mult                /**< initialized SCP lagrange multiplier that is to be freed         */
    )
 {
-   SCIPfreeBufferArray(scip, &mult->u);
-   SCIPfreeBufferArray(scip, &mult->subgradient);
-   SCIPfreeBufferArray(scip, &mult->lagrangiancostslocal);
-   SCIPfreeBufferArray(scip, &mult->lagrangiancostsglobal);
    SCIPfreeBufferArray(scip, &mult->xgreedylocal);
+   SCIPfreeBufferArray(scip, &mult->lagrangiancostsglobal);
+   SCIPfreeBufferArray(scip, &mult->lagrangiancostslocal);
+   SCIPfreeBufferArray(scip, &mult->subgradient);
+   SCIPfreeBufferArray(scip, &mult->u);
 }
 
 /** creates a set covering solution. Adds all fixed variables of 'inst' and all variables of 'source' to 'dest'.
@@ -824,12 +819,12 @@ void copySolution(
 /** initializes an instance where no variables are fixed and no rows are covered */
 static
 SCIP_RETCODE initInstance(
-   SCIP*                 scip,               /**< master SCIP data structure                                    */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
    SCP_INSTANCE*         inst                /**< unitialized SCP instance                                        */
    )
 {
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &inst->varsfixed, SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &inst->rowscovered, SCIPgetNConss(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &inst->varsfixed, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &inst->rowscovered, SCIPgetNConss(scip)) );
    inst->nvarsfixed = 0;
    inst->nrowscovered = 0;
    inst->costsfixed = 0.0;
@@ -840,7 +835,7 @@ SCIP_RETCODE initInstance(
 /** copies the fixed variables from 'source' to 'dest', but not the set of covered rows. this must be done separately. */
 static
 void copyInstance(
-   SCIP*                 scip,               /**< master SCIP data structure                                    */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
    SCP_CORE*             core,               /**< SCP core data structure                                         */
    SCP_INSTANCE*         dest,               /**< initialized SCP instance                                        */
    SCP_INSTANCE*         source              /**< initialized SCP instance that is to be copied                   */
@@ -869,23 +864,23 @@ void copyInstance(
 /** releases all memory used by an instance */
 static
 void freeInstance(
-   SCIP*                 scip,               /**< master SCIP data structure                                    */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
    SCP_INSTANCE*         inst                /**< initialized SCP instance that is to be freed                    */
    )
 {
-   SCIPfreeBufferArray(scip, &inst->varsfixed);
    SCIPfreeBufferArray(scip, &inst->rowscovered);
+   SCIPfreeBufferArray(scip, &inst->varsfixed);
 }
 
 /** initializes a tentative core: for each row the first few columns covering this row are added to the core */
 static
 SCIP_RETCODE initTentativeCore(
-   SCIP*                 scip,               /**< master SCIP data structure                                    */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
    SCP_CORE*             core,               /**< SCP core data structure                                         */
    SCIP_HEURDATA*        heurdata            /**< pointer to SCIP's heurdata                                      */
    )
 {
-   SCIP_VAR **vars;
+   SCIP_VAR** vars;
    SCIP_Bool success;
    int nvars;
    int i;
@@ -896,7 +891,7 @@ SCIP_RETCODE initTentativeCore(
 
    /* mapvariables is a mapping: SCIPvarGetIndex(core->variables[i]) -> i */
    SCIP_CALL( SCIPhashmapCreate(&core->mapvariables, SCIPblkmem(scip), SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &core->varincore, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &core->varincore, SCIPgetNVars(scip)) );
 
    core->rowsavailable = FALSE;
    core->rows = NULL;
@@ -978,6 +973,8 @@ SCIP_RETCODE initTentativeCore(
       core->nactiveconss++;
    }
 
+   SCIPfreeBufferArray(scip, &vars);
+
    /* create list of core variables, so it is easy to traverse them */
    j = 0;
    SCIP_CALL( SCIPallocBufferArray(scip, &core->listcorevariables, core->ncorevariables) );
@@ -987,7 +984,6 @@ SCIP_RETCODE initTentativeCore(
          core->listcorevariables[j++] = i;
    }
 
-   SCIPfreeBufferArray(scip, &vars);
    SCIPdebugMessage("%d variables in the tentative core\n", core->ncorevariables);
 
    return SCIP_OKAY;
@@ -996,7 +992,7 @@ SCIP_RETCODE initTentativeCore(
 /** adds all fixed variables of 'inst' to a set covering solution 'solution' */
 static
 void extendSolution(
-   SCIP*                 scip,               /**< master SCIP data structure                                    */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
    SCP_CORE*             core,               /**< SCP core data structure                                         */
    SCP_INSTANCE*         inst,               /**< (reduced) SCP instance                                          */
    SCIP_Bool*            solution            /**< SCP solution (a hashtable that contains SCIP variables)         */
@@ -1018,13 +1014,13 @@ void extendSolution(
 /** constructs rows of all constraints, but only includes core variables */
 static
 SCIP_RETCODE computeCoreRows(
-   SCIP*                 scip,               /**< master SCIP data structure                                    */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
    SCP_CORE*             core,               /**< SCP core data structure                                         */
    SCIP_HEURDATA*        heurdata            /**< pointer to the heuristics's data                                */
    )
 {
    SCIP_Bool success;
-   SCIP_VAR **vars;
+   SCIP_VAR** vars;
    int i;
    int j;
    int ncorevars;
@@ -1040,9 +1036,9 @@ SCIP_RETCODE computeCoreRows(
 
    assert(core->rows == NULL);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &vars, core->maxconstraintvariables) );
    SCIP_CALL( SCIPallocBufferArray(scip, &core->rows, core->nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &core->nrowvars, core->nconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &vars, core->maxconstraintvariables) );
 
    /* iterate through list of constraints */
    for( i = 0; i < core->nconss; i++ )
@@ -1094,12 +1090,12 @@ SCIP_RETCODE computeCoreRows(
 /** constructs columns of core variables to provide faster access */
 static
 SCIP_RETCODE computeCoreColumns(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   SCP_CORE *core                            /**< SCP core data structure                                         */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_CORE*             core                /**< SCP core data structure                                         */
    )
 {
    SCIP_Bool success;
-   SCIP_VAR **vars;
+   SCIP_VAR** vars;
    int i;
    int j;
    int k;
@@ -1170,8 +1166,8 @@ SCIP_RETCODE computeCoreColumns(
 /** releases memory that is used by the core, including rows and columns, if they were computed */
 static
 void freeCore(
-   SCIP *scip,                               /**< master SCIP data structure                                      */
-   SCP_CORE *core                            /**< SCP core data structure that is to be freed                     */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_CORE*             core                /**< SCP core data structure that is to be freed                     */
    )
 {
    assert(core != NULL);
@@ -1179,59 +1175,55 @@ void freeCore(
    assert(core->mapvariables != NULL);
    assert(core->nvarconss != NULL);
 
-   SCIPfreeBufferArray(scip, &core->varincore);
-   SCIPhashmapFree(&core->mapvariables);
-   SCIPfreeBufferArray(scip, &core->nvarconss);
-   SCIPfreeBufferArray(scip, &core->constraintid);
-   SCIPfreeBufferArray(scip, &core->delta);
-   SCIPfreeBufferArray(scip, &core->delta_pos);
-   SCIPfreeBufferArray(scip, &core->solgreedy);
+   if( core->rowsavailable )
+   {
+      int i;
+
+      for( i = 0; i < core->nconss; i++ )
+         if( core->rows[i] )
+            SCIPfreeBufferArray(scip, &core->rows[i]);
+
+      SCIPfreeBufferArray(scip, &core->nrowvars);
+      SCIPfreeBufferArray(scip, &core->rows);
+   }
 
    if( core->columnsavailable )
    {
       int i;
 
       for( i = 0; i < core->nvariables; i++ )
-      {
          if( core->columns[i] )
             SCIPfreeBufferArray(scip, &core->columns[i]);
-      }
 
       SCIPfreeBufferArray(scip, &core->columns);
    }
 
-   if( core->rowsavailable )
-   {
-      int i;
-
-      for( i = 0; i < core->nconss; i++ )
-      {
-         if( core->rows[i] )
-            SCIPfreeBufferArray(scip, &core->rows[i]);
-      }
-
-      SCIPfreeBufferArray(scip, &core->rows);
-      SCIPfreeBufferArray(scip, &core->nrowvars);
-   }
-
-   if( core->listcorevariables != NULL )
-      SCIPfreeBufferArray(scip, &core->listcorevariables);
+   SCIPfreeBufferArrayNull(scip, &core->listcorevariables);
+   SCIPfreeBufferArray(scip, &core->constraintid);
+   SCIPfreeBufferArray(scip, &core->nvarconss);
+   SCIPfreeBufferArray(scip, &core->solgreedy);
+   SCIPfreeBufferArray(scip, &core->delta_pos);
+   SCIPfreeBufferArray(scip, &core->delta);
+   SCIPfreeBufferArray(scip, &core->varincore);
+   SCIPhashmapFree(&core->mapvariables);
 }
 
 /** computes a new core based on the delta values of variables, see formula (9) in the paper */
 static
 SCIP_RETCODE redefineCore(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   SCIP_HEURDATA *heurdata                   /**< pointer to the heuristic's data; this contains the SCP core     */
+   SCIP*                 scip,               /**< master SCIP data structure                                    */
+   SCIP_HEURDATA*        heurdata            /**< pointer to the heuristic's data; this contains the SCP core     */
    )
 {
    SCIP_Bool recomputecolumns = FALSE;
    SCIP_Bool recomputerows = FALSE;
-   SCP_CORE *core;
-   int *deltaperm;
-   int i, j;
+   SCP_CORE* core;
+   int* deltaperm;
    int nvars;
-   SCIP_VAR **vars;
+   SCIP_VAR** vars;
+
+   int i;
+   int j;
 
    /* assumption: delta values were already computed and are sorted in increasing order, this happens in computeDelta */
 
@@ -1386,10 +1378,10 @@ SCIP_RETCODE redefineCore(
 /** for all rows that are covered by the variables in inst->varsfixed, this function adds their indices to inst->rowscovered */
 static
 SCIP_RETCODE markRowsCoveredByFixedVariables(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   SCP_CORE *core,                           /**< SCP core data structure                                         */
-   SCP_INSTANCE *inst,                       /**< initialized SCP instance where some variables may be fixed      */
-   SCIP_HEURDATA *heurdata                   /**< pointer to the heuristic's data                                 */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_CORE*             core,               /**< SCP core data structure                                         */
+   SCP_INSTANCE*         inst,               /**< initialized SCP instance where some variables may be fixed      */
+   SCIP_HEURDATA*        heurdata            /**< pointer to the heuristic's data                                 */
    )
 {
    int i;
@@ -1463,7 +1455,7 @@ SCIP_RETCODE checkSetCover(
    )
 {
    SCIP_Bool success;
-   SCIP_VAR **vars;
+   SCIP_VAR** vars;
    int nvars;
    int i;
    int j;
@@ -1525,13 +1517,13 @@ SCIP_RETCODE computeDelta(
    SCIP_Bool success;
    SCIP_Real delta_sum;
    SCIP_Real delta_max;
-   int *nvarcovering;
-   SCIP_VAR **vars;
+   int* nvarcovering;
+   SCIP_VAR** vars;
    int nvars;
    int i;
    int j;
-   int *delta_pos;
-   SCIP_Real *delta;
+   int* delta_pos;
+   SCIP_Real* delta;
 
    delta = core->delta;
    delta_pos = core->delta_pos;
@@ -1648,15 +1640,17 @@ SCIP_RETCODE removeRedundantColumns(
    SCIP_Real*            solcosts            /**< pointer to original costs of 'solution'; contains updated costs */
    )
 {
-   SCP_CORE *core;
-   SCIP_Real *costs;
-   int *varpos;
-   int *nvarcovering;
-   SCIP_VAR **vars;
+   SCP_CORE* core;
+   SCIP_Real* costs;
+   int* varpos;
+   int* nvarcovering;
+   SCIP_VAR** vars;
    int nvars;
-   int i, j;
    SCIP_Bool success;
    int solsize;
+
+   int i;
+   int j;
 
    core = &heurdata->core;
 
@@ -1764,34 +1758,36 @@ SCIP_RETCODE removeRedundantColumns(
       }
    }
 
-   SCIPfreeBufferArray(scip, &costs);
-   SCIPfreeBufferArray(scip, &varpos);
    SCIPfreeBufferArray(scip, &nvarcovering);
+   SCIPfreeBufferArray(scip, &varpos);
+   SCIPfreeBufferArray(scip, &costs);
+
    return SCIP_OKAY;
 }
 
 /** greedy set cover algorithm that uses lagrangian costs instead of original costs. */
 static
 SCIP_RETCODE greedySetCover(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   SCP_CORE *core,                           /**< SCP core data structure                                         */
-   SCP_INSTANCE *inst,                       /**< (reduced) SCP instance                                          */
-   SCP_Lagrange_Sol *mult,                   /**< lagrange multiplier that is used to compute lagrangian costs    */
-   SCIP_HEURDATA *heurdata                   /**< pointer to the heuristic's data                                 */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_CORE*             core,               /**< SCP core data structure                                         */
+   SCP_INSTANCE*         inst,               /**< (reduced) SCP instance                                          */
+   SCP_Lagrange_Sol*     mult,               /**< lagrange multiplier that is used to compute lagrangian costs    */
+   SCIP_HEURDATA*        heurdata            /**< pointer to the heuristic's data                                 */
    )
 {
-   SCP_INSTANCE *greedyinst;
-   int i;
-   int j;
+   SCP_INSTANCE* greedyinst;
    int nrowsuncovered = 0;
    SCIP_Bool success = FALSE;
    int nvars;
-   PQUEUE *prioqueue;
-   int *colpos;
-   int *colmu;
-   SCIP_Real *colgamma;
-   SCIP_Real *colscore;
-   SCIP_VAR **vars;
+   PQUEUE* prioqueue;
+   int* colpos;
+   int* colmu;
+   SCIP_Real* colgamma;
+   SCIP_Real* colscore;
+   SCIP_VAR** vars;
+
+   int i;
+   int j;
    int k;
 
    core->nsolgreedy = 0;
@@ -1946,16 +1942,18 @@ SCIP_RETCODE greedySetCover(
 /** computes lagrangian costs for all columns, only considering rows that are uncovered by fixed variables in 'inst' */
 static
 SCIP_RETCODE computeLocalLagrangianCosts(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   SCP_CORE *core,                           /**< SCP core data structure                                         */
-   SCP_INSTANCE *inst,                       /**< (reduced) SCP instance                                          */
-   SCP_Lagrange_Sol *mult,                   /**< lagrange multiplier that is used to compute the lagrangian costs*/
-   SCIP_HEURDATA *heurdata                   /**< pointer to the heuristic's data                                 */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_CORE*             core,               /**< SCP core data structure                                         */
+   SCP_INSTANCE*         inst,               /**< (reduced) SCP instance                                          */
+   SCP_Lagrange_Sol*     mult,               /**< lagrange multiplier that is used to compute the lagrangian costs*/
+   SCIP_HEURDATA*        heurdata            /**< pointer to the heuristic's data                                 */
    )
 {
-   SCIP_VAR **vars;
+   SCIP_VAR** vars;
    int nvars;
-   int i, j;
+
+   int i;
+   int j;
 
    /* set all lagrangian costs to objective values */
    for( i = 0; i < core->nvariables; i++ )
@@ -2012,13 +2010,13 @@ SCIP_RETCODE computeLocalLagrangianCosts(
 /** computes lagrangian costs for all columns of the unrestricted instance and a global lower bound. */
 static
 SCIP_RETCODE computeGlobalLagrangianCosts(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   SCP_CORE *core,                           /**< SCP core data structure                                         */
-   SCP_Lagrange_Sol *mult,                   /**< lagrange multiplier that is used to compute the lagrangian costs*/
-   SCIP_HEURDATA *heurdata                   /**< pointer to the heuristic's data                                 */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_CORE*             core,               /**< SCP core data structure                                         */
+   SCP_Lagrange_Sol*     mult,               /**< lagrange multiplier that is used to compute the lagrangian costs*/
+   SCIP_HEURDATA*        heurdata            /**< pointer to the heuristic's data                                 */
    )
 {
-   SCIP_VAR **vars;
+   SCIP_VAR** vars;
    int nvars;
    int i;
    int j;
@@ -2063,17 +2061,19 @@ SCIP_RETCODE computeGlobalLagrangianCosts(
 /** computes an optimal solution to the lagrangian relaxation, see formulae (4), (5) in the paper */
 static
 SCIP_RETCODE computeOptimalSolution(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   SCP_CORE *core,                           /**< SCP core data structure                                         */
-   SCP_INSTANCE *inst,                       /**< (reduced) SCP instance                                          */
-   SCP_Lagrange_Sol *mult,                   /**< lagrange multiplier                                             */
-   SCIP_HEURDATA *heurdata                   /**< pointer to the heuristic's data                                 */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_CORE*             core,               /**< SCP core data structure                                         */
+   SCP_INSTANCE*         inst,               /**< (reduced) SCP instance                                          */
+   SCP_Lagrange_Sol*     mult,               /**< lagrange multiplier                                             */
+   SCIP_HEURDATA*        heurdata            /**< pointer to the heuristic's data                                 */
    )
 {
-   SCIP_VAR **vars;
+   SCIP_VAR** vars;
    SCIP_Bool success;
    int nvars;
-   int i, j;
+
+   int i;
+   int j;
 
    mult->lblagrangelocal = 0.0;
    mult->lblagrangeglobal = 0.0;
@@ -2168,12 +2168,12 @@ SCIP_RETCODE computeOptimalSolution(
 /** subgradient method with Held-Karp update of subgradients */
 static
 SCIP_RETCODE subgradientOptimization(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   SCP_CORE *core,                           /**< SCP core data structure                                         */
-   SCP_INSTANCE *inst,                       /**< (reduced) SCP instance                                          */
-   SCP_Lagrange_Sol *best_mult_lb,           /**< lagrange multiplier that gives the best lower bound for 'inst'  */
-   SCIP_Real bestub,                         /**< costs of the best known solution for 'inst'                     */
-   SCIP_HEURDATA *heurdata                   /**< pointer the heuristic's data                                    */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_CORE*             core,               /**< SCP core data structure                                         */
+   SCP_INSTANCE*         inst,               /**< (reduced) SCP instance                                          */
+   SCP_Lagrange_Sol*     best_mult_lb,       /**< lagrange multiplier that gives the best lower bound for 'inst'  */
+   SCIP_Real             bestub,             /**< costs of the best known solution for 'inst'                     */
+   SCIP_HEURDATA*        heurdata            /**< pointer the heuristic's data                                    */
    )
 {
    int max_iter;
@@ -2183,7 +2183,7 @@ SCIP_RETCODE subgradientOptimization(
    SCIP_Real norm;
    SCIP_Real lambda = heurdata->param_lambda;
    SCIP_Bool lambda_adjustments = heurdata->param_lambda_adjustments;
-   SCIP_Real *last_lb = heurdata->sglastlb;
+   SCIP_Real* last_lb = heurdata->sglastlb;
    SCIP_Real stop_crit_lb = 0.0;
    int iter;
    int last_data_pos = 0;
@@ -2297,8 +2297,8 @@ SCIP_RETCODE subgradientOptimization(
       }
    }
 
-   freeMemoryForSolution(scip, &next_mult);
    freeMemoryForSolution(scip, &last_mult);
+   freeMemoryForSolution(scip, &next_mult);
 
    return SCIP_OKAY;
 }
@@ -2306,14 +2306,15 @@ SCIP_RETCODE subgradientOptimization(
 /** computes an initial lagrange multiplier, see formula (8) in the paper */
 static
 SCIP_RETCODE computeInitialLagrangeMultiplier(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   SCP_CORE *core,                           /**< SCP core data structure                                         */
-   SCP_INSTANCE *inst,                       /**< (reduced) SCP instance                                          */
-   SCP_Lagrange_Sol *mult,                   /**< initialized lagrange multiplier were the new one will be stored */
-   SCIP_HEURDATA *heurdata                   /**< pointer to the heuristic's data                                 */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_CORE*             core,               /**< SCP core data structure                                         */
+   SCP_INSTANCE*         inst,               /**< (reduced) SCP instance                                          */
+   SCP_Lagrange_Sol*     mult,               /**< initialized lagrange multiplier were the new one will be stored */
+   SCIP_HEURDATA*        heurdata            /**< pointer to the heuristic's data                                 */
    )
 {
-   int i, j;
+   int i;
+   int j;
 
    if( core->columnsavailable == TRUE )
    {
@@ -2460,15 +2461,15 @@ SCIP_RETCODE computeInitialLagrangeMultiplier(
  */
 static
 SCIP_RETCODE exploreNeighborhood(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
-   SCP_Lagrange_Sol *startmult,              /**< lagrange multiplier where the search is started                 */
-   SCIP_HEURDATA *heurdata                   /**< pointer to the heuristic's data                                 */
+   SCIP*                 scip,               /**< master SCIP data structure                                      */
+   SCP_Lagrange_Sol*     startmult,          /**< lagrange multiplier where the search is started                 */
+   SCIP_HEURDATA*        heurdata            /**< pointer to the heuristic's data                                 */
    )
 {
-   SCP_CORE *core;
-   SCP_INSTANCE *subinst;
+   SCP_CORE* core;
+   SCP_INSTANCE* subinst;
    SCP_Lagrange_Sol mult;
-   SCIP_VAR **vars;
+   SCIP_VAR** vars;
    SCIP_Bool success;
    SCIP_Real bestub;
    SCIP_Real norm;
@@ -2602,14 +2603,14 @@ SCIP_RETCODE reportSolution(
    SCIP_HEUR*            heur                /**< pointer to the heuristic's data                                 */
    )
 {
-   SCIP_VAR **solvars;
-   SCIP_Real *solvals;
+   SCIP_VAR** solvars;
+   SCIP_Real* solvals;
    int nsolvars;
    int i;
-   SCIP_SOL *newsol;
+   SCIP_SOL* newsol;
    SCIP_Bool success = FALSE;
    SCIP_Bool foundsol = FALSE;
-   SCIP_CONS **conss;
+   SCIP_CONS** conss;
    int nconss;
 
    SCIP_CALL( SCIPgetVarsData(scip, &solvars, &nsolvars, NULL, NULL, NULL, NULL) );
@@ -2732,12 +2733,12 @@ SCIP_RETCODE threePhase(
    SCIP_HEURDATA*        heurdata            /**< pointer to the heuristic's data                                 */
    )
 {
-   SCP_Lagrange_Sol *mult_lb_subinst;
+   SCP_Lagrange_Sol* mult_lb_subinst;
    int i;
    SCIP_Bool success;
-   SCP_CORE *core;
-   SCP_INSTANCE *inst;
-   SCP_INSTANCE *subinst;
+   SCP_CORE* core;
+   SCP_INSTANCE* inst;
+   SCP_INSTANCE* subinst;
    int niter;
 
    core = &heurdata->core;
@@ -2852,11 +2853,11 @@ SCIP_RETCODE threePhase(
 /** driver for the three-phase procedure */
 static
 SCIP_RETCODE setCoveringHeuristic(
-   SCIP *scip,                               /**< master SCIP data structure                                               */
-   SCIP_HEUR *heur                           /**< original SCIP heuristic data structure                                     */
+   SCIP*                 scip,               /**< master SCIP data structure                                                 */
+   SCIP_HEUR*            heur                /**< original SCIP heuristic data structure                                     */
    )
 {
-   SCIP_HEURDATA *heurdata;
+   SCIP_HEURDATA* heurdata;
    SCIP_Bool stopcft = FALSE;
    int niter = 0;                            /* total number of iterations of the three-phase loop                           */
    int nitercore = 0;                        /* total number of iterations on the current core                               */
@@ -2864,13 +2865,14 @@ SCIP_RETCODE setCoveringHeuristic(
    int coret = 10;                           /* compute new core after this number of iterations                             */
    SCIP_Real pi;                             /* percentage of rows that need to be covered in each fixing phase              */
    SCIP_Real corelb = 0.0;
-   SCP_CORE *core;
-   SCP_INSTANCE *inst;
+   SCP_CORE* core;
+   SCP_INSTANCE* inst;
    SCIP_Bool success;
 
    int i;
 
    heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
 
    /* allocate memory that is used locally by redefineCore */
    SCIP_CALL( SCIPallocBufferArray(scip, &heurdata->rccols, heurdata->param_core_tent_size) );
@@ -2912,9 +2914,9 @@ SCIP_RETCODE setCoveringHeuristic(
    SCIP_CALL( allocateMemoryForSolution(scip, &heurdata->core, &heurdata->multbestlbtotal) );
    SCIP_CALL( allocateMemoryForSolution(scip, &heurdata->core, &heurdata->tpmultlbsubinst) );
 
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &heurdata->bestubinst_sol, SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &heurdata->bestubsubinstsol, SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPallocCleanBufferArray(scip, &heurdata->bestubsol, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &heurdata->bestubinst_sol, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &heurdata->bestubsubinstsol, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocClearBufferArray(scip, &heurdata->bestubsol, SCIPgetNVars(scip)) );
 
    heurdata->multbestlbtotal.lblagrangeglobal = 0;
    heurdata->bestub = SCIP_REAL_MAX;
@@ -3017,30 +3019,34 @@ SCIP_RETCODE setCoveringHeuristic(
    SCIP_CALL( reportSolution(scip, inst, heurdata->bestubsol, heur) );
 
    /* release all memory that was allocated before */
-   pqueue_destroy(scip, &heurdata->greedyqueue);
-   SCIPfreeBufferArray(scip, &heurdata->greedycolpos);
-   SCIPfreeBufferArray(scip, &heurdata->greedycolmu);
-   SCIPfreeBufferArray(scip, &heurdata->greedycolgamma);
-   SCIPfreeBufferArray(scip, &heurdata->greedycolscore);
+   SCIPfreeBufferArray(scip, &heurdata->bestubsol);
+   SCIPfreeBufferArray(scip, &heurdata->bestubsubinstsol);
+   SCIPfreeBufferArray(scip, &heurdata->bestubinst_sol);
 
-   SCIPfreeBufferArray(scip, &heurdata->rccols);
-   SCIPfreeBufferArray(scip, &heurdata->rccoldelta);
-   SCIPfreeBufferArray(scip, &heurdata->sglastlb);
+   freeMemoryForSolution(scip, &heurdata->tpmultlbsubinst);
+   freeMemoryForSolution(scip, &heurdata->multbestlbtotal);
+   freeMemoryForSolution(scip, &heurdata->multbestlbsubinst);
+   freeMemoryForSolution(scip, &heurdata->multbestlbinst);
+
+   freeInstance(scip, &heurdata->greedyinst);
+   SCIPfreeBufferArray(scip, &heurdata->greedycolscore);
+   SCIPfreeBufferArray(scip, &heurdata->greedycolgamma);
+   SCIPfreeBufferArray(scip, &heurdata->greedycolmu);
+   SCIPfreeBufferArray(scip, &heurdata->greedycolpos);
+
+   pqueue_destroy(scip, &heurdata->greedyqueue);
+
+   freeInstance(scip, &heurdata->subinst);
+   freeInstance(scip, &heurdata->inst);
+
    SCIPfreeBufferArray(scip, &heurdata->vars);
 
-   freeMemoryForSolution(scip, &heurdata->multbestlbinst);
-   freeMemoryForSolution(scip, &heurdata->multbestlbsubinst);
-   freeMemoryForSolution(scip, &heurdata->multbestlbtotal);
-   freeMemoryForSolution(scip, &heurdata->tpmultlbsubinst);
-   freeInstance(scip, &heurdata->greedyinst);
-
-   SCIPfreeBufferArray(scip, &heurdata->bestubsol);
-   SCIPfreeBufferArray(scip, &heurdata->bestubinst_sol);
-   SCIPfreeBufferArray(scip, &heurdata->bestubsubinstsol);
-
-   freeInstance(scip, &heurdata->inst);
-   freeInstance(scip, &heurdata->subinst);
    freeCore(scip, &heurdata->core);
+
+   SCIPfreeBufferArray(scip, &heurdata->sglastlb);
+
+   SCIPfreeBufferArray(scip, &heurdata->rccoldelta);
+   SCIPfreeBufferArray(scip, &heurdata->rccols);
 
    return SCIP_OKAY;
 }
@@ -3113,8 +3119,8 @@ SCIP_DECL_HEUREXIT(heurExitSetcover)
 static
 SCIP_DECL_HEUREXEC(heurExecSetcover)
 { /*lint --e{715}*/
-   SCIP *origprob;
-   SCIP_HEURDATA *heurdata;
+   SCIP* origprob;
+   SCIP_HEURDATA* heurdata;
 
    assert(heur != NULL);
    assert(scip != NULL);

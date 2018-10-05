@@ -42,8 +42,6 @@
 #include "struct_detector.h"
 #include "pub_gcgvar.h"
 #include "pricer_gcg.h"
-#include "relax_gcg.h"
-#include "gcg.h"
 
 
 /** prints information about the best decomposition*/
@@ -57,9 +55,12 @@ SCIP_RETCODE GCGwriteDecompositionData(
    DEC_DECTYPE type;
    const char* typeName;
 
+   int i;
    int nblocks;
    int nlinkingconss;
    int nlinkingvars;
+   int* nvarsinblocks;
+   int* nconssinblocks;
 
    assert(scip != NULL);
 
@@ -70,6 +71,9 @@ SCIP_RETCODE GCGwriteDecompositionData(
    detector = DECdecompGetDetector(decomposition);
 
    nblocks = DECdecompGetNBlocks(decomposition);
+
+   nvarsinblocks = DECdecompGetNSubscipvars(decomposition);
+   nconssinblocks = DECdecompGetNSubscipconss(decomposition);
 
    nlinkingvars = DECdecompGetNLinkingvars(decomposition);
    nlinkingconss = DECdecompGetNLinkingconss(decomposition);
@@ -83,29 +87,12 @@ SCIP_RETCODE GCGwriteDecompositionData(
    SCIPinfoMessage(scip, NULL, "Number of LinkingVars: %d\n", nlinkingvars);
    SCIPinfoMessage(scip, NULL, "Number of LinkingCons: %d\n", nlinkingconss);
 
-   return SCIP_OKAY;
-}
-
-/** prints out information about solving process */
-SCIP_RETCODE GCGwriteSolvingDetails(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_CLOCK* rootnodetime;
-   SCIP_RealList* current;
-   
-   assert(scip != NULL);
-
-   rootnodetime = GCGgetRootNodeTime(scip);
-   SCIPinfoMessage(scip, NULL, "Time in root node: %6.2f\n", SCIPgetClockTime(scip, rootnodetime));
-   
-   SCIPinfoMessage(scip, NULL, "Degeneracy:\n");
-   current = GCGgetDegeneracyList(scip);
-   current = current->next;
-   while( current != NULL )
+   /* print number of variables and constraints per block */
+   SCIPinfoMessage(scip, NULL, "Block Information\n");
+   SCIPinfoMessage(scip, NULL, "no.:\t\t#Vars\t\t#Constraints\n");
+   for( i = 0; i < nblocks; i++ )
    {
-      SCIPinfoMessage(scip, NULL, "  %d: %6.2f\n", current->depth, current->data);
-      current = current->next;
+      SCIPinfoMessage(scip, NULL, "%d:\t\t%d\t\t%d\n", i, nvarsinblocks[i], nconssinblocks[i]);
    }
 
    DECdecompFree(scip, &decomposition);
@@ -125,7 +112,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
 
    int nvars, i, n;
    SCIP_Longint* createnodestat;
-   int nodes[2];         
+   int nodes[2];         /** < Wurzel Knoten und nicht wurzelknoten  */
    SCIP_Longint createtimestat[10];
    int createiterstat[10];
    int m;
@@ -139,7 +126,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
 
    solvingtime = SCIPgetSolvingTime(scip);
    assert(nnodes < INT_MAX);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &createnodestat, (int)nnodes) ); 
+   SCIP_CALL( SCIPallocMemoryArray(scip, &createnodestat, (int)nnodes) ); /* lld doesn't work here */
 
    SCIPinfoMessage(scip, NULL, "AddedVarDetails:\n");
 

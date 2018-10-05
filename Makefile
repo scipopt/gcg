@@ -67,7 +67,7 @@ HMETIS      =   true
 OPENMP      =   false
 GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
-LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
+LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER)
 
 # overriding SCIP PARASCIP setting if compiled with OPENMP
 ifeq ($(OPENMP),true)
@@ -317,6 +317,10 @@ ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
 			dec_isomorph.o \
 			bliss.o
+endif
+
+ifeq ($(CLIQUER),true)
+LIBOBJ		+=	solver_cliquer.o
 endif
 
 ifeq ($(CPLEXSOLVER),true)
@@ -613,6 +617,10 @@ ifneq ($(LAST_BLISS),$(BLISS))
 		@-touch $(SRCDIR)/relax_gcg.c
 		@-touch $(SRCDIR)/gcgplugins.c
 endif
+ifneq ($(LAST_CLIQUER),$(CLIQUER))
+		@-touch $(SRCDIR)/solver_cliquer.c
+		@-touch $(SRCDIR)/masterplugins.c
+endif
 ifneq ($(USRFLAGS),$(LAST_USRFLAGS))
 		@-touch $(ALLSRC)
 endif
@@ -646,6 +654,7 @@ endif
 		@echo "LAST_GCGGITHASH=$(GCGGITHASH)" >> $(LASTSETTINGS)
 		@echo "LAST_LPS=$(LPS)" >> $(LASTSETTINGS)
 		@echo "LAST_BLISS=$(BLISS)" >> $(LASTSETTINGS)
+		@echo "LAST_CLIQUER=$(CLIQUER)" >> $(LASTSETTINGS)
 		@echo "LAST_USRFLAGS=$(USRFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USROFLAGS=$(USROFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRCFLAGS=$(USRCFLAGS)" >> $(LASTSETTINGS)

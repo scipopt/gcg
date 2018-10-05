@@ -140,7 +140,6 @@ TEST_F(GcgTest, detectEmptyProblem) {
 
 TEST_F(GcgResultTest, numberOfBlocks) {
    ASSERT_EQ(50, GCGgetNPricingprobs(scip) );
-   ASSERT_EQ(50, GCGgetNIdenticalBlocks(scip, 0));
 }
 
 TEST_F(GcgResultTest, optimalSolutionValue) {
