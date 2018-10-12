@@ -45,8 +45,6 @@ for resfile in os.listdir(resdir):
 		sumsets[resfile] = pd.read_pickle(os.path.join(resdir, resfile))
 		sumnames.append(resfile)
 
-nversions = len(datasets)
-
 # sort names alphabetically
 ordereddata = collections.OrderedDict(sorted(datasets.items()))
 orderedsum = collections.OrderedDict(sorted(sumsets.items()))
@@ -97,6 +95,8 @@ timetimeouts = {}
 timereaderrors = {}
 timesolved = {}
 
+timeperinstance = collections.defaultdict(lambda :collections.defaultdict())
+
 highestfails = 0
 tempruntime = {}
 highesttime = 0
@@ -112,6 +112,7 @@ for key in ordereddata.keys():
 			ninserts = ninserts - 1
 		croppedkey = ''.join(charlist)
 	versions.append(croppedkey)
+
 	# get fail types and their amounts
 	fails[croppedkey] = 0
 	aborts[croppedkey] = 0
@@ -129,16 +130,23 @@ for key in ordereddata.keys():
 			timeouts[croppedkey] = timeouts[croppedkey] + 1 
 		elif status == 'readerror':
 			readerrors[croppedkey] = readerrors[croppedkey] + 1
+
 	# get amount of failed instances (including limits)
 	failamount = sumsets['sum' + key].loc['Fail']
 	if int(failamount) + timeouts[croppedkey] + memlimits[croppedkey] > highestfails:
 		highestfails = int(failamount) + timeouts[croppedkey] + memlimits[croppedkey]
+
 	# get runtime
 	tempruntime[croppedkey] = 0.0
 	for time in ordereddata[key]['TotalTime']:
 		tempruntime[croppedkey] = tempruntime[croppedkey] + float(time)
 		if highesttime < tempruntime[croppedkey]:
 			highesttime = tempruntime[croppedkey]
+
+	# get runtime per instance for each version
+	for i in range(len(ordereddata[key]['Name'])):
+		timeperinstance[croppedkey][ordereddata[key]['Name'][i]] = ordereddata[key]['TotalTime'][i]
+	
 	# get runtime per status
 	timefails[croppedkey] = 0
 	timeaborts[croppedkey] = 0
@@ -160,6 +168,7 @@ for key in ordereddata.keys():
 			timereaderrors[croppedkey] = timereaderrors[croppedkey] + float(ordereddata[key]['TotalTime'][i])
 		else:
 			timesolved[croppedkey] = timesolved[croppedkey] + float(ordereddata[key]['TotalTime'][i])
+
 	# round up runtime per status
 	timefails[croppedkey] = math.ceil(timefails[croppedkey])
 	timeaborts[croppedkey] = math.ceil(timeaborts[croppedkey])
@@ -274,6 +283,35 @@ labelbars(bars, highesttime)
 plt.savefig(outdir + '/runtimes.pdf')				# name of image
 
 # -------------------------------------------------------------------------------------------------------------------------
+# 3.a) Some helper functions for cumulative time differences
+# -------------------------------------------------------------------------------------------------------------------------
+
+# sums up runtimes of different instances given a list of names and a dict with (name, time) tuples
+# (avoid naming errors by checking whether name exists)
+def sumruntimes(namelist, instimelist):
+	res = 0.0
+	for insname in namelist:
+		if insname in instimelist:
+			res = res + float(instimelist[insname])
+	return res;
+
+# calculate relative difference given a list of (version, value) tuples and an index
+def calcreldiff(vallist, i):
+	diff = 0.0
+	diff = int(round( float(vallist[i-1][1]) - float(vallist[i][1]) )) # get abs difference to former value
+	diff = float(diff) / (max(vallist[i-1][1], vallist[i][1])) # get relative value
+	return diff;
+
+# add value to former one: get a (key, value) dict, a key with index > 0 and the current difference
+def addtoformer(valuedict, key, diff):
+	cumitems = list(valuedict.items())
+	assert len(cumitems)-1 >= 0
+	cumsum = cumitems[len(cumitems)-1][1]
+
+	res = diff + cumsum
+	return res;
+
+# -------------------------------------------------------------------------------------------------------------------------
 # 3) Plot runtime comparison
 # -------------------------------------------------------------------------------------------------------------------------
 
@@ -283,41 +321,97 @@ items = list(runtime.items())
 if len(items) < 2:
 	print 'Enter more than one GCG version to generate a runtime comparison plot.'
 else:	
+	# get instance names that originally (in first version) ran in under 10, 100, 1000 seconds
+	names10 = []
+	names100 = []
+	names1000 = []
+	(firstvers, instances) = timeperinstance.items()[0]
+	for instancename in instances.keys():
+		if float(instances[instancename]) <= 10.0:
+			names10.append(instancename)
+		elif float(instances[instancename]) <= 100.0:
+			names100.append(instancename)
+		elif float(instances[instancename]) <= 1000.0:
+			names1000.append(instancename)
+
+	# get sum of runtimes of these instances
+	runtimes10 = collections.OrderedDict()
+	runtimes100 = collections.OrderedDict()
+	runtimes1000 = collections.OrderedDict()
+	for vers in timeperinstance.keys():
+		runtimes10[vers] = sumruntimes(names10, timeperinstance[vers])
+		runtimes100[vers] = sumruntimes(names100, timeperinstance[vers])
+		runtimes1000[vers] = sumruntimes(names1000, timeperinstance[vers])
+
+	# convert the runtimes for easier access
+	runtimes10 = sorted(list(runtimes10.items()))
+	runtimes100 = sorted(list(runtimes100.items()))
+	runtimes1000 = sorted(list(runtimes1000.items()))
+
+	# prepare variables
 	highestdiff = 0
 	lowestdiff = 0
+
+	runtimecomp = collections.OrderedDict()
+	cumulative = collections.OrderedDict() # overall cumulative speedup
+	cum10 = collections.OrderedDict() # cumulative speedup for instances with original runtime <=10s
+	cum100 = collections.OrderedDict() # cumulative speedup for instances with original runtime <=100s
+	cum1000 = collections.OrderedDict() # cumulative speedup for instances with original runtime <=1000s
+
 	highestcum = 0
 	lowestcum = 0
-	runtimecomp = collections.OrderedDict()
-	cumulative = collections.OrderedDict()
+	highestcum10 = 0
+	lowestcum10 = 0
+	highestcum100 = 0
+	lowestcum100 = 0
+	highestcum1000 = 0
+	lowestcum1000 = 0
+
+	# calculate the different times per version
 	for i in range(len(items)):
 		diff = 0
+		diff10 = 0
+		diff100 = 0
+		diff1000 = 0
+
 		if i > 0:
 			# from the second item on calculate the version speed differences
 			name = items[i-1][0] + '\n->\n' + items[i][0]
-			diff = int(round( float(items[i-1][1]) - float(items[i][1]) ))
-			maxtime = max(items[i-1][1], items[i][1])
-			diff = float(diff) / maxtime
+			diff = calcreldiff(items, i)
 			runtimecomp[name] = diff
-			if diff > highestdiff:
-				highestdiff = diff
-			if diff < lowestdiff:
-				lowestdiff = diff
-			# for the first one set initial cumulative value
+			highestdiff = max(float(diff), float(highestdiff))
+			lowestdiff = min(float(diff), float(lowestdiff))
+
+			diff10 = calcreldiff(runtimes10, i)
+			diff100 = calcreldiff(runtimes100, i)
+			diff1000 = calcreldiff(runtimes1000, i)
+
+			# for the first one set initial cumulative difference values
 			if i == 1:
-				cumulative[name] = diff
-				highestcum = diff
-				lowestcum = diff
+				cumulative[name] = highestcum = lowestcum = diff
+				cum10[name] = highestcum10 = lowestcum10 = diff10
+				cum100[name] = highestcum100 = lowestcum100 = diff100
+				cum1000[name] = highestcum1000 = lowestcum1000 = diff1000
+				
 			# for all following add the last value to current diff
 			else:
-				cumitems = list(cumulative.items())
-				cumsum = cumitems[len(cumitems)-1][1]
-				cumulative[name] = diff + cumsum
-				if cumulative[name] > highestcum:
-					highestcum = cumulative[name]
-				elif cumulative[name] < lowestcum:
-					lowestcum = cumulative[name]
+				cumulative[name] = addtoformer(cumulative, name, diff)
+				highestcum = max(float(highestcum), float(cumulative[name]))
+				lowestcum = min(float(lowestcum), float(cumulative[name]))
 
-	#determine axis min/max (leave space for bar labels
+				cum10[name] = addtoformer(cum10, name, diff10)
+				highestcum10 = max(float(highestcum10), float(cum10[name]))
+				lowestcum10 = min(float(lowestcum10), float(cum10[name]))
+				
+				cum100[name] = addtoformer(cum100, name, diff100)
+				highestcum100 = max(float(highestcum100), float(cum100[name]))
+				lowestcum100 = min(float(lowestcum100), float(cum100[name]))
+
+				cum1000[name] = addtoformer(cum1000, name, diff1000)
+				highestcum1000 = max(float(highestcum1000), float(cum1000[name]))
+				lowestcum1000 = min(float(lowestcum1000), float(cum1000[name]))
+
+	#determine axis min/max (leave space for bar labels)
 	axmin = lowestdiff+0.1*lowestdiff
 	if lowestcum < axmin:
 		axmin = lowestcum
