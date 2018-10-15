@@ -412,15 +412,13 @@ else:
 				lowestcum1000 = min(float(lowestcum1000), float(cum1000[name]))
 
 	#determine axis min/max (leave space for bar labels)
-	axmin = lowestdiff+0.1*lowestdiff
-	if lowestcum < axmin:
-		axmin = lowestcum
+	axmin = min(lowestcum, lowestdiff, lowestcum10, lowestcum100, lowestcum1000)
+	axmin = axmin + 0.1*axmin
 	if axmin > 0:
 		axmin = 0
 
-	axmax = highestdiff+0.1*highestdiff
-	if highestcum > axmax:
-		axmax = highestcum
+	axmax = max(highestcum, highestdiff, highestcum10, highestcum100, highestcum1000)
+	axmax = axmax + 0.1*axmax
 	if axmax < 0:
 		axmax = 0
 
@@ -434,20 +432,26 @@ else:
 
 	# make space far bar labels
 	ax1.set_ylim(ymin=axmin, ymax=axmax)
-	longestbar = highestdiff	
-	if abs(lowestdiff) > longestbar:
-		longestbar = abs(lowestdiff)
 
+	longestbar = max(highestdiff, abs(lowestdiff))
 	labelbars(bar1, longestbar)
 
 	# plot cumulative speedup if there is more than one bar
+	nbars = range(len(runtimecomp))
 	if len(items) > 2:
 		ax2 = ax1.twinx()
-		ax2.plot(range(len(runtimecomp)), cumulative.values(), 'r-')
 		ax2.set_ylabel('Cumulative speedup factor', color='r')
 		ax2.tick_params('y', colors='r')
-		ax2.axhline(y=0, color='xkcd:orange')
 		ax2.set_ylim(ymin=axmin, ymax=axmax)
+
+		ax2.plot(nbars, cumulative.values(), 'r-', label='overall')
+		ax2.axhline(y=0, color='xkcd:slate')
+		
+		ax2.plot(nbars, cum10.values(), 'xkcd:light orange', label='<10s')
+		ax2.plot(nbars, cum100.values(), 'xkcd:orange', label='<100s')
+		ax2.plot(nbars, cum1000.values(), 'xkcd:dark orange', label='<1000s')
+
+		ax2.legend(loc='upper right', prop={'size': 'x-small'})
 	
 	fig.tight_layout(rect=[0, 0.03, 1, 0.95])
 	plt.title('Version-to-version runtime comparison')
