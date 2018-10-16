@@ -71,7 +71,7 @@ SCIP_DECL_EVENTFREE(eventFreeRelaxsol)
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
-   SCIPfreeBlockMemory(scip, &eventhdlrdata);
+   SCIPfreeMemory(scip, &eventhdlrdata);
    SCIPeventhdlrSetData(eventhdlr, NULL);
 
    return SCIP_OKAY;
