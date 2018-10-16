@@ -71,7 +71,7 @@ SCIP_DECL_EVENTFREE(eventFreeRelaxsol)
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
-   SCIPfreeBlockMemory(scip, &eventhdlrdata);
+   SCIPfreeMemory(scip, &eventhdlrdata);
    SCIPeventhdlrSetData(eventhdlr, NULL);
 
    return SCIP_OKAY;
@@ -144,7 +144,7 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
       /* transform the master solution to the original variable space */
       SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol) );
 
-      SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
+      SCIP_CALL( SCIPtrySolFree(origprob, &origsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
       SCIPdebugMessage("  ->%s stored\n", stored ? "" : " not");
    }
 
