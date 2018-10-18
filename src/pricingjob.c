@@ -40,7 +40,9 @@
 #include "pub_pricingjob.h"
 
 #include "gcg.h"
+#include "pricer_gcg.h"
 #include "pub_pricingprob.h"
+#include "pub_solver.h"
 
 #include "scip/scip.h"
 
@@ -78,6 +80,7 @@ void GCGpricingjobFree(
 
 /** setup a pricing job at the beginning of the pricing loop */
 SCIP_RETCODE GCGpricingjobSetup(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
    int                   scoring,            /**< scoring parameter */
@@ -88,8 +91,7 @@ SCIP_RETCODE GCGpricingjobSetup(
    )
 {
    GCG_PRICINGPROB* pricingprob = GCGpricingjobGetPricingprob(pricingjob);
-
-   pricingjob->heuristic = heuristic;
+   assert(pricingprob != NULL);
 
    /* set the score; the larger, the better */
    switch( scoring )
@@ -111,8 +113,8 @@ SCIP_RETCODE GCGpricingjobSetup(
       break;
    }
 
-   /* initialize result variables */
-   pricingjob->nheuriters = 0;
+   GCGpricingjobResetSolver(scip, pricingjob);
+   GCGpricingjobResetHeuristic(pricingjob);
 
    return SCIP_OKAY;
 }
@@ -130,6 +132,71 @@ GCG_SOLVER* GCGpricingjobGetSolver(
    )
 {
    return pricingjob->solver;
+}
+
+/** reset the pricing solver to be used to the one with the highest priority */
+void GCGpricingjobResetSolver(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   GCG_SOLVER** solvers;
+   int nsolvers;
+
+   int i;
+
+   solvers = GCGpricerGetSolvers(scip);
+   nsolvers = GCGpricerGetNSolvers(scip);
+
+   /* get first available solver;
+    * assumption: solvers are sorted by priority
+    */
+   pricingjob->solver = NULL;
+   for( i = 0; i < nsolvers; ++i )
+   {
+      if( GCGsolverIsEnabled(solvers[i]) )
+      {
+         pricingjob->solver = solvers[i];
+         break;
+      }
+   }
+
+   assert(pricingjob->solver != NULL);
+}
+
+/** get the next pricing solver to be used, or NULL of there is none */
+void GCGpricingjobNextSolver(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   GCG_SOLVER** solvers;
+   int nsolvers;
+
+   int pos;
+   int i;
+
+   solvers = GCGpricerGetSolvers(scip);
+   nsolvers = GCGpricerGetNSolvers(scip);
+
+   /* get position of current solver */
+   for( pos = 0; pos < nsolvers; ++pos )
+      if( solvers[pos] == pricingjob->solver )
+         break;
+   assert(pos < nsolvers);
+
+   /* get next available solver;
+    * assumption: solvers are sorted by priority
+    */
+   pricingjob->solver = NULL;
+   for( i = pos + 1; i < nsolvers; ++i )
+   {
+      if( GCGsolverIsEnabled(solvers[i]) )
+      {
+         pricingjob->solver = solvers[i];
+         break;
+      }
+   }
 }
 
 /** get the chunk of a pricing job */
