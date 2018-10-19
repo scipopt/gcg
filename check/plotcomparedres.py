@@ -125,13 +125,11 @@ fails = {}
 aborts = {}
 memlimits = {}
 timeouts = {}
-readerrors = {}
 
 timefails = {}
 timeaborts = {}
 timememlimits = {}
 timetimeouts = {}
-timereaderrors = {}
 timesolved = {}
 
 nsolved = {}
@@ -157,9 +155,8 @@ for key in ordereddata.keys():
 	aborts[croppedkey] = 0
 	memlimits[croppedkey] = 0
 	timeouts[croppedkey] = 0
-	readerrors[croppedkey] = 0
 	for status in ordereddata[key]['status']:
-		if status == 'fail':
+		if status == 'fail' or status == 'readerror':
 			fails[croppedkey] = fails[croppedkey] + 1
 		elif status == 'abort':
 			aborts[croppedkey] = aborts[croppedkey] + 1
@@ -167,8 +164,6 @@ for key in ordereddata.keys():
 			memlimits[croppedkey] = memlimits[croppedkey] + 1
 		elif status == 'timeout':
 			timeouts[croppedkey] = timeouts[croppedkey] + 1 
-		elif status == 'readerror':
-			readerrors[croppedkey] = readerrors[croppedkey] + 1
 
 	# get amount of failed instances (including limits)
 	failamount = sumsets['sum' + key].loc['Fail']
@@ -191,7 +186,6 @@ for key in ordereddata.keys():
 	timeaborts[croppedkey] = 0
 	timememlimits[croppedkey] = 0
 	timetimeouts[croppedkey] = 0
-	timereaderrors[croppedkey] = 0
 	timesolved[croppedkey] = 0
 	nsolved[croppedkey] = 0
 	tablelength = len(ordereddata[key].index)
@@ -204,8 +198,6 @@ for key in ordereddata.keys():
 			timememlimits[croppedkey] = timememlimits[croppedkey] + timelimits[croppedkey]
 		elif ordereddata[key]['status'][i] == 'timeout':
 			timetimeouts[croppedkey] = timetimeouts[croppedkey] + float(ordereddata[key]['TotalTime'][i])
-		elif ordereddata[key]['status'][i] == 'readerror':
-			timereaderrors[croppedkey] = timereaderrors[croppedkey] + timelimits[croppedkey]
 		else:
 			timesolved[croppedkey] = timesolved[croppedkey] + float(ordereddata[key]['TotalTime'][i])
 			nsolved[croppedkey] = nsolved[croppedkey] + 1
@@ -215,7 +207,6 @@ for key in ordereddata.keys():
 	timeaborts[croppedkey] = math.ceil(timeaborts[croppedkey])
 	timememlimits[croppedkey] = math.ceil(timememlimits[croppedkey])
 	timetimeouts[croppedkey] = math.ceil(timetimeouts[croppedkey])
-	timereaderrors[croppedkey] = math.ceil(timereaderrors[croppedkey])
 	timesolved[croppedkey] = math.ceil(timesolved[croppedkey])
 
 # order statistics by keys
@@ -225,14 +216,12 @@ fails = collections.OrderedDict(sorted(fails.items()))
 aborts = collections.OrderedDict(sorted(aborts.items()))
 memlimits = collections.OrderedDict(sorted(memlimits.items()))
 timeouts = collections.OrderedDict(sorted(timeouts.items()))
-readerrors = collections.OrderedDict(sorted(readerrors.items()))
 runtime = collections.OrderedDict(sorted(tempruntime.items()))
 
 timefails = collections.OrderedDict(sorted(timefails.items()))
 timeaborts = collections.OrderedDict(sorted(timeaborts.items()))
 timememlimits = collections.OrderedDict(sorted(timememlimits.items()))
 timetimeouts = collections.OrderedDict(sorted(timetimeouts.items()))
-timereaderrors = collections.OrderedDict(sorted(timereaderrors.items()))
 timesolved = collections.OrderedDict(sorted(timesolved.items()))
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -276,7 +265,7 @@ plt.title('Number of unsolved instances')
 plt.xlabel('GCG Version')
 
 faildata = {'fails': fails.values(), 'aborts': aborts.values(), 'memlimits': memlimits.values(), 
-	'timeouts': timeouts.values(), 'readerrors': readerrors.values()}
+	'timeouts': timeouts.values()}
 failbars = pd.DataFrame(data=faildata)
 failbars.plot(kind='bar', stacked=True)
 
@@ -371,11 +360,11 @@ else:
 	for instancename in instances.keys():
 		if float(instances[instancename]) < 10.0:
 			names10.append(instancename)
-		elif float(instances[instancename]) > 10.0 and float(instances[instancename]) < 100.0:
+		elif float(instances[instancename]) >= 10.0 and float(instances[instancename]) < 100.0:
 			names100.append(instancename)
-		elif float(instances[instancename]) > 100.0 and float(instances[instancename]) < 1000.0:
+		elif float(instances[instancename]) >= 100.0 and float(instances[instancename]) < 1000.0:
 			names1000.append(instancename)
-		elif float(instances[instancename]) > 1000.0 and float(instances[instancename]):
+		elif float(instances[instancename]) >= 1000.0 and float(instances[instancename]):
 			nameslong.append(instancename)
 
 	# get sum of runtimes of these instances
@@ -527,7 +516,6 @@ reltimefails = collections.OrderedDict()
 reltimeaborts = collections.OrderedDict()
 reltimememlimits = collections.OrderedDict()
 reltimetimeouts = collections.OrderedDict()
-reltimereaderrors = collections.OrderedDict()
 reltimesolved = collections.OrderedDict()
 
 for vers in versions:
@@ -543,14 +531,11 @@ for vers in versions:
 	reltime = float(timetimeouts[vers]) / runtime[vers]
 	reltimetimeouts.update({vers : reltime})
 
-	reltime = float(timereaderrors[vers]) / runtime[vers]
-	reltimereaderrors.update({vers : reltime})
-
 	reltime = float(timesolved[vers]) / runtime[vers]
 	reltimesolved.update({vers : reltime})
 
 faildata = {'fails': reltimefails.values(), 'aborts': reltimeaborts.values(), 'memlimits': reltimememlimits.values(), 
-	'timeouts': reltimetimeouts.values(), 'readerrors': reltimereaderrors.values(), 'solved': reltimesolved.values()}
+	'timeouts': reltimetimeouts.values(), 'solved': reltimesolved.values()}
 failbars = pd.DataFrame(data=faildata)
 failbars.plot(kind='bar', stacked=True, width=0.4)
 
