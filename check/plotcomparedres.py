@@ -95,6 +95,8 @@ timetimeouts = {}
 timereaderrors = {}
 timesolved = {}
 
+nsolved = {}
+
 timeperinstance = collections.defaultdict(lambda :collections.defaultdict())
 
 highestfails = 0
@@ -154,6 +156,7 @@ for key in ordereddata.keys():
 	timetimeouts[croppedkey] = 0
 	timereaderrors[croppedkey] = 0
 	timesolved[croppedkey] = 0
+	nsolved[croppedkey] = 0
 	tablelength = len(ordereddata[key].index)
 	for i in range(0, tablelength-1):
 		if ordereddata[key]['status'][i] == 'fail':
@@ -168,6 +171,7 @@ for key in ordereddata.keys():
 			timereaderrors[croppedkey] = timereaderrors[croppedkey] + float(ordereddata[key]['TotalTime'][i])
 		else:
 			timesolved[croppedkey] = timesolved[croppedkey] + float(ordereddata[key]['TotalTime'][i])
+			nsolved[croppedkey] = nsolved[croppedkey] + 1
 
 	# round up runtime per status
 	timefails[croppedkey] = math.ceil(timefails[croppedkey])
@@ -537,3 +541,28 @@ if ninstances < 0:
 		size='x-small')
 
 plt.savefig(outdir + '/timecomparisonperstatus.pdf')			# name of image
+
+# -------------------------------------------------------------------------------------------------------------------------
+# 5) Plot average runtime of solved instances per version
+# -------------------------------------------------------------------------------------------------------------------------
+
+fig = plt.figure()
+ax = plt.axes()        
+plt.title('Average runtime of solved instances')
+plt.xlabel('GCG Version')
+plt.ylabel('Average runtime in seconds')
+
+avsolved = collections.OrderedDict()
+highestavsolved = 0
+
+for vers in versions:
+	avtime = float(timesolved[vers]) / nsolved[vers]
+	avsolved.update({vers : avtime})
+	highestavsolved = max(highestavsolved, avtime)
+
+bars = plt.bar(range(len(avsolved)), avsolved.values(), align='center')
+plt.xticks(range(len(avsolved)), avsolved.keys(), rotation=90)
+setbarplotparams(highestavsolved)
+labelbars(bars, highestavsolved)
+
+plt.savefig(outdir + '/averagesolvetime.pdf')				# name of image
