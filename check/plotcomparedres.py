@@ -116,7 +116,7 @@ def cropkeypkl(key, keyprefix):
 # Get some statistics for each res file to be used in the plots
 # -------------------------------------------------------------------------------------------------------------------------
 
-maxstringlen = 12 # TODO make this number flexible
+maxstringlen = 12
 
 versions = []
 timelimits = {}
@@ -333,12 +333,11 @@ def sumruntimes(namelist, instimelist):
 			res = res + float(instimelist[insname])
 	return res;
 
-# calculate relative difference given a list of (version, value) tuples and an index
-def calcreldiff(vallist, i):
-	diff = 0.0
-	diff = int(round( float(vallist[i-1][1]) - float(vallist[i][1]) )) # get abs difference to former value
-	diff = float(diff) / (max(vallist[i-1][1], vallist[i][1])) # get relative value
-	return diff;
+# calculate speedup factor given a list of (version, value) tuples and an index
+def calcspeedup(vallist, i):
+	assert i > 0
+	speedup = float(vallist[i-1][1]) / vallist[i][1]
+	return speedup;
 
 # add value to former one: get a (key, value) dict, a key with index > 0 and the current difference
 def addtoformer(valuedict, key, diff):
@@ -346,7 +345,7 @@ def addtoformer(valuedict, key, diff):
 	assert len(cumitems)-1 >= 0
 	cumsum = cumitems[len(cumitems)-1][1]
 
-	res = diff + cumsum
+	res = float(diff) * cumsum
 	return res;
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -423,17 +422,17 @@ else:
 		difflong = 0
 
 		if i > 0:
-			# from the second item on calculate the version speed differences
+			# from the second item on calculate the version speed differences (speedup)
 			name = items[i-1][0] + '\n->\n' + items[i][0]
-			diff = calcreldiff(items, i)
+			diff = calcspeedup(items, i)
 			runtimecomp[name] = diff
 			highestdiff = max(float(diff), float(highestdiff))
 			lowestdiff = min(float(diff), float(lowestdiff))
 
-			diff10 = calcreldiff(runtimes10, i)
-			diff100 = calcreldiff(runtimes100, i)
-			diff1000 = calcreldiff(runtimes1000, i)
-			difflong = calcreldiff(runtimeslong, i)
+			diff10 = calcspeedup(runtimes10, i)
+			diff100 = calcspeedup(runtimes100, i)
+			diff1000 = calcspeedup(runtimes1000, i)
+			difflong = calcspeedup(runtimeslong, i)
 
 			# for the first one set initial cumulative difference values
 			if i == 1:
