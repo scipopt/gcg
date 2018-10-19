@@ -366,28 +366,34 @@ else:
 	names10 = []
 	names100 = []
 	names1000 = []
-	(firstvers, instances) = timeperinstance.items()[0]
+	nameslong = []
+	(firstvers, instances) = timeperinstance.items()[len(timeperinstance.items())-1]
 	for instancename in instances.keys():
-		if float(instances[instancename]) <= 10.0:
+		if float(instances[instancename]) < 10.0:
 			names10.append(instancename)
-		elif float(instances[instancename]) <= 100.0:
+		elif float(instances[instancename]) > 10.0 and float(instances[instancename]) < 100.0:
 			names100.append(instancename)
-		elif float(instances[instancename]) <= 1000.0:
+		elif float(instances[instancename]) > 100.0 and float(instances[instancename]) < 1000.0:
 			names1000.append(instancename)
+		elif float(instances[instancename]) > 1000.0 and float(instances[instancename]):
+			nameslong.append(instancename)
 
 	# get sum of runtimes of these instances
 	runtimes10 = collections.OrderedDict()
 	runtimes100 = collections.OrderedDict()
 	runtimes1000 = collections.OrderedDict()
+	runtimeslong = collections.OrderedDict()
 	for vers in timeperinstance.keys():
 		runtimes10[vers] = sumruntimes(names10, timeperinstance[vers])
 		runtimes100[vers] = sumruntimes(names100, timeperinstance[vers])
 		runtimes1000[vers] = sumruntimes(names1000, timeperinstance[vers])
+		runtimeslong[vers] = sumruntimes(nameslong, timeperinstance[vers])
 
 	# convert the runtimes for easier access
 	runtimes10 = sorted(list(runtimes10.items()))
 	runtimes100 = sorted(list(runtimes100.items()))
 	runtimes1000 = sorted(list(runtimes1000.items()))
+	runtimeslong = sorted(list(runtimeslong.items()))
 
 	# prepare variables
 	highestdiff = 0
@@ -395,9 +401,10 @@ else:
 
 	runtimecomp = collections.OrderedDict()
 	cumulative = collections.OrderedDict() # overall cumulative speedup
-	cum10 = collections.OrderedDict() # cumulative speedup for instances with original runtime <=10s
-	cum100 = collections.OrderedDict() # cumulative speedup for instances with original runtime <=100s
-	cum1000 = collections.OrderedDict() # cumulative speedup for instances with original runtime <=1000s
+	cum10 = collections.OrderedDict() # cumulative speedup for instances with original runtime <10s
+	cum100 = collections.OrderedDict() # cumulative speedup for instances with original runtime <100s
+	cum1000 = collections.OrderedDict() # cumulative speedup for instances with original runtime <1000s
+	cumlong = collections.OrderedDict() # cumulative speedup for instances with original runtime >1000s
 
 	highestcum = 0
 	lowestcum = 0
@@ -407,6 +414,8 @@ else:
 	lowestcum100 = 0
 	highestcum1000 = 0
 	lowestcum1000 = 0
+	highestcumlong = 0
+	lowestcumlong = 0
 
 	# calculate the different times per version
 	for i in range(len(items)):
@@ -414,6 +423,7 @@ else:
 		diff10 = 0
 		diff100 = 0
 		diff1000 = 0
+		difflong = 0
 
 		if i > 0:
 			# from the second item on calculate the version speed differences
@@ -426,6 +436,7 @@ else:
 			diff10 = calcreldiff(runtimes10, i)
 			diff100 = calcreldiff(runtimes100, i)
 			diff1000 = calcreldiff(runtimes1000, i)
+			difflong = calcreldiff(runtimeslong, i)
 
 			# for the first one set initial cumulative difference values
 			if i == 1:
@@ -433,6 +444,7 @@ else:
 				cum10[name] = highestcum10 = lowestcum10 = diff10
 				cum100[name] = highestcum100 = lowestcum100 = diff100
 				cum1000[name] = highestcum1000 = lowestcum1000 = diff1000
+				cumlong[name] = highestcumcumlong = lowestcumcumlong = difflong
 				
 			# for all following add the last value to current diff
 			else:
@@ -452,16 +464,18 @@ else:
 				highestcum1000 = max(float(highestcum1000), float(cum1000[name]))
 				lowestcum1000 = min(float(lowestcum1000), float(cum1000[name]))
 
-	#determine axis min/max (leave space for bar labels)
-	axmin = min(lowestcum, lowestdiff, lowestcum10, lowestcum100, lowestcum1000)
-	axmin = axmin + 0.1*axmin
-	if axmin > 0:
-		axmin = 0
+				cumlong[name] = addtoformer(cumlong, name, difflong)
+				highestcumlong = max(float(highestcumlong), float(cumlong[name]))
+				lowestcumlong = min(float(lowestcumlong), float(cumlong[name]))
 
-	axmax = max(highestcum, highestdiff, highestcum10, highestcum100, highestcum1000)
-	axmax = axmax + 0.1*axmax
-	if axmax < 0:
-		axmax = 0
+	#determine axis min/max
+	axmin = min(lowestcum, lowestdiff, lowestcum10, lowestcum100, lowestcum1000, lowestcumlong)
+	axmax = max(highestcum, highestdiff, highestcum10, highestcum100, highestcum1000, highestcumlong)
+
+	# make space for bar labels
+	longestbar = max(axmax, abs(axmin))
+	axmin = axmin - 0.1*longestbar
+	axmax = axmax + 0.1*longestbar
 
 	# first plot version-to-version comparison bars
 	fig, ax1 = plt.subplots()
@@ -470,11 +484,9 @@ else:
 	plt.tick_params(axis='x', which='major', labelsize=5)
 	ax1.set_ylabel('Speedup factor', color='b')
 	ax1.tick_params('y', colors='b')
-
-	# make space far bar labels
 	ax1.set_ylim(ymin=axmin, ymax=axmax)
 
-	longestbar = max(highestdiff, abs(lowestdiff))
+	#longestbar = max(highestdiff, abs(lowestdiff))
 	labelbars(bar1, longestbar)
 
 	# plot cumulative speedup if there is more than one bar
@@ -489,8 +501,9 @@ else:
 		ax2.axhline(y=0, color='xkcd:slate')
 		
 		ax2.plot(nbars, cum10.values(), 'xkcd:light orange', label='<10s')
-		ax2.plot(nbars, cum100.values(), 'xkcd:orange', label='<100s')
-		ax2.plot(nbars, cum1000.values(), 'xkcd:dark orange', label='<1000s')
+		ax2.plot(nbars, cum100.values(), 'xkcd:orange', label='[10,100)s')
+		ax2.plot(nbars, cum1000.values(), 'xkcd:dark orange', label='[100,1000)s')
+		ax2.plot(nbars, cumlong.values(), 'xkcd:reddy brown', label='>1000s')
 
 		ax2.legend(loc='upper right', prop={'size': 'x-small'})
 	
