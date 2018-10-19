@@ -19,6 +19,9 @@ columns = []
 sumline = []
 sumcolumns = []
 
+# variable for timelimit
+timelimit = 0
+
 # get parameters
 resfile = sys.argv[1]
 
@@ -54,10 +57,14 @@ for line in fh:
 		line = " ".join(line.split())
 		sumcolumns = line.split(" ")
 	
-	# if isdatatable is False and the summary values line is reached get the data line & finish reading
+	# if isdatatable is False and the summary values line is reached get the data line
 	elif not isdatatable and line.startswith("  "):
 		line = " ".join(line.split())
 		sumline = line.split(" ")
+	# if the position is beyond all the other cases get the timelimit & finish reading
+	elif not isdatatable and line.startswith("@02 timelimit: "):
+		prefix, strtimelimit, timelimit = line.split(" ")
+		timelimit = timelimit.replace("\n", "")
 		break
 
 
@@ -83,10 +90,14 @@ for row in linearray:
 # store data into panda dataframe & save it as pickle
 df = pd.DataFrame(columns=columns, data=linearray)
 sumdf = pd.Series(index=sumcolumns, data=sumline)
+timelimitdata = {'timelimit': [timelimit]}
+timelimitdf = pd.DataFrame(data=timelimitdata)
 
 if outdirset:
 	df.to_pickle(outdir + '/' + 'res_' + resfile.split('/')[-1].replace('.res', '.pkl'))
 	sumdf.to_pickle(outdir + '/' + 'sumres_' + resfile.split('/')[-1].replace('.res', '.pkl'))
+	timelimitdf.to_pickle(outdir + '/' + 'timelimit_' + resfile.split('/')[-1].replace('.res', '.pkl'))
 else:
 	df.to_pickle('pickles/' + 'res_' + resfile.split('/')[-1].replace('.res', '.pkl'))
 	sumdf.to_pickle('pickles/' + 'sumres_' + resfile.split('/')[-1].replace('.res', '.pkl'))
+	timelimitdf.to_pickle('pickles/' + 'timelimit_' + resfile.split('/')[-1].replace('.res', '.pkl'))

@@ -34,8 +34,11 @@ if len(sys.argv) > 1:
 # Get premade res data
 datasets = {}
 sumsets = {}
+timelimitset = {}
+
 filenames = []
 sumnames = []
+timelimitnames = []
 
 for resfile in os.listdir(resdir):
 	if resfile.endswith('.pkl') and resfile.startswith('res_'):
@@ -44,10 +47,14 @@ for resfile in os.listdir(resdir):
 	elif resfile.endswith('.pkl') and resfile.startswith('sumres_'):
 		sumsets[resfile] = pd.read_pickle(os.path.join(resdir, resfile))
 		sumnames.append(resfile)
+	elif resfile.endswith('.pkl') and resfile.startswith('timelimit_'):
+		timelimitset[resfile] = pd.read_pickle(os.path.join(resdir, resfile))
+		timelimitnames.append(resfile)
 
 # sort names alphabetically
 ordereddata = collections.OrderedDict(sorted(datasets.items()))
 orderedsum = collections.OrderedDict(sorted(sumsets.items()))
+orderedtimelimit = collections.OrderedDict(sorted(timelimitset.items()))
 
 # Sanity check: check whether the number of tested instances differs
 ninstances = -1
@@ -74,6 +81,37 @@ for res in sumnames:
 		print '--------------------------------------------------------------------------------------------------'
 		break
 
+# Sanity check: check whether the timelimits were indentical for all versions
+defaulttimelimit = -1
+printwarning = False
+for res in timelimitnames:
+	if int(defaulttimelimit) == -1:
+		defaulttimelimit = orderedtimelimit[res]['timelimit']
+	else:
+		if int(defaulttimelimit) != int(orderedtimelimit[res]['timelimit']):
+			printwarning = True
+if printwarning == True:
+	print '--------------------------------------------------------------------------------------------------'
+	print 'Warning: The timelimit of the versions differed. Some plots use the timelimit as a default for all'
+	print 'fails. Recommendation: Rurun the tests with a global timelimit.'
+	print '--------------------------------------------------------------------------------------------------'
+
+# -------------------------------------------------------------------------------------------------------------------------
+# Add function to crop filenames
+# -------------------------------------------------------------------------------------------------------------------------
+
+def cropkeypkl(key, keyprefix):
+	# crop the filenames by removing prefix ... .pkl and add linebreak for very long keys
+	croppedkey = key.split('/')[-1].replace(keyprefix, '').replace('.pkl', '')
+	if len(croppedkey) > maxstringlen:
+		charlist = list(croppedkey)
+		ninserts = len(charlist)/maxstringlen
+		while ninserts > 0:
+			charlist.insert(ninserts*maxstringlen, '\n')
+			ninserts = ninserts - 1
+		croppedkey = ''.join(charlist)
+	return croppedkey;
+
 # -------------------------------------------------------------------------------------------------------------------------
 # Get some statistics for each res file to be used in the plots
 # -------------------------------------------------------------------------------------------------------------------------
@@ -81,6 +119,7 @@ for res in sumnames:
 maxstringlen = 12 # TODO make this number flexible
 
 versions = []
+timelimits = {}
 
 fails = {}
 aborts = {}
@@ -103,16 +142,14 @@ highestfails = 0
 tempruntime = {}
 highesttime = 0
 
+# extract timelimits
+for key in orderedtimelimit.keys():
+	croppedkey = cropkeypkl(key, 'timelimit_')
+	timelimits[croppedkey] = int(orderedtimelimit[key]['timelimit'])
+
 for key in ordereddata.keys():
 	# crop the filenames (keys in ordereddata) by removing res_ ... .pkl and add linebreak for very long keys
-	croppedkey = key.split('/')[-1].replace('res_', '').replace('.pkl', '')
-	if len(croppedkey) > maxstringlen:
-		charlist = list(croppedkey)
-		ninserts = len(charlist)/maxstringlen
-		while ninserts > 0:
-			charlist.insert(ninserts*maxstringlen, '\n')
-			ninserts = ninserts - 1
-		croppedkey = ''.join(charlist)
+	croppedkey = cropkeypkl(key, 'res_')
 	versions.append(croppedkey)
 
 	# get fail types and their amounts
@@ -160,15 +197,15 @@ for key in ordereddata.keys():
 	tablelength = len(ordereddata[key].index)
 	for i in range(0, tablelength-1):
 		if ordereddata[key]['status'][i] == 'fail':
-			timefails[croppedkey] = timefails[croppedkey] + float(ordereddata[key]['TotalTime'][i])
+			timefails[croppedkey] = timefails[croppedkey] + timelimits[croppedkey]
 		elif ordereddata[key]['status'][i] == 'abort':
-			timeaborts[croppedkey] = timeaborts[croppedkey] + float(ordereddata[key]['TotalTime'][i])
+			timeaborts[croppedkey] = timeaborts[croppedkey] + timelimits[croppedkey]
 		elif ordereddata[key]['status'][i] == 'memlimit':
-			timememlimits[croppedkey] = timememlimits[croppedkey] + float(ordereddata[key]['TotalTime'][i])
+			timememlimits[croppedkey] = timememlimits[croppedkey] + timelimits[croppedkey]
 		elif ordereddata[key]['status'][i] == 'timeout':
 			timetimeouts[croppedkey] = timetimeouts[croppedkey] + float(ordereddata[key]['TotalTime'][i])
 		elif ordereddata[key]['status'][i] == 'readerror':
-			timereaderrors[croppedkey] = timereaderrors[croppedkey] + float(ordereddata[key]['TotalTime'][i])
+			timereaderrors[croppedkey] = timereaderrors[croppedkey] + timelimits[croppedkey]
 		else:
 			timesolved[croppedkey] = timesolved[croppedkey] + float(ordereddata[key]['TotalTime'][i])
 			nsolved[croppedkey] = nsolved[croppedkey] + 1
