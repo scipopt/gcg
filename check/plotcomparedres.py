@@ -200,6 +200,8 @@ for key in ordereddata.keys():
 	for i in range(0, tablelength-1):
 		if ordereddata[key]['status'][i] == 'fail':
 			timefails[croppedkey] = timefails[croppedkey] + timelimits[croppedkey]
+		elif ordereddata[key]['status'][i] == 'readerror':
+			timefails[croppedkey] = timefails[croppedkey] + timelimits[croppedkey]
 		elif ordereddata[key]['status'][i] == 'abort':
 			timeaborts[croppedkey] = timeaborts[croppedkey] + timelimits[croppedkey]
 		elif ordereddata[key]['status'][i] == 'memlimit':
@@ -521,7 +523,7 @@ else:
 	plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image
 
 # -------------------------------------------------------------------------------------------------------------------------
-# 4) Plot relative time per status category (fail categories and solved)
+# 4) Plot time per status category (fail categories and solved)
 # -------------------------------------------------------------------------------------------------------------------------
 
 fig = plt.figure()
@@ -530,36 +532,20 @@ plt.title('Runtime per solving status')
 plt.xlabel('GCG Version')
 plt.ylabel('Runtime in seconds')
 
-# get times per status relative to runtime
-reltimefails = collections.OrderedDict()
-reltimeaborts = collections.OrderedDict()
-reltimememlimits = collections.OrderedDict()
-reltimetimeouts = collections.OrderedDict()
-reltimesolved = collections.OrderedDict()
-
-for vers in versions:
-	reltime = float(timefails[vers]) / runtime[vers]
-	reltimefails.update({vers : reltime})
-
-	reltime = float(timeaborts[vers]) / runtime[vers]
-	reltimeaborts.update({vers : reltime})
-
-	reltime = float(timememlimits[vers]) / runtime[vers]
-	reltimememlimits.update({vers : reltime})
-
-	reltime = float(timetimeouts[vers]) / runtime[vers]
-	reltimetimeouts.update({vers : reltime})
-
-	reltime = float(timesolved[vers]) / runtime[vers]
-	reltimesolved.update({vers : reltime})
-
-faildata = {'fails': reltimefails.values(), 'aborts': reltimeaborts.values(), 'memlimits': reltimememlimits.values(), 
-	'timeouts': reltimetimeouts.values(), 'solved': reltimesolved.values()}
+faildata = {'fails': timefails.values(), 'aborts': timeaborts.values(), 'memlimits': timememlimits.values(), 
+	'timeouts': timetimeouts.values(), 'solved': timesolved.values()}
 failbars = pd.DataFrame(data=faildata)
 failbars.plot(kind='bar', stacked=True, width=0.4)
 
+# calculate highest bar length
+barheight = highesttime + .1*highesttime
+for vers in timefails.keys():
+	barheight = max(barheight, timefails[vers] + timeaborts[vers] + timememlimits[vers] + timetimeouts[vers] + timesolved[vers])
+
+barheight = barheight + .1*barheight
+
 # label the stacked bars
-labelscale = 0.02 
+labelscale = 0.02*barheight
 for (ind,row) in failbars.iterrows():
 	cumval = 0
 	lastleft = True
@@ -581,8 +567,8 @@ for (ind,row) in failbars.iterrows():
 
 plt.xticks(range(len(fails)), fails.keys(), rotation=90)
 setbarplotparams(1)
-plt.ylim(ymax=1.1)
-plt.ylabel('Percentage of runtime', size=7)
+plt.ylim(ymax=barheight)
+plt.ylabel('Runtime', size=7)
 plt.tick_params(axis='y', which='major', labelsize=7)
 
 ax1 = plt.subplot(111)
