@@ -134,7 +134,7 @@ timesolved = {}
 
 nsolved = {}
 
-timeperinstance = collections.defaultdict(lambda :collections.defaultdict())
+timeperinstance = {}
 
 highestfails = 0
 tempruntime = {}
@@ -178,8 +178,16 @@ for key in ordereddata.keys():
 			highesttime = tempruntime[croppedkey]
 
 	# get runtime per instance for each version
-	for i in range(len(ordereddata[key]['Name'])):
-		timeperinstance[croppedkey][ordereddata[key]['Name'][i]] = ordereddata[key]['TotalTime'][i]
+	temptimeperinstance = {}
+	for i in range(ninstances):
+		tempinsname = ordereddata[key]['Name'][i]
+		# the instance names might not be unique but they will appear in the same order in all versions
+		if tempinsname in temptimeperinstance:
+			while tempinsname in temptimeperinstance:
+				tempinsname = tempinsname + '_'	
+		temptimeperinstance.update({tempinsname: ordereddata[key]['TotalTime'][i]})
+
+	timeperinstance.update({croppedkey: temptimeperinstance})
 	
 	# get runtime per status
 	timefails[croppedkey] = 0
@@ -360,11 +368,11 @@ else:
 	for instancename in instances.keys():
 		if float(instances[instancename]) < 10.0:
 			names10.append(instancename)
-		elif float(instances[instancename]) >= 10.0 and float(instances[instancename]) < 100.0:
+		elif float(instances[instancename]) < 100.0:
 			names100.append(instancename)
-		elif float(instances[instancename]) >= 100.0 and float(instances[instancename]) < 1000.0:
+		elif float(instances[instancename]) < 1000.0:
 			names1000.append(instancename)
-		elif float(instances[instancename]) >= 1000.0 and float(instances[instancename]):
+		else:
 			nameslong.append(instancename)
 
 	# get sum of runtimes of these instances
@@ -498,6 +506,18 @@ else:
 	
 	fig.tight_layout(rect=[0, 0.03, 1, 0.95])
 	plt.title('Version-to-version runtime comparison')
+
+	stringninstances = 'unknown or differed'
+	if ninstances >= 0:
+		stringninstances = str(ninstances)
+
+	plt.figtext(.01,0,'The total number of instances in the test (per version) was ' + stringninstances + '.\n' +
+		'The number of instances running in <10s in the most recent version was ' + str(len(names10)) + '.\n' +
+		'The number of instances running in [10,100)s in the most recent version was ' + str(len(names100)) + '.\n' +
+		'The number of instances running in [100,1000)s in the most recent version was ' + str(len(names1000)) + '.\n' +
+		'The number of instances running in >1000s in the most recent version was ' + str(len(nameslong)) + '.\n',
+		size='x-small')
+	plt.subplots_adjust(bottom=0.2)
 
 	plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image
 
