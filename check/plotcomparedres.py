@@ -338,7 +338,10 @@ def sumruntimes(namelist, instimelist):
 # calculate speedup factor given a list of (version, value) tuples and an index
 def calcspeedup(vallist, i):
 	assert i > 0
-	speedup = float(vallist[i-1][1]) / vallist[i][1]
+	if not vallist[i][1] == 0:
+		speedup = float(vallist[i-1][1]) / vallist[i][1]
+	else:
+		speedup = 0
 	return speedup;
 
 # add value to former one: get a (key, value) dict, a key with index > 0 and the current difference
@@ -579,6 +582,7 @@ ax1.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, fancybox=Fals
 if ninstances < 0:
 	plt.figtext(.01,.01,'The total number of instances in the test (per version) was unknown or differed.', 
 		size='x-small')
+plt.subplots_adjust(left=0.1)
 
 plt.savefig(outdir + '/timecomparisonperstatus.pdf')			# name of image
 
