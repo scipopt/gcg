@@ -235,6 +235,18 @@ do
 	fi
 	cd ../../.. # exit to gcg folder (was in gcg/lib/scip-git/lib/ before)
 
+	# Get the versions of the components
+	GCGTAG=$(git describe --tags)
+	cd lib/scip-git/
+	SCIPTAG=$(git describe --tags)
+	cd ../soplex-git/
+	SOPLEXTAG=$(git describe --tags)
+	cd ../../check/
+	echo "GCG ${VERSION[$index]} ${index} ${GCGTAG}" >> $RESDIR/readme.txt
+	echo "SCIP ${VERSION[$index]} ${index} ${SCIPTAG}" >> $RESDIR/readme.txt
+	echo "SoPlex ${VERSION[$index]} ${index} ${SOPLEXTAG}" >> $RESDIR/readme.txt
+	cd ..
+
 	# building
 	make soplex ${GLOBALFLAGS} ${ADDFLAGS[$index]}	# in some older versions not sufficient
 	cd lib/soplex-git
