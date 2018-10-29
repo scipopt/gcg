@@ -122,7 +122,16 @@ ln -s ../bliss-git/ include/bliss
 ln -s ../bliss-git/libbliss.a static/libbliss.a
 ln -s ../googletest-git/include/gtest include/gtest
 ln -s ../googletest-git/build/libgtest.a static/libgtest.a
-cd ..
+cd .. # main folder
+
+# add links to instance folders
+cd check/instances
+for i in /opt/instances/* ; do
+  if [ -d "$i" ]; then
+    ln -s $i $(basename "$i")
+  fi
+done
+cd ../..
 
 index=0
 while [ $index -lt $nversions ]
