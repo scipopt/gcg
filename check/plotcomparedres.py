@@ -40,7 +40,7 @@ filenames = []
 sumnames = []
 timelimitnames = []
 readmeexists = False
-testset = ''
+testset = 'unknown'
 
 for resfile in os.listdir(resdir):
 	if resfile.endswith('.pkl') and resfile.startswith('res_'):
@@ -61,8 +61,6 @@ for resfile in os.listdir(resdir):
                                readmeexists = True
                                columns = line.split(' ') # line is of form "Testset testsetname"
                                testset = columns[1]
-
-print testset
 
 # sort names alphabetically
 ordereddata = collections.OrderedDict(sorted(datasets.items()))
@@ -287,8 +285,8 @@ ax = plt.axes()
 plt.title('Number of unsolved instances')
 plt.xlabel('GCG Version')
 
-faildata = {'fails': fails.values(), 'aborts': aborts.values(), 'memlimits': memlimits.values(), 
-	'timeouts': timeouts.values()}
+faildata = collections.OrderedDict([('aborts', aborts.values()), ('fails', fails.values()), ('memlimits', memlimits.values()), 
+	('timeouts', timeouts.values())])
 failbars = pd.DataFrame(data=faildata)
 failbars.plot(kind='bar', stacked=True)
 
@@ -534,7 +532,7 @@ else:
 		'The number of instances running in <10s in the most recent version was ' + str(len(names10)) + '.\n' +
 		'The number of instances running in [10,100)s in the most recent version was ' + str(len(names100)) + '.\n' +
 		'The number of instances running in [100,1000)s in the most recent version was ' + str(len(names1000)) + '.\n' +
-		'The number of instances running in >1000s in the most recent version was ' + str(len(nameslong)) + '.\n',
+		'The number of instances running in >1000s in the most recent version was ' + str(len(nameslong)) + '.\n' +
 		'Testset: ' + testset, size='x-small')
 	plt.subplots_adjust(bottom=0.2)
 
@@ -550,8 +548,8 @@ plt.title('Runtime per solving status')
 plt.xlabel('GCG Version')
 plt.ylabel('Runtime in seconds')
 
-faildata = {'fails': timefails.values(), 'aborts': timeaborts.values(), 'memlimits': timememlimits.values(), 
-	'timeouts': timetimeouts.values(), 'solved': timesolved.values()}
+faildata = collections.OrderedDict([('aborts', timeaborts.values()), ('fails', timefails.values()), ('memlimits', timememlimits.values()), 
+	('timeouts', timetimeouts.values()), ('solved',timesolved.values())])
 failbars = pd.DataFrame(data=faildata)
 failbars.plot(kind='bar', stacked=True, width=0.4)
 
@@ -595,7 +593,7 @@ ax1.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, fancybox=Fals
 # if the number of instances differs
 
 if ninstances < 0:
-	plt.figtext(.01,.01,'The total number of instances in the test (per version) was unknown or differed.', 
+	plt.figtext(.01,.01,'The total number of instances in the test (per version) was unknown or differed.' +
 	'Testset: ' + testset, size='x-small')
 else:
 	plt.figtext(.01,.01,'Testset: ' + testset, size='x-small')
