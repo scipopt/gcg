@@ -60,6 +60,7 @@ CURRENTBRANCH=$(git symbolic-ref -q HEAD)
 CURRENTBRANCH=${CURRENTBRANCH##refs/heads/}
 CURRENTBRANCH=${CURRENTBRANCH:-HEAD}
 
+TESTNAME=""
 # If there is one test file for all versions, store the test file in case it differs in the versions
 # (This is assuming that setting the test in the additional flags is intentional and test sets are supposed to differ in that case.)
 if [[ $GLOBALFLAGS = *"TEST="* ]]; then
@@ -101,6 +102,9 @@ mkdir -p $RESDIR
 if [ ! -e $RESDIR/readme.txt ]; then
 	echo "This directory contains the results of the GCG version comparison run with parameters:" > $RESDIR/readme.txt
 	echo "$ORIGINALPARAMS" >> $RESDIR/readme.txt
+	if [ ! -z $TESTNAME ]; then
+		echo "Testset $TESTNAME" >> $RESDIR/readme.txt
+	fi
 fi
 
 # Script is in check, so switch to gcg main folder

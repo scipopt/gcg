@@ -39,6 +39,8 @@ timelimitset = {}
 filenames = []
 sumnames = []
 timelimitnames = []
+readmeexists = False
+testset = ''
 
 for resfile in os.listdir(resdir):
 	if resfile.endswith('.pkl') and resfile.startswith('res_'):
@@ -50,6 +52,17 @@ for resfile in os.listdir(resdir):
 	elif resfile.endswith('.pkl') and resfile.startswith('timelimit_'):
 		timelimitset[resfile] = pd.read_pickle(os.path.join(resdir, resfile))
 		timelimitnames.append(resfile)
+	elif resfile.endswith('.txt') and resfile.startswith('readme'):
+               # Check for testset name
+               filename = resdir + '/' + resfile
+               readfile = open(filename, 'r')
+               for line in readfile:
+                       if line.startswith('Testset'):
+                               readmeexists = True
+                               columns = line.split(' ') # line is of form "Testset testsetname"
+                               testset = columns[1]
+
+print testset
 
 # sort names alphabetically
 ordereddata = collections.OrderedDict(sorted(datasets.items()))
@@ -300,8 +313,8 @@ stringninstances = 'unknown or differed'
 if ninstances >= 0:
 	stringninstances = str(ninstances)
 
-plt.figtext(.01,.01,'The total number of instances in the test (per version) was ' + stringninstances + '.', 
-	size='x-small')
+plt.figtext(.01,.01,'The total number of instances in the test (per version) was ' + stringninstances + '.\n' + 'Testset: '
+	+ testset, size='x-small')
 
 plt.savefig(outdir + '/failcomparison.pdf')			# name of image
 
@@ -319,6 +332,8 @@ bars = plt.bar(range(len(runtime)), runtime.values(), align='center')
 plt.xticks(range(len(runtime)), runtime.keys(), rotation=90)
 setbarplotparams(highesttime)
 labelbars(bars, highesttime)
+
+plt.figtext(.01,.01,'Testset: ' + testset, size='x-small')
 
 plt.savefig(outdir + '/runtimes.pdf')				# name of image
 
@@ -520,7 +535,7 @@ else:
 		'The number of instances running in [10,100)s in the most recent version was ' + str(len(names100)) + '.\n' +
 		'The number of instances running in [100,1000)s in the most recent version was ' + str(len(names1000)) + '.\n' +
 		'The number of instances running in >1000s in the most recent version was ' + str(len(nameslong)) + '.\n',
-		size='x-small')
+		'Testset: ' + testset, size='x-small')
 	plt.subplots_adjust(bottom=0.2)
 
 	plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image
@@ -581,7 +596,10 @@ ax1.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, fancybox=Fals
 
 if ninstances < 0:
 	plt.figtext(.01,.01,'The total number of instances in the test (per version) was unknown or differed.', 
-		size='x-small')
+	'Testset: ' + testset, size='x-small')
+else:
+	plt.figtext(.01,.01,'Testset: ' + testset, size='x-small')
+
 plt.subplots_adjust(left=0.1)
 
 plt.savefig(outdir + '/timecomparisonperstatus.pdf')			# name of image
@@ -608,5 +626,7 @@ bars = plt.bar(range(len(avsolved)), avsolved.values(), align='center')
 plt.xticks(range(len(avsolved)), avsolved.keys(), rotation=90)
 setbarplotparams(highestavsolved)
 labelbars(bars, highestavsolved)
+
+plt.figtext(.01,.01,'Testset: ' + testset, size='x-small')
 
 plt.savefig(outdir + '/averagesolvetime.pdf')				# name of image
