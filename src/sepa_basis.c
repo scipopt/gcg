@@ -876,7 +876,6 @@ SCIP_DECL_SEPAINIT(sepaInitBasis)
    sepadata->maxnewcuts = 0;
    sepadata->nnewcuts = 0;
    sepadata->objrow = NULL;
-
    /* if separator is disabled do nothing */
    if( !enable )
    {
@@ -1100,10 +1099,26 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    int nlprows;
    int maxrounds;
    SCIP_ROW** lprows;
+   int nviolatedcuts;
 
    SCIP_Bool isroot;
 
    SCIP_RESULT resultdummy;
+
+   SCIP_Bool enoughcuts;
+   int maxcuts;
+
+   int maxnsepastallrounds;
+
+   SCIP_Real objreldiff;
+   int nfracs;
+   SCIP_Real stalllpobjval;
+   SCIP_Real lpobjval;
+   SCIP_Bool stalling;
+   int nsepastallrounds;
+   int stallnfracs;
+   SCIP_LPSOLSTAT stalllpsolstat;
+
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -1194,9 +1209,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    /* disable rapid learning because it does not generate cuts */
    SCIP_CALL( SCIPsetIntParam(origscip, "separating/rapidlearning/freq", -1) );
 
-   /* disable close cuts separator because it separates cuts of a non-basic solution (similar to master separator) */
-   SCIP_CALL( SCIPsetIntParam(origscip, "separating/closecuts/freq", -1) );
-
    /* start probing */
    SCIP_CALL( SCIPstartProbing(origscip) );
    SCIP_CALL( SCIPnewProbingNode(origscip) );
@@ -1219,9 +1231,32 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    /* store number of lp rows in the beginning */
    nlprowsstart = SCIPgetNLPRows(origscip);
 
+   nsepastallrounds = 0;
+   stalllpobjval = SCIP_REAL_MIN;
+   stallnfracs = INT_MAX;
+   stalling = FALSE;
+
+   maxcuts = 0;
+   if( isroot )
+      SCIP_CALL( SCIPgetIntParam(origscip, "separating/maxcutsroot", &maxcuts) );
+   else
+      SCIP_CALL( SCIPgetIntParam(origscip, "separating/maxcuts", &maxcuts) );
+
+   maxnsepastallrounds = 0;
+   if( isroot )
+      SCIP_CALL( SCIPgetIntParam(origscip, "separating/maxstallroundsroot", &maxnsepastallrounds) );
+   else
+      SCIP_CALL( SCIPgetIntParam(origscip, "separating/maxstallrounds", &maxnsepastallrounds) );
+
+   if( maxnsepastallrounds == -1 )
+      maxnsepastallrounds = INT_MAX;
+
+   stalllpsolstat = SCIP_LPSOLSTAT_NOTSOLVED;
+
+
    /* while the counter is smaller than the number of allowed rounds,
     * try to separate origsol via probing lp sol */
-   while( sepadata->round < maxrounds )
+   while( sepadata->round < maxrounds && nsepastallrounds < maxnsepastallrounds )
    {
       SCIPdebugMessage("round %d of at most %d rounds\n", sepadata->round + 1, maxrounds);
 
@@ -1307,16 +1342,79 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
       assert(!lperror);
 
-      SCIPdebugMessage("separate current LP solution\n");
-
-      /** separate current probing lp sol of origscip */
-      SCIP_CALL( SCIPseparateSol(origscip, NULL, isroot, isroot, FALSE, &delayed, &cutoff) );
-
-      if( delayed && !cutoff )
+      /* check if we are stalling
+       * We are stalling if
+       *   the LP value did not improve and
+       *   the number of fractional variables did not decrease.
+       */
+      if( SCIPgetLPSolstat(origscip) == SCIP_LPSOLSTAT_OPTIMAL )
       {
-         SCIPdebugMessage("call delayed separators\n");
+         SCIP_CALL( SCIPgetLPBranchCands(origscip, NULL, NULL, NULL, &nfracs, NULL, NULL) );
+         lpobjval = SCIPgetLPObjval(origscip);
 
-         SCIP_CALL( SCIPseparateSol(origscip, NULL, isroot, isroot, TRUE, &delayed, &cutoff) );
+         objreldiff = SCIPrelDiff(lpobjval, stalllpobjval);
+         SCIPdebugMessage(" -> LP bound moved from %g to %g (reldiff: %g)\n",
+            stalllpobjval, lpobjval, objreldiff);
+
+         stalling = (objreldiff <= 1e-04 &&
+             nfracs >= (0.9 - 0.1 * nsepastallrounds) * stallnfracs);
+
+         stalllpobjval = lpobjval;
+         stallnfracs = nfracs;
+      }
+      else
+      {
+         stalling = (stalllpsolstat == SCIPgetLPSolstat(origscip));
+      }
+
+      if( !stalling )
+      {
+         nsepastallrounds = 0;
+      }
+      else
+      {
+         nsepastallrounds++;
+      }
+      stalllpsolstat = SCIPgetLPSolstat(origscip);
+
+      /* separate cuts in cutpool */
+      SCIPdebugMessage("separate current LP sol in cutpool\n");
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, &resultdummy) );
+
+      enoughcuts = (SCIPgetNCuts(origscip) >= 2 * (SCIP_Longint)maxcuts) || (resultdummy == SCIP_NEWROUND);
+
+      if( !enoughcuts )
+      {
+         /** separate current probing lp sol of origscip */
+         SCIPdebugMessage("separate current LP solution\n");
+         SCIP_CALL( SCIPseparateSol(origscip, NULL, isroot, isroot, FALSE, &delayed, &cutoff) );
+
+         enoughcuts = enoughcuts || (SCIPgetNCuts(origscip) >= 2 * (SCIP_Longint)maxcuts) || (resultdummy == SCIP_NEWROUND);
+
+         /* if we are close to the stall round limit, also call the delayed separators */
+         if( !enoughcuts && delayed && !cutoff && nsepastallrounds >= maxnsepastallrounds-1)
+         {
+            SCIPdebugMessage("call delayed separators\n");
+            SCIP_CALL( SCIPseparateSol(origscip, NULL, isroot, isroot, TRUE, &delayed, &cutoff) );
+         }
+      }
+
+      if( !enoughcuts && !cutoff )
+      {
+         /* separate cuts in cutpool */
+         SCIPdebugMessage("separate current LP sol in cutpool\n");
+         SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, &resultdummy) );
+
+         enoughcuts = enoughcuts || (SCIPgetNCuts(origscip) >= 2 * (SCIP_Longint)maxcuts) || (resultdummy == SCIP_NEWROUND);
+      }
+
+      if( SCIPgetNCuts(origscip) == 0 && !cutoff )
+      {
+         /* separate cuts in delayed cutpool */
+         SCIPdebugMessage("separate current LP sol in delayed cutpool\n");
+         SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), NULL, &resultdummy) );
+
+         enoughcuts = enoughcuts || (SCIPgetNCuts(origscip) >= 2 * (SCIP_Longint)maxcuts) || (resultdummy == SCIP_NEWROUND);
       }
 
       /* if cut off is detected set result pointer and return SCIP_OKAY */
@@ -1330,12 +1428,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          return SCIP_OKAY;
       }
-
-      SCIPdebugMessage("separate current LP solution and current original solution in cutpool\n");
-
-      /* separate cuts in cutpool */
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, &resultdummy) );
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), NULL, &resultdummy) );
 
       /* separate cuts in cutpool */
       SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), origsol, &resultdummy) );
@@ -1355,6 +1447,14 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       nmastervars = SCIPgetNVars(scip);
       SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
 
+      /* using nviolated cuts is a workaround for a SCIP issue:
+       * it might happen that non-violated cuts are added to the sepastore,
+       * which could lead to an infinite loop
+       */
+      /** initialize nviolated counting the number of cuts in the sepastore
+       * that are violated by the current LP solution */
+      nviolatedcuts = 0;
+
       /** loop over cuts and transform cut to master problem (and safe cuts) if it seperates origsol */
       for( i = 0; i < ncuts; i++ )
       {
@@ -1362,6 +1462,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          colvarused = FALSE;
          origcut = cuts[i];
+
+         /** if cut is violated by LP solution, increase nviolatedcuts */
+         if( SCIPisCutEfficacious(origscip, NULL, origcut) )
+         {
+            ++nviolatedcuts;
+         }
 
          /* get columns and vals of the cut */
          ncols = SCIProwGetNNonz(origcut);
@@ -1439,7 +1545,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIPfreeBufferArray(scip, &mastervals);
          break;
       }
-      else if( SCIPgetNCuts(origscip) == 0 )
+      /** use nviolated cuts instead of number of cuts in sepastore,
+       * because non-violated might be added to the sepastore */
+      else if( nviolatedcuts == 0 )
       {
          SCIPfreeBufferArray(scip, &mastervals);
          break;
@@ -1567,10 +1675,10 @@ SCIP_RETCODE SCIPincludeSepaBasis(
             SCIPinfinity(GCGmasterGetOrigprob(scip)), NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/objconvex", "convex combination factor (= 0.0, use original objective; = 1.0, use face objective)",
-         &(sepadata->objconvex), FALSE, 1.0, 0.0, 1.0, NULL, NULL) );
+         &(sepadata->objconvex), FALSE, 0.0, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/paramsetting", "parameter returns which parameter setting is used for "
-      "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 1, 0, 2, NULL, NULL) );
+      "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 0, 0, 2, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/chgobj", "parameter returns if basis is searched with different objective",
       &(sepadata->chgobj), FALSE, TRUE, NULL, NULL) );
@@ -1582,7 +1690,7 @@ SCIP_RETCODE SCIPincludeSepaBasis(
       &(sepadata->maxroundsroot), FALSE, -1, -1, INT_MAX , NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/mincuts", "parameter returns number of minimum cuts needed to "
-      "return *result = SCIP_Separated", &(sepadata->mincuts), FALSE, 1, 1, 100, NULL, NULL) );
+      "return *result = SCIP_Separated", &(sepadata->mincuts), FALSE, 50, 1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/chgobjallways", "parameter returns if obj is changed not only in the "
       "first round", &(sepadata->chgobjallways), FALSE, FALSE, NULL, NULL) );
