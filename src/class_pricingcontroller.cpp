@@ -292,6 +292,7 @@ SCIP_RETCODE Pricingcontroller::initSol()
             {
                SCIP_CALL_EXC( GCGpricingjobCreate(scip_, &pricingjobs[npricingjobs], pricingprobs[npricingprobs], solvers[j], npricingprobs / actchunksize) );
                ++npricingjobs;
+               break;
             }
          }
          ++npricingprobs;
@@ -376,7 +377,7 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
    {
       int probnr = GCGpricingprobGetProbnr(GCGpricingjobGetPricingprob(pricingjobs[i]));
 
-      SCIP_CALL_EXC( GCGpricingjobSetup(pricingjobs[i],
+      SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i],
          (heurpricingiters > 0 && (maxheurdepth == -1 || SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)) <= maxheurdepth)),
          sorting, nroundscol, dualsolconv[probnr], GCGpricerGetNPointsProb(scip_, probnr), GCGpricerGetNRaysProb(scip_, probnr)) );
 
@@ -471,10 +472,6 @@ void Pricingcontroller::evaluatePricingjob(
    if( heuristic )
       GCGpricingjobIncreaseNHeurIters(pricingjob);
 
-   /* If the solver was not appliable to the pricing problem, leave and do not add the job to the queue again */
-   if( status == GCG_PRICINGSTATUS_NOTAPPLICABLE )
-      return;
-
    /* If the pricing job has not yielded any improving column, possibly solve it again;
     * increase at least one of its limits, or solve it exactly if it was solved heuristically before
     */
@@ -484,7 +481,7 @@ void Pricingcontroller::evaluatePricingjob(
       SCIPdebugMessage("Solving problem %d with <%s> has not yielded improving columns.\n",
          GCGpricingprobGetProbnr(pricingprob), GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)));
 
-      if( heuristic && status != GCG_PRICINGSTATUS_OPTIMAL )
+      if( heuristic && status != GCG_PRICINGSTATUS_OPTIMAL && status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
       {
          assert(status == GCG_PRICINGSTATUS_UNKNOWN || status == GCG_PRICINGSTATUS_SOLVERLIMIT);
 
@@ -512,6 +509,14 @@ void Pricingcontroller::evaluatePricingjob(
          SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
 
          return;
+      }
+
+      GCGpricingjobNextSolver(scip_, pricingjob);
+      GCGpricingjobResetHeuristic(pricingjob);
+      if( GCGpricingjobGetSolver(pricingjob) != NULL )
+      {
+         SCIPdebugMessage("  -> use another solver\n");
+         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
       }
    }
    else
