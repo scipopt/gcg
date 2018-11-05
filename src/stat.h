@@ -47,6 +47,12 @@ SCIP_RETCODE GCGwriteDecompositionData(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** prints additional information about the solving process */
+extern
+SCIP_RETCODE GCGwriteSolvingDetails(
+   SCIP*                 scip                /**< SCIP data structure */
+);
+
 /** prints information about the creation of the Vars*/
 extern
 SCIP_RETCODE GCGwriteVarCreationDetails(

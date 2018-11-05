@@ -229,6 +229,12 @@ DEC_DECMODE GCGgetMasterDecompMode(
    SCIP*                 masterprob          /**< the master problem SCIP instance */
    );
 
+/** return root node clock */
+extern
+SCIP_CLOCK* GCGgetRootNodeTime(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 #ifdef __cplusplus
 }
 #endif
