@@ -141,10 +141,7 @@ SCIP_RETCODE writeAllDecompositions(
    }
 
    /* make sure directory exists */
-   if( dirname != NULL )
-   {
-      mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
-   }
+   mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
 
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &tmp, &endoffile) );
    strcpy(filename, tmp);
