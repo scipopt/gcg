@@ -54,14 +54,16 @@ for resfile in os.listdir(resdir):
 		timelimitset[resfile] = pd.read_pickle(os.path.join(resdir, resfile))
 		timelimitnames.append(resfile)
 	elif resfile.endswith('.txt') and resfile.startswith('readme'):
-               # Check for testset name
-               filename = resdir + '/' + resfile
-               readfile = open(filename, 'r')
-               for line in readfile:
+		# Check for testset name
+		filename = resdir + '/' + resfile
+		readfile = open(filename, 'r')
+		for line in readfile:
                        if line.startswith('Testset'):
                                readmeexists = True
                                columns = line.split(' ') # line is of form "Testset testsetname"
                                testset = columns[1]
+		readfile = open(filename, 'a')
+		readfile.write("Note: All plots (apart from \"runtimes\") count the runtime of all fails, aborts, timelimits, memlimits and readerrors as running into the timelimit.")
 
 # sort names alphabetically
 ordereddata = collections.OrderedDict(sorted(datasets.items()))
@@ -150,9 +152,7 @@ timeperinstance = {}
 
 highestfails = 0
 tempruntime = {}
-relruntime = {}
 highesttime = 0
-highestreltime = 0
 
 # extract timelimits
 for key in orderedtimelimit.keys():
@@ -190,7 +190,6 @@ for key in ordereddata.keys():
 		tempruntime[croppedkey] = tempruntime[croppedkey] + float(time)
 		if highesttime < tempruntime[croppedkey]:
 			highesttime = tempruntime[croppedkey]
-		
 
 	# get runtime per instance for each version
 	temptimeperinstance = {}
@@ -199,8 +198,11 @@ for key in ordereddata.keys():
 		# the instance names might not be unique but they will appear in the same order in all versions
 		if tempinsname in temptimeperinstance:
 			while tempinsname in temptimeperinstance:
-				tempinsname = tempinsname + '_'	
-		temptimeperinstance.update({tempinsname: ordereddata[key]['TotalTime'][i]})
+				tempinsname = tempinsname + '_'
+		if ordereddata[key]['status'][i] == 'fail' or ordereddata[key]['status'][i] == 'readerror' or ordereddata[key]['status'][i] == 'abort' or ordereddata[key]['status'][i] == 'abort'or ordereddata[key]['status'][i] == 'timeout':
+			temptimeperinstance.update({tempinsname: timelimits[croppedkey]})
+		else:
+			temptimeperinstance.update({tempinsname: ordereddata[key]['TotalTime'][i]})
 
 	timeperinstance.update({croppedkey: temptimeperinstance})
 	
@@ -219,7 +221,7 @@ for key in ordereddata.keys():
 			timefails[croppedkey] = timefails[croppedkey] + timelimits[croppedkey]
 		elif ordereddata[key]['status'][i] == 'abort':
 			timeaborts[croppedkey] = timeaborts[croppedkey] + timelimits[croppedkey]
-		elif ordereddata[key]['status'][i] == 'memlimit':
+		elif ordereddata[key]['status'][i] == 'abort':
 			timememlimits[croppedkey] = timememlimits[croppedkey] + timelimits[croppedkey]
 		elif ordereddata[key]['status'][i] == 'timeout':
 			timetimeouts[croppedkey] = timetimeouts[croppedkey] + float(ordereddata[key]['TotalTime'][i])
@@ -249,6 +251,16 @@ timeaborts = collections.OrderedDict(sorted(timeaborts.items()))
 timememlimits = collections.OrderedDict(sorted(timememlimits.items()))
 timetimeouts = collections.OrderedDict(sorted(timetimeouts.items()))
 timesolved = collections.OrderedDict(sorted(timesolved.items()))
+
+# add a runtime where every fail type is counted as timelimit
+totalruntime = collections.OrderedDict()
+highesttotalruntime = 0.0
+for key in runtime.keys():
+	time = 0.0
+	for instance in timeperinstance[key].keys():
+		time = time + float(timeperinstance[key][instance])
+	totalruntime.update({key: time})
+	highesttotalruntime = max(highesttotalruntime, time)
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Add functions for often used parts of the plots
@@ -331,7 +343,6 @@ tikz_save(outdir + '/failcomparison.tikz',
 fig = plt.figure()
 ax = plt.axes()        
 plt.title('Runtime per version')
-plt.xlabel('GCG Version')
 plt.ylabel('Runtime in seconds')
 
 bars = plt.bar(range(len(runtime)), runtime.values(), align='center')
@@ -383,7 +394,7 @@ def addtoformer(valuedict, key, diff):
 
 # Calculate version-to-version speedup
 
-items = list(runtime.items())
+items = list(totalruntime.items())
 assert(len(items) == nversions)
 if nversions < 2:
 	print 'Enter more than one GCG version to generate a runtime comparison plot.'
@@ -576,10 +587,7 @@ else:
 # -------------------------------------------------------------------------------------------------------------------------
 
 fig = plt.figure()
-ax = plt.axes()        
-plt.title('Runtime per solving status')
-plt.xlabel('GCG Version')
-plt.ylabel('Runtime in seconds')
+ax = plt.axes()
 
 faildata = collections.OrderedDict([('aborts', timeaborts.values()), ('fails', timefails.values()), ('memlimits', timememlimits.values()), 
 	('timeouts', timetimeouts.values()), ('solved',timesolved.values())])
@@ -617,7 +625,7 @@ for (ind,row) in failbars.iterrows():
 plt.xticks(range(len(fails)), fails.keys(), rotation=90)
 setbarplotparams(1)
 plt.ylim(ymax=barheight)
-plt.ylabel('Runtime', size=7)
+plt.ylabel('Runtime in seconds', size=7)
 plt.tick_params(axis='y', which='major', labelsize=7)
 
 ax1 = plt.subplot(111)
