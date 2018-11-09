@@ -149,7 +149,9 @@ timeperinstance = {}
 
 highestfails = 0
 tempruntime = {}
+relruntime = {}
 highesttime = 0
+highestreltime = 0
 
 # extract timelimits
 for key in orderedtimelimit.keys():
@@ -187,6 +189,7 @@ for key in ordereddata.keys():
 		tempruntime[croppedkey] = tempruntime[croppedkey] + float(time)
 		if highesttime < tempruntime[croppedkey]:
 			highesttime = tempruntime[croppedkey]
+		
 
 	# get runtime per instance for each version
 	temptimeperinstance = {}
@@ -231,6 +234,7 @@ for key in ordereddata.keys():
 	timesolved[croppedkey] = math.ceil(timesolved[croppedkey])
 
 # order statistics by keys
+nversions = len(versions)
 versions = sorted(versions)
 
 fails = collections.OrderedDict(sorted(fails.items()))
@@ -373,7 +377,8 @@ def addtoformer(valuedict, key, diff):
 # Calculate version-to-version speedup
 
 items = list(runtime.items())
-if len(items) < 2:
+assert(len(items) == nversions)
+if nversions < 2:
 	print 'Enter more than one GCG version to generate a runtime comparison plot.'
 else:	
 	# get instance names that originally (in first version) ran in under 10, 100, 1000 seconds
@@ -381,33 +386,39 @@ else:
 	names100 = []
 	names1000 = []
 	nameslong = []
-	(firstvers, instances) = timeperinstance.items()[len(timeperinstance.items())-1]
-	for instancename in instances.keys():
-		if float(instances[instancename]) < 10.0:
-			names10.append(instancename)
-		elif float(instances[instancename]) < 100.0:
-			names100.append(instancename)
-		elif float(instances[instancename]) < 1000.0:
-			names1000.append(instancename)
-		else:
-			nameslong.append(instancename)
+
+	# only compute intervals if > 2 versions
+	if nversions > 2:
+		(firstvers, instances) = timeperinstance.items()[len(timeperinstance.items())-1]
+		# get names of instances running in certain intervals on the latest version
+		for instancename in instances.keys():
+			if float(instances[instancename]) < 10.0:
+				names10.append(instancename)
+			elif float(instances[instancename]) < 100.0:
+				names100.append(instancename)
+			elif float(instances[instancename]) < 1000.0:
+				names1000.append(instancename)
+			else:
+				nameslong.append(instancename)
 
 	# get sum of runtimes of these instances
 	runtimes10 = collections.OrderedDict()
 	runtimes100 = collections.OrderedDict()
 	runtimes1000 = collections.OrderedDict()
 	runtimeslong = collections.OrderedDict()
-	for vers in timeperinstance.keys():
-		runtimes10[vers] = sumruntimes(names10, timeperinstance[vers])
-		runtimes100[vers] = sumruntimes(names100, timeperinstance[vers])
-		runtimes1000[vers] = sumruntimes(names1000, timeperinstance[vers])
-		runtimeslong[vers] = sumruntimes(nameslong, timeperinstance[vers])
 
-	# convert the runtimes for easier access
-	runtimes10 = sorted(list(runtimes10.items()))
-	runtimes100 = sorted(list(runtimes100.items()))
-	runtimes1000 = sorted(list(runtimes1000.items()))
-	runtimeslong = sorted(list(runtimeslong.items()))
+	if nversions > 2:
+		for vers in timeperinstance.keys():
+			runtimes10[vers] = sumruntimes(names10, timeperinstance[vers])
+			runtimes100[vers] = sumruntimes(names100, timeperinstance[vers])
+			runtimes1000[vers] = sumruntimes(names1000, timeperinstance[vers])
+			runtimeslong[vers] = sumruntimes(nameslong, timeperinstance[vers])
+
+		# convert the runtimes for easier access
+		runtimes10 = sorted(list(runtimes10.items()))
+		runtimes100 = sorted(list(runtimes100.items()))
+		runtimes1000 = sorted(list(runtimes1000.items()))
+		runtimeslong = sorted(list(runtimeslong.items()))
 
 	# prepare variables
 	highestdiff = 0
@@ -432,7 +443,7 @@ else:
 	lowestcumlong = 0
 
 	# calculate the different times per version
-	for i in range(len(items)):
+	for i in range(nversions):
 		diff = 0
 		diff10 = 0
 		diff100 = 0
@@ -447,44 +458,51 @@ else:
 			highestdiff = max(float(diff), float(highestdiff))
 			lowestdiff = min(float(diff), float(lowestdiff))
 
-			diff10 = calcspeedup(runtimes10, i)
-			diff100 = calcspeedup(runtimes100, i)
-			diff1000 = calcspeedup(runtimes1000, i)
-			difflong = calcspeedup(runtimeslong, i)
+			if nversions > 2:
+				diff10 = calcspeedup(runtimes10, i)
+				diff100 = calcspeedup(runtimes100, i)
+				diff1000 = calcspeedup(runtimes1000, i)
+				difflong = calcspeedup(runtimeslong, i)
 
 			# for the first one set initial cumulative difference values
 			if i == 1:
 				cumulative[name] = highestcum = lowestcum = diff
-				cum10[name] = highestcum10 = lowestcum10 = diff10
-				cum100[name] = highestcum100 = lowestcum100 = diff100
-				cum1000[name] = highestcum1000 = lowestcum1000 = diff1000
-				cumlong[name] = highestcumcumlong = lowestcumcumlong = difflong
+				if nversions > 2:
+					cum10[name] = highestcum10 = lowestcum10 = diff10
+					cum100[name] = highestcum100 = lowestcum100 = diff100
+					cum1000[name] = highestcum1000 = lowestcum1000 = diff1000
+					cumlong[name] = highestcumcumlong = lowestcumcumlong = difflong
 				
 			# for all following add the last value to current diff
 			else:
 				cumulative[name] = addtoformer(cumulative, name, diff)
 				highestcum = max(float(highestcum), float(cumulative[name]))
 				lowestcum = min(float(lowestcum), float(cumulative[name]))
-
-				cum10[name] = addtoformer(cum10, name, diff10)
-				highestcum10 = max(float(highestcum10), float(cum10[name]))
-				lowestcum10 = min(float(lowestcum10), float(cum10[name]))
 				
-				cum100[name] = addtoformer(cum100, name, diff100)
-				highestcum100 = max(float(highestcum100), float(cum100[name]))
-				lowestcum100 = min(float(lowestcum100), float(cum100[name]))
+				if nversions > 2:
+					cum10[name] = addtoformer(cum10, name, diff10)
+					highestcum10 = max(float(highestcum10), float(cum10[name]))
+					lowestcum10 = min(float(lowestcum10), float(cum10[name]))
+				
+					cum100[name] = addtoformer(cum100, name, diff100)
+					highestcum100 = max(float(highestcum100), float(cum100[name]))
+					lowestcum100 = min(float(lowestcum100), float(cum100[name]))
 
-				cum1000[name] = addtoformer(cum1000, name, diff1000)
-				highestcum1000 = max(float(highestcum1000), float(cum1000[name]))
-				lowestcum1000 = min(float(lowestcum1000), float(cum1000[name]))
+					cum1000[name] = addtoformer(cum1000, name, diff1000)
+					highestcum1000 = max(float(highestcum1000), float(cum1000[name]))
+					lowestcum1000 = min(float(lowestcum1000), float(cum1000[name]))
 
-				cumlong[name] = addtoformer(cumlong, name, difflong)
-				highestcumlong = max(float(highestcumlong), float(cumlong[name]))
-				lowestcumlong = min(float(lowestcumlong), float(cumlong[name]))
+					cumlong[name] = addtoformer(cumlong, name, difflong)
+					highestcumlong = max(float(highestcumlong), float(cumlong[name]))
+					lowestcumlong = min(float(lowestcumlong), float(cumlong[name]))
 
 	#determine axis min/max
-	axmin = min(lowestcum, lowestdiff, lowestcum10, lowestcum100, lowestcum1000, lowestcumlong)
-	axmax = max(highestcum, highestdiff, highestcum10, highestcum100, highestcum1000, highestcumlong)
+	if nversions > 2:
+		axmin = min(lowestcum, lowestdiff, lowestcum10, lowestcum100, lowestcum1000, lowestcumlong)
+		axmax = max(highestcum, highestdiff, highestcum10, highestcum100, highestcum1000, highestcumlong)
+	else:
+		axmin = min(lowestcum, lowestdiff)
+		axmax = max(highestcum, highestdiff)
 
 	# make space for bar labels
 	longestbar = max(axmax, abs(axmin))
@@ -514,10 +532,11 @@ else:
 		ax2.plot(nbars, cumulative.values(), 'r-', label='overall')
 		ax2.axhline(y=0, color='xkcd:slate')
 		
-		ax2.plot(nbars, cum10.values(), 'xkcd:light orange', label='<10s')
-		ax2.plot(nbars, cum100.values(), 'xkcd:orange', label='[10,100)s')
-		ax2.plot(nbars, cum1000.values(), 'xkcd:dark orange', label='[100,1000)s')
-		ax2.plot(nbars, cumlong.values(), 'xkcd:reddy brown', label='>1000s')
+		if nversions > 2:
+			ax2.plot(nbars, cum10.values(), 'xkcd:light orange', label='<10s')
+			ax2.plot(nbars, cum100.values(), 'xkcd:orange', label='[10,100)s')
+			ax2.plot(nbars, cum1000.values(), 'xkcd:dark orange', label='[100,1000)s')
+			ax2.plot(nbars, cumlong.values(), 'xkcd:reddy brown', label='>1000s')
 
 		ax2.legend(loc='upper right', prop={'size': 'x-small'})
 	
@@ -528,13 +547,17 @@ else:
 	if ninstances >= 0:
 		stringninstances = str(ninstances)
 
-	plt.figtext(.01,0,'The total number of instances in the test (per version) was ' + stringninstances + '.\n' +
-		'The number of instances running in <10s in the most recent version was ' + str(len(names10)) + '.\n' +
-		'The number of instances running in [10,100)s in the most recent version was ' + str(len(names100)) + '.\n' +
-		'The number of instances running in [100,1000)s in the most recent version was ' + str(len(names1000)) + '.\n' +
-		'The number of instances running in >1000s in the most recent version was ' + str(len(nameslong)) + '.\n' +
-		'Testset: ' + testset, size='x-small')
-	plt.subplots_adjust(bottom=0.2)
+	if nversions > 2:
+		plt.figtext(.01,0,'The total number of instances in the test (per version) was ' + stringninstances + '.\n' +
+			'Amount of instances running in the latest version in: \n<10s: ' + str(len(names10)) + '.\n' +
+			'[10,100)s: ' + str(len(names100)) + '.\n' +
+			'[100,1000)s: ' + str(len(names1000)) + '.\n' +
+			'>1000s: ' + str(len(nameslong)) + '.\n' +
+			'Testset: ' + testset, size='x-small')
+		plt.subplots_adjust(bottom=0.25)
+	else:
+		plt.figtext(.01,0,'The total number of instances in the test (per version) was ' + stringninstances + '.'
+			,size='x-small')
 
 	plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image
 
@@ -616,7 +639,10 @@ avsolved = collections.OrderedDict()
 highestavsolved = 0
 
 for vers in versions:
-	avtime = float(timesolved[vers]) / nsolved[vers]
+	if not nsolved[vers] == 0:
+		avtime = float(timesolved[vers]) / nsolved[vers]
+	else:
+		avtime = timelimits[vers]
 	avsolved.update({vers : avtime})
 	highestavsolved = max(highestavsolved, avtime)
 
