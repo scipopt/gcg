@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import collections
 import math
+from matplotlib2tikz import save as tikz_save
 
 # check command line arguments
 if len(sys.argv) < 2:
@@ -319,6 +320,9 @@ plt.figtext(.01,.01,'The total number of instances in the test (per version) was
 	+ testset, size='x-small')
 
 plt.savefig(outdir + '/failcomparison.pdf')			# name of image
+tikz_save(outdir + '/failcomparison.tikz',
+	figureheight = '\\figureheight',
+	figurewidth = '\\figurewidth')
 
 # -------------------------------------------------------------------------------------------------------------------------
 # 2) Plot runtime per version
@@ -338,6 +342,9 @@ labelbars(bars, highesttime)
 plt.figtext(.01,.01,'Testset: ' + testset, size='x-small')
 
 plt.savefig(outdir + '/runtimes.pdf')				# name of image
+tikz_save(outdir + '/runtimes.tikz',
+	figureheight = '\\figureheight',
+	figurewidth = '\\figurewidth')
 
 # -------------------------------------------------------------------------------------------------------------------------
 # 3.a) Some helper functions for cumulative time differences
@@ -560,6 +567,9 @@ else:
 			,size='x-small')
 
 	plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image
+	tikz_save(outdir + '/runtimecomparison.tikz',
+		figureheight = '\\figureheight',
+		figurewidth = '\\figurewidth')
 
 # -------------------------------------------------------------------------------------------------------------------------
 # 4) Plot time per status category (fail categories and solved)
@@ -624,6 +634,9 @@ else:
 plt.subplots_adjust(left=0.1)
 
 plt.savefig(outdir + '/timecomparisonperstatus.pdf')			# name of image
+tikz_save(outdir + '/timecomparisonperstatus.tikz',
+           figureheight = '\\figureheight',
+           figurewidth = '\\figurewidth')
 
 # -------------------------------------------------------------------------------------------------------------------------
 # 5) Plot average runtime of solved instances per version
@@ -654,3 +667,6 @@ labelbars(bars, highestavsolved)
 plt.figtext(.01,.01,'Testset: ' + testset, size='x-small')
 
 plt.savefig(outdir + '/averagesolvetime.pdf')				# name of image
+tikz_save(outdir + '/averagesolvetime.tikz',
+           figureheight = '\\figureheight',
+           figurewidth = '\\figurewidth')
