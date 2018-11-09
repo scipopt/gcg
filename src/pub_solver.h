@@ -78,9 +78,15 @@ int GCGsolverGetPriority(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
-/** gets whether GCG pricing solver is enabled */
+/** gets whether heuristic solving method of GCG pricing solver is enabled */
 EXTERN
-SCIP_Bool GCGsolverIsEnabled(
+SCIP_Bool GCGsolverIsHeurEnabled(
+   GCG_SOLVER*           solver              /**< pricing solver */
+   );
+
+/** gets whether exact solving method of GCG pricing solver is enabled */
+EXTERN
+SCIP_Bool GCGsolverIsExactEnabled(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 

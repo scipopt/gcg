@@ -51,7 +51,8 @@
 #define SOLVER_NAME          "mip"
 #define SOLVER_DESC          "pricing solver solving the pricing problem as a sub-MIP, using SCIP"
 #define SOLVER_PRIORITY      0
-#define SOLVER_ENABLED       TRUE  /**< indicates whether the solver should be enabled */
+#define SOLVER_HEURENABLED   TRUE            /**< indicates whether the heuristic solving method of the solver should be enabled */
+#define SOLVER_EXACTENABLED  TRUE            /**< indicates whether the exact solving method of the solver should be enabled */
 
 #define DEFAULT_CHECKSOLS            TRUE    /**< should solutions be checked extensively */
 #define DEFAULT_STARTNODELIMIT       1000LL  /**< start node limit for heuristic pricing */
@@ -685,7 +686,8 @@ SCIP_RETCODE GCGincludeSolverMip(
    SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
    solverdata->settingsfile = NULL;
 
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
+   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+         SOLVER_HEURENABLED, SOLVER_EXACTENABLED,
          solverUpdateMip, solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
          solverInitsolMip, solverExitsolMip, solverdata) );
 

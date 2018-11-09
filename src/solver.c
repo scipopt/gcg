@@ -62,7 +62,8 @@ SCIP_RETCODE GCGsolverCreate(
    const char*           name,               /**< name of solver */
    const char*           desc,               /**< description of solver */
    int                   priority,           /**< priority of solver */
-   SCIP_Bool             enabled,            /**< flag to indicate whether the solver is enabled */
+   SCIP_Bool             heurenabled,        /**< flag to indicate whether heuristic solving method of the solver is enabled */
+   SCIP_Bool             exactenabled,        /**< flag to indicate whether exact solving method of the solver is enabled */
    GCG_DECL_SOLVERUPDATE((*solverupdate)),   /**< update method for solver */
    GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
    GCG_DECL_SOLVERSOLVEHEUR((*solveheur)),   /**< heuristic solving method for solver */
@@ -80,13 +81,17 @@ SCIP_RETCODE GCGsolverCreate(
    assert(scip != NULL);
    assert(solver != NULL);
 
+   if( solveheur == NULL && solversolve == NULL )
+   {
+      SCIPwarningMessage(scip, "Solver <%s> has neither heuristic nor exact solving method and will not be included.\n", name);
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( SCIPallocMemory(scip, solver) ); /*lint !e866*/
 
    SCIP_ALLOC( BMSduplicateMemoryArray(&(*solver)->name, name, strlen(name)+1) );
    SCIP_ALLOC( BMSduplicateMemoryArray(&(*solver)->desc, desc, strlen(desc)+1) );
 
-   (*solver)->priority = priority;
-   (*solver)->enabled = enabled;
    (*solver)->solverupdate = solverupdate;
    (*solver)->solversolve = solversolve;
    (*solver)->solversolveheur = solveheur;
@@ -107,10 +112,25 @@ SCIP_RETCODE GCGsolverCreate(
    (*solver)->heurfarkascalls = 0;
    (*solver)->heurredcostcalls = 0;
 
-   (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "pricingsolver/%s/enabled", name);
-   (void) SCIPsnprintf(paramdesc, SCIP_MAXSTRLEN, "flag to indicate whether solver <%s> is enabled", name);
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), paramname, paramdesc,
-                  &((*solver)->enabled), FALSE, enabled, NULL, NULL));
+   if( solveheur != NULL )
+   {
+      (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "pricingsolver/%s/heurenabled", name);
+      (void) SCIPsnprintf(paramdesc, SCIP_MAXSTRLEN, "flag to indicate whether heuristic solving method of solver <%s> is enabled", name);
+      SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), paramname, paramdesc,
+                     &((*solver)->heurenabled), FALSE, heurenabled, NULL, NULL));
+   }
+   else
+      (*solver)->heurenabled = FALSE;
+
+   if( solversolve != NULL )
+   {
+      (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "pricingsolver/%s/exactenabled", name);
+      (void) SCIPsnprintf(paramdesc, SCIP_MAXSTRLEN, "flag to indicate whether exact solving method of solver <%s> is enabled", name);
+      SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), paramname, paramdesc,
+                     &((*solver)->exactenabled), FALSE, exactenabled, NULL, NULL));
+   }
+   else
+      (*solver)->exactenabled = FALSE;
 
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "pricingsolver/%s/priority", name);
    (void) SCIPsnprintf(paramdesc, SCIP_MAXSTRLEN, "priority of solver <%s>", name);
@@ -282,8 +302,10 @@ SCIP_RETCODE GCGsolverSolve(
 
    if( heuristic )
    {
-      if( solver->solversolveheur != NULL )
+      if( solver->heurenabled )
       {
+         assert(solver->solversolveheur != NULL);
+
          if( redcost )
             clock = solver->heurredcostclock;
          else
@@ -305,8 +327,10 @@ SCIP_RETCODE GCGsolverSolve(
    }
    else
    {
-      if( solver->solversolve != NULL )
+      if( solver->exactenabled )
       {
+         assert(solver->solversolve != NULL);
+
          if( redcost )
             clock = solver->optredcostclock;
          else
@@ -328,7 +352,7 @@ SCIP_RETCODE GCGsolverSolve(
       }
    }
 
-   if( *status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
+   if( *status != GCG_PRICINGSTATUS_NOTAPPLICABLE && *solved )
    {
       if( redcost )
          if( heuristic )
@@ -400,14 +424,24 @@ int GCGsolverGetPriority(
    return solver->priority;
 }
 
-/** gets whether GCG pricing solver is enabled */
-SCIP_Bool GCGsolverIsEnabled(
+/** gets whether heuristic solving method of GCG pricing solver is enabled */
+SCIP_Bool GCGsolverIsHeurEnabled(
+   GCG_SOLVER*           solver              /**< pricing solver */
+   )
+{
+   assert(solver != NULL);
+
+   return solver->heurenabled;
+}
+
+/** gets whether exact solving method of GCG pricing solver is enabled */
+SCIP_Bool GCGsolverIsExactEnabled(
    GCG_SOLVER*           solver              /**< pricing solver */
    )
 {
    assert(solver != NULL);
    
-   return solver->enabled;
+   return solver->exactenabled;
 }
 
 /** gets number of exact Farkas pricing calls of pricing solver */

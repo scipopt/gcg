@@ -4314,7 +4314,8 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    const char*           name,               /**< name of solver */
    const char*           desc,               /**< description of solver */
    int                   priority,           /**< priority of solver */
-   SCIP_Bool             enabled,            /**< flag to indicate whether the solver is enabled */
+   SCIP_Bool             heurenabled,        /**< flag to indicate whether heuristic solving method of the solver is enabled */
+   SCIP_Bool             exactenabled,        /**< flag to indicate whether exact solving method of the solver is enabled */
    GCG_DECL_SOLVERUPDATE((*solverupdate)),   /**< update method for solver */
    GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
    GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur)), /**< heuristic solving method for solver */
@@ -4340,7 +4341,7 @@ SCIP_RETCODE GCGpricerIncludeSolver(
 
    /* create pricing solver */
    solver = NULL;
-   SCIP_CALL( GCGsolverCreate(scip, &solver, name, desc, priority, enabled,
+   SCIP_CALL( GCGsolverCreate(scip, &solver, name, desc, priority, heurenabled, exactenabled,
       solverupdate, solversolve, solversolveheur, solverfree, solverinit, solverexit, solverinitsol, solverexitsol,
       solverdata) );
    assert(solver != NULL);
@@ -4423,14 +4424,15 @@ void GCGpricerPrintListOfSolvers(
 
    nsolvers = pricerdata->nsolvers;
 
-   SCIPdialogMessage(scip, NULL, " solver               priority enabled description\n");
-   SCIPdialogMessage(scip, NULL, " --------------       -------- ------- -----------\n");
+   SCIPdialogMessage(scip, NULL, " solver               priority heur  exact description\n");
+   SCIPdialogMessage(scip, NULL, " --------------       -------- ----- ----- -----------\n");
 
    for( i = 0; i < nsolvers; ++i )
    {
       SCIPdialogMessage(scip, NULL,  " %-20s", GCGsolverGetName(pricerdata->solvers[i]));
       SCIPdialogMessage(scip, NULL,  " %8d", GCGsolverGetPriority(pricerdata->solvers[i]));
-      SCIPdialogMessage(scip, NULL,  " %7s", GCGsolverIsEnabled(pricerdata->solvers[i]) ? "TRUE" : "FALSE");
+      SCIPdialogMessage(scip, NULL,  " %5s", GCGsolverIsHeurEnabled(pricerdata->solvers[i]) ? "TRUE" : "FALSE");
+      SCIPdialogMessage(scip, NULL,  " %5s", GCGsolverIsExactEnabled(pricerdata->solvers[i]) ? "TRUE" : "FALSE");
       SCIPdialogMessage(scip, NULL,  " %s\n", GCGsolverGetDesc(pricerdata->solvers[i]));
    }
 }
