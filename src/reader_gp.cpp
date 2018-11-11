@@ -58,6 +58,7 @@
 #define READER_DESC             "gnuplot file writer for seeed visualization"
 #define READER_EXTENSION        "gp"
 
+#define SCALING_FACTOR_NONZEROS 0.6
 
 using namespace gcg;
 
@@ -194,11 +195,10 @@ SCIP_RETCODE writeGpNonzeros(
    const char* filename,   /**< filename to write to (including path & extension) */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
    Seeedpool* seeedpool,   /**< current Seeedpool */
-   float radius            /**< radius of the dots */
+   float radius            /**< radius of the dots (scaled concerning matrix dimensions)*/
    )
 {
    int radiusscale;
-   SCIP_Bool plotmiplib;
    std::vector<int> orderToRows(seeed->getNConss(), -1);
    std::vector<int> rowToOrder(seeed->getNConss(), -1);
    std::vector<int> orderToCols(seeed->getNVars(), -1);
@@ -288,11 +288,12 @@ SCIP_RETCODE writeGpNonzeros(
 
    ofs.open (filename, std::ofstream::out | std::ofstream::app );
 
+   /** scaling factor concerning user wishes */
    SCIPgetIntParam(seeedpool->getScip(), "visual/nonzeroradius", &radiusscale);
-   SCIPgetBoolParam(seeedpool->getScip(), "write/miplib2017plotsanddecs", &plotmiplib);
-
    radius *= radiusscale;
 
+
+  /** dot should be visible, so enforce minimum radius of 0.01 */
    if ( radius < 0.01 )
       radius = 0.01;
 
@@ -435,15 +436,8 @@ SCIP_RETCODE writeGpSeeed(
    /* --- draw nonzeros --- */
    if( SCIPvisuGetDraftmode() == FALSE )
    {
-      /* scale nonzero radius with 2% of maximal index */
-      int radiusscale;
-      if(seeed->getNVars() > seeed->getNConss())
-         radiusscale = seeed->getNVars() / 200;
-      else
-         radiusscale = seeed->getNConss() / 200;
-
-      radiusscale = 0.6;
-      writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), radiusscale) );
+      /* scale the dots according to matrix dimensions here */
+      writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), SCALING_FACTOR_NONZEROS) );
    }
    else
    {
