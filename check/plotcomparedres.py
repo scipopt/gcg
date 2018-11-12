@@ -307,15 +307,33 @@ faildata = collections.OrderedDict([('aborts', aborts.values()), ('fails', fails
 failbars = pd.DataFrame(data=faildata)
 failbars.plot(kind='bar', stacked=True)
 
+# calculate highest bar length
+barheight = 0
+for vers in timefails.keys():
+	barheight = max(barheight, aborts[vers] + fails[vers] + memlimits[vers] + timeouts[vers])
+
+barheight = barheight + .1*barheight
+
 # label the stacked bars
+labelscale = 0.02*barheight
 for (ind,row) in failbars.iterrows():
 	cumval = 0
+	lastleft = True
 	for column in failbars:
 		val = row.loc[column]
 		if not val == 0:
 			cumval = cumval + val
-			plt.annotate( val, xy = (ind, cumval - .5), horizontalalignment='center', verticalalignment='top',
-				fontsize=8 )
+			if val < labelscale and not lastleft:
+				plt.annotate( val, xy = (ind-.3, cumval - .5), horizontalalignment='left', verticalalignment='top',
+					fontsize=6 )
+				lastleft = True
+			elif val < labelscale:
+				plt.annotate( val, xy = (ind+.3, cumval - .5), horizontalalignment='right', verticalalignment='top',
+					fontsize=6 )
+				lastleft = False
+			else:
+				plt.annotate( val, xy = (ind, cumval - .5), horizontalalignment='center', verticalalignment='top',
+					fontsize=6 )
 
 plt.xticks(range(len(fails)), fails.keys(), rotation=90)
 setbarplotparams(int(float(highestfails)))
@@ -330,6 +348,7 @@ if ninstances >= 0:
 
 plt.figtext(.01,.01,'The total number of instances in the test (per version) was ' + stringninstances + '.\n' + 'Testset: '
 	+ testset, size='x-small')
+plt.subplots_adjust(bottom=0.2)
 
 plt.savefig(outdir + '/failcomparison.pdf')			# name of image
 tikz_save(outdir + '/failcomparison.tikz',
