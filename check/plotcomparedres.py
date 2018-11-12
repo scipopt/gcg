@@ -57,13 +57,17 @@ for resfile in os.listdir(resdir):
 		# Check for testset name
 		filename = resdir + '/' + resfile
 		readfile = open(filename, 'r')
+		notice = False
 		for line in readfile:
-                       if line.startswith('Testset'):
+                	if line.startswith('Testset'):
                                readmeexists = True
                                columns = line.split(' ') # line is of form "Testset testsetname"
                                testset = columns[1]
-		readfile = open(filename, 'a')
-		readfile.write("Note: All plots (apart from \"runtimes\") count the runtime of all fails, aborts, timelimits, memlimits and readerrors as running into the timelimit.")
+			if line.startswith('Note'):
+				notice = True
+		if not notice:
+			readfile = open(filename, 'a')
+			readfile.write("Note: All plots (apart from \"runtimes\") count the runtime of all fails, aborts, timelimits, memlimits and readerrors as running into the timelimit.")
 
 # sort names alphabetically
 ordereddata = collections.OrderedDict(sorted(datasets.items()))
