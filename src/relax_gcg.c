@@ -79,6 +79,7 @@
 #define RELAX_INCLUDESLP       TRUE
 
 #define DEFAULT_DISCRETIZATION TRUE
+#define DEFAULT_MIPDISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
 #define DEFAULT_MODE DEC_DECMODE_DANTZIGWOLFE  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default),
@@ -135,6 +136,7 @@ struct SCIP_RelaxData
 
    /* parameter data */
    SCIP_Bool             discretization;     /**< TRUE: use discretization approach; FALSE: use convexification approach */
+   SCIP_Bool             mipdiscretization;  /**< TRUE: use discretization approach in MIPs; FALSE: use convexification approach in MIPs*/
    SCIP_Bool             aggregation;        /**< should identical blocks be aggregated (only for discretization approach)? */
    SCIP_Bool             masterissetpart;    /**< is the master a set partitioning problem? */
    SCIP_Bool             masterissetcover;   /**< is the master a set covering problem? */
@@ -2523,7 +2525,15 @@ SCIP_RETCODE initRelaxator(
 
    if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Warning: Discretization with continuous variables is only an experimental feature.\n");
+      if( relaxdata->mipdiscretization )
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Warning: Discretization with continuous variables is only an experimental feature.\n");
+      }
+      else
+      {
+         SCIP_CALL( SCIPsetBoolParam(scip, "relaxing/gcg/discretization", FALSE) );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Warning: Discretization with continuous variables is disabled by parameter relaxing/gcg/mipdiscretization.\n");
+      }
    }
 
    SCIP_CALL( createMaster(scip, relaxdata) );
@@ -2659,7 +2669,6 @@ void initRelaxdata(
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
 
-   relaxdata->filename = NULL;
 }
 
 /*
@@ -2693,7 +2702,8 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
    }
 
-   SCIPfreeBlockMemoryArrayNull( scip, & relaxdata->filename, SCIP_MAXSTRLEN);
+   SCIPfreeBlockMemoryArrayNull(scip, &relaxdata->filename, SCIP_MAXSTRLEN);
+
    SCIPfreeMemory(scip, &relaxdata);
 
    return SCIP_OKAY;
@@ -2729,6 +2739,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       }
       SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
    }
+
 
    relaxdata->nbranchrules = 0;
    relaxdata->relaxisinitialized = FALSE;
@@ -3371,6 +3382,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->branchrules = NULL;
    relaxdata->masterprob = NULL;
    relaxdata->altmasterprob = NULL;
+   relaxdata->filename = NULL;
 
    initRelaxdata(relaxdata);
 
@@ -3427,6 +3439,9 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
          "should discretization (TRUE) or convexification (FALSE) approach be used?",
          &(relaxdata->discretization), FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/mipdiscretization",
+         "should discretization (TRUE) or convexification (FALSE) approach be used in mixed-integer programs?",
+         &(relaxdata->mipdiscretization), FALSE, DEFAULT_MIPDISCRETIZATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/aggregation",
          "should identical blocks be aggregated (only for discretization approach)?",
          &(relaxdata->aggregation), FALSE, DEFAULT_AGGREGATION, NULL, NULL) );
@@ -4702,7 +4717,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
             SCIPdebugMessage("Masterproblem solved, no master sol present\n");
             return SCIP_OKAY;
          }
-         SCIPdebugMessage("Masterproblem solved, mastersol = %pd\n", (void*) mastersol);
+         SCIPdebugMessage("Masterproblem solved, mastersol = %p\n", (void*) mastersol);
       }
       else
       {
@@ -4816,8 +4831,8 @@ SCIP_RETCODE GCGsetFilename(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   if (relaxdata->filename != NULL)
-      SCIPfreeBlockMemoryArray(scip, &(relaxdata->filename), SCIP_MAXSTRLEN);
+
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->filename), SCIP_MAXSTRLEN);
 
    SCIP_CALL( SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, filename, SCIP_MAXSTRLEN ) );
 

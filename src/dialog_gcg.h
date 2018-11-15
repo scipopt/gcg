@@ -83,6 +83,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayNBlockcandidates);
 
+/** dialog execution method for the presolve command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecPresolve);
+
 /** dialog execution method for the master command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster);
@@ -98,6 +102,11 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect);
 /** dialog execution method for the select command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect);
+
+/** dialog execution method for the transform command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecTransform);
+
 
 /** dialog execution method for the decomposition toolbox command */
 extern

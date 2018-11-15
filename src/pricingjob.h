@@ -63,6 +63,7 @@ void GCGpricingjobFree(
 /** setup a pricing job at the beginning of the pricing loop */
 EXTERN
 SCIP_RETCODE GCGpricingjobSetup(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
    int                   scoring,            /**< scoring parameter */
@@ -70,6 +71,20 @@ SCIP_RETCODE GCGpricingjobSetup(
    SCIP_Real             dualsolconv,        /**< dual solution value of corresponding convexity constraint */
    int                   npointsprob,        /**< total number of extreme points generated so far by the pricing problem */
    int                   nraysprob           /**< total number of extreme rays generated so far by the pricing problem */
+   );
+
+/** reset the pricing solver to be used to the one with the highest priority */
+EXTERN
+void GCGpricingjobResetSolver(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** get the next pricing solver to be used, or NULL of there is none */
+EXTERN
+void GCGpricingjobNextSolver(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** set the pricing job to be performed exactly */

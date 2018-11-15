@@ -43,8 +43,14 @@ extern "C" {
 #endif
 
 /** creates event handler for mastersol event */
-extern
+EXTERN
 SCIP_RETCODE SCIPincludeEventHdlrMastersol(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** return whether event has been triggered */
+EXTERN
+SCIP_Bool GCGeventhdlrMastersolIsTriggered(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

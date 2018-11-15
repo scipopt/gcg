@@ -791,6 +791,11 @@ SCIP_RETCODE DECwriteAllDecomps(
    );
 
 
+SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
+   SCIP*                scip
+   );
+
+
 /** gets an array of all seeeds that are currently considered relevant
  * @params seeedswr  output of the relevant seeeds (don't forget to free the individual wrappers after use)
  * @params nseeeds   amount of seeeds that are put in the array

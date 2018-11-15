@@ -501,6 +501,7 @@ BEGIN {
    nsolver = 0;
    nprobs[nsolver] = 0;
    fulltotaltime = 0.0;
+   gcgversion = 0;
 }
 /^=group=/ {
    group = $2;
@@ -526,7 +527,27 @@ BEGIN {
       nsolver++;
    }
    nprobs[nsolver] = 0;
+   gcgversion = 0;
+   delete idx;
 }
+
+# recognize columns in GCG 3.0
+/^Name              |Type| Conss |  Vars | Conss |  Vars | Det/ {
+   gcgversion = 3000;
+
+   ntokens = split($0, tokens, "|");
+
+   for( i = 1; i <= ntokens; ++i ) {
+      token = tokens[i];
+      gsub(/ /, "", token);
+
+      idx[token] = i;
+   }
+
+   idx["Status"] = ntokens
+}
+
+
 // {
    statuses["ok"];
    statuses["timeout"];
@@ -563,7 +584,7 @@ BEGIN {
    if( $11 in statuses ) # from NLP-trace-files
    {
       # collect data (line with problem type, problem size and simplex iterations)
-       type[nsolver,nprobs[nsolver]] = $2;
+      type[nsolver,nprobs[nsolver]] = $2;
       conss[nsolver,nprobs[nsolver]] = $3;
       vars[nsolver,nprobs[nsolver]] = $4;
       dualbound[nsolver,nprobs[nsolver]] = max(min($5, +infinity), -infinity);
@@ -579,7 +600,7 @@ BEGIN {
    if( $12 in statuses ) # GUROBI, CBC
    {
       # collect data (line with original and presolved problem size and simplex iterations)
-        type[nsolver,nprobs[nsolver]] = "?";
+      type[nsolver,nprobs[nsolver]] = "?";
       conss[nsolver,nprobs[nsolver]] = $4;
       vars[nsolver,nprobs[nsolver]] = $5;
       dualbound[nsolver,nprobs[nsolver]] = max(min($6, +infinity), -infinity);
@@ -627,7 +648,7 @@ BEGIN {
       validline = 1;
    }
 
-   if( $21 in statuses ) # GCG < 2.0 without solution times to first/last
+   if( $21 in statuses && gcgversion < 3000 ) # GCG < 2.0 without solution times to first/last
    {
       # collect data (line with problem type, original and presolved problem size and simplex iterations)
       type[nsolver,nprobs[nsolver]] = $2;
@@ -644,7 +665,7 @@ BEGIN {
       validline = 1;
    }
 
-   if( $22 in statuses ) # GCG >= 2.0 without solution times to first/last
+   if( $22 in statuses && gcgversion < 3000 ) # GCG >= 2.0 without solution times to first/last
    {
       # collect data (line with problem type, original and presolved problem size and simplex iterations)
       type[nsolver,nprobs[nsolver]] = $2;
@@ -661,7 +682,7 @@ BEGIN {
       validline = 1;
    }
 
-   if( $23 in statuses ) # GCG < 2.0 with solution times to first/last
+   if( $23 in statuses && gcgversion < 3000 ) # GCG < 2.0 with solution times to first/last
    {
       # collect data (line with problem type, original and presolved problem size and simplex iterations)
       type[nsolver,nprobs[nsolver]] = $2;
@@ -679,7 +700,7 @@ BEGIN {
       validline = 1;
    }
 
-   if( $24 in statuses ) # GCG >= 2.0 with solution times to first/last
+   if( $24 in statuses && gcgversion < 3000 ) # GCG >= 2.0 with solution times to first/last
    {
       # collect data (line with problem type, original and presolved problem size and simplex iterations)
       type[nsolver,nprobs[nsolver]] = $2;
@@ -697,28 +718,51 @@ BEGIN {
       validline = 1;
    }
 
+   if( gcgversion >= 3000 && $idx["Status"] in statuses ) # GCG >= 3.0
+   {
+      # collect data (line with problem type, original and presolved problem size and simplex iterations)
+      type[nsolver,nprobs[nsolver]] = $idx["Type"];
+      conss[nsolver,nprobs[nsolver]] = $idx["Conss"];
+      vars[nsolver,nprobs[nsolver]] = $idx["Vars"];
+      dualbound[nsolver,nprobs[nsolver]] = max(min($idx["DualBound"], +infinity), -infinity);
+      primalbound[nsolver,nprobs[nsolver]] = max(min($idx["PrimalBound"], +infinity), -infinity);
+      gap[nsolver,nprobs[nsolver]] = $idx["Gap%"];
+      iters[nsolver,nprobs[nsolver]] = $idx["Iters"];
+      nodes[nsolver,nprobs[nsolver]] = max($idx["Nodes"],1);
+      time[nsolver,nprobs[nsolver]] = fracceil(max($idx["Time"],mintime),0.1);
+      status[nsolver,nprobs[nsolver]] = $idx["Status"];
+
+      if( $idx["ToFirst"] )
+         timetofirst[nsolver,nprobs[nsolver]] = fracceil(max($idx["ToFirst"],mintime),0.1);
+      if( $idx["ToBest"] )
+         timetobest[nsolver, nprobs[nsolver]] = fracceil(max($idx["ToBest"],mintime), 0.1);
+
+      validline = 1;
+   }
+
    if( validline )
    {
       # postprocessing of information
       if( status[nsolver,nprobs[nsolver]] == "better" )
-	 status[nsolver,nprobs[nsolver]] = "timeout";
+         status[nsolver,nprobs[nsolver]] = "timeout";
       if( status[nsolver,nprobs[nsolver]] == "sollimit" || status[nsolver,nprobs[nsolver]] == "gaplimit" || status[nsolver,nprobs[nsolver]] == "solved" )
-	 status[nsolver,nprobs[nsolver]] = "ok";
+         status[nsolver,nprobs[nsolver]] = "ok";
 
       if( status[nsolver,nprobs[nsolver]] == "timeout" || status[nsolver,nprobs[nsolver]] == "nodelimit" ||  status[nsolver,nprobs[nsolver]] == "memlimit")
-	 hitlimit[nsolver,nprobs[nsolver]] = 1;
+         hitlimit[nsolver,nprobs[nsolver]] = 1;
       else
-	 hitlimit[nsolver,nprobs[nsolver]] = 0;
+         hitlimit[nsolver,nprobs[nsolver]] = 0;
       probidx[$1,nsolver] = nprobs[nsolver];
       probcnt[$1]++;
       nprobs[nsolver]++;
       if( probcnt[$1] == 1 )
       {
-	 problist[problistlen] = $1;
-	 problistlen++;
+         problist[problistlen] = $1;
+         problistlen++;
       }
    }
 }
+
 END {
    if( onlygroup > 0 && nsolver == 1 && solvername[1] == "SCIP:default" )
    {

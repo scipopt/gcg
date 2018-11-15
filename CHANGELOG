@@ -6,6 +6,10 @@ Command line interface:
 
 - 'write matrix' and 'write origmatrix' for writing a gnuplot file showing the coefficient matrix
 
+New/changed parameters:
+-----------------------
+
+- new parameter "relaxing/gcg/mipdiscretization" indicates whether to use discretization with continuous variables (only has an effect if "relaxing/gcg/discretization" is enabled)
 
 GCG Version 3.0.0
 =================
