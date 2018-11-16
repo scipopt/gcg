@@ -70,6 +70,8 @@
 #include <queue>
 #include <fstream>
 #include <exception>
+#include <random> /* needed for exponential distributed random dual variables */
+
 #include "reader_gp.h"
 
 
@@ -5170,7 +5172,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    {
       int consid = seeed->getMasterconss()[c];
       SCIP_CONS* scipcons = ( transformed ? consToScipCons[consid] : SCIPconsGetTransformed(consToScipCons[consid]) ) ;
-      if( SCIPconsIsDeleted( scipcons) || scipcons == NULL || SCIPconsIsObsolete(scipcons))
+      if( scipcons == NULL || SCIPconsIsDeleted(scipcons) || SCIPconsIsObsolete(scipcons) )
       {
          --nlinkingconss;
          ++modifier;
@@ -5203,11 +5205,11 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
          int consid = seeed->getConssForBlock( b )[c];
          SCIP_CONS* scipcons = ( transformed ? consToScipCons[consid] : SCIPconsGetTransformed( consToScipCons[consid] ) ) ;
 
-         if( SCIPconsIsDeleted( scipcons) || scipcons == NULL )
-            {
-               --nsubscipconss[b-ndeletedblocksbefore[b]];
-               ++modifier;
-            }
+         if( scipcons == NULL || SCIPconsIsDeleted(scipcons) )
+         {
+            --nsubscipconss[b-ndeletedblocksbefore[b]];
+            ++modifier;
+         }
          else
          {
             assert( scipcons != NULL );

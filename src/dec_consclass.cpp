@@ -150,13 +150,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   SCIP_CLOCK* temporaryClock;
 
-  if ( seeedPropagationData->seeedToPropagate->getNOpenconss() != seeedPropagationData->seeedpool->getNConss() )
-  {
-     SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " abort dec_consclass cause there are %d many open vars of %d total vars and %d many open conss of %d  total conss \n ", seeedPropagationData->seeedToPropagate->getNOpenvars(), seeedPropagationData->seeedpool->getNVars(), seeedPropagationData->seeedToPropagate->getNOpenconss() ,seeedPropagationData->seeedpool->getNConss() );
-    *result = SCIP_SUCCESS;
-     return SCIP_OKAY;
-  }
-
   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 

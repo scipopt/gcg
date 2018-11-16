@@ -408,7 +408,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
          commandlen = strlen(command);
       }
 
-      if( !strncmp( command, "done", commandlen) == 0 && !strncmp( command, "quit", commandlen) == 0 )
+      if( strncmp( command, "done", commandlen) != 0 && strncmp( command, "quit", commandlen) != 0 )
       {
          for( i = 0; i < nclassifiers; ++i )
          {
@@ -459,7 +459,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
          commandlen = strlen(command);
       }
 
-      if( !strncmp( command, "done", commandlen) == 0 && !strncmp( command, "quit", commandlen) == 0 )
+      if( strncmp( command, "done", commandlen) != 0 && strncmp( command, "quit", commandlen) != 0 )
       {
          for( i = 0; i < static_cast<int>(varclassindices.size()); ++i )
          {

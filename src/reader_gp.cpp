@@ -312,6 +312,7 @@ SCIP_RETCODE writeGpNonzeros(
          col = colsToOrder[var];
          ofs << col + 0.5 << " " << row + 0.5 << std::endl;
       }
+
    }
 
    /* end writing dots */
