@@ -6639,6 +6639,8 @@ DEC_DECOMP* DECgetBestDecomp(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   if ( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+      return NULL;
 
    if( conshdlrdata->seeedpool == NULL )
       conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
