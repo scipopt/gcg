@@ -155,7 +155,7 @@ then
 fi
 
 SOLUFILE=""
-for SOLU in testset/$TSTNAME.solu testset/all.solu
+for SOLU in testset/$TSTNAME.solu testset/_all.solu
 do
     if test -e $SOLU
     then
@@ -169,7 +169,7 @@ if test $SETCUTOFF = "true"
 then
     if test $SOLUFILE = ""
     then
-        echo "Skipping test: SETCUTOFF=true set, but no .solu file (testset/$TSTNAME.solu or testset/all.solu) available"
+        echo "Skipping test: SETCUTOFF=true set, but no .solu file (testset/$TSTNAME.solu or testset/_all.solu) available"
         exit
     fi
 fi
