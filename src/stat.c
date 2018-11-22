@@ -42,6 +42,8 @@
 #include "struct_detector.h"
 #include "pub_gcgvar.h"
 #include "pricer_gcg.h"
+#include "gcg.h"
+#include "relax_gcg.h"
 
 
 /** prints information about the best decomposition*/
@@ -96,6 +98,22 @@ SCIP_RETCODE GCGwriteDecompositionData(
    }
 
    DECdecompFree(scip, &decomposition);
+
+   return SCIP_OKAY;
+}
+
+/** prints additional solving statistics */
+SCIP_RETCODE GCGwriteSolvingDetails(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CLOCK* rootnodetime;
+
+   assert(scip != NULL);
+
+   rootnodetime = GCGgetRootNodeTime(scip);
+   SCIPinfoMessage(scip, NULL, "Solving Details    :\n");
+   SCIPinfoMessage(scip, NULL, "  time in root node: %10.2f\n", SCIPgetClockTime(scip, rootnodetime));
 
    return SCIP_OKAY;
 }

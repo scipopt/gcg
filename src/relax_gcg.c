@@ -156,6 +156,7 @@ struct SCIP_RelaxData
 
    /* statistical information */
    SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
+   SCIP_CLOCK*           rootnodetime;       /**< time in root node */
 
    /* filename information */
    const char*           filename;
@@ -2668,6 +2669,7 @@ void initRelaxdata(
 
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
+   relaxdata->rootnodetime = NULL;
 
 }
 
@@ -2762,6 +2764,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    assert(relaxdata->masterprob != NULL);
 
    initRelaxdata(relaxdata);
+   SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
 
    /* if the master problem decomposition mode is the same as the original SCIP instance mode, then the master problem
     * must be swapped with the alternate master problem.
@@ -2898,6 +2901,12 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    }
 
    SCIP_CALL( GCGfreeOrigVarsData(scip) );
+
+   /* free root node clock */
+   if( relaxdata->rootnodetime != NULL )
+   {
+      SCIP_CALL( SCIPfreeClock(scip, &(relaxdata->rootnodetime)) );
+   }
 
    relaxdata->relaxisinitialized = FALSE;
 
@@ -3106,6 +3115,13 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
+      /* start root node time clock */
+      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+      {
+         SCIP_CALL( SCIPstartClock(scip, relaxdata->rootnodetime) );
+         SCIPdebugMessage("  root node time clock started.\n");
+      }
+
       /* increase the node limit for the master problem by 1 */
       SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
 
@@ -3154,6 +3170,13 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
    else
    {
       SCIPdebugMessage("Problem has been already solved at this node\n");
+   }
+
+   /* stop root node clock */
+   if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+   {
+      SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+      SCIPdebugMessage("  root node time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
    }
 
    return SCIP_OKAY;
@@ -5142,4 +5165,23 @@ DEC_DECMODE GCGgetMasterDecompMode(
    }
 
    return mode;
+}
+
+/** return root node time clock */
+SCIP_CLOCK* GCGgetRootNodeTime(
+   SCIP*                scip              /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->rootnodetime;
 }
