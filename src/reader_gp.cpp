@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_gp.cpp
- * @brief  GP file reader writing seeeds to gnuplot files
+ * @brief  GP file reader writing decompositions to gnuplot files
  * @author Martin Bergner
  * @author Hanna Franzen
  * @author Michael Bastubbe
@@ -66,7 +66,7 @@ using namespace gcg;
  */
 
 
-/** destructor of reader to free user data (called when SCIP is exiting) */
+/** Destructor of reader to free user data (called when SCIP is exiting) */
 static
 SCIP_DECL_READERFREE(readerFreeGp)
 {
@@ -75,7 +75,7 @@ SCIP_DECL_READERFREE(readerFreeGp)
 }
 
 
-/** problem writing method of reader */
+/** Problem writing method of reader */
 static
 SCIP_DECL_READERWRITE(readerWriteGp)
 {
@@ -134,7 +134,8 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 }
 
 
-/** write file header with terminal etc. */
+/** Write gnuplot file header with terminal etc.
+ * @returns SCIP status */
 static
 SCIP_RETCODE writeGpHeader(
    SCIP*                 scip,
@@ -147,8 +148,6 @@ SCIP_RETCODE writeGpHeader(
 
    SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &plotformiplib);
    ofs.open( filename, std::ofstream::out );
-
-
 
    /* set output format and file */
    ofs << "set encoding utf8" << std::endl;
@@ -165,7 +164,8 @@ SCIP_RETCODE writeGpHeader(
 }
 
 
-/* writes gp code to given file that contains a box with given coordinates and color */
+/** Adds gnuplot code to given file that contains a box with given coordinates and color
+ * @returns SCIP status */
 static
 SCIP_RETCODE drawGpBox(
    char* filename,   /**< filename (including path) to write to */
@@ -188,7 +188,8 @@ SCIP_RETCODE drawGpBox(
 }
 
 
-/** writes gp code to given file that contains all nonzero points */
+/** Writes gnuplot code to given file that contains all nonzero points
+ * @returns SCIP status */
 static
 SCIP_RETCODE writeGpNonzeros(
    const char* filename,   /**< filename to write to (including path & extension) */
@@ -207,7 +208,7 @@ SCIP_RETCODE writeGpNonzeros(
    int countercols = 0;
    std::ofstream ofs;
 
-   /** order of constraints */
+   /* order of constraints */
    /* master constraints */
    for( int i = 0; i < seeed->getNMasterconss() ; ++i )
    {
@@ -229,7 +230,7 @@ SCIP_RETCODE writeGpNonzeros(
       }
    }
 
-   /** open constraints */
+   /* open constraints */
    for( int i = 0; i < seeed->getNOpenconss(); ++i )
    {
       int rowidx = seeed->getOpenconss()[i];
@@ -238,7 +239,7 @@ SCIP_RETCODE writeGpNonzeros(
       ++counterrows;
    }
 
-   /** order of variables */
+   /* order of variables */
 
    /* linking variables */
    for( int i = 0; i < seeed->getNLinkingvars() ; ++i )
@@ -323,7 +324,10 @@ SCIP_RETCODE writeGpNonzeros(
    return SCIP_OKAY;
 }
 
-
+/** \brief Adds the gnuplot body of the seeed visualization to the given file
+ *
+ * Adds the gnuplot body of the seeed visualization to the given file.
+ * This includes axes, blocks and nonzeros. */
 static
 SCIP_RETCODE writeGpSeeed(
    char* filename,         /**< filename (including path) to write to */
@@ -459,7 +463,6 @@ SCIP_RETCODE writeGpSeeed(
 }
 
 
-/** writes a visualization for the given seeed */
 SCIP_RETCODE GCGwriteGpVisualization(
    SCIP* scip,             /**< SCIP data structure */
    char* filename,         /**< filename (including path) to write to */
