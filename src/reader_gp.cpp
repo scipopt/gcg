@@ -463,6 +463,7 @@ SCIP_RETCODE writeGpSeeed(
 }
 
 
+/* Writes a visualization for the given seeed */
 SCIP_RETCODE GCGwriteGpVisualization(
    SCIP* scip,             /**< SCIP data structure */
    char* filename,         /**< filename (including path) to write to */
@@ -503,12 +504,11 @@ SCIP_RETCODE GCGwriteGpVisualization(
  * reader include
  */
 
-/** includes the gp file reader into SCIP */
+/* includes the gp file reader into SCIP */
 SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   /* include gp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
       NULL, readerFreeGp, NULL, readerWriteGp, NULL) );
 
