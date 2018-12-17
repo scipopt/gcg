@@ -114,7 +114,10 @@ SCIP_RETCODE GCGpricingjobSetup(
    }
 
    GCGpricingjobResetSolver(scip, pricingjob);
-   GCGpricingjobResetHeuristic(pricingjob);
+   if( heuristic )
+      GCGpricingjobResetHeuristic(pricingjob);
+   else
+      GCGpricingjobSetExact(pricingjob);
 
    return SCIP_OKAY;
 }
