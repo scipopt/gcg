@@ -469,6 +469,8 @@ $(BINDIR):
 # this empty target is needed for the SCIP release versions
 githash::   # do not remove the double-colon
 
+${GCGGITHASHFILE}: githash
+
 .PHONY: test
 test:
 		cd check; \

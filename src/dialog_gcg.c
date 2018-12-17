@@ -600,9 +600,11 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
    if( decomp != NULL )
    {
       SCIP_CALL( GCGwriteDecomp(scip, NULL, decomp) );
+      SCIP_CALL(DECdecompFree(scip, &decomp) );
+   } else
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "No decomposition available.\n");
    }
-
-   SCIP_CALL(DECdecompFree(scip, &decomp) );
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
