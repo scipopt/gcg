@@ -1,4 +1,4 @@
-GCG Version 3.1.0
+GCG Version 3.0.1
 =================
 
 Command line interface:
@@ -10,6 +10,38 @@ New/changed parameters:
 -----------------------
 
 - new parameter "relaxing/gcg/mipdiscretization" indicates whether to use discretization with continuous variables (only has an effect if "relaxing/gcg/discretization" is enabled)
+
+Performance improvements:
+-------------------------
+
+- Improved performance of creating Gnuplot matrix visualizations
+- Corrected transfer from feasible master solutions to the original problem
+- Improved performnace of calculating foreseeing decomposition scores
+
+Code cleanup
+------------
+
+- Clean up scaling code in Gnuplot reader
+
+Bug fixes
+---------
+
+- Fix segmentation faults in aggressive detection
+- Fix toolbox method for assigning variables per regular expression
+- Fix issue with setting variables as linking variables in decomposition toolbox
+- Call hmetis only if at matrix should be decomposed into at least two blocks
+- Fix issues with hmetis in aggressive detection
+- Deal with empty or duplicate constraint names
+- Fix an assertion in detection concerning a non-existent hashmap
+- Fix memory error in relaxator concerning a filename string that was not freed
+- Fix bug in reader_dec for original problem
+- Handle double stored external branching candidates correctly in ZI rounding heuristic
+- Fix issue with non-violated cuts in separation storage
+- Fix NULL pointer error in two 'if' clauses in seeed pool
+- Fix memory leak in event_relaxsol
+- Use correct method to free event handler data in event_relaxsol.
+- Fix parallelization in pricing loop by allowing only one job per pricing problem at a time
+- Add a missing Makefile dependency
 
 
 GCG Version 3.0.0
