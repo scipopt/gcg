@@ -69,8 +69,7 @@
 
 using namespace gcg;
 
-/** destructor of reader to free user data (called when SCIP is exiting) */
-
+/** Destructor of reader to free user data (called when SCIP is exiting) */
 SCIP_DECL_READERFREE(readerFreeTex)
 {
    /*@todo this is a workaround */
@@ -80,14 +79,12 @@ SCIP_DECL_READERFREE(readerFreeTex)
 
 /** Problem reading method of reader.
  *  Since the reader is not supposed to read files this returns a reading error. */
-
 SCIP_DECL_READERREAD(readerReadTex)
 {  /*lint --e{715}*/
    return SCIP_READERROR;
 }
 
-/** problem writing method of reader */
-
+/** Problem writing method of reader */
 SCIP_DECL_READERWRITE(readerWriteTex)
 {
    SEEED_WRAPPER swr;
@@ -113,7 +110,9 @@ SCIP_DECL_READERWRITE(readerWriteTex)
 }
 
 
-/* outputs the r, g, b decimal values for the rgb hex input */
+/** Outputs the r, g, b decimal values for the rgb hex input
+ *
+ * @returns SCIP status */
 static
 SCIP_RETCODE getRgbFromHex(
    char*    hex,     /**< input hex rgb code of form "#000000" */
@@ -144,12 +143,14 @@ SCIP_RETCODE getRgbFromHex(
 }
 
 
-/** converts a hex color code into a tex-conform line of code that defines the color as \colorname */
+/** Converts a hex color code into a tex-conform line of code that defines the color as \colorname
+ *
+ * @returns SCIP status */
 static
 SCIP_RETCODE getTexColorFromHex(
    char* hex,              /**< hex code for color */
    const char* colorname,  /**< name of color */
-   char* code              /**< resulting code line */
+   char* code              /**< output resulting code line */
    )
 {
    char texcode[SCIP_MAXSTRLEN];
@@ -182,7 +183,9 @@ SCIP_RETCODE getTexColorFromHex(
 }
 
 
-/** write LaTeX code header & begin of document to given file */
+/** Write LaTeX code header & begin of document to given file
+ *
+ *  @returns SCIP status */
 static
 SCIP_RETCODE writeTexHeader(
    SCIP*                scip,               /**< SCIP data structure */
@@ -281,7 +284,9 @@ SCIP_RETCODE writeTexHeader(
 }
 
 
-/** write LaTeX code title page that includes general statistics about the problem to given file */
+/** Write LaTeX code title page that includes general statistics about the problem to given file
+ *
+ * @returns SCIP status */
 static
 SCIP_RETCODE writeTexTitlepage(
    SCIP*                scip,               /**< SCIP data structure */
@@ -338,7 +343,9 @@ SCIP_RETCODE writeTexTitlepage(
 }
 
 
-/** write LaTeX code for table of contents to given file */
+/** Write LaTeX code for table of contents to given file
+ *
+ *  @returns SCIP status */
 static
 SCIP_RETCODE writeTexTableOfContents(
    SCIP*                scip,               /**< SCIP data structure */
@@ -354,8 +361,9 @@ SCIP_RETCODE writeTexTableOfContents(
 }
 
 
-/** writes line to given file that contains the tikz code for a box with given dimensions
- * and options with a linebreak at the end. */
+/** Writes tikz code for a box
+ *
+ *  @returns SCIP status */
 static
 SCIP_RETCODE writeTikzBox(
    SCIP* scip,       /**< SCIP data structure */
@@ -366,7 +374,7 @@ SCIP_RETCODE writeTikzBox(
    int y1,           /**< y value of lower left vertex coordinate */
    int x2,           /**< x value of upper right vertex coordinate */
    int y2,           /**< y value of upper right vertex coordinate */
-   const char* color /**< color name */
+   const char* color /**< color name of box color */
    )
 {
    SCIPinfoMessage(scip, file,
@@ -377,12 +385,13 @@ SCIP_RETCODE writeTikzBox(
 }
 
 
-/** writes line to given file that contains the tikz code for a point with given radius
- * and options with a linebreak at the end. */
+/** Writes tikz code for dots representing nonzeros
+ *
+ *  @returns SCIP status */
 static
 SCIP_RETCODE writeTikzNonzeros(
    SCIP* scip,             /**< SCIP data structure */
-   FILE* file,             /**< filename to write to (including path & extension) */
+   FILE* file,             /**< file to write to  */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
    Seeedpool* seeedpool,   /**< current Seeedpool */
    float radius,           /**< radius of the dots */
@@ -496,13 +505,16 @@ SCIP_RETCODE writeTikzNonzeros(
 }
 
 
+/** Writes LaTeX code that contains a figure with a tikz picture of the given seeed
+ *
+ * @returns SCIP status */
 static
 SCIP_RETCODE writeTexSeeed(
    SCIP* scip,             /**< SCIP data structure */
-   FILE* file,             /**< filename (including path) to write to */
-   Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
+   FILE* file,             /**< file to write to */
+   Seeed* seeed,           /**< Seeed to be visualized */
    Seeedpool* seeedpool,   /**< current Seeedpool */
-   SCIP_Bool nofigure      /**< if true there will be no figure environments around tikz code*/
+   SCIP_Bool nofigure      /**< if true there will be no figure environment around tikz code*/
    )
 {
    int rowboxcounter = 0;
@@ -590,11 +602,19 @@ SCIP_RETCODE writeTexSeeed(
    return SCIP_OKAY;
 }
 
+
+/** Writes LaTeX code for some statistics about the seeed:
+ * - amount of blocks
+ * - amount of master, linking, stairlinking variables
+ * - amount of master constraints
+ * - max white score
+ *
+ * @returns SCIP status */
 static
 SCIP_RETCODE writeTexSeeedStatistics(
    SCIP* scip,             /**< SCIP data structure */
-   FILE* file,             /**< filename (including path) to write to */
-   Seeed* seeed            /**< Seeed for which the nonzeros should be visualized */
+   FILE* file,             /**< file to write to */
+   Seeed* seeed            /**< statistics are about this seeed */
    )
 {
    DEC_DETECTOR** detectorchain;
@@ -641,27 +661,31 @@ SCIP_RETCODE writeTexSeeedStatistics(
 }
 
 
-/** write LaTeX code for end of document to given file */
+/** Write LaTeX code for end of document to given file
+ *
+ * @returns SCIP status */
 static
 SCIP_RETCODE writeTexEnding(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file                /**< File pointer to write to */
+   SCIP* scip, /**< SCIP data structure */
+   FILE* file  /**< File pointer to write to */
    )
 {
-
    SCIPinfoMessage(scip, file, "\\end{document}                                                                  \n");
 
    return SCIP_OKAY;
 }
 
-/** help function for GCGwriteTexFamilyTree:
- * writes edges between nodes that are labeled corresponding to involved detectors */
+/** Help function for GCGwriteTexFamilyTree:
+ *  writes edges between nodes that are labeled corresponding to involved detectors
+ *
+ *  @returns SCIP status */
+static
 SCIP_RETCODE writeSeeedDetectorChainInfoLatex(
-   SCIP* scip,
+   SCIP* scip,       /**< SCIP data structure */
    FILE* file,       /**< file to write to */
    SeeedPtr seeed,   /**< seeed to write about */
-   int currheight,
-   int visucounter
+   int currheight,   /**< current tree height */
+   int visucounter   /**< position iterator for labeling nodes */
    )
 {
    char relposition[SCIP_MAXSTRLEN];
@@ -714,56 +738,74 @@ SCIP_RETCODE writeSeeedDetectorChainInfoLatex(
 }
 
 
-/**
- * @return is nextchild the last unfinished child
+/** Sets child to finished and checks whether to finish afterwards
+ *
+ * @returns whether child is the last (potentially) unfinished child
  */
-SCIP_Bool finishNextChild( std::vector<int>& childs, std::vector<SCIP_Bool>& childsfinished, int child )
+static
+SCIP_Bool finishNextChild(
+   std::vector<int>& children,               /**< vector of child ids */
+   std::vector<SCIP_Bool>& childrenfinished, /**< vector of finished stati of all children (in same order as children vector) */
+   int child                                 /**< next child */
+   )
 {
-   for( size_t s = 0; s < childsfinished.size(); ++s )
+   for( size_t s = 0; s < childrenfinished.size(); ++s )
    {
-      if( !childsfinished[s] )
+      if( !childrenfinished[s] )
       {
-         assert(childs[s] == child);
-         childsfinished[s] = TRUE;
-         return s == childsfinished.size() - 1;
+         assert(children[s] == child);
+         childrenfinished[s] = TRUE;
+         return s == childrenfinished.size() - 1;
       }
    }
    return FALSE;
 }
 
-
-SCIP_Bool unfinishedChildExists(std::vector<SCIP_Bool> const& childsfinished)
+/** Checks whether an unfinished child exists
+ *
+ * @returns true if an unfinished child exists, otherwise false */
+static
+SCIP_Bool unfinishedChildExists(
+   std::vector<SCIP_Bool> const& childrenfinished /**< vector of finished stati of all children */
+   )
 {
-   for( size_t s = 0; s < childsfinished.size(); ++s )
+   for( size_t s = 0; s < childrenfinished.size(); ++s )
    {
-      if( !childsfinished[s] )
+      if( !childrenfinished[s] )
          return true;
    }
    return false;
 }
 
 
-int getFirstUnfinishedChild(std::vector<SCIP_Bool> const& childsfinished, std::vector<int> const& childs)
+/** Looks for the first unfinished child in the childrenfinished vector
+ *
+ * @returns child id of first unfinished child */
+static
+int getFirstUnfinishedChild(
+   std::vector<SCIP_Bool> const& childrenfinished,   /**< vector of finished stati of all children */
+   std::vector<int> const& children                  /**< vector of child ids (in same order as childrenfinished */
+   )
 {
-   for( size_t s = 0; s < childsfinished.size(); ++s )
+   for( size_t s = 0; s < childrenfinished.size(); ++s )
    {
-      if( !childsfinished[s] )
-         return childs[s];
+      if( !childrenfinished[s] )
+         return children[s];
    }
    return -1;
 }
 
 
-/** writes a report for the given seeeds */
+/* Writes a report for the given seeeds */
 SCIP_RETCODE GCGwriteTexReport(
-   SCIP* scip,             /**< SCIP data structure */
-   FILE* file,             /**< filename including path */
-   int* seeedids,         /**< ids of seeeds to visualize */
-   int* nseeeds,           /**< number of seeeds to visualize */
-   SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
-   SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
-   SCIP_Bool statistics,   /**< true if statistics for each seeed should be included */
-   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
+   SCIP* scip,             /* SCIP data structure */
+   FILE* file,             /* file to write to */
+   int* seeedids,          /* ids of seeeds to visualize */
+   int* nseeeds,           /* number of seeeds to visualize */
+   SCIP_Bool titlepage,    /* true if a title page should be included in the document */
+   SCIP_Bool toc,          /* true if an interactive table of contents should be included */
+   SCIP_Bool statistics,   /* true if statistics for each seeed should be included */
+   SCIP_Bool usegp         /* true if the gp reader should be used to visualize the individual seeeds */
    )
 {
    MiscVisualization* misc = new MiscVisualization();
@@ -848,13 +890,13 @@ SCIP_RETCODE GCGwriteTexReport(
 }
 
 
-/** writes a visualization of the family tree of the current seeedpool */
+/* Writes a visualization of the family tree of the current seeedpool */
 SCIP_RETCODE GCGwriteTexFamilyTree(
-   SCIP* scip,                /**< SCIP data structure */
-   FILE* file,                /**< filename including path */
-   const char* workfolder,    /**< directory in which should be worked, includes generation of intermediate files */
-   SEEED_WRAPPER** seeedswr,  /**< seeed wrapper for the seeeds the family tree should be constructed for */
-   int* nseeeds               /**< number of seeeds the family tree should be constructed for */
+   SCIP* scip,                /* SCIP data structure */
+   FILE* file,                /* file to write to */
+   const char* workfolder,    /* directory in which should be worked, includes generation of intermediate files */
+   SEEED_WRAPPER** seeedswr,  /* seeed wrapper for the seeeds the family tree should be constructed for */
+   int* nseeeds               /* number of seeeds the family tree should be constructed for */
    )
 {
    MiscVisualization* miscvisu = new MiscVisualization();
@@ -876,8 +918,8 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    int root = -1;
    int root2 = -1;
    std::vector<int> parents(nallrelevantseeeds, -1);
-   std::vector< std::vector<int> > childs (nallrelevantseeeds, std::vector<int>(0));
-   std::vector< std::vector<SCIP_Bool> > childsfinished(nallrelevantseeeds, std::vector<SCIP_Bool>(0));
+   std::vector< std::vector<int> > children (nallrelevantseeeds, std::vector<int>(0));
+   std::vector< std::vector<SCIP_Bool> > childrenfinished(nallrelevantseeeds, std::vector<SCIP_Bool>(0));
    std::vector<SCIP_Bool> visited(nallrelevantseeeds, FALSE);
 
    helpvisucounter = 0;
@@ -909,8 +951,8 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
          int ancestorid;
          ancestorid = seeedswr[s]->seeed->getAncestorID( seeedswr[s]->seeed->getNAncestors() - i - 1 );
          parents[currid] = ancestorid;
-         childs[ancestorid].push_back(currid);
-         childsfinished[ancestorid].push_back(FALSE);
+         children[ancestorid].push_back(currid);
+         childrenfinished[ancestorid].push_back(FALSE);
 
          if( !isseeedintree[ancestorid] )
          {
@@ -964,14 +1006,14 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       }
    }
 
-   for( size_t s = 0; root2 != -1 && s < childs[root2].size(); ++s )
+   for( size_t s = 0; root2 != -1 && s < children[root2].size(); ++s )
    {
-      childs[root].push_back(childs[root2][s] );
-      childsfinished[root].push_back(FALSE );
+      children[root].push_back(children[root2][s] );
+      childrenfinished[root].push_back(FALSE );
    }
 
-   firstsibldist = 1. / (childs[root].size() - 1 );
-   if( childs[root].size() == 1 ){
+   firstsibldist = 1. / (children[root].size() - 1 );
+   if( children[root].size() == 1 ){
       firstsibldist = 1;
    }
 
@@ -994,7 +1036,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    {
       if( !visited[curr] )
       {
-         /** write node */
+         /* write node */
          SCIPinfoMessage(scip, file, "(s%d) ", allrelevantseeedswr[curr]->seeed->getID());
 
          char temp[SCIP_MAXSTRLEN];
@@ -1004,14 +1046,14 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
          /* set node visited */
          visited[curr] = TRUE;
          if( parents[curr] != -1 )
-            finishNextChild(childs[parents[curr]], childsfinished[parents[curr]], curr);
+            finishNextChild(children[parents[curr]], childrenfinished[parents[curr]], curr);
 
       }
-      if ( unfinishedChildExists(childsfinished[curr] ) )
+      if ( unfinishedChildExists(childrenfinished[curr] ) )
       {
-         int unfinishedchild = getFirstUnfinishedChild(childsfinished[curr], childs[curr] );
+         int unfinishedchild = getFirstUnfinishedChild(childrenfinished[curr], children[curr] );
          /* is first child unfinihsed? */
-         //         if( unfinishedchild == childs[curr][0] )
+         //         if( unfinishedchild == children[curr][0] )
          SCIPinfoMessage(scip, file, "\n child { node ");
          curr = unfinishedchild;
          ++currheight;
@@ -1086,13 +1128,13 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
 }
 
 
-/** writes a visualization for the given seeed */
+/* Writes a visualization for the given seeed */
 SCIP_RETCODE GCGwriteTexVisualization(
-   SCIP* scip,             /**< SCIP data structure */
-   FILE* file,             /**< filename including path */
-   int seeedid,            /**< id of seeed to visualize */
-   SCIP_Bool statistics,   /**< additionally to picture show statistics */
-   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
+   SCIP* scip,             /* SCIP data structure */
+   FILE* file,             /* file to write to */
+   int seeedid,            /* id of seeed to visualize */
+   SCIP_Bool statistics,   /* additionally to picture show statistics */
+   SCIP_Bool usegp         /* true if the gp reader should be used to visualize the individual seeeds */
    )
 {
    MiscVisualization* misc = new MiscVisualization();
@@ -1139,12 +1181,12 @@ SCIP_RETCODE GCGwriteTexVisualization(
 }
 
 
-/** makes a new makefile and readme for the given .tex file */
+/* Makes a new makefile and readme for the given .tex file */
 SCIP_RETCODE GCGtexWriteMakefileAndReadme(
-   SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file,               /**< File for which the makefile & readme are generated */
-   SCIP_Bool            usegp,              /**< true if there are gp files to be included in the makefile */
-   SCIP_Bool            compiletex          /**< true if there are tex files to be compiled before main document */
+   SCIP*                scip,               /* SCIP data structure */
+   FILE*                file,               /* File for which the makefile & readme are generated */
+   SCIP_Bool            usegp,              /* true if there are gp files to be included in the makefile */
+   SCIP_Bool            compiletex          /* true if there are tex files to be compiled before main document */
 
    )
 {
@@ -1278,12 +1320,11 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
 }
 
 
-/** includes the tex file reader in SCIP */
+/* Includes the tex file reader in SCIP */
 SCIP_RETCODE SCIPincludeReaderTex(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip                /*< SCIP data structure */
    )
 {
-   /* include tex reader */
    SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
            readerFreeTex, readerReadTex, readerWriteTex, NULL));
 

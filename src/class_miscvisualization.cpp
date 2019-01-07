@@ -56,7 +56,7 @@ MiscVisualization::~MiscVisualization(){}
 
 /* Gives a consistent filename for a (single) seeed visualization that includes the probname and seeedID
  *
- * @return standardized filename
+ * @returns standardized filename
  */
 SCIP_RETCODE MiscVisualization::GCGgetVisualizationFilename(
    SCIP* scip,             /* scip data structure */

@@ -30,7 +30,7 @@
  * @author Hanna Franzen
  * @ingroup FILEREADERS
 
- * This reader can write visualizations and reports of seeeds to a .tex LaTeX file.
+ * This reader can write visualizations, family trees and reports of seeeds to a .tex LaTeX file.
  * The gp reader might be required for visualizations.
 
  */
@@ -49,21 +49,27 @@ extern "C" {
 #endif
 
 
-/** Includes the tex file reader into SCIP */
+/** Includes the tex file reader into SCIP
+ *
+ * @returns SCIP status */
 extern SCIP_RETCODE SCIPincludeReaderTex(
    SCIP* scip     /**< SCIP data structure */
    );
 
-/** Writes visualization LaTeX code for the given seeed */
+/** Writes visualization LaTeX code for the given seeed
+ *
+ * @returns SCIP status */
 extern SCIP_RETCODE GCGwriteTexVisualization(
    SCIP* scip,             /**< SCIP data structure */
-   FILE* file,             /**< file in which to put the LaTeX code */
+   FILE* file,             /**< file in which to write the LaTeX code */
    int seeedid,            /**< id of seeed to visualize */
    SCIP_Bool statistics,   /**< additionally to picture show statistics */
-   SCIP_Bool usegp         /**< true if the gp reader should be used for the image generation */
+   SCIP_Bool usegp         /**< true if the gp reader should be used for the image generation (instead of tikz) */
    );
 
-/** Writes a visualization of the family tree of the current seeedpool */
+/** Writes a visualization of the family tree of the current seeedpool
+ *
+ * @returns SCIP status */
 extern SCIP_RETCODE GCGwriteTexFamilyTree(
    SCIP* scip,                /**< SCIP data structure */
    FILE* file,                /**< file in which to put the LaTeX code */
@@ -72,7 +78,9 @@ extern SCIP_RETCODE GCGwriteTexFamilyTree(
    int* nseeeds               /**< number of seeeds the family tree should be constructed for */
    );
 
-/** Writes a report for the given seeeds */
+/** Writes a report for the given seeeds
+ *
+ * @returns SCIP status */
 extern SCIP_RETCODE GCGwriteTexReport(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< file in which to put the LaTeX code */
@@ -82,9 +90,11 @@ extern SCIP_RETCODE GCGwriteTexReport(
    SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
    SCIP_Bool statistics,   /**< true if statistics for each seeed should be included */
    SCIP_Bool usegp         /**< true if the gp reader should be used for the image generation */
-      );
+   );
 
-/** Makes a new makefile and readme for the given .tex file */
+/** Makes a new makefile and readme for the given .tex file
+ *
+ * @returns SCIP status */
 extern SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    SCIP* scip,          /**< SCIP data structure */
    FILE* file,          /**< tex file for which the makefile & readme are generated */

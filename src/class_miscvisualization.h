@@ -61,7 +61,7 @@ public:
 
    /** Gives a consistent filename for a (single) seeed visualization that includes the probname and seeedID.
     *
-    * @return standardized filename
+    * @returns standardized filename
     * */
    SCIP_RETCODE GCGgetVisualizationFilename(
       SCIP* scip,             /**< scip data structure */
@@ -73,7 +73,7 @@ public:
 
    /** Gives the path of the file.
     *
-    * @return path of file
+    * @returns path of file
     * */
    char* GCGgetFilePath(
       SCIP* scip,       /**< scip data structure */
