@@ -406,7 +406,7 @@ SCIP_RETCODE writeTikzNonzeros(
    int counterrows = 0;
    int countercols = 0;
 
-   /** order of constraints */
+   /* order of constraints */
    /* master constraints */
    for( int i = 0; i < seeed->getNMasterconss() ; ++i )
    {
@@ -428,7 +428,7 @@ SCIP_RETCODE writeTikzNonzeros(
       }
    }
 
-   /** open constraints */
+   /* open constraints */
    for( int i = 0; i < seeed->getNOpenconss(); ++i )
    {
       int rowidx = seeed->getOpenconss()[i];
@@ -437,7 +437,7 @@ SCIP_RETCODE writeTikzNonzeros(
       ++counterrows;
    }
 
-   /** order of variables */
+   /* order of variables */
 
    /* linking variables */
    for( int i = 0; i < seeed->getNLinkingvars() ; ++i )
@@ -710,7 +710,7 @@ SCIP_RETCODE writeSeeedDetectorChainInfoLatex(
    else
    {
       std::string oldinfo = seeed->getDetectorchainInfo( currheight - 1 );
-      /** take latexified detectorchaininfo */
+      /* take latexified detectorchaininfo */
       size_t index = 0;
       while(true)
       {
@@ -924,13 +924,13 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
 
    helpvisucounter = 0;
 
-   /** check allrelevant seeeds **/
+   /* check allrelevant seeeds */
    for( int s = 0; s < nallrelevantseeeds; ++s )
    {
       assert(allrelevantseeedswr[s]->seeed == NULL || (int) s == allrelevantseeedswr[s]->seeed->getID() );
    }
 
-   /** 1) find relevant seeeds in tree and build tree */
+   /* 1) find relevant seeeds in tree and build tree */
    for( int s = 0; s < *nseeeds; ++s )
    {
       int currid;
@@ -1026,7 +1026,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       "\\begin{tikzpicture}[level/.style={sibling distance=%f\\textwidth/#1}, level distance=12em, ->, dashed]\n",
       firstsibldist);
 
-   /** iterate tree and write file */
+   /* iterate tree and write file */
    curr = root;
 
    if(curr != -1)
