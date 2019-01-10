@@ -5991,6 +5991,77 @@ SCIP_RETCODE DECdetectStructure(
 }
 
 
+/* writes all selected decompositions */
+SCIP_RETCODE DECwriteSelectedDecomps(
+   SCIP*                 scip,               /**< SCIP data structure */
+   char*                 directory,          /**< directory for decompositions */
+   char*                 extension          /**< extension for decompositions */
+   )
+{
+   MiscVisualization* misc = new MiscVisualization();
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   char outname[SCIP_MAXSTRLEN];
+   char tempstring[SCIP_MAXSTRLEN];
+   SCIP_Bool nodecomps;
+
+   assert(scip != NULL);
+   assert(extension != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   nodecomps = ( conshdlrdata->seeedpool == NULL && conshdlrdata->seeedpoolunpresolved == NULL );
+
+
+   if( nodecomps )
+   {
+      SCIPwarningMessage(scip, "No decomposition available.\n");
+      return SCIP_OKAY;
+   }
+
+
+   if(  conshdlrdata->selected->size() == 0 )
+   {
+      SCIPwarningMessage(scip, "No decomposition selected.\n");
+      return SCIP_OKAY;
+   }
+
+
+   for( size_t selid = 0; selid < conshdlrdata->selected->size(); ++selid )
+   {
+      SeeedPtr seeed;
+
+      seeed = conshdlrdata->listall->at(conshdlrdata->selected->at(selid) );
+
+      misc->GCGgetVisualizationFilename(scip, seeed, extension, tempstring);
+      if( directory != NULL )
+      {
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", directory, tempstring, extension);
+      }
+      else
+      {
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s.%s", tempstring, extension);
+      }
+
+      conshdlrdata->seeedtowrite = seeed;
+
+      if ( seeed->isFromUnpresolved() )
+         SCIP_CALL( SCIPwriteOrigProblem(scip, outname, extension, FALSE) );
+      else
+         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
+
+      conshdlrdata->seeedtowrite = NULL;
+   }
+
+   return SCIP_OKAY;
+}
+
+
 /* write out all known decompositions
  * @returns SCIP return code  */
 SCIP_RETCODE DECwriteAllDecomps(
