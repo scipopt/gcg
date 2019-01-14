@@ -58,6 +58,8 @@
 #define READER_DESC             "gnuplot file writer for seeed visualization"
 #define READER_EXTENSION        "gp"
 
+#define DEFAULT_RADIUS          0.6
+
 
 using namespace gcg;
 
@@ -194,12 +196,10 @@ static
 SCIP_RETCODE writeGpNonzeros(
    const char* filename,   /**< filename to write to (including path & extension) */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
-   Seeedpool* seeedpool,   /**< current Seeedpool */
    float radius            /**< radius of the dots */
    )
 {
    int radiusscale;
-   SCIP_Bool plotmiplib;
    std::vector<int> orderToRows(seeed->getNConss(), -1);
    std::vector<int> rowToOrder(seeed->getNConss(), -1);
    std::vector<int> orderToCols(seeed->getNVars(), -1);
@@ -207,6 +207,9 @@ SCIP_RETCODE writeGpNonzeros(
    int counterrows = 0;
    int countercols = 0;
    std::ofstream ofs;
+   Seeedpool* seeedpool;
+
+   seeedpool = seeed->getSeeedpool();
 
    /* order of constraints */
    /* master constraints */
@@ -290,8 +293,6 @@ SCIP_RETCODE writeGpNonzeros(
    ofs.open (filename, std::ofstream::out | std::ofstream::app );
 
    SCIPgetIntParam(seeedpool->getScip(), "visual/nonzeroradius", &radiusscale);
-   SCIPgetBoolParam(seeedpool->getScip(), "write/miplib2017plotsanddecs", &plotmiplib);
-
    radius *= radiusscale;
 
    if ( radius < 0.01 )
@@ -441,16 +442,8 @@ SCIP_RETCODE writeGpSeeed(
    /* --- draw nonzeros --- */
    if( SCIPvisuGetDraftmode() == FALSE )
    {
-      /* scale nonzero radius with 2% of maximal index */
-      int radiusscale;
-      if(seeed->getNVars() > seeed->getNConss())
-         radiusscale = seeed->getNVars() / 200;
-      else
-         radiusscale = seeed->getNConss() / 200;
-
-      radiusscale = 0.6;
-      writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(),
-         radiusscale) );
+      writeGpNonzeros( filename, seeed, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(),
+         DEFAULT_RADIUS) );
    }
    else
    {
