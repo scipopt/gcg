@@ -393,7 +393,6 @@ SCIP_RETCODE writeTikzNonzeros(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< file to write to  */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
-   Seeedpool* seeedpool,   /**< current Seeedpool */
    float radius,           /**< radius of the dots */
    int xmax,               /**< maximum x axis value */
    int ymax                /**< maximum y axis value */
@@ -405,6 +404,9 @@ SCIP_RETCODE writeTikzNonzeros(
    std::vector<int> colsToOrder(seeed->getNVars(), -1);
    int counterrows = 0;
    int countercols = 0;
+   Seeedpool* seeedpool;
+
+   seeedpool = seeed->getSeeedpool();
 
    /* order of constraints */
    /* master constraints */
@@ -513,7 +515,6 @@ SCIP_RETCODE writeTexSeeed(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< file to write to */
    Seeed* seeed,           /**< Seeed to be visualized */
-   Seeedpool* seeedpool,   /**< current Seeedpool */
    SCIP_Bool nofigure      /**< if true there will be no figure environment around tikz code*/
    )
 {
@@ -588,7 +589,7 @@ SCIP_RETCODE writeTexSeeed(
    /* --- draw nonzeros --- */
    if(SCIPvisuGetDraftmode() == FALSE)
    {
-      writeTikzNonzeros(scip, file, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), 1),
+      writeTikzNonzeros(scip, file, seeed, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), 1),
          nvars, nconss);
    }
 
@@ -811,7 +812,6 @@ SCIP_RETCODE GCGwriteTexReport(
    MiscVisualization* misc = new MiscVisualization();
    SEEED_WRAPPER seeedwr;
    Seeed* seeed;
-   Seeedpool* seeedpool = NULL;
    char* gppath;
    char* filepath;
    char* path;
@@ -845,10 +845,9 @@ SCIP_RETCODE GCGwriteTexReport(
          SCIPinfoMessage(scip, file, "                                                                \n");
       }
 
-      seeedpool = seeed->getSeeedpool();
       if(!usegp)
       {
-         writeTexSeeed(scip, file, seeed, seeedpool, FALSE);
+         writeTexSeeed(scip, file, seeed, FALSE);
       }
       else
       {
@@ -1140,21 +1139,19 @@ SCIP_RETCODE GCGwriteTexVisualization(
    MiscVisualization* misc = new MiscVisualization();
    SEEED_WRAPPER seeedwr;
    Seeed* seeed;
-   Seeedpool* seeedpool = NULL;
    char gpname[SCIP_MAXSTRLEN];
    char pdfname[SCIP_MAXSTRLEN];
 
    /* get seeed */
    GCGgetSeeedFromID(scip, &seeedid, &seeedwr);
    seeed = seeedwr.seeed;
-   seeedpool = seeed->getSeeedpool();
 
    /* write tex code into file */
    writeTexHeader(scip, file, FALSE);
 
    if(!usegp)
    {
-      writeTexSeeed(scip, file, seeed, seeedpool, FALSE);
+      writeTexSeeed(scip, file, seeed, FALSE);
    }
    else
    {

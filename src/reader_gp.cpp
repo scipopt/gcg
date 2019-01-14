@@ -331,8 +331,7 @@ SCIP_RETCODE writeGpNonzeros(
 static
 SCIP_RETCODE writeGpSeeed(
    char* filename,         /**< filename (including path) to write to */
-   Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
-   Seeedpool* seeedpool    /**< current Seeedpool */
+   Seeed* seeed            /**< Seeed for which the nonzeros should be visualized */
    )
 {
    int rowboxcounter = 0;
@@ -342,7 +341,9 @@ SCIP_RETCODE writeGpSeeed(
    int nconss;
    SCIP_Bool writematrix;
    SCIP_Bool noticsbutlabels;
+   Seeedpool* seeedpool;
 
+   seeedpool = seeed->getSeeedpool();
    nvars = seeed->getNVars();
    nconss = seeed->getNConss();
 
@@ -494,7 +495,7 @@ SCIP_RETCODE GCGwriteGpVisualization(
 
    /* write file */
    writeGpHeader(scip, filename, outputname );
-   writeGpSeeed( filename, seeed, seeedpool );
+   writeGpSeeed( filename, seeed );
 
    return SCIP_OKAY;
 }
