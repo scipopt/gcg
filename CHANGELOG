@@ -1,3 +1,9 @@
+GCG Version 3.1.0
+=================
+
+
+
+
 GCG Version 3.0.1
 =================
 
@@ -42,6 +48,7 @@ Bug fixes
 - Use correct method to free event handler data in event_relaxsol.
 - Fix parallelization in pricing loop by allowing only one job per pricing problem at a time
 - Add a missing Makefile dependency
+
 
 GCG Version 3.0.0
 =================
