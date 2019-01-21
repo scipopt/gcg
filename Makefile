@@ -35,7 +35,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	3.0.0
+VERSION         :=	3.1.0
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -61,9 +61,9 @@ STATISTICS  =  false
 PROJECT		=	none
 GTEST		=	false
 PARASCIP	= 	true
-BLISS      	=   true
+BLISS      	=   false
 CLIQUER     =   false
-HMETIS      =   true
+HMETIS      =   false
 OPENMP      =   false
 GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
@@ -468,6 +468,8 @@ $(BINDIR):
 
 # this empty target is needed for the SCIP release versions
 githash::   # do not remove the double-colon
+
+${GCGGITHASHFILE}: githash
 
 .PHONY: test
 test:

@@ -58,8 +58,7 @@
 #define READER_DESC             "gnuplot file writer for seeed visualization"
 #define READER_EXTENSION        "gp"
 
-#define DEFAULT_RADIUS          0.6
-
+#define SCALING_FACTOR_NONZEROS 0.6
 
 using namespace gcg;
 
@@ -196,7 +195,7 @@ static
 SCIP_RETCODE writeGpNonzeros(
    const char* filename,   /**< filename to write to (including path & extension) */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
-   float radius            /**< radius of the dots */
+   float radius            /**< radius of the dots (scaled concerning matrix dimensions)*/
    )
 {
    int radiusscale;
@@ -292,9 +291,12 @@ SCIP_RETCODE writeGpNonzeros(
 
    ofs.open (filename, std::ofstream::out | std::ofstream::app );
 
+   /** scaling factor concerning user wishes */
    SCIPgetIntParam(seeedpool->getScip(), "visual/nonzeroradius", &radiusscale);
    radius *= radiusscale;
 
+
+  /** dot should be visible, so enforce minimum radius of 0.01 */
    if ( radius < 0.01 )
       radius = 0.01;
 
@@ -442,8 +444,9 @@ SCIP_RETCODE writeGpSeeed(
    /* --- draw nonzeros --- */
    if( SCIPvisuGetDraftmode() == FALSE )
    {
+      /* scale the dots according to matrix dimensions here */
       writeGpNonzeros( filename, seeed, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(),
-         DEFAULT_RADIUS) );
+         SCALING_FACTOR_NONZEROS) );
    }
    else
    {
