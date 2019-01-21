@@ -291,12 +291,12 @@ SCIP_RETCODE writeGpNonzeros(
 
    ofs.open (filename, std::ofstream::out | std::ofstream::app );
 
-   /** scaling factor concerning user wishes */
+   /* scaling factor concerning user wishes */
    SCIPgetIntParam(seeedpool->getScip(), "visual/nonzeroradius", &radiusscale);
    radius *= radiusscale;
 
 
-  /** dot should be visible, so enforce minimum radius of 0.01 */
+  /* dot should be visible, so enforce minimum radius of 0.01 */
    if ( radius < 0.01 )
       radius = 0.01;
 

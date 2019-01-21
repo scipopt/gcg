@@ -35,6 +35,8 @@
  * This constraint handler will run all registered structure detectors in
  * in an iterative scheme increasing priority until the first detector finds a suitable structure.
  *
+ * It also manages the explore menu.
+ *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -191,9 +193,9 @@ struct SCIP_ConshdlrData
    int                   strongdetectiondualvalrandommethod;      /**< method to dual initilization of dual values for strong decomposition: 1) naive, 2) expected equal, 3) expected overestimation */
    SCIP_Real             coeffactororigvsrandom;                  /**< convex coefficient for orig dual val (1-this coef is facor for random dual value)  */
    SCIP_Bool             blocknumbercandsmedianvarspercons;       /**< should for block number candidates calcluation the medianvarspercons calculation be considered */
-   int                   maxnclassesfornblockcandidates;          /** maximum number of classes a classifier can have to be used for voting nblockcandidates */
-   int                   maxnclassesperclassifier;                /** maximum number of classes allowed for detectors, classifier with more classes are reduced to the meximum number of classes */
-   int                   maxnclassesperclassifierforlargeprobs;   /** maximum number of classes allowed for large (nvars+nconss > 50000) MIPs for detectors, classifier with more classes are reduced to the meximum number of classes */
+   int                   maxnclassesfornblockcandidates;          /**< maximum number of classes a classifier can have to be used for voting nblockcandidates */
+   int                   maxnclassesperclassifier;                /**< maximum number of classes allowed for detectors, classifier with more classes are reduced to the meximum number of classes */
+   int                   maxnclassesperclassifierforlargeprobs;   /**< maximum number of classes allowed for large (nvars+nconss > 50000) MIPs for detectors, classifier with more classes are reduced to the meximum number of classes */
    int                   weightinggpresolvedoriginaldecomps;      /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
    int                   aggregationlimitnconssperblock;          /**< if this limit on the number of constraints of a block is exceeded the aggregation information for this block is not calculated */
    int                   aggregationlimitnvarsperblock;           /**< if this limit on the number of variables of a block is exceeded the aggregation information for this block is not calculated */
@@ -253,7 +255,7 @@ struct SCIP_ConshdlrData
 
    SCIP_Bool             unpresolveduserseeedadded;               /**< stores whether or not an unpresolved user seeed was added */
 
-   /** new data fields for selection management */
+   /* new data fields for selection/exploration management */
    int                    startidvisu;                            /**< when displaying the list of decomps, this is the starting index */
    int                    selectvisulength;                       /**< number of decompositions to be displayed at once */
    std::vector<SeeedPtr>* listall;                                /**< vector containing the current list of decomps (to visualize, write, consider for family tree, consider for solving etc. )*/
@@ -271,20 +273,19 @@ struct SCIP_ConshdlrData
                                                                           6: ppc-max-white with aggregation info,
                                                                           7: experimental benders score */
 
-   SCIP_Bool               nonfinalfreetransform;                 /** help bool to notify a nonfinal free transform (neeeded if presolving is revoked, e.g. if unpresolved decomposition is used, and transformation is not successful) */
-   std::vector<int>*       userblocknrcandidates;                 /** vector to store block number candidates that were given by user */
-   SeeedPtr                seeedtowrite;                          /** help pointer as interface for writing partial decompositions */
-
-
+   SCIP_Bool               nonfinalfreetransform;                 /**< help bool to notify a nonfinal free transform (neeeded if presolving is revoked, e.g. if unpresolved decomposition is used, and transformation is not successful) */
+   std::vector<int>*       userblocknrcandidates;                 /**< vector to store block number candidates that were given by user */
+   SeeedPtr                seeedtowrite;                          /**< help pointer as interface for writing partial decompositions */
 
 };
 
-
-enum weightinggpresolvedoriginaldecomps{                          /** parameter how to modify scores when comparing decompositions for original and presolved problem (which might differ in size) */
-   NO_MODIF = 0,                                                  /** no modification */
-   FRACTION_OF_NNONZEROS,                                         /** scores are weighted according to ratio of number nonzeros, the more the worse */
-   FRACTION_OF_NROWS,                                             /** scores are weighted according to ratio of number nonzeros, the more the worse */
-   FAVOUR_PRESOLVED                                               /** decompositions for presolved problems are always favoured over decompositions of original problem */
+/** parameter how to modify scores when comparing decompositions for original and presolved problem
+ * (which might differ in size) */
+enum weightinggpresolvedoriginaldecomps{
+   NO_MODIF = 0,           /**< no modification */
+   FRACTION_OF_NNONZEROS,  /**< scores are weighted according to ratio of number nonzeros, the more the worse */
+   FRACTION_OF_NROWS,      /**< scores are weighted according to ratio of number nonzeros, the more the worse */
+   FAVOUR_PRESOLVED        /**< decompositions for presolved problems are always favoured over decompositions of original problem */
 };
 
 /*
@@ -292,26 +293,32 @@ enum weightinggpresolvedoriginaldecomps{                          /** parameter 
  */
 
 /**
- * method to calcualte the log with base of 2
+ * method to calculate the log with base of 2
+ *
+ * @returns log_2 of given value
  */
-SCIP_Real calcLogarithm(SCIP_Real val)
+SCIP_Real calcLogarithm(
+   SCIP_Real val  /**< value */
+   )
 {
    return log(val) / log(2);
 }
 
 
 /**
- * method to unselect all decompositions, called in consexit, and when the seeedlist is updated (especially if new (partial) are added )
+ * method to unselect all decompositions, called in consexit, and when the seeedlist is updated
+ * (especially if new (partial) are added )
  *
+ *@returns SCIP status
  */
 SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
-   SCIP*          scip
+   SCIP*          scip  /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
-     conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
    if( conshdlr == NULL )
    {
@@ -338,28 +345,31 @@ SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
 }
 
 /**
- * returns the currently selected scoretype
+ * Gets the currently selected scoretype
+ * @returns the currently selected scoretype
  */
 SCORETYPE SCIPconshdlrdataGetScoretype(
-   SCIP_CONSHDLRDATA* conshdlrdata
-)
+   SCIP_CONSHDLRDATA* conshdlrdata  /**< conshdlr data */
+   )
 {
    return  static_cast<scoretype>(conshdlrdata->currscoretype);
 }
 
 
 /**
- * returns the shortname of the given Scorwetype
+ * Gets the shortname of the given scoretype
+ *
+ * @returns the shortname of the given Scoretype
  */
 
 char*  SCIPconshdlrDecompGetScoretypeShortName(
-   SCIP*       scip,
-   SCORETYPE   sctype
+   SCIP*       scip,    /**< SCIP data structure */
+   SCORETYPE   sctype   /**< scoretype */
    )
 {
    char scoretypename[SCIP_MAXSTRLEN];
    char* copy;
-   /** set detector chain info string */
+   /* set detector chain info string */
    SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
 
 
@@ -399,50 +409,49 @@ char*  SCIPconshdlrDecompGetScoretypeShortName(
 /*!
  * returns the description of the given scoretype
  *
- * @ param
- * @return description of the scoretype
+ * @returns description of the scoretype
  */
 
 char*  SCIPconshdlrDecompGetScoretypeDescription(
-   SCIP*       scip,
-   SCORETYPE   sctype
+   SCIP*       scip,    /**< SCIP data structure */
+   SCORETYPE   sctype   /**< scoretype */
       )
 {
    char scoretypename[SCIP_MAXSTRLEN];
    char* copy;
-      /** set detector chain info string */
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
+   /* set detector chain info string */
+   SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
 
 
-      if( sctype == scoretype::MAX_WHITE)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum white area score (i.e. maximize fraction of white area score; white area is nonblock and nonborder area, stairlinking variables count as linking)") ;
+   if( sctype == scoretype::MAX_WHITE)
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum white area score (i.e. maximize fraction of white area score; white area is nonblock and nonborder area, stairlinking variables count as linking)") ;
 
-      if( sctype == scoretype::CLASSIC)
-            SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classical score") ;
+   if( sctype == scoretype::CLASSIC)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classical score") ;
 
-      if( sctype == scoretype::BORDER_AREA)
-            SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score; )")  ;
+   if( sctype == scoretype::BORDER_AREA)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score; )")  ;
 
-      if( sctype == scoretype::MAX_FORESSEEING_WHITE)
-            SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
+   if( sctype == scoretype::MAX_FORESSEEING_WHITE)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
 
-      if( sctype == scoretype::MAX_FORESEEING_AGG_WHITE)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score with aggregation information(i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
-
-
-      if( sctype == scoretype::SETPART_FWHITE)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing  white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
-
-      if( sctype == scoretype::SETPART_AGG_FWHITE)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
-
-      if( sctype == scoretype::BENDERS)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "experimental score to evaluate benders decompositions")  ;
+   if( sctype == scoretype::MAX_FORESEEING_AGG_WHITE)
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score with aggregation information(i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
 
 
-      SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
+   if( sctype == scoretype::SETPART_FWHITE)
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing  white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
 
-      return copy;
+   if( sctype == scoretype::SETPART_AGG_FWHITE)
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
+
+   if( sctype == scoretype::BENDERS)
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "experimental score to evaluate benders decompositions")  ;
+
+
+   SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
+
+   return copy;
 
 }
 
