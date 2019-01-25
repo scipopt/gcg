@@ -50,6 +50,7 @@
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
 #include "scip/misc.h"
+#include "scip/clock.h"
 
 #include "relax_gcg.h"
 
@@ -3116,7 +3117,7 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
       /* start root node time clock */
-      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) && !SCIPclockIsRunning(relaxdata->rootnodetime) )
       {
          SCIP_CALL( SCIPstartClock(scip, relaxdata->rootnodetime) );
          SCIPdebugMessage("  root node time clock started.\n");
@@ -3173,7 +3174,7 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
    }
 
    /* stop root node clock */
-   if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+   if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) && SCIPclockIsRunning(relaxdata->rootnodetime))
    {
       SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
       SCIPdebugMessage("  root node time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
