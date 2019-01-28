@@ -5691,10 +5691,12 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
 
 
 
-/** Check whether
+/** Checks whether
  *  1) the predecessors of all finished seeeds in both seeedpools can be found
  *  2) selected list is syncron with selected information in seeeds
- *  3) selected exists is synchronized with seleced list */
+ *  3) selected exists is synchronized with seleced list
+ *
+ *  @returns true if seeed information is consistent */
 SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    SCIP* scip  /**< SCIP data structure */
    )
@@ -6428,7 +6430,9 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
 }
 
 
-/** write the seeed in conshdlrdata->seeedtowrite into the file as dec */
+/** write the seeed in conshdlrdata->seeedtowrite into the file as dec
+ *
+ *  */
 SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    SCIP*     scip,         /**< SCIP data structure */
    FILE*     file,         /**< file for output */
@@ -6673,7 +6677,9 @@ void DECprintListOfDetectors(
 }
 
 
-/** Returns the current scoretype */
+/**
+ * Gets the current scoretype
+ * @returns the current scoretype */
 scoretype SCIPconshdlrDecompGetCurrScoretype(
    SCIP* scip  /**< SCIP data structure */
 )
@@ -7216,7 +7222,9 @@ SCIP_RETCODE GCGsetDetection(
 }
 
 
-/** returns wrapped Seeed with given id */
+/** returns wrapped Seeed with given id
+ *
+ * @returns SCIP status */
 SCIP_RETCODE GCGgetSeeedFromID(
    SCIP*          scip,       /**< SCIP data structure */
    int*           seeedid,    /**< id of Seeed */
@@ -7232,7 +7240,9 @@ SCIP_RETCODE GCGgetSeeedFromID(
 }
 
 
-/** returns wrapped Seeedpools */
+/** returns wrapped Seeedpools
+ *
+ * @returns SCIP status */
 SCIP_RETCODE GCGgetCurrentSeeedpools(
    SCIP*          scip,                   /**< SCIP data structure */
    SEEED_WRAPPER* seeedpoolwr,            /**< wrapper for presolved output Seeedpool (or NULL) */
@@ -7265,6 +7275,8 @@ SCIP_RETCODE GCGgetCurrentSeeedpools(
 /** prints blockcandiateinformation in following format:
  * NCANDIDATES
  * CANDIDATE : NVOTES for each candidate
+ *
+ * @returns SCIP status
  */
 SCIP_RETCODE GCGprintBlockcandidateInformation(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -7290,7 +7302,9 @@ SCIP_RETCODE GCGprintBlockcandidateInformation(
 }
 
 
-/** Prints complete detection time to given file */
+/** Prints complete detection time to given file
+ *
+ * @returns SCIP status */
 SCIP_RETCODE GCGprintCompleteDetectionTime(
  SCIP*                 givenscip,          /**< SCIP data structure */
  FILE*                 file                /**< output file or NULL for standard output */
@@ -7310,11 +7324,13 @@ SCIP_RETCODE GCGprintCompleteDetectionTime(
  * NCLASSES
  * CLASSNAME  for each class
  * NMEMBERS
+ *
+ * @returns SCIP status
  */
 SCIP_RETCODE GCGprintClassifierInformation(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
-)
+   )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
@@ -7332,7 +7348,9 @@ SCIP_RETCODE GCGprintClassifierInformation(
 }
 
 
-/** gets the ids of all selected seeeds */
+/** gets the ids of all selected seeeds
+ *
+ * @returns SCIP status*/
 SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
    SCIP* scip,       /**< SCIP data structure */
    int** output,     /**< pointer to array in which to write the ids */
@@ -7387,6 +7405,8 @@ SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
  * VARCLASSIFIERNAME for each varclassifier
  * nCLASSESMASTER
  * CLASSNAME for each class
+ *
+ * @returns SCIP status
  */
 SCIP_RETCODE GCGprintDecompInformation(
    SCIP*                 scip,   /**< SCIP data structure */
@@ -7490,6 +7510,8 @@ SCIP_RETCODE GCGprintDecompInformation(
  * - decomp_percentage_max_nvars_component,
  * - decomp_percentage_median_nvars_component,
  * - decomp_percentage_mean_nvars_component
+ *
+ * @returns SCIP status
  */
 SCIP_RETCODE GCGprintMiplibBaseInformation(
    SCIP*                scip, /**< SCIP data structure */
@@ -7781,6 +7803,8 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
  * - decomp_percentage_max_nvars_component,
  * - decomp_percentage_median_nvars_component,
  * - decomp_percentage_mean_nvars_component
+ *
+ * @returns SCIP status
  */
 SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
    SCIP*                scip, /**< SCIP data structure */
@@ -7866,7 +7890,9 @@ SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
 
 
 /** writes a gnuplot visualization of a decomposition purely detected by finding connected components
- * into the given file */
+ * into the given file
+ *
+ * @returns SCIP status*/
 SCIP_RETCODE GCGprintMiplibConnectedInformation(
    SCIP*                scip, /**< SCIP data structure */
    FILE*                file  /**< file for writing gnuplot code */
@@ -8009,7 +8035,9 @@ SCIP_RETCODE GCGprintMiplibConnectedInformation(
    return SCIP_OKAY;
 }
 
-/** output information about the currently "best" seeed into given file */
+/** output information about the currently "best" seeed into given file
+ *
+ * @returns SCIP status*/
 SCIP_RETCODE GCGprintMiplibDecompInformation(
    SCIP*                scip, /**< SCIP data structure */
    FILE*                file  /**< file into which to write the information */
@@ -8037,7 +8065,9 @@ SCIP_RETCODE GCGprintMiplibDecompInformation(
 }
 
 
-/** check setting for optional output & print them */
+/** check setting for optional output & print them
+ *
+ * @returns SCIP status*/
 SCIP_RETCODE GCGprintOptionalOutput(
    SCIP*                 scip,              /**< SCIP data structure */
    SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */

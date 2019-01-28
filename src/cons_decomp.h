@@ -86,22 +86,21 @@ typedef struct Seeed_Wrapper SEEED_WRAPPER;
 
 
 /**
- * \brief sort the finished decompositions according to the currently chosen score in the according datastructures for the presolved and original problem
- * @param scip data stucture
- * @return scip return code
+ * sort the finished decompositions according to the currently chosen score in the according datastructures for the
+ * presolved and original problem
+ * @returns scip return code
  */
 /*!
  *
  */
 SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
-   SCIP*          scip
+   SCIP*          scip     /**< SCIP data structure */
 );
 
 
 /**
  * @brief creates the constraint handler for decomp and includes it in SCIP
- * @param scip scip date structure
- * @return scip return code
+ * @returns scip return code
  */
 extern
 SCIP_RETCODE SCIPincludeConshdlrDecomp(
@@ -110,8 +109,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
 /**
  * returns the decomposition structures, caller is responsible for freeing memory
- * @param scip scip data structure
- * @return scip return code
+ * @returns scip return code
  */
 extern
 DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
@@ -121,8 +119,7 @@ DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
 
 /**
  * returns the number of found decomposition structures
- * @param scipscip dat structures
- * @return scip return code
+ * @returns scip return code
  */
 extern
 int SCIPconshdlrDecompGetNDecdecomps(
@@ -130,57 +127,59 @@ int SCIPconshdlrDecompGetNDecdecomps(
    );
 
 /**
- * @brief returns the number of constraints that were active while detecting the decomposition originating from the seeed with the given id, this method is used to decide if the problem has changed since detection, if so the aggregation information needs to be recalculated
- * @param scip scip data structure
- * @param id id of the seeed the information is asked for
- * @return number of constraints that were active while detecting the decomposition originating from the seeed with the given id, this method is used to decide if the problem has changed since detection, if so the aggregation information needs to be recalculated
+ * returns the number of constraints that were active while detecting the decomposition originating from the seeed with the
+ * given id, this method is used to decide if the problem has changed since detection, if so the aggregation information
+ * needs to be recalculated
+
+ * @returns number of constraints that were active while detecting the decomposition originating from the seeed with the
+ * given id, this method is used to decide if the problem has changed since detection, if so the aggregation information
+ * needs to be recalculated
  */
 extern
 int SCIPconshdlrDecompGetNFormerDetectionConssForID(
    SCIP*                 scip,               /**< SCIP data structure */
-   int                   id                  /**< id of the seeed */
+   int                   id                  /**< id of the seeed the information is asked for */
    );
 
 /**
  * @brief returns string name of the chosen pdf reader
  *
  * \ref see parameter visual/pdfreader
- * @param scip scip data structure
- * @return returns string name of the chosen pdf reader
+ * @returns returns string name of the chosen pdf reader
  */
 extern
 const char* SCIPconshdlrDecompGetPdfReader(
-   SCIP*                scip
+   SCIP*                scip        /**< SCIP data structure */
    );
 
 
 /**
- * @brief used before calling SCIPfreeTransform(),, if called to revoke presolving (e.g. if unpresolved decomposition is used, and transformation is not successful), this seems mandatory to decide during consExitDecomp if the original detection information should be freed
- * @param scip data structure
- * @return scip return code
+ * used before calling SCIPfreeTransform(),, if called to revoke presolving (e.g. if unpresolved decomposition is used, and
+ * transformation is not successful), this seems mandatory to decide during consExitDecomp if the original detection
+ * information should be freed
+ * @returns scip return code
  */
 extern
 SCIP_RETCODE SCIPconshdlrDecompNotifyNonFinalFreeTransform(
-   SCIP*                scip
+   SCIP*                scip     /**< SCIP data structure */
    );
 
 
 /**
- *
- * @brief used after calling SCIPfreeTransform() if called to revoke presolving (e.g. if unpresolved decomposition is used, and transformation is not successful), this seems mandatory to decide during consExitDecomp if the original detection information should be freed
- * @param scip data structure
- * @return scip return code
+ * used after calling SCIPfreeTransform() if called to revoke presolving (e.g. if unpresolved decomposition is used,
+ * and transformation is not successful), this seems mandatory to decide during consExitDecomp if the original detection
+ * information should be freed
+ * @returns scip return code
  */
 extern
 SCIP_RETCODE SCIPconshdlrDecompNotifyFinishedNonFinalFreeTransform(
-   SCIP*                scip
+   SCIP*                scip     /**< SCIP data structure */
    );
 
 
 /**
  * @brief returns the data of the provided detector
- * @param detector Detector data structure
- * @return data of the provided detector
+ * @returns data of the provided detector
  */
 extern
 DEC_DETECTORDATA* DECdetectorGetData(
@@ -189,8 +188,7 @@ DEC_DETECTORDATA* DECdetectorGetData(
 
 /**
  * @brief returns the name of the provided detector
- * @param detector detector data structure
- * @return name of the given detector
+ * @returns name of the given detector
  */
 extern
 const char* DECdetectorGetName(
@@ -199,14 +197,12 @@ const char* DECdetectorGetName(
 
 /**
  * @brief searches for the detector with the given name and returns it or NULL if detector is not found
- * @param scip scip data strcuture
- * @param name the name of the searched detector
- * @return returns detector pointer or NULL if detector with given name is not found
+ * @returns returns detector pointer or NULL if detector with given name is not found
  */
 extern
 DEC_DETECTOR* DECfindDetector(
    SCIP*                 scip,               /**< SCIP data structure  */
-   const char*           name                /**< name of the detector */
+   const char*           name                /**< the name of the searched detector */
    );
 
 
@@ -243,7 +239,7 @@ DEC_DETECTOR* DECfindDetector(
  * @param DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)) method that is called if the detection emphasis setting aggressive is chosen
  * @param DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector))  method that is called if the detection emphasis setting default is chosen
  * @param DEC_DECL_SETPARAMFAST((*setParamFastDetector))  method that is called if the detection emphasis setting fast is chosen
- * @return scip return code
+ * @returns scip return code
  */
 /**  */
 extern
@@ -271,21 +267,20 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_FREEDETECTOR((*freeDetector)),                 /**< destructor of detector (or NULL) */
    DEC_DECL_INITDETECTOR((*initDetector)),                 /**< initialization method of detector (or NULL)                        */
    DEC_DECL_EXITDETECTOR((*exitDetector)),                 /**< deinitialization method of detector (or NULL)                      */
-   DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),
-   DEC_DECL_PROPAGATEFROMTOOLBOX((*propagateFromToolboxDetector)),
-   DEC_DECL_FINISHFROMTOOLBOX((*finishFromToolboxDetector)),
-   DEC_DECL_FINISHSEEED((*finishSeeedDetector)),
-   DEC_DECL_POSTPROCESSSEEED((*postprocessSeeedDetector)),
-   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),
-   DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),
-   DEC_DECL_SETPARAMFAST((*setParamFastDetector))
+   DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),     /**< propagation method of detector (or NULL) */
+   DEC_DECL_PROPAGATEFROMTOOLBOX((*propagateFromToolboxDetector)),   /**< propagation from toolbox method of detector (or NULL) */
+   DEC_DECL_FINISHFROMTOOLBOX((*finishFromToolboxDetector)),         /**< finish from toolbox method of detector (or NULL) */
+   DEC_DECL_FINISHSEEED((*finishSeeedDetector)),           /**< finish method of detector (or NULL) */
+   DEC_DECL_POSTPROCESSSEEED((*postprocessSeeedDetector)), /**< postprocess method of detector (or NULL) */
+   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),       /**< set method for agressive parameters of detector (or NULL) */
+   DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),   /**< set method for default parameters of detector (or NULL) */
+   DEC_DECL_SETPARAMFAST((*setParamFastDetector))          /**< set method for fast parameters of detector (or NULL) */
    );
 
 
 /**
  * @brief returns the remaining time of scip that the decomposition may use
- * @param scip scip data structure
- * @return remaining  time that the decompositon may use
+ * @returns remaining  time that the decompositon may use
  */
 extern
 SCIP_Real DECgetRemainingTime(
@@ -296,16 +291,11 @@ SCIP_Real DECgetRemainingTime(
 
 /**
  * checks if two pricing problems are identical based on information from detection
- * @param scip scip datta structure
- * @param seeedid if of the partial decompostion for which the pricing problems are checked for identity
- * @param probnr1 index of first block to check
- * @param probnr2 index of second block to check
- * @param identical bool pointer to score the result of the check
- * @return scip return code
+ * @returns scip return code
  */
 extern
 SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
-   SCIP*                scip,             /**< scip scip datta structure */
+   SCIP*                scip,             /**< scip scip data structure */
    int                  seeedid,          /**< seeedid id of the partial decompostion for which the pricing problems are checked for identity */
    int                  probnr1,          /**< index of first block to check */
    int                  probnr2,          /**< index of second block to check */
@@ -324,12 +314,12 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
  * @param scip1 subscip of first block
  * @param scip2 subscip of second block
  * @param varmap mapping from orig to pricingvar
- * @return scip return code
+ * @returns scip return code
  */
 extern
 SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
    SCIP*                scip,
-   SCIP_HASHMAP**       hashorig2pricingvar, /**< mapping from orig to pricingvar  */
+   SCIP_HASHMAP**       hashorig2pricingvar,
    int                  seeedid,
    int                  probnr1,
    int                  probnr2,
@@ -341,20 +331,17 @@ SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
 
 /**
  * @brief sets (and adds) the decomposition structure
- * @param scip scip datat structure
- * @param decdecomp decomposition data structure
- * @return scip return code
+ * @returns scip return code
  */
 extern
 SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
    );
 
 /**
  * @brief creates the seeedpool for the presolved problem
- * @param scip scip data structure
- * @return scip return code
+ * @returns scip return code
  */
 SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpool(
    SCIP*                 scip                /**< SCIP data structure */
@@ -362,8 +349,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpool(
 
 /**
  * @brief creates the seeedpool for the unpresolved problem
- * @param scip scip data structure
- * @return scip return code
+ * @returns scip return code
  */
 SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
    SCIP*                 scip                /**< SCIP data structure */
@@ -372,8 +358,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
 /**
  * @brief help method to access seeedpool for unpresolved problem
  * @TODO: consider deleting this method will be deleted if the corresponidng wrapper classes are introduced
- * @param scip scip data structure
- * @return pointer to seeedpool wrapper data structure
+ * @returns pointer to seeedpool wrapper data structure
  */
 SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(
    SCIP*                 scip                /**< SCIP data structure */
@@ -383,8 +368,7 @@ SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(
 /**
  * @brief help method to access seeedpool for transformed problem
  * @TODO: consider deleting this method will be deleted if the corresponidng wrapper classes are introduced
- * @param scip scip dat structure
- * @return pointer to seeedpool wrapper data structure
+ * @returns pointer to seeedpool wrapper data structure
  */
 SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolExtern(
    SCIP*                 scip                /**< SCIP data structure */
@@ -393,14 +377,11 @@ SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolExtern(
 
 /**
  * @brief creates a user seeed for the problem
- * @param scip scip data structure
- * @param presolved should the user seeed be created for the presolved (transformed) or problem
- * @param markedincomplete boolean to notify that the created user decomposition is partial and should not be completed by assigning open constraints to the master
- * @return SCIP return code
+ *  @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool             presolved,          /**< should the user seeed be created for the presolved problem */
+   SCIP_Bool             presolved,          /**< should the user seeed be created for the presolved (transformed) problem */
    SCIP_Bool             markedincomplete    /**< boolean to notify that the created user decomposition is partial and should not be completed by assigning open constraints to the master */
    );
 
@@ -409,7 +390,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
  * @param scip SCIP data structure
  * @param dialoghdlr dialog handler to handle user input
  * @param dialog dialog to handle user input
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompExecSelect(
    SCIP*                   scip,
@@ -422,7 +403,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
  * @param scip SCIP data structure
  * @param dialoghdlr dialog handler to handle user input
  * @param dialog dialog to handle user input
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompExecToolboxModify(
    SCIP*                   scip,
@@ -435,7 +416,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxModify(
  * @param scip SCIP data structure
  * @param dialoghdlr dialog handler to handle user input
  * @param dialog dialog to handle user input
- * @return SCIP return data structure
+ * @returns SCIP return data structure
  */
 SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
    SCIP*                   scip,
@@ -448,7 +429,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
  * @param scip SCIP data structure
  * @param dialoghdlr dialog handler to handle user input
  * @param dialog dialog to handle user input
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
    SCIP*                   scip,
@@ -459,8 +440,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
 
 /**
  * @brief returns whether or not an unpresolved (untransformed) decompositions was given by the user
- * @param scip SCIP data structure
- * @return true iff an unpresolved (untransformed) decompositions was given by the user
+ * @returns true iff an unpresolved (untransformed) decompositions was given by the user
  */
 SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    SCIP*                 scip                /**< SCIP data structure */
@@ -468,8 +448,7 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
 
 /**
  * @brief returns whether or not an unpresolved (untransformed) decompositions exists in the data structures
- * @param scip SCIP data structure
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
    SCIP*                 scip                /**< SCIP data structure */
@@ -479,25 +458,25 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
 /**
  * @brief populate datastructures with incomplete decompositions (e.g. that were given by the user) to complete them during detection loop
  * @param scip SCIP data structure
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
    SCIP*       scip
    );
 
 /**
- * @brief method to update the list of incomplete decompositions in "explore" submenue ( this list changes due to new decompositions,  modified, decompositions or changes of the score
+ * @brief method to update the list of incomplete decompositions in "explore" submenu ( this list changes due to new decompositions,  modified, decompositions or changes of the score
  * @param scip SCIP data structure
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    SCIP*                 scip
    );
 
 /**
- * @brief returns whether or not there exists at least one (com[plete or incomplete) decomposition
+ * @brief returns whether or not there exists at least one (complete or incomplete) decomposition
  * @param scip SCIP data structure
- * @return TRUE if there exists at least one (com[plete or incomplete) decomposition
+ * @returns TRUE if there exists at least one (complete or incomplete) decomposition
  */
 SCIP_Bool SCIPconshdlrDecompHasDecomp(
    SCIP*    scip
@@ -505,9 +484,7 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
 
 /**
  * @brief set the number of blocks in the current user seeed (which is used for user input (read or modify) )
- * @param scip SCIP data structure
- * @param nblocks number of blocks
- * @return SCIP return code
+ * @returns SCIP return code
  */
 /** sets the number of blocks */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
@@ -518,8 +495,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
 
 /**
  * @brief returns whether there is an user seeed that is currently worked on
- * @param scip SCIP datastructure
- * @return TRUE there is an user seeed that is currently worked on
+ * @returns TRUE there is an user seeed that is currently worked on
  */
 SCIP_Bool SCIPconshdlrDecompUserSeeedIsActive(
    SCIP*                 scip                /**< SCIP data structure */
@@ -527,10 +503,10 @@ SCIP_Bool SCIPconshdlrDecompUserSeeedIsActive(
 
 
 /**
- * @brief set the user given information of the current user seeed according consdefaultmaster (if TRUE all open constraints are set to master )
- * @param scip SCIP data structure
+ * set the user given information of the current user seeed according consdefaultmaster (if TRUE all open constraints are
+ * set to master)
  * @param consdefaulttomaster if TRUE all open constraints are set to master,
- * @return SCIP return code
+ * @returns SCIP return code
  */
 /** sets the number of blocks */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsDefaultMaster(
@@ -544,7 +520,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsDefaultMaster(
  * @param scip SCIP data structure
  * @param consname name of the constraint that should be set to a block
  * @param blockid index of the block the constraint should be assigned to
- * @return SCIP return code
+ * @returns SCIP return code
  */
 /** sets a constraint by name to a block in the current user seeed */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToBlock(
@@ -555,9 +531,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToBlock(
 
 /**
  * @brief sets a constraint by name to master in the current user seeed
- * @param scip SCIP data structure
  * @param consname of the constraint that should be set to master
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToMaster(
    SCIP*                 scip,                /**< SCIP data structure */
@@ -566,10 +541,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToMaster(
 
 /**
  * @brief sets a variable by name to a block in the current user seeed
- * @param scip SCIP dat structure
- * @param varname name of the variable
- * @param blockid block index ( counting from 0)
- * @return SCIP return code
+ * @returns SCIP return code
  */
 /** sets a variable by name to a block in the current user seeed */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToBlock(
@@ -581,9 +553,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToBlock(
 
 /**
  * @brief sets a variable by name to the master in the current user seeed
- * @param scip SCIP data structure
- * @param varname name of the variable
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToMaster(
    SCIP*                 scip,                /**< SCIP data structure */
@@ -593,9 +563,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToMaster(
 
 /**
  * @brief sets a variable by name to the linking variables in the current user seeed
- * @param scip SCIP data structure
- * @param varname name of the variable
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
    SCIP*                 scip,                /**< SCIP data structure */
@@ -604,9 +572,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
 
 /**
  * @brief add block number user candidate (user candidates are prioritized over found ones)
- * @param scip SCIP data structure
- * @param blockNumberCandidate given block number candidate
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
    SCIP*                 scip,                /**< SCIP data structure */
@@ -616,8 +582,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
 
 /**
  * @brief returns the number of block candidates given by the user
- * @param scip SCIP data structures
- * @return number of block candidates given by the user
+ * @returns number of block candidates given by the user
  */
  int SCIPconshdlrDecompGetNBlockNumberCandidates(
    SCIP*                 scip                /**< SCIP data structure */
@@ -627,10 +592,10 @@ SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
   * @brief returns block number user candidate with given index
   * @param scip SCIP data structure
   * @param index index of block number user candidate that should be returned
-  * @return block number user candidate with given index
+  * @returns block number user candidate with given index
   */
  int SCIPconshdlrDecompGetBlockNumberCandidate(
-    SCIP*                 scip,                /**< SCIP data structure */
+    SCIP*                 scip,
     int                   index
      );
 
@@ -638,7 +603,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
  /**
   * @brief returns the total detection time
   * @param scip SCIP data structure
-  * @return total detection time
+  * @returns total detection time
   */
  extern
  SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
@@ -647,8 +612,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
 
  /**
   * @brief rejects and deletes the current user seeed
-  * @param scip SCIP data structure
-  * @return SCIP return code
+  * @returns SCIP return code
   */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(
    SCIP*                 scip                 /**< SCIP data structure */
@@ -656,9 +620,9 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(
 
 
 /**
- * @brief finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if complete etc
- * @param scip SCIP data structure
- * @return SCIP return code
+ * finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if
+ * complete etc
+ * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    SCIP*                 scip                 /**< SCIP data structure */
@@ -669,10 +633,10 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
  * @brief translates unpresolved seeed to a complete presolved one
  * @param scip SCIP data structure
  * @param success  at least one unpresolved seeed could not be translated in a complete presolved one
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
-   SCIP*                 scip,                 /**< SCIP data structure */
+   SCIP*                 scip,
    SCIP_Bool*            success
    );
 
@@ -680,7 +644,7 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
 /**
  * @brief returns if there is a decomposition that is currently selected by the user (done in explore menue)
  * @param scip SCIP data structure
- * @return TRUE if there is a decomposition that is currently selected by the user (done in explore menue)
+ * @returns TRUE if there is a decomposition that is currently selected by the user (done in explore menue)
  */
 SCIP_Bool SCIPconshdlrDecompExistsSelected(
    SCIP* scip
@@ -689,8 +653,7 @@ SCIP_Bool SCIPconshdlrDecompExistsSelected(
 
 /**
  * @brief counts up the counter for created decompositions and returns it
- * @param scip SCIP data structure
- * @return number of created decompositions that was recently increased
+ * @returns number of created decompositions that was recently increased
  */
 int SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(
   SCIP*                 scip                /**< SCIP data structure **/
@@ -698,8 +661,7 @@ int SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(
 
 /**
  * @brief decreases the counter for created decompositions and returns it
- * @param scip SCIP data structure
- * @return number of created decompositions that was recently decreased
+ * @returns number of created decompositions that was recently decreased
  */
 int SCIPconshdlrDecompDecreaseAndGetNCallsCreateDecomp(
   SCIP*                 scip                /**< SCIP data structure **/
@@ -710,7 +672,7 @@ int SCIPconshdlrDecompDecreaseAndGetNCallsCreateDecomp(
  * @brief initilizes the candidates data structures with selected seeeds (or all if there are no selected seeeds) and sort them according to the current scoretype
  * @param scip SCIP data structure
  * @param updatelist whether or not the seeed list should be updated
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    SCIP* scip,
@@ -723,7 +685,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
  *  into seeeds and adds these seeeds to (presolved) seeedpool
  * @param scip SCIP data structure
  * @param result was the legacy call successful
- * @return SCIP return code
+ * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    SCIP* scip,
@@ -732,47 +694,48 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
 
 
 /**
- * @brief returns whether
- * @param scip
- * @return
+ * Checks whether bender detection is enabled
+ * @returns whether bender detection is enabled
  */
 SCIP_Bool SCIPconshdlrDecompDetectBenders(
-   SCIP*                   scip
+   SCIP*                   scip  /**< SCIP data structure **/
    );
 
 
+/** Checks whether the currently best candidate is from the unpresolved seeedpool
+ *
+ * @returns true if best candidate is unpresolved, false otherwise */
 SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(
-   SCIP*                   scip
+   SCIP*                   scip  /**< SCIP data structure **/
    );
 
 
+/** Checks whether
+ *  1) the predecessors of all finished seeeds in both seeedpools can be found
+ *  2) selected list is syncron with selected information in seeeds
+ *  3) selected exists is synchronized with seleced list
+ *
+ *  @returns true if seeed information is consistent */
 SCIP_Bool SCIPconshdlrDecompCheckConsistency(
-   SCIP* scip
+   SCIP* scip  /**< SCIP data structure **/
    );
 
-/** returns the next seeed id managed by cons_decomp */
+/** Gets the next seeed id managed by cons_decomp
+ * @returns the next seeed id managed by cons_decomp */
 int SCIPconshdlrDecompGetNextSeeedID(
-   SCIP*   scip
+   SCIP*   scip   /**< SCIP data structure **/
    );
 
-
+/**
+ * Gets the current scoretype
+ * @returns the current scoretype */
 SCORETYPE SCIPconshdlrDecompGetCurrScoretype(
-   SCIP* scip
+   SCIP* scip  /**< SCIP data structure **/
    );
 
-//    char*  SCIPconshdlrDecompGetScoretypeShortName(
-//      SCIP*       scip,
-//      SCORETYPE   sctype
-//      );
-//
-//   char*  SCIPconshdlrDecompGetScoretypeDescription(
-//      SCIP*          scip,
-//      SCORETYPE      sctype
-//         );
 
-
-
-/** interface method to detect the structure */
+/** interface method to detect the structure
+ * @returns SCIP return code */
 extern
 SCIP_RETCODE DECdetectStructure(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -780,17 +743,21 @@ SCIP_RETCODE DECdetectStructure(
    );
 
 
-/** write out all known decompositions **/
+/** write out all known decompositions
+ * @returns SCIP return code  */
 SCIP_RETCODE DECwriteAllDecomps(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 directory,          /**< directory for decompositions */
    char*                 extension,          /**< the file extension for the export */
    SCIP_Bool             original,           /**< should decomps for original problem be written */
    SCIP_Bool             presolved           /**< should decomps for preoslved problem be written */
-
    );
 
 
+/**
+ * method to eliminate duplicate constraint names and name unnamed constraints
+ * @return SCIP return code
+ */
 SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
    SCIP*                scip
    );
@@ -806,16 +773,9 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
    int* nseeeds               /**< number of seeeds in output */
    );
 
-
-/** write family tree **/
-SCIP_RETCODE DECwriteFamilyTree(
-   SCIP*                 scip,               /**< SCIP data structure */
-   const char*           filename,           /**< filename the output should be written to (including directory) */
-   const char*           workfolder,         /**< directory in which should be worked */
-   int                   ndecompositions,    /**< the number of (complete) decompositions in order of a certain measure (atm: max white) */
-   SCIP_Bool 			    draft               /**< draft mode will not visualize non-zeros but is faster and takes less memory */
-   );
-
+/** write the seeed in conshdlrdata->seeedtowrite into the file as dec
+ *
+ * @returns SCIP return code */
 extern
 SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    SCIP*     scip,
@@ -824,6 +784,9 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    SCIP_RESULT* result
    );
 
+
+/** Runs the bender detector to create a block matrix and outputs its visualization as .png file
+ * @returns SCIP return code*/
 extern
 SCIP_RETCODE SCIPconshdlrDecompWriteMatrix(
    SCIP*                 scip,               /**< scip data structure */
@@ -833,13 +796,15 @@ SCIP_RETCODE SCIPconshdlrDecompWriteMatrix(
 );
 
 
-/** returns the best known decomposition, if available and NULL otherwise */
+/** Gets the best known decomposition
+ * @returns the decomposition if available and NULL otherwise */
 extern
 DEC_DECOMP* DECgetBestDecomp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** returns the Seeed ID of the best Seeed if available and -1 otherwise */
+/** Gets the Seeed ID of the best Seeed
+ * @returns the Seeed ID if available and -1 otherwise */
 SCIP_RETCODE DECgetSeeedToWrite(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_Bool             transformed,
@@ -852,47 +817,59 @@ void DECprintListOfDetectors(
    );
 
 /** gets all currently finished decomps
- * Note: the array is allocated and needs to be freed after use!
+ * @note: the array is allocated and needs to be freed after use!
+ * @returns an array containg all finished decompositions
  * */
 DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
-   SCIP*     scip
+   SCIP*     scip /**< SCIP data structure */
    );
 
-/* returns number of finished Seeeds */
+/** Gets the number of all finished Seeeds
+ * @returns number of finished Seeeds */
 int SCIPconshdlrDecompGetNFinishedDecomps(
-   SCIP*       scip
+   SCIP*       scip  /**< SCIP data structure */
    );
 
-/* returns number of all Seeeds */
+/** Gets the number of all seeeds
+ * @returns number of Seeeds */
 int SCIPconshdlrDecompGetNSeeeds(
-   SCIP*       scip
+   SCIP*       scip  /**< SCIP data structure */
    );
 
+/** Gets the number of all detectors
+ * @returns number of detectors */
 int SCIPconshdlrDecompGetNDetectors(
-   SCIP* scip
+   SCIP* scip  /**< SCIP data structure */
    );
 
+/** Gets whether the detection already took place
+ * @returns true if detection took place, false otherwise */
 SCIP_Bool GCGdetectionTookPlace(
-   SCIP*  scip
+   SCIP*  scip /**< SCIP data structure */
      );
 
-
+/** Gets an array of all detectors
+ *
+ * @returns array of detectors */
 DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
-   SCIP* scip
+   SCIP* scip  /**< SCIP data structure */
    );
 
 
-/** returns whether the detection has been performed */
+/** Gets whether the detection has been performed
+ * @returns whether the detection has been performed */
 SCIP_Bool DEChasDetectionRun(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** returns the character of the detector */
+/** Gets the character of the detector
+ * @returns detector character */
 char DECdetectorGetChar(
    DEC_DETECTOR*         detector            /**< pointer to detector */
 );
 
-/** display statistics about detectors */
+/** display statistics about detectors
+ * @returns SCIP return code */
 SCIP_RETCODE GCGprintDetectorStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
@@ -904,6 +881,8 @@ SCIP_RETCODE GCGprintDetectorStatistics(
  *  - SCIP_PARAMSETTING_FAST such that the time spend for detection is decreased
  *  - SCIP_PARAMSETTING_AGGRESSIVE such that the detectors produce more decompositions
  *  - SCIP_PARAMSETTING_OFF which turns off all detection
+ *
+ *   @returns SCIP return code
  */
 SCIP_RETCODE GCGsetDetection(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -912,7 +891,9 @@ SCIP_RETCODE GCGsetDetection(
    );
 
 
-/** returns wrapped Seeed with given id */
+/** Gets wrapped Seeed with given id
+ *
+ * @returns SCIP return code */
 SCIP_RETCODE GCGgetSeeedFromID(
    SCIP*          scip,       /**< SCIP data structure */
    int*           seeedid,    /**< id of Seeed */
@@ -920,7 +901,9 @@ SCIP_RETCODE GCGgetSeeedFromID(
    );
 
 
-/** returns wrapped Seeedpools */
+/** Gets wrapped Seeedpools
+ *
+ *  @returns SCIP return code */
 SCIP_RETCODE GCGgetCurrentSeeedpools(
    SCIP*          scip,                   /**< SCIP data structure */
    SEEED_WRAPPER* seeedpoolwr,            /**< wrapper for presolved output Seeedpool (or NULL) */
@@ -928,7 +911,9 @@ SCIP_RETCODE GCGgetCurrentSeeedpools(
    );
 
 
-/** gets the ids of all selected seeeds */
+/** gets the ids of all selected seeeds
+ *
+ *  @returns SCIP return code */
 SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
    SCIP* scip,       /**< SCIP data structure */
    int** output,     /**< array to put ids into */
