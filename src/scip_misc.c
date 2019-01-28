@@ -599,9 +599,9 @@ SCIP_RETCODE GCGconsGetVars(
       if( nvars != 2 )
          return SCIP_INVALIDDATA;
 
-      /** indicator conss : s - My <= 0 */
+      /* indicator conss : s - My <= 0 */
 
-      /** slack variable first */
+      /* slack variable first */
       vars[0] =   SCIPgetSlackVarIndicator(cons);
       vars[1] =   SCIPgetBinaryVarIndicator(cons);
    }
@@ -726,9 +726,9 @@ SCIP_RETCODE GCGconsGetVals(
       if( nvals != 2 )
          return SCIP_INVALIDDATA;
 
-      /** indicator conss : s - My <= 0 */
+      /* indicator conss : s - My <= 0 */
 
-      /** slack variable first */
+      /* slack variable first */
       vals[0] =   1.;
       vals[1] =   SCIPvarGetUbGlobal( SCIPgetSlackVarIndicator(cons) );
    }

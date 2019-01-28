@@ -52,17 +52,17 @@
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
 #define HEUR_USESSUBSCIP      TRUE      /**< does the heuristic use a secondary SCIP instance? */
 
-#define DEFAULT_NODESOFS      5000LL    /* number of nodes added to the contingent of the total nodes          */
-#define DEFAULT_MAXNODES      5000LL    /* maximum number of nodes to regard in the subproblem                 */
-#define DEFAULT_MINNODES      500LL     /* minimum number of nodes to regard in the subproblem                 */
-#define DEFAULT_MINIMPROVE    0.01      /* factor by which DINS should at least improve the incumbent          */
-#define DEFAULT_NODESQUOT     0.05      /* subproblem nodes in relation to nodes of the original problem       */
-#define DEFAULT_NWAITINGNODES 0LL       /* number of nodes without incumbent change that heuristic should wait */
-#define DEFAULT_NEIGHBORHOODSIZE  18    /* radius of the incumbents neighborhood to be searched                */
-#define DEFAULT_SOLNUM        5         /* number of pool-solutions to be checked for flag array update        */
-#define DEFAULT_USELPROWS     FALSE     /* should subproblem be created out of the rows in the LP rows,
+#define DEFAULT_NODESOFS      5000LL    /**< number of nodes added to the contingent of the total nodes          */
+#define DEFAULT_MAXNODES      5000LL    /**< maximum number of nodes to regard in the subproblem                 */
+#define DEFAULT_MINNODES      500LL     /**< minimum number of nodes to regard in the subproblem                 */
+#define DEFAULT_MINIMPROVE    0.01      /**< factor by which DINS should at least improve the incumbent          */
+#define DEFAULT_NODESQUOT     0.05      /**< subproblem nodes in relation to nodes of the original problem       */
+#define DEFAULT_NWAITINGNODES 0LL       /**< number of nodes without incumbent change that heuristic should wait */
+#define DEFAULT_NEIGHBORHOODSIZE  18    /**< radius of the incumbents neighborhood to be searched                */
+#define DEFAULT_SOLNUM        5         /**< number of pool-solutions to be checked for flag array update        */
+#define DEFAULT_USELPROWS     FALSE     /**< should subproblem be created out of the rows in the LP rows,
                                          * otherwise, the copy constructors of the constraints handlers are used */
-#define DEFAULT_COPYCUTS      TRUE      /* if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
+#define DEFAULT_COPYCUTS      TRUE      /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
                                          * of the original scip be copied to constraints of the subscip        */
 
 
@@ -733,7 +733,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
 
       if( heurdata->copycuts )
       {
-         /** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
+         /* copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
          SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE, NULL) );
       }
 

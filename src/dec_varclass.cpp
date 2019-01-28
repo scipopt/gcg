@@ -52,12 +52,12 @@
 /* constraint handler properties */
 #define DEC_DETECTORNAME          "varclass"       /**< name of detector */
 #define DEC_DESC                  "detector varclass" /**< description of detector*/
-#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          0           /** last round the detector gets called                              */
-#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
-#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
-#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          0           /**< last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /**< first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /**< last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'v'         /**< display character of detector */
 #define DEC_ENABLED               TRUE        /**< should the detection be enabled */
@@ -211,7 +211,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
 
        seeed = new gcg::Seeed(seeedOrig);
 
-       /** book open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
+       /* book open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
        for( int i = 0; i < seeed->getNOpenvars(); ++i )
        {
           bool foundVar = false;
@@ -224,7 +224,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
                   break;
               }
           }
-          /** only check varclassindices_linking if current var has not already been found in a subset */
+          /* only check varclassindices_linking if current var has not already been found in a subset */
           if ( !foundVar )
           {
              for( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
@@ -237,7 +237,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
                 }
              }
           }
-          /** only check varclassindices_master if current var has not already been found in a subset */
+          /* only check varclassindices_master if current var has not already been found in a subset */
           if ( !foundVar )
           {
              for( size_t varclassId = 0; varclassId < varclassindices_master.size(); ++varclassId )
@@ -251,7 +251,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
           }
        }
 
-       /** set decinfo to: varclass_<classfier_name>:<linking_class_name#1>-...-<linking_class_name#n> */
+       /* set decinfo to: varclass_<classfier_name>:<linking_class_name#1>-...-<linking_class_name#n> */
        std::stringstream decdesc;
        decdesc << "varclass" << "\\_" << classifier->getName() << ": \\\\ ";
        std::vector<int> curlinkingclasses( varclassindices_linking );
@@ -543,7 +543,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
 
    seeed = new gcg::Seeed(seeedOrig);
 
-   /** book open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
+   /* book open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
    for( i = 0; i < seeed->getNOpenvars(); ++i )
    {
       bool foundVar = false;
@@ -556,7 +556,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
             break;
          }
       }
-      /** only check varclassindices_linking if current var has not already been found in a subset */
+      /* only check varclassindices_linking if current var has not already been found in a subset */
       if ( !foundVar )
       {
          for( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
@@ -569,7 +569,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
             }
          }
       }
-      /** only check varclassindices_master if current var has not already been found in a subset */
+      /* only check varclassindices_master if current var has not already been found in a subset */
       if ( !foundVar )
       {
          for( size_t varclassId = 0; varclassId < varclassindices_master.size(); ++varclassId )
@@ -583,7 +583,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxVarclass)
       }
    }
 
-   /** set decinfo to: varclass_<classfier_name>:<linking_class_name#1>-...-<linking_class_name#n> */
+   /* set decinfo to: varclass_<classfier_name>:<linking_class_name#1>-...-<linking_class_name#n> */
    std::stringstream decdesc;
    decdesc << "varclass" << "\\_" << selectedclassifier->getName() << ": \\\\ ";
    std::vector<int> curlinkingclasses( varclassindices_linking );

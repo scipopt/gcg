@@ -130,7 +130,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
 
    int nvars, i, n;
    SCIP_Longint* createnodestat;
-   int nodes[2];         /** < Wurzel Knoten und nicht wurzelknoten  */
+   int nodes[2];         /* Wurzel Knoten und nicht wurzelknoten  */
    SCIP_Longint createtimestat[10];
    int createiterstat[10];
    int m;

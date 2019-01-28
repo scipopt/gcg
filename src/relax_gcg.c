@@ -940,7 +940,7 @@ SCIP_RETCODE checkIdenticalBlocks(
                SCIPblkmem(scip),
                5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /* +1 to deal with empty subproblems */
 
-         /** if (possibly deactive) conss has been added since structure detecting we need to reevaluate identity of subproblems */
+         /* if (possibly deactive) conss has been added since structure detecting we need to reevaluate identity of subproblems */
          if( SCIPgetNConss(scip) != SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ) )
          {
             SCIPdebugMessage("nconss: %d; ndetectionconss: %d -> using classical identity test \n", SCIPgetNConss(scip), SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ));
@@ -953,7 +953,7 @@ SCIP_RETCODE checkIdenticalBlocks(
          }
 
 
-/**
+/*
  *  new method of cons_decomp that uses seeed information
  * 1) check varmap
  * 2) build varmap for seeeds in seeed datatstructures

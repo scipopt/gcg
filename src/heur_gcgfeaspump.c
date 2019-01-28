@@ -111,7 +111,7 @@ struct SCIP_HeurData
                                               */
 };
 
-/* copies SCIP to diving SCIP and creates variable hashmap */
+/** copies SCIP to diving SCIP and creates variable hashmap */
 static
 SCIP_RETCODE setupDivingSCIP(
    SCIP*                 scip,               /**< SCIP data structure  */
@@ -139,7 +139,7 @@ SCIP_RETCODE setupDivingSCIP(
 
    if( copycuts )
    {
-      /** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
+      /* copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
       SCIP_CALL( SCIPcopyCuts(scip, *divingscip, *varmapfw, NULL, FALSE, NULL) );
    }
 
@@ -272,7 +272,7 @@ SCIP_RETCODE setupProbingSCIP(
 
    if( copycuts )
    {
-      /** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
+      /* copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
       SCIP_CALL( SCIPcopyCuts(scip, *probingscip, *varmapfw, NULL, FALSE, NULL) );
    }
 

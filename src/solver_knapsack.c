@@ -52,7 +52,7 @@
 #define SOLVER_HEURENABLED   FALSE           /**< indicates whether the heuristic solving method of the solver should be enabled */
 #define SOLVER_EXACTENABLED  TRUE            /**< indicates whether the exact solving method of the solver should be enabled */
 
-/** knapsack pricing solver needs no solverdata */
+/* knapsack pricing solver needs no solverdata */
 /* struct GCG_SolverData {}; */
 
 
