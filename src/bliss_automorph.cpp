@@ -226,7 +226,7 @@ void fhook(
    j = 0;
    n = hook->getNNodes();
 
-   /** new detection stuff */
+   /* new detection stuff */
    newdetection = (hook->seeedpool != NULL) ;
    seeed = hook->seeed;
    seeedpool = hook->seeedpool;

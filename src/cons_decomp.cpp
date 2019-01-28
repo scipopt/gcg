@@ -419,9 +419,9 @@ char*  SCIPconshdlrDecompGetScoretypeDescription(
 {
    char scoretypename[SCIP_MAXSTRLEN];
    char* copy;
+
    /* set detector chain info string */
    SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
-
 
    if( sctype == scoretype::MAX_WHITE)
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum white area score (i.e. maximize fraction of white area score; white area is nonblock and nonborder area, stairlinking variables count as linking)") ;
@@ -2325,7 +2325,6 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxModifyVars(
        "Please specify a regular expression (modified ECMAScript regular expression grammar) matching the names of unassigned variables you want to assign : \nGCG/toolbox> ",
        &varregex, &endoffile) );
 
-
     /* case distinction: */
 
     std::regex expr;
@@ -3280,6 +3279,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
    }
 
    commandlen = 0;
+
    /* Does user want to modify existing or create a new partial decomposition ?*/
    while( (strncmp( command, "modify", commandlen) != 0 && strncmp( command, "create", commandlen) != 0) || commandlen == 0)
    {
@@ -5762,7 +5762,6 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    }
 
    /* 2) selected list is syncronized with selected information in seeeds */
-
    selectediter = conshdlrdata->selected->begin();
    selectediterend = conshdlrdata->selected->end();
 
@@ -5793,7 +5792,6 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
       SCIPwarningMessage(scip, "Warning: there are selected seeeds not part of the list (selectedcounter: %d, nselected list> %d) \n", selectedcounter, (int) conshdlrdata->selected->size() );
       return FALSE;
    }
-
 
    /* 3) selected exists is syncronized with seleced list */
 
@@ -5930,7 +5928,7 @@ SCIP_RETCODE DECdetectStructure(
          detectonlyorig = TRUE;
 
       if ( conshdlrdata->seeedpoolunpresolved == NULL && ( classifyOrig || calculateOrigDecomps || detectonlyorig) )
-         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE, SCIPconshdlrDecompDetectBenders(scip));         /**< seeedpool with original variables and constraints */
+         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE, SCIPconshdlrDecompDetectBenders(scip));         /*< seeedpool with original variables and constraints */
 
 
       SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock));

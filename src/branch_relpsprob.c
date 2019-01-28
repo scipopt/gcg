@@ -138,7 +138,7 @@ typedef struct BdchgData BDCHGDATA;
  * local methods
  */
 
-/* creates bound change data structure:
+/** creates bound change data structure:
  * all variables are put into a hashmap and arrays containig current lower and upper bounds are created
  */
 static

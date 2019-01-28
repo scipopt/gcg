@@ -157,7 +157,7 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
    solver1 = GCGpricingjobGetSolver(pricingjob1);
    solver2 = GCGpricingjobGetSolver(pricingjob2);
 
-   /** preliminary order of sorting:
+   /* preliminary order of sorting:
     *  * priority of pricing solvers
     *  * heuristic before exact
     *  * score
