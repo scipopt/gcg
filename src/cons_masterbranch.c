@@ -332,11 +332,11 @@ SCIP_RETCODE initializeConsdata(
 /** add a global bound change on the original problem to the pending bound changes array */
 static
 SCIP_RETCODE addPendingBndChg(
-   SCIP*                 scip,               /* SCIP data structure */
-   SCIP_VAR*             var,                /* variable on which the bound change is applied (corresponding master variable copy or pricing variable) */
-   SCIP_BOUNDTYPE        boundtype,          /* type of the bound (lower or upper) */
-   SCIP_Real             oldbound,           /* previous bound value */
-   SCIP_Real             newbound            /* new bound value */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable on which the bound change is applied (corresponding master variable copy or pricing variable) */
+   SCIP_BOUNDTYPE        boundtype,          /**< type of the bound (lower or upper) */
+   SCIP_Real             oldbound,           /**< previous bound value */
+   SCIP_Real             newbound            /**< new bound value */
    )
 {
    SCIP_CONSHDLR*     conshdlr;

@@ -7640,23 +7640,23 @@ SCIP_RETCODE GCGprintMiplibBaseInformation(
    }
 
 
-   /** density of objective */
+   /* density of objective */
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ",
       ( (SCIP_Real )  nvarsnonzerocoef /   seeedpool->getNVars() ) );
 
-   /** density of lower bound */
+   /* density of lower bound */
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ",
       ( (SCIP_Real )  nvarsnonzerolb /   nvarslbnotinf) );
 
-   /** density of upper bound */
+   /* density of upper bound */
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ",
       ( (SCIP_Real )  nvarsnonzeroub /   nvarslbnotinf ) );
 
-   /** density of rhs */
+   /* density of rhs */
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ",
       ( (SCIP_Real )  nconsnonzerorhs /   seeedpool->getNTotalConss() ) );
 
-   /** percentage of Binary, Integer, Continuous Variables */
+   /* percentage of Binary, Integer, Continuous Variables */
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "%f, ",
       ( (SCIP_Real )  nbinvars /   seeedpool->getNVars()) );

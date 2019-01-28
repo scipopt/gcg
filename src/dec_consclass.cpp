@@ -198,7 +198,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
        seeed = new gcg::Seeed(seeedOrig);
 
-       /** book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
+       /* book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
        for( int i = 0; i < seeed->getNOpenconss(); ++i )
        {
           bool foundCons = false;
@@ -211,7 +211,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
                   break;
               }
           }
-          /** only check consclassindices_master if current cons has not already been found in a subset */
+          /* only check consclassindices_master if current cons has not already been found in a subset */
           if ( !foundCons )
           {
              for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
@@ -225,7 +225,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
           }
        }
 
-       /** set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
+        /* set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
        std::stringstream decdesc;
        decdesc << "consclass" << "\\_" << classifier->getName() << ": \\\\ ";
        std::vector<int> curmasterclasses( consclassindices_master );
@@ -497,7 +497,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
 
    seeed = new gcg::Seeed(seeedOrig);
 
-   /** book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
+   /* book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
    for( i = 0; i < seeed->getNOpenconss(); ++i )
    {
       bool foundCons = false;
@@ -510,7 +510,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
             break;
          }
       }
-      /** only check consclassindices_master if current cons has not already been found in a subset */
+      /* only check consclassindices_master if current cons has not already been found in a subset */
       if( !foundCons )
       {
          for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
@@ -524,7 +524,7 @@ DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxConsclass)
       }
    }
 
-   /** set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
+   /* set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
    std::stringstream decdesc;
    decdesc << "consclass" << "\\_" << selectedclassifier->getName() << ": \\\\ ";
    std::vector<int> curmasterclasses( consclassindices_master );

@@ -290,7 +290,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
       return SCIP_OKAY;
    }
 
-   /** get corresponding origsol in order to check integrality */
+   /* get corresponding origsol in order to check integrality */
    SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol) );
 
    origvars = SCIPgetOrigVars(origprob);

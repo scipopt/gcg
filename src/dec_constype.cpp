@@ -177,7 +177,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeedOrig->getOpenconss()[i]);
       consType cT = GCGconsGetType(cons);
 
-      /** find constype or not */
+      /* find constype or not */
       std::vector<consType>::const_iterator constypeIter = foundConstypes.begin();
       for(; constypeIter != foundConstypes.end(); ++constypeIter)
       {
@@ -207,7 +207,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
           continue;
 
       seeed = new gcg::Seeed(seeedOrig);
-         /** set open cons that have type of the current subset to Master */
+      /* set open cons that have type of the current subset to Master */
       for( int i = 0; i < seeed->getNOpenconss(); ++i)
       {
           for(size_t constypeId = 0; constypeId < subsetsOfConstypes[subset].size(); ++constypeId )
