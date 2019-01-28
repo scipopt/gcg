@@ -163,7 +163,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedDensemasterconss)
   seeed = new gcg::Seeed(seeedOrig);
 
   lastindex =  maxratio * seeedpool->getNConss();
-  /** book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
+  /* book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
   for( int i = 0; i < seeed->getNOpenconss(); ++i )
   {
      int cons = seeed->getOpenconss()[i];
