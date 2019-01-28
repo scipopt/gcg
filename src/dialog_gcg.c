@@ -56,6 +56,7 @@
 #include "reader_dec.h"
 #include "reader_tex.h"
 #include "params_visu.h"
+#include "reader_tex.h"
 
 /* display the reader information */
 static
@@ -224,6 +225,9 @@ SCIP_RETCODE writeFamilyTree(
    char probnamepath[SCIP_MAXSTRLEN];
    char filename[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
+   SEEED_WRAPPER* seeedwr;
+   FILE* outfile;
+   int nseeeds;
 
    if( SCIPconshdlrDecompGetNFinishedDecomps(scip) == 0 )
    {
@@ -271,8 +275,15 @@ SCIP_RETCODE writeFamilyTree(
 
    (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", dirname, filename, extension);
 
+   /* get the currently best seeed */
+   DECgetSeeedToWrite(scip, TRUE, seeedwr);
+
    /* call the creation of the family tree */
-   retcode = DECwriteFamilyTree( scip, outname, dirname, GCGfamtreeGetMaxNDecomps(), SCIPvisuGetDraftmode() );
+   outfile = fopen(outname, "w");
+   nseeeds = GCGfamtreeGetMaxNDecomps();
+   retcode = GCGwriteTexFamilyTree( scip, outfile, dirname, &seeedwr, &nseeeds );
+
+   fclose(outfile);
 
    if( retcode == SCIP_FILECREATEERROR )
    {
