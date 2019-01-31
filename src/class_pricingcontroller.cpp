@@ -512,7 +512,8 @@ void Pricingcontroller::evaluatePricingjob(
       }
 
       GCGpricingjobNextSolver(scip_, pricingjob);
-      GCGpricingjobResetHeuristic(pricingjob);
+      if( heurpricingiters > 0 )
+         GCGpricingjobResetHeuristic(pricingjob);
       if( GCGpricingjobGetSolver(pricingjob) != NULL )
       {
          SCIPdebugMessage("  -> use another solver\n");
