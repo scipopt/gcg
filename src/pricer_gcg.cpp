@@ -1804,9 +1804,9 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
 
       if( SCIPisFeasPositive(scip_, dualsol) )
-         boundval = SCIPgetLhsLinear(scip_, masterconss[i]);
+         boundval = SCIPgetLhsLinear(scip_, origconss[i]);
       else if( SCIPisFeasNegative(scip_, dualsol) )
-         boundval = SCIPgetRhsLinear(scip_, masterconss[i]);
+         boundval = SCIPgetRhsLinear(scip_, origconss[i]);
       else
          continue;
 
