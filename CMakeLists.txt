@@ -9,7 +9,7 @@ set(GCG_VERSION_MAJOR 3)
 set(GCG_VERSION_MINOR 1)
 set(GCG_VERSION_PATCH 0)
 set(GCG_VERSION_SUB 0)
-set(GCG_VERSION_API 1)
+set(GCG_VERSION_API 2)
 
 # TODO: In SCIP, license is in COPYING file and not in LICENSE.
 # TODO: SCIP has src/scipbuildflag.c which adds a function that returns the used build flags. Do we also want this?

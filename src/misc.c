@@ -40,6 +40,7 @@
 #include "pub_gcgvar.h"
 #include "cons_decomp.h"
 #include "gcgsort.h"
+#include "stat.h"
 #include <string.h>
 #include <unistd.h>
 
@@ -669,6 +670,7 @@ SCIP_RETCODE GCGprintStatistics(
       && SCIPgetStage(GCGgetMasterprob(scip)) > SCIP_STAGE_PRESOLVED )
    {
       GCGpricerPrintPricingStatistics(GCGgetMasterprob(scip), file);
+      SCIP_CALL( GCGwriteSolvingDetails(scip) );
    }
 
    if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE )
