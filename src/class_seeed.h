@@ -130,7 +130,7 @@ private:
 
    bool isagginfoalreadytoexpensive;                            /**< is agginfo already known to be to expensive to calculate*/
 
-   const static int primes[];                                   /**< an array of prime numbers to calculate the hashvalue */
+   const static int primes[];                                   /**< an array of prime numbers to calculate the hash value */
    const static int nPrimes;                                    /**< size of the array of prime numbers */
 
    bool isFinishedByFinisher;                                   /**< was this seeed finished by the finishseeed() method of a detector */
@@ -202,7 +202,7 @@ private:
 
    char* detectorchainstring;                         /**< string formed by the chars of the detectors involved for this seeed  */
 
-   /** datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
+   /* datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
    bool stemsFromUnpresolved;             /**< seeed has at least one ancestor that is a seeed from unpresolved problem */
    bool isfromunpresolved;                /**< seeed is from unpresolved problem */
    bool isFinishedByFinisherUnpresolved;  /**< was the ancestor seeed for the unpresolved problem finished by the
@@ -288,7 +288,8 @@ public:
 
     /**
      *
-     * @brief adds a block, returns the number of the new block
+     * @brief adds a block
+     * @returns the number of the new block
      * */
    int addBlock();
 
@@ -376,20 +377,17 @@ public:
       );
 
    /**
-    * @brief method to check if at leas one constraint is assigned to some block
+    * @brief method to check if at least one constraint is assigned to some block
     * @returns true if at least one constraint is assigned to a block
     *  */
    bool alreadyAssignedConssToBlocks();
 
 
    /**
-    *
-    */
-   /**
     * @brief assigns open conss to master according to the cons assignment information given in constoblock hashmap,
     * @param constoblock hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
     * @param givenNBlocks number of blocks the hashmap contains
-    * @return  scip return code
+    * @returns scip return code
     * \note for conss assigned to blocks according to constoblock there is no assignment \see assignSeeedFromConstoblock
     * */
    SCIP_RETCODE assignBorderFromConstoblock(
@@ -400,8 +398,8 @@ public:
 
 
    /**
-    * @brief assigns open vars to stairlinking if they can be found in exactly two consecutive blocks, returns
-    * @return true iff at least one stairlinkingvar  was assigned
+    * @brief assigns open vars to stairlinking if they can be found in exactly two consecutive blocks
+    * @returns true iff at least one stairlinkingvar was assigned
     */
    bool assignCurrentStairlinking(
       );
@@ -411,7 +409,7 @@ public:
     *  according to the cons assignment information given in constoblock hashmap
     *  @param constoblock hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
     *  @param additionalNBlocks number of (additional) blocks the hashmap contains
-    *  @return scip return code
+    *  @returns scip return code
     *  \see assignSeeedFromConstoblockVector
     *  */
    SCIP_RETCODE assignSeeedFromConstoblock(
@@ -425,7 +423,7 @@ public:
     *  according to the cons assignment information given in constoblock vector
     *  @param constoblock vector containing an assignment of conss to a block or to master
     *  @param additionalNBlocks number of (additional) blocks the vector contains
-    *  @return scip return code
+    *  @returns scip return code
     *  \see  assignSeeedFromConstoblock()  */
    SCIP_RETCODE assignSeeedFromConstoblockVector(
       std::vector<int> constoblock, /**< vector containing an assignment of conss to a block or to master
@@ -460,17 +458,17 @@ public:
    /**
     * @brief  books a constraint to be added to the master constraints (by calling flushBooked all bookings are in fact performed)
     * @param consToMaster index of the constraint to be booked for master assignment
-    * @return  scip return code
+    * @return scip return code
     * \see flushBooked()
     * */
    SCIP_RETCODE bookAsMasterCons(
-         int consToMaster /*< this index can be computed by the function Seeedpool::getIndexForCons */
+         int consToMaster /**< this index can be computed by the function Seeedpool::getIndexForCons */
       );
 
    /**
     * @brief books a variable to be added to the master variables (by calling flushBooked all bookings are in fact performed)
     * @param varToMaster index index of the variable to be booked for master assignment
-    * @return  scip return code
+    * @return scip return code
     * \see flushBooked()
     */
    SCIP_RETCODE bookAsMasterVar(
