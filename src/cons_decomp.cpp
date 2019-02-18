@@ -275,19 +275,6 @@ enum weightinggpresolvedoriginaldecomps{
  * Local methods
  */
 
-/**
- * method to calculate the log with base of 2
- *
- * @returns log_2 of given value
- */
-static
-SCIP_Real calcLogarithm(
-   SCIP_Real val  /**< value */
-   )
-{
-   return log(val) / log(2);
-}
-
 
 /**
  * method to unselect all decompositions, called in consexit, and when the seeedlist is updated
@@ -3757,46 +3744,6 @@ int SCIPconshdlrDecompGetNFormerDetectionConssForID(
 }
 
 
-/** gets the seeedpool (for the presolved problem)
- *
- * @returns presolved seeedpool */
-static
-gcg::Seeedpool* SCIPconshdlrDecompGetSeeedpool(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   assert(scip != NULL);
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert( conshdlr != NULL );
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   return conshdlrdata->seeedpool;
-}
-
-/** gets the seeedpool for the unpresolved problem
- *
- * @returns unpresolved seeedpool */
-static
-gcg::Seeedpool* SCIPconshdlrDecompGetSeeedpoolUnpresolved(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   assert(scip != NULL);
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert( conshdlr != NULL );
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   return conshdlrdata->seeedpoolunpresolved;
-}
-
 /*
  * @brief creates the seeedpool for the presolved problem
  * @returns scip return code
@@ -4459,31 +4406,6 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    return SCIP_OKAY;
 }
 
-/**
- * @brief returns whether or not an unpresolved (untransformed) decompositions was given by the user
- * @returns true iff an unpresolved (untransformed) decompositions was given by the user
- */
-static
-SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
-   SCIP*                 scip                /**< SCIP data structure */
-   ){
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-      return SCIP_ERROR;
-   }
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   return conshdlrdata->unpresolveduserseeedadded;
-}
-
 
 /*
  * @brief returns whether or not an unpresolved (untransformed) decompositions exists in the data structures
@@ -4513,93 +4435,6 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
 
    return ( conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() > 0 );
 
-}
-
-
-
-/**
- * @brief populate datastructures with incomplete decompositions (e.g. that were given by the user) to complete them during detection loop
- * @param scip SCIP data structure
- * @returns SCIP return code
- */
-static
-SCIP_RETCODE SCIPconshdlrDecompPopulateSelected(
-   SCIP*       scip
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   std::vector<SeeedPtr>  unfinishedunpresolved(0);
-   std::vector<SeeedPtr>  unfinishedpresolved(0);
-   SCIP_Bool selectedexists;
-   size_t i;
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-      return SCIP_ERROR;
-   }
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   assert( SCIPconshdlrDecompCheckConsistency(scip) );
-
-   selectedexists = SCIPconshdlrDecompExistsSelected(scip);
-
-   /* check existence of seeedpools */
-   if( conshdlrdata->seeedpoolunpresolved == NULL)
-      SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
-
-   if( conshdlrdata->seeedpool == NULL)
-      SCIPconshdlrDecompCreateSeeedpool(scip);
-
-
-   /* get unfinished unpresolved */
-   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < (size_t) conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds(); ++i)
-   {
-      SeeedPtr seeed;
-      seeed = conshdlrdata->seeedpoolunpresolved->getIncompleteSeeed( i );
-      seeed->setIsFromUnpresolved( TRUE );
-
-      if( seeed->isSelected() || (!selectedexists && seeed->getUsergiven() != gcg::USERGIVEN::NOT && !seeed->isComplete() ) )
-         unfinishedunpresolved.push_back(seeed);
-   }
-
-   /* enable orig detection if there are unpresolved decompositions */
-   if( unfinishedunpresolved.size() > 0)
-         SCIPsetBoolParam(scip, "detection/origprob/enabled", TRUE );
-
-
-   /* get unfinished presolved */
-   for( i = 0; i < (size_t) conshdlrdata->seeedpool->getNIncompleteSeeeds(); ++i )
-   {
-      SeeedPtr seeed;
-      seeed = conshdlrdata->seeedpool->getIncompleteSeeed( i );
-
-      if( seeed->isSelected() || (!selectedexists && seeed->getUsergiven() != gcg::USERGIVEN::NOT && !seeed->isComplete() ) )
-         unfinishedpresolved.push_back(seeed);
-   }
-
-   /* clear old seeds   */
-   conshdlrdata->seeedpoolunpresolved->clearCurrentSeeeds();
-   conshdlrdata->seeedpool->clearCurrentSeeeds();
-
-   /* populate unpresolved */
-   for( i = 0 ; i < unfinishedunpresolved.size() ; ++i)
-   {
-      conshdlrdata->seeedpoolunpresolved->populate(unfinishedunpresolved);
-   }
-
-   /* populate presolved */
-   for( i = 0 ; i < unfinishedpresolved.size() ; ++i)
-   {
-      conshdlrdata->seeedpool->populate(unfinishedpresolved);
-   }
-
-   return SCIP_OKAY;
 }
 
 
@@ -4727,70 +4562,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
 
    return SCIP_OKAY;
 }
-
-/**
- * @brief returns whether there is an user seeed that is currently worked on
- * @returns TRUE there is an user seeed that is currently worked on
- */
-static
-SCIP_Bool SCIPconshdlrDecompUserSeeedIsActive(
-   SCIP*                 scip                /**< SCIP data structure */
-   ){
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-      return SCIP_ERROR;
-   }
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   return conshdlrdata->curruserseeed != NULL;
-}
-
-
-/**
- * set the user given information of the current user seeed according consdefaultmaster (if TRUE all open constraints are
- * set to master)
- * @returns SCIP return code
- */
-static
-SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsDefaultMaster(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-      return SCIP_ERROR;
-   }
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   if( conshdlrdata->curruserseeed == NULL )
-   {
-      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
-      return SCIP_OKAY;
-   }
-
-
-   conshdlrdata->curruserseeed->setUsergiven( gcg::USERGIVEN::COMPLETED_CONSTOMASTER );
-
-
-   return SCIP_OKAY;
-}
-
 
 
 /*
@@ -5085,42 +4856,6 @@ SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
    assert(conshdlrdata != NULL);
 
    return SCIPclockGetTime( conshdlrdata->completedetectionclock );
-}
-
-
-/** adds block number candidates given by user
- *
- * @returns SCIP return code*/
-static
-SCIP_RETCODE SCIPconshdlrDecompBlockNumberCandidateToSeeedpool(
-   SCIP*                 scip,                /**< SCIP data structure */
-   SCIP_Bool             transformed          /**< is problem transformed yet */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-      return SCIP_ERROR;
-   }
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-
-   for ( size_t i = 0; i < conshdlrdata->userblocknrcandidates->size(); ++i )
-   {
-      if( transformed )
-         conshdlrdata->seeedpool->addUserCandidatesNBlocks(conshdlrdata->userblocknrcandidates->at(i) );
-      else
-         conshdlrdata->seeedpoolunpresolved->addUserCandidatesNBlocks(conshdlrdata->userblocknrcandidates->at(i) );
-   }
-
-   return SCIP_OKAY;
 }
 
 
@@ -5517,30 +5252,6 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
       ( conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->getNIncompleteSeeeds() > 0 ) ||
       ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds() > 0 )  ||
       ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() > 0 )      ) ;
-}
-
-/** returns TRUE iff there is at least one full decompositions
- *
- * @returns TRUE iff there is at least one full decompositions */
-static
-SCIP_Bool SCIPconshdlrDecompHasCompleteDecomp(
-   SCIP*    scip     /**< SCIP data structure */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-      return SCIP_ERROR;
-         }
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   return (conshdlrdata->ndecomps > 0 ||  (conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() > 0 ) ) ;
 }
 
 
@@ -7449,39 +7160,6 @@ SCIP_RETCODE GCGgetSeeedFromID(
 }
 
 
-/** returns wrapped Seeedpools
- *
- * @returns SCIP status */
-static
-SCIP_RETCODE GCGgetCurrentSeeedpools(
-   SCIP*          scip,                   /**< SCIP data structure */
-   SEEED_WRAPPER* seeedpoolwr,            /**< wrapper for presolved output Seeedpool (or NULL) */
-   SEEED_WRAPPER* seeedpoolunpresolvedwr  /**< wrapper for unpresolved output Seeedpool (or NULL) */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   conshdlr = SCIPfindConshdlr( scip, "decomp" );
-
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot find Seeedpool!\n");
-   }
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   if(seeedpoolwr != NULL)
-      seeedpoolwr->seeedpool = conshdlrdata->seeedpool;
-
-   if(seeedpoolunpresolvedwr != NULL)
-      seeedpoolunpresolvedwr->seeedpool = conshdlrdata->seeedpoolunpresolved;
-
-   return SCIP_OKAY;
-}
-
-
 /* prints blockcandiateinformation in following format:
  * NCANDIDATES
  * CANDIDATE : NVOTES for each candidate
@@ -7553,41 +7231,6 @@ SCIP_RETCODE GCGprintClassifierInformation(
    seeedpool = (conshdlrdata->seeedpool == NULL ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
 
    seeedpool->printClassifierInformation(scip, file);
-
-   return SCIP_OKAY;
-}
-
-
-/** gets the ids of all selected seeeds
- *
- * @returns SCIP status*/
-static
-SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
-   SCIP* scip,       /**< SCIP data structure */
-   int** output,     /**< pointer to array in which to write the ids */
-   int* outputsize   /**< pointer to int in which to output the size of the array after the call of this function */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   std::vector<int>* selectedseeeds;
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-   }
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   selectedseeeds = conshdlrdata->selected;
-
-   for( size_t i = 0; i < selectedseeeds->size(); i++ )
-   {
-      int newint = (*selectedseeeds)[i];
-      *(output[i]) = newint;
-   }
-   *outputsize = selectedseeeds->size();
 
    return SCIP_OKAY;
 }
