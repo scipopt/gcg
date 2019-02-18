@@ -174,8 +174,6 @@ SCIP_RETCODE Seeedpool::calculateDualvalsOptimalOrigLP()
    SCIPhashmapCreate(&origtocopiedconss, SCIPblkmem(scip), SCIPgetNConss(scip) );
 
    SCIPcreate(&scipcopy);
-  // SCIPincludeDefaultPlugins(scipcopy);
-
 
    SCIPcopy(scip, scipcopy, NULL, origtocopiedconss, "", FALSE, FALSE, FALSE, &valid );
 
@@ -222,21 +220,7 @@ SCIP_RETCODE Seeedpool::calculateDualvalsOptimalOrigLP()
 
    SCIPtransformProb(scipcopy);
 
-//   SCIPstartDive(scipcopy);
-//   SCIPconstructLP(scipcopy, FALSE);
-//   SCIPsolveDiveLP(scipcopy, -1, &lperror, &cutoff );
-
-
-
-  // SCIPwriteTransProblem(scipcopy, "lporig.lp", "lp", FALSE);
-
-   //SCIPwriteParams(scipcopy, "lporig.set", TRUE, TRUE);
-
    SCIPsolve(scipcopy);
-
-  // SCIPprintStatistics( scipcopy, NULL );
-
-  // assert(FALSE);
 
    for( int c = 0; c < nconss; ++c )
    {
@@ -318,9 +302,6 @@ SCIP_RETCODE createTestPricingprobConss(
    SCIP_Bool success;
 
    assert(scip != NULL);
-
-//   subscipconss = DECdecompGetSubscipconss(relaxdata->decdecomp);
-//   nsubscipconss = DECdecompGetNSubscipconss(relaxdata->decdecomp);
 
    SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingconstmp, SCIPblkmem(scip), seeedpool->getNConss() ) ); /*lint !e613*/
 
@@ -1718,7 +1699,6 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    if( (int) finishedSeeeds.size() != 0 )
    {
        SCIP_Real maxscore = finishedSeeeds[0]->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) );
-      //            SeeedPtr bestSeeed = finishedSeeeds[0];
       for( size_t i = 1; i < finishedSeeeds.size(); ++ i )
       {
           SCIP_Real score = finishedSeeeds[i]->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) );
@@ -1820,8 +1800,6 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
          delete seeedPropData->seeedToPropagate;
          delete seeedPropData;
       }
-//#pragma omp critical ( seeedptrstore )
-//       addSeeedToAncestor(seeedPtr);
 
    } // end for postprocessing finished seeeds
    SCIP_CALL_ABORT( SCIPstopClock( scip, postprocessingclock ) );
@@ -2085,7 +2063,6 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 {
    SCIP_Bool hittimelimit;
    SCIP_Bool errorpricing;
-   //std::vector<SCIP_Real> randomdualvals;
 
    /** @TODO introduce scip parameters */
    SCIP_Real timelimit;
@@ -2099,8 +2076,6 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
    SCIP_Real scorecoef_fastbenefical;
    SCIP_Real scorecoef_mediumbenefical;
-   /* SCIP_Real scorecoef_fastlittlebenefical; */
-   /* SCIP_Real scorecoef_mediumlittlebenefical; */
    SCIP_Real scorecoef_fastnobenefical;
    SCIP_Real scorecoef_mediumnobenefical;
 
@@ -2134,22 +2109,13 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
    writesubproblem = FALSE;
 
- // randomdualvals = std::vector<SCIP_Real>(getNConss(),0. );
-
    SCIPgetRealParam(scip, "detection/strong_detection/coeffactororigvsrandom", &dualvalmethodcoef);
 
    timelimit = 30.;
    timelimitfast  =  0.1 * timelimit;
 
-   /*gaplimitsolved = 0.;
-   gaplimitbeneficial = 0.3; */
-
    scorecoef_fastbenefical = 1.;
    scorecoef_mediumbenefical = 0.75;
-
-   /* not used yes */
-/*   scorecoef_fastlittlebenefical = 0.75; */
-/*   scorecoef_mediumlittlebenefical = 0.5; */
 
    scorecoef_fastnobenefical = 0.3;
    scorecoef_mediumnobenefical = 0.1;
@@ -2258,7 +2224,6 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
          }
 
          /* round variable objective coeffs to decrease numerical troubles */
-  //       obj = SCIPfloor(scip, obj * 100 + 0.5 )/100.;
 
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", block, SCIPvarGetName(origprobvar));
          SCIP_CALL( SCIPcreateVar(subscip, &pricingprobvar, name, SCIPvarGetLbGlobal(origprobvar),
@@ -2337,9 +2302,6 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
       *score += score_coef * weight_subproblem;
 
-    //  SCIPprintStatistics(subscip, NULL);
-
-
       /* free stuff */
       for( int var = 0; var < seeed->getNVarsForBlock(block); ++var )
       {
@@ -2351,10 +2313,6 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
       SCIPfree(&subscip);
    }// end for blocks
-
-
-   /*SCIPfreeRandom(scip, &randnumgen ); */
-   /* consider coefficients   */
 
    return SCIP_OKAY;
 }
@@ -2598,9 +2556,6 @@ void Seeedpool::translateSeeeds(
    std::vector<int> colthistoother( 0 );
    std::vector<int> missingrowinthis( 0 );
 
-//   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL, "started translate seeed method: presolving is %s \n", (presolvingdisabled ? "disabled, try short method." : "enabled, has to do long version. " ) );
-//
-
    SCIPgetIntParam(scip, "presolving/maxrounds", &roundspresolving);
 
    presolvingdisabled = (roundspresolving == 0);
@@ -2660,20 +2615,6 @@ void Seeedpool::calcTranslationMapping(
    assert(ncolsother == (int) origscipvars.size() );
    assert(ncolsthis == (int) thisscipvars.size() );
 
-
-//   std::vector<SCIP_CONS*>::const_iterator origiter = origscipconss.begin();
-//   std::vector<SCIP_CONS*>::const_iterator origiterend = origscipconss.end();
-//
-//   std::vector<SCIP_CONS*>::const_iterator thisiter = thisscipconss.begin();
-//   std::vector<SCIP_CONS*>::const_iterator thisiterend = thisscipconss.end();
-//
-//   std::vector<SCIP_VAR*>::const_iterator origitervars = origscipvars.begin();
-//   std::vector<SCIP_VAR*>::const_iterator origiterendvars = origscipvars.end();
-//
-//   std::vector<SCIP_VAR*>::const_iterator thisitervars = thisscipvars.begin();
-//   std::vector<SCIP_VAR*>::const_iterator thisiterendvars = thisscipvars.end();
-
-
    rowothertothis.assign( nrowsother, - 1 );
    rowthistoother.assign( nrowsthis, - 1 );
    colothertothis.assign( ncolsother, - 1 );
@@ -2687,7 +2628,6 @@ void Seeedpool::calcTranslationMapping(
       SCIP_CONS* otherrow = origscipconss[i];
       assert( otherrow != NULL );
       SCIP_Bool foundmaintained = false;
- //     thisiter = thisscipconss.begin();
       for( int j2 = i; j2 < nrowsthis + i; ++j2 )
       {
          int j = j2 % nrowsthis;
@@ -5152,7 +5092,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       SCIPwarningMessage(scip, "All blocks have been deleted since only deleted constraints are contained, no reformulation is done.\n");
    }
 
-   //detectorchaininfo ;
    /* set constraints */
    if( seeed->getNMasterconss() != 0 )
       SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & linkingconss, seeed->getNMasterconss() ) );
@@ -5395,7 +5334,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    {
       if( k != ndetectors - 1 || ! seeed->getFinishedByFinisher() )
       {
-         //          std::cout << " added detector of " << i << "-th seeed to its detetcor chain" << std::endl;
          ( * newdecomp )->detectorchain[k] = seeed->getDetectorchain()[k];
       }
       else
@@ -5480,8 +5418,6 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    assert( nConss == DECdecompGetNConss( decomp ) );
    assert( DECdecompGetPresolved( decomp ) );
    assert( transformed );
-
-//   std::cout << "Linkingvars decomp: " << DECdecompGetNLinkingvars( decomp ) << "\tStairlinkingvars decomp: " << DECdecompGetNTotalStairlinkingvars( decomp ) << "\n";
 
    /* create new seeed and initialize its data */
    SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), this );

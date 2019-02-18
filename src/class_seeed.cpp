@@ -793,11 +793,6 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
 
       }
 
-//      if( benders && hitsmastercons )
-//      {
-//         bookAsLinkingVar( var );
-//      }
-
       if(  blocksOfOpenvar.size() == 1 && hitsOpenCons )
       {
          bookAsLinkingVar( var );
@@ -2883,19 +2878,6 @@ SCIP_RETCODE Seeed::completeGreedily(
               break;
            }
         }
-
-//      for( size_t j = 0; j < masterConss.size() && checkVar; ++ j )
-//      {
-//         for( int k = 0; k < seeedpool->getNVarsForCons( masterConss[j] ); ++ k )
-//         {
-//            if( openVars[i] == seeedpool->getVarsForCons( masterConss[j] )[k] )
-//            {
-//               bookAsMasterVar( openVars[i] );
-//               checkVar = false; /* the variable does'nt need to be checked any more */
-//               break;
-//            }
-//         }
-//      }
    }
 
    flushBooked();
@@ -3067,9 +3049,6 @@ SCIP_RETCODE Seeed::considerImplicits(
 
       if ( benders && blocksOfBlockvars.size() == 1 && !master )
          bookAsBlockCons( cons, blocksOfBlockvars[0] );
-
-//      if( benders && master )
-//         bookAsMasterCons( cons );
 
       if( !benders && blocksOfBlockvars.size() > 1 )
          bookAsMasterCons( cons );
@@ -3800,7 +3779,6 @@ SCIP_Real Seeed::evaluate(
    int i;
    int j;
    int k;
-   /*   int blockarea; */
    SCIP_Real varratio;
    int* nzblocks;
    int* nlinkvarsblocks;
@@ -3843,8 +3821,6 @@ SCIP_Real Seeed::evaluate(
 
    if( getNOpenconss() != 0 || getNOpenvars() != 0 )
       SCIPwarningMessage( scip, "Evaluation for seeeds is not implemented for seeeds with open conss or open vars.\n" );
-
- //  if ( sctype == scoretype::MAX_FORESSEEING_WHITE || sctype == scoretype::SETPART_FWHITE )
 
    calcAggregationInformation();
 
@@ -3948,11 +3924,6 @@ SCIP_Real Seeed::evaluate(
       setpartfwhitescoreagg = 0.5 * maxforeseeingwhitescoreagg;
    }
 
-   //if( sctype == scoretype::SETPART_FWHITE )
-
-
-
-
    SCIP_CALL( SCIPallocBufferArray( scip, & nzblocks, nBlocks ) );
    SCIP_CALL( SCIPallocBufferArray( scip, & nlinkvarsblocks, nBlocks ) );
    SCIP_CALL( SCIPallocBufferArray( scip, & blockdensities, nBlocks ) );
@@ -3971,9 +3942,6 @@ SCIP_Real Seeed::evaluate(
 
    blackarea += (unsigned long) ( getNLinkingvars() + getNTotalStairlinkingvars() ) * (unsigned long) getNConss();
    blackarea += (unsigned long) getNMasterconss() * ( (unsigned long) getNVars() - ( getNLinkingvars() + getNTotalStairlinkingvars() ) ) ;
-
-   //std::cout << " black area without blocks is " <<  "(" << getNLinkingvars() << " + " << getNTotalStairlinkingvars() << " )  * " << getNConss() <<  " + " <<  getNMasterconss() << "  * ( " << getNVars() << "  -  ( " << getNLinkingvars() << " + " <<  getNTotalStairlinkingvars() << " ) ) "
-   //   <<     " = " <<   blackarea << std::endl;
 
    if( sctype == SCORETYPE::MAX_WHITE)
    {
@@ -3997,10 +3965,7 @@ SCIP_Real Seeed::evaluate(
          nzblocks[i] = 0;
          nlinkvarsblocks[i] = 0;
 
-         //    std::cout << "blackarea =  " << blackarea << " +  " << getNConssForBlock( i ) << " * " << getNVarsForBlock( i ) << " = " << getNConssForBlock( i ) * ( getNVarsForBlock( i ) );
-
          blackarea += (unsigned long) getNConssForBlock( i ) * ( (unsigned long) getNVarsForBlock( i ) );
-         //  std::cout << " =  " << blackarea  << std::endl;
 
          for( j = 0; j < nVars; ++ j )
          {
@@ -4062,9 +4027,6 @@ SCIP_Real Seeed::evaluate(
       + ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() ) * ( nConss - getNMasterconss() );
 
    maxwhitescore = 1. - ( (SCIP_Real) blackarea /  (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() ) );
-//   std::cout << "black area ration =  " << blackarea << "/ ( " << getNConss() << " * " << getNVars() << " =  " << ( (unsigned long) getNConss() * (unsigned long) getNVars() ) << ")  = " << maxwhitescore << std::endl;
-
-   //std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    this seeed has a black area ratio of " << maxwhitescore << std::endl;
 
    density = 1E20;
    varratio = 1.0;
@@ -4121,11 +4083,9 @@ SCIP_Real Seeed::evaluate(
    {
       case DEC_DECTYPE_ARROWHEAD:
          totalscore = 1. - (alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore ) );
-//      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
          break;
       case DEC_DECTYPE_BORDERED:
          totalscore = 1. - ( alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore ) );
-//      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
          break;
       case DEC_DECTYPE_DIAGONAL:
          if( nBlocks == 1 || nBlocks == 0 )
@@ -4509,7 +4469,6 @@ SCIP_RETCODE Seeed::findVarsLinkingToStairlinking(
 
       if( block1 != - 1 && block2 != - 1 && ( block1 == block2 + 1 || block1 + 1 == block2 ) )
       {
-//    	 std::cout << "Var " << lvars[i] << " hits block " << block1 << " and " << block2 << "\n";
 
          setVarToStairlinking( lvars[i], block1, block2 );
          foundMasterVarIndices.push_back( i );
@@ -4559,7 +4518,6 @@ std::vector< std::pair< int, std::vector< int > > > Seeed::findLinkingVarsPotent
                   /* if the hit block is new, add it to blockOfVar vector */
                   if ( std::find( blocksOfVar.begin(), blocksOfVar.end(), b ) == blocksOfVar.end() )
                   {
-                     //std::cout << "Var " << lvars[v] << " hits block " << b << "\n" ;
                      ++blockcounter;
                      blocksOfVar.push_back( b );
                   }
@@ -6059,8 +6017,6 @@ SCIP_RETCODE Seeed::printClassifierInformation(
    int nconsclassifier = 0;
    int nvarclassifier = 0;
 
-   //SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  nusedclassifier );
-
    for( int classif = 0; classif < nusedclassifier; ++classif)
    {
       if( usedClassifier[classif] == NULL )
@@ -6599,12 +6555,9 @@ SCIP_RETCODE findTranslationForDec(
       SCIPgetTransformedCons(scip, origcons, &transcons);
       if( transcons == NULL )
       {
- //       std::cout << "consname: " << SCIPconsGetName(origcons) << " ; oc:" << oc << " has no transformed constraint "  << std::endl;
-        continue;
+         continue;
       }
       transconsid = transseeedpool->getIndexForCons(transcons);
-
- //     std::cout << "consname: " << SCIPconsGetName(origcons) << " ; oc:" << oc << " ;transconsid: " << transconsid << " ; origconsid: " << origconsid << " transformed: " << origseeedpool->getTransformedInfo() << std::endl;
 
       if( fromunpresolvedtopresolved  )
       {
@@ -6760,10 +6713,6 @@ SCIP_RETCODE Seeed::writeAsDec(
 
       transseeed->deleteEmptyBlocks(false);
 
-      //displayInfo(getSeeedpool(), 0 );
-
-      //transseeed->displayInfo(seeedpooltowriteto, 0 );
-
       if( transseeed->isComplete() != isComplete() )
          success = FALSE;
 
@@ -6910,10 +6859,7 @@ void Seeed::calcmaxwhitescore(){
    if( borderareascore == -1. )
       calcborderareascore();
 
-   /* maxwhitescore = 1 - ( 1 - blackareascore + (1 - borderareascore ) ) */
    maxwhitescore = blockareascore + borderareascore - 1.;
-
-
 
    if( maxwhitescore < 0. )
      maxwhitescore = 0.;
@@ -7054,7 +7000,6 @@ void Seeed::calcbendersscore(){
    if( borderareascore == -1. )
       calcborderareascore();
 
-   /* bendersscore = 1 - ( 1 - blockareascore + (1 - borderareascore - benderborderscore ) ) */
    bendersscore = blockareascore + benderareascore + borderareascore - 1.;
 
     if( bendersscore < 0. )
@@ -7131,11 +7076,6 @@ SCIP_RETCODE Seeed::calcclassicscore()
       nzblocks[i] = 0;
       nlinkvarsblocks[i] = 0;
 
-      //    std::cout << "blackarea =  " << blackarea << " +  " << getNConssForBlock( i ) << " * " << getNVarsForBlock( i ) << " = " << getNConssForBlock( i ) * ( getNVarsForBlock( i ) );
-
-   //   blackarea += (unsigned long) getNConssForBlock( i ) * ( (unsigned long) getNVarsForBlock( i ) );
-      //  std::cout << " =  " << blackarea  << std::endl;
-
       for( j = 0; j < nVars; ++ j )
       {
          ishandled[j] = FALSE;
@@ -7195,10 +7135,6 @@ SCIP_RETCODE Seeed::calcclassicscore()
    borderarea = ((unsigned long) getNMasterconss() * nVars )  + ( ((unsigned long) getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() ) ) * ( nConss - getNMasterconss() );
 
    matrixarea = ((unsigned long) nVars ) * ((unsigned long) nConss );
-
-//   std::cout << "black area ration =  " << blackarea << "/ ( " << getNConss() << " * " << getNVars() << " =  " << ( (unsigned long) getNConss() * (unsigned long) getNVars() ) << ")  = " << maxwhitescore << std::endl;
-
-//std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    this seeed has a black area ratio of " << maxwhitescore << std::endl;
 
    density = 1E20;
    varratio = 1.0;
