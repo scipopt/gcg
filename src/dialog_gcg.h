@@ -59,7 +59,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecPrintDetectionInformation);
 
-/** dialog execution method for the display statistics command */
+/** dialog execution method for adding block number candidate */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr);
 
@@ -107,11 +107,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecTransform);
 
-
 /** dialog execution method for the decomposition toolbox command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecToolbox);
-
 
 /** dialog execution method for the optimize command */
 extern
@@ -161,7 +159,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsOff);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsAggressive);
 
-/** creates a root dialog */
+/** creates a root dialog
+ * @returns SCIP return code */
 extern
 SCIP_RETCODE GCGcreateRootDialog(
    SCIP*                 scip,               /**< SCIP data structure */

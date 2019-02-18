@@ -54,28 +54,32 @@
 #endif
 
 
-/** returns GCG major version */
+/** Gets GCG major version
+ * @returns GCG major version */
 static
 int GCGmajorVersion(void)
 {
    return GCG_VERSION/100;
 }
 
-/** returns GCG minor version */
+/** Gets GCG minor version
+ * @returns GCG minor version */
 static
 int GCGminorVersion(void)
 {
    return (GCG_VERSION/10) % 10; /*lint !e778*/
 }
 
-/** returns GCG technical version */
+/** Gets GCG technical version
+ * @returns GCG technical version */
 static
 int GCGtechVersion(void)
 {
    return GCG_VERSION % 10; /*lint !e778*/
 }
 #if GCG_SUBVERSION > 0
-/** returns GCG sub version number */
+/** Gets GCG sub version number
+ * @returns GCG sub version number */
 static
 int GCGsubversion(void)
 {
@@ -83,7 +87,8 @@ int GCGsubversion(void)
 }
 #endif
 
-/** prints out GCG version */
+/** prints out GCG version
+ * @returns nothing */
 static
 void GCGprintVersion(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -104,7 +109,8 @@ void GCGprintVersion(
 }
 
 
-/** read in parameter file */
+/** read in parameter file
+ * @returns SCIP return code */
 static
 SCIP_RETCODE readParams(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -122,7 +128,8 @@ SCIP_RETCODE readParams(
    return SCIP_OKAY;
 }
 
-/** runs GCG from the command line */
+/** runs GCG from the command line
+ * @returns SCIPreturn code */
 static
 SCIP_RETCODE fromCommandLine(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -187,7 +194,8 @@ SCIP_RETCODE fromCommandLine(
    return SCIP_OKAY;
 }
 
-/** evaluates command line parameters and runs GCG appropriately in the given SCIP instance */
+/** evaluates command line parameters and runs GCG appropriately in the given SCIP instance
+ * @returns SCIP return code */
 static
 SCIP_RETCODE SCIPprocessGCGShellArguments(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -458,7 +466,8 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
    return SCIP_OKAY;
 }
 
-/** runs the interactive shell */
+/** runs the interactive shell
+ * @returns SCIP return code */
 static
 SCIP_RETCODE SCIPrunGCGShell(
    int                   argc,               /**< number of shell parameters */
@@ -497,7 +506,8 @@ SCIP_RETCODE SCIPrunGCGShell(
    return SCIP_OKAY;
 }
 
-/** main function called first */
+/** main function called first
+ * @returns 0 if success, -1 otherwise */
 int
 main(
    int                   argc,               /**< number of arguments */

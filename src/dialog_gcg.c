@@ -58,7 +58,8 @@
 #include "params_visu.h"
 #include "reader_tex.h"
 
-/* display the reader information */
+/** display the reader information
+ * @returns nothing */
 static
 void displayReaders(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -95,15 +96,16 @@ void displayReaders(
 }
 
 
-/** writes out all decompositions currently known to cons_decomp */
+/** writes out all decompositions currently known to cons_decomp
+ * @returns SCIP return code */
 static
 SCIP_RETCODE writeAllDecompositions(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG*          dialog,             /**< dialog menu */
    SCIP_DIALOGHDLR*      dialoghdlr,         /**< dialog handler */
-   SCIP_DIALOG**         nextdialog,          /**< pointer to store next dialog to execute */
+   SCIP_DIALOG**         nextdialog,         /**< pointer to store next dialog to execute */
    SCIP_Bool             original,           /**< should decomps for original problem be written */
-   SCIP_Bool             presolved           /**< should decomps for preoslved problem be written */
+   SCIP_Bool             presolved           /**< should decomps for presolved problem be written */
 
    )
 {
@@ -207,7 +209,8 @@ SCIP_RETCODE writeAllDecompositions(
    return SCIP_OKAY;
 }
 
-/** writes out all decompositions currently known to cons_decomp */
+/** writes a family tree of the current seeeds
+ * @returns SCIP return code */
 static
 SCIP_RETCODE writeFamilyTree(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -309,14 +312,15 @@ SCIP_RETCODE writeFamilyTree(
 }
 
 
-/** writes out all decompositions currently known to cons_decomp */
+/** writes a block matrix to the location specified by the user
+ * @returns SCIP return code */
 static
 SCIP_RETCODE writeMatrix(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG*          dialog,             /**< dialog menu */
    SCIP_DIALOGHDLR*      dialoghdlr,         /**< dialog handler */
    SCIP_DIALOG**         nextdialog,         /**< pointer to store next dialog to execute */
-   SCIP_Bool             originalmatrix      /**< should the original (or transformed matrix be written) */
+   SCIP_Bool             originalmatrix      /**< should the original (or transformed) matrix be written */
    )
 {
    SCIP_Bool endoffile;
@@ -394,11 +398,8 @@ SCIP_RETCODE writeMatrix(
 }
 
 
-
-
-
-/** writes out visualizations of all decompositions currently known to cons_decomp to a PDF file
- * @TODO:   */
+/** writes out visualizations and statistics of all decompositions currently known to cons_decomp to a PDF file
+ * @returns SCIP return code */
 static
 SCIP_RETCODE reportAllDecompositions(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -539,7 +540,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecPrintDetectionInformation)
 }
 
 
-/** dialog execution method for the display statistics command */
+/** dialog execution method for adding block number candidate  */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr)
 {  /*lint --e{715}*/
 
@@ -578,8 +579,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr)
 }
 
 /** dialog execution method add an instance name, used for make test with statistic reading */
-SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddInstancename
-)
+SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddInstancename)
 {  /*lint --e{715}*/
 
    char* instancename;
@@ -836,7 +836,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
    return SCIP_OKAY;
 }
 
-/** dialog execution method for the displaying and selecting decompositions command */
+/** dialog execution method for the decomposition toolbox command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecToolbox)
 {  /*lint --e{715}*/
 
@@ -850,7 +850,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecToolbox)
 
    return SCIP_OKAY;
 }
-
 
 
 /** dialog execution method for the optimize command */
@@ -868,7 +867,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
    assert(SCIPconshdlrDecompCheckConsistency(scip) );
 
- //  SCIPdialogMessage(scip, NULL, "In optimize3 \n");
    SCIPdialogMessage(scip, NULL, "\n");
    switch( SCIPgetStage(scip) )
    {
@@ -879,10 +877,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_PROBLEM:
       SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
    case SCIP_STAGE_TRANSFORMED:
- //     SCIPdialogMessage(scip, NULL, "in transformed \n");
 
    case SCIP_STAGE_PRESOLVING:
- //     SCIPdialogMessage(scip, NULL, "in presolving \n");
 
       if( SCIPconshdlrDecompUnpresolvedSeeedExists(scip) )
       {
@@ -895,7 +891,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_PRESOLVED:
 
       assert(SCIPconshdlrDecompCheckConsistency(scip) );
-     // SCIPdialogMessage(scip, NULL, "In presolved \n");
 
       if( !SCIPconshdlrDecompExistsSelected(scip) )
       {
@@ -937,7 +932,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       }
       else if(! SCIPconshdlrDecompHasDecomp(scip) )
       {
-         //assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
          SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
       }
 
@@ -1014,7 +1008,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteAllDecompositions)
 }
 
 
-/** dialog execution method for writing all known decompositions */
+/** dialog execution method for writing all known presolved decompositions */
 static
 SCIP_DECL_DIALOGEXEC(GCGdialogExecWritePresolvedDecompositions)
 {
@@ -1033,7 +1027,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWritePresolvedDecompositions)
 }
 
 
-/** dialog execution method for writing all known decompositions */
+/** dialog execution method for writing all known original decompositions */
 static
 SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteOriginalDecompositions)
 {
@@ -1052,7 +1046,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteOriginalDecompositions)
 }
 
 
-/** dialog execution method for writing all known decompositions */
+/** dialog execution method for writing a family tree of the current seeeds */
 static
 SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteFamilyTree)
 {
@@ -1315,7 +1309,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsFast)
    return SCIP_OKAY;
 }
 
-/** creates a root dialog */
+/** creates a root dialog
+ * @returns SCIP return code */
 SCIP_RETCODE GCGcreateRootDialog(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG**         root                /**< pointer to store the root dialog */
@@ -1331,7 +1326,8 @@ SCIP_RETCODE GCGcreateRootDialog(
    return SCIP_OKAY;
 }
 
-/** create a "emphasis" sub menu */
+/** create an "emphasis" sub menu
+ * @returns SCIP return code */
 static
 SCIP_RETCODE createEmphasisSubmenu(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -1358,7 +1354,8 @@ SCIP_RETCODE createEmphasisSubmenu(
    return SCIP_OKAY;
 }
 
-/** includes or updates the GCG dialog menus in SCIP */
+/** includes or updates the GCG dialog menus in SCIP
+ * @returns SCIP return code */
 SCIP_RETCODE SCIPincludeDialogGcg(
    SCIP*                 scip                /**< SCIP data structure */
    )

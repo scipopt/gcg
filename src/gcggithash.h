@@ -40,7 +40,8 @@
 extern "C" {
 #endif
 
-/** returns the GCG git hash */
+/** Gets the GCG git hash
+ * @returns the GCG git hash */
 extern
 const char* GCGgetGitHash(
    void
