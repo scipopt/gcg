@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    params_visu.c
- * @brief   parameter-related stuff for visualization
+ * @brief   parameter settings for visualization readers
  * @author  Hanna Franzen
  * @author  Michael Bastubbe
  */
@@ -96,7 +96,7 @@
 /* familytree parameter defaults */
 #define DEFAULT_FAMTREE_MAXNDECOMPS    5        /**< maximum number of finished decompositions in family tree */
 
-
+/** data structure for visualization parameters */
 struct GCG_VisualizationData
 {
    SCIP_Bool         visudraftmode;    /**< true if no nonzeros should be shown */
@@ -138,7 +138,8 @@ struct GCG_VisualizationData
 struct GCG_VisualizationData* visudata;
 
 
-/** includes the visualization parameters into GCG */
+/** includes the visualization parameters into GCG
+ * @returns SCIP return code */
 SCIP_RETCODE SCIPincludeParamsVisu(
    SCIP* scip /**< SCIP data structure */
    )
@@ -265,15 +266,16 @@ SCIP_RETCODE SCIPincludeParamsVisu(
 /* getter & setter */
 
 
-/** gets if draftmode is on
- * draftmode lets visualizations omit nonzeros */
+/* gets if draftmode is on
+ * draftmode lets visualizations omit nonzeros
+ * @returns true if draftmode is on  */
 SCIP_Bool SCIPvisuGetDraftmode()
 {
    return visudata->visudraftmode;
 }
 
 
-/** sets draftmode
+/* sets draftmode
  * draftmode lets visualizations omit nonzeros */
 void SCIPvisuSetDraftmode(
    SCIP_Bool setmode
@@ -283,14 +285,15 @@ void SCIPvisuSetDraftmode(
 }
 
 
-/** gets the colorscheme for visualizations */
+/* gets the colorscheme for visualizations
+ * @returns current colorscheme */
 VISU_COLORSCHEME SCIPvisuGetColorscheme()
 {
    return visudata->visucolorscheme;
 }
 
 
-/** sets colorscheme for visualizations */
+/* sets colorscheme for visualizations */
 void SCIPvisuSetColorscheme(
    VISU_COLORSCHEME newscheme
    )
@@ -299,7 +302,8 @@ void SCIPvisuSetColorscheme(
 }
 
 
-/** gets color for mastercon block in current color scheme */
+/* gets color for mastercon block in current color scheme
+ * @returns mastercons color */
 char* SCIPvisuGetColorMasterconss()
 {
    switch(SCIPvisuGetColorscheme())
@@ -315,7 +319,8 @@ char* SCIPvisuGetColorMasterconss()
 }
 
 
-/** gets color for mastervar block in current color scheme */
+/* gets color for mastervar block in current color scheme
+ * @returns mastervars color */
 char* SCIPvisuGetColorMastervars()
 {
    switch(SCIPvisuGetColorscheme())
@@ -331,7 +336,8 @@ char* SCIPvisuGetColorMastervars()
 }
 
 
-/** gets color for linking blocks in current color scheme */
+/* gets color for linking blocks in current color scheme
+ * @returns linking color */
 char* SCIPvisuGetColorLinking()
 {
    switch(SCIPvisuGetColorscheme())
@@ -347,7 +353,8 @@ char* SCIPvisuGetColorLinking()
 }
 
 
-/** gets color for stairlinking blocks in current color scheme */
+/* gets color for stairlinking blocks in current color scheme
+ * @returns stairlinking color */
 char* SCIPvisuGetColorStairlinking()
 {
    switch(SCIPvisuGetColorscheme())
@@ -363,7 +370,8 @@ char* SCIPvisuGetColorStairlinking()
 }
 
 
-/** gets color for normal decomp blocks in current color scheme */
+/* gets color for normal decomp blocks in current color scheme
+ * @returns block color */
 char* SCIPvisuGetColorBlock()
 {
    switch(SCIPvisuGetColorscheme())
@@ -379,7 +387,8 @@ char* SCIPvisuGetColorBlock()
 }
 
 
-/** gets color for open blocks in current color scheme */
+/* gets color for open blocks in current color scheme
+ * @returns open color */
 char* SCIPvisuGetColorOpen()
 {
    switch(SCIPvisuGetColorscheme())
@@ -395,7 +404,8 @@ char* SCIPvisuGetColorOpen()
 }
 
 
-/** gets color for non-zero points in current color scheme */
+/* gets color for non-zero points in current color scheme
+ * @returns non-zero color */
 char* SCIPvisuGetColorNonzero()
 {
    switch(SCIPvisuGetColorscheme())
@@ -411,7 +421,8 @@ char* SCIPvisuGetColorNonzero()
 }
 
 
-/** gets color for lines in current color scheme */
+/* gets color for lines in current color scheme
+ * @returns line color */
 char* SCIPvisuGetColorLine()
 {
    switch(SCIPvisuGetColorscheme())
@@ -427,84 +438,85 @@ char* SCIPvisuGetColorLine()
 }
 
 
-/** sets color for mastercon block in current color scheme */
+/* sets color for mastercon block in current color scheme */
 void SCIPvisuSetColorManMasterconss(
-   char* newcolor       /**< new color */
+   char* newcolor       /* new color */
    )
 {
    visudata->mancolormasterconss = newcolor;
 }
 
 
-/** sets manual color for mastervar block in current color scheme */
+/* sets manual color for mastervar block in current color scheme */
 void SCIPvisuSetColorManMastervars(
-   char* newcolor       /**< new color */
+   char* newcolor       /* new color */
    )
 {
    visudata->mancolormastervars = newcolor;
 }
 
 
-/** sets manual color for linking blocks in current color scheme */
+/* sets manual color for linking blocks in current color scheme */
 void SCIPvisuSetColorManLinking(
-   char* newcolor       /**< new color */
+   char* newcolor       /* new color */
    )
 {
    visudata->mancolorlinking = newcolor;
 }
 
 
-/** sets manual color for stairlinking blocks in current color scheme */
+/* sets manual color for stairlinking blocks in current color scheme */
 void SCIPvisuSetColorManStairlinking(
-   char* newcolor       /**< new color */
+   char* newcolor       /* new color */
    )
 {
    visudata->mancolorstairlinking = newcolor;
 }
 
 
-/** sets manual color for normal decomp blocks in current color scheme */
+/* sets manual color for normal decomp blocks in current color scheme */
 void SCIPvisuSetColorManBlock(
-   char* newcolor       /**< new color */
+   char* newcolor       /* new color */
    )
 {
    visudata->mancolorblock = newcolor;
 }
 
 
-/** sets manual color for open blocks in current color scheme */
+/* sets manual color for open blocks in current color scheme */
 void SCIPvisuSetColorManOpen(
-   char* newcolor       /**< new color */
+   char* newcolor       /* new color */
    )
 {
    visudata->mancoloropen = newcolor;
 }
 
 
-/** sets manual color for non-zero points in current color scheme */
+/* sets manual color for non-zero points in current color scheme */
 void SCIPvisuSetColorManNonzero(
-   char* newcolor       /**< new color */
+   char* newcolor       /* new color */
    )
 {
    visudata->mancolornonzero = newcolor;
 }
 
 
-/** sets manual color for lines in current color scheme */
+/* sets manual color for lines in current color scheme */
 void SCIPvisuSetColorManLine(
-   char* newcolor       /**< new color */
+   char* newcolor       /* new color */
    )
 {
    visudata->mancolorline = newcolor;
 }
 
 
-/** gets appropriate radius for nonzeros
- * needs highest indices of both axes */
+/* gets appropriate radius for nonzeros
+ * needs highest indices of both axes
+ * @returns radius */
 float SCIPvisuGetNonzeroRadius(
-   int maxindx,         /**< highest index x-axis */
-   int maxindy,         /**< highest index y-axis */
-   float scalingfactor  /**< percentage to scale radius, 1 if no scaling */
+   int maxindx,         /* highest index x-axis */
+   int maxindy,         /* highest index y-axis */
+   float scalingfactor  /* percentage to scale radius, 1 if no scaling */
    )
 {
    int maxind = 0;
@@ -527,65 +539,73 @@ float SCIPvisuGetNonzeroRadius(
 }
 
 
-/** if true gp reader should be used for sub-visualizations, otherwise tex reader */
+/* if true gp reader should be used for sub-visualizations, otherwise tex reader
+ * @returns true if gp reader should be used, false if tex reader should be used */
 SCIP_Bool GCGgetUseGp()
 {
    return visudata->visuusegp;
 }
 
 
-/** gets the name of the pdf reader that should be used */
+/* gets the name of the pdf reader that should be used
+ * @returns name of pdf reader */
 char* GCGVisuGetPdfReader()
 {
    return visudata->pdfreader;
 }
 
 
-/** gets the max number of decomps to be included in reports */
+/* gets the max number of decomps to be included in reports
+ * @returns max number of decomps */
 int GCGreportGetMaxNDecomps()
 {
    return visudata->rep_maxndecomps;
 }
 
 
-/** gets what type of decomps to show in reports (where 0 corresponds to 'show all') */
+/* gets what type of decomps to show in reports (where 0 corresponds to 'show all')
+ * @returns type of decomps */
 DEC_DECTYPE GCGreportGetDecompTypeToShow()
 {
    return visudata->rep_showtype;
 }
 
 
-/** gets whether a titlepage should be included in reports */
+/* gets whether a titlepage should be included in reports
+ * @returns true iff title page should be generated */
 SCIP_Bool GCGreportGetShowTitlepage()
 {
    return visudata->rep_showtitle;
 }
 
 
-/** gets whether a table of contents should be included in reports */
+/* gets whether a table of contents should be included in reports
+ * @returns true iff table of contents should be generated */
 SCIP_Bool GCGreportGetShowToc()
 {
    return visudata->rep_showtoc;
 }
 
 
-/** gets whether statistics should be included for each decomp in reports */
+/* gets whether statistics should be included for each decomp in reports
+ * @returns true iff statistics for each decomp should be generated */
 SCIP_Bool GCGreportGetShowStatistics()
 {
    return visudata->rep_statistics;
 }
 
 
-/** gets the max number of finished decomps to be included in family tree */
+/* gets the max number of finished decomps to be included in family tree
+ * @returns max number of finished decomps */
 int GCGfamtreeGetMaxNDecomps()
 {
    return visudata->fam_maxndecomps;
 }
 
 
-/** frees all visualization parameters */
+/* frees all visualization parameters */
 void GCGVisuFreeParams(
-   SCIP* scip     /**< SCIP data structure */
+   SCIP* scip     /* SCIP data structure */
    )
 {
    if ( visudata != NULL )
