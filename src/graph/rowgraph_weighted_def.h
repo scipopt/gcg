@@ -493,19 +493,6 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
       // fill the col_labels
       for(auto i = 0; i < this->nvars; i++)
       {
-         /*int max = 0;
-         int most_common = -1;
-         map<int,int> m;
-         for (auto vi = all_labels_in_col[i].begin(); vi != all_labels_in_col[i].end(); vi++)
-         {
-            m[*vi]++;
-            if (m[*vi] > max)
-            {
-               max = m[*vi];
-               most_common = *vi;
-            }
-         }*/
-         //using pair_type = decltype(all_label_occ_in_col[i])::value_type;
          auto pr = max_element
          (
              all_label_occ_in_col[i].begin(), all_label_occ_in_col[i].end(),
@@ -514,11 +501,8 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
              }
          );
          // new code
-         //col_labels[i] = most_common;
          col_labels[i] = pr->first;
-         //assert(most_common == pr->first);
       }
-
 
       // Iterate all the conss and remove them (i.e. set label to -1) if necessary
       for(auto i = 0; i < this->nconss; i++)
@@ -551,7 +535,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
                var1 = curvars1[j];
 
             assert(var1 != NULL);
-            int varIndex = SCIPvarGetProbindex(var1);//curvars1[j]);
+            int varIndex = SCIPvarGetProbindex(var1);
             assert(varIndex >= 0);
             assert(varIndex < this->nvars);
 
@@ -634,7 +618,6 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::Seeedpo
    {
       diff_blocks_beginning.insert(*curr_int);
    }
-   //std::cout << "diff_blocks_beginning: " << diff_blocks_beginning.size() << std::endl;
    bool skip_me = false;
    if(diff_blocks_beginning.size() == labels.size())
    {
@@ -644,12 +627,12 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::Seeedpo
    if(enabled && !skip_me)
     {
       //fillout conssForGraph and varsForGraph
-      vector<int> conssForGraph; /** stores the conss included by the graph */
-      vector<int> varsForGraph; /** stores the vars included by the graph */
-      vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
-      vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
-      unordered_map<int, int> oldToNewConsIndex; /** stores new index of the conss */
-      unordered_map<int, int> oldToNewVarIndex; /** stores new index of the vars */
+      vector<int> conssForGraph; /* stores the conss included by the graph */
+      vector<int> varsForGraph; /* stores the vars included by the graph */
+      vector<bool> varsBool(seeed->getNVars(), false); /* true, if the var will be part of the graph */
+      vector<bool> conssBool(seeed->getNConss(), false); /* true, if the cons will be part of the graph */
+      unordered_map<int, int> oldToNewConsIndex; /* stores new index of the conss */
+      unordered_map<int, int> oldToNewVarIndex; /* stores new index of the vars */
 
       for(int c = 0; c < seeed->getNOpenconss(); ++c)
       {

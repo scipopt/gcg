@@ -52,10 +52,6 @@ public:
       Weights               w                  /**< weights for the given graph */
    );
    virtual ~ColumnGraph();
-   //virtual SCIP_RETCODE writeToFile(
-   //   const char*        filename,           /**< filename where the graph should be written to */
-   //   SCIP_Bool          writeweights        /**< whether to write weights */
-   //   );
 
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**      decomp                  /**< decomposition structure to generate */
