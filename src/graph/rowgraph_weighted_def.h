@@ -1178,7 +1178,6 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSetForPartialGraph(gcg
       // Iterate all the conss and remove them (i.e. set label to -1) if necessary
       for(int to_remove : no_stable_set)
       {
-         //SCIPverbMessage(this->scip_, SCIP_VERBLEVEL_NORMAL, NULL, " to_remove: %d \n", to_remove);
          labels[to_remove] = -1;
       }
    }

@@ -686,8 +686,6 @@ SCIP_RETCODE setuparraysnewdetection(
          consid = seeed->getConssForBlock(block)[i];
          cons = seeedpool->getConsForIndex( consid );
 
-         //ncurvars = GCGconsGetNVars(scip, conss[i]);    //SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(origscip), SCIPgetNVars(scip1)+1) );
-
          if( seeedpool->getNVarsForCons(consid) == 0 )
             continue;
 
@@ -1067,16 +1065,8 @@ SCIP_RETCODE createGraphNewDetection(
 
    scip = seeedpool->getScip();
 
-
-//   SCIP_CALL( SCIPallocMemoryArray(origscip, &pricingnonzeros, nscips) );
-//   SCIP_CALL( SCIPallocMemoryArray(origscip, &nnodesoffset, nscips) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &mastercoefindex, nblocks) );
-//   BMSclearMemoryArray(pricingnonzeros, nscips);
-//   BMSclearMemoryArray(nnodesoffset, nscips);
    BMSclearMemoryArray(mastercoefindex, nblocks);
-//
-//   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origscip);
-//   int nmasterconss = GCGgetNMasterConss(origscip);
 
    nconss = seeed->getNConssForBlock(blocks[0]);
    nvars = seeed->getNVarsForBlock(blocks[0]);
@@ -1092,7 +1082,6 @@ SCIP_RETCODE createGraphNewDetection(
 
       block = blocks[b];
       SCIPdebugMessage("Pricing problem %d\n", blocks[b]);
-//      SCIP* scip = scips[s];
       int z;
 
       z = 0;
@@ -1413,7 +1402,6 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    gcg::Seeedpool* seeedpoolpresolved;
    gcg::Seeed* seeed;
 
-//   int pricingindices[2];
    int pricingnodes;
 
    seeed = (gcg::Seeed*) seeedwr;
