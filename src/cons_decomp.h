@@ -90,9 +90,6 @@ typedef struct Seeed_Wrapper SEEED_WRAPPER;
  * presolved and original problem
  * @returns scip return code
  */
-/*!
- *
- */
 SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    SCIP*          scip     /**< SCIP data structure */
 );
@@ -107,49 +104,38 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/**
- * returns the decomposition structures, caller is responsible for freeing memory
- * @returns scip return code
- */
+/** \brief returns an array containing all decompositions
+ *
+ *  Updates the decdecomp decomposition structure by converting all finished seeeds into decompositions and replacing the
+ *  old list in the conshdlr.
+ *
+ *  @returns decomposition array
+ *   */
 extern
 DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 
-/**
- * returns the number of found decomposition structures
- * @returns scip return code
- */
+/** gets the number of decompositions (= amount of finished seeeds)
+ *
+ * @returns number of decompositions */
 extern
 int SCIPconshdlrDecompGetNDecdecomps(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /**
- * returns the number of constraints that were active while detecting the decomposition originating from the seeed with the
+ * Gets the number of constraints that were active while detecting the decomposition originating from the seeed with the
  * given id, this method is used to decide if the problem has changed since detection, if so the aggregation information
  * needs to be recalculated
 
- * @returns number of constraints that were active while detecting the decomposition originating from the seeed with the
- * given id, this method is used to decide if the problem has changed since detection, if so the aggregation information
- * needs to be recalculated
+ * @returns number of constraints that were active while detecting the decomposition
  */
 extern
 int SCIPconshdlrDecompGetNFormerDetectionConssForID(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   id                  /**< id of the seeed the information is asked for */
-   );
-
-/**
- * @brief returns string name of the chosen pdf reader
- *
- * \ref see parameter visual/pdfreader
- * @returns returns string name of the chosen pdf reader
- */
-extern
-const char* SCIPconshdlrDecompGetPdfReader(
-   SCIP*                scip        /**< SCIP data structure */
    );
 
 
@@ -197,7 +183,7 @@ const char* DECdetectorGetName(
 
 /**
  * @brief searches for the detector with the given name and returns it or NULL if detector is not found
- * @returns returns detector pointer or NULL if detector with given name is not found
+ * @returns detector pointer or NULL if detector with given name is not found
  */
 extern
 DEC_DETECTOR* DECfindDetector(
@@ -227,7 +213,7 @@ DEC_DETECTOR* DECfindDetector(
  * @param usefulRecall is it useful to call this detector on a descendant of the propagated seeed
  * @param legacymode whether (old) DETECTSTRUCTURE method should also be used for detection
  * @param detectordata the associated detector data (or NULL)
- * @param DEC_DECL_DETECTSTRUCTURE((*detectStructure))   the method that will detect the structure (may be NULL), only used in legecy detection mode
+ * @param DEC_DECL_DETECTSTRUCTURE((*detectStructure))   the method that will detect the structure (may be NULL), only used in legacy detection mode
  * @param DEC_DECL_FREEDETECTOR((*freeDetector)) destructor of detector (or NULL)
  * @param DEC_DECL_INITDETECTOR((*initDetector)) initialization method of detector (or NULL)
  * @param DEC_DECL_EXITDETECTOR((*exitDetector)) deinitialization method of detector (or NULL)
@@ -241,14 +227,13 @@ DEC_DETECTOR* DECfindDetector(
  * @param DEC_DECL_SETPARAMFAST((*setParamFastDetector))  method that is called if the detection emphasis setting fast is chosen
  * @returns scip return code
  */
-/**  */
 extern
 SCIP_RETCODE DECincludeDetector(
    SCIP*                 scip,                             /**< SCIP data structure                                                */
    const char*           name,                             /**< name of the detector                                               */
    const char            decchar,                          /**< display character of the detector                                  */
    const char*           description,                      /**< description of the detector                                        */
-   int                   freqCallRound,                    /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+   int                   freqCallRound,                    /** frequency the detector gets called in detection loop, i.e. it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
    int                   maxCallRound,                     /** last round the detector gets called                              */
    int                   minCallRound,                     /** first round the detector gets called (offset in detection loop) */
    int                   freqCallRoundOriginal,            /** frequency the detector gets called in detection loop while detecting of the original problem */
@@ -272,7 +257,7 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_FINISHFROMTOOLBOX((*finishFromToolboxDetector)),         /**< finish from toolbox method of detector (or NULL) */
    DEC_DECL_FINISHSEEED((*finishSeeedDetector)),           /**< finish method of detector (or NULL) */
    DEC_DECL_POSTPROCESSSEEED((*postprocessSeeedDetector)), /**< postprocess method of detector (or NULL) */
-   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),       /**< set method for agressive parameters of detector (or NULL) */
+   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),       /**< set method for aggressive parameters of detector (or NULL) */
    DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),   /**< set method for default parameters of detector (or NULL) */
    DEC_DECL_SETPARAMFAST((*setParamFastDetector))          /**< set method for fast parameters of detector (or NULL) */
    );
@@ -331,6 +316,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
 
 /**
  * @brief sets (and adds) the decomposition structure
+ * @note this method should only be called if there is no seeed for this decomposition
  * @returns scip return code
  */
 extern
@@ -357,7 +343,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
 
 /**
  * @brief help method to access seeedpool for unpresolved problem
- * @TODO: consider deleting this method will be deleted if the corresponidng wrapper classes are introduced
+ * @TODO: consider deleting this method will be deleted if the corresponding wrapper classes are introduced
  * @returns pointer to seeedpool wrapper data structure
  */
 SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(
@@ -425,7 +411,9 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
    );
 
 /**
- * @brief method to handle and moderate user input for creating new decompositions and modifying existing decompositions by the user
+ * method to handle and moderate user input for creating new decompositions
+ * and modifying existing decompositions by the user
+ *
  * @param scip SCIP data structure
  * @param dialoghdlr dialog handler to handle user input
  * @param dialog dialog to handle user input
@@ -483,10 +471,11 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
    );
 
 /**
- * @brief set the number of blocks in the current user seeed (which is used for user input (read or modify) )
+ * @brief sets the number of blocks
+ *
+ * set the number of blocks in the current user seeed (which is used for user input (read or modify) )
  * @returns SCIP return code
  */
-/** sets the number of blocks */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
    SCIP*                 scip,                /**< SCIP data structure */
    int                   nblocks              /**< number of blocks */
@@ -508,7 +497,6 @@ SCIP_Bool SCIPconshdlrDecompUserSeeedIsActive(
  * @param consdefaulttomaster if TRUE all open constraints are set to master,
  * @returns SCIP return code
  */
-/** sets the number of blocks */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsDefaultMaster(
    SCIP*                 scip,                /**< SCIP data structure */
    SCIP_Bool             consdefaulttomaster  /**< are not specified constraints set to master for default */
@@ -522,7 +510,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsDefaultMaster(
  * @param blockid index of the block the constraint should be assigned to
  * @returns SCIP return code
  */
-/** sets a constraint by name to a block in the current user seeed */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToBlock(
    SCIP*                 scip,                /**< SCIP data structure */
    const char*           consname,            /**< name of the constraint */
@@ -543,7 +530,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToMaster(
  * @brief sets a variable by name to a block in the current user seeed
  * @returns SCIP return code
  */
-/** sets a variable by name to a block in the current user seeed */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToBlock(
    SCIP*                 scip,                /**< SCIP data structure */
    const char*           varname,             /**< name of the variable */
@@ -642,9 +628,9 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
 
 
 /**
- * @brief returns if there is a decomposition that is currently selected by the user (done in explore menue)
+ * @brief returns if there is a decomposition that is currently selected by the user (done in explore menu)
  * @param scip SCIP data structure
- * @returns TRUE if there is a decomposition that is currently selected by the user (done in explore menue)
+ * @returns TRUE if there is a decomposition that is currently selected by the user (done in explore menu)
  */
 SCIP_Bool SCIPconshdlrDecompExistsSelected(
    SCIP* scip
@@ -693,10 +679,9 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    );
 
 
-/**
- * Checks whether bender detection is enabled
- * @returns whether bender detection is enabled
- */
+/** Checks whether benders detection is enabled
+ *
+ * @returns true if benders is enabled, false otherwise */
 SCIP_Bool SCIPconshdlrDecompDetectBenders(
    SCIP*                   scip  /**< SCIP data structure **/
    );
@@ -734,11 +719,11 @@ SCORETYPE SCIPconshdlrDecompGetCurrScoretype(
    );
 
 
-/** interface method to detect the structure
+/** interface method to detect the structure including presolving
  * @returns SCIP return code */
 extern
 SCIP_RETCODE DECdetectStructure(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,              /**< SCIP data structure */
    SCIP_RESULT*          result             /**< Result pointer to indicate whether some structure was found */
    );
 
@@ -759,13 +744,14 @@ SCIP_RETCODE DECwriteAllDecomps(
  * @return SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
-   SCIP*                scip
+   SCIP*                scip  /**< SCIP data structure */
    );
 
 
 /** gets an array of all seeeds that are currently considered relevant
  * @params seeedswr  output of the relevant seeeds (don't forget to free the individual wrappers after use)
  * @params nseeeds   amount of seeeds that are put in the array
+ * @retruns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
    SCIP* scip,                /**< SCIP data structure */
@@ -778,10 +764,10 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
  * @returns SCIP return code */
 extern
 SCIP_RETCODE SCIPconshdlrDecompWriteDec(
-   SCIP*     scip,
-   FILE*     file,
-   SCIP_Bool transformed,
-   SCIP_RESULT* result
+   SCIP*     scip,         /**< SCIP data structure */
+   FILE*     file,         /**< file for output */
+   SCIP_Bool transformed,  /**< is the problem transformed yet */
+   SCIP_RESULT* result     /**< result of writing dec */
    );
 
 
@@ -797,21 +783,23 @@ SCIP_RETCODE SCIPconshdlrDecompWriteMatrix(
 
 
 /** Gets the best known decomposition
+ * @note caller has to free returned DEC_DECOMP
  * @returns the decomposition if available and NULL otherwise */
 extern
 DEC_DECOMP* DECgetBestDecomp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** Gets the Seeed ID of the best Seeed
- * @returns the Seeed ID if available and -1 otherwise */
+/** Gets the currently considered best seeed
+ * @returns the Seeed of the best Seeed if available and seeedwrapper->seeed = NULL otherwise */
 SCIP_RETCODE DECgetSeeedToWrite(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool             transformed,
+   SCIP_Bool             transformed,        /**< is the problem transformed yet */
    SEEED_WRAPPER*        seeedwrapper        /**< seeed wrapper to output */
    );
 
-/** writes out a list of all detectors */
+/** writes out a list of all detectors
+ * @returns nothing */
 void DECprintListOfDetectors(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -919,33 +907,6 @@ SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
    int** output,     /**< array to put ids into */
    int* outputsize   /**< size of output */
    );
-
-SCIP_RETCODE GCGprintMiplibBaseInformation(
-   SCIP*                scip,
-   FILE*                file
-   );
-
-SCIP_RETCODE GCGprintMiplibBaseInformationHeader(
-   SCIP*                scip,
-   FILE*                file
-   );
-
-
-SCIP_RETCODE GCGprintMiplibConnectedInformation(
-   SCIP*                scip,
-   FILE*                file
-   );
-
-SCIP_RETCODE GCGprintMiplibDecompInformation(
-   SCIP*                scip,
-   FILE*                file
-   );
-
-SCIP_RETCODE GCGprintOptionalOutput(
-   SCIP*                scip,
-   SCIP_DIALOGHDLR*     dialoghdlr         /**< dialog handler */
-   );
-
 
 #ifdef __cplusplus
 }
