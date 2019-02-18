@@ -47,6 +47,7 @@
 extern "C" {
 #endif
 
+/** pricing problem data structure */
 struct GCG_PricingProb
 {
    /* problem data */

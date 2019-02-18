@@ -14,7 +14,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_colpool.h
- * @brief  datastructures for storing cols in a col pool
+ * @brief  data structures for storing cols in a col pool
  * @author Jonas Witt
  */
 
