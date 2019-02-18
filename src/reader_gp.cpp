@@ -99,32 +99,16 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    }
    else
    {
-      SCIP_Bool plotmiplib;
       seeed = seeedwr.seeed;
 
       /* reader internally works with the filename instead of the C FILE type */
       filename = misc->GCGgetFilePath(scip, file);
 
-      SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &plotmiplib );
+      /* get filename for compiled file */
+      misc->GCGgetVisualizationFilename(scip, seeed, "pdf", outputname);
+      strcat(outputname, ".pdf");
 
-      if( !plotmiplib )
-      {
-         /* get filename for compiled file */
-         misc->GCGgetVisualizationFilename(scip, seeed, "pdf", outputname);
-         strcat(outputname, ".pdf");
-
-         GCGwriteGpVisualization(scip, filename, outputname, seeed->getID() );
-      }
-      else
-      {
-         char problemname[SCIP_MAXSTRLEN];
-         char* outname2;
-         (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
-         SCIPsplitFilename(problemname, NULL, &outname2, NULL, NULL);
-
-         strcat(outname2, ".png");
-         GCGwriteGpVisualization(scip, filename, outname2, seeed->getID() );
-      }
+      GCGwriteGpVisualization(scip, filename, outputname, seeed->getID() );
 
       *result = SCIP_SUCCESS;
    }
@@ -145,17 +129,13 @@ SCIP_RETCODE writeGpHeader(
    )
 {
    std::ofstream ofs;
-   SCIP_Bool plotformiplib;
 
-   SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &plotformiplib);
    ofs.open( filename, std::ofstream::out );
 
    /* set output format and file */
    ofs << "set encoding utf8" << std::endl;
-   if( !plotformiplib )
-      ofs << "set terminal pdf" << std::endl;
-   else
-      ofs << "set terminal pngcairo" << std::endl;
+
+   ofs << "set terminal pdf" << std::endl;
 
    ofs << "set output \"" << outputname << "\"" << std::endl;
 
@@ -343,10 +323,7 @@ SCIP_RETCODE writeGpSeeed(
    int nvars;
    int nconss;
    SCIP_Bool writematrix;
-   SCIP_Bool noticsbutlabels;
-   Seeedpool* seeedpool;
 
-   seeedpool = seeed->getSeeedpool();
    nvars = seeed->getNVars();
    nconss = seeed->getNConss();
 
@@ -354,16 +331,13 @@ SCIP_RETCODE writeGpSeeed(
    ofs.open( filename, std::ofstream::out | std::ofstream::app );
 
    writematrix = FALSE;
-   noticsbutlabels = FALSE;
 
    if ( seeed->getNBlocks() == 1 && seeed->isComplete() && seeed->getNMasterconss() == 0
       && seeed->getNLinkingvars() == 0  && seeed->getNMastervars() == 0 )
       writematrix = TRUE;
 
-   SCIPgetBoolParam(seeedpool->getScip(), "write/miplib2017plotsanddecs", &noticsbutlabels);
-
    /* set coordinate range */
-   if( !writematrix && !noticsbutlabels )
+   if( !writematrix )
    {
       ofs << "set xrange [-1:" << nvars << "]" << std::endl;
       ofs << "set yrange[" << nconss << ":-1]" << std::endl;
