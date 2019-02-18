@@ -1901,11 +1901,12 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    return SCIP_OKAY;
 }
 
-/* Checks whether benders detection is enabled
+/** Checks whether benders detection is enabled
  *
  * @returns true if benders is enabled, false otherwise */
+static
 SCIP_Bool SCIPconshdlrDecompDetectBenders(
-   SCIP*                   scip  /* SCIP data structure */
+   SCIP*                   scip  /**< SCIP data structure */
    )
 {
    SCIP_Bool benders;
@@ -4458,12 +4459,13 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    return SCIP_OKAY;
 }
 
-/*
+/**
  * @brief returns whether or not an unpresolved (untransformed) decompositions was given by the user
  * @returns true iff an unpresolved (untransformed) decompositions was given by the user
  */
+static
 SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
-   SCIP*                 scip                /* SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    ){
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
@@ -4515,11 +4517,12 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
 
 
 
-/*
+/**
  * @brief populate datastructures with incomplete decompositions (e.g. that were given by the user) to complete them during detection loop
  * @param scip SCIP data structure
  * @returns SCIP return code
  */
+static
 SCIP_RETCODE SCIPconshdlrDecompPopulateSelected(
    SCIP*       scip
    )
@@ -4725,12 +4728,13 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
    return SCIP_OKAY;
 }
 
-/*
+/**
  * @brief returns whether there is an user seeed that is currently worked on
  * @returns TRUE there is an user seeed that is currently worked on
  */
+static
 SCIP_Bool SCIPconshdlrDecompUserSeeedIsActive(
-   SCIP*                 scip                /* SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    ){
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
@@ -4750,14 +4754,14 @@ SCIP_Bool SCIPconshdlrDecompUserSeeedIsActive(
 }
 
 
-/*
+/**
  * set the user given information of the current user seeed according consdefaultmaster (if TRUE all open constraints are
  * set to master)
- * @param consdefaulttomaster if TRUE all open constraints are set to master,
  * @returns SCIP return code
  */
+static
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsDefaultMaster(
-   SCIP*                 scip                /* SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -5684,16 +5688,17 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 }
 
 /*@todo cleanup: is SCIPconshdlrDecompAddLegacymodeDecompositions still used?*/
-/*
+/**
  * @brief calls old detectStructure methods of chosen detectors, translates the resulting decompositions
  *  into seeeds and adds these seeeds to (presolved) seeedpool
  * @param scip SCIP data structure
  * @param result was the legacy call successful
  * @returns SCIP return code
  */
+static
 SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
-   SCIP* scip,          /* SCIP data structure */
-   SCIP_RESULT* result  /* */
+   SCIP* scip,
+   SCIP_RESULT* result
    )
 {
    /* access to relevant data structures of the conshdlr */
@@ -7444,13 +7449,14 @@ SCIP_RETCODE GCGgetSeeedFromID(
 }
 
 
-/* returns wrapped Seeedpools
+/** returns wrapped Seeedpools
  *
  * @returns SCIP status */
+static
 SCIP_RETCODE GCGgetCurrentSeeedpools(
-   SCIP*          scip,                   /* SCIP data structure */
-   SEEED_WRAPPER* seeedpoolwr,            /* wrapper for presolved output Seeedpool (or NULL) */
-   SEEED_WRAPPER* seeedpoolunpresolvedwr  /* wrapper for unpresolved output Seeedpool (or NULL) */
+   SCIP*          scip,                   /**< SCIP data structure */
+   SEEED_WRAPPER* seeedpoolwr,            /**< wrapper for presolved output Seeedpool (or NULL) */
+   SEEED_WRAPPER* seeedpoolunpresolvedwr  /**< wrapper for unpresolved output Seeedpool (or NULL) */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -7552,13 +7558,14 @@ SCIP_RETCODE GCGprintClassifierInformation(
 }
 
 
-/* gets the ids of all selected seeeds
+/** gets the ids of all selected seeeds
  *
  * @returns SCIP status*/
+static
 SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
-   SCIP* scip,       /* SCIP data structure */
-   int** output,     /* pointer to array in which to write the ids */
-   int* outputsize   /* pointer to int in which to output the size of the array after the call of this function */
+   SCIP* scip,       /**< SCIP data structure */
+   int** output,     /**< pointer to array in which to write the ids */
+   int* outputsize   /**< pointer to int in which to output the size of the array after the call of this function */
    )
 {
    SCIP_CONSHDLR* conshdlr;
