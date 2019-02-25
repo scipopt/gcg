@@ -66,7 +66,10 @@ class Seeedpool;
 
 
 /*!
- * @brief class to manage partial decompositions (aka seeed), each seeed corresponds to one seeedpool which contains the problem information, there is one seeedpool for the original and the transformed problem.
+ * @brief class to manage partial decompositions
+ *
+ * each seeed corresponds to one seeedpool which contains the problem information,
+ * there is one seeedpool for the original and the transformed problem.
  */
 class Seeed
 {
@@ -135,14 +138,14 @@ private:
 
    bool isFinishedByFinisher;                                   /**< was this seeed finished by the finishseeed() method of a detector */
 
-   /** aggregation information */
+   /* aggregation information */
    SCIP_Bool            agginfocalculated;                             /**< is aggregation information for the blocks already calculated */
    int                  nrepblocks;                                    /**< number of block representatives */
    std::vector<std::vector<int>> reptoblocks;                          /**< translation of the block representatives to (old) blocks */
    std::vector<int>     blockstorep;                                   /**< translation of the (old) blocks to the block representatives */
    std::vector<std::vector<std::vector<int> > > pidtopidvarmaptofirst; /**< [nrepblocks][blockstorep[k].size()][nvarsforprob] collection of varmaps of probindices from k-th subproblem to the zeroth block that is represented */
 
-   /** statistic information */
+   /* statistic information */
    std::vector<DEC_DETECTOR*> detectorChain;          /**< vector containing detectors that worked on that seeed */
    std::vector<std::string> detectorchaininfo;        /**< vector containing information about the detector call */
    std::vector<SCIP_Bool> detectorChainFinishingUsed; /**< vector containing whether the finishing method of the
@@ -257,6 +260,7 @@ public:
 
    /**
     * @brief Standard constructor
+    * @note initially, all conss and vars are open
     */
    Seeed(
       SCIP* scip,                                  /**< scip data structure */
@@ -2114,7 +2118,6 @@ public:
    SCIP_RETCODE buildDecChainString();
 
 private:
-
 
    /**
     * @brief adds empty entries for all classifier statistics for a detector added to the detector chain
