@@ -41,19 +41,22 @@
 class PricingType
 {
 protected:
-   SCIP*                 scip_;
-   GCG_PRICETYPE         type;
-   SCIP_CLOCK*           clock;
+   SCIP*                 scip_;                 /**< SCIP instance (master problem) */
+   GCG_PRICETYPE         type;                  /**< type of pricing */
+   SCIP_CLOCK*           clock;                 /**< CPU clock */
 
-   int                   calls;
-   int                   maxrounds;
-   int                   maxcolsroundroot;
-   int                   maxcolsround;
-   int                   maxcolsprobroot;
-   int                   maxcolsprob;
-   int                   maxsuccessfulprobs;
-   SCIP_Real             relmaxprobsroot;
-   SCIP_Real             relmaxprobs;
+   int                   calls;                 /**< number of times this type of pricing was called */
+   int                   maxrounds;             /**< maximal number of pricing rounds */
+   int                   maxcolsroundroot;      /**< maximal number of columns per pricing round at root node */
+   int                   maxcolsround;          /**< maximal number of columns per pricing round */
+   int                   maxcolsprobroot;       /**< maximal number of columns per problem to be generated at root node */
+   int                   maxcolsprob;           /**< maximal number of columns per problem to be generated */
+   int                   maxsuccessfulprobs;    /**< maximal number of successfully solved pricing problems until pricing
+                                                  *  loop is aborted */
+   SCIP_Real             relmaxprobsroot;       /**< maximal percentage of pricing problems that are solved at root node if
+                                                  *  variables have already been found */
+   SCIP_Real             relmaxprobs;           /**< maximal percentage of pricing problems that are solved if variables
+                                                  *  have already been found */
    SCIP_Real             relmaxsuccessfulprobs; /**< maximal percentage of pricing problems that need to be solved successfully */
 
 public:
