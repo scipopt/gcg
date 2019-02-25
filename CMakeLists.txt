@@ -171,11 +171,6 @@ set(CMAKE_CXX_STANDARD 11)
 #search the selected symmetry computation program
 if(SYM STREQUAL "bliss")
 
-   # Apparently, bliss requires GMP
-   find_package(GMP REQUIRED)
-   include_directories(${GMP_INCLUDE_DIRS})
-   add_definitions(-DWITH_GMP)
-
    find_package(BLISS)
    if(BLISS_FOUND)
       include_directories(${BLISS_INCLUDE_DIRS})
