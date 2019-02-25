@@ -972,60 +972,6 @@ SCIP_RETCODE readLinkingvars(
 }
 
 
-/** DEPRECATED @TODE: delete */
-/** fills the whole Decomp struct after the dec file has been read */
-
-//static
-//SCIP_RETCODE fillDecompStruct(
-//   SCIP*                 scip,               /**< SCIP data structure */
-//   DECINPUT*             decinput,           /**< DEC reading data */
-//   DEC_DECOMP*           decomp,             /**< DEC_DECOMP structure to fill */
-//   SCIP_READERDATA*      readerdata          /**< reader data*/
-//   )
-//{
-//   int nblocks;
-//
-//   SCIP_CONS** conss;
-//   int nconss;
-//   int i;
-//   SCIP_HASHMAP* constoblock;
-//   assert(scip != NULL);
-//   assert(decinput != NULL);
-//   assert(decomp != NULL);
-//   assert(readerdata != NULL);
-//
-//   nblocks = decinput->nblocks;
-//
-//   DECdecompSetPresolved(decomp, decinput->presolved);
-//   DECdecompSetNBlocks(decomp, nblocks);
-//   DECdecompSetDetector(decomp, NULL);
-//
-//   nconss = SCIPgetNConss(scip);
-//   conss = SCIPgetConss(scip);
-//
-//   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
-//
-//   for( i = 0; i < nconss; ++i )
-//   {
-//
-//      int blockid;
-//      assert(SCIPhashmapExists(readerdata->constoblock, conss[i]));
-//      blockid = (int) (size_t) SCIPhashmapGetImage(readerdata->constoblock, conss[i]); /*lint !e507*/
-//      if( blockid == LINKINGVALUE )
-//      {
-//         blockid = decinput->nblocks+1;
-//         SCIP_CALL( SCIPhashmapSetImage(constoblock, conss[i], (void*) (size_t) (nblocks+1)) );
-//      }
-//
-//      SCIP_CALL( SCIPhashmapSetImage(constoblock, conss[i], (void*) (size_t) blockid) );
-//   }
-//
-//
-//   SCIP_CALL_QUIET( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE) );
-//   return SCIP_OKAY;
-//}
-
-
 /** reads a DEC file */
 static
 SCIP_RETCODE readDECFile(
@@ -1096,7 +1042,7 @@ SCIP_RETCODE readDECFile(
 
                assert(decinput->haspresolvesection);
             }
-            /** call cons_decomp to create seeed (and correct seeedpool if necessary) seeed from the right seeedpool */
+            /* call cons_decomp to create seeed (and correct seeedpool if necessary) seeed from the right seeedpool */
             if ( decinput->presolved )
             {
                SCIPconshdlrDecompCreateSeeedpool(scip);

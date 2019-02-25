@@ -157,10 +157,10 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
      int j;
      unordered_map<int, int> oldToNewVarIndex;
      unordered_map<int, int> oldToNewConsIndex;
-     std::vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
-     std::vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
-     std::vector<int> conssForGraph; /** stores the conss included by the graph */
-     std::vector<int> varsForGraph; /** stores the vars included by the graph */
+     std::vector<bool> varsBool(seeed->getNVars(), false); /* true, if the var will be part of the graph */
+     std::vector<bool> conssBool(seeed->getNConss(), false); /* true, if the cons will be part of the graph */
+     std::vector<int> conssForGraph; /* stores the conss included by the graph */
+     std::vector<int> varsForGraph; /* stores the vars included by the graph */
 
      //fillout conssForGraph and varsForGraph
      for(int c = 0; c < seeed->getNOpenconss(); ++c)
@@ -197,7 +197,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
      this->nvars = (int)varsForGraph.size();
 
 
-     /** add node for every var */
+     /* add node for every var */
      for( i = 0 ; i < this->nvars; ++i )
      {
          TCLIQUE_WEIGHT weight;
@@ -210,7 +210,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
      }
 
 
-     /** add node for every cons */
+     /* add node for every cons */
      for(  j = 0 ; j < this->nconss; ++j  )
      {
         TCLIQUE_WEIGHT weight;

@@ -81,12 +81,12 @@ using gcg::Weights;
 
 #define DEC_DETECTORNAME          "hrgpartition"    /**< name of the detector */
 #define DEC_DESC                  "enforces arrowhead structures using graph partitioning" /**< description of detector */
-#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          0           /** last round the detector gets called                              */
-#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
-#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  0           /** last round the detector gets called while detecting the original problem                            */
-#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          0           /**< last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /**< first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  0           /**< last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              1000        /**< priority of the detector */
 #define DEC_DECCHAR               'r'         /**< display character of detector */
 #define DEC_ENABLED               FALSE       /**< should detector be called by default */
@@ -452,10 +452,10 @@ SCIP_RETCODE detection(
    gcg::Seeed** newSeeeds;
    SCIP_CLOCK* clock;
    SCIP_CLOCK* temporaryClock;
-   std::vector<SCIP_Real> clockTimes;        /**< vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes;        /* vector containing times in seconds  */
    /* Graph stuff for hmetis */
-   MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
-   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
+   MatrixGraph<gcg::GraphTclique>* graph;    /* the graph of the matrix */
+   char tempfile[SCIP_MAXSTRLEN];            /* filename for the metis input file */
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
@@ -627,8 +627,8 @@ SCIP_RETCODE fromToolbox(
    SCIP_Bool endoffile;
    int nblocks;
    /* Graph stuff for hmetis */
-   MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
-   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
+   MatrixGraph<gcg::GraphTclique>* graph;    /* the graph of the matrix */
+   char tempfile[SCIP_MAXSTRLEN];            /* filename for the metis input file */
 
    seeed = seeedPropagationData->seeedToPropagate;
    detectordata = DECdetectorGetData(detector);
@@ -749,8 +749,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    assert(decdecomps != NULL);
    assert(ndecdecomps != NULL);
 
-   MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
-   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
+   MatrixGraph<gcg::GraphTclique>* graph;    /* the graph of the matrix */
+   char tempfile[SCIP_MAXSTRLEN];            /* filename for the metis input file */
 
 
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);

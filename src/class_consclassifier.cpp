@@ -174,11 +174,11 @@ ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
    if ( classindexmapping.empty() )
       return NULL;
 
-   /** create new ConsClassifier */
+   /* create new ConsClassifier */
    newName << getName() << "-red-to-" << givenMaxNumber;
    newClassifier = new ConsClassifier( scip, newName.str().c_str(), givenMaxNumber, getNConss() );
 
-   /** reassign conss */
+   /* reassign conss */
    for( int i = 0; i < newClassifier->getNConss(); ++i)
    {
       if ( getClassOfCons(i) != -1 )
@@ -187,7 +187,7 @@ ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
       }
    }
 
-   /** set new class names and descriptions (enlarged class has index 0) */
+   /* set new class names and descriptions (enlarged class has index 0) */
    newClassifier->setClassName( 0, "merged" );
    newClassifier->setClassDecompInfo( 0, BOTH );
 

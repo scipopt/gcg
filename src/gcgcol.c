@@ -468,7 +468,7 @@ void GCGcolComputeNorm(
    linkvars = GCGcolGetLinkvars(gcgcol);
 
    norm = 0.0;
-   /** compute scalar of master values of gcg columns */
+   /* compute scalar of master values of gcg columns */
    for( i = 0; i < nmastercoefs; ++i )
    {
       if( !SCIPisZero(scip, mastercoefs[i]))
@@ -674,7 +674,7 @@ SCIP_Real GCGcolComputeDualObjPara(
 
    dualobjnorm = 0.0;
 
-   /** compute scalar of master values of gcg columns */
+   /* compute scalar of master values of gcg columns */
    for( i = 0; i < nmastercoefs; ++i )
    {
       SCIP_Real lhs;
@@ -798,7 +798,7 @@ SCIP_Real GCGcolComputeOrth(
    nlinkvars2 = GCGcolGetNLinkvars(gcgcol2);
    linkvars2 = GCGcolGetLinkvars(gcgcol2);
 
-   /** compute scalar of master values of gcg columns */
+   /* compute scalar of master values of gcg columns */
    for( i = 0; i < nmastercoefs1; ++i )
    {
       if( SCIPisPositive(scip, mastercoefs1[i] * mastercoefs2[i]) )

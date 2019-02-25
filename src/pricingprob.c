@@ -298,7 +298,7 @@ int GCGpricingprobGetNSolves(
    return pricingprob->nsolves;
 }
 
-/** get the total number of improving colums found in the last pricing rounds */
+/** get the total number of improving columns found in the last pricing rounds */
 int GCGpricingprobGetNColsLastRounds(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */

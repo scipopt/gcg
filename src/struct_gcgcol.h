@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_gcgcol.h
- * @brief  struct to store columns (solutions from a pricing problem)
+ * @brief  data structure to store columns (solutions from a pricing problem)
  * @author Jonas Witt
  */
 
@@ -45,6 +45,7 @@
 extern "C" {
 #endif
 
+/** Column data structure */
 struct GCG_Col
 {
    SCIP*                pricingprob;        /**< SCIP data structure (pricing problem)*/

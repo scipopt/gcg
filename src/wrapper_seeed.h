@@ -40,10 +40,14 @@
 #include "class_seeed.h"
 #include "class_seeedpool.h"
 
+/** Wrapper class body to be included in .cpp files only.
+ * To pass a wrapper object through C headers include the wrapper forward declaration in cons_decomp.h
+ *
+ * The struct can contain a Seeed and a Seeedpool object.*/
 struct Seeed_Wrapper
 {
-   gcg::Seeed* seeed;
-   gcg::Seeedpool* seeedpool;
+   gcg::Seeed* seeed;            /**< seeed pointer */
+   gcg::Seeedpool* seeedpool;    /**< seeedpool pointer */
 };
 
 #endif   /* GCG_WRAPPER_SEEED_H__ */

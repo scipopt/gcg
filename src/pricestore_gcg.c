@@ -113,10 +113,10 @@ SCIP_RETCODE GCGpricestoreCreate(
    (*pricestore)->ncolsapplied = 0;
    (*pricestore)->infarkas = FALSE;
    (*pricestore)->forcecols = FALSE;
-   (*pricestore)->efficiacyfac = efficiacyfac;   /**< factor of efficiacies in score function */
-   (*pricestore)->objparalfac = objparalfac;     /**< factor of objective parallelism in score function */
-   (*pricestore)->orthofac = orthofac;           /**< factor of orthogonalities in score function */
-   (*pricestore)->mincolorth = mincolorth;       /**< minimal orthogonality of columns to add
+   (*pricestore)->efficiacyfac = efficiacyfac;   /* factor of efficiacies in score function */
+   (*pricestore)->objparalfac = objparalfac;     /* factor of objective parallelism in score function */
+   (*pricestore)->orthofac = orthofac;           /* factor of orthogonalities in score function */
+   (*pricestore)->mincolorth = mincolorth;       /* minimal orthogonality of columns to add
                                                       (with respect to columns added in the current round) */
    (*pricestore)->efficiacychoice = efficiacychoice;
 

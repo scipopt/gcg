@@ -430,9 +430,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
-   std::vector<SCIP_Real> clockTimes1;        /**< vector containing times in seconds  */
-   std::vector<SCIP_Real> clockTimes2;        /**< vector containing times in seconds  */
-   std::vector<SCIP_Real> clockTimes3;        /**< vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes1;        /* vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes2;        /* vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes3;        /* vector containing times in seconds  */
 
 
    assert(scip != NULL);

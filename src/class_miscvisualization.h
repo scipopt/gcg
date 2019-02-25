@@ -59,38 +59,26 @@ public:
    ~MiscVisualization();
 
 
-   /** gives a consistent filename for a (single) seeed visualization that includes the probname and seeedID
+   /** Gives a consistent filename for a (single) seeed visualization that includes the probname and seeedID.
     *
-    * @return standardized filename
+    * @returns standardized filename
     * */
    SCIP_RETCODE GCGgetVisualizationFilename(
       SCIP* scip,             /**< scip data structure */
       SeeedPtr seeed,         /**< seeed that is to be visualized */
-      const char* extension,  /**< file extension (to be included in the name) */
+      const char* extension,  /**< future file extension (to be included in the name) */
       char* filename          /**< filename output */
       );
 
 
-   /** gives the path of the file
+   /** Gives the path of the file.
     *
-    * @return path of file
+    * @returns path of file
     * */
    char* GCGgetFilePath(
       SCIP* scip,       /**< scip data structure */
       FILE* file        /**< file */
       );
-
-
-   /** compiles visualization files in gp or tex format and
-    * opens the resulting pdf file with the
-    *
-    * @return path of file
-    * */
-   void GCGshowVisualization(
-      SCIP* scip,       /**< scip data structure */
-      char* filename    /**< filename (including path) */
-      );
-
 
 }; /* class MiscVisualization */
 

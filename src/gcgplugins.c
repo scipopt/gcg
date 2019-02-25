@@ -146,7 +146,7 @@
 #include "scip/sepa_strongcg.h"
 #include "scip/sepa_zerohalf.h"
 
-/** added by Jonas */
+/* added by Jonas */
 #include "scip/sepa_closecuts.h"
 #include "scip/sepa_rapidlearning.h"
 #endif

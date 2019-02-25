@@ -65,7 +65,7 @@
 #define DEFAULT_COPYCUTS      TRUE          /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
                                              * of the original scip be copied to constraints of the subscip
                                              */
-#define DEFAULT_RANDSEED         7           /* initial random seed                                                  */
+#define DEFAULT_RANDSEED         7           /**< initial random seed                                                  */
 
 #define HASHSIZE_POINTS       11113         /**< size of hash table for extreme point tuples                         */
 

@@ -30,7 +30,7 @@
  * @author Hanna Franzen
  * @ingroup FILEREADERS
 
- * This reader can write visualizations and reports of seeeds to a .tex LaTeX file.
+ * This reader can write visualizations, family trees and reports of seeeds to a .tex LaTeX file.
  * The gp reader might be required for visualizations.
 
  */
@@ -49,46 +49,56 @@ extern "C" {
 #endif
 
 
-/** includes the tex file reader into SCIP */
+/** Includes the tex file reader into SCIP
+ *
+ * @returns SCIP status */
 extern SCIP_RETCODE SCIPincludeReaderTex(
    SCIP* scip     /**< SCIP data structure */
    );
 
-/** writes a visualization for the given seeed */
+/** Writes visualization LaTeX code for the given seeed
+ *
+ * @returns SCIP status */
 extern SCIP_RETCODE GCGwriteTexVisualization(
    SCIP* scip,             /**< SCIP data structure */
-   FILE* file,             /**< filename including path */
+   FILE* file,             /**< file in which to write the LaTeX code */
    int seeedid,            /**< id of seeed to visualize */
    SCIP_Bool statistics,   /**< additionally to picture show statistics */
-   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
+   SCIP_Bool usegp         /**< true if the gp reader should be used for the image generation (instead of tikz) */
    );
 
-/** writes a visualization of the family tree of the current seeedpool */
+/** Writes a visualization of the family tree of the current seeedpool
+ *
+ * @returns SCIP status */
 extern SCIP_RETCODE GCGwriteTexFamilyTree(
    SCIP* scip,                /**< SCIP data structure */
-   FILE* file,                /**< filename including path */
+   FILE* file,                /**< file in which to put the LaTeX code */
    const char* workfolder,    /**< directory in which should be worked, includes generation of intermediate files */
    SEEED_WRAPPER** seeedswr,  /**< seeed wrapper for the seeeds the family tree should be constructed for */
    int* nseeeds               /**< number of seeeds the family tree should be constructed for */
    );
 
-/** writes a report for the given seeeds */
+/** Writes a report for the given seeeds
+ *
+ * @returns SCIP status */
 extern SCIP_RETCODE GCGwriteTexReport(
    SCIP* scip,             /**< SCIP data structure */
-   FILE* file,             /**< filename including path */
+   FILE* file,             /**< file in which to put the LaTeX code */
    int* seeedids,          /**< ids of seeeds to visualize */
    int* nseeeds,           /**< number of seeeds to visualize */
    SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
    SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
    SCIP_Bool statistics,   /**< true if statistics for each seeed should be included */
-   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
-      );
+   SCIP_Bool usegp         /**< true if the gp reader should be used for the image generation */
+   );
 
-/** makes a new makefile and readme for the given .tex file */
+/** Makes a new makefile and readme for the given .tex file
+ *
+ * @returns SCIP status */
 extern SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    SCIP* scip,          /**< SCIP data structure */
-   FILE* file,          /**< File for which the makefile & readme are generated */
-   SCIP_Bool usegp,     /**< true if the gp reader was used for creation of file */
+   FILE* file,          /**< tex file for which the makefile & readme are generated */
+   SCIP_Bool usegp,     /**< true if the gp reader was used for creation of images */
    SCIP_Bool compiletex /**< true if there are tex files to be compiled before main document */
    );
 

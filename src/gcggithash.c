@@ -36,7 +36,8 @@
 #include "gcggithash.h"
 #include "githash.c"
 
-/** returns the SCIP git hash */
+/* Gets the GCG git hash
+ * @returns the GCG git hash */
 const char* GCGgetGitHash(
    void
    )
