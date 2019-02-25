@@ -964,16 +964,6 @@ public:
 
 
    /**
-    * @brief Gets a string containing statistical data of the numbers of constraints and variables in the components
-    *
-    * in particular: ncomponents, percentage_min_nconss, percentage_max_nconss, percentage_median_nconss,
-    * percentage_mean_nconss , percentage_min_nvars, percentage_max_nvars, percentage_median_nvars, percentage_mean_nvars
-    * @returns string with statistical data
-    */
-   std::string getComponentInformation(
-   );
-
-   /**
     * @brief returns the data of the consclassifier that the given detector made use of
     * @param detectorchainindex index of the detector in the detectorchain
     * @param classifier a pointer to the used consclassifier (set by method)
