@@ -52,7 +52,8 @@ SCIP_RETCODE SCIPincludeEventHdlrRelaxsol(
 /** return whether event has been triggered */
 EXTERN
 SCIP_Bool GCGeventhdlrRelaxsolIsTriggered(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 masterprob          /**< the SCIP data structure for the master problem */
    );
 
 #ifdef __cplusplus
