@@ -1564,7 +1564,7 @@ SCIP_RETCODE detectIsomorph(
       int pos = *nNewSeeeds;
 
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      SCIP_Real tempTime = SCIPclockGetTime(temporaryClock);
+      SCIP_Real tempTime = SCIPgetClockTime(scip, temporaryClock);
 
       for( p = *nNewSeeeds; p < *nNewSeeeds + nperms && pos < *nNewSeeeds + maxdecomps; ++p )
       {
@@ -1595,7 +1595,7 @@ SCIP_RETCODE detectIsomorph(
 
             ((*newSeeeds)[pos])->calcHashvalue();
             SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-            (*newSeeeds)[pos]->addClockTime( tempTime + SCIPclockGetTime(temporaryClock) );
+            (*newSeeeds)[pos]->addClockTime( tempTime + SCIPgetClockTime(scip, temporaryClock) );
 
             isduplicate = FALSE;
 

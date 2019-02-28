@@ -163,7 +163,7 @@ SCIP_RETCODE detection(
    seeedPropagationData->newSeeeds[0] = seeed;
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
    return SCIP_OKAY;

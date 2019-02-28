@@ -4895,7 +4895,7 @@ SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return SCIPclockGetTime( conshdlrdata->completedetectionclock );
+   return SCIPgetClockTime( scip, conshdlrdata->completedetectionclock );
 }
 
 
@@ -6019,7 +6019,7 @@ SCIP_RETCODE DECdetectStructure(
       if( conshdlrdata->seeedpoolunpresolved != NULL &&  conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() > 0 )
          *result = SCIP_SUCCESS;
 
-      SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
+      SCIPdebugMessage("Detection took %fs\n", SCIPgetClockTime( scip, conshdlrdata->detectorclock));
 
    } /* end of if( !onlylegacy ) */
 

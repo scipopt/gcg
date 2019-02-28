@@ -517,8 +517,8 @@ SCIP_RETCODE detection(
          newSeeeds[j]->addDetectorChainInfo(decinfo);
          newSeeeds[j+1]->addDetectorChainInfo(decinfo);
 
-         clockTimes.push_back(SCIPclockGetTime(temporaryClock));
-         clockTimes.push_back(SCIPclockGetTime(temporaryClock)); // 2x because two seeeds where created
+         clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock));
+         clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock)); // 2x because two seeeds where created
       }
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
       j = j + 2;
@@ -579,12 +579,12 @@ SCIP_RETCODE detection(
    if(border)
    {
       for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
+         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime(scip, clock) + clockTimes[s] );
    }
    else
    {
       for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[2*s] );
+         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime(scip, clock) + clockTimes[2*s] );
    }
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
 
@@ -831,7 +831,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
 
    for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
    {
-      seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+      seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
    }
 
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
@@ -880,7 +880,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
    {
       seeedPropagationData->newSeeeds[s]->considerImplicits();
       seeedPropagationData->newSeeeds[s]->refineToBlocks();
-      seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+      seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
       assert(seeedPropagationData->newSeeeds[s]->getNOpenconss() == 0);
       assert(seeedPropagationData->newSeeeds[s]->getNOpenvars() == 0);
    }

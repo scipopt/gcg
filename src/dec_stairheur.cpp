@@ -2114,7 +2114,7 @@ SCIP_RETCODE blocking(
    }
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
-   SCIP_Real tempTime = SCIPclockGetTime(temporaryClock);
+   SCIP_Real tempTime = SCIPgetClockTime(scip, temporaryClock);
    SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
    /* variant 2 */
    /* dynamic blocking */
@@ -2127,7 +2127,7 @@ SCIP_RETCODE blocking(
       SCIPdebugMessage("detectordata->enablemultipledecomps = %ud.\n", detectordata->multipledecomps);
 
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
-      SCIP_Real tempTimeDynamicBlocking = SCIPclockGetTime(temporaryClock);
+      SCIP_Real tempTimeDynamicBlocking = SCIPgetClockTime(scip, temporaryClock);
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
 
       if( detectordata->multipledecomps )
@@ -2153,7 +2153,7 @@ SCIP_RETCODE blocking(
     //        detectordata->constoblock = NULL;
 
             SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
-            (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + tempTimeDynamicBlocking + SCIPclockGetTime(temporaryClock) );
+            (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + tempTimeDynamicBlocking + SCIPgetClockTime(scip, temporaryClock) );
             SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
 
             (*nNewSeeeds) += 1;
@@ -2174,7 +2174,7 @@ SCIP_RETCODE blocking(
  //           detectordata->constoblock = NULL;
 
             SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
-            (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + tempTimeDynamicBlocking + SCIPclockGetTime(temporaryClock) );
+            (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + tempTimeDynamicBlocking + SCIPgetClockTime(scip, temporaryClock) );
             SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
 
             (*nNewSeeeds) += 1;
@@ -2206,7 +2206,7 @@ SCIP_RETCODE blocking(
 //         detectordata->constoblock = NULL;
 
          SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
-         (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + SCIPclockGetTime(temporaryClock) );
+         (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + SCIPgetClockTime(scip, temporaryClock) );
          SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
 
          (*nNewSeeeds) += 1;
@@ -2245,7 +2245,7 @@ SCIP_RETCODE blocking(
  //           detectordata->constoblock = NULL;
 
             SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
-            (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + SCIPclockGetTime(temporaryClock) );
+            (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + SCIPgetClockTime(scip, temporaryClock) );
             SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
 
             *nNewSeeeds += 1;
@@ -2267,7 +2267,7 @@ SCIP_RETCODE blocking(
             detectordata->constoblock = NULL;
 
             SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
-            (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + SCIPclockGetTime(temporaryClock) );
+            (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + SCIPgetClockTime(scip, temporaryClock) );
             SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
 
             *nNewSeeeds += 1;
@@ -2550,7 +2550,7 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
    /* ==================== */
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   SCIP_CALL( blocking(scip, detectordata, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->newSeeeds), &(seeedPropagationData->nNewSeeeds), SCIPclockGetTime(temporaryClock), result) );
+   SCIP_CALL( blocking(scip, detectordata, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->newSeeeds), &(seeedPropagationData->nNewSeeeds), SCIPgetClockTime(scip, temporaryClock), result) );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d seeeds.\n", seeedPropagationData->nNewSeeeds);
    #ifdef WRITEALLOUTPUT
