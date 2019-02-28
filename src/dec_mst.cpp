@@ -463,8 +463,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       detectordata->graphs->push_back(g);
       sim.push_back("Johnson");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->intersectionenable)
@@ -475,8 +475,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       detectordata->graphs->push_back(g);
       sim.push_back("Intersection");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->jaccardenable)
@@ -487,8 +487,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       detectordata->graphs->push_back(g);
       sim.push_back("Jaccard");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->cosineenable)
@@ -499,8 +499,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       detectordata->graphs->push_back(g);
       sim.push_back("Cosine");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->simpsonenable)
@@ -511,8 +511,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       detectordata->graphs->push_back(g);
       sim.push_back("Simspon");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    time(&cp0);
@@ -534,8 +534,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
          epsLists[i] = getEpsList(detectordata->n_iterations, mids[i], false); // case for all except intersection
       }
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes2.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes2.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes2.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes2.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
 
@@ -606,8 +606,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       detectordata->graphs->at(i) = NULL;
 
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes3.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes3.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes3.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes3.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
 

@@ -768,5 +768,5 @@ SCIP_Real GCGpricestoreGetTime(
 {
    assert(pricestore != NULL);
 
-   return SCIPclockGetTime(pricestore->priceclock);
+   return SCIPgetClockTime(pricestore->scip, pricestore->priceclock);
 }

@@ -230,7 +230,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
   {
-     seeedPropagationData->newSeeeds[s]->addClockTime(SCIPclockGetTime(temporaryClock )  );
+     seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime( scip, temporaryClock )  );
   }
   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 

@@ -296,7 +296,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
   {
      seeedPropagationData->newSeeeds[s] = foundseeeds[s];
-     seeedPropagationData->newSeeeds[s]->addClockTime(SCIPclockGetTime(temporaryClock )  );
+     seeedPropagationData->newSeeeds[s]->addClockTime(SCIPgetClockTime(scip, temporaryClock )  );
   }
 
   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );

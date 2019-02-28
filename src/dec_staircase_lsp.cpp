@@ -868,7 +868,7 @@ SCIP_RETCODE detection(
    tcliqueFree(&detectordata->graph);
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
 
@@ -909,7 +909,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
 
@@ -956,7 +956,7 @@ DEC_DECL_FINISHSEEED(detectorFinishSeeedStaircaseLsp)
     seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
     SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
     SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
 
