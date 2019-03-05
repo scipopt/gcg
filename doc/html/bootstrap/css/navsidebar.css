@@ -1,0 +1,120 @@
+#side-nav {
+/*    height: 100%;
+    width: 250px;
+    position: fixed;
+    z-index: 1;
+    top: 250px;
+    left: 0;
+    background-color: #FFF;
+    overflow-x: hidden;
+    padding-top: 20px;*/
+    display:none;
+}
+
+#nav-tree a {
+    margin: 9px;
+}
+
+.arrow {
+    color: #B8B8B8;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+    font-size: 80%;
+    display: inline-block;
+    width: 16px;
+    height: 22px;
+}
+
+#main {
+    transition: margin-left .4s;
+    margin-left: 20%;
+}
+
+#mySidebar {
+    width: 20%;
+    min-width: 200px;
+}
+
+#openNav {
+    display:None;
+}
+
+.w3-sidebar {
+    height: 100%;
+    width: 200px;
+    background-color: #fff;
+    position: fixed !important;
+    z-index: 1;
+    overflow: auto;
+}
+
+.w3-card, .w3-card-2 {
+    box-shadow: 0 2px 5px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12);
+}
+
+.w3-bar-block .w3-bar-item {
+    width: 100%;
+    display: block;
+    padding: 8px 16px;
+    text-align: left;
+    border: none;
+    white-space: normal;
+    float: none;
+    outline: 0;
+}
+.w3-large {
+    font-size: 18px !important;
+}
+
+.w3-btn, .w3-button {
+    border: none;
+    display: inline-block;
+    padding: 8px 16px;
+    vertical-align: middle;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    background-color: inherit;
+    text-align: center;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.w3-animate-left {
+    position: relative;
+    animation: animateleft 0.4s;
+}
+
+.w3-teal, .w3-hover-teal:hover {
+    color: #fff !important;
+    background-color: #009688 !important;
+}
+
+.w3-xlarge {
+    font-size: 24px !important;
+}
+
+a.anchor {
+    padding-top: 75px;
+    margin-top: -75px;
+}
+#MSearchResultsWindow {
+  z-index: 2;
+  position: fixed !important;
+  top: 80px !important;
+  left: 10px !important;
+}
+#MSearchResults {
+}
+#MSearchClose {
+  top: -1px;
+}
+#MSearchBox {
+  margin-top: 9px;
+}
+#MSearchField {
+}

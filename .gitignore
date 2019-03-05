@@ -6,8 +6,8 @@
 IP
 bin/
 check/results
-doc/gcg.tag
-doc/html/
+doc/html/doc-*/
+doc/html/MathJax/
 gcg-*.metis*
 lib/include/bliss
 lib/include/cliquer
