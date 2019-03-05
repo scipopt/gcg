@@ -6,6 +6,7 @@
 IP
 bin/
 check/results
+doc/html/index.html
 doc/html/doc-*/
 doc/html/MathJax/
 gcg-*.metis*
