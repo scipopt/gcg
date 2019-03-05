@@ -18,6 +18,7 @@ lib/include/gtest
 lib/static/lib*
 lib/linkscreated.*
 lib/scip
+lib/soplex
 lint.out
 obj/
 release
