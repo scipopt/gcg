@@ -450,7 +450,7 @@ endif
 
 .PHONY: doc
 doc:
-		cd doc; $(DOXY) $(MAINNAME).dxy;
+		cd doc; $(SHELL) builddoc.sh;
 
 .PHONY: $(MAINSHORTLINK)
 $(MAINSHORTLINK):	$(MAINFILE)

@@ -1,15 +1,41 @@
-.reveal:hover {
+body, table, div, p, dl {
+   font-family: 'Open Sans', sans-serif;
+}
+
+.reveal:hover, .reveal_faq:hover {
     text-shadow: 1px 1px 1px #777;
 }
-.reveal {
-    color:#06c;
-    padding-top: 1em;
-    cursor: pointer;
-    margin: 5px 0;
+
+/* scroll up headings a bit to compensate for the header */
+.reveal, .reveal_faq {
+  color:#06c;
+  cursor: pointer;
 }
-.answer {
-    background-color: #fff;
-    padding-left:   1em;
+/* scroll up a bit to compensate for the header */
+.anchor,
+#doc-content > .contents > a {
+  padding-top: 50px;
+  margin-top: -50px;
+  display: block;
+}
+li.anchor {
+  display: list-item;
+}
+.logo {
+   max-height:120px;
+   max-width:75%;
+   padding-top:20px;
+   padding-bottom:20px;
+   display: block;
+   margin-left: auto;
+   margin-right: auto;
+}
+.mono {
+font-family:monospace;
+}
+.img-padding {
+   padding-top:20px;
+   padding-bottom:20px;
 }
 /* used for download buttons */
 .w-30 {
@@ -18,9 +44,13 @@
 .w-60 {
    width:60px;
 }
+/* used for file information on download page */
+.w-120 {
+   width:120px;
+}
 /* used for news dates */
 .w-150 {
-   width:150px
+   width:150px;
 }
 /* used for developer names */
 .w-200 {
@@ -45,23 +75,36 @@
 .val-c {
    vertical-align:center;
 }
-.footer {
-margin-top: 100px;
-border-top: 1px solid #06c;
-color: #000;
-font-size: 8pt;
+
+/* red textcolor */
+.warning {
+    color:#d00;
 }
-/* scroll up a bit to compensate for the header */
-.targetpadding {
-    padding-top:80px;
-    margin-top:-60px;
+
+.input-group-addon {
+    min-width:100px;
+    text-align:left;
 }
 body {
     position: relative;
     /* For scrollyspy */
     padding-top: 50px;
     /* Account for fixed navbar */
+    background-image: url("https://scip.zib.de/images/scribble_light_@2X.png");
 }
+body > #main .bs-docs-container {
+    box-shadow: 0 10px 30px #777;
+    background-color: #FFF;
+}
+
+body > .container {
+    box-shadow: 0 10px 30px #777;
+    background-color: #FFF;
+}
+.bs-docs-container{
+    padding-bottom: 40px;
+}
+
 /* Keep code small in tables on account of limited space */
 .table code {
     font-size: 13px;
@@ -72,6 +115,20 @@ body {
 .bs-docs-nav .navbar-brand {
     color: #fff;
     padding-right:80px;
+}
+
+/* the z index of the main navigation bar of Doxygen */
+.sm{
+    position:relative;
+    z-index:10
+}
+
+/* smaller right margin to fit on one line with toggle button */
+@media (max-width: 768px) {
+  .navbar > .container .navbar-brand,
+  .navbar > .container-fluid .navbar-brand {
+    margin-right: -70px;
+  }
 }
 /* text of navbar elements */
 .bs-docs-nav .navbar-nav > li > a {
@@ -88,7 +145,7 @@ body {
 .bs-footer {
     padding-top: 40px;
     padding-bottom: 30px;
-    margin-top: 100px;
+    margin-top: 50px;
     color: #777;
     text-align: center;
     border-top: 1px solid #e5e5e5;
@@ -176,6 +233,7 @@ body {
     color: #fff;
 }
 .bs-header p {
+    font-size: 21px;
     font-weight: 300;
     line-height: 1.5;
 }
@@ -196,6 +254,16 @@ body {
     .bs-header h1, .bs-header p {
         margin-right: 380px;
     }
+}
+#openNav {
+  position: fixed;
+  display: none;
+  color: #fff;
+  background-color: #9999;
+  border-radius: 10px;
+}
+.container {
+   max-width: 100%;
 }
 .bs-sidebar.affix {
     position: static;
@@ -259,4 +327,8 @@ body {
  h1[id] {
     padding-top: 80px;
     margin-top: -45px;
+}
+
+.navbar-brand{
+  font-size:17px;
 }
