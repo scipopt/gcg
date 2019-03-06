@@ -12,7 +12,7 @@ int main()
 **This is the title of a section**
 - \ref sandbox      "Title of the link to sandbox"
 - \ref assdgda      "This is the title of a non-existing link"
-- [Title of the link to sandbox](sandbox.html)
+- [**Title of the link to sandbox**](sandbox.html)
 - [Link to install](INSTALL.html)
 - [This is the title of the link to Google](https://www.google.com)
-- \link https://www.google.com           "This is the title of the link to Google"
+- <a href="https://www.google.com">Google</a>
