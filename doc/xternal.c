@@ -34,51 +34,6 @@
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-/**@mainpage Generic Column Generation
- *
- * <table cellpadding="0px" border="0" width="100%">
- *   <tr>
- *     <td nowrap >
- * <b>How to get started</b>
- * - \ref INSTALL      "Installation information"
- * - \ref EXAMPLE      "How to get started (example)"
- * - \ref FILEFORMATS  "Input file formats"
- *
- * <table cellpadding="0px" border="0" width="100%">
- *   <tr>
- *     <td nowrap >
- * <b>Further Information</b>
- * - \ref AUTHORS      "Current GCG developers"
- * - \ref CHANGELOG    "Changelog"
- * - \ref RELEASENOTES "Release notes"
- * - \ref LICENSE      "Licensing information"
- *
- * @version  3.1.0
- *
- * <b>Further Documentation</b>
- * - \ref IMPORTANTMETHODS "Methods you should know for writing GCG plug-ins"
- * - \ref PUBLICMETHODS "List of callable functions"
- * - \ref PRICINGSOLVER "How to write a custom pricing problem solver"
- * - \ref BRANCH "How to write a custom branching rule"
- * - \ref HEUR "How to write a custom heuristic"
- * - \ref DETECT "How to write a custom structure detector"
- * - \ref FAQ "Frequently asked questions"
- * - \ref PARAMS "Default parameter settings"
- * - \ref bug "Known bugs"
- *     </td>
- *   </tr>
- * </table>
- */
-
-/**@page LICENSE Licensing Information
- *
- * GCG is released under the GNU Lesser General Public License.
-
- * For information about the origin of the test instances, consult <code>check/instances/readme</code>.
- *
- * \verbinclude LICENSE
- */
-
 /**@page INSTALL Installation information
  * There are several ways to install GCG and its dependencies:
  * -# install the <a href="http://scip.zib.de/">SCIP Optimization Suite</a>, which includes SCIP, SoPlex, ZIMPL, and GCG, or
