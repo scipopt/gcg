@@ -28,7 +28,7 @@ fi
 
 # Find relevant documentation versions.
 
-CURRENT_VERSION=`grep '@version' xternal.c | awk '{ printf("%s", $3); }'`
+CURRENT_VERSION=`grep '@version' main.md | awk '{ printf("%s", $2); }'`
 
 echo "Building documentation in html/doc-${CURRENT_VERSION}."
 echo "<li><a href='../doc-${CURRENT_VERSION}/index.html'>GCG ${CURRENT_VERSION}</a></li>" > docversions.html
