@@ -181,7 +181,7 @@
 	      is definitely not bug free.
 	    </p>
 	    <p>
-	      If you find a bug, please write an email to gcg-bugs<img src="doc/klammeraffe.png" alt="klammeraffe">or.rwth-aachen.de .
+	      If you find a bug, please write an email to gcg-bugs<img src="pictures/klammeraffe.png" alt="klammeraffe">or.rwth-aachen.de .
 	    </p>
 	  </div>
           <div>
@@ -360,7 +360,7 @@
 		<tr>
 		  <td class="w-350"><a href="http://www.zib.de">Konrad-Zuse-Zentrum für Informationstechnik Berlin</a></td>
 		  <td class="al-r"><a href="http://www.zib.de">
-		      <img src="doc/logo_zib.png" alt="ZIB Logo"></a>
+		      <img src="pictures/logo_zib.png" alt="ZIB Logo"></a>
 		  </td>
 		</tr>
 	      </tbody>
