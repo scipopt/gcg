@@ -87,7 +87,7 @@ SCIP_RETCODE GCGprintInstanceName(
 );
 
 SCIP_RETCODE GCGprintMiplibStructureInformation(
-   SCIP*                scip,
+   SCIP*                 scip,              /**< SCIP data structure */
    SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */
    );
 
