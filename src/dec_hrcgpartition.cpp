@@ -559,8 +559,8 @@ SCIP_RETCODE detection(
           newSeeeds[j+1]->addDetectorChainInfo(decinfo);
           nNewSeeeds = nNewSeeeds + 2;
          detectordata->found = TRUE;
-         clockTimes.push_back(SCIPclockGetTime(temporaryClock));
-         clockTimes.push_back(SCIPclockGetTime(temporaryClock)); // 2x because two seeeds where created
+         clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock));
+         clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock)); // 2x because two seeeds where created
       }
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
       j = j + 2;
@@ -620,12 +620,12 @@ SCIP_RETCODE detection(
    if(border)
    {
       for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
+         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime(scip, clock) + clockTimes[s] );
    }
    else
    {
       for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
+         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime(scip, clock) + clockTimes[s] );
    }
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
    *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;

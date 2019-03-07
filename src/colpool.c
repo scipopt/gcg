@@ -529,7 +529,7 @@ SCIP_Real GCGcolpoolGetTime(
 {
    assert(colpool != NULL);
 
-   return SCIPclockGetTime(colpool->poolclock);
+   return SCIPgetClockTime(colpool->scip, colpool->poolclock);
 }
 
 /** get number of times, the col pool was separated */

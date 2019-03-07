@@ -213,7 +213,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
 
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
