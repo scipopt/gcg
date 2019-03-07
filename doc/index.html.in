@@ -60,6 +60,21 @@
 	      GCG is developed jointly by <a href="http://www.or.rwth-aachen.de">RWTH Aachen</a> and <a href="http://www.zib.de">Zuse-Institute Berlin</a> and has more than 50,000 lines of C code.
 	    </p><br>
 
+
+            <ul> 
+              <li> About GCG (Marco) <ul>
+                 <li> Short description of detection
+                  <li> Picture of original problem + picture of problem with structure detected
+                  <li> Structure can be exploited
+                </ul>
+            <li> Downloads
+            <li> Installation (nur link mit korrektem Anchor) (1. installation)
+            <li> User Guide (nur link) a few nice use cases, short description of what you can find in the guide (2. use cases list)
+            <li> Developers Guide (3. C API 4. Howtos 5. Example projects) (nur link)
+            <li> [blank]
+            <li> News, License, Authors, ... (FYI)
+            </ul>
+
 	    <h4>What Is GCG?</h4>
 
 	    <p>
