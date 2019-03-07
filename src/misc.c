@@ -586,7 +586,7 @@ void GCGtransformOrigvalsToMastervals(
       blocknr = GCGvarGetBlock(origvars[i]);
 
       /* variable belongs to no block (or is a linking variable), so it was transferred directly to the master problem,
-       * hence, we transfer the value directly to the corresponding master variabe
+       * hence, we transfer the value directly to the corresponding master variable
        */
       if( blocknr < 0 )
       {

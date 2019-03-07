@@ -593,7 +593,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputDepth)
    return SCIP_OKAY;
 }
 
-/** output method of display column to output file stream 'file' */
+/** output method of display column to output file stream 'file' for memory used */
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputMemUsed)
 {  /*lint --e{715}*/
@@ -1186,7 +1186,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMlpiterations)
    return SCIP_OKAY;
 }
 
-/** output method of display column to output file stream 'file' */
+/** output method of display column to output file stream 'file' for number of master variables */
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputMvars)
 {  /*lint --e{715}*/
@@ -1206,7 +1206,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMvars)
    return SCIP_OKAY;
 }
 
-/** output method of display column to output file stream 'file' */
+/** output method of display column to output file stream 'file' for number of master constraints */
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputMconss)
 {  /*lint --e{715}*/
@@ -1226,7 +1226,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMconss)
    return SCIP_OKAY;
 }
 
-/** output method of display column to output file stream 'file' */
+/** output method of display column to output file stream 'file' for number of master cuts */
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputMcuts)
 {  /*lint --e{715}*/

@@ -112,14 +112,14 @@ typedef gcg::Seeed* SeeedPtr;
 
 #define DEFAULT_BLOCKNUMBERCANDSMEDIANVARSPERCONS FALSE     /**< should for block number candidates calculation the medianvarspercons calculation be considered */
 
-#define DEFAULT_ALLOWCLASSIFIERDUPLICATES FALSE       /** if false each new (conss- and vars-) classifier is checked for being a duplicate of an existing one, if so it is not added and NBOT statistically recognized*/
+#define DEFAULT_ALLOWCLASSIFIERDUPLICATES FALSE       /** if false each new (conss- and vars-) classifier is checked for being a duplicate of an existing one, if so it is not added and NOT statistically recognized*/
 #define DEFAULT_MAXDETECTIONROUNDS 1    /**< maximal number of detection rounds */
 #define DEFAULT_MAXNCLASSESLARGEPROBS 5   /** maximum number of classes allowed for large (nvars+nconss > 50000) MIPs for detectors, classifier with more classes are reduced to the maximum number of classes */
 #define DEFAULT_MAXNCLASSES 9            /** maximum number of classes allowed for detectors, classifier with more classes are reduced to the maximum number of classes */
 #define DEFAULT_MAXNCLASSESFORNBLOCKCANDIDATES 18                 /** maximum number of classes a classifier can have to be used for voting nblockcandidates */
 #define DEFAULT_ENABLEORIGDETECTION FALSE                         /**< indicates whether to start detection for the original problem */
 #define DEFAULT_CONSSADJCALCULATED                    TRUE        /**< indicates whether conss adjacency datastructures should be calculated, this might slow down initialization, but accelerating refinement methods*/
-#define DEFAULT_ENABLEORIGCLASSIFICATION              FALSE       /**< indicates whether to start detection for the original problem */
+#define DEFAULT_ENABLEORIGCLASSIFICATION              FALSE       /**< indicates whether to start classification for the original problem */
 #define DEFAULT_CONSSCLASSNNONZENABLED                TRUE        /**<  indicates whether constraint classifier for nonzero entries is enabled */
 #define DEFAULT_CONSSCLASSNNONZENABLEDORIG            TRUE       /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
 
@@ -173,8 +173,8 @@ struct SCIP_ConshdlrData
    DEC_DETECTOR**        detectors;                               /**< array of structure detectors */
    int*                  priorities;                              /**< priorities of the detectors */
    int                   ndetectors;                              /**< number of detectors */
-   SCIP_CLOCK*           detectorclock;                           /**< clock to measure detection time */
-   SCIP_CLOCK*           completedetectionclock;                  /**< clock to measure detection time */
+   SCIP_CLOCK*           detectorclock;                           /**< clock to measure a detector's detection time */
+   SCIP_CLOCK*           completedetectionclock;                  /**< clock to measure total detection time */
    SCIP_Bool             hasrun;                                  /**< flag to indicate whether we have already detected */
    int                   ndecomps;                                /**< number of decomposition structures  */
    int                   sizedecomps;                             /**< size of the decomp and complete seeeds array */
@@ -208,13 +208,13 @@ struct SCIP_ConshdlrData
    SCIP_Bool             varclassvartypesenabledorig;             /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
    SCIP_Bool             bendersonlycontsubpr;                    /**< indicates whether only decomposition with only continuous variables in the subproblems should be searched*/
    SCIP_Bool             bendersonlybinmaster;                    /**< indicates whether only decomposition with only binary variables in the master should be searched */
-   SCIP_Bool             detectbenders;                           /**< indicates wethher or not benders detection mode is enabled */
+   SCIP_Bool             detectbenders;                           /**< indicates whether or not benders detection mode is enabled */
    SCIP_Bool             varclassobjvalsenabled;                  /**< indicates whether variable classifier for objective function values is enabled */
    SCIP_Bool             varclassobjvalsenabledorig;              /**< indicates whether variable classifier for objective function values is enabled for the original problem */
    SCIP_Bool             varclassobjvalsignsenabled;              /**< indicates whether variable classifier for objective function value signs is enabled */
    SCIP_Bool             varclassobjvalsignsenabledorig;          /**< indicates whether variable classifier for objective function value signs is enabled for the original problem */
    SCIP_Bool             onlylegacymode;                          /**< indicates whether detection should only consist of legacy mode detection, this is sufficient to enable it */
-   SCIP_Bool             legacymodeenabled;                       /**< indicates whether the legacy detection mode (detection before v3.0) additionally*/
+   SCIP_Bool             legacymodeenabled;                       /**< indicates whether the legacy detection mode (detection before v3.0) additionally */
    SCIP_Bool             stairlinkingheur;                        /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
 
    int**                 candidatesNBlocks;                       /**< pointer to store candidates for number of blocks calculated by the seeedpool(s) */
@@ -222,37 +222,38 @@ struct SCIP_ConshdlrData
 
    int                   ncallscreatedecomp;                      /**< debugging method for counting the number of calls of created decompositions */
 
-   gcg::Seeedpool*		 seeedpool;                               /**< seeedpool that manages the detection process for the presolved transformed problem */
+   gcg::Seeedpool*	 seeedpool;                               /**< seeedpool that manages the detection process for the presolved transformed problem */
    gcg::Seeedpool*       seeedpoolunpresolved;                    /**< seeedpool that manages the detection process of the unpresolved problem */
 
    SeeedPtr*             allrelevantfinishedseeeds;               /**< collection  of all relevant seeeds ( i.e. all seeeds w.r.t. copies ) */
    SeeedPtr*             incompleteseeeds;                        /**< collection of incomplete seeeds originating from incomplete decompositions given by the users */
-   int                   nallrelevantseeeds;                      /**< number  of all relevant seeeds ( i.e. all seeeds w.r.t. copies ) */
-   int                   nincompleteseeeds;                       /**< number  of incomplete seeeds originating from incomplete decompositions given by the users */
+   int                   nallrelevantseeeds;                      /**< number of all relevant seeeds ( i.e. all seeeds w.r.t. copies ) */
+   int                   nincompleteseeeds;                       /**< number of incomplete seeeds originating from incomplete decompositions given by the users */
 
 
    SeeedPtr              curruserseeed;                           /**< help pointer for reader and toolbox to iteratively build (partial) decomposition */
    SeeedPtr              lastuserseeed;                           /**< help pointer for toolbox to revoke last changes to curruserseeed */
 
-   SCIP_Bool             consnamesalreadyrepaired;                /**< stores whether or not    */
+   SCIP_Bool             consnamesalreadyrepaired;                /**< indicates whether or not empty/duplicate/illegal constraint names have been eliminated */
 
    SCIP_Bool             unpresolveduserseeedadded;               /**< stores whether or not an unpresolved user seeed was added */
 
    /* new data fields for selection/exploration management */
    int                    startidvisu;                            /**< when displaying the list of decomps, this is the starting index */
    int                    selectvisulength;                       /**< number of decompositions to be displayed at once */
-   std::vector<SeeedPtr>* listall;                                /**< vector containing the current list of decomps (to visualize, write, consider for family tree, consider for solving etc. )*/
+   std::vector<SeeedPtr>* listall;                                /**< vector containing the current list of decomps (to visualize, write, consider for family tree, consider for solving etc. ) */
    std::vector<int>*      selected;                               /**< vector containing the indices of selected decompositions */
    SCIP_Bool              selectedexists;                         /**< are there some selected decompositions */
    int                    seeedcounter;                           /**< counts the number of seeeds, used for seeed ids */
    std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;      /**< vector containing the pairs of candidate list of decomps (to visualize, write, consider for family tree, consider for solving etc.) sorted according to  */
-   int                    currscoretype;                          /**< indicates which score should be used for comparing (partial) decompositions (
-                                                                          0:max white,
+   int                    currscoretype;                          /**< indicates which score should be used for comparing (partial) decompositions 
+                                                                     @todo: this should be an enum
+                                                                          0: max white,
                                                                           1: border area,
-                                                                          2:classic,
-                                                                          3:max foreseeing white,
+                                                                          2: classic,
+                                                                          3: max foreseeing white,
                                                                           4: ppc-max-white,
-                                                                          5:max foreseeing white with aggregation info,
+                                                                          5: max foreseeing white with aggregation info,
                                                                           6: ppc-max-white with aggregation info,
                                                                           7: experimental benders score */
 
@@ -266,10 +267,11 @@ struct SCIP_ConshdlrData
  * (which might differ in size) */
 enum weightinggpresolvedoriginaldecomps{
    NO_MODIF = 0,           /**< no modification */
-   FRACTION_OF_NNONZEROS,  /**< scores are weighted according to ratio of number nonzeros, the more the worse */
-   FRACTION_OF_NROWS,      /**< scores are weighted according to ratio of number nonzeros, the more the worse */
-   FAVOUR_PRESOLVED        /**< decompositions for presolved problems are always favoured over decompositions of original problem */
+   FRACTION_OF_NNONZEROS,  /**< scores are weighted according to ratio of number of nonzeros, the more the worse */
+   FRACTION_OF_NROWS,      /**< scores are weighted according to ratio of number of rows, the more the worse */
+   FAVOUR_PRESOLVED        /**< decompositions for presolved problems are always favored over decompositions of original problem */
 };
+
 
 /*
  * Local methods
@@ -294,7 +296,7 @@ SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot modify data!\n");
       return SCIP_ERROR;
    }
 
@@ -331,6 +333,7 @@ SCORETYPE SCIPconshdlrdataGetScoretype(
 
 /**
  * Gets the shortname of the given scoretype
+ * @todo this needs refactorization/abstraction
  *
  * @returns the shortname of the given Scoretype
  */
@@ -445,7 +448,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(
 
       if( conshdlr == NULL )
       {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+         SCIPerrorMessage("Decomp constraint handler is not included, cannot store decomposition!\n");
          return SCIP_ERROR;
       }
 
@@ -480,7 +483,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForPresolved(
 
       if( conshdlr == NULL )
       {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+         SCIPerrorMessage("Decomp constraint handler is not included, cannot store decomposition!\n");
          return SCIP_ERROR;
       }
 
@@ -515,7 +518,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForUnpresolved(
 
       if( conshdlr == NULL )
       {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+         SCIPerrorMessage("Decomp constraint handler is not included, cannot store seeed!\n");
          return SCIP_ERROR;
       }
 
@@ -550,7 +553,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForPresolved(
 
       if( conshdlr == NULL )
       {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+         SCIPerrorMessage("Decomp constraint handler is not included, cannot store seeed!\n");
          return SCIP_ERROR;
       }
 
@@ -612,7 +615,7 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromPresolved(
 
       if( conshdlr == NULL )
       {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot find Seeed!\n");
+         SCIPerrorMessage("Decomp constraint handler is not included, cannot find seeed!\n");
          return NULL;
       }
 
@@ -659,7 +662,7 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromUnpresolved(
 
       if( conshdlr == NULL )
       {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot find Seeed!\n");
+         SCIPerrorMessage("Decomp constraint handler is not included, cannot find seeed!\n");
          return NULL;
       }
 
@@ -2414,7 +2417,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxModifyVars(
    return SCIP_OKAY;
 }
 
-/** Apply propagation, finishing or postprocessing to the current user seeed via dialog
+/** Apply propagation, finishing, or postprocessing to the current user seeed via dialog
  *
  * @returns SCIP status */
 static
@@ -3605,7 +3608,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
 }
 
 
-/* \brief returns an array containing all decompositions
+/* @brief returns an array containing all decompositions
  *
  *  Updates the decdecomp decomposition structure by converting all finished seeeds into decompositions and replacing the
  *  old list in the conshdlr.
@@ -3661,7 +3664,7 @@ DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
    return conshdlrdata->decdecomps;
 }
 
-/* gets the number of decompositions (= amount of finished seeeds)
+/* gets the number of decompositions (= number of finished seeeds)
  *
  * @returns number of decompositions */
 int SCIPconshdlrDecompGetNDecdecomps(
@@ -3842,7 +3845,7 @@ SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolExtern(
 
 
 /*
- * @brief counts up the counter for created decompositions and returns it
+ * @brief increases the counter for created decompositions and returns it
  * @returns number of created decompositions that was recently increased
  */
 int SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(
@@ -4155,8 +4158,8 @@ SCIP_RETCODE DECincludeDetector(
 }
 
 /*
- * @brief returns the remaining time of scip that the decomposition may use
- * @returns remaining  time that the decompositon may use
+ * @brief returns the remaining time of scip that the detection may use
+ * @returns remaining time that the detection may use
  */
 SCIP_Real DECgetRemainingTime(
    SCIP*                 scip                /* SCIP data structure */
@@ -4190,7 +4193,7 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot compare blocks!\n");
       return SCIP_ERROR;
    }
 
@@ -4266,7 +4269,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot create data structures!\n");
       return SCIP_ERROR;
    }
 
@@ -4376,7 +4379,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot create seeed!\n");
       return SCIP_ERROR;
    }
 
@@ -4408,7 +4411,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
 
 
 /*
- * @brief returns whether or not an unpresolved (untransformed) decompositions exists in the data structures
+ * @brief returns whether or not an unpresolved (untransformed) decomposition exists in the data structures
  * @returns SCIP return code
  */
 SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
@@ -4422,7 +4425,7 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot access data structures!\n");
       return SCIP_ERROR;
    }
 
@@ -4439,9 +4442,9 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
 
 
 /*
- * @brief method to update the list of incomplete decompositions in "explore" submenu ( this list changes due to new decompositions,  modified, decompositions or changes of the score
+ * @brief method to update the list of incomplete decompositions in "explore" submenu ( this list changes due to new decompositions, modified decompositions, or changes of the score )
  *
- *  unselects all seeeds and updates list:
+ * unselects all seeeds and updates list:
  * 1) add presolved finished
  * 2) add presolved unfinished
  * 3) add unpresolved finished
@@ -4545,7 +4548,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot set number of blocks!\n");
       return SCIP_ERROR;
    }
 
@@ -4587,7 +4590,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToBlock(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot assign cons to block!\n");
       return SCIP_ERROR;
    }
 
@@ -4633,7 +4636,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToMaster(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot assign cons to master!\n");
       return SCIP_ERROR;
    }
 
@@ -4677,7 +4680,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToBlock(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot assign var to block!\n");
       return SCIP_ERROR;
    }
 
@@ -4719,7 +4722,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToMaster(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot assign var to master!\n");
       return SCIP_ERROR;
    }
 
@@ -4758,13 +4761,14 @@ SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add block number candidate!\n");
       return SCIP_ERROR;
    }
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   // @todo assert (reasonable block candidate number)
    conshdlrdata->userblocknrcandidates->push_back(blockNumberCandidate);
 
    if( conshdlrdata->seeedpool != NULL ){
@@ -4792,7 +4796,7 @@ int SCIPconshdlrDecompGetNBlockNumberCandidates(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot access data structures!\n");
       return SCIP_ERROR;
    }
 
@@ -4821,7 +4825,7 @@ int SCIPconshdlrDecompGetBlockNumberCandidate(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot access data structures!\n");
       return SCIP_ERROR;
    }
 
@@ -4848,7 +4852,7 @@ SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot access detection time!\n");
       return SCIP_ERROR;
    }
 
@@ -4877,7 +4881,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot assign vars to linking!\n");
       return SCIP_ERROR;
    }
 
@@ -4901,7 +4905,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
 
 
 /*
- * finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if
+ * finalizes and flushes the current user seeed, i.e., consider implicits, calc hashvalue, construct decdecomp if
  * complete etc
  * @returns SCIP return code
  */
@@ -4921,7 +4925,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot finalize seeed!\n");
       return SCIP_ERROR;
    }
 
@@ -5059,7 +5063,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot access data structures!\n");
       return SCIP_ERROR;
    }
 
@@ -5107,7 +5111,7 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot translate seeed!\n");
       return SCIP_ERROR;
    }
 
@@ -5189,7 +5193,7 @@ SCIP_Real SCIPconshdlrDecompAdaptScore(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot adapt score!\n");
       return SCIP_ERROR;
    }
 
@@ -5241,7 +5245,7 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot access data structures!\n");
       return SCIP_ERROR;
          }
 
@@ -5271,7 +5275,7 @@ SCIP_Bool SCIPconshdlrDecompExistsSelected(
 
     if( conshdlr == NULL )
     {
-       SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+       SCIPerrorMessage("Decomp constraint handler is not included, cannot access data structures!\n");
        return SCIP_ERROR;
     }
 
@@ -5283,7 +5287,7 @@ SCIP_Bool SCIPconshdlrDecompExistsSelected(
 
 
 /*
- * @brief initilizes the candidates data structures with selected seeeds (or all if there are no selected seeeds) and sort them according to the current scoretype
+ * @brief initializes the candidates data structures with selected seeeds (or all if there are no selected seeeds) and sort them according to the current scoretype
  * @param scip SCIP data structure
  * @param updatelist whether or not the seeed list should be updated
  * @returns SCIP return code
@@ -5309,7 +5313,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot access data structures!\n");
       return SCIP_ERROR;
    }
 
@@ -5588,8 +5592,8 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
 
 /* Checks whether
  *  1) the predecessors of all finished seeeds in both seeedpools can be found
- *  2) selected list is syncron with selected information in seeeds
- *  3) selected exists is synchronized with seleced list
+ *  2) selected list is in sync with selected information in seeeds
+ *  3) selected exists is synchronized with selected list
  *
  *  @returns true if seeed information is consistent */
 SCIP_Bool SCIPconshdlrDecompCheckConsistency(
@@ -5613,7 +5617,7 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot check seeed consistency!\n");
       return SCIP_ERROR;
    }
 
@@ -5714,7 +5718,7 @@ int SCIPconshdlrDecompGetNextSeeedID(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot access data structures!\n");
       return SCIP_ERROR;
    }
 
@@ -5741,7 +5745,7 @@ SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot sort decompositions!\n");
       return SCIP_ERROR;
    }
 
@@ -5787,7 +5791,7 @@ SCIP_RETCODE DECdetectStructure(
    if( SCIPgetNOrigVars(scip) == 0 && SCIPgetNOrigConss(scip) == 0 )
       return SCIP_OKAY;
 
-   /* if the original problem should be solved, then no decomposition will be performed */
+   /* if the original problem should be solved, then no detection will be performed */
    if( GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
       return SCIP_OKAY;
 
@@ -5801,7 +5805,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIPdebugMessage("start only legacy mode? %s \n", (onlylegacymode ? "yes": "no") );
    if( !onlylegacymode )
    {
-      std::vector<std::pair<int, int>> candidatesNBlocks(0); /* collection of different variable class distributions */
+      std::vector<std::pair<int, int>> candidatesNBlocks(0); /* collection of block number candidates */
       std::vector<gcg::ConsClassifier*> consClassDistributions; /* collection of different constraint class distributions */
       std::vector<gcg::VarClassifier*> varClassDistributions; /* collection of different variable class distributions */
 
@@ -5824,7 +5828,7 @@ SCIP_RETCODE DECdetectStructure(
       SCIPgetBoolParam(scip, "detection/origprob/classificationenabled", &classifyOrig);
 
       /* get data of the seeedpool with original vars and conss */
-      SCIPdebugMessage("is seeedpoolunpresolved not initilized yet but needed ? %s -> %s create it \n", (conshdlrdata->seeedpoolunpresolved == NULL ? "yes" : "no"), (conshdlrdata->seeedpoolunpresolved == NULL ? "" : "Do not")  );
+      SCIPdebugMessage("is seeedpoolunpresolved not initialized yet but needed ? %s -> %s create it \n", (conshdlrdata->seeedpoolunpresolved == NULL ? "yes" : "no"), (conshdlrdata->seeedpoolunpresolved == NULL ? "" : "Do not")  );
 
       /* scip is not presolved yet => only detect for original problem */
       if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
@@ -5842,7 +5846,7 @@ SCIP_RETCODE DECdetectStructure(
 
       SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
 
-      /* get block number candidates and conslcassifier for original problem*/
+      /* get block number candidates and consclassifier for original problem */
       if( classifyOrig || detectonlyorig )
       {
          SCIPdebugMessage("classification for orig problem enabled: calc classifier and nblock candidates \n" );
