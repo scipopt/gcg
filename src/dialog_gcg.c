@@ -57,6 +57,7 @@
 #include "reader_tex.h"
 #include "params_visu.h"
 #include "reader_tex.h"
+#include "dialog_explore.h"
 
 /** display the reader information
  * @returns nothing */
@@ -827,7 +828,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   SCIP_CALL( SCIPconshdlrDecompExecSelect(scip, dialoghdlr, dialog ) );
+   SCIP_CALL( SCIPdialogExecSelect(scip, dialoghdlr, dialog ) );
 
    SCIPdialogMessage(scip, NULL, "\n");
 

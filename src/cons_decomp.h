@@ -66,17 +66,6 @@ enum scoretype {
 typedef enum scoretype SCORETYPE;
 
 
-/*!
- * \brief help enum to avoid code duplication for the toolbox methods of the detectors
- */
-enum toolboxtype {
-   PROPAGATE,
-   FINISH,
-   POSTPROCESS
-};
-
-
-
 /** forward declarations */
 struct seeedpool_wrapper;
 typedef struct seeedpool_wrapper SEEEDPOOL_WRAPPER ;
@@ -377,64 +366,6 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    SCIP_Bool             markedincomplete    /**< boolean to notify that the created user decomposition is partial and should not be completed by assigning open constraints to the master */
    );
 
-/**
- * @brief method too handle user input for "explore" command
- * @param scip SCIP data structure
- * @param dialoghdlr dialog handler to handle user input
- * @param dialog dialog to handle user input
- * @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPconshdlrDecompExecSelect(
-   SCIP*                   scip,
-   SCIP_DIALOGHDLR*        dialoghdlr,
-   SCIP_DIALOG*            dialog
-   );
-
-/**
- * @brief method to handle and moderate user input for modifying decompositions
- * @param scip SCIP data structure
- * @param dialoghdlr dialog handler to handle user input
- * @param dialog dialog to handle user input
- * @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPconshdlrDecompExecToolboxModify(
-   SCIP*                   scip,
-   SCIP_DIALOGHDLR*        dialoghdlr,
-   SCIP_DIALOG*            dialog
-   );
-
-/**
- * @brief method to handle and moderate user input for creating new decompositions by the user
- * @param scip SCIP data structure
- * @param dialoghdlr dialog handler to handle user input
- * @param dialog dialog to handle user input
- * @returns SCIP return data structure
- */
-extern
-SCIP_RETCODE SCIPconshdlrDecompExecToolboxCreate(
-   SCIP*                   scip,
-   SCIP_DIALOGHDLR*        dialoghdlr,
-   SCIP_DIALOG*            dialog
-   );
-
-/**
- * method to handle and moderate user input for creating new decompositions
- * and modifying existing decompositions by the user
- *
- * @param scip SCIP data structure
- * @param dialoghdlr dialog handler to handle user input
- * @param dialog dialog to handle user input
- * @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
-   SCIP*                   scip,
-   SCIP_DIALOGHDLR*        dialoghdlr,
-   SCIP_DIALOG*            dialog
-   );
-
 
 /**
  * @brief returns whether or not an unpresolved (untransformed) decompositions exists in the data structures
@@ -445,16 +376,6 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedSeeedExists(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-
-/**
- * @brief method to update the list of incomplete decompositions in "explore" submenu ( this list changes due to new decompositions,  modified, decompositions or changes of the score
- * @param scip SCIP data structure
- * @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
-   SCIP*                 scip
-   );
 
 /**
  * @brief returns whether or not there exists at least one (complete or incomplete) decomposition
@@ -611,17 +532,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    SCIP*                 scip,
    SCIP_Bool*            success
-   );
-
-
-/**
- * @brief returns if there is a decomposition that is currently selected by the user (done in explore menu)
- * @param scip SCIP data structure
- * @returns TRUE if there is a decomposition that is currently selected by the user (done in explore menu)
- */
- extern
-SCIP_Bool SCIPconshdlrDecompExistsSelected(
-   SCIP* scip
    );
 
 
@@ -878,6 +788,102 @@ SCIP_RETCODE GCGgetSeeedFromID(
    SEEED_WRAPPER* seeedwr     /**< wrapper for output Seeed */
    );
 
+
+/**
+ * @brief method to update the list of incomplete decompositions
+ *
+ * this list changes due to new decompositions, modified, decompositions or changes of the score
+ * @param scip SCIP data structure
+ * @returns SCIP return code
+ */
+extern
+SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
+   SCIP*                 scip
+   );
+
+/** @brief Gets the first id to visualize in explore menu
+ *  @returns id to start with */
+int GCGgetSelectFirstIdToVisu(
+   SCIP*          scip,  /**< SCIP data structure */
+   );
+
+
+/** @brief sets the first id to visualize in explore menu */
+void GCGsetSelectFirstIdToVisu(
+   SCIP*          scip,  /**< SCIP data structure */
+   int            id     /**< id to start at */
+   );
+
+/** @brief Gets number of decompositions to be displayed at once in explore menu
+ *  @returns id to start with */
+int GCGgetSelectVisuLength(
+   SCIP*          scip,  /**< SCIP data structure */
+   );
+
+
+/** @brief sets number of decompositions to be displayed at once in explore menu */
+void GCGsetSelectVisuLength(
+   SCIP*          scip,    /**< SCIP data structure */
+   int            length   /**< number of rows */
+   );
+
+/** @brief Gets a vector containing the current list of decomps in explore menu
+ *
+ * (to visualize, write, consider for family tree, consider for solving etc. )
+ *  @returns list of seeeds */
+std::vector<SeeedPtr>* GCGgetSelectList(
+   SCIP*          scip,  /**< SCIP data structure */
+   );
+
+
+/** @brief Sets the vector containing the current list of decomps in explore menu
+ *
+ * (to visualize, write, consider for family tree, consider for solving etc. ) */
+void GCGsetSelectList(
+   SCIP*          scip,          /**< SCIP data structure */
+   std::vector<SeeedPtr>* list   /**< current list of seeeds */
+   );
+
+/** @brief Gets a vector containing the indices of selected decompositions in explore menu
+ *  @returns list of seeeds */
+std::vector<int>* GCGgetSelectIds(
+   SCIP*          scip,  /**< SCIP data structure */
+   );
+
+
+/** @brief Sets the vector containing the indices of selected decompositions in explore menu */
+void GCGsetSelectIds(
+   SCIP*          scip,          /**< SCIP data structure */
+   std::vector<int>* list   /**< current list of seeeds */
+   );
+
+/** @brief Gets whether there are selected decompositions
+ *  @returns true iff there are selected decompositions */
+SCIP_Bool GCGgetSelectExists(
+   SCIP*          scip,  /**< SCIP data structure */
+   );
+
+
+/** @brief Sets whether there are selected decompositions */
+void GCGsetSelectExists(
+   SCIP*          scip,          /**< SCIP data structure */
+   SCIP_Bool      selected       /**< input true iff there are selected decompositions */
+   );
+
+/** @brief Gets the number of (user) seeeds
+ *
+ * (used for seeed ids in explore menu)
+ *  @returns number of seeeds */
+int GCGgetSelectSeeedCounter(
+   SCIP*          scip,  /**< SCIP data structure */
+   );
+
+
+/** @brief sets number of (user) seeeds */
+void GCGsetSelectSeeedCounter(
+   SCIP*          scip,    /**< SCIP data structure */
+   int            counter   /**< new counter value */
+   );
 
 #ifdef __cplusplus
 }
