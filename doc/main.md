@@ -1,3 +1,4 @@
+Welcome to the official GCG Guide and Documentation. <a href="../index.html">Back to the landing page.</a>
 
 **How to get started**
 - \ref install

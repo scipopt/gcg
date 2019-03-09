@@ -3,4 +3,5 @@ The developer's guide offers explanations on how to add your own methods to GCG,
 
 - \subpage howtos
 - \subpage examples
+- <a href="http://gcg.or.rwth-aachen.de/doc/annotated.html">C API</a>
 */
