@@ -38,7 +38,7 @@
               <a href="doc-3.1.0/devs.html">Developer's Guide</a></a>
               </li>
               <hr>
-              <li><a href="#news">News</a></li>
+              <!--<li><a href="#news">News</a></li>-->
               <li><a href="#bugs">Bugs</a></li>
               <li><a href="#developers">Developers</a></li>
               <li><a href="#more">More Information</a></li>
@@ -143,14 +143,14 @@
         <li><a href="files/gcg-3.0.0.tgz">gcg-3.0.0.tgz</a> (1803kB)</li>
         <p id="olderdownloads" class="reveal">Older versions</p>
     	    <div style="display: block; margin-top: -10px;" id="olderdownloads_ans" class="answer">
-              <li><a href="files/gcg-2.1.2.tgz">gcg-2.1.2.tgz</a> (1118kB)</li>
-              <li><a href="files/gcg-2.1.1.tgz">gcg-2.1.1.tgz</a> (1100kB)</li>
-              <li><a href="files/gcg-2.1.0.tgz">gcg-2.1.0.tgz</a> (1096kB)</li>
-              <li><a href="files/gcg-2.0.1.tgz">gcg-2.0.1.tgz</a> (1053kB)</li>
-              <li><a href="files/gcg-2.0.0.tgz">gcg-2.0.0.tgz</a> (1007kB)</li>
-              <li><a href="files/gcg-1.1.1.tgz">gcg-1.1.1.tgz</a> (664kB)</li>
-              <li><a href="files/gcg-1.1.0.tgz">gcg-1.1.0.tgz</a> (664kB)</li>
-              <li><a href="files/gcg-1.0.0.tgz">gcg-1.0.0.tgz</a> (670kB)</li>
+              <li><a href="files/gcg-2.1.2.tgz">gcg-2.1.2.tgz</a> (1118kB, released 09/Mar/2017)</li>
+              <li><a href="files/gcg-2.1.1.tgz">gcg-2.1.1.tgz</a> (1100kB, released 29/Feb/2016)</li>
+              <li><a href="files/gcg-2.1.0.tgz">gcg-2.1.0.tgz</a> (1096kB, released 01/Jul/2015)</li>
+              <li><a href="files/gcg-2.0.1.tgz">gcg-2.0.1.tgz</a> (1053kB, released 18/Dec/2014)</li>
+              <li><a href="files/gcg-2.0.0.tgz">gcg-2.0.0.tgz</a> (1007kB, released 26/Feb/2014)</li>
+              <li><a href="files/gcg-1.1.1.tgz">gcg-1.1.1.tgz</a> (664kB, released 16/Oct/2013)</li>
+              <li><a href="files/gcg-1.1.0.tgz">gcg-1.1.0.tgz</a> (664kB, released 04/Jan/2013)</li>
+              <li><a href="files/gcg-1.0.0.tgz">gcg-1.0.0.tgz</a> (670kB, released 01/Aug/2012)</li>
     	    </div>
       </ul>
       <p>
@@ -164,7 +164,7 @@
       <p>Information on how to install and use and extend GCG can be found in the documentation
          under <a href="doc-3.1.0/install.html">Installation</a>, <a href="doc-3.1.0/devs.html">User's Guide</a> and <a href="doc-3.1.0/users.html">Developer's Guide</a>.</p>
     </div>
-
+<!--
     <div>
       <h1 id="news">News</h1>
       <table class="table table-hover table-condensed" style="margin-bottom:0">
@@ -172,17 +172,14 @@
       	<tr>
   	      <td class="mono">09/Mar/2017</td>
   	      <td>A small GCG 2.1.2 bugfix release is available together with the SCIP optimization Suite 4.0.0.
-              See the <a href="doc/CHANGELOG.html">CHANGELOG</a> and the <a href="doc/RELEASENOTES.html">Release notes</a> for more information.</td>
     		</tr>
     		<tr>
     		  <td class="mono">29/Feb/2016</td>
     		  <td>A small GCG 2.1.1 bugfix release is available together with the SCIP optimization Suite 3.2.1.
-              See the <a href="doc/CHANGELOG.html">CHANGELOG</a> and the <a href="doc/RELEASENOTES.html">Release notes</a> for more information.</td>
     		</tr>
     		<tr>
     		  <td class="mono">01/Jul/2015</td>
     		  <td>We released the minor version GCG 2.1.0 together with the SCIP optimization Suite 3.2.0.
-              See the <a href="doc/CHANGELOG.html">CHANGELOG</a> and the <a href="doc/RELEASENOTES.html">Release notes</a> for more information.</td>
     		</tr>
     		<tr>
     		  <td class="mono">18/Dec/2014</td>
@@ -206,14 +203,9 @@
     		</tr>
       </tbody>
      </table>
-<!--	    <p id="oldernews" class="reveal">...older news</p>
-	    <table style="display: block;" id="oldernews_ans" class="answer">
-	      <tbody>
-<!-- add here the old entry - - >
-	      </tbody>
-	    </table>            -->
-	</div>
 
+	</div>
+-->
   <div>
     <h1 id="bugs">Bugs</h1>
       <h3>Known Bugs</h3>
