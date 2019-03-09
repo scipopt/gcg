@@ -7,6 +7,9 @@
 # Stop on error.
 set -e
 
+./resources/devs/howtos/createindexes.sh
+cd $(dirname $0)
+
 if [ "$1" == "--mathjax" ]
 then
    DOXYGEN_USE_MATHJAX="YES"
@@ -48,3 +51,4 @@ echo "Cleaning up."
 rm -rf html/doc-${CURRENT_VERSION} docversions.html gcgheader.html
 mv html/doc html/doc-${CURRENT_VERSION}
 
+echo "Done."

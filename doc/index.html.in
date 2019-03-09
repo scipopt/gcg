@@ -30,17 +30,21 @@
         <div class="col-md-3">
           <div class="bs-sidebar hidden-print" role="complementary">
             <ul class="nav bs-sidenav">
-              <li><a href="#about">About</a></li>
+              <li><a href="#about">About GCG</a></li>
+              <li><a href="#download">Downloads</a></li>
+              <li><a href="#guide" style="margin:0;padding:0;">
+              <a href="doc-3.1.0/install.html">Installation</a>
+              <a href="doc-3.1.0/users.html">User's Guide</a>
+              <a href="doc-3.1.0/devs.html">Developer's Guide</a></a>
+              </li>
+              <hr>
               <li><a href="#news">News</a></li>
-	      <li><a href="#license">License</a></li>
-              <li><a href="#features">Features</a></li>
-              <li><a href="#platforms">Platforms</a></li>
               <li><a href="#bugs">Bugs</a></li>
               <li><a href="#developers">Developers</a></li>
-              <li><a href="#work">Related Work</a></li>
+              <li><a href="#more">More Information</a></li>
+              <!--<li><a href="#work">Related Work</a></li>
               <li><a href="#cooperation">Cooperation</a></li>
-              <li><a href="#download">Download</a></li>
-              <li><a href="doc-3.1.0/index.html">Documentation</a></li>
+              <li><a href="#license">License</a></li>-->
             </ul>
           </div>
           <!-- end bs-sidebar -->
@@ -48,8 +52,25 @@
         <!-- end col-md-3 -->
         <div class="col-md-9">
           <div>
-            <h1 id="about">About</h1>
+            <h1 id="about">About GCG</h1>
             <p>
+              Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+              At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+            </p>
+            <table style="margin:2em 0 2em">
+              <tr>
+                <td style="text-align:center;"><img src="../img/rout-cC-5.png" style="width: 70%" alt="before detection"></td>
+                <td><img src="../img/rout-cC-5.png" style="width: 70%" alt="after detection"></td>
+              </tr>
+            </table>
+            <p>
+              Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt. If you want to know what that exactly means and how
+              it is done, just visit the <a href="doc-3.1.0/devs.html">Developer's Guide</a>.
+            </p>
+          </div>
+
+    <!--
+      <p>
 	      GCG is a generic branch-cut-and-price solver for mixed integer programs. It is based on the branch-and-cut-and-price framework <a href="http://scip.zib.de">SCIP</a> and is also part of the <a href="http://scip.zib.de/#scipoptsuite">SCIP Optimization Suite</a>.
 	    </p>
 	    <p>
@@ -59,372 +80,301 @@
 	    </p><p>
 	      GCG is developed jointly by <a href="http://www.or.rwth-aachen.de">RWTH Aachen</a> and <a href="http://www.zib.de">Zuse-Institute Berlin</a> and has more than 50,000 lines of C code.
 	    </p><br>
-
-
-            <ul> 
-              <li> About GCG (Marco) <ul>
-                 <li> Short description of detection
-                  <li> Picture of original problem + picture of problem with structure detected
-                  <li> Structure can be exploited
-                </ul>
-            <li> Downloads
-            <li> Installation (nur link mit korrektem Anchor) (1. installation)
-            <li> User Guide (nur link) a few nice use cases, short description of what you can find in the guide (2. use cases list)
-            <li> Developers Guide (3. C API 4. Howtos 5. Example projects) (nur link)
-            <li> [blank]
-            <li> News, License, Authors, ... (FYI)
-            </ul>
-
 	    <h4>What Is GCG?</h4>
+      <p>
+        An outline of GCG and its algorithmic approach can be found in <br>
+      </p>
+      <ul>
+        <li><a href="http://www.zib.de/gamrath/publications/gamrath2010_genericBCP.pdf">Generic Branch-Cut-and-Price</a>, Gerald Gamrath,  Diploma Thesis, TU Berlin, 2010</li>
+      </ul>
+            <h1 id="features">Features</h1>
+                  <p>
+      	      GCG has the following features:
+      	    </p>
+      	    <ul>
+      	      <li>It is black box solver using a Dantzig-Wolfe reformulation (DWR) to solve arbitrary MIPs.
+      	      </li>
+      	      <li>It is a framework for implementing column generation algorithms</li>
+      	      <li>It detects hidden or apparent structures in the constraint matrix in order to apply DWR. Among others, it detects
+      		<ul>
+      		  <li>Staircase structures</li>
+      		  <li>Set partitioning master structures</li>
+      		  <li>Subproblems that can be aggregated in the Dantzig-Wolfe reformulation</li>
+      		  <li>With the additional tool <a href="http://glaros.dtc.umn.edu/gkhome/metis/hmetis">hmetis</a> it can enforce a structure suitable for DWR in arbitrary MIPs
+      		</ul>
+      	      </li>
+      	      <li>It has branching rules for automatic branching on any problem.</li>
+      	      <li>Stabilization by dual value smoothing</li>
+      	      <li>A large number of primal heuristics both in the original and the reformulated space</li>
+      	    </ul>
+      	  </div>
 
-	    <p>
-	      An outline of GCG and its algorithmic approach can be found in <br>
-	    </p>
-	    <ul>
-	      <li><a href="http://www.zib.de/gamrath/publications/gamrath2010_genericBCP.pdf">Generic Branch-Cut-and-Price</a>, Gerald Gamrath,  Diploma Thesis, TU Berlin, 2010</li>
-	    </ul>
-	  </div>
           <div>
-            <h1 id="news">News</h1>
-            <table class="desc">
-	      <tbody>
-		<tr>
-		  <td valign=top class="w-150">09/Mar/2017</td>
-		  <td>A small GCG 2.1.2 bugfix release is available together with the SCIP optimization Suite 4.0.0.
+            <h1 id="platforms">Platforms</h1>
+            <p>
+        GCG is written in C and C++. It should compile with any recent and ANSI compliant C and C++ compiler. We have tested the compilation with
+        the following compilers:
+      </p>
+      <ul>
+        <li>GNU compiler collection</li>
+        <li>LLVM Clang</li>
+        <li>Intel Studio compiler</li>
+      </ul>
+      <p>
+        on 32- and 64-bit versions of
+      </p>
+      <ul>
+        <li>Linux</li>
+        <li>Mac</li>
+        <li>Windows</li>
+      </ul>
+    </div>
+
+        -->
+
+    <div>
+      <h1 id="download">Downloads</h1>
+      <p>
+        <b>We recommend you to download the <a href="https://scip.zib.de/index.php#download">SCIP Optimization Suite</a></b>, a complete source
+        code bundle of SCIP, SoPlex, ZIMPL, GCG and UG with an easy-to-use Makefile.<br/>
+        <b>However</b>, you can also download the source code:
+      </p>
+      <ul>
+        <li><a href="files/gcg-3.0.0.tgz">gcg-3.0.0.tgz</a> (1803kB)</li>
+        <p id="olderdownloads" class="reveal">Older versions</p>
+    	    <div style="display: block; margin-top: -10px;" id="olderdownloads_ans" class="answer">
+              <li><a href="files/gcg-2.1.2.tgz">gcg-2.1.2.tgz</a> (1118kB)</li>
+              <li><a href="files/gcg-2.1.1.tgz">gcg-2.1.1.tgz</a> (1100kB)</li>
+              <li><a href="files/gcg-2.1.0.tgz">gcg-2.1.0.tgz</a> (1096kB)</li>
+              <li><a href="files/gcg-2.0.1.tgz">gcg-2.0.1.tgz</a> (1053kB)</li>
+              <li><a href="files/gcg-2.0.0.tgz">gcg-2.0.0.tgz</a> (1007kB)</li>
+              <li><a href="files/gcg-1.1.1.tgz">gcg-1.1.1.tgz</a> (664kB)</li>
+              <li><a href="files/gcg-1.1.0.tgz">gcg-1.1.0.tgz</a> (664kB)</li>
+              <li><a href="files/gcg-1.0.0.tgz">gcg-1.0.0.tgz</a> (670kB)</li>
+    	    </div>
+      </ul>
+      <p>
+        <i>The files you can download here come without any warranty.
+        Use at your own risk!</i>
+      </p>
+    </div>
+
+    <div>
+      <h1 id="guide">Installation and Guides</h1>
+      <p>Information on how to install and use and extend GCG can be found in the documentation
+         under <a href="/doc-3.1.0/install.html">Installation</a>, <a href="/doc-3.1.0/devs.html">User's Guide</a> and <a href="/doc-3.1.0/users.html">Developer's Guide</a>.</p>
+    </div>
+
+    <div>
+      <h1 id="news">News</h1>
+      <table class="table table-hover table-condensed" style="margin-bottom:0">
+       <tbody>
+      	<tr>
+  	      <td class="mono">09/Mar/2017</td>
+  	      <td>A small GCG 2.1.2 bugfix release is available together with the SCIP optimization Suite 4.0.0.
               See the <a href="doc/CHANGELOG.html">CHANGELOG</a> and the <a href="doc/RELEASENOTES.html">Release notes</a> for more information.</td>
-		</tr>
-		<tr>
-		  <td valign=top class="w-150">29/Feb/2016</td>
-		  <td>A small GCG 2.1.1 bugfix release is available together with the SCIP optimization Suite 3.2.1.
+    		</tr>
+    		<tr>
+    		  <td class="mono">29/Feb/2016</td>
+    		  <td>A small GCG 2.1.1 bugfix release is available together with the SCIP optimization Suite 3.2.1.
               See the <a href="doc/CHANGELOG.html">CHANGELOG</a> and the <a href="doc/RELEASENOTES.html">Release notes</a> for more information.</td>
-		</tr>
-		<tr>
-		  <td valign=top class="w-150">01/Jul/2015</td>
-		  <td>We released the minor version GCG 2.1.0 together with the SCIP optimization Suite 3.2.0.
+    		</tr>
+    		<tr>
+    		  <td class="mono">01/Jul/2015</td>
+    		  <td>We released the minor version GCG 2.1.0 together with the SCIP optimization Suite 3.2.0.
               See the <a href="doc/CHANGELOG.html">CHANGELOG</a> and the <a href="doc/RELEASENOTES.html">Release notes</a> for more information.</td>
-		</tr>
-		<tr>
-		  <td valign=top class="w-150">18/Dec/2014</td>
-		  <td>A small GCG 2.0.1 bugfix release is available together with the SCIP optimization Suite 3.1.1.</td>
-		</tr>
-		<tr>
-		  <td valign=top class="w-150">26/Feb/2014</td>
-		  <td>A new major version GCG 2.0.0 is available together with the SCIP optimization Suite 3.1.0 and plenty of new features!</td>
-		</tr>
-		<tr>
-		  <td valign=top class="w-150">16/Oct/2013</td>
-		  <td>A small GCG 1.1.1 bugfix release version is available together with the SCIP optimization Suite 3.0.2. </td>
-		</tr>
-		<tr>
-		  <td valign=top class="w-150">04/Jan/2013</td>
-		  <td>We released the minor version GCG 1.1.0 together with the SCIP optimization Suite 3.0.1. </td>
-		</tr>
-		<tr>
-		  <td valign=top class="w-150">01/Aug/2012</td>
-		  <td>We released the first version of GCG 1.0.0 together with the SCIP optimization Suite 3.0.0. </td>
-		</tr>
-	    </tbody></table>
+    		</tr>
+    		<tr>
+    		  <td class="mono">18/Dec/2014</td>
+    		  <td>A small GCG 2.0.1 bugfix release is available together with the SCIP optimization Suite 3.1.1.</td>
+    		</tr>
+    		<tr>
+    		  <td class="mono">26/Feb/2014</td>
+    		  <td>A new major version GCG 2.0.0 is available together with the SCIP optimization Suite 3.1.0 and plenty of new features!</td>
+    		</tr>
+    		<tr>
+    		  <td class="mono">16/Oct/2013</td>
+    		  <td>A small GCG 1.1.1 bugfix release version is available together with the SCIP optimization Suite 3.0.2. </td>
+    		</tr>
+    		<tr>
+    		  <td class="mono">04/Jan/2013</td>
+    		  <td>We released the minor version GCG 1.1.0 together with the SCIP optimization Suite 3.0.1. </td>
+    		</tr>
+    		<tr>
+    		  <td class="mono">01/Aug/2012</td>
+    		  <td>We released the first version of GCG 1.0.0 together with the SCIP optimization Suite 3.0.0. </td>
+    		</tr>
+      </tbody>
+     </table>
 <!--	    <p id="oldernews" class="reveal">...older news</p>
 	    <table style="display: block;" id="oldernews_ans" class="answer">
 	      <tbody>
 <!-- add here the old entry - - >
 	      </tbody>
 	    </table>            -->
-	  </div>
-          <div>
-            <h1 id="license">License</h1>
-            <p>
-	      GCG is released under the LGPL. If you use GCG in a publication, please reference the following article:
-            </p>
-	    <p>
-	      <a href="http://www.zib.de/gamrath/publications/gamrathluebbecke2010_experimentsDW.pdf"><em>Experiments with a Generic Dantzig-Wolfe Decomposition for Integer Programs</em></a>, Gerald Gamrath and Marco E. Lübbecke<br>
-	      In P.Festa (Ed.), Symposium on Experimental Algorithms (SEA 2010), LNCS, 6049, pp. 239-252, 2010, Springer, Berlin. DOI: <a href="http://doi.org/10.1007/978-3-642-13193-6_21">10.1007/978-3-642-13193-6_21</a></p>
-          </div>
-          <div>
-            <h1 id="features">Features</h1>
-            <p>
-	      GCG has the following features:
-	    </p>
-	    <ul>
-	      <li>It is black box solver using a Dantzig-Wolfe reformulation (DWR) to solve arbitrary MIPs.
-	      </li>
-	      <li>It is a framework for implementing column generation algorithms</li>
-	      <li>It detects hidden or apparent structures in the constraint matrix in order to apply DWR. Among others, it detects
-		<ul>
-		  <li>Staircase structures</li>
-		  <li>Set partitioning master structures</li>
-		  <li>Subproblems that can be aggregated in the Dantzig-Wolfe reformulation</li>
-		  <li>With the additional tool <a href="http://glaros.dtc.umn.edu/gkhome/metis/hmetis">hmetis</a> it can enforce a structure suitable for DWR in arbitrary MIPs
-		</ul>
-	      </li>
-	      <li>It has branching rules for automatic branching on any problem.</li>
-	      <li>Stabilization by dual value smoothing</li>
-	      <li>A large number of primal heuristics both in the original and the reformulated space</li>
-	    </ul>
-	  </div>
-          <div>
-            <h1 id="platforms">Platforms</h1>
-            <p>
-	      GCG is written in C and C++. It should compile with any recent and ANSI compliant C and C++ compiler. We have tested the compilation with
-	      the following compilers:
-	    </p>
-	    <ul>
-	      <li>GNU compiler collection</li>
-	      <li>LLVM Clang</li>
-	      <li>Intel Studio compiler</li>
-	    </ul>
-	    <p>
-	      on 32- and 64-bit versions of
-	    </p>
-	    <ul>
-	      <li>Linux</li>
-	      <li>Mac</li>
-	      <li>Windows</li>
-	    </ul>
-	  </div>
-          <div>
-            <h1 id="bugs">Bugs</h1>
-            <h3>Known Bugs</h3>
+	</div>
+
+  <div>
+    <h1 id="bugs">Bugs</h1>
+      <h3>Known Bugs</h3>
 	    <p>
 	      Here is a list of known bugs in the current version:
 	    </p>
 	    <ul>
 	      <li>There might be problems branching on discretized and aggregated problems. If you encounter such an issue, try to turn off either aggregation or discretization.</li>
 	    </ul>
-	    <h3>Reporting Bugs</h3>
+    <h3>Reporting Bugs</h3>
 	    <p>
 	      GCG has more than 50,000 lines of source code and
 	      is definitely not bug free.
 	    </p>
 	    <p>
-	      If you find a bug, please write an email to gcg-bugs<img src="pictures/klammeraffe.png" alt="klammeraffe">or.rwth-aachen.de .
+	      If you find a bug, please write an email to <a href="mailto:gcg-bugs@or.rwth-aachen.de">gcg-bugs@or.rwth-aachen.de</a>.
 	    </p>
-	  </div>
-          <div>
-            <h1 id="developers">Developers</h1>
-            <h3>Project head</h3>
-	    <table class="desc">
-	      <tbody><tr>
-		<tr>
-		  <td class="w-200">
-		    <a href="http://www.or.rwth-aachen.de/luebbecke">Marco Lübbecke</a>
-		  </td>
-		  <td>
-		    Project initiator and head
-		  </td>
-		</tr>
-	      </tbody>
-	    </table>
+  </div>
 
-            <h3>Main developers</h3>
+  <div>
+    <h1 id="developers">Developers</h1>
+    <h3>Project head</h3>
 	    <table class="desc">
-	      <tbody><tr>
-		<tr>
-		  <td class="w-200">
-		    <a href="http://www.or.rwth-aachen.de/team/staff/michael-bastubbe/">Michael Bastubbe</a>
-		  </td>
-		  <td>
-		    Structure detection
-		  </td>
-		</tr>
-		<tr>
-		  <td class="w-200">
-		    <a href="http://www.or.rwth-aachen.de/bergner">Martin Bergner</a>
-		  </td>
-		  <td>
-		    Structure detection, former main developer
-		  </td>
-		</tr>
-		<tr>
-		  <td>
-		    <a href="http://www.zib.de/gamrath/">Gerald Gamrath</a>
-		  </td>
-		  <td>
-		    Original and main developer
-		  </td>
-		</tr>
-		<tr>
-		  <td>
-		    <a href="http://www.or.rwth-aachen.de/puchert/">Christian Puchert</a>
-		  </td>
-		  <td>
-		    Primal heuristics, main developer
-		  </td>
-		</tr>
-		<tr>
-		  <td>
-		    <a href="http://www.or.rwth-aachen.de/team/staff/jonas-witt/">Jonas Witt</a>
-		  </td>
-		  <td>
-		    Cutting planes, main developer
-		  </td>
-		</tr>
-	      </tbody>
+    	  <tbody><tr><tr>
+    		  <td class="w-200">
+    		    <a href="http://www.or.rwth-aachen.de/luebbecke">Marco Lübbecke</a>
+    		  </td>
+    		  <td>
+    		    Project initiator and head
+    		  </td>
+    		</tr>
+    	  </tbody>
 	    </table>
-
+    <h3>Main developers</h3>
+      <table class="desc">
+        <tbody><tr>
+          <tr>
+		        <td class="w-200"><a href="http://www.or.rwth-aachen.de/team/staff/michael-bastubbe/">Michael Bastubbe</a></td>
+		        <td>Structure detection</td>
+		      </tr>
+		      <tr>
+		        <td><a href="http://www.or.rwth-aachen.de/bergner">Martin Bergner</a></td>
+		        <td>Structure detection, former main developer</td>
+		      </tr>
+		      <tr>
+		        <td><a href="http://www.zib.de/gamrath/">Gerald Gamrath</a></td>
+		        <td>Original and main developer</td>
+		      </tr>
+		      <tr>
+		        <td><a href="http://www.or.rwth-aachen.de/puchert/">Christian Puchert</a></td>
+		        <td>Primal heuristics, main developer</td>
+		      </tr>
+		      <tr>
+		        <td><a href="http://www.or.rwth-aachen.de/team/staff/jonas-witt/">Jonas Witt</a></td>
+		        <td>Cutting planes, main developer</td>
+		      </tr>
+        </tbody>
+      </table>
 	    <h3 id="contributors">Contributors</h3>
 	    <table class="desc">
 	      <tbody>
-        <tr>
-          <td width="180px">
-            Björn Dählmann
-         </td>
-          <td>
-            Student assistant, structure detection
-         </td>
-       </tr>
-		<tr>
-		  <td width="180px">
-		    Hanna Franzen
-		  </td>
-		  <td>
-		    Student assistant, structure detection
-		  </td>
-		</tr>
-		<tr>
-		  <td width="180px">
-		    Alexander Groß
-		  </td>
-		  <td>
-		    Student assistant, statistics
-		  </td>
-		</tr>
-		<tr>
-		  <td width="180px">
-		    Lukas Kirchhart
-		  </td>
-		  <td>
-		    Student assistant, documentation
-		  </td>
-		</tr>
-		<tr>
-		  <td width="180px">
-		    Tobias Oelschlägel
-		  </td>
-		  <td>
-		    Student assistant, set covering heuristic
-		  </td>
-		</tr>
-		<tr>
-		  <td width="180px">
-		    Marc Peiter
-		  </td>
-		  <td>
-		    Student assistant, testing
-		  </td>
-		</tr>
-		<tr>
-		  <td width="180px">
-		    Daniel Peters
-		  </td>
-		  <td>
-		    Student assistant, detection of similar pricing problems
-		  </td>
-		</tr>
-		<tr>
-		  <td width="180px">
-		    Marcel Schmickerath
-		  </td>
-		  <td>
-		    Student assistant, generic branching
-		  </td>
-		</tr>
-		<tr>
-		  <td width="180px">
-		    <a href="http://www.or.rwth-aachen.de/team/staff/annika-thome/">Annika Thome</a>
-		  </td>
-		  <td>
-		    Graph library methods
-		  </td>
-		</tr>
-	      </tbody>
-	    </table>
-          </div>
-          <div>
-            <h1 id="work">Related Work</h1>
-	    <ul>
-	      <li><h4 id="papers" class="reveal">Papers That Use GCG</h4></li>
-	      <li style="display: block;" id="papers_ans" class="answer">
-		<ul>
-		  <li>
-		    <a href="http://dx.doi.org/10.1145/2851492">A Branch-Price-and-Cut Algorithm for Packing Cuts in Undirected Graphs</a>
-		    Martin Bergner, Marco E. Lübbecke, Jonas T. Witt, Journal of Experimental Algorithmics (JEA) 21 (2016-): Article No. 1.2
-		  </li>
-		  <li>
-		    <a href="http://doi.org/10.1080/10556788.2013.768993">Solving a vehicle routing problem with resource conflicts and makespan objective with an application in car body manufacturing</a>
-		    Jörg Rambau, Cornelius Schwarz, Optimization Methods and Software, Vol. 29, Iss. 2, 2014
-		  </li>
-		  <li>
-		    <a href="http://www.patatconference.org/patat2014/proceedings/2_26.pdf">Branch-and-price and improved bounds to the traveling umpire problem</a>
-		    Túlio A. M. Toffolo, Sam van Malderen, Tony Wauters, Greet van den Berghe, Proceedings of the 10th international conference of the practice and theory of automated timetabling, 2014, pp. 420-32
-		  </li>
-		</ul>
-	      </li>
-	    </ul>
-	    <p>
-	      If you know about further projects or papers that use GCG, please let us <a href="http://www.or.rwth-aachen.de/puchert">
-		know</a>.
-	    </p>
-          </div>
-          <div>
-            <h1 id="cooperation">Cooperation</h1>
-            <p>
-	      GCG is developed in cooperation with
-	    </p>
-	    <table class="desc">
-	      <tbody>
-		<tr>
-		  <td class="w-350"><a href="http://www.zib.de">Konrad-Zuse-Zentrum für Informationstechnik Berlin</a></td>
-		  <td class="al-r"><a href="http://www.zib.de">
-		      <img src="pictures/logo_zib.png" alt="ZIB Logo"></a>
-		  </td>
-		</tr>
-	      </tbody>
-	    </table>
-	  </div>
-          <div>
-            <h1 id="download">Download</h1>
-            <p>
-	      The files you can download here come <b>without any warranty</b>.
-	      Use at your own risk!
-	    </p>
-	    <p>
-	      You can either download GCG alone or the SCIP
-	      Optimization Suite (recommended), a complete source
-	      code bundle of SCIP, SoPlex, ZIMPL, GCG, and UG with
-	      an easy-to-use Makefile.
-	    </p>
-	    <p>
-	      Due to licensing issues, we can not offer precompiled binaries. You can download the source code here:
-	    </p>
-	    <ul>
-	      <li><a href="files/gcg-2.1.2.tgz">gcg-2.1.2.tgz</a> (1118kB)</li>
-	      <li><a href="files/gcg-2.1.1.tgz">gcg-2.1.1.tgz</a> (1100kB)</li>
-	      <li><a href="files/gcg-2.1.0.tgz">gcg-2.1.0.tgz</a> (1096kB)</li>
-	      <li><a href="files/gcg-2.0.1.tgz">gcg-2.0.1.tgz</a> (1053kB)</li>
-	      <li><a href="files/gcg-2.0.0.tgz">gcg-2.0.0.tgz</a> (1007kB)</li>
-	      <li><a href="files/gcg-1.1.1.tgz">gcg-1.1.1.tgz</a> (664kB)</li>
-	      <li><a href="files/gcg-1.1.0.tgz">gcg-1.1.0.tgz</a> (664kB)</li>
-	      <li><a href="files/gcg-1.0.0.tgz">gcg-1.0.0.tgz</a> (670kB)</li>
-	    </ul>
-	    <p>or complete in the <a href="http://scip.zib.de/#scipoptsuite">SCIP Optimization Suite</a>.</p>
-	  </div>
-	</div>
-	<!-- end col-md-9 -->
-      </div>
-      <!-- end row -->
+          <tr>
+            <td class="w-200">Björn Dählmann</td>
+            <td>Structure detection</td>
+          </tr>
+    		  <tr>
+    		    <td>Hanna Franzen</td>
+    		    <td>Structure detection</td>
+     		  </tr>
+   		    <tr>
+    		    <td>Alexander Groß</td>
+    		    <td>Statistics</td>
+    		  </tr>
+    		  <tr>
+      		  <td>Lukas Kirchhart</td>
+      		  <td>Documentation</td>
+    		  </tr>
+    		  <tr>
+      		  <td>Tobias Oelschlägel</td>
+      		  <td>Set covering heuristic</td>
+      		</tr>
+      		<tr>
+      		  <td>Marc Peiter</td>
+      		  <td>Testing</td>
+      		</tr>
+      		<tr>
+      		  <td>Daniel Peters</td>
+      		  <td>Detection of similar pricing problems</td>
+      		</tr>
+      		<tr>
+      		  <td>Marcel Schmickerath</td>
+      		  <td>Generic branching</td>
+      		</tr>
+      		<tr>
+      		  <td><a href="http://www.or.rwth-aachen.de/team/staff/annika-thome/">Annika Thome</a></td>
+      		  <td>Graph library methods</td>
+      		</tr>
+  	      </tbody>
+  	    </table>
     </div>
+
+    <div>
+    <h1 id="more">More Information</h1>
+
+      <div>
+      <h3 id="work">Related Work</h3>
+  	    <p id="papers" class="reveal">Papers That Use GCG</p>
+  	    <li style="display: block;" id="papers_ans" class="answer">
+    		  <ul>
+      		  <li><a href="http://dx.doi.org/10.1145/2851492">A Branch-Price-and-Cut Algorithm for Packing Cuts in Undirected Graphs</a>
+            Martin Bergner, Marco E. Lübbecke, Jonas T. Witt, Journal of Experimental Algorithmics (JEA) 21 (2016-): Article No. 1.2</li>
+            <li><a href="http://doi.org/10.1080/10556788.2013.768993">Solving a vehicle routing problem with resource conflicts and makespan objective with an application in car body manufacturing</a>
+      		  Jörg Rambau, Cornelius Schwarz, Optimization Methods and Software, Vol. 29, Iss. 2, 2014</li>
+      		  <li><a href="http://www.patatconference.org/patat2014/proceedings/2_26.pdf">Branch-and-price and improved bounds to the traveling umpire problem</a>
+      		  Túlio A. M. Toffolo, Sam van Malderen, Tony Wauters, Greet van den Berghe, Proceedings of the 10th international conference of the practice and theory of automated timetabling, 2014, pp. 420-32</li>
+    		 </ul>
+  	   </li>
+  	    <p>
+  	      If you know about further projects or papers that use GCG, please let us <a href="http://www.or.rwth-aachen.de/puchert">
+  		know</a>.
+  	    </p>
+      </div>
+
+      <div>
+      <h3 id="cooperation">Cooperation</h3>
+        <p>GCG is developed in cooperation with</p>
+  	    <table class="desc">
+  	      <tbody>
+        		<tr>
+              <td class="al-r"><a href="http://www.zib.de">
+        		      <img src="pictures/logo_zib.png" alt="ZIB Logo" style="padding-right:20px; height: 80px;"></a>
+        		  </td>
+              <td class="w-350"><a href="http://www.zib.de">Konrad-Zuse-Zentrum für Informationstechnik Berlin</a></td>
+        		</tr>
+  	      </tbody>
+  	    </table>
+  	  </div>
+
+      <div>
+      <h3 id="license">License</h3>
+        <p>GCG is released under the LGPL. If you use GCG in a publication, please reference the following article:</p>
+        <p><a href="http://www.zib.de/gamrath/publications/gamrathluebbecke2010_experimentsDW.pdf"><em>Experiments with a Generic Dantzig-Wolfe Decomposition for Integer Programs</em></a>, Gerald Gamrath and Marco E. Lübbecke<br>
+        In P.Festa (Ed.), Symposium on Experimental Algorithms (SEA 2010), LNCS, 6049, pp. 239-252, 2010, Springer, Berlin. DOI: <a href="http://doi.org/10.1007/978-3-642-13193-6_21">10.1007/978-3-642-13193-6_21</a></p>
+      </div>
+	</div>
+
+	<!-- end col-md-9 -->
+  </div>
+  <!-- end row -->
+  </div>
 
     <!-- end container -->
     <footer class="bs-footer" role="contentinfo">
       <div class="container">
-	<div class="row">
-	  <div class="col-md-12">
-	          &copy; 2010-2018 by Operations Research, RWTH Aachen University, <a href="http://www.or.rwth-aachen.de/en/disclaimer/">Imprint</a><br />
-		  &copy; 2010-2018 by Zuse Institute Berlin (ZIB)<br />
+      	<div class="row">
+      	  <div class="col-md-12">
+      	    &copy; 2010-2019 by Operations Research, RWTH Aachen University, <a href="http://www.or.rwth-aachen.de/en/disclaimer/">Imprint</a><br />
+      		  &copy; 2010-2019 by Zuse Institute Berlin (ZIB)<br />
 
-	  </div>
-	</div>
+      	  </div>
+      	</div>
       </div>
     </footer>
 

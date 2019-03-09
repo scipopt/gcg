@@ -1,0 +1,6 @@
+/*! \page devs Developer's Guide
+The developer's guide offers explanations on how to add your own methods to GCG, from detectors to pricers.
+
+- \subpage howtos
+- \subpage examples
+*/

@@ -1,0 +1,22 @@
+Updates:
+- Landingpage and documentation cleanup!
+- sections that are unnecessary for most users removed or made less obvious
+- updated some stuff (e.g. removed "student assistant") and made some things
+consistent with the rest of the pages on the SCIP site
+- renaming to "User's Guide"/"Developer's Guide"
+- creation of the basic structures so that new subpages can be added easily
+- script to index howto-pages automatically (also added to builddoc.sh)
+
+Why did it happen like that?
+- markdown does not seem to support hierarchical functions of doxygen,
+therefore .dox files are used for all non-leaf pages
+
+How can I add new pages?
+- If you don't expect your page to get any subpages:
+just grab a .md file, copy it and write your stuff in there.
+IMPORTANT: NAME.md must match the page identifier {#NAME} inside the file.
+- Otherwise, use a .dox file.
+
+How can I structure it folderwise?
+- You can move and create folders as you like inside 'resources',
+but remember to add your folder path to INPUT in gcg.dxy (line 787).
