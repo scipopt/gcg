@@ -1,4 +1,4 @@
-# add primal heuristics # {#primal}
+# write primal heuristics # {#primal}
 
  For general information on how to add your own primal heuristics to GCG, first check the SCIP documentation.
  However, one has to take into account some peculiarities when implementing heuristics that are included

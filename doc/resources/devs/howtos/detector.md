@@ -1,1 +1,1 @@
-# build your own detector # {#detector}
+# build a detector # {#detector}
