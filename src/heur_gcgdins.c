@@ -729,7 +729,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
    }
    else
    {
-      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgdins", TRUE, FALSE, TRUE, &success) );
+      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgdins", TRUE, FALSE, FALSE, TRUE, &success) );
 
       if( heurdata->copycuts )
       {

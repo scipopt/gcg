@@ -175,7 +175,7 @@ SCIP_RETCODE Seeedpool::calculateDualvalsOptimalOrigLP()
 
    SCIPcreate(&scipcopy);
 
-   SCIPcopy(scip, scipcopy, NULL, origtocopiedconss, "", FALSE, FALSE, FALSE, &valid );
+   SCIPcopy(scip, scipcopy, NULL, origtocopiedconss, "", FALSE, FALSE, FALSE, FALSE, &valid );
 
    nconss = getNConss();
 

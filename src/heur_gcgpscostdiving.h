@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 /** creates the gcgpscostdiving heuristic and includes it in GCG */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGincludeHeurGcgpscostdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );

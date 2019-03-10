@@ -45,20 +45,20 @@ extern "C" {
 #endif
 
 /** gets diving rule specific data of a diving heuristic */
-EXTERN
+SCIP_EXPORT
 GCG_DIVINGDATA* GCGheurGetDivingDataOrig(
    SCIP_HEUR*               heur                    /**< primal heuristic */
    );
 
 /** sets diving rule specific data of a diving heuristic */
-EXTERN
+SCIP_EXPORT
 void GCGheurSetDivingDataOrig(
    SCIP_HEUR*               heur,                   /**< primal heuristic */
    GCG_DIVINGDATA*          divingdata              /**< diving rule specific data */
    );
 
 /** creates an original diving heuristic and includes it in GCG */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGincludeDivingHeurOrig(
    SCIP*                    scip,                   /**< SCIP data structure */
    SCIP_HEUR**              heur,                   /**< pointer to diving heuristic */
@@ -81,7 +81,7 @@ SCIP_RETCODE GCGincludeDivingHeurOrig(
    );
 
 /** creates event handler for origdiving event */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE SCIPincludeEventHdlrOrigdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );

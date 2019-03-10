@@ -50,7 +50,7 @@ extern "C" {
 #endif
 
 /** creates the masterlinesdiving primal heuristic and includes it in GCG */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGincludeHeurMasterlinesdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );
