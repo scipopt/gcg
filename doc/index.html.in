@@ -234,7 +234,7 @@
     		    <a href="http://www.or.rwth-aachen.de/luebbecke">Marco Lübbecke</a>
     		  </td>
     		  <td>
-    		    Project initiator and head
+    		    Project initiator and strategic coodinator
     		  </td>
     		</tr>
     	  </tbody>
@@ -243,11 +243,11 @@
       <table class="desc">
         <tbody><tr>
           <tr>
-		        <td class="w-200"><a href="http://www.or.rwth-aachen.de/team/staff/michael-bastubbe/">Michael Bastubbe</a></td>
+		        <td class="w-200"><a href="https://www.or.rwth-aachen.de/en/details-staff/bastubbe.html">Michael Bastubbe</a></td>
 		        <td>Structure detection</td>
 		      </tr>
 		      <tr>
-		        <td><a href="http://www.or.rwth-aachen.de/bergner">Martin Bergner</a></td>
+		        <td>Martin Bergner</td>
 		        <td>Structure detection, former main developer</td>
 		      </tr>
 		      <tr>
@@ -255,11 +255,11 @@
 		        <td>Original and main developer</td>
 		      </tr>
 		      <tr>
-		        <td><a href="http://www.or.rwth-aachen.de/puchert/">Christian Puchert</a></td>
+		        <td><a href="https://www.or.rwth-aachen.de/en/details-staff/puchert.html"</a>Christian Puchert</td>
 		        <td>Primal heuristics, main developer</td>
 		      </tr>
 		      <tr>
-		        <td><a href="http://www.or.rwth-aachen.de/team/staff/jonas-witt/">Jonas Witt</a></td>
+		        <td><a href="https://www.or.rwth-aachen.de/en/details-staff/witt.html">Jonas Witt</a></td>
 		        <td>Cutting planes, main developer</td>
 		      </tr>
         </tbody>
@@ -267,13 +267,17 @@
 	    <h3 id="contributors">Contributors</h3>
 	    <table class="desc">
 	      <tbody>
-          <tr>
-            <td class="w-200">Björn Dählmann</td>
-            <td>Structure detection</td>
-          </tr>
+	          <tr>
+        	    <td class="w-200">Björn Dählmann</td>
+            	    <td>Structure detection</td>
+          	  </tr>		
+    		  <tr>
+    		    <td>Tim Donkiewicz</td>
+    		    <td>Documentation</td>
+     		  </tr>
     		  <tr>
     		    <td>Hanna Franzen</td>
-    		    <td>Structure detection</td>
+    		    <td>Structure detection, visualization</td>
      		  </tr>
    		    <tr>
     		    <td>Alexander Groß</td>
@@ -297,11 +301,15 @@
       		</tr>
       		<tr>
       		  <td>Marcel Schmickerath</td>
-      		  <td>Generic branching</td>
+      		  <td>Generic (Vanderbeck) branching</td>
       		</tr>
       		<tr>
-      		  <td><a href="http://www.or.rwth-aachen.de/team/staff/annika-thome/">Annika Thome</a></td>
+      		  <td>Annika Thome</td>
       		  <td>Graph library methods</td>
+      		</tr>
+      		<tr>
+      		  <td>Matthias Walter</td>
+      		  <td>CMake integration</td>
       		</tr>
   	      </tbody>
   	    </table>
