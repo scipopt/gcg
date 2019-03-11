@@ -9,6 +9,8 @@ set -e
 
 ./resources/devs/howtos/createindexes.sh
 cd $(dirname $0)
+cp -a ./resources/img/ ./html/
+echo "Copied images to html/img."
 
 if [ "$1" == "--mathjax" ]
 then

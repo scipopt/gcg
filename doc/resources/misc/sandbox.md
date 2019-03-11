@@ -53,7 +53,7 @@ images can be easily included with the `!` command:
 
 ![instance MIPLIB2003/rout with 5 blocks](../../img/rout-cC-5.png)
 
-we need to discuss where images are located; meanwhile I use the `../../img/` folder
+we need to discuss where images are located; meanwhile use the `../img/` folder
 
 if you need to control the image size, the only way appears to use `HTML` code:
 
