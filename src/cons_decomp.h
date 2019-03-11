@@ -42,7 +42,6 @@
 #include "scip/scip.h"
 #include "type_detector.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -66,10 +65,7 @@ enum scoretype {
 typedef enum scoretype SCORETYPE;
 
 
-/** forward declarations */
-struct seeedpool_wrapper;
-typedef struct seeedpool_wrapper SEEEDPOOL_WRAPPER ;
-
+/** forward declaration */
 struct Seeed_Wrapper;
 typedef struct Seeed_Wrapper SEEED_WRAPPER;
 
@@ -335,22 +331,20 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
 
 /**
  * @brief help method to access seeedpool for unpresolved problem
- * @TODO: consider deleting this method will be deleted if the corresponding wrapper classes are introduced
- * @returns pointer to seeedpool wrapper data structure
+ * @returns pointer to seeed wrapper data structure
  */
 extern
-SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(
+SEEED_WRAPPER* SCIPconshdlrDecompGetSeeedpoolUnpresolved(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 
 /**
  * @brief help method to access seeedpool for transformed problem
- * @TODO: consider deleting this method will be deleted if the corresponidng wrapper classes are introduced
- * @returns pointer to seeedpool wrapper data structure
+ * @returns pointer to seeed wrapper data structure
  */
 extern
-SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolExtern(
+SEEED_WRAPPER* SCIPconshdlrDecompGetSeeedpool(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
@@ -551,19 +545,6 @@ int SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(
  extern
 int SCIPconshdlrDecompDecreaseAndGetNCallsCreateDecomp(
   SCIP*                 scip                /**< SCIP data structure **/
-   );
-
-
-/**
- * @brief initilizes the candidates data structures with selected seeeds (or all if there are no selected seeeds) and sort them according to the current scoretype
- * @param scip SCIP data structure
- * @param updatelist whether or not the seeed list should be updated
- * @returns SCIP return code
- */
- extern
-SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
-   SCIP* scip,
-   SCIP_Bool updatelist
    );
 
 
@@ -789,6 +770,20 @@ SCIP_RETCODE GCGgetSeeedFromID(
    );
 
 
+/* public methods for internal management of seeeds in explore menu and related functions */
+
+/**
+ * @brief initilizes the candidates data structures with selected seeeds (or all if there are no selected seeeds) and sort them according to the current scoretype
+ * @param scip SCIP data structure
+ * @param updatelist whether or not the seeed list should be updated
+ * @returns SCIP return code
+ */
+ extern
+SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
+   SCIP* scip,
+   SCIP_Bool updatelist
+   );
+
 /**
  * @brief method to update the list of incomplete decompositions
  *
@@ -801,10 +796,18 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    SCIP*                 scip
    );
 
+/**
+ * Gets the currently selected scoretype
+ * @returns the currently selected scoretype
+ */
+SCORETYPE SCIPconshdlrDecompGetScoretype(
+   SCIP*          scip  /**< SCIP data structure */
+   );
+
 /** @brief Gets the first id to visualize in explore menu
  *  @returns id to start with */
 int GCGgetSelectFirstIdToVisu(
-   SCIP*          scip,  /**< SCIP data structure */
+   SCIP*          scip  /**< SCIP data structure */
    );
 
 
@@ -817,7 +820,7 @@ void GCGsetSelectFirstIdToVisu(
 /** @brief Gets number of decompositions to be displayed at once in explore menu
  *  @returns id to start with */
 int GCGgetSelectVisuLength(
-   SCIP*          scip,  /**< SCIP data structure */
+   SCIP*          scip  /**< SCIP data structure */
    );
 
 
@@ -827,27 +830,19 @@ void GCGsetSelectVisuLength(
    int            length   /**< number of rows */
    );
 
-/** @brief Gets a vector containing the current list of decomps in explore menu
+/** @brief Gets a list of ids of the current decomps to be shown in explore menu
  *
  * (to visualize, write, consider for family tree, consider for solving etc. )
  *  @returns list of seeeds */
-std::vector<SeeedPtr>* GCGgetSelectList(
-   SCIP*          scip,  /**< SCIP data structure */
+int** GCGgetSelectList(
+   SCIP*          scip  /**< SCIP data structure */
    );
 
-
-/** @brief Sets the vector containing the current list of decomps in explore menu
- *
- * (to visualize, write, consider for family tree, consider for solving etc. ) */
-void GCGsetSelectList(
-   SCIP*          scip,          /**< SCIP data structure */
-   std::vector<SeeedPtr>* list   /**< current list of seeeds */
-   );
 
 /** @brief Gets a vector containing the indices of selected decompositions in explore menu
  *  @returns list of seeeds */
 std::vector<int>* GCGgetSelectIds(
-   SCIP*          scip,  /**< SCIP data structure */
+   SCIP*          scip  /**< SCIP data structure */
    );
 
 
@@ -860,7 +855,7 @@ void GCGsetSelectIds(
 /** @brief Gets whether there are selected decompositions
  *  @returns true iff there are selected decompositions */
 SCIP_Bool GCGgetSelectExists(
-   SCIP*          scip,  /**< SCIP data structure */
+   SCIP*          scip  /**< SCIP data structure */
    );
 
 
@@ -870,19 +865,39 @@ void GCGsetSelectExists(
    SCIP_Bool      selected       /**< input true iff there are selected decompositions */
    );
 
-/** @brief Gets the number of (user) seeeds
+
+/** @brief Gets current user seeed
  *
- * (used for seeed ids in explore menu)
- *  @returns number of seeeds */
-int GCGgetSelectSeeedCounter(
-   SCIP*          scip,  /**< SCIP data structure */
+ * (seeed currently selected for modification in explore menu)
+ *  @returns current user seeed */
+SeeedPtr GCGgetSelectCurrUserSeeed(
+   SCIP*          scip  /**< SCIP data structure */
    );
 
-
-/** @brief sets number of (user) seeeds */
-void GCGsetSelectSeeedCounter(
+/** @brief Sets current user seeed
+ *
+ * (seeed currently selected for modification in explore menu)
+ *  @returns current user seeed */
+void GCGsetSelectCurrUserSeeed(
    SCIP*          scip,    /**< SCIP data structure */
-   int            counter   /**< new counter value */
+   SeeedPtr       seeed    /**< current seeed */
+   );
+
+/** @brief Gets last user seeed
+ *
+ * (last seeed selected for modification in explore menu)
+ *  @returns last user seeed */
+SeeedPtr GCGgetSelectLastUserSeeed(
+   SCIP*          scip  /**< SCIP data structure */
+   );
+
+/** @brief Sets last user seeed
+ *
+ * (last seeed selected for modification in explore menu)
+ *  @returns last user seeed */
+void GCGsetSelectLastUserSeeed(
+   SCIP*          scip,    /**< SCIP data structure */
+   SeeedPtr       seeed    /**< current seeed */
    );
 
 #ifdef __cplusplus

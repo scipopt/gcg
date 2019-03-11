@@ -893,7 +893,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
       assert(SCIPconshdlrDecompCheckConsistency(scip) );
 
-      if( !SCIPconshdlrDecompExistsSelected(scip) )
+      if( !GCGgetSelectExists(scip) )
       {
          if( SCIPconshdlrDecompUnpresolvedSeeedExists(scip) )
          {
@@ -940,7 +940,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_SOLVING:
       assert( SCIPconshdlrDecompCheckConsistency(scip) );
       assert(SCIPgetNConss(scip) == SCIPgetNActiveConss(scip) );
-      if( SCIPconshdlrDecompExistsSelected(scip) )
+      if( GCGgetSelectExists(scip) )
          SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE ) );
       else
          SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE ) );

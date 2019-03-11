@@ -96,22 +96,6 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
    SCIP_DIALOG*            dialog
    );
 
-/**
- * method to handle and moderate user input for creating new decompositions
- * and modifying existing decompositions by the user
- *
- * @param scip SCIP data structure
- * @param dialoghdlr dialog handler to handle user input
- * @param dialog dialog to handle user input
- * @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPdialogExecToolbox(
-   SCIP*                   scip,
-   SCIP_DIALOGHDLR*        dialoghdlr,
-   SCIP_DIALOG*            dialog
-   );
-
 
 /**
  * @brief returns if there is a decomposition that is currently selected by the user (done in explore menu)

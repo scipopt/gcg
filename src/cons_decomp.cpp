@@ -230,13 +230,11 @@ struct SCIP_ConshdlrData
    int                   nallrelevantseeeds;                      /**< number  of all relevant seeeds ( i.e. all seeeds w.r.t. copies ) */
    int                   nincompleteseeeds;                       /**< number  of incomplete seeeds originating from incomplete decompositions given by the users */
 
-
-   SeeedPtr              curruserseeed;                           /**< help pointer for reader and toolbox to iteratively build (partial) decomposition */
-   SeeedPtr              lastuserseeed;                           /**< help pointer for toolbox to revoke last changes to curruserseeed */
-
    SCIP_Bool             consnamesalreadyrepaired;                /**< stores whether or not    */
 
    SCIP_Bool             unpresolveduserseeedadded;               /**< stores whether or not an unpresolved user seeed was added */
+
+   int                   seeedcounter;                           /**< counts the number of seeeds, used for seeed ids */
 
    /* data fields for selection/exploration management */
    int                    startidvisu;                            /**< when displaying the list of decomps, this is the starting index */
@@ -244,7 +242,6 @@ struct SCIP_ConshdlrData
    std::vector<SeeedPtr>* listall;                                /**< vector containing the current list of decomps (to visualize, write, consider for family tree, consider for solving etc. )*/
    std::vector<int>*      selected;                               /**< vector containing the indices of selected decompositions */
    SCIP_Bool              selectedexists;                         /**< are there some selected decompositions */
-   int                    seeedcounter;                           /**< counts the number of (user) seeeds, used for seeed ids */
    std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;      /**< vector containing the pairs of candidate list of decomps (to visualize, write, consider for family tree, consider for solving etc.) sorted according to  */
    int                    currscoretype;                          /**< indicates which score should be used for comparing (partial) decompositions (
                                                                           0:max white,
@@ -255,6 +252,8 @@ struct SCIP_ConshdlrData
                                                                           5:max foreseeing white with aggregation info,
                                                                           6: ppc-max-white with aggregation info,
                                                                           7: experimental benders score */
+   SeeedPtr                curruserseeed;                         /**< help pointer for reader and toolbox to iteratively build (partial) decomposition */
+   SeeedPtr                lastuserseeed;                         /**< help pointer for toolbox to revoke last changes to curruserseeed */
 
    SCIP_Bool               nonfinalfreetransform;                 /**< help bool to notify a nonfinal free transform (needed if presolving is revoked, e.g. if unpresolved decomposition is used, and transformation is not successful) */
    std::vector<int>*       userblocknrcandidates;                 /**< vector to store block number candidates that were given by user */
@@ -315,118 +314,6 @@ SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
    conshdlrdata->selectedexists = FALSE;
 
    return SCIP_OKAY;
-}
-
-/**
- * Gets the currently selected scoretype
- * @returns the currently selected scoretype
- */
-static
-SCORETYPE SCIPconshdlrdataGetScoretype(
-   SCIP_CONSHDLRDATA* conshdlrdata  /**< conshdlr data */
-   )
-{
-   return  static_cast<scoretype>(conshdlrdata->currscoretype);
-}
-
-
-/**
- * Gets the shortname of the given scoretype
- *
- * @returns the shortname of the given Scoretype
- */
-static
-char*  SCIPconshdlrDecompGetScoretypeShortName(
-   SCIP*       scip,    /**< SCIP data structure */
-   SCORETYPE   sctype   /**< scoretype */
-   )
-{
-   char scoretypename[SCIP_MAXSTRLEN];
-   char* copy;
-   /* set detector chain info string */
-   SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
-
-
-   if( sctype == scoretype::MAX_WHITE )
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maxwhi") ;
-
-   if( sctype == scoretype::CLASSIC )
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classi") ;
-
-   if( sctype == scoretype::BORDER_AREA )
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "border") ;
-
-   if( sctype == scoretype::MAX_FORESSEEING_WHITE )
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "forswh") ;
-
-   if( sctype == scoretype::MAX_FORESEEING_AGG_WHITE )
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "fawh") ;
-
-
-   if( sctype == scoretype::SETPART_FWHITE )
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh ") ;
-
-   if( sctype == scoretype::SETPART_AGG_FWHITE )
-           SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfawh") ;
-
-
-   if( sctype == scoretype::BENDERS )
-              SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "bender") ;
-
-
-   SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
-
-   return copy;
-
-}
-
-/*!
- * returns the description of the given scoretype
- *
- * @returns description of the scoretype
- */
-static
-char*  SCIPconshdlrDecompGetScoretypeDescription(
-   SCIP*       scip,    /**< SCIP data structure */
-   SCORETYPE   sctype   /**< scoretype */
-      )
-{
-   char scoretypename[SCIP_MAXSTRLEN];
-   char* copy;
-
-   /* set detector chain info string */
-   SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
-
-   if( sctype == scoretype::MAX_WHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum white area score (i.e. maximize fraction of white area score; white area is nonblock and nonborder area, stairlinking variables count as linking)") ;
-
-   if( sctype == scoretype::CLASSIC)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classical score") ;
-
-   if( sctype == scoretype::BORDER_AREA)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score; )")  ;
-
-   if( sctype == scoretype::MAX_FORESSEEING_WHITE)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
-
-   if( sctype == scoretype::MAX_FORESEEING_AGG_WHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score with aggregation information(i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
-
-
-   if( sctype == scoretype::SETPART_FWHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing  white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
-
-   if( sctype == scoretype::SETPART_AGG_FWHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
-
-   if( sctype == scoretype::BENDERS)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "experimental score to evaluate benders decompositions")  ;
-
-
-   SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
-
-   return copy;
-
 }
 
 
@@ -1471,40 +1358,16 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
 
 /*
  * @brief help method to access seeedpool for unpresolved problem
- * @TODO: consider deleting this method will be deleted if the corresponding wrapper classes are introduced
  * @returns pointer to seeedpool wrapper data structure
  */
-SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(
-   SCIP*                 scip                /* SCIP data structure */
-   ){
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   SEEEDPOOL_WRAPPER* help;
-
-   assert(scip != NULL);
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert( conshdlr != NULL );
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   help = (SEEEDPOOL_WRAPPER*) conshdlrdata->seeedpoolunpresolved;
-
-   return (SEEEDPOOL_WRAPPER*) help;
-}
-
-/*
- * @brief help method to access seeedpool for transformed problem
- * @TODO: consider deleting this method will be deleted if the corresponidng wrapper classes are introduced
- * @returns pointer to seeedpool wrapper data structure
- */
-SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolExtern(
+SEEED_WRAPPER* SCIPconshdlrDecompGetSeeedpoolUnpresolved(
    SCIP*                 scip                /* SCIP data structure */
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   SEEEDPOOL_WRAPPER* help;
+   SEEED_WRAPPER* help;
+
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert( conshdlr != NULL );
@@ -1512,9 +1375,32 @@ SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolExtern(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   help = (SEEEDPOOL_WRAPPER*) conshdlrdata->seeedpool;
+   help->seeedpool = conshdlrdata->seeedpoolunpresolved;
 
-   return (SEEEDPOOL_WRAPPER*) help;
+   return help;
+}
+
+/*
+ * @brief help method to access seeedpool for transformed problem
+ * @returns pointer to seeedpool wrapper data structure
+ */
+SEEED_WRAPPER* SCIPconshdlrDecompGetSeeedpool(
+   SCIP*                 scip                /* SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SEEED_WRAPPER* help;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   help->seeedpool = conshdlrdata->seeedpool;
+
+   return help;
 
 }
 
@@ -2850,34 +2736,8 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
 
 
 /*
- * @brief returns if there is a decomposition that is currently selected by the user (done in explore menu)
- * @param scip SCIP data structure
- * @returns TRUE if there is a decomposition that is currently selected by the user (done in explore menu)
- */
-SCIP_Bool SCIPconshdlrDecompExistsSelected(
-   SCIP* scip     /* SCIP data structure */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-    SCIP_CONSHDLRDATA* conshdlrdata;
-
-    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-    if( conshdlr == NULL )
-    {
-       SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-       return SCIP_ERROR;
-    }
-
-    conshdlrdata = SCIPconshdlrGetData(conshdlr);
-    assert(conshdlrdata != NULL);
-
-    return conshdlrdata->selectedexists;
-}
-
-
-/*
- * @brief initilizes the candidates data structures with selected seeeds (or all if there are no selected seeeds) and sort them according to the current scoretype
+ * @brief initilizes the candidates data structures with selected seeeds
+ * (or all if there are no selected seeeds) and sort them according to the current scoretype
  * @param scip SCIP data structure
  * @param updatelist whether or not the seeed list should be updated
  * @returns SCIP return code
@@ -2962,11 +2822,11 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
       SeeedPtr seeed = *seeediter ;
       if( seeed->isComplete() && !seeed->isFromUnpresolved() )
       {
-         conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) ) );
+         conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, seeed->getScore(SCIPconshdlrDecompGetScoretype(scip)) ) );
       }
       if( seeed->isComplete() && seeed->isFromUnpresolved() )
       {
-         conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, SCIPconshdlrDecompAdaptScore(scip, seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) ) ) );
+         conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, SCIPconshdlrDecompAdaptScore(scip, seeed->getScore(SCIPconshdlrDecompGetScoretype(scip)) ) ) );
       }
    }
 
@@ -2975,7 +2835,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    for( ; seeediter != seeediterend; ++seeediter )
    {
-      conshdlrdata->candidates->push_back(std::pair<SeeedPtr, SCIP_Real>(*seeediter, (*seeediter)->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) )  );
+      conshdlrdata->candidates->push_back(std::pair<SeeedPtr, SCIP_Real>(*seeediter, (*seeediter)->getScore(SCIPconshdlrDecompGetScoretype(scip)) )  );
    }
 
    seeediter = finishedunpresolved.begin();
@@ -2983,7 +2843,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    for( ; seeediter != seeediterend; ++seeediter )
    {
-      conshdlrdata->candidates->push_back(std::pair<SeeedPtr, SCIP_Real>(*seeediter, SCIPconshdlrDecompAdaptScore(scip, (*seeediter)->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) ) ) );
+      conshdlrdata->candidates->push_back(std::pair<SeeedPtr, SCIP_Real>(*seeediter, SCIPconshdlrDecompAdaptScore(scip, (*seeediter)->getScore(SCIPconshdlrDecompGetScoretype(scip)) ) ) );
    }
 
    /* sort decomp candidates according score */
@@ -4920,6 +4780,7 @@ SCIP_RETCODE GCGprintDecompInformation(
    return SCIP_OKAY;
 }
 
+
 /*
  * @brief method to update the list of incomplete decompositions
  *
@@ -5010,6 +4871,25 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    return SCIP_OKAY;
 }
 
+
+SCORETYPE SCIPconshdlrDecompGetScoretype(
+   SCIP*          scip  /* SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   return  static_cast<scoretype>(conshdlrdata->currscoretype);
+}
+
+
 int GCGgetSelectFirstIdToVisu(
    SCIP*          scip  /* SCIP data structure */
    )
@@ -5097,23 +4977,6 @@ std::vector<SeeedPtr>* GCGgetSelectList(
    return conshdlrdata->listall;
 }
 
-void GCGsetSelectList(
-   SCIP*          scip,  /* SCIP data structure */
-   std::vector<SeeedPtr>* list
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   assert(scip != NULL);
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert( conshdlr != NULL );
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   conshdlrdata->listall = list;
-}
 
 std::vector<int>* GCGgetSelectIds(
    SCIP*          scip  /* SCIP data structure */
@@ -5185,7 +5048,8 @@ void GCGsetSelectExists(
    conshdlrdata->selectedexists = selected;
 }
 
-int GCGgetSelectSeeedCounter(
+
+SeeedPtr GCGgetSelectCurrUserSeeed(
    SCIP*          scip  /* SCIP data structure */
    )
 {
@@ -5199,12 +5063,12 @@ int GCGgetSelectSeeedCounter(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return conshdlrdata->seeedcounter;
+   return conshdlrdata->curruserseeed;
 }
 
-void GCGsetSelectSeeedCounter(
+void GCGsetSelectCurrUserSeeed(
    SCIP*          scip,  /* SCIP data structure */
-   int            counter
+   SeeedPtr       seeed
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -5217,5 +5081,40 @@ void GCGsetSelectSeeedCounter(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   conshdlrdata->seeedcounter = counter;
+   conshdlrdata->curruserseeed = seeed;
+}
+
+SeeedPtr GCGgetSelectLastUserSeeed(
+   SCIP*          scip  /* SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->lastuserseeed;
+}
+
+void GCGsetSelectLastUserSeeed(
+   SCIP*          scip,  /* SCIP data structure */
+   SeeedPtr       seeed
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   conshdlrdata->lastuserseeed = seeed;
 }
