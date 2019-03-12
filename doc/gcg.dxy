@@ -230,7 +230,6 @@ TAB_SIZE               = 8
 
 ALIASES                = "GCG=<a href=http://gcg.or.rwth-aachen.de</a>"\
                          "SCIP=<a href=http://scip.zib.de>SCIP</a>"\
-                         "BUGEMAIL=\htmlonly gcg-bugs<img src=pictures/klammeraffe.png alt=klammeraffe>or.rwth-aachen.de\endhtmlonly"
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding "class=itcl::class"
@@ -891,8 +890,7 @@ EXAMPLE_RECURSIVE      = NO
 # that contain images that are to be included in the documentation (see the
 # \image command).
 
-IMAGE_PATH             = html/pictures/ \
-                         ./resources/img
+IMAGE_PATH             = ./resources/pictures
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -1153,7 +1151,7 @@ HTML_EXTRA_STYLESHEET  =
 # files will be copied as-is; there are no commands or markers available.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_FILES       = html/pictures/klammeraffe.png
+HTML_EXTRA_FILES       =
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to

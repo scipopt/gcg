@@ -35,6 +35,11 @@ IMPORTANT: The filename must match the page identifier (xy.md <-> "{#xy}")
 - You can move and create folders as you like inside 'resources',
 but remember to add your folder path to INPUT in gcg.dxy (line 787).
 
+**How can I add pictures to my page?**
+- Copy your picture to doc/pictures/. If used in a md/dox file, it will automatically
+be moved to the html/ folder.
+- Add a tag `![Pic Title](filename.png)`
+- If you need to control the image size, use HTML: `<img src="../../img/rout-cC-5.png" alt="alt text" width="50%" />`
 
 # Markdown Basics #
 This is a piece of code. <!-- C indicates that C language syntax is recognized. -->
@@ -48,15 +53,3 @@ This is a piece of inline code.
 - \ref doc "Title of the link to this page"
 - [This is the title of the link to Google](https://www.google.com)
 - <a href="https://www.google.com">Another Link to Google</a>
-
-images can be easily included with the `!` command:
-
-![instance MIPLIB2003/rout with 5 blocks](../../img/rout-cC-5.png)
-
-we need to discuss where images are located; meanwhile use the `../img/` folder
-
-if you need to control the image size, the only way appears to use `HTML` code:
-
-```
-<img src="../../img/rout-cC-5.png" alt="alt text" width="50%"></img>
-```

@@ -6,5 +6,5 @@ Welcome to the official GCG Guide and Documentation. <a href="../index.html">Bac
 - \ref devs
 
 
-![instance MIPLIB2003/rout with 5 blocks](../../img/rout-cC-5.png)
+![instance MIPLIB2003/rout with 5 blocks](rout-cC-5.png)
 @version  3.1.0

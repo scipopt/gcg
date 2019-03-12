@@ -59,8 +59,8 @@
             </p>
             <table style="margin:2em 0 2em">
               <tr>
-                <td style="text-align:center;"><img src="./img/rout-cC-5.png" style="width: 70%" alt="before detection"></td>
-                <td><img src="./img/rout-cC-5.png" style="width: 70%" alt="after detection"></td>
+                <td style="text-align:center;"><img src="rout-cC-5.png" style="width: 70%" alt="before detection"></td>
+                <td><img src="rout-cC-5.png" style="width: 70%" alt="after detection"></td>
               </tr>
             </table>
             <p>
