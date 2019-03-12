@@ -53,3 +53,5 @@ This is a piece of inline code.
 - \ref doc "Title of the link to this page"
 - [This is the title of the link to Google](https://www.google.com)
 - <a href="https://www.google.com">Another Link to Google</a>
+
+__For more information on Basic Markdown Syntax, visit [this page](https://help.github.com/en/articles/basic-writing-and-formatting-syntax).__
