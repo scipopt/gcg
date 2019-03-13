@@ -109,7 +109,7 @@ SCIP_RETCODE writeAllDecompositions(
 
    )
 {
-   char filename[SCIP_MAXSTRLEN];
+   char extension[SCIP_MAXSTRLEN];
    char dirname[SCIP_MAXSTRLEN];
    char* tmp;
    SCIP_Bool endoffile;
@@ -133,7 +133,7 @@ SCIP_RETCODE writeAllDecompositions(
 
    SCIPdebugMessage("dirname: %s\n", tmp);
 
-   strcpy(dirname, tmp);
+   snprintf(dirname, sizeof(dirname), "%s", tmp);
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, tmp, TRUE) );
 
@@ -147,63 +147,41 @@ SCIP_RETCODE writeAllDecompositions(
    mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
 
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &tmp, &endoffile) );
-   strcpy(filename, tmp);
+   snprintf(extension, sizeof(extension), "%s", tmp);
 
-   if( filename[0] != '\0' )
+   if( extension[0] != '\0' )
    {
-      char* extension;
-      extension = filename;
+      SCIP_RETCODE retcode;
+
       SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, extension, TRUE) );
 
-      do
+      retcode = DECwriteAllDecomps(scip, dirname, extension, original, presolved);
+
+      if( retcode == SCIP_FILECREATEERROR )
       {
-         SCIP_RETCODE retcode = DECwriteAllDecomps(scip, dirname, extension, original, presolved);
-
-         if( retcode == SCIP_FILECREATEERROR )
-         {
-            SCIPdialogMessage(scip, NULL, "error creating files\n");
-            SCIPdialoghdlrClearBuffer(dialoghdlr);
-            break;
-         }
-         else if( retcode == SCIP_WRITEERROR )
-         {
-            SCIPdialogMessage(scip, NULL, "error writing files\n");
-            SCIPdialoghdlrClearBuffer(dialoghdlr);
-            break;
-         }
-         else if( retcode == SCIP_PLUGINNOTFOUND )
-         {
-            /* ask user once for a suitable reader */
-            if( extension == NULL )
-            {
-               SCIPdialogMessage(scip, NULL, "no reader for requested output format\n");
-
-               SCIPdialogMessage(scip, NULL, "following readers are avaliable for writing:\n");
-               displayReaders(scip, FALSE, TRUE);
-
-               SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
-                     "select a suitable reader by extension (or return): ", &extension, &endoffile) );
-
-               if( extension[0] == '\0' )
-                  break;
-            }
-            else
-            {
-               SCIPdialogMessage(scip, NULL, "no reader for output in <%s> format\n", extension);
-               extension = NULL;
-            }
-         }
-         else
-         {
-            /* check for unexpected errors */
-            SCIP_CALL( retcode );
-
-            /* print result message if writing was successful */
-            SCIPdialogMessage(scip, NULL, "written all decompositions %s\n", extension);
-            break;
-         }
+         SCIPdialogMessage(scip, NULL, "error creating files\n");
+         SCIPdialoghdlrClearBuffer(dialoghdlr);
       }
-      while (extension != NULL );
+      else if( retcode == SCIP_WRITEERROR )
+      {
+         SCIPdialogMessage(scip, NULL, "error writing files\n");
+         SCIPdialoghdlrClearBuffer(dialoghdlr);
+      }
+      else if( retcode == SCIP_PLUGINNOTFOUND )
+      {
+         SCIPdialogMessage(scip, NULL, "The chosen output format (%s) is unknown.\n", extension);
+         SCIPdialogMessage(scip, NULL, "The following readers are available for writing:\n");
+         displayReaders(scip, FALSE, TRUE);
+      }
+      else
+      {
+         /* check for unexpected errors */
+         SCIP_CALL( retcode );
+
+         /* print result message if writing was successful */
+         SCIPdialogMessage(scip, NULL, "All selected decompositions were written (directory: %s, format: %s).\n",
+               dirname, extension);
+      }
    }
 
    return SCIP_OKAY;
@@ -219,7 +197,7 @@ SCIP_RETCODE writeSelectedDecompositions(
    SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
    )
 {
-   char filename[SCIP_MAXSTRLEN];
+   char extension[SCIP_MAXSTRLEN];
    char dirname[SCIP_MAXSTRLEN];
    char* tmp;
    SCIP_Bool endoffile;
@@ -243,7 +221,7 @@ SCIP_RETCODE writeSelectedDecompositions(
 
    SCIPdebugMessage("dirname: %s\n", tmp);
 
-   strcpy(dirname, tmp);
+   snprintf(dirname, sizeof(dirname), "%s", tmp);
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, tmp, TRUE) );
 
@@ -257,63 +235,41 @@ SCIP_RETCODE writeSelectedDecompositions(
    mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
 
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &tmp, &endoffile) );
-   strcpy(filename, tmp);
+   snprintf(extension, sizeof(extension), "%s", tmp);
 
-   if( filename[0] != '\0' )
+   if( extension[0] != '\0' )
    {
-      char* extension;
-      extension = filename;
+      SCIP_RETCODE retcode;
+
       SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, extension, TRUE) );
 
-      do
+      retcode = DECwriteSelectedDecomps(scip, dirname, extension);
+
+      if( retcode == SCIP_FILECREATEERROR )
       {
-         SCIP_RETCODE retcode = DECwriteSelectedDecomps(scip, dirname, extension);
-
-         if( retcode == SCIP_FILECREATEERROR )
-         {
-            SCIPdialogMessage(scip, NULL, "error creating files\n");
-            SCIPdialoghdlrClearBuffer(dialoghdlr);
-            break;
-         }
-         else if( retcode == SCIP_WRITEERROR )
-         {
-            SCIPdialogMessage(scip, NULL, "error writing files\n");
-            SCIPdialoghdlrClearBuffer(dialoghdlr);
-            break;
-         }
-         else if( retcode == SCIP_PLUGINNOTFOUND )
-         {
-            /* ask user once for a suitable reader */
-            if( extension == NULL )
-            {
-               SCIPdialogMessage(scip, NULL, "no reader for requested output format\n");
-
-               SCIPdialogMessage(scip, NULL, "following readers are avaliable for writing:\n");
-               displayReaders(scip, FALSE, TRUE);
-
-               SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
-                     "select a suitable reader by extension (or return): ", &extension, &endoffile) );
-
-               if( extension[0] == '\0' )
-                  break;
-            }
-            else
-            {
-               SCIPdialogMessage(scip, NULL, "no reader for output in <%s> format\n", extension);
-               extension = NULL;
-            }
-         }
-         else
-         {
-            /* check for unexpected errors */
-            SCIP_CALL( retcode );
-
-            /* print result message if writing was successful */
-            SCIPdialogMessage(scip, NULL, "written all decompositions %s\n", extension);
-            break;
-         }
+         SCIPdialogMessage(scip, NULL, "error creating files\n");
+         SCIPdialoghdlrClearBuffer(dialoghdlr);
       }
-      while (extension != NULL );
+      else if( retcode == SCIP_WRITEERROR )
+      {
+         SCIPdialogMessage(scip, NULL, "error writing files\n");
+         SCIPdialoghdlrClearBuffer(dialoghdlr);
+      }
+      else if( retcode == SCIP_PLUGINNOTFOUND )
+      {
+         SCIPdialogMessage(scip, NULL, "The chosen output format (%s) is unknown.\n", extension);
+         SCIPdialogMessage(scip, NULL, "The following readers are available for writing:\n");
+         displayReaders(scip, FALSE, TRUE);
+      }
+      else
+      {
+         /* check for unexpected errors */
+         SCIP_CALL( retcode );
+
+         /* print result message if writing was successful */
+         SCIPdialogMessage(scip, NULL, "All selected decompositions were written (directory: %s, format: %s).\n",
+                 dirname, extension);
+      }
    }
 
    return SCIP_OKAY;

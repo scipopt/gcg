@@ -6051,9 +6051,9 @@ SCIP_RETCODE DECwriteSelectedDecomps(
       conshdlrdata->seeedtowrite = seeed;
 
       if ( seeed->isFromUnpresolved() )
-         SCIP_CALL( SCIPwriteOrigProblem(scip, outname, extension, FALSE) );
+         SCIP_CALL_QUIET( SCIPwriteOrigProblem(scip, outname, extension, FALSE) );
       else
-         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
+         SCIP_CALL_QUIET( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
       conshdlrdata->seeedtowrite = NULL;
    }
@@ -6165,7 +6165,7 @@ SCIP_RETCODE DECwriteAllDecomps(
 
       conshdlrdata->seeedtowrite = seeed;
 
-      SCIP_CALL( SCIPwriteOrigProblem(scip, outname, extension, FALSE) );
+      SCIP_CALL_QUIET( SCIPwriteOrigProblem(scip, outname, extension, FALSE) );
       ++nwritten;
       conshdlrdata->seeedtowrite = NULL;
 
