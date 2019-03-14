@@ -62,24 +62,25 @@ This detector calculates cons-cons adjacency (if not already done), and sorts co
 #define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
-#define DEC_DECCHAR               'd'         /**< display character of detector */
+#define DEC_DECCHAR               'n'         /**< display character of detector */
 #define DEC_ENABLED               TRUE        /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       FALSE       /**< should the detection of the original problem be enabled */
-#define DEC_ENABLEDFINISHING      FALSE        /**< should the detection be enabled */
-#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
+#define DEC_ENABLEDFINISHING      FALSE       /**< should the detection be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE       /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+
+#define DEFAULT_MAXRATIO          0.2
 
 /*
  * Data structures
  */
 
-/** @todo fill in the necessary detector data */
-
 /** detector handler data */
 struct DEC_DetectorData
 {
+   SCIP_Real maxratio;
 };
 
 /*
@@ -99,37 +100,29 @@ struct sort_pred {
  */
 
 /** destructor of detector to free user data (called when GCG is exiting) */
-#define freeNeighborhoodmaster NULL
+DEC_DECL_FREEDETECTOR(freeNeighborhoodmaster)
+{ /*lint --e{715}*/
+
+   DEC_DETECTORDATA *detectordata;
+
+   assert(scip != NULL);
+   assert(detector != NULL);
+
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+
+   SCIPfreeMemory(scip, &detectordata);
+
+   return SCIP_OKAY;
+}
 
 /** destructor of detector to free detector data (called before the solving process begins) */
-#if 0
-static
-DEC_DECL_EXITDETECTOR(exitNeighborhoodmaster)
-{ /*lint --e{715}*/
-
-   SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define exitNeighborhoodmaster NULL
-#endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
-#if 0
-static
-DEC_DECL_INITDETECTOR(initNeighborhoodmaster)
-{ /*lint --e{715}*/
-
-   SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define initNeighborhoodmaster NULL
-#endif
 
 #define detectNeighborhoodmaster NULL
 
@@ -148,10 +141,13 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedNeighborhoodmaster)
   gcg::Seeed* seeedOrig;
   gcg::Seeed* seeed;
 
+  DEC_DetectorData* detectorData;
+
+  detectorData = DECdetectorGetData(detector);
+
   seeedOrig = seeedPropagationData->seeedToPropagate;
   std::stringstream decdesc;
 
-  SCIP_Real maxratio = 0.2;
   int maxdiff = -1;
   int maxdiffindex = -1;
   int lastindex = -1;
@@ -167,8 +163,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedNeighborhoodmaster)
   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-  lastindex =  maxratio * seeed->getNOpenconss();
-
+  lastindex = (int) (detectorData->maxratio * seeed->getNOpenconss());
 
   /** book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
   for( int i = 0; i < seeed->getNOpenconss(); ++i )
@@ -299,15 +294,23 @@ SCIP_RETCODE SCIPincludeDetectorNeighborhoodmaster(SCIP* scip /**< SCIP data str
 {
    DEC_DETECTORDATA* detectordata;
 
-   /**@todo create neighborhoodmaster detector data here*/
    detectordata = NULL;
+
+   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+   assert(detectordata != NULL);
 
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata,
-         detectNeighborhoodmaster, freeNeighborhoodmaster, initNeighborhoodmaster, exitNeighborhoodmaster, propagateSeeedNeighborhoodmaster, NULL, NULL, finishSeeedNeighborhoodmaster, detectorPostprocessSeeedNeighborhoodmaster, setParamAggressiveNeighborhoodmaster, setParamDefaultNeighborhoodmaster, setParamFastNeighborhoodmaster));
+         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
+         DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+         DEC_LEGACYMODE, detectordata, detectNeighborhoodmaster, freeNeighborhoodmaster, initNeighborhoodmaster,
+         exitNeighborhoodmaster, propagateSeeedNeighborhoodmaster, NULL, NULL, finishSeeedNeighborhoodmaster,
+         detectorPostprocessSeeedNeighborhoodmaster, setParamAggressiveNeighborhoodmaster,
+         setParamDefaultNeighborhoodmaster, setParamFastNeighborhoodmaster));
 
-   /**@todo add neighborhoodmaster detector parameters */
+   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/neighborhoodmaster/maxratio",
+         "the maximal ratio of open constraints that are assigned to the master problem",
+         &detectordata->maxratio, FALSE, DEFAULT_MAXRATIO, 0.0, 1.0, NULL, NULL ) );
 
    return SCIP_OKAY;
 }
