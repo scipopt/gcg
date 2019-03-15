@@ -15,6 +15,8 @@ Command line interface:
 
 - 'write matrix' and 'write origmatrix' for writing a gnuplot file showing the coefficient matrix
 
+- 'write selecteddecompositions' for writing all selected (in explore submenu) decompositions
+
 New/changed parameters:
 -----------------------
 
