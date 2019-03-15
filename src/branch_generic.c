@@ -161,7 +161,7 @@ SCIP_RETCODE addVarToMasterbranch(
 
    *added = FALSE;
 
-   if( ( GCGvarGetBlock(mastervar) == -1 && GCGbranchGenericBranchdataGetConsblocknr(branchdata) != -1 )  || !GCGisMasterVarInBlock(mastervar, GCGbranchGenericBranchdataGetConsblocknr(branchdata)) )
+   if( GCGvarGetBlock(mastervar) == -1 || GCGbranchGenericBranchdataGetConsblocknr(branchdata) == -3 || !GCGisMasterVarInBlock(mastervar, GCGbranchGenericBranchdataGetConsblocknr(branchdata)) )
       return SCIP_OKAY;
 
    SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata));
