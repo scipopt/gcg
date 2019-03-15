@@ -3160,6 +3160,13 @@ const int* Seeedpool::getConssForCons(
    return & conssadjacencies[cons][0];
 }
 
+/** returns whether or not the constraint-constraint adjacency data structure is initilized */
+SCIP_Bool Seeedpool::isConssAdjInitilized(
+)
+{
+   return ( conssadjacencies.size() != 0 );
+}
+
 
 
 /** returns the number of variables for a given constraint */
