@@ -195,6 +195,7 @@
 #include "dec_mastersetpack.h"
 #include "dec_mastersetpart.h"
 #include "dec_mastersetcover.h"
+#include "dec_neighborhoodmaster.h"
 #include "dec_hrcgpartition.h"
 #include "dec_hrgpartition.h"
 #include "dec_hcgpartition.h"
@@ -374,6 +375,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorConsclass(scip) );
    SCIP_CALL( SCIPincludeDetectorConsname(scip) );
    SCIP_CALL( SCIPincludeDetectorDensemasterconss(scip) );
+   SCIP_CALL( SCIPincludeDetectorNeighborhoodmaster(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );

@@ -320,6 +320,12 @@ public:
       SCIP_Bool* success
       );
 
+   /**
+    * @brief returns whether or not the constraint-constraint adjacency data structure is initilized
+    */
+   SCIP_Bool isConssAdjInitilized();
+
+
 
    /**
     * @brief check if seeed is a duplicate of an existing incomplete seeed

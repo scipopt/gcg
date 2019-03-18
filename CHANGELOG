@@ -1,6 +1,9 @@
 GCG Version 3.1.0
 =================
 
+New features:
+-------------
+- new detector neighborhoodmaster: calculating cons-cons adjacency (if not already done), sorting according size of neighborhood. Searching two consecutive constraints with largest size difference (according neighborhood size) in sorted constraints. All constraints having a larger neighborhood than the second one are assigned to the master.
 
 
 
@@ -11,6 +14,8 @@ Command line interface:
 -----------------------
 
 - 'write matrix' and 'write origmatrix' for writing a gnuplot file showing the coefficient matrix
+
+- 'write selecteddecompositions' for writing all selected (in explore submenu) decompositions
 
 New/changed parameters:
 -----------------------

@@ -593,6 +593,15 @@ SCIP_RETCODE DECdetectStructure(
    );
 
 
+/** writes all selected decompositions */
+extern
+SCIP_RETCODE DECwriteSelectedDecomps(
+   SCIP*                 scip,               /**< SCIP data structure */
+   char*                 directory,          /**< directory for decompositions */
+   char*                 extension           /**< extension for decompositions */
+   );
+
+
 /** write out all known decompositions
  * @returns SCIP return code  */
 extern
