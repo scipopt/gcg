@@ -3117,7 +3117,7 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
       /* start root node time clock */
-      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) && !SCIPclockIsRunning(relaxdata->rootnodetime) )
+      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
       {
          SCIP_CALL( SCIPstartClock(scip, relaxdata->rootnodetime) );
          SCIPdebugMessage("  root node time clock started.\n");
