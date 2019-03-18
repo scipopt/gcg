@@ -3167,17 +3167,17 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
          SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
                GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
       }
+
+      /* stop root node clock */
+      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip))
+      {
+         SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+         SCIPdebugMessage("  root node time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+      }
    }
    else
    {
       SCIPdebugMessage("Problem has been already solved at this node\n");
-   }
-
-   /* stop root node clock */
-   if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) && SCIPclockIsRunning(relaxdata->rootnodetime))
-   {
-      SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
-      SCIPdebugMessage("  root node time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
    }
 
    return SCIP_OKAY;
