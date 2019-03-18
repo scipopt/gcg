@@ -826,52 +826,32 @@ void GCGsetSelectFirstIdToVisu(
    int            id     /**< id to start at */
    );
 
-/** @brief Gets number of decompositions to be displayed at once in explore menu
- *  @returns id to start with */
-int GCGgetSelectVisuLength(
-   SCIP*          scip  /**< SCIP data structure */
-   );
 
-
-/** @brief sets number of decompositions to be displayed at once in explore menu */
-void GCGsetSelectVisuLength(
-   SCIP*          scip,    /**< SCIP data structure */
-   int            length   /**< number of rows */
-   );
-
-/** @brief Gets a list of ids of the current decomps to be shown in explore menu
+/** @brief Gets a list of ids of the current seeeds that are finished or to be finished
  *
- * (to visualize, write, consider for family tree, consider for solving etc. )
+ *  @note recommendation: when in doubt plan for as many ids as seeeds
+ *  \see SCIPconshdlrDecompGetNSeeeds
+ *  @returns scip return code */
+SCIP_RETCODE SCIPconshdlrDecompGetSeeedLeafList(
+   SCIP*          scip,       /**< SCIP data structure */
+   int**          idlist,     /**< id list to output to */
+   int*           listlength  /**< length of output list */
+   );
+
+
+/** @brief Gets a list of ids of all currently selected seeeds
  *  @returns list of seeeds */
-int** GCGgetSelectList(
-   SCIP*          scip  /**< SCIP data structure */
+SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
+   SCIP*          scip,       /**< SCIP data structure */
+   int**          idlist,     /**< id list to output to */
+   int*           listlength  /**< length of output list */
    );
 
-
-/** @brief Gets a vector containing the indices of selected decompositions in explore menu
- *  @returns list of seeeds */
-std::vector<int>* GCGgetSelectIds(
-   SCIP*          scip  /**< SCIP data structure */
-   );
-
-
-/** @brief Sets the vector containing the indices of selected decompositions in explore menu */
-void GCGsetSelectIds(
-   SCIP*          scip,          /**< SCIP data structure */
-   std::vector<int>* list   /**< current list of seeeds */
-   );
 
 /** @brief Gets whether there are selected decompositions
  *  @returns true iff there are selected decompositions */
-SCIP_Bool GCGgetSelectExists(
+SCIP_Bool SCIPconshdlrDecompGetSelectExists(
    SCIP*          scip  /**< SCIP data structure */
-   );
-
-
-/** @brief Sets whether there are selected decompositions */
-void GCGsetSelectExists(
-   SCIP*          scip,          /**< SCIP data structure */
-   SCIP_Bool      selected       /**< input true iff there are selected decompositions */
    );
 
 

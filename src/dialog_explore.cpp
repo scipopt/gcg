@@ -33,6 +33,8 @@
 #include "cons_decomp.h"
 #include "wrapper_seeed.h"
 
+#define DEFAULT_MENULENGTH 10
+
 typedef gcg::Seeed* SeeedPtr;
 
 
@@ -239,7 +241,7 @@ SCIP_RETCODE SCIPdialogShowListExtract(
 
    seeedlist = GCGgetSelectList(scip);
 
-   for( i = GCGgetSelectFirstIdToVisu(scip); i < (size_t) GCGgetSelectFirstIdToVisu(scip) + (size_t) GCGgetSelectVisuLength(scip) && i < seeedlist->size(); ++i)
+   for( i = GCGgetSelectFirstIdToVisu(scip); i < (size_t) GCGgetSelectFirstIdToVisu(scip) + (size_t) DEFAULT_MENULENGTH && i < seeedlist->size(); ++i)
    {
       SeeedPtr seeed;
       seeed = seeedlist->at(i);
@@ -400,38 +402,6 @@ SCIP_RETCODE SCIPdialogShowHelp(
    return SCIP_OKAY;
 }
 
-/** Modifies the number of presented seeeds in the explore menu via dialog
- *
- * @returns SCIP status */
-static
-SCIP_RETCODE SCIPdialogModifyNVisualized(
-   SCIP*                   scip,       /**< SCIP data structure */
-   SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
-   )
-{
-   char* ntovisualize;
-   SCIP_Bool endoffile;
-   int newval;
-
-   int commandlen;
-
-   assert(scip != NULL);
-
-   SCIPdialogMessage(scip, NULL, "Please specify the maximum number of decompositions displayed at once in the table [%d]:\n",
-      GCGgetSelectVisuLength(scip) );
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
-   commandlen = strlen(ntovisualize);
-
-   newval = GCGgetSelectVisuLength(scip);
-   if( commandlen != 0)
-      newval = atoi(ntovisualize);
-
-   if (newval != 0)
-      GCGsetSelectVisuLength(scip, newval);
-
-   return SCIP_OKAY;
-}
 
 /** shows a visualization of current user seeed
  *
@@ -830,7 +800,7 @@ SCIP_RETCODE SCIPdialogToolboxChoose(
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntochoose, &endoffile) );
    commandlen = strlen(ntochoose);
 
-   idtochoose = GCGgetSelectVisuLength(scip);
+   idtochoose = DEFAULT_MENULENGTH;
    if( commandlen != 0)
       idtochoose = atoi(ntochoose);
 
@@ -1324,7 +1294,6 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    int commandlen;
    SCIP_Bool selectedsomeseeed;
    int nseeeds;
-   int pagelength;
 
    selectedsomeseeed = TRUE;
 
@@ -1362,19 +1331,18 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       commandlen = strlen(command);
 
       nseeeds = (int) GCGgetSelectList(scip)->size();
-      pagelength = GCGgetSelectVisuLength(scip);
       if( strncmp( command, "back", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, GCGgetSelectFirstIdToVisu(scip) - pagelength);
+         GCGsetSelectFirstIdToVisu(scip, GCGgetSelectFirstIdToVisu(scip) - DEFAULT_MENULENGTH);
          if(GCGgetSelectFirstIdToVisu(scip) < 0 )
             GCGsetSelectFirstIdToVisu(scip, 0);
          continue;
       }
       if( strncmp( command, "next", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, (GCGgetSelectFirstIdToVisu(scip) + pagelength));
-         if( GCGgetSelectFirstIdToVisu(scip) > nseeeds - pagelength )
-            GCGsetSelectFirstIdToVisu(scip, nseeeds - pagelength);
+         GCGsetSelectFirstIdToVisu(scip, (GCGgetSelectFirstIdToVisu(scip) + DEFAULT_MENULENGTH));
+         if( GCGgetSelectFirstIdToVisu(scip) > nseeeds - DEFAULT_MENULENGTH )
+            GCGsetSelectFirstIdToVisu(scip, nseeeds - DEFAULT_MENULENGTH);
          continue;
       }
       if( strncmp( command, "top", commandlen) == 0 )
@@ -1384,7 +1352,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       }
       if( strncmp( command, "end", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, nseeeds - pagelength);
+         GCGsetSelectFirstIdToVisu(scip, nseeeds - DEFAULT_MENULENGTH);
          continue;
       }
 
@@ -1415,12 +1383,6 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       {
          finished = TRUE;
          selectedsomeseeed = FALSE;
-         continue;
-      }
-
-      if( strncmp( command, "change number displayed", commandlen) == 0 )
-      {
-         SCIP_CALL(SCIPdialogModifyNVisualized(scip, dialoghdlr, dialog) );
          continue;
       }
 
@@ -1808,7 +1770,7 @@ SCIP_RETCODE SCIPdialogExploreSelect(
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
    commandlen = strlen(ntovisualize);
 
-   idtovisu = GCGgetSelectVisuLength(scip);
+   idtovisu = DEFAULT_MENULENGTH;
    if( commandlen != 0)
       idtovisu = atoi(ntovisualize);
 
@@ -1851,7 +1813,6 @@ SCIP_RETCODE SCIPdialogExecSelect(
    SCIP_Bool         finished;
    char* command;
    SCIP_Bool endoffile;
-   int pagelength;
    int nseeeds;
 
    SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
@@ -1871,20 +1832,19 @@ SCIP_RETCODE SCIPdialogExecSelect(
 
       commandlen = strlen(command);
 
-      pagelength = GCGgetSelectVisuLength(scip);
       nseeeds = (int) GCGgetSelectList(scip)->size();
       if( strncmp( command, "back", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, (GCGgetSelectFirstIdToVisu(scip) - pagelength));
+         GCGsetSelectFirstIdToVisu(scip, (GCGgetSelectFirstIdToVisu(scip) - DEFAULT_MENULENGTH));
          if(GCGgetSelectFirstIdToVisu(scip) < 0 )
             GCGsetSelectFirstIdToVisu(scip, 0);
          continue;
       }
       if( strncmp( command, "next", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, (GCGgetSelectFirstIdToVisu(scip) + pagelength));
-         if( GCGgetSelectFirstIdToVisu(scip) > nseeeds - pagelength )
-            GCGsetSelectFirstIdToVisu(scip, nseeeds - pagelength);
+         GCGsetSelectFirstIdToVisu(scip, (GCGgetSelectFirstIdToVisu(scip) + DEFAULT_MENULENGTH));
+         if( GCGgetSelectFirstIdToVisu(scip) > nseeeds - DEFAULT_MENULENGTH )
+            GCGsetSelectFirstIdToVisu(scip, nseeeds - DEFAULT_MENULENGTH);
          continue;
       }
       if( strncmp( command, "top", commandlen) == 0 )
@@ -1894,7 +1854,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
       }
       if( strncmp( command, "end", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, nseeeds - pagelength);
+         GCGsetSelectFirstIdToVisu(scip, nseeeds - DEFAULT_MENULENGTH);
          continue;
       }
 
@@ -1908,12 +1868,6 @@ SCIP_RETCODE SCIPdialogExecSelect(
       if( strncmp( command, "legend", commandlen) == 0 )
       {
          SCIP_CALL(SCIPdialogShowLegend(scip) );
-         continue;
-      }
-
-      if( strncmp( command, "dispNEntries", commandlen) == 0 )
-      {
-         SCIP_CALL(SCIPdialogModifyNVisualized(scip, dialoghdlr, dialog) );
          continue;
       }
 
