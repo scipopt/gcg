@@ -35,8 +35,8 @@
 
 #define DEFAULT_MENULENGTH 10
 
-typedef gcg::Seeed* SeeedPtr;
-
+namespace gcg
+{
 
 /**
  * Gets the shortname of the given scoretype
@@ -153,7 +153,6 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    int nuserpresolvedpartial;
    int nuserunpresolvedfull;
    int nuserunpresolvedpartial;
-   std::vector<SeeedPtr>* seeedlist;
    char* scorename;
    size_t i;
 
@@ -165,24 +164,28 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    nuserpresolvedpartial = 0;
    nuserunpresolvedfull = 0;
    nuserunpresolvedpartial = 0;
-   seeedlist = GCGgetSelectList(scip);
+   int* idlist; //@todo SCIP malloc for nseeeds
+   int listlength;
+   SCIPconshdlrDecompGetSelectedSeeeds(scip, &idlist, &listlength);
 
    /* count corresponding seeeds */
-   for ( i = 0; i < seeedlist->size(); ++i )
+   for ( i = 0; i < listlength; ++i )
    {
-      SeeedPtr seeed;
-      seeed = seeedlist->at(i);
-      if( seeed->isComplete() && seeed->getUsergiven() == gcg::USERGIVEN::NOT && !seeed->isFromUnpresolved() )
+      Seeed_Wrapper sw;
+      GCGgetSeeedFromID(scip, idlist[i], sw);
+      Seeed* seeed;
+      seeed = sw->seeed;
+      if( seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::NOT && !seeed->isFromUnpresolved() )
          ++ndetectedpresolved;
-      if( seeed->isComplete() && seeed->getUsergiven() == gcg::USERGIVEN::NOT && seeed->isFromUnpresolved() )
+      if( seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::NOT && seeed->isFromUnpresolved() )
          ++ndetectedunpresolved;
-      if( seeed->isComplete() && ( seeed->getUsergiven() == gcg::USERGIVEN::COMPLETE || seeed->getUsergiven() == gcg::USERGIVEN::COMPLETED_CONSTOMASTER) && !seeed->isFromUnpresolved() )
+      if( seeed->isComplete() && ( seeed->getUsergiven() == USERGIVEN::COMPLETE || seeed->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER) && !seeed->isFromUnpresolved() )
          ++nuserpresolvedfull;
-      if( !seeed->isComplete() && seeed->getUsergiven() == gcg::USERGIVEN::PARTIAL && !seeed->isFromUnpresolved() )
+      if( !seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::PARTIAL && !seeed->isFromUnpresolved() )
          ++nuserpresolvedpartial;
-      if( seeed->isComplete() && ( seeed->getUsergiven() == gcg::USERGIVEN::COMPLETE || seeed->getUsergiven() == gcg::USERGIVEN::COMPLETED_CONSTOMASTER) && seeed->isFromUnpresolved() )
+      if( seeed->isComplete() && ( seeed->getUsergiven() == USERGIVEN::COMPLETE || seeed->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER) && seeed->isFromUnpresolved() )
          ++nuserunpresolvedfull;
-      if( !seeed->isComplete() && seeed->getUsergiven() == gcg::USERGIVEN::PARTIAL && seeed->isFromUnpresolved() )
+      if( !seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::PARTIAL && seeed->isFromUnpresolved() )
          ++nuserunpresolvedpartial;
 
    }
@@ -236,14 +239,18 @@ SCIP_RETCODE SCIPdialogShowListExtract(
    )
 {
    assert(scip != NULL);
-   std::vector<SeeedPtr>* seeedlist;
+   std::vector<Seeed*>* seeedlist;
    size_t i;
+
+   int* idlist; //@todo malloc for nseeeds
+   int listlength;
+   SCIPconshdlrDecompGetSeeedLeafList(scip, &idlist, listlength);
 
    seeedlist = GCGgetSelectList(scip);
 
    for( i = GCGgetSelectFirstIdToVisu(scip); i < (size_t) GCGgetSelectFirstIdToVisu(scip) + (size_t) DEFAULT_MENULENGTH && i < seeedlist->size(); ++i)
    {
-      SeeedPtr seeed;
+      Seeed* seeed;
       seeed = seeedlist->at(i);
 
       assert( seeed->checkConsistency( ) );
@@ -262,7 +269,7 @@ SCIP_RETCODE SCIPdialogShowListExtract(
       SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->isFromUnpresolved() ? "no" : "yes")  );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNOpenconss() );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNOpenvars() );
-      SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->getUsergiven() == gcg::USERGIVEN::NOT ? "no" : "yes")   );
+      SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->getUsergiven() == USERGIVEN::NOT ? "no" : "yes")   );
       SCIPdialogMessage(scip, NULL, "%3s  \n", (seeed->isSelected() ? "yes" : "no")  );
    }
 
@@ -433,7 +440,7 @@ SCIP_RETCODE SCIPdialogSelectVisualize(
    char* ntovisualize;
    SCIP_Bool endoffile;
    int idtovisu;
-   std::vector<SeeedPtr>* seeedlist;
+   std::vector<Seeed*>* seeedlist;
 
    int commandlen;
 
@@ -482,7 +489,7 @@ SCIP_RETCODE SCIPdialogSelectCalcStrongDecompositionScore(
    SCIP_Bool endoffile;
    int idtocalcstrong;
    int commandlen;
-   std::vector<SeeedPtr>* seeedlist;
+   std::vector<Seeed*>* seeedlist;
 
    assert( scip != NULL );
 
@@ -509,7 +516,7 @@ SCIP_RETCODE SCIPdialogSelectCalcStrongDecompositionScore(
    if( 0 <= idtocalcstrong && idtocalcstrong < (int) seeedlist->size() )
    {
       SCIP_Real score;
-      gcg::Seeedpool* seeedpool = seeedlist->at( idtocalcstrong )->getSeeedpool();
+      Seeedpool* seeedpool = seeedlist->at( idtocalcstrong )->getSeeedpool();
       seeedpool->calcStrongDecompositionScore(seeedlist->at( idtocalcstrong ), &score);
       SCIPdialogMessage( scip, NULL, "Strong decomposition score of this decomposition is %f.", score) ;
    }
@@ -539,7 +546,9 @@ SCIP_RETCODE SCIPdialogSelectInspect(
    SCIP_Bool endoffile;
    int idtoinspect;
    int detaillevel;
-   std::vector<SeeedPtr>* seeedlist;
+   std::vector<Seeed*> seeedlist;
+   int* idlist; //@todo malloc
+   int listlength;
 
    int commandlen;
 
@@ -555,8 +564,10 @@ SCIP_RETCODE SCIPdialogSelectInspect(
       idtoinspect = atoi( ntoinspect );
 
    /* check whether ID is in valid range */
-   seeedlist = GCGgetSelectList(scip);
-   if( idtoinspect < 0 || idtoinspect >= (int) seeedlist->size() )
+   SCIPconshdlrDecompGetSeeedLeafList(scip, &idlist, &listlength);
+
+   //@todo this range might noch be true any more when using the iternal ids
+   if( idtoinspect < 0 || idtoinspect >= listlength )
    {
       SCIPdialogMessage( scip, NULL, "This id is out of range." );
       return SCIP_PARAMETERWRONGVAL;
@@ -581,8 +592,392 @@ SCIP_RETCODE SCIPdialogSelectInspect(
    }
 
    /* call displayInfo method according to chosen parameters */
-   assert( 0 <= idtoinspect && idtoinspect < (int) seeedlist->size() );
-   seeedlist->at( idtoinspect )->displayInfo( detaillevel );
+   //@todo this assert might not work when using internal ids
+   assert( 0 <= idtoinspect && idtoinspect < listlength );
+   Seeed_Wrapper sw;
+   GCGgetSeeedFromID(scip, &idtoinspect, &sw);
+   sw->seeed->displayInfo( detaillevel );
+
+   return SCIP_OKAY;
+}
+
+
+/**
+ * @brief sets a variable by name to the linking variables in the current user seeed
+ * @returns SCIP return code
+ */
+static
+SCIP_RETCODE SCIPtoolboxUserSeeedSetVarToLinking(
+   SCIP*                 scip,                /**< SCIP data structure */
+   Seeed*                userseeed,           /**< user seeed to edit */
+   const char*           varname              /**< name of the variable */
+   )
+{
+   Seeedpool* currseeedpool;
+   int varindex;
+
+   if( userseeed == NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
+
+   currseeedpool = userseeed->isFromUnpresolved()
+      ? SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip)
+      : SCIPconshdlrDecompGetSeeedpool(scip);
+
+   varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
+
+   userseeed->bookAsLinkingVar(varindex);
+
+   return SCIP_OKAY;
+}
+
+/**
+ * @brief sets the number of blocks
+ *
+ * set the number of blocks in the current user seeed
+ * @returns SCIP return code
+ */
+extern
+SCIP_RETCODE SCIPtoolboxUserSeeedSetnumberOfBlocks(
+   SCIP*                 scip,                /**< SCIP data structure */
+   Seeed*                userseeed,           /**< user seeed to edit */
+   int                   nblocks              /**< number of blocks */
+   )
+{
+   if( userseeed == NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
+
+   userseeed->setNBlocks(nblocks);
+
+   return SCIP_OKAY;
+}
+
+
+/**
+ * @brief sets a variable by name to the master in the current user seeed
+ * @returns SCIP return code
+ */
+static
+SCIP_RETCODE SCIPtoolboxUserSeeedSetVarToMaster(
+   SCIP*                 scip,                /**< SCIP data structure */
+   Seeed*                userseeed,           /**< user seeed to edit */
+   const char*           varname              /**< name of the variable */
+   )
+{
+   Seeedpool* currseeedpool;
+   int varindex;
+
+   if( userseeed == NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
+
+   currseeedpool = userseeed->isFromUnpresolved()
+      ? SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip)
+      : SCIPconshdlrDecompGetSeeedpool(scip);
+
+   varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname) );
+
+   userseeed->bookAsMasterVar(varindex);
+
+   return SCIP_OKAY;
+}
+
+
+/**
+ * @brief sets a constraint by name to a block in the current user seeed
+ * @param scip SCIP data structure
+ * @param consname name of the constraint that should be set to a block
+ * @param blockid index of the block the constraint should be assigned to
+ * @returns SCIP return code
+ */
+static
+SCIP_RETCODE SCIPtoolboxUserSeeedSetConsToBlock(
+   SCIP*                 scip,                /**< SCIP data structure */
+   Seeed*                userseeed,           /**< user seeed to edit */
+   const char*           consname,            /**< name of the constraint */
+   int                   blockid              /**< block index ( counting from 0) */
+   )
+{
+   SCIP_CONS* cons;
+   Seeedpool* currseeedpool;
+   int consindex;
+
+   if( userseeed == NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
+
+   currseeedpool = userseeed->isFromUnpresolved()
+         ? SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip)
+         : SCIPconshdlrDecompGetSeeedpool(scip);
+
+   cons = userseeed->isFromUnpresolved() ? (SCIPfindOrigCons(scip, consname) == NULL
+      ? SCIPfindCons(scip, consname): SCIPfindOrigCons(scip, consname)) : SCIPfindCons(scip, consname);
+   consindex = currseeedpool->getIndexForCons( cons ) ;
+
+   if( blockid >= userseeed->getNBlocks() )
+         userseeed->setNBlocks(blockid+1);
+   userseeed->bookAsBlockCons(consindex, blockid);
+
+   return SCIP_OKAY;
+}
+
+
+/**
+ * @brief sets a variable by name to a block in the current user seeed
+ * @returns SCIP return code
+ */
+static
+SCIP_RETCODE SCIPtoolboxUserSeeedSetVarToBlock(
+   SCIP*                 scip,                /**< SCIP data structure */
+   Seeed*                userseeed,           /**< user seeed to edit */
+   const char*           varname,             /**< name of the variable */
+   int                   blockid              /**< block index ( counting from 0) */
+   )
+{
+   Seeedpool* currseeedpool;
+   int varindex;
+
+   if( userseeed == NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
+
+   currseeedpool = userseeed->isFromUnpresolved()
+         ? SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip)
+         : SCIPconshdlrDecompGetSeeedpool(scip);
+
+   varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname) );
+
+   // if the block id is higher than expected, set the block to master
+   if( blockid >= userseeed->getNBlocks() )
+      userseeed->setNBlocks(blockid+1);
+   userseeed->bookAsBlockVar(varindex, blockid);
+
+   return SCIP_OKAY;
+}
+
+
+/**
+ * @brief sets a constraint by name to master in the current user seeed
+ * @param consname of the constraint that should be set to master
+ * @returns SCIP return code
+ */
+static
+SCIP_RETCODE SCIPtoolboxUserSeeedSetConsToMaster(
+   SCIP*                 scip,      /**< SCIP data structure */
+   Seeed*                userseeed, /**< user seeed to edit */
+   const char*           consname   /**< name of cons to book as master cons */
+   )
+{
+   Seeedpool* currseeedpool;
+   int consindex;
+   SCIP_CONS* cons;
+
+   if( userseeed == NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
+
+   currseeedpool = userseeed->isFromUnpresolved()
+      ? SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip)
+      : SCIPconshdlrDecompGetSeeedpool(scip);
+
+   cons = userseeed->isFromUnpresolved() ? SCIPfindOrigCons(scip, consname) : SCIPfindCons(scip, consname);
+   consindex = currseeedpool->getIndexForCons( cons );
+
+   userseeed->bookAsMasterCons(consindex);
+   return SCIP_OKAY;
+}
+
+
+/**
+ * @brief rejects and deletes the current user seeed
+ * @returns SCIP return code
+ */
+static
+SCIP_RETCODE GCGtoolboxUserSeeedReject(
+  SCIP* scip, /**< SCIP data structure */
+  Seeed* userseeed
+  )
+{
+   if( userseeed == NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one  before you can reject it\n");
+      return SCIP_OKAY;
+   }
+   delete userseeed;
+
+   return SCIP_OKAY;
+}
+
+
+/**
+ * finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if
+ * complete etc
+ * @returns SCIP return code
+ */
+static
+SCIP_RETCODE SCIPtoolboxUserSeeedFlush(
+   SCIP* scip,       /**< SCIP data structure */
+   Seeed* userseeed  /**< user seeed to be flushed */
+   )
+{
+   char const* usergiveninfo;
+   char const* presolvedinfo;
+
+   if( userseeed == NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
+
+   Seeedpool* currseeedpool = userseeed->isFromUnpresolved()
+      ? SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip)
+      : SCIPconshdlrDecompGetSeeedpool(scip);
+
+   userseeed->setSeeedpool(currseeedpool);
+   userseeed->flushBooked();
+
+   if( userseeed->shouldCompletedByConsToMaster() )
+   {
+      for(int opencons = 0; opencons < userseeed->getNOpenconss(); ++opencons)
+         userseeed->bookAsMasterCons( userseeed->getOpenconss()[opencons] );
+      userseeed->flushBooked();
+   }
+
+   userseeed->considerImplicits();
+   currseeedpool->prepareSeeed(userseeed);
+
+   if( !userseeed->checkConsistency() )
+   {
+      GCGtoolboxUserSeeedReject(scip, userseeed);
+      SCIPwarningMessage(scip, "Your seeed was rejected because of inconsistencies! \n");
+      return SCIP_OKAY;
+   }
+   userseeed->buildDecChainString();
+   if( userseeed->isComplete() )
+   {
+      if( !userseeed->shouldCompletedByConsToMaster() )
+         userseeed->setUsergiven( USERGIVEN::COMPLETE );
+
+      if( !userseeed->isFromUnpresolved() )
+      {
+         SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, userseeed));
+      }
+      /* stems from unpresolved problem */
+      else
+      {
+
+         SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(scip, userseeed) );
+
+         /* if seeedpool for presolved problem already exist try to translate seeed */
+         if ( SCIPconshdlrDecompGetSeeedpool(scip) != NULL )          {
+            std::vector<Seeed*> seeedtotranslate(0);
+            std::vector<Seeed*> newseeeds(0);
+            seeedtotranslate.push_back(userseeed);
+            SCIPconshdlrDecompGetSeeedpool(scip)->translateSeeeds(SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip), seeedtotranslate, newseeeds);
+            if( newseeeds.size() != 0 )
+            {
+               SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, newseeeds[0]) );
+            }
+         }
+      }
+   }
+   else
+   {
+      assert( !userseeed->shouldCompletedByConsToMaster() );
+      userseeed->setUsergiven( USERGIVEN::PARTIAL );
+
+      if ( !userseeed->isFromUnpresolved() )
+         SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, userseeed) );
+      else
+         SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForUnpresolved(scip, userseeed) );
+   }
+
+   /* set statistics */
+   {
+      int nvarstoblock = 0;
+      int nconsstoblock = 0;
+
+      for ( int b = 0; b < userseeed->getNBlocks(); ++b )
+      {
+         nvarstoblock += userseeed->getNVarsForBlock(b);
+         nconsstoblock += userseeed->getNConssForBlock(b);
+      }
+      userseeed->setDetectorPropagated(NULL);
+
+      userseeed->addClockTime(0.);
+      userseeed->addPctVarsFromFree( (nvarstoblock + userseeed->getNMastervars() +userseeed->getNLinkingvars())/(SCIP_Real) userseeed->getNVars()  );
+      userseeed->addPctVarsToBlock((nvarstoblock )/(SCIP_Real) userseeed->getNVars() );
+      userseeed->addPctVarsToBorder( (userseeed->getNMastervars() +userseeed->getNLinkingvars())/(SCIP_Real) userseeed->getNVars() ) ;
+      userseeed->addPctConssToBorder( (userseeed->getNMasterconss() ) / (SCIP_Real) userseeed->getNConss() ) ;
+      userseeed->addPctConssFromFree( (userseeed->getNMasterconss() + nconsstoblock ) / (SCIP_Real) userseeed->getNConss() ) ;
+      userseeed->addPctConssToBlock( (nconsstoblock ) / (SCIP_Real) userseeed->getNConss() );
+      userseeed->addNNewBlocks(userseeed->getNBlocks());
+   }
+
+   userseeed->findVarsLinkingToMaster();
+   userseeed->findVarsLinkingToStairlinking();
+
+
+   if( userseeed->getUsergiven() == USERGIVEN::PARTIAL )
+      usergiveninfo = "partial";
+   if( userseeed->getUsergiven() == USERGIVEN::COMPLETE )
+      usergiveninfo = "complete";
+   if( userseeed->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER )
+         usergiveninfo = "complete";
+   if( userseeed->isFromUnpresolved() )
+         presolvedinfo = "unpresolved";
+   else presolvedinfo = "presolved";
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " added %s decomp for %s problem with %d blocks and %d masterconss, %d linkingvars, "
+      "%d mastervars, and max white score of %s %f \n", usergiveninfo, presolvedinfo,
+      userseeed->getNBlocks(), userseeed->getNMasterconss(),
+      userseeed->getNLinkingvars(), userseeed->getNMastervars(), (userseeed->isComplete() ? " " : " at best "),
+      userseeed->getScore(SCORETYPE::MAX_WHITE) );
+
+   return SCIP_OKAY;
+}
+
+
+/**
+ * @brief creates a user seeed for the problem
+ *
+ * creates a new seeed as specified by the user
+ * @note this function assumes that the corresponding seeedpool exists
+ * @returns new user seeed
+ */
+static
+Seeed* GCGtoolboxUserSeeedCreate(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             presolved,          /**< should the user seeed be created for the presolved problem */
+   SCIP_Bool             markedincomplete    /**< should the user seeed be a partial one */
+   )
+{
+   Seeed_Wrapper swpool = presolved ? SCIPconshdlrDecompGetSeeedpool(scip)
+      : SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip);
+   Seeedpool* currseeedpool = swpool.seeedpool;
+
+   assert( currseeedpool != NULL );
+
+   Seeed* userseeed = new Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool);
+   userseeed->setIsFromUnpresolved( !presolved );
+
+   if( markedincomplete )
+      userseeed->setUsergiven(USERGIVEN::PARTIAL);
+   else
+      userseeed->setUsergiven(USERGIVEN::COMPLETED_CONSTOMASTER);
 
    return SCIP_OKAY;
 }
@@ -608,8 +1003,8 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
     assert(scip != NULL);
     matching = FALSE;
 
-    SeeedPtr seeed  = GCGgetSelectCurrUserSeeed(scip);
-    gcg::Seeedpool* seeedpool;
+    Seeed* seeed  = GCGgetSelectCurrUserSeeed(scip);
+    Seeedpool* seeedpool;
     std::vector<int> matchingconss  = std::vector<int>(0);
 
     seeedpool = seeed->getSeeedpool();
@@ -654,7 +1049,7 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
 
     if( GCGgetSelectLastUserSeeed(scip) != NULL)
        delete GCGgetSelectLastUserSeeed(scip);
-    GCGsetSelectLastUserSeeed(scip, new gcg::Seeed(GCGgetSelectCurrUserSeeed(scip))) ;
+    GCGsetSelectLastUserSeeed(scip, new Seeed(GCGgetSelectCurrUserSeeed(scip))) ;
 
 
     if( matchingconss.size() > 10 )
@@ -723,8 +1118,8 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
 
    assert(scip != NULL);
 
-   SeeedPtr seeed  = GCGgetSelectCurrUserSeeed(scip);
-   gcg::Seeedpool* seeedpool;
+   Seeed* seeed  = GCGgetSelectCurrUserSeeed(scip);
+   Seeedpool* seeedpool;
    std::vector<int> matchingvars  = std::vector<int>(0);
 
    seeedpool = seeed->getSeeedpool();
@@ -756,11 +1151,11 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
    seeedPropData = new SEEED_PROPAGATION_DATA();
    seeedPropData->seeedpool = seeedpool;
    seeedPropData->nNewSeeeds = 0;
-   seeedPropData->seeedToPropagate = new gcg::Seeed(GCGgetSelectCurrUserSeeed(scip));
+   seeedPropData->seeedToPropagate = new Seeed(GCGgetSelectCurrUserSeeed(scip));
 
    if( GCGgetSelectLastUserSeeed(scip) != NULL)
       delete GCGgetSelectLastUserSeeed(scip);
-   GCGsetSelectLastUserSeeed(scip,new gcg::Seeed(GCGgetSelectCurrUserSeeed(scip)));
+   GCGsetSelectLastUserSeeed(scip,new Seeed(GCGgetSelectCurrUserSeeed(scip)));
 
    finisher = seeedpool->getFinishingDetectorForIndex(finisherid);
    finisher->finishSeeed(scip, finisher, seeedPropData, &result);
@@ -780,9 +1175,9 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
 
 /** Lets the user select a seeed to modify in toolbox
  *
- * @returns SCIP status */
+ * @returns pointer to the chosen seeed */
 static
-SCIP_RETCODE SCIPdialogToolboxChoose(
+Seeed* SCIPdialogToolboxChoose(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog      /**< dialog for user input management */
@@ -791,6 +1186,8 @@ SCIP_RETCODE SCIPdialogToolboxChoose(
    char* ntochoose;
    SCIP_Bool endoffile;
    int idtochoose;
+
+   Seeed* userseeed;
 
    int commandlen;
 
@@ -810,10 +1207,7 @@ SCIP_RETCODE SCIPdialogToolboxChoose(
       return SCIP_PARAMETERWRONGVAL;
    }
 
-   if( GCGgetSelectCurrUserSeeed(scip) != NULL )
-      delete GCGgetSelectCurrUserSeeed(scip);
-
-   GCGsetSelectCurrUserSeeed(scip, new gcg::Seeed( GCGgetSelectList(scip)->at(idtochoose) ));
+   return new Seeed( GCGgetSelectList(scip)->at(idtochoose) );
 
    return SCIP_OKAY;
 }
@@ -825,10 +1219,11 @@ static
 SCIP_RETCODE SCIPdialogToolboxModifyVars(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   Seeed*                  userseeed   /**< user seeed to edit */
    )
 {
-    SCIP_Bool         matching;
+    SCIP_Bool matching;
     char* varregex;
     char* command;
     char* command2;
@@ -838,17 +1233,14 @@ SCIP_RETCODE SCIPdialogToolboxModifyVars(
     assert(scip != NULL);
     matching = FALSE;
 
-    SeeedPtr seeed  = GCGgetSelectCurrUserSeeed(scip);
-    gcg::Seeedpool* seeedpool;
+    Seeedpool* seeedpool;
     std::vector<int> matchingvars  = std::vector<int>(0);
 
-    seeedpool = seeed->getSeeedpool();
+    seeedpool = userseeed->getSeeedpool();
     /* Does user want to modify existing or create a new partial decomposition ?*/
     SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
        "Please specify a regular expression (modified ECMAScript regular expression grammar) matching the names of unassigned variables you want to assign : \nGCG/toolbox> ",
        &varregex, &endoffile) );
-
-    /* case distinction: */
 
     std::regex expr;
     try  {
@@ -861,18 +1253,18 @@ SCIP_RETCODE SCIPdialogToolboxModifyVars(
        }
     }
 
-    for( int oc = 0; oc < seeed->getNOpenvars(); ++oc )
+    for( int oc = 0; oc < userseeed->getNOpenvars(); ++oc )
     {
        const char* varname;
 
-       varname = SCIPvarGetName(  seeedpool->getVarForIndex(seeed->getOpenvars()[oc] ) );
+       varname = SCIPvarGetName(seeedpool->getVarForIndex(userseeed->getOpenvars()[oc] ) );
 
        SCIPdebugMessage("check var %s for regex %s \n", varname, varregex);
 
        if( std::regex_match(varname, expr) )
        {
           matching = TRUE;
-          matchingvars.push_back(seeed->getOpenvars()[oc]);
+          matchingvars.push_back(userseeed->getOpenvars()[oc]);
           SCIPdebugMessage( " varname %s matches regex %s \n", varname, varregex );
        } else
           SCIPdebugMessage(" varname %s does not match regex %s \n", varname, varregex);
@@ -887,7 +1279,7 @@ SCIP_RETCODE SCIPdialogToolboxModifyVars(
 
     if( GCGgetSelectLastUserSeeed(scip) != NULL)
        delete GCGgetSelectLastUserSeeed(scip);
-    GCGsetSelectLastUserSeeed(scip, new gcg::Seeed(GCGgetSelectCurrUserSeeed(scip)));
+    GCGsetSelectLastUserSeeed(scip, new Seeed(GCGgetSelectCurrUserSeeed(scip)));
 
 
     if( matchingvars.size() > 10 )
@@ -912,7 +1304,6 @@ SCIP_RETCODE SCIPdialogToolboxModifyVars(
 
     commandlen = strlen(command);
 
-    /* case distinction: */
     if( strncmp( command, "master", commandlen) == 0 )
     {
        for( size_t mc = 0 ;  mc < matchingvars.size(); ++mc )
@@ -966,7 +1357,7 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
    int ndetectors;
    int i, j;
    SEEED_PROPAGATION_DATA* seeedPropData;
-   gcg::Seeedpool* seeedpool;
+   Seeedpool* seeedpool;
    SCIP_Bool finished, displayinfo;
    char stri[SCIP_MAXSTRLEN];
    const char* actiontype;
@@ -1020,7 +1411,7 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
    seeedPropData = new SEEED_PROPAGATION_DATA();
    seeedPropData->seeedpool = seeedpool;
    seeedPropData->nNewSeeeds = 0;
-   seeedPropData->seeedToPropagate = new gcg::Seeed(GCGgetSelectCurrUserSeeed(scip));
+   seeedPropData->seeedToPropagate = new Seeed(GCGgetSelectCurrUserSeeed(scip));
    seeedPropData->seeedToPropagate->setSeeedpool(seeedpool);
    if( action != POSTPROCESS )
    {
@@ -1140,7 +1531,7 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
             SCIPinfoMessage(scip, NULL, "\nSaving newly found seeeds...\n\n");
             for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
             {
-               GCGsetSelectCurrUserSeeed(scip, new gcg::Seeed( seeedPropData->newSeeeds[i] ));
+               GCGsetSelectCurrUserSeeed(scip, new Seeed( seeedPropData->newSeeeds[i] ));
                SCIP_CALL( SCIPconshdlrDecompUserSeeedFlush(scip) );
                assert(GCGgetSelectCurrUserSeeed(scip) == NULL);
             }
@@ -1157,16 +1548,16 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
                }
                if( strncmp( command, "continue", commandlen) == 0 )
                {
-                  GCGsetSelectCurrUserSeeed(scip, new gcg::Seeed(seeedPropData->newSeeeds[0]));
+                  GCGsetSelectCurrUserSeeed(scip, new Seeed(seeedPropData->newSeeeds[0]));
                }
                else
                {
-                  GCGsetSelectCurrUserSeeed(scip, new gcg::Seeed(seeedPropData->seeedToPropagate));
+                  GCGsetSelectCurrUserSeeed(scip, new Seeed(seeedPropData->seeedToPropagate));
                }
             }
             else
             {
-               GCGsetSelectCurrUserSeeed(scip, new gcg::Seeed(seeedPropData->seeedToPropagate));
+               GCGsetSelectCurrUserSeeed(scip, new Seeed(seeedPropData->seeedToPropagate));
             }
             finished = TRUE;
             continue;
@@ -1188,10 +1579,10 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
                SCIPinfoMessage(scip, NULL, "Storing seeeds...\n");
                for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
                {
-                  GCGsetSelectCurrUserSeeed(scip, new gcg::Seeed(seeedPropData->newSeeeds[i]));
+                  GCGsetSelectCurrUserSeeed(scip, new Seeed(seeedPropData->newSeeeds[i]));
                   SCIP_CALL( SCIPconshdlrDecompUserSeeedFlush(scip) );
                }
-               GCGsetSelectCurrUserSeeed(scip, new gcg::Seeed(seeedPropData->seeedToPropagate));
+               GCGsetSelectCurrUserSeeed(scip, new Seeed(seeedPropData->seeedToPropagate));
                SCIPinfoMessage(scip, NULL, "\nAll seeeds stored successfully!\n");
             }
             finished = TRUE;
@@ -1450,7 +1841,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       {
          if(GCGgetSelectLastUserSeeed(scip) != NULL)
             delete GCGgetSelectLastUserSeeed(scip);
-         GCGsetSelectLastUserSeeed(scip, new gcg::Seeed(GCGgetSelectCurrUserSeeed(scip)));
+         GCGsetSelectLastUserSeeed(scip, new Seeed(GCGgetSelectCurrUserSeeed(scip)));
          GCGgetSelectCurrUserSeeed(scip)->considerImplicits();
          continue;
       }
@@ -1459,10 +1850,10 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       {
          /* determine whether there is a seeedpool for the presolved problem */
          SEEED_WRAPPER* wrapper = SCIPconshdlrDecompGetSeeedpool(scip);
-         gcg::Seeedpool* internalseeedpool = wrapper->seeedpool;
+         Seeedpool* internalseeedpool = wrapper->seeedpool;
 
-         gcg::Seeedpool* seeedpool;
-         SeeedPtr curruserseeed = GCGgetSelectCurrUserSeeed(scip);
+         Seeedpool* seeedpool;
+         Seeed* curruserseeed = GCGgetSelectCurrUserSeeed(scip);
 
          if( !curruserseeed->isFromUnpresolved() && internalseeedpool == NULL )
             SCIPconshdlrDecompCreateSeeedpool(scip);
@@ -1579,7 +1970,7 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
    if( GCGgetSelectCurrUserSeeed(scip) != NULL )
       delete GCGgetSelectCurrUserSeeed(scip);
 
-   gcg::Seeedpool* seeedpool;
+   Seeedpool* seeedpool;
    SCIP_Bool isfromunpresolved;
 
    while( (strncmp( command, "presolved", commandlen) != 0 && strncmp( command, "unpresolved", commandlen) != 0) || commandlen == 0)
@@ -1631,7 +2022,7 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
 
    }
 
-   SeeedPtr newseeed = new gcg::Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool );
+   Seeed* newseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool );
    newseeed->setIsFromUnpresolved(isfromunpresolved);
 
    GCGsetSelectCurrUserSeeed(scip,newseeed);
@@ -1664,7 +2055,7 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
       {
          if(GCGgetSelectLastUserSeeed(scip) != NULL)
             delete GCGgetSelectLastUserSeeed(scip);
-         GCGsetSelectLastUserSeeed(scip, new gcg::Seeed(GCGgetSelectCurrUserSeeed(scip)));
+         GCGsetSelectLastUserSeeed(scip, new Seeed(GCGgetSelectCurrUserSeeed(scip)));
          GCGgetSelectCurrUserSeeed(scip)->considerImplicits();
          continue;
       }
@@ -1759,7 +2150,7 @@ SCIP_RETCODE SCIPdialogExploreSelect(
    char* ntovisualize;
    SCIP_Bool endoffile;
    int idtovisu;
-   SeeedPtr toselect;
+   Seeed* toselect;
    std::vector<int>* selected;
 
    int commandlen;
@@ -1916,3 +2307,5 @@ SCIP_RETCODE SCIPdialogExecSelect(
 
    return SCIP_OKAY;
 }
+
+} // namespace gcg

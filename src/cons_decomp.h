@@ -350,18 +350,6 @@ SEEED_WRAPPER* SCIPconshdlrDecompGetSeeedpool(
 
 
 /**
- * @brief creates a user seeed for the problem
- *  @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool             presolved,          /**< should the user seeed be created for the presolved (transformed) problem */
-   SCIP_Bool             markedincomplete    /**< boolean to notify that the created user decomposition is partial and should not be completed by assigning open constraints to the master */
-   );
-
-
-/**
  * @brief returns whether or not an unpresolved (untransformed) decompositions exists in the data structures
  * @returns SCIP return code
  */
@@ -381,76 +369,6 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
    SCIP*    scip
    );
 
-/**
- * @brief sets the number of blocks
- *
- * set the number of blocks in the current user seeed (which is used for user input (read or modify) )
- * @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
-   SCIP*                 scip,                /**< SCIP data structure */
-   int                   nblocks              /**< number of blocks */
-   );
-
-
-/**
- * @brief sets a constraint by name to a block in the current user seeed
- * @param scip SCIP data structure
- * @param consname name of the constraint that should be set to a block
- * @param blockid index of the block the constraint should be assigned to
- * @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToBlock(
-   SCIP*                 scip,                /**< SCIP data structure */
-   const char*           consname,            /**< name of the constraint */
-   int                   blockid              /**< block index ( counting from 0) */
-   );
-
-/**
- * @brief sets a constraint by name to master in the current user seeed
- * @param consname of the constraint that should be set to master
- * @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToMaster(
-   SCIP*                 scip,                /**< SCIP data structure */
-   const char*           consname
-   );
-
-/**
- * @brief sets a variable by name to a block in the current user seeed
- * @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToBlock(
-   SCIP*                 scip,                /**< SCIP data structure */
-   const char*           varname,             /**< name of the variable */
-   int                   blockid              /**< block index ( counting from 0) */
-   );
-
-
-/**
- * @brief sets a variable by name to the master in the current user seeed
- * @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToMaster(
-   SCIP*                 scip,                /**< SCIP data structure */
-   const char*           varname              /**< name of the variable */
-   );
-
-
-/**
- * @brief sets a variable by name to the linking variables in the current user seeed
- * @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
-   SCIP*                 scip,                /**< SCIP data structure */
-   const char*           varname              /**< name of the variable */
-   );
 
 /**
  * @brief add block number user candidate (user candidates are prioritized over found ones)
@@ -494,26 +412,6 @@ extern
  SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
     SCIP*                 scip
     );
-
- /**
-  * @brief rejects and deletes the current user seeed
-  * @returns SCIP return code
-  */
- extern
-SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(
-   SCIP*                 scip                 /**< SCIP data structure */
-   );
-
-
-/**
- * finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if
- * complete etc
- * @returns SCIP return code
- */
- extern
-SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
-   SCIP*                 scip                 /**< SCIP data structure */
-   );
 
 
 /**
@@ -837,6 +735,12 @@ SCIP_RETCODE SCIPconshdlrDecompGetSeeedLeafList(
    int**          idlist,     /**< id list to output to */
    int*           listlength  /**< length of output list */
    );
+/** @brief Gets the number of seeeds that are finished or to be finished
+ *
+ *  @returns number of leaf seeeds */
+int SCIPconshdlrDecompGetNSeeedLeafs(
+   SCIP*          scip       /**< SCIP data structure */
+   );
 
 
 /** @brief Gets a list of ids of all currently selected seeeds
@@ -854,40 +758,6 @@ SCIP_Bool SCIPconshdlrDecompGetSelectExists(
    SCIP*          scip  /**< SCIP data structure */
    );
 
-
-/** @brief Gets current user seeed
- *
- * (seeed currently selected for modification in explore menu)
- *  @returns current user seeed */
-SeeedPtr GCGgetSelectCurrUserSeeed(
-   SCIP*          scip  /**< SCIP data structure */
-   );
-
-/** @brief Sets current user seeed
- *
- * (seeed currently selected for modification in explore menu)
- *  @returns current user seeed */
-void GCGsetSelectCurrUserSeeed(
-   SCIP*          scip,    /**< SCIP data structure */
-   SeeedPtr       seeed    /**< current seeed */
-   );
-
-/** @brief Gets last user seeed
- *
- * (last seeed selected for modification in explore menu)
- *  @returns last user seeed */
-SeeedPtr GCGgetSelectLastUserSeeed(
-   SCIP*          scip  /**< SCIP data structure */
-   );
-
-/** @brief Sets last user seeed
- *
- * (last seeed selected for modification in explore menu)
- *  @returns last user seeed */
-void GCGsetSelectLastUserSeeed(
-   SCIP*          scip,    /**< SCIP data structure */
-   SeeedPtr       seeed    /**< current seeed */
-   );
 
 #ifdef __cplusplus
 }
