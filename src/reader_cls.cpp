@@ -117,13 +117,13 @@ SCIP_RETCODE GCGwriteCls(
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       transformed = FALSE;
 
-   if( !transformed && SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(scip) == NULL )
+   if( !transformed && SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip) == NULL )
       SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
 
-   if( transformed && SCIPconshdlrDecompGetSeeedpoolExtern(scip) == NULL )
+   if( transformed && SCIPconshdlrDecompGetSeeedpool(scip) == NULL )
       SCIPconshdlrDecompCreateSeeedpool(scip);
 
-   seeedpool = (gcg::Seeedpool*)(transformed ? SCIPconshdlrDecompGetSeeedpoolExtern(scip) : SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(scip));
+   seeedpool = (gcg::Seeedpool*)(transformed ? SCIPconshdlrDecompGetSeeedpool(scip) : SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip));
 
 
    SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);

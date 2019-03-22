@@ -31,6 +31,7 @@
  * @author Martin Bergner
  * @author Christian Puchert
  * @author Michael Bastubbe
+ * @author Hanna Franzen
  *
  * This constraint handler will run all registered structure detectors in
  * in an iterative scheme increasing priority until the first detector finds a suitable structure.
@@ -662,6 +663,26 @@ std::vector<SeeedPtr> getLeafSeeeds(
 }
 
 
+/** gets all selected seeeds
+ * @returns vector of all selected seeeds */
+static
+std::vector<SeeedPtr> getSelectedSeeeds(
+   SCIP*          scip  /**< SCIP data structure */
+   )
+{
+   std::vector<SeeedPtr> seeeds = getSeeeds(scip);
+
+   std::vector<SeeedPtr> selectedseeeds;
+   for(auto seeed : seeeds)
+   {
+      if(seeed->isSelected())
+      {
+         selectedseeeds.push_back(seeed);
+      }
+   }
+   return selectedseeeds;
+}
+
 /**
  * method to unselect all decompositions, called in consexit, and when the seeedlist is updated
  * (especially if new (partial) are added )
@@ -847,9 +868,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->completedetectionclock) );
 
-
-
-
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
       DEC_DETECTOR *detector;
@@ -874,7 +892,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
 
-   delete conshdlrdata->selected;
    delete conshdlrdata->userblocknrcandidates;
 
    SCIPfreeMemory(scip, &conshdlrdata);
@@ -965,9 +982,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->lastuserseeed = NULL;
    conshdlrdata->unpresolveduserseeedadded = FALSE;
    conshdlrdata->startidvisu = 0;
-   conshdlrdata->selected = new std::vector<int>(0, -1);
    conshdlrdata->candidates = new std::vector<std::pair<SeeedPtr, SCIP_Real > >(0);
-   conshdlrdata->selectedexists = FALSE;
    conshdlrdata->sizedecomps = 10;
    conshdlrdata->seeedcounter = 0;
    conshdlrdata->currscoretype = scoretype::MAX_WHITE;
@@ -2838,7 +2853,6 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    std::vector<SeeedPtr>::iterator seeediter;
    std::vector<SeeedPtr>::iterator seeediterend;
 
-
    std::vector<SeeedPtr> tofinishpresolved(0);
    std::vector<SeeedPtr> tofinishunpresolved(0);
    std::vector<SeeedPtr> selectedseeeds(0);
@@ -2864,16 +2878,17 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    if( updatelist )
       SCIP_CALL(SCIPconshdlrDecompUpdateSeeedlist(scip) );
-
-   for( size_t selid = 0; selid < conshdlrdata->selected->size(); ++selid )
+   
+   std::vector<SeeedPtr> selectedlist = getSelectedSeeeds(scip);
+   for( size_t selid = 0; selid < selectedlist.size(); ++selid )
    {
-      selectedseeeds.push_back(conshdlrdata->listall->at(conshdlrdata->selected->at(selid) ) );
+      selectedseeeds.push_back(selectedlist.at(selid) );
    }
 
    if ( selectedseeeds.size() == 0 )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL,  NULL, "currently no decomposition is selected, hence every known decomposition is considered: \n");
-      selectedseeeds = *conshdlrdata->listall;
+      selectedseeeds = getLeafSeeeds(scip);
       SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL,  NULL,  "number that is examined: %d \n", selectedseeeds.size() );
    }
 
@@ -3137,15 +3152,6 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    int i;
-   int selectedcounter;
-
-   std::vector<int> livingnoncompleteseeedids(0); /* this is a vector of seeed ids that should be living (living: there is no complete seeed having ) */
-   std::vector<int>::const_iterator selectediter;
-   std::vector<int>::const_iterator selectediterend;
-
-   std::vector<SeeedPtr>::const_iterator seeediter;
-   std::vector<SeeedPtr>::const_iterator seeediterend;
-
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -3512,9 +3518,7 @@ SCIP_RETCODE DECwriteSelectedDecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-
    nodecomps = ( conshdlrdata->seeedpool == NULL && conshdlrdata->seeedpoolunpresolved == NULL );
-
 
    if( nodecomps )
    {
@@ -3522,19 +3526,17 @@ SCIP_RETCODE DECwriteSelectedDecomps(
       return SCIP_OKAY;
    }
 
-
-   if(  conshdlrdata->selected->size() == 0 )
+   std::vector<SeeedPtr> selectedseeeds = getSelectedSeeeds(scip);
+   if( selectedseeeds.size() == 0 )
    {
       SCIPwarningMessage(scip, "No decomposition selected.\n");
       return SCIP_OKAY;
    }
 
-
-   for( size_t selid = 0; selid < conshdlrdata->selected->size(); ++selid )
+   for( size_t selid = 0; selid < selectedseeeds.size(); ++selid )
    {
       SeeedPtr seeed;
-
-      seeed = conshdlrdata->listall->at(conshdlrdata->selected->at(selid) );
+      seeed = selectedseeeds.at(selid);
 
       misc->GCGgetVisualizationFilename(scip, seeed, extension, tempstring);
       if( directory != NULL )
@@ -4847,11 +4849,12 @@ SCIP_RETCODE GCGprintDecompInformation(
 
    SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
 
-   seeediter = conshdlrdata->listall->begin();
-   seeediterend = conshdlrdata->listall->end();
+   std::vector<SeeedPtr> seeedlist = getLeafSeeeds(scip);
+   seeediter = seeedlist.begin();
+   seeediterend = seeedlist.end();
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "DECOMPINFO  \n" );
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (int) conshdlrdata->listall->size() );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (int) seeedlist.size() );
 
    for( ; seeediter != seeediterend; ++seeediter)
    {
@@ -4917,8 +4920,6 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
-   int i;
-
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
    if( conshdlr == NULL )
@@ -4934,8 +4935,6 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
 
    conshdlrdata->startidvisu = 0;
    SCIPconshdlrdataDecompUnselectAll(scip);
-   conshdlrdata->listall->clear();
-
 
    if( conshdlrdata->hasrun && conshdlrdata->seeedpool == NULL && conshdlrdata->seeedpoolunpresolved == NULL)
       return SCIP_OKAY;
@@ -5028,17 +5027,7 @@ SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
    int*           listlength
    )
 {
-   std::vector<SeeedPtr> seeeds = getSeeeds(scip);
-
-   std::vector<SeeedPtr> selectedseeeds;
-   for(auto seeed : seeeds)
-   {
-      if(seeed->isSelected())
-      {
-         selectedseeeds.push_back(seeed);
-      }
-   }
-
+   std::vector<SeeedPtr> selectedseeeds = getSelectedSeeeds(scip);
    *listlength = (int) selectedseeeds.size();
 
    for(int i = 0; i < (int) selectedseeeds.size(); i++)
