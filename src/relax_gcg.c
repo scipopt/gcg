@@ -2243,8 +2243,7 @@ SCIP_RETCODE solveBlockProblem(
       SCIPbendersSetSubproblemIsIndependent(benders, blocknum, TRUE);
 
       /* solving the Benders' decomposition subproblem */
-      SCIP_CALL( SCIPsolveBendersSubproblem(relaxdata->masterprob, benders, NULL, blocknum, &infeasible,
-            SCIP_BENDERSENFOTYPE_CHECK, TRUE, NULL) );
+      SCIP_CALL( SCIPsolveBendersSubproblem(relaxdata->masterprob, benders, NULL, blocknum, &infeasible, TRUE, NULL) );
    }
 
 
@@ -3117,7 +3116,7 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
       /* start root node time clock */
-      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) && !SCIPclockIsRunning(relaxdata->rootnodetime) )
+      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
       {
          SCIP_CALL( SCIPstartClock(scip, relaxdata->rootnodetime) );
          SCIPdebugMessage("  root node time clock started.\n");
@@ -3167,17 +3166,17 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
          SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
                GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
       }
+
+      /* stop root node clock */
+      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip))
+      {
+         SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+         SCIPdebugMessage("  root node time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+      }
    }
    else
    {
       SCIPdebugMessage("Problem has been already solved at this node\n");
-   }
-
-   /* stop root node clock */
-   if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) && SCIPclockIsRunning(relaxdata->rootnodetime))
-   {
-      SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
-      SCIPdebugMessage("  root node time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
    }
 
    return SCIP_OKAY;
@@ -4621,7 +4620,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
       int i;
 
       SCIP_CALL( SCIPcreateSol(scip, &relaxdata->currentorigsol, NULL) );
-      SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->storedorigsol, RELAX_INCLUDESLP) );
+      SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relax, relaxdata->storedorigsol, RELAX_INCLUDESLP) );
 
       for( i = 0; i < nvars; i++ )
       {
@@ -4758,7 +4757,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIP_CALL( GCGtransformMastersolToOrigsol(scip, mastersol, &(relaxdata->currentorigsol)) );
 
          /* store the solution as relaxation solution */
-         SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol, RELAX_INCLUDESLP) );
+         SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relax, relaxdata->currentorigsol, RELAX_INCLUDESLP) );
          assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, relaxdata->currentorigsol)));
 
          if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )

@@ -36,7 +36,7 @@ extern "C" {
 #endif
 
 /** creates the roundbound presolver and includes it in SCIP */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE SCIPincludePresolRoundbound(
    SCIP*                 scip                /**< SCIP data structure */
    );

@@ -135,9 +135,11 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
 
    /* transfer solution to the master problem if it was found by a heuristic in the original problem
     * or if discretization is used
+    * NOTE: Care must be taken with the event handlers. When BENDERS or ORIGINAL mode is used, the relaxation solution
+    * event handler is not included. So GCGeventhdlrRelaxsolIsTriggered will always return FALSE.
     */
    if( SCIPgetStage(scip) > SCIP_STAGE_TRANSFORMED && SCIPgetStage(masterprob) > SCIP_STAGE_TRANSFORMED &&
-      !GCGeventhdlrRelaxsolIsTriggered(masterprob) &&
+      !GCGeventhdlrRelaxsolIsTriggered(scip, masterprob) &&
       (SCIPsolGetHeur(sol) != NULL || (discretization && SCIPgetStage(masterprob) != SCIP_STAGE_SOLVED)) &&
       GCGgetDecompositionMode(scip) != DEC_DECMODE_BENDERS && GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL )
    {

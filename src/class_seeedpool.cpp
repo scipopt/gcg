@@ -175,7 +175,7 @@ SCIP_RETCODE Seeedpool::calculateDualvalsOptimalOrigLP()
 
    SCIPcreate(&scipcopy);
 
-   SCIPcopy(scip, scipcopy, NULL, origtocopiedconss, "", FALSE, FALSE, FALSE, &valid );
+   SCIPcopy(scip, scipcopy, NULL, origtocopiedconss, "", FALSE, FALSE, FALSE, FALSE, &valid );
 
    nconss = getNConss();
 
@@ -226,22 +226,29 @@ SCIP_RETCODE Seeedpool::calculateDualvalsOptimalOrigLP()
    {
       SCIP_CONS* cons;
       SCIP_CONS* copiedcons;
+      SCIP_CONS* transcons = NULL;
 
       cons = getConsForIndex(c);
-      if( !transformed && SCIPconsGetTransformed(cons) != NULL )
-         cons = SCIPconsGetTransformed(cons);
-      else if ( !transformed )
+      if( !transformed )
       {
-         SCIPwarningMessage(scip, "Could not find constraint for random dual variable initilization when calculating strong decomposition score; skip cons: %s \n", SCIPconsGetName(cons));
-         continue;
+         SCIPgetTransformedCons(scip, cons, &transcons);
+         if( transcons )
+            cons = transcons;
+         else
+         {
+            SCIPwarningMessage(scip, "Could not find constraint for random dual variable initialization when calculating strong decomposition score; skipping cons: %s \n", SCIPconsGetName(cons));
+            continue;
+         }
       }
       copiedcons = (SCIP_CONS*) SCIPhashmapGetImage(origtocopiedconss, (void*) cons);
 
       assert(copiedcons != NULL);
       assert( !SCIPconsIsTransformed(copiedcons) );
 
-      if( SCIPconsGetTransformed(copiedcons) != NULL )
-         copiedcons = SCIPconsGetTransformed(copiedcons);
+      transcons = NULL;
+      SCIPgetTransformedCons(scip, copiedcons, &transcons);
+      if( transcons != NULL)
+         copiedcons = transcons;
 
       dualvalsoptimaloriglp[c] = GCGconsGetDualsol(scipcopy, copiedcons);
       if( !SCIPisFeasEQ(scip, 0., dualvalsoptimaloriglp[c]) )
@@ -2599,6 +2606,7 @@ void Seeedpool::calcTranslationMapping(
    std::vector<int>& missingrowinthis
    )
 {
+   SCIP_CONS* transcons;
    int nrowsother = origpool->nConss;
    int nrowsthis = nConss;
    int ncolsother = origpool->nVars;
@@ -2634,7 +2642,8 @@ void Seeedpool::calcTranslationMapping(
          SCIP_CONS* thisrow = thisscipconss[j];
          assert( SCIPconsIsTransformed( thisrow ) );
 
-         if( SCIPconsGetTransformed(origscipconss[i]) == thisrow )
+         SCIPgetTransformedCons(scip, origscipconss[i], &transcons);
+         if( transcons == thisrow)
          {
             rowothertothis[i] = j;
             rowthistoother[j] = i;
@@ -5117,7 +5126,10 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    for( int c = 0; c < seeed->getNMasterconss(); ++c )
    {
       int consid = seeed->getMasterconss()[c];
-      SCIP_CONS* scipcons = ( transformed ? consToScipCons[consid] : SCIPconsGetTransformed(consToScipCons[consid]) ) ;
+      SCIP_CONS* scipcons = consToScipCons[consid];
+      if( !transformed )
+         SCIPgetTransformedCons(scip, scipcons, &scipcons);
+
       if( scipcons == NULL || SCIPconsIsDeleted(scipcons) || SCIPconsIsObsolete(scipcons) )
       {
          --nlinkingconss;
@@ -5149,7 +5161,9 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       for( int c = 0; c < seeed->getNConssForBlock( b ); ++c )
       {
          int consid = seeed->getConssForBlock( b )[c];
-         SCIP_CONS* scipcons = ( transformed ? consToScipCons[consid] : SCIPconsGetTransformed( consToScipCons[consid] ) ) ;
+         SCIP_CONS* scipcons = consToScipCons[consid];
+         if( !transformed )
+            SCIPgetTransformedCons(scip, scipcons, &scipcons);
 
          if( scipcons == NULL || SCIPconsIsDeleted(scipcons) )
          {

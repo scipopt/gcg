@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 /** creates the gcgguideddiving heuristic and includes it in GCG */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGincludeHeurGcgguideddiving(
    SCIP*                 scip                /**< SCIP data structure */
    );
