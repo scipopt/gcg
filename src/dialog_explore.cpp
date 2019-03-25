@@ -172,9 +172,9 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    for ( i = 0; i < listlength; ++i )
    {
       Seeed_Wrapper sw;
-      GCGgetSeeedFromID(scip, idlist[i], sw);
+      GCGgetSeeedFromID(scip, &(idlist[i]), &sw);
       Seeed* seeed;
-      seeed = sw->seeed;
+      seeed = sw.seeed;
       if( seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::NOT && !seeed->isFromUnpresolved() )
          ++ndetectedpresolved;
       if( seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::NOT && seeed->isFromUnpresolved() )
@@ -215,19 +215,6 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    return SCIP_OKAY;
 }
 
-/** Shows information about the current user seeed in toolbox
- *
- * @returns SCIP status */
-static
-SCIP_RETCODE SCIPdialogShowCurrUserSeeedInfo(
-   SCIP*                   scip     /**< SCIP data structure */
-   )
-{
-   assert(scip != NULL);
-
-   GCGgetSelectCurrUserSeeed(scip)->displaySeeed();
-   return SCIP_OKAY;
-}
 
 /** Shows detailed information about seeeds in explore menu
  *
@@ -235,23 +222,23 @@ SCIP_RETCODE SCIPdialogShowCurrUserSeeedInfo(
  * */
 static
 SCIP_RETCODE SCIPdialogShowListExtract(
-   SCIP*                 scip               /**< SCIP data structure */
+   SCIP* scip,    /**< SCIP data structure */
+   int startindex /**< index (in seeed list) of uppermost seeed in extract */
    )
 {
    assert(scip != NULL);
-   std::vector<Seeed*>* seeedlist;
-   size_t i;
+   int i;
 
    int* idlist; //@todo malloc for nseeeds
    int listlength;
-   SCIPconshdlrDecompGetSeeedLeafList(scip, &idlist, listlength);
+   SCIPconshdlrDecompGetSeeedLeafList(scip, &idlist, &listlength);
 
-   seeedlist = GCGgetSelectList(scip);
-
-   for( i = GCGgetSelectFirstIdToVisu(scip); i < (size_t) GCGgetSelectFirstIdToVisu(scip) + (size_t) DEFAULT_MENULENGTH && i < seeedlist->size(); ++i)
+   for( i = startindex; i < (size_t) startindex + DEFAULT_MENULENGTH && i < (int) listlength; ++i)
    {
+      Seeed_Wrapper sw;
       Seeed* seeed;
-      seeed = seeedlist->at(i);
+      SCIP_CALL( GCGgetSeeedFromID(scip, &(idlist[i]), &sw) );
+      seeed = sw.seeed;
 
       assert( seeed->checkConsistency( ) );
 
@@ -410,23 +397,6 @@ SCIP_RETCODE SCIPdialogShowHelp(
 }
 
 
-/** shows a visualization of current user seeed
- *
- * @returns SCip status*/
-static
-SCIP_RETCODE SCIPdialogSelectVisualizeCurrentUserSeeed(
-   SCIP*                   scip,       /**< SCIP data structure */
-   SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
-   )
-{
-   assert(scip != NULL);
-
-   GCGgetSelectCurrUserSeeed(scip)->showVisualisation();
-
-   return SCIP_OKAY;
-}
-
 /** Shows a visualization of the seeed specified by the user via the dialog
  *
  * @returns SCIP status */
@@ -440,7 +410,6 @@ SCIP_RETCODE SCIPdialogSelectVisualize(
    char* ntovisualize;
    SCIP_Bool endoffile;
    int idtovisu;
-   std::vector<Seeed*>* seeedlist;
 
    int commandlen;
 
@@ -455,19 +424,21 @@ SCIP_RETCODE SCIPdialogSelectVisualize(
       idtovisu = atoi(ntovisualize);
 
    /* check whether ID is in valid range */
-   seeedlist = GCGgetSelectList(scip);
-   if( (int)seeedlist->size() == 0 )
+   if( SCIPconshdlrDecompGetNSeeeds(scip) == 0 )
    {
       SCIPinfoMessage(scip, NULL, "No decompositions available. Please detect first.\n");
       return SCIP_OKAY;
    }
-   if( commandlen == 0 || idtovisu < 0 || idtovisu >= (int)seeedlist->size() )
+   Seeed_Wrapper sw;
+   SCIP_CALL( GCGgetSeeedFromID(scip, &idtovisu, &sw) );
+   Seeed* seeed = sw.seeed;
+   if( commandlen == 0 || seeed == NULL )
    {
       SCIPdialogMessage( scip, NULL, "This id is out of range." );
       return SCIP_OKAY;
    }
 
-   seeedlist->at(idtovisu)->showVisualisation();
+   seeed->showVisualisation();
 
    return SCIP_OKAY;
 }
@@ -489,7 +460,6 @@ SCIP_RETCODE SCIPdialogSelectCalcStrongDecompositionScore(
    SCIP_Bool endoffile;
    int idtocalcstrong;
    int commandlen;
-   std::vector<Seeed*>* seeedlist;
 
    assert( scip != NULL );
 
@@ -512,12 +482,13 @@ SCIP_RETCODE SCIPdialogSelectCalcStrongDecompositionScore(
    }
 
    /* call calculation strong decomp score method according to chosen parameters */
-   seeedlist = GCGgetSelectList(scip);
-   if( 0 <= idtocalcstrong && idtocalcstrong < (int) seeedlist->size() )
+   Seeed_Wrapper sw;
+   SCIP_CALL( GCGgetSeeedFromID(scip, &idtocalcstrong, &sw) );
+   if(sw.seeed != NULL)
    {
       SCIP_Real score;
-      Seeedpool* seeedpool = seeedlist->at( idtocalcstrong )->getSeeedpool();
-      seeedpool->calcStrongDecompositionScore(seeedlist->at( idtocalcstrong ), &score);
+      Seeedpool* seeedpool = sw.seeed->getSeeedpool();
+      seeedpool->calcStrongDecompositionScore(sw.seeed, &score);
       SCIPdialogMessage( scip, NULL, "Strong decomposition score of this decomposition is %f.", score) ;
    }
    else
@@ -546,9 +517,6 @@ SCIP_RETCODE SCIPdialogSelectInspect(
    SCIP_Bool endoffile;
    int idtoinspect;
    int detaillevel;
-   std::vector<Seeed*> seeedlist;
-   int* idlist; //@todo malloc
-   int listlength;
 
    int commandlen;
 
@@ -564,10 +532,10 @@ SCIP_RETCODE SCIPdialogSelectInspect(
       idtoinspect = atoi( ntoinspect );
 
    /* check whether ID is in valid range */
-   SCIPconshdlrDecompGetSeeedLeafList(scip, &idlist, &listlength);
+   Seeed_Wrapper sw;
+   SCIP_CALL( GCGgetSeeedFromID(scip, &idtoinspect &sw) );
 
-   //@todo this range might noch be true any more when using the iternal ids
-   if( idtoinspect < 0 || idtoinspect >= listlength )
+   if( sw.seeed == NULL )
    {
       SCIPdialogMessage( scip, NULL, "This id is out of range." );
       return SCIP_PARAMETERWRONGVAL;
@@ -592,11 +560,7 @@ SCIP_RETCODE SCIPdialogSelectInspect(
    }
 
    /* call displayInfo method according to chosen parameters */
-   //@todo this assert might not work when using internal ids
-   assert( 0 <= idtoinspect && idtoinspect < listlength );
-   Seeed_Wrapper sw;
-   GCGgetSeeedFromID(scip, &idtoinspect, &sw);
-   sw->seeed->displayInfo( detaillevel );
+   sw.seeed->displayInfo( detaillevel );
 
    return SCIP_OKAY;
 }
@@ -1813,7 +1777,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       int commandlen2;
       SCIP_Bool success;
 
-      SCIP_CALL( SCIPdialogShowCurrUserSeeedInfo(scip) );
+      userseeed.displaySeeed();
 
       SCIP_CALL( SCIPdialogShowToolboxInfo(scip) );
 
@@ -1903,7 +1867,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
 
       if( strncmp( command, "visualize", commandlen2) == 0 )
       {
-         SCIP_CALL(SCIPdialogSelectVisualizeCurrentUserSeeed(scip, dialoghdlr, dialog ) );
+         userseeed.showVisualisation();
          continue;
       }
 
@@ -2032,6 +1996,7 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
       int commandlen2;
       SCIP_Bool success;
 
+      userseeed.displaySeeed();
       SCIP_CALL( SCIPdialogShowCurrUserSeeedInfo(scip) );
 
       SCIP_CALL( SCIPdialogShowToolboxInfo(scip) );
@@ -2108,10 +2073,9 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
          continue;
       }
 
-
       if( strncmp( command, "visualize", commandlen2) == 0 )
       {
-         SCIP_CALL(SCIPdialogSelectVisualizeCurrentUserSeeed(scip, dialoghdlr, dialog ) );
+         userseeed.showVisualisation();
          continue;
       }
 
