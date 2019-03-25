@@ -222,8 +222,8 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
  * */
 static
 SCIP_RETCODE SCIPdialogShowListExtract(
-   SCIP* scip,    /**< SCIP data structure */
-   int startindex /**< index (in seeed list) of uppermost seeed in extract */
+   SCIP* scip,             /**< SCIP data structure */
+   const int startindex    /**< index (in seeed list) of uppermost seeed in extract */
    )
 {
    assert(scip != NULL);
@@ -533,7 +533,7 @@ SCIP_RETCODE SCIPdialogSelectInspect(
 
    /* check whether ID is in valid range */
    Seeed_Wrapper sw;
-   SCIP_CALL( GCGgetSeeedFromID(scip, &idtoinspect &sw) );
+   SCIP_CALL( GCGgetSeeedFromID(scip, &idtoinspect, &sw) );
 
    if( sw.seeed == NULL )
    {
@@ -1629,17 +1629,19 @@ SCIP_RETCODE SCIPdialogToolboxPostprocessSeeed(
 }
 
 
-/*
+/**
  * @brief method to handle and moderate user input for modifying decompositions
  * @param scip SCIP data structure
  * @param dialoghdlr dialog handler to handle user input
  * @param dialog dialog to handle user input
  * @returns SCIP return code
  */
+static
 SCIP_RETCODE SCIPdialogExecToolboxModify(
-   SCIP*                   scip,       /* SCIP data structure */
-   SCIP_DIALOGHDLR*        dialoghdlr, /* dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /* dialog for user input management */
+   SCIP*                   scip,       /**< SCIP data structure */
+   SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   int                     startindex  /**< index in seeed list to start list extract at */
    )
 {
    SCIP_Bool finished;
@@ -1675,16 +1677,15 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    /* 2) while user has not aborted: show current list extract */
    while ( !finished )
    {
-
       SCIP_CALL( SCIPdialogShowListExtractHeader(scip) );
 
-      SCIP_CALL( SCIPdialogShowListExtract(scip) );
+      SCIP_CALL( SCIPdialogShowListExtract(scip, startindex) );
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please choose an existing partial decomposition for modification (type \"choose <id>\" or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
 
       commandlen = strlen(command);
 
-      nseeeds = (int) GCGgetSelectList(scip)->size();
+      nseeeds = SCIPconshdlrDecompGetNSeeedLeafs(scip);
       if( strncmp( command, "back", commandlen) == 0 )
       {
          GCGsetSelectFirstIdToVisu(scip, GCGgetSelectFirstIdToVisu(scip) - DEFAULT_MENULENGTH);
@@ -1890,17 +1891,18 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    return SCIP_OKAY;
 }
 
-/*
+/**
  * @brief method to handle and moderate user input for creating new decompositions by the user
  * @param scip SCIP data structure
  * @param dialoghdlr dialog handler to handle user input
  * @param dialog dialog to handle user input
  * @returns SCIP return data structure
  */
+static
 SCIP_RETCODE SCIPdialogExecToolboxCreate(
-   SCIP*                   scip,       /* SCIP data structure */
-   SCIP_DIALOGHDLR*        dialoghdlr, /* dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /* dialog for user input management */
+   SCIP*                   scip,       /**< SCIP data structure */
+   SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
+   SCIP_DIALOG*            dialog      /**< dialog for user input management */
    )
 {
    char* command;
@@ -1915,7 +1917,7 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
       SCIPinfoMessage(scip, NULL, "No problem is loaded. Please read in a model first.\n");
       return SCIP_OKAY;
    }
-   if( (int) GCGgetSelectList(scip)->size() == 0 )
+   if( SCIPconshdlrDecompGetNSeeedLeafs(scip) == 0 )
    {
       SCIPinfoMessage(scip, NULL, "No decompositions available. Please detect first.\n");
       return SCIP_OKAY;
@@ -1929,9 +1931,6 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
    /* create new decomposition */
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Should the new partial decomposition be for the presolved or the unpresolved problem? (type \"presolved\" or \"unpresolved\") : \nGCG/toolbox> ", &command, &endoffile) );
    commandlen = strlen(command);
-
-   if( GCGgetSelectCurrUserSeeed(scip) != NULL )
-      delete GCGgetSelectCurrUserSeeed(scip);
 
    Seeedpool* seeedpool;
    SCIP_Bool isfromunpresolved;
@@ -1988,78 +1987,72 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
    Seeed* newseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool );
    newseeed->setIsFromUnpresolved(isfromunpresolved);
 
-   GCGsetSelectCurrUserSeeed(scip,newseeed);
    finished = FALSE;
    while ( !finished )
    {
       int commandlen2;
       SCIP_Bool success;
 
-      userseeed.displaySeeed();
-      SCIP_CALL( SCIPdialogShowCurrUserSeeedInfo(scip) );
-
+      newseeed->displaySeeed();
       SCIP_CALL( SCIPdialogShowToolboxInfo(scip) );
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "How do you want to proceed the with the current decomposition? (or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
 
       commandlen2 = strlen(command);
 
-      /* case distinction: */
       if( strncmp( command, "conss", commandlen2) == 0 )
       {
-         SCIPdialogToolboxModifyConss(scip, dialoghdlr, dialog);
+         SCIPdialogToolboxModifyConss(scip, dialoghdlr, dialog, newseeed);
          continue;
       }
       if( strncmp( command, "vars", commandlen2) == 0 )
       {
-         SCIPdialogToolboxModifyVars(scip, dialoghdlr, dialog);
+         SCIPdialogToolboxModifyVars(scip, dialoghdlr, dialog, newseeed);
          continue;
       }
       if( strncmp( command, "refine", commandlen2) == 0 )
       {
-         if(GCGgetSelectLastUserSeeed(scip) != NULL)
-            delete GCGgetSelectLastUserSeeed(scip);
-         GCGsetSelectLastUserSeeed(scip, new Seeed(GCGgetSelectCurrUserSeeed(scip)));
-         GCGgetSelectCurrUserSeeed(scip)->considerImplicits();
+         //@todo here was update of last user seeed
+         newseeed->considerImplicits();
          continue;
       }
 
       if( strncmp( command, "quit", commandlen2) == 0 )
       {
-         if( !GCGgetSelectCurrUserSeeed(scip)->isFromUnpresolved() && SCIPconshdlrDecompGetSeeedpool(scip) == NULL )
+         if( !newseeed->isFromUnpresolved() && SCIPconshdlrDecompGetSeeedpool(scip) == NULL )
             SCIPconshdlrDecompCreateSeeedpool(scip);
 
-         seeedpool = GCGgetSelectCurrUserSeeed(scip)->getSeeedpool();
-         if( seeedpool == NULL )
+         seeedpool = newseeed->getSeeedpool();
+         assert( seeedpool != NULL );
 
-         GCGgetSelectCurrUserSeeed(scip)->sort();
-         GCGgetSelectCurrUserSeeed(scip)->considerImplicits();
-         GCGgetSelectCurrUserSeeed(scip)->calcHashvalue();
-         assert( GCGgetSelectCurrUserSeeed(scip)->checkConsistency() );
+         newseeed->sort();
+         newseeed->considerImplicits();
+         newseeed->calcHashvalue();
+         assert( newseeed->checkConsistency() );
 
-         if(GCGgetSelectCurrUserSeeed(scip)->isComplete())
+         if(newseeed->isComplete())
          {
-            seeedpool->addSeeedToFinished(GCGgetSelectCurrUserSeeed(scip), &success);
+            seeedpool->addSeeedToFinished(newseeed, &success);
             if( !success )
             {
-               delete GCGgetSelectCurrUserSeeed(scip);
+               delete newseeed;
             }
          }
          else
          {
-            seeedpool->addSeeedToIncomplete(GCGgetSelectCurrUserSeeed(scip), &success);
+            seeedpool->addSeeedToIncomplete(newseeed, &success);
             if( !success )
             {
-               delete GCGgetSelectCurrUserSeeed(scip);
+               delete newseeed;
             }
          }
-         GCGsetSelectCurrUserSeeed(scip, NULL);
-         finished = TRUE;
 
+         finished = TRUE;
          continue;
       }
 
-      if( strncmp( command, "undo", commandlen2) == 0 )
+      //@todo reintroduce, maybe hand down pointer to last one?
+      /*if( strncmp( command, "undo", commandlen2) == 0 )
       {
          if ( GCGgetSelectLastUserSeeed(scip) == NULL )
             SCIPdialogMessage(scip, NULL, " nothing to be undone \n");
@@ -2070,29 +2063,29 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
             GCGsetSelectLastUserSeeed(scip, NULL);
          }
          continue;
-      }
+      }*/
 
       if( strncmp( command, "visualize", commandlen2) == 0 )
       {
-         userseeed.showVisualisation();
+         newseeed->showVisualisation();
          continue;
       }
 
       if( strncmp( command, "propagate", commandlen2) == 0 )
       {
-         SCIP_CALL( SCIPdialogToolboxPropagateSeeed(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPdialogToolboxPropagateSeeed(scip, dialoghdlr, dialog, newseeed) );
          continue;
       }
 
       if( strncmp( command, "finish", commandlen2) == 0 )
       {
-         SCIP_CALL( SCIPdialogToolboxFinishSeeed(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPdialogToolboxFinishSeeed(scip, dialoghdlr, dialog, newseeed) );
          continue;
       }
 
       if( strncmp( command, "postprocess", commandlen2) == 0 )
       {
-         SCIP_CALL( SCIPdialogToolboxPostprocessSeeed(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPdialogToolboxPostprocessSeeed(scip, dialoghdlr, dialog, newseeed) );
          continue;
       }
    }
@@ -2113,7 +2106,6 @@ SCIP_RETCODE SCIPdialogExploreSelect(
    char* ntovisualize;
    SCIP_Bool endoffile;
    int idtovisu;
-   Seeed* toselect;
    std::vector<int>* selected;
 
    int commandlen;
@@ -2124,28 +2116,23 @@ SCIP_RETCODE SCIPdialogExploreSelect(
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
    commandlen = strlen(ntovisualize);
 
-   idtovisu = DEFAULT_MENULENGTH;
+   idtovisu = -1;
    if( commandlen != 0)
       idtovisu = atoi(ntovisualize);
 
-   toselect = GCGgetSelectList(scip)->at(idtovisu);
+   Seeed_Wrapper sw;
+   SCIP_CALL( GCGgetSeeedFromID(scip, &idtovisu, &sw) );
 
-   toselect->setSelected(!toselect->isSelected() );
-
-   selected = GCGgetSelectIds(scip);
-   if( !toselect->isSelected() )
+   if( sw.seeed == NULL )
    {
-      selected->erase( find( selected->begin(), selected->end(), idtovisu) );
-   }
-   else
-   {
-      std::cout << "is selected!" << toselect->isSelected() <<std::endl;
-      selected->push_back(idtovisu);
-      assert(toselect->isSelected());
+      SCIPdialogMessage( scip, NULL, "This id is out of range." );
+      return SCIP_PARAMETERWRONGVAL;
    }
 
-   GCGsetSelectIds(scip, selected);
-   GCGsetSelectExists(scip, selected->size() > 0);
+   sw.seeed->setSelected(!sw.seeed->isSelected() );
+
+   if( sw.seeed->isSelected() )
+      std::cout << "is selected!" << sw.seeed->isSelected() <<std::endl;
 
    return SCIP_OKAY;
 }
@@ -2168,6 +2155,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
    char* command;
    SCIP_Bool endoffile;
    int nseeeds;
+   int startindex = 0;
 
    SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
    /* while user has not aborted: show current list extract */
@@ -2178,7 +2166,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
 
       SCIP_CALL( SCIPdialogShowListExtractHeader(scip) );
 
-      SCIP_CALL( SCIPdialogShowListExtract(scip) );
+      SCIP_CALL( SCIPdialogShowListExtract(scip, startindex) );
 
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
@@ -2186,29 +2174,29 @@ SCIP_RETCODE SCIPdialogExecSelect(
 
       commandlen = strlen(command);
 
-      nseeeds = (int) GCGgetSelectList(scip)->size();
+      nseeeds = SCIPconshdlrDecompGetNSeeedLeafs(scip);
       if( strncmp( command, "back", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, (GCGgetSelectFirstIdToVisu(scip) - DEFAULT_MENULENGTH));
-         if(GCGgetSelectFirstIdToVisu(scip) < 0 )
-            GCGsetSelectFirstIdToVisu(scip, 0);
+         startindex = startindex - DEFAULT_MENULENGTH;
+         if(startindex < 0 )
+            startindex = 0;
          continue;
       }
       if( strncmp( command, "next", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, (GCGgetSelectFirstIdToVisu(scip) + DEFAULT_MENULENGTH));
-         if( GCGgetSelectFirstIdToVisu(scip) > nseeeds - DEFAULT_MENULENGTH )
-            GCGsetSelectFirstIdToVisu(scip, nseeeds - DEFAULT_MENULENGTH);
+         startindex = startindex + DEFAULT_MENULENGTH;
+         if( startindex > nseeeds - DEFAULT_MENULENGTH )
+            startindex = nseeeds - DEFAULT_MENULENGTH;
          continue;
       }
       if( strncmp( command, "top", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, 0);
+         startindex = 0;
          continue;
       }
       if( strncmp( command, "end", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, nseeeds - DEFAULT_MENULENGTH);
+         startindex = nseeeds - DEFAULT_MENULENGTH;
          continue;
       }
 

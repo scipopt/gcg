@@ -68,46 +68,6 @@ SCIP_RETCODE SCIPdialogExecSelect(
    SCIP_DIALOG*            dialog
    );
 
-/**
- * @brief method to handle and moderate user input for modifying decompositions
- * @param scip SCIP data structure
- * @param dialoghdlr dialog handler to handle user input
- * @param dialog dialog to handle user input
- * @returns SCIP return code
- */
-extern
-SCIP_RETCODE SCIPdialogExecToolboxModify(
-   SCIP*                   scip,
-   SCIP_DIALOGHDLR*        dialoghdlr,
-   SCIP_DIALOG*            dialog
-   );
-
-/**
- * @brief method to handle and moderate user input for creating new decompositions by the user
- * @param scip SCIP data structure
- * @param dialoghdlr dialog handler to handle user input
- * @param dialog dialog to handle user input
- * @returns SCIP return data structure
- */
-extern
-SCIP_RETCODE SCIPdialogExecToolboxCreate(
-   SCIP*                   scip,
-   SCIP_DIALOGHDLR*        dialoghdlr,
-   SCIP_DIALOG*            dialog
-   );
-
-
-/**
- * @brief returns if there is a decomposition that is currently selected by the user (done in explore menu)
- * @param scip SCIP data structure
- * @returns TRUE if there is a decomposition that is currently selected by the user (done in explore menu)
- */
- extern
-SCIP_Bool SCIPdialogExistsSelected(
-   SCIP* scip
-   );
-
-
 
 #ifdef __cplusplus
 }

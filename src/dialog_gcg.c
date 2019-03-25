@@ -992,7 +992,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_SOLVING:
       assert( SCIPconshdlrDecompCheckConsistency(scip) );
       assert(SCIPgetNConss(scip) == SCIPgetNActiveConss(scip) );
-      if( GCGgetSelectExists(scip) )
+      if( SCIPconshdlrDecompGetSelectExists(scip) )
          SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE ) );
       else
          SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE ) );

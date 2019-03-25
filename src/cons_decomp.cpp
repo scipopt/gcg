@@ -4399,22 +4399,8 @@ SCIP_RETCODE GCGprintDecompInformation(
 }
 
 
-/*
- * @brief method to update the list of incomplete decompositions
- *
- * this list changes due to new decompositions, modified, decompositions or changes of the score
- *
- *  unselects all seeeds and updates list:
- * 1) add presolved finished
- * 2) add presolved unfinished
- * 3) add unpresolved finished
- * 4) add unpresolved partial
- *
- * @param scip SCIP data structure
- * @returns SCIP return code
- */
 SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
-   SCIP*          scip     /* SCIP data structure */
+   SCIP*          scip
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -4433,7 +4419,8 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
 
    assert( SCIPconshdlrDecompCheckConsistency(scip) );
 
-   conshdlrdata->startidvisu = 0;
+   //@todo here was startidvisu = 0
+
    SCIPconshdlrdataDecompUnselectAll(scip);
 
    if( conshdlrdata->hasrun && conshdlrdata->seeedpool == NULL && conshdlrdata->seeedpoolunpresolved == NULL)
