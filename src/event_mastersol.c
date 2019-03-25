@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -133,14 +133,18 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
    /* get discretization parameter */
    SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &discretization) );
 
-   /* transfer solution to the master problem if it was found by a heuristic in the original problem
-    * or if discretization is used
+   /* transfer solution to the master problem; ensure that
+    *  * SCIP instances are in correct stages
+    *  * the original solution does not already come from the master
+    *  * Dantzig-Wolfe decomposition is being used
+    *
     * NOTE: Care must be taken with the event handlers. When BENDERS or ORIGINAL mode is used, the relaxation solution
     * event handler is not included. So GCGeventhdlrRelaxsolIsTriggered will always return FALSE.
     */
    if( SCIPgetStage(scip) > SCIP_STAGE_TRANSFORMED && SCIPgetStage(masterprob) > SCIP_STAGE_TRANSFORMED &&
+      SCIPgetStage(masterprob) < SCIP_STAGE_SOLVED &&
       !GCGeventhdlrRelaxsolIsTriggered(scip, masterprob) &&
-      (SCIPsolGetHeur(sol) != NULL || (discretization && SCIPgetStage(masterprob) != SCIP_STAGE_SOLVED)) &&
+      (SCIPsolGetHeur(sol) != NULL || discretization) &&  /* @todo: This check is possibly not needed anymore */
       GCGgetDecompositionMode(scip) != DEC_DECMODE_BENDERS && GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL )
    {
       SCIPdebugMessage("Original feasible solution found by <%s> -- transferring to master problem\n",

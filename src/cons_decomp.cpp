@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -4838,9 +4838,9 @@ int SCIPconshdlrDecompGetBlockNumberCandidate(
  * @returns total detection time
  */
 SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
-    SCIP*                 scip   /* SCIP data structure */
-    )
-{
+    SCIP*                 scip                /**< SCIP data structure */
+    ){
+
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
@@ -4858,6 +4858,37 @@ SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
    return SCIPgetClockTime( scip, conshdlrdata->completedetectionclock );
 }
 
+
+SCIP_RETCODE SCIPconshdlrDecompBlockNumberCandidateToSeeedpool(
+   SCIP*                 scip,                /**< SCIP data structure */
+   SCIP_Bool             transformed
+   ){
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   for ( size_t i = 0; i < conshdlrdata->userblocknrcandidates->size(); ++i )
+   {
+      if( transformed )
+         conshdlrdata->seeedpool->addUserCandidatesNBlocks(conshdlrdata->userblocknrcandidates->at(i) );
+      else
+         conshdlrdata->seeedpoolunpresolved->addUserCandidatesNBlocks(conshdlrdata->userblocknrcandidates->at(i) );
+   }
+
+   return SCIP_OKAY;
+}
 
 /*
  * @brief sets a variable by name to the linking variables in the current user seeed
