@@ -792,7 +792,7 @@ SCIP_RETCODE GCGtoolboxUserSeeedReject(
  * @returns SCIP return code
  */
 static
-SCIP_RETCODE SCIPtoolboxUserSeeedFlush(
+SCIP_RETCODE GCGtoolboxUserSeeedFlush(
    SCIP* scip,       /**< SCIP data structure */
    Seeed* userseeed  /**< user seeed to be flushed */
    )
@@ -954,7 +954,8 @@ static
 SCIP_RETCODE SCIPdialogToolboxModifyConss(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   Seeed*                  userseeed   /**< seeed to be modified */
    )
 {
     SCIP_Bool matching;
@@ -967,11 +968,10 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
     assert(scip != NULL);
     matching = FALSE;
 
-    Seeed* seeed  = GCGgetSelectCurrUserSeeed(scip);
     Seeedpool* seeedpool;
     std::vector<int> matchingconss  = std::vector<int>(0);
 
-    seeedpool = seeed->getSeeedpool();
+    seeedpool = userseeed->getSeeedpool();
     /* Does user want to modify existing or create a new partial decomposition ?*/
     SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
        "Please specify a regular expression (modified ECMAScript regular expression grammar) matching the names of unassigned constraints you want to assign : \nGCG/toolbox> ",
@@ -990,16 +990,16 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
        }
     }
 
-    for( int oc = 0; oc < seeed->getNOpenconss(); ++oc )
+    for( int oc = 0; oc < userseeed->getNOpenconss(); ++oc )
     {
        const char* consname;
 
-       consname = SCIPconsGetName( seeedpool->getConsForIndex(seeed->getOpenconss()[oc] ) );
+       consname = SCIPconsGetName( seeedpool->getConsForIndex(userseeed->getOpenconss()[oc] ) );
 
        if( std::regex_match(consname, expr) )
        {
           matching = TRUE;
-          matchingconss.push_back(seeed->getOpenconss()[oc]);
+          matchingconss.push_back(userseeed->getOpenconss()[oc]);
           SCIPdebugMessage(" consname %s matches regex %s \n", consname, consregex );
        } else
           SCIPdebugMessage(" consname %s does not match regex %s \n", consname, consregex);
@@ -1011,10 +1011,7 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
        return SCIP_OKAY;
     }
 
-    if( GCGgetSelectLastUserSeeed(scip) != NULL)
-       delete GCGgetSelectLastUserSeeed(scip);
-    GCGsetSelectLastUserSeeed(scip, new Seeed(GCGgetSelectCurrUserSeeed(scip))) ;
-
+    //@todo note: here was the block updating last user seeed
 
     if( matchingconss.size() > 10 )
        SCIPdebugMessage(" There are %d unassigned constraints with names matching given regular expression. Showing the first 10:\n", (int) matchingconss.size());
@@ -1039,7 +1036,7 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
     {
        for( size_t mc = 0 ;  mc < matchingconss.size(); ++mc )
        {
-          seeed->bookAsMasterCons( matchingconss[mc] );
+          userseeed->bookAsMasterCons( matchingconss[mc] );
        }
     }
     else if( strncmp( command, "block", commandlen) == 0 )
@@ -1049,13 +1046,13 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
        int blockid = strtol(command2, &tail, 10);
        for( size_t mc = 0 ;  mc < matchingconss.size(); ++mc )
        {
-          seeed->bookAsBlockCons( matchingconss[mc], blockid );
+          userseeed->bookAsBlockCons( matchingconss[mc], blockid );
        }
     }
     else
        return SCIP_OKAY;
 
-    seeed->flushBooked();
+    userseeed->flushBooked();
 
    return SCIP_OKAY;
 }
@@ -1067,7 +1064,8 @@ static
 SCIP_RETCODE SCIPdialogToolboxModifyFinish(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   Seeed*                  userseeed
    )
 {
    SCIP_Bool         choosenfinisher;
@@ -1082,11 +1080,10 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
 
    assert(scip != NULL);
 
-   Seeed* seeed  = GCGgetSelectCurrUserSeeed(scip);
    Seeedpool* seeedpool;
    std::vector<int> matchingvars  = std::vector<int>(0);
 
-   seeedpool = seeed->getSeeedpool();
+   seeedpool = userseeed->getSeeedpool();
    choosenfinisher = FALSE;
    while ( !choosenfinisher )
    {
@@ -1115,16 +1112,14 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
    seeedPropData = new SEEED_PROPAGATION_DATA();
    seeedPropData->seeedpool = seeedpool;
    seeedPropData->nNewSeeeds = 0;
-   seeedPropData->seeedToPropagate = new Seeed(GCGgetSelectCurrUserSeeed(scip));
+   seeedPropData->seeedToPropagate = userseeed;
 
-   if( GCGgetSelectLastUserSeeed(scip) != NULL)
-      delete GCGgetSelectLastUserSeeed(scip);
-   GCGsetSelectLastUserSeeed(scip,new Seeed(GCGgetSelectCurrUserSeeed(scip)));
+   //@todo note: here was update of last user seeed
 
    finisher = seeedpool->getFinishingDetectorForIndex(finisherid);
    finisher->finishSeeed(scip, finisher, seeedPropData, &result);
 
-   delete GCGgetSelectCurrUserSeeed(scip);
+   delete userseeed;
 
    for( int i = 0; i <  seeedPropData->nNewSeeeds; ++i)
    {
@@ -1139,7 +1134,7 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
 
 /** Lets the user select a seeed to modify in toolbox
  *
- * @returns pointer to the chosen seeed */
+ * @returns pointer to a copy of the chosen seeed */
 static
 Seeed* SCIPdialogToolboxChoose(
    SCIP*                   scip,       /**< SCIP data structure */
@@ -1165,13 +1160,16 @@ Seeed* SCIPdialogToolboxChoose(
    if( commandlen != 0)
       idtochoose = atoi(ntochoose);
 
-   if ( commandlen == 0 || idtochoose < 0 || idtochoose >= (int) GCGgetSelectList(scip)->size() )
+   Seeed_Wrapper sw;
+   SCIP_CALL( GCGgetSeeedFromID(scip, &idtochoose, &sw) );
+
+   if( sw.seeed == NULL )
    {
       SCIPdialogMessage( scip, NULL, "This id is out of range." );
       return SCIP_PARAMETERWRONGVAL;
    }
 
-   return new Seeed( GCGgetSelectList(scip)->at(idtochoose) );
+   return new Seeed( sw.seeed );
 
    return SCIP_OKAY;
 }
@@ -1241,10 +1239,7 @@ SCIP_RETCODE SCIPdialogToolboxModifyVars(
        return SCIP_OKAY;
     }
 
-    if( GCGgetSelectLastUserSeeed(scip) != NULL)
-       delete GCGgetSelectLastUserSeeed(scip);
-    GCGsetSelectLastUserSeeed(scip, new Seeed(GCGgetSelectCurrUserSeeed(scip)));
-
+    //@todo here was the update of last user seeed
 
     if( matchingvars.size() > 10 )
        SCIPdialogMessage(scip, NULL,
@@ -1272,14 +1267,14 @@ SCIP_RETCODE SCIPdialogToolboxModifyVars(
     {
        for( size_t mc = 0 ;  mc < matchingvars.size(); ++mc )
        {
-          seeed->bookAsMasterVar( matchingvars[mc] );
+          userseeed->bookAsMasterVar( matchingvars[mc] );
        }
     } else
        if( strncmp( command, "linking", commandlen) == 0 )
            {
               for( size_t mc = 0 ;  mc < matchingvars.size(); ++mc )
               {
-                 seeed->bookAsLinkingVar( matchingvars[mc] );
+                 userseeed->bookAsLinkingVar( matchingvars[mc] );
               }
            }
     else if( strncmp( command, "block", commandlen) == 0 )
@@ -1290,14 +1285,14 @@ SCIP_RETCODE SCIPdialogToolboxModifyVars(
        int blockid = strtol(command2, &tail, 10);
        for( size_t mc = 0 ;  mc < matchingvars.size(); ++mc )
        {
-          seeed->bookAsBlockVar( matchingvars[mc], blockid );
+          userseeed->bookAsBlockVar( matchingvars[mc], blockid );
        }
     }
     else
        return SCIP_OKAY;
 
-    seeed->flushBooked();
-    seeed->deleteEmptyBlocks(true);
+    userseeed->flushBooked();
+    userseeed->deleteEmptyBlocks(true);
 
    return SCIP_OKAY;
 }
@@ -1310,6 +1305,7 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   Seeed*                  userseeed,  /**< seeed to edit */
    toolboxtype             action      /**< what to do: can be set to PROPAGATE, FINISH or POSTPROCESS */
    )
 {
@@ -1336,7 +1332,7 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
    else
       actiontype = "UNDEFINED_ACTION";
 
-   if( action == POSTPROCESS && GCGgetSelectCurrUserSeeed(scip)->isComplete() == FALSE )
+   if( action == POSTPROCESS && userseeed->isComplete() == FALSE )
    {
       SCIPinfoMessage(scip, NULL, "The currently selected seeed is not finished, postprocessing not possible.\n");
       return SCIP_OKAY;
@@ -1370,12 +1366,12 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
    }
 
    /* build seeed propagation data needed in callbacks */
-   seeedpool = GCGgetSelectCurrUserSeeed(scip)->getSeeedpool();
+   seeedpool = userseeed->getSeeedpool();
 
    seeedPropData = new SEEED_PROPAGATION_DATA();
    seeedPropData->seeedpool = seeedpool;
    seeedPropData->nNewSeeeds = 0;
-   seeedPropData->seeedToPropagate = new Seeed(GCGgetSelectCurrUserSeeed(scip));
+   seeedPropData->seeedToPropagate = new Seeed(userseeed);
    seeedPropData->seeedToPropagate->setSeeedpool(seeedpool);
    if( action != POSTPROCESS )
    {
@@ -1495,9 +1491,9 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
             SCIPinfoMessage(scip, NULL, "\nSaving newly found seeeds...\n\n");
             for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
             {
-               GCGsetSelectCurrUserSeeed(scip, new Seeed( seeedPropData->newSeeeds[i] ));
-               SCIP_CALL( SCIPconshdlrDecompUserSeeedFlush(scip) );
-               assert(GCGgetSelectCurrUserSeeed(scip) == NULL);
+               userseeed = new Seeed( seeedPropData->newSeeeds[i] ); //@todo delete previous seeed beforehand?
+               SCIP_CALL( GCGtoolboxUserSeeedFlush(scip, userseeed) );
+               assert(userseeed == NULL);
             }
 
             if( seeedPropData->nNewSeeeds == 1 )
@@ -1512,16 +1508,16 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
                }
                if( strncmp( command, "continue", commandlen) == 0 )
                {
-                  GCGsetSelectCurrUserSeeed(scip, new Seeed(seeedPropData->newSeeeds[0]));
+                  userseeed = new Seeed(seeedPropData->newSeeeds[0]); //@todo delete previous seeed beforehand?
                }
                else
                {
-                  GCGsetSelectCurrUserSeeed(scip, new Seeed(seeedPropData->seeedToPropagate));
+                  userseeed = new Seeed(seeedPropData->seeedToPropagate); //@todo delete previous seeed beforehand?
                }
             }
             else
             {
-               GCGsetSelectCurrUserSeeed(scip, new Seeed(seeedPropData->seeedToPropagate));
+               userseeed = new Seeed(seeedPropData->seeedToPropagate); //@todo delete previous seeed beforehand?
             }
             finished = TRUE;
             continue;
@@ -1543,10 +1539,10 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
                SCIPinfoMessage(scip, NULL, "Storing seeeds...\n");
                for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
                {
-                  GCGsetSelectCurrUserSeeed(scip, new Seeed(seeedPropData->newSeeeds[i]));
-                  SCIP_CALL( SCIPconshdlrDecompUserSeeedFlush(scip) );
+                  userseeed =  new Seeed(seeedPropData->newSeeeds[i]); //@todo delete previous seeed beforehand?
+                  SCIP_CALL( GCGtoolboxUserSeeedFlush(scip, userseeed) );
                }
-               GCGsetSelectCurrUserSeeed(scip, new Seeed(seeedPropData->seeedToPropagate));
+               userseeed = new Seeed(seeedPropData->seeedToPropagate); //@todo delete previous seeed beforehand?
                SCIPinfoMessage(scip, NULL, "\nAll seeeds stored successfully!\n");
             }
             finished = TRUE;
@@ -1595,10 +1591,11 @@ static
 SCIP_RETCODE SCIPdialogToolboxFinishSeeed(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   Seeed*                  seeed       /**< seeed to finish */
    )
 {
-   return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, FINISH);
+   return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, seeed, FINISH);
 }
 
 
@@ -1609,10 +1606,11 @@ static
 SCIP_RETCODE SCIPdialogToolboxPropagateSeeed(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   Seeed*                  seeed       /**< seeed to propagate */
    )
 {
-   return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, PROPAGATE);
+   return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, seeed, PROPAGATE);
 }
 
 
@@ -1623,10 +1621,11 @@ static
 SCIP_RETCODE SCIPdialogToolboxPostprocessSeeed(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   Seeed*                  seeed       /**< seeed to postprocess */
    )
 {
-   return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, POSTPROCESS);
+   return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, seeed, POSTPROCESS);
 }
 
 
@@ -1643,7 +1642,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    SCIP_DIALOG*            dialog      /* dialog for user input management */
    )
 {
-   SCIP_Bool         finished;
+   SCIP_Bool finished;
    char* command;
    SCIP_Bool endoffile;
    int commandlen;
@@ -1660,7 +1659,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       SCIPinfoMessage(scip, NULL, "No problem is loaded. Please read in a model first.\n");
       return SCIP_OKAY;
    }
-   if( (int) GCGgetSelectList(scip)->size() == 0 )
+   if( SCIPconshdlrDecompGetNSeeedLeafs(scip) == 0 )
    {
       SCIPinfoMessage(scip, NULL, "No decompositions available. Please detect first.\n");
       return SCIP_OKAY;
