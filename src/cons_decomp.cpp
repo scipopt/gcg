@@ -236,7 +236,6 @@ struct SCIP_ConshdlrData
    int                   seeedcounter;                            /**< counts the number of seeeds, used for seeed ids */
 
    /* data fields for selection/exploration management */
-   int                    startidvisu;                            /**< when displaying the list of decomps, this is the starting index */
    std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;      /**< vector containing the pairs of candidate list of decomps (to visualize, write, consider for family tree, consider for solving etc.) sorted according to  */
    int                    currscoretype;                          /**< indicates which score should be used for comparing (partial) decompositions
                                                                           0:max white,
@@ -975,7 +974,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->consnamesalreadyrepaired = FALSE;
 
    conshdlrdata->unpresolveduserseeedadded = FALSE;
-   conshdlrdata->startidvisu = 0;
    conshdlrdata->candidates = new std::vector<std::pair<SeeedPtr, SCIP_Real > >(0);
    conshdlrdata->sizedecomps = 10;
    conshdlrdata->seeedcounter = 0;
@@ -4468,42 +4466,6 @@ SCORETYPE SCIPconshdlrDecompGetScoretype(
 }
 
 
-int GCGgetSelectFirstIdToVisu(
-   SCIP*          scip  /* SCIP data structure */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   assert(scip != NULL);
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert( conshdlr != NULL );
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   return conshdlrdata->startidvisu;
-}
-
-void GCGsetSelectFirstIdToVisu(
-   SCIP*          scip,  /* SCIP data structure */
-   int            id
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   assert(scip != NULL);
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert( conshdlr != NULL );
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   conshdlrdata->startidvisu = id;
-}
-
-
 SCIP_RETCODE SCIPconshdlrDecompGetSeeedLeafList(
    SCIP*          scip,  /* SCIP data structure */
    int**          idlist,
@@ -4554,7 +4516,7 @@ SCIP_Bool SCIPconshdlrDecompGetSelectExists(
    )
 {
    int length;
-   int* list;
+   int* list; //@todo malloc in size of nseeeds
 
    SCIP_CALL( SCIPconshdlrDecompGetSelectedSeeeds(scip, &list, &length) );
 

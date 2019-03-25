@@ -711,19 +711,6 @@ SCORETYPE SCIPconshdlrDecompGetScoretype(
    SCIP*          scip  /**< SCIP data structure */
    );
 
-/** @brief Gets the first id to visualize in explore menu
- *  @returns id to start with */
-int GCGgetSelectFirstIdToVisu(
-   SCIP*          scip  /**< SCIP data structure */
-   );
-
-
-/** @brief sets the first id to visualize in explore menu */
-void GCGsetSelectFirstIdToVisu(
-   SCIP*          scip,  /**< SCIP data structure */
-   int            id     /**< id to start at */
-   );
-
 
 /** @brief Gets a list of ids of the current seeeds that are finished or to be finished
  *
