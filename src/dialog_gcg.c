@@ -904,21 +904,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
    return SCIP_OKAY;
 }
 
-/** dialog execution method for the decomposition toolbox command */
-SCIP_DECL_DIALOGEXEC(GCGdialogExecToolbox)
-{  /*lint --e{715}*/
-
-   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
-
-   SCIP_CALL( SCIPconshdlrDecompExecToolbox(scip, dialoghdlr, dialog ) );
-
-   SCIPdialogMessage(scip, NULL, "\n");
-
-   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
-
-   return SCIP_OKAY;
-}
-
 
 /** dialog execution method for the optimize command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
@@ -960,7 +945,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
       assert(SCIPconshdlrDecompCheckConsistency(scip) );
 
-      if( !GCGgetSelectExists(scip) )
+      if( !SCIPconshdlrDecompGetSelectExists(scip) )
       {
          if( SCIPconshdlrDecompUnpresolvedSeeedExists(scip) )
          {
@@ -1581,18 +1566,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
    }
-
-   /* select */
-   if( !SCIPdialogHasEntry(root, "decomposition_toolbox") )
-   {
-      SCIP_CALL( SCIPincludeDialog(scip, &submenu,
-         NULL,
-         GCGdialogExecToolbox, NULL, NULL,
-         "decomposition_toolbox", "create/modify (partial) decompositions", FALSE, NULL) );
-      SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
-      SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
-   }
-
 
    /* detect */
    if( !SCIPdialogHasEntry(root, "detect") )
