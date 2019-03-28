@@ -55,7 +55,7 @@ enum toolboxtype {
 };
 
 /**
- * @brief method too handle user input for "explore" command
+ * @brief method to handle user input for "explore" command
  * @param scip SCIP data structure
  * @param dialoghdlr dialog handler to handle user input
  * @param dialog dialog to handle user input

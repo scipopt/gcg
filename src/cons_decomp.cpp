@@ -4456,14 +4456,8 @@ SCIP_RETCODE GCGprintDecompInformation(
    FILE*                 file    /* output file or NULL for standard output */
 )
 {
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    std::vector<gcg::Seeed*>::const_iterator seeediter;
    std::vector<gcg::Seeed*>::const_iterator seeediterend;
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
 
    SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
 

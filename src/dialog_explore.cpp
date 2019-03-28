@@ -475,7 +475,7 @@ SCIP_RETCODE SCIPdialogSelectCalcStrongDecompositionScore(
       std::stringstream convert( ntocalcstrong );
       convert >> idtocalcstrong;
 
-      if ( idtocalcstrong == 0 && ntocalcstrong[0] != '0' )
+      if( idtocalcstrong == 0 && ntocalcstrong[0] != '0' )
       {
          idtocalcstrong = -1;
       }
@@ -553,7 +553,7 @@ SCIP_RETCODE SCIPdialogSelectInspect(
       std::stringstream convert( ndetaillevel );
       convert >> detaillevel;
 
-      if ( detaillevel < 0 || ( detaillevel == 0 && ndetaillevel[0] != '0' ) )
+      if( detaillevel < 0 || ( detaillevel == 0 && ndetaillevel[0] != '0' ) )
       {
          detaillevel = 1;
       }
@@ -561,27 +561,6 @@ SCIP_RETCODE SCIPdialogSelectInspect(
 
    /* call displayInfo method according to chosen parameters */
    sw.seeed->displayInfo( detaillevel );
-
-   return SCIP_OKAY;
-}
-
-
-/**
- * @brief rejects and deletes the current user seeed
- * @returns SCIP return code
- */
-static
-SCIP_RETCODE GCGtoolboxUserSeeedReject(
-  SCIP* scip, /**< SCIP data structure */
-  Seeed* userseeed
-  )
-{
-   if( userseeed == NULL )
-   {
-      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one  before you can reject it\n");
-      return SCIP_OKAY;
-   }
-   delete userseeed;
 
    return SCIP_OKAY;
 }
@@ -625,7 +604,7 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
     }
     catch (const std::regex_error& e) {
        std::cout << "regex_error caught: " << e.what() << '\n';
-       if (e.code() == std::regex_constants::error_brack) {
+       if(e.code() == std::regex_constants::error_brack) {
           std::cout << "The code was error_brack\n";
        }
     }
@@ -850,7 +829,7 @@ SCIP_RETCODE SCIPdialogToolboxModifyVars(
     }
     catch (const std::regex_error& e) {
        std::cout << "regex_error caught: " << e.what() << '\n';
-       if (e.code() == std::regex_constants::error_brack) {
+       if(e.code() == std::regex_constants::error_brack) {
           SCIPdebugMessage("The code was error_brack\n");
        }
     }
@@ -1132,7 +1111,9 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
             for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
             {
                userseeed = new Seeed( seeedPropData->newSeeeds[i] ); //@todo delete previous seeed beforehand?
-               SCIP_CALL( GCGtoolboxUserSeeedFlush(scip, userseeed) );
+               Seeed_Wrapper sw;
+               sw.seeed = userseeed;
+               SCIP_CALL( SCIPconshdlrDecompRefineAndAddSeeed(scip, &sw) );
                assert(userseeed == NULL);
             }
 
@@ -1179,8 +1160,10 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
                SCIPinfoMessage(scip, NULL, "Storing seeeds...\n");
                for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
                {
-                  userseeed =  new Seeed(seeedPropData->newSeeeds[i]); //@todo delete previous seeed beforehand?
-                  SCIP_CALL( GCGtoolboxUserSeeedFlush(scip, userseeed) );
+                  userseeed = new Seeed(seeedPropData->newSeeeds[i]); //@todo delete previous seeed beforehand?
+                  Seeed_Wrapper sw;
+                  sw.seeed = userseeed;
+                  SCIP_CALL( SCIPconshdlrDecompRefineAndAddSeeed(scip, &sw) );
                }
                userseeed = new Seeed(seeedPropData->seeedToPropagate); //@todo delete previous seeed beforehand?
                SCIPinfoMessage(scip, NULL, "\nAll seeeds stored successfully!\n");
@@ -1290,6 +1273,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    int commandlen;
    SCIP_Bool selectedsomeseeed;
    int nseeeds;
+   Seeed* userseeed;
 
    selectedsomeseeed = TRUE;
 
@@ -1328,26 +1312,26 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       nseeeds = SCIPconshdlrDecompGetNSeeedLeafs(scip);
       if( strncmp( command, "back", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, GCGgetSelectFirstIdToVisu(scip) - DEFAULT_MENULENGTH);
-         if(GCGgetSelectFirstIdToVisu(scip) < 0 )
-            GCGsetSelectFirstIdToVisu(scip, 0);
+         startindex = startindex - DEFAULT_MENULENGTH;
+         if(startindex < 0 )
+            startindex = 0;
          continue;
       }
       if( strncmp( command, "next", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, (GCGgetSelectFirstIdToVisu(scip) + DEFAULT_MENULENGTH));
-         if( GCGgetSelectFirstIdToVisu(scip) > nseeeds - DEFAULT_MENULENGTH )
-            GCGsetSelectFirstIdToVisu(scip, nseeeds - DEFAULT_MENULENGTH);
+         startindex = startindex + DEFAULT_MENULENGTH;
+         if( startindex > nseeeds - DEFAULT_MENULENGTH )
+            startindex = nseeeds - DEFAULT_MENULENGTH;
          continue;
       }
       if( strncmp( command, "top", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, 0);
+         startindex = 0;
          continue;
       }
       if( strncmp( command, "end", commandlen) == 0 )
       {
-         GCGsetSelectFirstIdToVisu(scip, nseeeds - DEFAULT_MENULENGTH);
+         startindex = nseeeds - DEFAULT_MENULENGTH;
          continue;
       }
 
@@ -1360,18 +1344,18 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
 
       if( strncmp( command, "choose", commandlen) == 0 )
       {
-         SCIP_RETCODE retcode = SCIPdialogToolboxChoose(scip, dialoghdlr, dialog );
-    if (retcode != SCIP_OKAY)
-    {
-       selectedsomeseeed = FALSE;
-       continue;
-    }
-    else
-    {
-       selectedsomeseeed = TRUE;
-       finished = TRUE;
-       break;
-    }
+          userseeed = SCIPdialogToolboxChoose(scip, dialoghdlr, dialog );
+          if(userseeed == NULL)
+          {
+             selectedsomeseeed = FALSE;
+             continue;
+          }
+          else
+          {
+             selectedsomeseeed = TRUE;
+             finished = TRUE;
+             break;
+          }
       }
 
       if( strncmp( command, "abort", commandlen) == 0 )
@@ -1395,19 +1379,19 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
 
       if( strncmp( command, "propagate", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogToolboxPropagateSeeed(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPdialogToolboxPropagateSeeed(scip, dialoghdlr, dialog, userseeed) );
          continue;
       }
 
       if( strncmp( command, "finishseeed", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogToolboxFinishSeeed(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPdialogToolboxFinishSeeed(scip, dialoghdlr, dialog, userseeed) );
          continue;
       }
 
       if( strncmp( command, "postprocess", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogToolboxPostprocessSeeed(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPdialogToolboxPostprocessSeeed(scip, dialoghdlr, dialog, userseeed) );
          continue;
       }
    }
@@ -1417,7 +1401,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       int commandlen2;
       SCIP_Bool success;
 
-      userseeed.displaySeeed();
+      userseeed->displaySeeed();
 
       SCIP_CALL( SCIPdialogShowToolboxInfo(scip) );
 
@@ -1425,76 +1409,72 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
 
       commandlen2 = strlen(command);
 
-      /* case distinction: */
       if( strncmp( command, "conss", commandlen2) == 0 )
       {
-         SCIPdialogToolboxModifyConss(scip, dialoghdlr, dialog);
+         SCIPdialogToolboxModifyConss(scip, dialoghdlr, dialog, userseeed);
          continue;
       }
       if( strncmp( command, "vars", commandlen2) == 0 )
       {
-         SCIPdialogToolboxModifyVars(scip, dialoghdlr, dialog);
+         SCIPdialogToolboxModifyVars(scip, dialoghdlr, dialog, userseeed);
          continue;
       }
       if( strncmp( command, "finish", commandlen2) == 0 )
       {
-         SCIPdialogToolboxModifyFinish(scip, dialoghdlr, dialog);
+         SCIPdialogToolboxModifyFinish(scip, dialoghdlr, dialog, userseeed);
          continue;
       }
       if( strncmp( command, "refine", commandlen2) == 0 )
       {
-         if(GCGgetSelectLastUserSeeed(scip) != NULL)
-            delete GCGgetSelectLastUserSeeed(scip);
-         GCGsetSelectLastUserSeeed(scip, new Seeed(GCGgetSelectCurrUserSeeed(scip)));
-         GCGgetSelectCurrUserSeeed(scip)->considerImplicits();
+         //@todo here was update of last user seeed
+         userseeed->considerImplicits();
          continue;
       }
 
       if( strncmp( command, "quit", commandlen2) == 0 )
       {
          /* determine whether there is a seeedpool for the presolved problem */
-         SEEED_WRAPPER* wrapper = SCIPconshdlrDecompGetSeeedpool(scip);
+         SEEED_WRAPPER wrapper;
+         SCIPconshdlrDecompGetSeeedpool(scip, &wrapper);
          Seeedpool* internalseeedpool = wrapper->seeedpool;
 
          Seeedpool* seeedpool;
-         Seeed* curruserseeed = GCGgetSelectCurrUserSeeed(scip);
 
-         if( !curruserseeed->isFromUnpresolved() && internalseeedpool == NULL )
+         if(!userseeed->isFromUnpresolved())
             SCIPconshdlrDecompCreateSeeedpool(scip);
 
-         seeedpool = curruserseeed->getSeeedpool();
+         seeedpool = userseeed->getSeeedpool();
          if( seeedpool == NULL )
 
-         curruserseeed->sort();
-         curruserseeed->considerImplicits();
-         curruserseeed->calcHashvalue();
-         assert( curruserseeed->checkConsistency() );
+         userseeed->sort();
+         userseeed->considerImplicits();
+         userseeed->calcHashvalue();
+         assert( userseeed->checkConsistency() );
 
-         if( curruserseeed->isComplete() )
+         if( userseeed->isComplete() )
          {
-            seeedpool->addSeeedToFinished(curruserseeed, &success);
+            seeedpool->addSeeedToFinished(userseeed, &success);
             if( !success )
             {
-               delete curruserseeed;
+               delete userseeed;
             }
          } else
          {
-            seeedpool->addSeeedToIncomplete(curruserseeed, &success);
+            seeedpool->addSeeedToIncomplete(userseeed, &success);
             if( !success )
             {
-               delete curruserseeed;
+               delete userseeed;
             }
          }
-         curruserseeed = NULL;
-         GCGsetSelectCurrUserSeeed(scip, curruserseeed);
+         userseeed = NULL;
          finished = TRUE;
 
          continue;
       }
-
+      /*@todo reintroduce undo feature
       if( strncmp( command, "undo", commandlen2) == 0 )
       {
-         if ( GCGgetSelectLastUserSeeed(scip) == NULL )
+         if( GCGgetSelectLastUserSeeed(scip) == NULL )
             SCIPdialogMessage(scip, NULL, " nothing to be undone \n");
          else
          {
@@ -1504,27 +1484,28 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
          }
          continue;
       }
+      */
 
       if( strncmp( command, "visualize", commandlen2) == 0 )
       {
-         userseeed.showVisualisation();
+         userseeed->showVisualisation();
          continue;
       }
 
       if( strncmp( command, "propagate", commandlen2) == 0 )
       {
-         SCIP_CALL( SCIPdialogToolboxPropagateSeeed(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPdialogToolboxPropagateSeeed(scip, dialoghdlr, dialog, userseeed) );
          continue;
       }
       if( strncmp( command, "finishseeed", commandlen2) == 0 )
       {
-         SCIP_CALL( SCIPdialogToolboxFinishSeeed(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPdialogToolboxFinishSeeed(scip, dialoghdlr, dialog, userseeed) );
          continue;
       }
 
       if( strncmp( command, "postprocess", commandlen2) == 0 )
       {
-         SCIP_CALL( SCIPdialogToolboxPostprocessSeeed(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPdialogToolboxPostprocessSeeed(scip, dialoghdlr, dialog, userseeed) );
          continue;
       }
    }
@@ -1583,9 +1564,11 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
 
    if( strncmp( command, "presolved", commandlen) == 0 )
    {
+      Seeed_Wrapper sw;
       isfromunpresolved = FALSE;
-      if (SCIPconshdlrDecompGetSeeedpool(scip) != NULL )
-         seeedpool = SCIPconshdlrDecompGetSeeedpool(scip);
+      SCIPconshdlrDecompGetSeeedpool(scip, &sw);
+      if( sw.seeedpool != NULL )
+         seeedpool = sw.seeedpool;
       else
       {
          if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
@@ -1595,33 +1578,34 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
          }
 
          SCIPconshdlrDecompCreateSeeedpool(scip);
-         seeedpool = SCIPconshdlrDecompGetSeeedpool(scip);
+         SCIPconshdlrDecompGetSeeedpool(scip, &sw);
+         seeedpool = sw.seeedpool;
       }
    }
    else
    {
       isfromunpresolved = TRUE;
-      if ( SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip) == NULL )
-         SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
-      seeedpool = SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip);
-
+      SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+      Seeed_Wrapper sw;
+      SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &sw);
+      seeedpool = sw.seeedpool;
    }
+
    if( seeedpool == NULL )
    {
+      Seeed_Wrapper sw;
       if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
-
       {
-         if(SCIPconshdlrDecompGetSeeedpool(scip) == NULL )
-            SCIPconshdlrDecompCreateSeeedpool(scip);
-         seeedpool = SCIPconshdlrDecompGetSeeedpool(scip);
+         SCIPconshdlrDecompCreateSeeedpool(scip);
+         SCIPconshdlrDecompGetSeeedpool(scip, &sw);
+         seeedpool = sw.seeedpool;
       }
       else
       {
-         if(SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip) == NULL)
-            SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
-         seeedpool = SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip);
+         SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+         SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &sw);
+         seeedpool = sw.seeedpool;
       }
-
    }
 
    Seeed* newseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool );
@@ -1659,7 +1643,7 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
 
       if( strncmp( command, "quit", commandlen2) == 0 )
       {
-         if( !newseeed->isFromUnpresolved() && SCIPconshdlrDecompGetSeeedpool(scip) == NULL )
+         if( !newseeed->isFromUnpresolved() )
             SCIPconshdlrDecompCreateSeeedpool(scip);
 
          seeedpool = newseeed->getSeeedpool();
@@ -1694,7 +1678,7 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
       //@todo reintroduce, maybe hand down pointer to last one?
       /*if( strncmp( command, "undo", commandlen2) == 0 )
       {
-         if ( GCGgetSelectLastUserSeeed(scip) == NULL )
+         if( GCGgetSelectLastUserSeeed(scip) == NULL )
             SCIPdialogMessage(scip, NULL, " nothing to be undone \n");
          else
          {
@@ -1778,17 +1762,10 @@ SCIP_RETCODE SCIPdialogExploreSelect(
 }
 
 
-/*
- * @brief method too handle user input for "explore" command
- * @param scip SCIP data structure
- * @param dialoghdlr dialog handler to handle user input
- * @param dialog dialog to handle user input
- * @returns SCIP return code
- */
 SCIP_RETCODE SCIPdialogExecSelect(
-   SCIP*                   scip,       /* SCIP data structure */
-   SCIP_DIALOGHDLR*        dialoghdlr, /* dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /* dialog for user input management */
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
    )
 {
    SCIP_Bool         finished;
@@ -1884,7 +1861,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
       }
       if( strncmp( command, "modify", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog, startindex) );
          SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
          continue;
       }
