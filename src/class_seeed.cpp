@@ -893,6 +893,22 @@ SCIP_RETCODE Seeed::bookAsBlockCons(
 }
 
 
+SCIP_RETCODE Seeed::bookAsBlockConsByName(
+   const char*           consname,            /**< name of the constraint */
+   int                   blockid              /**< block index ( counting from 0) */
+   )
+{
+   SCIP_CONS* cons = isfromunpresolved ? (SCIPfindOrigCons(scip, consname) == NULL
+      ? SCIPfindCons(scip, consname): SCIPfindOrigCons(scip, consname)) : SCIPfindCons(scip, consname);
+   int consindex = seeedpool->getIndexForCons( cons ) ;
+
+   if( blockid >= nBlocks )
+         nBlocks = blockid+1;
+   this->bookAsBlockCons(consindex, blockid);
+
+   return SCIP_OKAY;
+}
+
 SCIP_RETCODE Seeed::bookAsBlockVar(
    int varToBlock,
    int block
@@ -903,6 +919,21 @@ SCIP_RETCODE Seeed::bookAsBlockVar(
    assert( block >= 0 && block < nBlocks );
    std::pair<int, int> pair( varToBlock, block );
    bookedAsBlockVars.push_back( pair );
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE Seeed::bookAsBlockVarByName(
+   const char*           varname,
+   int                   blockid
+   )
+{
+   int varindex = seeedpool->getIndexForVar( SCIPfindVar(scip, varname) );
+
+   // if the block id is higher than expected, set the block to master
+   if( blockid >= nBlocks )
+      nBlocks = blockid+1;
+   this->bookAsBlockVar(varindex, blockid);
+
    return SCIP_OKAY;
 }
 
@@ -918,6 +949,17 @@ SCIP_RETCODE Seeed::bookAsMasterCons(
 }
 
 
+SCIP_RETCODE Seeed::bookAsMasterConsByName(
+   const char*           consname   /**< name of cons to book as master cons */
+   )
+{
+   SCIP_CONS* cons = isfromunpresolved ? SCIPfindOrigCons(scip, consname) : SCIPfindCons(scip, consname);
+
+   int consindex = seeedpool->getIndexForCons( cons );
+   this->bookAsMasterCons(consindex);
+   return SCIP_OKAY;
+}
+
 SCIP_RETCODE Seeed::bookAsMasterVar(
    int varToMaster
    )
@@ -925,6 +967,17 @@ SCIP_RETCODE Seeed::bookAsMasterVar(
    assert( varToMaster >= 0 && varToMaster < nVars );
    assert( isvaropen[varToMaster]);
    bookedAsMasterVars.push_back( varToMaster );
+   return SCIP_OKAY;
+}
+
+
+SCIP_RETCODE Seeed::bookAsMasterVarByName(
+   const char*           varname
+   )
+{
+   int varindex = seeedpool->getIndexForVar( SCIPfindVar(scip, varname) );
+   this->bookAsMasterVar(varindex);
+
    return SCIP_OKAY;
 }
 
@@ -939,6 +992,16 @@ SCIP_RETCODE Seeed::bookAsLinkingVar(
    return SCIP_OKAY;
 }
 
+
+SCIP_RETCODE Seeed::bookAsLinkingVarByName(
+   const char*           varname              /**< name of the variable */
+   )
+{
+   int varindex = seeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
+   this->bookAsLinkingVar(varindex);
+
+   return SCIP_OKAY;
+}
 
 SCIP_RETCODE Seeed::bookAsStairlinkingVar(
    int varToStairlinking,

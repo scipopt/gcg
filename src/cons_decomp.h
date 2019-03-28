@@ -677,6 +677,21 @@ SCIP_RETCODE GCGgetSeeedFromID(
    );
 
 
+/**
+ * @brief creates a new seeed and sets whether it is presolved and complete
+ *
+ * creates a new seeed as specified
+ * @note this function assumes that the corresponding seeedpool exists
+ * @returns new seeed
+ */
+extern
+SEEED_WRAPPER* GCGnewSeeed(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             presolved,          /**< should the user seeed be created for the presolved problem */
+   SCIP_Bool             markedincomplete    /**< should the user seeed be a partial one */
+   );
+
+
 /* public methods for internal management of seeeds in explore menu and related functions */
 
 /**
@@ -707,6 +722,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
  * Gets the currently selected scoretype
  * @returns the currently selected scoretype
  */
+extern
 SCORETYPE SCIPconshdlrDecompGetScoretype(
    SCIP*          scip  /**< SCIP data structure */
    );

@@ -4230,6 +4230,31 @@ SCIP_RETCODE GCGgetSeeedFromID(
    return SCIP_OKAY;
 }
 
+Seeed_Wrapper* GCGnewSeeed(
+   SCIP*                 scip,
+   SCIP_Bool             presolved,
+   SCIP_Bool             markedincomplete
+   )
+{
+   Seeed_Wrapper* swpool = presolved ? SCIPconshdlrDecompGetSeeedpool(scip)
+      : SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip);
+   Seeedpool* currseeedpool = swpool->seeedpool;
+
+   assert( currseeedpool != NULL );
+
+   Seeed* userseeed = new Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool);
+   userseeed->setIsFromUnpresolved( !presolved );
+
+   if( markedincomplete )
+      userseeed->setUsergiven(USERGIVEN::PARTIAL);
+   else
+      userseeed->setUsergiven(USERGIVEN::COMPLETED_CONSTOMASTER);
+
+   Seeed_Wrapper* sw;
+   sw->seeed = userseeed;
+   return sw;
+}
+
 
 /* prints blockcandiateinformation in following format:
  * NCANDIDATES

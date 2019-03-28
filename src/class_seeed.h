@@ -453,6 +453,16 @@ public:
       );
 
    /**
+    * @brief sets a constraint by name to a block
+    * @see bookAsBlockCons
+    * @returns SCIP return code
+    */
+   SCIP_RETCODE bookAsBlockConsByName(
+      const char*           consname,            /**< name of the constraint */
+      int                   blockid              /**< block index ( counting from 0) */
+      );
+
+   /**
     * @brief marks var as block variable of given block
     *
     * books a variable to be added to the block constraints of the given block
@@ -465,6 +475,16 @@ public:
    SCIP_RETCODE bookAsBlockVar(
       int varToBlock,
       int block
+      );
+
+   /**
+    * @brief books a variable by name to a block
+    * @see bookAsBlockVar
+    * @returns SCIP return code
+    */
+   SCIP_RETCODE bookAsBlockVarByName(
+      const char*           varname,             /**< name of the variable */
+      int                   blockid              /**< block index ( counting from 0) */
       );
 
    /**
@@ -482,6 +502,15 @@ public:
       );
 
    /**
+    * @brief books a constraint by name as master
+    * @see bookAsMasterCons
+    * @returns SCIP return code
+    */
+   SCIP_RETCODE bookAsMasterConsByName(
+      const char*           consname   /**< name of cons to book as master cons */
+      );
+
+   /**
     * @brief marks var as master variable
     *
     * books a variable to be added to the master variables (by calling flushBooked all bookings are in fact performed)
@@ -494,6 +523,15 @@ public:
       );
 
    /**
+    * @brief books a variable with given name as master
+    * @see bookAsMasterVar
+    * @returns SCIP return code
+    */
+   SCIP_RETCODE bookAsMasterVarByName(
+      const char*           varname              /**< name of the variable */
+      );
+
+   /**
     * @brief marks var as linking variable
     *
     * books a variable to be added to the linking variables (by calling flushBooked all bookings are in fact performed)
@@ -503,6 +541,15 @@ public:
     *  */
    SCIP_RETCODE bookAsLinkingVar(
       int varToLinking
+      );
+
+   /**
+    * @brief sets a variable by name to the linking variables
+    * @see bookAsLinkingVar
+    * @returns SCIP return code
+    */
+   SCIP_RETCODE bookAsLinkingVarByName(
+      const char*           varname              /**< name of the variable */
       );
 
    /**
