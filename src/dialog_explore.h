@@ -45,14 +45,6 @@
 extern "C" {
 #endif
 
-/*!
- * \brief help enum to avoid code duplication for the toolbox methods of the detectors
- */
-enum toolboxtype {
-   PROPAGATE,
-   FINISH,
-   POSTPROCESS
-};
 
 /**
  * @brief method to handle user input for "explore" command

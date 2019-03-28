@@ -29,6 +29,9 @@
 #include <assert.h>
 #include <stddef.h>
 
+#include <iostream>
+#include <regex>
+
 #include "class_seeed.h"
 #include "cons_decomp.h"
 #include "wrapper_seeed.h"
@@ -37,6 +40,17 @@
 
 namespace gcg
 {
+
+/*!
+ * \brief help enum to avoid code duplication for the toolbox methods of the detectors
+ */
+enum toolboxtype
+{
+   PROPAGATE,
+   FINISH,
+   POSTPROCESS
+};
+
 
 /**
  * Gets the shortname of the given scoretype
@@ -154,7 +168,7 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    int nuserunpresolvedfull;
    int nuserunpresolvedpartial;
    char* scorename;
-   size_t i;
+   int i;
 
    scorename = SCIPgetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip) );
 
@@ -233,7 +247,7 @@ SCIP_RETCODE SCIPdialogShowListExtract(
    int listlength;
    SCIPconshdlrDecompGetSeeedLeafList(scip, &idlist, &listlength);
 
-   for( i = startindex; i < (size_t) startindex + DEFAULT_MENULENGTH && i < (int) listlength; ++i)
+   for( i = startindex; i < startindex + DEFAULT_MENULENGTH && i < listlength; ++i)
    {
       Seeed_Wrapper sw;
       Seeed* seeed;
@@ -765,14 +779,12 @@ Seeed* SCIPdialogToolboxChoose(
    SCIP_Bool endoffile;
    int idtochoose;
 
-   Seeed* userseeed;
-
    int commandlen;
 
    assert(scip != NULL);
 
    SCIPdialogMessage(scip, NULL, "Please specify the id of the (partial) decomposition to be chosen for modification:\n");
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntochoose, &endoffile) );
+   SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntochoose, &endoffile);
    commandlen = strlen(ntochoose);
 
    idtochoose = DEFAULT_MENULENGTH;
@@ -780,17 +792,15 @@ Seeed* SCIPdialogToolboxChoose(
       idtochoose = atoi(ntochoose);
 
    Seeed_Wrapper sw;
-   SCIP_CALL( GCGgetSeeedFromID(scip, &idtochoose, &sw) );
+   GCGgetSeeedFromID(scip, &idtochoose, &sw);
 
    if( sw.seeed == NULL )
    {
       SCIPdialogMessage( scip, NULL, "This id is out of range." );
-      return SCIP_PARAMETERWRONGVAL;
+      return NULL;
    }
 
    return new Seeed( sw.seeed );
-
-   return SCIP_OKAY;
 }
 
 /** Lets user modify vars during use of the toolbox
@@ -925,7 +935,7 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
    Seeed*                  userseeed,  /**< seeed to edit */
-   toolboxtype             action      /**< what to do: can be set to PROPAGATE, FINISH or POSTPROCESS */
+   toolboxtype             action      /**< what to do: can be set to toolboxtype::PROPAGATE, toolboxtype::FINISH or toolboxtype::POSTPROCESS */
    )
 {
    char* command;
@@ -942,16 +952,16 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
    const char* actiontype;
 
    /* set string for dialog */
-   if( action == PROPAGATE )
+   if( action == toolboxtype::PROPAGATE )
      actiontype = "propagated";
-   else if( action == FINISH )
+   else if( action == toolboxtype::FINISH )
       actiontype = "finished";
-   else if( action == POSTPROCESS )
+   else if( action == toolboxtype::POSTPROCESS )
       actiontype = "postprocessed";
    else
       actiontype = "UNDEFINED_ACTION";
 
-   if( action == POSTPROCESS && userseeed->isComplete() == FALSE )
+   if( action == toolboxtype::POSTPROCESS && userseeed->isComplete() == FALSE )
    {
       SCIPinfoMessage(scip, NULL, "The currently selected seeed is not finished, postprocessing not possible.\n");
       return SCIP_OKAY;
@@ -969,11 +979,11 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
    ndetectors = 0;
    for( i = 0; i < SCIPconshdlrDecompGetNDetectors(scip); ++i )
    {
-      if( (action == PROPAGATE && SCIPconshdlrDecompGetDetectors(scip)[i]->propagateFromToolbox)
-       || (action == FINISH && SCIPconshdlrDecompGetDetectors(scip)[i]->finishFromToolbox)
-       || (action == POSTPROCESS && SCIPconshdlrDecompGetDetectors(scip)[i]->postprocessSeeed) )
+      if( (action == toolboxtype::PROPAGATE && SCIPconshdlrDecompGetDetectors(scip)[i]->propagateFromToolbox)
+       || (action == toolboxtype::FINISH && SCIPconshdlrDecompGetDetectors(scip)[i]->finishFromToolbox)
+       || (action == toolboxtype::POSTPROCESS && SCIPconshdlrDecompGetDetectors(scip)[i]->postprocessSeeed) )
       {
-         detectors[ndetectors] = SCIPconshdlrDecompGetNDetectors(scip)[i];
+         detectors[ndetectors] = SCIPconshdlrDecompGetDetectors(scip)[i];
          ++ndetectors;
       }
    }
@@ -992,7 +1002,7 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
    seeedPropData->nNewSeeeds = 0;
    seeedPropData->seeedToPropagate = new Seeed(userseeed);
    seeedPropData->seeedToPropagate->setSeeedpool(seeedpool);
-   if( action != POSTPROCESS )
+   if( action != toolboxtype::POSTPROCESS )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropData->newSeeeds), 1) );
       seeedPropData->newSeeeds[0] = NULL;
@@ -1028,11 +1038,11 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
             sprintf(stri, "%d", i+1); //used for matching numberings in the list, off-by-one since detectors start with 0
             if( strncmp( command, detectors[i]->name, commandlen) == 0 || strncmp( command, stri, commandlen ) == 0 )
             {
-               if( action == PROPAGATE )
+               if( action == toolboxtype::PROPAGATE )
                   SCIP_CALL( detectors[i]->propagateFromToolbox(scip, detectors[i], seeedPropData, &result, dialoghdlr, dialog) );
-               else if( action == FINISH )
+               else if( action == toolboxtype::FINISH )
                   SCIP_CALL( detectors[i]->finishFromToolbox(scip, detectors[i], seeedPropData, &result, dialoghdlr, dialog) );
-               else if( action == POSTPROCESS )
+               else if( action == toolboxtype::POSTPROCESS )
                   SCIP_CALL( detectors[i]->postprocessSeeed(scip, detectors[i], seeedPropData, &result) );
                break;
             }
@@ -1045,7 +1055,7 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
       }
       if( result == SCIP_SUCCESS )
       {
-         if( action != POSTPROCESS )
+         if( action != toolboxtype::POSTPROCESS )
          {
             SCIPinfoMessage(scip, NULL, "Considering implicits of newly found seeed(s)...\n");
             for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
@@ -1143,7 +1153,7 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
             finished = TRUE;
             continue;
          }
-         else if( action == POSTPROCESS )
+         else if( action == toolboxtype::POSTPROCESS )
          {
             SCIPinfoMessage(scip, NULL, "\nSeeed successfully %s. %d seeed(s) found in the process.\n", actiontype,
                seeedPropData->nNewSeeeds);
@@ -1218,7 +1228,7 @@ SCIP_RETCODE SCIPdialogToolboxFinishSeeed(
    Seeed*                  seeed       /**< seeed to finish */
    )
 {
-   return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, seeed, FINISH);
+   return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, seeed, toolboxtype::FINISH);
 }
 
 
@@ -1233,7 +1243,7 @@ SCIP_RETCODE SCIPdialogToolboxPropagateSeeed(
    Seeed*                  seeed       /**< seeed to propagate */
    )
 {
-   return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, seeed, PROPAGATE);
+   return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, seeed, toolboxtype::PROPAGATE);
 }
 
 
@@ -1248,7 +1258,7 @@ SCIP_RETCODE SCIPdialogToolboxPostprocessSeeed(
    Seeed*                  seeed       /**< seeed to postprocess */
    )
 {
-   return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, seeed, POSTPROCESS);
+   return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, seeed, toolboxtype::POSTPROCESS);
 }
 
 
@@ -1433,18 +1443,13 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
 
       if( strncmp( command, "quit", commandlen2) == 0 )
       {
-         /* determine whether there is a seeedpool for the presolved problem */
-         SEEED_WRAPPER wrapper;
-         SCIPconshdlrDecompGetSeeedpool(scip, &wrapper);
-         Seeedpool* internalseeedpool = wrapper->seeedpool;
-
          Seeedpool* seeedpool;
 
          if(!userseeed->isFromUnpresolved())
             SCIPconshdlrDecompCreateSeeedpool(scip);
 
          seeedpool = userseeed->getSeeedpool();
-         if( seeedpool == NULL )
+         assert(seeedpool != NULL);
 
          userseeed->sort();
          userseeed->considerImplicits();
@@ -1730,7 +1735,6 @@ SCIP_RETCODE SCIPdialogExploreSelect(
    char* ntovisualize;
    SCIP_Bool endoffile;
    int idtovisu;
-   std::vector<int>* selected;
 
    int commandlen;
 
