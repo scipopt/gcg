@@ -46,7 +46,7 @@
 #include "class_seeedpool.h"
 #include "class_consclassifier.h"
 #include "class_varclassifier.h"
-
+#include "wrapper_seeed.h"
 
 
 #define READER_NAME             "clsreader"
@@ -117,14 +117,20 @@ SCIP_RETCODE GCGwriteCls(
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       transformed = FALSE;
 
-   if( !transformed && SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip) == NULL )
+   Seeed_Wrapper swpool;
+   if( !transformed )
+   {
       SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+      SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &swpool);
+      seeedpool = swpool.seeedpool;
+   }
 
-   if( transformed && SCIPconshdlrDecompGetSeeedpool(scip) == NULL )
+   if( transformed )
+   {
       SCIPconshdlrDecompCreateSeeedpool(scip);
-
-   seeedpool = (gcg::Seeedpool*)(transformed ? SCIPconshdlrDecompGetSeeedpool(scip) : SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip));
-
+      SCIPconshdlrDecompGetSeeedpool(scip, &swpool);
+      seeedpool = swpool.seeedpool;
+   }
 
    SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
 

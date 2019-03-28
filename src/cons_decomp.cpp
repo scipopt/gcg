@@ -1422,7 +1422,6 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpool(
    if( conshdlrdata->seeedpool == NULL )
       conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
 
-
    return SCIP_OKAY;
 }
 
@@ -1449,17 +1448,14 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
    return SCIP_OKAY;
 }
 
-/*
- * @brief help method to access seeedpool for unpresolved problem
- * @returns pointer to seeedpool wrapper data structure
- */
-SEEED_WRAPPER* SCIPconshdlrDecompGetSeeedpoolUnpresolved(
-   SCIP*                 scip                /* SCIP data structure */
+
+SCIP_RETCODE SCIPconshdlrDecompGetSeeedpoolUnpresolved(
+   SCIP*                 scip,
+   SEEED_WRAPPER*        sw
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   SEEED_WRAPPER* help;
 
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -1468,22 +1464,19 @@ SEEED_WRAPPER* SCIPconshdlrDecompGetSeeedpoolUnpresolved(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   help->seeedpool = conshdlrdata->seeedpoolunpresolved;
+   sw->seeedpool = conshdlrdata->seeedpoolunpresolved;
 
-   return help;
+   return SCIP_OKAY;
 }
 
-/*
- * @brief help method to access seeedpool for transformed problem
- * @returns pointer to seeedpool wrapper data structure
- */
-SEEED_WRAPPER* SCIPconshdlrDecompGetSeeedpool(
-   SCIP*                 scip                /* SCIP data structure */
+
+SCIP_RETCODE SCIPconshdlrDecompGetSeeedpool(
+   SCIP*                 scip,
+   SEEED_WRAPPER*        sw
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   SEEED_WRAPPER* help;
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert( conshdlr != NULL );
@@ -1491,9 +1484,9 @@ SEEED_WRAPPER* SCIPconshdlrDecompGetSeeedpool(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   help->seeedpool = conshdlrdata->seeedpool;
+   sw->seeedpool = conshdlrdata->seeedpool;
 
-   return help;
+   return SCIP_OKAY;
 
 }
 
@@ -4230,29 +4223,129 @@ SCIP_RETCODE GCGgetSeeedFromID(
    return SCIP_OKAY;
 }
 
-Seeed_Wrapper* GCGnewSeeed(
-   SCIP*                 scip,
-   SCIP_Bool             presolved,
-   SCIP_Bool             markedincomplete
-   )
+
+SCIP_RETCODE SCIPconshdlrDecompRefineAndAddSeeed(
+  SCIP* scip,
+  Seeed_Wrapper* sw
+  )
 {
-   Seeed_Wrapper* swpool = presolved ? SCIPconshdlrDecompGetSeeedpool(scip)
-      : SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip);
-   Seeedpool* currseeedpool = swpool->seeedpool;
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
 
-   assert( currseeedpool != NULL );
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
 
-   Seeed* userseeed = new Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool);
-   userseeed->setIsFromUnpresolved( !presolved );
+   char const* usergiveninfo;
+   char const* presolvedinfo;
 
-   if( markedincomplete )
-      userseeed->setUsergiven(USERGIVEN::PARTIAL);
+   SeeedPtr seeed = sw->seeed;
+   assert( seeed != NULL );
+
+   Seeedpool* currseeedpool = seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved
+      : conshdlrdata->seeedpool;
+
+   seeed->flushBooked();
+
+   if( seeed->shouldCompletedByConsToMaster() )
+   {
+      for(int opencons = 0; opencons < seeed->getNOpenconss(); ++opencons)
+         seeed->bookAsMasterCons( seeed->getOpenconss()[opencons] );
+      seeed->flushBooked();
+   }
+
+   currseeedpool->prepareSeeed(seeed);
+
+   if( !seeed->checkConsistency() )
+   {
+      delete seeed;
+      SCIPwarningMessage(scip, "Your seeed was rejected because of inconsistencies! \n");
+      return SCIP_OKAY;
+   }
+   seeed->buildDecChainString();
+   if( seeed->isComplete() )
+   {
+      if( !seeed->shouldCompletedByConsToMaster() )
+         seeed->setUsergiven( USERGIVEN::COMPLETE );
+
+      if( !seeed->isFromUnpresolved() )
+      {
+         SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, seeed));
+      }
+      /* stems from unpresolved problem */
+      else
+      {
+
+         SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(scip, seeed) );
+
+         /* if seeedpool for presolved problem already exist try to translate seeed */
+         if ( conshdlrdata->seeedpool != NULL )          {
+            std::vector<Seeed*> seeedtotranslate(0);
+            std::vector<Seeed*> newseeeds(0);
+            seeedtotranslate.push_back(seeed);
+            conshdlrdata->seeedpool->translateSeeeds(conshdlrdata->seeedpoolunpresolved, seeedtotranslate, newseeeds);
+            if( newseeeds.size() != 0 )
+            {
+               SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, newseeeds[0]) );
+            }
+         }
+      }
+   }
    else
-      userseeed->setUsergiven(USERGIVEN::COMPLETED_CONSTOMASTER);
+   {
+      assert( !seeed->shouldCompletedByConsToMaster() );
+      seeed->setUsergiven( USERGIVEN::PARTIAL );
 
-   Seeed_Wrapper* sw;
-   sw->seeed = userseeed;
-   return sw;
+      if ( !seeed->isFromUnpresolved() )
+         SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, seeed) );
+      else
+         SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForUnpresolved(scip, seeed) );
+   }
+
+   /* set statistics */
+   {
+      int nvarstoblock = 0;
+      int nconsstoblock = 0;
+
+      for ( int b = 0; b < seeed->getNBlocks(); ++b )
+      {
+         nvarstoblock += seeed->getNVarsForBlock(b);
+         nconsstoblock += seeed->getNConssForBlock(b);
+      }
+      seeed->setDetectorPropagated(NULL);
+
+      seeed->addClockTime(0.);
+      seeed->addPctVarsFromFree( (nvarstoblock + seeed->getNMastervars() +seeed->getNLinkingvars())/(SCIP_Real) seeed->getNVars()  );
+      seeed->addPctVarsToBlock((nvarstoblock )/(SCIP_Real) seeed->getNVars() );
+      seeed->addPctVarsToBorder( (seeed->getNMastervars() +seeed->getNLinkingvars())/(SCIP_Real) seeed->getNVars() ) ;
+      seeed->addPctConssToBorder( (seeed->getNMasterconss() ) / (SCIP_Real) seeed->getNConss() ) ;
+      seeed->addPctConssFromFree( (seeed->getNMasterconss() + nconsstoblock ) / (SCIP_Real) seeed->getNConss() ) ;
+      seeed->addPctConssToBlock( (nconsstoblock ) / (SCIP_Real) seeed->getNConss() );
+      seeed->addNNewBlocks(seeed->getNBlocks());
+   }
+
+   seeed->findVarsLinkingToMaster();
+   seeed->findVarsLinkingToStairlinking();
+
+
+   if( seeed->getUsergiven() == USERGIVEN::PARTIAL )
+      usergiveninfo = "partial";
+   if( seeed->getUsergiven() == USERGIVEN::COMPLETE )
+      usergiveninfo = "complete";
+   if( seeed->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER )
+         usergiveninfo = "complete";
+   if( seeed->isFromUnpresolved() )
+         presolvedinfo = "unpresolved";
+   else presolvedinfo = "presolved";
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " added %s decomp for %s problem with %d blocks and %d masterconss, %d linkingvars, "
+      "%d mastervars, and max white score of %s %f \n", usergiveninfo, presolvedinfo,
+      seeed->getNBlocks(), seeed->getNMasterconss(),
+      seeed->getNLinkingvars(), seeed->getNMastervars(), (seeed->isComplete() ? " " : " at best "),
+      seeed->getScore(SCORETYPE::MAX_WHITE) );
+
+   return SCIP_OKAY;
 }
 
 

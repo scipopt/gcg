@@ -331,21 +331,27 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
 
 /**
  * @brief help method to access seeedpool for unpresolved problem
- * @returns pointer to seeed wrapper data structure
+ *
+ * gives pointer to seeedpool in wrapper data structure
+ * @returns SCIP return code
  */
 extern
-SEEED_WRAPPER* SCIPconshdlrDecompGetSeeedpoolUnpresolved(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE SCIPconshdlrDecompGetSeeedpoolUnpresolved(
+   SCIP*                 scip,                /**< SCIP data structure */
+   SEEED_WRAPPER*        sw                   /**< wrapper for output */
    );
 
 
 /**
  * @brief help method to access seeedpool for transformed problem
- * @returns pointer to seeed wrapper data structure
+ *
+ * gives pointer to seeedpool in wrapper data structure
+ * @returns SCIP return code
  */
 extern
-SEEED_WRAPPER* SCIPconshdlrDecompGetSeeedpool(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE SCIPconshdlrDecompGetSeeedpool(
+   SCIP*                 scip,                /**< SCIP data structure */
+   SEEED_WRAPPER*        sw                   /**< wrapper for output */
    );
 
 
@@ -677,22 +683,20 @@ SCIP_RETCODE GCGgetSeeedFromID(
    );
 
 
-/**
- * @brief creates a new seeed and sets whether it is presolved and complete
- *
- * creates a new seeed as specified
- * @note this function assumes that the corresponding seeedpool exists
- * @returns new seeed
- */
-extern
-SEEED_WRAPPER* GCGnewSeeed(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool             presolved,          /**< should the user seeed be created for the presolved problem */
-   SCIP_Bool             markedincomplete    /**< should the user seeed be a partial one */
-   );
-
-
 /* public methods for internal management of seeeds in explore menu and related functions */
+
+/**
+* @brief refine seeed, add meta data/statistics and add seeed to corresponding seeedpool
+*
+* Expects a new seeed that is finalized and refined before being add to the seeedpool,
+* i.e. consider implicits, calc hashvalue, construct decdecomp if complete etc.
+* @returns SCIP return code
+*/
+extern
+SCIP_RETCODE SCIPconshdlrDecompRefineAndAddSeeed(
+  SCIP* scip,        /**< SCIP data structure */
+  SEEED_WRAPPER* sw  /**< seeed to add */
+  );
 
 /**
  * @brief initilizes the candidates data structures with selected seeeds (or all if there are no selected seeeds) and sort them according to the current scoretype

@@ -1797,7 +1797,6 @@ public:
     *  assign other conss and vars to master if possible (@see assignOpenPartialHittingToMaster())
     * @return scip return code
     */
-   /**  */
    SCIP_RETCODE refineToMaster(
       );
 
