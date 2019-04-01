@@ -2151,7 +2151,7 @@ SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return SCIPclockGetTime( conshdlrdata->completedetectionclock );
+   return SCIPgetClockTime(scip,  conshdlrdata->completedetectionclock );
 }
 
 

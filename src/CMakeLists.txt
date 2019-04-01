@@ -64,6 +64,7 @@ set(gcgsources
     dec_stairheur.cpp
     dec_varclass.cpp
     decomp.c
+    dialog_explore.cpp
     dialog_gcg.c
     dialog_graph.cpp
     dialog_master.c

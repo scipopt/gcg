@@ -1722,6 +1722,7 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
 }
 
 
+
 /** Lets the user select decompositions from the explore menu
  *
  * @returns SCIP status */
@@ -1765,6 +1766,8 @@ SCIP_RETCODE SCIPdialogExploreSelect(
    return SCIP_OKAY;
 }
 
+
+extern "C" {
 
 SCIP_RETCODE SCIPdialogExecSelect(
    SCIP*                   scip,
@@ -1879,5 +1882,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
 
    return SCIP_OKAY;
 }
+
+} // extern "C"
 
 } // namespace gcg
