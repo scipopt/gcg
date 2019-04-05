@@ -178,8 +178,11 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    nuserpresolvedpartial = 0;
    nuserunpresolvedfull = 0;
    nuserunpresolvedpartial = 0;
-   int* idlist; //@todo SCIP malloc for nseeeds
+   int* idlist;
    int listlength;
+
+   int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &idlist, nseeeds) );
    SCIPconshdlrDecompGetSelectedSeeeds(scip, &idlist, &listlength);
 
    /* count corresponding seeeds */
@@ -201,7 +204,6 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
          ++nuserunpresolvedfull;
       if( !seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::PARTIAL && seeed->isFromUnpresolved() )
          ++nuserunpresolvedpartial;
-
    }
 
    SCIPdialogMessage(scip, NULL, "\n");
@@ -224,7 +226,7 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    SCIPdialogMessage(scip, NULL, " ----   -----  ------  ------  ------  ------  ------  -------  ---  ------  ------  ---  --- \n");
 
    SCIPfreeBlockMemoryArrayNull(scip, &scorename, SCIP_MAXSTRLEN);
-
+   SCIPfreeBlockMemoryArray(scip, &idlist, nseeeds);
 
    return SCIP_OKAY;
 }
@@ -243,8 +245,11 @@ SCIP_RETCODE SCIPdialogShowListExtract(
    assert(scip != NULL);
    int i;
 
-   int* idlist; //@todo malloc for nseeeds
+   int* idlist;
    int listlength;
+
+   int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &idlist, nseeeds) );
    SCIPconshdlrDecompGetSeeedLeafList(scip, &idlist, &listlength);
 
    for( i = startindex; i < startindex + DEFAULT_MENULENGTH && i < listlength; ++i)
@@ -256,7 +261,7 @@ SCIP_RETCODE SCIPdialogShowListExtract(
 
       assert( seeed->checkConsistency( ) );
 
-      SCIPdialogMessage(scip, NULL, " %4d   ", i );
+      SCIPdialogMessage(scip, NULL, " %4d   ", seeed->getID() );
       SCIPdialogMessage(scip, NULL, "%5d  ", seeed->getNBlocks() );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNMasterconss() );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNLinkingvars() );
@@ -275,6 +280,8 @@ SCIP_RETCODE SCIPdialogShowListExtract(
    }
 
    SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
+
+   SCIPfreeBlockMemoryArray(scip, &idlist, nseeeds);
 
    return SCIP_OKAY;
 }
@@ -1775,7 +1782,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
    SCIP_DIALOG*            dialog
    )
 {
-   SCIP_Bool         finished;
+   SCIP_Bool finished = false;
    char* command;
    SCIP_Bool endoffile;
    int nseeeds;

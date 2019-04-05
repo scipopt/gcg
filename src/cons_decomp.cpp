@@ -4615,9 +4615,13 @@ SCIP_Bool SCIPconshdlrDecompGetSelectExists(
    )
 {
    int length;
-   int* list; //@todo malloc in size of nseeeds
+   int* list;
+
+   int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &list, nseeeds) );
 
    SCIP_CALL( SCIPconshdlrDecompGetSelectedSeeeds(scip, &list, &length) );
+   SCIPfreeBlockMemoryArray(scip, &list, nseeeds);
 
    return (length == 0) ? false : true;
 }
