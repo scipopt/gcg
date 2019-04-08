@@ -12,7 +12,7 @@ If you want to check whether your own modules generate the right results,
 you can work with the testset files `*.test` in the folder `/check/testset`
 to specify which instances you want to test. The `*.solu` files specify their
 respective solution. <i>For further syntax of the `*.solu`-files, please check
-the <a href="">SCIP documentation</a>.</i><br>
+the <a href="https://scip.zib.de/doc-6.0.1/html/TEST.php">SCIP documentation</a>.</i><br>
 A simple test on `testrun.test` is executed with the following command
 in the GCG main folder:
 
