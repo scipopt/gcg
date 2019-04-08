@@ -1,3 +1,11 @@
+GCG Version 3.0.2
+=================
+
+Bug fixes
+---------
+
+- Fix segmentation fault due to missing relaxsol event handler in BENDERS and ORIGINAL mode.
+
 GCG Version 3.0.1
 =================
 
