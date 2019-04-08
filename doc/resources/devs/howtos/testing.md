@@ -60,5 +60,5 @@ even if you verified that your GCG works (and how fast it works).
 
 ### Plot performance profiles
 Using the tool `plotperprof.py`, you can plot performance profiles like this one:
-<img src=""></img>
+<img src="">
 The usage of this tool is as follows:
