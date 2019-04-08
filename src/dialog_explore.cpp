@@ -126,7 +126,7 @@ char*  SCIPconshdlrDecompGetScoretypeDescription(
          SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classical score") ;
 
    if( sctype == scoretype::BORDER_AREA)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score; )")  ;
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score)")  ;
 
    if( sctype == scoretype::MAX_FORESSEEING_WHITE)
          SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
@@ -134,12 +134,11 @@ char*  SCIPconshdlrDecompGetScoretypeDescription(
    if( sctype == scoretype::MAX_FORESEEING_AGG_WHITE)
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score with aggregation information(i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
 
-
    if( sctype == scoretype::SETPART_FWHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing  white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints)")  ;
 
    if( sctype == scoretype::SETPART_AGG_FWHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints)")  ;
 
    if( sctype == scoretype::BENDERS)
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "experimental score to evaluate benders decompositions")  ;
@@ -148,8 +147,52 @@ char*  SCIPconshdlrDecompGetScoretypeDescription(
    SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
 
    return copy;
-
 }
+
+
+/** modifies menulength according to input and updates menu accordingly
+ * @returns SCIP return code */
+static
+SCIP_RETCODE SCIPdialogSetNEntires(
+   SCIP* scip,                   /**< SCIP data structure */
+   SCIP_DIALOGHDLR* dialoghdlr,  /**< dialog handler for user input management */
+   SCIP_DIALOG* dialog,          /**< dialog for user input management */
+   int* menulength               /**< current menu length to be modified */
+   )
+{
+   char* ntovisualize;
+   SCIP_Bool endoffile;
+   int newlength;
+   int commandlen;
+
+   SCIPdialogMessage(scip, NULL, "Please specify the number of entries to be shown in this menu:\n");
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
+   commandlen = strlen(ntovisualize);
+
+   newlength = -1;
+   if( commandlen != 0 )
+      newlength = atoi(ntovisualize);
+
+   /* check whether there are decompositions,
+    * (preventing "Why doesn't it show anything? Maybe the entry number is 0") */
+   if( SCIPconshdlrDecompGetNSeeeds(scip) == 0 )
+   {
+      SCIPinfoMessage(scip, NULL, "No decompositions available. Please detect first.\n");
+      return SCIP_OKAY;
+   }
+
+   if( commandlen == 0 || newlength < 1 )
+   {
+      SCIPdialogMessage( scip, NULL, "The input was not a valid number." );
+      return SCIP_OKAY;
+   }
+
+   *menulength = newlength;
+
+   //@todo display
+   return SCIP_OKAY;
+}
+
 
 /** Shows header for seeed information in explore menu
  *
@@ -239,7 +282,8 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
 static
 SCIP_RETCODE SCIPdialogShowListExtract(
    SCIP* scip,             /**< SCIP data structure */
-   const int startindex    /**< index (in seeed list) of uppermost seeed in extract */
+   const int startindex,   /**< index (in seeed list) of uppermost seeed in extract */
+   int menulength          /**< number of menu entries */
    )
 {
    assert(scip != NULL);
@@ -252,7 +296,7 @@ SCIP_RETCODE SCIPdialogShowListExtract(
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &idlist, nseeeds) );
    SCIPconshdlrDecompGetSeeedLeafList(scip, &idlist, &listlength);
 
-   for( i = startindex; i < startindex + DEFAULT_MENULENGTH && i < listlength; ++i)
+   for( i = startindex; i < startindex + menulength && i < listlength; ++i)
    {
       Seeed_Wrapper sw;
       Seeed* seeed;
@@ -406,11 +450,12 @@ SCIP_RETCODE SCIPdialogShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "end", "displays the last decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "legend", "displays the legend for table header and history abbreviations");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "help", "displays this help");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "dispNEntries", "modifies the number of displayed decompositions ");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "number_entries", "modifies the number of displayed decompositions ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "finishes decomposition explorer and goes back to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "experimental feature: visualizes the specified decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "calc_strong", "calculates and displays the strong decomposition score for this decomposition");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "return to main menu");
 
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
@@ -617,8 +662,6 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
        "Please specify a regular expression (modified ECMAScript regular expression grammar) matching the names of unassigned constraints you want to assign : \nGCG/toolbox> ",
        &consregex, &endoffile) );
 
-    /* case distinction: */
-
     std::regex expr;
     try  {
        expr = std::regex(consregex);
@@ -794,9 +837,14 @@ Seeed* SCIPdialogToolboxChoose(
    SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntochoose, &endoffile);
    commandlen = strlen(ntochoose);
 
-   idtochoose = DEFAULT_MENULENGTH;
-   if( commandlen != 0)
+   idtochoose = 0;
+   if(commandlen != 0)
       idtochoose = atoi(ntochoose);
+   else
+   {
+      SCIPdialogMessage( scip, NULL, "Invalid input." );
+      return NULL;
+   }
 
    Seeed_Wrapper sw;
    GCGgetSeeedFromID(scip, &idtochoose, &sw);
@@ -1281,7 +1329,8 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
-   int                     startindex  /**< index in seeed list to start list extract at */
+   int                     startindex, /**< index in seeed list to start list extract at */
+   int                     menulength  /**< number of menu entries */
    )
 {
    SCIP_Bool finished;
@@ -1320,7 +1369,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    {
       SCIP_CALL( SCIPdialogShowListExtractHeader(scip) );
 
-      SCIP_CALL( SCIPdialogShowListExtract(scip, startindex) );
+      SCIP_CALL( SCIPdialogShowListExtract(scip, startindex, menulength) );
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please choose an existing partial decomposition for modification (type \"choose <id>\" or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
 
@@ -1329,16 +1378,16 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       nseeeds = SCIPconshdlrDecompGetNSeeedLeafs(scip);
       if( strncmp( command, "back", commandlen) == 0 )
       {
-         startindex = startindex - DEFAULT_MENULENGTH;
+         startindex = startindex - menulength;
          if(startindex < 0 )
             startindex = 0;
          continue;
       }
       if( strncmp( command, "next", commandlen) == 0 )
       {
-         startindex = startindex + DEFAULT_MENULENGTH;
-         if( startindex > nseeeds - DEFAULT_MENULENGTH )
-            startindex = nseeeds - DEFAULT_MENULENGTH;
+         startindex = startindex + menulength;
+         if( startindex > nseeeds - menulength )
+            startindex = nseeeds - menulength;
          continue;
       }
       if( strncmp( command, "top", commandlen) == 0 )
@@ -1348,7 +1397,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       }
       if( strncmp( command, "end", commandlen) == 0 )
       {
-         startindex = nseeeds - DEFAULT_MENULENGTH;
+         startindex = nseeeds - menulength;
          continue;
       }
 
@@ -1385,6 +1434,12 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       if( strncmp( command, "help", commandlen) == 0 )
       {
          SCIP_CALL(SCIPdialogShowHelp(scip) );
+         continue;
+      }
+
+      if( strncmp( command, "number_entries", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogSetNEntires(scip, dialoghdlr, dialog, &menulength) );
          continue;
       }
 
@@ -1787,6 +1842,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
    SCIP_Bool endoffile;
    int nseeeds;
    int startindex = 0;
+   int menulength = DEFAULT_MENULENGTH;
 
    SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
    /* while user has not aborted: show current list extract */
@@ -1797,8 +1853,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
 
       SCIP_CALL( SCIPdialogShowListExtractHeader(scip) );
 
-      SCIP_CALL( SCIPdialogShowListExtract(scip, startindex) );
-
+      SCIP_CALL( SCIPdialogShowListExtract(scip, startindex, menulength) );
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
          "Please enter command or decomposition id to select (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
@@ -1808,16 +1863,16 @@ SCIP_RETCODE SCIPdialogExecSelect(
       nseeeds = SCIPconshdlrDecompGetNSeeedLeafs(scip);
       if( strncmp( command, "back", commandlen) == 0 )
       {
-         startindex = startindex - DEFAULT_MENULENGTH;
+         startindex = startindex - menulength;
          if(startindex < 0 )
             startindex = 0;
          continue;
       }
       if( strncmp( command, "next", commandlen) == 0 )
       {
-         startindex = startindex + DEFAULT_MENULENGTH;
-         if( startindex > nseeeds - DEFAULT_MENULENGTH )
-            startindex = nseeeds - DEFAULT_MENULENGTH;
+         startindex = startindex + menulength;
+         if( startindex > nseeeds - menulength )
+            startindex = nseeeds - menulength;
          continue;
       }
       if( strncmp( command, "top", commandlen) == 0 )
@@ -1827,26 +1882,32 @@ SCIP_RETCODE SCIPdialogExecSelect(
       }
       if( strncmp( command, "end", commandlen) == 0 )
       {
-         startindex = nseeeds - DEFAULT_MENULENGTH;
+         startindex = nseeeds - menulength;
          continue;
       }
 
       if( strncmp( command, "quit", commandlen) == 0 )
       {
          finished = TRUE;
-         SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE) );
+         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE) );
          continue;
       }
 
       if( strncmp( command, "legend", commandlen) == 0 )
       {
-         SCIP_CALL(SCIPdialogShowLegend(scip) );
+         SCIP_CALL( SCIPdialogShowLegend(scip) );
          continue;
       }
 
       if( strncmp( command, "help", commandlen) == 0 )
       {
-         SCIP_CALL(SCIPdialogShowHelp(scip) );
+         SCIP_CALL( SCIPdialogShowHelp(scip) );
+         continue;
+      }
+
+      if( strncmp( command, "number_entries", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogSetNEntires(scip, dialoghdlr, dialog, &menulength) );
          continue;
       }
 
@@ -1875,7 +1936,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
       }
       if( strncmp( command, "modify", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog, startindex) );
+         SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog, startindex, menulength) );
          SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
          continue;
       }
