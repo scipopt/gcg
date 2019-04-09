@@ -8,7 +8,7 @@ This guide shows you how to install GCG on your machine. You can either
 # Install the SCIP Optimization Suite {#install-scipopt}
 
 The following steps are all executed automatically within
-<a href="">this install script</a>, if you prefer it.
+<a href="../installGCG.sh">this install script</a>, if you prefer it.
 
 ### Step 0: Prerequisites
 Install the required system libraries:
@@ -58,7 +58,10 @@ options, consult the Makefile.
 
 
 # Manual Installation {#install-manually}
-Note that a manual installation is not recommended to new users.
+Note that a manual installation is not recommended to new users. Its only benefit
+is the compatibility to your own code, if it was made with makefile instead of
+cmake.
+
 ### Step 1: Download everything
 Installing SCIP, SoPlex, ZIMPL, hMETIS, Bliss, and GCG manually requires <a href="http://www.or.rwth-aachen.de/gcg">GCG</a>, <a href="http://scip.zib.de/">SCIP</a>, <a href="http://soplex.zib.de/">SoPlex</a>, <a href="http://zimpl.zib.de/">ZIMPL</a>, and additionally <a href="http://www.tcs.hut.fi/Software/bliss/">Bliss</a> and <a href="http://glaros.dtc.umn.edu/gkhome/metis/hmetis/overview">hMETIS</a>. Let assume that all source code archives were saved within one folder, i.e.
 

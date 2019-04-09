@@ -1,10 +1,10 @@
-# write primal heuristics # {#primal}
+# write primal heuristics (deprecated) # {#writeprimal}
 
  For general information on how to add your own primal heuristics to GCG, first check the SCIP documentation.
  However, one has to take into account some peculiarities when implementing heuristics that are included
  in the original SCIP instance, i.e. work on the original variables.
 
- **HEUR_LPSOLUTIONS Access to LP feasible solutions (on the original variables)**
+ # Access to LP feasible solutions (on the original variables) {#HEUR_LPSOLUTIONS}
 
  Many MIP heuristics make use of an LP feasible solution. In SCIP, such a solution is obtained by solving the LP relaxation.
  In GCG however, no LP relaxation is solved by default. A linearly feasible solution on the original variables comes from the
@@ -31,7 +31,7 @@
  ```
  at the beginning of the HEUREXEC callback.
 
- **HEUR_DIVING Diving on original variables**
+# Diving on original variables {#HEUR_DIVING}
 
  A common class of heuristics are diving heuristics; they solve LPs with modified bounds to perform a depth-first
  search on the Branch-and-bound tree. For this purpose, a probing mode and a diving mode have been implemented in SCIP,
@@ -44,7 +44,7 @@
  propagate any bound changes on the original instance to the extended instance and solve the resulting modified master LP, either
  without or with pricing new variables in. See e.g. heur_gcgcoefdiving.c for an example on how to use them.
 
-  **HEURCOPY The HEURCOPY callback**
+# The HEURCOPY callback {#HEURCOPY}
 
  The HEURCOPY callback is executed when a SCIP instance is copied, e.g. to
  solve a sub-SCIP. By

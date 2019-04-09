@@ -1,7 +1,8 @@
 /*! \page howtos How to...
 
-- \subpage detector
-- \subpage pricing
-- \subpage primal
-- \subpage testing
+- \subpage addbranching
+- \subpage addpricing
+- \subpage dotesting
+- \subpage storestructure
+- \subpage writeprimal
 */
