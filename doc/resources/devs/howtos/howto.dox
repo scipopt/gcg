@@ -2,6 +2,7 @@
 
 - \subpage addbranching
 - \subpage addpricing
+- \subpage addstructure
 - \subpage dotesting
 - \subpage storestructure
 - \subpage writeprimal

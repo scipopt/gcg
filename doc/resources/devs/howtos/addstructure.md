@@ -2,7 +2,7 @@
 
 Structure detectors are used to detect or enforce a structure suitable for Dantzig-Wolfe Reformulation (DWR).
 \n
-A complete list of all detectors/enforcers contained in this release can be found \ref DETECTORS "here".
+A complete list of all detectors/enforcers contained in this release can be found "here" (please add).
 
 In the following, we explain how the user can add its own structure enforcement plug-in.
 Take the basic detector (dec_connected.c) as an example.
@@ -20,7 +20,7 @@ Here is what you have to do to implement a detector:
 - Adjust the properties of the detector (see \ref DEC_PROPERTIES).
 - Define the detector data (see \ref DEC_DATA). This is optional.
 - Implement the interface methods (see \ref DEC_INTERFACE).
-- Implement the fundamental callback methods (see \ref DEC_FUNDAMENTALCALLBACKS).
+- Implement the fundamental callback methods (see ???).
 - Implement the additional callback methods (see \ref DEC_ADDITIONALCALLBACKS). This is optional.
 
 
@@ -83,7 +83,7 @@ You can do this by calling
 SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
 ```
 You also have to initialize the fields in struct SCIP_DetectorData afterwards. For freeing the
-detector data, see \ref DETECTOREXIT.
+detector data, see ???.
 
 You may also add user parameters for your detector, see the parameters documentation of \SCIP for how to add user parameters and
 the method SCIPincludeDetectionBorderheur() in dec_connected.c for an example.
@@ -102,7 +102,7 @@ can be found in type_detector.h.
 
 The DETECTSTRUCTURE callback is called during the detection loop and should perform the actual detection.
 It should inspect the problem instance at hand and deduct some structure from the constraint matrix.
-It needs to store the structure information in \ref DEC_DECOMP "DEC_DECOMP" and needs to allocate the array where to store the
+It needs to store the structure information in ??? and needs to allocate the array where to store the
 information.
 
 Typical methods called by a detector are, for example, SCIPgetVars(), SCIPGetConss(), DECcreateDecompFromMasterconss(), etc. .
@@ -114,7 +114,7 @@ Typical methods called by a detector are, for example, SCIPgetVars(), SCIPGetCon
 The INITDETECTOR callback is executed after the problem was transformed.
 The detector may, e.g., use this call to initialize his detector data.
 The difference between the original and the transformed problem is explained in
-"What is this thing with the original and the transformed problem about?" on \ref FAQ.
+"What is this thing with the original and the transformed problem about?" on ???.
 
 ## DETECTOREXIT
 
@@ -139,4 +139,4 @@ DEC_DECL_EXITDETECTOR(decExitMydetector)
 If you have allocated memory for fields in your detector data, remember to free this memory
 before freeing the detector data itself.
 The DETECTOREXIT callback is executed before the solution process is started.
-In this method, the detector should free all resources that have been allocated for the detection process in \ref DETECTORINIT.
+In this method, the detector should free all resources that have been allocated for the detection process in ???.
