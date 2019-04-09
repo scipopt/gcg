@@ -20,8 +20,8 @@ Install the required system libraries:
 Download the archive and unzip it:
 
     wget https://scip.zib.de/download.php?fname=scipoptsuite-6.0.1.tgz
-    tar scipoptsuite-6.0.1.tgz
-    cd scipoptsuite-6.0.1.tgz
+    tar xvzf scipoptsuite-6.0.1.tgz
+    cd scipoptsuite-6.0.1
 
 
 ### Step 2: Compile via CMake
@@ -38,8 +38,13 @@ And you're done! To test your installation, you can run a quick check on some in
 
     make check
 
+Note that the execution of `make`-commands, e.g. `make test` is only supported
+inside the `build`-folder (in which you cannot add testsets). Therefore, if you
+intend on using `make test` (and not ctest), you should compile SCIP and GCG via
+Makefile.
+
 ### Step 2 (Alternative): Compile via Makefile
-<i>(recommended only for developers, if necessary)</i><br/>
+<i>(recommended for developers, if necessary)</i><br/>
 #### Creating softlinks
 
 In order to create all necessary links, type
