@@ -2025,7 +2025,7 @@ public:
     * @see visual/pdfreader and
     * @note linux only
     */
-   void showVisualisation();
+   SCIP_RETCODE showVisualisation();
 
 
    /**

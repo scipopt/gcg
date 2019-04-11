@@ -4243,8 +4243,23 @@ SCIP_RETCODE SCIPconshdlrDecompRefineAndAddSeeed(
    SeeedPtr seeed = sw->seeed;
    assert( seeed != NULL );
 
-   Seeedpool* currseeedpool = seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved
-      : conshdlrdata->seeedpool;
+   /* get seeedpool (create only does something if seeedpool does not exist) */
+   Seeedpool* currseeedpool;
+   if(seeed->isFromUnpresolved())
+   {
+      SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+      currseeedpool = conshdlrdata->seeedpoolunpresolved;
+   }
+   else
+   {
+      SCIPconshdlrDecompCreateSeeedpool(scip);
+      currseeedpool = conshdlrdata->seeedpool;
+   }
+
+   if(seeed->getSeeedpool() == NULL)
+   {
+      seeed->setSeeedpool(currseeedpool);
+   }
 
    seeed->flushBooked();
 

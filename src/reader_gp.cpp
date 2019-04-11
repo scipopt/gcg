@@ -446,17 +446,16 @@ SCIP_RETCODE GCGwriteGpVisualization(
    Seeedpool* seeedpool;
    SeeedPtr seeed;
 
-
    /* get seeed and seeedpool */
    GCGgetSeeedFromID(scip, &seeedid, &seeedwr);
    seeed = seeedwr.seeed;
-   seeedpool = seeed->getSeeedpool();
-
    if( seeed == NULL )
    {
       SCIPerrorMessage("Could not find Seeed!\n");
       return SCIP_ERROR;
    }
+
+   seeedpool = seeed->getSeeedpool();
    if( seeedpool == NULL )
    {
       SCIPerrorMessage("Could not find Seeedpool!\n");

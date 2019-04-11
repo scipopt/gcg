@@ -6268,7 +6268,7 @@ SCIP_RETCODE Seeed::setVarToStairlinking(
 }
 
 
-void Seeed::showVisualisation()
+SCIP_RETCODE Seeed::showVisualisation()
 {
    int returnvalue;
 
@@ -6281,7 +6281,7 @@ void Seeed::showVisualisation()
    miscvisu->GCGgetVisualizationFilename(scip, this, ".pdf", outname);
 
    /* generate gp file */
-   GCGwriteGpVisualization( scip, filename, outname, getID() );
+   SCIP_CALL( GCGwriteGpVisualization( scip, filename, outname, getID() ) );
 
    /* compile gp file */
    char command[SCIP_MAXSTRLEN];
@@ -6290,7 +6290,10 @@ void Seeed::showVisualisation()
    SCIPinfoMessage(seeedpool->getScip(), NULL, "%s\n", command);
    returnvalue = system(command);
    if( returnvalue == -1 )
+   {
       SCIPwarningMessage(scip, "Unable to write gnuplot file\n");
+      return SCIP_OKAY;
+   }
 
    /* open outputfile */
    strcpy(command, GCGVisuGetPdfReader());
@@ -6304,7 +6307,7 @@ void Seeed::showVisualisation()
       SCIPwarningMessage(scip, "Unable to open gnuplot file\n");
    SCIPinfoMessage(seeedpool->getScip(), NULL, "Please note that the generated pdf file was not deleted automatically!  \n", command);
 
-   return;
+   return SCIP_OKAY;
 }
 
 
