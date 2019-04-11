@@ -1816,8 +1816,8 @@ SCIP_RETCODE SCIPdialogExploreSelect(
 
    if( sw.seeed == NULL )
    {
-      SCIPdialogMessage( scip, NULL, "This id is out of range." );
-      return SCIP_PARAMETERWRONGVAL;
+      SCIPdialogMessage( scip, NULL, "This id is out of range, nothing was selected.\n" );
+      return SCIP_OKAY;
    }
 
    sw.seeed->setSelected(!sw.seeed->isSelected() );
