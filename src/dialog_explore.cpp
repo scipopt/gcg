@@ -226,7 +226,7 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
 
    int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &idlist, nseeeds) );
-   SCIPconshdlrDecompGetSelectedSeeeds(scip, &idlist, &listlength);
+   SCIPconshdlrDecompGetSeeedLeafList(scip, &idlist, &listlength);
 
    /* count corresponding seeeds */
    for ( i = 0; i < listlength; ++i )
