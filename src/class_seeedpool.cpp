@@ -2105,7 +2105,7 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
    SCIP_Real dualvalmethodcoef;
 
-   if( !transformed )
+   if( seeed->isFromUnpresolved() )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, " \n Attention! Strong decomposition score is not implemented for decomps belonging to the original problem \n\n");
       return SCIP_OKAY;
@@ -2141,8 +2141,6 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
    enableppcuts = FALSE;
    SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
-
-
 
    for ( int block = 0; block < seeed->getNBlocks(); ++block )
    {
@@ -2278,11 +2276,8 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
          SCIPhashmapFree(&hashpricingvartoindex);
          SCIPfree(&subscip);
 
-         /*SCIPfreeRandom(scip, &randnumgen ); */
-
          return SCIP_OKAY;
       }
-
 
       /* get coefficient */
       if ( !SCIPisEQ( scip,  SCIPgetFirstLPLowerboundRoot(subscip), SCIPgetDualbound(subscip) ) )
