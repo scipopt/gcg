@@ -165,7 +165,7 @@ SCIP_RETCODE SCIPdialogSetNEntires(
    int newlength;
    int commandlen;
 
-   SCIPdialogMessage(scip, NULL, "Please specify the number of entries to be shown in this menu:\n");
+   SCIPdialogMessage(scip, NULL, "Please specify the amount of entries to be shown in this menu:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
    commandlen = strlen(ntovisualize);
 
@@ -193,6 +193,33 @@ SCIP_RETCODE SCIPdialogSetNEntires(
    return SCIP_OKAY;
 }
 
+
+/**
+ * @brief method to update the list of incomplete decompositions
+ *
+ * this list changes due to new decompositions, modified, decompositions or changes of the score
+ * @returns SCIP return code
+ */
+static
+SCIP_RETCODE SCIPdialogUpdateSeeedlist(
+   SCIP* scip,       /**< SCIP data structure */
+   int* startindex   /**< start index of menu */
+   )
+{
+   assert( SCIPconshdlrDecompCheckConsistency(scip) );
+
+   *startindex = 0;
+
+   SCIPconshdlrdataDecompUnselectAll(scip);
+
+   /* sort decomposition and finished seeeds according to max white score */
+   /*@todo remove this when manual sorting in menu is implemented */
+   SCIP_CALL( DECconshdlrDecompSortDecompositionsByScore(scip) );
+
+   /*@todo here was listall update*/
+
+   return SCIP_OKAY;
+}
 
 /** Shows header for seeed information in explore menu
  *
@@ -782,7 +809,7 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
 
        if( finisherid >= seeedpool->getNFinishingDetectors() || finisherid < -1 )
        {
-            SCIPdialogMessage(scip, NULL, "The specified id is invalid \n"  );
+            SCIPdialogMessage(scip, NULL, "The specified index is invalid \n"  );
             continue;
        }
        choosenfinisher = TRUE;
@@ -830,7 +857,7 @@ Seeed* SCIPdialogToolboxChoose(
 
    assert(scip != NULL);
 
-   SCIPdialogMessage(scip, NULL, "Please specify the id of the (partial) decomposition to be chosen for modification:\n");
+   SCIPdialogMessage(scip, NULL, "Please specify the nr of the (partial) decomposition to be chosen for modification:\n");
    SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntochoose, &endoffile);
    commandlen = strlen(ntochoose);
 
@@ -1350,7 +1377,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
-   int                     startindex, /**< index in seeed list to start list extract at */
+   int*                    startindex, /**< index in seeed list to start list extract at */
    int                     menulength, /**< number of menu entries */
    int**                   idlist,     /**< current list of seeed ids */
    int*                    listlength  /**< length of idlist */
@@ -1380,7 +1407,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       SCIPinfoMessage(scip, NULL, "Applied transformation to problem.\n");
    }
    /* 1) update list of interesting seeeds */
-   SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+   SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, startindex) );
 
    /* 2) while user has not aborted: show current list extract */
    int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
@@ -1394,7 +1421,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       SCIPconshdlrDecompGetSeeedLeafList(scip, idlist, listlength);
 
       SCIP_CALL( SCIPdialogShowListExtractHeader(scip, idlist, listlength) );
-      SCIP_CALL( SCIPdialogShowListExtract(scip, startindex, menulength, idlist, listlength) );
+      SCIP_CALL( SCIPdialogShowListExtract(scip, *startindex, menulength, idlist, listlength) );
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please choose an existing partial decomposition for modification (type \"choose <nr>\" or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
 
@@ -1402,26 +1429,26 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
 
       if( strncmp( command, "back", commandlen) == 0 )
       {
-         startindex = startindex - menulength;
-         if(startindex < 0 )
-            startindex = 0;
+         *startindex = *startindex - menulength;
+         if(*startindex < 0 )
+            *startindex = 0;
          continue;
       }
       if( strncmp( command, "next", commandlen) == 0 )
       {
-         startindex = startindex + menulength;
-         if( startindex > *listlength - menulength )
-            startindex = *listlength - menulength;
+         *startindex = *startindex + menulength;
+         if( *startindex > *listlength - menulength )
+            *startindex = *listlength - menulength;
          continue;
       }
       if( strncmp( command, "top", commandlen) == 0 )
       {
-         startindex = 0;
+         *startindex = 0;
          continue;
       }
       if( strncmp( command, "end", commandlen) == 0 )
       {
-         startindex = *listlength - menulength;
+         *startindex = *listlength - menulength;
          continue;
       }
 
@@ -1877,7 +1904,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+   SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, &startindex) );
 
    int* idlist;
    int listlength;
@@ -1929,7 +1956,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
       if( strncmp( command, "quit", commandlen) == 0 )
       {
          finished = TRUE;
-         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE) );
+         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip) );
          continue;
       }
 
@@ -1976,14 +2003,14 @@ SCIP_RETCODE SCIPdialogExecSelect(
       }
       if( strncmp( command, "modify", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog, startindex, menulength, &idlist, &listlength) );
-         SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+         SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog, &startindex, menulength, &idlist, &listlength) );
+         SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, &startindex) );
          continue;
       }
       if( strncmp( command, "create", commandlen) == 0 )
       {
          SCIP_CALL( SCIPdialogExecToolboxCreate(scip, dialoghdlr, dialog) );
-         SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+         SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, &startindex) );
          continue;
       }
    }

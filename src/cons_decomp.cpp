@@ -678,15 +678,9 @@ std::vector<SeeedPtr> getSelectedSeeeds(
    return selectedseeeds;
 }
 
-/**
- * method to unselect all decompositions, called in consexit, and when the seeedlist is updated
- * (especially if new (partial) are added )
- *
- *@returns SCIP return code
- */
-static
+
 SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
-   SCIP*          scip  /**< SCIP data structure */
+   SCIP*          scip
    )
 {
    std::vector<SeeedPtr> seeeds = getSeeeds(scip);
@@ -2337,8 +2331,7 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
  * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
-   SCIP* scip,             /* SCIP data structure */
-   SCIP_Bool updatelist    /* whether to update seeed list beforehand */
+   SCIP* scip             /* SCIP data structure */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -2356,7 +2349,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot manage decompositions!\n");
       return SCIP_ERROR;
    }
 
@@ -2369,8 +2362,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    conshdlrdata->candidates->clear();
 
-   if( updatelist )
-      SCIP_CALL(SCIPconshdlrDecompUpdateSeeedlist(scip) );
+   assert( SCIPconshdlrDecompCheckConsistency(scip) );
    
    std::vector<SeeedPtr> selectedlist = getSelectedSeeeds(scip);
    for( size_t selid = 0; selid < selectedlist.size(); ++selid )
@@ -2382,7 +2374,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL,  NULL, "currently no decomposition is selected, hence every known decomposition is considered: \n");
       selectedseeeds = getLeafSeeeds(scip);
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL,  NULL,  "number that is examined: %d \n", selectedseeeds.size() );
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL,  NULL,  "number of considered decompositions: %d \n", selectedseeeds.size() );
    }
 
    /* if there are selected decomps, check if some of them needs to be finished and do so */
@@ -2982,7 +2974,7 @@ SCIP_RETCODE DECdetectStructure(
    /* show that we done our duty */
    conshdlrdata->hasrun = TRUE;
    *result = SCIP_SUCCESS;
-   SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
+   SCIPconshdlrDecompChooseCandidatesFromSelected(scip);
 
    return SCIP_OKAY;
 }
@@ -3438,7 +3430,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
 
    if( conshdlrdata->candidates->size() == 0 )
    {
-      SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
+      SCIPconshdlrDecompChooseCandidatesFromSelected(scip);
    }
 
 
@@ -3531,7 +3523,7 @@ DEC_DECOMP* DECgetBestDecomp(
 
    if( conshdlrdata->candidates->size() == 0 && conshdlrdata->useddecomp == NULL)
    {
-      SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
+      SCIPconshdlrDecompChooseCandidatesFromSelected(scip);
       if (conshdlrdata->candidates->size() == 0)
          return NULL;
    }
@@ -3587,7 +3579,7 @@ SCIP_RETCODE DECgetSeeedToWrite(
 
    if( conshdlrdata->candidates->size() == 0 )
    {
-      SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
+      SCIPconshdlrDecompChooseCandidatesFromSelected(scip);
    }
 
    if( conshdlrdata->candidates->size() == 0 )
@@ -4469,12 +4461,12 @@ SCIP_RETCODE GCGprintClassifierInformation(
 SCIP_RETCODE GCGprintDecompInformation(
    SCIP*                 scip,   /* SCIP data structure */
    FILE*                 file    /* output file or NULL for standard output */
-)
+   )
 {
    std::vector<gcg::Seeed*>::const_iterator seeediter;
    std::vector<gcg::Seeed*>::const_iterator seeediterend;
 
-   SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+   assert( SCIPconshdlrDecompCheckConsistency(scip) );
 
    std::vector<SeeedPtr> seeedlist = getLeafSeeeds(scip);
    seeediter = seeedlist.begin();
@@ -4521,42 +4513,6 @@ SCIP_RETCODE GCGprintDecompInformation(
       }
       seeed->printClassifierInformation(scip, file);
    }
-
-   return SCIP_OKAY;
-}
-
-
-SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
-   SCIP*          scip
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-      return SCIP_ERROR;
-   }
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   assert( SCIPconshdlrDecompCheckConsistency(scip) );
-
-   //@todo here was startidvisu = 0
-
-   SCIPconshdlrdataDecompUnselectAll(scip);
-
-   if( conshdlrdata->hasrun && conshdlrdata->seeedpool == NULL && conshdlrdata->seeedpoolunpresolved == NULL)
-      return SCIP_OKAY;
-
-   /* sort decomposition and finished seeeds according to max white score */
-   SCIP_CALL( DECconshdlrDecompSortDecompositionsByScore(scip) );
-
-   /*@todo here was listall update*/
 
    return SCIP_OKAY;
 }

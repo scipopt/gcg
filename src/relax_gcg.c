@@ -2455,7 +2455,7 @@ SCIP_RETCODE initRelaxator(
       relaxdata->decdecomp = DECgetBestDecomp(scip);
       if( relaxdata->decdecomp == NULL )
       {
-         SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE) );
+         SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip) );
          relaxdata->decdecomp = DECgetBestDecomp(scip);
          if( relaxdata->decdecomp == NULL )
          {
