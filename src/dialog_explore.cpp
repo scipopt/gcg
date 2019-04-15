@@ -1593,19 +1593,17 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
          {
             seeedpool->addSeeedToFinished(userseeed, &success);
             if( !success )
-            {
                delete userseeed;
-            }
-         } else
+         }
+         else
          {
             seeedpool->addSeeedToIncomplete(userseeed, &success);
             if( !success )
-            {
                delete userseeed;
-            }
          }
          userseeed = NULL;
          finished = TRUE;
+         delete lastseeed;
 
          continue;
       }
@@ -1809,6 +1807,7 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
             }
          }
 
+         delete lastseeed;
          finished = TRUE;
          continue;
       }
