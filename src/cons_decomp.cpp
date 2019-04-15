@@ -234,9 +234,9 @@ struct SCIP_ConshdlrData
    SCIP_Bool             unpresolveduserseeedadded;               /**< stores whether or not an unpresolved user seeed was added */
 
    int                   seeedcounter;                            /**< counts the number of seeeds, used for seeed ids */
+   std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;      /**< vector containing the pairs of candidate list of decomps (to visualize, write, consider for family tree, consider for solving etc.) sorted according to  */
 
    /* data fields for selection/exploration management */
-   std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;      /**< vector containing the pairs of candidate list of decomps (to visualize, write, consider for family tree, consider for solving etc.) sorted according to  */
    int                    currscoretype;                          /**< indicates which score should be used for comparing (partial) decompositions
                                                                           0:max white,
                                                                           1: border area,

@@ -1415,7 +1415,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    {
       if(nseeeds < SCIPconshdlrDecompGetNSeeeds(scip))
       {
-         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &idlist, nseeeds, SCIPconshdlrDecompGetNSeeeds(scip)) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, idlist, nseeeds, SCIPconshdlrDecompGetNSeeeds(scip)) );
          nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
       }
       SCIPconshdlrDecompGetSeeedLeafList(scip, idlist, listlength);
