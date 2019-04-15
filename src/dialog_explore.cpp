@@ -461,7 +461,7 @@ SCIP_RETCODE SCIPdialogShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "select", "selects/unselects decomposition with given id");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "modify", "modify an existing decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "create", "create a new decomposition");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "back", "displays the preceding decompositions (if there are any)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "previous", "displays the preceding decompositions (if there are any)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "next", "displays the subsequent decompositions (if there are any)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "top", "displays the first decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "end", "displays the last decompositions");
@@ -1427,7 +1427,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
 
       commandlen = strlen(command);
 
-      if( strncmp( command, "back", commandlen) == 0 )
+      if( strncmp( command, "previous", commandlen) == 0 )
       {
          *startindex = *startindex - menulength;
          if(*startindex < 0 )
@@ -1928,7 +1928,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
 
       int commandlen = strlen(command);
 
-      if( strncmp( command, "back", commandlen) == 0 )
+      if( strncmp( command, "previous", commandlen) == 0 )
       {
          startindex = startindex - menulength;
          if(startindex < 0 )
