@@ -1,7 +1,8 @@
 Installation {#install}
 ------------------
 [TOC]
-This guide shows you how to install GCG on your machine. You can either
+This guide shows you how to install GCG on your Linux or Mac computer. Note that
+GCG cannot be installed on a windows machine. You can either
 * \ref install-scipopt including GCG (recommended) or do a
 * \ref install-manually.
 
@@ -13,7 +14,7 @@ The following steps are all executed automatically within
 ### Step 0: Prerequisites
 Install the required system libraries:
 
-    sudo apt-get install build-essential libreadline-dev libz-dev libgmp3-dev
+    sudo apt-get install build-essential libreadline-dev libz-dev libgmp3-dev lib32ncurses5-dev
 
 
 ### Step 1: Get the SCIP Optimization Suite
@@ -26,7 +27,12 @@ Download the archive and unzip it:
 
 ### Step 2: Compile via CMake
 <i>(recommended for new users)</i><br/>
-Create the build directory and compile the program:
+First, make sure that cmake is installed correctly and up-to-date:
+
+    sudo apt-get install cmake
+
+Then create the build directory and compile the program
+(you should execute them as root, if possible, to avoid certain errors):
 
     mkdir build
     cd build
@@ -39,9 +45,9 @@ And you're done! To test your installation, you can run a quick check on some in
     make check
 
 Note that the execution of `make`-commands, e.g. `make test` is only supported
-inside the `build`-folder (in which you cannot add testsets). Therefore, if you
-intend on using `make test` (and not ctest), you should compile SCIP and GCG via
-Makefile.
+inside the `build`-folder (in which it requires some more steps to add testsets).
+Therefore, if you intend on using `make test` (and not ctest), you should compile
+SCIP and GCG via Makefile.
 
 ### Step 2 (Alternative): Compile via Makefile
 <i>(recommended for developers, if necessary)</i><br/>
@@ -53,19 +59,16 @@ In order to create all necessary links, type
 
 #### Compilation
 
-You can compile GCG with
+In the root folder of the scipoptsuite, you can then compile everything
+(you should execute them as root, if possible, to avoid certain errors) with:
 
-    make [options]
-
-where the `[options]` are the same options as those from SCIP which is
-documented on the official SCIP homepage under http://scip.zib.de. For further
-options, consult the Makefile.
+    make scipoptsuite
+    make gcg
+    make install
 
 
 # Manual Installation {#install-manually}
-Note that a manual installation is not recommended to new users. Its only benefit
-is the compatibility to your own code, if it was made with makefile instead of
-cmake.
+Note that a manual installation is not recommended to new users.
 
 ### Step 1: Download everything
 Installing SCIP, SoPlex, ZIMPL, hMETIS, Bliss, and GCG manually requires <a href="http://www.or.rwth-aachen.de/gcg">GCG</a>, <a href="http://scip.zib.de/">SCIP</a>, <a href="http://soplex.zib.de/">SoPlex</a>, <a href="http://zimpl.zib.de/">ZIMPL</a>, and additionally <a href="http://www.tcs.hut.fi/Software/bliss/">Bliss</a> and <a href="http://glaros.dtc.umn.edu/gkhome/metis/hmetis/overview">hMETIS</a>. Let assume that all source code archives were saved within one folder, i.e.
