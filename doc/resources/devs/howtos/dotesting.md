@@ -40,7 +40,7 @@ In the folder `/check/results` you will see multiple files per test.
 The output files for a test executed by
 `make TEST=testrun SETTINGS=my STATISTICS=true test` are as follows:
 
-    check.testrun.gcg-GCGVERSION.linux.x86_64.gnu.opt.spx2.COMPUTERNAME.my.default.{.err,.out,.set}
+    check.testrun.gcg-GCGVERSION.linux.x86_64.gnu.opt.spx2.COMPUTERNAME.my.default{.err,.out,.set}
 
 and the files `{.res,.pav,.tex}` are added after the test was completed.
 If you aborted the test before it finished, you can still generate those files
@@ -61,7 +61,24 @@ you can do the following things:
 - [Make overviews with the raw data](#raw)
 - [Create Performance Plots to compare different runs](#plot)
 
-Those things will be explained in the following subsections.
+Those things will be explained in the following subsections.<br>
+
+#### Prerequisites
+**Python:** <br>
+Some scripts are just raw shell scripts, but some are also python
+ones. For those, you need python to be installed on your system:
+
+    sudo apt-get install python3
+
+**Python-Packages:** <br>
+For some python-scripts, you will need packages, that are probably
+not yet installed on your computer. You can do that by first installing `pip`:
+
+    sudo apt-get install python3-pip
+
+And then the needed package via
+
+    pip install <packackename>
 
 ### <a name="raw">Create Tables with raw data</a>
 A (quite raw) comparison of testruns can be done using the `allcmpres.sh` script
