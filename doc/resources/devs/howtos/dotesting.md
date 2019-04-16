@@ -96,7 +96,7 @@ As described in the SCIP documentation, one should be able to run a test with
 **This apparently does not work.**
 
 
-### Scripts that don't work anymore (and have to be reworked or deleted)
+### Experimental Scripts
 **Script:** bounds_script.py<br>
 **Error:** Lines with rootbounds in .out files don't start with `iter    pd   db` anymore<br>
 <br>
