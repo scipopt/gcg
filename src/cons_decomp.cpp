@@ -505,6 +505,9 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromUnpresolved(
       conshdlrdata = SCIPconshdlrGetData(conshdlr);
       assert(conshdlrdata != NULL);
 
+      if(conshdlrdata->seeedpoolunpresolved == NULL)
+         return NULL;
+
       for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds(); ++i)
       {
          if(  conshdlrdata->seeedpoolunpresolved->getIncompleteSeeed( i )->getID() == seeedid )
@@ -2710,7 +2713,20 @@ int SCIPconshdlrDecompGetNextSeeedID(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return ++conshdlrdata->seeedcounter;
+   Seeed_Wrapper sw;
+   int testnextid;
+   bool found = false;
+   while(found == false)
+   {
+      testnextid = conshdlrdata->seeedcounter + 1;
+      GCGgetSeeedFromID(scip, &testnextid, &sw);
+      conshdlrdata->seeedcounter = testnextid;
+      if(sw.seeed == NULL)
+      {
+         found = true;
+      }
+   }
+   return conshdlrdata->seeedcounter;
 }
 
 

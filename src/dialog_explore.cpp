@@ -1690,23 +1690,18 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
 
    if( strncmp( command, "presolved", commandlen) == 0 )
    {
+      if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+      {
+         SCIPinfoMessage(scip, NULL, "Problem is not presolved yet. Please presolve it first!\n");
+         return SCIP_OKAY;
+      }
+
       Seeed_Wrapper sw;
       isfromunpresolved = FALSE;
+      SCIPconshdlrDecompCreateSeeedpool(scip);
       SCIPconshdlrDecompGetSeeedpool(scip, &sw);
-      if( sw.seeedpool != NULL )
-         seeedpool = sw.seeedpool;
-      else
-      {
-         if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
-         {
-            SCIPinfoMessage(scip, NULL, "Problem is not presolved yet. Please presolve it first!\n");
-            return SCIP_OKAY;
-         }
-
-         SCIPconshdlrDecompCreateSeeedpool(scip);
-         SCIPconshdlrDecompGetSeeedpool(scip, &sw);
-         seeedpool = sw.seeedpool;
-      }
+      assert(sw.seeedpool != NULL);
+      seeedpool = sw.seeedpool;
    }
    else
    {
