@@ -68,35 +68,31 @@ char* SCIPgetScoretypeShortName(
    /* set detector chain info string */
    SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
 
-
    if( sctype == scoretype::MAX_WHITE )
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maxwhi") ;
 
    if( sctype == scoretype::CLASSIC )
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classi") ;
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classi") ;
 
    if( sctype == scoretype::BORDER_AREA )
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "border") ;
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "border") ;
 
    if( sctype == scoretype::MAX_FORESSEEING_WHITE )
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "forswh") ;
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "forswh") ;
 
    if( sctype == scoretype::MAX_FORESEEING_AGG_WHITE )
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "fawh") ;
 
-
    if( sctype == scoretype::SETPART_FWHITE )
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh ") ;
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh ") ;
 
    if( sctype == scoretype::SETPART_AGG_FWHITE )
-           SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfawh") ;
-
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfawh") ;
 
    if( sctype == scoretype::BENDERS )
-              SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "bender") ;
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "bender") ;
 
-
-   SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
+   SCIP_CALL_ABORT( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN) );
 
    return copy;
 
@@ -123,13 +119,13 @@ char*  SCIPconshdlrDecompGetScoretypeDescription(
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum white area score (i.e. maximize fraction of white area score; white area is nonblock and nonborder area, stairlinking variables count as linking)") ;
 
    if( sctype == scoretype::CLASSIC)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classical score") ;
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classical score") ;
 
    if( sctype == scoretype::BORDER_AREA)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score)")  ;
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score)")  ;
 
    if( sctype == scoretype::MAX_FORESSEEING_WHITE)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
 
    if( sctype == scoretype::MAX_FORESEEING_AGG_WHITE)
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score with aggregation information(i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
@@ -142,7 +138,6 @@ char*  SCIPconshdlrDecompGetScoretypeDescription(
 
    if( sctype == scoretype::BENDERS)
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "experimental score to evaluate benders decompositions")  ;
-
 
    SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
 
@@ -217,6 +212,7 @@ SCIP_RETCODE SCIPdialogUpdateSeeedlist(
 
    return SCIP_OKAY;
 }
+
 
 /** Shows header for seeed information in explore menu
  *
@@ -456,7 +452,7 @@ SCIP_RETCODE SCIPdialogShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "command", "description");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "-------", "-----------");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "select", "selects/unselects decomposition with given id");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "modify", "modify an existing decomposition");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "modify", "modify an existing partial decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "create", "create a new decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "previous", "displays the preceding decompositions (if there are any)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "next", "displays the subsequent decompositions (if there are any)");
@@ -464,10 +460,9 @@ SCIP_RETCODE SCIPdialogShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "end", "displays the last decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "legend", "displays the legend for table header and history abbreviations");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "help", "displays this help");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "number_entries", "modifies the number of displayed decompositions ");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "finishes decomposition explorer and goes back to main menu");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "number_entries", "modifies the number of displayed decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "visualizes the specified decomposition (requires gnuplot)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition ");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "calc_strong", "calculates and displays the strong decomposition score for this decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "return to main menu");
 
@@ -1827,7 +1822,14 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
 
       if( strncmp( command, "visualize", commandlen2) == 0 )
       {
-         newseeed->showVisualisation();
+         Seeed_Wrapper sw;
+         int id = newseeed->getID();
+         GCGgetSeeedFromID(scip, &id, &sw);
+
+         if(newseeed != NULL && sw.seeed != NULL)
+            newseeed->showVisualisation();
+         else
+            SCIPdialogMessage(scip, NULL, "There is nothing to be visualized yet.\n");
          continue;
       }
 
