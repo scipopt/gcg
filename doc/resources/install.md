@@ -66,6 +66,8 @@ In the root folder of the scipoptsuite, you can then compile everything
     make gcg
     make install
 
+### Step 3: Use GCG!
+See our ![quickstart guide](#getting-started) for further comments on the usage.
 
 # Manual Installation {#install-manually}
 Note that a manual installation is not recommended to new users.

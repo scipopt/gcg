@@ -4,6 +4,7 @@ The user's guide is divided into 5 different use cases which are ordered
 according to their complexity.\n
 If you're new here, we recommend starting with the first one.
 
+ \subpage getting-started \n
  \subpage u1 \n
  \subpage u2 \n
  \subpage u3 \n
