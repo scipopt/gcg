@@ -36,6 +36,27 @@
 #include "cons_decomp.h"
 #include "wrapper_seeed.h"
 
+/* column headers */
+#define DEFAULT_COLUMN_MAX_WIDTH 10 /**< max length of a column header abbreviation (also determines max width of column) */
+#define DEFAULT_COLUMNS "nr id nbloc nmacon nlivar nmavar nstlva score history pre nopcon nopvar usr sel"
+
+#define DESC_NR      "number of the decomposition (use this number for choosing the decomposition)"
+#define DESC_ID      "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)"
+#define DESC_NBLOC   "number of blocks"
+#define DESC_NMACON  "number of master constraints"
+#define DESC_NLIVAR  "number of linking variables"
+#define DESC_NMAVAR  "number of master variables (do not occur in blocks)"
+#define DESC_NSTLVA  "number of stairlinking variables (disjoint from linking variables)"
+
+#define DESC_SCORE   " " //@todo put this back in the actual scores, they should know their description
+
+#define DESC_HISTORY "list of detector chars worked on this decomposition"
+#define DESC_PRE     "is this decomposition for the presolved problem"
+#define DESC_NOPCON  "number of open constraints"
+#define DESC_NOPVAR  "number of open variables"
+#define DESC_USR     "whether this decomposition was given by the user"
+#define DESC_SEL     "is this decomposition selected at the moment"
+
 #define DEFAULT_MENULENGTH 10
 
 namespace gcg
@@ -50,99 +71,6 @@ enum toolboxtype
    FINISH,
    POSTPROCESS
 };
-
-
-/**
- * Gets the shortname of the given scoretype
- *
- * @returns the shortname of the given Scoretype
- */
-static
-char* SCIPgetScoretypeShortName(
-   SCIP*       scip,    /**< SCIP data structure */
-   SCORETYPE   sctype   /**< scoretype */
-   )
-{
-   char scoretypename[SCIP_MAXSTRLEN];
-   char* copy;
-   /* set detector chain info string */
-   SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
-
-   if( sctype == scoretype::MAX_WHITE )
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maxwhi") ;
-
-   if( sctype == scoretype::CLASSIC )
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classi") ;
-
-   if( sctype == scoretype::BORDER_AREA )
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "border") ;
-
-   if( sctype == scoretype::MAX_FORESSEEING_WHITE )
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "forswh") ;
-
-   if( sctype == scoretype::MAX_FORESEEING_AGG_WHITE )
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "fawh") ;
-
-   if( sctype == scoretype::SETPART_FWHITE )
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh ") ;
-
-   if( sctype == scoretype::SETPART_AGG_FWHITE )
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfawh") ;
-
-   if( sctype == scoretype::BENDERS )
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "bender") ;
-
-   SCIP_CALL_ABORT( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN) );
-
-   return copy;
-
-}
-
-/*!
- * returns the description of the given scoretype
- *
- * @returns description of the scoretype
- */
-static
-char*  SCIPconshdlrDecompGetScoretypeDescription(
-   SCIP*       scip,    /**< SCIP data structure */
-   SCORETYPE   sctype   /**< scoretype */
-      )
-{
-   char scoretypename[SCIP_MAXSTRLEN];
-   char* copy;
-
-   /* set detector chain info string */
-   SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
-
-   if( sctype == scoretype::MAX_WHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum white area score (i.e. maximize fraction of white area score; white area is nonblock and nonborder area, stairlinking variables count as linking)") ;
-
-   if( sctype == scoretype::CLASSIC)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classical score") ;
-
-   if( sctype == scoretype::BORDER_AREA)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score)")  ;
-
-   if( sctype == scoretype::MAX_FORESSEEING_WHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
-
-   if( sctype == scoretype::MAX_FORESEEING_AGG_WHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score with aggregation information(i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
-
-   if( sctype == scoretype::SETPART_FWHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints)")  ;
-
-   if( sctype == scoretype::SETPART_AGG_FWHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints)")  ;
-
-   if( sctype == scoretype::BENDERS)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "experimental score to evaluate benders decompositions")  ;
-
-   SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
-
-   return copy;
-}
 
 
 /** modifies menulength according to input and updates menu accordingly
@@ -235,7 +163,7 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    char* scorename;
    int i;
 
-   scorename = SCIPgetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip) );
+   scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip) );
 
    ndetectedpresolved = 0;
    ndetectedunpresolved = 0;
@@ -381,7 +309,7 @@ SCIP_RETCODE SCIPdialogShowLegend(
    char * scorename;
    char * scoredescr;
 
-   scorename = SCIPgetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip) );
+   scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip) );
    scoredescr = SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrDecompGetScoretype(scip) );
 
 
@@ -1907,12 +1835,11 @@ SCIP_RETCODE SCIPdialogExecSelect(
    SCIP_DIALOG*            dialog
    )
 {
-   SCIP_Bool finished = false;
-   char* command;
-   SCIP_Bool endoffile;
+   /* set navigation defaults */
    int startindex = 0;
    int menulength = DEFAULT_MENULENGTH;
 
+   /* check for available seeeds */
    int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
    if(nseeeds == 0)
    {
@@ -1920,14 +1847,47 @@ SCIP_RETCODE SCIPdialogExecSelect(
       return SCIP_OKAY;
    }
 
+   /* get initial seeed list */
    SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, &startindex) );
-
    int* idlist;
    int listlength;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &idlist, nseeeds) );
 
-   /* while user has not aborted: show current list extract */
-   while ( !finished )
+   /* set initial columns */
+   std::vector<char*> columns;
+   SCORETYPE scoretype = scoretype::MAX_WHITE;
+   char* scorename;
+   char str[] = DEFAULT_COLUMNS;
+   char* tempcolumns = strtok(str, " ");
+   while(tempcolumns != NULL)
+   {
+      /* get each column header of default */
+      char newchar[DEFAULT_COLUMN_MAX_WIDTH];
+      strcpy(newchar, tempcolumns);
+
+      /* "score" is a wildcard for the current score */
+      if( strncmp(newchar, "score", strlen(newchar)) == 0 )
+      {
+         scoretype = SCIPconshdlrDecompGetScoretype(scip);
+         scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype );
+         columns.push_back(scorename);
+      }
+      else
+      {
+         char copy[DEFAULT_COLUMN_MAX_WIDTH];
+         strncpy(copy, newchar, strlen(newchar)); //@todo bug copy has weird values, pointer is reset to same address. FIX!
+         columns.push_back(&copy[0]);
+      }
+
+      tempcolumns = strtok (NULL, " ");
+   }
+   /*@todo hand this vector, scorename, scoretype down and use it to make menu columns generic */
+
+   /* while user has not aborted: show current list extract and catch commands */
+   SCIP_Bool finished = false;
+   char* command;
+   SCIP_Bool endoffile;
+   while( !finished )
    {
       if(nseeeds < SCIPconshdlrDecompGetNSeeeds(scip))
       {

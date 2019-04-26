@@ -730,6 +730,30 @@ SCORETYPE SCIPconshdlrDecompGetScoretype(
    );
 
 
+/**
+ * Gets the shortname of the given scoretype
+ *
+ * @returns the shortname of the given Scoretype
+ */
+extern
+char* SCIPconshdlrDecompGetScoretypeShortName(
+   SCIP*       scip,    /**< SCIP data structure */
+   SCORETYPE   sctype   /**< scoretype */
+   );
+
+
+/*!
+ * returns the description of the given scoretype
+ *
+ * @returns description of the scoretype
+ */
+extern
+char*  SCIPconshdlrDecompGetScoretypeDescription(
+   SCIP*       scip,    /**< SCIP data structure */
+   SCORETYPE   sctype   /**< scoretype */
+   );
+
+
 /** @brief Gets a list of ids of the current seeeds that are finished or to be finished
  *
  *  @note recommendation: when in doubt plan for as many ids as seeeds

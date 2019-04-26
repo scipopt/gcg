@@ -4548,7 +4548,94 @@ SCORETYPE SCIPconshdlrDecompGetScoretype(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return  static_cast<scoretype>(conshdlrdata->currscoretype);
+   return static_cast<scoretype>(conshdlrdata->currscoretype);
+}
+
+
+char* SCIPconshdlrDecompGetScoretypeShortName(
+   SCIP*       scip,
+   SCORETYPE   sctype
+   )
+{
+   char scoretypename[SCIP_MAXSTRLEN];
+   char* copy;
+
+   switch(sctype)
+   {
+   case scoretype::MAX_WHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maxwhi");
+      break;
+   case scoretype::CLASSIC:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classi");
+      break;
+   case scoretype::BORDER_AREA:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "border");
+      break;
+   case scoretype::MAX_FORESSEEING_WHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "forswh");
+      break;
+   case scoretype::MAX_FORESEEING_AGG_WHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "fawh");
+      break;
+   case scoretype::SETPART_FWHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh");
+      break;
+   case scoretype::SETPART_AGG_FWHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfawh");
+      break;
+   case scoretype::BENDERS:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "bender");
+      break;
+   default:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "");
+   }
+
+   SCIP_CALL_ABORT( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN) );
+   return copy;
+}
+
+
+char* SCIPconshdlrDecompGetScoretypeDescription(
+   SCIP*       scip,
+   SCORETYPE   sctype
+   )
+{
+   char scoretypename[SCIP_MAXSTRLEN];
+   char* copy;
+
+   switch(sctype)
+   {
+   case scoretype::MAX_WHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum white area score (i.e. maximize fraction of white area score; white area is nonblock and nonborder area, stairlinking variables count as linking)");
+      break;
+   case scoretype::CLASSIC:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classical score");
+      break;
+   case scoretype::BORDER_AREA:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score)");
+      break;
+   case scoretype::MAX_FORESSEEING_WHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)");
+      break;
+   case scoretype::MAX_FORESEEING_AGG_WHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score with aggregation information(i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)");
+      break;
+   case scoretype::SETPART_FWHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints)");
+      break;
+   case scoretype::SETPART_AGG_FWHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints)");
+      break;
+   case scoretype::BENDERS:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "experimental score to evaluate benders decompositions");
+      break;
+   default:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "");
+      break;
+   }
+
+   SCIP_CALL_ABORT( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
+   return copy;
 }
 
 
