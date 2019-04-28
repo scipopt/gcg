@@ -19,7 +19,7 @@ You can now enter commands into the interactive console.
 
 ## Basic commands
 ### `read`
-GCG reads your LP file. If you go to `/check/instances` from your GCG root
+GCG reads your LP file. If you go to `/check/instances/bpp` from your GCG root
 directory, you can read the problem "N1C3W1_A". Output:
 ```
 GCG> read
