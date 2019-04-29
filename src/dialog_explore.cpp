@@ -1298,6 +1298,38 @@ SCIP_RETCODE SCIPdialogToolboxPostprocessSeeed(
 }
 
 
+/** @brief show current menu
+ *
+ * Update length of seeed list in case it changed since the last command
+ * and show the table of seeeds. */
+static
+SCIP_RETCODE SCIPdialogShowMenu(
+   SCIP* scip,       /**< SCIP data structure */
+   int* nseeeds,     /**< max number of seeeds */
+   int startindex,   /**< index in seeed list to start list extract at */
+   int menulength,   /**< number of menu entries */
+   int** idlist,     /**< current list of seeed ids */
+   int* listlength   /**< length of idlist */
+   )
+{
+   /* update size of seeed list in case it changed */
+   if(*nseeeds < SCIPconshdlrDecompGetNSeeeds(scip))
+   {
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, idlist, *nseeeds, SCIPconshdlrDecompGetNSeeeds(scip)) );
+      *nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
+   }
+
+   /* update list of seeeds */
+   SCIPconshdlrDecompGetSeeedLeafList(scip, idlist, listlength);
+
+   /* show table */
+   SCIP_CALL( SCIPdialogShowListExtractHeader(scip, idlist, listlength) );
+   SCIP_CALL( SCIPdialogShowListExtract(scip, startindex, menulength, idlist, listlength) );
+
+   return SCIP_OKAY;
+}
+
+
 /**
  * @brief method to handle and moderate user input for modifying decompositions
  * @param scip SCIP data structure
@@ -1346,15 +1378,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
    while ( !finished )
    {
-      if(nseeeds < SCIPconshdlrDecompGetNSeeeds(scip))
-      {
-         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, idlist, nseeeds, SCIPconshdlrDecompGetNSeeeds(scip)) );
-         nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
-      }
-      SCIPconshdlrDecompGetSeeedLeafList(scip, idlist, listlength);
-
-      SCIP_CALL( SCIPdialogShowListExtractHeader(scip, idlist, listlength) );
-      SCIP_CALL( SCIPdialogShowListExtract(scip, *startindex, menulength, idlist, listlength) );
+      SCIPdialogShowMenu(scip, &nseeeds, *startindex, menulength, idlist, listlength);
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please choose an existing partial decomposition for modification (type \"choose <nr>\" or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
 
@@ -1869,16 +1893,17 @@ SCIP_RETCODE SCIPdialogExecSelect(
       if( strncmp(newchar, "score", strlen(newchar)) == 0 )
       {
          scoretype = SCIPconshdlrDecompGetScoretype(scip);
-         scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype );
+         scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype);
          columns.push_back(scorename);
       }
       else
       {
-         char copy[DEFAULT_COLUMN_MAX_WIDTH];
-         strncpy(copy, newchar, strlen(newchar)); //@todo bug copy has weird values, pointer is reset to same address. FIX!
+         /* if the name is not score, just use a copy of the current char */
+         char* copy = new char[strlen(newchar)]; //@todo seems like this needs no free/delete? check.
+         strncpy(copy, newchar, strlen(newchar));
          columns.push_back(&copy[0]);
       }
-
+      /* get the next item in the list */
       tempcolumns = strtok (NULL, " ");
    }
    /*@todo hand this vector, scorename, scoretype down and use it to make menu columns generic */
@@ -1889,15 +1914,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
    SCIP_Bool endoffile;
    while( !finished )
    {
-      if(nseeeds < SCIPconshdlrDecompGetNSeeeds(scip))
-      {
-         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &idlist, nseeeds, SCIPconshdlrDecompGetNSeeeds(scip)) );
-         nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
-      }
-      SCIPconshdlrDecompGetSeeedLeafList(scip, &idlist, &listlength);
-      SCIP_CALL( SCIPdialogShowListExtractHeader(scip, &idlist, &listlength) );
-
-      SCIP_CALL( SCIPdialogShowListExtract(scip, startindex, menulength, &idlist, &listlength) );
+      SCIPdialogShowMenu(scip, &nseeeds, startindex, menulength, &idlist, &listlength);
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
          "Please enter command or decomposition id to select (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
@@ -1990,6 +2007,11 @@ SCIP_RETCODE SCIPdialogExecSelect(
          continue;
       }
    }
+
+   /*for(auto header : columns)
+   {
+      delete header; //@todo is this neccessary?
+   } */
 
    SCIPfreeBlockMemoryArray(scip, &idlist, nseeeds);
    return SCIP_OKAY;
