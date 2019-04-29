@@ -29,15 +29,18 @@
 #include <assert.h>
 #include <stddef.h>
 
+#include <string>
 #include <iostream>
 #include <regex>
+#include <map>
 
 #include "class_seeed.h"
 #include "cons_decomp.h"
 #include "wrapper_seeed.h"
 
 /* column headers */
-#define DEFAULT_COLUMN_MAX_WIDTH 10 /**< max length of a column header abbreviation (also determines max width of column) */
+#define DEFAULT_COLUMN_MIN_WIDTH  4 /**< min width of a column in the menu table */
+#define DEFAULT_COLUMN_MAX_WIDTH 10 /**< max width of a column (also determines max width of column header abbreviation) */
 #define DEFAULT_COLUMNS "nr id nbloc nmacon nlivar nmavar nstlva score history pre nopcon nopvar usr sel"
 
 #define DESC_NR      "number of the decomposition (use this number for choosing the decomposition)"
@@ -142,14 +145,17 @@ SCIP_RETCODE SCIPdialogUpdateSeeedlist(
 }
 
 
-/** Shows header for seeed information in explore menu
+/** Shows seeed information in explore menu
  *
  * @returns SCIP status */
 static
-SCIP_RETCODE SCIPdialogShowListExtractHeader(
-   SCIP* scip,       /**< SCIP data structure */
-   int** idlist,     /**< current list of seeed ids */
-   int*  listlength  /**< length of idlist */
+SCIP_RETCODE SCIPdialogShowListExtract(
+   SCIP* scip,                         /**< SCIP data structure */
+   std::vector<std::string> columns,   /**< list of column headers (abbreviations) */
+   const int startindex,               /**< index (in seeed list) of uppermost seeed in extract */
+   int menulength,                     /**< number of menu entries */
+   int** idlist,                       /**< current list of seeed ids */
+   int*  listlength                    /**< length of idlist */
    )
 {
    assert(scip != NULL);
@@ -160,10 +166,6 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    int nuserpresolvedpartial;
    int nuserunpresolvedfull;
    int nuserunpresolvedpartial;
-   char* scorename;
-   int i;
-
-   scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip) );
 
    ndetectedpresolved = 0;
    ndetectedunpresolved = 0;
@@ -172,8 +174,8 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    nuserunpresolvedfull = 0;
    nuserunpresolvedpartial = 0;
 
-   /* count corresponding seeeds */
-   for ( i = 0; i < *listlength; ++i )
+   /* count corresponding seeeds for overview statistics */
+   for(int i = 0; i < *listlength; ++i)
    {
       Seeed_Wrapper sw;
       GCGgetSeeedFromID(scip, &(*idlist)[i], &sw);
@@ -193,9 +195,56 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
          ++nuserunpresolvedpartial;
    }
 
+   /* count width of menu table by summing width of column headers,
+    * make header line, and border line for header (will be beneath the column headers) as follows:
+    * a border line of the length of the column width as '-' for each column and a space between the columns,
+    * e.g. header line "   nr   id nbloc nmacon  sel ",
+    * e.g. underscores " ---- ---- ----- ------ ---- " */
+   std::string headerline;
+   std::string borderline;
+   std::map<std::string, int> columnlength;
+   int linelength = 0;
+
+   /* line starts with a space */
+   headerline = " ";
+   borderline = " ";
+
+   for(auto header : columns)
+   {
+      /* make sure the header name is unique and add a length for header */
+      assert(columnlength.find(header) == columnlength.end());
+      columnlength.insert(std::pair<std::string,int>(header, 0));
+
+      /* if header is smaller than min column width, add spaces to header first */
+      if(header.size() < DEFAULT_COLUMN_MIN_WIDTH)
+      {
+         for(int i = 0; i < (DEFAULT_COLUMN_MIN_WIDTH - (int) header.size()); i++)
+         {
+            headerline += " ";
+            borderline += "-";
+            columnlength.at(header)++;
+         }
+      }
+
+      /* add header to headerline and add #chars of header as '-' to borderline*/
+      headerline += header;
+      for(int i = 0; i < (int) header.size(); i++)
+         borderline += "-";
+      columnlength.at(header) += (int) header.size();
+
+      /* add space to both lines as column border */
+      headerline += " ";
+      borderline += " ";
+
+      /* add columnlength (+1 for border space) to overall linelength */
+      linelength += columnlength.at(header) + 1;
+   }
+
+   /* display overview statistics */
    SCIPdialogMessage(scip, NULL, "\n");
-   SCIPdialogMessage(scip, NULL, "=================================================================================================== ");
-   SCIPdialogMessage(scip, NULL, "\n");
+   for(int i = 0; i < linelength; i++)
+      SCIPdialogMessage(scip, NULL, "=");
+   SCIPdialogMessage(scip, NULL, " \n");
    SCIPdialogMessage(scip, NULL, "Summary              presolved       original \n");
    SCIPdialogMessage(scip, NULL, "                     ---------       -------- \n");
    SCIPdialogMessage(scip, NULL, "detected             ");
@@ -207,34 +256,16 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    SCIPdialogMessage(scip, NULL, "user given (full)    ");
    SCIPdialogMessage(scip, NULL, "%9d       ", nuserpresolvedfull );
    SCIPdialogMessage(scip, NULL, "%8d\n", nuserunpresolvedfull );
-
-   SCIPdialogMessage(scip, NULL, "=================================================================================================== \n");
-   SCIPdialogMessage(scip, NULL, "   nr     id  nbloc  nmacon  nlivar  nmavar  nstlva  %.6s  history  pre  nopcon  nopvar  usr  sel \n", scorename );
-   SCIPdialogMessage(scip, NULL, " ----   ----  -----  ------  ------  ------  ------  ------  -------  ---  ------  ------  ---  --- \n");
-
-   SCIPfreeBlockMemoryArrayNull(scip, &scorename, SCIP_MAXSTRLEN);
-
-   return SCIP_OKAY;
-}
+   for(int i = 0; i < linelength; i++)
+         SCIPdialogMessage(scip, NULL, "=");
+   SCIPdialogMessage(scip, NULL, " \n");
+   /* display header of table */
+   SCIPdialogMessage(scip, NULL, "%s\n", headerline.c_str());
+   SCIPdialogMessage(scip, NULL, "%s\n", borderline.c_str());
 
 
-/** Shows detailed information about seeeds in explore menu
- *
- *@returns SCIP status
- * */
-static
-SCIP_RETCODE SCIPdialogShowListExtract(
-   SCIP* scip,             /**< SCIP data structure */
-   const int startindex,   /**< index (in seeed list) of uppermost seeed in extract */
-   int menulength,         /**< number of menu entries */
-   int** idlist,           /**< current list of seeed ids */
-   int*  listlength        /**< length of idlist */
-   )
-{
-   assert(scip != NULL);
-   int i;
-
-   for( i = startindex; i < startindex + menulength && i < *listlength; ++i)
+   /*@todo make this part generic */
+   for( int i = startindex; i < startindex + menulength && i < *listlength; ++i)
    {
       Seeed_Wrapper sw;
       Seeed* seeed;
@@ -266,6 +297,7 @@ SCIP_RETCODE SCIPdialogShowListExtract(
 
    return SCIP_OKAY;
 }
+
 
 /** Shows help for the user toolbox
  *
@@ -301,35 +333,31 @@ SCIP_RETCODE SCIPdialogShowToolboxInfo(
  * @returns SCIP status */
 static
 SCIP_RETCODE SCIPdialogShowLegend(
-   SCIP* scip  /**< SCIP data structure */
+   SCIP* scip,             /**< SCIP data structure */
+   SCORETYPE scoretype     /**< current score type */
    )
 {
    assert(scip != NULL);
    DEC_DETECTOR** detectors;
-   char * scorename;
-   char * scoredescr;
 
-   scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip) );
-   scoredescr = SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrDecompGetScoretype(scip) );
+   std::string scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype);
+   std::string scoredescr = SCIPconshdlrDecompGetScoretypeDescription(scip, scoretype);
 
+   SCIPdialogMessage(scip, NULL, "List of included detectors for decompositions histories: \n");
 
-   SCIPdialogMessage(scip, NULL, "List of included detectors for decompositions histories: \n" );
-
-   SCIPdialogMessage(scip, NULL, "\n%30s    %4s\n", "detector" , "char"  );
-   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "--------" , "----"  );
+   SCIPdialogMessage(scip, NULL, "\n%30s    %4s\n", "detector" , "char");
+   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "--------" , "----");
 
    detectors = SCIPconshdlrDecompGetDetectors(scip);
 
    for( int det = 0; det < SCIPconshdlrDecompGetNDetectors(scip); ++det )
    {
       DEC_DETECTOR* detector;
-
       detector = detectors[det];
 
-      SCIPdialogMessage(scip, NULL, "%30s    %4c\n", DECdetectorGetName(detector), DECdetectorGetChar(detector)  );
+      SCIPdialogMessage(scip, NULL, "%30s    %4c\n", DECdetectorGetName(detector), DECdetectorGetChar(detector));
    }
-   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "given by user" , "U"  );
-
+   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "given by user" , "U");
    SCIPdialogMessage(scip, NULL, "\n" );
 
    SCIPdialogMessage(scip, NULL, "=================================================================================================== \n");
@@ -347,7 +375,7 @@ SCIP_RETCODE SCIPdialogShowLegend(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nlivar", "number of linking variables");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmavar", "number of master variables (do not occur in blocks)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nstlva", "number of stairlinking variables (disjoint from linking variables)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", scorename, scoredescr);
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", scorename.c_str(), scoredescr.c_str());
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "history", "list of detector chars worked on this decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "pre", "is this decomposition for the presolved problem");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopcon", "number of open constraints");
@@ -356,9 +384,6 @@ SCIP_RETCODE SCIPdialogShowLegend(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sel", "is this decomposition selected at the moment");
 
    SCIPdialogMessage(scip, NULL, "\n=================================================================================================== \n");
-
-   SCIPfreeBlockMemoryArrayNull(scip, &scorename, SCIP_MAXSTRLEN);
-   SCIPfreeBlockMemoryArrayNull(scip, &scoredescr, SCIP_MAXSTRLEN);
 
    return SCIP_OKAY;
 }
@@ -715,7 +740,7 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
 
    seeedpool = userseeed->getSeeedpool();
    choosenfinisher = FALSE;
-   while ( !choosenfinisher )
+   while( !choosenfinisher )
    {
        SCIPdialogMessage(scip, NULL, " Available finisher: \n");
        /* 1) print out available finisher */
@@ -1304,12 +1329,13 @@ SCIP_RETCODE SCIPdialogToolboxPostprocessSeeed(
  * and show the table of seeeds. */
 static
 SCIP_RETCODE SCIPdialogShowMenu(
-   SCIP* scip,       /**< SCIP data structure */
-   int* nseeeds,     /**< max number of seeeds */
-   int startindex,   /**< index in seeed list to start list extract at */
-   int menulength,   /**< number of menu entries */
-   int** idlist,     /**< current list of seeed ids */
-   int* listlength   /**< length of idlist */
+   SCIP* scip,                         /**< SCIP data structure */
+   std::vector<std::string> columns,   /**< list of column headers (abbreviations) */
+   int* nseeeds,                       /**< max number of seeeds */
+   int startindex,                     /**< index in seeed list to start list extract at */
+   int menulength,                     /**< number of menu entries */
+   int** idlist,                       /**< current list of seeed ids */
+   int* listlength                     /**< length of idlist */
    )
 {
    /* update size of seeed list in case it changed */
@@ -1323,8 +1349,7 @@ SCIP_RETCODE SCIPdialogShowMenu(
    SCIPconshdlrDecompGetSeeedLeafList(scip, idlist, listlength);
 
    /* show table */
-   SCIP_CALL( SCIPdialogShowListExtractHeader(scip, idlist, listlength) );
-   SCIP_CALL( SCIPdialogShowListExtract(scip, startindex, menulength, idlist, listlength) );
+   SCIP_CALL( SCIPdialogShowListExtract(scip, columns, startindex, menulength, idlist, listlength) );
 
    return SCIP_OKAY;
 }
@@ -1342,6 +1367,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   std::vector<std::string> columns,   /**< list of column headers (abbreviations) */
    int*                    startindex, /**< index in seeed list to start list extract at */
    int                     menulength, /**< number of menu entries */
    int**                   idlist,     /**< current list of seeed ids */
@@ -1376,9 +1402,9 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
 
    /* 2) while user has not aborted: show current list extract */
    int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
-   while ( !finished )
+   while( !finished )
    {
-      SCIPdialogShowMenu(scip, &nseeeds, *startindex, menulength, idlist, listlength);
+      SCIPdialogShowMenu(scip, columns, &nseeeds, *startindex, menulength, idlist, listlength);
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please choose an existing partial decomposition for modification (type \"choose <nr>\" or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
 
@@ -1482,7 +1508,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    Seeed* lastseeed = NULL;
 
    finished = FALSE;
-   while ( !finished && selectedsomeseeed )
+   while( !finished && selectedsomeseeed )
    {
       int commandlen2;
       SCIP_Bool success;
@@ -1687,7 +1713,7 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
    Seeed* lastseeed = NULL;
 
    finished = FALSE;
-   while ( !finished )
+   while( !finished )
    {
       int commandlen2;
       SCIP_Bool success;
@@ -1878,15 +1904,15 @@ SCIP_RETCODE SCIPdialogExecSelect(
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &idlist, nseeeds) );
 
    /* set initial columns */
-   std::vector<char*> columns;
+   std::vector<std::string> columns;
    SCORETYPE scoretype = scoretype::MAX_WHITE;
    char* scorename;
-   char str[] = DEFAULT_COLUMNS;
-   char* tempcolumns = strtok(str, " ");
+   char columnstr[] = DEFAULT_COLUMNS;
+   char* tempcolumns = strtok(columnstr, " ");
    while(tempcolumns != NULL)
    {
       /* get each column header of default */
-      char newchar[DEFAULT_COLUMN_MAX_WIDTH];
+      char newchar[DEFAULT_COLUMN_MAX_WIDTH]; // cutting string at max column width if longer
       strcpy(newchar, tempcolumns);
 
       /* "score" is a wildcard for the current score */
@@ -1894,14 +1920,14 @@ SCIP_RETCODE SCIPdialogExecSelect(
       {
          scoretype = SCIPconshdlrDecompGetScoretype(scip);
          scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype);
-         columns.push_back(scorename);
+         char name[DEFAULT_COLUMN_MAX_WIDTH];
+         strcpy(name, scorename);
+         columns.push_back(name);
       }
       else
       {
-         /* if the name is not score, just use a copy of the current char */
-         char* copy = new char[strlen(newchar)]; //@todo seems like this needs no free/delete? check.
-         strncpy(copy, newchar, strlen(newchar));
-         columns.push_back(&copy[0]);
+         /* if the name is not score, just use the current char */
+         columns.push_back(newchar);
       }
       /* get the next item in the list */
       tempcolumns = strtok (NULL, " ");
@@ -1914,7 +1940,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
    SCIP_Bool endoffile;
    while( !finished )
    {
-      SCIPdialogShowMenu(scip, &nseeeds, startindex, menulength, &idlist, &listlength);
+      SCIPdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist, &listlength);
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
          "Please enter command or decomposition id to select (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
@@ -1955,7 +1981,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
 
       if( strncmp( command, "legend", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogShowLegend(scip) );
+         SCIP_CALL( SCIPdialogShowLegend(scip, scoretype) );
          continue;
       }
 
@@ -1996,7 +2022,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
       }
       if( strncmp( command, "modify", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog, &startindex, menulength, &idlist, &listlength) );
+         SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog, columns, &startindex, menulength, &idlist, &listlength) );
          SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, &startindex) );
          continue;
       }
@@ -2007,11 +2033,6 @@ SCIP_RETCODE SCIPdialogExecSelect(
          continue;
       }
    }
-
-   /*for(auto header : columns)
-   {
-      delete header; //@todo is this neccessary?
-   } */
 
    SCIPfreeBlockMemoryArray(scip, &idlist, nseeeds);
    return SCIP_OKAY;
