@@ -32,6 +32,9 @@ original problem has 1224 variables (0 bin, 1224 int, 0 impl, 0 cont) and 74 con
 
 ```
 
+You can obviously also read your own problem. Your problem has to be in a
+`.lp`, `.mps` or `.cip` format.
+
 ### `optimize`
 GCG optimizes what you previously read.
 ```
@@ -70,7 +73,9 @@ Gap                : 0.00 %
 ```
 
 #### `detect` (included in `optimize`)
-Detects structure and applies Dantzig-Wolfe Reformulation.
+Detects structure and applies Dantzig-Wolfe Reformulation. If GCG is not able to
+detect such a structure, you can also give a `.dec`-file, specifying the structure.
+The format of such a file is documented in reader_dec.h.
 
 #### `presolve` (included in `optimize`)
 Presolves your LP.
@@ -91,3 +96,10 @@ in the `detect`-step.
 
 ### `write`
 Can write out multiple things, e.g. decompositions.
+
+### `load set`
+Uses your own settings file. Output:
+```
+GCG> set load settings/default.set
+loaded parameter file <settings/default.set>
+```
