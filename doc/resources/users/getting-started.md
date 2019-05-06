@@ -78,10 +78,15 @@ detect such a structure, you can also give a `.dec`-file, specifying the structu
 The format of such a file is documented in reader_dec.h.
 
 #### `presolve` (included in `optimize`)
-Presolves your LP.
+Presolves your LP. This includes searching for variables and constraints that could be deleted.
+For example, if there is `x + y <= 1` and also `x + y >= 1`, one could
+replace that with `x + y = 1`.
 
 ### `free`
 Removes current LP from memory. You can then read another.
+
+### `..`
+Leave a submenu.
 
 ### `quit`
 Ends GCG.

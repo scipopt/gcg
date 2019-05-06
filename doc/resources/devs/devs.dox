@@ -2,6 +2,7 @@
 The developer's guide offers explanations on how to add your own plug-ins to GCG
 and on how to test them.
 
+- \subpage dev-install
 - \subpage examples
 - \subpage howtos
 - <a href="http://gcg.or.rwth-aachen.de/doc/annotated.html">C API</a>

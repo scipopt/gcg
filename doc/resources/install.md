@@ -2,9 +2,12 @@ Installation {#install}
 ------------------
 [TOC]
 This guide shows you how to install GCG on your Linux or Mac computer. Note that
-GCG cannot be installed on a windows machine. You can either
+GCG cannot be installed on a windows machine. As a user, you can either
 * \ref install-scipopt including GCG (recommended) or do a
-* \ref install-manually.
+* \ref install-manually.<br>
+
+If you are a GCG developer and need the current master branch, consult
+* \ref dev-install
 
 # Install the SCIP Optimization Suite {#install-scipopt}
 
@@ -67,7 +70,7 @@ In the root folder of the scipoptsuite, you can then compile everything
     make install
 
 ### Step 3: Use GCG!
-See our ![quickstart guide](#getting-started) for further comments on the usage.
+See our \ref getting-started - Guide for further comments on the usage.
 
 # Manual Installation {#install-manually}
 Note that a manual installation is not recommended to new users.
