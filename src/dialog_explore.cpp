@@ -685,7 +685,6 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
 
     commandlen = strlen(command);
 
-    /* case distinction: */
     if( strncmp( command, "master", commandlen) == 0 )
     {
        for( size_t mc = 0 ;  mc < matchingconss.size(); ++mc )
@@ -1871,7 +1870,7 @@ SCIP_RETCODE SCIPdialogSelect(
    sw.seeed->setSelected(!sw.seeed->isSelected() );
 
    if( sw.seeed->isSelected() )
-      std::cout << "is selected!" << sw.seeed->isSelected() <<std::endl;
+      std::cout << "is selected!" << sw.seeed->isSelected() << std::endl;
 
    return SCIP_OKAY;
 }
@@ -1999,7 +1998,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
 
       if( strncmp( command, "visualize", commandlen) == 0 )
       {
-         SCIP_CALL(SCIPdialogSelectVisualize(scip, dialoghdlr, dialog, &idlist, &listlength) );
+         SCIP_CALL( SCIPdialogSelectVisualize(scip, dialoghdlr, dialog, &idlist, &listlength) );
          continue;
       }
 
@@ -2017,7 +2016,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
 
       if( strncmp( command, "select", commandlen) == 0 )
       {
-         SCIP_CALL(SCIPdialogSelect(scip, dialoghdlr, dialog, &idlist, &listlength) );
+         SCIP_CALL( SCIPdialogSelect(scip, dialoghdlr, dialog, &idlist, &listlength) );
          continue;
       }
       if( strncmp( command, "modify", commandlen) == 0 )

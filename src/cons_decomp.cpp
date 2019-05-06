@@ -275,31 +275,32 @@ static
 SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(
      SCIP* scip,     /**< SCIP data structure */
      SeeedPtr  seeed /**< pointer to seeed */
-   ){
+   )
+{
 
-      SCIP_CONSHDLR* conshdlr;
-      SCIP_CONSHDLRDATA* conshdlrdata;
-      SCIP_Bool success;
-      conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_Bool success;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
-      if( conshdlr == NULL )
-      {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-         return SCIP_ERROR;
-      }
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
 
-      conshdlrdata = SCIPconshdlrGetData(conshdlr);
-      assert(conshdlrdata != NULL);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
 
-     assert( seeed->isComplete() );
-     assert( seeed->isFromUnpresolved() );
+   assert( seeed->isComplete() );
+   assert( seeed->isFromUnpresolved() );
 
-     conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
+   conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
 
-     if( !success )
-        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
+   if( !success )
+     SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
 
-      return SCIP_OKAY;
+   return SCIP_OKAY;
    }
 
 /** local method to handle store a complete seeed in the presolved seeedpool
@@ -2788,7 +2789,6 @@ SCIP_RETCODE DECdetectStructure(
 
    *result = SCIP_DIDNOTRUN;
 
-
    if( SCIPgetNOrigVars(scip) == 0 && SCIPgetNOrigConss(scip) == 0 )
       return SCIP_OKAY;
 
@@ -2798,7 +2798,6 @@ SCIP_RETCODE DECdetectStructure(
 
    SCIP_CALL(SCIPresetClock(scip, conshdlrdata->completedetectionclock));
    SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
-
 
    /* check whether only legacy mode should be executed */
    SCIPgetBoolParam(scip, "detection/legacymode/onlylegacymode", &onlylegacymode);

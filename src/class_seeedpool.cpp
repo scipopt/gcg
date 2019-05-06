@@ -740,6 +740,7 @@ void removeDigits(
 
 
 /** method to calculate the greatest common divisor */
+static
 int gcd(
    int a,
    int b
