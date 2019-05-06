@@ -873,6 +873,7 @@ SCIP_DECL_SEPAINIT(sepaInitBasis)
 
    sepadata->maxcuts = STARTMAXCUTS;
    sepadata->norigcuts = 0;
+   sepadata->nmastercuts = 0;
    sepadata->maxnewcuts = 0;
    sepadata->nnewcuts = 0;
    sepadata->objrow = NULL;
@@ -1368,6 +1369,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       for( i = 0; i < ncuts; i++ )
       {
          SCIP_Bool colvarused;
+         SCIP_Real shift;
 
          colvarused = FALSE;
          origcut = cuts[i];
@@ -1418,17 +1420,19 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIP_CALL( SCIPcaptureRow(origscip, sepadata->origcuts[sepadata->norigcuts]) );
          sepadata->norigcuts++;
 
+         /* transform the original variables to master variables */
+         shift = GCGtransformOrigvalsToMastervals(origscip, roworigvars, vals, ncols, mastervars, mastervals, nmastervars);
+
          /* create new cut in the master problem */
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "mc_basis_%s", SCIProwGetName(origcut));
          SCIP_CALL( SCIPcreateEmptyRowSepa(scip, &mastercut, sepa, name,
-               ( SCIPisInfinity(scip, -SCIProwGetLhs(origcut)) ?
-                  SCIProwGetLhs(origcut) : SCIProwGetLhs(origcut) - SCIProwGetConstant(origcut)),
-               ( SCIPisInfinity(scip, SCIProwGetRhs(origcut)) ?
-                  SCIProwGetRhs(origcut) : SCIProwGetRhs(origcut) - SCIProwGetConstant(origcut)),
-                  SCIProwIsLocal(origcut), TRUE, FALSE) );
+            ( SCIPisInfinity(scip, -SCIProwGetLhs(origcut)) ?
+              SCIProwGetLhs(origcut) : SCIProwGetLhs(origcut) - SCIProwGetConstant(origcut) - shift),
+            ( SCIPisInfinity(scip, SCIProwGetRhs(origcut)) ?
+              SCIProwGetRhs(origcut) : SCIProwGetRhs(origcut) - SCIProwGetConstant(origcut) - shift),
+            SCIProwIsLocal(origcut), TRUE, FALSE) );
 
-         /* transform the original variables to master variables and add them to the cut */
-         GCGtransformOrigvalsToMastervals(origscip, roworigvars, vals, ncols, mastervars, mastervals, nmastervars);
+         /* add master variables to the cut */
          SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
          /* add the cut to the master problem and to the master cut storage */
