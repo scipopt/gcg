@@ -41,6 +41,7 @@
 #include "scip/scip.h"
 #include "type_branchgcg.h"
 #include "type_decomp.h"
+#include "type_parameter.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -228,6 +229,13 @@ extern
 DEC_DECMODE GCGgetMasterDecompMode(
    SCIP*                 masterprob          /**< the master problem SCIP instance */
    );
+
+/** returns the visualization parameters */
+extern
+GCG_PARAMDATA* GCGgetParamsVisu(
+   SCIP*                 scip               /**< SCIP data structure */
+   );
+
 
 /** return root node clock */
 extern

@@ -350,7 +350,7 @@ SCIP_RETCODE writeFamilyTree(
 
    /* call the creation of the family tree */
    outfile = fopen(outname, "w");
-   nseeeds = GCGfamtreeGetMaxNDecomps();
+   nseeeds = GCGfamtreeGetMaxNDecomps(scip);
    retcode = GCGwriteTexFamilyTree( scip, outfile, dirname, &seeedwr, &nseeeds );
 
    fclose(outfile);
@@ -531,7 +531,7 @@ SCIP_RETCODE reportAllDecompositions(
 
    SCIPallocBlockMemoryArray(scip, &seeedids, ndecomps);
    nseeeds = 0;
-   type = GCGreportGetDecompTypeToShow();
+   type = GCGreportGetDecompTypeToShow(scip);
    if( (int) type == 0 )
    {
       nseeeds = ndecomps;
@@ -544,7 +544,7 @@ SCIP_RETCODE reportAllDecompositions(
    {
       for( i = 0; i < ndecomps; i++ )
       {
-         if( DECdecompGetType(decomps[i]) == type && nseeeds <= GCGreportGetMaxNDecomps() )
+         if( DECdecompGetType(decomps[i]) == type && nseeeds <= GCGreportGetMaxNDecomps(scip) )
          {
             nseeeds++;
             seeedids[i] = DECdecompGetSeeedID(decomps[i]);
@@ -559,8 +559,8 @@ SCIP_RETCODE reportAllDecompositions(
       SCIPdialogMessage(scip, NULL, "error creating report file\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
    }
-   GCGwriteTexReport( scip, file, seeedids, &nseeeds, GCGreportGetShowTitlepage(), GCGreportGetShowToc(),
-      GCGreportGetShowStatistics(), GCGgetUseGp() );
+   GCGwriteTexReport( scip, file, seeedids, &nseeeds, GCGreportGetShowTitlepage(scip), GCGreportGetShowToc(scip),
+      GCGreportGetShowStatistics(scip), GCGgetUseGp(scip) );
    fclose(file);
 
    SCIPfreeBlockMemoryArray(scip, &seeedids, ndecomps);

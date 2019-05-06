@@ -171,7 +171,6 @@
 #include "dec_connected.h"
 
 /* visualization */
-#include "params_visu.h"
 #include "reader_gp.h"
 #include "reader_tex.h"
 #include "reader_cls.h"
@@ -362,7 +361,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeEventHdlrMastersol(scip) );
 
    /* Visualizations */
-   SCIP_CALL( SCIPincludeParamsVisu(scip) );
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeReaderTex(scip) );
    SCIP_CALL( SCIPincludeReaderCls(scip) );

@@ -6230,7 +6230,7 @@ void Seeed::showVisualisation()
       SCIPwarningMessage(scip, "Unable to write gnuplot file\n");
 
    /* open outputfile */
-   strcpy(command, GCGVisuGetPdfReader());
+   strcpy(command, GCGVisuGetPdfReader(scip));
    strcat(command, " ");
    strcat(command, outname);
    strcat(command, " && rm ");
