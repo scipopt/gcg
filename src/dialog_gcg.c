@@ -895,7 +895,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   SCIP_CALL( SCIPdialogExecSelect(scip, dialoghdlr, dialog ) );
+   SCIP_CALL( GCGdialogExecExplore(scip, dialoghdlr, dialog ) );
 
    SCIPdialogMessage(scip, NULL, "\n");
 

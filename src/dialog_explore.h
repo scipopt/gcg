@@ -54,7 +54,7 @@ extern "C" {
  * @returns SCIP return code
  */
 extern
-SCIP_RETCODE SCIPdialogExecSelect(
+SCIP_RETCODE GCGdialogExecExplore(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
    SCIP_DIALOG*            dialog

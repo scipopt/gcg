@@ -1878,7 +1878,7 @@ SCIP_RETCODE SCIPdialogSelect(
 
 extern "C" {
 
-SCIP_RETCODE SCIPdialogExecSelect(
+SCIP_RETCODE GCGdialogExecExplore(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
    SCIP_DIALOG*            dialog
