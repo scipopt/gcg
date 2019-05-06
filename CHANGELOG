@@ -54,7 +54,6 @@ Bug fixes
 - Fix parallelization in pricing loop by allowing only one job per pricing problem at a time
 - Add a missing Makefile dependency
 
-
 GCG Version 3.0.0
 =================
 

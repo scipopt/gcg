@@ -37,8 +37,14 @@
 #include "type_decomp.h"
 #include "cons_decomp.h"
 
+#include "relax_gcg.h"
+
+#include "scip/scip.h"
+
 #include <limits.h>
 
+#define PARAM_NAME          "paramsvisu"
+#define PARAM_DESC          "parameters for visualization"
 
 /* color defaults to build default color layout with */
 #define COLOR_WHITE     "#FFFFFF"   /**< standard white */
@@ -97,7 +103,7 @@
 #define DEFAULT_FAMTREE_MAXNDECOMPS    5        /**< maximum number of finished decompositions in family tree */
 
 /** data structure for visualization parameters */
-struct GCG_VisualizationData
+struct GCG_ParamData
 {
    SCIP_Bool         visudraftmode;    /**< true if no nonzeros should be shown */
    VISU_COLORSCHEME  visucolorscheme;  /**< stores the current color scheme */
@@ -134,134 +140,6 @@ struct GCG_VisualizationData
    int         nmaxdecompstowrite;     /**< maximum number of decompositions to write */
 };
 
-/** visualization parameter data */
-struct GCG_VisualizationData* visudata;
-
-
-/** includes the visualization parameters into GCG
- * @returns SCIP return code */
-SCIP_RETCODE SCIPincludeParamsVisu(
-   SCIP* scip /**< SCIP data structure */
-   )
-{
-   visudata = NULL;
-   SCIP_CALL( SCIPallocMemory(scip, &visudata) );
-
-   /* init string params with NULL pointer */
-   visudata->pdfreader = NULL;
-   visudata->mancolormastervars = NULL;
-   visudata->mancolormasterconss = NULL;
-   visudata->mancolorlinking = NULL;
-   visudata->mancolorstairlinking = NULL;
-   visudata->mancolorblock = NULL;
-   visudata->mancoloropen = NULL;
-   visudata->mancolornonzero = NULL;
-   visudata->mancolorline = NULL;
-
-   /* add general parameters */
-
-   SCIP_CALL( SCIPaddBoolParam(scip,
-      "visual/draftmode", "if true no nonzeros are shown (may improve performance)",
-      &visudata->visudraftmode, FALSE, DEFAULT_VISU_DRAFTMODE, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(scip,
-      "visual/colorscheme", "type number: 0=default, 1=black and white, 2=manual",
-      (int*) &visudata->visucolorscheme, FALSE, DEFAULT_VISU_COLORSCHEME, 0, 2, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(scip,
-      "visual/nonzeroradius", "integer value to scale points on range 1-10",
-      &visudata->visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(scip,
-      "visual/nmaxdecompstowrite", "maximum number of decompositions to write (-1: no limit)",
-      &visudata->nmaxdecompstowrite, FALSE, -1, -1, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddStringParam(scip,
-      "visual/pdfreader", "pdf reader that opens visualizations in decomposition explorer",
-      &visudata->pdfreader, FALSE,
-      DEFAULT_PDFREADER,
-      NULL, NULL) );
-
-   /* add parameters for manual colors */
-
-   SCIP_CALL( SCIPaddStringParam(scip,
-      "visual/colors/colormastervars", "color for master variables in hex code",
-      &visudata->mancolormastervars, FALSE, DEFAULT_COLOR_MASTERVARS, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddStringParam(scip,
-      "visual/colors/colormasterconss", "color for master constraints in hex code",
-      &visudata->mancolormasterconss, FALSE, DEFAULT_COLOR_MASTERCONSS, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddStringParam(scip,
-      "visual/colors/colorlinking", "color for linking variables in hex code",
-      &visudata->mancolorlinking, FALSE, DEFAULT_COLOR_LINKING, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddStringParam(scip,
-      "visual/colors/colorstairlinking", "color for stairlinking variables in hex code",
-      &visudata->mancolorstairlinking, FALSE, DEFAULT_COLOR_STAIRLINKING, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddStringParam(scip,
-      "visual/colors/colorblock", "color for found blocks in hex code",
-      &visudata->mancolorblock, FALSE, DEFAULT_COLOR_BLOCK, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddStringParam(scip,
-      "visual/colors/coloropen", "color for open areas in hex code",
-      &visudata->mancoloropen, FALSE, DEFAULT_COLOR_OPEN, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddStringParam(scip,
-      "visual/colors/colornonzeros", "color for nonzeros in hex code",
-      &visudata->mancolornonzero, FALSE, DEFAULT_COLOR_NONZERO, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddStringParam(scip,
-      "visual/colors/colorlines", "color for lines in hex code",
-      &visudata->mancolorline, FALSE, DEFAULT_COLOR_LINE, NULL, NULL) );
-
-   /* add parameters for report */
-
-   SCIP_CALL( SCIPaddIntParam(scip,
-      "visual/report/maxndecomps", "maximum number of decompositions shown in report (best scores first)",
-      &visudata->rep_maxndecomps, FALSE, DEFAULT_REPORT_MAXNDECOMPS, 1, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(scip,
-      "visual/report/showtype",
-      "only decompositions of type: 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered",
-      (int*) &visudata->rep_showtype, FALSE, DEFAULT_REPORT_SHOWTYPE, 0, 4, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip,
-      "visual/report/showtitle", "if true a title page is included",
-      &visudata->rep_showtitle, FALSE, DEFAULT_REPORT_SHOWTITLEPAGE, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip,
-      "visual/report/showtoc", "if true a table of contents is included",
-      &visudata->rep_showtoc, FALSE, DEFAULT_REPORT_SHOWTOC, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip,
-      "visual/report/showstatistics", "if true statistics are included for each decomp",
-      &visudata->rep_statistics, FALSE, DEFAULT_REPORT_SHOWSTATISTICS, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip,
-      "visual/report/usegp", "if true gnuplot is used for sub-visualizations in report, otherwise LaTeX/Tikz",
-      &visudata->visuusegp, FALSE, DEFAULT_VISU_USEGP, NULL, NULL) );
-
-   /* add parameters for family tree */
-
-   SCIP_CALL( SCIPaddIntParam(scip,
-      "visual/famtree/maxndecomps", "maximum number of finished decompositions in family tree",
-      &visudata->fam_maxndecomps, FALSE, DEFAULT_FAMTREE_MAXNDECOMPS, 1, INT_MAX, NULL, NULL) );
-
-   /* initialize black and white color scheme */
-
-   visudata->greycolormastervars = (char*) GREY_COLOR_MASTERVARS;
-   visudata->greycolormasterconss = (char*) GREY_COLOR_MASTERCONS;
-   visudata->greycolorlinking = (char*) GREY_COLOR_LINKING;
-   visudata->greycolorstairlinking = (char*) GREY_COLOR_STAIRLINKING;
-   visudata->greycolorblock = (char*) GREY_COLOR_BLOCK;
-   visudata->greycoloropen = (char*) GREY_COLOR_OPEN;
-   visudata->greycolornonzero = (char*) GREY_COLOR_NONZERO;
-   visudata->greycolorline = (char*) GREY_COLOR_LINE;
-
-   return SCIP_OKAY;
-}
 
 /* getter & setter */
 
@@ -269,244 +147,408 @@ SCIP_RETCODE SCIPincludeParamsVisu(
 /* gets if draftmode is on
  * draftmode lets visualizations omit nonzeros
  * @returns true if draftmode is on  */
-SCIP_Bool SCIPvisuGetDraftmode()
+SCIP_Bool SCIPvisuGetDraftmode(
+   SCIP* scip       /**< SCIP data structure */
+   )
 {
-   return visudata->visudraftmode;
+   GCG_PARAMDATA* paramdata;
+   SCIP_Bool draftmode;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   draftmode = paramdata->visudraftmode;
+   return draftmode;
 }
 
 
 /* sets draftmode
  * draftmode lets visualizations omit nonzeros */
 void SCIPvisuSetDraftmode(
-   SCIP_Bool setmode
+   SCIP* scip,       /**< SCIP data structure */
+   SCIP_Bool setmode /**< true iff draftmode should be on */
    )
 {
-   visudata->visudraftmode = setmode;
+   GCG_PARAMDATA* paramdata;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   paramdata->visudraftmode = setmode;
 }
 
-
-/* gets the colorscheme for visualizations
- * @returns current colorscheme */
-VISU_COLORSCHEME SCIPvisuGetColorscheme()
+/** gets the colorscheme for visualizations
+ *  @returns current colorscheme */
+VISU_COLORSCHEME SCIPvisuGetColorscheme(
+   SCIP* scip  /**< SCIP data structure */
+   )
 {
-   return visudata->visucolorscheme;
+   GCG_PARAMDATA* paramdata;
+   VISU_COLORSCHEME curscheme;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   curscheme = paramdata->visucolorscheme;
+   return curscheme;
 }
 
 
 /* sets colorscheme for visualizations */
 void SCIPvisuSetColorscheme(
-   VISU_COLORSCHEME newscheme
+   SCIP* scip,                /**< SCIP data structure */
+   VISU_COLORSCHEME newscheme /**< new colorscheme */
    )
 {
-   visudata->visucolorscheme = newscheme;
+   GCG_PARAMDATA* paramdata;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   paramdata->visucolorscheme = newscheme;
 }
 
 
 /* gets color for mastercon block in current color scheme
  * @returns mastercons color */
-char* SCIPvisuGetColorMasterconss()
+char* SCIPvisuGetColorMasterconss(
+   SCIP* scip       /**< SCIP data structure */
+   )
 {
-   switch(SCIPvisuGetColorscheme())
+   GCG_PARAMDATA* paramdata;
+   char* color;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   color = (char*) DEFAULT_COLOR_MASTERCONSS;
+   switch(SCIPvisuGetColorscheme(scip))
    {
    case COLORSCHEME_GREY:
-      return visudata->greycolormasterconss;
+      color = paramdata->greycolormasterconss;
       break;
    case COLORSCHEME_MANUAL:
-      return visudata->mancolormasterconss;
+      color = paramdata->mancolormasterconss;
+      break;
    default:
-      return (char*) DEFAULT_COLOR_MASTERCONSS;
+      color = (char*) DEFAULT_COLOR_MASTERCONSS;
    }
+   return color;
 }
 
 
 /* gets color for mastervar block in current color scheme
  * @returns mastervars color */
-char* SCIPvisuGetColorMastervars()
+char* SCIPvisuGetColorMastervars(
+   SCIP* scip       /**< SCIP data structure */
+   )
 {
-   switch(SCIPvisuGetColorscheme())
+   GCG_PARAMDATA* paramdata;
+   char* color;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   color = (char*) DEFAULT_COLOR_MASTERVARS;
+   switch(SCIPvisuGetColorscheme(scip))
    {
    case COLORSCHEME_GREY:
-      return visudata->greycolormastervars;
+      color =  paramdata->greycolormastervars;
       break;
    case COLORSCHEME_MANUAL:
-      return visudata->mancolormastervars;
+      color =  paramdata->mancolormastervars;
+      break;
    default:
-      return (char*) DEFAULT_COLOR_MASTERVARS;
+      color =  (char*) DEFAULT_COLOR_MASTERVARS;
    }
+   return color;
 }
 
 
 /* gets color for linking blocks in current color scheme
  * @returns linking color */
-char* SCIPvisuGetColorLinking()
+char* SCIPvisuGetColorLinking(
+   SCIP* scip       /**< SCIP data structure */
+   )
 {
-   switch(SCIPvisuGetColorscheme())
+   GCG_PARAMDATA* paramdata;
+   char* color;
+
+   GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   color = (char*) DEFAULT_COLOR_LINKING;
+   switch(SCIPvisuGetColorscheme(scip))
    {
    case COLORSCHEME_GREY:
-      return visudata->greycolorlinking;
+      color = paramdata->greycolorlinking;
       break;
    case COLORSCHEME_MANUAL:
-      return visudata->mancolorlinking;
+      color = paramdata->mancolorlinking;
+      break;
    default:
-      return (char*) DEFAULT_COLOR_LINKING;
+      color = (char*) DEFAULT_COLOR_LINKING;
    }
+   return color;
 }
 
 
 /* gets color for stairlinking blocks in current color scheme
  * @returns stairlinking color */
-char* SCIPvisuGetColorStairlinking()
+char* SCIPvisuGetColorStairlinking(
+   SCIP* scip       /**< SCIP data structure */
+   )
 {
-   switch(SCIPvisuGetColorscheme())
+   GCG_PARAMDATA* paramdata;
+   char* color;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   color = (char*) DEFAULT_COLOR_STAIRLINKING;
+   switch(SCIPvisuGetColorscheme(scip))
    {
    case COLORSCHEME_GREY:
-      return visudata->greycolorstairlinking;
+      color = paramdata->greycolorstairlinking;
       break;
    case COLORSCHEME_MANUAL:
-      return visudata->mancolorstairlinking;
+      color = paramdata->mancolorstairlinking;
+      break;
    default:
-      return (char*) DEFAULT_COLOR_STAIRLINKING;
+      color = (char*) DEFAULT_COLOR_STAIRLINKING;
    }
+   return color;
 }
 
 
 /* gets color for normal decomp blocks in current color scheme
  * @returns block color */
-char* SCIPvisuGetColorBlock()
+char* SCIPvisuGetColorBlock(
+   SCIP* scip       /**< SCIP data structure */
+   )
 {
-   switch(SCIPvisuGetColorscheme())
+   GCG_PARAMDATA* paramdata;
+   char* color;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   color = (char*) DEFAULT_COLOR_BLOCK;
+   switch(SCIPvisuGetColorscheme(scip))
    {
    case COLORSCHEME_GREY:
-      return visudata->greycolorblock;
+      color = paramdata->greycolorblock;
       break;
    case COLORSCHEME_MANUAL:
-      return visudata->mancolorblock;
+      color = paramdata->mancolorblock;
+      break;
    default:
-      return (char*) DEFAULT_COLOR_BLOCK;
+      color = (char*) DEFAULT_COLOR_BLOCK;
    }
+   return color;
 }
 
 
 /* gets color for open blocks in current color scheme
  * @returns open color */
-char* SCIPvisuGetColorOpen()
+char* SCIPvisuGetColorOpen(
+   SCIP* scip       /**< SCIP data structure */
+   )
 {
-   switch(SCIPvisuGetColorscheme())
+   GCG_PARAMDATA* paramdata;
+   char* color;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   color = (char*) DEFAULT_COLOR_OPEN;
+   switch(SCIPvisuGetColorscheme(scip))
    {
    case COLORSCHEME_GREY:
-      return visudata->greycoloropen;
+      color = paramdata->greycoloropen;
       break;
    case COLORSCHEME_MANUAL:
-      return visudata->mancoloropen;
+      color = paramdata->mancoloropen;
+      break;
    default:
-      return (char*) DEFAULT_COLOR_OPEN;
+      color = (char*) DEFAULT_COLOR_OPEN;
    }
+   return (char*) color;
 }
 
 
 /* gets color for non-zero points in current color scheme
  * @returns non-zero color */
-char* SCIPvisuGetColorNonzero()
+char* SCIPvisuGetColorNonzero(
+   SCIP* scip       /**< SCIP data structure */
+   )
 {
-   switch(SCIPvisuGetColorscheme())
+   GCG_PARAMDATA* paramdata;
+   char* color;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   color = (char*) DEFAULT_COLOR_NONZERO;
+   switch(SCIPvisuGetColorscheme(scip))
    {
    case COLORSCHEME_GREY:
-      return visudata->greycolornonzero;
+      color = paramdata->greycolornonzero;
       break;
    case COLORSCHEME_MANUAL:
-      return visudata->mancolornonzero;
+      color = paramdata->mancolornonzero;
+      break;
    default:
-      return (char*) DEFAULT_COLOR_NONZERO;
+      color = (char*) DEFAULT_COLOR_NONZERO;
    }
+   return color;
 }
 
 
 /* gets color for lines in current color scheme
  * @returns line color */
-char* SCIPvisuGetColorLine()
+char* SCIPvisuGetColorLine(
+   SCIP* scip       /**< SCIP data structure */
+   )
 {
-   switch(SCIPvisuGetColorscheme())
+   GCG_PARAMDATA* paramdata;
+   char* color;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   color = (char*)DEFAULT_COLOR_LINE;
+   switch(SCIPvisuGetColorscheme(scip))
    {
    case COLORSCHEME_GREY:
-      return visudata->greycolorline;
+      color = paramdata->greycolorline;
       break;
    case COLORSCHEME_MANUAL:
-      return visudata->mancolorline;
+      color = paramdata->mancolorline;
+      break;
    default:
-      return (char*) DEFAULT_COLOR_LINE;
+      color = (char*) DEFAULT_COLOR_LINE;
    }
+   return color;
 }
 
 
 /* sets color for mastercon block in current color scheme */
 void SCIPvisuSetColorManMasterconss(
+   SCIP* scip,          /* SCIP data structure */
    char* newcolor       /* new color */
    )
 {
-   visudata->mancolormasterconss = newcolor;
+   GCG_PARAMDATA* paramdata;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   paramdata->mancolormasterconss = newcolor;
 }
 
 
 /* sets manual color for mastervar block in current color scheme */
 void SCIPvisuSetColorManMastervars(
+   SCIP* scip,          /* SCIP data structure */
    char* newcolor       /* new color */
    )
 {
-   visudata->mancolormastervars = newcolor;
+   GCG_PARAMDATA* paramdata;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   paramdata->mancolormastervars = newcolor;
 }
 
 
 /* sets manual color for linking blocks in current color scheme */
 void SCIPvisuSetColorManLinking(
+   SCIP* scip,          /* SCIP data structure d refere*/
    char* newcolor       /* new color */
    )
 {
-   visudata->mancolorlinking = newcolor;
+   GCG_PARAMDATA* paramdata;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   paramdata->mancolorlinking = newcolor;
 }
 
 
 /* sets manual color for stairlinking blocks in current color scheme */
 void SCIPvisuSetColorManStairlinking(
+   SCIP* scip,          /* SCIP data structure */
    char* newcolor       /* new color */
    )
 {
-   visudata->mancolorstairlinking = newcolor;
+   GCG_PARAMDATA* paramdata;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   paramdata->mancolorstairlinking = newcolor;
 }
 
 
 /* sets manual color for normal decomp blocks in current color scheme */
 void SCIPvisuSetColorManBlock(
+   SCIP* scip,          /* SCIP data structure */
    char* newcolor       /* new color */
    )
 {
-   visudata->mancolorblock = newcolor;
+   GCG_PARAMDATA* paramdata;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   paramdata->mancolorblock = newcolor;
 }
 
 
 /* sets manual color for open blocks in current color scheme */
 void SCIPvisuSetColorManOpen(
+   SCIP* scip,          /* SCIP data structure */
    char* newcolor       /* new color */
    )
 {
-   visudata->mancoloropen = newcolor;
-}
+   GCG_PARAMDATA* paramdata;
 
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   paramdata->mancoloropen = newcolor;
+}
 
 /* sets manual color for non-zero points in current color scheme */
 void SCIPvisuSetColorManNonzero(
+   SCIP* scip,          /* SCIP data structure */
    char* newcolor       /* new color */
    )
 {
-   visudata->mancolornonzero = newcolor;
+   GCG_PARAMDATA* paramdata;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   paramdata->mancolornonzero = newcolor;
 }
 
 
 /* sets manual color for lines in current color scheme */
 void SCIPvisuSetColorManLine(
+   SCIP* scip,          /* SCIP data structure */
    char* newcolor       /* new color */
    )
 {
-   visudata->mancolorline = newcolor;
+   GCG_PARAMDATA* paramdata;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   paramdata->mancolorline = newcolor;
 }
 
 
@@ -514,12 +556,20 @@ void SCIPvisuSetColorManLine(
  * needs highest indices of both axes
  * @returns radius */
 float SCIPvisuGetNonzeroRadius(
+   SCIP* scip,          /* SCIP data structure */
    int maxindx,         /* highest index x-axis */
    int maxindy,         /* highest index y-axis */
    float scalingfactor  /* percentage to scale radius, 1 if no scaling */
    )
 {
-   int maxind = 0;
+   int maxind;
+   float radius;
+   GCG_PARAMDATA* paramdata;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   maxind = 0;
 
    /* the max indices must be at least one to be compatible with division */
    if(maxindx <= 0)
@@ -535,79 +585,279 @@ float SCIPvisuGetNonzeroRadius(
       maxind = maxindy;
 
    /* scale by coordinate system size and given factor */
-   return ( (float) visudata->visuradius / (float) maxind) * scalingfactor;
+   radius = ( (float) paramdata->visuradius / (float) maxind) * scalingfactor;
+
+   return radius;
 }
 
 
 /* if true gp reader should be used for sub-visualizations, otherwise tex reader
  * @returns true if gp reader should be used, false if tex reader should be used */
-SCIP_Bool GCGgetUseGp()
+SCIP_Bool GCGgetUseGp(
+   SCIP* scip          /**< SCIP data structure */
+   )
 {
-   return visudata->visuusegp;
+   GCG_PARAMDATA* paramdata;
+   SCIP_Bool usegp;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   usegp = paramdata->visuusegp;
+   return usegp;
 }
 
 
 /* gets the name of the pdf reader that should be used
  * @returns name of pdf reader */
-char* GCGVisuGetPdfReader()
+char* GCGVisuGetPdfReader(
+   SCIP* scip          /**< SCIP data structure */
+   )
 {
-   return visudata->pdfreader;
+   GCG_PARAMDATA* paramdata;
+   char* pdfreader;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   pdfreader = paramdata->pdfreader;
+   return pdfreader;
 }
 
 
 /* gets the max number of decomps to be included in reports
  * @returns max number of decomps */
-int GCGreportGetMaxNDecomps()
+int GCGreportGetMaxNDecomps(
+   SCIP* scip          /**< SCIP data structure */
+   )
 {
-   return visudata->rep_maxndecomps;
+   GCG_PARAMDATA* paramdata;
+   int max;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   max = paramdata->rep_maxndecomps;
+   return max;
 }
 
 
 /* gets what type of decomps to show in reports (where 0 corresponds to 'show all')
  * @returns type of decomps */
-DEC_DECTYPE GCGreportGetDecompTypeToShow()
+DEC_DECTYPE GCGreportGetDecompTypeToShow(
+   SCIP* scip          /**< SCIP data structure */
+   )
 {
-   return visudata->rep_showtype;
+   GCG_PARAMDATA* paramdata;
+   DEC_DECTYPE type;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   type =  paramdata->rep_showtype;
+   return type;
 }
 
 
 /* gets whether a titlepage should be included in reports
  * @returns true iff title page should be generated */
-SCIP_Bool GCGreportGetShowTitlepage()
+SCIP_Bool GCGreportGetShowTitlepage(
+   SCIP* scip          /**< SCIP data structure */
+   )
 {
-   return visudata->rep_showtitle;
+   GCG_PARAMDATA* paramdata;
+   SCIP_Bool showtitle;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   showtitle = paramdata->rep_showtitle;
+   return showtitle;
 }
 
 
 /* gets whether a table of contents should be included in reports
  * @returns true iff table of contents should be generated */
-SCIP_Bool GCGreportGetShowToc()
+SCIP_Bool GCGreportGetShowToc(
+   SCIP* scip          /**< SCIP data structure */
+   )
 {
-   return visudata->rep_showtoc;
+   GCG_PARAMDATA* paramdata;
+   SCIP_Bool showtoc;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   showtoc = paramdata->rep_showtoc;
+   return showtoc;
 }
 
 
 /* gets whether statistics should be included for each decomp in reports
  * @returns true iff statistics for each decomp should be generated */
-SCIP_Bool GCGreportGetShowStatistics()
+SCIP_Bool GCGreportGetShowStatistics(
+   SCIP* scip          /**< SCIP data structure */
+   )
 {
-   return visudata->rep_statistics;
+   GCG_PARAMDATA* paramdata;
+   SCIP_Bool showstats;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   showstats = paramdata->rep_statistics;
+   return showstats;
 }
 
 
 /* gets the max number of finished decomps to be included in family tree
  * @returns max number of finished decomps */
-int GCGfamtreeGetMaxNDecomps()
+int GCGfamtreeGetMaxNDecomps(
+   SCIP* scip          /**< SCIP data structure */
+   )
 {
-   return visudata->fam_maxndecomps;
+   GCG_PARAMDATA* paramdata;
+   int max;
+
+   paramdata = GCGgetParamsVisu(scip);
+   assert(paramdata != NULL);
+
+   max = paramdata->fam_maxndecomps;
+   return max;
 }
 
 
+#define paramInitVisu NULL
+
 /* frees all visualization parameters */
-void GCGVisuFreeParams(
-   SCIP* scip     /* SCIP data structure */
+extern void GCGVisuFreeParams(
+   SCIP* scip,                /* SCIP data structure */
+   GCG_PARAMDATA* paramdata   /* input empty paramdata, oputput new set of param data */
    )
 {
-   if ( visudata != NULL )
-      SCIPfreeMemory(scip, &visudata);
+   assert(scip != NULL);
+   assert(paramdata != NULL);
+
+   SCIPfreeMemory(scip, &paramdata);
+}
+
+/** includes the visualization parameters into GCG & initializes them */
+SCIP_RETCODE SCIPcreateParamsVisu(
+   SCIP* scip,                /**< SCIP data structure */
+   GCG_PARAMDATA** paramdata  /**< input empty paramdata, output new set of param data */
+   )
+{
+   assert(*paramdata == NULL);
+
+   SCIP_CALL( SCIPallocMemory(scip, &(*paramdata)) );
+
+   /* init string params with NULL pointer */
+   (*paramdata)->pdfreader = NULL;
+   (*paramdata)->mancolormastervars = NULL;
+   (*paramdata)->mancolormasterconss = NULL;
+   (*paramdata)->mancolorlinking = NULL;
+   (*paramdata)->mancolorstairlinking = NULL;
+   (*paramdata)->mancolorblock = NULL;
+   (*paramdata)->mancoloropen = NULL;
+   (*paramdata)->mancolornonzero = NULL;
+   (*paramdata)->mancolorline = NULL;
+
+   /* initialize black and white color scheme */
+   (*paramdata)->greycolormastervars = (char*) GREY_COLOR_MASTERVARS;
+   (*paramdata)->greycolormasterconss = (char*) GREY_COLOR_MASTERCONS;
+   (*paramdata)->greycolorlinking = (char*) GREY_COLOR_LINKING;
+   (*paramdata)->greycolorstairlinking = (char*) GREY_COLOR_STAIRLINKING;
+   (*paramdata)->greycolorblock = (char*) GREY_COLOR_BLOCK;
+   (*paramdata)->greycoloropen = (char*) GREY_COLOR_OPEN;
+   (*paramdata)->greycolornonzero = (char*) GREY_COLOR_NONZERO;
+   (*paramdata)->greycolorline = (char*) GREY_COLOR_LINE;
+
+   /* add general parameters */
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "visual/draftmode", "if true no nonzeros are shown (may improve performance)",
+      &(*paramdata)->visudraftmode, FALSE, DEFAULT_VISU_DRAFTMODE, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "visual/colorscheme", "type number: 0=default, 1=black and white, 2=manual",
+      (int*) &(*paramdata)->visucolorscheme, FALSE, DEFAULT_VISU_COLORSCHEME, 0, 2, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "visual/nonzeroradius", "integer value to scale points on range 1-10",
+      &(*paramdata)->visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "visual/nmaxdecompstowrite", "maximum number of decompositions to write (-1: no limit)",
+      &(*paramdata)->nmaxdecompstowrite, FALSE, -1, -1, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visual/pdfreader", "pdf reader that opens visualizations in decomposition explorer",
+      &(*paramdata)->pdfreader, FALSE,
+      DEFAULT_PDFREADER,
+      NULL, NULL) );
+
+   /* add parameters for manual colors */
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visual/colors/colormastervars", "color for master variables in hex code",
+      &(*paramdata)->mancolormastervars, FALSE, DEFAULT_COLOR_MASTERVARS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visual/colors/colormasterconss", "color for master constraints in hex code",
+      &(*paramdata)->mancolormasterconss, FALSE, DEFAULT_COLOR_MASTERCONSS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visual/colors/colorlinking", "color for linking variables in hex code",
+      &(*paramdata)->mancolorlinking, FALSE, DEFAULT_COLOR_LINKING, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visual/colors/colorstairlinking", "color for stairlinking variables in hex code",
+      &(*paramdata)->mancolorstairlinking, FALSE, DEFAULT_COLOR_STAIRLINKING, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visual/colors/colorblock", "color for found blocks in hex code",
+      &(*paramdata)->mancolorblock, FALSE, DEFAULT_COLOR_BLOCK, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visual/colors/coloropen", "color for open areas in hex code",
+      &(*paramdata)->mancoloropen, FALSE, DEFAULT_COLOR_OPEN, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visual/colors/colornonzeros", "color for nonzeros in hex code",
+      &(*paramdata)->mancolornonzero, FALSE, DEFAULT_COLOR_NONZERO, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visual/colors/colorlines", "color for lines in hex code",
+      &(*paramdata)->mancolorline, FALSE, DEFAULT_COLOR_LINE, NULL, NULL) );
+
+   /* add parameters for report */
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "visual/report/maxndecomps", "maximum number of decompositions shown in report (best scores first)",
+      &(*paramdata)->rep_maxndecomps, FALSE, DEFAULT_REPORT_MAXNDECOMPS, 1, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "visual/report/showtype",
+      "only decompositions of type: 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered",
+      (int*) &(*paramdata)->rep_showtype, FALSE, DEFAULT_REPORT_SHOWTYPE, 0, 4, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "visual/report/showtitle", "if true a title page is included",
+      &(*paramdata)->rep_showtitle, FALSE, DEFAULT_REPORT_SHOWTITLEPAGE, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "visual/report/showtoc", "if true a table of contents is included",
+      &(*paramdata)->rep_showtoc, FALSE, DEFAULT_REPORT_SHOWTOC, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "visual/report/showstatistics", "if true statistics are included for each decomp",
+      &(*paramdata)->rep_statistics, FALSE, DEFAULT_REPORT_SHOWSTATISTICS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "visual/report/usegp", "if true gnuplot is used for sub-visualizations in report, otherwise LaTeX/Tikz",
+      &(*paramdata)->visuusegp, FALSE, DEFAULT_VISU_USEGP, NULL, NULL) );
+
+   /* add parameters for family tree */
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "visual/famtree/maxndecomps", "maximum number of finished decompositions in family tree",
+      &(*paramdata)->fam_maxndecomps, FALSE, DEFAULT_FAMTREE_MAXNDECOMPS, 1, INT_MAX, NULL, NULL) );
+
+   return SCIP_OKAY;
 }

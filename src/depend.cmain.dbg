@@ -176,6 +176,6 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/nlpi/nlpi_filtersqp.h lib/scip/src/nlpi/nlpi_worhp.h \
  lib/scip/src/nlpi/nlpi_all.h src/gcgplugins.h src/cons_decomp.h \
  src/type_detector.h src/type_decomp.h src/gcggithash.h src/relax_gcg.h \
- src/type_branchgcg.h src/gcg.h src/type_solver.h src/type_gcgcol.h \
- src/struct_gcgcol.h src/type_pricingstatus.h src/pub_gcgvar.h \
- src/pub_decomp.h
+ src/type_branchgcg.h src/type_parameter.h src/gcg.h src/type_solver.h \
+ src/type_gcgcol.h src/struct_gcgcol.h src/type_pricingstatus.h \
+ src/pub_gcgvar.h src/pub_decomp.h

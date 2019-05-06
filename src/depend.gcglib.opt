@@ -8459,7 +8459,8 @@ $(LIBOBJDIR)/stat.o: src/stat.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h
  lib/scip/src/scip/cons_setppc.h src/pub_decomp.h src/type_decomp.h \
  src/type_detector.h src/cons_decomp.h src/struct_detector.h \
  src/pub_gcgvar.h src/pricer_gcg.h src/type_solver.h src/type_gcgcol.h \
- src/struct_gcgcol.h src/type_pricingstatus.h
+ src/struct_gcgcol.h src/type_pricingstatus.h src/relax_gcg.h \
+ src/type_branchgcg.h src/gcg.h
 $(LIBOBJDIR)/class_consclassifier.o: src/class_consclassifier.cpp \
  src/class_consclassifier.h src/class_indexclassifier.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbenders.h \
@@ -9340,7 +9341,7 @@ $(LIBOBJDIR)/class_seeedpool.o: src/class_seeedpool.cpp \
  src/graph/graph.h lib/scip/src/tclique/tclique.h \
  lib/scip/src/tclique/tclique_def.h src/graph/weights.h src/pub_decomp.h \
  src/graph/graph_interface.h src/struct_decomp.h src/decomp.h \
- src/scip_misc.h lib/scip/src/scip/clock.h
+ src/scip_misc.h lib/scip/src/scip/clock.h src/reader_gp.h
 $(LIBOBJDIR)/class_stabilization.o: src/class_stabilization.cpp \
  src/class_stabilization.h lib/scip/src/objscip/objscip.h \
  lib/scip/src/objscip/objbenders.h lib/scip/src/scip/scip.h \

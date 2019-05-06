@@ -149,6 +149,7 @@ SCIP_RETCODE writeGpHeader(
  * @returns SCIP status */
 static
 SCIP_RETCODE drawGpBox(
+   SCIP* scip,       /**< SCIP data structure */
    char* filename,   /**< filename (including path) to write to */
    int objectid,     /**< id number of box (>0), must be unique */
    int x1,           /**< x value of lower left vertex coordinate */
@@ -162,7 +163,7 @@ SCIP_RETCODE drawGpBox(
    ofs.open( filename, std::ofstream::out | std::ofstream::app );
 
    ofs << "set object " << objectid << " rect from " << x1 << "," << y1 << " to " << x2 << "," << y2
-      << " fc rgb \"" << color << "\"" << " lc rgb \"" << SCIPvisuGetColorLine() << "\"" << std::endl;
+      << " fc rgb \"" << color << "\"" << " lc rgb \"" << SCIPvisuGetColorLine(scip) << "\"" << std::endl;
 
    ofs.close();
    return SCIP_OKAY;
@@ -173,6 +174,7 @@ SCIP_RETCODE drawGpBox(
  * @returns SCIP status */
 static
 SCIP_RETCODE writeGpNonzeros(
+   SCIP* scip,             /**< SCIP data structure */
    const char* filename,   /**< filename to write to (including path & extension) */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
    float radius            /**< radius of the dots (scaled concerning matrix dimensions)*/
@@ -281,7 +283,7 @@ SCIP_RETCODE writeGpNonzeros(
       radius = 0.01;
 
    /* start writing dots */
-   ofs << "set style line 99 lc rgb \"" << SCIPvisuGetColorNonzero() << "\"  " << std::endl;
+   ofs << "set style line 99 lc rgb \"" << SCIPvisuGetColorNonzero(scip) << "\"  " << std::endl;
    ofs << "plot \"-\" using 1:2:(" << radius << ") with dots ls 99 notitle " << std::endl;
    /* write scatter plot */
    for( int row = 0; row < seeed->getNConss(); ++row )
@@ -313,6 +315,7 @@ SCIP_RETCODE writeGpNonzeros(
  * This includes axes, blocks and nonzeros. */
 static
 SCIP_RETCODE writeGpSeeed(
+   SCIP* scip,             /**< SCIP data structure */
    char* filename,         /**< filename (including path) to write to */
    Seeed* seeed            /**< Seeed for which the nonzeros should be visualized */
    )
@@ -361,8 +364,8 @@ SCIP_RETCODE writeGpSeeed(
       if(seeed->getNLinkingvars() != 0)
       {
          ++objcounter; /* has to start at 1 for gnuplot */
-         drawGpBox( filename, objcounter, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
-            SCIPvisuGetColorLinking() );
+         drawGpBox( scip, filename, objcounter, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
+            SCIPvisuGetColorLinking(scip) );
          colboxcounter += seeed->getNLinkingvars();
       }
 
@@ -370,8 +373,8 @@ SCIP_RETCODE writeGpSeeed(
       if(seeed->getNMasterconss() != 0)
       {
          ++objcounter;
-         drawGpBox( filename, objcounter, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
-            SCIPvisuGetColorMasterconss() );
+         drawGpBox( scip, filename, objcounter, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
+            SCIPvisuGetColorMasterconss(scip) );
          rowboxcounter += seeed->getNMasterconss();
       }
 
@@ -379,7 +382,7 @@ SCIP_RETCODE writeGpSeeed(
       if(seeed->getNMastervars() != 0)
       {
          ++objcounter;
-         //      drawGpBox( filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
+         //      drawGpBox( scip, filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
          //         seeed->getNMasterconss(), SCIPvisuGetColorMastervars() );
          colboxcounter += seeed->getNMastervars();
       }
@@ -388,18 +391,18 @@ SCIP_RETCODE writeGpSeeed(
       for( int b = 0; b < seeed->getNBlocks() ; ++b )
       {
          ++objcounter;
-         drawGpBox(filename, objcounter, colboxcounter, rowboxcounter,
+         drawGpBox(scip, filename, objcounter, colboxcounter, rowboxcounter,
             colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b),
-            SCIPvisuGetColorBlock());
+            SCIPvisuGetColorBlock(scip));
          colboxcounter += seeed->getNVarsForBlock(b);
 
          if( seeed->getNStairlinkingvars(b) != 0 )
          {
             ++objcounter;
-            drawGpBox( filename, objcounter, colboxcounter, rowboxcounter,
+            drawGpBox( scip, filename, objcounter, colboxcounter, rowboxcounter,
                colboxcounter + seeed->getNStairlinkingvars(b),
                rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1),
-               SCIPvisuGetColorStairlinking() );
+               SCIPvisuGetColorStairlinking(scip) );
          }
          colboxcounter += seeed->getNStairlinkingvars(b);
          rowboxcounter += seeed->getNConssForBlock(b);
@@ -409,17 +412,17 @@ SCIP_RETCODE writeGpSeeed(
       if(seeed->getNOpenvars() != 0)
       {
          ++objcounter;
-         drawGpBox( filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
-            rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen() );
+         drawGpBox( scip, filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
+            rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen(scip) );
          colboxcounter += seeed->getNOpenvars();
          rowboxcounter += seeed->getNOpenconss();
       }
    }
    /* --- draw nonzeros --- */
-   if( SCIPvisuGetDraftmode() == FALSE )
+   if( SCIPvisuGetDraftmode(scip) == FALSE )
    {
       /* scale the dots according to matrix dimensions here */
-      writeGpNonzeros( filename, seeed, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(),
+      writeGpNonzeros(scip, filename, seeed, SCIPvisuGetNonzeroRadius(scip, seeed->getNVars(), seeed->getNConss(),
          SCALING_FACTOR_NONZEROS) );
    }
    else
@@ -465,7 +468,7 @@ SCIP_RETCODE GCGwriteGpVisualization(
 
    /* write file */
    writeGpHeader(scip, filename, outputname );
-   writeGpSeeed( filename, seeed );
+   writeGpSeeed(scip, filename, seeed );
 
    return SCIP_OKAY;
 }
