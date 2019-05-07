@@ -5,7 +5,7 @@ First, clone the git repo with
 
     git clone git@git.or.rwth-aachen.de:gcg/gcg.git [gcg-dir]
 
-
+You **have** to clone it via ssh, otherwise the submodules won't work.
 To initialize the SCIP, SoPlex, bliss and the googletest framework, goto the repository folder "gcg" and run
 
     git submodule init
