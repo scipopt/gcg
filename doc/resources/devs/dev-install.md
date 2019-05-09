@@ -38,7 +38,7 @@ It should work to compile the depends (scip, soplex, bliss and googletest) with
 
 ## Links to submodules
 Before compilation, you will be asked for some links. Paste the following paths:
- * lib/scip is `../lib/scip-git lib/scip`
+ * lib/scip is `../lib/scip-git`
  * lib/include/spxinc is `../../../soplex-git/src/`
  * lib/static/libsoplex.linux.x86_64.gnu.opt.a is `../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a`
 
