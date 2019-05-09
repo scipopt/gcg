@@ -1,4 +1,4 @@
-# The explore Menu {#explore-menu}
+# The explore menu {#explore-menu}
 
 ## Enter the explore menu
 First, you have to `read` and at least `detect` your problem. Then, like with

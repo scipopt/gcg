@@ -1,4 +1,4 @@
-# How to get started with GCG {#getting-started}
+# Getting started {#getting-started}
 ## Start GCG
 To start GCG, you just type `gcg` into your console, preferably inside the GCG
 root folder. If the console prompts you to install packages or throws an error,

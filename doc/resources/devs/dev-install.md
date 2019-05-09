@@ -29,15 +29,6 @@ flex
 libncurses-dev
 ```
 
-## Link to SCIP (before compilation)
-Create a symbolic link for SCIP:
-
-    ln -s ../lib/scip-git lib/scip
-
-On some distros, including the one used on RWTH cluster, this line does not work, use this one **instead**:
-
-    cd lib && ln -s scip-git scip && cd ..
-
 ## Compile SCIP, SOPLEX, BLISS using makefiles
 **Note**: Next, ```make``` is used with some arguments that you prefer. Do not use the ```-j``` option on the very first compilation as it is not compatible with the linker. As the linker is not called again once all links are set, using this option on future compilations should be fine.
 
@@ -47,7 +38,7 @@ It should work to compile the depends (scip, soplex, bliss and googletest) with
 
 ## Links to submodules
 Before compilation, you will be asked for some links. Paste the following paths:
- * lib/scip is `scip-git/`
+ * lib/scip is `../lib/scip-git lib/scip`
  * lib/include/spxinc is `../../../soplex-git/src/`
  * lib/static/libsoplex.linux.x86_64.gnu.opt.a is `../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a`
 
@@ -78,3 +69,9 @@ Afterwards, compile GCG with
 You can run a short test with
 
     make [args] test
+
+
+## Common Errors
+On some distros, including the one used on RWTH cluster, the SCIP link does not work. Do this before compiling:
+
+    cd lib && ln -s scip-git scip && cd ..
