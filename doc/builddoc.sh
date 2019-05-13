@@ -8,6 +8,7 @@
 set -e
 
 ./resources/devs/howtos/createindexes.sh
+./resources/devs/detectors/createindexes.sh
 cd $(dirname $0)
 
 

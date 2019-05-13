@@ -10,4 +10,4 @@ sed -i '/\\subpage /d' ./howto.dox
 ls | egrep '\.md$|\.dox$' | sed 's/.dox//' | sed 's/.md//' | sed 's/^/- \\subpage /' | sed '/howto/d' >> howto.dox
 echo "*/" >> howto.dox
 
-echo "Subpage indexing built sucessfully."
+echo "Subpage indexing for devs/howtos/ built sucessfully."

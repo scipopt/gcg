@@ -787,6 +787,7 @@ INPUT                  = . \
                          ./resources/ \
                          ./resources/users \
                          ./resources/devs \
+                         ./resources/devs/detectors \
                          ./resources/devs/examples \
                          ./resources/devs/howtos \
                          ./resources/misc/
