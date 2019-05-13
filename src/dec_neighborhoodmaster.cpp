@@ -304,7 +304,7 @@ SCIP_RETCODE SCIPincludeDetectorNeighborhoodmaster(SCIP* scip /**< SCIP data str
          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
          DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
          DEC_LEGACYMODE, detectordata, detectNeighborhoodmaster, freeNeighborhoodmaster, initNeighborhoodmaster,
-         exitNeighborhoodmaster, propagateSeeedNeighborhoodmaster, NULL, NULL, finishSeeedNeighborhoodmaster,
+         exitNeighborhoodmaster, propagateSeeedNeighborhoodmaster, finishSeeedNeighborhoodmaster,
          detectorPostprocessSeeedNeighborhoodmaster, setParamAggressiveNeighborhoodmaster,
          setParamDefaultNeighborhoodmaster, setParamFastNeighborhoodmaster));
 

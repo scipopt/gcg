@@ -65,16 +65,6 @@
 namespace gcg
 {
 
-/*!
- * \brief help enum to avoid code duplication for the toolbox methods of the detectors
- */
-enum toolboxtype
-{
-   PROPAGATE,
-   FINISH,
-   POSTPROCESS
-};
-
 
 /** modifies menulength according to input and updates menu accordingly
  * @returns SCIP return code */

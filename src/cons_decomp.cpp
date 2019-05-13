@@ -1256,11 +1256,6 @@ SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(
 }
 
 
-
-
-
-
-
 /* \brief returns an array containing all decompositions
  *
  *  Updates the decdecomp decomposition structure by converting all finished seeeds into decompositions and replacing the
@@ -1606,8 +1601,6 @@ DEC_DETECTOR* DECfindDetector(
  * @param DEC_DECL_INITDETECTOR((*initDetector)) initialization method of detector (or NULL)
  * @param DEC_DECL_EXITDETECTOR((*exitDetector)) deinitialization method of detector (or NULL)
  * @param DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)) method to refine a partial decomposition inside detection loop (or NULL)
- * @param DEC_DECL_PROPAGATEFROMTOOLBOX((*propagateFromToolboxDetector)) method to refine a partial decomposition when called by user from console (or NULL)
- * @param DEC_DECL_FINISHFROMTOOLBOX((*finishFromToolboxDetector)) method to complete a partial decomposition when called by user from console (or NULL)
  * @param DEC_DECL_FINISHSEEED((*finishSeeedDetector)) method to complete a partial decomposition when called in detection loop (or NULL)
  * @param DEC_DECL_POSTPROCESSSEEED((*postprocessSeeedDetector)) method to postprocess a complete decomposition, called after detection loop (or NULL)
  * @param DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)) method that is called if the detection emphasis setting aggressive is chosen
@@ -1648,9 +1641,6 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_INITDETECTOR((*initDetector)),       /* initialization method of detector (or NULL) */
    DEC_DECL_EXITDETECTOR((*exitDetector)),       /* deinitialization method of detector (or NULL) */
    DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),   /* propagation method of detector (or NULL) */
-   DEC_DECL_PROPAGATEFROMTOOLBOX((*propagateFromToolboxDetector)),   /* propagation from toolbox method of detector
-                                                                          (or NULL) */
-   DEC_DECL_FINISHFROMTOOLBOX((*finishFromToolboxDetector)),   /* finish from toolbox method of detector (or NULL) */
    DEC_DECL_FINISHSEEED((*finishSeeedDetector)),               /* finish method of detector (or NULL) */
    DEC_DECL_POSTPROCESSSEEED((*postprocessSeeedDetector)),     /* postprocess method of detector (or NULL) */
    DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)), /* set method for aggressive parameters of detector
@@ -1689,27 +1679,27 @@ SCIP_RETCODE DECincludeDetector(
    assert(DECfindDetector(scip, name) == NULL);
 #endif
 
+   /* set meta data of detector */
    detector->decdata = detectordata;
    detector->name = name;
    detector->description = description;
    detector->decchar = decchar;
 
+   /* set memory handling and detection functions */
    detector->freeDetector = freeDetector;
    detector->initDetector = initDetector;
    detector->exitDetector = exitDetector;
    detector->detectStructure = detectStructure;
 
+   /* set functions for editing seeeds */
    detector->propagateSeeed = propagateSeeedDetector;
-   detector->propagateFromToolbox = propagateFromToolboxDetector;
-   detector->finishFromToolbox = finishFromToolboxDetector;
    detector->finishSeeed = finishSeeedDetector;
    detector->postprocessSeeed = postprocessSeeedDetector;
+
+   /* initialize parameters */
    detector->setParamAggressive =  setParamAggressiveDetector;
    detector->setParamDefault =  setParamDefaultDetector;
    detector->setParamFast =  setParamFastDetector;
-
-   detector->decchar = decchar;
-
    detector->freqCallRound = freqCallRound;
    detector->maxCallRound = maxCallRound;
    detector->minCallRound = minCallRound;
@@ -1729,6 +1719,7 @@ SCIP_RETCODE DECincludeDetector(
    detector->decomps = NULL;
    detector->dectime = 0.;
 
+   /* add and initialize all parameters accessable from menu */
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabled), FALSE, enabled, NULL, NULL) );
@@ -1761,7 +1752,6 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether emphasis settings for detector <%s> should be overruled by normal settings", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->overruleemphasis), FALSE, FALSE, NULL, NULL) );
 
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/freqcallround", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <%s>", name);
    SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->freqCallRound), FALSE, freqCallRound, 0, INT_MAX, NULL, NULL) );
@@ -1790,8 +1780,6 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "priority of detector <%s>", name);
    SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->priority), FALSE, priority, INT_MIN, INT_MAX, NULL, NULL) );
 
-
-
    SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->detectors, (size_t)conshdlrdata->ndetectors+1) );
    SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->priorities,(size_t) conshdlrdata->ndetectors+1) );
 
@@ -1799,7 +1787,6 @@ SCIP_RETCODE DECincludeDetector(
    conshdlrdata->ndetectors = conshdlrdata->ndetectors+1;
 
    return SCIP_OKAY;
-
 }
 
 /*
@@ -4697,4 +4684,12 @@ SCIP_Bool SCIPconshdlrDecompGetSelectExists(
    SCIPfreeBlockMemoryArray(scip, &list, nseeeds);
 
    return (length == 0) ? false : true;
+}
+
+/* sets number of seeeds for public interface (pub_decomp.h)*/
+int DECgetNDecomps(
+   SCIP* scip
+   )
+{
+   return SCIPconshdlrDecompGetNDecdecomps(scip);
 }

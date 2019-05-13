@@ -215,8 +215,6 @@ DEC_DETECTOR* DECfindDetector(
  * @param DEC_DECL_INITDETECTOR((*initDetector)) initialization method of detector (or NULL)
  * @param DEC_DECL_EXITDETECTOR((*exitDetector)) deinitialization method of detector (or NULL)
  * @param DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)) method to refine a partial decomposition inside detection loop (or NULL)
- * @param DEC_DECL_PROPAGATEFROMTOOLBOX((*propagateFromToolboxDetector)) method to refine a partial decomposition when called by user from console (or NULL)
- * @param DEC_DECL_FINISHFROMTOOLBOX((*finishFromToolboxDetector)) method to complete a partial decomposition when called by user from console (or NULL)
  * @param DEC_DECL_FINISHSEEED((*finishSeeedDetector)) method to complete a partial decomposition when called in detection loop (or NULL)
  * @param DEC_DECL_POSTPROCESSSEEED((*postprocessSeeedDetector)) method to postprocess a complete decomposition, called after detection loop (or NULL)
  * @param DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)) method that is called if the detection emphasis setting aggressive is chosen
@@ -250,8 +248,6 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_INITDETECTOR((*initDetector)),                 /**< initialization method of detector (or NULL)                        */
    DEC_DECL_EXITDETECTOR((*exitDetector)),                 /**< deinitialization method of detector (or NULL)                      */
    DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),     /**< propagation method of detector (or NULL) */
-   DEC_DECL_PROPAGATEFROMTOOLBOX((*propagateFromToolboxDetector)),   /**< propagation from toolbox method of detector (or NULL) */
-   DEC_DECL_FINISHFROMTOOLBOX((*finishFromToolboxDetector)),         /**< finish from toolbox method of detector (or NULL) */
    DEC_DECL_FINISHSEEED((*finishSeeedDetector)),           /**< finish method of detector (or NULL) */
    DEC_DECL_POSTPROCESSSEEED((*postprocessSeeedDetector)), /**< postprocess method of detector (or NULL) */
    DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),       /**< set method for aggressive parameters of detector (or NULL) */

@@ -316,7 +316,7 @@ SCIP_RETCODE SCIPincludeDetectorGeneralmastersetcover(SCIP* scip /**< SCIP data 
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND,
          DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
          DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-         detectordata, detectGeneralmastersetcover, freeGeneralmastersetcover, initGeneralmastersetcover, exitGeneralmastersetcover, propagateSeeedGeneralmastersetcover, NULL, NULL, finishSeeedGeneralmastersetcover, detectorPostprocessSeeedGeneralmastersetcover, setParamAggressiveGeneralmastersetcover, setParamDefaultGeneralmastersetcover, setParamFastGeneralmastersetcover));
+         detectordata, detectGeneralmastersetcover, freeGeneralmastersetcover, initGeneralmastersetcover, exitGeneralmastersetcover, propagateSeeedGeneralmastersetcover, finishSeeedGeneralmastersetcover, detectorPostprocessSeeedGeneralmastersetcover, setParamAggressiveGeneralmastersetcover, setParamDefaultGeneralmastersetcover, setParamFastGeneralmastersetcover));
 
    /**@todo add generalmastersetcover detector parameters */
 
