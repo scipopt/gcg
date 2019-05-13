@@ -81,6 +81,16 @@ SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    SCIP*          scip     /**< SCIP data structure */
 );
 
+/**
+ * method to unselect all decompositions, called in consexit, and when the seeedlist is updated
+ * (especially if new (partial) are added )
+ *
+ *@returns SCIP return code
+ */
+extern
+SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
+   SCIP*          scip  /**< SCIP data structure */
+   );
 
 /**
  * @brief creates the constraint handler for decomp and includes it in SCIP
@@ -465,7 +475,7 @@ SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(
 /** Checks whether
  *  1) the predecessors of all finished seeeds in both seeedpools can be found
  *  2) selected list is syncron with selected information in seeeds
- *  3) selected exists is synchronized with seleced list
+ *  3) selected exists is synchronized with selected list
  *
  *  @returns true if seeed information is consistent */
  extern
@@ -702,26 +712,13 @@ SCIP_RETCODE SCIPconshdlrDecompRefineAndAddSeeed(
 /**
  * @brief initilizes the candidates data structures with selected seeeds (or all if there are no selected seeeds) and sort them according to the current scoretype
  * @param scip SCIP data structure
- * @param updatelist whether or not the seeed list should be updated
- * @returns SCIP return code
- */
- extern
-SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
-   SCIP* scip,
-   SCIP_Bool updatelist
-   );
-
-/**
- * @brief method to update the list of incomplete decompositions
- *
- * this list changes due to new decompositions, modified, decompositions or changes of the score
- * @param scip SCIP data structure
  * @returns SCIP return code
  */
 extern
-SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
-   SCIP*                 scip
+SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
+   SCIP* scip
    );
+
 
 /**
  * Gets the currently selected scoretype
@@ -730,6 +727,30 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
 extern
 SCORETYPE SCIPconshdlrDecompGetScoretype(
    SCIP*          scip  /**< SCIP data structure */
+   );
+
+
+/**
+ * Gets the shortname of the given scoretype
+ *
+ * @returns the shortname of the given Scoretype
+ */
+extern
+char* SCIPconshdlrDecompGetScoretypeShortName(
+   SCIP*       scip,    /**< SCIP data structure */
+   SCORETYPE   sctype   /**< scoretype */
+   );
+
+
+/*!
+ * returns the description of the given scoretype
+ *
+ * @returns description of the scoretype
+ */
+extern
+char*  SCIPconshdlrDecompGetScoretypeDescription(
+   SCIP*       scip,    /**< SCIP data structure */
+   SCORETYPE   sctype   /**< scoretype */
    );
 
 

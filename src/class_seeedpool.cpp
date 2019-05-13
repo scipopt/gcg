@@ -740,6 +740,7 @@ void removeDigits(
 
 
 /** method to calculate the greatest common divisor */
+static
 int gcd(
    int a,
    int b
@@ -1171,8 +1172,8 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamenonumbers/enabled", & conssclassconsnamenonumbers );
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamelevenshtein/enabled", & conssclassconsnamelevenshtein );
       SCIPgetBoolParam( scip, "detection/varclassifier/scipvartype/enabled", & varclassscipvartypes );
-        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevalues/enabled", &varclassobjvals);
-        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevaluesigns/enabled", &varclassobjvalsigns);
+      SCIPgetBoolParam(scip, "detection/varclassifier/objectivevalues/enabled", &varclassobjvals);
+      SCIPgetBoolParam(scip, "detection/varclassifier/objectivevaluesigns/enabled", &varclassobjvalsigns);
    }
    else
    {
@@ -1182,8 +1183,8 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamenonumbers/origenabled", & conssclassconsnamenonumbers );
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamelevenshtein/origenabled", & conssclassconsnamelevenshtein );
       SCIPgetBoolParam( scip, "detection/varclassifier/scipvartype/origenabled", & varclassscipvartypes );
-        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevalues/origenabled", &varclassobjvals);
-        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevaluesigns/origenabled", &varclassobjvalsigns);
+      SCIPgetBoolParam(scip, "detection/varclassifier/objectivevalues/origenabled", &varclassobjvals);
+      SCIPgetBoolParam(scip, "detection/varclassifier/objectivevaluesigns/origenabled", &varclassobjvalsigns);
    }
 
 
@@ -1202,10 +1203,10 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
 
    if( varclassscipvartypes )
       addVarClassifier( createVarClassifierForSCIPVartypes() );
-     if ( varclassobjvals )
-        addVarClassifier( createVarClassifierForObjValues() );
-     if ( varclassobjvalsigns )
-        addVarClassifier( createVarClassifierForObjValueSigns() );
+   if ( varclassobjvals )
+      addVarClassifier( createVarClassifierForObjValues() );
+   if ( varclassobjvalsigns )
+      addVarClassifier( createVarClassifierForObjValueSigns() );
 
 
    reduceConsclasses();
@@ -2142,8 +2143,6 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    enableppcuts = FALSE;
    SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
 
-
-
    for ( int block = 0; block < seeed->getNBlocks(); ++block )
    {
       npricingconss += seeed->getNConssForBlock(block);
@@ -2278,11 +2277,8 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
          SCIPhashmapFree(&hashpricingvartoindex);
          SCIPfree(&subscip);
 
-         /*SCIPfreeRandom(scip, &randnumgen ); */
-
          return SCIP_OKAY;
       }
-
 
       /* get coefficient */
       if ( !SCIPisEQ( scip,  SCIPgetFirstLPLowerboundRoot(subscip), SCIPgetDualbound(subscip) ) )
@@ -3232,7 +3228,7 @@ DEC_DETECTOR* Seeedpool::getFinishingDetectorForIndex(
    int detectorIndex
    )
 {
-   return detectorToFinishingScipDetector[detectorIndex];
+   return &(*detectorToFinishingScipDetector[detectorIndex]);
 }
 
 

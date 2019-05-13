@@ -860,7 +860,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecPresolve)
 }
 
 
-
 /** dialog execution method for the detect command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
@@ -890,12 +889,13 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    return SCIP_OKAY;
 }
 
+
 /** dialog execution method for the displaying and selecting decompositions command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   SCIP_CALL( SCIPdialogExecSelect(scip, dialoghdlr, dialog ) );
+   SCIP_CALL( GCGdialogExecExplore(scip, dialoghdlr, dialog ) );
 
    SCIPdialogMessage(scip, NULL, "\n");
 
@@ -992,10 +992,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_SOLVING:
       assert( SCIPconshdlrDecompCheckConsistency(scip) );
       assert(SCIPgetNConss(scip) == SCIPgetNActiveConss(scip) );
-      if( SCIPconshdlrDecompGetSelectExists(scip) )
-         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE ) );
-      else
-         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE ) );
+      SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip) );
+
       if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
       {
          int npresolvingrounds;

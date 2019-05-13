@@ -29,14 +29,38 @@
 #include <assert.h>
 #include <stddef.h>
 
+#include <string>
 #include <iostream>
 #include <regex>
+#include <map>
 
 #include "class_seeed.h"
 #include "cons_decomp.h"
 #include "wrapper_seeed.h"
 
-#define DEFAULT_MENULENGTH 10
+/* column headers */
+#define DEFAULT_COLUMN_MIN_WIDTH  4 /**< min width of a column in the menu table */
+#define DEFAULT_COLUMN_MAX_WIDTH 10 /**< max width of a column (also determines max width of column header abbreviation) */
+#define DEFAULT_COLUMNS "nr id nbloc nmacon nlivar nmavar nstlva score history pre nopcon nopvar usr sel" /**< default column headers */
+
+#define DESC_NR      "number of the decomposition (use this number for choosing the decomposition)" /**< description of number */
+#define DESC_ID      "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)" /**< description of seeed id */
+#define DESC_NBLOC   "number of blocks" /**< description of block number */
+#define DESC_NMACON  "number of master constraints" /**< description of master conss number */
+#define DESC_NLIVAR  "number of linking variables" /**< description of linking vars number */
+#define DESC_NMAVAR  "number of master variables (do not occur in blocks)" /**< description of master vars number */
+#define DESC_NSTLVA  "number of stairlinking variables (disjoint from linking variables)" /**< description of stairlinking vars number */
+
+#define DESC_SCORE   " " //@todo put this back in the actual scores, they should know their description 
+
+#define DESC_HISTORY "list of detector chars worked on this decomposition" /**< description of detection history */
+#define DESC_PRE     "is this decomposition for the presolved problem" /**< description of presolved bool */
+#define DESC_NOPCON  "number of open constraints" /**< description of open conss number */
+#define DESC_NOPVAR  "number of open variables" /**< description of open vars number */
+#define DESC_USR     "whether this decomposition was given by the user" /**< description of user given bool */
+#define DESC_SEL     "is this decomposition selected at the moment" /**< description of selected bool */
+
+#define DEFAULT_MENULENGTH 10 /**< initial number of entries in menu */
 
 namespace gcg
 {
@@ -50,104 +74,6 @@ enum toolboxtype
    FINISH,
    POSTPROCESS
 };
-
-
-/**
- * Gets the shortname of the given scoretype
- *
- * @returns the shortname of the given Scoretype
- */
-static
-char* SCIPgetScoretypeShortName(
-   SCIP*       scip,    /**< SCIP data structure */
-   SCORETYPE   sctype   /**< scoretype */
-   )
-{
-   char scoretypename[SCIP_MAXSTRLEN];
-   char* copy;
-   /* set detector chain info string */
-   SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
-
-
-   if( sctype == scoretype::MAX_WHITE )
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maxwhi") ;
-
-   if( sctype == scoretype::CLASSIC )
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classi") ;
-
-   if( sctype == scoretype::BORDER_AREA )
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "border") ;
-
-   if( sctype == scoretype::MAX_FORESSEEING_WHITE )
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "forswh") ;
-
-   if( sctype == scoretype::MAX_FORESEEING_AGG_WHITE )
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "fawh") ;
-
-
-   if( sctype == scoretype::SETPART_FWHITE )
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh ") ;
-
-   if( sctype == scoretype::SETPART_AGG_FWHITE )
-           SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfawh") ;
-
-
-   if( sctype == scoretype::BENDERS )
-              SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "bender") ;
-
-
-   SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
-
-   return copy;
-
-}
-
-/*!
- * returns the description of the given scoretype
- *
- * @returns description of the scoretype
- */
-static
-char*  SCIPconshdlrDecompGetScoretypeDescription(
-   SCIP*       scip,    /**< SCIP data structure */
-   SCORETYPE   sctype   /**< scoretype */
-      )
-{
-   char scoretypename[SCIP_MAXSTRLEN];
-   char* copy;
-
-   /* set detector chain info string */
-   SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
-
-   if( sctype == scoretype::MAX_WHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum white area score (i.e. maximize fraction of white area score; white area is nonblock and nonborder area, stairlinking variables count as linking)") ;
-
-   if( sctype == scoretype::CLASSIC)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classical score") ;
-
-   if( sctype == scoretype::BORDER_AREA)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score)")  ;
-
-   if( sctype == scoretype::MAX_FORESSEEING_WHITE)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
-
-   if( sctype == scoretype::MAX_FORESEEING_AGG_WHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score with aggregation information(i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
-
-   if( sctype == scoretype::SETPART_FWHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints)")  ;
-
-   if( sctype == scoretype::SETPART_AGG_FWHITE)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints)")  ;
-
-   if( sctype == scoretype::BENDERS)
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "experimental score to evaluate benders decompositions")  ;
-
-
-   SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
-
-   return copy;
-}
 
 
 /** modifies menulength according to input and updates menu accordingly
@@ -165,7 +91,7 @@ SCIP_RETCODE SCIPdialogSetNEntires(
    int newlength;
    int commandlen;
 
-   SCIPdialogMessage(scip, NULL, "Please specify the number of entries to be shown in this menu:\n");
+   SCIPdialogMessage(scip, NULL, "Please specify the amount of entries to be shown in this menu:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
    commandlen = strlen(ntovisualize);
 
@@ -189,31 +115,86 @@ SCIP_RETCODE SCIPdialogSetNEntires(
 
    *menulength = newlength;
 
-   //@todo display
    return SCIP_OKAY;
 }
 
 
-/** Shows header for seeed information in explore menu
+/**
+ * @brief method to update the list of incomplete decompositions
  *
- * @returns SCIP status */
+ * this list changes due to new decompositions, modified, decompositions or changes of the score
+ * @returns SCIP return code
+ */
 static
-SCIP_RETCODE SCIPdialogShowListExtractHeader(
-   SCIP*                   scip  /**< SCIP data structure */
+SCIP_RETCODE SCIPdialogUpdateSeeedlist(
+   SCIP* scip,       /**< SCIP data structure */
+   int* startindex   /**< start index of menu */
+   )
+{
+   assert( SCIPconshdlrDecompCheckConsistency(scip) );
+
+   *startindex = 0;
+
+   SCIPconshdlrdataDecompUnselectAll(scip);
+
+   /* sort decomposition and finished seeeds according to max white score */
+   /*@todo remove this when manual sorting in menu is implemented */
+   SCIP_CALL( DECconshdlrDecompSortDecompositionsByScore(scip) );
+
+   return SCIP_OKAY;
+}
+
+/**
+ * Outputs the given char x times as SCIPdialogMessage
+ * @returns SCIP status
+ */
+static
+SCIP_RETCODE outputCharXTimes(
+   SCIP* scip,          /**< SCIP data structure */
+   const char letter,   /**< char to write */
+   int x                /**< write char x times */
+   )
+{
+   for(int i = 0; i < x; i++)
+      SCIPdialogMessage(scip, NULL, "%c", letter);
+}
+
+/** @brief show current menu containing seeed information
+ *
+ * Update length of seeed list in case it changed since the last command
+ * and show the table of seeeds. 
+ * @returns SCIP status
+ */
+static
+SCIP_RETCODE SCIPdialogShowMenu(
+   SCIP* scip,                         /**< SCIP data structure */
+   std::vector<std::string> columns,   /**< list of column headers (abbreviations) */
+   int* nseeeds,                       /**< max number of seeeds */
+   const int startindex,               /**< index (in seeed list) of uppermost seeed in extract */
+   int menulength,                     /**< number of menu entries */
+   int** idlist,                       /**< current list of seeed ids */
+   int*  listlength                    /**< length of idlist */
    )
 {
    assert(scip != NULL);
 
+   /* update size of seeed list in case it changed */
+   if(*nseeeds < SCIPconshdlrDecompGetNSeeeds(scip))
+   {
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, idlist, *nseeeds, SCIPconshdlrDecompGetNSeeeds(scip)) );
+      *nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
+   }
+
+   /* update list of seeeds */
+   SCIPconshdlrDecompGetSeeedLeafList(scip, idlist, listlength);
+
+   /* count corresponding seeeds for overview statistics */
    int ndetectedpresolved;
    int ndetectedunpresolved;
    int nuserpresolvedfull;
    int nuserpresolvedpartial;
    int nuserunpresolvedfull;
    int nuserunpresolvedpartial;
-   char* scorename;
-   int i;
-
-   scorename = SCIPgetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip) );
 
    ndetectedpresolved = 0;
    ndetectedunpresolved = 0;
@@ -221,37 +202,110 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    nuserpresolvedpartial = 0;
    nuserunpresolvedfull = 0;
    nuserunpresolvedpartial = 0;
-   int* idlist;
-   int listlength;
 
-   int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &idlist, nseeeds) );
-   SCIPconshdlrDecompGetSelectedSeeeds(scip, &idlist, &listlength);
-
-   /* count corresponding seeeds */
-   for ( i = 0; i < listlength; ++i )
+   for(int i = 0; i < *listlength; ++i)
    {
       Seeed_Wrapper sw;
-      GCGgetSeeedFromID(scip, &(idlist[i]), &sw);
+      GCGgetSeeedFromID(scip, &(*idlist)[i], &sw);
       Seeed* seeed;
       seeed = sw.seeed;
-      if( seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::NOT && !seeed->isFromUnpresolved() )
-         ++ndetectedpresolved;
-      if( seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::NOT && seeed->isFromUnpresolved() )
-         ++ndetectedunpresolved;
-      if( seeed->isComplete() && ( seeed->getUsergiven() == USERGIVEN::COMPLETE || seeed->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER) && !seeed->isFromUnpresolved() )
-         ++nuserpresolvedfull;
-      if( !seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::PARTIAL && !seeed->isFromUnpresolved() )
-         ++nuserpresolvedpartial;
-      if( seeed->isComplete() && ( seeed->getUsergiven() == USERGIVEN::COMPLETE || seeed->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER) && seeed->isFromUnpresolved() )
-         ++nuserunpresolvedfull;
-      if( !seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::PARTIAL && seeed->isFromUnpresolved() )
-         ++nuserunpresolvedpartial;
+      /* finished seeeds */
+      if(seeed->isComplete())
+      {
+         /* detected by program */
+         if(seeed->getUsergiven() == USERGIVEN::NOT)
+         {
+            /* from presolved problem */
+            if(!seeed->isFromUnpresolved())
+            {
+               ++ndetectedpresolved;
+            }
+            /* from original problem */
+            else
+            {
+               ++ndetectedunpresolved;
+            }
+         }
+         /* seeed was given by user (finished) */
+         else if(seeed->getUsergiven() == USERGIVEN::COMPLETE || seeed->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER)
+         {
+            /* from presolved problem */
+            if(!seeed->isFromUnpresolved())
+            {
+               ++nuserpresolvedfull;
+            }
+            /* from unpresolved problem */
+            else
+            {
+               ++nuserunpresolvedfull;
+            }
+         }
+      }
+      /* seeed is not finished (partial) */
+      else
+      {
+         /* statistics is only interested in partial seeeds if they were given by the user */
+         if(seeed->getUsergiven() == USERGIVEN::PARTIAL)
+         {
+            /* from presolved problem */
+            if(!seeed->isFromUnpresolved() )
+            {
+               ++nuserpresolvedpartial;
+            }
+            /* from unpresolved problem */
+            else
+            {
+               ++nuserunpresolvedpartial;
+            }
+         }
+      }
    }
 
+   /* count width of menu table by summing width of column headers,
+    * make header line, and border line for header (will be beneath the column headers) as follows:
+    * a border line of the length of the column width as '-' for each column and a space between the columns,
+    * e.g. header line "   nr   id nbloc nmacon  sel ",
+    * e.g. underscores " ---- ---- ----- ------ ---- " */
+   std::string headerline;
+   std::string borderline;
+   std::map<std::string, int> columnlength;
+   int linelength = 0;
+
+   /* line starts with a space */
+   headerline = " ";
+   borderline = " ";
+
+   for(auto header : columns)
+   {
+      /* make sure the header name is unique and add a length for header */
+      assert(columnlength.find(header) == columnlength.end());
+      columnlength.insert(std::pair<std::string,int>(header, 0));
+      /* if header is smaller than min column width, add spaces to header first */
+      if(header.size() < DEFAULT_COLUMN_MIN_WIDTH)
+      {
+         for(int i = 0; i < (DEFAULT_COLUMN_MIN_WIDTH - (int) header.size()); i++)
+         {
+            headerline += " ";
+            borderline += "-";
+            columnlength.at(header)++;
+         }
+      }
+      /* add header to headerline and add #chars of header as '-' to borderline*/
+      headerline += header;
+      for(int i = 0; i < (int) header.size(); i++)
+         borderline += "-";
+      columnlength.at(header) += (int) header.size();
+      /* add space to both lines as column border */
+      headerline += " ";
+      borderline += " ";
+      /* add columnlength (+1 for border space) to overall linelength */
+      linelength += columnlength.at(header) + 1;
+   }
+
+   /* display overview statistics */
    SCIPdialogMessage(scip, NULL, "\n");
-   SCIPdialogMessage(scip, NULL, "============================================================================================= ");
-   SCIPdialogMessage(scip, NULL, "\n");
+   outputCharXTimes(scip, '=', linelength);
+   SCIPdialogMessage(scip, NULL, " \n");
    SCIPdialogMessage(scip, NULL, "Summary              presolved       original \n");
    SCIPdialogMessage(scip, NULL, "                     ---------       -------- \n");
    SCIPdialogMessage(scip, NULL, "detected             ");
@@ -263,49 +317,24 @@ SCIP_RETCODE SCIPdialogShowListExtractHeader(
    SCIPdialogMessage(scip, NULL, "user given (full)    ");
    SCIPdialogMessage(scip, NULL, "%9d       ", nuserpresolvedfull );
    SCIPdialogMessage(scip, NULL, "%8d\n", nuserunpresolvedfull );
+   outputCharXTimes(scip, '=', linelength);
+   SCIPdialogMessage(scip, NULL, " \n");
+   /* display header of table */
+   SCIPdialogMessage(scip, NULL, "%s\n", headerline.c_str());
+   SCIPdialogMessage(scip, NULL, "%s\n", borderline.c_str());
 
-   SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
-   SCIPdialogMessage(scip, NULL, "   id   nbloc  nmacon  nlivar  nmavar  nstlva  %.6s  history  pre  nopcon  nopvar  usr  sel \n", scorename );
-   SCIPdialogMessage(scip, NULL, " ----   -----  ------  ------  ------  ------  ------  -------  ---  ------  ------  ---  --- \n");
-
-   SCIPfreeBlockMemoryArrayNull(scip, &scorename, SCIP_MAXSTRLEN);
-   SCIPfreeBlockMemoryArray(scip, &idlist, nseeeds);
-
-   return SCIP_OKAY;
-}
-
-
-/** Shows detailed information about seeeds in explore menu
- *
- *@returns SCIP status
- * */
-static
-SCIP_RETCODE SCIPdialogShowListExtract(
-   SCIP* scip,             /**< SCIP data structure */
-   const int startindex,   /**< index (in seeed list) of uppermost seeed in extract */
-   int menulength          /**< number of menu entries */
-   )
-{
-   assert(scip != NULL);
-   int i;
-
-   int* idlist;
-   int listlength;
-
-   int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &idlist, nseeeds) );
-   SCIPconshdlrDecompGetSeeedLeafList(scip, &idlist, &listlength);
-
-   for( i = startindex; i < startindex + menulength && i < listlength; ++i)
+   /*@todo make this part generic */
+   /* go through all seeeds that should currently be displayed,
+    * so from startindex on menulength many entries if there are that much left in the id list */
+   for(int i = startindex; i < startindex + menulength && i < *listlength; ++i)
    {
       Seeed_Wrapper sw;
       Seeed* seeed;
-      SCIP_CALL( GCGgetSeeedFromID(scip, &(idlist[i]), &sw) );
+      SCIP_CALL( GCGgetSeeedFromID(scip, &(*idlist)[i], &sw) );
       seeed = sw.seeed;
 
-      assert( seeed->checkConsistency( ) );
-
-      SCIPdialogMessage(scip, NULL, " %4d   ", seeed->getID() );
+      SCIPdialogMessage(scip, NULL, " %4d   ", i );
+      SCIPdialogMessage(scip, NULL, "%4d  ", seeed->getID() );
       SCIPdialogMessage(scip, NULL, "%5d  ", seeed->getNBlocks() );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNMasterconss() );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNLinkingvars() );
@@ -323,12 +352,11 @@ SCIP_RETCODE SCIPdialogShowListExtract(
       SCIPdialogMessage(scip, NULL, "%3s  \n", (seeed->isSelected() ? "yes" : "no")  );
    }
 
-   SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
-
-   SCIPfreeBlockMemoryArray(scip, &idlist, nseeeds);
+   SCIPdialogMessage(scip, NULL, "=================================================================================================== \n");
 
    return SCIP_OKAY;
 }
+
 
 /** Shows help for the user toolbox
  *
@@ -349,12 +377,12 @@ SCIP_RETCODE SCIPdialogShowToolboxInfo(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "refine", "refine implicit constraint and variables assignments");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "finish", "choose a finishing detector that completes the decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "quit the modification process and returns to main menu");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "undo", "last modification is undone (atm only the last modification can be undone)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "undo", "last modification is undone (only one modification can be undone)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "shows a visualization of the current decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "propagate", "list all detectors that can propagate the current seeed and apply one to propagate it");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "finish", "list all detectors that can finish the current seeed and apply one to finish it");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "postprocess", "apply postprocessing to a finished seeed by selecting a suitable postprocessor");
-   SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
+   SCIPdialogMessage(scip, NULL, "\n=================================================================================================== \n");
 
    return SCIP_OKAY;
 }
@@ -364,38 +392,34 @@ SCIP_RETCODE SCIPdialogShowToolboxInfo(
  * @returns SCIP status */
 static
 SCIP_RETCODE SCIPdialogShowLegend(
-   SCIP* scip  /**< SCIP data structure */
+   SCIP* scip,             /**< SCIP data structure */
+   SCORETYPE scoretype     /**< current score type */
    )
 {
    assert(scip != NULL);
    DEC_DETECTOR** detectors;
-   char * scorename;
-   char * scoredescr;
 
-   scorename = SCIPgetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip) );
-   scoredescr = SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrDecompGetScoretype(scip) );
+   std::string scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype);
+   std::string scoredescr = SCIPconshdlrDecompGetScoretypeDescription(scip, scoretype);
 
+   SCIPdialogMessage(scip, NULL, "List of included detectors for decompositions histories: \n");
 
-   SCIPdialogMessage(scip, NULL, "List of included detectors for decompositions histories: \n" );
-
-   SCIPdialogMessage(scip, NULL, "\n%30s    %4s\n", "detector" , "char"  );
-   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "--------" , "----"  );
+   SCIPdialogMessage(scip, NULL, "\n%30s    %4s\n", "detector" , "char");
+   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "--------" , "----");
 
    detectors = SCIPconshdlrDecompGetDetectors(scip);
 
    for( int det = 0; det < SCIPconshdlrDecompGetNDetectors(scip); ++det )
    {
       DEC_DETECTOR* detector;
-
       detector = detectors[det];
 
-      SCIPdialogMessage(scip, NULL, "%30s    %4c\n", DECdetectorGetName(detector), DECdetectorGetChar(detector)  );
+      SCIPdialogMessage(scip, NULL, "%30s    %4c\n", DECdetectorGetName(detector), DECdetectorGetChar(detector));
    }
-   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "given by user" , "U"  );
-
+   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "given by user" , "U");
    SCIPdialogMessage(scip, NULL, "\n" );
 
-   SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
+   SCIPdialogMessage(scip, NULL, "=================================================================================================== \n");
 
    SCIPdialogMessage(scip, NULL, "\n" );
 
@@ -403,13 +427,14 @@ SCIP_RETCODE SCIPdialogShowLegend(
    SCIPdialogMessage(scip, NULL, "\n" );
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "abbreviation", "description");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "------------", "-----------");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "id", "id of the decomposition");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nr", "number of the decomposition (use this number for choosing the decomposition)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "id", "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nbloc", "number of blocks");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmacon", "number of master constraints");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nlivar", "number of linking variables");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmavar", "number of master variables (do not occur in blocks)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nstlva", "number of stairlinking variables (disjoint from linking variables)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", scorename, scoredescr);
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", scorename.c_str(), scoredescr.c_str());
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "history", "list of detector chars worked on this decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "pre", "is this decomposition for the presolved problem");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopcon", "number of open constraints");
@@ -417,10 +442,7 @@ SCIP_RETCODE SCIPdialogShowLegend(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "usr", "was this decomposition given by the user");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sel", "is this decomposition selected at the moment");
 
-   SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
-
-   SCIPfreeBlockMemoryArrayNull(scip, &scorename, SCIP_MAXSTRLEN);
-   SCIPfreeBlockMemoryArrayNull(scip, &scoredescr, SCIP_MAXSTRLEN);
+   SCIPdialogMessage(scip, NULL, "\n=================================================================================================== \n");
 
    return SCIP_OKAY;
 }
@@ -435,29 +457,28 @@ SCIP_RETCODE SCIPdialogShowHelp(
 {
    assert(scip != NULL);
 
-   SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
+   SCIPdialogMessage(scip, NULL, "=================================================================================================== \n");
    SCIPdialogMessage(scip, NULL, "\n" );
    SCIPdialogMessage(scip, NULL, "List of selection commands \n" );
    SCIPdialogMessage(scip, NULL, "\n" );
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "command", "description");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "-------", "-----------");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "select", "selects/unselects decomposition with given id");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "modify", "modify an existing decomposition");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "modify", "modify an existing partial decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "create", "create a new decomposition");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "back", "displays the preceding decompositions (if there are any)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "previous", "displays the preceding decompositions (if there are any)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "next", "displays the subsequent decompositions (if there are any)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "top", "displays the first decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "end", "displays the last decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "legend", "displays the legend for table header and history abbreviations");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "help", "displays this help");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "number_entries", "modifies the number of displayed decompositions ");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "finishes decomposition explorer and goes back to main menu");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "experimental feature: visualizes the specified decomposition ");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition ");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "number_entries", "modifies the number of displayed decompositions");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "visualizes the specified decomposition (requires gnuplot)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "calc_strong", "calculates and displays the strong decomposition score for this decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "return to main menu");
 
-   SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
+   SCIPdialogMessage(scip, NULL, "\n=================================================================================================== \n");
 
    return SCIP_OKAY;
 }
@@ -470,18 +491,19 @@ static
 SCIP_RETCODE SCIPdialogSelectVisualize(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   int**                   idlist,     /**< current list of seeed ids */
+   int*                    listlength  /**< length of idlist */
    )
 {
    char* ntovisualize;
    SCIP_Bool endoffile;
    int idtovisu;
-
    int commandlen;
 
    assert(scip != NULL);
 
-   SCIPdialogMessage(scip, NULL, "Please specify the id of the decomposition to be visualized:\n");
+   SCIPdialogMessage(scip, NULL, "Please specify the nr of the decomposition to be visualized:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
    commandlen = strlen(ntovisualize);
 
@@ -489,20 +511,18 @@ SCIP_RETCODE SCIPdialogSelectVisualize(
    if( commandlen != 0 )
       idtovisu = atoi(ntovisualize);
 
-   /* check whether ID is in valid range */
-   if( SCIPconshdlrDecompGetNSeeeds(scip) == 0 )
+   /* check whether the seeed exists */
+   if( commandlen == 0 || idtovisu < 0 || idtovisu >= *listlength )
    {
-      SCIPinfoMessage(scip, NULL, "No decompositions available. Please detect first.\n");
+      SCIPdialogMessage( scip, NULL, "This nr is out of range." );
       return SCIP_OKAY;
    }
+
+   /* get and show seeed */
    Seeed_Wrapper sw;
-   SCIP_CALL( GCGgetSeeedFromID(scip, &idtovisu, &sw) );
+   SCIP_CALL( GCGgetSeeedFromID(scip, &(*idlist)[idtovisu], &sw) );
    Seeed* seeed = sw.seeed;
-   if( commandlen == 0 || seeed == NULL )
-   {
-      SCIPdialogMessage( scip, NULL, "This id is out of range." );
-      return SCIP_OKAY;
-   }
+   assert( seeed != NULL );
 
    seeed->showVisualisation();
 
@@ -516,10 +536,12 @@ SCIP_RETCODE SCIPdialogSelectVisualize(
  * @returns SCIP status
  */
 static
-SCIP_RETCODE SCIPdialogSelectCalcStrongDecompositionScore(
+SCIP_RETCODE SCIPdialogCalcStrongDecompositionScore(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   int**                   idlist,     /**< current list of seeed ids */
+   int*                    listlength  /**< length of idlist */
    )
 {
    char* ntocalcstrong;
@@ -529,9 +551,9 @@ SCIP_RETCODE SCIPdialogSelectCalcStrongDecompositionScore(
 
    assert( scip != NULL );
 
-   /* read the id of the decomposition to be calculate strong decomp score */
+   /* read the id of the decomposition to calculate strong decomp score for */
    SCIPdialogMessage( scip, NULL,
-      "Please specify the id of the decomposition that should be evaluated by strong decomposition score:\n" );
+      "Please specify the nr of the decomposition that should be evaluated by strong decomposition score:\n" );
    SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ntocalcstrong, &endoffile ) );
    commandlen = strlen( ntocalcstrong );
 
@@ -547,20 +569,22 @@ SCIP_RETCODE SCIPdialogSelectCalcStrongDecompositionScore(
       }
    }
 
+   /* check whether the seeed exists */
+   if( commandlen == 0 || idtocalcstrong < 0 || idtocalcstrong >= *listlength )
+   {
+      SCIPdialogMessage( scip, NULL, "This nr is out of range." );
+      return SCIP_OKAY;
+   }
+
    /* call calculation strong decomp score method according to chosen parameters */
    Seeed_Wrapper sw;
-   SCIP_CALL( GCGgetSeeedFromID(scip, &idtocalcstrong, &sw) );
-   if(sw.seeed != NULL)
-   {
-      SCIP_Real score;
-      Seeedpool* seeedpool = sw.seeed->getSeeedpool();
-      seeedpool->calcStrongDecompositionScore(sw.seeed, &score);
-      SCIPdialogMessage( scip, NULL, "Strong decomposition score of this decomposition is %f.", score) ;
-   }
-   else
-   {
-      SCIPdialogMessage( scip, NULL, "This is not an existing id." );
-   }
+   SCIP_CALL( GCGgetSeeedFromID(scip, &(*idlist)[idtocalcstrong], &sw) );
+   assert(sw.seeed != NULL);
+
+   SCIP_Real score;
+   Seeedpool* seeedpool = sw.seeed->getSeeedpool();
+   seeedpool->calcStrongDecompositionScore(sw.seeed, &score);
+   SCIPdialogMessage( scip, NULL, "Strong decomposition score of this decomposition is %f.", score) ;
 
    return SCIP_OKAY;
 }
@@ -572,10 +596,12 @@ SCIP_RETCODE SCIPdialogSelectCalcStrongDecompositionScore(
  * @returns SCIP status
  */
 static
-SCIP_RETCODE SCIPdialogSelectInspect(
+SCIP_RETCODE SCIPdialogInspectSeeed(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   int**                   idlist,     /**< current list of seeed ids */
+   int*                    listlength  /**< length of idlist */
    )
 {
    char* ntoinspect;
@@ -589,7 +615,7 @@ SCIP_RETCODE SCIPdialogSelectInspect(
    assert( scip != NULL );
 
    /* read the id of the decomposition to be inspected */
-   SCIPdialogMessage( scip, NULL, "Please specify the id of the decomposition to be inspected:\n");
+   SCIPdialogMessage( scip, NULL, "Please specify the nr of the decomposition to be inspected:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ntoinspect, &endoffile ) );
    commandlen = strlen( ntoinspect );
 
@@ -597,15 +623,16 @@ SCIP_RETCODE SCIPdialogSelectInspect(
    if( commandlen != 0 )
       idtoinspect = atoi( ntoinspect );
 
+   if(idtoinspect < 0 || idtoinspect >= *listlength){
+      SCIPdialogMessage( scip, NULL, "This nr is out of range." );
+      return SCIP_OKAY;
+   }
+
    /* check whether ID is in valid range */
    Seeed_Wrapper sw;
-   SCIP_CALL( GCGgetSeeedFromID(scip, &idtoinspect, &sw) );
+   SCIP_CALL( GCGgetSeeedFromID(scip, &(*idlist)[idtoinspect], &sw) );
 
-   if( sw.seeed == NULL )
-   {
-      SCIPdialogMessage( scip, NULL, "This id is out of range." );
-      return SCIP_PARAMETERWRONGVAL;
-   }
+   assert( sw.seeed != NULL );
 
    /* read the desired detail level; for wrong input, it is set to 1 by default */
    SCIPdialogMessage( scip, NULL,
@@ -640,7 +667,8 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
-   Seeed*                  userseeed   /**< seeed to be modified */
+   Seeed*                  userseeed,  /**< seeed to be modified */
+   Seeed*                  lastseeed   /**< store seeed before last change for undo option */
    )
 {
     SCIP_Bool matching;
@@ -694,7 +722,9 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
        return SCIP_OKAY;
     }
 
-    //@todo note: here was the block updating last user seeed
+    if(lastseeed != NULL)
+      delete lastseeed;
+    lastseeed = new Seeed(userseeed);
 
     if( matchingconss.size() > 10 )
        SCIPdebugMessage(" There are %d unassigned constraints with names matching given regular expression. Showing the first 10:\n", (int) matchingconss.size());
@@ -714,7 +744,6 @@ SCIP_RETCODE SCIPdialogToolboxModifyConss(
 
     commandlen = strlen(command);
 
-    /* case distinction: */
     if( strncmp( command, "master", commandlen) == 0 )
     {
        for( size_t mc = 0 ;  mc < matchingconss.size(); ++mc )
@@ -748,7 +777,8 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
-   Seeed*                  userseeed
+   Seeed*                  userseeed,  /**< seeed to be edit */
+   Seeed*                  lastseeed   /**< store seeed before last change for undo option */
    )
 {
    SCIP_Bool         choosenfinisher;
@@ -768,7 +798,7 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
 
    seeedpool = userseeed->getSeeedpool();
    choosenfinisher = FALSE;
-   while ( !choosenfinisher )
+   while( !choosenfinisher )
    {
        SCIPdialogMessage(scip, NULL, " Available finisher: \n");
        /* 1) print out available finisher */
@@ -786,7 +816,7 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
 
        if( finisherid >= seeedpool->getNFinishingDetectors() || finisherid < -1 )
        {
-            SCIPdialogMessage(scip, NULL, "The specified id is invalid \n"  );
+            SCIPdialogMessage(scip, NULL, "The specified index is invalid \n"  );
             continue;
        }
        choosenfinisher = TRUE;
@@ -797,7 +827,9 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
    seeedPropData->nNewSeeeds = 0;
    seeedPropData->seeedToPropagate = userseeed;
 
-   //@todo note: here was update of last user seeed
+   if(lastseeed != NULL)
+      delete lastseeed;
+   lastseeed = new Seeed(userseeed);
 
    finisher = seeedpool->getFinishingDetectorForIndex(finisherid);
    finisher->finishSeeed(scip, finisher, seeedPropData, &result);
@@ -809,7 +841,6 @@ SCIP_RETCODE SCIPdialogToolboxModifyFinish(
       delete seeedPropData->newSeeeds[i];
    }
 
-   delete seeedPropData->seeedToPropagate;
    delete seeedPropData;
 
    return SCIP_OKAY;
@@ -822,7 +853,9 @@ static
 Seeed* SCIPdialogToolboxChoose(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   int**                   idlist,     /**< current list of seeed ids */
+   int*                    listlength  /**< length of idlist */
    )
 {
    char* ntochoose;
@@ -833,27 +866,24 @@ Seeed* SCIPdialogToolboxChoose(
 
    assert(scip != NULL);
 
-   SCIPdialogMessage(scip, NULL, "Please specify the id of the (partial) decomposition to be chosen for modification:\n");
+   SCIPdialogMessage(scip, NULL, "Please specify the nr of the (partial) decomposition to be chosen for modification:\n");
    SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntochoose, &endoffile);
    commandlen = strlen(ntochoose);
 
    idtochoose = 0;
    if(commandlen != 0)
       idtochoose = atoi(ntochoose);
-   else
+
+   if( commandlen == 0 || idtochoose < 0 || idtochoose >= *listlength )
    {
-      SCIPdialogMessage( scip, NULL, "Invalid input." );
+      SCIPdialogMessage( scip, NULL, "This nr is out of range." );
       return NULL;
    }
 
    Seeed_Wrapper sw;
-   GCGgetSeeedFromID(scip, &idtochoose, &sw);
+   GCGgetSeeedFromID(scip, &(*idlist)[idtochoose], &sw);
 
-   if( sw.seeed == NULL )
-   {
-      SCIPdialogMessage( scip, NULL, "This id is out of range." );
-      return NULL;
-   }
+   assert( sw.seeed != NULL );
 
    return new Seeed( sw.seeed );
 }
@@ -866,7 +896,8 @@ SCIP_RETCODE SCIPdialogToolboxModifyVars(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
-   Seeed*                  userseeed   /**< user seeed to edit */
+   Seeed*                  userseeed,  /**< user seeed to edit */
+   Seeed*                  lastseeed   /**< store seeed before last change for undo option */
    )
 {
     SCIP_Bool matching;
@@ -923,7 +954,9 @@ SCIP_RETCODE SCIPdialogToolboxModifyVars(
        return SCIP_OKAY;
     }
 
-    //@todo here was the update of last user seeed
+    if(lastseeed != NULL)
+       delete lastseeed;
+    lastseeed = new Seeed(userseeed);
 
     if( matchingvars.size() > 10 )
        SCIPdialogMessage(scip, NULL,
@@ -1050,7 +1083,20 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
    }
 
    /* build seeed propagation data needed in callbacks */
-   seeedpool = userseeed->getSeeedpool();
+   if(userseeed->isFromUnpresolved())
+   {
+      SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+      Seeed_Wrapper sw;
+      SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &sw);
+      seeedpool = sw.seeedpool;
+   }
+   else
+   {
+      SCIPconshdlrDecompCreateSeeedpool(scip);
+      Seeed_Wrapper sw;
+      SCIPconshdlrDecompGetSeeedpool(scip, &sw);
+      seeedpool = sw.seeedpool;
+   }
 
    seeedPropData = new SEEED_PROPAGATION_DATA();
    seeedPropData->seeedpool = seeedpool;
@@ -1117,6 +1163,21 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
             {
                assert(seeedPropData->newSeeeds[i] != NULL);
                seeedPropData->newSeeeds[i]->considerImplicits( ); //There may be open vars/cons left that were not matched
+               if(seeedPropData->newSeeeds[i]->getSeeedpool() == NULL)
+               {
+                  Seeed_Wrapper sw;
+                  if(seeedPropData->newSeeeds[i]->isFromUnpresolved())
+                  {
+                     SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+                     SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &sw);
+                  }
+                  else
+                  {
+                     SCIPconshdlrDecompCreateSeeedpool(scip);
+                     SCIPconshdlrDecompGetSeeedpool(scip, &sw);
+                  }
+                  seeedPropData->newSeeeds[i]->setSeeedpool(sw.seeedpool);
+               }
             }
 
             SCIPinfoMessage(scip, NULL, "\nSeeed was successfully %s, %d potentially new seeed(s) found.\n", actiontype,
@@ -1163,7 +1224,7 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
                }
                if( strncmp( command, "yes", commandlen) == 0 )
                {
-                  SCIP_CALL( SCIPdialogSelectVisualize(scip, dialoghdlr, dialog ) );
+                  seeedPropData->newSeeeds[0]->showVisualisation();
                }
                else if( strncmp( command, "quit", commandlen) == 0 )
                {
@@ -1175,12 +1236,15 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
             SCIPinfoMessage(scip, NULL, "\nSaving newly found seeeds...\n\n");
             for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
             {
-               userseeed = new Seeed( seeedPropData->newSeeeds[i] ); //@todo delete previous seeed beforehand?
+               auto newseeed = new Seeed( seeedPropData->newSeeeds[i] );
                Seeed_Wrapper sw;
-               sw.seeed = userseeed;
+               sw.seeed = newseeed;
                SCIP_CALL( SCIPconshdlrDecompRefineAndAddSeeed(scip, &sw) );
-               assert(userseeed == NULL);
             }
+
+            /* at this point we continue with a different userseeed */
+            if(userseeed != NULL)
+               delete userseeed;
 
             if( seeedPropData->nNewSeeeds == 1 )
             {
@@ -1192,18 +1256,15 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
                      &command, &endoffile) );
                   commandlen = strlen(command);
                }
+
                if( strncmp( command, "continue", commandlen) == 0 )
-               {
-                  userseeed = new Seeed(seeedPropData->newSeeeds[0]); //@todo delete previous seeed beforehand?
-               }
+                  userseeed = new Seeed(seeedPropData->newSeeeds[0]);
                else
-               {
-                  userseeed = new Seeed(seeedPropData->seeedToPropagate); //@todo delete previous seeed beforehand?
-               }
+                  userseeed = new Seeed(seeedPropData->seeedToPropagate);
             }
             else
             {
-               userseeed = new Seeed(seeedPropData->seeedToPropagate); //@todo delete previous seeed beforehand?
+               userseeed = new Seeed(seeedPropData->seeedToPropagate);
             }
             finished = TRUE;
             continue;
@@ -1225,12 +1286,15 @@ SCIP_RETCODE SCIPdialogToolboxActOnSeeed(
                SCIPinfoMessage(scip, NULL, "Storing seeeds...\n");
                for( i = 0; i < seeedPropData->nNewSeeeds; ++i )
                {
-                  userseeed = new Seeed(seeedPropData->newSeeeds[i]); //@todo delete previous seeed beforehand?
+                  Seeed* newseeed = new Seeed(seeedPropData->newSeeeds[i]);
                   Seeed_Wrapper sw;
-                  sw.seeed = userseeed;
+                  sw.seeed = newseeed;
                   SCIP_CALL( SCIPconshdlrDecompRefineAndAddSeeed(scip, &sw) );
                }
-               userseeed = new Seeed(seeedPropData->seeedToPropagate); //@todo delete previous seeed beforehand?
+
+               if(userseeed != NULL)
+                  delete userseeed;
+               userseeed = new Seeed(seeedPropData->seeedToPropagate);
                SCIPinfoMessage(scip, NULL, "\nAll seeeds stored successfully!\n");
             }
             finished = TRUE;
@@ -1329,8 +1393,11 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
-   int                     startindex, /**< index in seeed list to start list extract at */
-   int                     menulength  /**< number of menu entries */
+   std::vector<std::string> columns,   /**< list of column headers (abbreviations) */
+   int*                    startindex, /**< index in seeed list to start list extract at */
+   int                     menulength, /**< number of menu entries */
+   int**                   idlist,     /**< current list of seeed ids */
+   int*                    listlength  /**< length of idlist */
    )
 {
    SCIP_Bool finished;
@@ -1338,7 +1405,6 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
    SCIP_Bool endoffile;
    int commandlen;
    SCIP_Bool selectedsomeseeed;
-   int nseeeds;
    Seeed* userseeed;
 
    selectedsomeseeed = TRUE;
@@ -1351,53 +1417,47 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
       SCIPinfoMessage(scip, NULL, "No problem is loaded. Please read in a model first.\n");
       return SCIP_OKAY;
    }
-   if( SCIPconshdlrDecompGetNSeeedLeafs(scip) == 0 )
-   {
-      SCIPinfoMessage(scip, NULL, "No decompositions available. Please detect first.\n");
-      return SCIP_OKAY;
-   }
+
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
    {
       SCIP_CALL( SCIPtransformProb(scip) );
-      SCIPinfoMessage(scip, NULL, "Applied tranformation to problem.\n");
+      SCIPinfoMessage(scip, NULL, "Applied transformation to problem.\n");
    }
    /* 1) update list of interesting seeeds */
-   SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+   SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, startindex) );
 
    /* 2) while user has not aborted: show current list extract */
-   while ( !finished )
+   int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
+   while( !finished )
    {
-      SCIP_CALL( SCIPdialogShowListExtractHeader(scip) );
+      SCIPdialogShowMenu(scip, columns, &nseeeds, *startindex, menulength, idlist, listlength);
 
-      SCIP_CALL( SCIPdialogShowListExtract(scip, startindex, menulength) );
-
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please choose an existing partial decomposition for modification (type \"choose <id>\" or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please choose an existing partial decomposition for modification (type \"choose <nr>\" or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
 
       commandlen = strlen(command);
 
-      nseeeds = SCIPconshdlrDecompGetNSeeedLeafs(scip);
-      if( strncmp( command, "back", commandlen) == 0 )
+      if( strncmp( command, "previous", commandlen) == 0 )
       {
-         startindex = startindex - menulength;
-         if(startindex < 0 )
-            startindex = 0;
+         *startindex = *startindex - menulength;
+         if(*startindex < 0 )
+            *startindex = 0;
          continue;
       }
       if( strncmp( command, "next", commandlen) == 0 )
       {
-         startindex = startindex + menulength;
-         if( startindex > nseeeds - menulength )
-            startindex = nseeeds - menulength;
+         *startindex = *startindex + menulength;
+         if( *startindex > *listlength - menulength )
+            *startindex = *listlength - menulength;
          continue;
       }
       if( strncmp( command, "top", commandlen) == 0 )
       {
-         startindex = 0;
+         *startindex = 0;
          continue;
       }
       if( strncmp( command, "end", commandlen) == 0 )
       {
-         startindex = nseeeds - menulength;
+         *startindex = *listlength - menulength;
          continue;
       }
 
@@ -1410,7 +1470,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
 
       if( strncmp( command, "choose", commandlen) == 0 )
       {
-          userseeed = SCIPdialogToolboxChoose(scip, dialoghdlr, dialog );
+          userseeed = SCIPdialogToolboxChoose(scip, dialoghdlr, dialog, idlist, listlength);
           if(userseeed == NULL)
           {
              selectedsomeseeed = FALSE;
@@ -1445,7 +1505,7 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
 
       if( strncmp( command, "visualize", commandlen) == 0 )
       {
-         SCIP_CALL(SCIPdialogSelectVisualize(scip, dialoghdlr, dialog ) );
+         SCIP_CALL(SCIPdialogSelectVisualize(scip, dialoghdlr, dialog, idlist, listlength) );
          continue;
       }
 
@@ -1466,39 +1526,49 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
          SCIP_CALL( SCIPdialogToolboxPostprocessSeeed(scip, dialoghdlr, dialog, userseeed) );
          continue;
       }
+
+      /* the following only happens when the user types something else that is invalid in this context */
+      SCIPinfoMessage(scip, NULL, "Invalid input. Press \"h\" for help.\n");
    }
+
+   Seeed* lastseeed = NULL;
+
    finished = FALSE;
-   while ( !finished && selectedsomeseeed )
+   while( !finished && selectedsomeseeed )
    {
       int commandlen2;
       SCIP_Bool success;
 
+      assert(userseeed != NULL);
       userseeed->displaySeeed();
 
       SCIP_CALL( SCIPdialogShowToolboxInfo(scip) );
 
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "How do you want to proceed the with the current decomposition? (or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "How do you want to proceed the with the current decomposition?: \nGCG/toolbox> ", &command, &endoffile) );
 
       commandlen2 = strlen(command);
 
       if( strncmp( command, "conss", commandlen2) == 0 )
       {
-         SCIPdialogToolboxModifyConss(scip, dialoghdlr, dialog, userseeed);
+         SCIPdialogToolboxModifyConss(scip, dialoghdlr, dialog, userseeed, lastseeed);
          continue;
       }
       if( strncmp( command, "vars", commandlen2) == 0 )
       {
-         SCIPdialogToolboxModifyVars(scip, dialoghdlr, dialog, userseeed);
+         SCIPdialogToolboxModifyVars(scip, dialoghdlr, dialog, userseeed, lastseeed);
          continue;
       }
       if( strncmp( command, "finish", commandlen2) == 0 )
       {
-         SCIPdialogToolboxModifyFinish(scip, dialoghdlr, dialog, userseeed);
+         SCIPdialogToolboxModifyFinish(scip, dialoghdlr, dialog, userseeed, lastseeed);
          continue;
       }
       if( strncmp( command, "refine", commandlen2) == 0 )
       {
-         //@todo here was update of last user seeed
+         if(lastseeed != NULL)
+            delete lastseeed;
+         lastseeed = new Seeed(userseeed);
+
          userseeed->considerImplicits();
          continue;
       }
@@ -1522,36 +1592,33 @@ SCIP_RETCODE SCIPdialogExecToolboxModify(
          {
             seeedpool->addSeeedToFinished(userseeed, &success);
             if( !success )
-            {
                delete userseeed;
-            }
-         } else
+         }
+         else
          {
             seeedpool->addSeeedToIncomplete(userseeed, &success);
             if( !success )
-            {
                delete userseeed;
-            }
          }
          userseeed = NULL;
          finished = TRUE;
+         delete lastseeed;
 
          continue;
       }
-      /*@todo reintroduce undo feature
+
       if( strncmp( command, "undo", commandlen2) == 0 )
       {
-         if( GCGgetSelectLastUserSeeed(scip) == NULL )
+         if( lastseeed == NULL )
             SCIPdialogMessage(scip, NULL, " nothing to be undone \n");
          else
          {
-            delete GCGgetSelectCurrUserSeeed(scip);
-            GCGsetSelectCurrUserSeeed(scip, GCGgetSelectLastUserSeeed(scip));
-            GCGsetSelectLastUserSeeed(scip, NULL);
+            delete userseeed;
+            userseeed = lastseeed;
+            lastseeed = NULL;
          }
          continue;
       }
-      */
 
       if( strncmp( command, "visualize", commandlen2) == 0 )
       {
@@ -1605,11 +1672,7 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
       SCIPinfoMessage(scip, NULL, "No problem is loaded. Please read in a model first.\n");
       return SCIP_OKAY;
    }
-   if( SCIPconshdlrDecompGetNSeeedLeafs(scip) == 0 )
-   {
-      SCIPinfoMessage(scip, NULL, "No decompositions available. Please detect first.\n");
-      return SCIP_OKAY;
-   }
+
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
    {
       SCIP_CALL( SCIPtransformProb(scip) );
@@ -1631,23 +1694,18 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
 
    if( strncmp( command, "presolved", commandlen) == 0 )
    {
+      if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+      {
+         SCIPinfoMessage(scip, NULL, "Problem is not presolved yet. Please presolve it first!\n");
+         return SCIP_OKAY;
+      }
+
       Seeed_Wrapper sw;
       isfromunpresolved = FALSE;
+      SCIPconshdlrDecompCreateSeeedpool(scip);
       SCIPconshdlrDecompGetSeeedpool(scip, &sw);
-      if( sw.seeedpool != NULL )
-         seeedpool = sw.seeedpool;
-      else
-      {
-         if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
-         {
-            SCIPinfoMessage(scip, NULL, "Problem is not presolved yet. Please presolve it first!\n");
-            return SCIP_OKAY;
-         }
-
-         SCIPconshdlrDecompCreateSeeedpool(scip);
-         SCIPconshdlrDecompGetSeeedpool(scip, &sw);
-         seeedpool = sw.seeedpool;
-      }
+      assert(sw.seeedpool != NULL);
+      seeedpool = sw.seeedpool;
    }
    else
    {
@@ -1678,8 +1736,10 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
    Seeed* newseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool );
    newseeed->setIsFromUnpresolved(isfromunpresolved);
 
+   Seeed* lastseeed = NULL;
+
    finished = FALSE;
-   while ( !finished )
+   while( !finished )
    {
       int commandlen2;
       SCIP_Bool success;
@@ -1687,23 +1747,26 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
       newseeed->displaySeeed();
       SCIP_CALL( SCIPdialogShowToolboxInfo(scip) );
 
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "How do you want to proceed the with the current decomposition? (or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "How do you want to proceed the with the current decomposition? \nGCG/toolbox> ", &command, &endoffile) );
 
       commandlen2 = strlen(command);
 
       if( strncmp( command, "conss", commandlen2) == 0 )
       {
-         SCIPdialogToolboxModifyConss(scip, dialoghdlr, dialog, newseeed);
+         SCIPdialogToolboxModifyConss(scip, dialoghdlr, dialog, newseeed, lastseeed);
          continue;
       }
       if( strncmp( command, "vars", commandlen2) == 0 )
       {
-         SCIPdialogToolboxModifyVars(scip, dialoghdlr, dialog, newseeed);
+         SCIPdialogToolboxModifyVars(scip, dialoghdlr, dialog, newseeed, lastseeed);
          continue;
       }
       if( strncmp( command, "refine", commandlen2) == 0 )
       {
-         //@todo here was update of last user seeed
+         if(lastseeed != NULL)
+            delete lastseeed;
+         lastseeed = new Seeed(newseeed);
+
          newseeed->considerImplicits();
          continue;
       }
@@ -1738,27 +1801,34 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
             }
          }
 
+         delete lastseeed;
          finished = TRUE;
          continue;
       }
 
-      //@todo reintroduce, maybe hand down pointer to last one?
-      /*if( strncmp( command, "undo", commandlen2) == 0 )
+      if( strncmp( command, "undo", commandlen2) == 0 )
       {
-         if( GCGgetSelectLastUserSeeed(scip) == NULL )
+         if( lastseeed == NULL )
             SCIPdialogMessage(scip, NULL, " nothing to be undone \n");
          else
          {
-            delete GCGgetSelectCurrUserSeeed(scip);
-            GCGsetSelectCurrUserSeeed(scip, GCGgetSelectLastUserSeeed(scip));
-            GCGsetSelectLastUserSeeed(scip, NULL);
+            delete newseeed;
+            newseeed = lastseeed;
+            lastseeed = NULL;
          }
          continue;
-      }*/
+      }
 
       if( strncmp( command, "visualize", commandlen2) == 0 )
       {
-         newseeed->showVisualisation();
+         Seeed_Wrapper sw;
+         int id = newseeed->getID();
+         GCGgetSeeedFromID(scip, &id, &sw);
+
+         if(newseeed != NULL && sw.seeed != NULL)
+            newseeed->showVisualisation();
+         else
+            SCIPdialogMessage(scip, NULL, "There is nothing to be visualized yet.\n");
          continue;
       }
 
@@ -1789,10 +1859,12 @@ SCIP_RETCODE SCIPdialogExecToolboxCreate(
  *
  * @returns SCIP status */
 static
-SCIP_RETCODE SCIPdialogExploreSelect(
+SCIP_RETCODE SCIPdialogSelect(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog      /**< dialog for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   int**                   idlist,     /**< current list of seeed ids */
+   int*                    listlength  /**< length of idlist */
    )
 {
    char* ntovisualize;
@@ -1803,7 +1875,7 @@ SCIP_RETCODE SCIPdialogExploreSelect(
 
    assert(scip != NULL);
 
-   SCIPdialogMessage(scip, NULL, "Please specify the id of the decomposition to be selected:\n");
+   SCIPdialogMessage(scip, NULL, "Please specify the nr of the decomposition to be selected:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
    commandlen = strlen(ntovisualize);
 
@@ -1811,19 +1883,21 @@ SCIP_RETCODE SCIPdialogExploreSelect(
    if( commandlen != 0)
       idtovisu = atoi(ntovisualize);
 
-   Seeed_Wrapper sw;
-   SCIP_CALL( GCGgetSeeedFromID(scip, &idtovisu, &sw) );
-
-   if( sw.seeed == NULL )
+   if( commandlen == 0 || idtovisu < 0 || idtovisu >= *listlength )
    {
-      SCIPdialogMessage( scip, NULL, "This id is out of range." );
-      return SCIP_PARAMETERWRONGVAL;
+      SCIPdialogMessage( scip, NULL, "This nr is out of range, nothing was selected." );
+      return SCIP_OKAY;
    }
+
+   Seeed_Wrapper sw;
+   SCIP_CALL( GCGgetSeeedFromID(scip, &(*idlist)[idtovisu], &sw) );
+
+   assert( sw.seeed != NULL );
 
    sw.seeed->setSelected(!sw.seeed->isSelected() );
 
    if( sw.seeed->isSelected() )
-      std::cout << "is selected!" << sw.seeed->isSelected() <<std::endl;
+      std::cout << "is selected!" << sw.seeed->isSelected() << std::endl;
 
    return SCIP_OKAY;
 }
@@ -1833,122 +1907,171 @@ SCIP_RETCODE SCIPdialogExecCommand(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
    SCIP_DIALOG*            dialog,
+   std::vector<std::string> columns,
    char*                   command,
    SCIP_Bool               endoffile,
-   int*                    point_startindex,
+   int*                    startindex,
    int*                    menulength,
-   SCIP_Bool*              point_finished
+   SCIP_Bool*              finished,
+   SCORETYPE*              scoretype,
+   int*                    nseeeds,
+   int**                   idlist,
+   int*                    listlength
    )
 {
-   int nseeeds;
+   
 
    int commandlen = strlen(command);
 
-   nseeeds = SCIPconshdlrDecompGetNSeeedLeafs(scip);
+      if( strncmp( command, "previous", commandlen) == 0 )
+      {
+         *startindex = *startindex - *menulength;
+         if(*startindex < 0 )
+            *startindex = 0;
+      }
+      else if( strncmp( command, "next", commandlen) == 0 )
+      {
+         *startindex = *startindex + *menulength;
+         if( *startindex > *listlength - *menulength )
+            *startindex = *listlength - *menulength;
+      }
+      else if( strncmp( command, "top", commandlen) == 0 )
+      {
+         *startindex = 0;
+      }
+      else if( strncmp( command, "end", commandlen) == 0 )
+      {
+         *startindex = *listlength - *menulength;
+      }
 
-   if( strncmp( command, "back", commandlen) == 0 )
-   {
-      *point_startindex = *point_startindex - *menulength;
-      if(*point_startindex < 0 )
-         *point_startindex = 0;
-   }
-   else if( strncmp( command, "next", commandlen) == 0 )
-   {
-      *point_startindex = *point_startindex + *menulength;
-      if( *point_startindex > nseeeds - *menulength )
-         *point_startindex = nseeeds - *menulength;
-   }
-   else if( strncmp( command, "top", commandlen) == 0 )
-   {
-      *point_startindex = 0;
-   }
-   else if( strncmp( command, "end", commandlen) == 0 )
-   {
-      *point_startindex = nseeeds - *menulength;
-   }
-   else if( strncmp( command, "quit", commandlen) == 0 )
-   {
-      *point_finished = TRUE;
-      SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE) );
-   }
-   else if( strncmp( command, "legend", commandlen) == 0 )
-   {
-      SCIP_CALL( SCIPdialogShowLegend(scip) );
-   }
-   else if( strncmp( command, "help", commandlen) == 0 )
-   {
-      SCIP_CALL( SCIPdialogShowHelp(scip) );
-   }
-   else if( strncmp( command, "number_entries", commandlen) == 0 )
-   {
-      SCIP_CALL( SCIPdialogSetNEntires(scip, dialoghdlr, dialog, menulength) );
-   }
-   else if( strncmp( command, "visualize", commandlen) == 0 )
-   {
-      SCIP_CALL(SCIPdialogSelectVisualize(scip, dialoghdlr, dialog ) );
-   }
-   else if( strncmp( command, "inspect", commandlen) == 0 )
-   {
-      SCIP_CALL( SCIPdialogSelectInspect( scip, dialoghdlr, dialog ) );
-   }
-   else if( strncmp( command, "calc_strong", commandlen) == 0 )
-   {
-      SCIP_CALL( SCIPdialogSelectCalcStrongDecompositionScore( scip, dialoghdlr, dialog ) );
-   }
-   else if( strncmp( command, "select", commandlen) == 0 )
-   {
-      SCIP_CALL(SCIPdialogExploreSelect(scip, dialoghdlr, dialog ) );
-   }
-   else if( strncmp( command, "modify", commandlen) == 0 )
-   {
-      SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog, *point_startindex, *menulength) );
-      SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
-   }
-   else if( strncmp( command, "create", commandlen) == 0 )
-   {
-      SCIP_CALL( SCIPdialogExecToolboxCreate(scip, dialoghdlr, dialog) );
-      SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
-   }
+      else if( strncmp( command, "quit", commandlen) == 0 )
+      {
+         *finished = TRUE;
+         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip) );
+      }
+
+      else if( strncmp( command, "legend", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogShowLegend(scip, *scoretype) );
+      }
+
+      else if( strncmp( command, "help", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogShowHelp(scip) );
+      }
+
+      else if( strncmp( command, "number_entries", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogSetNEntires(scip, dialoghdlr, dialog, menulength) );
+      }
+
+      else if( strncmp( command, "visualize", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogSelectVisualize(scip, dialoghdlr, dialog, idlist, listlength) );
+      }
+
+      else if( strncmp( command, "inspect", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogInspectSeeed( scip, dialoghdlr, dialog, idlist, listlength) );
+      }
+
+      else if( strncmp( command, "calc_strong", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogCalcStrongDecompositionScore(scip, dialoghdlr, dialog, idlist, listlength) );
+      }
+
+      else if( strncmp( command, "select", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogSelect(scip, dialoghdlr, dialog, idlist, listlength) );
+      }
+      else if( strncmp( command, "modify", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog, columns, startindex, *menulength, idlist, listlength) );
+         SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, startindex) );
+      }
+      else if( strncmp( command, "create", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogExecToolboxCreate(scip, dialoghdlr, dialog) );
+         SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, startindex) );
+      }
+
 
    return SCIP_OKAY;
 }
 
 extern "C" {
 
-SCIP_RETCODE SCIPdialogExecSelect(
+SCIP_RETCODE GCGdialogExecExplore(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
    SCIP_DIALOG*            dialog
    )
 {
-   SCIP_Bool finished = false;
-   char* command;
-   SCIP_Bool endoffile;
-   int nseeeds;
+   /* set navigation defaults */
    int startindex = 0;
    int menulength = DEFAULT_MENULENGTH;
 
-
-   SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
-   /* while user has not aborted: show current list extract */
-
-   while ( !finished )
+   /* check for available seeeds */
+   int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
+   if(nseeeds == 0)
    {
-      int commandlen;
+      SCIPdialogMessage( scip, NULL, "There are no decompositions to explore yet, please detect first.\n" );
+      return SCIP_OKAY;
+   }
 
-      SCIP_CALL( SCIPdialogShowListExtractHeader(scip) );
+   /* get initial seeed list */
+   SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, &startindex) );
+   int* idlist;
+   int listlength;
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &idlist, nseeeds) );
 
-      SCIP_CALL( SCIPdialogShowListExtract(scip, startindex, menulength) );
+   /* set initial columns */
+   std::vector<std::string> columns;
+   SCORETYPE scoretype = scoretype::MAX_WHITE;
+   char* scorename;
+   char columnstr[] = DEFAULT_COLUMNS;
+   char* tempcolumns = strtok(columnstr, " ");
+   while(tempcolumns != NULL)
+   {
+      /* get each column header of default */
+      char newchar[DEFAULT_COLUMN_MAX_WIDTH]; // cutting string at max column width if longer
+      strcpy(newchar, tempcolumns);
+
+      /* "score" is a wildcard for the current score */
+      if( strncmp(newchar, "score", strlen(newchar)) == 0 )
+      {
+         scoretype = SCIPconshdlrDecompGetScoretype(scip);
+         scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype);
+         char name[DEFAULT_COLUMN_MAX_WIDTH];
+         strcpy(name, scorename);
+         columns.push_back(name);
+      }
+      else
+      {
+         /* if the name is not score, just use the current char */
+         columns.push_back(newchar);
+      }
+      /* get the next item in the list */
+      tempcolumns = strtok (NULL, " ");
+   }
+   /*@todo hand this vector, scorename, scoretype down and use it to make menu columns generic */
+
+   /* while user has not aborted: show current list extract and catch commands */
+   SCIP_Bool finished = false;
+   char* command;
+   SCIP_Bool endoffile;
+   while( !finished )
+   {
+      SCIPdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist, &listlength);
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
          "Please enter command or decomposition id to select (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
 
-      SCIPdialogExecCommand(scip, dialoghdlr, dialog, command, endoffile, &startindex, &menulength, &finished);
+      SCIPdialogExecCommand(scip, dialoghdlr, dialog, columns, command, endoffile, &startindex, &menulength, &finished, &scoretype, &nseeeds, &idlist, &listlength);
       /*
       commandlen = strlen(command);
 
-      nseeeds = SCIPconshdlrDecompGetNSeeedLeafs(scip);
-      if( strncmp( command, "back", commandlen) == 0 )
+      if( strncmp( command, "previous", commandlen) == 0 )
       {
          startindex = startindex - menulength;
          if(startindex < 0 )
@@ -1958,8 +2081,8 @@ SCIP_RETCODE SCIPdialogExecSelect(
       if( strncmp( command, "next", commandlen) == 0 )
       {
          startindex = startindex + menulength;
-         if( startindex > nseeeds - menulength )
-            startindex = nseeeds - menulength;
+         if( startindex > listlength - menulength )
+            startindex = listlength - menulength;
          continue;
       }
       if( strncmp( command, "top", commandlen) == 0 )
@@ -1969,20 +2092,20 @@ SCIP_RETCODE SCIPdialogExecSelect(
       }
       if( strncmp( command, "end", commandlen) == 0 )
       {
-         startindex = nseeeds - menulength;
+         startindex = listlength - menulength;
          continue;
       }
 
       if( strncmp( command, "quit", commandlen) == 0 )
       {
          finished = TRUE;
-         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE) );
+         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip) );
          continue;
       }
 
       if( strncmp( command, "legend", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogShowLegend(scip) );
+         SCIP_CALL( SCIPdialogShowLegend(scip, scoretype) );
          continue;
       }
 
@@ -2000,42 +2123,43 @@ SCIP_RETCODE SCIPdialogExecSelect(
 
       if( strncmp( command, "visualize", commandlen) == 0 )
       {
-         SCIP_CALL(SCIPdialogSelectVisualize(scip, dialoghdlr, dialog ) );
+         SCIP_CALL( SCIPdialogSelectVisualize(scip, dialoghdlr, dialog, &idlist, &listlength) );
          continue;
       }
 
       if( strncmp( command, "inspect", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogSelectInspect( scip, dialoghdlr, dialog ) );
+         SCIP_CALL( SCIPdialogInspectSeeed( scip, dialoghdlr, dialog, &idlist, &listlength) );
          continue;
       }
 
       if( strncmp( command, "calc_strong", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogSelectCalcStrongDecompositionScore( scip, dialoghdlr, dialog ) );
+         SCIP_CALL( SCIPdialogCalcStrongDecompositionScore(scip, dialoghdlr, dialog, &idlist, &listlength) );
          continue;
       }
 
       if( strncmp( command, "select", commandlen) == 0 )
       {
-         SCIP_CALL(SCIPdialogExploreSelect(scip, dialoghdlr, dialog ) );
+         SCIP_CALL( SCIPdialogSelect(scip, dialoghdlr, dialog, &idlist, &listlength) );
          continue;
       }
       if( strncmp( command, "modify", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog, startindex, menulength) );
-         SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+         SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog, columns, &startindex, menulength, &idlist, &listlength) );
+         SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, &startindex) );
          continue;
       }
       if( strncmp( command, "create", commandlen) == 0 )
       {
          SCIP_CALL( SCIPdialogExecToolboxCreate(scip, dialoghdlr, dialog) );
-         SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+         SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, &startindex) );
          continue;
       }
       */
    }
 
+   SCIPfreeBlockMemoryArray(scip, &idlist, nseeeds);
    return SCIP_OKAY;
 }
 

@@ -234,9 +234,9 @@ struct SCIP_ConshdlrData
    SCIP_Bool             unpresolveduserseeedadded;               /**< stores whether or not an unpresolved user seeed was added */
 
    int                   seeedcounter;                            /**< counts the number of seeeds, used for seeed ids */
+   std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;      /**< vector containing the pairs of candidate list of decomps (to visualize, write, consider for family tree, consider for solving etc.) sorted according to  */
 
    /* data fields for selection/exploration management */
-   std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;      /**< vector containing the pairs of candidate list of decomps (to visualize, write, consider for family tree, consider for solving etc.) sorted according to  */
    int                    currscoretype;                          /**< indicates which score should be used for comparing (partial) decompositions
                                                                           0:max white,
                                                                           1: border area,
@@ -275,31 +275,32 @@ static
 SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(
      SCIP* scip,     /**< SCIP data structure */
      SeeedPtr  seeed /**< pointer to seeed */
-   ){
+   )
+{
 
-      SCIP_CONSHDLR* conshdlr;
-      SCIP_CONSHDLRDATA* conshdlrdata;
-      SCIP_Bool success;
-      conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_Bool success;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
-      if( conshdlr == NULL )
-      {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-         return SCIP_ERROR;
-      }
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
 
-      conshdlrdata = SCIPconshdlrGetData(conshdlr);
-      assert(conshdlrdata != NULL);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
 
-     assert( seeed->isComplete() );
-     assert( seeed->isFromUnpresolved() );
+   assert( seeed->isComplete() );
+   assert( seeed->isFromUnpresolved() );
 
-     conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
+   conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
 
-     if( !success )
-        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
+   if( !success )
+     SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
 
-      return SCIP_OKAY;
+   return SCIP_OKAY;
    }
 
 /** local method to handle store a complete seeed in the presolved seeedpool
@@ -505,6 +506,9 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromUnpresolved(
       conshdlrdata = SCIPconshdlrGetData(conshdlr);
       assert(conshdlrdata != NULL);
 
+      if(conshdlrdata->seeedpoolunpresolved == NULL)
+         return NULL;
+
       for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds(); ++i)
       {
          if(  conshdlrdata->seeedpoolunpresolved->getIncompleteSeeed( i )->getID() == seeedid )
@@ -678,15 +682,9 @@ std::vector<SeeedPtr> getSelectedSeeeds(
    return selectedseeeds;
 }
 
-/**
- * method to unselect all decompositions, called in consexit, and when the seeedlist is updated
- * (especially if new (partial) are added )
- *
- *@returns SCIP return code
- */
-static
+
 SCIP_RETCODE SCIPconshdlrdataDecompUnselectAll(
-   SCIP*          scip  /**< SCIP data structure */
+   SCIP*          scip
    )
 {
    std::vector<SeeedPtr> seeeds = getSeeeds(scip);
@@ -2337,8 +2335,7 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
  * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
-   SCIP* scip,             /* SCIP data structure */
-   SCIP_Bool updatelist    /* whether to update seeed list beforehand */
+   SCIP* scip             /* SCIP data structure */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -2356,7 +2353,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot manage decompositions!\n");
       return SCIP_ERROR;
    }
 
@@ -2369,8 +2366,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    conshdlrdata->candidates->clear();
 
-   if( updatelist )
-      SCIP_CALL(SCIPconshdlrDecompUpdateSeeedlist(scip) );
+   assert( SCIPconshdlrDecompCheckConsistency(scip) );
    
    std::vector<SeeedPtr> selectedlist = getSelectedSeeeds(scip);
    for( size_t selid = 0; selid < selectedlist.size(); ++selid )
@@ -2382,7 +2378,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL,  NULL, "currently no decomposition is selected, hence every known decomposition is considered: \n");
       selectedseeeds = getLeafSeeeds(scip);
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL,  NULL,  "number that is examined: %d \n", selectedseeeds.size() );
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL,  NULL,  "number of considered decompositions: %d \n", selectedseeeds.size() );
    }
 
    /* if there are selected decomps, check if some of them needs to be finished and do so */
@@ -2718,7 +2714,20 @@ int SCIPconshdlrDecompGetNextSeeedID(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return ++conshdlrdata->seeedcounter;
+   Seeed_Wrapper sw;
+   int testnextid;
+   bool found = false;
+   while(found == false)
+   {
+      testnextid = conshdlrdata->seeedcounter + 1;
+      GCGgetSeeedFromID(scip, &testnextid, &sw);
+      conshdlrdata->seeedcounter = testnextid;
+      if(sw.seeed == NULL)
+      {
+         found = true;
+      }
+   }
+   return conshdlrdata->seeedcounter;
 }
 
 
@@ -2780,7 +2789,6 @@ SCIP_RETCODE DECdetectStructure(
 
    *result = SCIP_DIDNOTRUN;
 
-
    if( SCIPgetNOrigVars(scip) == 0 && SCIPgetNOrigConss(scip) == 0 )
       return SCIP_OKAY;
 
@@ -2790,7 +2798,6 @@ SCIP_RETCODE DECdetectStructure(
 
    SCIP_CALL(SCIPresetClock(scip, conshdlrdata->completedetectionclock));
    SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
-
 
    /* check whether only legacy mode should be executed */
    SCIPgetBoolParam(scip, "detection/legacymode/onlylegacymode", &onlylegacymode);
@@ -2845,7 +2852,7 @@ SCIP_RETCODE DECdetectStructure(
          SCIPdebugMessage("classification for orig problem enabled: calc classifier and nblock candidates \n" );
          conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
          candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocksFull();
-         if( conshdlrdata->seeedpoolunpresolved != NULL && SCIPgetVerbLevel(scip) >= SCIP_VERBLEVEL_FULL )
+         if( SCIPgetVerbLevel(scip) >= SCIP_VERBLEVEL_FULL )
                   conshdlrdata->seeedpoolunpresolved->printBlockcandidateInformation(scip, NULL);
       }
       else
@@ -2982,7 +2989,7 @@ SCIP_RETCODE DECdetectStructure(
    /* show that we done our duty */
    conshdlrdata->hasrun = TRUE;
    *result = SCIP_SUCCESS;
-   SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
+   SCIPconshdlrDecompChooseCandidatesFromSelected(scip);
 
    return SCIP_OKAY;
 }
@@ -3438,7 +3445,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
 
    if( conshdlrdata->candidates->size() == 0 )
    {
-      SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
+      SCIPconshdlrDecompChooseCandidatesFromSelected(scip);
    }
 
 
@@ -3531,7 +3538,7 @@ DEC_DECOMP* DECgetBestDecomp(
 
    if( conshdlrdata->candidates->size() == 0 && conshdlrdata->useddecomp == NULL)
    {
-      SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
+      SCIPconshdlrDecompChooseCandidatesFromSelected(scip);
       if (conshdlrdata->candidates->size() == 0)
          return NULL;
    }
@@ -3587,7 +3594,7 @@ SCIP_RETCODE DECgetSeeedToWrite(
 
    if( conshdlrdata->candidates->size() == 0 )
    {
-      SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
+      SCIPconshdlrDecompChooseCandidatesFromSelected(scip);
    }
 
    if( conshdlrdata->candidates->size() == 0 )
@@ -4243,8 +4250,23 @@ SCIP_RETCODE SCIPconshdlrDecompRefineAndAddSeeed(
    SeeedPtr seeed = sw->seeed;
    assert( seeed != NULL );
 
-   Seeedpool* currseeedpool = seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved
-      : conshdlrdata->seeedpool;
+   /* get seeedpool (create only does something if seeedpool does not exist) */
+   Seeedpool* currseeedpool;
+   if(seeed->isFromUnpresolved())
+   {
+      SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+      currseeedpool = conshdlrdata->seeedpoolunpresolved;
+   }
+   else
+   {
+      SCIPconshdlrDecompCreateSeeedpool(scip);
+      currseeedpool = conshdlrdata->seeedpool;
+   }
+
+   if(seeed->getSeeedpool() == NULL)
+   {
+      seeed->setSeeedpool(currseeedpool);
+   }
 
    seeed->flushBooked();
 
@@ -4454,12 +4476,12 @@ SCIP_RETCODE GCGprintClassifierInformation(
 SCIP_RETCODE GCGprintDecompInformation(
    SCIP*                 scip,   /* SCIP data structure */
    FILE*                 file    /* output file or NULL for standard output */
-)
+   )
 {
    std::vector<gcg::Seeed*>::const_iterator seeediter;
    std::vector<gcg::Seeed*>::const_iterator seeediterend;
 
-   SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+   assert( SCIPconshdlrDecompCheckConsistency(scip) );
 
    std::vector<SeeedPtr> seeedlist = getLeafSeeeds(scip);
    seeediter = seeedlist.begin();
@@ -4511,42 +4533,6 @@ SCIP_RETCODE GCGprintDecompInformation(
 }
 
 
-SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
-   SCIP*          scip
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-      return SCIP_ERROR;
-   }
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   assert( SCIPconshdlrDecompCheckConsistency(scip) );
-
-   //@todo here was startidvisu = 0
-
-   SCIPconshdlrdataDecompUnselectAll(scip);
-
-   if( conshdlrdata->hasrun && conshdlrdata->seeedpool == NULL && conshdlrdata->seeedpoolunpresolved == NULL)
-      return SCIP_OKAY;
-
-   /* sort decomposition and finished seeeds according to max white score */
-   SCIP_CALL( DECconshdlrDecompSortDecompositionsByScore(scip) );
-
-   /*@todo here was listall update*/
-
-   return SCIP_OKAY;
-}
-
-
 SCORETYPE SCIPconshdlrDecompGetScoretype(
    SCIP*          scip  /* SCIP data structure */
    )
@@ -4561,7 +4547,94 @@ SCORETYPE SCIPconshdlrDecompGetScoretype(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return  static_cast<scoretype>(conshdlrdata->currscoretype);
+   return static_cast<scoretype>(conshdlrdata->currscoretype);
+}
+
+
+char* SCIPconshdlrDecompGetScoretypeShortName(
+   SCIP*       scip,
+   SCORETYPE   sctype
+   )
+{
+   char scoretypename[SCIP_MAXSTRLEN];
+   char* copy;
+
+   switch(sctype)
+   {
+   case scoretype::MAX_WHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maxwhi");
+      break;
+   case scoretype::CLASSIC:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classi");
+      break;
+   case scoretype::BORDER_AREA:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "border");
+      break;
+   case scoretype::MAX_FORESSEEING_WHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "forswh");
+      break;
+   case scoretype::MAX_FORESEEING_AGG_WHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "fawh");
+      break;
+   case scoretype::SETPART_FWHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh");
+      break;
+   case scoretype::SETPART_AGG_FWHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfawh");
+      break;
+   case scoretype::BENDERS:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "bender");
+      break;
+   default:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "");
+   }
+
+   SCIP_CALL_ABORT( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN) );
+   return copy;
+}
+
+
+char* SCIPconshdlrDecompGetScoretypeDescription(
+   SCIP*       scip,
+   SCORETYPE   sctype
+   )
+{
+   char scoretypename[SCIP_MAXSTRLEN];
+   char* copy;
+
+   switch(sctype)
+   {
+   case scoretype::MAX_WHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum white area score (i.e. maximize fraction of white area score; white area is nonblock and nonborder area, stairlinking variables count as linking)");
+      break;
+   case scoretype::CLASSIC:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classical score");
+      break;
+   case scoretype::BORDER_AREA:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score)");
+      break;
+   case scoretype::MAX_FORESSEEING_WHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)");
+      break;
+   case scoretype::MAX_FORESEEING_AGG_WHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score with aggregation information(i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)");
+      break;
+   case scoretype::SETPART_FWHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints)");
+      break;
+   case scoretype::SETPART_AGG_FWHITE:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints)");
+      break;
+   case scoretype::BENDERS:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "experimental score to evaluate benders decompositions");
+      break;
+   default:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "");
+      break;
+   }
+
+   SCIP_CALL_ABORT( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
+   return copy;
 }
 
 
