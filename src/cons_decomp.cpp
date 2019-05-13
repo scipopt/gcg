@@ -2852,7 +2852,7 @@ SCIP_RETCODE DECdetectStructure(
          SCIPdebugMessage("classification for orig problem enabled: calc classifier and nblock candidates \n" );
          conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
          candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocksFull();
-         if( conshdlrdata->seeedpoolunpresolved != NULL && SCIPgetVerbLevel(scip) >= SCIP_VERBLEVEL_FULL )
+         if( SCIPgetVerbLevel(scip) >= SCIP_VERBLEVEL_FULL )
                   conshdlrdata->seeedpoolunpresolved->printBlockcandidateInformation(scip, NULL);
       }
       else

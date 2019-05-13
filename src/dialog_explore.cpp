@@ -144,14 +144,32 @@ SCIP_RETCODE SCIPdialogUpdateSeeedlist(
    return SCIP_OKAY;
 }
 
-
-/** Shows seeed information in explore menu
- *
- * @returns SCIP status */
+/**
+ * Outputs the given char x times as SCIPdialogMessage
+ * @returns SCIP status
+ */
 static
-SCIP_RETCODE SCIPdialogShowListExtract(
+SCIP_RETCODE outputCharXTimes(
+   SCIP* scip,          /**< SCIP data structure */
+   const char letter,   /**< char to write */
+   int x                /**< write char x times */
+   )
+{
+   for(int i = 0; i < x; i++)
+      SCIPdialogMessage(scip, NULL, "%c", letter);
+}
+
+/** @brief show current menu containing seeed information
+ *
+ * Update length of seeed list in case it changed since the last command
+ * and show the table of seeeds. 
+ * @returns SCIP status
+ */
+static
+SCIP_RETCODE SCIPdialogShowMenu(
    SCIP* scip,                         /**< SCIP data structure */
    std::vector<std::string> columns,   /**< list of column headers (abbreviations) */
+   int* nseeeds,                       /**< max number of seeeds */
    const int startindex,               /**< index (in seeed list) of uppermost seeed in extract */
    int menulength,                     /**< number of menu entries */
    int** idlist,                       /**< current list of seeed ids */
@@ -160,6 +178,17 @@ SCIP_RETCODE SCIPdialogShowListExtract(
 {
    assert(scip != NULL);
 
+   /* update size of seeed list in case it changed */
+   if(*nseeeds < SCIPconshdlrDecompGetNSeeeds(scip))
+   {
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, idlist, *nseeeds, SCIPconshdlrDecompGetNSeeeds(scip)) );
+      *nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
+   }
+
+   /* update list of seeeds */
+   SCIPconshdlrDecompGetSeeedLeafList(scip, idlist, listlength);
+
+   /* count corresponding seeeds for overview statistics */
    int ndetectedpresolved;
    int ndetectedunpresolved;
    int nuserpresolvedfull;
@@ -174,25 +203,62 @@ SCIP_RETCODE SCIPdialogShowListExtract(
    nuserunpresolvedfull = 0;
    nuserunpresolvedpartial = 0;
 
-   /* count corresponding seeeds for overview statistics */
    for(int i = 0; i < *listlength; ++i)
    {
       Seeed_Wrapper sw;
       GCGgetSeeedFromID(scip, &(*idlist)[i], &sw);
       Seeed* seeed;
       seeed = sw.seeed;
-      if( seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::NOT && !seeed->isFromUnpresolved() )
-         ++ndetectedpresolved;
-      if( seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::NOT && seeed->isFromUnpresolved() )
-         ++ndetectedunpresolved;
-      if( seeed->isComplete() && ( seeed->getUsergiven() == USERGIVEN::COMPLETE || seeed->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER) && !seeed->isFromUnpresolved() )
-         ++nuserpresolvedfull;
-      if( !seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::PARTIAL && !seeed->isFromUnpresolved() )
-         ++nuserpresolvedpartial;
-      if( seeed->isComplete() && ( seeed->getUsergiven() == USERGIVEN::COMPLETE || seeed->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER) && seeed->isFromUnpresolved() )
-         ++nuserunpresolvedfull;
-      if( !seeed->isComplete() && seeed->getUsergiven() == USERGIVEN::PARTIAL && seeed->isFromUnpresolved() )
-         ++nuserunpresolvedpartial;
+      /* finished seeeds */
+      if(seeed->isComplete())
+      {
+         /* detected by program */
+         if(seeed->getUsergiven() == USERGIVEN::NOT)
+         {
+            /* from presolved problem */
+            if(!seeed->isFromUnpresolved())
+            {
+               ++ndetectedpresolved;
+            }
+            /* from original problem */
+            else
+            {
+               ++ndetectedunpresolved;
+            }
+         }
+         /* seeed was given by user (finished) */
+         else if(seeed->getUsergiven() == USERGIVEN::COMPLETE || seeed->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER)
+         {
+            /* from presolved problem */
+            if(!seeed->isFromUnpresolved())
+            {
+               ++nuserpresolvedfull;
+            }
+            /* from unpresolved problem */
+            else
+            {
+               ++nuserunpresolvedfull;
+            }
+         }
+      }
+      /* seeed is not finished (partial) */
+      else
+      {
+         /* statistics is only interested in partial seeeds if they were given by the user */
+         if(seeed->getUsergiven() == USERGIVEN::PARTIAL)
+         {
+            /* from presolved problem */
+            if(!seeed->isFromUnpresolved() )
+            {
+               ++nuserpresolvedpartial;
+            }
+            /* from unpresolved problem */
+            else
+            {
+               ++nuserunpresolvedpartial;
+            }
+         }
+      }
    }
 
    /* count width of menu table by summing width of column headers,
@@ -214,7 +280,6 @@ SCIP_RETCODE SCIPdialogShowListExtract(
       /* make sure the header name is unique and add a length for header */
       assert(columnlength.find(header) == columnlength.end());
       columnlength.insert(std::pair<std::string,int>(header, 0));
-
       /* if header is smaller than min column width, add spaces to header first */
       if(header.size() < DEFAULT_COLUMN_MIN_WIDTH)
       {
@@ -225,25 +290,21 @@ SCIP_RETCODE SCIPdialogShowListExtract(
             columnlength.at(header)++;
          }
       }
-
       /* add header to headerline and add #chars of header as '-' to borderline*/
       headerline += header;
       for(int i = 0; i < (int) header.size(); i++)
          borderline += "-";
       columnlength.at(header) += (int) header.size();
-
       /* add space to both lines as column border */
       headerline += " ";
       borderline += " ";
-
       /* add columnlength (+1 for border space) to overall linelength */
       linelength += columnlength.at(header) + 1;
    }
 
    /* display overview statistics */
    SCIPdialogMessage(scip, NULL, "\n");
-   for(int i = 0; i < linelength; i++)
-      SCIPdialogMessage(scip, NULL, "=");
+   outputCharXTimes(scip, '=', linelength);
    SCIPdialogMessage(scip, NULL, " \n");
    SCIPdialogMessage(scip, NULL, "Summary              presolved       original \n");
    SCIPdialogMessage(scip, NULL, "                     ---------       -------- \n");
@@ -256,23 +317,21 @@ SCIP_RETCODE SCIPdialogShowListExtract(
    SCIPdialogMessage(scip, NULL, "user given (full)    ");
    SCIPdialogMessage(scip, NULL, "%9d       ", nuserpresolvedfull );
    SCIPdialogMessage(scip, NULL, "%8d\n", nuserunpresolvedfull );
-   for(int i = 0; i < linelength; i++)
-         SCIPdialogMessage(scip, NULL, "=");
+   outputCharXTimes(scip, '=', linelength);
    SCIPdialogMessage(scip, NULL, " \n");
    /* display header of table */
    SCIPdialogMessage(scip, NULL, "%s\n", headerline.c_str());
    SCIPdialogMessage(scip, NULL, "%s\n", borderline.c_str());
 
-
    /*@todo make this part generic */
-   for( int i = startindex; i < startindex + menulength && i < *listlength; ++i)
+   /* go through all seeeds that should currently be displayed,
+    * so from startindex on menulength many entries if there are that much left in the id list */
+   for(int i = startindex; i < startindex + menulength && i < *listlength; ++i)
    {
       Seeed_Wrapper sw;
       Seeed* seeed;
       SCIP_CALL( GCGgetSeeedFromID(scip, &(*idlist)[i], &sw) );
       seeed = sw.seeed;
-
-      assert( seeed->checkConsistency( ) );
 
       SCIPdialogMessage(scip, NULL, " %4d   ", i );
       SCIPdialogMessage(scip, NULL, "%4d  ", seeed->getID() );
@@ -1319,38 +1378,6 @@ SCIP_RETCODE SCIPdialogToolboxPostprocessSeeed(
    )
 {
    return SCIPdialogToolboxActOnSeeed(scip, dialoghdlr, dialog, seeed, toolboxtype::POSTPROCESS);
-}
-
-
-/** @brief show current menu
- *
- * Update length of seeed list in case it changed since the last command
- * and show the table of seeeds. */
-static
-SCIP_RETCODE SCIPdialogShowMenu(
-   SCIP* scip,                         /**< SCIP data structure */
-   std::vector<std::string> columns,   /**< list of column headers (abbreviations) */
-   int* nseeeds,                       /**< max number of seeeds */
-   int startindex,                     /**< index in seeed list to start list extract at */
-   int menulength,                     /**< number of menu entries */
-   int** idlist,                       /**< current list of seeed ids */
-   int* listlength                     /**< length of idlist */
-   )
-{
-   /* update size of seeed list in case it changed */
-   if(*nseeeds < SCIPconshdlrDecompGetNSeeeds(scip))
-   {
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, idlist, *nseeeds, SCIPconshdlrDecompGetNSeeeds(scip)) );
-      *nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
-   }
-
-   /* update list of seeeds */
-   SCIPconshdlrDecompGetSeeedLeafList(scip, idlist, listlength);
-
-   /* show table */
-   SCIP_CALL( SCIPdialogShowListExtract(scip, columns, startindex, menulength, idlist, listlength) );
-
-   return SCIP_OKAY;
 }
 
 
