@@ -1828,6 +1828,90 @@ SCIP_RETCODE SCIPdialogExploreSelect(
    return SCIP_OKAY;
 }
 
+static
+SCIP_RETCODE SCIPdialogExecCommand(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog,
+   char*                   command,
+   SCIP_Bool               endoffile,
+   int*                    point_startindex,
+   int*                    menulength,
+   SCIP_Bool*              point_finished
+   )
+{
+   int nseeeds;
+
+   int commandlen = strlen(command);
+
+   nseeeds = SCIPconshdlrDecompGetNSeeedLeafs(scip);
+
+   if( strncmp( command, "back", commandlen) == 0 )
+   {
+      *point_startindex = *point_startindex - *menulength;
+      if(*point_startindex < 0 )
+         *point_startindex = 0;
+   }
+   else if( strncmp( command, "next", commandlen) == 0 )
+   {
+      *point_startindex = *point_startindex + *menulength;
+      if( *point_startindex > nseeeds - *menulength )
+         *point_startindex = nseeeds - *menulength;
+   }
+   else if( strncmp( command, "top", commandlen) == 0 )
+   {
+      *point_startindex = 0;
+   }
+   else if( strncmp( command, "end", commandlen) == 0 )
+   {
+      *point_startindex = nseeeds - *menulength;
+   }
+   else if( strncmp( command, "quit", commandlen) == 0 )
+   {
+      *point_finished = TRUE;
+      SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE) );
+   }
+   else if( strncmp( command, "legend", commandlen) == 0 )
+   {
+      SCIP_CALL( SCIPdialogShowLegend(scip) );
+   }
+   else if( strncmp( command, "help", commandlen) == 0 )
+   {
+      SCIP_CALL( SCIPdialogShowHelp(scip) );
+   }
+   else if( strncmp( command, "number_entries", commandlen) == 0 )
+   {
+      SCIP_CALL( SCIPdialogSetNEntires(scip, dialoghdlr, dialog, menulength) );
+   }
+   else if( strncmp( command, "visualize", commandlen) == 0 )
+   {
+      SCIP_CALL(SCIPdialogSelectVisualize(scip, dialoghdlr, dialog ) );
+   }
+   else if( strncmp( command, "inspect", commandlen) == 0 )
+   {
+      SCIP_CALL( SCIPdialogSelectInspect( scip, dialoghdlr, dialog ) );
+   }
+   else if( strncmp( command, "calc_strong", commandlen) == 0 )
+   {
+      SCIP_CALL( SCIPdialogSelectCalcStrongDecompositionScore( scip, dialoghdlr, dialog ) );
+   }
+   else if( strncmp( command, "select", commandlen) == 0 )
+   {
+      SCIP_CALL(SCIPdialogExploreSelect(scip, dialoghdlr, dialog ) );
+   }
+   else if( strncmp( command, "modify", commandlen) == 0 )
+   {
+      SCIP_CALL( SCIPdialogExecToolboxModify(scip, dialoghdlr, dialog, *point_startindex, *menulength) );
+      SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+   }
+   else if( strncmp( command, "create", commandlen) == 0 )
+   {
+      SCIP_CALL( SCIPdialogExecToolboxCreate(scip, dialoghdlr, dialog) );
+      SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+   }
+
+   return SCIP_OKAY;
+}
 
 extern "C" {
 
@@ -1844,6 +1928,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
    int startindex = 0;
    int menulength = DEFAULT_MENULENGTH;
 
+
    SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
    /* while user has not aborted: show current list extract */
 
@@ -1858,6 +1943,8 @@ SCIP_RETCODE SCIPdialogExecSelect(
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
          "Please enter command or decomposition id to select (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
 
+      SCIPdialogExecCommand(scip, dialoghdlr, dialog, command, endoffile, &startindex, &menulength, &finished);
+      /*
       commandlen = strlen(command);
 
       nseeeds = SCIPconshdlrDecompGetNSeeedLeafs(scip);
@@ -1946,6 +2033,7 @@ SCIP_RETCODE SCIPdialogExecSelect(
          SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
          continue;
       }
+      */
    }
 
    return SCIP_OKAY;
