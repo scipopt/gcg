@@ -1,1 +1,1 @@
-# The visualization suite {#visu}
+# The Visualization Suite {#visu}
