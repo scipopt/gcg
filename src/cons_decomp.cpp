@@ -2114,7 +2114,7 @@ int SCIPconshdlrDecompGetBlockNumberCandidate(
 }
 
 /*
- * @brief returns the total detection time
+ * @brief returns the total detection time, including classification, score computation, etc.
  * @param scip SCIP data structure
  * @returns total detection time
  */
@@ -2124,6 +2124,7 @@ SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_Real totaltime;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -2136,7 +2137,26 @@ SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return SCIPgetClockTime(scip,  conshdlrdata->completedetectionclock );
+   totaltime = SCIPgetClockTime(scip,  conshdlrdata->completedetectionclock );
+
+   if( conshdlrdata->seeedpoolunpresolved != NULL )
+   {
+      totaltime += conshdlrdata->seeedpoolunpresolved->classificationtime;
+      totaltime += conshdlrdata->seeedpoolunpresolved->nblockscandidatescalctime;
+      totaltime += conshdlrdata->seeedpoolunpresolved->postprocessingtime;
+      totaltime += conshdlrdata->seeedpoolunpresolved->scorecalculatingtime;
+      totaltime += conshdlrdata->seeedpoolunpresolved->translatingtime;
+   }
+   if( conshdlrdata->seeedpool != NULL )
+   {
+      totaltime += conshdlrdata->seeedpool->classificationtime;
+      totaltime += conshdlrdata->seeedpool->nblockscandidatescalctime;
+      totaltime += conshdlrdata->seeedpool->postprocessingtime;
+      totaltime += conshdlrdata->seeedpool->scorecalculatingtime;
+      totaltime += conshdlrdata->seeedpool->translatingtime;
+   }
+   
+   return totaltime;
 }
 
 
@@ -2815,7 +2835,7 @@ SCIP_RETCODE DECdetectStructure(
       SCIPgetBoolParam(scip, "detection/origprob/classificationenabled", &classifyOrig);
 
       /* get data of the seeedpool with original vars and conss */
-      SCIPdebugMessage("is seeedpoolunpresolved not initilized yet but needed ? %s -> %s create it \n", (conshdlrdata->seeedpoolunpresolved == NULL ? "yes" : "no"), (conshdlrdata->seeedpoolunpresolved == NULL ? "" : "Do not")  );
+      SCIPdebugMessage("is seeedpoolunpresolved not initialized yet but needed ? %s -> %s create it \n", (conshdlrdata->seeedpoolunpresolved == NULL ? "yes" : "no"), (conshdlrdata->seeedpoolunpresolved == NULL ? "" : "Do not")  );
 
       /* scip is not presolved yet => only detect for original problem */
       if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
@@ -2967,6 +2987,10 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock) );
    SCIPconshdlrDecompAddLegacymodeDecompositions( scip, result );
    SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock) );
+
+   /* display timing statistics */
+   SCIPmessagePrintVerbInfo(scip->messagehdlr, scip->set->disp_verblevel, SCIP_VERBLEVEL_HIGH,
+      "Detection Time: %.2f\n", SCIPconshdlrDecompGetCompleteDetectionTime(scip));
 
    if( *result == SCIP_DIDNOTRUN )
    {
