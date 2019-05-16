@@ -28,6 +28,7 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #include <string>
 #include <iostream>
@@ -64,6 +65,27 @@
 
 namespace gcg
 {
+
+/**  
+ * All information concerning a seeed that can be displayed in menu
+ * Used for easier sorting of seeed lines by arbitrary entry
+ * 
+ * @note The only entry not included is "nr" as this depends on the order in the menu
+ */
+typedef struct{
+	int id;              /**< (internal) id of seeed */
+   int nblocks;         /**< number of blocks */
+   int nmasterconss;    /**< number of master constraints */
+   int nlinkingconss;   /**< number of linking constraints */
+   int nmastervars;     /**< number of master variables */
+   int nstairlinkvars;  /**< number of stairlinking variables */
+   float score;         /**< current score */
+   char* history;       /**< detector history (often refered to as detectorchainstring) */
+   bool presolved;      /**< whether the seeed is from presolved problem */
+   int nopenconss;      /**< number of open constraints */
+   int nopenvars;       /**< number of open variables */
+   bool selected;       /**< whether the seeed is currently selected */
+} Seeedinfo;
 
 
 /** modifies menulength according to input and updates menu accordingly
@@ -138,6 +160,115 @@ SCIP_RETCODE SCIPdialogUpdateSeeedlist(
    return SCIP_OKAY;
 }
 
+
+/**
+ * Builds a Seeedinfo structure for every Seeed
+ * @returns vector with all Seeedinfos
+ */
+static
+std::vector<Seeedinfo> getSeedinfos(
+   SCIP* scip,          /**< SCIP data structure */
+   int* idlist,         /**< current list of seeed ids */
+   int  listlength,     /**< length of idlist */
+   SCORETYPE scoretype  /**< score to be used */
+   )
+{
+   std::vector<Seeedinfo> infolist;
+   /* go through list of seeeds and create a Seeedinfo for each */
+   for(int i = 0; i < listlength; i++)
+   {
+      /* get seeed */
+      Seeed_Wrapper sw;
+      GCGgetSeeedFromID(scip, &(idlist[i]), &sw);
+      Seeed* seeed;
+      seeed = sw.seeed;
+
+      /* create and fill fresh Seeedinfo */
+      Seeedinfo info;
+
+      info.id = seeed->getID();
+      info.nblocks = seeed->getNBlocks();
+      info.nmasterconss = seeed->getNMasterconss();
+      info.nlinkingconss = seeed->getNLinkingvars();
+      info.nmastervars = seeed->getNMastervars();
+      info.nstairlinkvars = seeed->getNTotalStairlinkingvars();
+      info.score = seeed->getScore(scoretype);
+      info.history = seeed->getDetectorChainString();
+      info.presolved = !seeed->isFromUnpresolved();
+      info.nopenconss = seeed->getNOpenconss();
+      info.nopenvars = seeed->getNOpenvars();
+      info.selected = seeed->isSelected();
+
+      /* add filled Seeedinfo to vector */
+      infolist.push_back(info);
+   }
+
+   return infolist;
+}
+
+
+/**
+ * @briefUpdates a Seeedinfo structure for every Seeed
+ * 
+ * For all existing infos, the score is updated,
+ * if there is a seeed in the idlist for which no info exists it is added
+ * @returns vector with all Seeedinfos
+ */
+static
+std::vector<Seeedinfo> updateSeedinfos(
+   SCIP* scip,                      /**< SCIP data structure */
+   int* idlist,                     /**< current list of seeed ids */
+   int  listlength,                 /**< length of idlist */
+   std::vector<Seeedinfo> infolist, /**< Seeedinfo list to update */
+   SCORETYPE scoretype              /**< score to be used */
+   )
+{
+   /* go through list of seeeds and check if there is a Seeedinfo for each one */
+   for(int i = 0; i < listlength; i++)
+   {
+      /* get seeed */
+      Seeed_Wrapper sw;
+      GCGgetSeeedFromID(scip, &(idlist[i]), &sw);
+      Seeed* seeed;
+      seeed = sw.seeed;
+
+      bool found = false;
+      for(auto curinfo : infolist)
+      {
+         if(curinfo.id == seeed->getID())
+         {
+            found = true;
+            curinfo.score = seeed->getScore(scoretype);
+         }
+      }
+
+      if(!found)
+      {
+         /* create and fill fresh Seeedinfo */
+         Seeedinfo info;
+
+         info.id = seeed->getID();
+         info.nblocks = seeed->getNBlocks();
+         info.nmasterconss = seeed->getNMasterconss();
+         info.nlinkingconss = seeed->getNLinkingvars();
+         info.nmastervars = seeed->getNMastervars();
+         info.nstairlinkvars = seeed->getNTotalStairlinkingvars();
+         info.score = seeed->getScore(scoretype);
+         info.history = seeed->getDetectorChainString();
+         info.presolved = !seeed->isFromUnpresolved();
+         info.nopenconss = seeed->getNOpenconss();
+         info.nopenvars = seeed->getNOpenvars();
+         info.selected = seeed->isSelected();
+
+         /* add filled Seeedinfo to vector */
+         infolist.push_back(info);
+      }
+   }
+
+   return infolist;
+}
+
+
 /**
  * Outputs the given char x times as SCIPdialogMessage
  * @returns SCIP status
@@ -169,7 +300,9 @@ SCIP_RETCODE SCIPdialogShowMenu(
    const int startindex,               /**< index (in seeed list) of uppermost seeed in extract */
    int menulength,                     /**< number of menu entries */
    int** idlist,                       /**< current list of seeed ids */
-   int*  listlength                    /**< length of idlist */
+   int*  listlength,                   /**< length of idlist */
+   std::vector<Seeedinfo> seeedinfos,  /**< infos of all seeeds that can be displayed */
+   SCORETYPE scoretype                 /**< score that is currently used */
    )
 {
    assert(scip != NULL);
@@ -181,8 +314,9 @@ SCIP_RETCODE SCIPdialogShowMenu(
       *nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
    }
 
-   /* update list of seeeds */
+   /* update list of seeeds and their infos */
    SCIPconshdlrDecompGetSeeedLeafList(scip, idlist, listlength);
+   seeedinfos = updateSeedinfos(scip, *idlist, *listlength, seeedinfos, scoretype);
 
    /* count corresponding seeeds for overview statistics */
    int ndetectedpresolved = 0;
@@ -224,15 +358,23 @@ SCIP_RETCODE SCIPdialogShowMenu(
    headerline = " ";
    borderline = " ";
 
+   /* add each column header */
    for(auto header : columns)
    {
+      /* "score" is a wildcard for the current score, relace it with actual scoretype */
+      std::string newheader;
+      if(header != "score")
+         newheader = header;
+      else
+         newheader = SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype);
+      
       /* make sure the header name is unique and add a length for header */
       assert(columnlength.find(header) == columnlength.end());
       columnlength.insert(std::pair<std::string,int>(header, 0));
       /* if header is smaller than min column width, add spaces to header first */
-      if(header.size() < DEFAULT_COLUMN_MIN_WIDTH)
+      if(newheader.size() < DEFAULT_COLUMN_MIN_WIDTH)
       {
-         for(int i = 0; i < (DEFAULT_COLUMN_MIN_WIDTH - (int) header.size()); i++)
+         for(int i = 0; i < (DEFAULT_COLUMN_MIN_WIDTH - (int) newheader.size()); i++)
          {
             headerline += " ";
             borderline += "-";
@@ -240,10 +382,10 @@ SCIP_RETCODE SCIPdialogShowMenu(
          }
       }
       /* add header to headerline and add #chars of header as '-' to borderline*/
-      headerline += header;
-      for(int i = 0; i < (int) header.size(); i++)
+      headerline += newheader;
+      for(int i = 0; i < (int) newheader.size(); i++)
          borderline += "-";
-      columnlength.at(header) += (int) header.size();
+      columnlength.at(header) += (int) newheader.size();
       /* add space to both lines as column border */
       headerline += " ";
       borderline += " ";
@@ -266,35 +408,56 @@ SCIP_RETCODE SCIPdialogShowMenu(
    SCIPdialogMessage(scip, NULL, "%s\n", headerline.c_str());
    SCIPdialogMessage(scip, NULL, "%s\n", borderline.c_str());
 
-   /*@todo make this part generic */
    /* go through all seeeds that should currently be displayed,
-    * so from startindex on menulength many entries if there are that much left in the id list */
-   for(int i = startindex; i < startindex + menulength && i < *listlength; ++i)
+    * so from startindex on menulength many entries if there are that much left in the list */
+   for(int i = startindex; i < startindex + menulength && i < (int) seeedinfos.size(); ++i)
    {
-      Seeed_Wrapper sw;
-      Seeed* seeed;
-      SCIP_CALL( GCGgetSeeedFromID(scip, &(*idlist)[i], &sw) );
-      seeed = sw.seeed;
+      /* each line starts with a space */
+      SCIPdialogMessage(scip, NULL, " ");
 
-      SCIPdialogMessage(scip, NULL, " %4d   ", i );
-      SCIPdialogMessage(scip, NULL, "%4d  ", seeed->getID() );
-      SCIPdialogMessage(scip, NULL, "%5d  ", seeed->getNBlocks() );
-      SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNMasterconss() );
-      SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNLinkingvars() );
-      SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNMastervars() );
-      SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNTotalStairlinkingvars() );
-      if( seeed->isComplete() )
-         SCIPdialogMessage(scip, NULL, "%.4f  ",  seeed->getScore(SCIPconshdlrDecompGetScoretype(scip)) );
-      else
-         SCIPdialogMessage(scip, NULL, "<=%.2f  ", seeed->getScore(SCIPconshdlrDecompGetScoretype(scip)) );
-      SCIPdialogMessage(scip, NULL, "%7s  ", seeed->getDetectorChainString() );
-      SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->isFromUnpresolved() ? "no" : "yes")  );
-      SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNOpenconss() );
-      SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNOpenvars() );
-      SCIPdialogMessage(scip, NULL, "%3s  \n", (seeed->isSelected() ? "yes" : "no")  );
+      /* go through the columns and write the entry for each one */
+      for(auto header : columns)
+      {
+         std::string towrite;
+         if(header == "nr")
+            towrite = std::to_string(i);
+         else if(header == "id")
+            towrite = std::to_string(seeedinfos.at(i).id);
+         else if(header == "nbloc")
+            towrite = std::to_string(seeedinfos.at(i).nblocks);
+         else if(header == "nmacon")
+            towrite = std::to_string(seeedinfos.at(i).nmasterconss);
+         else if(header == "nmavar")
+            towrite = std::to_string(seeedinfos.at(i).nmastervars);
+         else if(header == "nlivar")
+            towrite = std::to_string(seeedinfos.at(i).nstairlinkvars);
+         else if(header == "score")
+            towrite = std::to_string(seeedinfos.at(i).score);
+         else if(header == "history")
+            towrite = seeedinfos.at(i).history;
+         else if(header == "pre")
+            towrite = (seeedinfos.at(i).presolved == true) ? "yes" : "no";
+         else if(header == "nopcon")
+            towrite = std::to_string(seeedinfos.at(i).nopenconss);
+         else if(header == "nopvar")
+            towrite = std::to_string(seeedinfos.at(i).nopenvars);
+         else if(header == "sel")
+            towrite = (seeedinfos.at(i).selected == true) ? "yes" : "no";
+         else 
+            towrite = " ";
+
+         /* write spaces to fill out the columnwidth until towrite (-1 for border space) */
+         outputCharXTimes(scip, ' ', (columnlength.at(header) - (int) towrite.size() - 1));
+         /* write actual value of the column +1 space for border */
+         SCIPdialogMessage(scip, NULL, "%s ", towrite.c_str());
+      }
+
+      /* continue to next line */
+      SCIPdialogMessage(scip, NULL, "\n");
    }
 
-   SCIPdialogMessage(scip, NULL, "=================================================================================================== \n");
+   /* at the end of the table add a line */
+   outputCharXTimes(scip, '=', linelength);
 
    return SCIP_OKAY;
 }
@@ -730,8 +893,7 @@ SCIP_RETCODE GCGdialogExecExplore(
 
    /* set initial columns */
    std::vector<std::string> columns;
-   SCORETYPE scoretype = scoretype::MAX_WHITE;
-   char* scorename;
+   SCORETYPE scoretype = SCIPconshdlrDecompGetScoretype(scip);
    char columnstr[] = DEFAULT_COLUMNS;
    char* tempcolumns = strtok(columnstr, " ");
    while(tempcolumns != NULL)
@@ -739,25 +901,16 @@ SCIP_RETCODE GCGdialogExecExplore(
       /* get each column header of default */
       char newchar[DEFAULT_COLUMN_MAX_WIDTH]; // cutting string at max column width if longer
       strcpy(newchar, tempcolumns);
-
-      /* "score" is a wildcard for the current score */
-      if( strncmp(newchar, "score", strlen(newchar)) == 0 )
-      {
-         scoretype = SCIPconshdlrDecompGetScoretype(scip);
-         scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype);
-         char name[DEFAULT_COLUMN_MAX_WIDTH];
-         strcpy(name, scorename);
-         columns.push_back(name);
-      }
-      else
-      {
-         /* if the name is not score, just use the current char */
-         columns.push_back(newchar);
-      }
+      columns.push_back(newchar);
+      /**@note: score is a widcard! replace by score name later*/
+      
       /* get the next item in the list */
       tempcolumns = strtok (NULL, " ");
    }
-   /*@todo hand this vector, scorename, scoretype down and use it to make menu columns generic */
+
+   /* get initial list of all seeed infos to be displayed 
+    * (redundant with infos accessible by idlist, is stored seperately for time efficiency) */
+   std::vector<Seeedinfo> seeedinfos = getSeedinfos(scip, idlist, listlength, scoretype);
 
    /* while user has not aborted: show current list extract and catch commands */
    SCIP_Bool finished = false;
@@ -765,7 +918,7 @@ SCIP_RETCODE GCGdialogExecExplore(
    SCIP_Bool endoffile;
    while( !finished )
    {
-      SCIPdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist, &listlength);
+      SCIPdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist, &listlength, seeedinfos, scoretype);
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
          "Please enter command or decomposition id to select (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
@@ -773,6 +926,7 @@ SCIP_RETCODE GCGdialogExecExplore(
       SCIPdialogExecCommand(scip, dialoghdlr, dialog, columns, command, endoffile, &startindex, &menulength, &finished, &scoretype, &nseeeds, &idlist, &listlength);
    }
 
+   /* free idlist */
    SCIPfreeBlockMemoryArray(scip, &idlist, nseeeds);
    return SCIP_OKAY;
 }
