@@ -935,7 +935,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
       if( SCIPconshdlrDecompUnpresolvedSeeedExists(scip) )
       {
-         SCIPinfoMessage(scip, NULL,"there is an unpresolved decomposition and problem is not presolved yet -> disable presolving and start optimizing (rerun with presolve command before detect command for detecting in presolved problem  )  \n");
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "there is an unpresolved decomposition and problem is not presolved yet -> disable presolving and start optimizing (rerun with presolve command before detect command for detecting in presolved problem  )  \n");
          SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
          SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
       }
@@ -950,12 +950,12 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          if( SCIPconshdlrDecompUnpresolvedSeeedExists(scip) )
          {
             SCIP_Bool success;
-            SCIPinfoMessage(scip, NULL,"there is an unpresolved decomposition -> try to translate it to presolved problem...  \n");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "there is an unpresolved decomposition -> try to translate it to presolved problem...  \n");
             SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
 
             if( !success )
             {
-               SCIPinfoMessage(scip, NULL,"translatation was not successful -> revoke presolving and use user given decomposition   \n");
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "translatation was not successful -> revoke presolving and use user given decomposition   \n");
                /* @TODO experimental */
                SCIPconshdlrDecompNotifyNonFinalFreeTransform(scip);
                SCIPfreeTransform(scip);
@@ -967,7 +967,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
                assert(success);
             }
             else
-               SCIPinfoMessage(scip, NULL,"translation was successful \n");
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "translation was successful \n");
          }
       }
 
@@ -1002,7 +1002,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          SCIPgetIntParam(scip, "presolving/maxrounds", &npresolvingrounds);
          if( npresolvingrounds > 0)
          {
-            SCIPinfoMessage(scip, NULL,"best candidate decomposition is from unpresolved problem -> revoke presolving and use it \n");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "best candidate decomposition is from unpresolved problem -> revoke presolving and use it \n");
             SCIPconshdlrDecompNotifyNonFinalFreeTransform(scip);
             SCIPfreeTransform(scip);
             SCIPconshdlrDecompNotifyFinishedNonFinalFreeTransform(scip);

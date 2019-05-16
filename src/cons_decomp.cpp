@@ -298,7 +298,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(
    conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
 
    if( !success )
-     SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
+     SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Decomposition to add is already known to gcg!\n");
 
    return SCIP_OKAY;
    }
@@ -333,7 +333,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForPresolved(
      conshdlrdata->seeedpool->addSeeedToFinished(seeed, &success);
 
      if( !success )
-        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
+        SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Decomposition to add is already known to gcg!\n");
 
       return SCIP_OKAY;
 }
@@ -368,7 +368,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForUnpresolved(
      conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete(seeed, &success);
 
      if( !success )
-        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
+        SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Decomposition to add is already known to gcg!\n");
 
      return SCIP_OKAY;
   }
@@ -403,7 +403,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForPresolved(
      conshdlrdata->seeedpool->addSeeedToIncomplete(seeed, &success);
 
      if( !success )
-        SCIPinfoMessage(scip, NULL, "Decomposition to add is already known to gcg!\n");
+        SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Decomposition to add is already known to gcg!\n");
 
      return SCIP_OKAY;
 }
@@ -2921,12 +2921,12 @@ SCIP_RETCODE DECdetectStructure(
          SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
          if( conshdlrdata->seeedpool == NULL )
          {
-            SCIPdebugMessagePrint(scip, "start creating seeedpool for current problem \n");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "start creating seeedpool for current problem \n");
             conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
-            SCIPdebugMessagePrint(scip, "created seeedpool for current problem, n detectors: %d \n", conshdlrdata->ndetectors);
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "created seeedpool for current problem, n detectors: %d \n", conshdlrdata->ndetectors);
          }
          else
-            SCIPdebugMessagePrint(scip, "seeedpool is not NULL \n");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "seeedpool is not NULL \n");
 
          conshdlrdata->seeedpool->calcClassifierAndNBlockCandidates(scip);
 
@@ -2989,8 +2989,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock) );
 
    /* display timing statistics */
-   SCIPmessagePrintVerbInfo(scip->messagehdlr, scip->set->disp_verblevel, SCIP_VERBLEVEL_HIGH,
-      "Detection Time: %.2f\n", SCIPconshdlrDecompGetCompleteDetectionTime(scip));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Detection Time: %.2f\n", SCIPconshdlrDecompGetCompleteDetectionTime(scip));
 
    if( *result == SCIP_DIDNOTRUN )
    {
@@ -3494,7 +3493,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteMatrix(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIPinfoMessage(scip, NULL, "start creating seeedpool \n");
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "start creating seeedpool \n");
    if( !originalmatrix )
    {
       if (conshdlrdata->seeedpool == NULL )
@@ -3508,7 +3507,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteMatrix(
       seeedpool = conshdlrdata->seeedpoolunpresolved;
    }
 
-   SCIPinfoMessage(scip, NULL, "finished creating seeedpool \n");
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "finished creating seeedpool \n");
    SCIP_CALL( seeedpool->writeMatrix(filename, workfolder ) );
 
    return SCIP_OKAY;
@@ -3926,7 +3925,7 @@ SCIP_RETCODE setDetectionDefault(
          SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
          if( paramval == TRUE )
          {
-            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
             written = TRUE;
          }
 
@@ -3935,7 +3934,7 @@ SCIP_RETCODE setDetectionDefault(
          SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
          if( paramval == TRUE )
          {
-            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
             written = TRUE;
          }
 
@@ -3944,12 +3943,12 @@ SCIP_RETCODE setDetectionDefault(
          SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
          if( paramval == TRUE )
          {
-            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
             written = TRUE;
          }
 
          if( written )
-            SCIPinfoMessage(scip, NULL, "\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
 
       }
    }
@@ -4006,7 +4005,7 @@ SCIP_RETCODE setDetectionAggressive(
             SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
             if( paramval == TRUE )
             {
-               SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
                written = TRUE;
             }
 
@@ -4015,7 +4014,7 @@ SCIP_RETCODE setDetectionAggressive(
             SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
             if( paramval == TRUE )
             {
-               SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
                written = TRUE;
             }
 
@@ -4024,12 +4023,12 @@ SCIP_RETCODE setDetectionAggressive(
             SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
             if( paramval == TRUE )
             {
-               SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
                written = TRUE;
             }
 
             if( written )
-               SCIPinfoMessage(scip, NULL, "\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
 
          }
       }
@@ -4059,7 +4058,7 @@ SCIP_RETCODE setDetectionOff(
       SCIP_CALL( SCIPsetBoolParam(scip, paramname, FALSE) );
       if( !quiet )
       {
-         SCIPinfoMessage(scip, NULL, "%s = FALSE\n", paramname);
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "%s = FALSE\n", paramname);
       }
    }
 
@@ -4072,7 +4071,7 @@ SCIP_RETCODE setDetectionOff(
       SCIP_CALL(SCIPsetBoolParam(scip, paramname, FALSE));
       if( !quiet )
       {
-         SCIPinfoMessage(scip, NULL, "%s = FALSE\n", paramname);
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "%s = FALSE\n", paramname);
       }
    }
 
@@ -4084,7 +4083,7 @@ SCIP_RETCODE setDetectionOff(
       SCIP_CALL(SCIPsetBoolParam(scip, paramname, FALSE));
       if( !quiet )
       {
-         SCIPinfoMessage(scip, NULL, "%s = FALSE\n", paramname);
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "%s = FALSE\n", paramname);
       }
    }
 
@@ -4144,7 +4143,7 @@ SCIP_RETCODE setDetectionFast(
          SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
          if( paramval == TRUE )
          {
-            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
             written = TRUE;
          }
 
@@ -4153,7 +4152,7 @@ SCIP_RETCODE setDetectionFast(
          SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
          if( paramval == TRUE )
          {
-            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
             written = TRUE;
          }
 
@@ -4162,12 +4161,12 @@ SCIP_RETCODE setDetectionFast(
          SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
          if( paramval == TRUE )
          {
-            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
             written = TRUE;
          }
 
          if( written )
-            SCIPinfoMessage(scip, NULL, "\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
       }
    }
 

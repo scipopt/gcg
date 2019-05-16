@@ -342,7 +342,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveVarclass)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnclasses", name);
 
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
-   SCIPinfoMessage(scip, NULL, "\n%s = %d\n", setstr, newval);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "\n%s = %d\n", setstr, newval);
 
 
    return SCIP_OKAY;
@@ -383,7 +383,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultVarclass)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnclasses", name);
 
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
-   SCIPinfoMessage(scip, NULL, "\n%s = %d\n", setstr, newval);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "\n%s = %d\n", setstr, newval);
 
    return SCIP_OKAY;
 
@@ -424,7 +424,7 @@ DEC_DECL_SETPARAMFAST(setParamFastVarclass)
    newval = MAX( 2, FAST_MAXIMUMNCLASSES - modifier );
 
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
-   SCIPinfoMessage(scip, NULL, "\n%s = %d\n", setstr, newval);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "\n%s = %d\n", setstr, newval);
 
    return SCIP_OKAY;
 
