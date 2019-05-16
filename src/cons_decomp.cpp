@@ -2993,7 +2993,7 @@ SCIP_RETCODE DECdetectStructure(
 
 
    /** @todo put this output to the statistics output */
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "this output is temporary and will be moved to the statistics output\n" ));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "this output is temporary and will be moved to the statistics output\n" );
 ;
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "detecttotal: %.2f\n", SCIPgetClockTime(scip, conshdlrdata->completedetectionclock ));
 ;
