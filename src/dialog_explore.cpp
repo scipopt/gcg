@@ -51,7 +51,7 @@
 #define DESC_NMAVAR  "number of master variables (do not occur in blocks)" /**< description of master vars number */
 #define DESC_NSTLVA  "number of stairlinking variables (disjoint from linking variables)" /**< description of stairlinking vars number */
 
-#define DESC_SCORE   " " //@todo put this back in the actual scores, they should know their description 
+#define DESC_SCORE   " " //@todo put this back in the actual scores, they should know their description
 
 #define DESC_HISTORY "list of detector chars worked on this decomposition" /**< description of detection history */
 #define DESC_PRE     "is this decomposition for the presolved problem" /**< description of presolved bool */
@@ -154,7 +154,7 @@ SCIP_RETCODE outputCharXTimes(
 /** @brief show current menu containing seeed information
  *
  * Update length of seeed list in case it changed since the last command
- * and show the table of seeeds. 
+ * and show the table of seeeds.
  * @returns SCIP status
  */
 static
@@ -629,7 +629,7 @@ SCIP_RETCODE SCIPdialogExecCommand(
    int*                    listlength
    )
 {
-   
+
 
    int commandlen = strlen(command);
 
@@ -654,7 +654,7 @@ SCIP_RETCODE SCIPdialogExecCommand(
          *startindex = *listlength - *menulength;
       }
 
-      else if( strncmp( command, "quit", commandlen) == 0 )
+      else if( strncmp( command, "quit", commandlen) == 0 || strncmp( command, "..", commandlen) == 0 )
       {
          *finished = TRUE;
          SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip) );
