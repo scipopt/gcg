@@ -2991,6 +2991,41 @@ SCIP_RETCODE DECdetectStructure(
    /* display timing statistics */
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Detection Time: %.2f\n", SCIPconshdlrDecompGetCompleteDetectionTime(scip));
 
+
+   /** @todo put this output to the statistics output */
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "this output is temporary and will be moved to the statistics output\n" ));
+;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "detecttotal: %.2f\n", SCIPgetClockTime(scip, conshdlrdata->completedetectionclock ));
+;
+   if( conshdlrdata->seeedpoolunpresolved != NULL )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "orig class: %.2f\n",
+                      conshdlrdata->seeedpoolunpresolved->classificationtime);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "orig nblocks: %.2f\n",      
+                      conshdlrdata->seeedpoolunpresolved->nblockscandidatescalctime);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "orig postp: %.2f\n",
+                      conshdlrdata->seeedpoolunpresolved->postprocessingtime);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "orig score: %.2f\n",
+                      conshdlrdata->seeedpoolunpresolved->scorecalculatingtime);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "orig trans: %.2f\n",
+                      conshdlrdata->seeedpoolunpresolved->translatingtime);
+   }
+   if( conshdlrdata->seeedpool != NULL )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "pres class: %.2f\n",
+                      conshdlrdata->seeedpool->classificationtime);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "pres nblocks: %.2f\n",
+                      conshdlrdata->seeedpool->nblockscandidatescalctime);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "pres postp: %.2f\n",
+                      conshdlrdata->seeedpool->postprocessingtime);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "pres score: %.2f\n",
+                      conshdlrdata->seeedpool->scorecalculatingtime);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "pres trans: %.2f\n",
+                      conshdlrdata->seeedpool->translatingtime);
+   }
+   
+
+
    if( *result == SCIP_DIDNOTRUN )
    {
       return SCIP_OKAY;
