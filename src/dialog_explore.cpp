@@ -51,7 +51,7 @@
 #define DESC_NMAVAR  "number of master variables (do not occur in blocks)" /**< description of master vars number */
 #define DESC_NSTLVA  "number of stairlinking variables (disjoint from linking variables)" /**< description of stairlinking vars number */
 
-#define DESC_SCORE   " " //@todo put this back in the actual scores, they should know their description 
+#define DESC_SCORE   " " //@todo put this back in the actual scores, they should know their description
 
 #define DESC_HISTORY "list of detector chars worked on this decomposition" /**< description of detection history */
 #define DESC_PRE     "is this decomposition for the presolved problem" /**< description of presolved bool */
@@ -73,6 +73,7 @@ SCIP_RETCODE SCIPdialogSetNEntires(
    SCIP* scip,                   /**< SCIP data structure */
    SCIP_DIALOGHDLR* dialoghdlr,  /**< dialog handler for user input management */
    SCIP_DIALOG* dialog,          /**< dialog for user input management */
+   int listlength,               /**< length of seeed id list */
    int* menulength               /**< current menu length to be modified */
    )
 {
@@ -103,7 +104,10 @@ SCIP_RETCODE SCIPdialogSetNEntires(
       return SCIP_OKAY;
    }
 
-   *menulength = newlength;
+   if( newlength < listlength )
+      *menulength = newlength;
+   else
+      *menulength = listlength;
 
    return SCIP_OKAY;
 }
@@ -154,7 +158,7 @@ SCIP_RETCODE outputCharXTimes(
 /** @brief show current menu containing seeed information
  *
  * Update length of seeed list in case it changed since the last command
- * and show the table of seeeds. 
+ * and show the table of seeeds.
  * @returns SCIP status
  */
 static
@@ -629,7 +633,7 @@ SCIP_RETCODE SCIPdialogExecCommand(
    int*                    listlength
    )
 {
-   
+
 
    int commandlen = strlen(command);
 
@@ -654,7 +658,7 @@ SCIP_RETCODE SCIPdialogExecCommand(
          *startindex = *listlength - *menulength;
       }
 
-      else if( strncmp( command, "quit", commandlen) == 0 )
+      else if( strncmp( command, "quit", commandlen) == 0 || strncmp( command, "..", commandlen) == 0 )
       {
          *finished = TRUE;
          SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip) );
@@ -672,7 +676,7 @@ SCIP_RETCODE SCIPdialogExecCommand(
 
       else if( strncmp( command, "number_entries", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogSetNEntires(scip, dialoghdlr, dialog, menulength) );
+         SCIP_CALL( SCIPdialogSetNEntires(scip, dialoghdlr, dialog, *listlength, menulength) );
       }
 
       else if( strncmp( command, "visualize", commandlen) == 0 )
