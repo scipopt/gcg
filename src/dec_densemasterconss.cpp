@@ -203,7 +203,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedDensemasterconss)
   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), foundseeeds.size() ) );
   seeedPropagationData->nNewSeeeds  = foundseeeds.size();
 
-  SCIPinfoMessage(scip, NULL, "dec_densemasterconss found %d new seeed \n", seeedPropagationData->nNewSeeeds  );
+  SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "dec_densemasterconss found %d new seeed \n", seeedPropagationData->nNewSeeeds  );
 
   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
   {
