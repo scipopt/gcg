@@ -73,6 +73,7 @@ SCIP_RETCODE SCIPdialogSetNEntires(
    SCIP* scip,                   /**< SCIP data structure */
    SCIP_DIALOGHDLR* dialoghdlr,  /**< dialog handler for user input management */
    SCIP_DIALOG* dialog,          /**< dialog for user input management */
+   int listlength,               /**< length of seeed id list */
    int* menulength               /**< current menu length to be modified */
    )
 {
@@ -103,7 +104,10 @@ SCIP_RETCODE SCIPdialogSetNEntires(
       return SCIP_OKAY;
    }
 
-   *menulength = newlength;
+   if( newlength < listlength )
+      *menulength = newlength;
+   else
+      *menulength = listlength;
 
    return SCIP_OKAY;
 }
@@ -672,7 +676,7 @@ SCIP_RETCODE SCIPdialogExecCommand(
 
       else if( strncmp( command, "number_entries", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogSetNEntires(scip, dialoghdlr, dialog, menulength) );
+         SCIP_CALL( SCIPdialogSetNEntires(scip, dialoghdlr, dialog, *listlength, menulength) );
       }
 
       else if( strncmp( command, "visualize", commandlen) == 0 )
