@@ -33,8 +33,8 @@
  * @author Michael Bastubbe
  * @author Hanna Franzen
  *
- * This constraint handler will run all registered structure detectors in
- * in an iterative scheme increasing priority until the first detector finds a suitable structure.
+ * This constraint handler will run all registered structure detectors in a loop. They will find partial decompositions in a loop iteration until the decompositions are full
+ * or the maximum number of detection rounds is reached.
  *
  */
 
@@ -2155,7 +2155,7 @@ SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
       totaltime += conshdlrdata->seeedpool->scorecalculatingtime;
       totaltime += conshdlrdata->seeedpool->translatingtime;
    }
-   
+
    return totaltime;
 }
 
@@ -2374,7 +2374,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    conshdlrdata->candidates->clear();
 
    assert( SCIPconshdlrDecompCheckConsistency(scip) );
-   
+
    std::vector<SeeedPtr> selectedlist = getSelectedSeeeds(scip);
    for( size_t selid = 0; selid < selectedlist.size(); ++selid )
    {
