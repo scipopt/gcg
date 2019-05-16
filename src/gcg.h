@@ -136,9 +136,9 @@ SCIP_Real GCGgetDegeneracy(
    );
 
 /** transforms given values of the given original variables into values of the given master variables
- *  @returns nothing */
+ * @returns the sum of the values of the corresponding master variables that are fixed */
 extern
-void GCGtransformOrigvalsToMastervals(
+SCIP_Real GCGtransformOrigvalsToMastervals(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            origvars,           /**< array with (subset of the) original variables */
    SCIP_Real*            origvals,           /**< array with values for the given original variables */

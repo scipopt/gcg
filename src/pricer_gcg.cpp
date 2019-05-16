@@ -3586,10 +3586,10 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->avgrootnodedegeneracy = 0.0;
    pricerdata->ndegeneracycalcs = 0;
 
-   SCIP_CALL( pricingcontroller->initSol() );
-
    /* sort solvers by priority */
    SCIPsortPtr((void**)pricerdata->solvers, GCGsolverComp, pricerdata->nsolvers);
+
+   SCIP_CALL( pricingcontroller->initSol() );
 
    SCIP_CALL( solversInitsol() );
 

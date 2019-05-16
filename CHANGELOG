@@ -5,7 +5,13 @@ New features:
 -------------
 - new detector neighborhoodmaster: calculating cons-cons adjacency (if not already done), sorting according size of neighborhood. Searching two consecutive constraints with largest size difference (according neighborhood size) in sorted constraints. All constraints having a larger neighborhood than the second one are assigned to the master.
 
+GCG Version 3.0.2
+=================
 
+Bug fixes
+---------
+
+- Fix segmentation fault due to missing relaxsol event handler in BENDERS and ORIGINAL mode.
 
 GCG Version 3.0.1
 =================
