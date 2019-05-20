@@ -166,7 +166,7 @@ SCIP_RETCODE SCIPdialogUpdateSeeedlist(
  * @returns vector with all Seeedinfos
  */
 static
-std::vector<Seeedinfo> getSeedinfos(
+std::vector<Seeedinfo> getSeeedinfos(
    SCIP* scip,          /**< SCIP data structure */
    int* idlist,         /**< current list of seeed ids */
    int  listlength,     /**< length of idlist */
@@ -878,7 +878,8 @@ SCIP_RETCODE GCGdialogExecExplore(
    int menulength = DEFAULT_MENULENGTH;
 
    /* check for available seeeds */
-   int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
+   int nseeeds;   /**< stores the last known number of seeeds, is handed down to check for changes in seeed number */
+   nseeeds = SCIPconshdlrDecompGetNSeeeds(scip)
    if(nseeeds == 0)
    {
       SCIPdialogMessage( scip, NULL, "There are no decompositions to explore yet, please detect first.\n" );
@@ -890,6 +891,7 @@ SCIP_RETCODE GCGdialogExecExplore(
    int* idlist;
    int listlength;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &idlist, nseeeds) );
+   SCIPconshdlrDecompGetSeeedLeafList(scip, &idlist, &listlength);
 
    /* set initial columns */
    std::vector<std::string> columns;
@@ -910,7 +912,7 @@ SCIP_RETCODE GCGdialogExecExplore(
 
    /* get initial list of all seeed infos to be displayed 
     * (redundant with infos accessible by idlist, is stored seperately for time efficiency) */
-   std::vector<Seeedinfo> seeedinfos = getSeedinfos(scip, idlist, listlength, scoretype);
+   std::vector<Seeedinfo> seeedinfos = getSeeedinfos(scip, idlist, listlength, scoretype);
 
    /* while user has not aborted: show current list extract and catch commands */
    SCIP_Bool finished = false;
