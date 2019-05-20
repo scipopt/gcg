@@ -486,14 +486,6 @@ int SCIPconshdlrDecompGetNextSeeedID(
    SCIP*   scip   /**< SCIP data structure **/
    );
 
-/**
- * Gets the current scoretype
- * @returns the current scoretype */
- extern
-SCORETYPE SCIPconshdlrDecompGetCurrScoretype(
-   SCIP* scip  /**< SCIP data structure **/
-   );
-
 
 /** interface method to detect the structure including presolving
  * @returns SCIP return code */
@@ -713,6 +705,16 @@ SCIP_RETCODE SCIPconshdlrDecompRefineAndAddSeeed(
 extern
 SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    SCIP* scip
+   );
+
+
+/**
+ * Sets the currently used scoretype
+ * @returns SCIP return code
+ */
+SCIP_RETCODE SCIPconshdlrDecompSetScoretype(
+   SCIP*  scip,
+   SCORETYPE sctype
    );
 
 

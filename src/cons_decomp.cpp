@@ -215,29 +215,20 @@ struct SCIP_ConshdlrData
    SCIP_Bool             onlylegacymode;                          /**< indicates whether detection should only consist of legacy mode detection, this is sufficient to enable it */
    SCIP_Bool             legacymodeenabled;                       /**< indicates whether the legacy detection mode (detection before v3.0) additionally*/
    SCIP_Bool             stairlinkingheur;                        /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
-
    int**                 candidatesNBlocks;                       /**< pointer to store candidates for number of blocks calculated by the seeedpool(s) */
    int*                  nCandidates;                             /**< number of candidates for number of blocks calculated by the seeedpool */
-
    int                   ncallscreatedecomp;                      /**< debugging method for counting the number of calls of created decompositions */
-
    gcg::Seeedpool*		 seeedpool;                               /**< seeedpool that manages the detection process for the presolved transformed problem */
    gcg::Seeedpool*       seeedpoolunpresolved;                    /**< seeedpool that manages the detection process of the unpresolved problem */
-
    SeeedPtr*             allrelevantfinishedseeeds;               /**< collection  of all relevant seeeds ( i.e. all seeeds w.r.t. copies ) */
    SeeedPtr*             incompleteseeeds;                        /**< collection of incomplete seeeds originating from incomplete decompositions given by the users */
    int                   nallrelevantseeeds;                      /**< number  of all relevant seeeds ( i.e. all seeeds w.r.t. copies ) */
    int                   nincompleteseeeds;                       /**< number  of incomplete seeeds originating from incomplete decompositions given by the users */
-
    SCIP_Bool             consnamesalreadyrepaired;                /**< stores whether or not    */
-
    SCIP_Bool             unpresolveduserseeedadded;               /**< stores whether or not an unpresolved user seeed was added */
-
    int                   seeedcounter;                            /**< counts the number of seeeds, used for seeed ids */
    std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;      /**< vector containing the pairs of candidate list of decomps (to visualize, write, consider for family tree, consider for solving etc.) sorted according to  */
-
-   /* data fields for selection/exploration management */
-   int                    currscoretype;                          /**< indicates which score should be used for comparing (partial) decompositions
+   int                   currscoretype;                           /**< indicates which score should be used for comparing (partial) decompositions
                                                                           0:max white,
                                                                           1: border area,
                                                                           2:classic,
@@ -246,11 +237,9 @@ struct SCIP_ConshdlrData
                                                                           5:max foreseeing white with aggregation info,
                                                                           6: ppc-max-white with aggregation info,
                                                                           7: experimental benders score */
-
-   SCIP_Bool               nonfinalfreetransform;                 /**< help bool to notify a nonfinal free transform (needed if presolving is revoked, e.g. if unpresolved decomposition is used, and transformation is not successful) */
    std::vector<int>*       userblocknrcandidates;                 /**< vector to store block number candidates that were given by user */
+   SCIP_Bool               nonfinalfreetransform;                 /**< help bool to notify a nonfinal free transform (needed if presolving is revoked, e.g. if unpresolved decomposition is used, and transformation is not successful) */
    SeeedPtr                seeedtowrite;                          /**< help pointer as interface for writing partial decompositions */
-
 };
 
 
@@ -3288,7 +3277,7 @@ DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
 
 /* @brief switch nonfinalfreetransform to TRUE
  *
- * used before calling SCIPfreeTransform(),, if called to revoke presolving (e.g. if unpresolved decomposition is used, and
+ * used before calling SCIPfreeTransform(), if called to revoke presolving (e.g. if unpresolved decomposition is used, and
  * transformation is not successful), this seems mandatory to decide during consExitDecomp if the original detection
  * information should be freed
  * @returns scip return code
@@ -3695,28 +3684,6 @@ void DECprintListOfDetectors(
       SCIPdialogMessage(scip, NULL,  " %7s", conshdlrdata->detectors[i]->enabled ? "TRUE" : "FALSE");
       SCIPdialogMessage(scip, NULL,  "  %s\n", conshdlrdata->detectors[i]->description);
    }
-}
-
-
-/*
- * Gets the current scoretype
- * @returns the current scoretype */
-scoretype SCIPconshdlrDecompGetCurrScoretype(
-   SCIP* scip  /* SCIP data structure */
-)
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   assert(scip != NULL);
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   return  static_cast<scoretype>(conshdlrdata->currscoretype);
-
 }
 
 
@@ -4578,8 +4545,29 @@ SCIP_RETCODE GCGprintDecompInformation(
 }
 
 
+SCIP_RETCODE SCIPconshdlrDecompSetScoretype(
+   SCIP*  scip,
+   SCORETYPE sctype
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   conshdlrdata->currscoretype = sctype;
+
+   return SCIP_OKAY;
+}
+
+
 SCORETYPE SCIPconshdlrDecompGetScoretype(
-   SCIP*          scip  /* SCIP data structure */
+   SCIP* scip
    )
 {
    SCIP_CONSHDLR* conshdlr;

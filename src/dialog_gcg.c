@@ -213,7 +213,6 @@ SCIP_RETCODE writeSelectedDecompositions(
 
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory: ", &tmp, &endoffile) );
 
-
    if( endoffile )
    {
       *nextdialog = NULL;

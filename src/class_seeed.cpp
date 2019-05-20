@@ -2465,7 +2465,7 @@ SCIP_RETCODE Seeed::completeByConnected(
 
     sort();
 
-    getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
+    getScore( SCIPconshdlrDecompGetScoretype(scip) ) ;
     calcHashvalue();
 
     return SCIP_OKAY;

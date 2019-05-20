@@ -44,23 +44,6 @@
 #define DEFAULT_COLUMN_MAX_WIDTH 10 /**< max width of a column (also determines max width of column header abbreviation) */
 #define DEFAULT_COLUMNS "nr id nbloc nmacon nlivar nmavar nstlva score history pre nopcon nopvar sel" /**< default column headers */
 
-#define DESC_NR      "number of the decomposition (use this number for choosing the decomposition)" /**< description of number */
-#define DESC_ID      "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)" /**< description of seeed id */
-#define DESC_NBLOC   "number of blocks" /**< description of block number */
-#define DESC_NMACON  "number of master constraints" /**< description of master conss number */
-#define DESC_NLIVAR  "number of linking variables" /**< description of linking vars number */
-#define DESC_NMAVAR  "number of master variables (do not occur in blocks)" /**< description of master vars number */
-#define DESC_NSTLVA  "number of stairlinking variables (disjoint from linking variables)" /**< description of stairlinking vars number */
-
-#define DESC_SCORE   " " //@todo put this back in the actual scores, they should know their description
-
-#define DESC_HISTORY "list of detector chars worked on this decomposition" /**< description of detection history */
-#define DESC_PRE     "is this decomposition for the presolved problem" /**< description of presolved bool */
-#define DESC_NOPCON  "number of open constraints" /**< description of open conss number */
-#define DESC_NOPVAR  "number of open variables" /**< description of open vars number */
-#define DESC_USR     "whether this decomposition was given by the user" /**< description of user given bool */
-#define DESC_SEL     "is this decomposition selected at the moment" /**< description of selected bool */
-
 #define DEFAULT_MENULENGTH 10 /**< initial number of entries in menu */
 
 namespace gcg

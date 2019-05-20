@@ -1706,10 +1706,10 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    SCIPdebugMessage("Started score calculating of finished decompositions\n");
    if( (int) finishedSeeeds.size() != 0 )
    {
-       SCIP_Real maxscore = finishedSeeeds[0]->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) );
+       SCIP_Real maxscore = finishedSeeeds[0]->getScore( SCIPconshdlrDecompGetScoretype( scip ) );
       for( size_t i = 1; i < finishedSeeeds.size(); ++ i )
       {
-          SCIP_Real score = finishedSeeeds[i]->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) );
+          SCIP_Real score = finishedSeeeds[i]->getScore( SCIPconshdlrDecompGetScoretype( scip ) );
          if( score > maxscore )
          {
             maxscore = score;
@@ -1826,28 +1826,28 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 /* sorts seeeds in finished seeeds data structure according to their score */
  void Seeedpool::sortFinishedForScore()
 {
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_WHITE )
+   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::MAX_WHITE )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
 
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::BORDER_AREA )
+   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::BORDER_AREA )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsBorderArea);
 
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::CLASSIC )
+   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::CLASSIC )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsClassic);
 
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_FORESSEEING_WHITE )
+   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::MAX_FORESSEEING_WHITE )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsFWhite);
 
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_FORESEEING_AGG_WHITE )
+   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::MAX_FORESEEING_AGG_WHITE )
          std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsAggFWhite);
 
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::SETPART_FWHITE )
+   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::SETPART_FWHITE )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsPPCfWhite);
 
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::SETPART_AGG_FWHITE )
+   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::SETPART_AGG_FWHITE )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsPPCaggFWhite);
 
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::BENDERS )
+   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::BENDERS )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsBenders);
 
 
@@ -2818,7 +2818,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->sort();
       newseeed->considerImplicits( );
       newseeed->deleteEmptyBlocks(benders);
-      newseeed->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
+      newseeed->getScore( SCIPconshdlrDecompGetScoretype( scip ) ) ;
 
       if( newseeed->checkConsistency(  ) )
          newseeeds.push_back( newseeed );
