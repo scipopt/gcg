@@ -59,7 +59,7 @@ typedef struct{
 	int id;              /**< (internal) id of seeed */
    int nblocks;         /**< number of blocks */
    int nmasterconss;    /**< number of master constraints */
-   int nlinkingconss;   /**< number of linking constraints */
+   int nlinkingvars;   /**< number of linking constraints */
    int nmastervars;     /**< number of master variables */
    int nstairlinkvars;  /**< number of stairlinking variables */
    float score;         /**< current score */
@@ -119,32 +119,6 @@ SCIP_RETCODE SCIPdialogSetNEntires(
 
 
 /**
- * @brief method to update the list of incomplete decompositions
- *
- * this list changes due to new decompositions, modified, decompositions or changes of the score
- * @returns SCIP return code
- */
-static
-SCIP_RETCODE SCIPdialogUpdateSeeedlist(
-   SCIP* scip,       /**< SCIP data structure */
-   int* startindex   /**< start index of menu */
-   )
-{
-   assert( SCIPconshdlrDecompCheckConsistency(scip) );
-
-   *startindex = 0;
-
-   SCIPconshdlrdataDecompUnselectAll(scip);
-
-   /* sort decomposition and finished seeeds according to max white score */
-   /*@todo remove this when manual sorting in menu is implemented */
-   /*SCIP_CALL( DECconshdlrDecompSortDecompositionsByScore(scip) ); */
-
-   return SCIP_OKAY;
-}
-
-
-/**
  * Builds a Seeedinfo structure for every Seeed
  * @returns vector with all Seeedinfos
  */
@@ -172,7 +146,7 @@ std::vector<Seeedinfo> getSeeedinfos(
       info.id = seeed->getID();
       info.nblocks = seeed->getNBlocks();
       info.nmasterconss = seeed->getNMasterconss();
-      info.nlinkingconss = seeed->getNLinkingvars();
+      info.nlinkingvars = seeed->getNLinkingvars();
       info.nmastervars = seeed->getNMastervars();
       info.nstairlinkvars = seeed->getNTotalStairlinkingvars();
       info.score = seeed->getScore(scoretype);
@@ -235,7 +209,7 @@ std::vector<Seeedinfo> updateSeedinfos(
          info.id = seeed->getID();
          info.nblocks = seeed->getNBlocks();
          info.nmasterconss = seeed->getNMasterconss();
-         info.nlinkingconss = seeed->getNLinkingvars();
+         info.nlinkingvars = seeed->getNLinkingvars();
          info.nmastervars = seeed->getNMastervars();
          info.nstairlinkvars = seeed->getNTotalStairlinkingvars();
          info.score = seeed->getScore(scoretype);
@@ -414,6 +388,8 @@ SCIP_RETCODE SCIPdialogShowMenu(
             towrite = std::to_string(seeedinfos.at(i).nmasterconss);
          else if(header == "nmavar")
             towrite = std::to_string(seeedinfos.at(i).nmastervars);
+         else if(header == "nlivar")
+            towrite = std::to_string(seeedinfos.at(i).nlinkingvars);
          else if(header == "nstlva")
             towrite = std::to_string(seeedinfos.at(i).nstairlinkvars);
          else if(header == "score")
@@ -453,21 +429,21 @@ SCIP_RETCODE SCIPdialogShowMenu(
  * @returns SCIP status */
 static
 SCIP_RETCODE SCIPdialogShowLegend(
-   SCIP* scip,             /**< SCIP data structure */
-   SCORETYPE scoretype     /**< current score type */
+   SCIP* scip,                         /**< SCIP data structure */
+   std::vector<std::string> columns,   /**< list of table header entries */
+   SCORETYPE scoretype                 /**< current score type */
    )
 {
    assert(scip != NULL);
    DEC_DETECTOR** detectors;
 
-   std::string scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype);
-   std::string scoredescr = SCIPconshdlrDecompGetScoretypeDescription(scip, scoretype);
-
+   /* print header for detector list */
    SCIPdialogMessage(scip, NULL, "List of included detectors for decompositions histories: \n");
 
    SCIPdialogMessage(scip, NULL, "\n%30s    %4s\n", "detector" , "char");
    SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "--------" , "----");
 
+   /* get and print char of each detector */
    detectors = SCIPconshdlrDecompGetDetectors(scip);
 
    for( int det = 0; det < SCIPconshdlrDecompGetNDetectors(scip); ++det )
@@ -477,6 +453,7 @@ SCIP_RETCODE SCIPdialogShowLegend(
 
       SCIPdialogMessage(scip, NULL, "%30s    %4c\n", DECdetectorGetName(detector), DECdetectorGetChar(detector));
    }
+   /* print usergiven as part of detector chars */
    SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "given by user" , "U");
    SCIPdialogMessage(scip, NULL, "\n" );
 
@@ -484,24 +461,58 @@ SCIP_RETCODE SCIPdialogShowLegend(
 
    SCIPdialogMessage(scip, NULL, "\n" );
 
+   /* print header of abbreviation table */
    SCIPdialogMessage(scip, NULL, "List of abbreviations of decomposition table \n" );
    SCIPdialogMessage(scip, NULL, "\n" );
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "abbreviation", "description");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "------------", "-----------");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nr", "number of the decomposition (use this number for choosing the decomposition)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "id", "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nbloc", "number of blocks");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmacon", "number of master constraints");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nlivar", "number of linking variables");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmavar", "number of master variables (do not occur in blocks)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nstlva", "number of stairlinking variables (disjoint from linking variables)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", scorename.c_str(), scoredescr.c_str());
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "history", "list of detector chars worked on this decomposition ");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "pre", "is this decomposition for the presolved problem");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopcon", "number of open constraints");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopvar", "number of open variables");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sel", "is this decomposition selected at the moment");
 
+   /* add legend entry for each header abbreviation */
+   for(auto header : columns)
+   {
+      /* get description for current header */
+      std::string desc;
+      if(header == "nr")
+         desc = "number of the decomposition (use this number for choosing the decomposition)";
+      else if(header == "id")
+         desc = "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)";
+      else if(header == "nbloc")
+         desc = "number of blocks";
+      else if(header == "nmacon")
+         desc = "number of master constraints";
+      else if(header == "nmavar")
+         desc = "number of master variables (do not occur in blocks)";
+      else if(header == "nlivar")
+         desc = "number of linking variables";
+      else if(header == "nstlva")
+         desc = "number of stairlinking variables";
+      else if(header == "score")
+         desc = SCIPconshdlrDecompGetScoretypeDescription(scip, scoretype);
+      else if(header == "history")
+         desc = "list of detector chars worked on this decomposition ";
+      else if(header == "pre")
+         desc = "is this decomposition for the presolved problem";
+      else if(header == "nopcon")
+         desc = "number of open constraints";
+      else if(header == "nopvar")
+         desc = "number of open variables";
+      else if(header == "sel")
+         desc = "is this decomposition selected at the moment";
+      else 
+         desc = " ";
+
+      /* print the header with the description */
+      if(header != "score")
+      {
+         SCIPdialogMessage(scip, NULL, "%30s     %s\n", header.c_str(), desc.c_str());
+      }
+      /* if the header is "score" replace with shortname of the current score */
+      else
+      {
+         SCIPdialogMessage(scip, NULL, "%30s     %s\n", SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype), desc.c_str());
+      }
+      
+   }
    SCIPdialogMessage(scip, NULL, "\n=================================================================================================== \n");
 
    return SCIP_OKAY;
@@ -814,7 +825,7 @@ SCIP_RETCODE SCIPdialogExecCommand(
 
       else if( strncmp( command, "legend", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogShowLegend(scip, *scoretype) );
+         SCIP_CALL( SCIPdialogShowLegend(scip, columns, *scoretype) );
       }
 
       else if( strncmp( command, "help", commandlen) == 0 )
@@ -871,8 +882,8 @@ SCIP_RETCODE GCGdialogExecExplore(
       return SCIP_OKAY;
    }
 
+   //@todo sort list
    /* get initial seeed list */
-   SCIP_CALL( SCIPdialogUpdateSeeedlist(scip, &startindex) );
    int* idlist;
    int listlength;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &idlist, nseeeds) );
