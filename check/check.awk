@@ -636,7 +636,7 @@ BEGIN {
       tablehead3 = hyphenstr;
 
       tablehead1 = tablehead1"+----+--- Original --+-- Presolved --+------------------- Decomposition -----------+---------------------------+------+------- Pricing -------+---- Master ----+-------+-------+";
-      tablehead2 = tablehead2"|Type| Conss |  Vars | Conss |  Vars | Det| Blks| Agg | MWhi | MConss| LVars| SVars|  Dual Bound | Primal Bound| Gap% | Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
+      tablehead2 = tablehead2"|Type| Conss |  Vars | Conss |  Vars | Det| Blks| Agg | MWhi | MConss| LVars| SVars|  Dual Bound | Primal Bound| Gap %%| Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
       tablehead3 = tablehead3"+----+-------+-------+-------+-------+----+-----+-----+------+-------+------+------+-------------+-------------+------+-------+-------+-------+-------+--------+-------+-------+";
 
       if( printsoltimes == 1 ) {

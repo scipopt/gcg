@@ -11,6 +11,14 @@ Code cleanup
 - Removed toolbox feature from 'explore' menu
 - Removed 'toolbox' command
 
+GCG Version 3.0.2
+=================
+
+Bug fixes
+---------
+
+- Fix segmentation fault due to missing relaxsol event handler in BENDERS and ORIGINAL mode.
+
 GCG Version 3.0.1
 =================
 
@@ -57,7 +65,6 @@ Bug fixes
 - Use correct method to free event handler data in event_relaxsol.
 - Fix parallelization in pricing loop by allowing only one job per pricing problem at a time
 - Add a missing Makefile dependency
-
 
 GCG Version 3.0.0
 =================

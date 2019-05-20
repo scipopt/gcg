@@ -717,7 +717,6 @@ SCIP_RETCODE SCIPconshdlrDecompSetScoretype(
    SCORETYPE sctype  /**< new scoretype */
    );
 
-
 /**
  * Gets the currently selected scoretype
  * @returns the currently selected scoretype
@@ -726,7 +725,6 @@ extern
 SCORETYPE SCIPconshdlrDecompGetScoretype(
    SCIP*          scip  /**< SCIP data structure */
    );
-
 
 /**
  * Gets the shortname of the given scoretype
@@ -739,7 +737,6 @@ char* SCIPconshdlrDecompGetScoretypeShortName(
    SCORETYPE   sctype   /**< scoretype */
    );
 
-
 /*!
  * returns the description of the given scoretype
  *
@@ -750,7 +747,6 @@ char*  SCIPconshdlrDecompGetScoretypeDescription(
    SCIP*       scip,    /**< SCIP data structure */
    SCORETYPE   sctype   /**< scoretype */
    );
-
 
 /** @brief Gets a list of ids of the current seeeds that are finished or to be finished
  *

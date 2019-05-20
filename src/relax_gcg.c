@@ -65,6 +65,7 @@
 #include "cons_decomp.h"
 #include "scip_misc.h"
 
+#include "params_visu.h"
 
 #include "gcg.h"
 
@@ -161,6 +162,9 @@ struct SCIP_RelaxData
 
    /* filename information */
    const char*           filename;
+
+   /* visualization parameter */
+   GCG_PARAMDATA*        paramsvisu;         /**< parameters for visualization */
 };
 
 
@@ -2670,7 +2674,6 @@ void initRelaxdata(
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
    relaxdata->rootnodetime = NULL;
-
 }
 
 /*
@@ -2685,6 +2688,12 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   /* free visualization parameters */
+   if( relaxdata->paramsvisu != NULL )
+   {
+      GCGVisuFreeParams(scip, relaxdata->paramsvisu);
+   }
 
    /* free master problem */
    if( relaxdata->masterprob != NULL )
@@ -2707,7 +2716,6 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
    SCIPfreeBlockMemoryArrayNull(scip, &relaxdata->filename, SCIP_MAXSTRLEN);
 
    SCIPfreeMemory(scip, &relaxdata);
-
    return SCIP_OKAY;
 }
 
@@ -3406,6 +3414,9 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->masterprob = NULL;
    relaxdata->altmasterprob = NULL;
    relaxdata->filename = NULL;
+   relaxdata->paramsvisu = NULL;
+   SCIPcreateParamsVisu(scip, &(relaxdata->paramsvisu));
+   assert(relaxdata->paramsvisu != NULL);
 
    initRelaxdata(relaxdata);
 
@@ -4124,6 +4135,30 @@ SCIP_CONS* GCGgetConvCons(
    assert(blocknr < relaxdata->npricingprobs);
 
    return relaxdata->convconss[blocknr];
+}
+
+/** returns the visualization parameters */
+GCG_PARAMDATA* GCGgetParamsVisu(
+   SCIP*                 scip               /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   GCG_PARAMDATA* paramdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+   assert(relaxdata->paramsvisu != NULL);
+
+   paramdata = relaxdata->paramsvisu;
+   assert(paramdata != NULL);
+
+   return paramdata;
 }
 
 /** returns the current solution for the original problem */
