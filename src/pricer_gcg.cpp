@@ -837,7 +837,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
 #ifdef PRINTDUALSOLS
                SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n",
-                     SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j]* pricetype->consGetDual(scip_, masterconss[i]));
+                     SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j] * pricetype->consGetDual(scip_, masterconss[i]));
 #endif
             }
          }
@@ -896,7 +896,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
 #ifdef PRINTDUALSOLS
                SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n",
-                                   SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j]* pricetype->consGetDual(scip_, masterconss[i]));
+                     SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j] * pricetype->rowGetDual(mastercuts[i]));
 #endif
             }
          }
