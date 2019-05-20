@@ -138,7 +138,7 @@ SCIP_RETCODE SCIPdialogUpdateSeeedlist(
 
    /* sort decomposition and finished seeeds according to max white score */
    /*@todo remove this when manual sorting in menu is implemented */
-   SCIP_CALL( DECconshdlrDecompSortDecompositionsByScore(scip) );
+   /*SCIP_CALL( DECconshdlrDecompSortDecompositionsByScore(scip) ); */
 
    return SCIP_OKAY;
 }

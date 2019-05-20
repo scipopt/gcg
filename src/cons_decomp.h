@@ -713,8 +713,8 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
  * @returns SCIP return code
  */
 SCIP_RETCODE SCIPconshdlrDecompSetScoretype(
-   SCIP*  scip,
-   SCORETYPE sctype
+   SCIP*  scip,      /**< SCIP data structure */
+   SCORETYPE sctype  /**< new scoretype */
    );
 
 

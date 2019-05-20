@@ -559,83 +559,6 @@ SCIP_RETCODE getDetectorCallRoundInfo(
 }
 
 
-/** returns TRUE if seeed i has a greater MaxWhiteScore than seeed j */
-SCIP_Bool cmpSeeedsMaxWhite(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getMaxWhiteScore() > j->getMaxWhiteScore() );
-}
-
-
-/** returns TRUE if seeed i has a greater border area score than seeed j */
-SCIP_Bool cmpSeeedsBorderArea(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( BORDER_AREA ) > j->getScore( BORDER_AREA ) );
-}
-
-
-/** returns TRUE if seeed i has a greater score than seeed j */
-SCIP_Bool cmpSeeedsClassic(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( CLASSIC )  > j->getScore( CLASSIC ) );
-}
-
-/** returns TRUE if seeed i has a greater score than seeed j */
-SCIP_Bool cmpSeeedsFWhite(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( MAX_FORESSEEING_WHITE )  > j->getScore( MAX_FORESSEEING_WHITE ) );
-}
-
-/** returns TRUE if seeed i has a greater score than seeed j */
-SCIP_Bool cmpSeeedsAggFWhite(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( MAX_FORESEEING_AGG_WHITE )  > j->getScore( MAX_FORESEEING_AGG_WHITE ) );
-}
-
-
-/** returns TRUE if seeed i has a greater score than seeed j */
-SCIP_Bool cmpSeeedsPPCfWhite(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( SETPART_FWHITE )  > j->getScore( SETPART_FWHITE ) );
-}
-
-/** returns TRUE if seeed i has a greater score than seeed j */
-SCIP_Bool cmpSeeedsPPCaggFWhite(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( SETPART_AGG_FWHITE )  > j->getScore( SETPART_AGG_FWHITE ) );
-}
-
-
-/** returns TRUE if seeed i has a greater score than seeed j */
-SCIP_Bool cmpSeeedsBenders(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( BENDERS )  > j->getScore( BENDERS ) );
-}
-
-
 /* method to thin out the vector of given seeeds */
 std::vector<SeeedPtr> thinout(
    std::vector<SeeedPtr> finishedseeeds,
@@ -1826,31 +1749,27 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 /* sorts seeeds in finished seeeds data structure according to their score */
  void Seeedpool::sortFinishedForScore()
 {
-   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::MAX_WHITE )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
-
-   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::BORDER_AREA )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsBorderArea);
-
-   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::CLASSIC )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsClassic);
-
-   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::MAX_FORESSEEING_WHITE )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsFWhite);
-
-   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::MAX_FORESEEING_AGG_WHITE )
-         std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsAggFWhite);
-
-   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::SETPART_FWHITE )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsPPCfWhite);
-
-   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::SETPART_AGG_FWHITE )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsPPCaggFWhite);
-
-   if( SCIPconshdlrDecompGetScoretype(scip) == scoretype::BENDERS )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsBenders);
-
-
+   /* get scoretype once, no need to call it twice for every comparison */
+   SCORETYPE sctype = SCIPconshdlrDecompGetScoretype(scip);
+   /* selection sort: find smallest element in (remaining) vector and exchange with current element */
+   for(int i = 0; i < (int) finishedSeeeds.size(); i++)
+   {
+      /* minindex stores the index of the smallest known score */
+      int minindex = i;
+      /* go through all remaining elements and check if there is one with a smaller score */
+      for(int j = i; j < (int) finishedSeeeds.size(); i++)
+      {
+         if( finishedSeeeds.at(minindex)->getScore(sctype) > finishedSeeeds.at(j)->getScore(sctype) )
+         {
+            minindex = j;
+         }
+      }
+      /* change places with smallest element */
+      if(minindex != i)
+      {
+         std::swap(finishedSeeeds[minindex], finishedSeeeds[i]);
+      }
+   }
 }
 
  /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
@@ -1929,7 +1848,9 @@ std::vector<SeeedPtr> Seeedpool::finishIncompleteSeeeds(
 }
 
 
-/** calls findSeeeds method and translates the resulting seeeds into decompositions */
+/** calls findSeeeds method and translates the resulting seeeds into decompositions
+ * @todo the functions does not translate the seeeds into decompositions as suggested
+ */
 void Seeedpool::findDecompositions()
 {
    std::vector<int> successDetectors;
@@ -1937,24 +1858,8 @@ void Seeedpool::findDecompositions()
    successDetectors = std::vector<int>( nDetectors, 0 );
 
    finishedSeeeds = findSeeeds();
-
-   /* sort the seeeds according to maximum white measure */
-   sortFinishedForScore();
-
 }
 
-
-/*SCIP_RETCODE DECdecompCheckConsistency(DEC_DECOMP* decomp)
-{
-   int c;
-   int b;
-   int v;
-
-   for( v = 0; v < SCIPgetNVars(scip); ++v )
-   {
-      assert(SCIPhashmapExists(DECdecompGetVartoblock(decomp), SCIPgetVars(scip)[v]));
-   }
-}*/
 
 /** returns seeed with the corresponding id or NULL if there is no finished seeed with that id */
 gcg::Seeed* Seeedpool::findFinishedSeeedByID(
@@ -1969,7 +1874,6 @@ gcg::Seeed* Seeedpool::findFinishedSeeedByID(
 
      return NULL;
   }
-
 
 
 /** adds a seeed to ancestor seeeds */

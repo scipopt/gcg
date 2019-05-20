@@ -5205,7 +5205,6 @@ SCIP_Real Seeed::getScore(
          return bendersscore;
       }
 
-
    return 0;
 }
 

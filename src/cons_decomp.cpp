@@ -2956,6 +2956,7 @@ SCIP_RETCODE DECdetectStructure(
      if( !detectonlyorig )
      {
         conshdlrdata->seeedpool->findDecompositions();
+        conshdlrdata->seeedpool->sortFinishedForScore();
         SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
      }
 
