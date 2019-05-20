@@ -232,6 +232,7 @@ std::vector<Seeedinfo> updateSeedinfos(
       Seeed* seeed;
       seeed = sw.seeed;
 
+      /* if the seeed is in the list, update score */
       bool found = false;
       for(auto curinfo : infolist)
       {
@@ -242,6 +243,7 @@ std::vector<Seeedinfo> updateSeedinfos(
          }
       }
 
+      /* if the seeed is not in the list yet, add it */
       if(!found)
       {
          /* create and fill fresh Seeedinfo */
@@ -429,10 +431,10 @@ SCIP_RETCODE SCIPdialogShowMenu(
             towrite = std::to_string(seeedinfos.at(i).nmasterconss);
          else if(header == "nmavar")
             towrite = std::to_string(seeedinfos.at(i).nmastervars);
-         else if(header == "nlivar")
+         else if(header == "nstlva")
             towrite = std::to_string(seeedinfos.at(i).nstairlinkvars);
          else if(header == "score")
-            towrite = std::to_string(seeedinfos.at(i).score);
+            towrite = std::to_string(seeedinfos.at(i).score).substr(0, columnlength.at(header));
          else if(header == "history")
             towrite = seeedinfos.at(i).history;
          else if(header == "pre")
@@ -446,8 +448,8 @@ SCIP_RETCODE SCIPdialogShowMenu(
          else 
             towrite = " ";
 
-         /* write spaces to fill out the columnwidth until towrite (-1 for border space) */
-         outputCharXTimes(scip, ' ', (columnlength.at(header) - (int) towrite.size() - 1));
+         /* write spaces to fill out the columnwidth until towrite */
+         outputCharXTimes(scip, ' ', (columnlength.at(header) - (int) towrite.size()));
          /* write actual value of the column +1 space for border */
          SCIPdialogMessage(scip, NULL, "%s ", towrite.c_str());
       }
@@ -879,7 +881,7 @@ SCIP_RETCODE GCGdialogExecExplore(
 
    /* check for available seeeds */
    int nseeeds;   /**< stores the last known number of seeeds, is handed down to check for changes in seeed number */
-   nseeeds = SCIPconshdlrDecompGetNSeeeds(scip)
+   nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
    if(nseeeds == 0)
    {
       SCIPdialogMessage( scip, NULL, "There are no decompositions to explore yet, please detect first.\n" );
