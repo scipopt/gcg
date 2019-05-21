@@ -36,7 +36,7 @@ libncurses-dev
 It should work to compile the depends (scip, soplex, bliss and googletest) with
 
     make [args] deps
-    
+
 ## Links to submodules
 Before compilation, you will be asked for some links. Paste the following paths:
  * lib/scip is `../lib/scip-git`
@@ -87,7 +87,16 @@ scripts, you'll need `STATISTICS=true` to be set **during compilation**. Importa
 
     -d                          Print lots of debugging information.
     --debug[=FLAGS]             Print various types of debugging information.
-    STATISTICS=true             Print additional statistics (esp. for pricing)
+    STATISTICS[=B]              Print additional statistics (esp. for pricing)
+
+## Limits and Modes (only for `make test`)
+
+    STATISTICS[=B]              Print additional statistics (beware: different to the one above,
+                                which is used during compilation), B in {true,false}.
+    NODE[=N]                    Limit of Nodes to be opened during branching.
+    OPT[=TYPE]                  Choose from {opt, dbg, prf}.
+    SETTINGS[=SET]              Choose settings for the testrun as defined in settings/SET.set.
+    MODE[=TYPE]                 Use different modes. 0 or none to prevent from using dec files.
 
 ## Compilation process (errors)
 

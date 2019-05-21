@@ -786,10 +786,14 @@ WARN_LOGFILE           =
 INPUT                  = . \
                          ./resources/ \
                          ./resources/users \
+                         ./resources/users/features \
+                         ./resources/users/use-cases \
+                         ./resources/users/misc \
                          ./resources/devs \
                          ./resources/devs/detectors \
                          ./resources/devs/examples \
                          ./resources/devs/howtos \
+                         ./resources/devs/misc \
                          ./resources/misc/
 
 # This tag can be used to specify the character encoding of the source files
