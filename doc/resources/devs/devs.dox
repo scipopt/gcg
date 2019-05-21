@@ -1,11 +1,25 @@
 /*! \page devs Developer's Guide
-The developer's guide offers explanations on how to add your own plug-ins to GCG
-and on how to test them.
+The <b>first part</b> of the developer's guide offers an extended Installation guide,
+for example containing a guide for a git-based installation.
 
 - \subpage dev-install
+
+The <b>second part</b> of this guide includes a comprehensive description of what's
+already implemented, so you get an idea of what could be reasonable to implement yourself.
+
 - \subpage detectors
+
+
+The <b>third part</b> then finally takes you by the hand to implement your own plug-ins for
+GCG. First, the howtos show you a rough outline of what's to be done, and then you can
+consider some example plug-ins to serve as your basis.
+
 - \subpage howtos
 - \subpage examples
+
+The <b>last part</b> contains the list of known bugs and the C documentation, for your reference.
+
+- \subpage known-bugs
 - <a href="http://gcg.or.rwth-aachen.de/doc/annotated.html">C API</a>
 
 */

@@ -12,4 +12,5 @@ explore menu (`..`) and optimize the problem.
 
 ## Visualize your decomposition
 With the `visualize` command, you can export a visualization of the selected
-decomposition.
+decomposition. Prior to that, you will have to install "gnuplot" by typing
+`sudo apt-get install gnuplot` into your console.

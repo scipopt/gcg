@@ -1,4 +1,4 @@
-# How to document {#doc}
+# document in this documentation {#doc}
 <!-- The very first line of the .md document should be the page title and {# name of the site}
      #sandbox is the name of this site. Needed when making a link to this site. -->
 
@@ -7,7 +7,7 @@
 Note that this page will be moved to somewhere in the Developer's Guide before
 publication of the new documentation.
 
-**Updates (9.3.2019):**
+**Updates:**
 - landingpage cleanup
   - sections that are unnecessary for most users removed or made less obvious
   - updated some stuff (e.g. removed "student assistant") and made some things
@@ -15,7 +15,7 @@ publication of the new documentation.
   - renaming to "User's Guide"/"Developer's Guide" with link to documentation
 - documentation cleanup/preparation
   - creation of the basic structures so that new subpages can be added easily
-  - script to index howto-pages automatically (also added to builddoc.sh)
+  - script to index howto- and detectors- pages automatically (also added to builddoc.sh)
 
 **Why's there a mix of .md and .dox files?**
 - markdown does not seem to support hierarchical functions of doxygen,
