@@ -5,6 +5,7 @@
 - \subpage addstructure
 - \subpage doc
 - \subpage dotesting
+- \subpage generatevisu
 - \subpage storestructure
 - \subpage writeprimal
 */

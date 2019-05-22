@@ -57,4 +57,4 @@ The latter file is also given as (incomplete) LaTeX code in the .tex file.<br>
 The previous chapter only covered the absolute basics of testing, mainly used
 for verification purposes. But heads up, the output files still have a purpose,
 even if you verified that your GCG works (and how fast it works). You can create
-various visualizations. They are explained under \ref visu.
+various visualizations. They are explained under \ref generatevisu.
