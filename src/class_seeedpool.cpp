@@ -1757,7 +1757,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
       /* minindex stores the index of the smallest known score */
       int minindex = i;
       /* go through all remaining elements and check if there is one with a smaller score */
-      for(int j = i; j < (int) finishedSeeeds.size(); i++)
+      for(int j = i; j < (int) finishedSeeeds.size(); j++)
       {
          if( finishedSeeeds.at(minindex)->getScore(sctype) > finishedSeeeds.at(j)->getScore(sctype) )
          {
