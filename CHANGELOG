@@ -5,6 +5,7 @@ Bug fixes
 ---------
 
 - Fix segmentation fault due to missing relaxsol event handler in BENDERS and ORIGINAL mode.
+- Fix cmake module FindBLISS to handle GMP dependency correctly.
 
 GCG Version 3.0.1
 =================
