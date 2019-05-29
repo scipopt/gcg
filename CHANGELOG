@@ -6,6 +6,10 @@ Bug fixes
 
 - Fix segmentation fault due to missing relaxsol event handler in BENDERS and ORIGINAL mode.
 - Fix cmake module FindBLISS to handle GMP dependency correctly.
+- Fix branching on directly transferred master variables in generic branching.
+- Fix in pricer_gcg when calculating stabilized dual objective value.
+- Fix a parameter bug concerning heuristic pricing.
+- Fix: sort pricing solvers before initialization of pricing controller.
 
 GCG Version 3.0.1
 =================
