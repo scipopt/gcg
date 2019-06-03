@@ -111,7 +111,6 @@ private:
    bool mastervarssorted;                                      /**< bool to store if the mastervars datastructure is sorted atm */
    bool masterconsssorted;                                     /**< bool to store if the masterconsssorted datastructure is sorted atm */
 
-
    std::vector<int> bookedAsMasterConss;                       /**< vector containing indices of constraints that are not
                                                                  *< assigned yet but booked as master conss */
    std::vector<std::pair<int, int>> bookedAsBlockConss;        /**< vector containing indices of constraints that are not
@@ -177,31 +176,21 @@ private:
 
    std::vector<int> listofancestorids;                /**< vector containing decomposition indices that are ancestors of this seeed */
 
-
    USERGIVEN usergiven;                               /**< is this seeed partially or completely given by user */
    bool isfromlegacymode;                             /**< true if this seeed stems from a detector operating in legacy mode */
    SCIP_Real score;                                   /**< classc score to evaluate the partial */
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
    SCIP_Real bendersscore;                            /**< score to evaluate the seeeds */
    SCIP_Real benderareascore;                         /**< 1 - fraction of white area in master constraints to complete area */
-
    SCIP_Real strongdecompositionscore;                /**< strong decomposition score  */
-
    SCIP_Real borderareascore;                         /**< 1 - fraction of border area to complete area */
-
-
    SCIP_Real maxwhitescoreagg;                        /**< score corresponding to the max white measure according to aggregated blocks */
-
    SCIP_Real blockareascore;                          /**< 1 - fraction of block area to complete area */
    SCIP_Real blockareascoreagg;                       /**< 1 - fraction of aggregated block area to complete area */
-
-
-   SCIP_Real maxforeseeingwhitescore;                /**< maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
-   SCIP_Real maxforeseeingwhitescoreagg;             /**< maximum foreseeing  white area score with respect to aggregatable blocks  (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
-
+   SCIP_Real maxforeseeingwhitescore;                 /**< maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
+   SCIP_Real maxforeseeingwhitescoreagg;              /**< maximum foreseeing  white area score with respect to aggregatable blocks  (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
    SCIP_Real setpartfwhitescore;                      /** setpartitioning maximum foreseeing  white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )*/
    SCIP_Real setpartfwhitescoreagg;                   /** setpartitioning maximum foreseeing  white area score with respect to aggregateable  (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )*/
-
 
    char* detectorchainstring;                         /**< string formed by the chars of the detectors involved for this seeed  */
 

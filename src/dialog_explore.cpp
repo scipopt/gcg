@@ -119,52 +119,6 @@ SCIP_RETCODE SCIPdialogSetNEntires(
 
 
 /**
- * Builds a Seeedinfo structure for every Seeed
- * @returns vector with all Seeedinfos
- */
-static
-std::vector<Seeedinfo> getSeeedinfos(
-   SCIP* scip,          /**< SCIP data structure */
-   int* idlist,         /**< current list of seeed ids */
-   int  listlength,     /**< length of idlist */
-   SCORETYPE scoretype  /**< score to be used */
-   )
-{
-   std::vector<Seeedinfo> infolist;
-   /* go through list of seeeds and create a Seeedinfo for each */
-   for(int i = 0; i < listlength; i++)
-   {
-      /* get seeed */
-      Seeed_Wrapper sw;
-      GCGgetSeeedFromID(scip, &(idlist[i]), &sw);
-      Seeed* seeed;
-      seeed = sw.seeed;
-
-      /* create and fill fresh Seeedinfo */
-      Seeedinfo info;
-
-      info.id = seeed->getID();
-      info.nblocks = seeed->getNBlocks();
-      info.nmasterconss = seeed->getNMasterconss();
-      info.nlinkingvars = seeed->getNLinkingvars();
-      info.nmastervars = seeed->getNMastervars();
-      info.nstairlinkvars = seeed->getNTotalStairlinkingvars();
-      info.score = seeed->getScore(scoretype);
-      info.history = seeed->getDetectorChainString();
-      info.presolved = !seeed->isFromUnpresolved();
-      info.nopenconss = seeed->getNOpenconss();
-      info.nopenvars = seeed->getNOpenvars();
-      info.selected = seeed->isSelected();
-
-      /* add filled Seeedinfo to vector */
-      infolist.push_back(info);
-   }
-
-   return infolist;
-}
-
-
-/**
  * @briefUpdates a Seeedinfo structure for every Seeed
  * 
  * For all existing infos, the score is updated,
@@ -172,12 +126,11 @@ std::vector<Seeedinfo> getSeeedinfos(
  * @returns vector with all Seeedinfos
  */
 static
-std::vector<Seeedinfo> updateSeedinfos(
+std::vector<Seeedinfo> updateSeeedinfos(
    SCIP* scip,                      /**< SCIP data structure */
    int* idlist,                     /**< current list of seeed ids */
    int  listlength,                 /**< length of idlist */
-   std::vector<Seeedinfo> infolist, /**< Seeedinfo list to update */
-   SCORETYPE scoretype              /**< score to be used */
+   std::vector<Seeedinfo> infolist  /**< Seeedinfo list to update */
    )
 {
    /* go through list of seeeds and check if there is a Seeedinfo for each one */
@@ -196,7 +149,7 @@ std::vector<Seeedinfo> updateSeedinfos(
          if(curinfo.id == seeed->getID())
          {
             found = true;
-            curinfo.score = seeed->getScore(scoretype);
+            curinfo.score = seeed->getScore(SCIPconshdlrDecompGetScoretype(scip));
          }
       }
 
@@ -212,7 +165,7 @@ std::vector<Seeedinfo> updateSeedinfos(
          info.nlinkingvars = seeed->getNLinkingvars();
          info.nmastervars = seeed->getNMastervars();
          info.nstairlinkvars = seeed->getNTotalStairlinkingvars();
-         info.score = seeed->getScore(scoretype);
+         info.score = seeed->getScore(SCIPconshdlrDecompGetScoretype(scip));
          info.history = seeed->getDetectorChainString();
          info.presolved = !seeed->isFromUnpresolved();
          info.nopenconss = seeed->getNOpenconss();
@@ -225,6 +178,89 @@ std::vector<Seeedinfo> updateSeedinfos(
    }
 
    return infolist;
+}
+
+
+/** sorts seeedinfos according to their current score in their seeedinfo
+ * 
+ * @note the seeedinfo list is not updated in this function
+ * @returns sorted Seeedinfo list
+ */
+static
+std::vector<Seeedinfo> sortSeeedinfoList(
+   SCIP* scip,                      /**< SCIP data structure */
+   std::vector<Seeedinfo> infolist, /**< Seeedinfo list to update */
+   bool descending                  /**< if true sort descending, else ascending */
+)
+{
+   /* selection sort: find "better" (smaller/greater) element in (remaining) vector and exchange with current element */
+   for(int i = 0; i < (int) infolist.size(); i++)
+   {
+      /* bestindex stores the index of the smallest/greatest known score */
+      int bestindex = i;
+      /* go through all remaining elements and check if there is one with a better score */
+      for(int j = i; j < (int) infolist.size(); j++)
+      {
+         if( (descending && infolist[bestindex].score < infolist[j].score) 
+            || (!descending && infolist[bestindex].score > infolist[j].score) )
+         {
+            bestindex = j;
+         }
+      }
+      /* change places with smallest element */
+      if(bestindex != i)
+      {
+         std::swap(infolist[bestindex], infolist[i]);
+      }
+   }
+
+   return infolist;
+}
+
+
+/** changes the used score internally and updates the seeedinfo structure accordingly
+ * 
+ * @returns SCIP return code
+ */
+static
+SCIP_RETCODE GCGdialogChangeScore(
+   SCIP* scip,                         /**< SCIP data structure */
+   SCIP_DIALOGHDLR* dialoghdlr,        /**< dialog handler for user input management */
+   SCIP_DIALOG* dialog,                /**< dialog for user input management */
+   int* idlist,                       /**< current list of seeed ids */
+   int listlength,                    /**< length of idlist */
+   std::vector<Seeedinfo> seeedinfos   /**< list of seeedinfos */
+   )
+{
+   char* getscore;
+   SCIP_Bool endoffile;
+   int commandlen;
+
+   SCIPdialogMessage(scip, NULL, "\nPlease specify the new score:\n");
+   SCIPdialogMessage(scip, NULL, "0: max white, \n1: border area, \n2: classic, \n3: max foreseeing white, \n4: ppc-max-white, \n");
+   SCIPdialogMessage(scip, NULL, "5: max foreseeing white with aggregation info, \n6: ppc-max-white with aggregation info, \n7: experimental benders score\n");
+   SCIPdialogMessage(scip, NULL, "8: strong decomposition score\n");
+   SCIPdialogMessage(scip, NULL, "Note: Sets the detection/scoretype parameter to the given score.\n");
+
+   /* get input */
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &getscore, &endoffile) );
+   commandlen = strlen(getscore);
+   if( commandlen != 0 )
+   {
+      /* convert to int (if value is invalid, this results in 0) */
+      int scorenr = atoi(getscore);
+
+      /* check if the value is in valid range */
+      if(scorenr >= 0 && scorenr <= 8)
+      {
+         /* set score */
+         SCIPsetIntParam(scip, "detection/scoretype", scorenr);
+         sortSeeedinfoList(scip, seeedinfos, true);
+         SCIPdialogMessage(scip, NULL, "Score set to %d.\n", scorenr);
+      }
+   }
+
+   return SCIP_OKAY;
 }
 
 
@@ -260,8 +296,7 @@ SCIP_RETCODE SCIPdialogShowMenu(
    int menulength,                     /**< number of menu entries */
    int** idlist,                       /**< current list of seeed ids */
    int*  listlength,                   /**< length of idlist */
-   std::vector<Seeedinfo> seeedinfos,  /**< infos of all seeeds that can be displayed */
-   SCORETYPE scoretype                 /**< score that is currently used */
+   std::vector<Seeedinfo> seeedinfos   /**< infos of all seeeds that can be displayed */
    )
 {
    assert(scip != NULL);
@@ -275,7 +310,7 @@ SCIP_RETCODE SCIPdialogShowMenu(
 
    /* update list of seeeds and their infos */
    SCIPconshdlrDecompGetSeeedLeafList(scip, idlist, listlength);
-   seeedinfos = updateSeedinfos(scip, *idlist, *listlength, seeedinfos, scoretype);
+   seeedinfos = updateSeeedinfos(scip, *idlist, *listlength, seeedinfos);
 
    /* count corresponding seeeds for overview statistics */
    int ndetectedpresolved = 0;
@@ -325,7 +360,7 @@ SCIP_RETCODE SCIPdialogShowMenu(
       if(header != "score")
          newheader = header;
       else
-         newheader = SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype);
+         newheader = SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip));
       
       /* make sure the header name is unique and add a length for header */
       assert(columnlength.find(header) == columnlength.end());
@@ -430,8 +465,7 @@ SCIP_RETCODE SCIPdialogShowMenu(
 static
 SCIP_RETCODE SCIPdialogShowLegend(
    SCIP* scip,                         /**< SCIP data structure */
-   std::vector<std::string> columns,   /**< list of table header entries */
-   SCORETYPE scoretype                 /**< current score type */
+   std::vector<std::string> columns    /**< list of table header entries */
    )
 {
    assert(scip != NULL);
@@ -487,7 +521,7 @@ SCIP_RETCODE SCIPdialogShowLegend(
       else if(header == "nstlva")
          desc = "number of stairlinking variables";
       else if(header == "score")
-         desc = SCIPconshdlrDecompGetScoretypeDescription(scip, scoretype);
+         desc = SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrDecompGetScoretype(scip));
       else if(header == "history")
          desc = "list of detector chars worked on this decomposition ";
       else if(header == "pre")
@@ -509,7 +543,7 @@ SCIP_RETCODE SCIPdialogShowLegend(
       /* if the header is "score" replace with shortname of the current score */
       else
       {
-         SCIPdialogMessage(scip, NULL, "%30s     %s\n", SCIPconshdlrDecompGetScoretypeShortName(scip, scoretype), desc.c_str());
+         SCIPdialogMessage(scip, NULL, "%30s     %s\n", SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip)), desc.c_str());
       }
       
    }
@@ -544,7 +578,7 @@ SCIP_RETCODE SCIPdialogShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "number_entries", "modifies the number of displayed decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "visualizes the specified decomposition (requires gnuplot)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "calc_strong", "calculates and displays the strong decomposition score for this decomposition");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "set_score", "sets the score by which the \"goodness\" of decompositions is evaluated");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "return to main menu");
 
    SCIPdialogMessage(scip, NULL, "\n=================================================================================================== \n");
@@ -594,66 +628,6 @@ SCIP_RETCODE SCIPdialogSelectVisualize(
    assert( seeed != NULL );
 
    seeed->showVisualisation();
-
-   return SCIP_OKAY;
-}
-
-
-/**
- * Calculates and displays the strong decomposition score for this decomposition in a dialog.
- *
- * @returns SCIP status
- */
-static
-SCIP_RETCODE SCIPdialogCalcStrongDecompositionScore(
-   SCIP*                   scip,       /**< SCIP data structure */
-   SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
-   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
-   int**                   idlist,     /**< current list of seeed ids */
-   int*                    listlength  /**< length of idlist */
-   )
-{
-   char* ntocalcstrong;
-   SCIP_Bool endoffile;
-   int idtocalcstrong;
-   int commandlen;
-
-   assert( scip != NULL );
-
-   /* read the id of the decomposition to calculate strong decomp score for */
-   SCIPdialogMessage( scip, NULL,
-      "Please specify the nr of the decomposition that should be evaluated by strong decomposition score:\n" );
-   SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ntocalcstrong, &endoffile ) );
-   commandlen = strlen( ntocalcstrong );
-
-   idtocalcstrong = -1;
-   if( commandlen != 0 )
-   {
-      std::stringstream convert( ntocalcstrong );
-      convert >> idtocalcstrong;
-
-      if( idtocalcstrong == 0 && ntocalcstrong[0] != '0' )
-      {
-         idtocalcstrong = -1;
-      }
-   }
-
-   /* check whether the seeed exists */
-   if( commandlen == 0 || idtocalcstrong < 0 || idtocalcstrong >= *listlength )
-   {
-      SCIPdialogMessage( scip, NULL, "This nr is out of range." );
-      return SCIP_OKAY;
-   }
-
-   /* call calculation strong decomp score method according to chosen parameters */
-   Seeed_Wrapper sw;
-   SCIP_CALL( GCGgetSeeedFromID(scip, &(*idlist)[idtocalcstrong], &sw) );
-   assert(sw.seeed != NULL);
-
-   SCIP_Real score;
-   Seeedpool* seeedpool = sw.seeed->getSeeedpool();
-   seeedpool->calcStrongDecompositionScore(sw.seeed, &score);
-   SCIPdialogMessage( scip, NULL, "Strong decomposition score of this decomposition is %f.", score) ;
 
    return SCIP_OKAY;
 }
@@ -777,23 +751,21 @@ SCIP_RETCODE SCIPdialogSelect(
 
 static
 SCIP_RETCODE SCIPdialogExecCommand(
-   SCIP*                   scip,
-   SCIP_DIALOGHDLR*        dialoghdlr,
-   SCIP_DIALOG*            dialog,
+   SCIP*                   scip,          /**< SCIP data structure */
+   SCIP_DIALOGHDLR*        dialoghdlr,    /**< dialog handler for user input management */
+   SCIP_DIALOG*            dialog,        /**< dialog for user input management */
    std::vector<std::string> columns,
    char*                   command,
    SCIP_Bool               endoffile,
    int*                    startindex,
    int*                    menulength,
    SCIP_Bool*              finished,
-   SCORETYPE*              scoretype,
    int*                    nseeeds,
-   int**                   idlist,
-   int*                    listlength
+   int**                   idlist,        /**< current list of seeed ids */
+   int*                    listlength,    /**< length of idlist */
+   std::vector<Seeedinfo>  seeedinfos     /**< list of seeedinfos */
    )
 {
-
-
    int commandlen = strlen(command);
 
       if( strncmp( command, "previous", commandlen) == 0 )
@@ -825,7 +797,7 @@ SCIP_RETCODE SCIPdialogExecCommand(
 
       else if( strncmp( command, "legend", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogShowLegend(scip, columns, *scoretype) );
+         SCIP_CALL( SCIPdialogShowLegend(scip, columns) );
       }
 
       else if( strncmp( command, "help", commandlen) == 0 )
@@ -848,15 +820,28 @@ SCIP_RETCODE SCIPdialogExecCommand(
          SCIP_CALL( SCIPdialogInspectSeeed( scip, dialoghdlr, dialog, idlist, listlength) );
       }
 
-      else if( strncmp( command, "calc_strong", commandlen) == 0 )
-      {
-         SCIP_CALL( SCIPdialogCalcStrongDecompositionScore(scip, dialoghdlr, dialog, idlist, listlength) );
-      }
-
       else if( strncmp( command, "select", commandlen) == 0 )
       {
          SCIP_CALL( SCIPdialogSelect(scip, dialoghdlr, dialog, idlist, listlength) );
       }
+
+      else if( strncmp( command, "set_score", commandlen) == 0 )
+      {
+         SCIP_CALL( GCGdialogChangeScore(scip, dialoghdlr, dialog, *idlist, *listlength, seeedinfos) );
+      }
+
+      //@todo
+      /*
+      else if( strncmp( command, "sort_asc", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogChangeOrder(scip, dialoghdlr, dialog, seeedinfos) );
+      }
+
+      else if( strncmp( command, "sort_by", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPdialogChangeOrder(scip, dialoghdlr, dialog, seeedinfos) );
+      }
+      */
 
    return SCIP_OKAY;
 }
@@ -891,7 +876,6 @@ SCIP_RETCODE GCGdialogExecExplore(
 
    /* set initial columns */
    std::vector<std::string> columns;
-   SCORETYPE scoretype = SCIPconshdlrDecompGetScoretype(scip);
    char columnstr[] = DEFAULT_COLUMNS;
    char* tempcolumns = strtok(columnstr, " ");
    while(tempcolumns != NULL)
@@ -900,7 +884,7 @@ SCIP_RETCODE GCGdialogExecExplore(
       char newchar[DEFAULT_COLUMN_MAX_WIDTH]; // cutting string at max column width if longer
       strcpy(newchar, tempcolumns);
       columns.push_back(newchar);
-      /**@note: score is a widcard! replace by score name later*/
+      /**@note: 'score' is a wildcard! replace by score name later*/
       
       /* get the next item in the list */
       tempcolumns = strtok (NULL, " ");
@@ -908,7 +892,9 @@ SCIP_RETCODE GCGdialogExecExplore(
 
    /* get initial list of all seeed infos to be displayed 
     * (redundant with infos accessible by idlist, is stored seperately for time efficiency) */
-   std::vector<Seeedinfo> seeedinfos = getSeeedinfos(scip, idlist, listlength, scoretype);
+   std::vector<Seeedinfo> seeedinfos(0);
+   seeedinfos = updateSeeedinfos(scip, idlist, listlength, seeedinfos);
+   seeedinfos = sortSeeedinfoList(scip, seeedinfos, true);
 
    /* while user has not aborted: show current list extract and catch commands */
    SCIP_Bool finished = false;
@@ -916,12 +902,12 @@ SCIP_RETCODE GCGdialogExecExplore(
    SCIP_Bool endoffile;
    while( !finished )
    {
-      SCIPdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist, &listlength, seeedinfos, scoretype);
+      SCIPdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist, &listlength, seeedinfos);
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
          "Please enter command or decomposition id to select (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
 
-      SCIPdialogExecCommand(scip, dialoghdlr, dialog, columns, command, endoffile, &startindex, &menulength, &finished, &scoretype, &nseeeds, &idlist, &listlength);
+      SCIPdialogExecCommand(scip, dialoghdlr, dialog, columns, command, endoffile, &startindex, &menulength, &finished, &nseeeds, &idlist, &listlength, seeedinfos);
    }
 
    /* free idlist */

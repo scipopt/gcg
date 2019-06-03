@@ -1043,7 +1043,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
       "if this limit on the number of variables of a block is exceeded the aggregation information for this block is not calculated ", &conshdlrdata->aggregationlimitnvarsperblock, FALSE,
       DEFAULT_AGGREGATIONLIMITNVARSPERBLOCK, 0, INT_MAX, NULL, NULL) );
 
-
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs",
       "Maximum number of classes per classifier for large problems (nconss + nvars >= 50000)", &conshdlrdata->maxnclassesperclassifierforlargeprobs, FALSE,
       DEFAULT_MAXNCLASSESLARGEPROBS, 0, INT_MAX, NULL, NULL) );
@@ -1053,9 +1052,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
       NO_MODIF, 0, 3, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/scoretype",
-         "indicates which score should be used for comparing (partial) decompositions (0:max white, 1: border area, 2:classic, 3:max foreseeing white, 4: ppc-max-white, 5:max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info, 7: experimental benders score): ", &conshdlrdata->currscoretype, FALSE,
-         scoretype::SETPART_FWHITE, 0, 7, NULL, NULL) );
-
+         "indicates which score should be used for comparing (partial) decompositions (0: max white, 1: border area, 2:classic, 3:max foreseeing white, 4: ppc-max-white, 5:max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info, 7: experimental benders score, 8:strong decomposition score): ", &conshdlrdata->currscoretype, FALSE,
+         scoretype::SETPART_FWHITE, 0, 8, NULL, NULL) );
 
    assert(conshdlrdata->candidates != NULL);
 
@@ -4619,6 +4617,9 @@ char* SCIPconshdlrDecompGetScoretypeShortName(
    case scoretype::BENDERS:
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "bender");
       break;
+   case scoretype::STRONG_DECOMP:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "strode");
+      break;
    default:
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "");
    }
@@ -4662,6 +4663,9 @@ char* SCIPconshdlrDecompGetScoretypeDescription(
    case scoretype::BENDERS:
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "experimental score to evaluate benders decompositions");
       break;
+   case scoretype::STRONG_DECOMP:
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "strong decomposition score");
+      break;
    default:
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "");
       break;
@@ -4673,12 +4677,13 @@ char* SCIPconshdlrDecompGetScoretypeDescription(
 
 
 SCIP_RETCODE SCIPconshdlrDecompGetSeeedLeafList(
-   SCIP*          scip,  /* SCIP data structure */
+   SCIP*          scip,
    int**          idlist,
    int*           listlength
    )
 {
    std::vector<SeeedPtr> seeeds = getLeafSeeeds(scip);
+
 
    *listlength = (int) seeeds.size();
 

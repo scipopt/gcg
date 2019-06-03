@@ -197,9 +197,9 @@ Seeed::Seeed(
    blockareascoreagg = -1.;
    maxforeseeingwhitescore = -1.;
    maxforeseeingwhitescoreagg = -1.;
-
    setpartfwhitescore = -1.;
    setpartfwhitescoreagg = -1.;
+   strongdecompositionscore = -1;
 
    isagginfoalreadytoexpensive = seeedtocopy->isagginfoalreadytoexpensive;
 
@@ -5138,7 +5138,7 @@ int  Seeed::getNCoeffsForMaster(
 
 SCIP_Real Seeed::getScore(
    SCORETYPE type
-   )
+)
 {
    /* if there are indicator constraints in the master we want to reject this decomposition */
    for( int mc = 0; mc < getNMasterconss(); ++mc )
@@ -5149,62 +5149,61 @@ SCIP_Real Seeed::getScore(
          return 0.;
    }
 
-   /* calculate maximum white score anyway */
-   if( maxwhitescore == -1. )
-      calcmaxwhitescore();
-
    if( type == scoretype::MAX_WHITE )
+   {
+      if( maxwhitescore == -1. )
+         calcmaxwhitescore();
       return maxwhitescore;
-
-   if( type == scoretype::CLASSIC )
+   }
+   else if( type == scoretype::CLASSIC )
    {
       if ( score == -1. )
          SCIP_CALL_ABORT(calcclassicscore() );
       return score;
    }
-
-   if( type == scoretype::BORDER_AREA )
+   else if( type == scoretype::BORDER_AREA )
    {
       if( borderareascore == -1. )
          calcborderareascore();
       return borderareascore;
    }
-
-   if( type == scoretype::MAX_FORESSEEING_WHITE )
+   else if( type == scoretype::MAX_FORESSEEING_WHITE )
    {
       if( maxforeseeingwhitescore == -1. )
          calcmaxforeseeingwhitescore();
       return maxforeseeingwhitescore;
    }
-
-   if( type == scoretype::MAX_FORESEEING_AGG_WHITE )
+   else if( type == scoretype::MAX_FORESEEING_AGG_WHITE )
    {
       if( maxforeseeingwhitescoreagg == -1. )
          calcmaxforeseeingwhitescoreagg();
       return maxforeseeingwhitescoreagg;
    }
-
-   if( type == scoretype::SETPART_FWHITE )
+   else if( type == scoretype::SETPART_FWHITE )
    {
       if( setpartfwhitescore == -1. )
          calcsetpartfwhitescore();
       return setpartfwhitescore;
    }
-
-   if( type == scoretype::SETPART_AGG_FWHITE )
+   else if( type == scoretype::SETPART_AGG_FWHITE )
    {
       if( setpartfwhitescoreagg == -1. )
          calcsetpartfwhitescoreagg();
       return setpartfwhitescoreagg;
    }
-
-   if( type == scoretype::BENDERS )
-      {
-         if( bendersscore == -1. )
-            calcbendersscore();
-         return bendersscore;
-      }
-
+   else if( type == scoretype::BENDERS )
+   {
+      if( bendersscore == -1. )
+         calcbendersscore();
+      return bendersscore;
+   }
+   else if( type == scoretype::STRONG_DECOMP )
+   {
+      if( strongdecompositionscore == -1. )
+         this->getSeeedpool()->calcStrongDecompositionScore(this, &strongdecompositionscore);
+      return strongdecompositionscore;
+   }
+   
    return 0;
 }
 

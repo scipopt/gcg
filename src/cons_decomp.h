@@ -61,7 +61,8 @@ enum scoretype {
    SETPART_FWHITE,
    MAX_FORESEEING_AGG_WHITE,
    SETPART_AGG_FWHITE,
-   BENDERS
+   BENDERS,
+   STRONG_DECOMP
 };
 typedef enum scoretype SCORETYPE;
 
