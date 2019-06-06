@@ -133,9 +133,9 @@ will be worse than setting 2 by 5%.
 
 #### Usage
 
-    ./plotperprof.py <files> ...
+    ./plotperprof.py FILES ...
 
-with <files> being some (space-separated) `.res` or `.out` files in the format as shown in "What files do I get".
+with FILES being some (space-separated) `.res` or `.out` files in the format as shown in "What files do I get".
 
 ### Experimental scripts
 #### plotclassifier.py
