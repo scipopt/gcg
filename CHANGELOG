@@ -10,6 +10,8 @@ Bug fixes
 - Fix in pricer_gcg when calculating stabilized dual objective value.
 - Fix a parameter bug concerning heuristic pricing.
 - Fix: sort pricing solvers before initialization of pricing controller.
+- Handle fixed master variables correctly when transforming values of original variables into values of master variables.
+- Transfer solutions to the master problem only if it is not solved already.
 
 GCG Version 3.0.1
 =================
