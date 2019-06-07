@@ -4708,6 +4708,9 @@ void Seeed::addAncestorID(
 
 char* Seeed::getDetectorChainString()
 {
+   if(detectorchainstring == NULL)
+      buildDecChainString();
+   assert(detectorchainstring != NULL);
    return detectorchainstring;
 }
 
