@@ -68,10 +68,29 @@ Seeed* getSeeed(
 }
 
 
+/** @brief local sorting function for seeed id vectors
+ * 
+ * avoids redundant sorting calls,
+ * sorts by score in given order
+ */
+static 
+void sortByScore(
+   SCIP* scip,                   /**< SCIP data structure */
+   std::vector<int>* idlist,     /**< current list of seeed ids */
+   bool asc                      /**< whether to sort ascending or descending */
+   )
+{
+   if(asc)
+      std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return (getSeeed(scip, a)->getScore(SCIPconshdlrDecompGetScoretype(scip)) < getSeeed(scip, b)->getScore(SCIPconshdlrDecompGetScoretype(scip))); });
+   else
+      std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return (getSeeed(scip, a)->getScore(SCIPconshdlrDecompGetScoretype(scip)) > getSeeed(scip, b)->getScore(SCIPconshdlrDecompGetScoretype(scip))); });
+}
+
+
 /** modifies menulength according to input and updates menu accordingly
  * @returns SCIP return code */
 static
-SCIP_RETCODE SCIPdialogSetNEntires(
+SCIP_RETCODE GCGdialogSetNEntires(
    SCIP* scip,                   /**< SCIP data structure */
    SCIP_DIALOGHDLR* dialoghdlr,  /**< dialog handler for user input management */
    SCIP_DIALOG* dialog,          /**< dialog for user input management */
@@ -100,12 +119,14 @@ SCIP_RETCODE SCIPdialogSetNEntires(
       return SCIP_OKAY;
    }
 
+   /* check for invalid input */
    if( commandlen == 0 || newlength < 1 )
    {
       SCIPdialogMessage( scip, NULL, "The input was not a valid number." );
       return SCIP_OKAY;
    }
 
+   /* set new length (max listlength) */
    if( newlength < listlength )
       *menulength = newlength;
    else
@@ -115,7 +136,7 @@ SCIP_RETCODE SCIPdialogSetNEntires(
 }
 
 
-/** changes the used score internally and updates the seeedinfo structure accordingly
+/** sets the used score according to user input
  * 
  * @returns SCIP return code
  */
@@ -177,18 +198,19 @@ SCIP_RETCODE outputCharXTimes(
 
 /** @brief show current menu containing seeed information
  *
- * Update length of seeed list in case it changed since the last command
+ * Update seeed list in case it changed since the last command
  * and show the table of seeeds.
  * @returns SCIP status
  */
 static
-SCIP_RETCODE SCIPdialogShowMenu(
+SCIP_RETCODE GCGdialogShowMenu(
    SCIP* scip,                            /**< SCIP data structure */
    std::vector<std::string> columns,      /**< list of column headers (abbreviations) */
    int* nseeeds,                          /**< max number of seeeds */
    const int startindex,                  /**< index (in seeed list) of uppermost seeed in extract */
    int menulength,                        /**< number of menu entries */
-   std::vector<int>* idlist               /**< current list of seeed ids */
+   std::vector<int>* idlist,              /**< current list of seeed ids */
+   bool sortasc                           /**< true iff sorting should be ascending */
    )
 {
    assert(scip != NULL);
@@ -214,7 +236,7 @@ SCIP_RETCODE SCIPdialogShowMenu(
    }
 
    /* sort seeed ids by score, descending (in case score was changed or id list was updated)*/
-   std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return (getSeeed(scip, a)->getScore(SCIPconshdlrDecompGetScoretype(scip)) > getSeeed(scip, b)->getScore(SCIPconshdlrDecompGetScoretype(scip))); });
+   sortByScore(scip, idlist, sortasc);
 
    /* count corresponding seeeds for overview statistics */
    int ndetectedpresolved = 0;
@@ -367,7 +389,7 @@ SCIP_RETCODE SCIPdialogShowMenu(
  *
  * @returns SCIP status */
 static
-SCIP_RETCODE SCIPdialogShowLegend(
+SCIP_RETCODE GCGdialogShowLegend(
    SCIP* scip,                         /**< SCIP data structure */
    std::vector<std::string> columns    /**< list of table header entries */
    )
@@ -456,11 +478,12 @@ SCIP_RETCODE SCIPdialogShowLegend(
    return SCIP_OKAY;
 }
 
-/** Shows help section of explore menu
- *
+/** @brief Shows help section of explore menu
+ * 
+ * Outputs al ist of commands and a description of their function
  * @returns SCIP status */
 static
-SCIP_RETCODE SCIPdialogShowHelp(
+SCIP_RETCODE GCGdialogShowHelp(
    SCIP* scip  /**< SCIP data structure */
    )
 {
@@ -483,6 +506,7 @@ SCIP_RETCODE SCIPdialogShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "visualizes the specified decomposition (requires gnuplot)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "set_score", "sets the score by which the \"goodness\" of decompositions is evaluated");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sort_asc", "sets whether to sort (by score) in ascending or descending order");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "return to main menu");
 
    SCIPdialogMessage(scip, NULL, "\n=================================================================================================== \n");
@@ -495,7 +519,7 @@ SCIP_RETCODE SCIPdialogShowHelp(
  *
  * @returns SCIP status */
 static
-SCIP_RETCODE SCIPdialogSelectVisualize(
+SCIP_RETCODE GCGdialogSelectVisualize(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
@@ -538,7 +562,7 @@ SCIP_RETCODE SCIPdialogSelectVisualize(
  * @returns SCIP status
  */
 static
-SCIP_RETCODE SCIPdialogInspectSeeed(
+SCIP_RETCODE GCGdialogInspectSeeed(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
@@ -601,7 +625,7 @@ SCIP_RETCODE SCIPdialogInspectSeeed(
  *
  * @returns SCIP status */
 static
-SCIP_RETCODE SCIPdialogSelect(
+SCIP_RETCODE GCGdialogSelect(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
@@ -644,19 +668,55 @@ SCIP_RETCODE SCIPdialogSelect(
    return SCIP_OKAY;
 }
 
+/** Set whether order in menu should be ascending/descending
+ *
+ * @returns SCIP return code */
 static
-SCIP_RETCODE SCIPdialogExecCommand(
+SCIP_RETCODE GCGdialogSortAsc(
+   SCIP*                   scip,       /**< SCIP data structure */
+   SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   bool*                   asc         /**< true iff sorting should be ascending */
+   )
+{
+   char* ascen;
+   SCIP_Bool endoffile;
+   int commandlen;
+
+   assert(scip != NULL);
+
+   /* get input */
+   SCIPdialogMessage(scip, NULL, "\nPlease enter \"true\"/\"1\" for ascending or \"false\"/\"0\" for descending order:\n");
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ascen, &endoffile) );
+   commandlen = strlen(ascen);
+
+   std::string input = ascen;
+   if( commandlen != 0)
+   {
+      /* check if input if is true, set ascending */
+      if(input == "true" || input == "1")
+         *asc = true;
+      /* check if input if is false, set descending */
+      else if(input == "false" || input == "0")
+         *asc = false;
+      /* all other inputs are considered invalid and do nothing */
+   }
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_RETCODE GCGdialogExecCommand(
    SCIP*                   scip,          /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr,    /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,        /**< dialog for user input management */
-   std::vector<std::string> columns,
-   char*                   command,
-   SCIP_Bool               endoffile,
-   int*                    startindex,
-   int*                    menulength,
-   SCIP_Bool*              finished,
-   int*                    nseeeds,
-   std::vector<int>*       idlist         /**< current list of seeed ids */
+   std::vector<std::string> columns,      /**< list of table header entries */
+   char*                   command,       /**< the command that was entered */
+   int*                    startindex,    /**< number of seeed there the menu extract starts */
+   int*                    menulength,    /**< current menu length to be modified */
+   SCIP_Bool*              finished,      /**< whether to quit the menu */
+   std::vector<int>*       idlist,        /**< current list of seeed ids */
+   bool*                   sortasc        /**< true iff sorting should be ascending */
    )
 {
    int commandlen = strlen(command);
@@ -690,32 +750,32 @@ SCIP_RETCODE SCIPdialogExecCommand(
 
       else if( strncmp( command, "legend", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogShowLegend(scip, columns) );
+         SCIP_CALL( GCGdialogShowLegend(scip, columns) );
       }
 
       else if( strncmp( command, "help", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogShowHelp(scip) );
+         SCIP_CALL( GCGdialogShowHelp(scip) );
       }
 
       else if( strncmp( command, "number_entries", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogSetNEntires(scip, dialoghdlr, dialog, (int) idlist->size(), menulength) );
+         SCIP_CALL( GCGdialogSetNEntires(scip, dialoghdlr, dialog, (int) idlist->size(), menulength) );
       }
 
       else if( strncmp( command, "visualize", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogSelectVisualize(scip, dialoghdlr, dialog, *idlist) );
+         SCIP_CALL( GCGdialogSelectVisualize(scip, dialoghdlr, dialog, *idlist) );
       }
 
       else if( strncmp( command, "inspect", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogInspectSeeed( scip, dialoghdlr, dialog, *idlist) );
+         SCIP_CALL( GCGdialogInspectSeeed( scip, dialoghdlr, dialog, *idlist) );
       }
 
       else if( strncmp( command, "select", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogSelect(scip, dialoghdlr, dialog, *idlist) );
+         SCIP_CALL( GCGdialogSelect(scip, dialoghdlr, dialog, *idlist) );
       }
 
       else if( strncmp( command, "set_score", commandlen) == 0 )
@@ -723,18 +783,10 @@ SCIP_RETCODE SCIPdialogExecCommand(
          SCIP_CALL( GCGdialogChangeScore(scip, dialoghdlr, dialog) );
       }
 
-      //@todo
-      /*
       else if( strncmp( command, "sort_asc", commandlen) == 0 )
       {
-         SCIP_CALL( SCIPdialogChangeOrder(scip, dialoghdlr, dialog, seeedinfos) );
+         SCIP_CALL( GCGdialogSortAsc(scip, dialoghdlr, dialog, sortasc) );
       }
-
-      else if( strncmp( command, "sort_by", commandlen) == 0 )
-      {
-         SCIP_CALL( SCIPdialogChangeOrder(scip, dialoghdlr, dialog, seeedinfos) );
-      }
-      */
 
    return SCIP_OKAY;
 }
@@ -749,8 +801,9 @@ SCIP_RETCODE GCGdialogExecExplore(
    )
 {
    /* set navigation defaults */
-   int startindex = 0;
-   int menulength = DEFAULT_MENULENGTH;
+   int startindex = 0;                    /**< number of seeed there the menu extract starts */
+   int menulength = DEFAULT_MENULENGTH;   /**< number of entries shown in menu */
+   bool sortasc = false;                  /**< whether to show entries in ascending order (score) */
 
    /* check for available seeeds */
    int nseeeds;   /**< stores the last known number of seeeds, is handed down to check for changes in seeed number */
@@ -778,7 +831,7 @@ SCIP_RETCODE GCGdialogExecExplore(
    SCIPfreeBlockMemoryArray(scip, &idarray, nseeeds);
 
    /* sort by score, descending */
-   std::sort(idlist.begin(), idlist.end(), [&](const int a, const int b) {return (getSeeed(scip, a)->getScore(SCIPconshdlrDecompGetScoretype(scip)) > getSeeed(scip, b)->getScore(SCIPconshdlrDecompGetScoretype(scip))); });
+   sortByScore(scip, &idlist, sortasc);
 
    /* set initial columns */
    std::vector<std::string> columns;
@@ -802,12 +855,12 @@ SCIP_RETCODE GCGdialogExecExplore(
    SCIP_Bool endoffile;
    while( !finished )
    {
-      SCIPdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist);
+      GCGdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist, sortasc);
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
          "Please enter command or decomposition id to select (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
 
-      SCIPdialogExecCommand(scip, dialoghdlr, dialog, columns, command, endoffile, &startindex, &menulength, &finished, &nseeeds, &idlist);
+      GCGdialogExecCommand(scip, dialoghdlr, dialog, columns, command, &startindex, &menulength, &finished, &idlist, &sortasc);
    }
 
    return SCIP_OKAY;

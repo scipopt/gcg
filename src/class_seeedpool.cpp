@@ -1751,25 +1751,8 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 {
    /* get scoretype once, no need to call it twice for every comparison */
    SCORETYPE sctype = SCIPconshdlrDecompGetScoretype(scip);
-   /* selection sort: find smallest element in (remaining) vector and exchange with current element */
-   for(int i = 0; i < (int) finishedSeeeds.size(); i++)
-   {
-      /* minindex stores the index of the smallest known score */
-      int minindex = i;
-      /* go through all remaining elements and check if there is one with a smaller score */
-      for(int j = i; j < (int) finishedSeeeds.size(); j++)
-      {
-         if( finishedSeeeds.at(minindex)->getScore(sctype) > finishedSeeeds.at(j)->getScore(sctype) )
-         {
-            minindex = j;
-         }
-      }
-      /* change places with smallest element */
-      if(minindex != i)
-      {
-         std::swap(finishedSeeeds[minindex], finishedSeeeds[i]);
-      }
-   }
+   /* sort by score in descending order */
+   std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), [&](Seeed* a, Seeed* b) {return (a->getScore(sctype) > b->getScore(sctype)); });
 }
 
  /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method

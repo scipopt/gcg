@@ -4608,7 +4608,7 @@ char* SCIPconshdlrDecompGetScoretypeDescription(
    switch(sctype)
    {
    case scoretype::MAX_WHITE:
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum white area score (i.e. maximize fraction of white area score; white area is nonblock and nonborder area, stairlinking variables count as linking)");
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum white area score (white area is nonblock and nonborder area)");
       break;
    case scoretype::CLASSIC:
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classical score");
@@ -4617,16 +4617,16 @@ char* SCIPconshdlrDecompGetScoretypeDescription(
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score)");
       break;
    case scoretype::MAX_FORESSEEING_WHITE:
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)");
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing white area score (considering copied linking vars and their master conss; white area is nonblock and nonborder area)");
       break;
    case scoretype::MAX_FORESEEING_AGG_WHITE:
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score with aggregation information(i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)");
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing white area score with aggregation infos (considering copied linking vars and their master conss; white area is nonblock and nonborder area)");
       break;
    case scoretype::SETPART_FWHITE:
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints)");
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score (convex combination of maximum foreseeing white area score and rewarding if master contains only setppc and cardinality constraints)");
       break;
    case scoretype::SETPART_AGG_FWHITE:
-      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints)");
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (convex combination of maximum foreseeing white area score and rewarding if a master contains only setppc and cardinality constraints)");
       break;
    case scoretype::BENDERS:
       SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "experimental score to evaluate benders decompositions");
