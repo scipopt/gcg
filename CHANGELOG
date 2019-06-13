@@ -13,6 +13,7 @@ Bug fixes
 - Handle fixed master variables correctly when transforming values of original variables into values of master variables.
 - Transfer solutions to the master problem only if it is not solved already.
 
+
 GCG Version 3.0.1
 =================
 
