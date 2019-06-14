@@ -41,7 +41,3 @@ subto dominate:
 # the domination capacity of each vertex must be respected
 subto capacity:
 	forall <v> in V: sum<i> in N(v): y[v,i] <= x[v]*cap[v];
-
-# link the y and the x variables
-subto link:
-	forall <v> in V: forall <i> in N(v): y[v,i] <= x[v];
