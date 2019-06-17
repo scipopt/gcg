@@ -16,7 +16,7 @@ To initialize the SCIP, SoPlex, bliss and the googletest framework, goto the rep
 ## System prerequisites
 If you are not working on one of the OR chair's computers make sure that the following libraries are installed:
 
-```
+```or
 gcc
 gpp
 git
@@ -78,49 +78,7 @@ On some distros, including the one used on RWTH cluster, the SCIP link does not 
 
     cd lib && ln -s scip-git scip && cd ..
 
-# Makefiles Arguments {#makefiles-args}
-You can modify your Makefiles installation by setting flags during compilation. For example, for some visualization
-scripts, you'll need `STATISTICS=true` to be set **during compilation**. Important flags are listed here
-(a complete list can be found by typing `make --help`):
-
-## Debugging and statistics
-
-    -d                          Print lots of debugging information.
-    --debug[=FLAGS]             Print various types of debugging information.
-    STATISTICS[=B]              Print additional statistics (esp. for pricing)
-
-## Limits and Modes (only for `make test`)
-
-    STATISTICS[=B]              Print additional statistics (beware: different to the one above,
-                                which is used during compilation), B in {true,false}.
-    NODE[=N]                    Limit of Nodes to be opened during branching.
-    OPT[=TYPE]                  Choose from {opt, dbg, prf}.
-    SETTINGS[=SET]              Choose settings for the testrun as defined in settings/SET.set.
-    MODE[=TYPE]                 Use different modes. 0 or none to prevent from using dec files.
-
-## Compilation process (errors)
-
-    -i, --ignore-errors         Ignore errors from recipes.
-    --warn-undefined-variables  Warn when an undefined variable is referenced.
-    -k, --keep-going            Keep going when some targets can't be made.
-    -S, --no-keep-going, --stop Turns off -k.
-
-## Compilation process (speedup)
-
-    -j [N], --jobs[=N]          Allow N jobs at once; infinite jobs with no arg.
-    -l [N], --load-average[=N], --max-load[=N]
-                                Don't start multiple jobs unless load is below N.
-    -O[TYPE], --output-sync[=TYPE]
-                                Synchronize output of parallel jobs by TYPE.
-
-## Compilation process (messages)
-
-    -s, --silent, --quiet       Don't echo recipes.
-    -v, --version               Print the version number of make and exit.
-    -w, --print-directory       Print the current directory.
-    --no-print-directory        Turn off -w, even if it was turned on implicitly.
-    --trace                     Print tracing information.
-
+You can find all arguments for the installation under \subpage makefiles-args and \subpage cmake-args .
 
 # Manual Installation {#install-manually}
 Note that a manual installation is not recommended to new users.
