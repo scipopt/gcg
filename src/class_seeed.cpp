@@ -6286,8 +6286,10 @@ SCIP_RETCODE Seeed::showVisualisation()
 
    /* compile gp file */
    char command[SCIP_MAXSTRLEN];
-   strcpy(command, "gnuplot ");
+   /* command: gnuplot "filename" */
+   strcpy(command, "gnuplot \"");
    strcat(command, filename);
+   strcat(command, "\"");
    SCIPinfoMessage(seeedpool->getScip(), NULL, "%s\n", command);
    returnvalue = system(command);
    if( returnvalue == -1 )
@@ -6297,11 +6299,13 @@ SCIP_RETCODE Seeed::showVisualisation()
    }
 
    /* open outputfile */
+   /* command: e.g. evince "outname" && rm "filename" */
    strcpy(command, GCGVisuGetPdfReader(scip));
-   strcat(command, " ");
+   strcat(command, " \"");
    strcat(command, outname);
-   strcat(command, " && rm ");
+   strcat(command, "\" && rm \"");
    strcat(command, filename);
+   strcat(command, "\"");
    SCIPinfoMessage(seeedpool->getScip(), NULL, "%s\n", command);
    returnvalue = system(command);
    if( returnvalue == -1 )

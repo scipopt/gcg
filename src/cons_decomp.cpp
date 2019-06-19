@@ -4652,7 +4652,6 @@ SCIP_RETCODE SCIPconshdlrDecompGetSeeedLeafList(
 {
    std::vector<SeeedPtr> seeeds = getLeafSeeeds(scip);
 
-
    *listlength = (int) seeeds.size();
 
    for(int i = 0; i < (int) seeeds.size(); i++)
