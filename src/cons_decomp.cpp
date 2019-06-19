@@ -269,6 +269,7 @@ SCIP_CONSHDLRDATA* getConshdlrdata(
    )
 {
    /* get current conshdlr, identified by the name define */
+   assert(scip != NULL);
    SCIP_CONSHDLR* conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
    /* check if conshdlr was found */
@@ -1003,8 +1004,6 @@ SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
 {
    long int startcount;
    SCIP_CONS** conss;
-
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -1132,7 +1131,6 @@ DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
    SCIP*                 scip                /* SCIP data structure */
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
    int decompcounter = 0;
@@ -1176,7 +1174,6 @@ int SCIPconshdlrDecompGetNDecdecomps(
    SCIP*                 scip                /* SCIP data structure */
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    int ndecomps;
 
@@ -1218,7 +1215,6 @@ int SCIPconshdlrDecompGetNFormerDetectionConssForID(
    int                   id                  /* id of the seeed */
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    gcg::Seeedpool* currseeedpool;
    gcg::Seeed* seeed;
@@ -1250,7 +1246,6 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpool(
    SCIP*                 scip                /* SCIP data structure */
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -1268,7 +1263,6 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
    SCIP*                 scip                /* SCIP data structure */
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -1284,7 +1278,6 @@ SCIP_RETCODE SCIPconshdlrDecompGetSeeedpoolUnpresolved(
    SEEED_WRAPPER*        sw
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -1299,7 +1292,6 @@ SCIP_RETCODE SCIPconshdlrDecompGetSeeedpool(
    SEEED_WRAPPER*        sw
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -1318,7 +1310,6 @@ int SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(
    SCIP*                 scip                /* SCIP data structure */
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -1335,7 +1326,6 @@ int SCIPconshdlrDecompDecreaseAndGetNCallsCreateDecomp(
    SCIP*                 scip                /* SCIP data structure */
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -1369,7 +1359,7 @@ DEC_DETECTOR* DECfindDetector(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    int i;
-   assert(scip != NULL);
+
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    if( conshdlr == NULL )
       return NULL;
@@ -2659,7 +2649,6 @@ SCIP_RETCODE DECwriteSelectedDecomps(
    char tempstring[SCIP_MAXSTRLEN];
    SCIP_Bool nodecomps;
 
-   assert(scip != NULL);
    assert(extension != NULL);
 
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
@@ -2729,7 +2718,6 @@ SCIP_RETCODE DECwriteAllDecomps(
    int maxtowrite;
    int nwritten;
 
-   assert(scip != NULL);
    assert(extension != NULL);
 
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
@@ -2888,7 +2876,6 @@ SCIP_RETCODE SCIPconshdlrDecompNotifyFinishedNonFinalFreeTransform(
    SCIP*                scip  /* SCIP data structure */
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -2910,7 +2897,6 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
    int* nseeeds               /* amount of seeeds that are put in the output array */
    )
 {
-   assert(scip != NULL);
    assert(seeedswr != NULL);
 
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
@@ -3008,7 +2994,6 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    SCIP_RESULT* result     /* result of writing dec */
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -3058,9 +3043,8 @@ SCIP_RETCODE SCIPconshdlrDecompWriteMatrix(
    const char*           filename,           /* filename the output should be written to (including directory) */
    const char*           workfolder,         /* directory in which should be worked */
    SCIP_Bool             originalmatrix      /* should the original (or transformed) matrix be written */
-)
+   )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -3094,8 +3078,6 @@ DEC_DECOMP* DECgetBestDecomp(
    SCIP*                 scip                /* SCIP data structure */
    )
 {
-   assert(scip != NULL);
-
    DEC_DECOMP* decomp;
    gcg::Seeedpool* seeedpool;
    gcg::Seeedpool* seeedpoolunpresolved;
@@ -3150,7 +3132,6 @@ SCIP_RETCODE DECgetSeeedToWrite(
    SEEED_WRAPPER*        seeedwrapper        /* seeed wrapper to output */
    )
 {
-   assert(scip != NULL);
    int dec;
 
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
@@ -3198,7 +3179,6 @@ void DECprintListOfDetectors(
    int ndetectors;
    int i;
 
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -3224,7 +3204,6 @@ SCIP_Bool DEChasDetectionRun(
    SCIP*                 scip                /* SCIP data structure */
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -3254,7 +3233,6 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
    DEC_DECOMP** decomps;
    int ndecomps;
 
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -3298,7 +3276,6 @@ int SCIPconshdlrDecompGetNFinishedDecomps(
    SCIP*       scip  /* SCIP data structure */
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -3325,7 +3302,6 @@ int SCIPconshdlrDecompGetNSeeeds(
 {
    int nseeeds;
 
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -3354,7 +3330,7 @@ SCIP_RETCODE GCGprintDetectorStatistics(
 {
    int i;
    int j;
-   assert(scip != NULL);
+
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -3686,7 +3662,6 @@ SCIP_RETCODE GCGsetDetection(
    SCIP_Bool             quiet               /* should the parameter be set quiet (no output) */
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -4024,7 +3999,6 @@ SCIP_RETCODE SCIPconshdlrDecompSetScoretype(
    SCORETYPE sctype
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
@@ -4038,7 +4012,6 @@ SCORETYPE SCIPconshdlrDecompGetScoretype(
    SCIP* scip
    )
 {
-   assert(scip != NULL);
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
