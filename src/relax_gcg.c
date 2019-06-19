@@ -1317,7 +1317,7 @@ SCIP_RETCODE createPricingVariables(
          }
          else
          {
-            SCIPinfoMessage(scip, NULL, " changed block number to %d \n", tempblock );
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " changed block number to %d \n", tempblock );
             blocknr = tempblock; /*lint !e806*/
          }
       }
@@ -2459,7 +2459,7 @@ SCIP_RETCODE initRelaxator(
       relaxdata->decdecomp = DECgetBestDecomp(scip);
       if( relaxdata->decdecomp == NULL )
       {
-         SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE) );
+         SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip) );
          relaxdata->decdecomp = DECgetBestDecomp(scip);
          if( relaxdata->decdecomp == NULL )
          {
@@ -2469,7 +2469,7 @@ SCIP_RETCODE initRelaxator(
             {
                DEC_DECOMP* decomp;
                SCIP_RETCODE retcode;
-               SCIPinfoMessage(scip, NULL, " CREATE BASIC DECOMP!\n");
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " CREATE BASIC DECOMP!\n");
                retcode = DECcreateBasicDecomp(scip, &decomp, FALSE);
                if( retcode != SCIP_OKAY )
                {
@@ -2497,24 +2497,24 @@ SCIP_RETCODE initRelaxator(
    }
 
    oxfordcomma = 0;
-   SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks", DECdecompGetNBlocks(relaxdata->decdecomp));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Chosen structure has %d blocks", DECdecompGetNBlocks(relaxdata->decdecomp));
    /* every master-only variable internally also counts as linking, but should not be reported as linking variable */
    if ( DECdecompGetNLinkingvars(relaxdata->decdecomp) - DECdecompGetNMastervars(relaxdata->decdecomp) > 0)
    {
-      SCIPinfoMessage(scip, NULL, ", %d linking variables", DECdecompGetNLinkingvars(relaxdata->decdecomp) - DECdecompGetNMastervars(relaxdata->decdecomp));
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, ", %d linking variables", DECdecompGetNLinkingvars(relaxdata->decdecomp) - DECdecompGetNMastervars(relaxdata->decdecomp));
       ++oxfordcomma;
    }
    if ( DECdecompGetNMastervars(relaxdata->decdecomp) > 0 )
    {
-      SCIPinfoMessage(scip, NULL, ", %d master-only (static) variables", DECdecompGetNMastervars(relaxdata->decdecomp));
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, ", %d master-only (static) variables", DECdecompGetNMastervars(relaxdata->decdecomp));
       ++oxfordcomma;
    }
    if ( oxfordcomma > 0 )
    {
-      SCIPinfoMessage(scip, NULL, ",");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, ",");
    }
-   SCIPinfoMessage(scip, NULL, " and %d linking constraints.\n", DECdecompGetNLinkingconss(relaxdata->decdecomp));
-   SCIPinfoMessage(scip, NULL, "This decomposition has a maxwhite score of %f.\n", DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " and %d linking constraints.\n", DECdecompGetNLinkingconss(relaxdata->decdecomp));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "This decomposition has a maxwhite score of %f.\n", DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
 
    /* permute the decomposition if the permutation seed is set */
    SCIP_CALL( SCIPgetIntParam(scip, "randomization/permutationseed", &permutationseed) );
@@ -2814,18 +2814,18 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    SCIP_CALL( SCIPfixParam(scip, "relaxing/gcg/mode") );
 
    /* Informing the user of the decomposition technique that is being used to solve the original problem */
-   SCIPinfoMessage(scip, NULL, "\n");
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "\n");
    if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
    {
-      SCIPinfoMessage(scip, NULL, "A Dantzig-Wolfe reformulation is applied to solve the original problem.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "A Dantzig-Wolfe reformulation is applied to solve the original problem.\n");
    }
    else if( relaxdata->mode == DEC_DECMODE_BENDERS )
    {
-      SCIPinfoMessage(scip, NULL, "A Benders' decomposition is applied to solve the original problem.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "A Benders' decomposition is applied to solve the original problem.\n");
    }
    else if( relaxdata->mode == DEC_DECMODE_ORIGINAL )
    {
-      SCIPinfoMessage(scip, NULL, "No reformulation will be performed. Solving the original model.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "No reformulation will be performed. Solving the original model.\n");
    }
 
    return SCIP_OKAY;
@@ -3034,7 +3034,7 @@ SCIP_RETCODE solveMasterProblem(
       }
 
       if( !SCIPisInfinity(scip, timelimit) && !SCIPisStopped(scip) )
-         SCIPinfoMessage(scip, NULL, "time for master problem was too short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "time for master problem was too short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
    }
    if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
    {
@@ -3359,7 +3359,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
     */
    if( GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
    {
-      SCIPinfoMessage(scip, NULL, "There are no pricing problems in the decomposition. The original problem will be solved directly.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "There are no pricing problems in the decomposition. The original problem will be solved directly.\n");
       SCIP_CALL( relaxExecGcgOriginalProblem(scip, relax, lowerbound, result) );
    }
    else if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
@@ -3372,7 +3372,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    }
    else
    {
-      SCIPinfoMessage(scip, NULL, "Sorry, the automatic selection is not currently available\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Sorry, the automatic selection is not currently available\n");
    }
 
    return SCIP_OKAY;

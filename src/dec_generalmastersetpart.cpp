@@ -312,7 +312,7 @@ SCIP_RETCODE SCIPincludeDetectorGeneralmastersetpart(SCIP* scip /**< SCIP data s
    detectordata = NULL;
 
    SCIP_CALL(
-      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectGeneralmastersetpart, freeGeneralmastersetpart, initGeneralmastersetpart, exitGeneralmastersetpart, propagateSeeedGeneralmastersetpart, NULL, NULL, finishSeeedGeneralmastersetpart, detectorPostprocessSeeedGeneralmastersetpart, setParamAggressiveGeneralmastersetpart, setParamDefaultGeneralmastersetpart, setParamFastGeneralmastersetpart));
+      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectGeneralmastersetpart, freeGeneralmastersetpart, initGeneralmastersetpart, exitGeneralmastersetpart, propagateSeeedGeneralmastersetpart, finishSeeedGeneralmastersetpart, detectorPostprocessSeeedGeneralmastersetpart, setParamAggressiveGeneralmastersetpart, setParamDefaultGeneralmastersetpart, setParamFastGeneralmastersetpart));
 
    /**@todo add generalmastersetpart detector parameters */
 

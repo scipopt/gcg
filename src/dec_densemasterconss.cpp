@@ -203,7 +203,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedDensemasterconss)
   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), foundseeeds.size() ) );
   seeedPropagationData->nNewSeeeds  = foundseeeds.size();
 
-  SCIPinfoMessage(scip, NULL, "dec_densemasterconss found %d new seeed \n", seeedPropagationData->nNewSeeeds  );
+  SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "dec_densemasterconss found %d new seeed \n", seeedPropagationData->nNewSeeeds  );
 
   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
   {
@@ -298,7 +298,7 @@ SCIP_RETCODE SCIPincludeDetectorDensemasterconss(SCIP* scip /**< SCIP data struc
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata,
-         detectDensemasterconss, freeDensemasterconss, initDensemasterconss, exitDensemasterconss, propagateSeeedDensemasterconss, NULL, NULL, finishSeeedDensemasterconss, detectorPostprocessSeeedDensemasterconss, setParamAggressiveDensemasterconss, setParamDefaultDensemasterconss, setParamFastDensemasterconss));
+         detectDensemasterconss, freeDensemasterconss, initDensemasterconss, exitDensemasterconss, propagateSeeedDensemasterconss, finishSeeedDensemasterconss, detectorPostprocessSeeedDensemasterconss, setParamAggressiveDensemasterconss, setParamDefaultDensemasterconss, setParamFastDensemasterconss));
 
    /**@todo add densemasterconss detector parameters */
 

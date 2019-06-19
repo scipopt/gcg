@@ -197,9 +197,9 @@ Seeed::Seeed(
    blockareascoreagg = -1.;
    maxforeseeingwhitescore = -1.;
    maxforeseeingwhitescoreagg = -1.;
-
    setpartfwhitescore = -1.;
    setpartfwhitescoreagg = -1.;
+   strongdecompositionscore = -1;
 
    isagginfoalreadytoexpensive = seeedtocopy->isagginfoalreadytoexpensive;
 
@@ -893,6 +893,22 @@ SCIP_RETCODE Seeed::bookAsBlockCons(
 }
 
 
+SCIP_RETCODE Seeed::bookAsBlockConsByName(
+   const char*           consname,            /**< name of the constraint */
+   int                   blockid              /**< block index ( counting from 0) */
+   )
+{
+   SCIP_CONS* cons = isfromunpresolved ? (SCIPfindOrigCons(scip, consname) == NULL
+      ? SCIPfindCons(scip, consname): SCIPfindOrigCons(scip, consname)) : SCIPfindCons(scip, consname);
+   int consindex = seeedpool->getIndexForCons( cons ) ;
+
+   if( blockid >= nBlocks )
+         nBlocks = blockid+1;
+   this->bookAsBlockCons(consindex, blockid);
+
+   return SCIP_OKAY;
+}
+
 SCIP_RETCODE Seeed::bookAsBlockVar(
    int varToBlock,
    int block
@@ -903,6 +919,21 @@ SCIP_RETCODE Seeed::bookAsBlockVar(
    assert( block >= 0 && block < nBlocks );
    std::pair<int, int> pair( varToBlock, block );
    bookedAsBlockVars.push_back( pair );
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE Seeed::bookAsBlockVarByName(
+   const char*           varname,
+   int                   blockid
+   )
+{
+   int varindex = seeedpool->getIndexForVar( SCIPfindVar(scip, varname) );
+
+   // if the block id is higher than expected, set the block to master
+   if( blockid >= nBlocks )
+      nBlocks = blockid+1;
+   this->bookAsBlockVar(varindex, blockid);
+
    return SCIP_OKAY;
 }
 
@@ -918,6 +949,17 @@ SCIP_RETCODE Seeed::bookAsMasterCons(
 }
 
 
+SCIP_RETCODE Seeed::bookAsMasterConsByName(
+   const char*           consname   /**< name of cons to book as master cons */
+   )
+{
+   SCIP_CONS* cons = isfromunpresolved ? SCIPfindOrigCons(scip, consname) : SCIPfindCons(scip, consname);
+
+   int consindex = seeedpool->getIndexForCons( cons );
+   this->bookAsMasterCons(consindex);
+   return SCIP_OKAY;
+}
+
 SCIP_RETCODE Seeed::bookAsMasterVar(
    int varToMaster
    )
@@ -925,6 +967,17 @@ SCIP_RETCODE Seeed::bookAsMasterVar(
    assert( varToMaster >= 0 && varToMaster < nVars );
    assert( isvaropen[varToMaster]);
    bookedAsMasterVars.push_back( varToMaster );
+   return SCIP_OKAY;
+}
+
+
+SCIP_RETCODE Seeed::bookAsMasterVarByName(
+   const char*           varname
+   )
+{
+   int varindex = seeedpool->getIndexForVar( SCIPfindVar(scip, varname) );
+   this->bookAsMasterVar(varindex);
+
    return SCIP_OKAY;
 }
 
@@ -939,6 +992,16 @@ SCIP_RETCODE Seeed::bookAsLinkingVar(
    return SCIP_OKAY;
 }
 
+
+SCIP_RETCODE Seeed::bookAsLinkingVarByName(
+   const char*           varname              /**< name of the variable */
+   )
+{
+   int varindex = seeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
+   this->bookAsLinkingVar(varindex);
+
+   return SCIP_OKAY;
+}
 
 SCIP_RETCODE Seeed::bookAsStairlinkingVar(
    int varToStairlinking,
@@ -2402,7 +2465,7 @@ SCIP_RETCODE Seeed::completeByConnected(
 
     sort();
 
-    getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
+    getScore( SCIPconshdlrDecompGetScoretype(scip) ) ;
     calcHashvalue();
 
     return SCIP_OKAY;
@@ -4645,6 +4708,9 @@ void Seeed::addAncestorID(
 
 char* Seeed::getDetectorChainString()
 {
+   if(detectorchainstring == NULL)
+      buildDecChainString();
+   assert(detectorchainstring != NULL);
    return detectorchainstring;
 }
 
@@ -5075,7 +5141,7 @@ int  Seeed::getNCoeffsForMaster(
 
 SCIP_Real Seeed::getScore(
    SCORETYPE type
-   )
+)
 {
    /* if there are indicator constraints in the master we want to reject this decomposition */
    for( int mc = 0; mc < getNMasterconss(); ++mc )
@@ -5086,63 +5152,61 @@ SCIP_Real Seeed::getScore(
          return 0.;
    }
 
-   /* calculate maximum white score anyway */
-   if( maxwhitescore == -1. )
-      calcmaxwhitescore();
-
    if( type == scoretype::MAX_WHITE )
+   {
+      if( maxwhitescore == -1. )
+         calcmaxwhitescore();
       return maxwhitescore;
-
-   if( type == scoretype::CLASSIC )
+   }
+   else if( type == scoretype::CLASSIC )
    {
       if ( score == -1. )
          SCIP_CALL_ABORT(calcclassicscore() );
       return score;
    }
-
-   if( type == scoretype::BORDER_AREA )
+   else if( type == scoretype::BORDER_AREA )
    {
       if( borderareascore == -1. )
          calcborderareascore();
       return borderareascore;
    }
-
-   if( type == scoretype::MAX_FORESSEEING_WHITE )
+   else if( type == scoretype::MAX_FORESSEEING_WHITE )
    {
       if( maxforeseeingwhitescore == -1. )
          calcmaxforeseeingwhitescore();
       return maxforeseeingwhitescore;
    }
-
-   if( type == scoretype::MAX_FORESEEING_AGG_WHITE )
+   else if( type == scoretype::MAX_FORESEEING_AGG_WHITE )
    {
       if( maxforeseeingwhitescoreagg == -1. )
          calcmaxforeseeingwhitescoreagg();
       return maxforeseeingwhitescoreagg;
    }
-
-   if( type == scoretype::SETPART_FWHITE )
+   else if( type == scoretype::SETPART_FWHITE )
    {
       if( setpartfwhitescore == -1. )
          calcsetpartfwhitescore();
       return setpartfwhitescore;
    }
-
-   if( type == scoretype::SETPART_AGG_FWHITE )
+   else if( type == scoretype::SETPART_AGG_FWHITE )
    {
       if( setpartfwhitescoreagg == -1. )
          calcsetpartfwhitescoreagg();
       return setpartfwhitescoreagg;
    }
-
-   if( type == scoretype::BENDERS )
-      {
-         if( bendersscore == -1. )
-            calcbendersscore();
-         return bendersscore;
-      }
-
-
+   else if( type == scoretype::BENDERS )
+   {
+      if( bendersscore == -1. )
+         calcbendersscore();
+      return bendersscore;
+   }
+   else if( type == scoretype::STRONG_DECOMP )
+   {
+      if( strongdecompositionscore == -1. )
+         this->getSeeedpool()->calcStrongDecompositionScore(this, &strongdecompositionscore);
+      return strongdecompositionscore;
+   }
+   
    return 0;
 }
 
@@ -6205,7 +6269,7 @@ SCIP_RETCODE Seeed::setVarToStairlinking(
 }
 
 
-void Seeed::showVisualisation()
+SCIP_RETCODE Seeed::showVisualisation()
 {
    int returnvalue;
 
@@ -6218,7 +6282,7 @@ void Seeed::showVisualisation()
    miscvisu->GCGgetVisualizationFilename(scip, this, ".pdf", outname);
 
    /* generate gp file */
-   GCGwriteGpVisualization( scip, filename, outname, getID() );
+   SCIP_CALL( GCGwriteGpVisualization( scip, filename, outname, getID() ) );
 
    /* compile gp file */
    char command[SCIP_MAXSTRLEN];
@@ -6227,7 +6291,10 @@ void Seeed::showVisualisation()
    SCIPinfoMessage(seeedpool->getScip(), NULL, "%s\n", command);
    returnvalue = system(command);
    if( returnvalue == -1 )
+   {
       SCIPwarningMessage(scip, "Unable to write gnuplot file\n");
+      return SCIP_OKAY;
+   }
 
    /* open outputfile */
    strcpy(command, GCGVisuGetPdfReader(scip));
@@ -6241,7 +6308,7 @@ void Seeed::showVisualisation()
       SCIPwarningMessage(scip, "Unable to open gnuplot file\n");
    SCIPinfoMessage(seeedpool->getScip(), NULL, "Please note that the generated pdf file was not deleted automatically!  \n", command);
 
-   return;
+   return SCIP_OKAY;
 }
 
 

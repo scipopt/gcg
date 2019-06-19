@@ -57,6 +57,7 @@
 #include "reader_tex.h"
 #include "params_visu.h"
 #include "reader_tex.h"
+#include "dialog_explore.h"
 
 /** display the reader information
  * @returns nothing */
@@ -211,7 +212,6 @@ SCIP_RETCODE writeSelectedDecompositions(
    }
 
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory: ", &tmp, &endoffile) );
-
 
    if( endoffile )
    {
@@ -859,7 +859,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecPresolve)
 }
 
 
-
 /** dialog execution method for the detect command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
@@ -889,27 +888,13 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    return SCIP_OKAY;
 }
 
+
 /** dialog execution method for the displaying and selecting decompositions command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   SCIP_CALL( SCIPconshdlrDecompExecSelect(scip, dialoghdlr, dialog ) );
-
-   SCIPdialogMessage(scip, NULL, "\n");
-
-   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
-
-   return SCIP_OKAY;
-}
-
-/** dialog execution method for the decomposition toolbox command */
-SCIP_DECL_DIALOGEXEC(GCGdialogExecToolbox)
-{  /*lint --e{715}*/
-
-   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
-
-   SCIP_CALL( SCIPconshdlrDecompExecToolbox(scip, dialoghdlr, dialog ) );
+   SCIP_CALL( GCGdialogExecExplore(scip, dialoghdlr, dialog ) );
 
    SCIPdialogMessage(scip, NULL, "\n");
 
@@ -949,7 +934,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
       if( SCIPconshdlrDecompUnpresolvedSeeedExists(scip) )
       {
-         SCIPinfoMessage(scip, NULL,"there is an unpresolved decomposition and problem is not presolved yet -> disable presolving and start optimizing (rerun with presolve command before detect command for detecting in presolved problem  )  \n");
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "there is an unpresolved decomposition and problem is not presolved yet -> disable presolving and start optimizing (rerun with presolve command before detect command for detecting in presolved problem  )  \n");
          SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
          SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
       }
@@ -959,17 +944,17 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
       assert(SCIPconshdlrDecompCheckConsistency(scip) );
 
-      if( !SCIPconshdlrDecompExistsSelected(scip) )
+      if( !SCIPconshdlrDecompGetSelectExists(scip) )
       {
          if( SCIPconshdlrDecompUnpresolvedSeeedExists(scip) )
          {
             SCIP_Bool success;
-            SCIPinfoMessage(scip, NULL,"there is an unpresolved decomposition -> try to translate it to presolved problem...  \n");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "there is an unpresolved decomposition -> try to translate it to presolved problem...  \n");
             SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
 
             if( !success )
             {
-               SCIPinfoMessage(scip, NULL,"translatation was not successful -> revoke presolving and use user given decomposition   \n");
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "translatation was not successful -> revoke presolving and use user given decomposition   \n");
                /* @TODO experimental */
                SCIPconshdlrDecompNotifyNonFinalFreeTransform(scip);
                SCIPfreeTransform(scip);
@@ -981,7 +966,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
                assert(success);
             }
             else
-               SCIPinfoMessage(scip, NULL,"translation was successful \n");
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "translation was successful \n");
          }
       }
 
@@ -1006,10 +991,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_SOLVING:
       assert( SCIPconshdlrDecompCheckConsistency(scip) );
       assert(SCIPgetNConss(scip) == SCIPgetNActiveConss(scip) );
-      if( SCIPconshdlrDecompExistsSelected(scip) )
-         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE ) );
-      else
-         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE ) );
+      SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip) );
+
       if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
       {
          int npresolvingrounds;
@@ -1018,7 +1001,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          SCIPgetIntParam(scip, "presolving/maxrounds", &npresolvingrounds);
          if( npresolvingrounds > 0)
          {
-            SCIPinfoMessage(scip, NULL,"best candidate decomposition is from unpresolved problem -> revoke presolving and use it \n");
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "best candidate decomposition is from unpresolved problem -> revoke presolving and use it \n");
             SCIPconshdlrDecompNotifyNonFinalFreeTransform(scip);
             SCIPfreeTransform(scip);
             SCIPconshdlrDecompNotifyFinishedNonFinalFreeTransform(scip);
@@ -1580,18 +1563,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
    }
-
-   /* select */
-   if( !SCIPdialogHasEntry(root, "decomposition_toolbox") )
-   {
-      SCIP_CALL( SCIPincludeDialog(scip, &submenu,
-         NULL,
-         GCGdialogExecToolbox, NULL, NULL,
-         "decomposition_toolbox", "create/modify (partial) decompositions", FALSE, NULL) );
-      SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
-      SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
-   }
-
 
    /* detect */
    if( !SCIPdialogHasEntry(root, "detect") )

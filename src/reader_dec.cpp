@@ -54,6 +54,7 @@
 #include "pub_decomp.h"
 
 #include "class_seeed.h"
+#include "wrapper_seeed.h"
 
 typedef gcg::Seeed* SeeedPtr;
 
@@ -644,13 +645,15 @@ SCIP_RETCODE readPresolved(
 static
 SCIP_RETCODE readNBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
-   DECINPUT*             decinput            /**< DEC reading data */
+   DECINPUT*             decinput,           /**< DEC reading data */
+   gcg::Seeed*           seeed               /**< seeed to edit */
    )
 {
    int nblocks;
 
    assert(scip != NULL);
    assert(decinput != NULL);
+   assert(seeed != NULL);
 
    while( getNextToken(decinput) )
    {
@@ -669,7 +672,7 @@ SCIP_RETCODE readNBlocks(
          if( decinput->nblocks == NOVALUE )
          {
             decinput->nblocks = nblocks;
-            SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(scip, nblocks);
+            seeed->setNBlocks(nblocks);
          }
          else
             syntaxError(scip, decinput, "2 integer values in nblocks section");
@@ -685,6 +688,7 @@ static
 SCIP_RETCODE readBlockconss(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput,           /**< DEC reading data */
+   gcg::Seeed*           seeed,              /**< seeed to edit */
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
@@ -694,6 +698,7 @@ SCIP_RETCODE readBlockconss(
    SCIP_Bool success;
    assert(decinput != NULL);
    assert(readerdata != NULL);
+   assert(seeed != NULL);
 
    currblock = 0;
 
@@ -760,7 +765,7 @@ SCIP_RETCODE readBlockconss(
       {
          SCIPdebugMessage("Cons <%s> has been deleted by presolving or has no variable at all, skipped.\n",  SCIPconsGetName(cons) );
          SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (currblock+1)) );
-         SCIP_CALL(SCIPconshdlrDecompUserSeeedSetConsToBlock(scip, decinput->token, currblock) );
+         SCIP_CALL( seeed->bookAsBlockConsByName(decinput->token, currblock) );
          ++currblock;
          currblock = currblock % decinput->nblocks;
          continue;
@@ -778,7 +783,7 @@ SCIP_RETCODE readBlockconss(
 
       SCIPdebugMessage("cons %s is in block %d\n", SCIPconsGetName(cons), blockid);
       SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (blockid+1)) );
-      SCIP_CALL(SCIPconshdlrDecompUserSeeedSetConsToBlock(scip, decinput->token, blockid) );
+      SCIP_CALL( seeed->bookAsBlockConsByName(decinput->token, blockid) );
    }
 
    return SCIP_OKAY;
@@ -789,6 +794,7 @@ static
 SCIP_RETCODE readBlockvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput,           /**< DEC reading data */
+   gcg::Seeed*           seeed,              /**< seeed to edit */
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
@@ -796,14 +802,12 @@ SCIP_RETCODE readBlockvars(
 
    assert(decinput != NULL);
    assert(readerdata != NULL);
+   assert(seeed != NULL);
 
    while( getNextToken(decinput) )
    {
       SCIP_Var* var;
-//      SCIP_VAR** curvars = NULL;
-//      int ncurvars;
 
-//      SCIP_Bool conshasvar = FALSE;
       /* check if we reached a new section */
       if( isNewSection(scip, decinput) )
          break;
@@ -822,12 +826,8 @@ SCIP_RETCODE readBlockvars(
          continue;
       }
 
-
       blockid = decinput->blocknr;
-
-
-      SCIPconshdlrDecompUserSeeedSetVarToBlock(scip, decinput->token, blockid);
-
+      SCIP_CALL( seeed->bookAsBlockVarByName(decinput->token, blockid) );
    }
 
    return SCIP_OKAY;
@@ -840,12 +840,14 @@ static
 SCIP_RETCODE readMasterconss(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput,           /**< DEC reading data */
+   gcg::Seeed*           seeed,              /**< seeed to edit */
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
    assert(scip != NULL);
    assert(decinput != NULL);
    assert(readerdata != NULL);
+   assert(seeed != NULL);
 
    while( getNextToken(decinput) )
    {
@@ -875,7 +877,7 @@ SCIP_RETCODE readMasterconss(
 
          assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) LINKINGVALUE);
 
-         SCIPconshdlrDecompUserSeeedSetConsToMaster(scip, decinput->token);
+         SCIP_CALL( seeed->bookAsMasterConsByName(decinput->token) );
          SCIPdebugMessage("cons %s is linking constraint\n", decinput->token);
       }
    }
@@ -888,12 +890,14 @@ static
 SCIP_RETCODE readMastervars(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput,           /**< DEC reading data */
+   gcg::Seeed*           seeed,              /**< seeed to edit */
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
    assert(scip != NULL);
    assert(decinput != NULL);
    assert(readerdata != NULL);
+   assert(seeed != NULL);
 
    while( getNextToken(decinput) )
    {
@@ -918,7 +922,7 @@ SCIP_RETCODE readMastervars(
             continue;
          }
 
-         SCIPconshdlrDecompUserSeeedSetVarToMaster(scip, decinput->token);
+         SCIP_CALL( seeed->bookAsMasterVarByName(decinput->token) );
 
          SCIPdebugMessage("var %s is master constraint\n", decinput->token);
       }
@@ -932,12 +936,14 @@ static
 SCIP_RETCODE readLinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput,           /**< DEC reading data */
+   gcg::Seeed*           seeed,              /**< seeed to edit */
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
    assert(scip != NULL);
    assert(decinput != NULL);
    assert(readerdata != NULL);
+   assert(seeed != NULL);
 
    while( getNextToken(decinput) )
    {
@@ -962,7 +968,7 @@ SCIP_RETCODE readLinkingvars(
             continue;
          }
 
-         SCIPconshdlrDecompUserSeeedSetVarToLinking(scip, decinput->token);
+         SCIP_CALL( seeed->bookAsLinkingVarByName(decinput->token) );
 
          SCIPdebugMessage("cons %s is linking constraint\n", decinput->token);
       }
@@ -1011,13 +1017,11 @@ SCIP_RETCODE readDECFile(
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
 
-
-
-
    /* parse the file */
    decinput->section = DEC_START;
    retcode = SCIP_OKAY;
-
+   gcg::Seeed* newseeed;
+   Seeed_Wrapper swpool;
    while( decinput->section != DEC_END && ! hasError(decinput) && retcode == SCIP_OKAY )
    {
       switch( decinput->section )
@@ -1029,16 +1033,12 @@ SCIP_RETCODE readDECFile(
             SCIP_CALL( readIncomplete(scip, decinput) );
             break;
 
-
          case DEC_PRESOLVED:
             SCIP_CALL( readPresolved(scip, decinput) );
             if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
             {
-
                SCIPinfoMessage(scip, NULL, "read presolved decomposition but problem is not presolved yet -> presolve()\n");
                SCIPpresolve(scip);
-
-
 
                assert(decinput->haspresolvesection);
             }
@@ -1070,11 +1070,18 @@ SCIP_RETCODE readDECFile(
                SCIPdebugMessage("init cons block of %s to %ld\n", SCIPconsGetName(conss[i]), (long) SCIPhashmapGetImage(readerdata->constoblock, conss[i]) );
             }
 
-            SCIPconshdlrDecompCreateUserSeeed(scip, decinput->presolved, decinput->incomplete);
+            decinput->presolved ? SCIPconshdlrDecompGetSeeedpool(scip, &swpool)
+                  : SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &swpool);
+            newseeed = new gcg::Seeed(scip, swpool.seeedpool->getNewIdForSeeed(), swpool.seeedpool);
+            newseeed->setIsFromUnpresolved( !decinput->presolved );
+            if(decinput->incomplete)
+               newseeed->setUsergiven(gcg::USERGIVEN::PARTIAL);
+            else
+               newseeed->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
             break;
 
          case DEC_NBLOCKS:
-            SCIP_CALL( readNBlocks(scip, decinput) );
+            SCIP_CALL( readNBlocks(scip, decinput, newseeed) );
             if( decinput->haspresolvesection && !decinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
             {
                SCIPwarningMessage(scip, "decomposition belongs to the unpresolved problem, but the problem is already presolved, please consider to re-read the problem and read the decomposition without presolving when transforming do not succeed.\n");
@@ -1088,27 +1095,24 @@ SCIP_RETCODE readDECFile(
             break;
 
          case DEC_BLOCKCONSS:
-            SCIP_CALL( readBlockconss(scip, decinput, readerdata) );
+            SCIP_CALL( readBlockconss(scip, decinput, newseeed, readerdata) );
             break;
 
          case DEC_MASTERCONSS:
-            SCIP_CALL( readMasterconss(scip, decinput, readerdata) );
+            SCIP_CALL( readMasterconss(scip, decinput, newseeed, readerdata) );
             break;
 
          case DEC_BLOCKVARS:
-            SCIP_CALL( readBlockvars(scip, decinput, readerdata) );
+            SCIP_CALL( readBlockvars(scip, decinput, newseeed, readerdata) );
             break;
 
-
          case DEC_MASTERVARS:
-            SCIP_CALL( readMastervars(scip, decinput, readerdata) );
+            SCIP_CALL( readMastervars(scip, decinput, newseeed, readerdata) );
             break;
 
          case DEC_LINKINGVARS:
-            SCIP_CALL( readLinkingvars(scip, decinput, readerdata) );
+            SCIP_CALL( readLinkingvars(scip, decinput, newseeed, readerdata) );
             break;
-
-
 
          case DEC_END: /* this is already handled in the while() loop */
          default:
@@ -1120,30 +1124,16 @@ SCIP_RETCODE readDECFile(
    if( decinput->haserror)
    {
       SCIPinfoMessage(scip, NULL, "error occured while reading dec file");
-      SCIPconshdlrDecompUserSeeedReject(scip);
+      delete newseeed;
    }
    else
    {
       SCIPinfoMessage(scip, NULL, "just read dec file:");
-      SCIPconshdlrDecompUserSeeedFlush(scip);
+      Seeed_Wrapper sw;
+      sw.seeed = newseeed;
+      SCIPconshdlrDecompRefineAndAddSeeed(scip, &sw);
    }
-//   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
-//
-//   if( retcode == SCIP_OKAY )
-//   {
-//      /* fill decomp */
-//      retcode =  fillDecompStruct(scip, decinput, decdecomp, readerdata);
-//   }
-//
-//   if( retcode == SCIP_OKAY )
-//   {
-//      /* add decomp to cons_decomp */
-//      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
-//   }
-//   else
-//   {
-//      SCIP_CALL( DECdecompFree(scip, &decdecomp) );
-//   }
+
    SCIPhashmapFree(&readerdata->constoblock);
 
    /* close file */

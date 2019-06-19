@@ -719,6 +719,15 @@ SCIP_RETCODE DECpermuteDecomp(
    SCIP_RANDNUMGEN*      randnumgen          /**< random number generator */
    );
 
+/** gets the number of existing decompositions
+ * 
+ * @returns number of decompositions
+ */
+extern
+int DECgetNDecomps(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 #ifdef __cplusplus
 }
 #endif

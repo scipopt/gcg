@@ -240,6 +240,7 @@ LIBOBJ = \
 			dec_stairheur.o \
 			dec_varclass.o \
 			decomp.o \
+			dialog_explore.o \
 			dialog_gcg.o \
 			dialog_graph.o \
 			dialog_master.o \
