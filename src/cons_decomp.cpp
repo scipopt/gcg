@@ -284,121 +284,39 @@ SCIP_CONSHDLRDATA* getConshdlrdata(
 }
 
 
-/** local method to handle store a complete seeed in the unpresolved seeedpool
+/** @brief local method to handle store a seeed in the seeedpool
+ * 
+ * if presolved, the seeed is added to the presolved seeedpool,
+ * else to the unpresolved seeedpool
  *
  * @returns SCIP status */
 static
-SCIP_RETCODE SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(
+SCIP_RETCODE SCIPconshdlrDecompAddSeeed(
      SCIP* scip,     /**< SCIP data structure */
-     SeeedPtr  seeed /**< pointer to seeed */
+     SeeedPtr seeed, /**< pointer to seeed */
+     bool presolved  /**< if true add to presolved, else to unpresolved */
    )
 {
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    SCIP_Bool success;
 
+   Seeedpool* seeedpool = presolved ? conshdlrdata->seeedpool : conshdlrdata->seeedpoolunpresolved;
+
    if( conshdlrdata == NULL )
    {
-      SCIPerrorMessage("Decomp constraint handler is not included, cannot add complete seeed!\n");
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add seeed!\n");
       return SCIP_ERROR;
    }
 
-   assert( seeed->isComplete() );
-   assert( seeed->isFromUnpresolved() );
-
-   conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
+   if( seeed->isComplete() )
+      seeedpool->addSeeedToFinished(seeed, &success);
+   else
+      seeedpool->addSeeedToIncomplete(seeed, &success);
 
    if( !success )
      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Decomposition to add is already known to gcg!\n");
 
    return SCIP_OKAY;
-   }
-
-/** local method to handle store a complete seeed in the presolved seeedpool
- *
- * @returns SCIP status */
-static
-SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForPresolved(
-     SCIP* scip,     /**< SCIP data structure */
-     SeeedPtr  seeed /**< pointer to seeed */
-   )
-{
-      SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-      SCIP_Bool success;
-
-
-      if( conshdlrdata == NULL )
-      {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add complete seeed!\n");
-         return SCIP_ERROR;
-      }
-
-     assert( seeed->isComplete() );
-     assert( !seeed->isFromUnpresolved() );
-
-     conshdlrdata->seeedpool->addSeeedToFinished(seeed, &success);
-
-     if( !success )
-        SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Decomposition to add is already known to gcg!\n");
-
-      return SCIP_OKAY;
-}
-
-/** local method to handle store a seeed as partial seeed to unpresolved seeedpool
- *
- * @returns SCIP status */
-static
-SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForUnpresolved(
-     SCIP* scip,     /**< SCIP data structure */
-     SeeedPtr  seeed /**< pointer to seeed */
-   )
-{
-      SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-      SCIP_Bool success;
-
-      if( conshdlrdata == NULL )
-      {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add partial seeed!\n");
-         return SCIP_ERROR;
-      }
-
-     assert( !seeed->isComplete() );
-     assert( seeed->isFromUnpresolved() );
-
-     conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete(seeed, &success);
-
-     if( !success )
-        SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Decomposition to add is already known to gcg!\n");
-
-     return SCIP_OKAY;
-  }
-
-/** local method to handle store a seeed as partial seeed to presolved seeedpool
- *
- * @returns SCIP status*/
-static
-SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForPresolved(
-     SCIP* scip,     /**< SCIP data structure */
-     SeeedPtr  seeed /**< pointer to partial seeed */
-   )
-{
-      SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-      SCIP_Bool success;
-
-      if( conshdlrdata == NULL )
-      {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add partial seeed!\n");
-         return SCIP_ERROR;
-      }
-
-     assert( !seeed->isComplete() );
-     assert( !seeed->isFromUnpresolved() );
-
-     conshdlrdata->seeedpool->addSeeedToIncomplete(seeed, &success);
-
-     if( !success )
-        SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Decomposition to add is already known to gcg!\n");
-
-     return SCIP_OKAY;
 }
 
 
@@ -414,16 +332,16 @@ SCIP_RETCODE  SCIPconshdlrDecompAddSeeed(
       if( seeed->isComplete() )
       {
          if( seeed->isFromUnpresolved() )
-            SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(scip, seeed);
+            SCIPconshdlrDecompAddSeeed(scip, seeed, false);
          else
-            SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, seeed);
+            SCIPconshdlrDecompAddSeeed(scip, seeed, true);
       }
       else
       {
          if( seeed->isFromUnpresolved() )
-            SCIPconshdlrDecompAddPartialSeeedForUnpresolved(scip, seeed);
+            SCIPconshdlrDecompAddSeeed(scip, seeed, false);
          else
-            SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, seeed);
+            SCIPconshdlrDecompAddSeeed(scip, seeed, true);
       }
 
       return SCIP_OKAY;
@@ -2029,22 +1947,14 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    for(; seeediter != seeediterend; ++seeediter )
    {
       seeedpool->prepareSeeed( *seeediter);
-      if( (*seeediter)->isComplete() )
-      {
-         SCIP_CALL(SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, *seeediter ) );
-         *success = TRUE;
-      }
-      else
+      if( !((*seeediter)->isComplete()) )
       {
          (*seeediter)->completeByConnected();
-         if ( (*seeediter)->isComplete() )
-         {
-            SCIP_CALL(SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, *seeediter ) );
-            *success = TRUE;
-         }
-         else
-            SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, *seeediter ) );
       }
+      SCIP_CALL(SCIPconshdlrDecompAddSeeed(scip, *seeediter, true) );
+
+      if( (*seeediter)->isComplete() )
+         *success = TRUE;
    }
 
    return SCIP_OKAY;
@@ -3878,23 +3788,23 @@ SCIP_RETCODE SCIPconshdlrDecompRefineAndAddSeeed(
 
       if( !seeed->isFromUnpresolved() )
       {
-         SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, seeed));
+         SCIP_CALL( SCIPconshdlrDecompAddSeeed(scip, seeed, true));
       }
       /* stems from unpresolved problem */
       else
       {
-
-         SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(scip, seeed) );
+         SCIP_CALL( SCIPconshdlrDecompAddSeeed(scip, seeed, false) );
 
          /* if seeedpool for presolved problem already exist try to translate seeed */
-         if ( conshdlrdata->seeedpool != NULL )          {
+         if ( conshdlrdata->seeedpool != NULL )
+         {
             std::vector<Seeed*> seeedtotranslate(0);
             std::vector<Seeed*> newseeeds(0);
             seeedtotranslate.push_back(seeed);
             conshdlrdata->seeedpool->translateSeeeds(conshdlrdata->seeedpoolunpresolved, seeedtotranslate, newseeeds);
             if( newseeeds.size() != 0 )
             {
-               SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, newseeeds[0]) );
+               SCIP_CALL( SCIPconshdlrDecompAddSeeed(scip, newseeeds[0], true) );
             }
          }
       }
@@ -3905,9 +3815,9 @@ SCIP_RETCODE SCIPconshdlrDecompRefineAndAddSeeed(
       seeed->setUsergiven( USERGIVEN::PARTIAL );
 
       if ( !seeed->isFromUnpresolved() )
-         SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, seeed) );
+         SCIP_CALL(SCIPconshdlrDecompAddSeeed(scip, seeed, true) );
       else
-         SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForUnpresolved(scip, seeed) );
+         SCIP_CALL(SCIPconshdlrDecompAddSeeed(scip, seeed, false) );
    }
 
    /* set statistics */
