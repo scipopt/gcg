@@ -330,7 +330,7 @@ SCIP_RETCODE GCGdialogShowMenu(
    for(int i = startindex; i < startindex + menulength && i < (int) idlist->size(); ++i)
    {
       /* get current seeed */
-      Seeed seeed = getSeeed(scip, idlist->at(i));
+      Seeed* seeed = getSeeed(scip, idlist->at(i));
 
       /* each line starts with a space */
       SCIPdialogMessage(scip, NULL, " ");
@@ -342,29 +342,29 @@ SCIP_RETCODE GCGdialogShowMenu(
          if(header == "nr")
             towrite = std::to_string(i);
          else if(header == "id")
-            towrite = std::to_string(seeed.getID());
+            towrite = std::to_string(seeed->getID());
          else if(header == "nbloc")
-            towrite = std::to_string(seeed.getNBlocks());
+            towrite = std::to_string(seeed->getNBlocks());
          else if(header == "nmacon")
-            towrite = std::to_string(seeed.getNMasterconss());
+            towrite = std::to_string(seeed->getNMasterconss());
          else if(header == "nmavar")
-            towrite = std::to_string(seeed.getNMastervars());
+            towrite = std::to_string(seeed->getNMastervars());
          else if(header == "nlivar")
-            towrite = std::to_string(seeed.getNLinkingvars());
+            towrite = std::to_string(seeed->getNLinkingvars());
          else if(header == "nstlva")
-            towrite = std::to_string(seeed.getNTotalStairlinkingvars());
+            towrite = std::to_string(seeed->getNTotalStairlinkingvars());
          else if(header == "score")
-            towrite = std::to_string(seeed.getScore(SCIPconshdlrDecompGetScoretype(scip))).substr(0, columnlength.at(header));
+            towrite = std::to_string(seeed->getScore(SCIPconshdlrDecompGetScoretype(scip))).substr(0, columnlength.at(header));
          else if(header == "history")
-            towrite = seeed.getDetectorChainString();
+            towrite = seeed->getDetectorChainString();
          else if(header == "pre")
-            towrite = (!seeed.isFromUnpresolved()) ? "yes" : "no";
+            towrite = (!seeed->isFromUnpresolved()) ? "yes" : "no";
          else if(header == "nopcon")
-            towrite = std::to_string(seeed.getNOpenconss());
+            towrite = std::to_string(seeed->getNOpenconss());
          else if(header == "nopvar")
-            towrite = std::to_string(seeed.getNOpenvars());
+            towrite = std::to_string(seeed->getNOpenvars());
          else if(header == "sel")
-            towrite = (seeed.isSelected()) ? "yes" : "no";
+            towrite = (seeed->isSelected()) ? "yes" : "no";
          else 
             towrite = " ";
 
@@ -641,7 +641,7 @@ SCIP_RETCODE GCGdialogSelect(
    assert(scip != NULL);
 
    /* get input */
-   SCIPdialogMessage(scip, NULL, "Please specify the nr of the decomposition to be selected:\n");
+   SCIPdialogMessage(scip, NULL, "\nPlease specify the nr of the decomposition to be selected:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
    commandlen = strlen(ntovisualize);
 
@@ -661,9 +661,6 @@ SCIP_RETCODE GCGdialogSelect(
 
    /* reverse selection (deselects if seeed was previously selected) */
    seeed->setSelected(!seeed->isSelected() );
-
-   if( seeed->isSelected() )
-      std::cout << "is selected!" << seeed->isSelected() << std::endl;
 
    return SCIP_OKAY;
 }
