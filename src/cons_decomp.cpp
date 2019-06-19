@@ -570,26 +570,28 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   /* remove the used decomp */
    if( conshdlrdata->useddecomp != NULL )
       SCIP_CALL( DECdecompFree(scip, &conshdlrdata->useddecomp) );
 
-
+   /* remove all decomps */
    if( conshdlrdata->ndecomps > 0 && conshdlrdata->decdecomps != NULL )
    {
       for( int dec = 0; dec < conshdlrdata->ndecomps; ++dec )
       {
-
          DECdecompFree(scip, &conshdlrdata->decdecomps[conshdlrdata->ndecomps - dec - 1]);
       }
 
+      /* remove decomp array structure */
       SCIPfreeBlockMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps);
       conshdlrdata->ndecomps = 0;
       conshdlrdata->decdecomps = NULL;
    }
 
-
+   /* reset the run */
    conshdlrdata->hasrun = FALSE;
 
+   /* release the detectors' data sets */
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
       DEC_DETECTOR *detector;
@@ -604,9 +606,11 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       }
    }
 
+   /* remove the presolved seeedpool */
    delete conshdlrdata->seeedpool;
    conshdlrdata->seeedpool = NULL;
 
+   /* if parameter is set, free unpresolved seeedpool */
    if( !conshdlrdata->nonfinalfreetransform )
    {
       if( conshdlrdata->seeedpoolunpresolved != NULL )
@@ -614,8 +618,8 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       conshdlrdata->seeedpoolunpresolved = NULL;
    }
 
+   /* remove selection of seeeds */
    SCIPconshdlrdataDecompUnselectAll(scip);
-
 
    return SCIP_OKAY;
 }
@@ -629,9 +633,11 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   /* free detection time clocks */
    SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->completedetectionclock) );
 
+   /* free all detectors */
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
       DEC_DETECTOR *detector;
@@ -650,6 +656,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    if ( conshdlrdata->useddecomp != NULL )
       SCIP_CALL( DECdecompFree(scip, &conshdlrdata->useddecomp) );
 
+   /* remove all remaining data */
    if( conshdlrdata->candidates != NULL )
          delete conshdlrdata->candidates;
 
@@ -658,6 +665,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 
    delete conshdlrdata->userblocknrcandidates;
 
+   /* remove the data structure of the conshdlr */
    SCIPfreeMemory(scip, &conshdlrdata);
 
    return SCIP_OKAY;
@@ -723,6 +731,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPallocMemory(scip, &conshdlrdata) );
    assert(conshdlrdata != NULL);
 
+   /* initialize conshdlrdata */
    conshdlrdata->useddecomp = NULL;
    conshdlrdata->ndetectors = 0;
    conshdlrdata->priorities = NULL;
@@ -739,9 +748,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->seeedpoolunpresolved = NULL;
    conshdlrdata->seeedpool = NULL;
    conshdlrdata->ncallscreatedecomp = 0;
-
    conshdlrdata->consnamesalreadyrepaired = FALSE;
-
    conshdlrdata->unpresolveduserseeedadded = FALSE;
    conshdlrdata->candidates = new std::vector<std::pair<SeeedPtr, SCIP_Real > >(0);
    conshdlrdata->sizedecomps = 10;
@@ -753,6 +760,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->completedetectionclock) );
+
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
          CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY, CONSHDLR_EAGERFREQ, CONSHDLR_NEEDSCONS,
@@ -765,7 +773,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPsetConshdlrInit(scip, conshdlr, consInitDecomp) );
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitDecomp) );
 
-
+   /* add menu parameters for detection */
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/allowclassifierduplicates/enabled", "indicates whether classifier duplicates are allowed (for statistical reasons)", &conshdlrdata->allowclassifierduplicates, FALSE, DEFAULT_ALLOWCLASSIFIERDUPLICATES, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssadjcalculated", "conss adjecency datastructures should be calculated", &conshdlrdata->conssadjcalculated, FALSE, DEFAULT_CONSSADJCALCULATED, NULL, NULL) );
@@ -860,11 +868,13 @@ int findGenericConsname(
    /* terminates since there are only finitely many constraints and i (for c_i) increases every iteration */
    while( TRUE )
    {
+      /* create new name candidate */
       char candidatename[SCIP_MAXSTRLEN] = "c_";
       char number[20];
       sprintf(number, "%d", candidatenumber );
       strcat(candidatename, number );
 
+      /* check candidate, if it is not free increase counter for candidate number */
       if ( SCIPfindCons( scip, candidatename ) == NULL )
       {
          strncpy(consname, candidatename, namelength - 1);
