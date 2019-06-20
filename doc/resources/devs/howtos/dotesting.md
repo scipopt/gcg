@@ -58,3 +58,7 @@ The previous chapter only covered the absolute basics of testing, mainly used
 for verification purposes. But heads up, the output files still have a purpose,
 even if you verified that your GCG works (and how fast it works). You can create
 various visualizations. They are explained under \ref generatevisu.
+
+### Troubleshooting
+**Q: Why are there LP files missing?**\n
+A: If the test is executed in the chair, you have to link the folder containing the striplib to your `check/instances` folder.
