@@ -9,8 +9,7 @@
 
 
 # this can overwritten by a -D file=<filename> option
-# you can download the parameter files from https://scis.uohyd.ac.in/~apcs/capmds/
-param file := "CAPMDS-data/uni/UDG/2/50/150/graphS0N50"; 
+param file="CAPMDS-data/uni/UDG/2/50/150/graphS0N50"; 
 
 # how many vertices?
 param n := read file as "1n" use 1;

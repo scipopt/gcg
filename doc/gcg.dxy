@@ -718,7 +718,7 @@ CITE_BIB_FILES         = gcg.bib
 # messages are off.
 # The default value is: NO.
 
-QUIET                  = NO ### CHANGE TO NO DURING REFACTORING
+QUIET                  = YES
 
 # The WARNINGS tag can be used to turn on/off the warning messages that are
 # generated to standard error (stderr) by doxygen. If WARNINGS is set to YES
@@ -734,7 +734,7 @@ WARNINGS               = YES
 # will automatically be disabled.
 # The default value is: YES.
 
-WARN_IF_UNDOCUMENTED   = NO ### CHANGE TO YES DURING REFACTORING
+WARN_IF_UNDOCUMENTED   = YES
 
 # If the WARN_IF_DOC_ERROR tag is set to YES, doxygen will generate warnings for
 # potential errors in the documentation, such as not documenting some parameters
@@ -742,7 +742,7 @@ WARN_IF_UNDOCUMENTED   = NO ### CHANGE TO YES DURING REFACTORING
 # markup commands wrongly.
 # The default value is: YES.
 
-WARN_IF_DOC_ERROR      = NO ### CHANGE TO YES DURING REFACTORING
+WARN_IF_DOC_ERROR      = YES
 
 # This WARN_NO_PARAMDOC option can be enabled to get warnings for functions that
 # are documented, but have no documentation for their parameters or return
@@ -785,7 +785,6 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = . \
-												 ../src/ \
                          ./resources/ \
                          ./resources/users \
                          ./resources/users/features \
@@ -1159,8 +1158,7 @@ HTML_EXTRA_STYLESHEET  =
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
 HTML_EXTRA_FILES       = resources/users/use-cases/potluri+singh.zpl \
-			 resources/users/use-cases/CDS_uni.zpl \
-			 resources/users/use-cases/uni-UDG-5-250-150-graphS0N250.mps.gz 
+			 resources/users/use-cases/CDS_uni.zpl
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to
