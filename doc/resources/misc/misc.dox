@@ -5,9 +5,7 @@ for example compatibility and known bugs.
 - \subpage input-formats
 - \subpage compatibility
 - \subpage known-bugs
-- \subpage citelist
-- \subpage modules
-- \subpage classes
+- @subpage citelist
 
 */
 

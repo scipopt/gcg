@@ -629,7 +629,7 @@ GENERATE_TESTLIST      = NO
 # list. This list is created by putting \bug commands in the documentation.
 # The default value is: YES.
 
-GENERATE_BUGLIST       = YES
+GENERATE_BUGLIST       = NO
 
 # The GENERATE_DEPRECATEDLIST tag can be used to enable (YES) or disable (NO)
 # the deprecated list. This list is created by putting \deprecated commands in
@@ -707,7 +707,7 @@ LAYOUT_FILE            = gcglayout.xml
 # LATEX_BIB_STYLE. To use this feature you need bibtex and perl available in the
 # search path. See also \cite for info how to create references.
 
-CITE_BIB_FILES         = gcg.bib
+CITE_BIB_FILES         = ./resources/misc/gcg.bib
 
 #---------------------------------------------------------------------------
 # Configuration options related to warning and progress messages
@@ -1160,7 +1160,7 @@ HTML_EXTRA_STYLESHEET  =
 
 HTML_EXTRA_FILES       = resources/users/use-cases/potluri+singh.zpl \
 			 resources/users/use-cases/CDS_uni.zpl \
-			 resources/users/use-cases/uni-UDG-5-250-150-graphS0N250.mps.gz 
+			 resources/users/use-cases/uni-UDG-5-250-150-graphS0N250.mps.gz
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to

@@ -11,7 +11,7 @@ set -e
 ./resources/devs/detectors/createindexes.sh
 cd $(dirname $0)
 
-
+# Bypassed through usage of a direct link
 if [ "$1" == "--mathjax" ]
 then
    DOXYGEN_USE_MATHJAX="YES"
@@ -36,6 +36,7 @@ fi
 CURRENT_VERSION=`grep '@version' main.md | awk '{ printf("%s", $2); }'`
 
 echo "Building documentation in html/doc-${CURRENT_VERSION}."
+echo "Please ensure that graphviz is installed on your system."
 echo "<li><a href='../doc-${CURRENT_VERSION}/index.html'>GCG ${CURRENT_VERSION}</a></li>" > docversions.html
 
 # Create index.html and gcgheader.html.
@@ -52,5 +53,9 @@ DOXYGEN_USE_MATHJAX=${DOXYGEN_USE_MATHJAX} doxygen gcg.dxy
 echo "Cleaning up."
 rm -rf html/doc-${CURRENT_VERSION} docversions.html gcgheader.html
 mv html/doc html/doc-${CURRENT_VERSION}
+echo $(pwd)
+cd html/doc-${CURRENT_VERSION}/
+echo $(pwd)
+sed -i '/citelist/d' *.js
 
 echo "Done."
