@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -482,7 +482,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
 
       valid = FALSE;
 
-      SCIP_CALL( SCIPcopy(scip, restmaster, varmapfw, NULL, "restmaster", TRUE, FALSE, TRUE, &valid) ); /** @todo check for thread safeness */
+      SCIP_CALL( SCIPcopy(scip, restmaster, varmapfw, NULL, "restmaster", TRUE, FALSE, FALSE, TRUE, &valid) ); /** @todo check for thread safeness */
 
       if( heurdata->copycuts )
       {

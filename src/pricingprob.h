@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -48,7 +48,7 @@ extern "C" {
 #endif
 
 /** create a pricing problem */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGpricingprobCreate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB**     pricingprob,        /**< pricing problem to be created */
@@ -58,27 +58,27 @@ SCIP_RETCODE GCGpricingprobCreate(
 );
 
 /** free a pricing problem */
-EXTERN
+SCIP_EXPORT
 void GCGpricingprobFree(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB**     pricingprob         /**< pricing problem to be freed */
 );
 
 /** initialize pricing problem at the beginning of the pricing round */
-EXTERN
+SCIP_EXPORT
 void GCGpricingprobInitPricing(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** uninitialize pricing problem at the beginning of the pricing round */
-EXTERN
+SCIP_EXPORT
 void GCGpricingprobExitPricing(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
    );
 
 /** add generic branching data (constraint and dual value) to the current pricing problem */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGpricingprobAddGenericBranchData(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
@@ -87,14 +87,14 @@ SCIP_RETCODE GCGpricingprobAddGenericBranchData(
    );
 
 /** reset the pricing problem statistics for the current pricing round */
-EXTERN
+SCIP_EXPORT
 void GCGpricingprobReset(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** update solution information of a pricing problem */
-EXTERN
+SCIP_EXPORT
 void GCGpricingprobUpdate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
@@ -104,13 +104,13 @@ void GCGpricingprobUpdate(
    );
 
 /** add the information that the next branching constraint must be added */
-EXTERN
+SCIP_EXPORT
 void GCGpricingprobNextBranchcons(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** set the lower bound of a pricing job */
-EXTERN
+SCIP_EXPORT
 void GCGpricingjobSetLowerbound(
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_Real             lowerbound          /**< new lower bound */

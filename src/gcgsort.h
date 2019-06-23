@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -57,7 +57,7 @@ extern "C" {
  **/
 #define GCG_DECL_SORTPTRCOMP(x) int x (void* userdata, void* elem1, void* elem2)
 
-EXTERN
+SCIP_EXPORT
 void GCGsortPtr(
    void**                ptrarray,           /**< pointer array to be sorted */
    GCG_DECL_SORTPTRCOMP((*ptrcomp)),         /**< data element comparator */
@@ -66,7 +66,7 @@ void GCGsortPtr(
    );
 
 /** sort of two joint arrays of pointers/pointers, sorted by first array in non-decreasing order */
-EXTERN
+SCIP_EXPORT
 void GCGsortPtrPtr(
    void**                ptrarray1,          /**< first pointer array to be sorted */
    void**                ptrarray2,          /**< second pointer array to be permuted in the same way */

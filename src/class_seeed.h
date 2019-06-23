@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -111,7 +111,6 @@ private:
    bool mastervarssorted;                                      /**< bool to store if the mastervars datastructure is sorted atm */
    bool masterconsssorted;                                     /**< bool to store if the masterconsssorted datastructure is sorted atm */
 
-
    std::vector<int> bookedAsMasterConss;                       /**< vector containing indices of constraints that are not
                                                                  *< assigned yet but booked as master conss */
    std::vector<std::pair<int, int>> bookedAsBlockConss;        /**< vector containing indices of constraints that are not
@@ -177,31 +176,21 @@ private:
 
    std::vector<int> listofancestorids;                /**< vector containing decomposition indices that are ancestors of this seeed */
 
-
    USERGIVEN usergiven;                               /**< is this seeed partially or completely given by user */
    bool isfromlegacymode;                             /**< true if this seeed stems from a detector operating in legacy mode */
    SCIP_Real score;                                   /**< classc score to evaluate the partial */
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
    SCIP_Real bendersscore;                            /**< score to evaluate the seeeds */
    SCIP_Real benderareascore;                         /**< 1 - fraction of white area in master constraints to complete area */
-
    SCIP_Real strongdecompositionscore;                /**< strong decomposition score  */
-
    SCIP_Real borderareascore;                         /**< 1 - fraction of border area to complete area */
-
-
    SCIP_Real maxwhitescoreagg;                        /**< score corresponding to the max white measure according to aggregated blocks */
-
    SCIP_Real blockareascore;                          /**< 1 - fraction of block area to complete area */
    SCIP_Real blockareascoreagg;                       /**< 1 - fraction of aggregated block area to complete area */
-
-
-   SCIP_Real maxforeseeingwhitescore;                /**< maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
-   SCIP_Real maxforeseeingwhitescoreagg;             /**< maximum foreseeing  white area score with respect to aggregatable blocks  (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
-
+   SCIP_Real maxforeseeingwhitescore;                 /**< maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
+   SCIP_Real maxforeseeingwhitescoreagg;              /**< maximum foreseeing  white area score with respect to aggregatable blocks  (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
    SCIP_Real setpartfwhitescore;                      /** setpartitioning maximum foreseeing  white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )*/
    SCIP_Real setpartfwhitescoreagg;                   /** setpartitioning maximum foreseeing  white area score with respect to aggregateable  (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )*/
-
 
    char* detectorchainstring;                         /**< string formed by the chars of the detectors involved for this seeed  */
 
@@ -453,6 +442,16 @@ public:
       );
 
    /**
+    * @brief sets a constraint by name to a block
+    * @see bookAsBlockCons
+    * @returns SCIP return code
+    */
+   SCIP_RETCODE bookAsBlockConsByName(
+      const char*           consname,            /**< name of the constraint */
+      int                   blockid              /**< block index ( counting from 0) */
+      );
+
+   /**
     * @brief marks var as block variable of given block
     *
     * books a variable to be added to the block constraints of the given block
@@ -465,6 +464,16 @@ public:
    SCIP_RETCODE bookAsBlockVar(
       int varToBlock,
       int block
+      );
+
+   /**
+    * @brief books a variable by name to a block
+    * @see bookAsBlockVar
+    * @returns SCIP return code
+    */
+   SCIP_RETCODE bookAsBlockVarByName(
+      const char*           varname,             /**< name of the variable */
+      int                   blockid              /**< block index ( counting from 0) */
       );
 
    /**
@@ -482,6 +491,15 @@ public:
       );
 
    /**
+    * @brief books a constraint by name as master
+    * @see bookAsMasterCons
+    * @returns SCIP return code
+    */
+   SCIP_RETCODE bookAsMasterConsByName(
+      const char*           consname   /**< name of cons to book as master cons */
+      );
+
+   /**
     * @brief marks var as master variable
     *
     * books a variable to be added to the master variables (by calling flushBooked all bookings are in fact performed)
@@ -494,6 +512,15 @@ public:
       );
 
    /**
+    * @brief books a variable with given name as master
+    * @see bookAsMasterVar
+    * @returns SCIP return code
+    */
+   SCIP_RETCODE bookAsMasterVarByName(
+      const char*           varname              /**< name of the variable */
+      );
+
+   /**
     * @brief marks var as linking variable
     *
     * books a variable to be added to the linking variables (by calling flushBooked all bookings are in fact performed)
@@ -503,6 +530,15 @@ public:
     *  */
    SCIP_RETCODE bookAsLinkingVar(
       int varToLinking
+      );
+
+   /**
+    * @brief sets a variable by name to the linking variables
+    * @see bookAsLinkingVar
+    * @returns SCIP return code
+    */
+   SCIP_RETCODE bookAsLinkingVarByName(
+      const char*           varname              /**< name of the variable */
       );
 
    /**
@@ -1750,7 +1786,6 @@ public:
     *  assign other conss and vars to master if possible (@see assignOpenPartialHittingToMaster())
     * @return scip return code
     */
-   /**  */
    SCIP_RETCODE refineToMaster(
       );
 
@@ -1979,7 +2014,7 @@ public:
     * @see visual/pdfreader and
     * @note linux only
     */
-   void showVisualisation();
+   SCIP_RETCODE showVisualisation();
 
 
    /**

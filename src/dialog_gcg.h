@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -106,10 +106,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect);
 /** dialog execution method for the transform command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecTransform);
-
-/** dialog execution method for the decomposition toolbox command */
-extern
-SCIP_DECL_DIALOGEXEC(GCGdialogExecToolbox);
 
 /** dialog execution method for the optimize command */
 extern

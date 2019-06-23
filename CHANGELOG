@@ -1,8 +1,23 @@
 GCG Version 3.1.0
 =================
 
+New features:
+-------------
+- new detector neighborhoodmaster: calculating cons-cons adjacency (if not already done), sorting according size of neighborhood. Searching two consecutive constraints with largest size difference (according neighborhood size) in sorted constraints. All constraints having a larger neighborhood than the second one are assigned to the master.
 
+Code cleanup
+------------
+- Clean up 'explore' menu
+- Removed toolbox feature from 'explore' menu
+- Removed 'toolbox' command
 
+GCG Version 3.0.2
+=================
+
+Bug fixes
+---------
+
+- Fix segmentation fault due to missing relaxsol event handler in BENDERS and ORIGINAL mode.
 
 GCG Version 3.0.1
 =================
@@ -11,6 +26,8 @@ Command line interface:
 -----------------------
 
 - 'write matrix' and 'write origmatrix' for writing a gnuplot file showing the coefficient matrix
+
+- 'write selecteddecompositions' for writing all selected (in explore submenu) decompositions
 
 New/changed parameters:
 -----------------------
@@ -48,7 +65,6 @@ Bug fixes
 - Use correct method to free event handler data in event_relaxsol.
 - Fix parallelization in pricing loop by allowing only one job per pricing problem at a time
 - Add a missing Makefile dependency
-
 
 GCG Version 3.0.0
 =================

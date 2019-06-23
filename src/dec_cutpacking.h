@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -42,7 +42,7 @@
 extern "C" {
 #endif
 
-EXTERN
+SCIP_EXPORT
 /** creates the cutpacking detector and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectorCutpacking(
       SCIP*                 scip                /**< SCIP data structure */

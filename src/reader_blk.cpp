@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -62,6 +62,8 @@
 #include "pub_decomp.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
+#include "class_seeed.h"
+#include "wrapper_seeed.h"
 
 #define READER_NAME             "blkreader"
 #define READER_DESC             "file reader for structures in blk format"
@@ -596,6 +598,7 @@ SCIP_RETCODE readPresolved(
 static
 SCIP_RETCODE readNBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
+   gcg::Seeed*           seeed,              /**< seeed to edit */
    BLKINPUT*             blkinput            /**< BLK reading data */
    )
 {
@@ -603,6 +606,7 @@ SCIP_RETCODE readNBlocks(
 
    assert(scip != NULL);
    assert(blkinput != NULL);
+   assert(seeed != NULL);
 
    while( getNextToken(blkinput) )
    {
@@ -621,7 +625,7 @@ SCIP_RETCODE readNBlocks(
          if( blkinput->nblocks == NOVALUE )
          {
             blkinput->nblocks = nblocks;
-            SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(scip, nblocks);
+            seeed->setNBlocks(nblocks);
          }
          else
             syntaxError(scip, blkinput, "2 integer values in nblocks section");
@@ -637,12 +641,14 @@ static
 SCIP_RETCODE readBlock(
    SCIP*                 scip,               /**< SCIP data structure */
    BLKINPUT*             blkinput,           /**< BLK reading data */
+   gcg::Seeed*           seeed,              /**< seeed to edit */
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
    int blockid;
 
    assert(blkinput != NULL);
+   assert(seeed != NULL);
 
    blockid = blkinput->blocknr;
 
@@ -673,7 +679,7 @@ SCIP_RETCODE readBlock(
          SCIPdebugMessage("\tVar %s temporary in block %d.\n", SCIPvarGetName(var), blockid);
          readerdata->varstoblock[varidx] = blockid;
          ++(readerdata->nblockvars[blockid]);
-         SCIPconshdlrDecompUserSeeedSetVarToBlock(scip, blkinput->token, blockid);
+         SCIP_CALL( seeed->bookAsBlockVarByName(blkinput->token, blockid) );
       }
       /* variable was assigned to another (non-linking) block before, so it becomes a linking variable, now */
       else if( (oldblock != LINKINGVALUE) )
@@ -694,7 +700,7 @@ SCIP_RETCODE readBlock(
          readerdata->linkingvarsblocks[varidx][1] = blockid;
          readerdata->nlinkingvarsblocks[varidx] = 2;
 
-         SCIPconshdlrDecompUserSeeedSetVarToLinking(scip, blkinput->token);
+         SCIP_CALL( seeed->bookAsLinkingVarByName(blkinput->token) );
       }
       /* variable is a linking variable already, store the new block to which it belongs */
       else
@@ -716,10 +722,12 @@ static
 SCIP_RETCODE readMasterconss(
    SCIP*                 scip,               /**< SCIP data structure */
    BLKINPUT*             blkinput,           /**< BLK reading data */
+   gcg::Seeed*           seeed,              /**< Seeed to edit */
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
    assert(blkinput != NULL);
+   assert(seeed != NULL);
 
    while( getNextToken(blkinput) )
    {
@@ -740,7 +748,7 @@ SCIP_RETCODE readMasterconss(
       {
          assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) NOVALUE);
          SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (blkinput->nblocks +1)) );
-         SCIPconshdlrDecompUserSeeedSetConsToMaster(scip, blkinput->token);
+         SCIP_CALL( seeed->bookAsMasterConsByName(blkinput->token) );
       }
    }
 
@@ -753,10 +761,10 @@ SCIP_RETCODE fillDecompStruct(
    SCIP*                 scip,               /**< SCIP data structure */
    BLKINPUT*             blkinput,           /**< blk reading data */
    DEC_DECOMP*           decomp,             /**< DEC_DECOMP structure to fill */
+   gcg::Seeed*           seeed,              /**< seeed to fill for internal handling */
    SCIP_READERDATA*      readerdata          /**< reader data*/
    )
 {
-
    SCIP_HASHMAP* constoblock;
    SCIP_CONS** allcons;
    SCIP_VAR** allvars;
@@ -773,6 +781,7 @@ SCIP_RETCODE fillDecompStruct(
    assert(scip != NULL);
    assert(blkinput != NULL);
    assert(readerdata != NULL);
+   assert(seeed != NULL);
 
    allcons = SCIPgetConss(scip);
    allvars = SCIPgetVars(scip);
@@ -797,7 +806,7 @@ SCIP_RETCODE fillDecompStruct(
       var = allvars[i];
       if( readerdata->varstoblock[i] == NOVALUE )
       {
-         SCIP_CALL( SCIPconshdlrDecompUserSeeedSetVarToMaster(scip, SCIPvarGetName(var) ) );
+         SCIP_CALL( seeed->bookAsMasterVarByName(SCIPvarGetName(var)) );
       }
    }
 
@@ -879,7 +888,7 @@ SCIP_RETCODE fillDecompStruct(
          if( blocknr == -1 )
          {
             SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) (nblocks+1)) );
-            SCIP_CALL( SCIPconshdlrDecompUserSeeedSetConsToMaster(scip, SCIPconsGetName(cons) ) );
+            SCIP_CALL( seeed->bookAsMasterConsByName(SCIPconsGetName(cons)) );
 
             SCIPdebugMessage("constraint <%s> is a linking constraint\n",
                SCIPconsGetName(cons));
@@ -887,16 +896,16 @@ SCIP_RETCODE fillDecompStruct(
          else
          {
             SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) (blocknr+1)) );
-            SCIP_CALL( SCIPconshdlrDecompUserSeeedSetConsToBlock(scip, SCIPconsGetName(cons), blocknr ) );
+            SCIP_CALL( seeed->bookAsBlockConsByName(SCIPconsGetName(cons), blocknr) );
             SCIPdebugMessage("constraint <%s> is assigned to block %d\n", SCIPconsGetName(cons), blocknr);
          }
       }
    }
 
    SCIPinfoMessage(scip, NULL, "just read blk file:\n");
-   SCIPconshdlrDecompUserSeeedFlush(scip);
-
-
+   Seeed_Wrapper sw;
+   sw.seeed = seeed;
+   SCIPconshdlrDecompRefineAndAddSeeed(scip, &sw);
 
    retcode = DECfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE);
    SCIPfreeMemoryArray(scip, &consvars);
@@ -971,6 +980,7 @@ SCIP_RETCODE readBLKFile(
 
    /* parse the file */
    blkinput->section = BLK_START;
+   gcg::Seeed* newseeed;
    while( blkinput->section != BLK_END && !hasError(blkinput) )
    {
       switch( blkinput->section )
@@ -991,29 +1001,27 @@ SCIP_RETCODE readBLKFile(
             //            SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
          }
 
-
          if ( blkinput->presolved )
          {
             SCIPconshdlrDecompCreateSeeedpool(scip);
-            //             seeedpool = SCIPconshdlrDecompGetSeeedpool(scip);
-            //               decinput->seeed = new gcg::Seeed(scip, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars() );
-
          }
          else
          {
             SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
          }
-
-
-
          break;
 
       case BLK_NBLOCKS:
          if( blkinput->haspresolvesection )
          {
-                     SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved, FALSE);
+            Seeed_Wrapper swpool;
+            blkinput->presolved ? SCIPconshdlrDecompGetSeeedpool(scip, &swpool)
+                  : SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &swpool);
+            newseeed = new gcg::Seeed(scip, swpool.seeedpool->getNewIdForSeeed(), swpool.seeedpool);
+            newseeed->setIsFromUnpresolved( !blkinput->presolved );
+            newseeed->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
          }
-         SCIP_CALL( readNBlocks(scip, blkinput) );
+         SCIP_CALL( readNBlocks(scip, newseeed, blkinput) );
          if( blkinput->haspresolvesection && !blkinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
          {
             SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the unpresolved problem, please re-read the problem and read the decomposition without presolving.\n");
@@ -1024,7 +1032,12 @@ SCIP_RETCODE readBLKFile(
             SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. It is assumed to belong to the unpresolved problem but the behaviour is undefined. See the FAQ for further information.\n");
             blkinput->presolved = FALSE;
             SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
-            SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved, FALSE);
+            Seeed_Wrapper swpool;
+            blkinput->presolved ? SCIPconshdlrDecompGetSeeedpool(scip, &swpool)
+                  : SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &swpool);
+            newseeed = new gcg::Seeed(scip, swpool.seeedpool->getNewIdForSeeed(), swpool.seeedpool);
+            newseeed->setIsFromUnpresolved( !blkinput->presolved );
+            newseeed->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
          }
 
          break;
@@ -1044,11 +1057,11 @@ SCIP_RETCODE readBLKFile(
             }
             nblocksread = TRUE;
          }
-         SCIP_CALL( readBlock(scip, blkinput, readerdata) );
+         SCIP_CALL( readBlock(scip, blkinput, newseeed, readerdata) );
          break;
 
       case BLK_MASTERCONSS:
-         SCIP_CALL( readMasterconss(scip, blkinput, readerdata) );
+         SCIP_CALL( readMasterconss(scip, blkinput, newseeed, readerdata) );
          break;
 
       case BLK_END: /* this is already handled in the while() loop */
@@ -1058,11 +1071,10 @@ SCIP_RETCODE readBLKFile(
       }
    }
 
-
    SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
 
    /* fill decomp */
-   retcode = fillDecompStruct(scip, blkinput, decdecomp, readerdata);
+   retcode = fillDecompStruct(scip, blkinput, decdecomp, newseeed, readerdata);
 
    SCIP_CALL( DECdecompFree(scip, &decdecomp) );
 

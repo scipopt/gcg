@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -300,6 +300,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       SCIP_COL** cols;
       int ncols;
       SCIP_Real* vals;
+      SCIP_Real shift;
 
       origcut = sepadata->origcuts[norigcuts-ncuts+i]; /*lint !e679*/
 
@@ -315,17 +316,20 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
          rowvars[j] = SCIPcolGetVar(cols[j]);
       }
 
+      /* transform the original variables to master variables */
+      shift = GCGtransformOrigvalsToMastervals(GCGmasterGetOrigprob(scip), rowvars, vals, ncols, mastervars, mastervals,
+            nmastervars);
+
       /* create new cut in the master problem */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "mc_%s", SCIProwGetName(origcut));
       SCIP_CALL( SCIPcreateEmptyRowSepa(scip, &mastercut, sepa, name,
             ( SCIPisInfinity(scip, -SCIProwGetLhs(origcut)) ?
-               SCIProwGetLhs(origcut) : SCIProwGetLhs(origcut) - SCIProwGetConstant(origcut)),
+              SCIProwGetLhs(origcut) : SCIProwGetLhs(origcut) - SCIProwGetConstant(origcut) - shift),
             ( SCIPisInfinity(scip, SCIProwGetRhs(origcut)) ?
-               SCIProwGetRhs(origcut) : SCIProwGetRhs(origcut) - SCIProwGetConstant(origcut)),
+              SCIProwGetRhs(origcut) : SCIProwGetRhs(origcut) - SCIProwGetConstant(origcut) - shift),
             SCIProwIsLocal(origcut), TRUE, FALSE) );
 
-      /* transform the original variables to master variables and add them to the cut */
-      GCGtransformOrigvalsToMastervals(GCGmasterGetOrigprob(scip), rowvars, vals, ncols, mastervars, mastervals, nmastervars);
+      /* add master variables to the cut */
       SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
       /* add the cut to the master problem */
