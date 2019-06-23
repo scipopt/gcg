@@ -5,11 +5,11 @@
 # DOI: 10.1057/s41274-017-0268-6
 
 
-###### this file only works for the *uniform* capacity instances ######
+###### this file only works with the input format of the *uniform* capacity instances ######
 
 
-# this can overwritten by a -D file=<filename> option
-# you can download the parameter files from https://scis.uohyd.ac.in/~apcs/capmds/
+# this can be overwritten by a -D file=<filename> option
+# you can download all instances from https://scis.uohyd.ac.in/~apcs/capmds/
 param file := "CAPMDS-data/uni/UDG/2/50/150/graphS0N50"; 
 
 # how many vertices?
