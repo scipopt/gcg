@@ -11,7 +11,7 @@ set -e
 ./resources/devs/detectors/createindexes.sh
 cd $(dirname $0)
 
-
+# Bypassed through usage of a direct link
 if [ "$1" == "--mathjax" ]
 then
    DOXYGEN_USE_MATHJAX="YES"
@@ -36,6 +36,7 @@ fi
 CURRENT_VERSION=`grep '@version' main.md | awk '{ printf("%s", $2); }'`
 
 echo "Building documentation in html/doc-${CURRENT_VERSION}."
+echo "Please ensure that graphviz is installed on your system."
 echo "<li><a href='../doc-${CURRENT_VERSION}/index.html'>GCG ${CURRENT_VERSION}</a></li>" > docversions.html
 
 # Create index.html and gcgheader.html.
@@ -53,4 +54,11 @@ echo "Cleaning up."
 rm -rf html/doc-${CURRENT_VERSION} docversions.html gcgheader.html
 mv html/doc html/doc-${CURRENT_VERSION}
 
+# Remove citelist.html (the Bibliography) manually from the menu (but still reachable via link)
+cd html/doc-${CURRENT_VERSION}
+sed -i "/citelist/d" pages.html
+sed -i "/citelist/d" navtreedata.js
+sed -i "/citelist/d" navtreeindex0.js
+sed -i "s/\:\[5/\:\[4/g" navtreeindex0.js
+sed -i "s/\:\[6/\:\[5/g" navtreeindex0.js
 echo "Done."
