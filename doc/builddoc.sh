@@ -53,9 +53,12 @@ DOXYGEN_USE_MATHJAX=${DOXYGEN_USE_MATHJAX} doxygen gcg.dxy
 echo "Cleaning up."
 rm -rf html/doc-${CURRENT_VERSION} docversions.html gcgheader.html
 mv html/doc html/doc-${CURRENT_VERSION}
-echo $(pwd)
-cd html/doc-${CURRENT_VERSION}/
-echo $(pwd)
-sed -i '/citelist/d' *.js
 
+# Remove citelist.html (the Bibliography) manually from the menu (but still reachable via link)
+cd html/doc-${CURRENT_VERSION}
+sed -i "/citelist/d" pages.html
+sed -i "/citelist/d" navtreedata.js
+sed -i "/citelist/d" navtreeindex0.js
+sed -i "s/\:\[5/\:\[4/g" navtreeindex0.js
+sed -i "s/\:\[6/\:\[5/g" navtreeindex0.js
 echo "Done."
