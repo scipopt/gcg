@@ -41,43 +41,43 @@ extern "C" {
  */
 
 /** gets array of cols in the col pool */
-EXTERN
+SCIP_EXPORT
 GCG_COL** GCGcolpoolGetCols(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
 /** get number of cols in the col pool */
-EXTERN
+SCIP_EXPORT
 int GCGcolpoolGetNCols(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
 /** get maximum number of cols that were stored in the col pool at the same time */
-EXTERN
+SCIP_EXPORT
 int GCGcolpoolGetMaxNCols(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
 /** gets time in seconds used for pricing cols from the pool */
-EXTERN
+SCIP_EXPORT
 SCIP_Real GCGcolpoolGetTime(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
 /** get number of times, the col pool was separated */
-EXTERN
+SCIP_EXPORT
 SCIP_Longint GCGcolpoolGetNCalls(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
 /** get total number of cols that were priced from the col pool */
-EXTERN
+SCIP_EXPORT
 SCIP_Longint GCGcolpoolGetNColsFound(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
 /** creates col pool */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGcolpoolCreate(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_COLPOOL**         colpool,            /**< pointer to store col pool */
@@ -85,20 +85,20 @@ SCIP_RETCODE GCGcolpoolCreate(
    );
 
 /** frees col pool */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGcolpoolFree(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_COLPOOL**        colpool             /**< pointer to store col pool */
    );
 
 /** removes all cols from the col pool */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGcolpoolClear(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
 /** if not already existing, adds col to col pool and captures it */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGcolpoolAddCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_COL*              col,                /**< column to add */
@@ -106,14 +106,14 @@ SCIP_RETCODE GCGcolpoolAddCol(
    );
 
 /** adds col to col pool and captures it; doesn't check for multiple cols */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGcolpoolAddNewCol(
    GCG_COLPOOL*         colpool,            /**< col pool */
    GCG_COL*             col                 /**< column to add */
    );
 
 /** removes the col from the col pool */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGcolpoolDelCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_COL*              col,                /**< col to remove */
@@ -121,31 +121,31 @@ SCIP_RETCODE GCGcolpoolDelCol(
    );
 
 /** gets array of cols in the col pool */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGcolpoolUpdateNode(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
 /** update reduced cost of columns in column pool */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGcolpoolUpdateRedcost(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
 /** gets number of cols in the col pool */
-EXTERN
+SCIP_EXPORT
 void GCGcolpoolStartFarkas(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
 /** gets number of cols in the col pool */
-EXTERN
+SCIP_EXPORT
 void GCGcolpoolEndFarkas(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
 /** prices cols of the col pool */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGcolpoolPrice(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_COLPOOL*          colpool,            /**< col pool */

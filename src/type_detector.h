@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -117,10 +117,6 @@ typedef struct Seeed_Propagation_Data SEEED_PROPAGATION_DATA;
  */
 #define DEC_DECL_PROPAGATESEEED(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector, SEEED_PROPAGATION_DATA* seeedPropagationData, SCIP_RESULT* result)
 
-
-#define DEC_DECL_PROPAGATEFROMTOOLBOX(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector, SEEED_PROPAGATION_DATA* seeedPropagationData, SCIP_RESULT* result, SCIP_DIALOGHDLR* dialoghdlr,SCIP_DIALOG* dialog )
-
-#define DEC_DECL_FINISHFROMTOOLBOX(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector, SEEED_PROPAGATION_DATA* seeedPropagationData, SCIP_RESULT* result, SCIP_DIALOGHDLR* dialoghdlr,SCIP_DIALOG* dialog )
 
 /**
  * given a seeed (incomplete decomposition) the detector

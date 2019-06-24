@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -46,7 +46,7 @@
 #include "class_seeedpool.h"
 #include "class_consclassifier.h"
 #include "class_varclassifier.h"
-
+#include "wrapper_seeed.h"
 
 
 #define READER_NAME             "clsreader"
@@ -117,14 +117,20 @@ SCIP_RETCODE GCGwriteCls(
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       transformed = FALSE;
 
-   if( !transformed && SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(scip) == NULL )
+   Seeed_Wrapper swpool;
+   if( !transformed )
+   {
       SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+      SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &swpool);
+      seeedpool = swpool.seeedpool;
+   }
 
-   if( transformed && SCIPconshdlrDecompGetSeeedpoolExtern(scip) == NULL )
+   if( transformed )
+   {
       SCIPconshdlrDecompCreateSeeedpool(scip);
-
-   seeedpool = (gcg::Seeedpool*)(transformed ? SCIPconshdlrDecompGetSeeedpoolExtern(scip) : SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(scip));
-
+      SCIPconshdlrDecompGetSeeedpool(scip, &swpool);
+      seeedpool = swpool.seeedpool;
+   }
 
    SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
 

@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -636,7 +636,7 @@ BEGIN {
       tablehead3 = hyphenstr;
 
       tablehead1 = tablehead1"+----+--- Original --+-- Presolved --+------------------- Decomposition -----------+---------------------------+------+------- Pricing -------+---- Master ----+-------+-------+";
-      tablehead2 = tablehead2"|Type| Conss |  Vars | Conss |  Vars | Det| Blks| Agg | MWhi | MConss| LVars| SVars|  Dual Bound | Primal Bound| Gap% | Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
+      tablehead2 = tablehead2"|Type| Conss |  Vars | Conss |  Vars | Det| Blks| Agg | MWhi | MConss| LVars| SVars|  Dual Bound | Primal Bound| Gap %%| Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
       tablehead3 = tablehead3"+----+-------+-------+-------+-------+----+-----+-----+------+-------+------+------+-------------+-------------+------+-------+-------+-------+-------+--------+-------+-------+";
 
       if( printsoltimes == 1 ) {

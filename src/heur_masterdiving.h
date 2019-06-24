@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -45,20 +45,20 @@ extern "C" {
 #endif
 
 /** gets diving rule specific data of a diving heuristic */
-EXTERN
+SCIP_EXPORT
 GCG_DIVINGDATA* GCGheurGetDivingDataMaster(
    SCIP_HEUR*               heur                    /**< primal heuristic */
    );
 
 /** sets diving rule specific data of a diving heuristic */
-EXTERN
+SCIP_EXPORT
 void GCGheurSetDivingDataMaster(
    SCIP_HEUR*               heur,                   /**< primal heuristic */
    GCG_DIVINGDATA*          divingdata              /**< diving rule specific data */
    );
 
 /** creates a master diving heuristic and includes it in GCG */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGincludeDivingHeurMaster(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_HEUR**           heur,               /**< pointer to diving heuristic */
@@ -81,7 +81,7 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
    );
 
 /** creates event handler for masterdiving event */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE SCIPincludeEventHdlrMasterdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );

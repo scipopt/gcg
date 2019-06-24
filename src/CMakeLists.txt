@@ -56,6 +56,7 @@ set(gcgsources
     dec_mastersetpart.cpp
     dec_mcl.cpp
     dec_mst.cpp
+    dec_neighborhoodmaster.cpp
     dec_postprocess.cpp
     dec_random.c
     dec_staircase.c
@@ -63,6 +64,7 @@ set(gcgsources
     dec_stairheur.cpp
     dec_varclass.cpp
     decomp.c
+    dialog_explore.cpp
     dialog_gcg.c
     dialog_graph.cpp
     dialog_master.c
@@ -179,6 +181,7 @@ set(gcgheaders
     dec_mastersetpart.h
     dec_mcl.h
     dec_mst.h
+    dec_neighborhoodmaster.h
     dec_postprocess.h
     dec_random.h
     dec_staircase.h

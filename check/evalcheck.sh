@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -25,10 +25,6 @@
 #* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-#
-# @author Martin Bergner
-# @author Christian Puchert
-# @author Gerald Gamrath
 
 export LANG=C
 
@@ -38,9 +34,9 @@ for i in $@
 do
     if test ! -e $i
     then
-	AWKARGS="$AWKARGS $i"
+        AWKARGS="$AWKARGS $i"
     else
-	FILES="$FILES $i"
+        FILES="$FILES $i"
     fi
 done
 
@@ -59,21 +55,21 @@ do
     echo "$TSTNAME"
     if test -f testset/$TSTNAME.test
     then
-	TESTFILE=testset/$TSTNAME.test
+        TESTFILE=testset/$TSTNAME.test
     else
-	TESTFILE=""
+        TESTFILE=""
     fi
 
-    if test -f testset/$TSTNAME.solu
-    then
-	SOLUFILE=testset/$TSTNAME.solu
-    else if test -f testset/all.solu
-    then
-	SOLUFILE=testset/all.solu
-    else
-        SOLUFILE=""
-    fi
-    fi
+      # look for .solu files under the name of the test, the name of the test with everything after the first "_" pt "-" stripped, and "_all"
+      SOLUFILE=""
+      for F in $TSTNAME ${TSTNAME%%_*} ${TSTNAME%%-*} _all
+      do
+          if test -f testset/${F}.solu
+          then
+              SOLUFILE=testset/${F}.solu
+              break
+          fi
+      done
 
     awk -f check.awk -v "TEXFILE=$TEXFILE" -v "PAVFILE=$PAVFILE" $AWKARGS $TESTFILE $SOLUFILE $OUTFILE | tee $RESFILE
 done

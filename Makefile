@@ -6,7 +6,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -232,6 +232,7 @@ LIBOBJ = \
 			dec_mastersetpart.o \
 			dec_mcl.o \
 			dec_mst.o \
+			dec_neighborhoodmaster.o \
 			dec_postprocess.o \
 			dec_random.o \
 			dec_staircase.o \
@@ -239,6 +240,7 @@ LIBOBJ = \
 			dec_stairheur.o \
 			dec_varclass.o \
 			decomp.o \
+			dialog_explore.o \
 			dialog_gcg.o \
 			dialog_graph.o \
 			dialog_master.o \

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -3566,6 +3566,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->maxpricedvars = 50;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars) );
 
+   pricerdata->nroundsredcost = 0;
 #ifdef SCIP_STATISTIC
    pricerdata->rootlpsol = NULL;
    pricerdata->rootfarkastime = 0.0;
@@ -3573,7 +3574,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->dualdiffround = -1;
    pricerdata->nrootbounds = 0;
    pricerdata->maxrootbounds = 50;
-   pricerdata->nroundsredcost = 0;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->rootdbs, pricerdata->maxrootbounds) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->roottimes, pricerdata->maxrootbounds) );
@@ -3586,10 +3586,10 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->avgrootnodedegeneracy = 0.0;
    pricerdata->ndegeneracycalcs = 0;
 
-   SCIP_CALL( pricingcontroller->initSol() );
-
    /* sort solvers by priority */
    SCIPsortPtr((void**)pricerdata->solvers, GCGsolverComp, pricerdata->nsolvers);
+
+   SCIP_CALL( pricingcontroller->initSol() );
 
    SCIP_CALL( solversInitsol() );
 

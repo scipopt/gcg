@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -53,12 +53,13 @@
 #include "cons_decomp.h"
 #include "pub_decomp.h"
 #include "struct_decomp.h"
-#include "params_visu.h"
 
 #include "class_miscvisualization.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
 #include "wrapper_seeed.h"
+
+#include "params_visu.h"
 
 #define READER_NAME             "texreader"
 #define READER_DESC             "LaTeX file writer for seeed visualization"
@@ -72,8 +73,6 @@ using namespace gcg;
 /** Destructor of reader to free user data (called when SCIP is exiting) */
 SCIP_DECL_READERFREE(readerFreeTex)
 {
-   /*@todo this is a workaround */
-   GCGVisuFreeParams(scip);
    return SCIP_OKAY;
 }
 
@@ -204,7 +203,7 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "%% *                  of the branch-cut-and-price framework                    * \n");
    SCIPinfoMessage(scip, file, "%% *         SCIP --- Solving Constraint Integer Programs                      * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
-   SCIPinfoMessage(scip, file, "%% * Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       * \n");
+   SCIPinfoMessage(scip, file, "%% * Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       * \n");
    SCIPinfoMessage(scip, file, "%% *                         Zuse Institute Berlin (ZIB)                       * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
    SCIPinfoMessage(scip, file, "%% * This program is free software; you can redistribute it and/or             * \n");
@@ -233,7 +232,7 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                \n");
    SCIPinfoMessage(scip, file, "\\usepackage{pdfpages}                                                           \n");
    SCIPinfoMessage(scip, file, "\\usepackage{fancybox}                                                           \n");
-   if(!GCGgetUseGp())
+   if(!GCGgetUseGp(scip))
    {
       SCIPinfoMessage(scip, file, "\\usepackage{pgfplots}                                                          \n");
       SCIPinfoMessage(scip, file, "\\pgfplotsset{compat=1.12}                                                      \n");
@@ -251,28 +250,28 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "                                                                                 \n");
 
   /* introduce colors of current color scheme */
-   getTexColorFromHex(SCIPvisuGetColorMasterconss(), "colormasterconss", temp);
+   getTexColorFromHex(SCIPvisuGetColorMasterconss(scip), "colormasterconss", temp);
    SCIPinfoMessage(scip, file, "%s                            \n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorMastervars(), "colormastervars", temp);
+   getTexColorFromHex(SCIPvisuGetColorMastervars(scip), "colormastervars", temp);
    SCIPinfoMessage(scip, file, "%s                            \n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorLinking(), "colorlinking", temp);
+   getTexColorFromHex(SCIPvisuGetColorLinking(scip), "colorlinking", temp);
    SCIPinfoMessage(scip, file, "%s                            \n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorStairlinking(), "colorstairlinking", temp);
+   getTexColorFromHex(SCIPvisuGetColorStairlinking(scip), "colorstairlinking", temp);
    SCIPinfoMessage(scip, file, "%s                            \n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorBlock(), "colorblock", temp);
+   getTexColorFromHex(SCIPvisuGetColorBlock(scip), "colorblock", temp);
    SCIPinfoMessage(scip, file, "%s                            \n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorOpen(), "coloropen", temp);
+   getTexColorFromHex(SCIPvisuGetColorOpen(scip), "coloropen", temp);
    SCIPinfoMessage(scip, file, "%s                            \n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorNonzero(), "colornonzero", temp);
+   getTexColorFromHex(SCIPvisuGetColorNonzero(scip), "colornonzero", temp);
    SCIPinfoMessage(scip, file, "%s                            \n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorLine(), "colorline", temp);
+   getTexColorFromHex(SCIPvisuGetColorLine(scip), "colorline", temp);
    SCIPinfoMessage(scip, file, "%s                            \n", temp);
 
    /* start writing the document */
@@ -587,9 +586,9 @@ SCIP_RETCODE writeTexSeeed(
    }
 
    /* --- draw nonzeros --- */
-   if(SCIPvisuGetDraftmode() == FALSE)
+   if(SCIPvisuGetDraftmode(scip) == FALSE)
    {
-      writeTikzNonzeros(scip, file, seeed, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), 1),
+      writeTikzNonzeros(scip, file, seeed, SCIPvisuGetNonzeroRadius(scip, seeed->getNVars(), seeed->getNConss(), 1),
          nvars, nconss);
    }
 
@@ -818,8 +817,8 @@ SCIP_RETCODE GCGwriteTexReport(
    char gpname[SCIP_MAXSTRLEN];
    char pdfname[SCIP_MAXSTRLEN];
 
-   if(*nseeeds > GCGreportGetMaxNDecomps())
-      *nseeeds = GCGreportGetMaxNDecomps();
+   if(*nseeeds > GCGreportGetMaxNDecomps(scip))
+      *nseeeds = GCGreportGetMaxNDecomps(scip);
 
    /* write tex code into file */
    writeTexHeader(scip, file, TRUE);

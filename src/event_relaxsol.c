@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -181,15 +181,23 @@ SCIP_RETCODE SCIPincludeEventHdlrRelaxsol(
 
 /** return whether event has been triggered */
 SCIP_Bool GCGeventhdlrRelaxsolIsTriggered(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 masterprob          /**< the SCIP data structure for the master problem */
    )
 {
    SCIP_EVENTHDLR* eventhdlr;
    SCIP_EVENTHDLRDATA* eventhdlrdata;
 
    assert(scip != NULL);
+   assert(masterprob != NULL);
 
-   eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
+   /* the relaxation solution event handler is not included if BENDERS or ORIGINAL mode is used. As such, it will
+    * never be triggered. In this case, it will always return FALSE.
+    */
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS || GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
+      return FALSE;
+
+   eventhdlr = SCIPfindEventhdlr(masterprob, EVENTHDLR_NAME);
    assert(eventhdlr != NULL);
 
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);

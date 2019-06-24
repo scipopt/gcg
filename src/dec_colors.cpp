@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -464,7 +464,7 @@ SCIP_RETCODE SCIPincludeDetectorColors(
 
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLED_ORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-         detectordata, detectorDetectColors, detectorFreeColors, detectorInitColors, detectorExitColors, detectorPropagateSeeedColors, NULL, NULL, detectorFinishSeeedColors, detectorPostprocessSeeedColors, setParamAggressiveColors, setParamDefaultColors, setParamFastColor) );
+         detectordata, detectorDetectColors, detectorFreeColors, detectorInitColors, detectorExitColors, detectorPropagateSeeedColors, detectorFinishSeeedColors, detectorPostprocessSeeedColors, setParamAggressiveColors, setParamDefaultColors, setParamFastColor) );
 
 
    /* add colors constraint handler parameters */

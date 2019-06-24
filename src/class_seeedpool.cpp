@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -175,7 +175,7 @@ SCIP_RETCODE Seeedpool::calculateDualvalsOptimalOrigLP()
 
    SCIPcreate(&scipcopy);
 
-   SCIPcopy(scip, scipcopy, NULL, origtocopiedconss, "", FALSE, FALSE, FALSE, &valid );
+   SCIPcopy(scip, scipcopy, NULL, origtocopiedconss, "", FALSE, FALSE, FALSE, FALSE, &valid );
 
    nconss = getNConss();
 
@@ -226,22 +226,29 @@ SCIP_RETCODE Seeedpool::calculateDualvalsOptimalOrigLP()
    {
       SCIP_CONS* cons;
       SCIP_CONS* copiedcons;
+      SCIP_CONS* transcons = NULL;
 
       cons = getConsForIndex(c);
-      if( !transformed && SCIPconsGetTransformed(cons) != NULL )
-         cons = SCIPconsGetTransformed(cons);
-      else if ( !transformed )
+      if( !transformed )
       {
-         SCIPwarningMessage(scip, "Could not find constraint for random dual variable initilization when calculating strong decomposition score; skip cons: %s \n", SCIPconsGetName(cons));
-         continue;
+         SCIPgetTransformedCons(scip, cons, &transcons);
+         if( transcons )
+            cons = transcons;
+         else
+         {
+            SCIPwarningMessage(scip, "Could not find constraint for random dual variable initialization when calculating strong decomposition score; skipping cons: %s \n", SCIPconsGetName(cons));
+            continue;
+         }
       }
       copiedcons = (SCIP_CONS*) SCIPhashmapGetImage(origtocopiedconss, (void*) cons);
 
       assert(copiedcons != NULL);
       assert( !SCIPconsIsTransformed(copiedcons) );
 
-      if( SCIPconsGetTransformed(copiedcons) != NULL )
-         copiedcons = SCIPconsGetTransformed(copiedcons);
+      transcons = NULL;
+      SCIPgetTransformedCons(scip, copiedcons, &transcons);
+      if( transcons != NULL)
+         copiedcons = transcons;
 
       dualvalsoptimaloriglp[c] = GCGconsGetDualsol(scipcopy, copiedcons);
       if( !SCIPisFeasEQ(scip, 0., dualvalsoptimaloriglp[c]) )
@@ -552,83 +559,6 @@ SCIP_RETCODE getDetectorCallRoundInfo(
 }
 
 
-/** returns TRUE if seeed i has a greater MaxWhiteScore than seeed j */
-SCIP_Bool cmpSeeedsMaxWhite(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getMaxWhiteScore() > j->getMaxWhiteScore() );
-}
-
-
-/** returns TRUE if seeed i has a greater border area score than seeed j */
-SCIP_Bool cmpSeeedsBorderArea(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( BORDER_AREA ) > j->getScore( BORDER_AREA ) );
-}
-
-
-/** returns TRUE if seeed i has a greater score than seeed j */
-SCIP_Bool cmpSeeedsClassic(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( CLASSIC )  > j->getScore( CLASSIC ) );
-}
-
-/** returns TRUE if seeed i has a greater score than seeed j */
-SCIP_Bool cmpSeeedsFWhite(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( MAX_FORESSEEING_WHITE )  > j->getScore( MAX_FORESSEEING_WHITE ) );
-}
-
-/** returns TRUE if seeed i has a greater score than seeed j */
-SCIP_Bool cmpSeeedsAggFWhite(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( MAX_FORESEEING_AGG_WHITE )  > j->getScore( MAX_FORESEEING_AGG_WHITE ) );
-}
-
-
-/** returns TRUE if seeed i has a greater score than seeed j */
-SCIP_Bool cmpSeeedsPPCfWhite(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( SETPART_FWHITE )  > j->getScore( SETPART_FWHITE ) );
-}
-
-/** returns TRUE if seeed i has a greater score than seeed j */
-SCIP_Bool cmpSeeedsPPCaggFWhite(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( SETPART_AGG_FWHITE )  > j->getScore( SETPART_AGG_FWHITE ) );
-}
-
-
-/** returns TRUE if seeed i has a greater score than seeed j */
-SCIP_Bool cmpSeeedsBenders(
-   SeeedPtr i,
-   SeeedPtr j
-   )
-{
-   return ( i->getScore( BENDERS )  > j->getScore( BENDERS ) );
-}
-
-
 /* method to thin out the vector of given seeeds */
 std::vector<SeeedPtr> thinout(
    std::vector<SeeedPtr> finishedseeeds,
@@ -733,6 +663,7 @@ void removeDigits(
 
 
 /** method to calculate the greatest common divisor */
+static
 int gcd(
    int a,
    int b
@@ -1164,8 +1095,8 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamenonumbers/enabled", & conssclassconsnamenonumbers );
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamelevenshtein/enabled", & conssclassconsnamelevenshtein );
       SCIPgetBoolParam( scip, "detection/varclassifier/scipvartype/enabled", & varclassscipvartypes );
-        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevalues/enabled", &varclassobjvals);
-        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevaluesigns/enabled", &varclassobjvalsigns);
+      SCIPgetBoolParam(scip, "detection/varclassifier/objectivevalues/enabled", &varclassobjvals);
+      SCIPgetBoolParam(scip, "detection/varclassifier/objectivevaluesigns/enabled", &varclassobjvalsigns);
    }
    else
    {
@@ -1175,8 +1106,8 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamenonumbers/origenabled", & conssclassconsnamenonumbers );
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamelevenshtein/origenabled", & conssclassconsnamelevenshtein );
       SCIPgetBoolParam( scip, "detection/varclassifier/scipvartype/origenabled", & varclassscipvartypes );
-        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevalues/origenabled", &varclassobjvals);
-        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevaluesigns/origenabled", &varclassobjvalsigns);
+      SCIPgetBoolParam(scip, "detection/varclassifier/objectivevalues/origenabled", &varclassobjvals);
+      SCIPgetBoolParam(scip, "detection/varclassifier/objectivevaluesigns/origenabled", &varclassobjvalsigns);
    }
 
 
@@ -1195,10 +1126,10 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
 
    if( varclassscipvartypes )
       addVarClassifier( createVarClassifierForSCIPVartypes() );
-     if ( varclassobjvals )
-        addVarClassifier( createVarClassifierForObjValues() );
-     if ( varclassobjvalsigns )
-        addVarClassifier( createVarClassifierForObjValueSigns() );
+   if ( varclassobjvals )
+      addVarClassifier( createVarClassifierForObjValues() );
+   if ( varclassobjvalsigns )
+      addVarClassifier( createVarClassifierForObjValueSigns() );
 
 
    reduceConsclasses();
@@ -1698,10 +1629,10 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    SCIPdebugMessage("Started score calculating of finished decompositions\n");
    if( (int) finishedSeeeds.size() != 0 )
    {
-       SCIP_Real maxscore = finishedSeeeds[0]->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) );
+       SCIP_Real maxscore = finishedSeeeds[0]->getScore( SCIPconshdlrDecompGetScoretype( scip ) );
       for( size_t i = 1; i < finishedSeeeds.size(); ++ i )
       {
-          SCIP_Real score = finishedSeeeds[i]->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) );
+          SCIP_Real score = finishedSeeeds[i]->getScore( SCIPconshdlrDecompGetScoretype( scip ) );
          if( score > maxscore )
          {
             maxscore = score;
@@ -1818,31 +1749,10 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 /* sorts seeeds in finished seeeds data structure according to their score */
  void Seeedpool::sortFinishedForScore()
 {
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_WHITE )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
-
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::BORDER_AREA )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsBorderArea);
-
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::CLASSIC )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsClassic);
-
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_FORESSEEING_WHITE )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsFWhite);
-
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_FORESEEING_AGG_WHITE )
-         std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsAggFWhite);
-
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::SETPART_FWHITE )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsPPCfWhite);
-
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::SETPART_AGG_FWHITE )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsPPCaggFWhite);
-
-   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::BENDERS )
-      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsBenders);
-
-
+   /* get scoretype once, no need to call it twice for every comparison */
+   SCORETYPE sctype = SCIPconshdlrDecompGetScoretype(scip);
+   /* sort by score in descending order */
+   std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), [&](Seeed* a, Seeed* b) {return (a->getScore(sctype) > b->getScore(sctype)); });
 }
 
  /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
@@ -1921,7 +1831,9 @@ std::vector<SeeedPtr> Seeedpool::finishIncompleteSeeeds(
 }
 
 
-/** calls findSeeeds method and translates the resulting seeeds into decompositions */
+/** calls findSeeeds method and translates the resulting seeeds into decompositions
+ * @todo the functions does not translate the seeeds into decompositions as suggested
+ */
 void Seeedpool::findDecompositions()
 {
    std::vector<int> successDetectors;
@@ -1929,24 +1841,8 @@ void Seeedpool::findDecompositions()
    successDetectors = std::vector<int>( nDetectors, 0 );
 
    finishedSeeeds = findSeeeds();
-
-   /* sort the seeeds according to maximum white measure */
-   sortFinishedForScore();
-
 }
 
-
-/*SCIP_RETCODE DECdecompCheckConsistency(DEC_DECOMP* decomp)
-{
-   int c;
-   int b;
-   int v;
-
-   for( v = 0; v < SCIPgetNVars(scip); ++v )
-   {
-      assert(SCIPhashmapExists(DECdecompGetVartoblock(decomp), SCIPgetVars(scip)[v]));
-   }
-}*/
 
 /** returns seeed with the corresponding id or NULL if there is no finished seeed with that id */
 gcg::Seeed* Seeedpool::findFinishedSeeedByID(
@@ -1961,7 +1857,6 @@ gcg::Seeed* Seeedpool::findFinishedSeeedByID(
 
      return NULL;
   }
-
 
 
 /** adds a seeed to ancestor seeeds */
@@ -2135,8 +2030,6 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    enableppcuts = FALSE;
    SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
 
-
-
    for ( int block = 0; block < seeed->getNBlocks(); ++block )
    {
       npricingconss += seeed->getNConssForBlock(block);
@@ -2271,11 +2164,8 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
          SCIPhashmapFree(&hashpricingvartoindex);
          SCIPfree(&subscip);
 
-         /*SCIPfreeRandom(scip, &randnumgen ); */
-
          return SCIP_OKAY;
       }
-
 
       /* get coefficient */
       if ( !SCIPisEQ( scip,  SCIPgetFirstLPLowerboundRoot(subscip), SCIPgetDualbound(subscip) ) )
@@ -2599,6 +2489,7 @@ void Seeedpool::calcTranslationMapping(
    std::vector<int>& missingrowinthis
    )
 {
+   SCIP_CONS* transcons;
    int nrowsother = origpool->nConss;
    int nrowsthis = nConss;
    int ncolsother = origpool->nVars;
@@ -2634,7 +2525,8 @@ void Seeedpool::calcTranslationMapping(
          SCIP_CONS* thisrow = thisscipconss[j];
          assert( SCIPconsIsTransformed( thisrow ) );
 
-         if( SCIPconsGetTransformed(origscipconss[i]) == thisrow )
+         SCIPgetTransformedCons(scip, origscipconss[i], &transcons);
+         if( transcons == thisrow)
          {
             rowothertothis[i] = j;
             rowthistoother[j] = i;
@@ -2813,7 +2705,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->sort();
       newseeed->considerImplicits( );
       newseeed->deleteEmptyBlocks(benders);
-      newseeed->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
+      newseeed->getScore( SCIPconshdlrDecompGetScoretype( scip ) ) ;
 
       if( newseeed->checkConsistency(  ) )
          newseeeds.push_back( newseeed );
@@ -3160,6 +3052,13 @@ const int* Seeedpool::getConssForCons(
    return & conssadjacencies[cons][0];
 }
 
+/** returns whether or not the constraint-constraint adjacency data structure is initilized */
+SCIP_Bool Seeedpool::isConssAdjInitilized(
+)
+{
+   return ( conssadjacencies.size() != 0 );
+}
+
 
 
 /** returns the number of variables for a given constraint */
@@ -3216,7 +3115,7 @@ DEC_DETECTOR* Seeedpool::getFinishingDetectorForIndex(
    int detectorIndex
    )
 {
-   return detectorToFinishingScipDetector[detectorIndex];
+   return &(*detectorToFinishingScipDetector[detectorIndex]);
 }
 
 
@@ -5110,7 +5009,10 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    for( int c = 0; c < seeed->getNMasterconss(); ++c )
    {
       int consid = seeed->getMasterconss()[c];
-      SCIP_CONS* scipcons = ( transformed ? consToScipCons[consid] : SCIPconsGetTransformed(consToScipCons[consid]) ) ;
+      SCIP_CONS* scipcons = consToScipCons[consid];
+      if( !transformed )
+         SCIPgetTransformedCons(scip, scipcons, &scipcons);
+
       if( scipcons == NULL || SCIPconsIsDeleted(scipcons) || SCIPconsIsObsolete(scipcons) )
       {
          --nlinkingconss;
@@ -5142,7 +5044,9 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       for( int c = 0; c < seeed->getNConssForBlock( b ); ++c )
       {
          int consid = seeed->getConssForBlock( b )[c];
-         SCIP_CONS* scipcons = ( transformed ? consToScipCons[consid] : SCIPconsGetTransformed( consToScipCons[consid] ) ) ;
+         SCIP_CONS* scipcons = consToScipCons[consid];
+         if( !transformed )
+            SCIPgetTransformedCons(scip, scipcons, &scipcons);
 
          if( scipcons == NULL || SCIPconsIsDeleted(scipcons) )
          {

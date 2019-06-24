@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -104,7 +104,7 @@ void GCGprintVersion(
 #endif
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " [GitHash: %s]", GCGgetGitHash());
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Copyright (C) 2010-2018 Operations Research, RWTH Aachen University\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Copyright (C) 2010-2019 Operations Research, RWTH Aachen University\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "                        Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)\n\n");
 }
 

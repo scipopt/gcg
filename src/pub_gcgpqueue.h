@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -55,7 +55,7 @@ extern "C" {
  */
 
 /** creates priority queue */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGpqueueCreate(
    GCG_PQUEUE**         pqueue,             /**< pointer to a priority queue */
    int                   initsize,           /**< initial number of available element slots */
@@ -64,32 +64,32 @@ SCIP_RETCODE GCGpqueueCreate(
    );
 
 /** frees priority queue, but not the data elements themselves */
-EXTERN
+SCIP_EXPORT
 void GCGpqueueFree(
    GCG_PQUEUE**         pqueue              /**< pointer to a priority queue */
    );
 
 /** clears the priority queue, but doesn't free the data elements themselves */
-EXTERN
+SCIP_EXPORT
 void GCGpqueueClear(
    GCG_PQUEUE*          pqueue              /**< priority queue */
    );
 
 /** inserts element into priority queue */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGpqueueInsert(
    GCG_PQUEUE*          pqueue,             /**< priority queue */
    void*                 elem                /**< element to be inserted */
    );
 
 /** removes and returns best element from the priority queue */
-EXTERN
+SCIP_EXPORT
 void* GCGpqueueRemove(
    GCG_PQUEUE*          pqueue              /**< priority queue */
    );
 
 /** resorts priority queue after changing the key values */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGpqueueResort(
    GCG_PQUEUE*           pqueue              /**< priority queue */
    );
@@ -109,19 +109,19 @@ SCIP_RETCODE GCGpqueueDelete(
 );
 
 /** returns the best element of the queue without removing it */
-EXTERN
+SCIP_EXPORT
 void* GCGpqueueFirst(
    GCG_PQUEUE*          pqueue              /**< priority queue */
    );
 
 /** returns the number of elements in the queue */
-EXTERN
+SCIP_EXPORT
 int GCGpqueueNElems(
    GCG_PQUEUE*          pqueue              /**< priority queue */
    );
 
 /** returns the elements of the queue; changing the returned array may destroy the queue's ordering! */
-EXTERN
+SCIP_EXPORT
 void** GCGpqueueElems(
    GCG_PQUEUE*          pqueue              /**< priority queue */
    );

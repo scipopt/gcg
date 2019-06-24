@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -606,7 +606,7 @@ SCIP_RETCODE SCIPincludeDetectorMCL(
    detectordata->found = FALSE;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectMCL, freeMCL, initMCL, exitMCL, propagateSeeedMCL, NULL, NULL, finishSeeedMCL, detectorPostprocessSeeedMCL, setParamAggressiveMCL, setParamDefaultMCL, setParamFastMCL) );
+      detectordata, detectMCL, freeMCL, initMCL, exitMCL, propagateSeeedMCL, finishSeeedMCL, detectorPostprocessSeeedMCL, setParamAggressiveMCL, setParamDefaultMCL, setParamFastMCL) );
 
    /* add arrowheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/mcl/niterations", "Number of iterations to run MCL with different inflate factor (max=20).", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 1, 20, NULL, NULL) );
