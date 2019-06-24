@@ -743,12 +743,12 @@ help:
 		@echo
 		@echo "  Additional Features and Modules:"
 		@echo "  - READLINE=<true|false>: Enables READLINE, required for command line interaction (default: true)."
-		@echo "  - CLIQUER=<true|false>: Enables CLIQUER."
-		@echo "  - HMETIS=<true|false>: Enables hMETIS (Hypergraph & Circuit Partitioning)."
-		@echo "  - GSL=<true|false>: Enables the GNU Scientific Library (needed for one detector)"
+		@echo "  - CLIQUER=<true|false>: Enables CLIQUER (as a heuristic for stable set pricing problems)."
+		@echo "  - HMETIS=<true|false>: Enables hMETIS (hypergraph partitioning, used in structure detection)."
+		@echo "  - GSL=<true|false>: Enables the GNU Scientific Library (needed by a detector)"
 		@echo "  - GAMS=<true|false>: To enable or disable (default) reading functionality in GAMS reader (needs GAMS)."
 		@echo "  - GTEST=<true|false>: Enables Google Test."
-		@echo "  - BLISS=<true|false>: Enables BLISS"
+		@echo "  - BLISS=<true|false>: Enables BLISS (graph isomorphism, used a.o., by 'isomorph' detector)."
 		@echo "  - SYM=<none|bliss>: To choose type of symmetry handling."
 		@echo "  - ZIMPL=<true|false>: Enables ZIMPL, required to convert .zpl files to .lp/.mps files"
 		@echo
