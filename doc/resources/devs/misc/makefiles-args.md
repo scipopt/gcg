@@ -22,11 +22,12 @@ scripts, you'll need `STATISTICS=true` to be set **during compilation**. Importa
 
 #### Limits and Modes (only for `make test`)
 
+    TEST[=NAME]                 Name of the testset. Default: "short".
+    SETTINGS[=SET]              Choose settings for the testrun as defined in settings/SET.set.
     STATISTICS[=B]              Print additional statistics (beware: different to the one above,
                                 which is used during compilation), B in {true,false}.
     NODE[=N]                    Limit of Nodes to be opened during branching.
     OPT[=TYPE]                  Choose from {opt, dbg, prf}.
-    SETTINGS[=SET]              Choose settings for the testrun as defined in settings/SET.set.
     MODE[=TYPE]                 Use different modes. 0 or none to prevent from using dec files.
 
 ### GCG-unspecific arguments
