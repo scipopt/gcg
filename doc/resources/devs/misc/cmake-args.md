@@ -1,7 +1,7 @@
 # CMake Arguments {#cmake-args}
 
-| Argument | Value Type | Default Value |
-|:--------:|:----------:|:-------------:|
+| Argument | Value Type | Default Value | Description |
+|:--------:|:----------:|:-------------:|:-----------:|
 |BLISS_INCLUDE_DIR|PATH|BLISS_INCLUDE_DIR-NOTFOUND|
 |BLISS_LIBRARY|FILEPATH|BLISS_LIBRARY-NOTFOUND|
 |BUILD_TESTING|BOOL|ON|
@@ -13,7 +13,7 @@
 |CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS|BOOL|ON|
 |COVERAGE|BOOL|OFF|
 |COVERAGE_CTEST_ARGS|STRING|no default|
-|CPLEX|BOOL|OFF|
+|CPLEX|BOOL|OFF|Enable CPLEX solver for problem solving|
 |CXXONLY|BOOL|OFF|
 |DEBUGSOL|BOOL|OFF|
 |EXPRINT|STRING|cppad|
@@ -29,14 +29,14 @@
 |IPOPT_DIR|PATH|/usr|
 |LEGACY|BOOL|OFF|
 |LIBM|FILEPATH|/usr/lib/x86_64-linux-gnu/libm.so|
-|LPS|STRING|spx|
+|LPS|STRING|spx|What solver to use for LP solving, soplex (spx) or cplex (cpx)|
 |LPSCHECK|BOOL|OFF|
 |MT|BOOL|OFF|
 |NOBLKBUFMEM|BOOL|OFF|
 |NOBLKMEM|BOOL|OFF|
 |NOBUFMEM|BOOL|OFF|
-|OPENMP|BOOL|OFF|
-|PARASCIP|BOOL|OFF|
+|OPENMP|BOOL|OFF|Use GCG parallelization|
+|PARASCIP|BOOL|OFF|Use SCIP parallelization|
 |POLYSCIP_MAX_NUMBER_OBJS|STRING|30|
 |READLINE|BOOL|ON|
 |SANITIZE_ADDRESS|BOOL|OFF|
