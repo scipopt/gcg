@@ -58,6 +58,21 @@ enum RETTYPE{
    STRING      /**< char* */
 };
 
+/** callback for getters of column infos */
+typedef void (*callback)(SCIP*, int);
+
+/** storage for column information */
+struct Columninfo{
+   std::string header;  /**< table header for the column */
+   std::string desc;    /**< description of the column entries used in the menu help */
+   callback getter;     /**< callback to get the infos displayed in the column for a given scip & seeed id */
+   RETTYPE type;        /**< return type of the getter */
+
+    Columninfo(std::string nheader, std::string ndesc, callback ngetter, RETTYPE ntype) :
+    header(nheader), desc(ndesc), getter(ngetter), type(ntype) {}
+    /**< constructor for easier initialization */
+};
+
 /** gets the seeed structure from a given id (local help function)
  * 
  * @todo remove this help function once the seeed structure is depricated
@@ -213,7 +228,7 @@ SCIP_RETCODE outputCharXTimes(
 static
 SCIP_RETCODE GCGdialogShowMenu(
    SCIP* scip,                            /**< SCIP data structure */
-   std::vector<std::tuple<std::string, void(*)(SCIP*, int), RETTYPE>> columns, /**< list of column headers/ info sources */
+   std::vector<Columninfo*> columns,      /**< list of column headers/ info sources */
    int* nseeeds,                          /**< max number of seeeds */
    const int startindex,                  /**< index (in seeed list) of uppermost seeed in extract */
    int menulength,                        /**< number of menu entries */
@@ -287,7 +302,7 @@ SCIP_RETCODE GCGdialogShowMenu(
    for(auto column : columns)
    {
       /* "score" is a wildcard for the current score, relace it with actual scoretype */
-      std::string header = std::get<0>(column);
+      std::string header = column->header;
       std::string newheader;
       if(header != "score")
          newheader = header;
@@ -349,9 +364,9 @@ SCIP_RETCODE GCGdialogShowMenu(
       {
          std::string towrite;
          /* get the type of the callback function that is the getter for this column */
-         RETTYPE type = std::get<2>(column);
+         RETTYPE type = column->type;
          /* get the header of this column */
-         std::string header = std::get<0>(column);
+         std::string header = column->header;
 
          /* call the getter of the column depending on the given return type */
          if(type == UNKNOWN)
@@ -366,20 +381,20 @@ SCIP_RETCODE GCGdialogShowMenu(
          }
          else if(type == INTEGER)
             /* convert the callback function to int rettype, call it on (scip, seeedid) and convert the result to a string */
-            towrite = std::to_string( (*( (int(*)(SCIP*, int)) std::get<1>(column) ))(scip, seeedid) );
+            towrite = std::to_string( (*( (int(*)(SCIP*, int)) column->getter ))(scip, seeedid) );
          else if(type == FLOAT)
          {
             /* convert the callback function to float rettype, call it on (scip, seeedid) */
-            float number = (*( (float(*)(SCIP*, int)) std::get<1>(column) ))(scip, seeedid);
+            float number = (*( (float(*)(SCIP*, int)) column->getter ))(scip, seeedid);
             /* convert the result to a string and set the number of digits (i.e.letters) to the width of the column */
             towrite = std::to_string(number).substr(0, columnlength.at(header));
          }
          else if(type == BOOLEAN)
             /* convert the callback function to SCIP_Bool rettype, call it on (scip, seeedid) and check the result */
-            towrite = ( (*( (SCIP_Bool(*)(SCIP*, int)) std::get<1>(column) ))(scip, seeedid) ) ? "yes" : "no";
+            towrite = ( (*( (SCIP_Bool(*)(SCIP*, int)) column->getter ))(scip, seeedid) ) ? "yes" : "no";
          else if(type == STRING)
             /* convert the callback function to char* rettype and call it on (scip, seeedid) */
-            towrite = (*( (char* (*)(SCIP*, int)) std::get<1>(column) ))(scip, seeedid);
+            towrite = (*( (char* (*)(SCIP*, int)) column->getter ))(scip, seeedid);
          else 
             towrite = " ";
 
@@ -406,7 +421,7 @@ SCIP_RETCODE GCGdialogShowMenu(
 static
 SCIP_RETCODE GCGdialogShowLegend(
    SCIP* scip,                         /**< SCIP data structure */
-   std::vector<std::tuple<std::string, void(*)(SCIP*, int), RETTYPE>> columns /**< list of column headers/ info sources */
+   std::vector<Columninfo*> columns    /**< list of column headers/ info sources */
    )
 {
    assert(scip != NULL);
@@ -446,48 +461,18 @@ SCIP_RETCODE GCGdialogShowLegend(
    for(auto column : columns)
    {
       /* get table header */
-      std::string header = std::get<0>(column);
-
-      /* get description for current header */
-      std::string desc;
-      if(header == "nr")
-         desc = "number of the decomposition (use this number for choosing the decomposition)";
-      else if(header == "id")
-         desc = "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)";
-      else if(header == "nbloc")
-         desc = "number of blocks";
-      else if(header == "nmacon")
-         desc = "number of master constraints";
-      else if(header == "nmavar")
-         desc = "number of master variables (do not occur in blocks)";
-      else if(header == "nlivar")
-         desc = "number of linking variables";
-      else if(header == "nstlva")
-         desc = "number of stairlinking variables";
-      else if(header == "score")
-         desc = SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrDecompGetScoretype(scip));
-      else if(header == "history")
-         desc = "list of detector chars worked on this decomposition ";
-      else if(header == "pre")
-         desc = "is this decomposition for the presolved problem";
-      else if(header == "nopcon")
-         desc = "number of open constraints";
-      else if(header == "nopvar")
-         desc = "number of open variables";
-      else if(header == "sel")
-         desc = "is this decomposition selected at the moment";
-      else 
-         desc = " ";
+      std::string header = column->header;
 
       /* print the header with the description */
       if(header != "score")
       {
-         SCIPdialogMessage(scip, NULL, "%30s     %s\n", header.c_str(), desc.c_str());
+         SCIPdialogMessage(scip, NULL, "%30s     %s\n", header.c_str(), column->desc.c_str());
       }
       /* if the header is "score" replace with shortname of the current score */
       else
       {
-         SCIPdialogMessage(scip, NULL, "%30s     %s\n", SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip)), desc.c_str());
+         SCIPdialogMessage(scip, NULL, "%30s     %s\n", SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip)), 
+            SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrDecompGetScoretype(scip)) );
       }
       
    }
@@ -725,7 +710,7 @@ SCIP_RETCODE GCGdialogExecCommand(
    SCIP*                   scip,          /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr,    /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,        /**< dialog for user input management */
-   std::vector<std::tuple<std::string, void(*)(SCIP*, int), RETTYPE>> columns, /**< list of column headers/ info sources */
+   std::vector<Columninfo*> columns,      /**< list of column headers/ info sources */
    char*                   command,       /**< the command that was entered */
    int*                    startindex,    /**< number of seeed there the menu extract starts */
    int*                    menulength,    /**< current menu length to be modified */
@@ -849,7 +834,7 @@ SCIP_RETCODE GCGdialogExecExplore(
 
    /* set initial columns */
    /* the column information has the header, a getter for the column info and the return type of the getter */
-   std::vector<std::tuple<std::string, void(*)(SCIP*, int), RETTYPE>> columns;
+   std::vector<Columninfo*> columns;
    char columnstr[] = DEFAULT_COLUMNS;
    char* tempcolumns = strtok(columnstr, " ");
    /* go through each column header and determine its getter */
@@ -863,77 +848,88 @@ SCIP_RETCODE GCGdialogExecExplore(
       /* determine what callback the header should receive as its getter */
       if( strcmp(newchar, "nr") == 0)
          /* "nr" represents the position in the menu table and is determined by the menu */
-         columns.push_back(std::tuple<std::string, void(*)(SCIP*, int), RETTYPE>(newchar, NULL, UNKNOWN));
+         columns.push_back(new Columninfo(newchar, "number of the decomposition (use this number for choosing the decomposition)", NULL, UNKNOWN));
       else if(strcmp(newchar, "id") == 0)
          /* "id" is the seeed id, the list of ids is known to the menu */
-         columns.push_back(std::tuple<std::string, void(*)(SCIP*, int), RETTYPE>(newchar, NULL, UNKNOWN));
+         columns.push_back(new Columninfo(newchar, "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)", NULL, UNKNOWN));
       else
       {
          /**@note devs: if you want to add new headers, please specify their getters here! */
-         /*@todo macro for (void(*)(SCIP*, int)) conversion? */
-         /*@todo it would be possible to add a description of the column to be displayed in the legend */
          RETTYPE type = UNKNOWN;
-         void(*funct)(SCIP*, int);
+         callback funct;
+         std::string desc;
          
          if(strcmp(newchar, "nbloc") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGgetNBlocksBySeeedId;
             type = INTEGER;
+            desc = "number of blocks";
          }
          else if(strcmp(newchar, "nmacon") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGgetNMasterConssBySeeedId;
             type = INTEGER;
+            desc = "number of master constraints";
          }
          else if(strcmp(newchar, "nmavar") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGgetNMasterVarsBySeeedId;
             type = INTEGER;
+            desc = "number of master variables (do not occur in blocks)";
          }
          else if(strcmp(newchar, "nlivar") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGgetNLinkingVarsBySeeedId;
             type = INTEGER;
+            desc = "number of linking variables";
          }
          else if(strcmp(newchar, "nstlva") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGgetNStairlinkingVarsBySeeedId;
             type = INTEGER;
+            desc = "number of stairlinking variables";
          }
          else if(strcmp(newchar, "score") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGgetScoreBySeeedId;
             type = FLOAT;
+            /**@note as "score" is a wildcard, its description is determined only when needed */
+            desc = " ";
          }
          else if(strcmp(newchar, "history") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGgetDetectorHistoryBySeeedId;
             type = STRING;
+            desc = "list of detector chars worked on this decomposition ";
          }
          else if(strcmp(newchar, "pre") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGisPresolvedBySeeedId;
             type = BOOLEAN;
+            desc = "is this decomposition for the presolved problem";
          }
          else if(strcmp(newchar, "nopcon") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGgetNOpenConssBySeeedId;
             type = INTEGER;
+            desc = "number of open constraints";
          }
          else if(strcmp(newchar, "nopvar") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGgetNOpenVarsBySeeedId;
             type = INTEGER;
+            desc = "number of open variables";
          }
          else if(strcmp(newchar, "sel") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGisSelectedBySeeedId;
             type = BOOLEAN;
+            desc = "is this decomposition selected at the moment";
          }
 
          /* add the column if a corresponding callback was found */
          if(type != UNKNOWN)
-            columns.push_back(std::make_tuple(newchar, funct, type));
+            columns.push_back(new Columninfo(newchar, desc, funct, type));
       }
 
       /* get the next item in the list of headers */
