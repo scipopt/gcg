@@ -34,6 +34,7 @@
 #include <iostream>
 #include <regex>
 #include <map>
+#include <functional>
 
 #include "class_seeed.h"
 #include "cons_decomp.h"
@@ -49,6 +50,14 @@
 namespace gcg
 {
 
+/** rettype is used to store the return type of a callback function */
+enum RETTYPE{
+   UNKNOWN,    /**< dummy default to catch errors */
+   INTEGER,    /**< integer */
+   FLOAT,
+   BOOLEAN,    /**< Boolean */
+   STRING      /**< char* */
+};
 
 /** gets the seeed structure from a given id (local help function)
  * 
@@ -788,7 +797,6 @@ SCIP_RETCODE GCGdialogExecCommand(
    return SCIP_OKAY;
 }
 
-
 extern "C" {
 
 SCIP_RETCODE GCGdialogExecExplore(
@@ -831,18 +839,95 @@ SCIP_RETCODE GCGdialogExecExplore(
    sortByScore(scip, &idlist, sortasc);
 
    /* set initial columns */
-   std::vector<std::string> columns;
+   /* the column information has the header, a getter for the column info and the return type of the getter */
+   std::vector<std::tuple<std::string, void(*)(SCIP, int), RETTYPE>> columns;
    char columnstr[] = DEFAULT_COLUMNS;
    char* tempcolumns = strtok(columnstr, " ");
+   /* go through each column header and determine its getter */
    while(tempcolumns != NULL)
    {
       /* get each column header of default */
       char newchar[DEFAULT_COLUMN_MAX_WIDTH]; // cutting string at max column width if longer
       strcpy(newchar, tempcolumns);
-      columns.push_back(newchar);
       /**@note: 'score' is a wildcard! replace by score name later*/
-      
-      /* get the next item in the list */
+
+      /* determine what callback the header should receive as its getter */
+      if( strcmp(newchar, "nr") == 0)
+         /* "nr" represents the position in the menu table and is determined by the menu */
+         columns.push_back(std::tuple<std::string, void(*)(SCIP, int), RETTYPE>(newchar, NULL, UNKNOWN));
+      else if(strcmp(newchar, "id") == 0)
+         /* "id" is the seeed id, the list of ids is known to the menu */
+         columns.push_back(std::tuple<std::string, void(*)(SCIP, int), RETTYPE>(newchar, NULL, UNKNOWN));
+      else
+      {
+         /**@note devs: if you want to add new headers, please specify their getters here! */
+         RETTYPE type = UNKNOWN;
+         void(*funct)(SCIP, int);
+         
+         if(strcmp(newchar, "nbloc") == 0)
+         {
+            funct = (void(*)(SCIP, int)) &GCGgetNBlocksBySeeedId;
+            type = INTEGER;
+         }
+         else if(strcmp(newchar, "nmacon") == 0)
+         {
+            funct = (void(*)(SCIP, int)) &GCGgetNMasterConssBySeeedId;
+            type = INTEGER;
+         }
+         else if(strcmp(newchar, "nmavar") == 0)
+         {
+            funct = (void(*)(SCIP, int)) &GCGgetNMasterVarsBySeeedId;
+            type = INTEGER;
+         }
+         else if(strcmp(newchar, "nlivar") == 0)
+         {
+            funct = (void(*)(SCIP, int)) &GCGgetNLinkingVarsBySeeedId;
+            type = INTEGER;
+         }
+         else if(strcmp(newchar, "nstlva") == 0)
+         {
+            funct = (void(*)(SCIP, int)) &GCGgetNStairlinkingVarsBySeeedId;
+            type = INTEGER;
+         }
+         else if(strcmp(newchar, "score") == 0)
+         {
+            funct = (void(*)(SCIP, int)) &GCGgetScoreBySeeedId;
+            type = FLOAT;
+         }
+         else if(strcmp(newchar, "history") == 0)
+         {
+            funct = (void(*)(SCIP, int)) &GCGgetDetectorHistoryBySeeedId;
+            type = STRING;
+         }
+         else if(strcmp(newchar, "pre") == 0)
+         {
+            funct = (void(*)(SCIP, int)) &GCGisPresolvedBySeeedId;
+            type = BOOLEAN;
+         }
+         else if(strcmp(newchar, "nopcon") == 0)
+         {
+            funct = (void(*)(SCIP, int)) &GCGgetNOpenConssBySeeedId;
+            type = INTEGER;
+         }
+         else if(strcmp(newchar, "nopvar") == 0)
+         {
+            funct = (void(*)(SCIP, int)) &GCGgetNOpenVarsBySeeedId;
+            type = INTEGER;
+         }
+         else if(strcmp(newchar, "sel") == 0)
+         {
+            funct = (void(*)(SCIP, int)) &GCGisSelectedBySeeedId;
+            type = BOOLEAN;
+         }
+         else
+            funct = NULL;
+
+         /* add the column if a corresponding callback was found */
+         if(type != UNKNOWN)
+            columns.push_back(std::make_tuple(newchar, funct, type));
+      }
+
+      /* get the next item in the list of headers */
       tempcolumns = strtok (NULL, " ");
    }
 
