@@ -203,7 +203,7 @@ SCIP_RETCODE writeSelectedDecompositions(
    char* tmp;
    SCIP_Bool endoffile;
 
-   if( SCIPconshdlrDecompGetNFinishedDecomps(scip) == 0 )
+   if( SCIPconshdlrDecompGetNSeeedLeafs(scip) == 0 )
    {
       SCIPdialogMessage(scip, NULL, "No decomposition to write, please read or detect one first.\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
@@ -1490,7 +1490,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 
-
    /* display additionalstatistics */
    if( !SCIPdialogHasEntry(submenu, "additionalstatistics") )
    {
@@ -1499,7 +1498,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
-
 
    /* display solvers */
    if( !SCIPdialogHasEntry(submenu, "solvers") )
@@ -1540,7 +1538,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
-
 
    /* optimize */
    if( !SCIPdialogHasEntry(root, "optimize") )
@@ -1609,8 +1606,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
-
-
 
    /* set detectors */
       if( !SCIPdialogHasEntry(setmenu, "detection") )
@@ -1819,7 +1814,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
         SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
      }
 
-
    /* write original decompositions */
    if( !SCIPdialogHasEntry(submenu, "alloriginaldecompositions") )
    {
@@ -1842,8 +1836,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 
-
-
    /* write family tree of whites decompositions */
    if( !SCIPdialogHasEntry(submenu, "familytree") )
    {
@@ -1854,7 +1846,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
-
 
    /* write orig matrix */
    if( !SCIPdialogHasEntry(submenu, "matrix") )
@@ -1867,7 +1858,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 
-
    /* write orig matrix */
    if( !SCIPdialogHasEntry(submenu, "transmatrix") )
    {
@@ -1878,7 +1868,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
-
 
    /* write reportdecompositions */
       if( !SCIPdialogHasEntry(submenu, "reportdecompositions") )
@@ -1901,7 +1890,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
-
 
    /* change */
       if( !SCIPdialogHasEntry(root, "change") )
@@ -1962,8 +1950,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
       }
-
-
 
    return SCIP_OKAY;
 }
