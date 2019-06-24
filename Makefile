@@ -778,6 +778,16 @@ help:
 		@echo "  - MEM=b: Set memory limit."
 		@echo "  - TIME=s: Set time limit in seconds."
 		@echo "  - NODE=n: Set opened node limit for the branch and bound tree."
+		@echo
+		@echo "  Targets common for SCIP and GCG can be found in SCIP's make help."
+		@echo "  Most important SCIP targets:"
+		@echo "  - all (default): Build SCIP libaries and binary."
+		@echo "  - links: Reconfigures the links in the \"lib\" directory."
+		@echo "  - doc: Creates documentation in ./doc."
+		@echo "  - check/test: Runs the check/test script current computer."
+		@echo "  GCG specific targets:"
+		@echo "  - deps: build all dependencies."
+		@echo "  - testcluster: Runs the check/test script on the OR cluster."
 
 
 #---- EOF --------------------------------------------------------------------
