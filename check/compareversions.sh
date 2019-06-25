@@ -4,12 +4,14 @@
 # README
 #
 # This script will run different versions of GCG using the test script for comparison.
+# To this end, it checks out different branches from the git, compiles, tests, and reports.
+#
 # Comparing different GCG versions (that might have different compile conventions) is basically one huge workaround, so beware!
 # Some older versions might require manual linking of libraries (especially tag < v2*). If the test runs overnight it might stop until someone manually presses Enter.
 # You have been warned.
 #
 # Call this script with arguments: "global flags" "gitversion1" "flags for gitversion1" "gitversion2" "flags for gitversion2" "gitversion3" ...
-# e.g. ./compareversions "TEST=mytestset SETTINGS=mysettings -j" "master" "" "mybranch" "LPS=cpx"
+# e.g. ./compareversions.sh "TEST=mytestset SETTINGS=mysettings -j" "master" "" "mybranch" "LPS=cpx"
 #
 # Put "" around your arguments if they include spaces.
 # Add "" after a git version for no additional flags
@@ -38,6 +40,22 @@ GLOBALFLAGS=$1
 ninputs=$((ninputs - 1))
 shift
 nversions=0
+
+# output a little help message
+if [[ $ninputs < 3 ]]; then
+cat <<EOF
+Call this script with arguments: "global flags" "gitversion1" "flags for gitversion1" "gitversion2" "flags for gitversion2" "gitversion3" ...
+e.g. ./compareversions.sh "TEST=mytestset SETTINGS=mysettings -j" "master" "" "mybranch" "LPS=cpx"
+
+Put "" around your arguments if they include spaces.
+Add "" after a git version for no additional flags
+
+Useful git branches to compare are, among others:
+EOF
+git branch -a |grep origin/release-v |sort |cut -d / -f 3
+exit 0
+fi
+
 while ((ninputs > 0))
 do
 	nversions=$((nversions + 1))
