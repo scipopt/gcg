@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -56,7 +56,6 @@ GraphGCG::GraphGCG()
    adj_matrix_sparse = gsl_spmatrix_alloc(1,1);
    working_adj_matrix = NULL;
 #endif
-   //adj_matrix = new vector<vector<double>>(0, vector<double>(0));
 }
 
 GraphGCG::GraphGCG(int _n_nodes, bool _undirected)
@@ -359,7 +358,6 @@ vector<int> GraphGCG::getClustersMCL()
    {
       for(auto val : item.second)
       {
-         //cout << val << ", ";
          labels[val] = item.first;
       }
    }
@@ -491,7 +489,6 @@ vector<int> GraphGCG::getNeighbors(int node)
       res[curr++] = adj_matrix_sparse->i[begin_++];
    }
    assert(curr == res.size());
-   //res = row_inds;
    if(self_found)
       res.erase(remove(res.begin(), res.end(), node), res.end());
 #else
@@ -716,7 +713,6 @@ double GraphGCG::getEdgeWeight(int node_i, int node_j)
 #else
    assert(node_i < (int)adj_matrix.size());
    assert(node_j < (int)adj_matrix.size());
-   //assert(adj_matrix[node_i][node_j] == 0);
    weight = adj_matrix[node_i][node_j];
 #endif
    return weight;
@@ -803,7 +799,6 @@ double GraphGCG::getEdgeWeightPercentile(double q)
 SCIP_RETCODE GraphGCG::getEdges(vector<void *>& _edges)
 {
    _edges.resize(edges.size());
-   //_edges = static_cast< vector<void *> >(edges);
    for(int i = 0; i < (int)edges.size(); i++)
    {
       assert(edges[i]->src < (int)nodes.size());

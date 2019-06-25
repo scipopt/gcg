@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -208,7 +208,7 @@ SCIP_RETCODE initProbingObjWithOrigObj(
    origvars = SCIPgetVars(origscip);
    norigvars = SCIPgetNVars(origscip);
 
-   /** loop over original variables */
+   /* loop over original variables */
    for( i = 0; i < norigvars; ++i )
    {
       /* get variable information */
@@ -246,7 +246,7 @@ SCIP_RETCODE chgProbingObjAddingOrigObj(
    origvars = SCIPgetVars(origscip);
    norigvars = SCIPgetNVars(origscip);
 
-   /** loop over original variables */
+   /* loop over original variables */
    for( i = 0; i < norigvars; ++i )
    {
       /* get variable information */
@@ -295,7 +295,7 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
    enableposslack = sepadata->enableposslack;
    posslackexp = sepadata->posslackexp;
 
-   /** loop over original variables */
+   /* loop over original variables */
    for( i = 0; i < norigvars; ++i )
    {
       /* get variable information */
@@ -407,7 +407,7 @@ SCIP_RETCODE chgProbingObjUsingRows(
    SCIP_CALL( SCIPallocBufferArray(origscip, &solvals, SCIPgetNVars(origscip)) );
    SCIP_CALL( SCIPallocBufferArray(origscip, &vars, SCIPgetNVars(origscip)) );
 
-   /** loop over constraint and check activity */
+   /* loop over constraint and check activity */
    for( i = 0; i < nrows; ++i )
    {
       row = rows[i];
@@ -476,7 +476,7 @@ SCIP_RETCODE chgProbingObjUsingRows(
 
       norm = SCIProwGetNorm(row);
 
-      /** loop over variables of the constraint and change objective */
+      /* loop over variables of the constraint and change objective */
       for( j = 0; j < nvars; ++j )
       {
          obj = SCIPgetVarObjProbing(origscip, vars[j]);
@@ -493,7 +493,7 @@ SCIP_RETCODE chgProbingObjUsingRows(
 }
 
 #ifdef WITH_GSL
-/**< Get matrix (including nrows and ncols) of rows that are satisfied with equality by sol */
+/** Get matrix (including nrows and ncols) of rows that are satisfied with equality by sol */
 static
 SCIP_RETCODE getEqualityMatrixGsl(
    SCIP*                scip,               /**< SCIP data structure */
@@ -618,7 +618,7 @@ SCIP_RETCODE getEqualityMatrixGsl(
    return SCIP_OKAY;
 }
 
-/**< get the rank of a given matrix */
+/** get the rank of a given matrix */
 static
 SCIP_RETCODE getRank(
    SCIP*                scip,
@@ -680,7 +680,7 @@ SCIP_RETCODE getRank(
    return SCIP_OKAY;
 }
 
-/**< Get rank (number of linear independent rows) of rows that are satisfied
+/** Get rank (number of linear independent rows) of rows that are satisfied
  *   with equality by solution sol */
 static
 SCIP_RETCODE getEqualityRankGsl(
@@ -873,6 +873,7 @@ SCIP_DECL_SEPAINIT(sepaInitBasis)
 
    sepadata->maxcuts = STARTMAXCUTS;
    sepadata->norigcuts = 0;
+   sepadata->nmastercuts = 0;
    sepadata->maxnewcuts = 0;
    sepadata->nnewcuts = 0;
    sepadata->objrow = NULL;
@@ -979,7 +980,7 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolBasis)
 }
 
 
-/**< Initialize generic convex combination coefficient */
+/** Initialize generic convex combination coefficient */
 static
 SCIP_RETCODE initGenconv(
    SCIP*                origscip,           /**< original SCIP data structure */
@@ -1010,7 +1011,7 @@ SCIP_RETCODE initGenconv(
 }
 
 
-/**< Initialize objective as convex combination of so-called face objective function and original objective function */
+/** Initialize objective as convex combination of so-called face objective function and original objective function */
 static
 SCIP_RETCODE initConvObj(
    SCIP*                origscip,           /**< original SCIP data structure */
@@ -1195,7 +1196,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    /* get trans objective value */
    obj = SCIPgetSolTransObj(origscip, origsol);
 
-   /** get number of linearly independent rows needed for basis */
+   /* get number of linearly independent rows needed for basis */
    nbasis = SCIPgetNLPCols(origscip);
 
    *result = SCIP_DIDNOTFIND;
@@ -1214,14 +1215,14 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP_CALL( SCIPnewProbingNode(origscip) );
    SCIP_CALL( SCIPconstructLP(origscip, &cutoff) );
 
-   /** add origcuts to probing lp */
+   /* add origcuts to probing lp */
    for( i = 0; i < GCGsepaGetNCuts(scip); ++i )
    {
       if( SCIProwGetLPPos(GCGsepaGetOrigcuts(scip)[i]) == -1 )
          SCIP_CALL( SCIPaddRowProbing(origscip, GCGsepaGetOrigcuts(scip)[i]) );
    }
 
-   /** add new cuts which did not cut off master sol to probing lp */
+   /* add new cuts which did not cut off master sol to probing lp */
    for( i = 0; i < sepadata->nnewcuts; ++i )
    {
       if( SCIProwGetLPPos(sepadata->newcuts[i]) == -1 )
@@ -1331,7 +1332,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          SCIPdebugMessage("add original objective cut to probing LP\n");
 
-         /** add row to probing lp */
+         /* add row to probing lp */
          SCIP_CALL( SCIPaddRowProbing(origscip, sepadata->objrow) );
       }
 
@@ -1385,7 +1386,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
       if( !enoughcuts )
       {
-         /** separate current probing lp sol of origscip */
+         /* separate current probing lp sol of origscip */
          SCIPdebugMessage("separate current LP solution\n");
          SCIP_CALL( SCIPseparateSol(origscip, NULL, isroot, isroot, FALSE, &delayed, &cutoff) );
 
@@ -1451,19 +1452,20 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
        * it might happen that non-violated cuts are added to the sepastore,
        * which could lead to an infinite loop
        */
-      /** initialize nviolated counting the number of cuts in the sepastore
+      /* initialize nviolated counting the number of cuts in the sepastore
        * that are violated by the current LP solution */
       nviolatedcuts = 0;
 
-      /** loop over cuts and transform cut to master problem (and safe cuts) if it seperates origsol */
+      /* loop over cuts and transform cut to master problem (and safe cuts) if it seperates origsol */
       for( i = 0; i < ncuts; i++ )
       {
          SCIP_Bool colvarused;
+         SCIP_Real shift;
 
          colvarused = FALSE;
          origcut = cuts[i];
 
-         /** if cut is violated by LP solution, increase nviolatedcuts */
+         /* if cut is violated by LP solution, increase nviolatedcuts */
          if( SCIPisCutEfficacious(origscip, NULL, origcut) )
          {
             ++nviolatedcuts;
@@ -1509,17 +1511,19 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIP_CALL( SCIPcaptureRow(origscip, sepadata->origcuts[sepadata->norigcuts]) );
          sepadata->norigcuts++;
 
+         /* transform the original variables to master variables */
+         shift = GCGtransformOrigvalsToMastervals(origscip, roworigvars, vals, ncols, mastervars, mastervals, nmastervars);
+
          /* create new cut in the master problem */
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "mc_basis_%s", SCIProwGetName(origcut));
          SCIP_CALL( SCIPcreateEmptyRowSepa(scip, &mastercut, sepa, name,
-               ( SCIPisInfinity(scip, -SCIProwGetLhs(origcut)) ?
-                  SCIProwGetLhs(origcut) : SCIProwGetLhs(origcut) - SCIProwGetConstant(origcut)),
-               ( SCIPisInfinity(scip, SCIProwGetRhs(origcut)) ?
-                  SCIProwGetRhs(origcut) : SCIProwGetRhs(origcut) - SCIProwGetConstant(origcut)),
-                  SCIProwIsLocal(origcut), TRUE, FALSE) );
+            ( SCIPisInfinity(scip, -SCIProwGetLhs(origcut)) ?
+              SCIProwGetLhs(origcut) : SCIProwGetLhs(origcut) - SCIProwGetConstant(origcut) - shift),
+            ( SCIPisInfinity(scip, SCIProwGetRhs(origcut)) ?
+              SCIProwGetRhs(origcut) : SCIProwGetRhs(origcut) - SCIProwGetConstant(origcut) - shift),
+            SCIProwIsLocal(origcut), TRUE, FALSE) );
 
-         /* transform the original variables to master variables and add them to the cut */
-         GCGtransformOrigvalsToMastervals(origscip, roworigvars, vals, ncols, mastervars, mastervals, nmastervars);
+         /* add master variables to the cut */
          SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
          /* add the cut to the master problem and to the master cut storage */
@@ -1545,7 +1549,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIPfreeBufferArray(scip, &mastervals);
          break;
       }
-      /** use nviolated cuts instead of number of cuts in sepastore,
+      /* use nviolated cuts instead of number of cuts in sepastore,
        * because non-violated might be added to the sepastore */
       else if( nviolatedcuts == 0 )
       {

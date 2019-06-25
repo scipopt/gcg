@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -40,6 +40,7 @@
 #include "pub_gcgvar.h"
 #include "cons_decomp.h"
 #include "gcgsort.h"
+#include "stat.h"
 #include <string.h>
 #include <unistd.h>
 
@@ -118,13 +119,14 @@ GCG_DECL_SORTPTRCOMP(mastervarcomp)
    return 0;
 }
 
-/** transforms given solution of the master problem into solution of the original problem
+/* transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method
+ *  @returns SCIP return code
  */
 SCIP_RETCODE GCGtransformMastersolToOrigsol(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_SOL*             mastersol,          /**< solution of the master problem, or NULL for current LP solution */
-   SCIP_SOL**            origsol             /**< pointer to store the new created original problem's solution */
+   SCIP*                 scip,               /* SCIP data structure */
+   SCIP_SOL*             mastersol,          /* solution of the master problem, or NULL for current LP solution */
+   SCIP_SOL**            origsol             /* pointer to store the new created original problem's solution */
    )
 {
    SCIP* masterprob;
@@ -544,8 +546,9 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
 }
 
 
-/** transforms given values of the given original variables into values of the given master variables */
-void GCGtransformOrigvalsToMastervals(
+/* transforms given values of the given original variables into values of the given master variables
+ * @returns the sum of the values of the corresponding master variables that are fixed */
+SCIP_Real GCGtransformOrigvalsToMastervals(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            origvars,           /**< array with (subset of the) original variables */
    SCIP_Real*            origvals,           /**< array with values (coefs) for the given original variables */
@@ -558,6 +561,7 @@ void GCGtransformOrigvalsToMastervals(
    int i;
    int j;
    int k;
+   SCIP_Real sum;
 
    assert(scip != NULL);
    assert(origvars != NULL);
@@ -565,6 +569,8 @@ void GCGtransformOrigvalsToMastervals(
    assert(mastervars != NULL);
    assert(mastervals != NULL);
    assert(nmastervars >= 0);
+
+   sum = 0.0;
 
    /* set all values to 0 initially */
    for( i = 0; i < nmastervars; i++ )
@@ -583,7 +589,7 @@ void GCGtransformOrigvalsToMastervals(
       blocknr = GCGvarGetBlock(origvars[i]);
 
       /* variable belongs to no block (or is a linking variable), so it was transferred directly to the master problem,
-       * hence, we transfer the value directly to the corresponding master variabe
+       * hence, we transfer the value directly to the corresponding master variable
        */
       if( blocknr < 0 )
       {
@@ -599,7 +605,29 @@ void GCGtransformOrigvalsToMastervals(
                break;
             }
          }
-         assert(k < nmastervars);
+
+         if ( k >= nmastervars )
+         {
+            // inactive variable, check whether it is fixed
+            if ( SCIPisFeasEQ(scip, SCIPvarGetLbGlobal(varmastervars[0]), SCIPvarGetUbGlobal(varmastervars[0])) )
+            {
+               // variable is fixed in the master problem
+               sum += (SCIPvarGetLbGlobal(varmastervars[0]) * varmastervals[0] * origvals[i]);
+            }
+            else
+            {
+#ifdef SCIP_DEBUG
+               SCIP* masterprob = GCGgetMasterprob(scip);
+               SCIP_VAR** vars = SCIPgetVars(masterprob);
+
+               SCIPdebugMessage("OrigVar %s [%f,%f]\n", SCIPvarGetName(origvars[i]), SCIPvarGetLbGlobal(origvars[i]),
+                     SCIPvarGetUbGlobal(origvars[i]));
+               SCIPdebugMessage("MasterVar %s [%f,%f]\n", SCIPvarGetName(varmastervars[0]),
+                     SCIPvarGetLbGlobal(varmastervars[0]), SCIPvarGetUbGlobal(varmastervars[0]));
+#endif
+               assert(FALSE);
+            }
+         }
       }
       /* variable belongs to exactly one block, so we have to look at all master variables and increase their values
        * if they contain the original variable
@@ -635,30 +663,34 @@ void GCGtransformOrigvalsToMastervals(
       }
 
    }
+   return sum;
 }
 
-/** returns whether the scip is the original scip instance */
+/* checks whether the scip is the original scip instance
+ * @returns whether the scip is the original scip instance */
 SCIP_Bool GCGisOriginal(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip                /* SCIP data structure */
    )
 {
    assert(scip != NULL);
    return SCIPfindRelax(scip, "gcg") != NULL;
 }
 
-/** returns whether the scip is the master problem scip */
+/* checks whether the scip is the master problem scip
+ * @returns whether the scip is the master problem scip */
 SCIP_Bool GCGisMaster(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip                /* SCIP data structure */
    )
 {
    assert(scip != NULL);
    return SCIPfindPricer(scip, "gcg") != NULL;
 }
 
-/** print out GCG statistics */
+/* print out GCG statistics
+ * @returns SCIP return code */
 SCIP_RETCODE GCGprintStatistics(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file                /**< output file or NULL for standard output */
+   SCIP*                 scip,               /* SCIP data structure */
+   FILE*                 file                /* output file or NULL for standard output */
 )
 {
    assert(scip != NULL);
@@ -669,6 +701,7 @@ SCIP_RETCODE GCGprintStatistics(
       && SCIPgetStage(GCGgetMasterprob(scip)) > SCIP_STAGE_PRESOLVED )
    {
       GCGpricerPrintPricingStatistics(GCGgetMasterprob(scip), file);
+      SCIP_CALL( GCGwriteSolvingDetails(scip) );
    }
 
    if( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE )
@@ -702,9 +735,11 @@ SCIP_RETCODE GCGprintStatistics(
    return SCIP_OKAY;
 }
 
+/* print name of current instance to given output
+ * @returns SCIP return code */
 SCIP_RETCODE GCGprintInstanceName(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file                /**< output file or NULL for standard output */
+   SCIP*                 scip,               /* SCIP data structure */
+   FILE*                 file                /* output file or NULL for standard output */
 )
 {
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "filename: %s \n", GCGgetFilename(scip) );
@@ -712,55 +747,11 @@ SCIP_RETCODE GCGprintInstanceName(
 }
 
 
-SCIP_RETCODE GCGprintMiplibStructureInformation(
-   SCIP*                scip,
-   SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */
-   )
-{
-   FILE* file;
-
-   char* filepath;
-   char completefilepath[SCIP_MAXSTRLEN];
-
-   SCIPgetStringParam(scip, "write/miplib2017featurefilepath", &filepath);
-
-   (void) SCIPsnprintf(completefilepath, SCIP_MAXSTRLEN, "%s%s", filepath, ".csv");
-
-
-   file = fopen(completefilepath, "w");
-   if( file == NULL )
-   {
-      SCIPdialogMessage(scip, NULL, "error creating file <%s>\n", completefilepath);
-      SCIPprintSysError(completefilepath);
-      SCIPdialoghdlrClearBuffer(dialoghdlr);
-
-      return SCIP_OKAY;
-   }
-
-   SCIP_CALL( GCGprintMiplibBaseInformationHeader(scip, file) );
-
-
-   SCIP_CALL( GCGprintMiplibBaseInformation(scip, file) );
-
-   SCIP_CALL( GCGprintMiplibConnectedInformation(scip, file) );
-
-   SCIP_CALL( GCGprintMiplibDecompInformation(scip, file) );
-
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n, " );
-
-
-   fclose(file);
-
-   return SCIP_OKAY;
-}
-
-
-
-
-/** print out complete detection statistics */
+/* print out complete detection statistics
+ * @returns SCIP return code */
 SCIP_RETCODE GCGprintCompleteDetectionStatistics(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file                /**< output file or NULL for standard output */
+   SCIP*                 scip,               /* SCIP data structure */
+   FILE*                 file                /* output file or NULL for standard output */
 )
 {
    assert(scip != NULL);
@@ -775,8 +766,6 @@ SCIP_RETCODE GCGprintCompleteDetectionStatistics(
 
    SCIP_CALL( GCGprintInstanceName(scip, file) );
 
-
-
    GCGprintBlockcandidateInformation(scip, file);
 
    GCGprintCompleteDetectionTime(scip, file);
@@ -785,16 +774,15 @@ SCIP_RETCODE GCGprintCompleteDetectionStatistics(
 
    GCGprintDecompInformation(scip, file);
 
-//   GCGprintMiplibStructureInformation(scip, file);
-
    return SCIP_OKAY;
 }
 
 
 
-/** returns whether the constraint belongs to GCG or not */
+/* Checks whether the constraint belongs to GCG or not
+ *  @returns whether the constraint belongs to GCG or not */
 SCIP_Bool GCGisConsGCGCons(
-   SCIP_CONS*            cons                /**< constraint to check */
+   SCIP_CONS*            cons                /* constraint to check */
    )
 {
    SCIP_CONSHDLR* conshdlr;

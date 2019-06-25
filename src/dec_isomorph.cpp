@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -61,12 +61,12 @@
 /* constraint handler properties */
 #define DEC_DETECTORNAME          "isomorph"  /**< name of detector */
 #define DEC_DESC                  "Detector for pricing problems suitable for aggregation" /**< description of detector*/
-#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          0           /** last round the detector gets called                              */
-#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
-#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  0     /** last round the detector gets called while detecting the original problem                            */
-#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          0           /**< last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /**< first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  0     /**< last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              100         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'I'         /**< display character of detector */
 
@@ -173,8 +173,8 @@ void struct_hook::setBool( SCIP_Bool aut_ )
 
 
 
-/** methode to calculate the greates common divisor */
-
+/** method to calculate the greatest common divisor */
+static
 int gcd(int a, int b) {
     return b == 0 ? a : gcd(b, a % b);
 }
@@ -1287,7 +1287,7 @@ SCIP_RETCODE reorderPermutations(
       int orbitsize;
       orbitsize = count[i];
 
-      /** find orbitsize or not */
+      /* find orbitsize or not */
       std::vector<int>::const_iterator orbitsizesIter = orbitsizes.begin();
       for(; orbitsizesIter != orbitsizes.end(); ++orbitsizesIter)
       {
@@ -1564,7 +1564,7 @@ SCIP_RETCODE detectIsomorph(
       int pos = *nNewSeeeds;
 
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      SCIP_Real tempTime = SCIPclockGetTime(temporaryClock);
+      SCIP_Real tempTime = SCIPgetClockTime(scip, temporaryClock);
 
       for( p = *nNewSeeeds; p < *nNewSeeeds + nperms && pos < *nNewSeeeds + maxdecomps; ++p )
       {
@@ -1595,7 +1595,7 @@ SCIP_RETCODE detectIsomorph(
 
             ((*newSeeeds)[pos])->calcHashvalue();
             SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-            (*newSeeeds)[pos]->addClockTime( tempTime + SCIPclockGetTime(temporaryClock) );
+            (*newSeeeds)[pos]->addClockTime( tempTime + SCIPgetClockTime(scip, temporaryClock) );
 
             isduplicate = FALSE;
 
@@ -1706,7 +1706,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
    if( detectordata->legacyextend)
       SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, TRUE, detectordata->maxdecompsextend) );
 
-   /** do exact detection */
+   /* do exact detection */
    if( detectordata->legacyexact)
       SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, FALSE, detectordata->maxdecompsexact) );
 
@@ -1918,7 +1918,7 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph, NULL, NULL, detectorFinishSeeedIsomorph, detectorPostprocessSeeedIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
+      detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph, detectorFinishSeeedIsomorph, detectorPostprocessSeeedIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
 
    /* add isomorph constraint handler parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/isomorph/maxdecompsexact",

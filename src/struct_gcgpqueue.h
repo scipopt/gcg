@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_gcgpqueue.h
- * @brief  priority queueu
+ * @brief  data structure for priority queue
  * @author Jonas Witt
  */
 
@@ -45,7 +45,8 @@
 extern "C" {
 #endif
 
-/** priority queue data structure
+/** @brief priority queue data structure
+ *
  *  Elements are stored in an array, which grows dynamically in size as new elements are added to the queue.
  *  The ordering is done through a pointer comparison function.
  *  The array is organized as follows. The root element (that is the "best" element $r$ with $r <= x$ for all $x$)

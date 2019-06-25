@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_gp.h
- * @brief  GP file reader writing gnuplot files
+ * @brief  GP file reader writing decompositions to gnuplot files
  * @author Martin Bergner
  * @author Hanna Franzen
  * @ingroup FILEREADERS
@@ -47,24 +47,20 @@ extern "C" {
 #endif
 
 
-/** includes the gp file reader into SCIP */
+/** Includes the gp file reader into SCIP
+ * @returns SCIP status */
 extern
 SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** writes a visualization for the given seeed */
+/** Writes a visualization for the given seeed
+ * @returns SCIP status */
 extern SCIP_RETCODE GCGwriteGpVisualization(
    SCIP* scip,             /**< SCIP data structure */
-   char* filename,         /**< filename (including path) to write to */
-   char* outputname,       /**< filename for compiled output file */
+   char* filename,         /**< filename (including path), location of the output*/
+   char* outputname,       /**< outputname is the name of the file for the compiled gnuplot output file */
    int seeedid             /**< id of seeed to visualize */
-   );
-
-/** makes a new makefile and readme for the given .gp file */
-extern SCIP_RETCODE GCGgpWriteMakefileAndReadme(
-   SCIP* scip,       /**< SCIP data structure */
-   FILE* file        /**< File for which the makefile & readme are generated */
    );
 
 #ifdef __cplusplus

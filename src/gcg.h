@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -51,31 +51,36 @@
 extern "C" {
 #endif
 
-/** returns whether the scip is the original scip instance */
+/** checks whether the scip is the original scip instance
+ * @returns whether the scip is the original scip instance */
 extern
 SCIP_Bool GCGisOriginal(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** returns whether the scip is the master problem scip */
+/** checks whether the scip is the master problem scip
+ * @returns whether the scip is the master problem scip */
 extern
 SCIP_Bool GCGisMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** print out GCG statistics */
+/** print out GCG statistics
+ * @returns SCIP return code */
 SCIP_RETCODE GCGprintStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
 );
 
-/** print out complete detection statistics */
+/** print out complete detection statistics
+ * @returns SCIP return code */
 SCIP_RETCODE GCGprintCompleteDetectionStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
 );
 
-
+/** print name of current instance to given output
+ * @returns SCIP return code */
 SCIP_RETCODE GCGprintInstanceName(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
@@ -130,9 +135,10 @@ SCIP_Real GCGgetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** transforms given values of the given original variables into values of the given master variables */
+/** transforms given values of the given original variables into values of the given master variables
+ * @returns the sum of the values of the corresponding master variables that are fixed */
 extern
-void GCGtransformOrigvalsToMastervals(
+SCIP_Real GCGtransformOrigvalsToMastervals(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            origvars,           /**< array with (subset of the) original variables */
    SCIP_Real*            origvals,           /**< array with values for the given original variables */
@@ -142,7 +148,8 @@ void GCGtransformOrigvalsToMastervals(
    int                   nmastervars         /**< number of master variables */
    );
 
-/** transforms given solution of the master problem into solution of the original problem */
+/** transforms given solution of the master problem into solution of the original problem
+ *  @returns SCIP return code */
 extern
 SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -150,7 +157,8 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP_SOL**            origsol             /**< pointer to store the new created original problem's solution */
    );
 
-/** returns whether the constraint belongs to GCG or not */
+/** Checks whether the constraint belongs to GCG or not
+ *  @returns whether the constraint belongs to GCG or not */
 extern
 SCIP_Bool GCGisConsGCGCons(
    SCIP_CONS*            cons                /**< constraint to check */

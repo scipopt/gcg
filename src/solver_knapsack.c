@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -52,7 +52,7 @@
 #define SOLVER_HEURENABLED   FALSE           /**< indicates whether the heuristic solving method of the solver should be enabled */
 #define SOLVER_EXACTENABLED  TRUE            /**< indicates whether the exact solving method of the solver should be enabled */
 
-/** knapsack pricing solver needs no solverdata */
+/* knapsack pricing solver needs no solverdata */
 /* struct GCG_SolverData {}; */
 
 

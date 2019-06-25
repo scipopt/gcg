@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -161,7 +161,7 @@ SCIP_RETCODE addVarToMasterbranch(
 
    *added = FALSE;
 
-   if( ( GCGvarGetBlock(mastervar) == -1 && GCGbranchGenericBranchdataGetConsblocknr(branchdata) != -1 )  || !GCGisMasterVarInBlock(mastervar, GCGbranchGenericBranchdataGetConsblocknr(branchdata)) )
+   if( GCGvarGetBlock(mastervar) == -1 || GCGbranchGenericBranchdataGetConsblocknr(branchdata) == -3 || !GCGisMasterVarInBlock(mastervar, GCGbranchGenericBranchdataGetConsblocknr(branchdata)) )
       return SCIP_OKAY;
 
    SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata));
@@ -1159,7 +1159,7 @@ SCIP_RETCODE Separate(
 
    SCIP_CALL( partition(scip, J, &Jsize, priority, F, Fsize, &origvar, &median) );
 
-   /** this is a copy of S for the recursive call below */
+   /* this is a copy of S for the recursive call below */
    SCIP_CALL( SCIPallocMemoryArray(scip, &upperLowerS, (size_t)Ssize+1) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &upperS, (size_t)Ssize+1) );
 
@@ -1921,7 +1921,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteGeneric)
 }
 
 /** check method for pruning ChildS directly on childnodes
- *  retrun TRUE if node is pruned */
+ *  @returns TRUE if node is pruned */
 static
 SCIP_Bool checkchildconsS(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -2434,7 +2434,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    assert(nbranchcands > 0 || (discretization && SCIPgetNContVars(origscip) > 0));
    mastervar = NULL;
 
-   /** loop over all branching candidates */
+   /* loop over all branching candidates */
    for( i = 0; i < nbranchcands && (!discretization || SCIPgetNContVars(origscip) == 0); ++i )
    {
       int k;

@@ -6,7 +6,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -35,7 +35,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	3.0.0
+VERSION         :=	3.1.0
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -61,9 +61,9 @@ STATISTICS  =  false
 PROJECT		=	none
 GTEST		=	false
 PARASCIP	= 	true
-BLISS      	=   true
+BLISS      	=   false
 CLIQUER     =   false
-HMETIS      =   true
+HMETIS      =   false
 OPENMP      =   false
 GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
@@ -232,6 +232,7 @@ LIBOBJ = \
 			dec_mastersetpart.o \
 			dec_mcl.o \
 			dec_mst.o \
+			dec_neighborhoodmaster.o \
 			dec_postprocess.o \
 			dec_random.o \
 			dec_staircase.o \
@@ -239,6 +240,7 @@ LIBOBJ = \
 			dec_stairheur.o \
 			dec_varclass.o \
 			decomp.o \
+			dialog_explore.o \
 			dialog_gcg.o \
 			dialog_graph.o \
 			dialog_master.o \
@@ -450,7 +452,7 @@ endif
 
 .PHONY: doc
 doc:
-		cd doc; $(DOXY) $(MAINNAME).dxy;
+		cd doc; $(SHELL) builddoc.sh;
 
 .PHONY: $(MAINSHORTLINK)
 $(MAINSHORTLINK):	$(MAINFILE)
@@ -468,6 +470,8 @@ $(BINDIR):
 
 # this empty target is needed for the SCIP release versions
 githash::   # do not remove the double-colon
+
+${GCGGITHASHFILE}: githash
 
 .PHONY: test
 test:

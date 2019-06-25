@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -48,12 +48,12 @@
 /* constraint handler properties */
 #define DEC_DETECTORNAME          "mastersetpart"       /**< name of detector */
 #define DEC_DESC                  "detector mastersetpart" /**< description of detector*/
-#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
-#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
-#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
-#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          INT_MAX     /**< last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /**< first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /**< last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               '?'         /**< display character of detector */
 #define DEC_ENABLED               FALSE        /**< should the detection be enabled */
@@ -143,7 +143,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpart)
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
-   /** set open setpartitioning constraints to Master */
+   /* set open setpartitioning constraints to Master */
    for( int i = 0; i < seeed->getNOpenconss(); ++i)
    {
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
@@ -160,7 +160,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpart)
    seeedPropagationData->nNewSeeeds = 1;
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
@@ -191,7 +191,7 @@ SCIP_RETCODE SCIPincludeDetectorMastersetpart(SCIP* scip /**< SCIP data structur
    detectordata = NULL;
 
    SCIP_CALL(
-      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectMastersetpart, freeMastersetpart, initMastersetpart, exitMastersetpart, propagateSeeedMastersetpart, NULL, NULL, finishSeeedMastersetpart, detectorPostprocessSeeedMastersetpart, setParamAggressiveMastersetpart, setParamDefaultMastersetpart, setParamFastMastersetpart));
+      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectMastersetpart, freeMastersetpart, initMastersetpart, exitMastersetpart, propagateSeeedMastersetpart, finishSeeedMastersetpart, detectorPostprocessSeeedMastersetpart, setParamAggressiveMastersetpart, setParamDefaultMastersetpart, setParamFastMastersetpart));
 
    /**@todo add mastersetpart detector parameters */
 

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -66,19 +66,17 @@ struct DEC_Detector {
    int                   ndecomps;           /**< number of decompositions the detector has found */
    SCIP_Real             dectime;            /**< time the detector took to find decompositions */
 
-   DEC_DECL_FREEDETECTOR((*freeDetector));  /**< destructor of detector */
-   DEC_DECL_INITDETECTOR((*initDetector));  /**< initialization method of detector */
-   DEC_DECL_EXITDETECTOR((*exitDetector));  /**< deinitialization method of detector */
-   DEC_DECL_DETECTSTRUCTURE((*detectStructure)); /**< structure detection method of detector */
-   DEC_DECL_EXITDETECTOR((*exitDetection));  /**< deinitialization method of detector */
-   DEC_DECL_PROPAGATESEEED((*propagateSeeed));
-   DEC_DECL_PROPAGATEFROMTOOLBOX((*propagateFromToolbox));
-   DEC_DECL_FINISHFROMTOOLBOX((*finishFromToolbox));
-   DEC_DECL_FINISHSEEED((*finishSeeed));
-   DEC_DECL_POSTPROCESSSEEED((*postprocessSeeed));
-   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressive));
-   DEC_DECL_SETPARAMDEFAULT((*setParamDefault));
-   DEC_DECL_SETPARAMFAST((*setParamFast));
+   DEC_DECL_FREEDETECTOR((*freeDetector));                  /**< destructor of detector */
+   DEC_DECL_INITDETECTOR((*initDetector));                  /**< initialization method of detector */
+   DEC_DECL_EXITDETECTOR((*exitDetector));                  /**< deinitialization method of detector */
+   DEC_DECL_DETECTSTRUCTURE((*detectStructure));            /**< structure detection method of detector */
+   DEC_DECL_EXITDETECTOR((*exitDetection));                 /**< deinitialization method of detector */
+   DEC_DECL_PROPAGATESEEED((*propagateSeeed));              /**< propagation method of detector (or NULL) */
+   DEC_DECL_FINISHSEEED((*finishSeeed));                    /**< finish method of detector (or NULL) */
+   DEC_DECL_POSTPROCESSSEEED((*postprocessSeeed));          /**< postprocess method of detector (or NULL) */
+   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressive));      /**< set method for aggressive parameters of detector (or NULL) */
+   DEC_DECL_SETPARAMDEFAULT((*setParamDefault));            /**< set method for default parameters of detector (or NULL) */
+   DEC_DECL_SETPARAMFAST((*setParamFast));                  /**< set method for fast parameters of detector (or NULL) */
 
 
 };

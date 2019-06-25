@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -290,7 +290,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
       return SCIP_OKAY;
    }
 
-   /** get corresponding origsol in order to check integrality */
+   /* get corresponding origsol in order to check integrality */
    SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol) );
 
    origvars = SCIPgetOrigVars(origprob);

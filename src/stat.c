@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -42,6 +42,8 @@
 #include "struct_detector.h"
 #include "pub_gcgvar.h"
 #include "pricer_gcg.h"
+#include "gcg.h"
+#include "relax_gcg.h"
 
 
 /** prints information about the best decomposition*/
@@ -100,6 +102,22 @@ SCIP_RETCODE GCGwriteDecompositionData(
    return SCIP_OKAY;
 }
 
+/** prints additional solving statistics */
+SCIP_RETCODE GCGwriteSolvingDetails(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CLOCK* rootnodetime;
+
+   assert(scip != NULL);
+
+   rootnodetime = GCGgetRootNodeTime(scip);
+   SCIPinfoMessage(scip, NULL, "Solving Details    :\n");
+   SCIPinfoMessage(scip, NULL, "  time in root node: %10.2f\n", SCIPgetClockTime(scip, rootnodetime));
+
+   return SCIP_OKAY;
+}
+
 /** prints information about the creation of the Vars*/
 SCIP_RETCODE GCGwriteVarCreationDetails(
    SCIP*                 scip                /**< SCIP data structure */
@@ -112,7 +130,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
 
    int nvars, i, n;
    SCIP_Longint* createnodestat;
-   int nodes[2];         /** < Wurzel Knoten und nicht wurzelknoten  */
+   int nodes[2];         /* Wurzel Knoten und nicht wurzelknoten  */
    SCIP_Longint createtimestat[10];
    int createiterstat[10];
    int m;

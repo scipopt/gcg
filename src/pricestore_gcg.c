@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -113,10 +113,10 @@ SCIP_RETCODE GCGpricestoreCreate(
    (*pricestore)->ncolsapplied = 0;
    (*pricestore)->infarkas = FALSE;
    (*pricestore)->forcecols = FALSE;
-   (*pricestore)->efficiacyfac = efficiacyfac;   /**< factor of efficiacies in score function */
-   (*pricestore)->objparalfac = objparalfac;     /**< factor of objective parallelism in score function */
-   (*pricestore)->orthofac = orthofac;           /**< factor of orthogonalities in score function */
-   (*pricestore)->mincolorth = mincolorth;       /**< minimal orthogonality of columns to add
+   (*pricestore)->efficiacyfac = efficiacyfac;   /* factor of efficiacies in score function */
+   (*pricestore)->objparalfac = objparalfac;     /* factor of objective parallelism in score function */
+   (*pricestore)->orthofac = orthofac;           /* factor of orthogonalities in score function */
+   (*pricestore)->mincolorth = mincolorth;       /* minimal orthogonality of columns to add
                                                       (with respect to columns added in the current round) */
    (*pricestore)->efficiacychoice = efficiacychoice;
 
@@ -768,5 +768,5 @@ SCIP_Real GCGpricestoreGetTime(
 {
    assert(pricestore != NULL);
 
-   return SCIPclockGetTime(pricestore->priceclock);
+   return SCIPgetClockTime(pricestore->scip, pricestore->priceclock);
 }

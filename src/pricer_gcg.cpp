@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -165,7 +165,7 @@ struct SCIP_PricerData
 
    SCIP_Real**           realdualvalues;     /**< real dual values for pricing variables */
 
-   /** variables used for statistics */
+   /* variables used for statistics */
    SCIP_CLOCK*           freeclock;          /**< time for freeing pricing problems */
    SCIP_CLOCK*           transformclock;     /**< time for transforming pricing problems */
    int                   solvedsubmipsoptimal; /**< number of optimal pricing runs */
@@ -180,7 +180,7 @@ struct SCIP_PricerData
    /* event handler */
    SCIP_EVENTHDLR*       eventhdlr;          /**< event handler */
 
-   /** parameter values */
+   /* parameter values */
    SCIP_VARTYPE          vartype;            /**< vartype of created master variables */
    int                   nroundsredcost;     /**< number of reduced cost rounds */
    SCIP_Bool             abortpricingint;    /**< should the pricing be aborted on integral solutions? */
@@ -201,7 +201,7 @@ struct SCIP_PricerData
                                               *   if pricing problems cannot be aggregation */
    int                   colpoolagelimit;    /**< agelimit of columns in colpool */
 
-   /** price storage */
+   /* price storage */
    SCIP_Real             redcostfac;         /**< factor of -redcost/norm in score function */
    SCIP_Real             objparalfac;        /**< factor of objective parallelism in score function */
    SCIP_Real             orthofac;           /**< factor of orthogonalities in score function */
@@ -211,7 +211,7 @@ struct SCIP_PricerData
    SCIP_Real             maxpricecolsfarkas; /**< maximum number of columns per Farkas round */
    GCG_EFFICIACYCHOICE   efficiacychoice;    /**< choice to base efficiacy on */
 
-   /** statistics */
+   /* statistics */
    int                   oldvars;            /**< Vars of last pricing iteration */
    int*                  farkascallsdist;    /**< Calls of each farkas pricing problem */
    int*                  farkasfoundvars;    /**< Found vars of each farkas pricing problem */
@@ -1033,10 +1033,10 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraintsFromGCGCol(
    int nlinkvars;
    int* linkvars;
 
-   SCIP_VAR**            solvars;            /**< array of variables with non-zero value in the solution of the pricing problem */
-   SCIP_Real*            solvals;            /**< array of values in the solution of the pricing problem for variables in array solvars*/
+   SCIP_VAR**            solvars;            /* array of variables with non-zero value in the solution of the pricing problem */
+   SCIP_Real*            solvals;            /* array of values in the solution of the pricing problem for variables in array solvars*/
 #ifndef NDEBUG
-   int                   nsolvars;            /**< number of variables in array solvars */
+   int                   nsolvars;            /* number of variables in array solvars */
 #endif
 
    int i;
@@ -1804,9 +1804,9 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
 
       if( SCIPisFeasPositive(scip_, dualsol) )
-         boundval = SCIPgetLhsLinear(scip_, masterconss[i]);
+         boundval = SCIPgetLhsLinear(scip_, origconss[i]);
       else if( SCIPisFeasNegative(scip_, dualsol) )
-         boundval = SCIPgetRhsLinear(scip_, masterconss[i]);
+         boundval = SCIPgetRhsLinear(scip_, origconss[i]);
       else
          continue;
 
@@ -2731,7 +2731,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
    enableppcuts = FALSE;
    SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppcuts", &enableppcuts) );
-   /** set parameters for adding pool cuts to separation basis */
+   /* set parameters for adding pool cuts to separation basis */
    if( enableppcuts && SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_) )
    {
       for( i = 0; i < pricerdata->npricingprobs; i++ )
@@ -3074,7 +3074,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    enableppcuts = FALSE;
    SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppcuts", &enableppcuts) );
 
-   /** add pool cuts to sepa basis */
+   /* add pool cuts to sepa basis */
    if( enableppcuts && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) )
    {
       for( j = 0; j < pricerdata->npricingprobs; j++ )
@@ -3566,6 +3566,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->maxpricedvars = 50;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars) );
 
+   pricerdata->nroundsredcost = 0;
 #ifdef SCIP_STATISTIC
    pricerdata->rootlpsol = NULL;
    pricerdata->rootfarkastime = 0.0;
@@ -3573,7 +3574,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->dualdiffround = -1;
    pricerdata->nrootbounds = 0;
    pricerdata->maxrootbounds = 50;
-   pricerdata->nroundsredcost = 0;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->rootdbs, pricerdata->maxrootbounds) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->roottimes, pricerdata->maxrootbounds) );
@@ -3586,10 +3586,10 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->avgrootnodedegeneracy = 0.0;
    pricerdata->ndegeneracycalcs = 0;
 
-   SCIP_CALL( pricingcontroller->initSol() );
-
    /* sort solvers by priority */
    SCIPsortPtr((void**)pricerdata->solvers, GCGsolverComp, pricerdata->nsolvers);
+
+   SCIP_CALL( pricingcontroller->initSol() );
 
    SCIP_CALL( solversInitsol() );
 

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 /** creates a GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGsolverCreate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_SOLVER**          solver,             /**< pointer to pricing solver data structure */
@@ -65,42 +65,42 @@ SCIP_RETCODE GCGsolverCreate(
    );
 
 /** calls destructor and frees memory of GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGsolverFree(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_SOLVER**          solver              /**< pointer to pricing solver data structure */
    );
 
 /** initializes GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGsolverInit(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** calls exit method of GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGsolverExit(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** calls solving process initialization method of GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGsolverInitsol(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** calls solving process deinitialization method of GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGsolverExitsol(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** calls update method of GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGsolverUpdate(
    SCIP*                 pricingprob,
    GCG_SOLVER*           solver,
@@ -111,7 +111,7 @@ SCIP_RETCODE GCGsolverUpdate(
    );
 
 /** calls heuristic or exact solving method of GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGsolverSolve(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    SCIP*                 pricingprob,        /**< the pricing problem that should be solved */

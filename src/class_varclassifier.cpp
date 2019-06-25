@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -180,11 +180,11 @@ VarClassifier* VarClassifier::reduceClasses( int givenMaxNumber )
    if ( classindexmapping.empty() )
       return NULL;
 
-   /** create new VarClassifier */
+   /* create new VarClassifier */
    newName << getName() << "-red-to-" << givenMaxNumber;
    newClassifier = new VarClassifier( scip, newName.str().c_str(), givenMaxNumber, getNVars() );
 
-   /** reassign vars */
+   /* reassign vars */
    for( int i = 0; i < newClassifier->getNVars(); ++i)
    {
       if ( getClassOfVar(i) != -1 )
@@ -193,7 +193,7 @@ VarClassifier* VarClassifier::reduceClasses( int givenMaxNumber )
       }
    }
 
-   /** set new class names and descriptions (enlarged class has index 0) */
+   /* set new class names and descriptions (enlarged class has index 0) */
    newClassifier->setClassName( 0, "merged" );
    newClassifier->setClassDecompInfo( 0, ALL );
 

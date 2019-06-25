@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -53,17 +53,16 @@
 #include "scip/clock.h"
 
 
-
 /* constraint handler properties */
 #define DEC_DETECTORNAME          "staircase_lsp"    /**< name of detector */
 #define DEC_DESC                  "Staircase detection via shortest paths" /**< description of detector */
 #define DEC_PRIORITY              200            /**< priority of the detector */
-#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
-#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
-#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
-#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          INT_MAX     /**< last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /**< first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /**< last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
 #define DEC_DECCHAR               'S'            /**< display character of detector */
 #define DEC_ENABLED               FALSE           /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
@@ -486,8 +485,8 @@ SCIP_RETCODE findDiameter(
 /** finds the connected components of the row graph. a staircase_lsp decomposition will be built for each component separately. */
 static
 SCIP_RETCODE findConnectedComponents(
-   SCIP*                 scip,               /** SCIP data structure */
-   DEC_DETECTORDATA*     detectordata        /** constraint handler data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata        /**< constraint handler data structure */
    )
 {
    int i;
@@ -566,7 +565,7 @@ SCIP_RETCODE findConnectedComponents(
    return SCIP_OKAY;
 }
 
-/* copy conshdldata data to decdecomp */
+/** copy conshdldata data to decdecomp */
 static
 SCIP_RETCODE copyToDecdecomp(
    SCIP*              scip,                  /**< SCIP data structure */
@@ -868,7 +867,7 @@ SCIP_RETCODE detection(
    tcliqueFree(&detectordata->graph);
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
 
@@ -909,7 +908,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
 
@@ -956,7 +955,7 @@ DEC_DECL_FINISHSEEED(detectorFinishSeeedStaircaseLsp)
     seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
     SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
     SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
 
@@ -1061,7 +1060,7 @@ SCIP_RETCODE SCIPincludeDetectorStaircaseLsp(
    SCIP_CALL( DECincludeDetector( scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
          DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP,
          DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectorDetectStaircaseLsp, detectorFreeStaircaseLsp,
-         detectorInitStaircaseLsp, detectorExitStaircaseLsp, detectorPropagateSeeedStaircaseLsp, NULL, NULL, detectorFinishSeeedStaircaseLsp, detectorPostprocessSeeedStaircaseLsp, setParamAggressiveStaircaseLsp, setParamDefaultStaircaseLsp, setParamFastStaircaseLsp) );
+         detectorInitStaircaseLsp, detectorExitStaircaseLsp, detectorPropagateSeeedStaircaseLsp, detectorFinishSeeedStaircaseLsp, detectorPostprocessSeeedStaircaseLsp, setParamAggressiveStaircaseLsp, setParamDefaultStaircaseLsp, setParamFastStaircaseLsp) );
 
 
    return SCIP_OKAY;

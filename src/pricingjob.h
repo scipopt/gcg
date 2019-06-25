@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 /** create a pricing job */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGpricingjobCreate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB**      pricingjob,         /**< pricing job to be created */
@@ -54,14 +54,14 @@ SCIP_RETCODE GCGpricingjobCreate(
 );
 
 /** free a pricing job */
-EXTERN
+SCIP_EXPORT
 void GCGpricingjobFree(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB**      pricingjob          /**< pricing job to be freed */
 );
 
 /** setup a pricing job at the beginning of the pricing loop */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGpricingjobSetup(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
@@ -74,33 +74,33 @@ SCIP_RETCODE GCGpricingjobSetup(
    );
 
 /** reset the pricing solver to be used to the one with the highest priority */
-EXTERN
+SCIP_EXPORT
 void GCGpricingjobResetSolver(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** get the next pricing solver to be used, or NULL of there is none */
-EXTERN
+SCIP_EXPORT
 void GCGpricingjobNextSolver(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** set the pricing job to be performed exactly */
-EXTERN
+SCIP_EXPORT
 void GCGpricingjobSetExact(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** reset number of heuristic pricing iterations of a pricing job */
-EXTERN
+SCIP_EXPORT
 void GCGpricingjobResetHeuristic(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** update number of heuristic pricing iterations of a pricing job */
-EXTERN
+SCIP_EXPORT
 void GCGpricingjobIncreaseNHeurIters(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );

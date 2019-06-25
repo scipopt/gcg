@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -440,7 +440,6 @@ std::vector<int> GraphAlgorithms<T>::mcl(
 )
 {
 #ifdef WITH_GSL
-   //std::cout << " Running MCL with inflate_factor = " << inflatefac << std::endl;
    graph.initMCL();
    graph.colL1Norm();
    graph.prune();
@@ -448,7 +447,6 @@ std::vector<int> GraphAlgorithms<T>::mcl(
    int i = 0;
    for(; i < maxiters; i++)
    {
-      //SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " MCL iteration: %d \n", i);
       graph.inflate(inflatefac);
       graph.expand(expandfac);
       graph.prune();
@@ -460,7 +458,6 @@ std::vector<int> GraphAlgorithms<T>::mcl(
    }
    assert(i > 6);
    stoppedAfter = i;
-   //std::cout << " MCL stopped after " << i << " iterations." << std::endl;
 
    std::vector<int> res = graph.getClustersMCL();
    graph.clearMCL();

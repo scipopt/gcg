@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -127,10 +127,6 @@ int Graph<T>::edge(int i, int j) {
    assert( i>= 0);
    assert(j >= 0);
 
-   //int edge_ij=0;
-
-   //return tcliqueIsEdge(tgraph,i,j);
-
    int edge_ij=0;
    std::vector<int> Neighbors;
 
@@ -208,44 +204,6 @@ SCIP_RETCODE Graph<T>::writeToFile(
    return SCIP_OKAY;
 }
 
-/** write the graph to a file */
-/*template <class T>
-SCIP_RETCODE Graph<T>::writeToFile(
-      int                fd,
-      SCIP_Bool writeweights
-    )
-{
-   int nnodes;
-   int nedges;
-   FILE* file;
-   file = fdopen(fd, "wx");
-   if( file == NULL )
-      return SCIP_FILECREATEERROR;
-
-   nnodes = Graph<T>::getNNodes();
-   nedges = Graph<T>::getNEdges();
-
-   SCIPinfoMessage(scip_, file, "%d %d\n", nnodes, nedges);
-
-   for( int i = 0; i < nnodes; ++i )
-   {
-      SCIPinfoMessage(scip_, file, "node %d :\n ", i);
-      //int nneighbors = Graph<T>::getNNeighbors(i);
-      //int nneighbors = Graph<T>::getNNeighbors(i);
-      std::vector<int> neighbors = Graph<T>::getNeighbors(i);
-      //assert(nneighbors == (int)neighbors.size());
-
-      for( int j : neighbors)
-      {
-         double w = Graph<T>::getEdgeWeight(i,j);
-         SCIPinfoMessage(scip_, file, "(%d, w= %.10f) ", j, w);
-      }
-      SCIPinfoMessage(scip_, file, "\n");
-   }
-
-
-   return SCIP_OKAY;
-}*/
 
 /** read in the partition from a file */
 template <class T>

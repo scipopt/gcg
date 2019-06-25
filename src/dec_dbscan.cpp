@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -430,9 +430,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
-   std::vector<SCIP_Real> clockTimes1;        /**< vector containing times in seconds  */
-   std::vector<SCIP_Real> clockTimes2;        /**< vector containing times in seconds  */
-   std::vector<SCIP_Real> clockTimes3;        /**< vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes1;        /* vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes2;        /* vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes3;        /* vector containing times in seconds  */
 
 
    assert(scip != NULL);
@@ -469,8 +469,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
       detectordata->graphs->push_back(g);
       sim.push_back("Johnson");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->intersectionenable)
@@ -481,8 +481,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
       detectordata->graphs->push_back(g);
       sim.push_back("Intersection");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->jaccardenable)
@@ -493,8 +493,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
       detectordata->graphs->push_back(g);
       sim.push_back("Jaccard");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->cosineenable)
@@ -505,8 +505,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
       detectordata->graphs->push_back(g);
       sim.push_back("Cosine");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->simpsonenable)
@@ -517,8 +517,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
       detectordata->graphs->push_back(g);
       sim.push_back("Simspon");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    time(&cp0);
@@ -541,8 +541,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
          epsLists[i] = getEpsList(detectordata->n_iterations, mids[i], false); // case for all except intersection
       }
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes2.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes2.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
 
@@ -608,8 +608,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
          n_seeeds_found += 2;
 
          SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-         clockTimes3.push_back(SCIPclockGetTime(temporaryClock));
-         clockTimes3.push_back(SCIPclockGetTime(temporaryClock));
+         clockTimes3.push_back(SCIPgetClockTime(scip, temporaryClock));
+         clockTimes3.push_back(SCIPgetClockTime(scip, temporaryClock));
          SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
       }
       delete detectordata->graphs->at(i);
@@ -740,7 +740,7 @@ SCIP_RETCODE SCIPincludeDetectorDBSCAN(
    detectordata->found = FALSE;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectDBSCAN, freeDBSCAN, initDBSCAN, exitDBSCAN, propagateSeeedDBSCAN, NULL, NULL, finishSeeedDBSCAN, detectorPostprocessSeeedDBSCAN, setParamAggressiveDBSCAN, setParamDefaultDBSCAN, setParamFastDBSCAN) );
+      detectordata, detectDBSCAN, freeDBSCAN, initDBSCAN, exitDBSCAN, propagateSeeedDBSCAN, finishSeeedDBSCAN, detectorPostprocessSeeedDBSCAN, setParamAggressiveDBSCAN, setParamDefaultDBSCAN, setParamFastDBSCAN) );
 
    /* add arrowheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/dbscan/niterations", "Number of iterations to run dbscan with different eps.", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 11, 1001, NULL, NULL) );

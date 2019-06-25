@@ -6,10 +6,10 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} ${CMAKE_CXX_FLAGS_R
 project(GCG)
 
 set(GCG_VERSION_MAJOR 3)
-set(GCG_VERSION_MINOR 0)
+set(GCG_VERSION_MINOR 1)
 set(GCG_VERSION_PATCH 0)
 set(GCG_VERSION_SUB 0)
-set(GCG_VERSION_API 1)
+set(GCG_VERSION_API 2)
 
 # TODO: In SCIP, license is in COPYING file and not in LICENSE.
 # TODO: SCIP has src/scipbuildflag.c which adds a function that returns the used build flags. Do we also want this?
@@ -42,6 +42,7 @@ endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 option(OPENMP "should gcg be compiled with openmp" OFF)
+option(STATIC_GMP "prefer static gmp library" OFF)
 option(GSL "should gcg be compiled with GSL" ON)
 option(GMP "should gmp be linked" ON)
 option(CLIQUER "should cliquer be linked" ON)
@@ -170,18 +171,13 @@ set(CMAKE_CXX_STANDARD 11)
 #search the selected symmetry computation program
 if(SYM STREQUAL "bliss")
 
-   # Apparently, bliss requires GMP
-   find_package(GMP REQUIRED)
-   include_directories(${GMP_INCLUDE_DIRS})
-   add_definitions(-DWITH_GMP)
-
    find_package(BLISS)
    if(BLISS_FOUND)
       include_directories(${BLISS_INCLUDE_DIRS})
       set(SYM_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
       set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_CXX_FLAGS} -DWITH_BLISS")
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DWITH_BLISS")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
    else()
       set(SYM_LIBRARIES)
       set(SYM_PIC_LIBRARIES)

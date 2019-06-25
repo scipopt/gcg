@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -163,7 +163,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedDensemasterconss)
   seeed = new gcg::Seeed(seeedOrig);
 
   lastindex =  maxratio * seeedpool->getNConss();
-  /** book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
+  /* book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
   for( int i = 0; i < seeed->getNOpenconss(); ++i )
   {
      int cons = seeed->getOpenconss()[i];
@@ -203,12 +203,12 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedDensemasterconss)
   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), foundseeeds.size() ) );
   seeedPropagationData->nNewSeeeds  = foundseeeds.size();
 
-  SCIPinfoMessage(scip, NULL, "dec_densemasterconss found %d new seeed \n", seeedPropagationData->nNewSeeeds  );
+  SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "dec_densemasterconss found %d new seeed \n", seeedPropagationData->nNewSeeeds  );
 
   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
   {
      seeedPropagationData->newSeeeds[s] = foundseeeds[s];
-     seeedPropagationData->newSeeeds[s]->addClockTime(SCIPclockGetTime(temporaryClock )  );
+     seeedPropagationData->newSeeeds[s]->addClockTime(SCIPgetClockTime(scip, temporaryClock )  );
   }
 
   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
@@ -298,7 +298,7 @@ SCIP_RETCODE SCIPincludeDetectorDensemasterconss(SCIP* scip /**< SCIP data struc
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata,
-         detectDensemasterconss, freeDensemasterconss, initDensemasterconss, exitDensemasterconss, propagateSeeedDensemasterconss, NULL, NULL, finishSeeedDensemasterconss, detectorPostprocessSeeedDensemasterconss, setParamAggressiveDensemasterconss, setParamDefaultDensemasterconss, setParamFastDensemasterconss));
+         detectDensemasterconss, freeDensemasterconss, initDensemasterconss, exitDensemasterconss, propagateSeeedDensemasterconss, finishSeeedDensemasterconss, detectorPostprocessSeeedDensemasterconss, setParamAggressiveDensemasterconss, setParamDefaultDensemasterconss, setParamFastDensemasterconss));
 
    /**@todo add densemasterconss detector parameters */
 

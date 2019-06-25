@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -58,98 +58,6 @@ ColumnGraph<T>::~ColumnGraph()
 {
    // TODO Auto-generated destructor stub
 }
-
-
-/** writes column graph to file */
-
-//template <class T>
-//SCIP_RETCODE ColumnGraph<T>::writeToFile(
-//   const char*        filename,           /**< filename where the graph should be written to */
-//   SCIP_Bool          writeweights         /**< whether to write weights */
-//   )
-/*{
-   int nedges;
-   int* nrealneighbors;
-   int** realneighbors;
-
-   SCIP_Bool* handled;
-   FILE* file;
-   assert(filename != NULL);
-   file = fopen(filename, "w");
-   if( file == NULL )
-      return SCIP_FILECREATEERROR;
-
-   nrealneighbors = 0;
-   nedges = 0;
-
-   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &handled, this->nvars) );
-   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors, this->nvars) );
-   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &nrealneighbors, this->nvars) );
-
-   for( int i = 0; i < this->nvars; ++i )
-   {
-      BMSclearMemoryArray(handled, this->nvars);
-      handled[i] = TRUE;
-      nrealneighbors[i] = 0;
-
-      SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors[i], this->nvars) );
-      int nneighbors = graph.getNNeighbors(i);
-
-      SCIPdebugMessage("%d has %d neighbors\n", i, nneighbors);
-
-      std::vector<int> neighbors = graph.getNeighbors(i);
-      for( int j = 0; j < nneighbors; ++j )
-      {
-         int neighbor = neighbors[j];
-         int nneighborneighbors = graph.getNNeighbors(neighbor);
-         std::vector<int> neighborneighbors = graph.getNeighbors(neighbor);
-         SCIPdebugMessage("\tneighbor %d has %d neighbors\n", neighbor, nneighborneighbors);
-         for( int k = 0; k < nneighborneighbors; ++k )
-         {
-            int neighborneighbor = neighborneighbors[k];
-
-            SCIPdebugMessage("\t\t%d->%d->%d (", i, neighbor, neighborneighbor);
-            if( !handled[neighborneighbor] )
-            {
-               SCIPdebugPrintf("x)\n");
-               realneighbors[i][nrealneighbors[i]] = neighborneighbor;
-               ++(nrealneighbors[i]);
-
-               handled[neighborneighbor] = TRUE;
-               ++nedges;
-            }
-            else
-            {
-               SCIPdebugPrintf("-)\n");
-            }
-         }
-      }
-   }
-
-   SCIPinfoMessage(this->scip_, file, "%d %d\n", this->nvars, nedges);
-
-   for( int i = 0; i < this->nvars; ++i)
-   {
-      for( int j = 0; j < nrealneighbors[i]; ++j )
-      {
-         SCIPinfoMessage(this->scip_, file, "%d ", realneighbors[i][j]+1);
-      }
-      SCIPinfoMessage(this->scip_, file, "\n");
-      SCIPfreeMemoryArray(this->scip_, &realneighbors[i]);
-   }
-
-   for( int i = 0; i < this->dummynodes; ++i )
-   {
-      SCIPinfoMessage(this->scip_, file, "\n");
-   }
-
-   SCIPfreeMemoryArray(this->scip_, &handled);
-   SCIPfreeMemoryArray(this->scip_, &realneighbors);
-   SCIPfreeMemoryArray(this->scip_, &nrealneighbors);
-
-   return SCIP_OKAY;
-}
-*/
 
 template <class T>
 SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(

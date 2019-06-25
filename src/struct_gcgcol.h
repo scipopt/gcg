@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_gcgcol.h
- * @brief  struct to store columns (solutions from a pricing problem)
+ * @brief  data structure to store columns (solutions from a pricing problem)
  * @author Jonas Witt
  */
 
@@ -45,6 +45,7 @@
 extern "C" {
 #endif
 
+/** Column data structure */
 struct GCG_Col
 {
    SCIP*                pricingprob;        /**< SCIP data structure (pricing problem)*/

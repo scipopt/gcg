@@ -5,7 +5,7 @@
     <!--   load css styles -->
     <link rel="stylesheet" type="text/css" href="http://scip.zib.de/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="http://scip.zib.de/bootstrap/css/custom.css">
-    <link rel="stylesheet" type="text/css" href="doc/custom-gcg.css">
+    <link rel="stylesheet" type="text/css" href="bootstrap/css/custom-gcg.css">
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://code.jquery.com/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
@@ -13,31 +13,14 @@
     <script src="http://scip.zib.de/bootstrap/js/bootstrap.min.js"></script>
   </head>
   <body>
-    <header class="navbar navbar-inverse navbar-fixed-top bs-docs-nav" role="banner">
-      <div class="container">
-        <div class="navbar-header">
-          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse"> <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button> <a href="http://scip.zib.de/#scipoptsuite" class="navbar-brand">SCIP Optimization Suite</a>
-        </div>
-        <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
-          <ul class="nav navbar-nav">
-            <li > <a href="http://scip.zib.de/">SCIP</a></li>
-            <li> <a href="http://soplex.zib.de/">SoPlex</a></li>
-            <li> <a href="http://zimpl.zib.de/">ZIMPL</a></li>
-            <li> <a href="http://ug.zib.de/">UG</a></li>
-            <li class="active"> <a href="http://www.or.rwth-aachen.de/gcg">GCG</a></li>
-          </ul>
-	  <ul class="nav navbar-nav navbar-right">
-	    <li><a href="http://www.or.rwth-aachen.de/gcg/doc/">Documentation </a></li>
-	  </ul>
-        </nav>
-      </div>
-    </header>
+
+    <SCIPOPTSUITEHEADER/>
+
     <div class="bs-header" id="content">
       <div class="container">
+        <a href="http://scip.zib.de">
+          <img style="float:right" src="https://scip.zib.de/images/newscippy.png" height="130" title="Scippy" alt="Scippy"/>
+        </a>
         <h1>GCG</h1>
         <p>Generic column generation</p>
       </div>
@@ -198,7 +181,7 @@
 	      is definitely not bug free.
 	    </p>
 	    <p>
-	      If you find a bug, please write an email to gcg-bugs<img src="doc/klammeraffe.png" alt="klammeraffe">or.rwth-aachen.de .
+	      If you find a bug, please write an email to gcg-bugs<img src="pictures/klammeraffe.png" alt="klammeraffe">or.rwth-aachen.de .
 	    </p>
 	  </div>
           <div>
@@ -377,7 +360,7 @@
 		<tr>
 		  <td class="w-350"><a href="http://www.zib.de">Konrad-Zuse-Zentrum für Informationstechnik Berlin</a></td>
 		  <td class="al-r"><a href="http://www.zib.de">
-		      <img src="doc/logo_zib.png" alt="ZIB Logo"></a>
+		      <img src="pictures/logo_zib.png" alt="ZIB Logo"></a>
 		  </td>
 		</tr>
 	      </tbody>
@@ -421,8 +404,8 @@
       <div class="container">
 	<div class="row">
 	  <div class="col-md-12">
-	          &copy; 2010-2018 by Operations Research, RWTH Aachen University, <a href="http://www.or.rwth-aachen.de/en/disclaimer/">Imprint</a><br />
-		  &copy; 2010-2018 by Zuse Institute Berlin (ZIB)<br />
+	          &copy; 2010-2019 by Operations Research, RWTH Aachen University, <a href="http://www.or.rwth-aachen.de/en/disclaimer/">Imprint</a><br />
+		  &copy; 2010-2019 by Zuse Institute Berlin (ZIB)<br />
 
 	  </div>
 	</div>

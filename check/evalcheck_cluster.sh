@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -42,9 +42,9 @@ do
   then
       if test "$i" = "-r"
       then
-	  REMOVE=1
+          REMOVE=1
       else
-	  AWKARGS="$AWKARGS $i"
+          AWKARGS="$AWKARGS $i"
       fi
   else
       FILES="$FILES $i"
@@ -73,57 +73,57 @@ do
       echo create overall output and error file for $EVALFILE
 
       for i in `cat $DIR/$EVALFILE.eval` DONE
-	do
-	if test "$i" = "DONE"
-	then
-	    break
-	fi
+   do
+   if test "$i" = "DONE"
+   then
+       break
+   fi
 
-	FILE=$i.out
-	if test -e $FILE
-	then
-	    cat $FILE >> $OUTFILE
-	    if test "$REMOVE" = "1"
-	    then
-		rm -f $FILE
-	    fi
-	else
-	    echo Missing $i
-	fi
+   FILE=$i.out
+   if test -e $FILE
+   then
+       cat $FILE >> $OUTFILE
+       if test "$REMOVE" = "1"
+       then
+           rm -f $FILE
+       fi
+   else
+       echo Missing $i
+   fi
 
-	FILE=$i.err
-	if test -e $FILE
-	then
-	    cat $FILE >> $ERRFILE
-	    if test "$REMOVE" = "1"
-	    then
-		rm -f $FILE
-	    fi
-	fi
+   FILE=$i.err
+   if test -e $FILE
+   then
+       cat $FILE >> $ERRFILE
+       if test "$REMOVE" = "1"
+       then
+           rm -f $FILE
+       fi
+   fi
 
-	FILE=$i.set
-	if test -e $FILE
-	then
-	    cp $FILE $SETFILE
-	    if test "$REMOVE" = "1"
-	    then
-		rm -f $FILE
-	    fi
-	fi
+   FILE=$i.set
+   if test -e $FILE
+   then
+       cp $FILE $SETFILE
+       if test "$REMOVE" = "1"
+       then
+           rm -f $FILE
+       fi
+   fi
 
-	FILE=$i.tmp
-	if test -e $FILE
+   FILE=$i.tmp
+   if test -e $FILE
         then
-	    if test "$REMOVE" = "1"
-	    then
-		rm -f $FILE
-	    fi
-	fi
+       if test "$REMOVE" = "1"
+       then
+           rm -f $FILE
+       fi
+   fi
       done
 
       if test "$REMOVE" = "1"
       then
-	  rm -f $DIR/$EVALFILE.eval
+          rm -f $DIR/$EVALFILE.eval
       fi
   fi
 
@@ -143,31 +143,30 @@ do
 
       if test -f testset/$TSTNAME.test
       then
-	  TESTFILE=testset/$TSTNAME.test
+          TESTFILE=testset/$TSTNAME.test
       else
-	  TESTFILE=""
+          TESTFILE=""
       fi
 
-      if test -f testset/$TSTNAME.solu
-      then
-	  SOLUFILE=testset/$TSTNAME.solu
-      else
-	  if test -f testset/all.solu
-	  then
-	      SOLUFILE=testset/all.solu
-	  else
-	      SOLUFILE=""
-	  fi
-      fi
+      # look for .solu files under the name of the test, the name of the test with everything after the first "_" pt "-" stripped, and "_all"
+      SOLUFILE=""
+      for F in $TSTNAME ${TSTNAME%%_*} ${TSTNAME%%-*} _all
+      do
+          if test -f testset/${F}.solu
+          then
+              SOLUFILE=testset/${F}.solu
+              break
+          fi
+      done
 
       if test  "$SOLVER" = "cplex"
       then
-	  awk -f check_cplex.awk -v "TEXFILE=$TEXFILE" $AWKARGS $SOLUFILE $OUTFILE | tee $RESFILE
+     awk -f check_cplex.awk -v "TEXFILE=$TEXFILE" $AWKARGS $SOLUFILE $OUTFILE | tee $RESFILE
       elif test  "$SOLVER" = "dip"
       then
-	  awk -f check_dip.awk -v "TEXFILE=$TEXFILE" -v "PAVFILE=$PAVFILE" $AWKARGS $TESTFILE $SOLUFILE $OUTFILE | tee $RESFILE
+          awk -f check_dip.awk -v "TEXFILE=$TEXFILE" -v "PAVFILE=$PAVFILE" $AWKARGS $TESTFILE $SOLUFILE $OUTFILE | tee $RESFILE
       else
-	  awk -f check.awk -v "TEXFILE=$TEXFILE" -v "PAVFILE=$PAVFILE" $AWKARGS $TESTFILE $SOLUFILE $OUTFILE | tee $RESFILE
+          awk -f check.awk -v "TEXFILE=$TEXFILE" -v "PAVFILE=$PAVFILE" $AWKARGS $TESTFILE $SOLUFILE $OUTFILE | tee $RESFILE
       fi
   fi
 done

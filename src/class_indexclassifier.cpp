@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -121,12 +121,12 @@ bool IndexClassifier::classifierIsDuplicateOfClassifier( IndexClassifier* otherC
 {
    std::vector<int> classMapping ( getNClasses(), -1 );
 
-   /** check whether number of indices and classes is the same */
+   /* check whether number of indices and classes is the same */
    assert( getNIndices() == otherClassifier->getNIndices() );
    if ( getNClasses() != otherClassifier->getNClasses() )
       return false;
 
-   /** check whether index classes in this classifier are subsets of classes in current classifier */
+   /* check whether index classes in this classifier are subsets of classes in current classifier */
    for ( int i = 0; i < getNIndices(); ++i )
    {
       if ( isIndexClassified( i ) )
@@ -144,7 +144,7 @@ bool IndexClassifier::classifierIsDuplicateOfClassifier( IndexClassifier* otherC
       }
    }
 
-   /** check whether index classes in this classifier are strict subsets of classes in current classifier */
+   /* check whether index classes in this classifier are strict subsets of classes in current classifier */
    for ( size_t c = 0; c < classMapping.size(); ++c )
    {
       if ( classMapping[c] != -1 )
@@ -283,7 +283,7 @@ std::vector<int> IndexClassifier::reduceClasses( int givenMaxNumber )
    std::vector<int> classindexmapping(nClasses, 0);
    int enlargedclass = nClasses - givenMaxNumber;
 
-   /** count number of indices per class */
+   /* count number of indices per class */
    std::vector<std::pair<int,int>> nmembers( nClasses, std::pair<int,int>(0,0) );
    for( int i = 0; i < nClasses; ++i )
    {
@@ -298,7 +298,7 @@ std::vector<int> IndexClassifier::reduceClasses( int givenMaxNumber )
          nmembers[*iter].second++;
    }
 
-   /** map the classes with high numbers of assigned indices to new class indices */
+   /* map the classes with high numbers of assigned indices to new class indices */
    std::sort( nmembers.begin(), nmembers.end(), sort_pred() );
    for( int i = 1; i < givenMaxNumber; ++i )
    {
@@ -315,7 +315,7 @@ int IndexClassifier::removeEmptyClasses()
    if ( nClasses == 0 )
       return 0;
 
-   /** firstly, find empty classes */
+   /* firstly, find empty classes */
    std::vector<int> toDelete(0);
    std::vector<int> nIndicesPerClasses(nClasses, 0);
 
@@ -333,7 +333,7 @@ int IndexClassifier::removeEmptyClasses()
       }
    }
 
-   /** secondly, update data */
+   /* secondly, update data */
    for ( size_t i = 0; i < toDelete.size(); ++i )
    {
       int classindex = toDelete[toDelete.size() - 1 - i];

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -73,22 +73,22 @@ PricingType::PricingType(
    SCIP*                 scip
    )
 {
-   scip_ = scip;                             /**< SCIP instance (master problem) */
-   type  = GCG_PRICETYPE_UNKNOWN;            /**< type of pricing */
+   scip_ = scip;                             /* SCIP instance (master problem) */
+   type  = GCG_PRICETYPE_UNKNOWN;            /* type of pricing */
 
    /* statistical values */
-   calls = 0;                                /**< number of times this type of pricing was called */
+   calls = 0;                                /* number of times this type of pricing was called */
 
    /* parameters */
-   maxrounds = INT_MAX;                      /**< maximal number of pricing rounds */
-   maxcolsroundroot = INT_MAX;               /**< maximal number of columns per pricing round at root node */
-   maxcolsround = INT_MAX;                   /**< maximal number of columns per pricing round */
-   maxcolsprobroot = INT_MAX;                /**< maximal number of columns per problem to be generated at root node */
-   maxcolsprob = INT_MAX;                    /**< maximal number of columns per problem to be generated */
-   maxsuccessfulprobs = INT_MAX;             /**< maximal number of successfully solved pricing problems until pricing loop is aborted */
-   relmaxprobsroot = 1.0;                    /**< maximal percentage of pricing problems that are solved at root node if variables have already been found */
-   relmaxprobs = 1.0;                        /**< maximal percentage of pricing problems that are solved if variables have already been found */
-   relmaxsuccessfulprobs = 1.0;              /**< maximal percentage of successfully solved pricing problems until pricing loop is aborted */
+   maxrounds = INT_MAX;                      /* maximal number of pricing rounds */
+   maxcolsroundroot = INT_MAX;               /* maximal number of columns per pricing round at root node */
+   maxcolsround = INT_MAX;                   /* maximal number of columns per pricing round */
+   maxcolsprobroot = INT_MAX;                /* maximal number of columns per problem to be generated at root node */
+   maxcolsprob = INT_MAX;                    /* maximal number of columns per problem to be generated */
+   maxsuccessfulprobs = INT_MAX;             /* maximal number of successfully solved pricing problems until pricing loop is aborted */
+   relmaxprobsroot = 1.0;                    /* maximal percentage of pricing problems that are solved at root node if variables have already been found */
+   relmaxprobs = 1.0;                        /* maximal percentage of pricing problems that are solved if variables have already been found */
+   relmaxsuccessfulprobs = 1.0;              /* maximal percentage of successfully solved pricing problems until pricing loop is aborted */
 
    SCIP_CALL_EXC( SCIPcreateCPUClock(scip, &(clock)) );
 }

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -50,6 +50,7 @@
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
 #include "scip/misc.h"
+#include "scip/clock.h"
 
 #include "relax_gcg.h"
 
@@ -64,6 +65,7 @@
 #include "cons_decomp.h"
 #include "scip_misc.h"
 
+#include "params_visu.h"
 
 #include "gcg.h"
 
@@ -156,9 +158,13 @@ struct SCIP_RelaxData
 
    /* statistical information */
    SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
+   SCIP_CLOCK*           rootnodetime;       /**< time in root node */
 
    /* filename information */
    const char*           filename;
+
+   /* visualization parameter */
+   GCG_PARAMDATA*        paramsvisu;         /**< parameters for visualization */
 };
 
 
@@ -939,7 +945,7 @@ SCIP_RETCODE checkIdenticalBlocks(
                SCIPblkmem(scip),
                5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /* +1 to deal with empty subproblems */
 
-         /** if (possibly deactive) conss has been added since structure detecting we need to reevaluate identity of subproblems */
+         /* if (possibly deactive) conss has been added since structure detecting we need to reevaluate identity of subproblems */
          if( SCIPgetNConss(scip) != SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ) )
          {
             SCIPdebugMessage("nconss: %d; ndetectionconss: %d -> using classical identity test \n", SCIPgetNConss(scip), SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ));
@@ -952,7 +958,7 @@ SCIP_RETCODE checkIdenticalBlocks(
          }
 
 
-/**
+/*
  *  new method of cons_decomp that uses seeed information
  * 1) check varmap
  * 2) build varmap for seeeds in seeed datatstructures
@@ -1311,7 +1317,7 @@ SCIP_RETCODE createPricingVariables(
          }
          else
          {
-            SCIPinfoMessage(scip, NULL, " changed block number to %d \n", tempblock );
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " changed block number to %d \n", tempblock );
             blocknr = tempblock; /*lint !e806*/
          }
       }
@@ -2241,8 +2247,7 @@ SCIP_RETCODE solveBlockProblem(
       SCIPbendersSetSubproblemIsIndependent(benders, blocknum, TRUE);
 
       /* solving the Benders' decomposition subproblem */
-      SCIP_CALL( SCIPsolveBendersSubproblem(relaxdata->masterprob, benders, NULL, blocknum, &infeasible,
-            SCIP_BENDERSENFOTYPE_CHECK, TRUE, NULL) );
+      SCIP_CALL( SCIPsolveBendersSubproblem(relaxdata->masterprob, benders, NULL, blocknum, &infeasible, TRUE, NULL) );
    }
 
 
@@ -2454,7 +2459,7 @@ SCIP_RETCODE initRelaxator(
       relaxdata->decdecomp = DECgetBestDecomp(scip);
       if( relaxdata->decdecomp == NULL )
       {
-         SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE) );
+         SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip) );
          relaxdata->decdecomp = DECgetBestDecomp(scip);
          if( relaxdata->decdecomp == NULL )
          {
@@ -2464,7 +2469,7 @@ SCIP_RETCODE initRelaxator(
             {
                DEC_DECOMP* decomp;
                SCIP_RETCODE retcode;
-               SCIPinfoMessage(scip, NULL, " CREATE BASIC DECOMP!\n");
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " CREATE BASIC DECOMP!\n");
                retcode = DECcreateBasicDecomp(scip, &decomp, FALSE);
                if( retcode != SCIP_OKAY )
                {
@@ -2492,24 +2497,24 @@ SCIP_RETCODE initRelaxator(
    }
 
    oxfordcomma = 0;
-   SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks", DECdecompGetNBlocks(relaxdata->decdecomp));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Chosen structure has %d blocks", DECdecompGetNBlocks(relaxdata->decdecomp));
    /* every master-only variable internally also counts as linking, but should not be reported as linking variable */
    if ( DECdecompGetNLinkingvars(relaxdata->decdecomp) - DECdecompGetNMastervars(relaxdata->decdecomp) > 0)
    {
-      SCIPinfoMessage(scip, NULL, ", %d linking variables", DECdecompGetNLinkingvars(relaxdata->decdecomp) - DECdecompGetNMastervars(relaxdata->decdecomp));
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, ", %d linking variables", DECdecompGetNLinkingvars(relaxdata->decdecomp) - DECdecompGetNMastervars(relaxdata->decdecomp));
       ++oxfordcomma;
    }
    if ( DECdecompGetNMastervars(relaxdata->decdecomp) > 0 )
    {
-      SCIPinfoMessage(scip, NULL, ", %d master-only (static) variables", DECdecompGetNMastervars(relaxdata->decdecomp));
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, ", %d master-only (static) variables", DECdecompGetNMastervars(relaxdata->decdecomp));
       ++oxfordcomma;
    }
    if ( oxfordcomma > 0 )
    {
-      SCIPinfoMessage(scip, NULL, ",");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, ",");
    }
-   SCIPinfoMessage(scip, NULL, " and %d linking constraints.\n", DECdecompGetNLinkingconss(relaxdata->decdecomp));
-   SCIPinfoMessage(scip, NULL, "This decomposition has a maxwhite score of %f.\n", DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " and %d linking constraints.\n", DECdecompGetNLinkingconss(relaxdata->decdecomp));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "This decomposition has a maxwhite score of %f.\n", DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
 
    /* permute the decomposition if the permutation seed is set */
    SCIP_CALL( SCIPgetIntParam(scip, "randomization/permutationseed", &permutationseed) );
@@ -2668,7 +2673,7 @@ void initRelaxdata(
 
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
-
+   relaxdata->rootnodetime = NULL;
 }
 
 /*
@@ -2683,6 +2688,12 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   /* free visualization parameters */
+   if( relaxdata->paramsvisu != NULL )
+   {
+      GCGVisuFreeParams(scip, relaxdata->paramsvisu);
+   }
 
    /* free master problem */
    if( relaxdata->masterprob != NULL )
@@ -2705,7 +2716,6 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
    SCIPfreeBlockMemoryArrayNull(scip, &relaxdata->filename, SCIP_MAXSTRLEN);
 
    SCIPfreeMemory(scip, &relaxdata);
-
    return SCIP_OKAY;
 }
 
@@ -2762,6 +2772,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    assert(relaxdata->masterprob != NULL);
 
    initRelaxdata(relaxdata);
+   SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
 
    /* if the master problem decomposition mode is the same as the original SCIP instance mode, then the master problem
     * must be swapped with the alternate master problem.
@@ -2803,18 +2814,18 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    SCIP_CALL( SCIPfixParam(scip, "relaxing/gcg/mode") );
 
    /* Informing the user of the decomposition technique that is being used to solve the original problem */
-   SCIPinfoMessage(scip, NULL, "\n");
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "\n");
    if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
    {
-      SCIPinfoMessage(scip, NULL, "A Dantzig-Wolfe reformulation is applied to solve the original problem.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "A Dantzig-Wolfe reformulation is applied to solve the original problem.\n");
    }
    else if( relaxdata->mode == DEC_DECMODE_BENDERS )
    {
-      SCIPinfoMessage(scip, NULL, "A Benders' decomposition is applied to solve the original problem.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "A Benders' decomposition is applied to solve the original problem.\n");
    }
    else if( relaxdata->mode == DEC_DECMODE_ORIGINAL )
    {
-      SCIPinfoMessage(scip, NULL, "No reformulation will be performed. Solving the original model.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "No reformulation will be performed. Solving the original model.\n");
    }
 
    return SCIP_OKAY;
@@ -2898,6 +2909,12 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    }
 
    SCIP_CALL( GCGfreeOrigVarsData(scip) );
+
+   /* free root node clock */
+   if( relaxdata->rootnodetime != NULL )
+   {
+      SCIP_CALL( SCIPfreeClock(scip, &(relaxdata->rootnodetime)) );
+   }
 
    relaxdata->relaxisinitialized = FALSE;
 
@@ -3017,7 +3034,7 @@ SCIP_RETCODE solveMasterProblem(
       }
 
       if( !SCIPisInfinity(scip, timelimit) && !SCIPisStopped(scip) )
-         SCIPinfoMessage(scip, NULL, "time for master problem was too short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "time for master problem was too short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
    }
    if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
    {
@@ -3106,6 +3123,13 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
+      /* start root node time clock */
+      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+      {
+         SCIP_CALL( SCIPstartClock(scip, relaxdata->rootnodetime) );
+         SCIPdebugMessage("  root node time clock started.\n");
+      }
+
       /* increase the node limit for the master problem by 1 */
       SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
 
@@ -3149,6 +3173,13 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
       {
          SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
                GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
+      }
+
+      /* stop root node clock */
+      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip))
+      {
+         SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+         SCIPdebugMessage("  root node time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
       }
    }
    else
@@ -3328,7 +3359,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
     */
    if( GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
    {
-      SCIPinfoMessage(scip, NULL, "There are no pricing problems in the decomposition. The original problem will be solved directly.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "There are no pricing problems in the decomposition. The original problem will be solved directly.\n");
       SCIP_CALL( relaxExecGcgOriginalProblem(scip, relax, lowerbound, result) );
    }
    else if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
@@ -3341,7 +3372,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    }
    else
    {
-      SCIPinfoMessage(scip, NULL, "Sorry, the automatic selection is not currently available\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Sorry, the automatic selection is not currently available\n");
    }
 
    return SCIP_OKAY;
@@ -3383,6 +3414,9 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->masterprob = NULL;
    relaxdata->altmasterprob = NULL;
    relaxdata->filename = NULL;
+   relaxdata->paramsvisu = NULL;
+   SCIPcreateParamsVisu(scip, &(relaxdata->paramsvisu));
+   assert(relaxdata->paramsvisu != NULL);
 
    initRelaxdata(relaxdata);
 
@@ -4103,6 +4137,30 @@ SCIP_CONS* GCGgetConvCons(
    return relaxdata->convconss[blocknr];
 }
 
+/** returns the visualization parameters */
+GCG_PARAMDATA* GCGgetParamsVisu(
+   SCIP*                 scip               /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   GCG_PARAMDATA* paramdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+   assert(relaxdata->paramsvisu != NULL);
+
+   paramdata = relaxdata->paramsvisu;
+   assert(paramdata != NULL);
+
+   return paramdata;
+}
+
 /** returns the current solution for the original problem */
 SCIP_SOL* GCGrelaxGetCurrentOrigSol(
    SCIP*                 scip                /**< SCIP data structure */
@@ -4597,7 +4655,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
       int i;
 
       SCIP_CALL( SCIPcreateSol(scip, &relaxdata->currentorigsol, NULL) );
-      SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->storedorigsol, RELAX_INCLUDESLP) );
+      SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relax, relaxdata->storedorigsol, RELAX_INCLUDESLP) );
 
       for( i = 0; i < nvars; i++ )
       {
@@ -4734,7 +4792,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIP_CALL( GCGtransformMastersolToOrigsol(scip, mastersol, &(relaxdata->currentorigsol)) );
 
          /* store the solution as relaxation solution */
-         SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol, RELAX_INCLUDESLP) );
+         SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relax, relaxdata->currentorigsol, RELAX_INCLUDESLP) );
          assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, relaxdata->currentorigsol)));
 
          if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
@@ -5142,4 +5200,23 @@ DEC_DECMODE GCGgetMasterDecompMode(
    }
 
    return mode;
+}
+
+/** return root node time clock */
+SCIP_CLOCK* GCGgetRootNodeTime(
+   SCIP*                scip              /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->rootnodetime;
 }

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -146,7 +146,7 @@
 #include "scip/sepa_strongcg.h"
 #include "scip/sepa_zerohalf.h"
 
-/** added by Jonas */
+/* added by Jonas */
 #include "scip/sepa_closecuts.h"
 #include "scip/sepa_rapidlearning.h"
 #endif
@@ -171,7 +171,6 @@
 #include "dec_connected.h"
 
 /* visualization */
-#include "params_visu.h"
 #include "reader_gp.h"
 #include "reader_tex.h"
 #include "reader_cls.h"
@@ -195,6 +194,7 @@
 #include "dec_mastersetpack.h"
 #include "dec_mastersetpart.h"
 #include "dec_mastersetcover.h"
+#include "dec_neighborhoodmaster.h"
 #include "dec_hrcgpartition.h"
 #include "dec_hrgpartition.h"
 #include "dec_hcgpartition.h"
@@ -361,7 +361,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeEventHdlrMastersol(scip) );
 
    /* Visualizations */
-   SCIP_CALL( SCIPincludeParamsVisu(scip) );
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeReaderTex(scip) );
    SCIP_CALL( SCIPincludeReaderCls(scip) );
@@ -374,6 +373,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorConsclass(scip) );
    SCIP_CALL( SCIPincludeDetectorConsname(scip) );
    SCIP_CALL( SCIPincludeDetectorDensemasterconss(scip) );
+   SCIP_CALL( SCIPincludeDetectorNeighborhoodmaster(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );

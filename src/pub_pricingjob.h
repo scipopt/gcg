@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -53,37 +53,37 @@ extern "C" {
 
 
 /** get the pricing problem structure associated with a pricing job */
-EXTERN
+SCIP_EXPORT
 GCG_PRICINGPROB* GCGpricingjobGetPricingprob(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** get the pricing solver with which the pricing job is to be performed */
-EXTERN
+SCIP_EXPORT
 GCG_SOLVER* GCGpricingjobGetSolver(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** get the chunk of a pricing job */
-EXTERN
+SCIP_EXPORT
 SCIP_Real GCGpricingjobGetChunk(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** get the score of a pricing job */
-EXTERN
+SCIP_EXPORT
 SCIP_Real GCGpricingjobGetScore(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** return whether the pricing job is to be performed heuristically */
-EXTERN
+SCIP_EXPORT
 SCIP_Bool GCGpricingjobIsHeuristic(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** get the number of heuristic pricing iterations of the pricing job */
-EXTERN
+SCIP_EXPORT
 int GCGpricingjobGetNHeurIters(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -41,6 +41,7 @@
 #include "scip/scip.h"
 #include "type_branchgcg.h"
 #include "type_decomp.h"
+#include "type_parameter.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -227,6 +228,19 @@ DEC_DECMODE GCGgetDecompositionMode(
 extern
 DEC_DECMODE GCGgetMasterDecompMode(
    SCIP*                 masterprob          /**< the master problem SCIP instance */
+   );
+
+/** returns the visualization parameters */
+extern
+GCG_PARAMDATA* GCGgetParamsVisu(
+   SCIP*                 scip               /**< SCIP data structure */
+   );
+
+
+/** return root node clock */
+extern
+SCIP_CLOCK* GCGgetRootNodeTime(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 #ifdef __cplusplus

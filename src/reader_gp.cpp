@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_gp.cpp
- * @brief  GP file reader writing seeeds to gnuplot files
+ * @brief  GP file reader writing decompositions to gnuplot files
  * @author Martin Bergner
  * @author Hanna Franzen
  * @author Michael Bastubbe
@@ -58,6 +58,7 @@
 #define READER_DESC             "gnuplot file writer for seeed visualization"
 #define READER_EXTENSION        "gp"
 
+#define SCALING_FACTOR_NONZEROS 0.6
 
 using namespace gcg;
 
@@ -66,7 +67,7 @@ using namespace gcg;
  */
 
 
-/** destructor of reader to free user data (called when SCIP is exiting) */
+/** Destructor of reader to free user data (called when SCIP is exiting) */
 static
 SCIP_DECL_READERFREE(readerFreeGp)
 {
@@ -75,7 +76,7 @@ SCIP_DECL_READERFREE(readerFreeGp)
 }
 
 
-/** problem writing method of reader */
+/** Problem writing method of reader */
 static
 SCIP_DECL_READERWRITE(readerWriteGp)
 {
@@ -98,32 +99,16 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    }
    else
    {
-      SCIP_Bool plotmiplib;
       seeed = seeedwr.seeed;
 
       /* reader internally works with the filename instead of the C FILE type */
       filename = misc->GCGgetFilePath(scip, file);
 
-      SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &plotmiplib );
+      /* get filename for compiled file */
+      misc->GCGgetVisualizationFilename(scip, seeed, "pdf", outputname);
+      strcat(outputname, ".pdf");
 
-      if( !plotmiplib )
-      {
-         /* get filename for compiled file */
-         misc->GCGgetVisualizationFilename(scip, seeed, "pdf", outputname);
-         strcat(outputname, ".pdf");
-
-         GCGwriteGpVisualization(scip, filename, outputname, seeed->getID() );
-      }
-      else
-      {
-         char problemname[SCIP_MAXSTRLEN];
-         char* outname2;
-         (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
-         SCIPsplitFilename(problemname, NULL, &outname2, NULL, NULL);
-
-         strcat(outname2, ".png");
-         GCGwriteGpVisualization(scip, filename, outname2, seeed->getID() );
-      }
+      GCGwriteGpVisualization(scip, filename, outputname, seeed->getID() );
 
       *result = SCIP_SUCCESS;
    }
@@ -134,7 +119,8 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 }
 
 
-/** write file header with terminal etc. */
+/** Write gnuplot file header with terminal etc.
+ * @returns SCIP status */
 static
 SCIP_RETCODE writeGpHeader(
    SCIP*                 scip,
@@ -143,19 +129,13 @@ SCIP_RETCODE writeGpHeader(
    )
 {
    std::ofstream ofs;
-   SCIP_Bool plotformiplib;
 
-   SCIPgetBoolParam(scip, "write/miplib2017plotsanddecs", &plotformiplib);
    ofs.open( filename, std::ofstream::out );
-
-
 
    /* set output format and file */
    ofs << "set encoding utf8" << std::endl;
-   if( !plotformiplib )
-      ofs << "set terminal pdf" << std::endl;
-   else
-      ofs << "set terminal pngcairo" << std::endl;
+
+   ofs << "set terminal pdf" << std::endl;
 
    ofs << "set output \"" << outputname << "\"" << std::endl;
 
@@ -165,9 +145,11 @@ SCIP_RETCODE writeGpHeader(
 }
 
 
-/* writes gp code to given file that contains a box with given coordinates and color */
+/** Adds gnuplot code to given file that contains a box with given coordinates and color
+ * @returns SCIP status */
 static
 SCIP_RETCODE drawGpBox(
+   SCIP* scip,       /**< SCIP data structure */
    char* filename,   /**< filename (including path) to write to */
    int objectid,     /**< id number of box (>0), must be unique */
    int x1,           /**< x value of lower left vertex coordinate */
@@ -181,24 +163,24 @@ SCIP_RETCODE drawGpBox(
    ofs.open( filename, std::ofstream::out | std::ofstream::app );
 
    ofs << "set object " << objectid << " rect from " << x1 << "," << y1 << " to " << x2 << "," << y2
-      << " fc rgb \"" << color << "\"" << " lc rgb \"" << SCIPvisuGetColorLine() << "\"" << std::endl;
+      << " fc rgb \"" << color << "\"" << " lc rgb \"" << SCIPvisuGetColorLine(scip) << "\"" << std::endl;
 
    ofs.close();
    return SCIP_OKAY;
 }
 
 
-/** writes gp code to given file that contains all nonzero points */
+/** Writes gnuplot code to given file that contains all nonzero points
+ * @returns SCIP status */
 static
 SCIP_RETCODE writeGpNonzeros(
+   SCIP* scip,             /**< SCIP data structure */
    const char* filename,   /**< filename to write to (including path & extension) */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
-   Seeedpool* seeedpool,   /**< current Seeedpool */
-   float radius            /**< radius of the dots */
+   float radius            /**< radius of the dots (scaled concerning matrix dimensions)*/
    )
 {
    int radiusscale;
-   SCIP_Bool plotmiplib;
    std::vector<int> orderToRows(seeed->getNConss(), -1);
    std::vector<int> rowToOrder(seeed->getNConss(), -1);
    std::vector<int> orderToCols(seeed->getNVars(), -1);
@@ -206,8 +188,11 @@ SCIP_RETCODE writeGpNonzeros(
    int counterrows = 0;
    int countercols = 0;
    std::ofstream ofs;
+   Seeedpool* seeedpool;
 
-   /** order of constraints */
+   seeedpool = seeed->getSeeedpool();
+
+   /* order of constraints */
    /* master constraints */
    for( int i = 0; i < seeed->getNMasterconss() ; ++i )
    {
@@ -229,7 +214,7 @@ SCIP_RETCODE writeGpNonzeros(
       }
    }
 
-   /** open constraints */
+   /* open constraints */
    for( int i = 0; i < seeed->getNOpenconss(); ++i )
    {
       int rowidx = seeed->getOpenconss()[i];
@@ -238,7 +223,7 @@ SCIP_RETCODE writeGpNonzeros(
       ++counterrows;
    }
 
-   /** order of variables */
+   /* order of variables */
 
    /* linking variables */
    for( int i = 0; i < seeed->getNLinkingvars() ; ++i )
@@ -288,16 +273,17 @@ SCIP_RETCODE writeGpNonzeros(
 
    ofs.open (filename, std::ofstream::out | std::ofstream::app );
 
+   /* scaling factor concerning user wishes */
    SCIPgetIntParam(seeedpool->getScip(), "visual/nonzeroradius", &radiusscale);
-   SCIPgetBoolParam(seeedpool->getScip(), "write/miplib2017plotsanddecs", &plotmiplib);
-
    radius *= radiusscale;
 
+
+  /* dot should be visible, so enforce minimum radius of 0.01 */
    if ( radius < 0.01 )
       radius = 0.01;
 
    /* start writing dots */
-   ofs << "set style line 99 lc rgb \"" << SCIPvisuGetColorNonzero() << "\"  " << std::endl;
+   ofs << "set style line 99 lc rgb \"" << SCIPvisuGetColorNonzero(scip) << "\"  " << std::endl;
    ofs << "plot \"-\" using 1:2:(" << radius << ") with dots ls 99 notitle " << std::endl;
    /* write scatter plot */
    for( int row = 0; row < seeed->getNConss(); ++row )
@@ -323,12 +309,15 @@ SCIP_RETCODE writeGpNonzeros(
    return SCIP_OKAY;
 }
 
-
+/** \brief Adds the gnuplot body of the seeed visualization to the given file
+ *
+ * Adds the gnuplot body of the seeed visualization to the given file.
+ * This includes axes, blocks and nonzeros. */
 static
 SCIP_RETCODE writeGpSeeed(
+   SCIP* scip,             /**< SCIP data structure */
    char* filename,         /**< filename (including path) to write to */
-   Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
-   Seeedpool* seeedpool    /**< current Seeedpool */
+   Seeed* seeed            /**< Seeed for which the nonzeros should be visualized */
    )
 {
    int rowboxcounter = 0;
@@ -337,7 +326,6 @@ SCIP_RETCODE writeGpSeeed(
    int nvars;
    int nconss;
    SCIP_Bool writematrix;
-   SCIP_Bool noticsbutlabels;
 
    nvars = seeed->getNVars();
    nconss = seeed->getNConss();
@@ -346,16 +334,13 @@ SCIP_RETCODE writeGpSeeed(
    ofs.open( filename, std::ofstream::out | std::ofstream::app );
 
    writematrix = FALSE;
-   noticsbutlabels = FALSE;
 
    if ( seeed->getNBlocks() == 1 && seeed->isComplete() && seeed->getNMasterconss() == 0
       && seeed->getNLinkingvars() == 0  && seeed->getNMastervars() == 0 )
       writematrix = TRUE;
 
-   SCIPgetBoolParam(seeedpool->getScip(), "write/miplib2017plotsanddecs", &noticsbutlabels);
-
    /* set coordinate range */
-   if( !writematrix && !noticsbutlabels )
+   if( !writematrix )
    {
       ofs << "set xrange [-1:" << nvars << "]" << std::endl;
       ofs << "set yrange[" << nconss << ":-1]" << std::endl;
@@ -379,8 +364,8 @@ SCIP_RETCODE writeGpSeeed(
       if(seeed->getNLinkingvars() != 0)
       {
          ++objcounter; /* has to start at 1 for gnuplot */
-         drawGpBox( filename, objcounter, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
-            SCIPvisuGetColorLinking() );
+         drawGpBox( scip, filename, objcounter, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
+            SCIPvisuGetColorLinking(scip) );
          colboxcounter += seeed->getNLinkingvars();
       }
 
@@ -388,8 +373,8 @@ SCIP_RETCODE writeGpSeeed(
       if(seeed->getNMasterconss() != 0)
       {
          ++objcounter;
-         drawGpBox( filename, objcounter, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
-            SCIPvisuGetColorMasterconss() );
+         drawGpBox( scip, filename, objcounter, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
+            SCIPvisuGetColorMasterconss(scip) );
          rowboxcounter += seeed->getNMasterconss();
       }
 
@@ -397,7 +382,7 @@ SCIP_RETCODE writeGpSeeed(
       if(seeed->getNMastervars() != 0)
       {
          ++objcounter;
-         //      drawGpBox( filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
+         //      drawGpBox( scip, filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
          //         seeed->getNMasterconss(), SCIPvisuGetColorMastervars() );
          colboxcounter += seeed->getNMastervars();
       }
@@ -406,18 +391,18 @@ SCIP_RETCODE writeGpSeeed(
       for( int b = 0; b < seeed->getNBlocks() ; ++b )
       {
          ++objcounter;
-         drawGpBox(filename, objcounter, colboxcounter, rowboxcounter,
+         drawGpBox(scip, filename, objcounter, colboxcounter, rowboxcounter,
             colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b),
-            SCIPvisuGetColorBlock());
+            SCIPvisuGetColorBlock(scip));
          colboxcounter += seeed->getNVarsForBlock(b);
 
          if( seeed->getNStairlinkingvars(b) != 0 )
          {
             ++objcounter;
-            drawGpBox( filename, objcounter, colboxcounter, rowboxcounter,
+            drawGpBox( scip, filename, objcounter, colboxcounter, rowboxcounter,
                colboxcounter + seeed->getNStairlinkingvars(b),
                rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1),
-               SCIPvisuGetColorStairlinking() );
+               SCIPvisuGetColorStairlinking(scip) );
          }
          colboxcounter += seeed->getNStairlinkingvars(b);
          rowboxcounter += seeed->getNConssForBlock(b);
@@ -427,25 +412,18 @@ SCIP_RETCODE writeGpSeeed(
       if(seeed->getNOpenvars() != 0)
       {
          ++objcounter;
-         drawGpBox( filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
-            rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen() );
+         drawGpBox( scip, filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
+            rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen(scip) );
          colboxcounter += seeed->getNOpenvars();
          rowboxcounter += seeed->getNOpenconss();
       }
    }
    /* --- draw nonzeros --- */
-   if( SCIPvisuGetDraftmode() == FALSE )
+   if( SCIPvisuGetDraftmode(scip) == FALSE )
    {
-      /* scale nonzero radius with 2% of maximal index */
-      int radiusscale;
-      if(seeed->getNVars() > seeed->getNConss())
-         radiusscale = seeed->getNVars() / 200;
-      else
-         radiusscale = seeed->getNConss() / 200;
-
-      radiusscale = 0.6;
-      writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(),
-         radiusscale) );
+      /* scale the dots according to matrix dimensions here */
+      writeGpNonzeros(scip, filename, seeed, SCIPvisuGetNonzeroRadius(scip, seeed->getNVars(), seeed->getNConss(),
+         SCALING_FACTOR_NONZEROS) );
    }
    else
    {
@@ -459,7 +437,7 @@ SCIP_RETCODE writeGpSeeed(
 }
 
 
-/** writes a visualization for the given seeed */
+/* Writes a visualization for the given seeed */
 SCIP_RETCODE GCGwriteGpVisualization(
    SCIP* scip,             /**< SCIP data structure */
    char* filename,         /**< filename (including path) to write to */
@@ -471,17 +449,16 @@ SCIP_RETCODE GCGwriteGpVisualization(
    Seeedpool* seeedpool;
    SeeedPtr seeed;
 
-
    /* get seeed and seeedpool */
    GCGgetSeeedFromID(scip, &seeedid, &seeedwr);
    seeed = seeedwr.seeed;
-   seeedpool = seeed->getSeeedpool();
-
    if( seeed == NULL )
    {
       SCIPerrorMessage("Could not find Seeed!\n");
       return SCIP_ERROR;
    }
+
+   seeedpool = seeed->getSeeedpool();
    if( seeedpool == NULL )
    {
       SCIPerrorMessage("Could not find Seeedpool!\n");
@@ -490,7 +467,7 @@ SCIP_RETCODE GCGwriteGpVisualization(
 
    /* write file */
    writeGpHeader(scip, filename, outputname );
-   writeGpSeeed( filename, seeed, seeedpool );
+   writeGpSeeed(scip, filename, seeed );
 
    return SCIP_OKAY;
 }
@@ -500,12 +477,11 @@ SCIP_RETCODE GCGwriteGpVisualization(
  * reader include
  */
 
-/** includes the gp file reader into SCIP */
+/* includes the gp file reader into SCIP */
 SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   /* include gp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
       NULL, readerFreeGp, NULL, readerWriteGp, NULL) );
 

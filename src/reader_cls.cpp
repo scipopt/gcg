@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -46,7 +46,7 @@
 #include "class_seeedpool.h"
 #include "class_consclassifier.h"
 #include "class_varclassifier.h"
-
+#include "wrapper_seeed.h"
 
 
 #define READER_NAME             "clsreader"
@@ -117,14 +117,20 @@ SCIP_RETCODE GCGwriteCls(
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       transformed = FALSE;
 
-   if( !transformed && SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(scip) == NULL )
+   Seeed_Wrapper swpool;
+   if( !transformed )
+   {
       SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+      SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &swpool);
+      seeedpool = swpool.seeedpool;
+   }
 
-   if( transformed && SCIPconshdlrDecompGetSeeedpoolExtern(scip) == NULL )
+   if( transformed )
+   {
       SCIPconshdlrDecompCreateSeeedpool(scip);
-
-   seeedpool = (gcg::Seeedpool*)(transformed ? SCIPconshdlrDecompGetSeeedpoolExtern(scip) : SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(scip));
-
+      SCIPconshdlrDecompGetSeeedpool(scip, &swpool);
+      seeedpool = swpool.seeedpool;
+   }
 
    SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
 
@@ -144,7 +150,7 @@ SCIP_RETCODE GCGwriteCls(
    SCIPinfoMessage(scip, file, "###########################################\n" );
 
 
-   /** a */
+   /* a */
    SCIPinfoMessage(scip, file, "%d\n", (int) seeedpool->consclassescollection.size() + (int) seeedpool->varclassescollection.size() );
 
    for( size_t c = 0; c < seeedpool->consclassescollection.size() ; ++c )
@@ -155,19 +161,19 @@ SCIP_RETCODE GCGwriteCls(
       for( int cons = 0; cons < seeedpool->getNConss(); ++cons )
          conssofclasses[classifier->getClassOfCons(cons)].push_back(cons);
 
-      /** b1 */
+      /* b1 */
       SCIPinfoMessage(scip, file, "CONS\n" );
-      /** b2 */
+      /* b2 */
       SCIPinfoMessage(scip, file, "%s \n", classifier->getName());
-      /** b3 */
+      /* b3 */
       SCIPinfoMessage(scip, file, "%d\n", classifier->getNClasses() );
       for( int cl = 0; cl < classifier->getNClasses(); ++cl )
       {
-         /** c1 */
+         /* c1 */
          SCIPinfoMessage(scip, file, "%s: %s\n", classifier->getClassName(cl), classifier->getClassDescription(cl) );
-         /** c2 */
+         /* c2 */
          SCIPinfoMessage(scip, file, "%d\n",  conssofclasses[cl].size() );
-         /** c3 */
+         /* c3 */
          for( size_t clm = 0; clm < conssofclasses[cl].size(); ++clm )
          {
             SCIPinfoMessage(scip, file, "%s\n",  SCIPconsGetName( seeedpool->getConsForIndex( conssofclasses[cl][clm])) );
@@ -184,19 +190,19 @@ SCIP_RETCODE GCGwriteCls(
       for( int var = 0; var < seeedpool->getNVars(); ++var )
          varsofclasses[classifier->getClassOfVar(var)].push_back(var);
 
-      /** b1 */
+      /* b1 */
       SCIPinfoMessage(scip, file, "VAR\n" );
-      /** b2 */
+      /* b2 */
       SCIPinfoMessage(scip, file, "%s \n", classifier->getName());
-      /** b3 */
+      /* b3 */
       SCIPinfoMessage(scip, file, "%d\n", classifier->getNClasses() );
       for( int cl = 0; cl < classifier->getNClasses(); ++cl )
       {
-         /** c1 */
+         /* c1 */
          SCIPinfoMessage(scip, file, "%s: %s\n", classifier->getClassName(cl), classifier->getClassDescription(cl) );
-         /** c2 */
+         /* c2 */
          SCIPinfoMessage(scip, file, "%d\n",  classifier->getNVarsOfClasses()[cl] );
-         /** c3 */
+         /* c3 */
          for( size_t clm = 0; clm <varsofclasses[cl].size(); ++clm )
          {
             SCIPinfoMessage(scip, file, "%s\n",  SCIPvarGetName( seeedpool->getVarForIndex( varsofclasses[cl][clm])) );

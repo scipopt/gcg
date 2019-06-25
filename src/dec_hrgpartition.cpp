@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -81,16 +81,16 @@ using gcg::Weights;
 
 #define DEC_DETECTORNAME          "hrgpartition"    /**< name of the detector */
 #define DEC_DESC                  "enforces arrowhead structures using graph partitioning" /**< description of detector */
-#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          0           /** last round the detector gets called                              */
-#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
-#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  0           /** last round the detector gets called while detecting the original problem                            */
-#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          0           /**< last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /**< first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  0           /**< last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              1000        /**< priority of the detector */
 #define DEC_DECCHAR               'r'         /**< display character of detector */
-#define DEC_ENABLED               TRUE        /**< should detector be called by default */
-#define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLED               FALSE       /**< should detector be called by default */
+#define DEC_ENABLEDORIGINAL       FALSE       /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
 #define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if others found detections */
@@ -452,10 +452,10 @@ SCIP_RETCODE detection(
    gcg::Seeed** newSeeeds;
    SCIP_CLOCK* clock;
    SCIP_CLOCK* temporaryClock;
-   std::vector<SCIP_Real> clockTimes;        /**< vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes;        /* vector containing times in seconds  */
    /* Graph stuff for hmetis */
-   MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
-   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
+   MatrixGraph<gcg::GraphTclique>* graph;    /* the graph of the matrix */
+   char tempfile[SCIP_MAXSTRLEN];            /* filename for the metis input file */
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
@@ -526,8 +526,8 @@ SCIP_RETCODE detection(
       {
          nNewSeeeds = nNewSeeeds + 2;
          detectordata->found = TRUE;
-         clockTimes.push_back(SCIPclockGetTime(temporaryClock));
-         clockTimes.push_back(SCIPclockGetTime(temporaryClock)); // 2x because two seeeds where created
+         clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock));
+         clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock)); // 2x because two seeeds where created
          (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hr\\_%d", numberOfBlocks[k]);
          newSeeeds[j]->addDetectorChainInfo(decinfo);
          newSeeeds[j+1]->addDetectorChainInfo(decinfo);
@@ -591,12 +591,12 @@ SCIP_RETCODE detection(
    if(border)
    {
       for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
+         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime(scip, clock) + clockTimes[s] );
    }
    else
    {
       for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
+         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime(scip, clock) + clockTimes[s] );
    }
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
 
@@ -604,137 +604,6 @@ SCIP_RETCODE detection(
    return SCIP_OKAY;
 }
 
-/** Merge of propagation and finishing method from decomposition_toolbox */
-static
-SCIP_RETCODE fromToolbox(
-   SCIP_Bool propagate,  /**< Shall the instance be propagated or finished */
-   SCIP* scip, 
-   DEC_DETECTOR* detector, 
-   SEEED_PROPAGATION_DATA* seeedPropagationData, 
-   SCIP_RESULT* result, 
-   SCIP_DIALOGHDLR* dialoghdlr,
-   SCIP_DIALOG* dialog
-   )
-{
-   /* add hrgpartition presolver parameters */
-   char decinfo[SCIP_MAXSTRLEN];
-   gcg::Seeed** newSeeeds;
-   DEC_DETECTORDATA* detectordata;
-   gcg::Seeed* seeed;
-   SCIP_RETCODE retcode;
-   char* command;
-   int commandlen;
-   SCIP_Bool endoffile;
-   int nblocks;
-   /* Graph stuff for hmetis */
-   MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
-   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
-
-   seeed = seeedPropagationData->seeedToPropagate;
-   detectordata = DECdetectorGetData(detector);
-
-   *result = SCIP_DIDNOTFIND;
-
-   std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getSortedCandidatesNBlocks();
-   if( numberOfBlocks.empty() )
-      numberOfBlocks.push_back(DEFAULT_FALLBACK_NBLOCKS);
-
-   int nconss = seeedPropagationData->seeedpool->getNConss();
-   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-
-   SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
-
-   /* allocate space for output data */
-   assert(detectordata->maxblocks >= detectordata->minblocks);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 2 ) );
-
-    /* build the hypergraph structure from the original problem */
-
-   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
-
-   SCIP_CALL( graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed) );
-
-   SCIP_CALL( createMetisFile(scip, detectordata, seeed->getID(), graph, tempfile) );
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:\n");
-
-   SCIPinfoMessage(scip, NULL, "Maximal number of blocks the decomposition can contain: %d\n", seeed->getNOpenconss());
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the number of blocks that the decomposition should contain (e.g. \"5\") \nGCG/toolbox> ", &command, &endoffile) );
-   commandlen = strlen(command);
-
-   if( commandlen != 0 )
-   {
-      nblocks = atoi(command);
-   }
-   else
-   {
-      SCIPinfoMessage(scip, NULL, "Invalid input!\n");
-      return SCIP_OKAY;
-   }
-
-   if(nblocks > seeed->getNOpenconss() || nblocks <= 0)
-   {
-      SCIPinfoMessage(scip, NULL, "Invalid number of blocks, choose at most %d\n", seeed->getNOpenconss() );
-      return SCIP_OKAY;
-   }
-
-   retcode = callMetis(scip, detectordata, graph, tempfile, nblocks, result);
-
-   if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
-   {
-      *result = SCIP_DIDNOTFIND;
-      return SCIP_OKAY;
-   }
-
-   if( detectordata->tidy )
-   {
-      int status = remove( tempfile );
-      if( status == -1 )
-      {
-         SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
-         return SCIP_WRITEERROR;
-      }
-   }
-
-   SCIP_CALL( graph->createSeeedFromPartition(seeed, &newSeeeds[0], &newSeeeds[1], seeedPropagationData->seeedpool) );
-
-   delete graph;
-   graph = NULL;
-   if( (newSeeeds)[0] != NULL && !propagate ) //finishing successful
-   {
-      detectordata->found = TRUE;
-      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hr\\_%d", numberOfBlocks[0]);
-      newSeeeds[0]->addDetectorChainInfo(decinfo);
-      seeedPropagationData->newSeeeds[0] = (newSeeeds)[0];
-      ++(seeedPropagationData->nNewSeeeds);
-      seeedPropagationData->newSeeeds[0]->setFinishingDetectorPropagated(detector);
-      SCIPfreeMemoryArray(scip, &newSeeeds);
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
-   }
-   else if( (newSeeeds)[1] != NULL && propagate ) //propagation successful
-   {
-      detectordata->found = TRUE;
-      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hr\\_%d", numberOfBlocks[0]);
-      newSeeeds[1]->addDetectorChainInfo(decinfo);
-      seeedPropagationData->newSeeeds[0] = (newSeeeds)[1];
-      ++(seeedPropagationData->nNewSeeeds);
-      seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
-      SCIPfreeMemoryArray(scip, &newSeeeds);
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
-   }
-   else //propagation/finishing unsuccessful
-   {
-      SCIPfreeMemoryArray(scip, &newSeeeds);
-      *result = SCIP_DIDNOTFIND;
-      return SCIP_OKAY;
-   }
-}
 
 /** detection callback method */
 static
@@ -749,8 +618,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    assert(decdecomps != NULL);
    assert(ndecdecomps != NULL);
 
-   MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
-   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
+   MatrixGraph<gcg::GraphTclique>* graph;    /* the graph of the matrix */
+   char tempfile[SCIP_MAXSTRLEN];            /* filename for the metis input file */
 
 
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
@@ -855,17 +724,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    return SCIP_OKAY;
 }
 
-static
-DEC_DECL_PROPAGATEFROMTOOLBOX(propagateFromToolboxHrgpartition)
-{
-   return fromToolbox(TRUE, scip, detector, seeedPropagationData, result, dialoghdlr, dialog );
-}
-
-static
-DEC_DECL_FINISHFROMTOOLBOX(finishFromToolboxHrgpartition)
-{
-   return fromToolbox(FALSE, scip, detector, seeedPropagationData, result, dialoghdlr, dialog );
-}
 
 static
 DEC_DECL_FINISHSEEED(finishSeeedHrgpartition)
@@ -895,7 +753,9 @@ DEC_DECL_FINISHSEEED(finishSeeedHrgpartition)
    return SCIP_OKAY;
 }
 
+
 #define detectorPostprocessSeeedHrgpartition NULL
+
 
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrgpartition)
@@ -1072,7 +932,7 @@ SCIP_RETCODE SCIPincludeDetectorHrgpartition(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectAndBuildArrowhead, freeHrgpartition, initHrgpartition, exitHrgpartition, propagateSeeedHrgpartition, propagateFromToolboxHrgpartition, finishFromToolboxHrgpartition, finishSeeedHrgpartition, detectorPostprocessSeeedHrgpartition, setParamAggressiveHrgpartition, setParamDefaultHrgpartition, setParamFastHrgpartition) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectAndBuildArrowhead, freeHrgpartition, initHrgpartition, exitHrgpartition, propagateSeeedHrgpartition, finishSeeedHrgpartition, detectorPostprocessSeeedHrgpartition, setParamAggressiveHrgpartition, setParamDefaultHrgpartition, setParamFastHrgpartition) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrgpartition/limitnconssnvarsdefault", "Limit for sum of nvars and nconss for enabling this detector in default", &detectordata->limitnconssnvarsdefault, TRUE, DEFAULT_LIMITNCONSSNVARSDEFAULT, 0, INT_MAX, NULL, NULL) );
 

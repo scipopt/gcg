@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -49,12 +49,12 @@ using gcg::GraphGCG;
 /* constraint handler properties */
 #define DEC_DETECTORNAME          "mst"                               /**< name of detector */
 #define DEC_DESC                  "detector based on MST clustering"  /**< description of detector*/
-#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
-#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
-#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
-#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          INT_MAX     /**< last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /**< first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /**< last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              910         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'M'         /**< display character of detector */
 #define DEC_ENABLED               FALSE        /**< should the detection be enabled */
@@ -425,9 +425,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
-   std::vector<SCIP_Real> clockTimes1;        /**< vector containing times in seconds  */
-   std::vector<SCIP_Real> clockTimes2;        /**< vector containing times in seconds  */
-   std::vector<SCIP_Real> clockTimes3;        /**< vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes1;        /* vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes2;        /* vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes3;        /* vector containing times in seconds  */
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -463,8 +463,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       detectordata->graphs->push_back(g);
       sim.push_back("Johnson");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->intersectionenable)
@@ -475,8 +475,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       detectordata->graphs->push_back(g);
       sim.push_back("Intersection");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->jaccardenable)
@@ -487,8 +487,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       detectordata->graphs->push_back(g);
       sim.push_back("Jaccard");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->cosineenable)
@@ -499,8 +499,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       detectordata->graphs->push_back(g);
       sim.push_back("Cosine");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->simpsonenable)
@@ -511,8 +511,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       detectordata->graphs->push_back(g);
       sim.push_back("Simspon");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    time(&cp0);
@@ -534,8 +534,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
          epsLists[i] = getEpsList(detectordata->n_iterations, mids[i], false); // case for all except intersection
       }
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes2.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes2.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes2.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes2.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
 
@@ -606,8 +606,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       detectordata->graphs->at(i) = NULL;
 
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes3.push_back(SCIPclockGetTime(temporaryClock));
-      clockTimes3.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes3.push_back(SCIPgetClockTime(scip, temporaryClock));
+      clockTimes3.push_back(SCIPgetClockTime(scip, temporaryClock));
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
 
@@ -672,7 +672,7 @@ SCIP_RETCODE SCIPincludeDetectorMST(
    detectordata->found = FALSE;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectMST, freeMST, initMST, exitMST, propagateSeeedMST, NULL, NULL, finishSeeedMST, detectorPostprocessSeeedMST, setParamAggressiveMST, setParamDefaultMST, setParamFastMST) );
+      detectordata, detectMST, freeMST, initMST, exitMST, propagateSeeedMST, finishSeeedMST, detectorPostprocessSeeedMST, setParamAggressiveMST, setParamDefaultMST, setParamFastMST) );
 
    /* add arrowheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/mst/niterations", "Number of iterations to run mst with different eps.", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 11, 1001, NULL, NULL) );

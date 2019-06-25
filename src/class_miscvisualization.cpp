@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -54,15 +54,15 @@ MiscVisualization::MiscVisualization(){}
 /** destructor */
 MiscVisualization::~MiscVisualization(){}
 
-/** gives a consistent filename for a (single) seeed visualization that includes the probname and seeedID
+/* Gives a consistent filename for a (single) seeed visualization that includes the probname and seeedID
  *
- * @return standardized filename
- * */
+ * @returns standardized filename
+ */
 SCIP_RETCODE MiscVisualization::GCGgetVisualizationFilename(
-   SCIP* scip,             /**< scip data structure */
-   SeeedPtr seeed,         /**< seeed that is to be visualized */
-   const char* extension,  /**< file extension (to be included in the name) */
-   char* filename          /**< filename output */
+   SCIP* scip,             /* scip data structure */
+   SeeedPtr seeed,         /* seeed that is to be visualized */
+   const char* extension,  /* file extension (to be included in the name) */
+   char* filename          /* filename output */
    )
 {
    char* name;
@@ -109,10 +109,10 @@ SCIP_RETCODE MiscVisualization::GCGgetVisualizationFilename(
 }
 
 
-/** gives the path of the file */
+/* Gives the path of the file */
 char* MiscVisualization::GCGgetFilePath(
-   SCIP* scip,       /**< scip data structure */
-   FILE* file        /**< file */
+   SCIP* scip,       /* scip data structure */
+   FILE* file        /* file */
    )
 {
    char* pfile = {};
