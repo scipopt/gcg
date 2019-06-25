@@ -43,6 +43,7 @@
 #define DEFAULT_COLUMN_MIN_WIDTH  4 /**< min width of a column in the menu table */
 #define DEFAULT_COLUMN_MAX_WIDTH 10 /**< max width of a column (also determines max width of column header abbreviation) */
 #define DEFAULT_COLUMNS "nr id nbloc nmacon nlivar nmavar nstlva score history pre nopcon nopvar sel" /**< default column headers */
+#define DEFAULT_SORT_HEADER "score"
 
 #define DEFAULT_MENULENGTH 10 /**< initial number of entries in menu */
 
@@ -74,11 +75,11 @@ struct Columninfo{
 };
 
 /** gets the seeed structure from a given id (local help function)
- * 
+ *
  * @todo remove this help function once the seeed structure is depricated
  * @returns seeed for given id
 */
-static 
+static
 Seeed* getSeeed(
    SCIP* scip,    /**< SCIP data structure */
    int id         /**< id of seeed */
@@ -91,22 +92,83 @@ Seeed* getSeeed(
 }
 
 
+/** @brief comparator function for char* in alphabetical order (asc/desc)
+ * @returns true iff the first string is before the second one
+ */
+static
+bool strComp(
+   char* c1,   /**< first string */
+   char* c2,   /**< second string */
+   bool asc    /**< iff true sort ascending, else descending */
+   )
+{
+   /* use the C++ string comparison to determine the order */
+   std::string st1 = c1;
+   bool isasc = (st1.compare(c2) < 0) ? true : false;
+
+   if(asc)
+      return isasc;
+   else
+      return !isasc;
+}
+
+
 /** @brief local sorting function for seeed id vectors
- * 
+ *
  * avoids redundant sorting calls,
  * sorts by score in given order
  */
-static 
-void sortByScore(
-   SCIP* scip,                   /**< SCIP data structure */
-   std::vector<int>* idlist,     /**< current list of seeed ids */
-   bool asc                      /**< whether to sort ascending or descending */
+static
+void sortSeeedList(
+   SCIP* scip,                      /**< SCIP data structure */
+   std::vector<int>* idlist,        /**< current list of seeed ids */
+   std::string header,              /**< header of column to sort by */
+   std::vector<Columninfo*> columns,/**< column infos */
+   bool asc                         /**< whether to sort ascending or descending */
    )
 {
-   if(asc)
-      std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return (getSeeed(scip, a)->getScore(SCIPconshdlrDecompGetScoretype(scip)) < getSeeed(scip, b)->getScore(SCIPconshdlrDecompGetScoretype(scip))); });
-   else
-      std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return (getSeeed(scip, a)->getScore(SCIPconshdlrDecompGetScoretype(scip)) > getSeeed(scip, b)->getScore(SCIPconshdlrDecompGetScoretype(scip))); });
+   /* find the column infos for the given header */
+   for(auto column : columns)
+   {
+      if(column->header == header)
+      {
+         /* sort the id list according to given order using the callback getter of the column */
+         if(column->type == INTEGER)
+         {
+            /* the callback has to be parsed to expect an int output */
+            if(asc)
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ((*( (int(*)(SCIP*, int)) column->getter))(scip, a) < (*( (int(*)(SCIP*, int)) column->getter))(scip, b)); });
+            else
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ((*( (int(*)(SCIP*, int)) column->getter))(scip, a) > (*( (int(*)(SCIP*, int)) column->getter))(scip, b)); });
+         }
+         else if(column->type == FLOAT)
+         {
+            /* the callback has to be parsed to expect a float output */
+            if(asc)
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ((*( (float(*)(SCIP*, int)) column->getter))(scip, a) < (*( (float(*)(SCIP*, int)) column->getter))(scip, b)); });
+            else
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ((*( (float(*)(SCIP*, int)) column->getter))(scip, a) > (*( (float(*)(SCIP*, int)) column->getter))(scip, b)); });
+         }
+         else if(column->type == BOOLEAN)
+         {
+            /* the callback has to be parsed to expect a SCIP_Bool output */
+            if(asc)
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ((*( (SCIP_Bool(*)(SCIP*, int)) column->getter))(scip, a) < (*( (SCIP_Bool(*)(SCIP*, int)) column->getter))(scip, b)); });
+            else
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ((*( (SCIP_Bool(*)(SCIP*, int)) column->getter))(scip, a) > (*( (SCIP_Bool(*)(SCIP*, int)) column->getter))(scip, b)); });
+         }
+         else if(column->type == STRING)
+         {
+            /* the callback has to be parsed to expect a SCIP_Bool output, the comparison is in strComp */
+            if(asc)
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return strComp((*( (char* (*)(SCIP*, int)) column->getter))(scip, a),(*( (char* (*)(SCIP*, int)) column->getter))(scip, b), true); });
+            else
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return strComp((*( (char* (*)(SCIP*, int)) column->getter))(scip, a),(*( (char* (*)(SCIP*, int)) column->getter))(scip, b), false); });
+         }
+         break;
+     }
+  }
+
 }
 
 
@@ -160,7 +222,7 @@ SCIP_RETCODE GCGdialogSetNEntires(
 
 
 /** sets the used score according to user input
- * 
+ *
  * @returns SCIP return code
  */
 static
@@ -259,7 +321,7 @@ SCIP_RETCODE GCGdialogShowMenu(
    }
 
    /* sort seeed ids by score, descending (in case score was changed or id list was updated)*/
-   sortByScore(scip, idlist, sortasc);
+   sortSeeedList(scip, idlist, DEFAULT_SORT_HEADER, columns, sortasc);
 
    /* count corresponding seeeds for overview statistics */
    int ndetectedpresolved = 0;
@@ -308,7 +370,7 @@ SCIP_RETCODE GCGdialogShowMenu(
          newheader = header;
       else
          newheader = SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip));
-      
+
       /* make sure the header name is unique and add a length for header */
       assert(columnlength.find(header) == columnlength.end());
       columnlength.insert(std::pair<std::string,int>(header, 0));
@@ -395,7 +457,7 @@ SCIP_RETCODE GCGdialogShowMenu(
          else if(type == STRING)
             /* convert the callback function to char* rettype and call it on (scip, seeedid) */
             towrite = (*( (char* (*)(SCIP*, int)) column->getter ))(scip, seeedid);
-         else 
+         else
             towrite = " ";
 
          /* write spaces to fill out the columnwidth until towrite */
@@ -471,10 +533,10 @@ SCIP_RETCODE GCGdialogShowLegend(
       /* if the header is "score" replace with shortname of the current score */
       else
       {
-         SCIPdialogMessage(scip, NULL, "%30s     %s\n", SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip)), 
+         SCIPdialogMessage(scip, NULL, "%30s     %s\n", SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip)),
             SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrDecompGetScoretype(scip)) );
       }
-      
+
    }
    SCIPdialogMessage(scip, NULL, "\n=================================================================================================== \n");
 
@@ -482,7 +544,7 @@ SCIP_RETCODE GCGdialogShowLegend(
 }
 
 /** @brief Shows help section of explore menu
- * 
+ *
  * Outputs al ist of commands and a description of their function
  * @returns SCIP status */
 static
@@ -829,9 +891,6 @@ SCIP_RETCODE GCGdialogExecExplore(
    /* free idarray */
    SCIPfreeBlockMemoryArray(scip, &idarray, nseeeds);
 
-   /* sort by score, descending */
-   sortByScore(scip, &idlist, sortasc);
-
    /* set initial columns */
    /* the column information has the header, a getter for the column info and the return type of the getter */
    std::vector<Columninfo*> columns;
@@ -858,7 +917,7 @@ SCIP_RETCODE GCGdialogExecExplore(
          RETTYPE type = UNKNOWN;
          callback funct;
          std::string desc;
-         
+
          if(strcmp(newchar, "nbloc") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGgetNBlocksBySeeedId;
@@ -935,6 +994,9 @@ SCIP_RETCODE GCGdialogExecExplore(
       /* get the next item in the list of headers */
       tempcolumns = strtok (NULL, " ");
    }
+
+   /* sort by default, descending */
+   sortSeeedList(scip, &idlist, DEFAULT_SORT_HEADER, columns, sortasc);
 
    /* while user has not aborted: show current list extract and catch commands */
    SCIP_Bool finished = false;
