@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Comparison plots for res files. 
+# Comparison plots for res files.
 # Takes res files in pickles format (aquired by parseres.py).
 # Python 2.7
 
@@ -59,10 +59,10 @@ for resfile in os.listdir(resdir):
 		readfile = open(filename, 'r')
 		notice = False
 		for line in readfile:
-                	if line.startswith('Testset'):
-                               readmeexists = True
-                               columns = line.split(' ') # line is of form "Testset testsetname"
-                               testset = columns[1]
+			if line.startswith('Testset'):
+				readmeexists = True
+				columns = line.split(' ') # line is of form "Testset testsetname"
+				testset = columns[1]
 			if line.startswith('Note'):
 				notice = True
 		if not notice:
@@ -84,19 +84,19 @@ for res in filenames:
 		if ninstances != ordereddata[res].shape[0]:
 			printwarning = True
 if printwarning == True:
-	print '--------------------------------------------------------------------------------------------------'
-	print 'Warning: Not all tests had the same number of instances.'
-	print 'Did you enter more than one testset? Did all tested versions have access to all testset instances?'
-	print '--------------------------------------------------------------------------------------------------'
+	print('--------------------------------------------------------------------------------------------------')
+	print('Warning: Not all tests had the same number of instances.')
+	print('Did you enter more than one testset? Did all tested versions have access to all testset instances?')
+	print('--------------------------------------------------------------------------------------------------')
 	ninstances = -1
 
 # Sanity check: check for fails, let the dev know
 for res in sumnames:
-	if not sumsets[res]['Fail'] == '0':	
-		print '--------------------------------------------------------------------------------------------------'
-		print 'Warning: There were some failed runs in the tests. This might influence the significance of the'
-		print 'comparisons! Recommendation: Check for memlimits, aborts, fails etc. in the tested GCG versions.'
-		print '--------------------------------------------------------------------------------------------------'
+	if not sumsets[res]['Fail'] == '0':
+		print('--------------------------------------------------------------------------------------------------')
+		print('Warning: There were some failed runs in the tests. This might influence the significance of the')
+		print('comparisons! Recommendation: Check for memlimits, aborts, fails etc. in the tested GCG versions.')
+		print('--------------------------------------------------------------------------------------------------')
 		break
 
 # Sanity check: check whether the timelimits were indentical for all versions
@@ -109,10 +109,10 @@ for res in timelimitnames:
 		if int(defaulttimelimit) != int(orderedtimelimit[res]['timelimit']):
 			printwarning = True
 if printwarning == True:
-	print '--------------------------------------------------------------------------------------------------'
-	print 'Warning: The timelimit of the versions differed. Some plots use the timelimit as a default for all'
-	print 'fails. Recommendation: Rurun the tests with a global timelimit.'
-	print '--------------------------------------------------------------------------------------------------'
+	print('--------------------------------------------------------------------------------------------------')
+	print('Warning: The timelimit of the versions differed. Some plots use the timelimit as a default for all')
+	print('fails. Recommendation: Rurun the tests with a global timelimit.')
+	print('--------------------------------------------------------------------------------------------------')
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Add function to crop filenames
@@ -125,7 +125,7 @@ def cropkeypkl(key, keyprefix):
 		charlist = list(croppedkey)
 		ninserts = len(charlist)/maxstringlen
 		while ninserts > 0:
-			charlist.insert(ninserts*maxstringlen, '\n')
+			charlist.insert(int(ninserts*maxstringlen), '\n')
 			ninserts = ninserts - 1
 		croppedkey = ''.join(charlist)
 	return croppedkey;
@@ -159,11 +159,11 @@ tempruntime = {}
 highesttime = 0
 
 # extract timelimits
-for key in orderedtimelimit.keys():
+for key in list(orderedtimelimit.keys()):
 	croppedkey = cropkeypkl(key, 'timelimit_')
 	timelimits[croppedkey] = int(orderedtimelimit[key]['timelimit'])
 
-for key in ordereddata.keys():
+for key in list(ordereddata.keys()):
 	# crop the filenames (keys in ordereddata) by removing res_ ... .pkl and add linebreak for very long keys
 	croppedkey = cropkeypkl(key, 'res_')
 	versions.append(croppedkey)
@@ -181,7 +181,7 @@ for key in ordereddata.keys():
 		elif status == 'memlimit':
 			memlimits[croppedkey] = memlimits[croppedkey] + 1
 		elif status == 'timeout':
-			timeouts[croppedkey] = timeouts[croppedkey] + 1 
+			timeouts[croppedkey] = timeouts[croppedkey] + 1
 
 	# get amount of failed instances (including limits)
 	failamount = sumsets['sum' + key].loc['Fail']
@@ -209,7 +209,7 @@ for key in ordereddata.keys():
 			temptimeperinstance.update({tempinsname: ordereddata[key]['TotalTime'][i]})
 
 	timeperinstance.update({croppedkey: temptimeperinstance})
-	
+
 	# get runtime per status
 	timefails[croppedkey] = 0
 	timeaborts[croppedkey] = 0
@@ -259,9 +259,9 @@ timesolved = collections.OrderedDict(sorted(timesolved.items()))
 # add a runtime where every fail type is counted as timelimit
 totalruntime = collections.OrderedDict()
 highesttotalruntime = 0.0
-for key in runtime.keys():
+for key in list(runtime.keys()):
 	time = 0.0
-	for instance in timeperinstance[key].keys():
+	for instance in list(timeperinstance[key].keys()):
 		time = time + float(timeperinstance[key][instance])
 	totalruntime.update({key: time})
 	highesttotalruntime = max(highesttotalruntime, time)
@@ -287,7 +287,7 @@ def setbarplotparams(highestbar):
 		valymax = highestbar+(highestbar/10)
 
 	# guarantee that max y value is set to more than highest value
-	elif highestbar == 0: 
+	elif highestbar == 0:
 		valymax = highestbar+2
 	else:
 		valymax = highestbar+1
@@ -302,18 +302,18 @@ def setbarplotparams(highestbar):
 # -------------------------------------------------------------------------------------------------------------------------
 
 fig = plt.figure()
-ax = plt.axes()        
+ax = plt.axes()
 plt.title('Number of unsolved instances')
 plt.xlabel('GCG Version')
 
-faildata = collections.OrderedDict([('aborts', aborts.values()), ('fails', fails.values()), ('memlimits', memlimits.values()), 
-	('timeouts', timeouts.values())])
+faildata = collections.OrderedDict([('aborts', list(aborts.values())), ('fails', list(fails.values())), ('memlimits', list(memlimits.values())),
+	('timeouts', list(timeouts.values()))])
 failbars = pd.DataFrame(data=faildata)
 failbars.plot(kind='bar', stacked=True)
 
 # calculate highest bar length
 barheight = 0
-for vers in timefails.keys():
+for vers in list(timefails.keys()):
 	barheight = max(barheight, aborts[vers] + fails[vers] + memlimits[vers] + timeouts[vers])
 
 barheight = barheight + .1*barheight
@@ -339,10 +339,10 @@ for (ind,row) in failbars.iterrows():
 				plt.annotate( val, xy = (ind, cumval - .5), horizontalalignment='center', verticalalignment='top',
 					fontsize=6 )
 
-plt.xticks(range(len(fails)), fails.keys(), rotation=90)
+plt.xticks(list(range(len(fails))), list(fails.keys()), rotation=90)
 setbarplotparams(int(float(highestfails)))
 
-ax1 = plt.subplot(111)
+ax1 = plt.subplot(1,1,1,label="1")
 ax1.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=5, fancybox=False, prop={'size': 'small'}, framealpha=1.0)
 
 # if the number of instances differs
@@ -364,12 +364,12 @@ tikz_save(outdir + '/failcomparison.tikz',
 # -------------------------------------------------------------------------------------------------------------------------
 
 fig = plt.figure()
-ax = plt.axes()        
+ax = plt.axes()
 plt.title('Runtime per version')
 plt.ylabel('Runtime in seconds')
 
-bars = plt.bar(range(len(runtime)), runtime.values(), align='center')
-plt.xticks(range(len(runtime)), runtime.keys(), rotation=90)
+bars = plt.bar(list(range(len(runtime))), list(runtime.values()), align='center')
+plt.xticks(list(range(len(runtime))), list(runtime.keys()), rotation=90)
 setbarplotparams(highesttime)
 labelbars(bars, highesttime)
 
@@ -420,8 +420,8 @@ def addtoformer(valuedict, key, diff):
 items = list(totalruntime.items())
 assert(len(items) == nversions)
 if nversions < 2:
-	print 'Enter more than one GCG version to generate a runtime comparison plot.'
-else:	
+	print('Enter more than one GCG version to generate a runtime comparison plot.')
+else:
 	# get instance names that originally (in first version) ran in under 10, 100, 1000 seconds
 	names10 = []
 	names100 = []
@@ -430,9 +430,9 @@ else:
 
 	# only compute intervals if > 2 versions
 	if nversions > 2:
-		(firstvers, instances) = timeperinstance.items()[len(timeperinstance.items())-1]
+		(firstvers, instances) = list(timeperinstance.items())[len(list(timeperinstance.items()))-1]
 		# get names of instances running in certain intervals on the latest version
-		for instancename in instances.keys():
+		for instancename in list(instances.keys()):
 			if float(instances[instancename]) < 10.0:
 				names10.append(instancename)
 			elif float(instances[instancename]) < 100.0:
@@ -449,7 +449,7 @@ else:
 	runtimeslong = collections.OrderedDict()
 
 	if nversions > 2:
-		for vers in timeperinstance.keys():
+		for vers in list(timeperinstance.keys()):
 			runtimes10[vers] = sumruntimes(names10, timeperinstance[vers])
 			runtimes100[vers] = sumruntimes(names100, timeperinstance[vers])
 			runtimes1000[vers] = sumruntimes(names1000, timeperinstance[vers])
@@ -513,18 +513,18 @@ else:
 					cum100[name] = highestcum100 = lowestcum100 = diff100
 					cum1000[name] = highestcum1000 = lowestcum1000 = diff1000
 					cumlong[name] = highestcumcumlong = lowestcumcumlong = difflong
-				
+
 			# for all following add the last value to current diff
 			else:
 				cumulative[name] = addtoformer(cumulative, name, diff)
 				highestcum = max(float(highestcum), float(cumulative[name]))
 				lowestcum = min(float(lowestcum), float(cumulative[name]))
-				
+
 				if nversions > 2:
 					cum10[name] = addtoformer(cum10, name, diff10)
 					highestcum10 = max(float(highestcum10), float(cum10[name]))
 					lowestcum10 = min(float(lowestcum10), float(cum10[name]))
-				
+
 					cum100[name] = addtoformer(cum100, name, diff100)
 					highestcum100 = max(float(highestcum100), float(cum100[name]))
 					lowestcum100 = min(float(lowestcum100), float(cum100[name]))
@@ -552,8 +552,8 @@ else:
 
 	# first plot version-to-version comparison bars
 	fig, ax1 = plt.subplots()
-	bar1 = ax1.bar(range(len(runtimecomp)), runtimecomp.values(), color='b')
-	plt.xticks(range(len(runtimecomp)), runtimecomp.keys(), rotation=90)
+	bar1 = ax1.bar(list(range(len(runtimecomp))), list(runtimecomp.values()), color='b')
+	plt.xticks(list(range(len(runtimecomp))), list(runtimecomp.keys()), rotation=90)
 	plt.tick_params(axis='x', which='major', labelsize=5)
 	ax1.set_ylabel('Speedup factor', color='b')
 	ax1.tick_params('y', colors='b')
@@ -563,24 +563,24 @@ else:
 	labelbars(bar1, longestbar)
 
 	# plot cumulative speedup if there is more than one bar
-	nbars = range(len(runtimecomp))
+	nbars = list(range(len(runtimecomp)))
 	if len(items) > 2:
 		ax2 = ax1.twinx()
 		ax2.set_ylabel('Cumulative speedup factor', color='r')
 		ax2.tick_params('y', colors='r')
 		ax2.set_ylim(ymin=axmin, ymax=axmax)
 
-		ax2.plot(nbars, cumulative.values(), 'r-', label='overall')
+		ax2.plot(nbars, list(cumulative.values()), 'r-', label='overall')
 		ax2.axhline(y=0, color='xkcd:slate')
-		
+
 		if nversions > 2:
-			ax2.plot(nbars, cum10.values(), 'xkcd:light orange', label='<10s')
-			ax2.plot(nbars, cum100.values(), 'xkcd:orange', label='[10,100)s')
-			ax2.plot(nbars, cum1000.values(), 'xkcd:dark orange', label='[100,1000)s')
-			ax2.plot(nbars, cumlong.values(), 'xkcd:reddy brown', label='>1000s')
+			ax2.plot(nbars, list(cum10.values()), 'xkcd:light orange', label='<10s')
+			ax2.plot(nbars, list(cum100.values()), 'xkcd:orange', label='[10,100)s')
+			ax2.plot(nbars, list(cum1000.values()), 'xkcd:dark orange', label='[100,1000)s')
+			ax2.plot(nbars, list(cumlong.values()), 'xkcd:reddy brown', label='>1000s')
 
 		ax2.legend(loc='upper right', prop={'size': 'x-small'})
-	
+
 	fig.tight_layout(rect=[0, 0.03, 1, 0.95])
 	plt.title('Version-to-version runtime comparison')
 
@@ -612,14 +612,14 @@ else:
 fig = plt.figure()
 ax = plt.axes()
 
-faildata = collections.OrderedDict([('aborts', timeaborts.values()), ('fails', timefails.values()), ('memlimits', timememlimits.values()), 
-	('timeouts', timetimeouts.values()), ('solved',timesolved.values())])
+faildata = collections.OrderedDict([('aborts', list(timeaborts.values())), ('fails', list(timefails.values())), ('memlimits', list(timememlimits.values())),
+	('timeouts', list(timetimeouts.values())), ('solved',list(timesolved.values()))])
 failbars = pd.DataFrame(data=faildata)
 failbars.plot(kind='bar', stacked=True, width=0.4)
 
 # calculate highest bar length
 barheight = highesttime + .1*highesttime
-for vers in timefails.keys():
+for vers in list(timefails.keys()):
 	barheight = max(barheight, timefails[vers] + timeaborts[vers] + timememlimits[vers] + timetimeouts[vers] + timesolved[vers])
 
 barheight = barheight + .1*barheight
@@ -634,24 +634,24 @@ for (ind,row) in failbars.iterrows():
 		if not val == 0:
 			cumval = cumval + val
 			if val < labelscale and not lastleft:
-				plt.annotate( round(val,2), xy = (ind+0.2, cumval), horizontalalignment='left', 
+				plt.annotate( round(val,2), xy = (ind+0.2, cumval), horizontalalignment='left',
 					verticalalignment='top', fontsize=6 )
 				lastleft = True
 			elif val < labelscale:
-				plt.annotate( round(val,2), xy = (ind-0.2, cumval), horizontalalignment='right', 
+				plt.annotate( round(val,2), xy = (ind-0.2, cumval), horizontalalignment='right',
 					verticalalignment='top', fontsize=6 )
 				lastleft = False
 			else:
-				plt.annotate( round(val,2), xy = (ind, cumval-0.005), horizontalalignment='center', 
+				plt.annotate( round(val,2), xy = (ind, cumval-0.005), horizontalalignment='center',
 					verticalalignment='top', fontsize=6 )
 
-plt.xticks(range(len(fails)), fails.keys(), rotation=90)
+plt.xticks(list(range(len(fails))), list(fails.keys()), rotation=90)
 setbarplotparams(1)
 plt.ylim(ymax=barheight)
 plt.ylabel('Runtime in seconds', size=7)
 plt.tick_params(axis='y', which='major', labelsize=7)
 
-ax1 = plt.subplot(111)
+ax1 = plt.subplot(1,1,1,label="2")
 ax1.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, fancybox=False, prop={'size': 'small'}, framealpha=1.0)
 
 # if the number of instances differs
@@ -674,7 +674,7 @@ tikz_save(outdir + '/timecomparisonperstatus.tikz',
 # -------------------------------------------------------------------------------------------------------------------------
 
 fig = plt.figure()
-ax = plt.axes()        
+ax = plt.axes()
 plt.title('Average runtime of solved instances')
 plt.xlabel('GCG Version')
 plt.ylabel('Average runtime in seconds')
@@ -690,8 +690,8 @@ for vers in versions:
 	avsolved.update({vers : avtime})
 	highestavsolved = max(highestavsolved, avtime)
 
-bars = plt.bar(range(len(avsolved)), avsolved.values(), align='center')
-plt.xticks(range(len(avsolved)), avsolved.keys(), rotation=90)
+bars = plt.bar(list(range(len(avsolved))), list(avsolved.values()), align='center')
+plt.xticks(list(range(len(avsolved))), list(avsolved.keys()), rotation=90)
 setbarplotparams(highestavsolved)
 labelbars(bars, highestavsolved)
 
