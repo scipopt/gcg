@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Comparison plots for res files.
 # Takes res files in pickles format (aquired by parseres.py).
-# Python 2.7
+# Python 3
 
 import sys
 import os
