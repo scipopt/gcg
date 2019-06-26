@@ -42,7 +42,7 @@ shift
 nversions=0
 
 # output a little help message
-if [[ $ninputs < 3 ]]; then
+if [[ $ninputs < 1 ]]; then
 cat <<EOF
 Call this script with arguments: "global flags" "gitversion1" "flags for gitversion1" "gitversion2" "flags for gitversion2" "gitversion3" ...
 e.g. ./compareversions.sh "TEST=mytestset SETTINGS=mysettings -j" "master" "" "mybranch" "LPS=cpx"
