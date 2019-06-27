@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # This script reads *.res files created by GCG's make test and parses it into a pandas dataframe.
 # Based on the parseout.py script
 import sys
