@@ -42,6 +42,8 @@ sumnames = []
 timelimitnames = []
 readmeexists = False
 testset = 'unknown'
+orderByCommand = True
+orderedinstances = []
 
 for resfile in os.listdir(resdir):
 	if resfile.endswith('.pkl') and resfile.startswith('res_'):
@@ -58,6 +60,7 @@ for resfile in os.listdir(resdir):
 		filename = resdir + '/' + resfile
 		readfile = open(filename, 'r')
 		notice = False
+		parameterLine = False
 		for line in readfile:
 			if line.startswith('Testset'):
 				readmeexists = True
@@ -65,12 +68,23 @@ for resfile in os.listdir(resdir):
 				testset = columns[1]
 			if line.startswith('Note'):
 				notice = True
+			# get the ordering from the readme file
+			if orderByCommand and (line.startswith('This directory contains') or parameterLine):
+				if parameterLine:
+					orderedinstances = line.split(' ')[1:-1:2]
+					parameterLine = False
+				else:
+					parameterLine = True
+
 		if not notice:
 			readfile = open(filename, 'a')
 			readfile.write("Note: All plots (apart from \"runtimes\") count the runtime of all fails, aborts, timelimits, memlimits and readerrors as running into the timelimit.")
 
+#for i in range(len(orderedinstances)):
+#	orderedinstances[i] = "res_" + orderedinstances[i] + ".pkl"
+
 # sort names alphabetically
-ordereddata = collections.OrderedDict(sorted(datasets.items()))
+ordereddata = collections.OrderedDict(datasets.items())
 orderedsum = collections.OrderedDict(sorted(sumsets.items()))
 orderedtimelimit = collections.OrderedDict(sorted(timelimitset.items()))
 
@@ -248,7 +262,13 @@ fails = collections.OrderedDict(sorted(fails.items()))
 aborts = collections.OrderedDict(sorted(aborts.items()))
 memlimits = collections.OrderedDict(sorted(memlimits.items()))
 timeouts = collections.OrderedDict(sorted(timeouts.items()))
-runtime = collections.OrderedDict(sorted(tempruntime.items()))
+runtime_temp = collections.OrderedDict(sorted(tempruntime.items()))###
+
+# resort names according to readme file, where the arguments as given in the shell script, are saved
+runtime = collections.OrderedDict()
+for k in orderedinstances:
+    runtime[k] = runtime_temp[k]
+
 
 timefails = collections.OrderedDict(sorted(timefails.items()))
 timeaborts = collections.OrderedDict(sorted(timeaborts.items()))
