@@ -24,6 +24,12 @@
 # 5th argument: additional flags for the 2nd GCG version
 # ...
 #
+#
+# some hints:
+# release-v201 needs ZIMPL=false
+# 
+#
+#
 #####################################################################################
 
 
