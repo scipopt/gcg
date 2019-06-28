@@ -1449,6 +1449,14 @@ SCIP_RETCODE SCIPconshdlrDecompGetSeeedpoolUnpresolved(
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE SCIPconshdlrDecompGetSeeedpoolExtern(
+   SCIP*                 scip,
+   SEEED_WRAPPER*        sw
+   )
+{
+   SCIPconshdlrDecompGetSeeedpool(scip, sw);
+   return SCIP_OKAY;
+}
 
 SCIP_RETCODE SCIPconshdlrDecompGetSeeedpool(
    SCIP*                 scip,
