@@ -24,6 +24,18 @@
 * In order facilitate the navigation through the core API of \SCIP, it is structured into different modules.
 */
 
+/**@defgroup DATASTRUCTURES Data Structures
+  * @ingroup PUBLICCOREAPI
+  * @brief all data structures implemented in \GCG.
+  *
+  */
+
+/**@defgroup DECOMP Decomposition
+  * @ingroup PUBLICCOREAPI
+  * @brief all decomposition algorithmics implemented in \GCG.
+  *
+  */
+
 /**@defgroup PUBLICPLUGINAPI Plugin API of GCG
   * @ingroup PUBLICAPI
   * @brief core API extensions provided by the default plugins of \SCIP, includable via scipdefplugins.h.
@@ -59,6 +71,12 @@
   *
   * @see \ref LPI for a list of available LP solver interfaces
   */
+
+  /**@defgroup BENDERS Benders' Decomposition
+   * @ingroup PUBLICPLUGINAPI
+   * @brief This page contains a description of all methods and files provided by the Benders' decomposition.
+   *
+   */
 
   /**@defgroup BRANCHINGRULES Branching Rules
    * @ingroup PUBLICPLUGINAPI
@@ -117,8 +135,14 @@
    * in the SCIP documentation.
    */
 
+   /**@defgroup PRICING Pricing
+    * @ingroup PUBLICPLUGINAPI
+    * @brief This page contains a list of all pricers, pricing solvers and the pricing jobs and problem structures.
+    *
+    */
+
   /**@defgroup PRICERS Pricers
-   * @ingroup PUBLICPLUGINAPI
+   * @ingroup PRICING
    * @brief This page contains a list of all pricers which are currently available.
    *
    * Per default there exist no variable pricer. A detailed description what a variable pricer does and how to add a
@@ -126,12 +150,13 @@
    */
 
   /**@defgroup PRICINGSOLVERS Pricing solvers
-   * @ingroup PUBLICPLUGINAPI
+   * @ingroup PRICING
    * @brief This page contains a list of all pricing solvers which are currently available.
    *
    * A detailed description what a pricing solver does and how to add a pricing solver to GCG can be found
    * \ref PRICINGSOLVER "here".
    */
+
 
   /**@defgroup PUBLICMETHODS Public Methods
    * @ingroup PUBLICCOREAPI
@@ -166,7 +191,7 @@
    */
 
   /**@defgroup TYPEDEFINITIONS Type Definitions
-   * @ingroup PUBLICPLUGINAPI
+   * @ingroup PUBLICCOREAPI
    * This page lists headers which contain type definitions of callback methods.
    *
    * All headers below include the descriptions of callback methods of

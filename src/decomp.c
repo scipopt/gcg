@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   decomp.c
- * @ingroup DECOMP
  * @brief  generic methods for working with different decomposition structures
  * @author Martin Bergner
  * @author Michael Bastubbe

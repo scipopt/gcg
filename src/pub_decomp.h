@@ -48,7 +48,9 @@
 extern "C" {
 #endif
 
-/** score data structure **/
+/** score data structure
+ * @ingroup DATASTRUCTURES
+**/
 struct Dec_Scores
 {
    SCIP_Real             borderscore;        /**< score of the border */
@@ -720,7 +722,7 @@ SCIP_RETCODE DECpermuteDecomp(
    );
 
 /** gets the number of existing decompositions
- * 
+ *
  * @returns number of decompositions
  */
 extern

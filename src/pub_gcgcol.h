@@ -50,8 +50,8 @@ extern "C" {
  * GCG Column
  */
 
-/**@defgroup GCG_Column gcg column
- *
+/**@defgroup GCG_COLUMN GCG Column
+ * @ingroup DATASTRUCTURES
  * @{
  */
 

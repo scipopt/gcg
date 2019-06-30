@@ -26,11 +26,11 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_decomp.h
+* @ingroup DECOMP
  * @brief  constraint handler for structure detection
  * @author Martin Bergner
  * @author Michael Bastubbe
  * @author Hanna Franzen
- *
  * This constraint handler manages the structure detection process. It will run all registered structure detectors in an
  * iterative refinement scheme. Afterwards some post-processing detectors might be called.
  */

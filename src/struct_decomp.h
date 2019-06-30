@@ -26,6 +26,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_decomp.h
+ * @ingroup DECOMP
+ * @ingroup DATASTRUCTURES
  * @brief  structure information for decomposition information in GCG projects
  * @author Martin Bergner
  * @author Michael Bastubbe
