@@ -43,7 +43,7 @@
 #define DEFAULT_COLUMN_MIN_WIDTH  4 /**< min width of a column in the menu table */
 #define DEFAULT_COLUMN_MAX_WIDTH 10 /**< max width of a column (also determines max width of column header abbreviation) */
 #define DEFAULT_COLUMNS "nr id nbloc nmacon nlivar nmavar nstlva score history pre nopcon nopvar sel" /**< default column headers */
-#define DEFAULT_SORT_HEADER "score"
+#define DEFAULT_SORT_HEADER "history"
 
 #define DEFAULT_MENULENGTH 10 /**< initial number of entries in menu */
 
@@ -92,24 +92,27 @@ Seeed* getSeeed(
 }
 
 
-/** @brief comparator function for char* in alphabetical order (asc/desc)
- * @returns true iff the first string is before the second one
+/** @brief comparator function for seeeds in alphabetical order (asc/desc)
+ * @returns true iff the given char* callback of the first seeed string is before/after the second one
  */
 static
-bool strComp(
-   char* c1,   /**< first string */
-   char* c2,   /**< second string */
-   bool asc    /**< iff true sort ascending, else descending */
+bool seeedStrComp(
+   SCIP* scip,                         /**< SCIP data structure */
+   int id1,                            /**< id of first seeed */
+   int id2,                            /**< id of second seeed */
+   Columninfo* column,                 /**< column info containing the callback */
+   bool asc                            /**< iff true sort ascending, else descending */
    )
 {
-   /* use the C++ string comparison to determine the order */
-   std::string st1 = c1;
-   bool isasc = (st1.compare(c2) < 0) ? true : false;
+   /* get the strings to compare via the given callback in the columninfo */
+   std::string st1 = (*( (char*(*)(SCIP*, int)) column->getter))(scip, id1);
+   std::string st2 = (*( (char*(*)(SCIP*, int)) column->getter))(scip, id2);
 
-   if(asc)
-      return isasc;
-   else
-      return !isasc;
+   /* use the C++ string comparison to determine the order */
+   bool isasc = (st1.compare(st2) < 0) ? true : false;
+
+   /* give true or false depending on ascending or descending order */
+   return (asc) ? isasc : !isasc;
 }
 
 
@@ -160,10 +163,8 @@ void sortSeeedList(
          else if(column->type == STRING)
          {
             /* the callback has to be parsed to expect a SCIP_Bool output, the comparison is in strComp */
-            if(asc)
-               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return strComp((*( (char* (*)(SCIP*, int)) column->getter))(scip, a),(*( (char* (*)(SCIP*, int)) column->getter))(scip, b), true); });
-            else
-               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return strComp((*( (char* (*)(SCIP*, int)) column->getter))(scip, a),(*( (char* (*)(SCIP*, int)) column->getter))(scip, b), false); });
+            /*@todo this has a bug, the getter of the history is receiving non-valid seeed ids */
+            std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return seeedStrComp(scip, a, b, column, asc); });
          }
          break;
      }

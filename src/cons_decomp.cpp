@@ -4786,6 +4786,7 @@ char* GCGgetDetectorHistoryBySeeedId(
 {
    /* get seeed and returns its detector history */
    Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   assert(seeed != NULL);
    return seeed->getDetectorChainString();
 }
 
