@@ -46,6 +46,7 @@
 #include "pub_bliss.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include "wrapper_seeed.h"
 
 #include <cstring>
 
@@ -1414,8 +1415,12 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    blocks[1] = block2;
    pricingnodes = 0;
 
-   seeedpoolpresolved = (gcg::Seeedpool*) SCIPconshdlrDecompGetSeeedpoolExtern(scip);
-   seeedpoolunpresolved = (gcg::Seeedpool*) SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(scip);
+   Seeed_Wrapper sw;
+   SCIPconshdlrDecompGetSeeedpool(scip, &sw);
+   seeedpoolpresolved = sw.seeedpool;
+   Seeed_Wrapper swu;
+   SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &swu);
+   seeedpoolunpresolved = swu.seeedpool;
 
    if (seeed->isFromUnpresolved() )
       seeedpool = seeedpoolunpresolved;
