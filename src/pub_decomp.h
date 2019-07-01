@@ -416,7 +416,7 @@ SCIP_Real* DECdecompGetDetectorPctVarsToBorder(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
-/** sets the percenta * @ingroup PUBLICMETHODSges of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+/** sets the percentages of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
 extern
 void DECdecompSetDetectorPctConssToBorder(
    SCIP*                 scip,               /**< SCIP data structure */
