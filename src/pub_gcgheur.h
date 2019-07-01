@@ -43,6 +43,11 @@
 extern "C" {
 #endif
 
+/**@defgroup Heuristics
+ * @ingroup PUBLICCOREAPI
+ * @{
+ */
+
 /** sets heuristic parameters values to
  *
  *  - SCIP_PARAMSETTING_DEFAULT which are the default values of all heuristic parameters
@@ -57,6 +62,7 @@ SCIP_RETCODE GCGsetHeuristics(
 
 #ifdef __cplusplus
 }
+/* @} */
 #endif
 
 #endif

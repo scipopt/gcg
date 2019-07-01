@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   gcg.h
+ * @ingroup PUBLICCOREAPI
  * @brief  GCG interface methods
  * @author Martin Bergner
  */

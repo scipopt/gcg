@@ -45,6 +45,11 @@
 extern "C" {
 #endif
 
+/**@defgroup Bliss
+ * @ingroup PUBLICCOREAPI
+ * @{
+ */
+
 typedef struct struct_cons AUT_CONS;
 typedef struct struct_var AUT_VAR;
 typedef struct struct_coef AUT_COEF;
@@ -155,6 +160,8 @@ struct struct_colorinformation
    /** get onlysign bool */
    SCIP_Bool getOnlySign();
 };
+
+/* @} */
 #endif
 
 #endif /* PUB_BLISS_H_ */

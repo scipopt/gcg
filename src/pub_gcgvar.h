@@ -44,6 +44,11 @@
 extern "C" {
 #endif
 
+/**@defgroup GCG Variables
+ * @ingroup PUBLICCOREAPI
+ * @{
+ */
+
 /** returns TRUE or FALSE whether variable is a pricing variable or not */
 extern
 SCIP_Bool GCGvarIsPricing(
@@ -512,6 +517,8 @@ void GCGprintVar(
 
 #ifdef __cplusplus
 }
+
+/* @} */
 #endif
 
 #endif

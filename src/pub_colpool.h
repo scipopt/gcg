@@ -34,8 +34,8 @@
 extern "C" {
 #endif
 
-/**@addtogroup PUBLICMETHODS
- *
+/**@defgroup Colpool
+ * @ingroup PUBLICCOREAPI
  * @{
  */
 

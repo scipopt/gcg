@@ -44,6 +44,11 @@
 extern "C" {
 #endif
 
+/**@defgroup Separators
+ * @ingroup PUBLICCOREAPI
+ * @{
+ */
+
 /** sets separator parameters values to
  *
  *  - SCIP_PARAMSETTING_DEFAULT which are the default values of all separator parameters
@@ -58,6 +63,7 @@ SCIP_RETCODE GCGsetSeparators(
 
 #ifdef __cplusplus
 }
+/* @} */
 #endif
 
 #endif

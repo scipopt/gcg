@@ -43,6 +43,11 @@
 extern "C" {
 #endif
 
+/**@defgroup Pricing Solvers
+ * @ingroup PUBLICCOREAPI
+ * @{
+ */
+
 /** compares two solvers w. r. t. their priorities */
 SCIP_EXPORT
 SCIP_DECL_SORTPTRCOMP(GCGsolverComp);
@@ -144,6 +149,8 @@ SCIP_Real GCGsolverGetHeurRedcostTime(
 
 #ifdef __cplusplus
 }
+
+/* @} */
 #endif
 
 #endif
