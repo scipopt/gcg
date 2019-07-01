@@ -4832,3 +4832,13 @@ SCIP_Bool GCGisSelectedBySeeedId(
    Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
    return seeed->isSelected();
 }
+
+
+SCIP_Bool GCGseeedExists(
+   SCIP* scip,
+   int id
+   )
+{
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   return (seeed == NULL) ? false : true;
+}

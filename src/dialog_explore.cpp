@@ -104,6 +104,9 @@ bool seeedStrComp(
    bool asc                            /**< iff true sort ascending, else descending */
    )
 {
+   assert(GCGseeedExists(scip, id1));
+   assert(GCGseeedExists(scip, id2));
+
    /* get the strings to compare via the given callback in the columninfo */
    std::string st1 = (*( (char*(*)(SCIP*, int)) column->getter))(scip, id1);
    std::string st2 = (*( (char*(*)(SCIP*, int)) column->getter))(scip, id2);

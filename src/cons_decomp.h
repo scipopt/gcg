@@ -868,6 +868,14 @@ SCIP_Bool GCGisSelectedBySeeedId(
    int id         /**< id of seeed */
    );
 
+/** @brief gets whether a seeed with the given id exists
+ * @returns true iff seeed with this id exists
+ */
+SCIP_Bool GCGseeedExists(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
+
 #ifdef __cplusplus
 }
 #endif
