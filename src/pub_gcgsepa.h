@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_gcgsepa.h
- * @ingroup PUBLICMETHODS
  * @brief  public methods for GCG separators
  * @author Christian Puchert
  * @author Jonas Witt

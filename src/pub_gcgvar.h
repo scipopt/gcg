@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_gcgvar.h
- * @ingroup PUBLICMETHODS
  * @brief  public methods for GCG variables
  * @author Martin Bergner
  * @author Christian Puchert

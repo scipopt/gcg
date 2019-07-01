@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_pricingprob.h
- * @ingroup PUBLICMETHODS
  * @brief  public methods for working with pricing problems
  * @author Christian Puchert
  */
@@ -47,7 +46,7 @@ extern "C" {
  */
 
 /**@defgroup PRICINGPROB Pricing Problem
- * @ingroup PRICING
+ * @ingroup PRICING_PUB
  * @{
  */
 
@@ -129,7 +128,6 @@ int GCGpricingprobGetNColsLastRounds(
    );
 
 /**@} */
-
 
 #ifdef __cplusplus
 }

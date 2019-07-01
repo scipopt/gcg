@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    scip_misc.h
- * @ingroup PUBLICMETHODS
  * @brief   various SCIP helper methods
  * @author  Martin Bergner
  */
@@ -42,6 +41,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**@defgroup MISC Miscellaneous
+ * @ingroup PUBLICCOREAPI
+ * @{
+ */
 
 /** constraint types */
 typedef enum  {
@@ -145,6 +149,7 @@ SCIP_RETCODE GCGincludeDialogsGraph(
    SCIP* scip
    );
 
+/**@} */
 #ifdef __cplusplus
 }
 #endif

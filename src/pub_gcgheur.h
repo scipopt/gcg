@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_gcgheur.h
- * @ingroup PUBLICMETHODS
  * @brief  public methods for GCG heuristics
  * @author Christian Puchert
  */

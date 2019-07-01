@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_pricingjob.h
- * @ingroup PUBLICMETHODS
  * @brief  public methods for working with pricing jobs
  * @author Christian Puchert
  */
@@ -47,7 +46,7 @@ extern "C" {
  */
 
 /**@defgroup PRICINGJOB Pricing Job
- * @ingroup PRICING
+ * @ingroup PRICING_PUB
  *
  * @{
  */
@@ -90,8 +89,6 @@ int GCGpricingjobGetNHeurIters(
    );
 
 /**@} */
-
-
 #ifdef __cplusplus
 }
 #endif

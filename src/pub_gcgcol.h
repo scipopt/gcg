@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_gcgcol.h
- * @ingroup PUBLICMETHODS
  * @brief  public methods for working with gcg columns
  * @author Jonas Witt
  */
@@ -277,7 +276,6 @@ SCIP_Real GCGcolComputeOrth(
    );
 
 /**@} */
-
 
 #ifdef __cplusplus
 }

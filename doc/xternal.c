@@ -36,6 +36,12 @@
   *
   */
 
+/**@defgroup PRICING_PUB Pricing
+ * @ingroup PUBLICCOREAPI
+ * @brief This page contains all pricing-related public functionalities.
+ *
+ */
+
 /**@defgroup PUBLICPLUGINAPI Plugin API of GCG
   * @ingroup PUBLICAPI
   * @brief core API extensions provided by the default plugins of \SCIP, includable via scipdefplugins.h.
@@ -157,18 +163,6 @@
    * \ref PRICINGSOLVER "here".
    */
 
-
-  /**@defgroup PUBLICMETHODS Public Methods
-   * @ingroup PUBLICCOREAPI
-   *
-   * This page lists headers containing branch-and-price specific public methods provided by GCG.
-   *
-   * All of the headers listed below include functions that are allowed to be called by external users. Besides those
-   * functions it is also valid to call methods that are listed in one of the headers of the (default) GCG plug-ins; in
-   * particular, this holds for relax_gcg.h and pricer_gcg.h.
-   *
-   */
-
    /**@defgroup PRIMALHEURISTICS Primal Heuristics
    * @ingroup PUBLICPLUGINAPI
    * @brief This page contains a list of all primal heuristics which are currently available.
@@ -192,8 +186,10 @@
 
   /**@defgroup TYPEDEFINITIONS Type Definitions
    * @ingroup PUBLICCOREAPI
-   * This page lists headers which contain type definitions of callback methods.
+   * This page lists headers containing branch-and-price specific public methods provided by GCG.
    *
-   * All headers below include the descriptions of callback methods of
-   * certain plug-ins. For more detail see the corresponding header.
+   * All of the headers listed below include functions that are allowed to be called by external users. Besides those
+   * functions it is also valid to call methods that are listed in one of the headers of the (default) GCG plug-ins; in
+   * particular, this holds for relax_gcg.h and pricer_gcg.h.
+   *
    */

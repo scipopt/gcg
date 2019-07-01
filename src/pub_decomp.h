@@ -27,7 +27,6 @@
 
 /**@file   pub_decomp.h
  * @ingroup DECOMP
- * @ingroup PUBLICMETHODS
  * @brief  public methods for working with decomposition structures
  * @author Martin Bergner
  */
@@ -47,6 +46,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @ingroup DECOMP
+ * @{
+ */
 
 /** score data structure
  * @ingroup DATASTRUCTURES
@@ -412,7 +416,7 @@ SCIP_Real* DECdecompGetDetectorPctVarsToBorder(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
-/** sets the percentages of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+/** sets the percenta * @ingroup PUBLICMETHODSges of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
 extern
 void DECdecompSetDetectorPctConssToBorder(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -730,7 +734,9 @@ int DECgetNDecomps(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/* @} */
 #ifdef __cplusplus
 }
+
 #endif
 #endif
