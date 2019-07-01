@@ -349,17 +349,6 @@ SCIP_RETCODE SCIPconshdlrDecompGetSeeedpoolUnpresolved(
    SEEED_WRAPPER*        sw                   /**< wrapper for output */
    );
 
-/**
- * @brief help method to access seeedpool for transformed problem
- *
- * gives pointer to seeedpool in wrapper data structure
- * @returns SCIP return code
- * @note Deprecated, use SCIPconshdlrDecompGetSeeedpool instead.
- */
-SCIP_RETCODE SCIPconshdlrDecompGetSeeedpoolExtern(
-   SCIP*                 scip,
-   SEEED_WRAPPER*        sw
-   );
 
 /**
  * @brief help method to access seeedpool for transformed problem
