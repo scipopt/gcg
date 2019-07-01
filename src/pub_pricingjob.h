@@ -45,8 +45,8 @@ extern "C" {
  * GCG Pricing Job
  */
 
-/**@defgroup PRICINGJOB Pricing Job
- * @ingroup PRICING_PUB
+/**
+ * @ingroup PRICINGJOB
  *
  * @{
  */

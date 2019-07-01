@@ -27,7 +27,15 @@
 /**@defgroup DATASTRUCTURES Data Structures
   * @ingroup PUBLICCOREAPI
   * @brief all data structures implemented in \GCG.
-  *
+  */
+
+/**@defgroup TYPEDEFINITIONS Type Definitions
+  * @ingroup PUBLICCOREAPI
+  */
+
+
+/**@defgroup BLISS Bliss
+  * @ingroup PUBLICCOREAPI
   */
 
 /**@defgroup DECOMP Decomposition
@@ -36,11 +44,34 @@
   *
   */
 
+/**@defgroup HEURISTICS Heuristics
+  * @ingroup PUBLICCOREAPI
+  */
+
 /**@defgroup PRICING_PUB Pricing
- * @ingroup PUBLICCOREAPI
- * @brief This page contains all pricing-related public functionalities.
- *
- */
+  * @ingroup PUBLICCOREAPI
+  * @brief This page contains all pricing-related public functionalities.
+  *
+  */
+
+/**@defgroup PRICINGJOB Pricing Job
+  * @ingroup PRICING_PUB
+  */
+
+/**@defgroup PRICINGPROB Pricing Problem
+  * @ingroup PRICING_PUB
+  */
+
+/**@defgroup SEPARATORS_PUB Separators
+  * @ingroup PUBLICCOREAPI
+  */
+
+/**@defgroup MISC Miscellaneous
+  * @ingroup PUBLICCOREAPI
+  */
+
+
+
 
 /**@defgroup PUBLICPLUGINAPI Plugin API of GCG
   * @ingroup PUBLICAPI

@@ -34,8 +34,8 @@
 extern "C" {
 #endif
 
-/**@defgroup Colpool
- * @ingroup PUBLICCOREAPI
+/**
+ * @ingroup DATASTRUCTURES
  * @{
  */
 

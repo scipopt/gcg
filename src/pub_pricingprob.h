@@ -45,8 +45,8 @@ extern "C" {
  * GCG Pricing Problem
  */
 
-/**@defgroup PRICINGPROB Pricing Problem
- * @ingroup PRICING_PUB
+/**
+ * @ingroup PRICINGPROB
  * @{
  */
 

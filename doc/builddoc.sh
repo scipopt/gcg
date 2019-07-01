@@ -58,7 +58,6 @@ mv html/doc html/doc-${CURRENT_VERSION}
 cd html/doc-${CURRENT_VERSION}
 sed -i "/citelist/d" pages.html
 sed -i "/citelist/d" navtreedata.js
-#sed -i "/citelist/d" navtreeindex0.js
-sed -i "s/\:\[4/\:\[3/g" navtreeindex*.js
-sed -i "s/\:\[5/\:\[4/g" navtreeindex*.js
+sed -i "s/\:\[4/\:\[3/g" navtreeindex*.js # citelist is the third item in the navigation (after Users Guide and Devs Guide,
+sed -i "s/\:\[5/\:\[4/g" navtreeindex*.js # since Installation counts as homepage and thus 0)
 echo "Done."

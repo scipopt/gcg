@@ -19,8 +19,8 @@ consider some example plug-ins to serve as your basis.
 \subpage examples \n
 
 \n
-The <b>last part</b> contains the C documentation, for your reference.
+For further reading, we then recommend <b>GCG's C-documentation</b> for your reference.
 
-<a href="modules.html">C API</a> \n
+<a href="modules.html"><b>C API</b></a> \n
 
 */

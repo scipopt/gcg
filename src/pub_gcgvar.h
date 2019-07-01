@@ -43,8 +43,8 @@
 extern "C" {
 #endif
 
-/**@defgroup GCG Variables
- * @ingroup PUBLICCOREAPI
+/**
+ * @ingroup TYPEDEFINITIONS
  * @{
  */
 

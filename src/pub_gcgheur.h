@@ -42,8 +42,8 @@
 extern "C" {
 #endif
 
-/**@defgroup Heuristics
- * @ingroup PUBLICCOREAPI
+/**
+ * @ingroup HEURISTICS
  * @{
  */
 

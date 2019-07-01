@@ -43,8 +43,8 @@
 extern "C" {
 #endif
 
-/**@defgroup Separators
- * @ingroup PUBLICCOREAPI
+/**
+ * @ingroup SEPARATORS_PUB
  * @{
  */
 

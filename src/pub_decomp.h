@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_decomp.h
- * @ingroup DECOMP
  * @brief  public methods for working with decomposition structures
  * @author Martin Bergner
  */

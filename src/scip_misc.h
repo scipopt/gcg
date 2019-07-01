@@ -42,10 +42,6 @@
 extern "C" {
 #endif
 
-/**@defgroup MISC Miscellaneous
- * @ingroup PUBLICCOREAPI
- * @{
- */
 
 /** constraint types */
 typedef enum  {
@@ -53,6 +49,10 @@ typedef enum  {
    logicor, sos1, sos2, unknown, nconsTypeItems, indicator
 } consType;
 
+/**@defgroup MISC Miscellaneous
+* @ingroup PUBLICCOREAPI
+* @{
+  */
 
 /** returns TRUE if variable is relevant, FALSE otherwise */
 extern
