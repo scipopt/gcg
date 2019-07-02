@@ -220,6 +220,7 @@
 	      GCG has more than 50,000 lines of source code and
 	      is definitely not bug free.
 	    </p>
+   	    <p>@todo Mention SCIP mailing list</a>
 	    <p>
 	      If you find a bug, please write an email to <a href="mailto:gcg-bugs@or.rwth-aachen.de">gcg-bugs@or.rwth-aachen.de</a>.
 	    </p>
@@ -234,7 +235,7 @@
     		    <a href="http://www.or.rwth-aachen.de/luebbecke">Marco Lübbecke</a>
     		  </td>
     		  <td>
-    		    Project initiator and strategic coodinator
+    		    Project initiator, strategic coodination
     		  </td>
     		</tr>
     	  </tbody>
@@ -248,19 +249,23 @@
 		      </tr>
 		      <tr>
 		        <td>Martin Bergner</td>
-		        <td>Structure detection, former main developer</td>
+		        <td>Structure detection</td>
 		      </tr>
 		      <tr>
 		        <td><a href="http://www.zib.de/gamrath/">Gerald Gamrath</a></td>
-		        <td>Original and main developer</td>
+		        <td>Original concept and development</td>
+		      </tr>
+		      <tr>
+		        <td><a href="http://www.stephenjmaher.com/">Stephen J. Maher</a></td>
+		        <td>Benders decomposition</td>
 		      </tr>
 		      <tr>
 		        <td><a href="https://www.or.rwth-aachen.de/en/details-staff/puchert.html"</a>Christian Puchert</td>
-		        <td>Primal heuristics, main developer</td>
+		        <td>Primal heuristics, pricing</td>
 		      </tr>
 		      <tr>
 		        <td><a href="https://www.or.rwth-aachen.de/en/details-staff/witt.html">Jonas Witt</a></td>
-		        <td>Cutting planes, main developer</td>
+		        <td>Cutting planes, strIPlib</td>
 		      </tr>
         </tbody>
       </table>
@@ -273,19 +278,39 @@
           	  </tr>
     		  <tr>
     		    <td>Tim Donkiewicz</td>
-    		    <td>Documentation</td>
+    		    <td>Documentation, visualization suite</td>
      		  </tr>
     		  <tr>
     		    <td>Hanna Franzen</td>
-    		    <td>Structure detection, visualization</td>
+    		    <td>Structure detection, visualization, refactoring</td>
      		  </tr>
    		    <tr>
     		    <td>Alexander Groß</td>
     		    <td>Statistics</td>
     		  </tr>
+      		<tr>
+      		  <td>Julius Hense</td>
+      		  <td>Cons/vars classification</td>
+      		</tr>
     		  <tr>
       		  <td>Lukas Kirchhart</td>
       		  <td>Documentation</td>
+    		  </tr>
+    		  <tr>
+      		  <td>Henri Lotze</td>
+      		  <td>CLIQUER stable set pricer</td>
+    		  </tr>
+    		  <tr>
+      		  <td>Matthias Luers</td>
+      		  <td>Staircase detectors</td>
+    		  </tr>
+    		  <tr>
+    		    <td>William Ma</td>
+    		    <td>WWW strIPlib, refactoring</td>
+     		  </tr>
+    		  <tr>
+      		  <td>Friederike Menge</td>
+      		  <td>Staircase detectors</td>
     		  </tr>
     		  <tr>
       		  <td>Tobias Oelschlägel</td>
@@ -299,6 +324,14 @@
       		  <td>Daniel Peters</td>
       		  <td>Detection of similar pricing problems</td>
       		</tr>
+      		<tr>
+      		  <td>Maximilian Peters</td>
+      		  <td>Continuous integration, unit testing</td>
+      		</tr>
+    		  <tr>	
+    		    <td>Niklas Rieken</td>
+    		    <td>strIPlib instance curation</td>
+     		  </tr>
       		<tr>
       		  <td>Marcel Schmickerath</td>
       		  <td>Generic (Vanderbeck) branching</td>
