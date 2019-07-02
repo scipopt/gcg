@@ -206,7 +206,7 @@ SCIP_RETCODE Pricingcontroller::getGenericBranchconss()
    SCIP_BRANCHRULE* branchrule = GCGconsMasterbranchGetBranchrule(branchcons);
 
    assert(branchcons != NULL);
-   assert(SCIPnodeGetDepth(GCGconsMasterbranchGetNode(branchcons)) == 0 || branchrule != NULL);
+   assert(SCIPnodeGetDepth(GCGconsMasterbranchGetNode(branchcons)) == 0 || branchrule != NULL || SCIPinProbing(scip_));
 
    while( GCGisBranchruleGeneric(branchrule) )
    {
@@ -224,15 +224,15 @@ SCIP_RETCODE Pricingcontroller::getGenericBranchconss()
       assert(mastercons != NULL);
       assert(consblocknr >= 0 || consblocknr == -3);
 
-      if (consblocknr >= 0)
+      if( consblocknr >= 0 )
       {
-         for (i = 0; i < npricingprobs; ++i)
+         for( i = 0; i < npricingprobs; ++i )
          {
             /* search for the pricing problem to which the generic branching decision belongs */
-            if (consblocknr == GCGpricingprobGetProbnr(pricingprobs[i]))
+            if( consblocknr == GCGpricingprobGetProbnr(pricingprobs[i]) )
             {
-               SCIP_CALL(GCGpricingprobAddGenericBranchData(scip_, pricingprobs[i], branchcons,
-                                                            pricingtype_->consGetDual(scip_, mastercons)));
+               SCIP_CALL( GCGpricingprobAddGenericBranchData(scip_, pricingprobs[i], branchcons,
+                  pricingtype_->consGetDual(scip_, mastercons)) );
                break;
             }
          }
