@@ -27,7 +27,7 @@
 #
 # some hints:
 # release-v201 and earlier need ZIMPL=false
-# versions 1 are tagged like "tags/v100" (see git tag); "git co tags/v100" works
+# versions are tagged like "tags/v100" (see git tag); "git co tags/v100" works
 #
 #
 #####################################################################################
