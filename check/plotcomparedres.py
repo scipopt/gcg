@@ -61,6 +61,8 @@ for resfile in os.listdir(resdir):
 		readfile = open(filename, 'r')
 		notice = False
 		parameterLine = False
+		globalLine = False
+		globalflags=[]
 		for line in readfile:
 			if line.startswith('Testset'):
 				readmeexists = True
@@ -69,24 +71,34 @@ for resfile in os.listdir(resdir):
 			if line.startswith('Note'):
 				notice = True
 			# get the ordering from the readme file
-			if orderByCommand and (line.startswith('This directory contains') or parameterLine):
-				if parameterLine:
-					orderedinstances = line.split(' ')[1:-1:2]
+			if orderByCommand and (line.startswith('This directory contains') or parameterLine or globalLine):
+				if globalLine:
+					globalflags = line[:-1].split(':')[1].split(' ')[1:]
+					globalLine = False
+					parameterLine = True
+				elif parameterLine:
+					orderedinstances = line.split(':')[1].split(' ')[1:-1]
+					orderedinstances = orderedinstances[len(globalflags)::2] # Remove all global flags
 					parameterLine = False
 				else:
-					parameterLine = True
-
+					globalLine = True
 		if not notice:
 			readfile = open(filename, 'a')
 			readfile.write("Note: All plots (apart from \"runtimes\") count the runtime of all fails, aborts, timelimits, memlimits and readerrors as running into the timelimit.")
 
+print("Using ordering: {}".format(orderedinstances))
 #for i in range(len(orderedinstances)):
 #	orderedinstances[i] = "res_" + orderedinstances[i] + ".pkl"
 
 # sort names alphabetically
-ordereddata = collections.OrderedDict(datasets.items())
-orderedsum = collections.OrderedDict(sorted(sumsets.items()))
-orderedtimelimit = collections.OrderedDict(sorted(timelimitset.items()))
+ordereddata_temp = collections.OrderedDict(datasets.items())
+orderedsum = collections.OrderedDict(sumsets.items())
+orderedtimelimit = collections.OrderedDict(timelimitset.items())
+
+# resort names according to readme file, where the arguments as given in the shell script, are saved
+ordereddata = collections.OrderedDict()
+for k in orderedinstances:
+    ordereddata["res_{}.pkl".format(k)] = ordereddata_temp["res_{}.pkl".format(k)]
 
 # Sanity check: check whether the number of tested instances differs
 ninstances = -1
@@ -254,9 +266,9 @@ for key in list(ordereddata.keys()):
 	timetimeouts[croppedkey] = math.ceil(timetimeouts[croppedkey])
 	timesolved[croppedkey] = math.ceil(timesolved[croppedkey])
 
-# order statistics by keys
+# DO NOT order statistics by keys
 nversions = len(versions)
-versions = sorted(versions)
+versions = versions
 
 fails = collections.OrderedDict(sorted(fails.items()))
 aborts = collections.OrderedDict(sorted(aborts.items()))

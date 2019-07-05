@@ -17,7 +17,7 @@
 # Add "" after a git version for no additional flags
 #
 # In detail:
-# 1st argument: all flags to be set for all git versions 
+# 1st argument: all flags to be set for all git versions
 # 2nd argument: git hash/branch/tag of 1st GCG version
 # 3rd argument: additional flags for the 1st GCG version
 # 4th argument: git hash/branch/tag of 2nd GCG version
@@ -103,6 +103,7 @@ if [[ $GLOBALFLAGS = *"TEST="* ]]; then
 	fi
 	cd ..
 
+	OLDGLOBALFLAGS=$GLOBALFLAGS
 	# Replace testset name in global flags by copy
 	GLOBALFLAGS=${GLOBALFLAGS//"$TESTNAME"/"$TESTNAME"_comparecopy}
 fi
@@ -124,8 +125,9 @@ mkdir -p $RESDIR
 
 # Add readme with parameters
 if [ ! -e $RESDIR/readme.txt ]; then
-	echo "This directory contains the results of the GCG version comparison run with parameters:" > $RESDIR/readme.txt
-	echo "$ORIGINALPARAMS" >> $RESDIR/readme.txt
+	echo "This directory contains the results of the GCG version comparison run with the following parameters:" > $RESDIR/readme.txt
+	echo "Global flags: $OLDGLOBALFLAGS" >> $RESDIR/readme.txt
+	echo "Complete input: $ORIGINALPARAMS" >> $RESDIR/readme.txt
 	if [ ! -z $TESTNAME ]; then
 		echo "Testset $TESTNAME" >> $RESDIR/readme.txt
 	fi
@@ -300,7 +302,7 @@ do
 	# change name of output files: sort by last modified and take the first one
 	mkdir -p check/results
 	cd check/results
-	
+
 	# establish VERSIONNAME as a name safe to use as a filename
 	VERSIONNAME="${VERSION[$index]//\/}"		# remove slashs
 	VERSIONNAME="${VERSIONNAME//.}"			# remove points
@@ -326,7 +328,7 @@ do
 			VERSIONNAME=${VERSIONNAME}${lastchar}
 		done
 	fi
-	
+
 	# move the resulting files to the result directory of this comparison run
 	OLDout=$(find . -type f -name "*.out"  -printf "%p\n" | sort -n | head -n 1)
 	mv "$OLDout" "../${RESDIR}/${VERSIONNAME}.out"
@@ -389,7 +391,7 @@ done
 ./plotcomparedres.py ${RESDIR}
 
 echo "Finished."
-echo "The results and plots can be found in $RESDIR." 
+echo "The results and plots can be found in $RESDIR."
 
 # termination
 exit 0
