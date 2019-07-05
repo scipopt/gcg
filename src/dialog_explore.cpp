@@ -109,7 +109,7 @@ void sortSeeedList(
    /* find the column infos for the given header */
    for(auto column : columns)
    {
-      if(column->header == header)
+      if( column->header.find( header ) == 0 )
       {
          /* sort the id list according to given order using the callback getter of the column */
          if(column->type == INTEGER)
@@ -539,19 +539,19 @@ SCIP_RETCODE GCGdialogShowHelp(
    SCIPdialogMessage(scip, NULL, "\n" );
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "command", "description");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "-------", "-----------");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "select", "selects/unselects decomposition with given id");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "help", "displays this help");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "legend", "displays the legend for table header and history abbreviations");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "select", "selects/unselects decomposition with given nr");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "previous", "displays the preceding decompositions (if there are any)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "next", "displays the subsequent decompositions (if there are any)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "top", "displays the first decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "end", "displays the last decompositions");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "legend", "displays the legend for table header and history abbreviations");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "help", "displays this help");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "number_entries", "modifies the number of displayed decompositions");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "entries", "modifies the number of decompositions to display per page");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "visualizes the specified decomposition (requires gnuplot)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "set_score", "sets the score by which the \"goodness\" of decompositions is evaluated");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sort_asc", "sets whether to sort in ascending or descending order");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sort_by", "sets the column that should be sorted");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "score", "sets the score by which the quality of decompositions is evaluated");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sort", "sets the column by which the decompositions are sorted (default: by score)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "ascending", "sort decompositions in ascending (true) or descending (false) order");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "return to main menu");
 
    SCIPdialogMessage(scip, NULL, "\n=================================================================================================== \n");
@@ -757,10 +757,10 @@ bool isHeader(
    std::vector<Columninfo*> columns    /**< list of column headers/ info sources */  
    )
 {
-   /* check if the given header is a registered table header */
+   /* check if the given header is a (prefix of a) registered table header */
    for(auto column : columns)
    {
-      if(column->header == header)
+      if(column->header.find( header ) == 0 )
          return true;
    }
    /* else return false */
@@ -787,7 +787,7 @@ SCIP_RETCODE GCGdialogSortBy(
    assert(scip != NULL);
 
    /* get input */
-   SCIPdialogMessage(scip, NULL, "\nPlease enter the table header of the column you would like to sort:\n");
+   SCIPdialogMessage(scip, NULL, "\nPlease enter the table header of the column by which you would like to sort:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &newsort, &endoffile) );
    commandlen = strlen(newsort);
 
@@ -795,7 +795,7 @@ SCIP_RETCODE GCGdialogSortBy(
    std::string input = newsort;
    if( commandlen != 0)
    {
-      /* all header (including the "score" wildcard) are valid */
+      /* all headers (including the "score" wildcard) are valid */
       if(isHeader(input, columns))
          *sortby = input;
       /* if the score abbreviation is entered, the header would not be in the column info */
@@ -822,7 +822,7 @@ SCIP_RETCODE GCGdialogExecCommand(
    )
 {
    int commandlen = strlen(command);
-
+   
       if( strncmp( command, "previous", commandlen) == 0 )
       {
          *startindex = *startindex - *menulength;
@@ -860,7 +860,7 @@ SCIP_RETCODE GCGdialogExecCommand(
          SCIP_CALL( GCGdialogShowHelp(scip) );
       }
 
-      else if( strncmp( command, "number_entries", commandlen) == 0 )
+      else if( strncmp( command, "entries", commandlen) == 0 )
       {
          SCIP_CALL( GCGdialogSetNEntires(scip, dialoghdlr, dialog, (int) idlist->size(), menulength) );
       }
@@ -880,16 +880,16 @@ SCIP_RETCODE GCGdialogExecCommand(
          SCIP_CALL( GCGdialogSelect(scip, dialoghdlr, dialog, *idlist) );
       }
 
-      else if( strncmp( command, "set_score", commandlen) == 0 )
+      else if( strncmp( command, "score", commandlen) == 0 )
       {
          SCIP_CALL( GCGdialogChangeScore(scip, dialoghdlr, dialog) );
       }
 
-      else if( strncmp( command, "sort_asc", commandlen) == 0 )
+      else if( strncmp( command, "ascending", commandlen) == 0 )
       {
          SCIP_CALL( GCGdialogSortAsc(scip, dialoghdlr, dialog, sortasc) );
       }
-      else if( strncmp( command, "sort_by", commandlen) == 0 )
+      else if( strncmp( command, "sort", commandlen) == 0 )
       {
          SCIP_CALL( GCGdialogSortBy(scip, dialoghdlr, dialog, columns, sortby) );
       }
@@ -952,7 +952,7 @@ SCIP_RETCODE GCGdialogExecExplore(
       /* determine what callback the header should receive as its getter */
       if( strcmp(newchar, "nr") == 0)
          /* "nr" represents the position in the menu table and is determined by the menu */
-         columns.push_back(new Columninfo(newchar, "number of the decomposition (use this number for choosing the decomposition)", NULL, UNKNOWN));
+         columns.push_back(new Columninfo(newchar, "number of the decomposition (use this number for selecting the decomposition)", NULL, UNKNOWN));
       else if(strcmp(newchar, "id") == 0)
          /* "id" is the seeed id, the list of ids is known to the menu */
          columns.push_back(new Columninfo(newchar, "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)", NULL, UNKNOWN));
@@ -979,7 +979,7 @@ SCIP_RETCODE GCGdialogExecExplore(
          {
             funct = (void(*)(SCIP*, int)) &GCGgetNMasterVarsBySeeedId;
             type = INTEGER;
-            desc = "number of master variables (do not occur in blocks)";
+            desc = "number of \"master only\" variables (also called \"static\", do not occur in blocks)";
          }
          else if(strcmp(newchar, "nlivar") == 0)
          {
@@ -991,7 +991,7 @@ SCIP_RETCODE GCGdialogExecExplore(
          {
             funct = (void(*)(SCIP*, int)) &GCGgetNStairlinkingVarsBySeeedId;
             type = INTEGER;
-            desc = "number of stairlinking variables";
+            desc = "number of stair linking variables";
          }
          else if(strcmp(newchar, "score") == 0)
          {
@@ -1004,31 +1004,31 @@ SCIP_RETCODE GCGdialogExecExplore(
          {
             funct = (void(*)(SCIP*, int)) &GCGgetDetectorHistoryBySeeedId;
             type = STRING;
-            desc = "list of detector chars worked on this decomposition ";
+            desc = "list of detectors (their chars) which  worked on this decomposition ";
          }
          else if(strcmp(newchar, "pre") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGisPresolvedBySeeedId;
             type = BOOLEAN;
-            desc = "is this decomposition for the presolved problem";
+            desc = "is this decomposition for the presolved problem?";
          }
          else if(strcmp(newchar, "nopcon") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGgetNOpenConssBySeeedId;
             type = INTEGER;
-            desc = "number of open constraints";
+            desc = "number of open (=unassigned) constraints";
          }
          else if(strcmp(newchar, "nopvar") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGgetNOpenVarsBySeeedId;
             type = INTEGER;
-            desc = "number of open variables";
+            desc = "number of open (=unassigned) variables";
          }
          else if(strcmp(newchar, "sel") == 0)
          {
             funct = (void(*)(SCIP*, int)) &GCGisSelectedBySeeedId;
             type = BOOLEAN;
-            desc = "is this decomposition selected at the moment";
+            desc = "is this decomposition selected?";
          }
 
          /* add the column if a corresponding callback was found */
@@ -1055,7 +1055,7 @@ SCIP_RETCODE GCGdialogExecExplore(
       GCGdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist, sortasc, sortby);
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
-         "Please enter command or decomposition id to select (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
+         "Please enter command   (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
 
       GCGdialogExecCommand(scip, dialoghdlr, dialog, columns, command, &startindex, &menulength, &finished, &idlist, &sortasc, &sortby);
    }
