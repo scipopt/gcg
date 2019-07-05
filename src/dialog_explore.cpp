@@ -299,10 +299,6 @@ SCIP_RETCODE GCGdialogShowMenu(
       SCIPfreeBlockMemoryArray(scip, &idarray, *nseeeds);
    }
 
-   /*@todo remove this check after resolving bug with invalid ids */
-   for(auto id : *(idlist))
-      assert(GCGseeedExists(scip, id));
-
    /* sort seeed ids by score, descending (in case score was changed or id list was updated)*/
    sortSeeedList(scip, idlist, sortby, columns, sortasc);
 
