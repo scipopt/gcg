@@ -797,9 +797,14 @@ SCIP_RETCODE GCGdialogSortBy(
 
    /* if the input is a valid table header, change sortby */
    std::string input = newsort;
-   if( commandlen != 0 && isHeader(newsort, columns))
+   if( commandlen != 0)
    {
-      *sortby = newsort;
+      /* all header (including the "score" wildcard) are valid */
+      if(isHeader(input, columns))
+         *sortby = input;
+      /* if the score abbreviation is entered, the header would not be in the column info */
+      else if( input == SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip)))
+         *sortby = "score";
    }
    return SCIP_OKAY;
 }
