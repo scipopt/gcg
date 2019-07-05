@@ -43,7 +43,7 @@
 #define DEFAULT_COLUMN_MIN_WIDTH  4 /**< min width of a column in the menu table */
 #define DEFAULT_COLUMN_MAX_WIDTH 10 /**< max width of a column (also determines max width of column header abbreviation) */
 #define DEFAULT_COLUMNS "nr id nbloc nmacon nlivar nmavar nstlva score history pre nopcon nopvar sel" /**< default column headers */
-#define DEFAULT_SORT_HEADER "history"
+#define DEFAULT_SORT_HEADER "score"
 
 #define DEFAULT_MENULENGTH 10 /**< initial number of entries in menu */
 
@@ -138,7 +138,7 @@ void sortSeeedList(
          }
          else if(column->type == STRING)
          {
-            /* the callback has to be parsed to expect a SCIP_Bool output, the comparison is in strComp */
+            /* the callback has to be parsed to expect a char* output, the comparison requires another cast into string */
             if(asc)
                std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ( (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, a)) < (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, b))); });
             else
@@ -273,7 +273,8 @@ SCIP_RETCODE GCGdialogShowMenu(
    const int startindex,                  /**< index (in seeed list) of uppermost seeed in extract */
    int menulength,                        /**< number of menu entries */
    std::vector<int>* idlist,              /**< current list of seeed ids */
-   bool sortasc                           /**< true iff sorting should be ascending */
+   bool sortasc,                          /**< true iff sorting should be ascending */
+   std::string sortby                     /**< table header of column to sort by */
    )
 {
    assert(scip != NULL);
@@ -303,7 +304,7 @@ SCIP_RETCODE GCGdialogShowMenu(
       assert(GCGseeedExists(scip, id));
 
    /* sort seeed ids by score, descending (in case score was changed or id list was updated)*/
-   sortSeeedList(scip, idlist, DEFAULT_SORT_HEADER, columns, sortasc);
+   sortSeeedList(scip, idlist, sortby, columns, sortasc);
 
    /* count corresponding seeeds for overview statistics */
    int ndetectedpresolved = 0;
@@ -553,7 +554,8 @@ SCIP_RETCODE GCGdialogShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "visualizes the specified decomposition (requires gnuplot)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "set_score", "sets the score by which the \"goodness\" of decompositions is evaluated");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sort_asc", "sets whether to sort (by score) in ascending or descending order");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sort_asc", "sets whether to sort in ascending or descending order");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sort_by", "sets the column that should be sorted");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "return to main menu");
 
    SCIPdialogMessage(scip, NULL, "\n=================================================================================================== \n");
@@ -749,6 +751,60 @@ SCIP_RETCODE GCGdialogSortAsc(
    return SCIP_OKAY;
 }
 
+
+/** Checks whether the given header is valid
+ * @returns true iff header is valid
+ */
+static
+bool isHeader(
+   std::string header,                 /**< header to check */
+   std::vector<Columninfo*> columns    /**< list of column headers/ info sources */  
+   )
+{
+   /* check if the given header is a registered table header */
+   for(auto column : columns)
+   {
+      if(column->header == header)
+         return true;
+   }
+   /* else return false */
+   return false;
+}
+
+
+/** Set whether order in menu should be ascending/descending
+ *
+ * @returns SCIP return code */
+static
+SCIP_RETCODE GCGdialogSortBy(
+   SCIP*                   scip,       /**< SCIP data structure */
+   SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   std::vector<Columninfo*> columns,   /**< list of column headers/ info sources */
+   std::string*            sortby      /**< table header, identifies by which column to sort by */
+   )
+{
+   char* newsort;
+   SCIP_Bool endoffile;
+   int commandlen;
+
+   assert(scip != NULL);
+
+   /* get input */
+   SCIPdialogMessage(scip, NULL, "\nPlease enter the table header of the column you would like to sort:\n");
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &newsort, &endoffile) );
+   commandlen = strlen(newsort);
+
+   /* if the input is a valid table header, change sortby */
+   std::string input = newsort;
+   if( commandlen != 0 && isHeader(newsort, columns))
+   {
+      *sortby = newsort;
+   }
+   return SCIP_OKAY;
+}
+
+
 static
 SCIP_RETCODE GCGdialogExecCommand(
    SCIP*                   scip,          /**< SCIP data structure */
@@ -760,7 +816,8 @@ SCIP_RETCODE GCGdialogExecCommand(
    int*                    menulength,    /**< current menu length to be modified */
    SCIP_Bool*              finished,      /**< whether to quit the menu */
    std::vector<int>*       idlist,        /**< current list of seeed ids */
-   bool*                   sortasc        /**< true iff sorting should be ascending */
+   bool*                   sortasc,       /**< true iff sorting should be ascending */
+   std::string*            sortby         /**< name of table header to identify sorting column */
    )
 {
    int commandlen = strlen(command);
@@ -831,6 +888,10 @@ SCIP_RETCODE GCGdialogExecCommand(
       {
          SCIP_CALL( GCGdialogSortAsc(scip, dialoghdlr, dialog, sortasc) );
       }
+      else if( strncmp( command, "sort_by", commandlen) == 0 )
+      {
+         SCIP_CALL( GCGdialogSortBy(scip, dialoghdlr, dialog, columns, sortby) );
+      }
 
    return SCIP_OKAY;
 }
@@ -844,9 +905,10 @@ SCIP_RETCODE GCGdialogExecExplore(
    )
 {
    /* set navigation defaults */
-   int startindex = 0;                    /**< number of seeed there the menu extract starts */
-   int menulength = DEFAULT_MENULENGTH;   /**< number of entries shown in menu */
-   bool sortasc = false;                  /**< whether to show entries in ascending order (score) */
+   int startindex = 0;                       /**< number of seeed there the menu extract starts */
+   int menulength = DEFAULT_MENULENGTH;      /**< number of entries shown in menu */
+   bool sortasc = false;                     /**< whether to show entries in ascending order (score) */
+   std::string sortby = DEFAULT_SORT_HEADER; /**< table header, identifies by which column to sort by */
 
    /* check for available seeeds */
    int nseeeds;   /**< stores the last known number of seeeds, is handed down to check for changes in seeed number */
@@ -977,8 +1039,11 @@ SCIP_RETCODE GCGdialogExecExplore(
       tempcolumns = strtok (NULL, " ");
    }
 
+   /* check that the given default sorting header is valid */
+   assert(isHeader(sortby, columns));
+
    /* sort by default, descending */
-   sortSeeedList(scip, &idlist, DEFAULT_SORT_HEADER, columns, sortasc);
+   sortSeeedList(scip, &idlist, sortby, columns, sortasc);
 
    /* while user has not aborted: show current list extract and catch commands */
    SCIP_Bool finished = false;
@@ -986,12 +1051,12 @@ SCIP_RETCODE GCGdialogExecExplore(
    SCIP_Bool endoffile;
    while( !finished )
    {
-      GCGdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist, sortasc);
+      GCGdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist, sortasc, sortby);
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
          "Please enter command or decomposition id to select (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
 
-      GCGdialogExecCommand(scip, dialoghdlr, dialog, columns, command, &startindex, &menulength, &finished, &idlist, &sortasc);
+      GCGdialogExecCommand(scip, dialoghdlr, dialog, columns, command, &startindex, &menulength, &finished, &idlist, &sortasc, &sortby);
    }
 
    return SCIP_OKAY;
