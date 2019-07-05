@@ -78,9 +78,9 @@ instances/striplibn/pcp/nsf_p0.5_s1.lp.gz
 instances/striplibn/pcp/n60p5t2s2.lp.gz
 instances/striplibn/pcp/n70p5t2s2.lp.gz
 instances/striplibn/pcp/ring_n15p0.3s2.lp.gz
-instances/s-clique_covering/4-clique_covering_celegansneural.lp
-instances/s-clique_covering/2-clique_covering_polbooks.lp
-instances/s-clique_covering/2-clique_covering_football.lp
+instances/striplibn/rc/s-clique_covering/4-clique_covering_celegansneural.lp.gz
+instances/striplibn/rc/s-clique_covering/2-clique_covering_polbooks.lp.gz
+instances/striplibn/rc/s-clique_covering/2-clique_covering_football.lp.gz
 instances/striplibn/sscwlp/class1/6Cap10.lp.gz
 instances/striplibn/sscwlp/class2/8Cap20.lp.gz
 instances/striplibn/sscwlp/class1/14Cap10.lp.gz
