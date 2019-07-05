@@ -92,33 +92,6 @@ Seeed* getSeeed(
 }
 
 
-/** @brief comparator function for seeeds in alphabetical order (asc/desc)
- * @returns true iff the given char* callback of the first seeed string is before/after the second one
- */
-static
-bool seeedStrComp(
-   SCIP* scip,                         /**< SCIP data structure */
-   int id1,                            /**< id of first seeed */
-   int id2,                            /**< id of second seeed */
-   Columninfo* column,                 /**< column info containing the callback */
-   bool asc                            /**< iff true sort ascending, else descending */
-   )
-{
-   assert(GCGseeedExists(scip, id1));
-   assert(GCGseeedExists(scip, id2));
-
-   /* get the strings to compare via the given callback in the columninfo */
-   std::string st1 = (*( (char*(*)(SCIP*, int)) column->getter))(scip, id1);
-   std::string st2 = (*( (char*(*)(SCIP*, int)) column->getter))(scip, id2);
-
-   /* use the C++ string comparison to determine the order */
-   bool isasc = (st1.compare(st2) < 0) ? true : false;
-
-   /* give true or false depending on ascending or descending order */
-   return (asc) ? isasc : !isasc;
-}
-
-
 /** @brief local sorting function for seeed id vectors
  *
  * avoids redundant sorting calls,
@@ -166,13 +139,14 @@ void sortSeeedList(
          else if(column->type == STRING)
          {
             /* the callback has to be parsed to expect a SCIP_Bool output, the comparison is in strComp */
-            /*@todo this has a bug, the getter of the history is receiving non-valid seeed ids */
-            std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return seeedStrComp(scip, a, b, column, asc); });
+            if(asc)
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ( (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, a)) < (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, b))); });
+            else
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ( (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, a)) > (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, b))); });
          }
          break;
      }
   }
-
 }
 
 
@@ -323,6 +297,10 @@ SCIP_RETCODE GCGdialogShowMenu(
       /* free idarray */
       SCIPfreeBlockMemoryArray(scip, &idarray, *nseeeds);
    }
+
+   /*@todo remove this check after resolving bug with invalid ids */
+   for(auto id : *(idlist))
+      assert(GCGseeedExists(scip, id));
 
    /* sort seeed ids by score, descending (in case score was changed or id list was updated)*/
    sortSeeedList(scip, idlist, DEFAULT_SORT_HEADER, columns, sortasc);
