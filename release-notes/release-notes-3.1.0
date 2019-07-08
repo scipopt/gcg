@@ -2,8 +2,17 @@ Notes for GCG Release 3.1.0
 
 General
 ================
-We are proud to release GCG in version 3.1.0. Check both the feature list
-as well as the CHANGELOG for the changes
+
+The 3.1.0 release of GCG is mainly an enhancement of GCG's ecosystem, a hopyfully improved user interface and experience, and a much expanded and improved documentation. The main subprojects that contribute to this release are
+
+@todo!!
+
+* direct support of (more) modeling languages: GAMS and ZIMPL 
+* a much expanded documentation on the project's website https:// ... including general documentation, code examples, use cases, etc.
+* an improved and expanded testing and visualization suite that helps users test, benchmark, and document their computational experiments
+
+
+Details can be found in the feature list below as well as in the CHANGELOG.
 
 Features
 ================
