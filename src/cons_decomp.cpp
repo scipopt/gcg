@@ -4025,9 +4025,12 @@ SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
    int*           listlength
    )
 {
+   /* get list of selected seeeds */
    std::vector<SeeedPtr> selectedseeeds = getSelectedSeeeds(scip);
+   /* set the length of the pointer array to the list size */
    *listlength = (int) selectedseeeds.size();
 
+   /* build a pointer list of ids from the seeed list */
    for(int i = 0; i < (int) selectedseeeds.size(); i++)
    {
       (*idlist)[i] = selectedseeeds[i]->getID();
@@ -4041,16 +4044,11 @@ SCIP_Bool SCIPconshdlrDecompGetSelectExists(
    SCIP*          scip  /* SCIP data structure */
    )
 {
-   int length;
-   int* list;
-
-   int nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &list, nseeeds) );
-
-   SCIP_CALL( SCIPconshdlrDecompGetSelectedSeeeds(scip, &list, &length) );
-   SCIPfreeBlockMemoryArray(scip, &list, nseeeds);
-
-   return (length == 0) ? false : true;
+   /* get list of selected seeeds */
+   std::vector<SeeedPtr> selectedseeeds = getSelectedSeeeds(scip);
+   
+   /* determine whether its size is 0*/
+   return (selectedseeeds.size() == 0) ? false : true;
 }
 
 /* gets number of seeeds for public interface (pub_decomp.h)*/
@@ -4059,4 +4057,135 @@ int DECgetNDecomps(
    )
 {
    return SCIPconshdlrDecompGetNDecdecomps(scip);
+}
+
+
+int GCGgetNBlocksBySeeedId(
+   SCIP* scip,
+   int id
+   )
+{
+   /* get seeed and returns the number of its blocks */
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   return seeed->getNBlocks();
+}
+
+
+int GCGgetNMasterConssBySeeedId(
+   SCIP* scip,
+   int id
+   )
+{
+   /* get seeed and returns the number of its master conss */
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   return seeed->getNMasterconss();
+}
+
+
+int GCGgetNMasterVarsBySeeedId(
+   SCIP* scip,
+   int id
+   )
+{
+   /* get seeed and returns the number of its master vars */
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   return seeed->getNMastervars();
+}
+
+
+int GCGgetNLinkingVarsBySeeedId(
+   SCIP* scip,
+   int id
+   )
+{
+   /* get seeed and returns the number of its linking vars */
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   return seeed->getNLinkingvars();
+}
+
+
+int GCGgetNStairlinkingVarsBySeeedId(
+   SCIP* scip,
+   int id
+   )
+{
+   /* get seeed and returns the number of its stairlinking vars */
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   return seeed->getNTotalStairlinkingvars();
+}
+
+
+float GCGgetScoreBySeeedId(
+   SCIP* scip,
+   int id
+   )
+{
+   /* get seeed and returns its score in respect to the current score type */
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   return seeed->getScore(SCIPconshdlrDecompGetScoretype(scip));
+}
+
+
+char* GCGgetDetectorHistoryBySeeedId(
+   SCIP* scip,
+   int id
+   )
+{
+   /* get seeed and returns its detector history */
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   assert(seeed != NULL);
+   return seeed->getDetectorChainString();
+}
+
+SCIP_Bool GCGisPresolvedBySeeedId(
+   SCIP* scip,
+   int id
+   )
+{
+   /* get seeed and returns whether it is presolved */
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   return !(seeed->isFromUnpresolved());
+}
+
+
+int GCGgetNOpenConssBySeeedId(
+   SCIP* scip,
+   int id
+   )
+{
+   /* get seeed and returns the number of its open conss */
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   return seeed->getNOpenconss();
+}
+
+
+int GCGgetNOpenVarsBySeeedId(
+   SCIP* scip,
+   int id
+   )
+{
+   /* get seeed and returns the number of its open vars */
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   return seeed->getNOpenvars();
+}
+
+
+SCIP_Bool GCGisSelectedBySeeedId(
+   SCIP* scip,
+   int id
+   )
+{
+   /* get seeed and returns whether it is currently selected */
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   return seeed->isSelected();
+}
+
+
+SCIP_Bool GCGseeedExists(
+   SCIP* scip,
+   int id
+   )
+{
+   Seeed* seeed = SCIPconshdlrDecompGetSeeed(scip, id);
+   return (seeed == NULL) ? false : true;
 }

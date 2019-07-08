@@ -766,7 +766,6 @@ int SCIPconshdlrDecompGetNSeeedLeafs(
    SCIP*          scip       /**< SCIP data structure */
    );
 
-
 /** @brief Gets a list of ids of all currently selected seeeds
  *  @returns list of seeeds */
 SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
@@ -775,13 +774,107 @@ SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
    int*           listlength  /**< length of output list */
    );
 
-
 /** @brief Gets whether there are selected decompositions
  *  @returns true iff there are selected decompositions */
 SCIP_Bool SCIPconshdlrDecompGetSelectExists(
    SCIP*          scip  /**< SCIP data structure */
    );
 
+/** @brief gets block number of seeed with given id
+ * @returns block number of seeed
+ */
+int GCGgetNBlocksBySeeedId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
+
+/** @brief gets number of master constraints of seeed with given id
+ * @returns number of master constraints of seeed
+ */
+int GCGgetNMasterConssBySeeedId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
+
+/** @brief gets number of master variables of seeed with given id
+ * @returns number of master variables of seeed
+ */
+int GCGgetNMasterVarsBySeeedId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
+
+/** @brief gets number of linking variables of seeed with given id
+ * @returns number of linking variables of seeed
+ */
+int GCGgetNLinkingVarsBySeeedId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
+
+/** @brief gets number of stairlinking variables of seeed with given id
+ * @returns total number of stairlinking variables of seeed
+ */
+int GCGgetNStairlinkingVarsBySeeedId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
+
+/** @brief gets score of seeed with given id
+ * @returns score in respect to current score type
+ */
+float GCGgetScoreBySeeedId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
+
+/** @brief gets detector history of seeed with given id
+ * @returns detector history of seeed
+ */
+char* GCGgetDetectorHistoryBySeeedId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
+
+/** @brief gets whether seeed with given id is presolved
+ * @returns true iff seeed is presolved
+ */
+SCIP_Bool GCGisPresolvedBySeeedId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
+
+/** @brief gets number of open constraints of seeed with given id
+ * @returns total number of open constraints of seeed
+ */
+int GCGgetNOpenConssBySeeedId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
+
+/** @brief gets number of open variables of seeed with given id
+ * @returns total number of open variables of seeed
+ */
+int GCGgetNOpenVarsBySeeedId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
+
+/** @brief gets whether seeed with given id is selected
+ * @returns true iff seeed is selected
+ */
+SCIP_Bool GCGisSelectedBySeeedId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
+
+/** @brief gets whether a seeed with the given id exists
+ * @returns true iff seeed with this id exists
+ */
+SCIP_Bool GCGseeedExists(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of seeed */
+   );
 
 #ifdef __cplusplus
 }
