@@ -55,6 +55,7 @@ def rename_duplicates( old ):
 	for x in old:
 		if x in seen:
 			seen[x] += 1
+			print(seen[x])
 			yield "%s%d" % (x, seen[x])
 		else:
 			seen[x] = 0
@@ -87,10 +88,9 @@ for resfile in os.listdir(resdir):
 			# get the ordering from the readme file
 			if orderByCommand and line.startswith('  Branch:'):
 				sortedbranches.append(line.split(' ')[-1].split('\n')[0])
-				if len(sortedbranches) > len(set(sortedbranches)):
+				if len(sortedbranches) > len(set(sortedbranches)) and not comparesettings:
 					print("You entered the same branch twice. Using settings compare mode.")
 					comparesettings = True
-					sortedbranches = list(rename_duplicates(sortedbranches))
 			# get settings from readme file
 			if line.startswith('  Settings:'):
 				settingslist.append(line.split(' ')[-1].split('\n')[0])
@@ -98,6 +98,8 @@ for resfile in os.listdir(resdir):
 			readfile = open(filename, 'a')
 			readfile.write("Note: All plots (apart from \"runtimes\") count the runtime of all fails, aborts, timelimits, memlimits and readerrors as running into the timelimit.")
 
+if comparesettings:
+	sortedbranches = list(rename_duplicates(sortedbranches))
 print("Using ordering: {}".format(sortedbranches))
 if comparesettings:
 	print("Using settings: {}".format(settingslist))
