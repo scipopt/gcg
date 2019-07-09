@@ -41,9 +41,24 @@ filenames = []
 sumnames = []
 timelimitnames = []
 readmeexists = False
-testset = 'unknown'
+testset = 'short'
+
+comparesettings = False
+settingslist = []
+
 orderByCommand = True
-orderedinstances = []
+sortedbranches = []
+
+# helper function to add an increasing number to duplicate instance names in the ordering
+def rename_duplicates( old ):
+	seen = {}
+	for x in old:
+		if x in seen:
+			seen[x] += 1
+			yield "%s%d" % (x, seen[x])
+		else:
+			seen[x] = 0
+			yield x
 
 for resfile in os.listdir(resdir):
 	if resfile.endswith('.pkl') and resfile.startswith('res_'):
@@ -64,31 +79,30 @@ for resfile in os.listdir(resdir):
 		globalLine = False
 		globalflags=[]
 		for line in readfile:
-			if line.startswith('Testset'):
+			if line.startswith('  Testset:'):
 				readmeexists = True
-				columns = line.split(' ') # line is of form "Testset testsetname"
-				testset = columns[1]
+				testset = line.split(' ')[-1].split('\n')[0] # line is of form "Testset testsetname"
 			if line.startswith('Note'):
 				notice = True
 			# get the ordering from the readme file
-			if orderByCommand and (line.startswith('This directory contains') or parameterLine or globalLine):
-				if globalLine:
-					globalflags = line[:-1].split(':')[1].split(' ')[1:]
-					globalLine = False
-					parameterLine = True
-				elif parameterLine:
-					orderedinstances = line.split(':')[1].split(' ')[1:-1]
-					orderedinstances = orderedinstances[len(globalflags)::2] # Remove all global flags
-					parameterLine = False
-				else:
-					globalLine = True
+			if orderByCommand and line.startswith('  Branch:'):
+				sortedbranches.append(line.split(' ')[-1].split('\n')[0])
+				if len(sortedbranches) > len(set(sortedbranches)):
+					print("You entered the same branch twice. Using settings compare mode.")
+					comparesettings = True
+					sortedbranches = list(rename_duplicates(sortedbranches))
+			# get settings from readme file
+			if line.startswith('  Settings:'):
+				settingslist.append(line.split(' ')[-1].split('\n')[0])
 		if not notice:
 			readfile = open(filename, 'a')
 			readfile.write("Note: All plots (apart from \"runtimes\") count the runtime of all fails, aborts, timelimits, memlimits and readerrors as running into the timelimit.")
 
-print("Using ordering: {}".format(orderedinstances))
-#for i in range(len(orderedinstances)):
-#	orderedinstances[i] = "res_" + orderedinstances[i] + ".pkl"
+print("Using ordering: {}".format(sortedbranches))
+if comparesettings:
+	print("Using settings: {}".format(settingslist))
+#for i in range(len(sortedbranches)):
+#	sortedbranches[i] = "res_" + sortedbranches[i] + ".pkl"
 
 # sort names alphabetically
 ordereddata_temp = collections.OrderedDict(datasets.items())
@@ -97,7 +111,7 @@ orderedtimelimit = collections.OrderedDict(timelimitset.items())
 
 # resort names according to readme file, where the arguments as given in the shell script, are saved
 ordereddata = collections.OrderedDict()
-for k in orderedinstances:
+for k in sortedbranches:
     ordereddata["res_{}.pkl".format(k)] = ordereddata_temp["res_{}.pkl".format(k)]
 
 # Sanity check: check whether the number of tested instances differs
@@ -144,14 +158,15 @@ if printwarning == True:
 # Add function to crop filenames
 # -------------------------------------------------------------------------------------------------------------------------
 
-def cropkeypkl(key, keyprefix):
+def cropkeypkl(key, keyprefix, addlinebreak=False):
 	# crop the filenames by removing prefix ... .pkl and add linebreak for very long keys
 	croppedkey = key.split('/')[-1].replace(keyprefix, '').replace('.pkl', '')
 	if len(croppedkey) > maxstringlen:
 		charlist = list(croppedkey)
 		ninserts = len(charlist)/maxstringlen
 		while ninserts > 0:
-			charlist.insert(int(ninserts*maxstringlen), '\n')
+			if addlinebreak:
+				charlist.insert(int(ninserts*maxstringlen), '\n')
 			ninserts = ninserts - 1
 		croppedkey = ''.join(charlist)
 	return croppedkey;
@@ -278,8 +293,8 @@ runtime_temp = collections.OrderedDict(sorted(tempruntime.items()))###
 
 # resort names according to readme file, where the arguments as given in the shell script, are saved
 runtime = collections.OrderedDict()
-for k in orderedinstances:
-    runtime[k] = runtime_temp[k]
+for k in sortedbranches:
+	runtime[k] = runtime_temp[k]
 
 
 timefails = collections.OrderedDict(sorted(timefails.items()))
@@ -326,7 +341,7 @@ def setbarplotparams(highestbar):
 	plt.ylim(ymax=valymax)
 	ax.grid(True,axis='y')
 	plt.tight_layout()
-	plt.tick_params(axis='x', which='major', labelsize=7)
+	plt.tick_params(axis='x', labelsize=7)
 	return;
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -336,7 +351,10 @@ def setbarplotparams(highestbar):
 fig = plt.figure()
 ax = plt.axes()
 plt.title('Number of unsolved instances')
-plt.xlabel('GCG Version')
+if not comparesettings:
+	plt.xlabel('GCG Version')
+else:
+	plt.xlabel('GCG Settings')
 
 faildata = collections.OrderedDict([('aborts', list(aborts.values())), ('fails', list(fails.values())), ('memlimits', list(memlimits.values())),
 	('timeouts', list(timeouts.values()))])
@@ -371,7 +389,10 @@ for (ind,row) in failbars.iterrows():
 				plt.annotate( val, xy = (ind, cumval - .5), horizontalalignment='center', verticalalignment='top',
 					fontsize=6 )
 
-plt.xticks(list(range(len(fails))), list(fails.keys()), rotation=90)
+if not comparesettings:
+	plt.xticks(list(range(len(fails))), list([cropkeypkl(key,"",True) for key in fails.keys()]), rotation=90)
+else:
+	plt.xticks(list(range(len(fails))), list(settingslist), rotation=90)
 setbarplotparams(int(float(highestfails)))
 
 ax1 = plt.subplot(1,1,1,label="1")
@@ -382,8 +403,10 @@ stringninstances = 'unknown or differed'
 if ninstances >= 0:
 	stringninstances = str(ninstances)
 
-plt.figtext(.01,.01,'The total number of instances in the test (per version) was ' + stringninstances + '.\n' + 'Testset: '
-	+ testset, size='x-small')
+plt.figtext(.01,.01,'The total number of instances in the test (per version) was ' + stringninstances, size='x-small')
+if comparesettings:
+	plt.figtext(.01,.060,'Branch: ' + list(sortedbranches)[0], size='x-small')
+plt.figtext(.01,.035,'Testset: ' + testset, size='x-small')
 plt.subplots_adjust(bottom=0.2)
 
 plt.savefig(outdir + '/failcomparison.pdf')			# name of image
@@ -401,10 +424,15 @@ plt.title('Runtime per version')
 plt.ylabel('Runtime in seconds')
 
 bars = plt.bar(list(range(len(runtime))), list(runtime.values()), align='center')
-plt.xticks(list(range(len(runtime))), list(runtime.keys()), rotation=90)
+if not comparesettings:
+	plt.xticks(list(range(len(runtime))), list([cropkeypkl(key,"",True) for key in runtime.keys()]), rotation=90)
+else:
+	plt.xticks(list(range(len(runtime))), list(settingslist), rotation=90)
 setbarplotparams(highesttime)
 labelbars(bars, highesttime)
 
+if comparesettings:
+	plt.figtext(.01,.035,'Branch: ' + list(sortedbranches)[0], size='x-small')
 plt.figtext(.01,.01,'Testset: ' + testset, size='x-small')
 
 plt.savefig(outdir + '/runtimes.pdf')				# name of image
@@ -526,6 +554,8 @@ else:
 		if i > 0:
 			# from the second item on calculate the version speed differences (speedup)
 			name = items[i-1][0] + '\n->\n' + items[i][0]
+			if comparesettings:
+				name = settingslist[i-1] + ' -> ' + settingslist[i]
 			diff = calcspeedup(items, i)
 			runtimecomp[name] = diff
 			highestdiff = max(float(diff), float(highestdiff))
@@ -585,8 +615,11 @@ else:
 	# first plot version-to-version comparison bars
 	fig, ax1 = plt.subplots()
 	bar1 = ax1.bar(list(range(len(runtimecomp))), list(runtimecomp.values()), color='b')
-	plt.xticks(list(range(len(runtimecomp))), list(runtimecomp.keys()), rotation=90)
-	plt.tick_params(axis='x', which='major', labelsize=5)
+	if not comparesettings:
+		plt.xticks(list(range(len(runtimecomp))), list([cropkeypkl(key,"",True) for key in runtimecomp.keys()]), rotation=90)
+	else:
+		plt.xticks(list(range(len(runtimecomp))), list(settingslist), rotation=90)
+	plt.tick_params(axis='x', labelsize=5)
 	ax1.set_ylabel('Speedup factor', color='b')
 	ax1.tick_params('y', colors='b')
 	ax1.set_ylim(ymin=axmin, ymax=axmax)
@@ -625,12 +658,19 @@ else:
 			'Amount of instances running in the latest version in: \n<10s: ' + str(len(names10)) + '.\n' +
 			'[10,100)s: ' + str(len(names100)) + '.\n' +
 			'[100,1000)s: ' + str(len(names1000)) + '.\n' +
-			'>1000s: ' + str(len(nameslong)) + '.\n' +
-			'Testset: ' + testset, size='x-small')
+			'>1000s: ' + str(len(nameslong)), size='x-small')
+		if comparesettings:
+			plt.figtext(.06,.06,'Settings: ' + list(runtimecomp.keys())[0], size='x-small')
+			plt.figtext(.01,.06,'Branch: ' + list(sortedbranches)[0], size='x-small')
+		plt.figtext(.01,.035,'Testset: ' + testset, size='x-small')
 		plt.subplots_adjust(bottom=0.25)
 	else:
-		plt.figtext(.01,0,'The total number of instances in the test (per version) was ' + stringninstances + '.'
+		plt.figtext(.01,.01,'The total number of instances in the test (per version) was ' + stringninstances + '.'
 			,size='x-small')
+		if comparesettings:
+			plt.figtext(.60,.035,'Settings: ' + list(runtimecomp.keys())[0], size='x-small')
+			plt.figtext(.01,.06,'Branch: ' + list(sortedbranches)[0], size='x-small')
+		plt.figtext(.01,.035,'Testset: ' + testset, size='x-small')
 
 	plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image
 	tikz_save(outdir + '/runtimecomparison.tikz',
@@ -677,11 +717,14 @@ for (ind,row) in failbars.iterrows():
 				plt.annotate( round(val,2), xy = (ind, cumval-0.005), horizontalalignment='center',
 					verticalalignment='top', fontsize=6 )
 
-plt.xticks(list(range(len(fails))), list(fails.keys()), rotation=90)
+if not comparesettings:
+	plt.xticks(list(range(len(fails))), list([cropkeypkl(key,"",True) for key in fails.keys()]), rotation=90)
+else:
+	plt.xticks(list(range(len(fails))), list(settingslist), rotation=90)
 setbarplotparams(1)
 plt.ylim(ymax=barheight)
 plt.ylabel('Runtime in seconds', size=7)
-plt.tick_params(axis='y', which='major', labelsize=7)
+plt.tick_params(axis='y', labelsize=7)
 
 ax1 = plt.subplot(1,1,1,label="2")
 ax1.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, fancybox=False, prop={'size': 'small'}, framealpha=1.0)
@@ -692,6 +735,8 @@ if ninstances < 0:
 	plt.figtext(.01,.01,'The total number of instances in the test (per version) was unknown or differed.' +
 	'Testset: ' + testset, size='x-small')
 else:
+	if comparesettings:
+		plt.figtext(.01,.035,'Branch: ' + list(sortedbranches)[0], size='x-small')
 	plt.figtext(.01,.01,'Testset: ' + testset, size='x-small')
 
 plt.subplots_adjust(left=0.1)
@@ -708,7 +753,10 @@ tikz_save(outdir + '/timecomparisonperstatus.tikz',
 fig = plt.figure()
 ax = plt.axes()
 plt.title('Average runtime of solved instances')
-plt.xlabel('GCG Version')
+if not comparesettings:
+	plt.xlabel('GCG Version')
+else:
+	plt.xlabel('GCG Settings')
 plt.ylabel('Average runtime in seconds')
 
 avsolved = collections.OrderedDict()
@@ -723,10 +771,14 @@ for vers in versions:
 	highestavsolved = max(highestavsolved, avtime)
 
 bars = plt.bar(list(range(len(avsolved))), list(avsolved.values()), align='center')
-plt.xticks(list(range(len(avsolved))), list(avsolved.keys()), rotation=90)
+if not comparesettings:
+	plt.xticks(list(range(len(avsolved))), list([cropkeypkl(key,"",True) for key in avsolved.keys()]), rotation=90)
+else:
+	plt.xticks(list(range(len(avsolved))), list(settingslist), rotation=90)
 setbarplotparams(highestavsolved)
 labelbars(bars, highestavsolved)
-
+if comparesettings:
+	plt.figtext(.01,.035,'Branch: ' + list(sortedbranches)[0], size='x-small')
 plt.figtext(.01,.01,'Testset: ' + testset, size='x-small')
 
 plt.savefig(outdir + '/averagesolvetime.pdf')				# name of image
