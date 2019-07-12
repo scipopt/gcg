@@ -2,6 +2,8 @@
 The <b>first part</b> of the developer's guide offers an extended Installation guide,
 for example containing a guide for a git-based installation.
 
+@todo we should describe the general *architecture* of GCG with the *original* instance and an *extended* instance which "mirrors" the branching decisions done in the original instance, etc.
+
 \subpage dev-install \n
 
 \n
