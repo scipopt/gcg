@@ -1,7 +1,14 @@
 # Advanced Installation {#dev-install}
+> This guide aims to help you with installing GCG as a developer. If you want to know what operating systems and compilers are
+> supported to install GCG, please consult @subpage compatibility. To prepare yourself, you should also check the @subpage known-bugs.
 
 # Installation using Git {#git-install}
+> For the following steps, you need to have Git installed on your system. If you want to let an automated installer
+> do the work for you, you can download it <a href="../installGCG.sh">here</a>. Note that you have to have your SSH key installed for it to work.
+
 ## Git prerequisites
+Please make sure that you have your ssh key saved in your Git account. Otherwise, you won't be able to
+clone or commit anything, since you have not authorized yourself.
 First, clone the git repo with
 
     git clone git@git.or.rwth-aachen.de:gcg/gcg.git [gcg-dir]
@@ -81,7 +88,7 @@ On some distros, including the one used on RWTH cluster, the SCIP link does not 
 You can find all arguments for the installation under \subpage makefiles-args and \subpage cmake-args .
 
 # Manual Installation {#install-manually}
-Note that a manual installation is not recommended to new users.
+> Note that a manual installation is not recommended to new users and not necessary, even for most developers.
 
 ### Step 1: Download everything
 Installing SCIP, SoPlex, ZIMPL, hMETIS, Bliss, and GCG manually requires <a href="http://www.or.rwth-aachen.de/gcg">GCG</a>, <a href="http://scip.zib.de/">SCIP</a>, <a href="http://soplex.zib.de/">SoPlex</a>, <a href="http://zimpl.zib.de/">ZIMPL</a>, and additionally <a href="http://www.tcs.hut.fi/Software/bliss/">Bliss</a> and <a href="http://glaros.dtc.umn.edu/gkhome/metis/hmetis/overview">hMETIS</a>. Let assume that all source code archives were saved within one folder, i.e.

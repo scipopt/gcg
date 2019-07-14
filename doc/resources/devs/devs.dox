@@ -8,6 +8,7 @@ for example containing a guide for a git-based installation.
 The <b>second part</b> of this guide includes a comprehensive description of what's
 already implemented, so you get an idea of what could be reasonable to implement yourself.
 
+\subpage detectionloop \n
 \subpage detectors \n
 
 \n
