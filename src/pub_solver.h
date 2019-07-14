@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    solver.h
+ * @ingroup PUBLICCOREAPI
  * @brief   public methods for GCG pricing solvers
  * @author  Christian Puchert
  */

@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_pricingprob.h
+ * @ingroup PUBLICCOREAPI
  * @brief  public methods for working with pricing problems
  * @author Christian Puchert
  */

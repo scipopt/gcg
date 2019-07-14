@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_gcgcol.h
+ * @ingroup PUBLICCOREAPI
  * @brief  public methods for working with gcg columns
  * @author Jonas Witt
  */
