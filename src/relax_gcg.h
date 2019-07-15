@@ -46,8 +46,8 @@
 extern "C" {
 #endif
 
-/**@defgroup GCG Relaxator
- * @ingroup PUBLICCOREAPI
+/**
+ * @ingroup RELAXATORS
  * @{
  */
 

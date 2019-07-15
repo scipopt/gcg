@@ -43,6 +43,12 @@
 extern "C" {
 #endif
 
+/**
+ * @ingroup PRICING
+ *
+ * @{
+ */
+
 /** creates a GCG pricing solver */
 SCIP_EXPORT
 SCIP_RETCODE GCGsolverCreate(
@@ -124,7 +130,7 @@ SCIP_RETCODE GCGsolverSolve(
    GCG_PRICINGSTATUS*    status,             /**< pointer to store the returned pricing status */
    SCIP_Bool*            solved              /**< pointer to store whether the solution method was called */
    );
-
+/**@} */
 #ifdef __cplusplus
 }
 #endif

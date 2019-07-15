@@ -43,8 +43,8 @@
 extern "C" {
 #endif
 
-/**@defgroup Pricing Solvers
- * @ingroup PRICING
+/**
+ * @ingroup PRICING_PUB
  * @{
  */
 

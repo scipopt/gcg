@@ -1,1 +1,1 @@
-# How to write .dec files in GCG {#writedecfiles}
+# write .dec files in GCG {#writedecfiles}
