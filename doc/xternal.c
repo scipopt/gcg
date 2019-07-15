@@ -8,49 +8,41 @@
 
 /**@defgroup PUBLICCOREAPI Core API
 * @ingroup PUBLICAPI
-* @brief methods and headers of the plugin-independent C-API provided by the \GCG header file scip.h.
+* @brief methods and headers of the plugin-independent C-API provided by \GCG.
 *
-* This module comprises methods provided by the header file scip.h. Including this header into a user-written extension
-* suffices to have all plugin-independent functionality of \SCIP available. Plugin-independent
-* user functionality includes the
-*
-* - creation of problems that \SCIP should solve
-* - fine-grained access to initiate the solving process of \SCIP
-* - access to all sorts of solving process statistics
-* - commonly used data structures and algorithms
-* - the management of plugins
-* - ...
-*
-* In order facilitate the navigation through the core API of \SCIP, it is structured into different modules.
+* In order facilitate the navigation through the core API of \GCG, it is structured into different modules.
 */
 
 /**@defgroup DATASTRUCTURES Data Structures
   * @ingroup PUBLICCOREAPI
-  * @brief all data structures implemented in \GCG.
+  * @brief Commonly used data structures
   */
 
 /**@defgroup TYPEDEFINITIONS Type Definitions
   * @ingroup PUBLICCOREAPI
+  * @brief Type definitions and callback declarations
   */
 
 
 /**@defgroup BLISS Bliss
   * @ingroup PUBLICCOREAPI
+  * @brief Methods concerning BLISS
   */
 
 /**@defgroup DECOMP Decomposition
   * @ingroup PUBLICCOREAPI
-  * @brief all decomposition algorithmics implemented in \GCG.
+  * @brief Public methods concerning the decomposition.
   *
   */
 
 /**@defgroup HEURISTICS Heuristics
   * @ingroup PUBLICCOREAPI
+  * @brief Public methods concerning heuristics.
   */
 
 /**@defgroup PRICING_PUB Pricing
   * @ingroup PUBLICCOREAPI
-  * @brief This page contains all pricing-related public functionalities.
+  * @brief All pricing-related public functionalities.
   *
   */
 
@@ -64,10 +56,12 @@
 
 /**@defgroup SEPARATORS_PUB Separators
   * @ingroup PUBLICCOREAPI
+  * @brief Public methods for separators.
   */
 
 /**@defgroup MISC Miscellaneous
   * @ingroup PUBLICCOREAPI
+  * @brief Public methods from the scip_misc.c file.
   */
 
 
@@ -75,17 +69,11 @@
 
 /**@defgroup PUBLICPLUGINAPI Plugin API of GCG
   * @ingroup PUBLICAPI
-  * @brief core API extensions provided by the default plugins of \SCIP, includable via scipdefplugins.h.
-  *
-  * All default plugins of \SCIP, especially the default \ref CONSHDLRS "constraint handlers", provide
-  * valuable extensions to the \ref PUBLICCOREAPI "core API" of \SCIP. These methods are made available
-  * by including scipdefplugins.h to user-written extensions.
-  *
-  * For a better overview, this page lists all default plugin headers structured into modules based on their individual
-  * topic.
+  * @brief core API extensions provided by the default plugins of \GCG.
   *
   * All of the modules listed below provide functions that are allowed to be used by user-written extensions of \SCIP.
   */
+
  /**@defgroup INTERNALAPI Internal API of GCG
   * @brief internal API methods that should only be used by the core of \GCG
   *
@@ -98,15 +86,6 @@
  /**@defgroup LPIS LP Solver Interface
   * @ingroup PUBLICPLUGINLPI
   * @brief methods and files provided by the LP solver interface of \GCG
-  *
-  * \SCIP uses external tools to solve LP relaxations. The communication
-  * is realized through an LP interface.
-  *
-  * This page lists public interface methods that every LP interface provides.
-  * Find the concrete implementation for your LP solver
-  * under "src/lpi/".
-  *
-  * @see \ref LPI for a list of available LP solver interfaces
   */
 
   /**@defgroup BENDERS Benders' Decomposition

@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_decomp.h
+ * @ingroup PUBLICCOREAPI
  * @brief  public methods for working with decomposition structures
  * @author Martin Bergner
  */

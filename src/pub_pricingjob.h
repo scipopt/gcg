@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_pricingjob.h
+ * @ingroup PUBLICCOREAPI
  * @brief  public methods for working with pricing jobs
  * @author Christian Puchert
  */

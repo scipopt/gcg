@@ -14,6 +14,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_colpool.h
+ * @ingroup PUBLICCOREAPI
  * @brief  public methods for storing cols in a col pool
  * @author Tobias Achterberg
  */

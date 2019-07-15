@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    pub_bliss.h
+ * @ingroup PUBLICCOREAPI
  * @brief   helper functions for automorphism detection
  *
  * @author  Martin Bergner

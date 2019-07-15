@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    solver.h
+ * @ingroup PUBLICCOREAPI
  * @brief   public methods for GCG pricing solvers
  * @author  Christian Puchert
  */
@@ -42,8 +43,8 @@
 extern "C" {
 #endif
 
-/**@defgroup Pricing Solvers
- * @ingroup PRICING
+/**
+ * @ingroup PRICING_PUB
  * @{
  */
 

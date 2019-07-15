@@ -18,9 +18,12 @@ GCG>
 You can now enter commands into the interactive console.
 
 ## Basic commands
+> In the interactive console, you can always leave a submenu with `..`. If you want
+> to quit GCG, just type `quit`. Now let's go ahead and read some problem:
+
 ### `read`
-GCG reads your LP file. If you go to `/check/instances/bpp` from your GCG root
-directory, you can read the problem "N1C3W1_A". Output:
+With this command, GCG reads your LP file. If you, for example, go to `/check/instances/bpp` from your GCG root
+directory, you can read the problem "N1C3W1_A.lp". The output looks as following:
 ```
 GCG> read
 enter filename: N1C3W1_A.lp
@@ -32,11 +35,10 @@ original problem has 1224 variables (0 bin, 1224 int, 0 impl, 0 cont) and 74 con
 
 ```
 
-You can obviously also read your own problem. Your problem has to be in a
-`.lp`, `.mps` or `.cip` format.
+You can obviously also read your own problem, as long as it is in a format as described in @subpage input-formats.
 
 ### `optimize`
-GCG optimizes what you previously read.
+Here the magic happens: GCG optimizes what you previously read.
 ```
 GCG> optimize
 
@@ -72,39 +74,9 @@ Gap                : 0.00 %
 
 ```
 
-#### `detect` (included in `optimize`)
-Detects structure and applies Dantzig-Wolfe Reformulation. If GCG is not able to
-detect such a structure, you can also give a `.dec`-file, specifying the structure.
-The format of such a file is documented in reader_dec.h.
-
-#### `presolve` (included in `optimize`)
-Presolves your LP. This includes searching for variables and constraints that could be deleted.
-For example, if there is `x + y <= 1` and also `x + y >= 1`, one could
-replace that with `x + y = 1`.
+### `explore`
+This menu is probably the most interesting for you, thus it earned itself its own page: @ref explore-menu.
 
 ### `free`
-Removes current LP from memory. You can then read another.
-
-### `..`
-Leave a submenu.
-
-### `quit`
-Ends GCG.
-
-## Advanced Commands
-### `validatesolve`
-Checks your solution against a `.solu` file.
-
-### `explore`
-The explore menu offers you insight into the different decompositions created
-in the `detect`-step.
-
-### `write`
-Can write out multiple things, e.g. decompositions.
-
-### `load set`
-Uses your own settings file. Output:
-```
-GCG> set load settings/default.set
-loaded parameter file <settings/default.set>
-```
+If you now want to start all over and read a different problem, that's no problem. `free` will happily
+remove the current LP from memory, such that you can then read another.
