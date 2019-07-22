@@ -203,3 +203,16 @@
    * particular, this holds for relax_gcg.h and pricer_gcg.h.
    *
    */
+
+
+   /**@page CHG Changelog of GCG
+    *
+    * New features, peformance improvements, and interface changes between different versions of GCG are documented in the
+    * release notes:
+    *
+    * - \subpage RN310
+    * - \subpage RN302
+    * - \subpage RN301
+    * - \subpage RN300
+    *
+    */
