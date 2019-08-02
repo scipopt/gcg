@@ -1,0 +1,10 @@
+/*! \page misc Miscellaneous
+On this page, you will find meta information about GCG,
+for example compatibility and known bugs.
+
+- \subpage input-formats
+- \subpage compatibility
+- \subpage known-bugs
+- \subpage FAQ
+
+*/

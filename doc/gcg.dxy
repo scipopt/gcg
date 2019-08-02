@@ -789,6 +789,7 @@ INPUT                  = . \
 												 ../src/ \
                          ./resources/ \
 												 ./resources/misc \
+												 ./resources/misc/faq \
                          ./resources/users \
                          ./resources/users/features \
                          ./resources/users/use-cases \

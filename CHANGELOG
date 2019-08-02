@@ -1,5 +1,6 @@
-GCG Version 3.1.0
-=================
+@page RN31 Release notes for GCG 3.1
+@section RN310 GCG 3.1.0
+*************************
 
 New features:
 -------------
@@ -11,16 +12,18 @@ Code cleanup
 - Removed toolbox feature from 'explore' menu
 - Removed 'toolbox' command
 
-GCG Version 3.0.2
-=================
+
+@page RN30 Release notes for GCG 3.0
+@section RN302 GCG 3.0.2
+*************************
 
 Bug fixes
 ---------
 
 - Fix segmentation fault due to missing relaxsol event handler in BENDERS and ORIGINAL mode.
 
-GCG Version 3.0.1
-=================
+@section RN301 GCG 3.0.1
+*************************
 
 Command line interface:
 -----------------------
@@ -66,8 +69,8 @@ Bug fixes
 - Fix parallelization in pricing loop by allowing only one job per pricing problem at a time
 - Add a missing Makefile dependency
 
-GCG Version 3.0.0
-=================
+@section RN300 GCG 3.0.0
+*************************
 
 Features
 --------
@@ -282,14 +285,14 @@ Bug fixes
 - fix memory management in set covering heuristic
 - fix a bug in GCG feasibility pump concerning wrong SCIP instances.
 
-
-GCG Version 2.1.4
-=================
+@page RN21 Release notes for GCG 2.1
+@section RN214 GCG 2.1.4
+*************************
 
 - use SCIPaddRow() instead of deprecated SCIPaddCut()
 
-GCG Version 2.1.3
-=================
+@section RN213 GCG 2.1.3
+*************************
 
 - changed interface to SCIP 5.0.0
 
@@ -302,8 +305,8 @@ bug fixes
 - diving heuristics and branching rules compute fractionalities by themselves
 
 
-GCG Version 2.1.2
-=================
+@section RN212 GCG 2.1.2
+*************************
 
 - changed interface to SCIP 4.0.0
 
@@ -336,8 +339,8 @@ bug fixes
 - avoid numerical troubles by rounding integral pricing solutions if possible
 
 
-GCG Version 2.1.1
-=================
+@section RN211 GCG 2.1.1
+*************************
 
 code cleanup
 - simplified logic when assigning variables to blocks
@@ -350,8 +353,8 @@ bug fixes
 - reorganized detector callbacks and thus fixed memory leaks when reading a new instance
 - fixed memory allocation in basis separator
 
-GCG Version 2.1.0
-=================
+@section RN210 GCG 2.1.0
+*************************
 
 features
 - column pool
@@ -367,9 +370,9 @@ code cleanup
 bug fixes
 - GCG columns are freed correctly in the pricer
 
-
-GCG Version 2.0.1
-=================
+@page RN20 Release notes for GCG 2.0
+@section RN201 GCG 2.0.1
+*************************
 
 features
 - decomposition and pricing problems are permuted when the permutation
@@ -398,8 +401,8 @@ bug fixes
 - fix translation of original solution to master problem when pricing problems are aggregated
 - better handling of infinite objective values in pricing
 
-GCG Version 2.0
-===============
+@section RN200 GCG 2.0
+*************************
 features
 - GCG can now automatically create a decomposition to solve the LP with
   empty pricing problems. See the cons/decomp/createbasicdecomp parameter
@@ -438,9 +441,9 @@ bug fixes
 - override PARASCIP=true if OPENMP=true
 - correct decomp documentation and simplify decomposition interfaces
 
-
-GCG Version 1.1
-===============
+@page RN11 Release notes for GCG 1.1
+@section RN110 GCG 1.1
+*************************
 features
 - add staircase structure information
 - add staircase structure detection
@@ -462,9 +465,9 @@ code cleanup
 - Add consistency check function for decompositions
 - removed a bit of redundant and leftover code
 
-
-GCG Version 1.0
-===============
+@page RN10 Release notes for GCG 1.0
+@section RN100 GCG 1.0
+*************************
 features
 - include variable deletion code
 - add a block diagonal detector (cons_connected)
@@ -530,8 +533,9 @@ Makefile and scripts
 - fix clean rule to a safer version
 
 
-GCG Version 0.9
-===============
+@page RN09 Release notes for GCG 0.9
+@section RN090 GCG 0.9
+*************************
 features
 - included new heuristics
 - included new reader for the ref file format
@@ -555,8 +559,9 @@ interface
 - added much more extensive documentation
 
 
-GCG Version 0.81
-================
+@page RN08 Release notes for GCG 0.8
+@section RN081 GCG 0.8.1
+*************************
 features
 - polished source code
 
@@ -564,21 +569,21 @@ bug fixes
 - some
 
 
-GCG Version 0.8
-===============
+@section RN080 GCG 0.8
+*************************
 bugfixes
 - fixed some bugs for solving MIPs when branching on variables that were
   directly transferred to the master problem
 
-
-GCG Version 0.7
-===============
+@page RN07 Release notes for GCG 0.7
+@section RN070 GCG 0.7
+*************************
 bugfixes
 - some bugfixes
 
-
-GCG Version 0.6
-===============
+@page RN06 Release notes for GCG 0.6
+@section RN060 GCG 0.6
+*************************
 feastures
 - implemented dialog handler for GCG
 - added concept of pricing solvers
@@ -587,9 +592,9 @@ feastures
 bugfixes
 - quite a few
 
-
-GCG Version 0.5
-===============
+@page RN05 Release notes for GCG 0.5
+@section RN050 GCG 0.5
+*************************
 bugfixes
 - fixed problems with transfering bounds from the original program to the
   master program: when propagating a node, the bounds of all variables in
@@ -598,9 +603,9 @@ bugfixes
   fulfill the current bounds
 - fixed bug when disabling discretization approach
 
-
-GCG Version 0.4
-===============
+@page RN04 Release notes for GCG 0.4
+@section RN040 GCG 0.4
+*************************
 design
 - working SCIP represents the original problem
 - read in problem is standard format (e.g., .lp-file, .mps-file) and
@@ -634,4 +639,3 @@ features
     structure
 - added GCGs own display plugin showing the number of LP iterations, of
   constraints, variables and cuts in the master
-

@@ -31,6 +31,11 @@ else
    DOXYGEN_USE_MATHJAX="NO"
 fi
 
+if [ "$HTML_FILE_EXTENSION" = "" ]
+then
+    HTML_FILE_EXTENSION=shtml
+fi
+
 # Find relevant documentation versions.
 
 CURRENT_VERSION=`grep '@version' main.md | awk '{ printf("%s", $2); }'`
@@ -46,6 +51,11 @@ DOCVERSIONS=`sed 's/\//\\\\\//g' docversions.html | tr -d '\n'`
 
 sed -e "s/<SCIPOPTSUITEHEADER\/>/${SCIPOPTSUITEHEADER}/g" -e "s/<DOCVERSIONS\/>/${DOCVERSIONS}/g" -e "s/..\/doc/doc/g" < index.html.in > html/index.html
 sed -e "s/<SCIPOPTSUITEHEADER\/>/${SCIPOPTSUITEHEADER}/g" -e "s/<DOCVERSIONS\/>/${DOCVERSIONS}/g" < gcgheader.html.in > gcgheader.html
+
+echo "Please ensure that you have php installed."
+cd resources/misc/faq
+python parser.py --linkext $HTML_FILE_EXTENSION  && php localfaq.php > faq.inc
+cd ../../../
 
 # Build the gcg documentation.
 DOXYGEN_USE_MATHJAX=${DOXYGEN_USE_MATHJAX} doxygen gcg.dxy
