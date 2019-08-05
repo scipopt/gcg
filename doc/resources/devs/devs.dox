@@ -20,9 +20,10 @@ consider some example plug-ins to serve as your basis.
 \subpage examples \n
 
 \n
-For further reading, we then recommend <b>GCG's C-documentation</b> and Changelog for your reference.
+For <b>further reading</b> (and coding), we then also recommend the following pages as reference:
 
-<a href="modules.html"><b>C API</b></a> \n
-\subpage CHG
+<a href="modules.html"><b>GCG C API</b></a> \n
+\ref CHG \n
+<a href="https://scip.zib.de/doc-6.0.2/html/CODE.php"><b>SCIP and GCG Coding Style Guidelines</b></a> \n
 
 */
