@@ -42,6 +42,10 @@ CURRENT_VERSION=`grep '@version' main.md | awk '{ printf("%s", $2); }'`
 
 echo "Building documentation in html/doc-${CURRENT_VERSION}."
 echo "Please ensure that graphviz is installed on your system."
+echo "Please ensure that you have php installed."
+cd resources/misc/faq
+python parser.py --linkext $HTML_FILE_EXTENSION  && php localfaq.php > faq.inc
+cd ../../../
 echo "<li><a href='../doc-${CURRENT_VERSION}/index.html'>GCG ${CURRENT_VERSION}</a></li>" > docversions.html
 
 # Create index.html and gcgheader.html.
@@ -51,11 +55,6 @@ DOCVERSIONS=`sed 's/\//\\\\\//g' docversions.html | tr -d '\n'`
 
 sed -e "s/<SCIPOPTSUITEHEADER\/>/${SCIPOPTSUITEHEADER}/g" -e "s/<DOCVERSIONS\/>/${DOCVERSIONS}/g" -e "s/..\/doc/doc/g" < index.html.in > html/index.html
 sed -e "s/<SCIPOPTSUITEHEADER\/>/${SCIPOPTSUITEHEADER}/g" -e "s/<DOCVERSIONS\/>/${DOCVERSIONS}/g" < gcgheader.html.in > gcgheader.html
-
-echo "Please ensure that you have php installed."
-cd resources/misc/faq
-python parser.py --linkext $HTML_FILE_EXTENSION  && php localfaq.php > faq.inc
-cd ../../../
 
 # Build the gcg documentation.
 DOXYGEN_USE_MATHJAX=${DOXYGEN_USE_MATHJAX} doxygen gcg.dxy
