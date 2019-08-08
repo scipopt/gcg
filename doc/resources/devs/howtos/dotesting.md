@@ -35,7 +35,7 @@ you can use the following command:
     make TEST=testrun SETTINGS=my test
 
 
-### What files do I get?
+# What files do I get? {#what-files}
 In the folder `/check/results` you will see multiple files per test.
 The output files for a test executed by
 `make TEST=testrun SETTINGS=my STATISTICS=true test` are as follows:
@@ -46,7 +46,7 @@ and the files `{.res,.pav,.tex}` are added after the test was completed.
 If you aborted the test before it finished, you can still generate those files
 (incompletely) using the command `./evalcheck.sh` in the `/check` folder.
 
-### What do the files contain?
+## What do the files contain?
 The .out files contain the `stdout`-output and therefore all data that was
 printed during the execution of GCG.<br>
 The .res files only contain the execution table with

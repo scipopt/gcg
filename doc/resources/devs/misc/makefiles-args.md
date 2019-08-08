@@ -1,7 +1,7 @@
 # Makefiles Arguments {#makefiles-args}
 You can modify your Makefiles installation by setting flags during compilation. For example, for some visualization
 scripts, you'll need `STATISTICS=true` to be set **during compilation**. Important flags are listed here
-(a complete list can be found by typing `make --help`):
+(a complete list can be found by typing `make help` (GCG-specific arguments) or `make --help`):
 
 ### Main Arguments
 #### Compilation, debugging and statistics (only for `make`)
