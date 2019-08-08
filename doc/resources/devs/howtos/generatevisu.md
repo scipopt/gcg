@@ -124,16 +124,31 @@ runs to have been on the same testset.
 
 \n
 ## Pricing Plotter
-Plots different statistics about pricing.
-execute with argument `--complete-only`
+The Pricing Plotter generates 7 different plots illustrating the pricing procedure during a single instance's solving process.
+When given an outfile with more than one instance, it generates the plots sequentially.
+#### Execution
+
+    python3 pricing/pricing_plotter.py FILES
+
+with `FILES` being some `.out` or `.res` files.
 
 \n
 ## Bounds Plotter
-Plots development of primal and dual bound, as well as added LP and IP vars.
+The Bounds Plotter generates a plot showing the development of the primal and dual bound and gap in the root node, as well as the basic variables generated.
+#### Execution
+
+    python3 bounds/bounds_plotter.py FILES
+
+with `FILES` being some `.out` or `.res` files.
 
 \n
 ## Classification and Detection Plotter
-Test
+This plotter works on a whole testset and makes plots similar to performance profiles, showing the performance of the classifiers and detectors.
+#### Execution
+
+    python3 detection/detection_plotter.py FILES
+
+with `FILES` being some `.out` or `.res` files.
 
 ## More Scripts
 ### <a name="raw">Comparison Table</a> (comparison_table.sh)
