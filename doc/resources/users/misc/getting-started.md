@@ -87,22 +87,22 @@ remove the current LP from memory, such that you can then read another.
 ## Advanced Commands
 After these basic commands, you might want to change some more settings or give GCG information about your problem.
 
-### Reading your own decomposition
-You can read decomposition files (with formats as given @ref input-formats "here") with a simple `read`.
-The behavior when giving own decomposition files is described @ref detectionloop "here".
+### GCG decompositions
+**Detecting without solving:** This is possible with a simple `detect`. The instance already has to be read.\n
+**Marking your own .dec file:** \n
+**Reading your decomposition:** You can read decomposition files (with formats as given @ref input-formats "here") with a simple `read`.
+The behavior when giving own decomposition files is described @ref detectionloop "here".\n
+**Saving your decomposition:** You can save all decompositions found with `write alldecompositions`. To just save single ones, you have
+to select a decomposition in the @ref explore-menu "Explore Menu" with `explore select <nr>` and then `write selecteddecompositions`.
 
-### Changing settings
-Everything related to settings can be found in the `set` submenu.
-### Load and save settings
-If you want to create a whole settings file from the scratch, you can find information
-about that <a href="FAQ.html#createsettingsfile">here</a>. Otherwise, you can
-just set everything you want and then
-#### Save settings with `save`
-Inside the settings submenu, you can save your own settings with `save`. You will
+### GCG settings
+Everything related to settings can be found in the `set` submenu. All possible settings that can be done there, can be found @ref params "here".\n
+**Making your own settings file:** If you want to create a whole settings file from the scratch, you can find information
+about that <a href="FAQ.html#createsettingsfile">here</a>.\n
+**Saving your settings:** Otherwise, you can just set everything you want (e.g. `set display 1` to make GCG display solving information
+  every second) and then save those settings with `save`. You will
 be prompted to give a settings name (which can also be a path), that should end
-with `.set`.
-#### Load settings with `load`
-Inside the settings submenu, you can load your own settings file with `load`.
-You have to give the path to the settings file (relative to the folder that
+with `.set`.\n
+**Loading your settings:** You can also load your own settings file with `load`. You have to give the path to the settings file (relative to the folder that
 you are in), with the `.set` extension of the file. If some settings could not
 be applied, you will be reminded of that.

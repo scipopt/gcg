@@ -227,3 +227,10 @@
     * - \subpage RN04
     *
     */
+
+/**@page PARAMETERS List of all SCIP parameters
+*
+* This page list all parameters of the current GCG version.
+* 
+* \verbinclude parameters.set
+*/
