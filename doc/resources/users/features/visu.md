@@ -4,7 +4,8 @@
 From inside GCG, one can generate a runtime report which will export a pdf file containing information about the time distribution and pricing.
 
 > The report needs more information about the runtime than what is usually saved, thus as of now, it is required to rerun the solving on this instance.
-> This will probably be fixed in later versions.
+> This will probably be fixed in later versions.\n
+> Additionally, python3 and some python3 packages are needed. More on that can be found @ref generatevisu "here".
 
 In order to make \GCG generate your report, you have to have your instance read into it. Since \GCG will run again on this instance (twice, to be exact), you don't need to have it optimized already. To export the pdf report, simply enter the write menu and type reportinstance just like
 

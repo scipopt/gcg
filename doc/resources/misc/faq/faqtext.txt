@@ -32,7 +32,6 @@ SECTION: General Questions about GCG
       Just like for SCIP, as long as you use it for academic, non-commercial purposes: No.
       This will not change. For the other cases, check the explanation of the
       <a href="http://scip.zib.de/#license">ZIB academic license</a> and always feel free to ask us.
-      If you want to use SCIP commercially, please write an e-mail to koch@zib.de.
     </p>
 
     QUESTION: How do I get started?
@@ -54,4 +53,11 @@ SECTION: General Questions about GCG
       This is explained in the HowTos for all plugin types, which you can find in the
       <a href="PATHTODOC/index.LINKEXT">doxygen documentation</a>.
       See also <a href="PATHTODOC/START.LINKEXT">How to start a new project</a>.
+    </p>
+
+    QUESTION: How do I create my own settings file?
+    LABEL:createsettingsfile
+    ANSWER:
+    <p>
+      Hm.
     </p>

@@ -58,7 +58,7 @@ with `FILES` being either some pickles, or some outfiles, and [args] being as de
 \n
 #### Defining Data to be plotted
 > **Times** are the most common arguments to plot (that's the reason for the naming),
-> but you can use whatever argument parsed you want.
+> but you can use whatever argument parsed you want. You can find a list of those @subpage visu-args "here".
 
 You can define what data to plot with the `--times` argument:
 
@@ -123,16 +123,6 @@ runs to have been on the same testset.
 **time.py** \n
 
 \n
-## Pricing Plotter
-The Pricing Plotter generates 7 different plots illustrating the pricing procedure during a single instance's solving process.
-When given an outfile with more than one instance, it generates the plots sequentially.
-#### Execution
-
-    python3 pricing/pricing_plotter.py FILES
-
-with `FILES` being some `.out` or `.res` files.
-
-\n
 ## Bounds Plotter
 The Bounds Plotter generates a plot showing the development of the primal and dual bound and gap in the root node, as well as the basic variables generated.
 #### Execution
@@ -149,6 +139,25 @@ This plotter works on a whole testset and makes plots similar to performance pro
     python3 detection/detection_plotter.py FILES
 
 with `FILES` being some `.out` or `.res` files.
+
+\n
+## Pricing Plotter
+The Pricing Plotter generates 7 different plots illustrating the pricing procedure during a single instance's solving process.
+When given an outfile with more than one instance, it generates the plots sequentially.
+#### Execution
+
+    python3 pricing/pricing_plotter.py FILES --vbcdir VBC
+
+with `FILES` being some `.out` or `.res` files and `VBC` being the directory where all `.vbc` files are (per default: `check/results/vbc/`)
+
+\n
+## Tree Plotter
+The Tree Plotter, just like the Pricing Plotter, needs the `vbc` files to function correctly. It will plot how many nodes were opened on each level.
+#### Execution
+
+    python3 tree/tree_plotter.py FILES
+
+with `FILES` being some `.vbc` files.
 
 ## More Scripts
 ### <a name="raw">Comparison Table</a> (comparison_table.sh)

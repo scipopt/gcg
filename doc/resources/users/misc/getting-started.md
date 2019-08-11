@@ -1,9 +1,9 @@
 # Getting started {#getting-started}
 ## Start GCG
-To start GCG, you just type `gcg` into your console, preferably inside the GCG
-root folder. If the console prompts you to install packages or throws an error,
-that such command does not exist, you have not installed everything correctly.
-Otherwise, you're in and you should see something like:
+If you did a "global" install with `make install` of the SCIP Optimization Suite,
+just type `gcg` into your console. \n
+Otherwise, execute `./bin/gcg` from the GCG root folder.
+You should then see something like:
 ```
 GCG version 3.0.1 [GitHash: dbc6c61]
 Copyright (C) 2010-2019 Operations Research, RWTH Aachen University
@@ -18,10 +18,12 @@ GCG>
 You can now enter commands into the interactive console.
 
 ## Basic commands
-> In the interactive console, you can always leave a submenu with `..`. If you want
-> to quit GCG, just type `quit`. Now let's go ahead and read some problem:
+> In the interactive console, you can always leave a submenu with `..`. \n
+> If you want to quit GCG, just type `quit`.
 
-### `read`
+Now let's go ahead and read some problem:
+
+### Make GCG know your problem with `read`
 With this command, GCG reads your LP file. If you, for example, go to `/check/instances/bpp` from your GCG root
 directory, you can read the problem "N1C3W1_A.lp". The output looks as following:
 ```
@@ -37,7 +39,7 @@ original problem has 1224 variables (0 bin, 1224 int, 0 impl, 0 cont) and 74 con
 
 You can obviously also read your own problem, as long as it is in a format as described in @subpage input-formats.
 
-### `optimize`
+### Solve your problem with `optimize`
 Here the magic happens: GCG optimizes what you previously read.
 ```
 GCG> optimize
@@ -74,9 +76,33 @@ Gap                : 0.00 %
 
 ```
 
-### `explore`
+### Look at your decompositions with `explore`
 This menu is probably the most interesting for you, thus it earned itself its own page: @ref explore-menu.
 
-### `free`
+### Start from new with `free`
 If you now want to start all over and read a different problem, that's no problem. `free` will happily
 remove the current LP from memory, such that you can then read another.
+
+
+## Advanced Commands
+After these basic commands, you might want to change some more settings or give GCG information about your problem.
+
+### Reading your own decomposition
+You can read decomposition files (with formats as given @ref input-formats "here") with a simple `read`.
+The behavior when giving own decomposition files is described @ref detectionloop "here".
+
+### Changing settings
+Everything related to settings can be found in the `set` submenu.
+### Load and save settings
+If you want to create a whole settings file from the scratch, you can find information
+about that <a href="FAQ.html#createsettingsfile">here</a>. Otherwise, you can
+just set everything you want and then
+#### Save settings with `save`
+Inside the settings submenu, you can save your own settings with `save`. You will
+be prompted to give a settings name (which can also be a path), that should end
+with `.set`.
+#### Load settings with `load`
+Inside the settings submenu, you can load your own settings file with `load`.
+You have to give the path to the settings file (relative to the folder that
+you are in), with the `.set` extension of the file. If some settings could not
+be applied, you will be reminded of that.

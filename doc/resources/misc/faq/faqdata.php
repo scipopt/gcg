@@ -42,7 +42,6 @@ GCG allows you to implement your own methods and take full control of the solvin
 Just like for SCIP, as long as you use it for academic, non-commercial purposes: No.
 This will not change. For the other cases, check the explanation of the
 <a href="http://scip.zib.de/#license">ZIB academic license</a> and always feel free to ask us.
-If you want to use SCIP commercially, please write an e-mail to koch@zib.de.
 </p>
 ',
               'label'=>'licensefaq'
@@ -66,8 +65,17 @@ A third way is to implement your own plugins into SCIP.
 This is explained in the HowTos for all plugin types, which you can find in the
 <a href="./index.shtml">doxygen documentation</a>.
 See also <a href="./START.shtml">How to start a new project</a>.
-</p>',
+</p>
+',
               'label'=>'howtogetstarted'
+             ),
+
+          array(
+              'question'=>'How do I create my own settings file?',
+              'answer'=>'<p>
+Hm.
+</p>',
+              'label'=>'createsettingsfile'
              )),
              )
         );

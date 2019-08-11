@@ -27,6 +27,10 @@
     <a class="reveal_faq" href="#howtogetstarted">
       How do I get started?    </a>
   </li>
+    <li>
+    <a class="reveal_faq" href="#createsettingsfile">
+      How do I create my own settings file?    </a>
+  </li>
   </ol>
 <hr />
 <h3 id="faq_generalquestionsaboutgcg" class="anchor"><span class="fa fa-caret-right"></span> General Questions about GCG<a href="#" class="pull-right"><span title="go to top" class="fa fa-caret-up"></span></a></h3><ol>  <li id="whatisgcg" class="anchor">
@@ -76,7 +80,6 @@ GCG allows you to implement your own methods and take full control of the solvin
 Just like for SCIP, as long as you use it for academic, non-commercial purposes: No.
 This will not change. For the other cases, check the explanation of the
 <a href="http://scip.zib.de/#license">ZIB academic license</a> and always feel free to ask us.
-If you want to use SCIP commercially, please write an e-mail to koch@zib.de.
 </p>
     </div>
   </li>
@@ -103,6 +106,18 @@ A third way is to implement your own plugins into SCIP.
 This is explained in the HowTos for all plugin types, which you can find in the
 <a href="./index.shtml">doxygen documentation</a>.
 See also <a href="./START.shtml">How to start a new project</a>.
+</p>
+    </div>
+  </li>
+    <li id="createsettingsfile" class="anchor">
+    <h4>
+      <a class="reveal_faq" href="#createsettingsfile">How do I create my own settings file?</a>
+
+      <a href="#" class="pull-right"><span class="fa fa-caret-up" title="go to top"></span></a>
+    </h4>
+    <div id="createsettingsfile_ans" class="answer">
+      <p>
+Hm.
 </p>    </div>
   </li>
   </ol>
