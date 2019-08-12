@@ -203,34 +203,3 @@
    * particular, this holds for relax_gcg.h and pricer_gcg.h.
    *
    */
-
-   /**@page FAQ Frequently Asked Questions (FAQ)
-    * \htmlinclude resources/misc/faq/faq.inc
-    */
-
-   /**@page CHG Changelog of GCG
-    *
-    * New features, peformance improvements, and interface changes between different versions of GCG are documented in the
-    * release notes:
-    *
-    * - \subpage RN31
-    * - \subpage RN30
-    * - \subpage RN21
-    * - \subpage RN20
-    * - \subpage RN11
-    * - \subpage RN10
-    * - \subpage RN09
-    * - \subpage RN08
-    * - \subpage RN07
-    * - \subpage RN06
-    * - \subpage RN05
-    * - \subpage RN04
-    *
-    */
-
-/**@page PARAMETERS List of all SCIP parameters
-*
-* This page list all parameters of the current GCG version.
-* 
-* \verbinclude parameters.set
-*/

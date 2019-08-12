@@ -48,11 +48,13 @@ cd resources/misc/faq
 python parser.py --linkext $HTML_FILE_EXTENSION  && php localfaq.php > faq.inc
 cd ../../../
 echo "<li><a href='../doc-${CURRENT_VERSION}/index.html'>GCG ${CURRENT_VERSION}</a></li>" > docversions.html
-cd ..
-bin/gcg -c "set default set save doc/resources/parameters.set quit"
-cd doc
-# Create index.html and gcgheader.html.
 
+echo "Generating parameters file."
+cd ..
+bin/gcg -c "set default set save doc/resources/misc/parameters.set quit"
+cd doc
+
+# Create index.html and gcgheader.html.
 SCIPOPTSUITEHEADER=`sed 's/\//\\\\\//g' scipoptsuiteheader.html.in | tr -d '\n'`
 DOCVERSIONS=`sed 's/\//\\\\\//g' docversions.html | tr -d '\n'`
 

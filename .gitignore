@@ -26,3 +26,4 @@ release
 src/TAGS
 src/githash.c
 build*
+parameters.set
