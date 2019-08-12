@@ -25,7 +25,7 @@ for example compatibility and known bugs.
   */
 
    /**@page FAQ Frequently Asked Questions (FAQ)
-    * \htmlinclude resources/misc/faq/faq.inc
+    * \htmlinclude faq/faq.inc
     */
 
    /**@page CHG GCG Changelog
