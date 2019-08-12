@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_blk.c
+/**@file   reader_blk.cpp
  * @brief  BLK file reader for structure information
  * @author Gerald Gamrath
  * @author Martin Bergner

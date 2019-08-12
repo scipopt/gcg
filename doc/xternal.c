@@ -99,7 +99,7 @@
    * @brief This page contains a list of all branching rule which are currently available.
    *
    * A detailed description what a branching rule does and how to add a branching rule to GCG can be found
-   * \subpage BRANCH "here".
+   * \ref addbranching "here".
    */
 
   /**@defgroup CONSHDLRS  Constraint Handler

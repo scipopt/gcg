@@ -41,9 +41,9 @@ fi
 CURRENT_VERSION=`grep '@version' main.md | awk '{ printf("%s", $2); }'`
 
 echo "Building documentation in html/doc-${CURRENT_VERSION}."
-echo "Please ensure that graphviz is installed on your system."
-echo "Please ensure that you have php installed."
-echo "Please ensure that GCG was installed correctly."
+echo "  Please ensure that graphviz is installed on your system."
+echo "  Please ensure that you have php installed."
+echo "  Please ensure that GCG was installed correctly."
 cd resources/misc/faq
 python parser.py --linkext $HTML_FILE_EXTENSION  && php localfaq.php > faq.inc
 cd ../../../
@@ -51,9 +51,10 @@ echo "<li><a href='../doc-${CURRENT_VERSION}/index.html'>GCG ${CURRENT_VERSION}<
 
 echo "Generating parameters file."
 cd ..
-bin/gcg -c "set default set save doc/resources/misc/parameters.set quit"
+bin/gcg -c "set default set save doc/resources/misc/parameters.set quit" > /dev/null 2>&1
 cd doc
 
+echo "Generating Documentation..."
 # Create index.html and gcgheader.html.
 SCIPOPTSUITEHEADER=`sed 's/\//\\\\\//g' scipoptsuiteheader.html.in | tr -d '\n'`
 DOCVERSIONS=`sed 's/\//\\\\\//g' docversions.html | tr -d '\n'`

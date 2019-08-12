@@ -15,7 +15,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dialog_explore.c
+/**@file   dialog_explore.cpp
  * @brief  dialog menu for exploring decompositions
  * @author Michael Bastubbe
  * @author Hanna Franzen
@@ -51,11 +51,11 @@ namespace gcg
 
 
 /** gets the seeed structure from a given id (local help function)
- * 
+ *
  * @todo remove this help function once the seeed structure is depricated
  * @returns seeed for given id
 */
-static 
+static
 Seeed* getSeeed(
    SCIP* scip,    /**< SCIP data structure */
    int id         /**< id of seeed */
@@ -69,11 +69,11 @@ Seeed* getSeeed(
 
 
 /** @brief local sorting function for seeed id vectors
- * 
+ *
  * avoids redundant sorting calls,
  * sorts by score in given order
  */
-static 
+static
 void sortByScore(
    SCIP* scip,                   /**< SCIP data structure */
    std::vector<int>* idlist,     /**< current list of seeed ids */
@@ -137,7 +137,7 @@ SCIP_RETCODE GCGdialogSetNEntires(
 
 
 /** sets the used score according to user input
- * 
+ *
  * @returns SCIP return code
  */
 static
@@ -284,7 +284,7 @@ SCIP_RETCODE GCGdialogShowMenu(
          newheader = header;
       else
          newheader = SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip));
-      
+
       /* make sure the header name is unique and add a length for header */
       assert(columnlength.find(header) == columnlength.end());
       columnlength.insert(std::pair<std::string,int>(header, 0));
@@ -365,7 +365,7 @@ SCIP_RETCODE GCGdialogShowMenu(
             towrite = std::to_string(seeed->getNOpenvars());
          else if(header == "sel")
             towrite = (seeed->isSelected()) ? "yes" : "no";
-         else 
+         else
             towrite = " ";
 
          /* write spaces to fill out the columnwidth until towrite */
@@ -458,7 +458,7 @@ SCIP_RETCODE GCGdialogShowLegend(
          desc = "number of open variables";
       else if(header == "sel")
          desc = "is this decomposition selected at the moment";
-      else 
+      else
          desc = " ";
 
       /* print the header with the description */
@@ -471,7 +471,7 @@ SCIP_RETCODE GCGdialogShowLegend(
       {
          SCIPdialogMessage(scip, NULL, "%30s     %s\n", SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip)), desc.c_str());
       }
-      
+
    }
    SCIPdialogMessage(scip, NULL, "\n=================================================================================================== \n");
 
@@ -479,7 +479,7 @@ SCIP_RETCODE GCGdialogShowLegend(
 }
 
 /** @brief Shows help section of explore menu
- * 
+ *
  * Outputs al ist of commands and a description of their function
  * @returns SCIP status */
 static
@@ -841,7 +841,7 @@ SCIP_RETCODE GCGdialogExecExplore(
       strcpy(newchar, tempcolumns);
       columns.push_back(newchar);
       /**@note: 'score' is a wildcard! replace by score name later*/
-      
+
       /* get the next item in the list */
       tempcolumns = strtok (NULL, " ");
    }

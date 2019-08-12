@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_consname.c
+/**@file   dec_consname.cpp
  * @ingroup DETECTORS
  * @brief  structure detection by constraint names (via regular expressions)
  * @author Jonas Witt

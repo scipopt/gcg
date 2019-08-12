@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_connectedbase.c
+/**@file   dec_connectedbase.cpp
  * @ingroup DETECTORS
  * @brief  detector connectedbase (completes the seeed by bfs)
  * @author Martin Bergner

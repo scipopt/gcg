@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   cons_decomp.c
+/**@file   cons_decomp.cpp
  * @ingroup CONSHDLRS
  * @brief  constraint handler for structure detection
  * @author Martin Bergner

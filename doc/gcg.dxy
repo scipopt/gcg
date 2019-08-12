@@ -742,7 +742,7 @@ WARN_IF_UNDOCUMENTED   = NO ### CHANGE TO YES DURING REFACTORING
 # markup commands wrongly.
 # The default value is: YES.
 
-WARN_IF_DOC_ERROR      = YES ### CHANGE TO YES DURING REFACTORING
+WARN_IF_DOC_ERROR      = NO ### CHANGE TO YES DURING REFACTORING
 
 # This WARN_NO_PARAMDOC option can be enabled to get warnings for functions that
 # are documented, but have no documentation for their parameters or return
@@ -796,7 +796,6 @@ INPUT                  = . \
                          ./resources/users/misc \
                          ./resources/devs \
                          ./resources/devs/detectors \
-                         ./resources/devs/examples \
                          ./resources/devs/howtos \
                          ./resources/devs/misc
 

@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_neighborhoodmasterconss.h
+/**@file   dec_neighborhoodmaster.h
  * @brief  neighborhoodmasterconss detector
  * @author Michael Bastubbe
  */
