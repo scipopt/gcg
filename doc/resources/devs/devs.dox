@@ -14,10 +14,11 @@ already implemented, so you get an idea of what could be reasonable to implement
 \n
 The <b>third part</b> then finally takes you by the hand to implement your own plug-ins for
 GCG. First, the howtos show you a rough outline of what's to be done, and then you can
-consider some example plug-ins to serve as your basis.
+consider some example plug-ins to serve as your basis, which can be found in the advanced part
+of the Use Cases in the User's Guide.
 
 \subpage howtos \n
-\subpage examples \n
+\ref use-cases
 
 \n
 For <b>further reading</b> (and coding), we then also recommend the following pages as reference:

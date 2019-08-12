@@ -797,7 +797,12 @@ INPUT                  = . \
                          ./resources/devs \
                          ./resources/devs/detectors \
                          ./resources/devs/howtos \
-                         ./resources/devs/misc
+                         ./resources/devs/misc \
+												 ./resources/users/use-cases/u1 \
+												 ./resources/users/use-cases/u2 \
+												 ./resources/users/use-cases/u3 \
+												 ./resources/users/use-cases/u4 \
+												 ./resources/users/use-cases/u5 \
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1161,9 +1166,9 @@ HTML_EXTRA_STYLESHEET  =
 # files will be copied as-is; there are no commands or markers available.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_FILES       = resources/users/use-cases/potluri+singh.zpl \
-			 resources/users/use-cases/CDS_uni.zpl \
-			 resources/users/use-cases/uni-UDG-5-250-150-graphS0N250.mps.gz
+HTML_EXTRA_FILES       = resources/users/use-cases/u1/potluri+singh.zpl \
+			 resources/users/use-cases/u1/CDS_uni.zpl \
+			 resources/users/use-cases/u1/uni-UDG-5-250-150-graphS0N250.mps.gz
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to

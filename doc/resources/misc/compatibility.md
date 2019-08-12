@@ -15,7 +15,7 @@
 | gcc      | yes     |
 
 
-# Supported file formats {#input-formats}
+# Supported File Formats {#input-formats}
 
 ## Problem file formats
 GCG supports all file formats supported by SCIP to read in problems, solution, etc.

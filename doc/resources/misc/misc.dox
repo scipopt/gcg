@@ -3,16 +3,18 @@ On this page, you will find meta information about GCG,
 for example compatibility and known bugs.
 
 - \subpage FAQ
-- \subpage input-formats
 - \subpage compatibility
-- \subpage known-bugs
+  - \subpage os-support
+  - \subpage compiler-support
+  - \subpage input-formats
+  - \subpage known-bugs
 - \subpage CHG
 - \subpage PARAMETERS
 - \subpage AUTHORS
 
 */
 
-  /**@page PARAMETERS List of all GCG parameters
+  /**@page PARAMETERS GCG Parameters
   *
   * This page lists all parameters of the current GCG version. \n
   * Since GCG is built on top of SCIP, the SCIP commands are also included.
@@ -24,7 +26,7 @@ for example compatibility and known bugs.
     * \htmlinclude resources/misc/faq/faq.inc
     */
 
-   /**@page CHG Changelog of GCG
+   /**@page CHG GCG Changelog
     *
     * New features, peformance improvements, and interface changes between different versions of GCG are documented in the
     * release notes:
