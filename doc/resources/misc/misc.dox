@@ -2,6 +2,7 @@
 On this page, you will find meta information about GCG,
 for example compatibility and known bugs.
 
+- \subpage MANUAL
 - \subpage FAQ
 - \subpage compatibility
   - \subpage os-support
@@ -16,6 +17,14 @@ for example compatibility and known bugs.
 
 */
 
+  /**@page MANUAL How to use this manual
+  * \htmlinclude manual.html
+  */
+
+  /**@page FAQ Frequently Asked Questions (FAQ)
+  * \htmlinclude faq/faq.inc
+  */
+
   /**@page PARAMETERS GCG Parameters
   *
   * This page lists all parameters of the current GCG version. \n
@@ -24,35 +33,30 @@ for example compatibility and known bugs.
   * \verbinclude resources/misc/parameters.set
   */
 
-   /**@page FAQ Frequently Asked Questions (FAQ)
-    * \htmlinclude faq/faq.inc
-    */
+  /**@page CHG GCG Changelog
+  *
+  * New features, peformance improvements, and interface changes between different versions of GCG are documented in the
+  * release notes:
+  *
+  * - \subpage RN31
+  * - \subpage RN30
+  * - \subpage RN21
+  * - \subpage RN20
+  * - \subpage RN11
+  * - \subpage RN10
+  * - \subpage RN09
+  * - \subpage RN08
+  * - \subpage RN07
+  * - \subpage RN06
+  * - \subpage RN05
+  * - \subpage RN04
+  *
+  */
 
-   /**@page CHG GCG Changelog
-    *
-    * New features, peformance improvements, and interface changes between different versions of GCG are documented in the
-    * release notes:
-    *
-    * - \subpage RN31
-    * - \subpage RN30
-    * - \subpage RN21
-    * - \subpage RN20
-    * - \subpage RN11
-    * - \subpage RN10
-    * - \subpage RN09
-    * - \subpage RN08
-    * - \subpage RN07
-    * - \subpage RN06
-    * - \subpage RN05
-    * - \subpage RN04
-    *
-    */
-
-
-    /**@page AUTHORS GCG Authors
-     *
-     * A list of all current and former developers as well as contributors can
-     * be found on the
-     * <a class="el" href="../index.html#developers">Main Web Page</a>.
-     *
-     */
+  /**@page AUTHORS GCG Authors
+  *
+  * A list of all current and former developers as well as contributors can
+  * be found on the
+  * <a class="el" href="../index.html#developers">Main Web Page</a>.
+  *
+  */

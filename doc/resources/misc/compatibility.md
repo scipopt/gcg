@@ -1,4 +1,4 @@
-# Compatibility {#compatibility}
+# GCG Compatibility {#compatibility}
 # Supported Operating Systems {#os-support}
 
 |   | 32 bit | 64 bit | Supported Extensions | Comments |
