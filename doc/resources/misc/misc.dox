@@ -17,9 +17,6 @@ for example compatibility and known bugs.
 
 */
 
-  /**@page MANUAL How to use this manual
-  * \htmlinclude manual.html
-  */
 
   /**@page FAQ Frequently Asked Questions (FAQ)
   * \htmlinclude faq/faq.inc
