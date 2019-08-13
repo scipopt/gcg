@@ -1,4 +1,4 @@
-# add branching rules to GCG (deprecated) {#addbranching}
+# Branching Rules (deprecated) {#branchingrules}
 
  Branching in the branch-cut-and-price context is a bit more complicated than in a branch-and-cut algorithm.
  GCG manages two SCIP instances, one for the original instance and one for the reformulated instance, that are solved jointly.

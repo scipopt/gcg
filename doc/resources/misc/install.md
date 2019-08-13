@@ -14,7 +14,7 @@ If you need to install GCG using arguments, for example if you want to enable pa
 # Install the SCIP Optimization Suite {#install-scipopt}
 
 The following steps are all executed automatically within
-<a href="../installGCG.sh">this install script</a>, if you prefer it. Note that we don't take any responsibility if you use it.
+<a href="../scripts/installGCG.sh">this install script</a>, if you prefer it. Note that we don't take any responsibility if you use it.
 
 ### Step 1: Prerequisites
 Install the required system libraries:

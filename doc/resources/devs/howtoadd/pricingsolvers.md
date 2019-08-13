@@ -1,4 +1,4 @@
-# add pricing problem solvers (deprecated) {#addpricing}
+# Pricing Solvers (deprecated) {#pricingsolvers}
 
  Pricing problem solvers are called by the pricer to solve a single pricing problem either heuristically or to optimality
  and return a set of solutions.

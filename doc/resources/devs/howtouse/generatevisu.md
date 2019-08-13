@@ -1,4 +1,4 @@
-# generate visualizations {#generatevisu}
+# Visualization Generation {#generatevisu}
 
 ## Prerequisites
 ### Software requirements

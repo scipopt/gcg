@@ -1,4 +1,4 @@
-# store structure information (deprecated) {#storestructure}
+# Storing structure information (deprecated) {#storestructure}
 
 struct_decomp.h is responsible for storing structure information. The memory has to be allocated by caller and is freed
 later. You can either create the decomposition by calling DECcreateDecompFromMasterconss() or DECfilloutDecompFromConstoblock()

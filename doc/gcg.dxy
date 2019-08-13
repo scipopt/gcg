@@ -9,7 +9,7 @@
 # All text after a single hash (#) is considered a comment and will be ignored.
 # The format is:
 # TAG = value [value, ...]
-# For lists, items can also be appended using:
+# For lists, items can also be appended using:R
 # TAG += value [value, ...]
 # Values that contain spaces should be placed between quotes (\" \").
 
@@ -295,7 +295,7 @@ EXTENSION_MAPPING      = no_extension=C
 
 MARKDOWN_SUPPORT       = YES
 
-USE_MDFILE_AS_MAINPAGE = main.md
+USE_MDFILE_AS_MAINPAGE = resources/main.md
 
 # When the TOC_INCLUDE_HEADINGS tag is set to a non-zero value, all headings up
 # to that level are automatically included in the table of contents, even if

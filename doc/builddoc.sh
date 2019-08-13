@@ -7,9 +7,13 @@
 # Stop on error.
 set -e
 
-./resources/devs/howtos/createindexes.sh
+./resources/devs/howtoadd/createindexes.sh
+./resources/devs/howtouse/createindexes.sh
 ./resources/devs/detectors/createindexes.sh
 cd $(dirname $0)
+
+mkdir -p html
+cp -r resources/misc/scripts html
 
 # Bypassed through usage of a direct link
 if [ "$1" == "--mathjax" ]
@@ -38,7 +42,7 @@ fi
 
 # Find relevant documentation versions.
 
-CURRENT_VERSION=`grep '@version' main.md | awk '{ printf("%s", $2); }'`
+CURRENT_VERSION=`grep '@version' resources/main.md | awk '{ printf("%s", $2); }'`
 
 echo "Building documentation in html/doc-${CURRENT_VERSION}."
 echo "  Please ensure that graphviz is installed on your system."

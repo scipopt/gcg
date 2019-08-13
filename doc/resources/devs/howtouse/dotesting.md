@@ -1,4 +1,4 @@
-# do automatic testing # {#dotesting}
+# Automatic Testing with GCG # {#dotesting}
 Just like SCIP, GCG supports automatic testing. It uses the same command
 structure as SCIP, so if any information is missing,
 you can also consult the <a href="https://scip.zib.de/doc-6.0.1/html/">SCIP documentation</a>.

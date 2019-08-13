@@ -1,4 +1,4 @@
-# document in this documentation {#doc}
+# Documenting in this Documentation {#doc}
 <!-- The very first line of the .md document should be the page title and {# name of the site}
      #sandbox is the name of this site. Needed when making a link to this site. -->
 
