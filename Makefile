@@ -450,7 +450,7 @@ endif
 
 .PHONY: doc
 doc:
-		cd doc; $(DOXY) $(MAINNAME).dxy;
+		cd doc; $(SHELL) builddoc.sh;
 
 .PHONY: $(MAINSHORTLINK)
 $(MAINSHORTLINK):	$(MAINFILE)
@@ -474,7 +474,8 @@ ${GCGGITHASHFILE}: githash
 .PHONY: test
 test:
 		cd check; \
-		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE) $(SETCUTOFF) $(STATISTICS);
+		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE) $(SETCUTOFF) \
+		$(STATISTICS) $(SHARED);
 
 .PHONY: eval
 eval:
@@ -725,6 +726,67 @@ ifeq ($(MAKESOFTLINKS), true)
 				echo ; \
 			fi'
 endif
+
+.PHONY: help
+help:
+		@echo "Use the GCG makefile system."
+		@echo
+		@echo "  The main options for the GCG makefile system are as follows:"
+		@echo
+		@echo "  General options:"
+		@echo "  - OPT={opt|dbg|prf}: Set solver mode (default: opt)."
+		@echo "  - STATISTICS=<true|false>: Enable additional statistics."
+		@echo "  - MODE={readdec|none}: If set to readdec (default), GCG looks for given .dec files. "
+		@echo "  - PARASCIP=<true|false>: Use SCIP's parallelization."
+		@echo "  - OPENMP=<true|false>: Use GCG's parallelization. Will set PARASCIP to true."
+		@echo
+		@echo "  Additional Features and Modules:"
+		@echo "  - READLINE=<true|false>: Enables READLINE, required for command line interaction (default: true)."
+		@echo "  - CLIQUER=<true|false>: Enables CLIQUER (as a heuristic for stable set pricing problems)."
+		@echo "  - HMETIS=<true|false>: Enables hMETIS (hypergraph partitioning, used in structure detection)."
+		@echo "  - GSL=<true|false>: Enables the GNU Scientific Library (needed by a detector)"
+		@echo "  - GAMS=<true|false>: To enable or disable (default) reading functionality in GAMS reader (needs GAMS)."
+		@echo "  - GTEST=<true|false>: Enables Google Test."
+		@echo "  - BLISS=<true|false>: Enables BLISS (graph isomorphism, used a.o., by 'isomorph' detector)."
+		@echo "  - SYM=<none|bliss>: To choose type of symmetry handling."
+		@echo "  - ZIMPL=<true|false>: Enables ZIMPL, required to convert .zpl files to .lp/.mps files"
+		@echo
+		@echo "  More detailed options:"
+		@echo "  - VALGRIND=<true|false>: Enable memory leak checking (and more) using valgrind."
+		@echo "  - EXPRINT=<cppad|none>: Use CppAD as expressions interpreter (default) or no expressions interpreter."
+		@echo "  - IPOPT=<true|false>: Turns support of IPOPT on or off (default)."
+		@echo "  - LPSOPT=<dbg|opt>: Use debug or optimized (default) mode for LP-solver (SoPlex and Clp only)."
+		@echo "  - NOBLKBUFMEM=<true|false>: Turn usage of internal memory functions off or on (default)."
+		@echo "  - NOBLKMEM=<true|false>: Turn off block memory or on (default)."
+		@echo "  - NOBUFMEM=<true|false>>: Turn off buffer memory or on (default)."
+		@echo "  - ZIMPLOPT=<dbg|opt>: Use debug or optimized (default) mode for ZIMPL."
+		@echo "  - ARCH"
+		@echo "  - GMP"
+		@echo "  - IPOPTOPT"
+		@echo "  - LPSCHECK"
+		@echo "  - PROJECT"
+		@echo "  - SANITIZE"
+		@echo "  - ZLIB"
+		@echo
+		@echo "  Options for make test:"
+		@echo "  - TEST=file: Define a testset file (located in ./check/testset) to be used"
+		@echo "  - SETTINGS=file: Define a settings file (located in ./settings) to be used"
+		@echo "  - MODE={readdec|none}: If set to readdec (default), GCG looks for given .dec files."
+		@echo "  - STATISTICS=<true|false>: Enable additional statistics."
+		@echo "  - OPT={opt|dbg|prf}: Set solver mode (default: opt)."
+		@echo "  - MEM=b: Set memory limit."
+		@echo "  - TIME=s: Set time limit in seconds."
+		@echo "  - NODE=n: Set opened node limit for the branch and bound tree."
+		@echo
+		@echo "  Targets common for SCIP and GCG can be found in SCIP's make help."
+		@echo "  Most important SCIP targets:"
+		@echo "  - all (default): Build SCIP libaries and binary."
+		@echo "  - links: Reconfigures the links in the \"lib\" directory."
+		@echo "  - doc: Creates documentation in ./doc."
+		@echo "  - check/test: Runs the check/test script current computer."
+		@echo "  GCG specific targets:"
+		@echo "  - deps: build all dependencies."
+		@echo "  - testcluster: Runs the check/test script on the OR cluster."
 
 
 #---- EOF --------------------------------------------------------------------
