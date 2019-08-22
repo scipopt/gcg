@@ -48,6 +48,7 @@
 #include "params_visu.h"
 #include "class_miscvisualization.h"
 #include "reader_gp.h"
+#include "wrapper_seeed.h"
 
 #include <sstream>
 #include <iostream>
@@ -108,13 +109,16 @@ Seeed::Seeed(
    detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
    isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL ), seeedpool(givenseeedpool)
 {
+   SEEED_WRAPPER sw;
+   SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &sw);
+   if(!seeedpool->getTransformedInfo())
+      isfromunpresolved = TRUE;
 
    for( int i = 0; i < nConss; ++i )
       openConss.push_back(i);
 
    for( int i = 0; i < nVars; ++i )
       openVars.push_back(i);
-
 }
 
 
