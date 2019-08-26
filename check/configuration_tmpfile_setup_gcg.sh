@@ -45,9 +45,8 @@ NODELIMIT=${11}  # - node limit for the solver
 LPS=${12}        # - LP solver to use
 DISPFREQ=${13}   # - display frequency for chronological output table
 REOPT=${14}      # - true if we use reoptimization, i.e., using a difflist file instead if an instance file
-CLIENTTMPDIR=${15}
-STATISTICS=${16}
-SOLBASENAME=${17}
+STATISTICS=${15}
+MODE=${16}
 
 #args=("$@")
 #for ((i=0; i < $#; i++)) {
