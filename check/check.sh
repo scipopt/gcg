@@ -49,9 +49,14 @@ VALGRIND=${16}
 MODE=${17}
 SETCUTOFF=${18}
 STATISTICS=${19}
+SHARED=${20}
 
 SETDIR=../settings
 
+if $SHARED = "true"
+then
+  LD="LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:../lib/shared/"
+fi
 if test ! -e results
 then
     mkdir results
@@ -497,7 +502,7 @@ EOF
             date >>$ERRFILE
             echo -----------------------------
             date +"@03 %s"
-            bash -c " ulimit -t $HARDTIMELIMIT s; ulimit -v $HARDMEMLIMIT k; ulimit -f 200000; $VALGRINDCMD ../$BINNAME < $TMPFILE" 2>>$ERRFILE
+            bash -c " ulimit -t $HARDTIMELIMIT s; ulimit -v $HARDMEMLIMIT k; ulimit -f 200000; $VALGRINDCMD $LD ../$BINNAME < $TMPFILE" 2>>$ERRFILE
             date +"@04 %s"
             echo -----------------------------
             date
