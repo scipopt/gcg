@@ -2629,7 +2629,6 @@ SCIP_RETCODE DECwriteAllDecomps(
        )
       ;
 
-
    if( presolved && conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->getNFinishedSeeeds() == 0 )
    {
       SCIPwarningMessage(scip, "No decomposition available.\n");
@@ -2897,17 +2896,15 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    {
       if (conshdlrdata->seeedpool == NULL )
          conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE, SCIPconshdlrDecompDetectBenders(scip));
-      seeedpool = conshdlrdata->seeedpool;
    }
    else
    {
       if (conshdlrdata->seeedpoolunpresolved == NULL )
          conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE, SCIPconshdlrDecompDetectBenders(scip));
-      seeedpool = conshdlrdata->seeedpoolunpresolved;
-   }
 
    if( conshdlrdata->seeedtowrite != NULL )
    {
+      seeedpool = conshdlrdata->seeedtowrite->getSeeedpool();
       conshdlrdata->seeedtowrite->writeAsDec(file, seeedpool, result);
       return SCIP_OKAY;
    }
