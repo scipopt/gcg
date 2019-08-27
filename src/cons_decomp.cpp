@@ -2901,7 +2901,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    {
       if (conshdlrdata->seeedpoolunpresolved == NULL )
          conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE, SCIPconshdlrDecompDetectBenders(scip));
-
+   }
    if( conshdlrdata->seeedtowrite != NULL )
    {
       seeedpool = conshdlrdata->seeedtowrite->getSeeedpool();
