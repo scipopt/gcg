@@ -84,7 +84,7 @@ CURRENTBRANCH=$(git symbolic-ref -q HEAD)
 CURRENTBRANCH=${CURRENTBRANCH##refs/heads/}
 CURRENTBRANCH=${CURRENTBRANCH:-HEAD}
 
-TESTNAME=""
+TESTNAME=short
 # If there is one test file for all versions, store the test file in case it differs in the versions
 # (This is assuming that setting the test in the additional flags is intentional and test sets are supposed to differ in that case.)
 if [[ $GLOBALFLAGS = *"TEST="* ]]; then
@@ -116,6 +116,7 @@ if [[ $GLOBALFLAGS = *"SETTINGS="* ]]; then
 
 	if [ ! -f ../settings/${SETTINGSNAME}.set ]; then
 		echo "Warning: Global setting file ${SETTINGSNAME}.set not found! GCG will use default settings instead."
+		SETTINGSNAME=default
 	fi
 fi
 
@@ -126,7 +127,6 @@ mkdir -p $RESDIR
 # Add readme with parameters
 if [ ! -e $RESDIR/readme.txt ]; then
 	echo "This directory contains the results of the GCG version comparison run with the following parameters:" > $RESDIR/readme.txt
-	echo "Global flags: $OLDGLOBALFLAGS" >> $RESDIR/readme.txt
 	echo "Complete input: $ORIGINALPARAMS" >> $RESDIR/readme.txt
 	if [ ! -z $TESTNAME ]; then
 		echo "Testset $TESTNAME" >> $RESDIR/readme.txt
@@ -175,8 +175,9 @@ do
 		SETTINGSNAME=${SETTINGSNAME%% *}
 	fi
 
-	if [ ! -f ../settings/${SETTINGSNAME}.set ]; then
+	if [ ! -f settings/${SETTINGSNAME}.set ]; then
 		echo "Warning: Additional setting file ${SETTINGSNAME}.set not found! GCG will use default settings instead."
+		SETTINGSNAME=default
 	fi
 
 	# get submodules
@@ -281,9 +282,13 @@ do
 	cd ../soplex-git/
 	SOPLEXTAG=$(git describe --tags)
 	cd ../../check/
-	echo "GCG ${VERSION[$index]} ${index} ${GCGTAG}" >> $RESDIR/readme.txt
-	echo "SCIP ${VERSION[$index]} ${index} ${SCIPTAG}" >> $RESDIR/readme.txt
-	echo "SoPlex ${VERSION[$index]} ${index} ${SOPLEXTAG}" >> $RESDIR/readme.txt
+	echo "Testrun number ${index}:" >> $RESDIR/readme.txt
+	echo "  Branch: ${VERSION[$index]}" >> $RESDIR/readme.txt
+	echo "  Testset: $TESTNAME" >> $RESDIR/readme.txt
+	echo "  Settings: $SETTINGSNAME" >> $RESDIR/readme.txt
+	echo "  GCG version: ${GCGTAG}" >> $RESDIR/readme.txt
+	echo "  SCIP version: ${SCIPTAG}" >> $RESDIR/readme.txt
+	echo "  SoPlex version: ${SOPLEXTAG}" >> $RESDIR/readme.txt
 	cd ..
 
 	# building
@@ -389,6 +394,8 @@ done
 
 # plot the results
 ./plotcomparedres.py ${RESDIR}
+
+./plotperprof.py $(ls ${RESDIR}/*.res) --outdir "${RESDIR}/"
 
 echo "Finished."
 echo "The results and plots can be found in $RESDIR."
