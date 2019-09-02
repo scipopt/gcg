@@ -1,5 +1,5 @@
 # Getting started {#getting-started}
-## Start GCG
+# Start GCG {#start-gcg}
 If you did a "global" install with `make install` of the SCIP Optimization Suite,
 just type `gcg` into your console. \n
 Otherwise, execute `./bin/gcg` from the GCG root folder.
@@ -17,7 +17,7 @@ GCG>
 
 You can now enter commands into the interactive console.
 
-## Basic commands
+# Basic commands {#basic-commands}
 > In the interactive console, you can always leave a submenu with `..`. \n
 > If you want to quit GCG, just type `quit`.
 
@@ -76,8 +76,20 @@ Gap                : 0.00 %
 
 ```
 
-### Look at your decompositions with `explore`
-This menu is probably the most interesting for you, thus it earned itself its own page: @ref explore-menu.
+### Show the solution with `display solution`
+To get your solution, you can let GCG show you the solution with `display solution` or directly write it
+with `write solution`. You will get the following output:
+```
+GCG> display solution
+
+objective value:                                   16
+x#1#20                                              1 	(obj:0)
+x#2#22                                              1 	(obj:0)
+x#3#21                                              1 	(obj:0)
+x#4#14                                              1 	(obj:0)
+...
+
+```
 
 ### Start from new with `free`
 If you now want to start all over and read a different problem, that's no problem. `free` will happily
