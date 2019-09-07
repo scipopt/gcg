@@ -3570,7 +3570,7 @@ void Seeedpool::addUserCandidatesNBlocks(
    )
 {
    bool alreadyIn = false;
-   for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
+   for( size_t i = 0; i < usercandidatesnblocks.size(); ++i )
    {
       if( usercandidatesnblocks[i] == candidate )
       {
