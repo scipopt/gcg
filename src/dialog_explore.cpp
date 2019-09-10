@@ -34,6 +34,7 @@
 #include <iostream>
 #include <regex>
 #include <map>
+#include <sstream>
 
 #include "class_seeed.h"
 #include "cons_decomp.h"
