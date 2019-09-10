@@ -74,20 +74,6 @@
   * All of the modules listed below provide functions that are allowed to be used by user-written extensions of \SCIP.
   */
 
- /**@defgroup INTERNALAPI Internal API of GCG
-  * @brief internal API methods that should only be used by the core of \GCG
-  *
-  * This page lists the header files of internal API methods. In contrast to the public API, these internal methods
-  * should not be used by user plugins and extensions of GCG. Please consult
-  * \ref PUBLICCOREAPI "the Core API" and \ref PUBLICPLUGINAPI "Plugin API" for the complete API available to user plugins.
-  *
-  */
-
- /**@defgroup LPIS LP Solver Interface
-  * @ingroup PUBLICPLUGINLPI
-  * @brief methods and files provided by the LP solver interface of \GCG
-  */
-
   /**@defgroup BENDERS Benders' Decomposition
    * @ingroup PUBLICPLUGINAPI
    * @brief This page contains a description of all methods and files provided by the Benders' decomposition.
@@ -201,5 +187,14 @@
    * All of the headers listed below include functions that are allowed to be called by external users. Besides those
    * functions it is also valid to call methods that are listed in one of the headers of the (default) GCG plug-ins; in
    * particular, this holds for relax_gcg.h and pricer_gcg.h.
+   *
+   */
+
+  /**\@defgroup INTERNALAPI Internal API of GCG
+   * \@brief internal API methods that should only be used by the core of \GCG
+   *
+   * This page lists the header files of internal API methods. In contrast to the public API, these internal methods
+   * should not be used by user plugins and extensions of GCG. Please consult
+   * \ref PUBLICCOREAPI "the Core API" and \ref PUBLICPLUGINAPI "Plugin API" for the complete API available to user plugins.
    *
    */
