@@ -32,13 +32,13 @@ done with statistics enabled. You can do that with:
 To test with your own settings, e.g. `my.set` (located in `/settings`)
 you can use the following command:
 
-    make TEST=testrun SETTINGS=my test
+    make TEST=testrun SETTING=settings/my test
 
 
 # What files do I get? {#what-files}
 In the folder `/check/results` you will see multiple files per test.
 The output files for a test executed by
-`make TEST=testrun SETTINGS=my STATISTICS=true test` are as follows:
+`make TEST=testrun SETTING=my STATISTICS=true test` are as follows:
 
     check.testrun.gcg-GCGVERSION.linux.x86_64.gnu.opt.spx2.COMPUTERNAME.my.default{.err,.out,.set}
 

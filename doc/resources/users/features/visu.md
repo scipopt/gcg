@@ -18,7 +18,7 @@ You will be prompted to give a folder to save the report into. After you gave on
 The pages generated will then look similar to this:
 \image html report_instance.png "A page inside the instance report." width=30%
 <br/>
-**All visualizations created inside this report (and more, if a whole testset is given) can also be generated manually. A guide for that can be found under @ref generatevisu.**
+All visualizations created inside this report (and more, if a whole testset is given) can also be generated manually. A guide for that can be found under @ref generatevisu.
 
 # Decomposition Report # {#detectionreport}
 
