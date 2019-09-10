@@ -34,6 +34,9 @@ you can use the following command:
 
     make TEST=testrun SETTING=settings/my test
 
+#### More arguments for testing
+There exist more arguments apart from the testset, statistics and setting that can be set.
+All possible arguments for automatic testing in GCG can be found @ref makefiles-args "here".
 
 # What files do I get? {#what-files}
 In the folder `/check/results` you will see multiple files per test.
