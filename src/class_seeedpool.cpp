@@ -5431,7 +5431,10 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    /* calc maxwhitescore and hashvalue */
    prepareSeeed( seeed );
 
-   seeed->setIsFromUnpresolved( false );
+   if(transformed)
+      seeed->setIsFromUnpresolved( false );
+   else
+      seeed->setIsFromUnpresolved( true );
 
 
    assert( seeed->checkConsistency( ) );

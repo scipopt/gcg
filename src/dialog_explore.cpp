@@ -34,6 +34,7 @@
 #include <iostream>
 #include <regex>
 #include <map>
+#include <sstream>
 
 #include "class_seeed.h"
 #include "cons_decomp.h"
@@ -43,12 +44,36 @@
 #define DEFAULT_COLUMN_MIN_WIDTH  4 /**< min width of a column in the menu table */
 #define DEFAULT_COLUMN_MAX_WIDTH 10 /**< max width of a column (also determines max width of column header abbreviation) */
 #define DEFAULT_COLUMNS "nr id nbloc nmacon nlivar nmavar nstlva score history pre nopcon nopvar sel" /**< default column headers */
+#define DEFAULT_SORT_HEADER "score"
 
 #define DEFAULT_MENULENGTH 10 /**< initial number of entries in menu */
 
 namespace gcg
 {
 
+/** rettype is used to store the return type of a callback function */
+enum RETTYPE{
+   UNKNOWN,    /**< dummy default to catch errors */
+   INTEGER,    /**< integer */
+   FLOAT,      /**< float */
+   BOOLEAN,    /**< Boolean */
+   STRING      /**< char* */
+};
+
+/** callback for getters of column infos */
+typedef void (*callback)(SCIP*, int);
+
+/** storage for column information */
+struct Columninfo{
+   std::string header;  /**< table header for the column */
+   std::string desc;    /**< description of the column entries used in the menu help */
+   callback getter;     /**< callback to get the infos displayed in the column for a given scip & seeed id */
+   RETTYPE type;        /**< return type of the getter */
+
+    Columninfo(std::string nheader, std::string ndesc, callback ngetter, RETTYPE ntype) :
+    header(nheader), desc(ndesc), getter(ngetter), type(ntype) {}
+    /**< constructor for easier initialization */
+};
 
 /** gets the seeed structure from a given id (local help function)
  *
@@ -74,16 +99,55 @@ Seeed* getSeeed(
  * sorts by score in given order
  */
 static
-void sortByScore(
-   SCIP* scip,                   /**< SCIP data structure */
-   std::vector<int>* idlist,     /**< current list of seeed ids */
-   bool asc                      /**< whether to sort ascending or descending */
+void sortSeeedList(
+   SCIP* scip,                      /**< SCIP data structure */
+   std::vector<int>* idlist,        /**< current list of seeed ids */
+   std::string header,              /**< header of column to sort by */
+   std::vector<Columninfo*> columns,/**< column infos */
+   bool asc                         /**< whether to sort ascending or descending */
    )
 {
-   if(asc)
-      std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return (getSeeed(scip, a)->getScore(SCIPconshdlrDecompGetScoretype(scip)) < getSeeed(scip, b)->getScore(SCIPconshdlrDecompGetScoretype(scip))); });
-   else
-      std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return (getSeeed(scip, a)->getScore(SCIPconshdlrDecompGetScoretype(scip)) > getSeeed(scip, b)->getScore(SCIPconshdlrDecompGetScoretype(scip))); });
+   /* find the column infos for the given header */
+   for(auto column : columns)
+   {
+      if( column->header.find( header ) == 0 )
+      {
+         /* sort the id list according to given order using the callback getter of the column */
+         if(column->type == INTEGER)
+         {
+            /* the callback has to be parsed to expect an int output */
+            if(asc)
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ((*( (int(*)(SCIP*, int)) column->getter))(scip, a) < (*( (int(*)(SCIP*, int)) column->getter))(scip, b)); });
+            else
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ((*( (int(*)(SCIP*, int)) column->getter))(scip, a) > (*( (int(*)(SCIP*, int)) column->getter))(scip, b)); });
+         }
+         else if(column->type == FLOAT)
+         {
+            /* the callback has to be parsed to expect a float output */
+            if(asc)
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ((*( (float(*)(SCIP*, int)) column->getter))(scip, a) < (*( (float(*)(SCIP*, int)) column->getter))(scip, b)); });
+            else
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ((*( (float(*)(SCIP*, int)) column->getter))(scip, a) > (*( (float(*)(SCIP*, int)) column->getter))(scip, b)); });
+         }
+         else if(column->type == BOOLEAN)
+         {
+            /* the callback has to be parsed to expect a SCIP_Bool output */
+            if(asc)
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ((*( (SCIP_Bool(*)(SCIP*, int)) column->getter))(scip, a) < (*( (SCIP_Bool(*)(SCIP*, int)) column->getter))(scip, b)); });
+            else
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ((*( (SCIP_Bool(*)(SCIP*, int)) column->getter))(scip, a) > (*( (SCIP_Bool(*)(SCIP*, int)) column->getter))(scip, b)); });
+         }
+         else if(column->type == STRING)
+         {
+            /* the callback has to be parsed to expect a char* output, the comparison requires another cast into string */
+            if(asc)
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ( (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, a)) < (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, b))); });
+            else
+               std::sort(idlist->begin(), idlist->end(), [&](const int a, const int b) {return ( (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, a)) > (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, b))); });
+         }
+         break;
+     }
+  }
 }
 
 
@@ -205,12 +269,13 @@ SCIP_RETCODE outputCharXTimes(
 static
 SCIP_RETCODE GCGdialogShowMenu(
    SCIP* scip,                            /**< SCIP data structure */
-   std::vector<std::string> columns,      /**< list of column headers (abbreviations) */
+   std::vector<Columninfo*> columns,      /**< list of column headers/ info sources */
    int* nseeeds,                          /**< max number of seeeds */
    const int startindex,                  /**< index (in seeed list) of uppermost seeed in extract */
    int menulength,                        /**< number of menu entries */
    std::vector<int>* idlist,              /**< current list of seeed ids */
-   bool sortasc                           /**< true iff sorting should be ascending */
+   bool sortasc,                          /**< true iff sorting should be ascending */
+   std::string sortby                     /**< table header of column to sort by */
    )
 {
    assert(scip != NULL);
@@ -236,7 +301,7 @@ SCIP_RETCODE GCGdialogShowMenu(
    }
 
    /* sort seeed ids by score, descending (in case score was changed or id list was updated)*/
-   sortByScore(scip, idlist, sortasc);
+   sortSeeedList(scip, idlist, sortby, columns, sortasc);
 
    /* count corresponding seeeds for overview statistics */
    int ndetectedpresolved = 0;
@@ -276,9 +341,10 @@ SCIP_RETCODE GCGdialogShowMenu(
    borderline = " ";
 
    /* add each column header */
-   for(auto header : columns)
+   for(auto column : columns)
    {
       /* "score" is a wildcard for the current score, relace it with actual scoretype */
+      std::string header = column->header;
       std::string newheader;
       if(header != "score")
          newheader = header;
@@ -329,42 +395,48 @@ SCIP_RETCODE GCGdialogShowMenu(
     * so from startindex on menulength many entries if there are that much left in the list */
    for(int i = startindex; i < startindex + menulength && i < (int) idlist->size(); ++i)
    {
-      /* get current seeed */
-      Seeed* seeed = getSeeed(scip, idlist->at(i));
+      /* get current seeed id */
+      int seeedid = idlist->at(i);
 
       /* each line starts with a space */
       SCIPdialogMessage(scip, NULL, " ");
 
       /* go through the columns and write the entry for each one */
-      for(auto header : columns)
+      for(auto column : columns)
       {
          std::string towrite;
-         if(header == "nr")
-            towrite = std::to_string(i);
-         else if(header == "id")
-            towrite = std::to_string(seeed->getID());
-         else if(header == "nbloc")
-            towrite = std::to_string(seeed->getNBlocks());
-         else if(header == "nmacon")
-            towrite = std::to_string(seeed->getNMasterconss());
-         else if(header == "nmavar")
-            towrite = std::to_string(seeed->getNMastervars());
-         else if(header == "nlivar")
-            towrite = std::to_string(seeed->getNLinkingvars());
-         else if(header == "nstlva")
-            towrite = std::to_string(seeed->getNTotalStairlinkingvars());
-         else if(header == "score")
-            towrite = std::to_string(seeed->getScore(SCIPconshdlrDecompGetScoretype(scip))).substr(0, columnlength.at(header));
-         else if(header == "history")
-            towrite = seeed->getDetectorChainString();
-         else if(header == "pre")
-            towrite = (!seeed->isFromUnpresolved()) ? "yes" : "no";
-         else if(header == "nopcon")
-            towrite = std::to_string(seeed->getNOpenconss());
-         else if(header == "nopvar")
-            towrite = std::to_string(seeed->getNOpenvars());
-         else if(header == "sel")
-            towrite = (seeed->isSelected()) ? "yes" : "no";
+         /* get the type of the callback function that is the getter for this column */
+         RETTYPE type = column->type;
+         /* get the header of this column */
+         std::string header = column->header;
+
+         /* call the getter of the column depending on the given return type */
+         if(type == UNKNOWN)
+         {
+            /* "nr" and "id" are special cases and should be the only ones where the type is UNKNOWN */
+            if(header == "nr")
+               /* "nr" is the current position of the seeed in the menu list */
+               towrite = std::to_string(i);
+            else if(header == "id")
+               /* "id" is the seeed's id */
+               towrite = std::to_string(seeedid);
+         }
+         else if(type == INTEGER)
+            /* convert the callback function to int rettype, call it on (scip, seeedid) and convert the result to a string */
+            towrite = std::to_string( (*( (int(*)(SCIP*, int)) column->getter ))(scip, seeedid) );
+         else if(type == FLOAT)
+         {
+            /* convert the callback function to float rettype, call it on (scip, seeedid) */
+            float number = (*( (float(*)(SCIP*, int)) column->getter ))(scip, seeedid);
+            /* convert the result to a string and set the number of digits (i.e.letters) to the width of the column */
+            towrite = std::to_string(number).substr(0, columnlength.at(header));
+         }
+         else if(type == BOOLEAN)
+            /* convert the callback function to SCIP_Bool rettype, call it on (scip, seeedid) and check the result */
+            towrite = ( (*( (SCIP_Bool(*)(SCIP*, int)) column->getter ))(scip, seeedid) ) ? "yes" : "no";
+         else if(type == STRING)
+            /* convert the callback function to char* rettype and call it on (scip, seeedid) */
+            towrite = (*( (char* (*)(SCIP*, int)) column->getter ))(scip, seeedid);
          else
             towrite = " ";
 
@@ -391,7 +463,7 @@ SCIP_RETCODE GCGdialogShowMenu(
 static
 SCIP_RETCODE GCGdialogShowLegend(
    SCIP* scip,                         /**< SCIP data structure */
-   std::vector<std::string> columns    /**< list of table header entries */
+   std::vector<Columninfo*> columns    /**< list of column headers/ info sources */
    )
 {
    assert(scip != NULL);
@@ -428,48 +500,21 @@ SCIP_RETCODE GCGdialogShowLegend(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "------------", "-----------");
 
    /* add legend entry for each header abbreviation */
-   for(auto header : columns)
+   for(auto column : columns)
    {
-      /* get description for current header */
-      std::string desc;
-      if(header == "nr")
-         desc = "number of the decomposition (use this number for choosing the decomposition)";
-      else if(header == "id")
-         desc = "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)";
-      else if(header == "nbloc")
-         desc = "number of blocks";
-      else if(header == "nmacon")
-         desc = "number of master constraints";
-      else if(header == "nmavar")
-         desc = "number of master variables (do not occur in blocks)";
-      else if(header == "nlivar")
-         desc = "number of linking variables";
-      else if(header == "nstlva")
-         desc = "number of stairlinking variables";
-      else if(header == "score")
-         desc = SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrDecompGetScoretype(scip));
-      else if(header == "history")
-         desc = "list of detector chars worked on this decomposition ";
-      else if(header == "pre")
-         desc = "is this decomposition for the presolved problem";
-      else if(header == "nopcon")
-         desc = "number of open constraints";
-      else if(header == "nopvar")
-         desc = "number of open variables";
-      else if(header == "sel")
-         desc = "is this decomposition selected at the moment";
-      else
-         desc = " ";
+      /* get table header */
+      std::string header = column->header;
 
       /* print the header with the description */
       if(header != "score")
       {
-         SCIPdialogMessage(scip, NULL, "%30s     %s\n", header.c_str(), desc.c_str());
+         SCIPdialogMessage(scip, NULL, "%30s     %s\n", header.c_str(), column->desc.c_str());
       }
       /* if the header is "score" replace with shortname of the current score */
       else
       {
-         SCIPdialogMessage(scip, NULL, "%30s     %s\n", SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip)), desc.c_str());
+         SCIPdialogMessage(scip, NULL, "%30s     %s\n", SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip)),
+            SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrDecompGetScoretype(scip)) );
       }
 
    }
@@ -495,18 +540,19 @@ SCIP_RETCODE GCGdialogShowHelp(
    SCIPdialogMessage(scip, NULL, "\n" );
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "command", "description");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "-------", "-----------");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "select", "selects/unselects decomposition with given id");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "help", "displays this help");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "legend", "displays the legend for table header and history abbreviations");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "select", "selects/unselects decomposition with given nr");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "previous", "displays the preceding decompositions (if there are any)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "next", "displays the subsequent decompositions (if there are any)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "top", "displays the first decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "end", "displays the last decompositions");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "legend", "displays the legend for table header and history abbreviations");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "help", "displays this help");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "number_entries", "modifies the number of displayed decompositions");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "entries", "modifies the number of decompositions to display per page");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "visualizes the specified decomposition (requires gnuplot)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "set_score", "sets the score by which the \"goodness\" of decompositions is evaluated");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sort_asc", "sets whether to sort (by score) in ascending or descending order");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "score", "sets the score by which the quality of decompositions is evaluated");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sort", "sets the column by which the decompositions are sorted (default: by score)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "ascending", "sort decompositions in ascending (true) or descending (false) order");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "return to main menu");
 
    SCIPdialogMessage(scip, NULL, "\n=================================================================================================== \n");
@@ -702,22 +748,82 @@ SCIP_RETCODE GCGdialogSortAsc(
    return SCIP_OKAY;
 }
 
+
+/** Checks whether the given header is valid
+ * @returns true iff header is valid
+ */
+static
+bool isHeader(
+   std::string header,                 /**< header to check */
+   std::vector<Columninfo*> columns    /**< list of column headers/ info sources */  
+   )
+{
+   /* check if the given header is a (prefix of a) registered table header */
+   for(auto column : columns)
+   {
+      if(column->header.find( header ) == 0 )
+         return true;
+   }
+   /* else return false */
+   return false;
+}
+
+
+/** Set whether order in menu should be ascending/descending
+ *
+ * @returns SCIP return code */
+static
+SCIP_RETCODE GCGdialogSortBy(
+   SCIP*                   scip,       /**< SCIP data structure */
+   SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
+   SCIP_DIALOG*            dialog,     /**< dialog for user input management */
+   std::vector<Columninfo*> columns,   /**< list of column headers/ info sources */
+   std::string*            sortby      /**< table header, identifies by which column to sort by */
+   )
+{
+   char* newsort;
+   SCIP_Bool endoffile;
+   int commandlen;
+
+   assert(scip != NULL);
+
+   /* get input */
+   SCIPdialogMessage(scip, NULL, "\nPlease enter the table header of the column by which you would like to sort:\n");
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &newsort, &endoffile) );
+   commandlen = strlen(newsort);
+
+   /* if the input is a valid table header, change sortby */
+   std::string input = newsort;
+   if( commandlen != 0)
+   {
+      /* all headers (including the "score" wildcard) are valid */
+      if(isHeader(input, columns))
+         *sortby = input;
+      /* if the score abbreviation is entered, the header would not be in the column info */
+      else if( input == SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrDecompGetScoretype(scip)))
+         *sortby = "score";
+   }
+   return SCIP_OKAY;
+}
+
+
 static
 SCIP_RETCODE GCGdialogExecCommand(
    SCIP*                   scip,          /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr,    /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,        /**< dialog for user input management */
-   std::vector<std::string> columns,      /**< list of table header entries */
+   std::vector<Columninfo*> columns,      /**< list of column headers/ info sources */
    char*                   command,       /**< the command that was entered */
    int*                    startindex,    /**< number of seeed there the menu extract starts */
    int*                    menulength,    /**< current menu length to be modified */
    SCIP_Bool*              finished,      /**< whether to quit the menu */
    std::vector<int>*       idlist,        /**< current list of seeed ids */
-   bool*                   sortasc        /**< true iff sorting should be ascending */
+   bool*                   sortasc,       /**< true iff sorting should be ascending */
+   std::string*            sortby         /**< name of table header to identify sorting column */
    )
 {
    int commandlen = strlen(command);
-
+   
       if( strncmp( command, "previous", commandlen) == 0 )
       {
          *startindex = *startindex - *menulength;
@@ -755,7 +861,7 @@ SCIP_RETCODE GCGdialogExecCommand(
          SCIP_CALL( GCGdialogShowHelp(scip) );
       }
 
-      else if( strncmp( command, "number_entries", commandlen) == 0 )
+      else if( strncmp( command, "entries", commandlen) == 0 )
       {
          SCIP_CALL( GCGdialogSetNEntires(scip, dialoghdlr, dialog, (int) idlist->size(), menulength) );
       }
@@ -775,19 +881,22 @@ SCIP_RETCODE GCGdialogExecCommand(
          SCIP_CALL( GCGdialogSelect(scip, dialoghdlr, dialog, *idlist) );
       }
 
-      else if( strncmp( command, "set_score", commandlen) == 0 )
+      else if( strncmp( command, "score", commandlen) == 0 )
       {
          SCIP_CALL( GCGdialogChangeScore(scip, dialoghdlr, dialog) );
       }
 
-      else if( strncmp( command, "sort_asc", commandlen) == 0 )
+      else if( strncmp( command, "ascending", commandlen) == 0 )
       {
          SCIP_CALL( GCGdialogSortAsc(scip, dialoghdlr, dialog, sortasc) );
+      }
+      else if( strncmp( command, "sort", commandlen) == 0 )
+      {
+         SCIP_CALL( GCGdialogSortBy(scip, dialoghdlr, dialog, columns, sortby) );
       }
 
    return SCIP_OKAY;
 }
-
 
 extern "C" {
 
@@ -798,9 +907,10 @@ SCIP_RETCODE GCGdialogExecExplore(
    )
 {
    /* set navigation defaults */
-   int startindex = 0;                    /**< number of seeed there the menu extract starts */
-   int menulength = DEFAULT_MENULENGTH;   /**< number of entries shown in menu */
-   bool sortasc = false;                  /**< whether to show entries in ascending order (score) */
+   int startindex = 0;                       /**< number of seeed there the menu extract starts */
+   int menulength = DEFAULT_MENULENGTH;      /**< number of entries shown in menu */
+   bool sortasc = false;                     /**< whether to show entries in ascending order (score) */
+   std::string sortby = DEFAULT_SORT_HEADER; /**< table header, identifies by which column to sort by */
 
    /* check for available seeeds */
    int nseeeds;   /**< stores the last known number of seeeds, is handed down to check for changes in seeed number */
@@ -827,24 +937,115 @@ SCIP_RETCODE GCGdialogExecExplore(
    /* free idarray */
    SCIPfreeBlockMemoryArray(scip, &idarray, nseeeds);
 
-   /* sort by score, descending */
-   sortByScore(scip, &idlist, sortasc);
-
    /* set initial columns */
-   std::vector<std::string> columns;
+   /* the column information has the header, a getter for the column info and the return type of the getter */
+   std::vector<Columninfo*> columns;
    char columnstr[] = DEFAULT_COLUMNS;
    char* tempcolumns = strtok(columnstr, " ");
+   /* go through each column header and determine its getter */
    while(tempcolumns != NULL)
    {
       /* get each column header of default */
       char newchar[DEFAULT_COLUMN_MAX_WIDTH]; // cutting string at max column width if longer
       strcpy(newchar, tempcolumns);
-      columns.push_back(newchar);
       /**@note: 'score' is a wildcard! replace by score name later*/
 
-      /* get the next item in the list */
+      /* determine what callback the header should receive as its getter */
+      if( strcmp(newchar, "nr") == 0)
+         /* "nr" represents the position in the menu table and is determined by the menu */
+         columns.push_back(new Columninfo(newchar, "number of the decomposition (use this number for selecting the decomposition)", NULL, UNKNOWN));
+      else if(strcmp(newchar, "id") == 0)
+         /* "id" is the seeed id, the list of ids is known to the menu */
+         columns.push_back(new Columninfo(newchar, "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)", NULL, UNKNOWN));
+      else
+      {
+         /**@note devs: if you want to add new headers, please specify their getters here! */
+         RETTYPE type = UNKNOWN;
+         callback funct;
+         std::string desc;
+
+         if(strcmp(newchar, "nbloc") == 0)
+         {
+            funct = (void(*)(SCIP*, int)) &GCGgetNBlocksBySeeedId;
+            type = INTEGER;
+            desc = "number of blocks";
+         }
+         else if(strcmp(newchar, "nmacon") == 0)
+         {
+            funct = (void(*)(SCIP*, int)) &GCGgetNMasterConssBySeeedId;
+            type = INTEGER;
+            desc = "number of master constraints";
+         }
+         else if(strcmp(newchar, "nmavar") == 0)
+         {
+            funct = (void(*)(SCIP*, int)) &GCGgetNMasterVarsBySeeedId;
+            type = INTEGER;
+            desc = "number of \"master only\" variables (also called \"static\", do not occur in blocks)";
+         }
+         else if(strcmp(newchar, "nlivar") == 0)
+         {
+            funct = (void(*)(SCIP*, int)) &GCGgetNLinkingVarsBySeeedId;
+            type = INTEGER;
+            desc = "number of linking variables";
+         }
+         else if(strcmp(newchar, "nstlva") == 0)
+         {
+            funct = (void(*)(SCIP*, int)) &GCGgetNStairlinkingVarsBySeeedId;
+            type = INTEGER;
+            desc = "number of stair linking variables";
+         }
+         else if(strcmp(newchar, "score") == 0)
+         {
+            funct = (void(*)(SCIP*, int)) &GCGgetScoreBySeeedId;
+            type = FLOAT;
+            /**@note as "score" is a wildcard, its description is determined only when needed */
+            desc = " ";
+         }
+         else if(strcmp(newchar, "history") == 0)
+         {
+            funct = (void(*)(SCIP*, int)) &GCGgetDetectorHistoryBySeeedId;
+            type = STRING;
+            desc = "list of detectors (their chars) which  worked on this decomposition ";
+         }
+         else if(strcmp(newchar, "pre") == 0)
+         {
+            funct = (void(*)(SCIP*, int)) &GCGisPresolvedBySeeedId;
+            type = BOOLEAN;
+            desc = "is this decomposition for the presolved problem?";
+         }
+         else if(strcmp(newchar, "nopcon") == 0)
+         {
+            funct = (void(*)(SCIP*, int)) &GCGgetNOpenConssBySeeedId;
+            type = INTEGER;
+            desc = "number of open (=unassigned) constraints";
+         }
+         else if(strcmp(newchar, "nopvar") == 0)
+         {
+            funct = (void(*)(SCIP*, int)) &GCGgetNOpenVarsBySeeedId;
+            type = INTEGER;
+            desc = "number of open (=unassigned) variables";
+         }
+         else if(strcmp(newchar, "sel") == 0)
+         {
+            funct = (void(*)(SCIP*, int)) &GCGisSelectedBySeeedId;
+            type = BOOLEAN;
+            desc = "is this decomposition selected?";
+         }
+
+         /* add the column if a corresponding callback was found */
+         if(type != UNKNOWN)
+            columns.push_back(new Columninfo(newchar, desc, funct, type));
+      }
+
+      /* get the next item in the list of headers */
       tempcolumns = strtok (NULL, " ");
    }
+
+   /* check that the given default sorting header is valid */
+   assert(isHeader(sortby, columns));
+
+   /* sort by default, descending */
+   sortSeeedList(scip, &idlist, sortby, columns, sortasc);
 
    /* while user has not aborted: show current list extract and catch commands */
    SCIP_Bool finished = false;
@@ -852,12 +1053,12 @@ SCIP_RETCODE GCGdialogExecExplore(
    SCIP_Bool endoffile;
    while( !finished )
    {
-      GCGdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist, sortasc);
+      GCGdialogShowMenu(scip, columns, &nseeeds, startindex, menulength, &idlist, sortasc, sortby);
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
-         "Please enter command or decomposition id to select (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
+         "Please enter command   (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
 
-      GCGdialogExecCommand(scip, dialoghdlr, dialog, columns, command, &startindex, &menulength, &finished, &idlist, &sortasc);
+      GCGdialogExecCommand(scip, dialoghdlr, dialog, columns, command, &startindex, &menulength, &finished, &idlist, &sortasc, &sortby);
    }
 
    return SCIP_OKAY;

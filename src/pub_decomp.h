@@ -726,7 +726,7 @@ SCIP_RETCODE DECpermuteDecomp(
    );
 
 /** gets the number of existing decompositions
- *
+ * 
  * @returns number of decompositions
  */
 extern
@@ -734,7 +734,6 @@ int DECgetNDecomps(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/* @} */
 #ifdef __cplusplus
 }
 
