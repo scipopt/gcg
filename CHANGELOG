@@ -16,9 +16,11 @@ Documentation:
 --------------
 - todo
 
+
 @page RN30 Release notes for GCG 3.0
 @section RN302 GCG 3.0.2
 *************************
+
 Visualization and testing:
 --------------------------
 - check/compareversions.sh runs tests on several git versions, summarizes performace results
@@ -29,21 +31,10 @@ Code cleanup:
 - Removed toolbox feature from 'explore' menu
 - Removed 'toolbox' command
 
-
-
-
-GCG Version 3.0.2
-=================
-
 Bug fixes
 ---------
-
 - Fix segmentation fault due to missing relaxsol event handler in BENDERS and ORIGINAL mode.
 
-Bug fixes
----------
-
-- Fix segmentation fault due to missing relaxsol event handler in BENDERS and ORIGINAL mode.
 
 @section RN301 GCG 3.0.1
 *************************
