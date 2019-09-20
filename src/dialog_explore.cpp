@@ -907,13 +907,13 @@ SCIP_RETCODE GCGdialogExecExplore(
    )
 {
    /* set navigation defaults */
-   int startindex = 0;                       /**< number of seeed there the menu extract starts */
-   int menulength = DEFAULT_MENULENGTH;      /**< number of entries shown in menu */
-   bool sortasc = false;                     /**< whether to show entries in ascending order (score) */
-   std::string sortby = DEFAULT_SORT_HEADER; /**< table header, identifies by which column to sort by */
+   int startindex = 0;                       /*< number of seeed there the menu extract starts */
+   int menulength = DEFAULT_MENULENGTH;      /*< number of entries shown in menu */
+   bool sortasc = false;                     /*< whether to show entries in ascending order (score) */
+   std::string sortby = DEFAULT_SORT_HEADER; /*< table header, identifies by which column to sort by */
 
    /* check for available seeeds */
-   int nseeeds;   /**< stores the last known number of seeeds, is handed down to check for changes in seeed number */
+   int nseeeds;                              /*< stores the last known number of seeeds, is handed down to check for changes in seeed number */
    nseeeds = SCIPconshdlrDecompGetNSeeeds(scip);
    if(nseeeds == 0)
    {
@@ -948,7 +948,7 @@ SCIP_RETCODE GCGdialogExecExplore(
       /* get each column header of default */
       char newchar[DEFAULT_COLUMN_MAX_WIDTH]; // cutting string at max column width if longer
       strcpy(newchar, tempcolumns);
-      /**@note: 'score' is a wildcard! replace by score name later*/
+      /* 'score' is a wildcard! replace by score name later */
 
       /* determine what callback the header should receive as its getter */
       if( strcmp(newchar, "nr") == 0)
@@ -959,7 +959,7 @@ SCIP_RETCODE GCGdialogExecExplore(
          columns.push_back(new Columninfo(newchar, "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)", NULL, UNKNOWN));
       else
       {
-         /**@note devs: if you want to add new headers, please specify their getters here! */
+         /* devs: if you want to add new headers, please specify their getters here! */
          RETTYPE type = UNKNOWN;
          callback funct;
          std::string desc;
@@ -998,7 +998,7 @@ SCIP_RETCODE GCGdialogExecExplore(
          {
             funct = (void(*)(SCIP*, int)) &GCGgetScoreBySeeedId;
             type = FLOAT;
-            /**@note as "score" is a wildcard, its description is determined only when needed */
+            /* "score" is a wildcard, its description is determined only when needed */
             desc = " ";
          }
          else if(strcmp(newchar, "history") == 0)

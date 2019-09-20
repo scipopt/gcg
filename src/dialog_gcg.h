@@ -26,12 +26,12 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dialog_gcg.h
+ * @ingroup DIALOGS
  * @brief  GCG user interface dialog
  * @author Tobias Achterberg
  * @author Timo Berthold
  * @author Gerald Gamrath
  * @author Martin Bergner
- * @ingroup DIALOGS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dialog_explore.h
+ * @ingroup DIALOGS
  * @brief  dialog menu for exploring decompositions
  * @author Michael Bastubbe
  * @author Hanna Franzen
@@ -48,16 +49,13 @@ extern "C" {
 
 /**
  * @brief method to handle user input for "explore" command
- * @param scip SCIP data structure
- * @param dialoghdlr dialog handler to handle user input
- * @param dialog dialog to handle user input
  * @returns SCIP return code
  */
 extern
 SCIP_RETCODE GCGdialogExecExplore(
-   SCIP*                   scip,
-   SCIP_DIALOGHDLR*        dialoghdlr,
-   SCIP_DIALOG*            dialog
+   SCIP*                   scip,               /**< SCIP data structure */
+   SCIP_DIALOGHDLR*        dialoghdlr,         /**< dialog handler for user input management */
+   SCIP_DIALOG*            dialog              /**< dialog for user input management */
    );
 
 
