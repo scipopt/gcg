@@ -843,6 +843,8 @@ SCIP_RETCODE GCGdialogExecCommand(
       else if( strncmp( command, "end", commandlen) == 0 )
       {
          *startindex = (int) idlist->size() - *menulength;
+         if (*startindex < 0)
+            *startindex = 0;
       }
 
       else if( strncmp( command, "quit", commandlen) == 0 || strncmp( command, "..", commandlen) == 0 )
