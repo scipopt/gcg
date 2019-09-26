@@ -1,6 +1,6 @@
 # Visualization Generation {#generatevisu}
 
-## Prerequisites
+# Prerequisites
 ### Software requirements
 **Python:** \n
 Except for the comparison_table script, all visualizations are generated using python.
@@ -19,37 +19,50 @@ And then the needed package via
 
     pip install <packagename>
 
+The packages needed for the scripts are (space-separated):
+
+    numpy matplotlib pandas sklearn
+
+
 ### Run tests
 First, you have to do a testrun to gather the data for the visualizations. A guide on how to
 do that can be found @ref dotesting "here".
 
 
-# Plotting
-You can create different plots with the included scripts in the `stats` folder. All scripts are briefly explained in the following.
-When describing how to execute them, it is always assumed that you are inside the `stats` folder.
+> You can create different plots with the included scripts in the `stats` folder. All scripts are briefly explained in the following.
+> When describing how to execute them, it is always assumed that you are inside the `stats` folder.
 \n
-## <a name="plot">Performance Profile Plotter</a> (performance_profile.py)
-Using the tool `plotperprof.py`, you can plot performance profiles
-(which will be saved as `perprof_plot.pdf` in the `check`-folder) like this one:
-![Performance Profile](perfprofile.png)
-#### Execution
 
-    python3 /general/performance_profile.py FILES
+## Performance Profile Plotter: `performance_profile.py`
+Using this plotter, one can generate performance profiles.
+In those, the x-axis represents the factor by which the respective run is worse than the
+optimal run, while the y axis is the corresponding probability.
+![Performance Profile](perfprofile.png)
+### Execution
+
+    python3 general/performance_profile.py FILES
 
 with `FILES` being some (space-separated) `.res` or `.out` files in the format as shown in @ref what-files "'What files do I get'".
 
-#### Interpretation
-The x-axis represents the factor by which the respective run is worse than the
-optimal run, while the y axis is the corresponding probability. so for the green
-line in `x=1.05`, we see `y≈0.7`, therefore, with a probability of 70%, setting 3
-will be worse than setting 2 by 5%.
 
 \n
-## General Plotter
+## General Plotter `plotter_general.py`
 The general plotter is able to plot two or more arguments parsed by the `general_parser.py` script in different ways.
 You can find all parsed arguments @ref general-args "here".
 \n
-#### Execution
+**bubble.py** \n
+
+\n
+**plot.py** \n
+
+\n
+**twin.py** \n
+
+\n
+**time.py** \n
+
+\n
+### Execution
 
     python3 general/{bubble,plot,twin,time}.py [args] FILES
 
@@ -111,51 +124,40 @@ runs to have been on the same testset.
     --compare             if set, each outfile will be summed and plotted with all other outfiles
 
 
-**bubble.py** \n
-
 \n
-**plot.py** \n
-
-\n
-**twin.py** \n
-
-\n
-**time.py** \n
-
-\n
-## Bounds Plotter
+## Bounds Plotter: `plotter_bounds.py`
 The Bounds Plotter generates a plot showing the development of the primal and dual bound and gap in the root node, as well as the basic variables generated.
 #### Execution
 
-    python3 bounds/bounds_plotter.py FILES
+    python3 bounds/plotter_bounds.py FILES
 
-with `FILES` being some `.out` or `.res` files.
+with `FILES` being one or more `.out` files.
 
 \n
-## Classification and Detection Plotter
+## Classification and Detection Plotter: `plotter_detection.py`
 This plotter works on a whole testset and makes plots similar to performance profiles, showing the performance of the classifiers and detectors.
 #### Execution
 
-    python3 detection/detection_plotter.py FILES
+    python3 detection/plotter_detection.py FILES
 
-with `FILES` being some `.out` or `.res` files.
+with `FILES` being one or more `.out` files.
 
 \n
-## Pricing Plotter
+## Pricing Plotter: `plotter_pricing.py`
 The Pricing Plotter generates 7 different plots illustrating the pricing procedure during a single instance's solving process.
 When given an outfile with more than one instance, it generates the plots sequentially.
 #### Execution
 
-    python3 pricing/pricing_plotter.py FILES --vbcdir VBC
+    python3 pricing/plotter_pricing.py FILES --vbcdir VBC
 
-with `FILES` being some `.out` or `.res` files and `VBC` being the directory where all `.vbc` files are (per default: `check/results/vbc/`)
+with `FILES` being one `.out` file and `VBC` being the directory where all corresponding `.vbc` files are (per default: `check/results/vbc/`)
 
 \n
-## Tree Plotter
+## Tree Plotter: `plotter_tree.py`
 The Tree Plotter, just like the Pricing Plotter, needs the `vbc` files to function correctly. It will plot how many nodes were opened on each level.
 #### Execution
 
-    python3 tree/tree_plotter.py FILES
+    python3 tree/plotter_tree.py FILES
 
 with `FILES` being some `.vbc` files.
 
