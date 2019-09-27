@@ -46,7 +46,7 @@ with `FILES` being some (space-separated) `.res` or `.out` files in the format a
 
 
 \n
-## General Plotter `plotter_general.py`
+## General Plotter: `plotter_general.py`
 The general plotter is able to plot two or more arguments parsed by the `general_parser.py` script in different ways.
 You can find all parsed arguments @ref general-args "here".
 \n
@@ -111,22 +111,9 @@ runs to have been on the same testset.
     --single              if set, all outfiles will be summed and cumulated in a single plot
     --compare             if set, each outfile will be summed and plotted with all other outfiles
 
-**plot.py** \n
-\image html visu/goodinstancesnodec.default.plot.png "Simple Plot showing information about the decomposition, with a common y-axis. Illustrates the relation between the number of blocks of the chosen decomposition, the variables linking those blocks and the ('hard')/master constraints." width=80%
-\n
 
-**bubble.py** \n
-\image html visu/goodinstancesnodec.default.bubble.png "Bubble Plot showing the relation between the number of cuts found for the instance and the time used to find these cuts with bubbles. If one of the bubbles is big, this means that this ratio, up to a specified proximity factor (`--proximity`), occurred particularly often." width=80%
+\htmlinclude visualizations/general.html
 \n
-
-**twin.py** \n
-\image html visu/goodinstancesnodec.heurpricing.twin.png "Twin Plot showing the relation between the time needed for heuristics and the resulting heuristics found with an own y-axis for each argument. In particular useful for arguments that are not measurable on the same scale, i.e. time vs. amount, as shown here." width=80%
-\n
-
-**time.py** \n
-\image html goodinstances.timedist_bar_SMALL.png "A bar chart of the time distribution of all instances in the test set 'goodinstancesnodec' that had a detection time of 3 or more seconds, a pricing time between 10 and 40 seconds, an arbitrary heuristics time and a total time of 2 to 1000 seconds. This plot gives an impression of how strong the detection times and pricing times vary from instance to instance." width=80%
-\n
-
 ## Bounds Plotter: `plotter_bounds.py`
 The Bounds Plotter generates a plot showing the development of the primal and dual bound and gap in the root node, as well as the basic variables generated.
 #### Execution
@@ -135,6 +122,7 @@ The Bounds Plotter generates a plot showing the development of the primal and du
 
 with `FILES` being one or more `.out` files.
 
+\htmlinclude visualizations/bounds.html
 \n
 ## Classification and Detection Plotter: `plotter_detection.py`
 This plotter works on a whole testset and makes plots similar to performance profiles, showing the performance of the classifiers and detectors.
@@ -144,6 +132,7 @@ This plotter works on a whole testset and makes plots similar to performance pro
 
 with `FILES` being one or more `.out` files.
 
+\htmlinclude visualizations/detection.html
 \n
 ## Pricing Plotter: `plotter_pricing.py`
 The Pricing Plotter generates 7 different plots illustrating the pricing procedure during a single instance's solving process.
@@ -154,6 +143,7 @@ When given an outfile with more than one instance, it generates the plots sequen
 
 with `FILES` being one `.out` file and `VBC` being the directory where all corresponding `.vbc` files are (per default: `check/results/vbc/`)
 
+\htmlinclude visualizations/pricing.html
 \n
 ## Tree Plotter: `plotter_tree.py`
 The Tree Plotter, just like the Pricing Plotter, needs the `vbc` files to function correctly. It will plot how many nodes were opened on each level.
@@ -163,6 +153,8 @@ The Tree Plotter, just like the Pricing Plotter, needs the `vbc` files to functi
 
 with `FILES` being some `.vbc` files.
 
+\htmlinclude visualizations/tree.html
+\n
 ## More Scripts
 ### <a name="raw">Comparison Table</a> (comparison_table.sh)
 A (quite raw) comparison of testruns can be done using the `allcmpres.sh` script
