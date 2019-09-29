@@ -33,18 +33,19 @@ do that can be found @ref dotesting "here".
 > When describing how to execute them, it is always assumed that you are inside the `stats` folder.
 \n
 
+# Plotting
+
 ## Performance Profile Plotter: `performance_profile.py`
 Using this plotter, one can generate performance profiles.
 In those, the x-axis represents the factor by which the respective run is worse than the
 optimal run, while the y axis is the corresponding probability.
-![Performance Profile](perfprofile.png)
 ### Execution
 
     python3 general/performance_profile.py FILES
 
 with `FILES` being some (space-separated) `.res` or `.out` files in the format as shown in @ref what-files "'What files do I get'".
 
-
+\htmlinclude performance_profile.html
 \n
 ## General Plotter: `plotter_general.py`
 The general plotter is able to plot two or more arguments parsed by the `general_parser.py` script in different ways.
@@ -155,18 +156,17 @@ with `FILES` being some `.vbc` files.
 
 \htmlinclude visualizations/tree.html
 \n
-## More Scripts
-### <a name="raw">Comparison Table</a> (comparison_table.sh)
-A (quite raw) comparison of testruns can be done using the `allcmpres.sh` script
-in the `check`-folder. This script just puts the statistics of all runs that are
+
+## Comparison Table: `comparison_table.sh`
+A (quite raw) comparison of testruns can be done using this script
+in the `general`-folder. This script just puts the statistics of all runs that are
 given as arguments into a `.tex`-file and prints it as ASCII on the console.
-![Comparison Table (run with settings earlybranching was stopped)](cmpres.png)
 **Execution**
 
     ./general/comparison_table.sh run1.res run2.res run3.res ...
 
 with run1, run2, ... being a `.res` file in the format as shown in @ref what-files "'What files do I get'"..
-
+\htmlinclude visualizations/table.html
 \n
 ### Parse outfiles without plotting
 For the scripts `bubble.py`, `plot.py`, `twin.py` and `time.py`, the outfile(s)
@@ -178,8 +178,13 @@ If you want to parse your outfiles by hand, you can do that by executing
 in the `stats/` folder. A `parseout.pkl` file will be saved into this same folder.
 
 \n
-### Testset selection
-See pdf
+
+# Test set selection
+> A guide on this is coming soon.
+
+# Custom Visualizations
+When creating custom visualizations, one has to know exactly what data is needed to make the visualization. With these arguments in mind, one can then look if they are already parsed. A list of the currently parsed data is located in the Appendix, Chapter </code>. If so, one of the parsers (<code>parser_general.py</code>, <code>parser_bounds.py</code> or <code>parser_detection.py</code>) can be used, or otherwise, for the <code>plotter_pricing.py</code>, the <code>-{</code>-savepickle</code> argument of the plotter shall be used each time to parse the runtime data and save it to the pickle, to then read it again for the plotter. Then, the <code>plotter_</code> script can be created which should import the parser that already gets the data needed with a simple <code>import parser_...</code>. Then, the parser can be used just like in the other plotters.
+
 
 ### Troubleshooting
 **Q: Why don't I get any detection times?**\n
