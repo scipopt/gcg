@@ -2,14 +2,22 @@
   <div class="pre-spoiler">
   <input name="button" type="button" onClick="
   if (this.parentNode.getElementsByTagName('div')[0].style.display != 'none') {
-     this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'Show Results'; }
+     this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'Show Bounds Plots'; }
   else { this.parentNode.getElementsByTagName('div')[0].style.display = 'block'; this.value = 'Hide';
 }" value="Show Bounds Plots">
   <div class="spoiler" style="display: none;">
 
-    <h4>Sample Plot</h4>
-    <img src="" style="width=80%">
-    <figcaption style="font-size:x-small;"></figcaption>
+    <h4>Bounds Plot: Time</h4>
+    <img src="img/visu/bounds/BPPC_1_1_2.default.bounds_time.png" style="width:80%">
+    <figcaption style="font-size:x-small; line-height:1.1">The top subplot shows the development of the primal and dual bounds in the RMP during the pricing in the root node as given by the table "root bounds" printed by GCG. Every change represents a pricing iteration and the resulting changes to the bounds. The other two subplots illustrate the point in time in the pricing at which the columns that are finally in the basis are generated.</figcaption>
+
+    <h4>Bounds Plot: Iterations</h4>
+    <img src="img/visu/bounds/BPPC_1_1_2.default.bounds_iter.png" style="width:80%">
+    <figcaption style="font-size:x-small; line-height:1.1">The same plot as the previous one, but with pricing iterations in the root node instead of the time spent there on the x-axis.</figcaption>
+
+    <h4>Bounds Plot: Comparison</h4>
+    <img src="img/visu/bounds/compareRuns.bounds_time.BPPC_1_1_2.png" style="width:80%">
+    <figcaption style="font-size:x-small; line-height:1.1">The same plot, but comparing different runs of this bin-packing instance. Shows that with heuristic pricing enabled, GCG continues pricing in the root node of the Branch and Bound tree for longer than with the default or "fastDetection" setting.</figcaption>
 
   </div>
   </div>
