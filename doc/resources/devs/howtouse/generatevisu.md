@@ -26,13 +26,22 @@ The packages needed for the scripts are (space-separated):
 
 ### Run tests
 First, you have to do a testrun to gather the data for the visualizations. A guide on how to
-do that can be found @ref dotesting "here".
+do that can be found @ref dotesting "here".\n
+The scripts sometimes expect a certain flag to be set. The following table gives an overview over
+the requirements for the runtime data for each visualization script.
 
-
-> You can create different plots with the included scripts in the `stats` folder. All scripts are briefly explained in the following.
-> When describing how to execute them, it is always assumed that you are inside the `stats` folder.
+|                       | Expected Input | Required  compile flags | Required test flags |
+|-----------------------|----------------|-------------------------|---------------------|
+| Pricing               | .out, .vbc     | STATISTICS=true         | -                   |
+| Classifier/ Detection | .out           | -                       | MODE=detectionstatistics         |
+| Bounds                | .out           | -                       | STATISTICS=true     |
+| General               | .out           |                         | STATISTICS=true     |
+| Performance Profile   | .out/.res      | -                       | -                   |
+| Table Comparison      | .res           | -                       | -                   |
 
 # Plotting
+> You can create different plots with the included scripts in the `stats` folder. All scripts are briefly explained in the following.
+> When describing how to execute them, it is always assumed that you are inside the `stats` folder.
 
 ### Common arguments
 The following arguments are common across all following scripts (except for the performance profile plotter and comparison table).
