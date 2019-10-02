@@ -54,8 +54,9 @@
           <div>
             <h1 id="about">About GCG</h1>
             <p>
-              Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
-              At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+              GCG is a generic branch-price-and-cut solver for mixed integer linear programs that uses <a href="https://scip.zib.de/">SCIP</a> (Solving Constraint Integer Programs).
+              It finds structures in models that can be exploited to accelerate solving speed. Furthermore, GCG applies a Dantzig-Wolfe reformulation such that many problems
+              can be solved more efficiently using Column Generation.
             </p>
             <table style="margin:2em 0 2em">
               <tr>
@@ -64,7 +65,7 @@
               </tr>
             </table>
             <p>
-              Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt. If you want to know what that exactly means and how
+              Above, you see a problem before and after detection, showing what a 'decomposition' found by GCG looks like. If you want to know what that exactly what all of that means and how
               it is done, just visit the <a href="doc-3.1.0/devs.html">Developer's Guide</a>.
             </p>
           </div>
@@ -140,9 +141,10 @@
         <b>However</b>, you can also download the source code:
       </p>
       <ul>
-        <li><a href="files/gcg-3.0.0.tgz">gcg-3.0.0.tgz</a> (1803kB)</li>
+        <li><a href="files/gcg-3.1.0.tgz">gcg-3.1.0.tgz</a> (?kB, released 10/Jul/2019)</li>
         <p id="olderdownloads" class="reveal">Older versions</p>
     	    <div style="display: block; margin-top: -10px;" id="olderdownloads_ans" class="answer">
+              <li><a href="files/gcg-3.0.0.tgz">gcg-3.0.0.tgz</a> (1803kB, released 02/Jul/2018)</li>
               <li><a href="files/gcg-2.1.2.tgz">gcg-2.1.2.tgz</a> (1118kB, released 09/Mar/2017)</li>
               <li><a href="files/gcg-2.1.1.tgz">gcg-2.1.1.tgz</a> (1100kB, released 29/Feb/2016)</li>
               <li><a href="files/gcg-2.1.0.tgz">gcg-2.1.0.tgz</a> (1096kB, released 01/Jul/2015)</li>
