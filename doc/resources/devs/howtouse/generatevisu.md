@@ -35,10 +35,26 @@ do that can be found @ref dotesting "here".
 
 # Plotting
 
+### Common arguments
+The following arguments are common across all following scripts (except for the performance profile plotter and comparison table).
+\n
+#### Defining the Output Directory
+
+    -o OUTDIR, --outdir OUTDIR
+                          output directory (default: "plots")
+
+\n
+#### Parsing without Plotting, Plotting without Parsing
+
+    -s, --savepickle      parses the given .out-file without plotting
+    -l, --loadpickle      loads the given .pkl-file and plots it
+
+\n
+
 ## Performance Profile Plotter: `performance_profile.py`
 Using this plotter, one can generate performance profiles.
 In those, the x-axis represents the factor by which the respective run is worse than the
-optimal run, while the y axis is the corresponding probability.
+optimal run, while the y-axis is the corresponding probability.
 ### Execution
 
     python3 general/performance_profile.py FILES
@@ -83,12 +99,6 @@ add those bounds to the time argument:
 In this example, we generate all plots (`-A`) for all instances that had a detection time
 between 10 and 20 seconds in the `check.gcg.out` file with the arguments `"DETECTION TIME"`
 and `"RMP LP TIME"` (without filter).
-
-\n
-#### Defining the Output Directory
-
-    -o OUTDIR, --outdir OUTDIR
-                          output directory (default: "plots")
 
 \n
 #### Defining additional Arguments (only for time.py)
@@ -183,7 +193,7 @@ in the `stats/` folder. A `parseout.pkl` file will be saved into this same folde
 > A guide on this is coming soon.
 
 # Custom Visualizations
-When creating custom visualizations, one has to know exactly what data is needed to make the visualization. With these arguments in mind, one can then look if they are already parsed. A list of the currently parsed data is located in the Appendix, Chapter </code>. If so, one of the parsers (<code>parser_general.py</code>, <code>parser_bounds.py</code> or <code>parser_detection.py</code>) can be used, or otherwise, for the <code>plotter_pricing.py</code>, the <code>-{</code>-savepickle</code> argument of the plotter shall be used each time to parse the runtime data and save it to the pickle, to then read it again for the plotter. Then, the <code>plotter_</code> script can be created which should import the parser that already gets the data needed with a simple <code>import parser_...</code>. Then, the parser can be used just like in the other plotters.
+When creating custom visualizations, one has to know exactly what data is needed to make the visualization. With these arguments in mind, one can then look if they are already parsed. A list of the currently parsed data is located in the Appendix, Chapter </code>. If so, one of the parsers (<code>parser_general.py</code>, <code>parser_bounds.py</code> or <code>parser_detection.py</code>) can be used, or otherwise, for the <code>plotter_pricing.py</code>, the <code>--savepickle</code> argument of the plotter shall be used each time to parse the runtime data and save it to the pickle, to then read it again for the plotter. Then, the <code>plotter_</code> script can be created which should import the parser that already gets the data needed with a simple <code>import parser_...</code>. Then, the parser can be used just like in the other plotters.
 
 
 ### Troubleshooting
