@@ -31,7 +31,6 @@ do that can be found @ref dotesting "here".
 
 > You can create different plots with the included scripts in the `stats` folder. All scripts are briefly explained in the following.
 > When describing how to execute them, it is always assumed that you are inside the `stats` folder.
-\n
 
 # Plotting
 
@@ -175,7 +174,8 @@ given as arguments into a `.tex`-file and prints it as ASCII on the console.
 
     ./general/comparison_table.sh run1.res run2.res run3.res ...
 
-with run1, run2, ... being a `.res` file in the format as shown in @ref what-files "'What files do I get'"..
+with run1, run2, ... being a `.res` file in the format as shown in @ref what-files "'What files do I get'".
+
 \htmlinclude visualizations/table.html
 \n
 ### Parse outfiles without plotting
