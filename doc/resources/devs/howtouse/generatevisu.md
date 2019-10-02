@@ -178,16 +178,6 @@ with run1, run2, ... being a `.res` file in the format as shown in @ref what-fil
 
 \htmlinclude visualizations/table.html
 \n
-### Parse outfiles without plotting
-For the scripts `bubble.py`, `plot.py`, `twin.py` and `time.py`, the outfile(s)
-are first parsed, if you don't already execute them with a `.pkl` file.
-If you want to parse your outfiles by hand, you can do that by executing
-
-  python3 general/general_parser.py myoutfile.out
-
-in the `stats/` folder. A `parseout.pkl` file will be saved into this same folder.
-
-\n
 
 # Test set selection
 > A guide on this is coming soon.
