@@ -32,12 +32,13 @@ the requirements for the runtime data for each visualization script.
 
 |                       | Expected Input | Required  compile flags | Required test flags |
 |-----------------------|----------------|-------------------------|---------------------|
-| Pricing               | .out, .vbc     | STATISTICS=true         | -                   |
-| Classifier/ Detection | .out           | -                       | MODE=detectionstatistics         |
-| Bounds                | .out           | -                       | STATISTICS=true     |
-| General               | .out           |                         | STATISTICS=true     |
 | Performance Profile   | .out/.res      | -                       | -                   |
-| Table Comparison      | .res           | -                       | -                   |
+| General               | .out           |                         | STATISTICS=true     |
+| Bounds                | .out           | -                       | STATISTICS=true     |
+| Classifier/ Detection | .out           | -                       | MODE=detectionstatistics         |
+| Pricing               | .out, .vbc     | STATISTICS=true         | -                   |
+| Tree                  | .vbc           |                         | -                   |
+| Comparison Table      | .res           | -                       | -                   |
 
 # Plotting
 > You can create different plots with the included scripts in the `stats` folder. All scripts are briefly explained in the following.
