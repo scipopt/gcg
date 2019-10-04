@@ -1,0 +1,172 @@
+checksol              double checks best solution w.r.t. original problem
+concurrentopt         solve the problem using concurrent solvers
+detect                detect structure
+explore               explore decompositions
+free                  free current problem from memory
+help                  display this help
+master                switch to the interactive shell of the master problem
+newstart              reset branch and bound tree to start again from root
+optimize              solve the problem
+presolve              presolve the problem
+quit                  leave GCG
+read                  read a problem
+transform             transform the problem
+validatesolve         validate the solution against external objective reference interval
+
+<change>              change the problem
+  add                   add constraint
+  blocknr               add block number candidate
+  bounds                change bounds of a variable
+  freetransproblem      free transformed problem
+  instancename          add instancename information
+  objsense              change objective sense
+
+<display>             display information
+  additionalstatistics  display additional solving statistics
+  benders               display Benders' decomposition
+  blocknumbercandidates display number of blocks candidates
+  branching             display branching rules
+  compression           display compression techniques
+  conflict              display conflict handlers
+  conshdlrs             display constraint handlers
+  decomposition         display decomposition
+  detectionstatistics   display complete detection information
+  displaycols           display display columns
+  dualsolution          display dual solution vector (LP only, without presolving)
+  finitesolution        display best primal solution (try to make solution values finite, first)
+  heuristics            display primal heuristics
+  linclass              linear constraint classification as used for MIPLIB
+  lpsolquality          display quality of the current LP solution, if available
+  memory                display memory diagnostics
+  nlpis                 display NLP solver interfaces
+  nodeselectors         display node selectors
+  parameters            display non-default parameter settings
+  presolvers            display presolvers
+  pricers               display pricers
+  problem               display original problem
+  propagators           display propagators
+  readers               display file readers
+  relaxators            display relaxators
+  reoptstatistics       display reoptimitazion statistics
+  separators            display cut separators
+  sols                  display solutions from pool
+  solution              display best primal solution
+  solvers               display available pricing problem solvers
+  statistics            display problem and optimization statistics
+  subproblem            display subproblem of a Benders' decomposition
+  subsolution           display solution to the Benders' decomposition subproblems given the best master problem solution
+  transproblem          display current node transformed problem
+  transsolution         display best primal solution in transformed variables
+  value                 display value of single variable in best primal solution
+  varbranchstatistics   display statistics for branching on variables
+
+<fix>                 fix/unfix parameters
+  <benders>             parameters for <benders>
+  <branching>           fix parameters for branching rules
+  <compression>         parameters for <compression>
+  <concurrent>          parameters for <concurrent>
+  <conflict>            fix parameters for conflict handlers
+  <constraints>         fix parameters for constraint handlers
+  <detection>           parameters for <detection>
+  <display>             fix parameters for display columns
+  <eventhdlr>           parameters for <eventhdlr>
+  <heuristics>          fix parameters for primal heuristics
+  <history>             parameters for <history>
+  <limits>              fix parameters for time, memory, objective value, and other limits
+  <lp>                  fix parameters for linear programming relaxations
+  <memory>              fix parameters for memory management
+  <misc>                fix parameters for miscellaneous stuff
+  <nlp>                 fix parameters for nonlinear programming relaxations
+  <nlpi>                fix parameters for NLP solver interfaces
+  <nodeselection>       fix parameters for node selectors
+  <numerics>            fix parameters for numerical values
+  <parallel>            parameters for <parallel>
+  <presolving>          fix parameters for presolving
+  <pricing>             fix parameters for pricing variables
+  <pricingsolver>       parameters for <pricingsolver>
+  <propagating>         fix parameters for constraint propagation
+  <randomization>       parameters for <randomization>
+  <reading>             fix parameters for problem file readers
+  <relaxing>            parameters for <relaxing>
+  <reoptimization>      parameters for <reoptimization>
+  <sepa>                parameters for <sepa>
+  <separating>          fix parameters for cut separators
+  <table>               parameters for <table>
+  <timing>              fix parameters for timing issues
+  <visual>              parameters for <visual>
+  <write>               parameters for <write>
+
+<graph>               graph submenu to read and write graph
+  <read>                read partition from file
+    rowgraph              reads graph of given type
+  <write>               write graph to file
+    rowgraph              writes graph of given type
+
+<set>                 load/save/change parameters
+  <benders>             parameters for <benders>
+  <branching>           change parameters for branching rules
+  <compression>         parameters for <compression>
+  <concurrent>          parameters for <concurrent>
+  <conflict>            change parameters for conflict handlers
+  <constraints>         change parameters for constraint handlers
+  <detection>           change parameters for detection in general
+  <display>             change parameters for display columns
+  <emphasis>            predefined parameter settings
+  <eventhdlr>           parameters for <eventhdlr>
+  <heuristics>          change parameters for primal heuristics
+  <history>             parameters for <history>
+  <limits>              change parameters for time, memory, objective value, and other limits
+  <lp>                  change parameters for linear programming relaxations
+  <memory>              change parameters for memory management
+  <misc>                change parameters for miscellaneous stuff
+  <nlp>                 change parameters for nonlinear programming relaxations
+  <nlpi>                change parameters for NLP solver interfaces
+  <nodeselection>       change parameters for node selectors
+  <numerics>            change parameters for numerical values
+  <parallel>            change parameters for parallel implementation
+  <presolving>          change parameters for presolving
+  <pricing>             change parameters for pricing variables
+  <pricingsolver>       parameters for <pricingsolver>
+  <propagating>         change parameters for constraint propagation
+  <randomization>       parameters for <randomization>
+  <reading>             change parameters for problem file readers
+  <relaxing>            parameters for <relaxing>
+  <reoptimization>      parameters for <reoptimization>
+  <sepa>                change parameters for gcg separators
+  <separating>          change parameters for cut separators
+  <table>               parameters for <table>
+  <timing>              change parameters for timing issues
+  <visual>              change parameters for visualization output
+  <write>               parameters for <write>
+  default               reset parameter settings to their default values
+  diffsave              save non-default parameter settings to a file
+  load                  load parameter settings from a file
+  loadmaster            load parameter settings for master problem from a file
+  save                  save parameter settings to a file
+
+
+<write>               write information to file
+  alldecompositions     write all known decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})
+  alloriginaldecompositions
+                   -->  write all known original decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})
+  allpresolveddecompositions
+                   -->  write all known presolved decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})
+  cliquegraph           write graph of cliques and implications of binary variables to GML file (better call after presolving)
+  familytree            write all (partial) decompositions contained in family tree to files (.gp/.tex) and create family tree file (.tex)
+  finitesolution        write best primal solution to file (try to make solution values finite, first)
+  genproblem            write original problem with generic names to file (format is given by file extension, e.g., orig.{lp,rlp,cip,mps})
+  gentransproblem       write current node transformed problem with generic names to file (format is given by file extension, e.g., trans.{lp,rlp,cip,mps})
+  history               write command line history to a file (only works if SCIP was compiled with 'readline')
+  lp                    write current node LP relaxation in LP format to file
+  matrix                write gnuplot file showing the nonzero structure of the original matrix
+  mip                   write current node MIP relaxation in LP format to file
+  mipstart              write mip start to file
+  nlp                   write current node NLP relaxation to file
+  problem               write original problem to file (format is given by file extension, e.g., orig.{lp,rlp,cip,mps})
+  reportdecompositions  write report of all finished decompositions to LaTeX format
+  selecteddecompositions
+                   -->  write selected (in "explore" submenu) decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})
+  solution              write best primal solution to file
+  statistics            write statistics to file
+  transmatrix           write gnuplot file showing the nonzero structure of the transformed (presolved) matrix
+  transproblem          write current node transformed problem to file (format is given by file extension, e.g., trans.{lp,rlp,cip,mps})

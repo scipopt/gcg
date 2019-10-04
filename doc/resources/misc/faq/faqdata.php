@@ -111,8 +111,17 @@ This is done with "write familytree".
 Apart from the detection visualizations, GCG also comes with some python scripts that
 allow to make graphics showing the pricing process, time distribution, bounds development and more.
 A guide on how to use those scripts can be found <a href="generatevisu.html">here</a>
-</p>',
+</p>
+',
               'label'=>'runvisu'
+             ),
+
+          array(
+              'question'=>'How do I use the GAMS interface?',
+              'answer'=>'<p>
+For the GAMS interface to run with GCG, you have to make sure that the dependencies were compiled with SHARED=true and READLINE=false.
+</p>',
+              'label'=>'gams'
              )),
              )
         );

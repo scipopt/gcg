@@ -47,6 +47,10 @@
     <a class="reveal_faq" href="#runvisu">
       How do I generate runtime visualizations?    </a>
   </li>
+    <li>
+    <a class="reveal_faq" href="#gams">
+      How do I use the GAMS interface?    </a>
+  </li>
   </ol>
 <hr />
 <h3 id="faq_generalquestionsaboutgcg" class="anchor"><span class="fa fa-caret-right"></span> General Questions about GCG<a href="#" class="pull-right"><span title="go to top" class="fa fa-caret-up"></span></a></h3><ol>  <li id="whatisgcg" class="anchor">
@@ -183,6 +187,18 @@ This is done with "write familytree".
 Apart from the detection visualizations, GCG also comes with some python scripts that
 allow to make graphics showing the pricing process, time distribution, bounds development and more.
 A guide on how to use those scripts can be found <a href="generatevisu.html">here</a>
+</p>
+    </div>
+  </li>
+    <li id="gams" class="anchor">
+    <h4>
+      <a class="reveal_faq" href="#gams">How do I use the GAMS interface?</a>
+
+      <a href="#" class="pull-right"><span class="fa fa-caret-up" title="go to top"></span></a>
+    </h4>
+    <div id="gams_ans" class="answer">
+      <p>
+For the GAMS interface to run with GCG, you have to make sure that the dependencies were compiled with SHARED=true and READLINE=false.
 </p>    </div>
   </li>
   </ol>
