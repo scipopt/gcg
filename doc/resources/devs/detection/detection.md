@@ -4,19 +4,16 @@
 > distinguishes GCG from SCIP. It accelerates the solving speed of many problems.
 > For further reading, please consult the @ref use-cases "Use-Cases", in particular @ref u2 "the second one".
 
-There are many different structures that can be found in models and for each type, we
-have a **unique detector** to find (detect) it. In the following, you can
-find the pages that lead to the description of these. For each, we will present
-what exact structure it finds, how it does that and for what instances this might be suited.
+There are many different kinds of constraints and variables inside a model and each has a certain
+form. Since we want to use those, we let our **classifiers** run on your model to check
+for specific classes of constraints and variables. Then, there are many structures
+that can be found in models and for each type, we have a **detector** to find (detect) it.
+In the following, you can find the pages that lead to the description of all classifiers and
+detectors that GCG offers. For each, we will present what exact structure it finds
+(or what classes, respectively), how it does that and for what instances this might be suited.
 
+@subpage classifiers "Classifiers: Overview Page"\n
 @subpage detectors "Detectors: Overview Page"\n
-- @ref det-colors
-- @ref det-connected
-- @ref det-cutpacking
-- @ref det-gomory
-- @ref det-isomorph
-- @ref det-random
-- @ref det-staircase
 
 \n
 Our **detection** is executed in a **loop**, where all detectors are called one by one.

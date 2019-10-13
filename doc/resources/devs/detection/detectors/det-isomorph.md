@@ -1,4 +1,6 @@
-# Isomorph Detector {#det-isomorph}
+# Isomorph Detector (deprecated) {#det-isomorph}
+
+> Does not exist anymore.
 
 This detector finds subproblems that can be aggregated thus reducing the symmetry of the problem using color preserving automorphisms and bliss.
 

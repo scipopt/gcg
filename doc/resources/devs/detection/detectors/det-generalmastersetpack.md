@@ -1,0 +1,1 @@
+# Generalmastersetpack Detector {#det-generalmastersetpack}

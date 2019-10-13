@@ -1,0 +1,1 @@
+# Generalmastersetcover Detector {#det-generalmastersetcover}

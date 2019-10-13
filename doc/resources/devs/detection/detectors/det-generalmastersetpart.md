@@ -1,0 +1,1 @@
+# Generalmastersetpart Detector {#det-generalmastersetpart}

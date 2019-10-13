@@ -5,4 +5,4 @@
 Once GCG was started, you can navigate through the menu. All points of the menu that are expandable
 are written inside brackets (`display`, `set`, ...) and everything else is just a keyword (`read`, `quit`, ...).
 
-\include menu.txt
+\htmlinclude menu.html

@@ -1,0 +1,1 @@
+# Constype Detector {#det-constype}
