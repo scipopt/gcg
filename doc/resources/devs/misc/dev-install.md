@@ -1,10 +1,10 @@
 # Advanced Installation {#dev-install}
 > This guide aims to help you with installing GCG as a developer. If you want to know what operating systems and compilers are
-> supported to install GCG, please consult @subpage compatibility. To prepare yourself, you should also check the @subpage known-bugs.
+> supported to install GCG, please consult @ref compatibility. To prepare yourself, you should also check the @ref known-bugs.
 
 # Installation using Git {#git-install}
 > For the following steps, you need to have Git installed on your system. If you want to let an automated installer
-> do the work for you, you can download it <a href="../installGCG.sh">here</a>. Note that you have to have your SSH key installed for it to work.
+> do the work for you, you can download it <a href="../scripts/installGCGfromGit.sh">here</a>. Note that you have to have your SSH key installed for it to work.
 
 ## Git prerequisites
 Please make sure that you have your ssh key saved in your Git account. Otherwise, you won't be able to

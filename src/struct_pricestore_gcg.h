@@ -13,7 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_pricestore.h
+/**@file   struct_pricestore_gcg.h
  * @brief  datastructures for storing priced cols
  * @author Jonas Witt
  */

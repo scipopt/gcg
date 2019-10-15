@@ -1,0 +1,1 @@
+# Neighborhoodmaster Detector {#det-neighborhoodmaster}

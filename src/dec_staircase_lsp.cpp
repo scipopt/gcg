@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_staircase_lsp.c
+/**@file   dec_staircase_lsp.cpp
  * @ingroup DETECTORS
  * @brief  detector for staircase_lsp matrices
  * @author Martin Bergner

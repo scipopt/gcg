@@ -1,0 +1,1 @@
+# Hcgpartition Detector {#det-hcgpartition}

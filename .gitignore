@@ -8,6 +8,7 @@ bin/
 check/results
 doc/html/index.html
 doc/html/doc-*/
+doc/html/scripts/*
 doc/html/MathJax/
 gcg-*.metis*
 lib/include/bliss
@@ -26,3 +27,4 @@ release
 src/TAGS
 src/githash.c
 build*
+parameters.set

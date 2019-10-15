@@ -1,0 +1,36 @@
+<div style="text-align: center; align: center">
+  <div class="pre-spoiler">
+  <input name="button" type="button" onClick="
+  if (this.parentNode.getElementsByTagName('div')[0].style.display != 'none') {
+     this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'Show Detection Plots'; }
+  else { this.parentNode.getElementsByTagName('div')[0].style.display = 'block'; this.value = 'Hide';
+}" value="Show Detection Plots">
+  <div class="spoiler" style="display: none;">
+
+    <h4>Detection Times</h4>
+    <img src="img/visu/detection/goodinstancesnodec.detection_times.png" style="width:80%">
+    <figcaption style="font-size:x-small; line-height:1.1">This plot visualizes what fraction of instances against the time used for the whole detection process, including classification and score computation, on a logarithmic scale. The parser reads the time from the extended detection statistics printed when executing make test MODE=detectionstatistics.</figcaption>
+
+    <h4>Found Decompositions</h4>
+    <img src="img/visu/detection/goodinstancesnodec.detection_decomps.png" style="width:80%">
+    <figcaption style="font-size:x-small; line-height:1.1">The above plot shows the number of decompositions that were found for what fraction of instances in the given test set on a logarithmic scale. Only those decompositions are shown that have a score that is strictly greater than 0.</figcaption>
+
+    <h4>Detection Quality (score)</h4>
+    <img src="img/visu/detection/goodinstancesnodec.detection_quality.png" style="width:80%">
+    <figcaption style="font-size:x-small; line-height:1.1">This plot illustrates the detection goodness of the test set (according to the "max white score"). If for all instances in the test set, the best ("whitest") decomposition was completely white, this plot would show a line with y=1 for all x.</figcaption>
+
+    <h4>Detection Quality (score): Set Partitioning Master</h4>
+    <img src="img/visu/detection/goodinstancesnodec.detection_quality_SetPartMaster.png" style="width:80%">
+    <figcaption style="font-size:x-small; line-height:1.1">Similarly to the previous plot, this one shows the detection goodness of the whole test set, but for a specific detector, the "mastersetpart" detector. For this specific detector, GCG outputs the scores separately in the detectionstatistics test mode. With this plot, together with the previous one, one can compare the performance of the Set Partitioning Master detector with the overall performance.</figcaption>
+
+    <h4>Number of Blocks for whitest decomposition</h4>
+    <img src="img/visu/detection/goodinstancesnodec.detection_nBlocksOfBest.png" style="width:80%">
+    <figcaption style="font-size:x-small; line-height:1.1">This plot shows how many blocks are used in the (according to the max white score) best decomposition, allowing to make statements about the sensibility of different numbers of blocks.</figcaption>
+
+    <h4>Number of classes found by a single classifier</h4>
+    <img src="img/visu/detection/goodinstancesnodec.classification_classes_nonzeros.png" style="width:80%">
+    <figcaption style="font-size:x-small; line-height:1.1">With this visualization, one can see how many classes a classifier determined for the variables. The user can choose for which classifier to plot this, here "nonzeros" was chosen.</figcaption>
+
+  </div>
+  </div>
+</div>

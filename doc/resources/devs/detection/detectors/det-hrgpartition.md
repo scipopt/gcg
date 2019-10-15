@@ -1,0 +1,1 @@
+# Hrgpartition Detector {#det-hrgpartition}

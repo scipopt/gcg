@@ -1,0 +1,24 @@
+<div style="text-align: center; align: center">
+  <div class="pre-spoiler">
+  <input name="button" type="button" onClick="
+  if (this.parentNode.getElementsByTagName('div')[0].style.display != 'none') {
+     this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'Show Tree Plots'; }
+  else { this.parentNode.getElementsByTagName('div')[0].style.display = 'block'; this.value = 'Hide';
+}" value="Show Tree Plots">
+  <div class="spoiler" style="display: none;">
+
+    <h4>Simple Plot</h4>
+    <img src="img/visu/tree/F25N.default.tree.png" style="width:80%">
+    <figcaption style="font-size:x-small; line-height:1.1">In this plot, one can see a distribution that is common for many instances: a parabolic distribution along the tree depth, indicating a rather balanced branching process. After determining which node selection rule can evoke this behavior, these visualizations could contribute to the GCG documentation by illustrating the branching behavior graphically and also compare along different categories of instances. The visualization here represents the most common behavior of GCG in the tree for the testset used.</figcaption>
+
+    <h4>Bar Graph</h4>
+    <img src="img/visu/tree/F25N.default.tree_bar.png" style="width:80%">
+    <figcaption style="font-size:x-small; line-height:1.1">Being similar to the simple plot, this bar graph offers better readability in most situations.</figcaption>
+
+    <h4>Normalized Bar Graph</h4>
+    <img src="img/visu/tree/F25N.default.tree_bar.2.png" style="width:80%">
+    <figcaption style="font-size:x-small; line-height:1.1">In contrast to the previous plot, the data is normalized before plotting. This means that the percentage of nodes opened on each level against how many exist on this level is illustrated.</figcaption>
+
+  </div>
+  </div>
+</div>

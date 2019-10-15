@@ -1,0 +1,225 @@
+<style>
+.data a, .data span, .data tr, .data td { white-space: pre; }
+
+#myInput {
+  background-image: url('/css/searchicon.png'); /* Add a search icon to input */
+  background-position: 10px 12px; /* Position the search icon */
+  background-repeat: no-repeat; /* Do not repeat the icon image */
+  width: 100%; /* Full-width */
+  font-size: 16px; /* Increase font-size */
+  padding: 12px 20px 12px 40px; /* Add some padding */
+  border: 1px solid #ddd; /* Add a grey border */
+  margin-bottom: 12px; /* Add some space below the input */
+}
+
+#myUL {
+  /* Remove default list styling */
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+#myUL li a {
+  border: 1px solid #ddd; /* Add a border to all links */
+  margin-top: -1px; /* Prevent double borders */
+  background-color: #f6f6f6; /* Grey background color */
+  padding: 12px; /* Add some padding */
+  text-decoration: none; /* Remove default text underline */
+  /*font-size: 18px; /* Increase the font-size */
+  color: black; /* Add a black text color */
+  display: block; /* Make it into a block element to fill the whole list */
+}
+
+#myUL li a:hover:not(.header) {
+  background-color: #eee; /* Add a hover effect to all links, except for headers */
+}
+</style>
+<script>
+function myFunction() {
+  // Declare variables
+  var input, filter, ul, li, a, i, txtValue;
+  input = document.getElementById('myInput');
+  filter = input.value.toUpperCase();
+  ul = document.getElementById("myUL");
+  li = ul.getElementsByTagName('li');
+
+  // Loop through all list items, and hide those who don't match the search query
+  for (i = 0; i < li.length; i++) {
+    a = li[i].getElementsByTagName("a")[0];
+    txtValue = a.textContent || a.innerText;
+    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+      li[i].style.display = "";
+    } else {
+      li[i].style.display = "none";
+    }
+  }
+}
+</script>
+
+<div class="data">
+<input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for names..">
+<ul id="myUL">
+<li><a href="#"><code>checksol</code>: double checks best solution w.r.t. original problem</a></li>
+<li><a href="#"><code>concurrentopt</code>: solve the problem using concurrent solvers</a></li>
+<li><a href="#"><code>detect</code>: detect structure</a></li>
+<li><a href="#"><code>explore</code>: explore decompositions</a></li>
+<li><a href="#"><code>free</code>: free current problem from memory</a></li>
+<li><a href="#"><code>help</code>: display this help</a></li>
+<li><a href="#"><code>master</code>: switch to the interactive shell of the master problem</a></li>
+<li><a href="#"><code>newstart</code>: reset branch and bound tree to start again from root</a></li>
+<li><a href="#"><code>optimize</code>: solve the problem</a></li>
+<li><a href="#"><code>presolve</code>: presolve the problem</a></li>
+<li><a href="#"><code>quit</code>: leave GCG</a></li>
+<li><a href="#"><code>read</code>: read a problem</a></li>
+<li><a href="#"><code>transform</code>: transform the problem</a></li>
+<li><a href="#"><code>validatesolve</code>: validate the solution against external objective reference interval</a></li>
+<li><a href="#"><code>&lt;change&gt;</code>: change the problem</a></li>
+<li><a href="#"><code>change/add</code>: add constraint</a></li>
+<li><a href="#"><code>change/blocknr</code>: add block number candidate</a></li>
+<li><a href="#"><code>change/bounds</code>: change bounds of a variable</a></li>
+<li><a href="#"><code>change/freetransproblem</code>: free transformed problem</a></li>
+<li><a href="#"><code>change/instancename</code>: add instancename information</a></li>
+<li><a href="#"><code>change/objsense</code>: change objective sense</a></li>
+<li><a href="#"><code>&lt;display&gt;</code>: display information</a></li>
+<li><a href="#"><code>display/additionalstatistics</code>: display additional solving statistics</a></li>
+<li><a href="#"><code>display/benders</code>: display Benders' decomposition</a></li>
+<li><a href="#"><code>display/blocknumbercandidates</code>: display number of blocks candidates</a></li>
+<li><a href="#"><code>display/branching</code>: display branching rules</a></li>
+<li><a href="#"><code>display/compression</code>: display compression techniques</a></li>
+<li><a href="#"><code>display/conflict</code>: display conflict handlers</a></li>
+<li><a href="#"><code>display/conshdlrs</code>: display constraint handlers</a></li>
+<li><a href="#"><code>display/decomposition</code>: display decomposition</a></li>
+<li><a href="#"><code>display/detectionstatistics</code>: display complete detection information</a></li>
+<li><a href="#"><code>display/displaycols</code>: display display columns</a></li>
+<li><a href="#"><code>display/dualsolution</code>: display dual solution vector (LP only, without presolving)</a></li>
+<li><a href="#"><code>display/finitesolution</code>: display best primal solution (try to make solution values finite, first)</a></li>
+<li><a href="#"><code>display/heuristics</code>: display primal heuristics</a></li>
+<li><a href="#"><code>display/linclass</code>: linear constraint classification as used for MIPLIB</a></li>
+<li><a href="#"><code>display/lpsolquality</code>: display quality of the current LP solution, if available</a></li>
+<li><a href="#"><code>display/memory</code>: display memory diagnostics</a></li>
+<li><a href="#"><code>display/nlpis</code>: display NLP solver interfaces</a></li>
+<li><a href="#"><code>display/nodeselectors</code>: display node selectors</a></li>
+<li><a href="#"><code>display/parameters</code>: display non-default parameter settings</a></li>
+<li><a href="#"><code>display/presolvers</code>: display presolvers</a></li>
+<li><a href="#"><code>display/pricers</code>: display pricers</a></li>
+<li><a href="#"><code>display/problem</code>: display original problem</a></li>
+<li><a href="#"><code>display/propagators</code>: display propagators</a></li>
+<li><a href="#"><code>display/readers</code>: display file readers</a></li>
+<li><a href="#"><code>display/relaxators</code>: display relaxators</a></li>
+<li><a href="#"><code>display/reoptstatistics</code>: display reoptimitazion statistics</a></li>
+<li><a href="#"><code>display/separators</code>: display cut separators</a></li>
+<li><a href="#"><code>display/sols</code>: display solutions from pool</a></li>
+<li><a href="#"><code>display/solution</code>: display best primal solution</a></li>
+<li><a href="#"><code>display/solvers</code>: display available pricing problem solvers</a></li>
+<li><a href="#"><code>display/statistics</code>: display problem and optimization statistics</a></li>
+<li><a href="#"><code>display/subproblem</code>: display subproblem of a Benders' decomposition</a></li>
+<li><a href="#"><code>display/subsolution</code>: display solution to the Benders' decomposition subproblems given the best master problem solution</a></li>
+<li><a href="#"><code>display/transproblem</code>: display current node transformed problem</a></li>
+<li><a href="#"><code>display/transsolution</code>: display best primal solution in transformed variables</a></li>
+<li><a href="#"><code>display/value</code>: display value of single variable in best primal solution</a></li>
+<li><a href="#"><code>display/varbranchstatistics</code>: display statistics for branching on variables</a></li>
+<li><a href="#"><code>&lt;fix&gt;</code>: fix/unfix parameters</a></li>
+<li><a href="#"><code>fix/&lt;benders&gt;</code>: parameters for &lt;benders&gt;</a></li>
+<li><a href="#"><code>fix/&lt;branching&gt;</code>: fix parameters for branching rules</a></li>
+<li><a href="#"><code>fix/&lt;compression&gt;</code>: parameters for &lt;compression&gt;</a></li>
+<li><a href="#"><code>fix/&lt;concurrent&gt;</code>: parameters for &lt;concurrent&gt;</a></li>
+<li><a href="#"><code>fix/&lt;conflict&gt;</code>: fix parameters for conflict handlers</a></li>
+<li><a href="#"><code>fix/&lt;constraints&gt;</code>: fix parameters for constraint handlers</a></li>
+<li><a href="#"><code>fix/&lt;detection&gt;</code>: parameters for &lt;detection&gt;</a></li>
+<li><a href="#"><code>fix/&lt;display&gt;</code>: fix parameters for display columns</a></li>
+<li><a href="#"><code>fix/&lt;eventhdlr&gt;</code>: parameters for &lt;eventhdlr&gt;</a></li>
+<li><a href="#"><code>fix/&lt;heuristics&gt;</code>: fix parameters for primal heuristics</a></li>
+<li><a href="#"><code>fix/&lt;history&gt;</code>: parameters for &lt;history&gt;</a></li>
+<li><a href="#"><code>fix/&lt;limits&gt;</code>: fix parameters for time, memory, objective value, and other limits</a></li>
+<li><a href="#"><code>fix/&lt;lp&gt;</code>: fix parameters for linear programming relaxations</a></li>
+<li><a href="#"><code>fix/&lt;memory&gt;</code>: fix parameters for memory management</a></li>
+<li><a href="#"><code>fix/&lt;misc&gt;</code>: fix parameters for miscellaneous stuff</a></li>
+<li><a href="#"><code>fix/&lt;nlp&gt;</code>: fix parameters for nonlinear programming relaxations</a></li>
+<li><a href="#"><code>fix/&lt;nlpi&gt;</code>: fix parameters for NLP solver interfaces</a></li>
+<li><a href="#"><code>fix/&lt;nodeselection&gt;</code>: fix parameters for node selectors</a></li>
+<li><a href="#"><code>fix/&lt;numerics&gt;</code>: fix parameters for numerical values</a></li>
+<li><a href="#"><code>fix/&lt;parallel&gt;</code>: parameters for &lt;parallel&gt;</a></li>
+<li><a href="#"><code>fix/&lt;presolving&gt;</code>: fix parameters for presolving</a></li>
+<li><a href="#"><code>fix/&lt;pricing&gt;</code>: fix parameters for pricing variables</a></li>
+<li><a href="#"><code>fix/&lt;pricingsolver&gt;</code>: parameters for &lt;pricingsolver&gt;</a></li>
+<li><a href="#"><code>fix/&lt;propagating&gt;</code>: fix parameters for constraint propagation</a></li>
+<li><a href="#"><code>fix/&lt;randomization&gt;</code>: parameters for &lt;randomization&gt;</a></li>
+<li><a href="#"><code>fix/&lt;reading&gt;</code>: fix parameters for problem file readers</a></li>
+<li><a href="#"><code>fix/&lt;relaxing&gt;</code>: parameters for &lt;relaxing&gt;</a></li>
+<li><a href="#"><code>fix/&lt;reoptimization&gt;</code>: parameters for &lt;reoptimization&gt;</a></li>
+<li><a href="#"><code>fix/&lt;sepa&gt;</code>: parameters for &lt;sepa&gt;</a></li>
+<li><a href="#"><code>fix/&lt;separating&gt;</code>: fix parameters for cut separators</a></li>
+<li><a href="#"><code>fix/&lt;table&gt;</code>: parameters for &lt;table&gt;</a></li>
+<li><a href="#"><code>fix/&lt;timing&gt;</code>: fix parameters for timing issues</a></li>
+<li><a href="#"><code>fix/&lt;visual&gt;</code>: parameters for &lt;visual&gt;</a></li>
+<li><a href="#"><code>fix/&lt;write&gt;</code>: parameters for &lt;write&gt;</a></li>
+<li><a href="#"><code>&lt;graph&gt;</code>: graph submenu to read and write graph</a></li>
+<li><a href="#"><code>graph/&lt;read&gt;</code>: read partition from file</a></li>
+<li><a href="#"><code>graph/read/rowgraph</code>: reads graph of given type</a></li>
+<li><a href="#"><code>graph/&lt;write&gt;</code>: write graph to file</a></li>
+<li><a href="#"><code>graph/write/rowgraph</code>: writes graph of given type</a></li>
+<li><a href="#"><code>&lt;set&gt;</code>: load/save/change parameters</a></li>
+<li><a href="#"><code>set/&lt;benders&gt;</code>: parameters for &lt;benders&gt;</a></li>
+<li><a href="#"><code>set/&lt;branching&gt;</code>: change parameters for branching rules</a></li>
+<li><a href="#"><code>set/&lt;compression&gt;</code>: parameters for &lt;compression&gt;</a></li>
+<li><a href="#"><code>set/&lt;concurrent&gt;</code>: parameters for &lt;concurrent&gt;</a></li>
+<li><a href="#"><code>set/&lt;conflict&gt;</code>: change parameters for conflict handlers</a></li>
+<li><a href="#"><code>set/&lt;constraints&gt;</code>: change parameters for constraint handlers</a></li>
+<li><a href="#"><code>set/&lt;detection&gt;</code>: change parameters for detection in general</a></li>
+<li><a href="#"><code>set/&lt;display&gt;</code>: change parameters for display columns</a></li>
+<li><a href="#"><code>set/&lt;emphasis&gt;</code>: predefined parameter settings</a></li>
+<li><a href="#"><code>set/&lt;eventhdlr&gt;</code>: parameters for &lt;eventhdlr&gt;</a></li>
+<li><a href="#"><code>set/&lt;heuristics&gt;</code>: change parameters for primal heuristics</a></li>
+<li><a href="#"><code>set/&lt;history&gt;</code>: parameters for &lt;history&gt;</a></li>
+<li><a href="#"><code>set/&lt;limits&gt;</code>: change parameters for time, memory, objective value, and other limits</a></li>
+<li><a href="#"><code>set/&lt;lp&gt;</code>: change parameters for linear programming relaxations</a></li>
+<li><a href="#"><code>set/&lt;memory&gt;</code>: change parameters for memory management</a></li>
+<li><a href="#"><code>set/&lt;misc&gt;</code>: change parameters for miscellaneous stuff</a></li>
+<li><a href="#"><code>set/&lt;nlp&gt;</code>: change parameters for nonlinear programming relaxations</a></li>
+<li><a href="#"><code>set/&lt;nlpi&gt;</code>: change parameters for NLP solver interfaces</a></li>
+<li><a href="#"><code>set/&lt;nodeselection&gt;</code>: change parameters for node selectors</a></li>
+<li><a href="#"><code>set/&lt;numerics&gt;</code>: change parameters for numerical values</a></li>
+<li><a href="#"><code>set/&lt;parallel&gt;</code>: change parameters for parallel implementation</a></li>
+<li><a href="#"><code>set/&lt;presolving&gt;</code>: change parameters for presolving</a></li>
+<li><a href="#"><code>set/&lt;pricing&gt;</code>: change parameters for pricing variables</a></li>
+<li><a href="#"><code>set/&lt;pricingsolver&gt;</code>: parameters for &lt;pricingsolver&gt;</a></li>
+<li><a href="#"><code>set/&lt;propagating&gt;</code>: change parameters for constraint propagation</a></li>
+<li><a href="#"><code>set/&lt;randomization&gt;</code>: parameters for &lt;randomization&gt;</a></li>
+<li><a href="#"><code>set/&lt;reading&gt;</code>: change parameters for problem file readers</a></li>
+<li><a href="#"><code>set/&lt;relaxing&gt;</code>: parameters for &lt;relaxing&gt;</a></li>
+<li><a href="#"><code>set/&lt;reoptimization&gt;</code>: parameters for &lt;reoptimization&gt;</a></li>
+<li><a href="#"><code>set/&lt;sepa&gt;</code>: change parameters for gcg separators</a></li>
+<li><a href="#"><code>set/&lt;separating&gt;</code>: change parameters for cut separators</a></li>
+<li><a href="#"><code>set/&lt;table&gt;</code>: parameters for &lt;table&gt;</a></li>
+<li><a href="#"><code>set/&lt;timing&gt;</code>: change parameters for timing issues</a></li>
+<li><a href="#"><code>set/&lt;visual&gt;</code>: change parameters for visualization output</a></li>
+<li><a href="#"><code>set/&lt;write&gt;</code>: parameters for &lt;write&gt;</a></li>
+<li><a href="#"><code>set/default</code>: reset parameter settings to their default values</a></li>
+<li><a href="#"><code>set/diffsave</code>: save non-default parameter settings to a file</a></li>
+<li><a href="#"><code>set/load</code>: load parameter settings from a file</a></li>
+<li><a href="#"><code>set/loadmaster</code>: load parameter settings for master problem from a file</a></li>
+<li><a href="#"><code>set/save</code>: save parameter settings to a file</a></li>
+<li><a href="#"><code>&lt;write&gt;</code>: write information to file</a></li>
+<li><a href="#"><code>write/alldecompositions</code>: write all known decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})</a></li>
+<li><a href="#"><code>write/alloriginaldecompositions</code>: write all known original decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})</a></li>
+<li><a href="#"><code>write/allpresolveddecompositions</code>: write all known presolved decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})</a></li>
+<li><a href="#"><code>write/cliquegraph</code>: write graph of cliques and implications of binary variables to GML file (better call after presolving)</a></li>
+<li><a href="#"><code>write/familytree</code>: write all (partial) decompositions contained in family tree to files (.gp/.tex) and create family tree file (.tex)</a></li>
+<li><a href="#"><code>write/finitesolution</code>: write best primal solution to file (try to make solution values finite, first)</a></li>
+<li><a href="#"><code>write/genproblem</code>: write original problem with generic names to file (format is given by file extension, e.g., orig.{lp,rlp,cip,mps})</a></li>
+<li><a href="#"><code>write/gentransproblem</code>: write current node transformed problem with generic names to file (format is given by file extension, e.g., trans.{lp,rlp,cip,mps})</a></li>
+<li><a href="#"><code>write/history</code>: write command line history to a file (only works if SCIP was compiled with 'readline')</a></li>
+<li><a href="#"><code>write/lp</code>: write current node LP relaxation in LP format to file</a></li>
+<li><a href="#"><code>write/matrix</code>: write gnuplot file showing the nonzero structure of the original matrix</a></li>
+<li><a href="#"><code>write/mip</code>: write current node MIP relaxation in LP format to file</a></li>
+<li><a href="#"><code>write/mipstart</code>: write mip start to file</a></li>
+<li><a href="#"><code>write/nlp</code>: write current node NLP relaxation to file</a></li>
+<li><a href="#"><code>write/problem</code>: write original problem to file (format is given by file extension, e.g., orig.{lp,rlp,cip,mps})</a></li>
+<li><a href="#"><code>write/reportdecompositions</code>: write report of all finished decompositions to LaTeX format</a></li>
+<li><a href="#"><code>write/selecteddecompositions</code>: write selected (in "explore" submenu) decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})</a></li>
+<li><a href="#"><code>write/solution</code>: write best primal solution to file</a></li>
+<li><a href="#"><code>write/statistics</code>: write statistics to file</a></li>
+<li><a href="#"><code>write/transmatrix</code>: write gnuplot file showing the nonzero structure of the transformed (presolved) matrix</a></li>
+<li><a href="#"><code>write/transproblem</code>: write current node transformed problem to file (format is given by file extension, e.g., trans.{lp,rlp,cip,mps})</a></li>
+</ul>
+</div>

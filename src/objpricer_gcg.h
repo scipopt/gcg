@@ -449,6 +449,6 @@ private:
       SCIP_Bool*            feasible            /**< check whether the solution is feasible */
    ) const;
 
-/* @} */
 };
+/* @} */
 #endif

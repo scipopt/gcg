@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* {
+  box-sizing: border-box;
+}
+
+/* Float two columns side by side */
+.column {
+  float: left;
+  width: 50%; /* Edit amount of cards */
+  padding: 0 10px;
+}
+.column_single {
+  float: left;
+  width: 100%; /* Edit amount of cards */
+  padding: 0 10px;
+}
+
+/* Remove extra left and right margins, due to padding */
+.card_row {
+  margin: 0 -5px 14px;
+}
+.card_row_last {
+  margin: 0 -5px 50px;
+}
+
+/* Clear floats after the columns */
+.card_row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Responsive columns */
+@media screen and (max-width: 600px) {
+  .column {
+    width: 100%;
+    display: block;
+    margin-bottom: 10px;
+  }
+}
+
+/* Style the counter cards */
+.card {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  padding: 14px;
+  height: 100%;
+  text-align: center;
+  background-color: #f1f1f1;
+}
+
+.card_small {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  margin: 0 25% 0 25%;
+  padding: 14px;
+  text-align: center;
+  background-color: #f1f1f1;
+}
+
+a.heading3:link {
+ font-size: 24px;
+ margin-top:10px;
+ margin-bottom:10px;
+ color:black;
+ font-weight: 500;
+ }
+a.heading3:visited {
+ font-size: 24px;
+ margin-top:10px;
+ margin-bottom:10px;
+ color:black;
+ font-weight: 500;
+ }
+a.heading3:hover {
+ font-size: 24px;
+ margin-top:10px;
+ margin-bottom:10px;
+ color:black;
+ text-decoration:underline;
+ }
+
+a.heading3_bold:link {
+font-size: 24px;
+margin-top:10px;
+margin-bottom:15px;
+color:black;
+font-weight:bold;
+}
+a.heading3_bold:visited {
+font-size: 24px;
+margin-top:10px;
+margin-bottom:15px;
+color:black;
+font-weight:bold;
+}
+a.heading3_bold:hover {
+font-size: 24px;
+margin-top:10px;
+margin-bottom:15px;
+color:black;
+text-decoration:underline;
+}
+
+a.heading4:link {
+ font-size: 18px;
+ margin-top:10px;
+ margin-bottom:10px;
+ color:black;
+ font-weight: 500;
+ }
+a.heading4:visited {
+ font-size: 18px;
+ margin-top:10px;
+ margin-bottom:10px;
+ color:black;
+ font-weight: 500;
+ }
+a.heading4:hover {
+ font-size: 18px;
+ margin-top:10px;
+ margin-bottom:10px;
+ color:black;
+ text-decoration:underline;
+ }
+
+ a.text:link {
+  color:black;
+  margin-right:0.5em;
+  margin-left: 0.5em;
+  }
+ a.text:visited {
+  color:black;
+  margin-right:0.5em;
+  margin-left: 0.5em;
+  }
+ a.text:hover {
+  color:black;
+  margin-right:0.5em;
+  margin-left: 0.5em;
+  text-decoration:underline;
+  }
+
+a.subtext:link {
+ font-size:10px;
+ margin-top:-2px;
+ color:black;
+ margin-right:1em;
+ }
+a.subtext:visited {
+ font-size:10px;
+ margin-top:-2px;
+ color:black;
+ margin-right:1em;
+ }
+a.subtext:hover {
+ font-size:10px;
+ margin-top:-2px;
+ color:black;
+ margin-right:1em;
+ text-decoration:underline;
+ }
+
+.headtext {
+ margin-top:3px;
+ margin-bottom:-4px;
+ font-size:9px;
+ text-transform:uppercase;
+ text-weight:bold;
+}
+</style>
+</head>
+
+<div class="card_row">
+  <div class="column_single">
+    <div class="card" onclick="location.href='install.html';">
+      <a class="heading3_bold" href="install.html">Installation</a><br>
+        <a class="text" href="install.html">Complete SCIP Optimization Suite</a>
+        <a class="text" href="dev-install.html#git-install">Git Installation</a>
+        <a class="text" href="dev-install.html#install-manually">Manual Installation</a><br>
+          <a class="subtext" href="dev-install.html#cmake-args">CMake Arguments</a>
+          <a class="subtext" href="dev-install.html#makefile-args">Makefile Arguments</a>
+    </div>
+  </div>
+</div>
+
+<div class="card_row">
+  <div class="column">
+    <div class="card">
+      <a class="heading3" href="users.html">User's Guide</a><br>
+        <a class="text" href="getting-started.html">Getting Started</a><br>
+        <p class="headtext">Features</p>
+          <a class="text" href="explore-menu.html">The Explore Menu</a>
+          <a class="text" href="visu.html">The Visualization Suite</a>
+        <p class="headtext">Use Cases</p>
+          <a class="text" href="u1.html">Use Case 1</a>
+          <a class="text" href="u2.html">Use Case 2</a>
+          <a class="text" href="u3.html">Use Case 3</a>
+          <a class="text" href="u4.html">Use Case 4</a>
+          <a class="text" href="u5.html">Use Case 5</a>
+    </div>
+  </div>
+  <div class="column">
+    <div class="card">
+      <a class="heading3" href="devs.html">Developer's Guide</a><br>
+        <p class="headtext">Feature descriptions</p>
+          <a class="text" href="detectionloop.html">The Detection Loop</a>
+          <a class="text" href="detectors.html">The Detectors</a>
+        <p class="headtext">Howtos</p>
+          <a class="text" href="howtouse.html">How to use</a>
+          <a class="text" href="howtoadd.html">How to add</a>
+    </div>
+  </div>
+</div>
+
+
+<div class="card_row">
+  <div class="column_single">
+    <div class="card">
+      <a class="heading3" href="modules.html">GCG C-API</a><br>
+        <a class="text" href="group__PUBLICCOREAPI.html">Public Core API</a>
+        <a class="text" href="group__PUBLICPLUGINAPI.html">Public Plugin API</a>
+      <!--  <a class="text" href="group__INTERNALAPI.html">Internal API</a>-->
+    </div>
+  </div>
+</div>
+
+<div class="card_row">
+  <div class="column_single">
+    <div class="card_small">
+      <a class="heading4" href="misc.html">Miscellaneous</a><br>
+        <a class="text" href="FAQ.html">FAQ</a>
+        <a class="text" href="compatibility.html">Compatibility</a>
+        <a class="text" href="CHG.html">Changelog</a>
+        <a class="text" href="PARAMETERS.html">Parameters</a>
+        <a class="text" href="AUTHORS.html">Authors</a>
+        <a class="text" href="PAPERS.html">Papers that use GCG</a>
+    </div>
+  </div>
+</div>
+<br>&nbsp;
+</html>

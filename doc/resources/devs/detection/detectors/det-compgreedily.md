@@ -1,0 +1,1 @@
+# Compgreedily Detector {#det-compgreedily}

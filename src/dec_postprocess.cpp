@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_postprocess.c
+/**@file   dec_postprocess.cpp
  * @ingroup DETECTORS
  * @brief  checks if there are master constraints that can be assigned to one block (without any other changes)
  * @author Michael Bastubbe
@@ -185,7 +185,7 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
       seeed->postprocessMasterToBlocksConssAdjacency( &success );
    else
       seeed->postprocessMasterToBlocks( &success );
-  
+
 
    if ( !success )
    {

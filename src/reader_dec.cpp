@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_dec.c
+/**@file   reader_dec.cpp
  * @brief  DEC file reader for structure information
  * @author Lukas Kirchhart
  * @author Martin Bergner

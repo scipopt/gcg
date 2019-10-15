@@ -181,7 +181,7 @@ do
         fi
 
         # call tmp file configuration for GCG
-        . ./configuration_tmpfile_setup_gcg.sh $INSTANCE $GCGPATH $TMPFILE $SETNAME $MSETNAME $SETFILE $THREADS $FEASTOL $TIMELIMIT $MEMLIMIT $NODELIMIT $LPS $DISPFREQ false $CLIENTTMPDIR $STATISTICS $FILENAME
+        . ./configuration_tmpfile_setup_gcg.sh $INSTANCE $GCGPATH $TMPFILE $SETNAME $MSETNAME $SETFILE $THREADS $FEASTOL $TIMELIMIT $MEMLIMIT $NODELIMIT $LPS $DISPFREQ false $STATISTICS $MODE
 
         # additional environment variables needed by runcluster.sh
 	    export SOLVERPATH=$GCGPATH

@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   class_Seeed.h
+/**@file   class_seeed.h
  * @brief  class with functions for seeed
  * @author Michael Bastubbe
  * @author Hannah Hechenrieder
