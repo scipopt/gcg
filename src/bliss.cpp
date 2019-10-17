@@ -463,10 +463,13 @@ struct_coef::struct_coef(
    val = val_;
 }
 
-
 /** returns bliss version */
 extern "C"
-const char* GCGgetBlissVersion(void)
+void GCGgetBlissName(char* buffer, int len)
 {
-   return bliss::version;
+#ifdef BLISS_PATCH_PRESENT
+   SCIPsnprintf(buffer, len, "bliss %sp", bliss::version);
+#else
+   sprintf(buffer, "bliss %s", bliss::version);
+#endif
 }

@@ -3396,7 +3396,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 #ifdef WITH_BLISS
    {
       char name[SCIP_MAXSTRLEN];
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "bliss %s", GCGgetBlissVersion());
+      GCGgetBlissName(name, SCIP_MAXSTRLEN);
       SCIP_CALL( SCIPincludeExternalCodeInformation(scip, name, "A Tool for Computing Automorphism Groups of Graphs by T. Junttila and P. Kaski (http://www.tcs.hut.fi/Software/bliss/)") );
    }
 #endif

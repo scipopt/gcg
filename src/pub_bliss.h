@@ -52,7 +52,7 @@ typedef struct struct_colorinformation AUT_COLOR;
 
 /** returns bliss version */
 extern
-const char* GCGgetBlissVersion(void);
+void GCGgetBlissName(char* buffer, int len);
 
 #ifdef __cplusplus
 }
