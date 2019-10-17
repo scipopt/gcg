@@ -3,6 +3,6 @@
 Here you find a list of all classifiers available in GCG and
 a short description of their functionality.
 
-- @subpage cl-varclass
-- @subpage cl-consclass
-- @subpage cl-indexclass
+- @subpage clsvar "Overview: Variable Classifiers"
+- @subpage clscons "Overview: Constraint Classifiers"
+- @subpage clsindex "Overview: Index Classifiers"

@@ -1,0 +1,25 @@
+# User's Guide {#users}
+
+The **first part** of the User's Guide offers a short introduction to GCG, which suffices for solving programs.
+
+ @ref install \n
+ @subpage getting-started \n
+
+\n
+The **second part** explains how the interactive menu and more features of GCG can be used.
+
+ @subpage menu \n
+ @subpage explore-menu \n
+ @subpage visu
+
+\n
+Then, **the remainder** of the user's guide is divided into 5 different use cases
+which are ordered according to their complexity.\n
+If you're new here, we recommend starting with the first one.
+
+ @subpage use-cases "Use Cases: Overview Page"\n
+ - @ref u1
+ - @ref u2
+ - @ref u3
+ - @ref u4
+ - @ref u5

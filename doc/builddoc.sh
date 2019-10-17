@@ -9,6 +9,7 @@ set -e
 
 ./resources/devs/howtoadd/createindexes.sh
 ./resources/devs/howtouse/createindexes.sh
+./resources/devs/detection/classifiers/createindexes.sh
 ./resources/devs/detection/detectors/createindexes.sh
 ./resources/users/features/interactive-menu/createMenuDocu.sh
 cd $(dirname $0)
