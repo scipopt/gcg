@@ -5,12 +5,12 @@ cd $(dirname $0)
 
 cd consclass
 echo "# Constraint Classifier {#clscons}" > clscons.md
-ls | egrep '\.md$|\.dox$' | sed 's/clscons\.md//' | sed 's/.md//' | sed 's/^/- @subpage /' | sed '/howto/d' >> clscons.md
+ls | egrep '\.md$|\.dox$' | sed '/clscons\.md/d' | sed 's/.md//' | sed 's/^/- @subpage /' >> clscons.md
 cd ..
 
 cd varclass
 echo "# Variable Classifier {#clsvar}" > clsvar.md
-ls | egrep '\.md$|\.dox$' | sed 's/clsvar\.md//' | sed 's/.md//' | sed 's/^/- @subpage /' | sed '/howto/d' >> clsvar.md
+ls | egrep '\.md$|\.dox$' | sed '/clsvar\.md/d' | sed 's/.md//' | sed 's/^/- @subpage /' >> clsvar.md
 cd ..
 
 echo "Subpage indexing for devs/classifiers/ built sucessfully."
