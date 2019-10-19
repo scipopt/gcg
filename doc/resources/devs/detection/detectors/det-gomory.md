@@ -1,4 +1,6 @@
 # Gomory-Hu Detector {#det-gomory}
+> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
+
 This detector constructs a Gomory-Hu tree of a hypergraph where the vertices correspond to rows of the LP and the hyperedges correspond to columns of the LP. Each edge of the tree has a weight which is the size of a minimum cut between the two nodes incident to the edge. Then, a decomposition is constructed by merging nodes of the tree and assigning each node (which represents several vertices) to a block.
 
 ### Details

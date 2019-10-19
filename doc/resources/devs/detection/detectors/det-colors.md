@@ -1,4 +1,5 @@
 # Colors Detector {#det-colors}
+> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 The detector assigns color classes to constraints and tries combinations of colors in the master.
 

@@ -1,4 +1,6 @@
 # Random Detector {#det-random}
+> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
+
 Assigns to every constraint randomly equally
 
 ### Details

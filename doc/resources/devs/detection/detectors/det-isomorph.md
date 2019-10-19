@@ -1,4 +1,5 @@
 # Isomorph Detector (deprecated) {#det-isomorph}
+> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 > Does not exist anymore.
 
@@ -15,7 +16,7 @@ To find subproblems the detector proceeds as follows:
  * Add nodes for nonzero entries the color of its equivalence class
  * connect nonzero entries with their corresponding constraint and variable nodes
 2. Search for a color-preserving automorphism of the graph using BLISS
-3. If a color-preserving automorphism is found, it gives rise to permutations of the constraints and variables. If the permutation of the constraints is non-trivial, subsets of nodes with a bijection of one to another can be identified. 
+3. If a color-preserving automorphism is found, it gives rise to permutations of the constraints and variables. If the permutation of the constraints is non-trivial, subsets of nodes with a bijection of one to another can be identified.
 4. Put the constraints of the different subsets in different pricing problems. These problems can be aggregated.
 
 
@@ -27,7 +28,7 @@ To find subproblems the detector proceeds as follows:
 
 ### Future work
 
-If the graph is not coherent, BLISS returns more than one generator. To get all possible automorphisms, all generators have to be "connected" in all possible ways. 
+If the graph is not coherent, BLISS returns more than one generator. To get all possible automorphisms, all generators have to be "connected" in all possible ways.
 
 
 ### Links

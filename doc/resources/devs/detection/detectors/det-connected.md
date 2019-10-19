@@ -1,4 +1,5 @@
 # Connected Detector {#det-connected}
+> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 The Connected Detector finds variables shared by constraints and places those constraints into the same block.
 
@@ -21,8 +22,8 @@ To detect blocks the detector uses the following steps:
 ```
 ### Future work
 
-There is current work on 
- * finding bordered structures with the Connected Detector as well as any other connector that defines a master problem. This will be done by finding other structures within the non-master problem by additionally to finding connected components applying other detectors to a subscip. 
+There is current work on
+ * finding bordered structures with the Connected Detector as well as any other connector that defines a master problem. This will be done by finding other structures within the non-master problem by additionally to finding connected components applying other detectors to a subscip.
 Additional parameters will be
   ```
   maxnvarsstaircase    variable limit for finding bordered staircase structures

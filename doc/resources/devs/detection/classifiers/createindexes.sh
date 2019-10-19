@@ -13,4 +13,4 @@ echo "# Variable Classifier {#clsvar}" > clsvar.md
 ls | egrep '\.md$|\.dox$' | sed 's/clsvar\.md//' | sed 's/.md//' | sed 's/^/- @subpage /' | sed '/howto/d' >> clsvar.md
 cd ..
 
-echo "Subpage indexing for devs/detection/ built sucessfully."
+echo "Subpage indexing for devs/classifiers/ built sucessfully."

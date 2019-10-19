@@ -1,4 +1,5 @@
 # Cutpacking Detector {#det-cutpacking}
+> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 This detector tries to find a staircase structure by recursively partitioning the row graph of the matrix.
 
