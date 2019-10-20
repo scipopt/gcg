@@ -6,7 +6,7 @@
 ### Requirements
 - Rights to write inside the `doc` directory
 - common bash tools (`egrep`, `sed`, ...)
-- Doxygen
+- Doxygen and graphviz (for graph visualizations)
 - PHP (for FAQ generation)
 - Python 2.7 or newer with `re`, `sys` and `argparse` importable (for FAQ generation)
 - a working LaTeX installation (for formulas inside the use cases)

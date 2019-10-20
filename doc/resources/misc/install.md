@@ -73,5 +73,5 @@ In the root folder of the scipoptsuite, you can then compile everything
 
 Arguments to be added to `make gcg` if needed can be found under \ref makefiles-args.
 
-### Step 3: Use GCG!
+### Step 4: Use GCG!
 See our \ref getting-started - Guide for further comments on the usage.
