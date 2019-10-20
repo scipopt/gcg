@@ -11,6 +11,7 @@
 - @subpage install
 - @subpage users
 - @subpage devs
+- @subpage example-projects
 - @subpage misc
 - <a href="modules.html"><b>GCG C-API</b></a>
 
