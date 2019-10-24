@@ -4,21 +4,26 @@ import signal
 import os
 
 
-def getItem(command = "help", level = 0):
-    quitCommand = "-c 'quit'"
-    goBackCommand = ""
-    execCommand = ""
+def getSubmenu(command = "help", level = 0):
+    print("Command to be executed: " + command)
+    quitCommand     = " -c 'quit'"
+    goBackCommand   = " -c '"
+    execCommand     = " -c '"
     for com in command.split():
-        execCommand += "-c '" + com + "'"
+        execCommand += com + " "
+    execCommand += "'"
+
     print("Level:" + str(level))
     i = 0
     while i < level:
-        goBackCommand += '-c ".."'
+        goBackCommand += " .."
         i += 1
+    goBackCommand += "'"
 
     #print(f'Executing "{command}"')
-    proc = subprocess.Popen([f'./../../../../../bin/gcg {execCommand} {goBackCommand} {quitCommand} | grep -A100 -m1 "user parameter file" | tail -n+4 | sed "s/^  //g" | sed "/\\n/d"'], shell=True, stdout=subprocess.PIPE,universal_newlines=True)
-
+    execstring = "./../../../../../bin/gcg {} {} {} | grep -A100 -m1 'user parameter file' | tail -n+4 | sed 's/^  //g' | sed '/\\n/d'".format(execCommand, goBackCommand, quitCommand)
+    print(execstring)
+    proc = subprocess.Popen([str(execstring)], shell=True, stdout=subprocess.PIPE,universal_newlines=True)
     try:
         outs, errs = proc.communicate(timeout=15)
     except TimeoutExpired:
@@ -28,24 +33,39 @@ def getItem(command = "help", level = 0):
     outs = str(outs).split("\n")
     return outs
 
-def getSubmenu(menu, level = 1):
+def getMenu(menu, level = 1, previousCmd = ""):
+    print("Trying to get submenu: " + str(menu))
     menu_temp = []
+    # iterate through current menu
     for i in range(len(menu)):
-        menu_temp.append(menu[i])
+        print("Checking item " + menu[i])
+        if menu[i].startswith("<no options available>"):
+            print("========================================")
+            print("= WARNING: No options for menu {} =".format(menu[i]))
+            print("========================================")
+            continue
+        elif menu[i].startswith("<set>") and level == 1:
+            print("========================================")
+            print("= INFORMATION: Skipping <set> submenu. =")
+            print("========================================")
+            continue
+        elif menu[i] == '':
+            continue
+        else:
+            menu_temp.append(menu[i])
+        # check whether there are items that have a submenu
         if menu[i].startswith("<"):
-            to_insert = getItem(menu[i].split('<')[1].split('>')[0],level=level)
-            for item in to_insert:
-                print("Inserting: " + item)
+            for item in getMenu(getSubmenu(previousCmd + menu[i].split('<')[1].split('>')[0],level=level), level = level+1, previousCmd = previousCmd + menu_temp[-1].split('<')[1].split('>')[0]+ " "):
                 menu_temp.append(item)
-                menu.append(getSubmenu(item, level = level+1))
         i += 1
     return menu_temp
 
 def main():
     # get help first
-    menu = getItem(command = "help", level = 0)
-    menu = getSubmenu(menu, level = 1)
-    print(menu)
+    menu = getSubmenu(command = "help", level = 0)
+    menu = getMenu(menu, level = 1)
+    for entry in menu:
+        print(entry + "\n")
 
 
 if __name__ == '__main__':
