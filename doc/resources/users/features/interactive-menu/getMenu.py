@@ -3,9 +3,12 @@ import subprocess
 import signal
 import os
 
+'''
+This script gets the menu of the currently compiled GCG version recursively.
+'''
 
 def getSubmenu(command = "help", level = 0):
-    print("Command to be executed: " + command)
+    #print("Command to be executed: " + command)
     quitCommand     = " -c 'quit'"
     goBackCommand   = " -c '"
     execCommand     = " -c '"
@@ -13,7 +16,7 @@ def getSubmenu(command = "help", level = 0):
         execCommand += com + " "
     execCommand += "'"
 
-    print("Level:" + str(level))
+    #print("Level:" + str(level))
     i = 0
     while i < level:
         goBackCommand += " .."
@@ -22,7 +25,7 @@ def getSubmenu(command = "help", level = 0):
 
     #print(f'Executing "{command}"')
     execstring = "./../../../../../bin/gcg {} {} {} | grep -A100 -m1 'user parameter file' | tail -n+4 | sed 's/^  //g' | sed '/\\n/d'".format(execCommand, goBackCommand, quitCommand)
-    print(execstring)
+    #print(execstring)
     proc = subprocess.Popen([str(execstring)], shell=True, stdout=subprocess.PIPE,universal_newlines=True)
     try:
         outs, errs = proc.communicate(timeout=15)
@@ -34,29 +37,37 @@ def getSubmenu(command = "help", level = 0):
     return outs
 
 def getMenu(menu, level = 1, previousCmd = ""):
-    print("Trying to get submenu: " + str(menu))
+    #print("Trying to get submenu: " + str(menu))
     menu_temp = []
     # iterate through current menu
     for i in range(len(menu)):
-        print("Checking item " + menu[i])
+        if len((menu[i]+previousCmd).split()) == level:
+            menu[i] = menu[i] + menu[i+1].replace("                 -->  ", " ")
+            i =+ 1
+
+        if "-->" in menu[i].split():
+            continue
+
+        #print("Checking item " + menu[i])
         if menu[i].startswith("<no options available>"):
-            print("========================================")
-            print("= WARNING: No options for menu {} =".format(menu[i]))
-            print("========================================")
+            #print("========================================")
+            #print("= WARNING: No options for menu {} =".format(menu[i]))
+            #print("========================================")
             continue
         elif menu[i].startswith("<set>") and level == 1:
-            print("========================================")
-            print("= INFORMATION: Skipping <set> submenu. =")
-            print("========================================")
+            #print("========================================")
+            #print("= INFORMATION: Skipping <set> submenu. =")
+            #print("========================================")
             continue
         elif menu[i] == '':
             continue
         else:
             menu_temp.append(menu[i])
-        # check whether there are items that have a submenu
+        # check whether this item has a submenu and get it recursively
         if menu[i].startswith("<"):
             for item in getMenu(getSubmenu(previousCmd + menu[i].split('<')[1].split('>')[0],level=level), level = level+1, previousCmd = previousCmd + menu_temp[-1].split('<')[1].split('>')[0]+ " "):
-                menu_temp.append(item)
+                menu_temp.append(menu[i].split('<')[1].split('>')[0] + " " + item)
+
         i += 1
     return menu_temp
 
@@ -64,9 +75,11 @@ def main():
     # get help first
     menu = getSubmenu(command = "help", level = 0)
     menu = getMenu(menu, level = 1)
+    f = open("menu.txt", "w+")
     for entry in menu:
-        print(entry + "\n")
+        f.write(entry + "\n")
 
 
 if __name__ == '__main__':
     main()
+    

@@ -11,7 +11,7 @@ set -e
 ./resources/devs/howtouse/createindexes.sh
 ./resources/devs/detection/classifiers/createindexes.sh
 ./resources/devs/detection/detectors/createindexes.sh
-./resources/users/features/interactive-menu/createMenuDocu.sh
+./resources/users/features/interactive-menu/generateMenu.sh
 cd $(dirname $0)
 
 mkdir -p html
