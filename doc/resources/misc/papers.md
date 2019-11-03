@@ -30,7 +30,7 @@ Springer, Berlin, Heidelberg, 2012.
 <a href="http://dx.doi.org/10.1007/978-3-319-20086-6_9"><b>Separation of generic cutting planes in branch-and-price using a basis</b></a>\n
 In Bampis, E., Experimental Algorithms - SEA 2015, pp.110—121, 2015. Springer. Lecture Notes in Computer Science, vol 9125.
 
-- J. Rambau nad C. Schwarz.\n
+- J. Rambau and C. Schwarz.\n
 <a href="http://doi.org/10.1080/10556788.2013.768993"><b>Solving a vehicle routing problem with resource conflicts and makespan objective with an application in car body manufacturing</b></a>\n
 Optimization Methods and Software, Vol. 29, Iss. 2, 2014
 
