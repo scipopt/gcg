@@ -32,7 +32,7 @@ In Bampis, E., Experimental Algorithms - SEA 2015, pp.110—121, 2015. Springer.
 
 - J. Rambau and C. Schwarz.\n
 <a href="http://doi.org/10.1080/10556788.2013.768993"><b>Solving a vehicle routing problem with resource conflicts and makespan objective with an application in car body manufacturing</b></a>\n
-Optimization Methods and Software, Vol. 29, Iss. 2, 2014
+Optimization Methods and Software, 29(2):353-375, 2014
 
 - T.A.M. Toffolo, S. van Malderen, T. Wauters, and G. van den Berghe.\n
 <a href="http://www.patatconference.org/patat2014/proceedings/2_26.pdf"><b>Branch-and-price and improved bounds to the traveling umpire problem</b></a>\n
