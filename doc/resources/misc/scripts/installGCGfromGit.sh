@@ -6,8 +6,15 @@ if [ ! -z $1 ];
   then
     NAME=$1
   else
-    echo "Usage: ./installGCGFromGit.sh <folder name>"
+    echo "Usage: ./installGCGFromGit.sh <folder name> <branch>"
     exit
+fi
+
+if [ ! -z $2 ];
+  then
+    BRANCH=$2
+  else
+    BRANCH=master
 fi
 
 function start(){
@@ -61,6 +68,7 @@ function download(){
   printf "${B}Cloning GCG...${W}"
   git clone git@git.or.rwth-aachen.de:gcg/gcg.git $NAME
   cd $NAME
+  git checkout $BRANCH
 
   # Get SCIP and SoPlex from GCG git
   printf "${B}Cloning submodules (SCIP and SoPlex)...${W}"
