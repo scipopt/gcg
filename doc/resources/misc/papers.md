@@ -30,6 +30,10 @@ Springer, Berlin, Heidelberg, 2012.
 <a href="http://dx.doi.org/10.1007/978-3-319-20086-6_9"><b>Separation of generic cutting planes in branch-and-price using a basis</b></a>\n
 In Bampis, E., Experimental Algorithms - SEA 2015, pp.110—121, 2015. Springer. Lecture Notes in Computer Science, vol 9125.
 
+- P. Lutter\n
+<a href="http://dx.doi.org/10.1016/j.cor.2015.10.003"><b>Optimized load planning for motorail transportation</b></a>\n
+Computers & Operations Research 68:63–74, 2016.
+
 - J. Rambau and C. Schwarz.\n
 <a href="http://doi.org/10.1080/10556788.2013.768993"><b>Solving a vehicle routing problem with resource conflicts and makespan objective with an application in car body manufacturing</b></a>\n
 Optimization Methods and Software, 29(2):353-375, 2014
