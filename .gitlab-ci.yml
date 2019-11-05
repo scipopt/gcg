@@ -18,6 +18,9 @@ build_job:
       - static/build/
       - webpack-stats.json
       - .cache/pip
+  before_script:
+      - git submodule sync --recursive
+      - git submodule update --init --recursive
   script:
       - make doc
 #  only:
