@@ -1,0 +1,46 @@
+.init_ssh: &init_ssh |
+  eval $(ssh-agent -s)
+  echo "$PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+  mkdir -p ~/.ssh
+  chmod 700 ~/.ssh
+  [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+
+stages:
+  - build
+  - deploy
+
+
+build_job:
+  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
+  stage: build
+  artifacts:
+    paths:
+      - static/build/
+      - webpack-stats.json
+      - .cache/pip
+  script:
+      - make doc
+#  only:
+#    - tags
+#    - merge_requests
+
+
+deploy_production:
+  image: pivotaldata/concourse-ssh
+  stage: deploy
+  dependencies: 
+    - build_job
+#  environment:
+#    name: Production
+#    url: https://orweb.or.rwth-aachen.de
+#  only:
+#    - tags
+  except:
+    - branches
+  before_script:
+    - *init_ssh
+  script:
+    - echo "Deploying tag $CI_COMMIT_TAG ..."
+    # copy new data to dev
+    - scp -r doc/html gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
+    - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod 744 ./* ;"
