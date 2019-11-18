@@ -5740,7 +5740,7 @@ SCIP_RETCODE Seeedpool::writeMatrix(
    (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
    SCIPsplitFilename(problemname, NULL, &outputname, NULL, NULL);
 
-   strcat(outputname, ".pdf");
+   strcat(outputname, ".png");
    strcpy(filename2, filename);
 
    SCIPinfoMessage(scip, NULL, "filename for matrix plot is %s \n", filename );
