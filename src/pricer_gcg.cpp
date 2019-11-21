@@ -837,7 +837,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
 #ifdef PRINTDUALSOLS
                SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n",
-                     SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j]* pricetype->consGetDual(scip_, masterconss[i]));
+                     SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j] * pricetype->consGetDual(scip_, masterconss[i]));
 #endif
             }
          }
@@ -896,7 +896,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
 #ifdef PRINTDUALSOLS
                SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n",
-                                   SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j]* pricetype->consGetDual(scip_, masterconss[i]));
+                     SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j] * pricetype->rowGetDual(mastercuts[i]));
 #endif
             }
          }
@@ -3917,6 +3917,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    SCIP_RETCODE retcode;
    SCIP_SOL** origsols;
    int norigsols;
+   int nstoredsols;
 
    assert(scip == scip_);
    assert(pricer != NULL);
@@ -3948,19 +3949,27 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
 
    /* Add already known solutions for the original problem to the master variable space */
    /** @todo This is just a workaround around SCIP stages! */
+   nstoredsols = 0;
    if( farkaspricing->getCalls() == 0 )
    {
       int i;
 
       for( i = 0; i < norigsols; ++i )
       {
+         SCIP_Bool stored;
          assert(origsols[i] != NULL);
          SCIPdebugMessage("Transferring original feasible solution found by <%s> to master problem\n",
             SCIPsolGetHeur(origsols[i]) == NULL ? "relaxation" : SCIPheurGetName(SCIPsolGetHeur(origsols[i])));
-         SCIP_CALL( GCGmasterTransOrigSolToMasterVars(scip, origsols[i], NULL) );
+         SCIP_CALL( GCGmasterTransOrigSolToMasterVars(scip, origsols[i], &stored) );
+         if( stored )
+         {
+            ++nstoredsols;
+         }
       }
+      SCIPdebugMessage("GCGmasterTransOrigSolToMasterVars() transferred %d original feasible solutions\n",
+         nstoredsols);
       /* return if we transferred solutions as the master should be feasible */
-      if( norigsols > 0 )
+      if( nstoredsols > 0 )
       {
          farkaspricing->incCalls();
 #ifdef SCIP_STATISTIC

@@ -3399,7 +3399,7 @@ void Seeedpool::addUserCandidatesNBlocks(
    )
 {
    bool alreadyIn = false;
-   for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
+   for( size_t i = 0; i < usercandidatesnblocks.size(); ++i )
    {
       if( usercandidatesnblocks[i] == candidate )
       {
@@ -5569,7 +5569,7 @@ SCIP_RETCODE Seeedpool::writeMatrix(
    (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", GCGgetFilename(scip));
    SCIPsplitFilename(problemname, NULL, &outputname, NULL, NULL);
 
-   strcat(outputname, ".png");
+   strcat(outputname, ".pdf");
    strcpy(filename2, filename);
 
    SCIPinfoMessage(scip, NULL, "filename for matrix plot is %s \n", filename );
