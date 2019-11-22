@@ -138,7 +138,6 @@ private:
    bool isFinishedByFinisher;                                   /**< was this seeed finished by the finishseeed() method of a detector */
 
    /* aggregation information */
-   SCIP_Bool            agginfocalculated;                             /**< is aggregation information for the blocks already calculated */
    int                  nrepblocks;                                    /**< number of block representatives */
    std::vector<std::vector<int>> reptoblocks;                          /**< translation of the block representatives to (old) blocks */
    std::vector<int>     blockstorep;                                   /**< translation of the (old) blocks to the block representatives */
@@ -209,12 +208,14 @@ private:
     * Checks blocks for equality by graph automorphism check, done by bliss
     * @note equality is only found if variables are in correct order
     */
-      void checkIdenticalBlocksBliss(
+   void checkIdenticalBlocksBliss(
       int                  b1,         /**< block id of first block */
       int                  b2,         /**< block id of second block */
       std::vector<int>&    varmap,     /**< maps variable indices (corresponding to  seeedpool indices) of block 2 to block 1 */
       SCIP_HASHMAP*        varmap2,    /**< maps variable pointers of block 2 to those of block 1 if both blocks (problems) are identical*/
-      SCIP_Bool*           identical   /**< pointer to store if the subproblems are identical  */
+      SCIP_Bool*           identical,  /**< pointer to store if the subproblems are identical  */
+      unsigned int         searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
+      unsigned int         generatorlimit      /**< bliss generator limit (requires patched bliss version) */
       );
 
 
@@ -560,8 +561,12 @@ public:
     * @brief computes if aggregation of sub problems is possible
     *
     * checks if aggregation of sub problems is possible and stores the corresponding aggregation information
+    *
+    * @param ignoreDetectionLimits Set to true if computation should ignore detection limits. This parameter is ignored if the patched bliss version is not present.
     */
-   void calcAggregationInformation( );
+   void calcAggregationInformation(
+      bool ignoreDetectionLimits
+      );
 
    /**
     * @brief calculates the hash value of the seeed for comparing
@@ -1584,7 +1589,7 @@ public:
     * @brief checks if calculation of aggregation information is considered to be to expansive
     * @return TRUE iff calculation of aggregation information is considered to be to expansive
     */
-   SCIP_Bool isAgginfoToExpensive();
+   SCIP_Bool isAgginfoTooExpensive();
 
 
 
@@ -2151,6 +2156,12 @@ public:
     * @return scip return code
     */
    SCIP_RETCODE buildDecChainString();
+
+   /**
+    * @brief Checks if the aggregation information was already calculated
+    * @return true iff the aggregation information was already calculated
+    */
+   bool aggInfoCalculated();
 
 private:
 

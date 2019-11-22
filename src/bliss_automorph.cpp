@@ -1339,7 +1339,9 @@ SCIP_RETCODE cmpGraphPair(
    int                   prob2,              /**< index of second pricing prob */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
    SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap             /**< hashmap to save permutation of constraints */
+   SCIP_HASHMAP*         consmap,            /**< hashmap to save permutation of constraints */
+   unsigned int          searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
+   unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version) */
    )
 {
    bliss::Graph graph;
@@ -1366,6 +1368,9 @@ SCIP_RETCODE cmpGraphPair(
    SCIP_CALL( freeMemory(origscip, &colorinfo) );
 
    ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, scips);
+#ifdef BLISS_PATCH_PRESENT
+   graph.set_search_limits(searchnodelimit, generatorlimit);
+#endif
    graph.find_automorphisms(bstats, fhook, ptrhook);
 
    SCIPverbMessage(origscip, SCIP_VERBLEVEL_FULL , NULL, "finished calling bliss: number of reporting function calls (=number of generators): %d \n", ptrhook->ncalls);
@@ -1386,7 +1391,9 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    int                   block2,             /**< index of second pricing prob */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
    SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap             /**< hashmap to save permutation of constraints */
+   SCIP_HASHMAP*         consmap,            /**< hashmap to save permutation of constraints */
+   unsigned int          searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
+   unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version) */
    )
 {
    bliss::Graph graph;
@@ -1442,7 +1449,9 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    SCIPdebugMessage("finished creating aut hook.\n");
    ptrhook->setNewDetectionStuff(seeedpool, seeed, &blocks);
 
-
+#ifdef BLISS_PATCH_PRESENT
+   graph.set_search_limits(searchnodelimit, generatorlimit);
+#endif
    graph.find_automorphisms(bstats, fhook, ptrhook);
    SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL , NULL, "finished calling bliss: number of reporting function calls (=number of generators): %d \n", ptrhook->ncalls);
 

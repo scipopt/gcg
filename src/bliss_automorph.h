@@ -56,7 +56,9 @@ SCIP_RETCODE cmpGraphPair(
    int                   prob2,              /**< index of second pricing prob */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
    SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap             /**< hashmap to save permutation of constraints */
+   SCIP_HASHMAP*         consmap,            /**< hashmap to save permutation of constraints */
+   unsigned int          searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
+   unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version) */
    );
 
 /** compare two graphs w.r.t. automorphism */
@@ -67,7 +69,9 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    int                   block2,             /**< index of second pricing prob */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
    SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap             /**< hashmap to save permutation of constraints */
+   SCIP_HASHMAP*         consmap,            /**< hashmap to save permutation of constraints */
+   unsigned int          searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
+   unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version) */
    );
 
 

@@ -1526,7 +1526,8 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
    if( seeed->getNReps() == 0 )
    {
       SCIPdebugMessage("calc aggregation information for seeed!\n");
-      seeed->calcAggregationInformation();
+      // ignore limits of detection since we do this only for this specific seeed
+      seeed->calcAggregationInformation(true);
    }
 
    assert(seeed != NULL);
