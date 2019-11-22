@@ -7,6 +7,8 @@
   
 .init_ssh2: &init_ssh2 |
   eval $(ssh-agent -s)
+  echo "$PRIVATE_KEY"
+  ls -la "$PRIVATE_KEY"
   ssh-add "$PRIVATE_KEY" > /dev/null
   mkdir -p ~/.ssh
   chmod 700 ~/.ssh
