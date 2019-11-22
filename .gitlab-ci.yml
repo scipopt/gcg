@@ -5,8 +5,8 @@
 #  chmod 700 ~/.ssh
 #  [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
 
-stages:
-  - build
+#stages:
+#  - build
 #  - deploy
 
 
