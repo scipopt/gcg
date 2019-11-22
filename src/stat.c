@@ -144,7 +144,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
 
    solvingtime = SCIPgetSolvingTime(scip);
    assert(nnodes < INT_MAX);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &createnodestat, (int)nnodes) ); /* lld doesn't work here */
+   SCIP_CALL( SCIPallocBufferArray(scip, &createnodestat, (int)nnodes) ); /* lld doesn't work here */
 
    SCIPinfoMessage(scip, NULL, "AddedVarDetails:\n");
 
@@ -168,12 +168,12 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
       SCIP_Longint rootredcostcall;
       SCIP_Real rootlpsolval;
 
-      node = GCGgetCreationNode(scip, vars[i]);
-      time = GCGgetCreationTime(scip, vars[i]);
-      iteration = GCGgetIteration(scip, vars[i]);
-      redcost = GCGgetRedcost(scip, vars[i]);
-      gap = GCGgetGap(scip, vars[i]);
-      rootredcostcall = GCGgetRootRedcostCall(scip, vars[i]);
+      node = GCGgetCreationNode(vars[i]);
+      time = GCGgetCreationTime(vars[i]);
+      iteration = GCGgetIteration(vars[i]);
+      redcost = GCGgetRedcost(vars[i]);
+      gap = GCGgetGap(vars[i]);
+      rootredcostcall = GCGgetRootRedcostCall(vars[i]);
 
       rootlpsolval = NAN;
 
@@ -221,7 +221,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
       SCIPinfoMessage(scip, NULL, "Iter %d-%d%%: Vars: %d \n", 10 * i, 10 * (i + 1), createiterstat[i]);
    }
 
-   SCIPfreeMemoryArray(scip, &createnodestat);
+   SCIPfreeBufferArray(scip, &createnodestat);
 
    return SCIP_OKAY;
 }

@@ -766,7 +766,7 @@ TEST_F(GcgVarTest, SetCreationNode)
 {
    MASTERVAR(var, vardata);
    vardata.creationnode = -1L;
-   GCGsetCreationNode(scip, &var, 1L);
+   GCGsetCreationNode(&var, 1L);
    ASSERT_EQ(1, vardata.creationnode);
 }
 
@@ -774,14 +774,14 @@ TEST_F(GcgVarTest, GetCreationNode)
 {
    MASTERVAR(var, vardata);
    vardata.creationnode = 1L;
-   ASSERT_EQ(1L, GCGgetCreationNode(scip, &var));
+   ASSERT_EQ(1L, GCGgetCreationNode(&var));
 }
 
 TEST_F(GcgVarTest, SetCreationTime)
 {
    MASTERVAR(var, vardata);
    vardata.creationtime = 0.0;
-   GCGsetCreationTime(scip, &var, 1.0);
+   GCGsetCreationTime(&var, 1.0);
    ASSERT_EQ(1.0, vardata.creationtime);
 }
 
@@ -789,14 +789,14 @@ TEST_F(GcgVarTest, GetCreationTime)
 {
    MASTERVAR(var, vardata);
    vardata.creationtime = 1.0;
-   ASSERT_EQ(1.0, GCGgetCreationTime(scip, &var));
+   ASSERT_EQ(1.0, GCGgetCreationTime(&var));
 }
 
 TEST_F(GcgVarTest, SetIteration)
 {
    MASTERVAR(var, vardata);
    vardata.iteration = -1;
-   GCGsetIteration(scip, &var, 1L);
+   GCGsetIteration(&var, 1L);
    ASSERT_EQ(1, vardata.iteration);
 }
 
@@ -804,14 +804,14 @@ TEST_F(GcgVarTest, GetIteration)
 {
    MASTERVAR(var, vardata);
    vardata.iteration = 1L;
-   ASSERT_EQ(1, GCGgetIteration(scip, &var));
+   ASSERT_EQ(1, GCGgetIteration(&var));
 }
 
 TEST_F(GcgVarTest, SetGap)
 {
    MASTERVAR(var, vardata);
    vardata.gap = 0.0;
-   GCGsetGap(scip, &var, 1.0);
+   GCGsetGap(&var, 1.0);
    ASSERT_EQ(1.0, vardata.gap);
 }
 
@@ -819,7 +819,7 @@ TEST_F(GcgVarTest, GetGap)
 {
    MASTERVAR(var, vardata);
    vardata.gap = 1.0;
-   ASSERT_EQ(1.0, GCGgetGap(scip, &var));
+   ASSERT_EQ(1.0, GCGgetGap(&var));
 }
 
 TEST_F(GcgVarTest, SetRedcost)
@@ -834,5 +834,5 @@ TEST_F(GcgVarTest, GetRedcost)
 {
    MASTERVAR(var, vardata);
    vardata.redcost = -1.0;
-   ASSERT_EQ(-1.0, GCGgetRedcost(scip, &var));
+   ASSERT_EQ(-1.0, GCGgetRedcost(&var));
 }

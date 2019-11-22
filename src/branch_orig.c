@@ -188,9 +188,11 @@ SCIP_RETCODE branchVar(
       char name[SCIP_MAXSTRLEN];
 
       int norigbranchconss;
+      int maxorigbranchconss;
 
       origbranchconss = NULL;
       norigbranchconss = 0;
+      maxorigbranchconss = 0;
 
       /* create child node x >= uplb */
       SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
@@ -218,8 +220,8 @@ SCIP_RETCODE branchVar(
          SCIPdebugMessage("enforced by cons\n");
 
          norigbranchconss = 1;
-         SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchconss, norigbranchconss) );
-         BMSclearMemoryArray(origbranchconss, norigbranchconss);
+         maxorigbranchconss = SCIPcalcMemGrowSize(scip, 1);
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &origbranchconss, maxorigbranchconss) );
 
          /* create corresponding constraints */
          SCIP_CALL( SCIPcreateConsLinear(scip, &consup, name, 0, NULL, NULL,
@@ -236,7 +238,8 @@ SCIP_RETCODE branchVar(
 
       /* create and add the masterbranch constraint */
       SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons, name, child,
-         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdata, origbranchconss, norigbranchconss) );
+         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdata, origbranchconss, norigbranchconss,
+         maxorigbranchconss) );
       SCIP_CALL( SCIPaddConsNode(masterscip, child, cons, NULL) );
    }
 
@@ -249,9 +252,11 @@ SCIP_RETCODE branchVar(
       char name[SCIP_MAXSTRLEN];
 
       int norigbranchconss;
+      int maxorigbranchconss;
 
       origbranchconss = NULL;
       norigbranchconss = 0;
+      maxorigbranchconss = 0;
 
       /* create child node x <= downub */
       SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
@@ -278,8 +283,8 @@ SCIP_RETCODE branchVar(
          SCIP_CONS* consdown;
 
          norigbranchconss = 1;
-         SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchconss, norigbranchconss) );
-         BMSclearMemoryArray(origbranchconss, norigbranchconss);
+         maxorigbranchconss = SCIPcalcMemGrowSize(scip, 1);
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &origbranchconss, maxorigbranchconss) );
 
          /* create corresponding constraints */
          SCIP_CALL( SCIPcreateConsLinear(scip, &consdown, name, 0, NULL, NULL,
@@ -295,7 +300,8 @@ SCIP_RETCODE branchVar(
 
       /* create and add the masterbranch constraint */
       SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons, name, child,
-         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdata, origbranchconss, norigbranchconss) );
+         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdata, origbranchconss, norigbranchconss,
+         maxorigbranchconss) );
       SCIP_CALL( SCIPaddConsNode(masterscip, child, cons, NULL) );
    }
 
@@ -308,9 +314,11 @@ SCIP_RETCODE branchVar(
       char name[SCIP_MAXSTRLEN];
 
       int norigbranchconss;
+      int maxorigbranchconss;
 
       origbranchconss = NULL;
       norigbranchconss = 0;
+      maxorigbranchconss = 0;
 
       /* create child node x = fixval */
       SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
@@ -337,8 +345,8 @@ SCIP_RETCODE branchVar(
          SCIP_CONS* consfix;
 
          norigbranchconss = 1;
-         SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchconss, norigbranchconss) );
-         BMSclearMemoryArray(origbranchconss, norigbranchconss);
+         maxorigbranchconss = SCIPcalcMemGrowSize(scip, 1);
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &origbranchconss, maxorigbranchconss) );
 
          /* create corresponding constraints */
          SCIP_CALL( SCIPcreateConsLinear(scip, &consfix, name, 0, NULL, NULL,
@@ -353,7 +361,8 @@ SCIP_RETCODE branchVar(
 
       /* create and add the masterbranch constraint */
       SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons, name, child,
-         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdata, origbranchconss, norigbranchconss) );
+         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdata, origbranchconss, norigbranchconss,
+         maxorigbranchconss) );
       SCIP_CALL( SCIPaddConsNode(masterscip, child, cons, NULL) );
    }
 

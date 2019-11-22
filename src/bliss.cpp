@@ -302,9 +302,9 @@ SCIP_RETCODE struct_colorinformation::insert(
    {
       if( !SCIPsortedvecFindPtr(ptrarraycoefs, sortptrval, scoef, lencoefsarray, &pos) )
       {
-         int size = SCIPcalcMemGrowSize(scoef->getScip(), alloccoefsarray+1);
-         if( alloccoefsarray == 0 || lencoefsarray % alloccoefsarray == 0)
+         if( alloccoefsarray == 0 || alloccoefsarray < lencoefsarray + 1 )
          {
+            int size = SCIPcalcMemGrowSize(scoef->getScip(), alloccoefsarray+1);
             SCIP_CALL( SCIPreallocMemoryArray(scip, &ptrarraycoefs, size) );
             alloccoefsarray = size;
          }
@@ -320,9 +320,9 @@ SCIP_RETCODE struct_colorinformation::insert(
    {
       if( !SCIPsortedvecFindPtr(ptrarraycoefs, sortptrvalsign, scoef, lencoefsarray, &pos) )
       {
-         int size = SCIPcalcMemGrowSize(scoef->getScip(), alloccoefsarray+1);
-         if( alloccoefsarray == 0 || lencoefsarray % alloccoefsarray == 0)
+         if( alloccoefsarray == 0 || alloccoefsarray < lencoefsarray + 1 )
          {
+            int size = SCIPcalcMemGrowSize(scoef->getScip(), alloccoefsarray+1);
             SCIP_CALL( SCIPreallocMemoryArray(scip, &ptrarraycoefs, size) );
             alloccoefsarray = size;
          }

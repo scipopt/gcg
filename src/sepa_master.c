@@ -54,7 +54,6 @@
 #define SEPA_DELAY        FALSE /**< should separation method be delayed, if other separators found cuts? */
 
 #define STARTMAXCUTS 50       /**< maximal cuts used at the beginning */
-#define MAXCUTSINC   20       /**< increase of allowed number of cuts */
 
 
 /*
@@ -95,12 +94,10 @@ SCIP_RETCODE ensureSizeCuts(
 
    if( sepadata->maxcuts < size )
    {
-      while ( sepadata->maxcuts < size )
-      {
-         sepadata->maxcuts += MAXCUTSINC;
-      }
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(sepadata->origcuts), sepadata->maxcuts) );
+      int newmaxcuts = SCIPcalcMemGrowSize(scip, size);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts, newmaxcuts) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(sepadata->origcuts), sepadata->maxcuts, newmaxcuts) );
+      sepadata->maxcuts = newmaxcuts;
    }
    assert(sepadata->maxcuts >= size);
 
@@ -124,10 +121,10 @@ SCIP_DECL_SEPAFREE(sepaFreeMaster)
 
    sepadata = SCIPsepaGetData(sepa);
 
-   SCIPfreeMemoryArray(scip, &(sepadata->origcuts));
-   SCIPfreeMemoryArray(scip, &(sepadata->mastercuts));
+   SCIPfreeBlockMemoryArray(scip, &(sepadata->origcuts), sepadata->maxcuts);
+   SCIPfreeBlockMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts);
 
-   SCIPfreeMemory(scip, &sepadata);
+   SCIPfreeBlockMemory(scip, &sepadata);
 
    return SCIP_OKAY;
 }
@@ -375,11 +372,11 @@ SCIP_RETCODE SCIPincludeSepaMaster(
    SCIP_SEPADATA* sepadata;
 
    /* create master separator data */
-   SCIP_CALL( SCIPallocMemory(scip, &sepadata) );
+   SCIP_CALL( SCIPallocBlockMemory(scip, &sepadata) );
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->origcuts), STARTMAXCUTS) ); /*lint !e506*/
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->mastercuts), STARTMAXCUTS) ); /*lint !e506*/
-   sepadata->maxcuts = STARTMAXCUTS;
+   sepadata->maxcuts = SCIPcalcMemGrowSize(scip, STARTMAXCUTS);
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(sepadata->origcuts), sepadata->maxcuts) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts) ); /*lint !e506*/
    sepadata->ncuts = 0;
 
    /* include separator */

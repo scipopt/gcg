@@ -130,6 +130,7 @@ struct SCIP_RelaxData
    SCIP_SOL*             lastmastersol;      /**< last feasible master solution that was added to the original problem */
    SCIP_CONS**           markedmasterconss;  /**< array of conss that are marked to be in the master */
    int                   nmarkedmasterconss; /**< number of elements in array of conss that are marked to be in the master */
+   int                   maxmarkedmasterconss; /**< capacity of markedmasterconss */
    SCIP_Longint          lastsolvednodenr;   /**< node number of the node that was solved at the last call of the relaxator */
 
    /* branchrule data */
@@ -234,9 +235,8 @@ SCIP_RETCODE markConsMaster(
    /* allocate array, if not yet done */
    if( relaxdata->markedmasterconss == NULL )
    {
-      int nconss;
-      nconss = SCIPgetNConss(scip);
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->markedmasterconss), nconss) );
+      relaxdata->maxmarkedmasterconss = SCIPcalcMemGrowSize(scip, SCIPgetNConss(scip));
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->markedmasterconss), relaxdata->maxmarkedmasterconss) );
       relaxdata->nmarkedmasterconss = 0;
    }
    assert(relaxdata->nmarkedmasterconss <= SCIPgetNConss(scip));
@@ -2556,7 +2556,7 @@ SCIP_RETCODE initRelaxator(
    relaxdata->lastsolvednodenr = -1;
 
    SCIP_CALL( SCIPtransformProb(masterprob) );
-   SCIP_CALL( SCIPduplicateMemoryArray(scip, &oldconss, relaxdata->masterconss, relaxdata->nmasterconss) );
+   SCIP_CALL( SCIPduplicateBufferArray(scip, &oldconss, relaxdata->masterconss, relaxdata->nmasterconss) );
 
    /* transform the master constraints */
    SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss,
@@ -2565,7 +2565,7 @@ SCIP_RETCODE initRelaxator(
    {
       SCIP_CALL( SCIPreleaseCons(masterprob, &(oldconss[i])) );
    }
-   SCIPfreeMemoryArray(scip, &oldconss);
+   SCIPfreeBufferArray(scip, &oldconss);
 
    /* transform the decomposition */
    SCIP_CALL( DECdecompTransform(scip, relaxdata->decdecomp) );
@@ -2661,6 +2661,7 @@ void initRelaxdata(
    relaxdata->lastmastersol = NULL;
    relaxdata->lastmasterlpiters = 0;
    relaxdata->markedmasterconss = NULL;
+   relaxdata->maxmarkedmasterconss = 0;
    relaxdata->masterinprobing = FALSE;
    relaxdata->probingheur = NULL;
 
@@ -2851,8 +2852,9 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       relaxdata->hashorig2origvar = NULL;
    }
 
-   SCIPfreeMemoryArrayNull(scip, &(relaxdata->markedmasterconss));
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->markedmasterconss), relaxdata->maxmarkedmasterconss);
    relaxdata->markedmasterconss = NULL;
+   relaxdata->maxmarkedmasterconss = 0;
 
    /* free arrays for constraints */
    for( i = 0; i < relaxdata->nmasterconss; i++ )
@@ -4395,7 +4397,7 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
    probingnode = SCIPgetCurrentNode(masterprob);
    assert(GCGconsMasterbranchGetActiveCons(masterprob) != NULL);
    SCIP_CALL( GCGcreateConsMasterbranch(masterprob, &probingcons, "mprobingcons", probingnode,
-      GCGconsMasterbranchGetActiveCons(masterprob), NULL, NULL, NULL, 0) );
+      GCGconsMasterbranchGetActiveCons(masterprob), NULL, NULL, NULL, 0, 0) );
    SCIP_CALL( SCIPaddConsNode(masterprob, probingnode, probingcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(masterprob, &probingcons) );
 

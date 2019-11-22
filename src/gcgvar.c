@@ -119,8 +119,9 @@ SCIP_DECL_VARDELTRANS(gcgvardeltrans)
 {
    /*lint -e715 */
    assert((*vardata)->vartype == GCG_VARTYPE_MASTER);
-   SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.norigvars);
-   SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.maxorigvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.maxorigvars);
+   SCIPhashmapFree(&((*vardata)->data.mastervardata.origvar2val));
 
    SCIPfreeBlockMemory(scip, vardata);
 
@@ -144,6 +145,7 @@ SCIP_Bool GCGvarIsPricing(
    return vardata->vartype == GCG_VARTYPE_PRICING;
 }
 
+#ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a master variable or not */
 SCIP_Bool GCGvarIsMaster(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -157,7 +159,9 @@ SCIP_Bool GCGvarIsMaster(
 
    return vardata->vartype == GCG_VARTYPE_MASTER;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a original variable or not */
 SCIP_Bool GCGvarIsOriginal(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -171,7 +175,9 @@ SCIP_Bool GCGvarIsOriginal(
 
    return vardata->vartype == GCG_VARTYPE_ORIGINAL;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a linking variable or not */
 SCIP_Bool GCGoriginalVarIsLinking(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -186,7 +192,9 @@ SCIP_Bool GCGoriginalVarIsLinking(
 
    return vardata->blocknr == -2;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a directly transferred variable or not */
 SCIP_Bool GCGoriginalVarIsTransVar(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -201,7 +209,9 @@ SCIP_Bool GCGoriginalVarIsTransVar(
 
    return vardata->blocknr == -1;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns the pricing var of an original variable */
 SCIP_VAR* GCGoriginalVarGetPricingVar(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -219,6 +229,7 @@ SCIP_VAR* GCGoriginalVarGetPricingVar(
       assert(GCGvarIsPricing(vardata->data.origvardata.pricingvar));
    return vardata->data.origvardata.pricingvar;
 }
+#endif
 
 /** returns the pricing var of an original variable */
 void GCGoriginalVarSetPricingVar(
@@ -318,7 +329,7 @@ SCIP_RETCODE GCGorigVarCreateData(
    vardata->data.origvardata.masterconss = NULL;
    vardata->data.origvardata.ncoefs = 0;
    vardata->data.origvardata.nmastervars = 0;
-   vardata->data.origvardata.maxmastervars = STARTMAXMASTERVARS;
+   vardata->data.origvardata.maxmastervars = SCIPcalcMemGrowSize(scip, STARTMAXMASTERVARS);
    vardata->data.origvardata.linkingvardata = NULL;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(vardata->data.origvardata.mastervars),
          vardata->data.origvardata.maxmastervars) );
@@ -360,6 +371,7 @@ SCIP_RETCODE GCGcopyPricingvarDataToMastervar(
    )
 {
    SCIP_VARDATA* targetvardata;
+   SCIP_VAR* origvar;
    assert(pricingvar != NULL);
    assert(mastervar != NULL);
    assert(GCGvarIsPricing(pricingvar));
@@ -374,12 +386,17 @@ SCIP_RETCODE GCGcopyPricingvarDataToMastervar(
    targetvardata->data.mastervardata.isray = FALSE;
    targetvardata->data.mastervardata.isartificial = FALSE;
    targetvardata->data.mastervardata.norigvars = 1;
+   targetvardata->data.mastervardata.maxorigvars = 1;
+   targetvardata->data.mastervardata.index = -1;
 
    /* save corresoponding origvar */
+   origvar = GCGpricingVarGetOrigvars(pricingvar)[0];
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(targetvardata->data.mastervardata.origvars), 1) ); /*lint !e506*/
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(targetvardata->data.mastervardata.origvals), 1) ); /*lint !e506*/
-   targetvardata->data.mastervardata.origvars[0] = GCGpricingVarGetOrigvars(pricingvar)[0];
+   SCIP_CALL( SCIPhashmapCreate(&(targetvardata->data.mastervardata.origvar2val), SCIPblkmem(scip), 1));
+   targetvardata->data.mastervardata.origvars[0] = origvar;
    targetvardata->data.mastervardata.origvals[0] = 1.0;
+   SCIPhashmapInsertReal(targetvardata->data.mastervardata.origvar2val, origvar, 1.0);
 
    SCIPvarSetData(mastervar, targetvardata);
    SCIPvarSetDeltransData(mastervar, gcgvardeltrans);
@@ -387,6 +404,7 @@ SCIP_RETCODE GCGcopyPricingvarDataToMastervar(
    return SCIP_OKAY;
 }
 
+#ifndef NDEBUG
 /** returns the pricing variables of an linking variable */
 SCIP_VAR** GCGlinkingVarGetPricingVars(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -403,6 +421,7 @@ SCIP_VAR** GCGlinkingVarGetPricingVars(
 
    return vardata->data.origvardata.linkingvardata->pricingvars;
 }
+#endif
 
 /** sets the pricing var of the corresponding linking variable at the specified position */
 void GCGlinkingVarSetPricingVar(
@@ -469,6 +488,7 @@ SCIP_RETCODE GCGlinkingVarGetBlocks(
    return SCIP_OKAY;
 }
 
+#ifndef NDEBUG
 /** returns the number of blocks the linking variable is in */
 int GCGlinkingVarGetNBlocks(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -484,7 +504,9 @@ int GCGlinkingVarGetNBlocks(
    assert(vardata->data.origvardata.linkingvardata->nblocks > 0);
    return vardata->data.origvardata.linkingvardata->nblocks;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns the original var of a pricing variable */
 SCIP_VAR* GCGpricingVarGetOriginalVar(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -503,6 +525,7 @@ SCIP_VAR* GCGpricingVarGetOriginalVar(
 
    return vardata->data.pricingvardata.origvars[0];
 }
+#endif
 
 /** adds the original var to the pricing variable */
 SCIP_RETCODE GCGpricingVarAddOrigVar(
@@ -541,6 +564,7 @@ SCIP_RETCODE GCGpricingVarAddOrigVar(
    return SCIP_OKAY;
 }
 
+#ifndef NDEBUG
 /** returns the number of master variables the original variable is contained in */
 int GCGoriginalVarGetNMastervars(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -556,7 +580,9 @@ int GCGoriginalVarGetNMastervars(
 
    return vardata->data.origvardata.nmastervars;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns the master variables the original variable is contained in */
 SCIP_VAR** GCGoriginalVarGetMastervars(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -572,7 +598,9 @@ SCIP_VAR** GCGoriginalVarGetMastervars(
    assert(vardata->data.origvardata.mastervars != NULL);
    return vardata->data.origvardata.mastervars;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns the fraction of master variables the original variable is contained in */
 SCIP_Real* GCGoriginalVarGetMastervals(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -588,7 +616,9 @@ SCIP_Real* GCGoriginalVarGetMastervals(
    assert(vardata->data.origvardata.mastervals != NULL);
    return vardata->data.origvardata.mastervals;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns the coefficients of master constraints the original variable is contained in */
 SCIP_Real* GCGoriginalVarGetCoefs(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -604,7 +634,9 @@ SCIP_Real* GCGoriginalVarGetCoefs(
    assert(vardata->data.origvardata.coefs != NULL || vardata->data.origvardata.ncoefs == 0 );
    return vardata->data.origvardata.coefs;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns the number of coefficients of master constraints the original variable is contained in */
 int GCGoriginalVarGetNCoefs(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -620,6 +652,7 @@ int GCGoriginalVarGetNCoefs(
    assert(vardata->data.origvardata.coefs != NULL || vardata->data.origvardata.ncoefs == 0 );
    return vardata->data.origvardata.ncoefs;
 }
+#endif
 
 /** sets the number of master variables the original variable is contained in */
 void GCGoriginalVarSetNCoefs(
@@ -672,7 +705,7 @@ SCIP_RETCODE GCGoriginalVarAddCoef(
    return SCIP_OKAY;
 }
 
-
+#ifndef NDEBUG
 /** returns the fraction of master variables the original variable is contained in */
 SCIP_CONS** GCGoriginalVarGetMasterconss(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -687,6 +720,7 @@ SCIP_CONS** GCGoriginalVarGetMasterconss(
 
    return vardata->data.origvardata.masterconss;
 }
+#endif
 
 /** adds variable to a new block, making a linkingvariable out of it, if necessary */
 SCIP_RETCODE GCGoriginalVarAddBlock(
@@ -748,7 +782,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    return SCIP_OKAY;
 }
 
-
+#ifndef NDEBUG
 /** returns the linking constraints */
 SCIP_CONS** GCGlinkingVarGetLinkingConss(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -766,6 +800,7 @@ SCIP_CONS** GCGlinkingVarGetLinkingConss(
    //assert(vardata->data.origvardata.linkingvardata->linkconss != NULL);
    return vardata->data.origvardata.linkingvardata->linkconss;
 }
+#endif
 
 /** sets the linking constraints */
 void GCGlinkingVarSetLinkingCons(
@@ -812,6 +847,7 @@ SCIP_Bool GCGmasterVarIsLinking(
       return FALSE;
 }
 
+#ifndef NDEBUG
 /** returns whether the master variable is a ray */
 SCIP_Bool GCGmasterVarIsRay(
    SCIP_VAR*             var                 /**< variable data structure */
@@ -826,7 +862,9 @@ SCIP_Bool GCGmasterVarIsRay(
 
    return vardata->data.mastervardata.isray;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns TRUE or FALSE whether a master variable is an artificial variable */
 SCIP_Bool GCGmasterVarIsArtificial(
    SCIP_VAR*             var                 /**< variable data structure */
@@ -841,7 +879,9 @@ SCIP_Bool GCGmasterVarIsArtificial(
 
    return vardata->data.mastervardata.isartificial;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns the number of original variables the master variable is contained in */
 int GCGmasterVarGetNOrigvars(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -861,7 +901,9 @@ int GCGmasterVarGetNOrigvars(
 
    return vardata->data.mastervardata.norigvars;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns the original variables the master variable is contained in */
 SCIP_VAR** GCGmasterVarGetOrigvars(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -883,7 +925,9 @@ SCIP_VAR** GCGmasterVarGetOrigvars(
 
    return vardata->data.mastervardata.origvars;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns the fraction of original variables the master variable is contained in */
 SCIP_Real* GCGmasterVarGetOrigvals(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -899,7 +943,56 @@ SCIP_Real* GCGmasterVarGetOrigvals(
    assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
    return vardata->data.mastervardata.origvals;
 }
+#endif
 
+/* returns the fraction of the original variable the master variable is contained in */
+SCIP_Real GCGmasterVarGetOrigval(
+   SCIP_VAR*             mastervar,         /**< master variable data structure */
+   SCIP_VAR*             origvar            /**< original variable data structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   SCIP_Real origval;
+   assert(mastervar != NULL);
+   assert(GCGvarIsMaster(mastervar));
+
+   vardata = SCIPvarGetData(mastervar);
+   assert(vardata != NULL);
+
+   assert(vardata->data.mastervardata.origvar2val != NULL || vardata->data.mastervardata.norigvars == 0);
+
+   if( vardata->data.mastervardata.origvar2val == NULL )
+      return SCIP_INVALID;
+   if( GCGoriginalVarIsLinking(origvar) )
+   {
+      if( !GCGisLinkingVarInBlock(origvar, vardata->blocknr))
+         return SCIP_INVALID;
+   }
+   else if( vardata->blocknr != GCGvarGetBlock(origvar) )
+      return SCIP_INVALID;
+
+   origval = SCIPhashmapGetImageReal(vardata->data.mastervardata.origvar2val, origvar);
+   return origval == SCIP_INVALID ? 0.0 : origval;
+}
+
+#ifndef NDEBUG
+SCIP_HASHMAP* GCGmasterVarGetOrigvalmap(
+   SCIP_VAR*             var         /**< master variable data structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsMaster(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->data.mastervardata.origvar2val != NULL || vardata->data.mastervardata.norigvars == 0);
+   return vardata->data.mastervardata.origvar2val;
+}
+#endif
+
+#ifndef NDEBUG
 /** returns the number of original variables the pricing variable is contained in */
 int GCGpricingVarGetNOrigvars(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -915,7 +1008,9 @@ int GCGpricingVarGetNOrigvars(
    assert(vardata->data.pricingvardata.norigvars >= 0);
    return vardata->data.pricingvardata.norigvars;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns the original variables the pricing variable is contained in */
 SCIP_VAR** GCGpricingVarGetOrigvars(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -931,7 +1026,9 @@ SCIP_VAR** GCGpricingVarGetOrigvars(
    assert(vardata->data.pricingvardata.origvars != NULL);
    return vardata->data.pricingvardata.origvars;
 }
+#endif
 
+#ifndef NDEBUG
 /** returns the block of the variable */
 int GCGvarGetBlock(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -945,6 +1042,7 @@ int GCGvarGetBlock(
    assert(vardata->blocknr >= -2);
    return vardata->blocknr;
 }
+#endif
 
 /** sets the block of the variable */
 void GCGvarSetBlock(
@@ -961,6 +1059,7 @@ void GCGvarSetBlock(
    vardata->blocknr = block;
 }
 
+#ifndef NDEBUG
 /** returns TRUE if the linking variable is in the block, FALSE otherwise */
 SCIP_Bool GCGisLinkingVarInBlock(
    SCIP_VAR*             var,                /**< variabel data structure */
@@ -979,6 +1078,7 @@ SCIP_Bool GCGisLinkingVarInBlock(
 
    return pricingvars[block] != NULL;
 }
+#endif
 
 /** determines if the master variable is in the given block */
 SCIP_Bool GCGisMasterVarInBlock(
@@ -1249,6 +1349,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
    newvardata->vartype = GCG_VARTYPE_MASTER;
    newvardata->blocknr = prob;
+   newvardata->data.mastervardata.index = -1;
 
    /* store whether the variable represents a ray */
    newvardata->data.mastervardata.isray = solisray;
@@ -1260,6 +1361,7 @@ SCIP_RETCODE GCGcreateMasterVar(
 
    /* count number of non-zeros */
    newvardata->data.mastervardata.norigvars = 0;
+   newvardata->data.mastervardata.maxorigvars = 0;
 
    for( i = 0; i < nsolvars; i++ )
    {
@@ -1285,13 +1387,16 @@ SCIP_RETCODE GCGcreateMasterVar(
 
    if( newvardata->data.mastervardata.norigvars > 0 )
    {
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.norigvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), newvardata->data.mastervardata.norigvars) );
+      newvardata->data.mastervardata.maxorigvars = SCIPcalcMemGrowSize(scip, newvardata->data.mastervardata.norigvars);
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.maxorigvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), newvardata->data.mastervardata.maxorigvars) );
+      SCIP_CALL( SCIPhashmapCreate(&(newvardata->data.mastervardata.origvar2val), SCIPblkmem(scip), newvardata->data.mastervardata.norigvars) );
    }
    else
    {
       newvardata->data.mastervardata.origvars = NULL;
       newvardata->data.mastervardata.origvals = NULL;
+      newvardata->data.mastervardata.origvar2val = NULL;
    }
 
    /* number of original variables already saved in mastervardata */
@@ -1327,6 +1432,7 @@ SCIP_RETCODE GCGcreateMasterVar(
          /* save in the master problem variable's data the quota of the corresponding original variable */
          newvardata->data.mastervardata.origvars[j] = origvar;
          newvardata->data.mastervardata.origvals[j] = solval;
+         SCIPhashmapInsertReal(newvardata->data.mastervardata.origvar2val, origvar, solval);
          /* save the quota in the original variable's data */
          SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, solval) );
          j++;
@@ -1353,6 +1459,7 @@ SCIP_RETCODE GCGcreateMasterVar(
          /* save in the master problem variable's data the quota of the corresponding original variable */
          newvardata->data.mastervardata.origvars[j] = origvar;
          newvardata->data.mastervardata.origvals[j] = 0.0;
+         SCIPhashmapInsertReal(newvardata->data.mastervardata.origvar2val, origvar, 0.0);
          /* save the quota in the original variable's data */
          SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, 0.0) );
       }
@@ -1392,12 +1499,16 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    newvardata->data.mastervardata.isray = FALSE;
    newvardata->data.mastervardata.isartificial = FALSE;
    newvardata->data.mastervardata.norigvars = 1;
+   newvardata->data.mastervardata.maxorigvars = 1;
+   newvardata->data.mastervardata.index = -1;
 
    /* save corresoponding origvar */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), 1) ); /*lint !e506*/
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), 1) ); /*lint !e506*/
+   SCIP_CALL( SCIPhashmapCreate(&(newvardata->data.mastervardata.origvar2val), SCIPblkmem(scip), 1) );
    newvardata->data.mastervardata.origvars[0] = var;
    newvardata->data.mastervardata.origvals[0] = 1.0;
+   SCIPhashmapInsertReal(newvardata->data.mastervardata.origvar2val, var, 1.0);
 
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(scip, newvar, SCIPvarGetName(var),
@@ -1423,10 +1534,13 @@ SCIP_RETCODE GCGcreateArtificialVar(
    newvardata->blocknr = -1;
    newvardata->data.mastervardata.isray = FALSE;
    newvardata->data.mastervardata.norigvars = 0;
+   newvardata->data.mastervardata.maxorigvars = 0;
    newvardata->data.mastervardata.isartificial = TRUE;
 
    newvardata->data.mastervardata.origvars = NULL;
    newvardata->data.mastervardata.origvals = NULL;
+   newvardata->data.mastervardata.origvar2val = NULL;
+   newvardata->data.mastervardata.index = -1;
 
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(scip, newvar, name,
@@ -1458,9 +1572,11 @@ SCIP_RETCODE GCGaddDataAuxiliaryVar(
 
    /* count number of non-zeros */
    newvardata->data.mastervardata.norigvars = 0;
+   newvardata->data.mastervardata.maxorigvars = 0;
 
    newvardata->data.mastervardata.origvars = NULL;
    newvardata->data.mastervardata.origvals = NULL;
+   newvardata->data.mastervardata.origvar2val = NULL;
 
    /* setting the variable data */
    SCIPvarSetData(auxiliaryvar, newvardata);
@@ -1473,13 +1589,11 @@ SCIP_RETCODE GCGaddDataAuxiliaryVar(
 
 /** set creation node of variable */
 void GCGsetCreationNode(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Longint          creationNode        /**< node in which the variable is created */
    )
 {
    SCIP_VARDATA* vardata;
-   assert(scip != NULL);
    assert(var != NULL);
    assert(creationNode >= 0);
 
@@ -1487,29 +1601,27 @@ void GCGsetCreationNode(
    vardata->creationnode = creationNode;
 }
 
+#ifndef NDEBUG
 /** return creation node of variable */
 long long int GCGgetCreationNode(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var                 /**< variable data structure */
    )
 {
    SCIP_VARDATA* vardata;
-   assert(scip != NULL);
    assert(var != NULL);
 
    vardata = SCIPvarGetData(var);
    return vardata->creationnode;
 }
+#endif
 
 /** store creation time */
 void GCGsetCreationTime(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Real             time                /**< time at which the variable is created */
    )
 {
    SCIP_VARDATA* vardata;
-   assert(scip != NULL);
    assert(var != NULL);
    assert(time >= 0.0);
 
@@ -1517,29 +1629,27 @@ void GCGsetCreationTime(
    vardata->creationtime = time;
 }
 
+#ifndef NDEBUG
 /** return stored creation time */
 SCIP_Real GCGgetCreationTime(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var                 /**< variable data structure */
    )
 {
    SCIP_VARDATA* vardata;
-   assert(scip != NULL);
    assert(var != NULL);
 
    vardata = SCIPvarGetData(var);
    return vardata->creationtime;
 }
+#endif
 
 /** store pricing reduced cost call */
 void GCGsetRootRedcostCall(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Longint          rootredcostcall     /**< iteration at which the variable is created */
    )
 {
    SCIP_VARDATA* vardata;
-   assert(scip != NULL);
    assert(var != NULL);
    assert(rootredcostcall >= -1);
 
@@ -1547,29 +1657,27 @@ void GCGsetRootRedcostCall(
    vardata->rootredcostcall = rootredcostcall;
 }
 
+#ifndef NDEBUG
 /** return stored pricing reduced cost call */
 SCIP_Longint GCGgetRootRedcostCall(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var                 /**< variable data structure */
    )
 {
    SCIP_VARDATA* vardata;
-   assert(scip != NULL);
    assert(var != NULL);
 
    vardata = SCIPvarGetData(var);
    return vardata->rootredcostcall;
 }
+#endif
 
 /** store iteration */
 void GCGsetIteration(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Longint          iteration           /**< iteration at which the variable is created */
    )
 {
    SCIP_VARDATA* vardata;
-   assert(scip != NULL);
    assert(var != NULL);
    assert(iteration >= 0);
 
@@ -1577,29 +1685,27 @@ void GCGsetIteration(
    vardata->iteration = iteration;
 }
 
+#ifndef NDEBUG
 /** return stored iteration */
 SCIP_Longint GCGgetIteration(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var                 /**< variable data structure */
    )
 {
    SCIP_VARDATA* vardata;
-   assert(scip != NULL);
    assert(var != NULL);
 
    vardata = SCIPvarGetData(var);
    return vardata->iteration;
 }
+#endif
 
 /** store gap */
 void GCGsetGap(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Real             gap                 /**< present gap when variable is created */
    )
 {
    SCIP_VARDATA* vardata;
-   assert(scip != NULL);
    assert(var != NULL);
    assert(gap >= 0.0);
 
@@ -1607,23 +1713,23 @@ void GCGsetGap(
    vardata->gap = gap;
 }
 
+#ifndef NDEBUG
 /** return stored gap */
 SCIP_Real GCGgetGap(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var                 /**< variable data structure */
    )
 {
    SCIP_VARDATA* vardata;
-   assert(scip != NULL);
    assert(var != NULL);
 
    vardata = SCIPvarGetData(var);
    return vardata->gap;
 }
+#endif
 
 /** store reduced cost */
 void GCGsetRedcost(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< master SCIP data structure */
    SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Real             redcost             /**< reduced cost of the variable at creation */
    )
@@ -1637,19 +1743,19 @@ void GCGsetRedcost(
    vardata->redcost = redcost;
 }
 
+#ifndef NDEBUG
 /** return stored reduced cost */
 SCIP_Real GCGgetRedcost(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var                 /**< variable data structure */
    )
 {
    SCIP_VARDATA* vardata;
-   assert(scip != NULL);
    assert(var != NULL);
 
    vardata = SCIPvarGetData(var);
    return vardata->redcost;
 }
+#endif
 
 /** updates the statistics part of the variable */
 void GCGupdateVarStatistics(
@@ -1667,12 +1773,12 @@ void GCGupdateVarStatistics(
    assert(newvar != NULL);
 
    redcostcall = -1;
-   GCGsetCreationNode(origprob, newvar, SCIPnodeGetNumber(SCIPgetCurrentNode(origprob)));
-   GCGsetCreationTime(origprob, newvar, SCIPgetSolvingTime(scip));
+   GCGsetCreationNode(newvar, SCIPnodeGetNumber(SCIPgetCurrentNode(origprob)));
+   GCGsetCreationTime(newvar, SCIPgetSolvingTime(scip));
 
-   GCGsetRootRedcostCall(origprob, newvar, redcostcall);
-   GCGsetIteration(origprob, newvar, SCIPgetNLPIterations(scip));
-   GCGsetGap(origprob, newvar, MIN(SCIPgetGap(origprob), SCIPgetGap(scip))); /*lint !e666*/
+   GCGsetRootRedcostCall(newvar, redcostcall);
+   GCGsetIteration(newvar, SCIPgetNLPIterations(scip));
+   GCGsetGap(newvar, MIN(SCIPgetGap(origprob), SCIPgetGap(scip))); /*lint !e666*/
    GCGsetRedcost(origprob, newvar, redcost);
 
 }
@@ -1765,4 +1871,31 @@ void GCGprintVar(
       }
       SCIPinfoMessage(scip, file, "%s (%g)\n", SCIPvarGetName(origvars[norigvars-1]), origvals[norigvars-1]);
    }
+}
+
+#ifndef NDEBUG
+/* returns the index of the mater variable */
+int GCGmasterVarGetIndex(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+
+   vardata = SCIPvarGetData(var);
+   return vardata->data.mastervardata.index;
+}
+#endif
+
+/* sets the index of the master variable */
+void GCGmasterVarSetIndex(
+   SCIP_VAR*             var,                /**< SCIP variable structure */
+   int                   index               /**< index */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+
+   vardata = SCIPvarGetData(var);
+   vardata->data.mastervardata.index = index;
 }

@@ -88,12 +88,14 @@ typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 struct GCG_MasterVarData
 {
    int                   norigvars;          /**< number of variables in the original program corresponding to  the current variable */
+   int                   maxorigvars;        /**< capacity of origvars and origvals */
    SCIP_VAR**            origvars;           /**< variables in the original program corresponding to the current variable */
    SCIP_Real*            origvals;           /**< this variable represents vals[i] times the variable origvars[i] in the
                                               *   original program */
    SCIP_Bool             isray;              /**< does this variable represent a ray or an extreme point? */
    SCIP_Bool             isartificial;       /**< is variable artificial? */
-
+   SCIP_HASHMAP*         origvar2val;        /**< hash map that stores the fraction of original variables the master variable is contained in */
+   int                   index;              /**< index of the master variable if stored in GCG's pricedvars array, -1 otherwise */
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
 

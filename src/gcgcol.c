@@ -63,10 +63,11 @@ SCIP_RETCODE GCGcreateGcgCol(
    int i;
    int nnonz;
 
-   SCIP_CALL( SCIPallocMemory(pricingprob, gcgcol) );
+   SCIP_CALL( SCIPallocBlockMemory(pricingprob, gcgcol) );
 
-   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &((*gcgcol)->vars), nvars) );
-   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &((*gcgcol)->vals), nvars) );
+   (*gcgcol)->maxvars = SCIPcalcMemGrowSize(pricingprob, nvars);
+   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vars), (*gcgcol)->maxvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vals), (*gcgcol)->maxvars) );
 
    (*gcgcol)->pricingprob = pricingprob;
    (*gcgcol)->probnr = probnr;
@@ -78,6 +79,8 @@ SCIP_RETCODE GCGcreateGcgCol(
    (*gcgcol)->linkvars = NULL;
    (*gcgcol)->nmastercoefs = 0;
    (*gcgcol)->nmastercuts = 0;
+   (*gcgcol)->maxmastercoefs = 0;
+   (*gcgcol)->maxmastercuts = 0;
    (*gcgcol)->nlinkvars = 0;
    (*gcgcol)->initcoefs = FALSE;
 
@@ -138,13 +141,13 @@ void GCGfreeGcgCol(
 
    /* todo: release vars? */
    assert((*gcgcol)->nvars == 0 || (*gcgcol)->vars != NULL);
-   SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vars);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vars, (*gcgcol)->maxvars);
    assert((*gcgcol)->nvars == 0 || (*gcgcol)->vals != NULL);
-   SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vals);
-   SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercoefs);
-   SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->linkvars);
-   SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercuts);
-   SCIPfreeMemory((*gcgcol)->pricingprob, gcgcol);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vals, (*gcgcol)->maxvars);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercoefs, (*gcgcol)->maxmastercoefs);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->linkvars, (*gcgcol)->maxlinkvars);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercuts, (*gcgcol)->maxmastercuts);
+   SCIPfreeBlockMemory((*gcgcol)->pricingprob, gcgcol);
 }
 
 /** create a gcg column from a solution to a pricing problem */
@@ -416,7 +419,8 @@ SCIP_RETCODE GCGcolSetMastercoefs(
    if( nmastercoefs == 0 )
       return SCIP_OKAY;
 
-   SCIP_CALL( SCIPallocMemoryArray(gcgcol->pricingprob, &(gcgcol->mastercoefs), nmastercoefs) );
+   gcgcol->maxmastercoefs = SCIPcalcMemGrowSize(gcgcol->pricingprob, nmastercoefs);
+   SCIP_CALL( SCIPallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->mastercoefs), gcgcol->maxmastercoefs) );
 
    for( i = 0; i < nmastercoefs; ++i )
    {
@@ -539,7 +543,8 @@ SCIP_RETCODE GCGcolSetLinkvars(
 
    assert(gcgcol->nlinkvars == 0);
 
-   SCIP_CALL( SCIPallocMemoryArray(gcgcol->pricingprob, &(gcgcol->linkvars), nlinkvars) );
+   gcgcol->maxlinkvars = SCIPcalcMemGrowSize(gcgcol->pricingprob, nlinkvars);
+   SCIP_CALL( SCIPallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->linkvars), gcgcol->maxlinkvars) );
 
    for( i = 0; i < nlinkvars; ++i )
    {
@@ -583,11 +588,17 @@ SCIP_RETCODE GCGcolUpdateMastercuts(
    )
 {
    int i;
+   int newsize;
 
-   if( gcgcol->nmastercuts > 0 )
-      SCIP_CALL( SCIPreallocMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->mastercuts), gcgcol->nmastercuts + nnewmastercuts) );
-   else
-      SCIP_CALL( SCIPallocMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->mastercuts), nnewmastercuts) );
+   i = gcgcol->nmastercuts + nnewmastercuts;
+   newsize = SCIPcalcMemGrowSize(gcgcol->pricingprob, i);
+   if( i > gcgcol->maxmastercuts )
+   {
+      SCIP_CALL( SCIPreallocBlockMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->mastercuts),
+            gcgcol->maxmastercuts, newsize) );
+   }
+
+   gcgcol->maxmastercuts = newsize;
 
    for( i = 0; i < nnewmastercuts; ++i )
    {

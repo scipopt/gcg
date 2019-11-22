@@ -52,8 +52,10 @@ private:
    SCIP*                 scip_;              /**< SCIP instance (master problem) */
    GCG_PRICINGPROB**     pricingprobs;       /**< pricing problems */
    int                   npricingprobs;      /**< number of pricing problems */
+   int                   maxpricingprobs;    /**< capacity of pricingprobs */
    GCG_PRICINGJOB**      pricingjobs;        /**< pricing jobs */
    int                   npricingjobs;       /**< number of pricing jobs */
+   int                   maxpricingjobs;     /**< capacity of pricingjobs */
 
    /* parameters */
    int                   heurpricingiters;   /**< maximum number of heuristic pricing iterations per pricing call and problem */

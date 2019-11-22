@@ -57,9 +57,9 @@ extern "C" {
 /** creates priority queue */
 SCIP_EXPORT
 SCIP_RETCODE GCGpqueueCreate(
-   GCG_PQUEUE**         pqueue,             /**< pointer to a priority queue */
+   SCIP*                scip,                /** SCIP data structure */
+   GCG_PQUEUE**         pqueue,              /**< pointer to a priority queue */
    int                   initsize,           /**< initial number of available element slots */
-   SCIP_Real             sizefac,            /**< memory growing factor applied, if more element slots are needed */
    SCIP_DECL_SORTPTRCOMP((*ptrcomp))         /**< data element comparator */
    );
 

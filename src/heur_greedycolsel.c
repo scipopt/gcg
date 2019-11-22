@@ -69,6 +69,7 @@ struct SCIP_HeurData
 
    /* data */
    SCIP_VAR**            zerovars;           /**< array of master variables corresponding to zero solutions */
+   int                   maxzerovars;        /**< capacity of zerovars */
    int                   lastncols;          /**< number of columns in the last call of the heuristic       */
 };
 
@@ -353,7 +354,7 @@ SCIP_DECL_HEURFREE(heurFreeGreedycolsel)
    assert(heurdata != NULL);
 
    /* free heuristic data */
-   SCIPfreeMemory(scip, &heurdata);
+   SCIPfreeBlockMemory(scip, &heurdata);
    SCIPheurSetData(heur, NULL);
 
    return SCIP_OKAY;
@@ -388,7 +389,10 @@ SCIP_DECL_HEURINIT(heurInitGreedycolsel)
 
    /* allocate memory and initialize array with NULL pointers */
    if( nblocks > 0 )
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->zerovars, nblocks) );
+   {
+      heurdata->maxzerovars = SCIPcalcMemGrowSize(scip, nblocks);
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &heurdata->zerovars, heurdata->maxzerovars) );
+   }
 
    for( i = 0; i < nblocks; ++i )
       heurdata->zerovars[i] = NULL;
@@ -411,7 +415,7 @@ SCIP_DECL_HEUREXIT(heurExitGreedycolsel)
    assert(heurdata != NULL);
 
    /* free memory */
-   SCIPfreeMemoryArrayNull(scip, &heurdata->zerovars);
+   SCIPfreeBlockMemoryArrayNull(scip, &heurdata->zerovars, heurdata->maxzerovars);
 
    return SCIP_OKAY;
 }
@@ -801,9 +805,10 @@ SCIP_RETCODE SCIPincludeHeurGreedycolsel(
    SCIP_HEURDATA* heurdata;
 
    /* create greedy column selection primal heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
+   SCIP_CALL( SCIPallocBlockMemory(scip, &heurdata) );
 
    heurdata->zerovars = NULL;
+   heurdata->maxzerovars = 0;
 
    /* include primal heuristic */
    SCIP_CALL( SCIPincludeHeur(scip, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,

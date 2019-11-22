@@ -216,7 +216,7 @@ SCIP_RETCODE solveKnapsack(
          }
       }
 
-      SCIP_CALL( SCIPallocMemoryArray(pricingprob, &ubs, nconsvars) );
+      SCIP_CALL( SCIPallocBufferArray(pricingprob, &ubs, nconsvars) );
 
       SCIPdebugMessage("Set variable upper bounds\n");
 
@@ -248,7 +248,7 @@ SCIP_RETCODE solveKnapsack(
       capacity = SCIPgetCapacityKnapsack(pricingprob, cons);
 
       SCIP_CALL( SCIPallocBufferArray(pricingprob, &consvals, nconsvars) );
-      SCIP_CALL( SCIPallocMemoryArray(pricingprob, &ubs, nconsvars) );
+      SCIP_CALL( SCIPallocBufferArray(pricingprob, &ubs, nconsvars) );
       BMScopyMemoryArray(consvals, consweights, nconsvars);
 
       for( i = 0; i < nconsvars; ++i )
@@ -279,8 +279,8 @@ SCIP_RETCODE solveKnapsack(
    }
    SCIPdebugMessage("-> %d items\n", nitems);
 
-   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvars, npricingprobvars) );
-   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvals, npricingprobvars) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &solvars, npricingprobvars) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &solvals, npricingprobvars) );
 
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &items, nitems) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &weights, nitems) );
@@ -470,10 +470,10 @@ SCIP_RETCODE solveKnapsack(
    SCIPfreeBufferArray(pricingprob, &profits);
    SCIPfreeBufferArray(pricingprob, &weights);
    SCIPfreeBufferArray(pricingprob, &items);
+   SCIPfreeBufferArray(pricingprob, &solvals);
+   SCIPfreeBufferArray(pricingprob, &solvars);
+   SCIPfreeBufferArray(pricingprob, &ubs);
    SCIPfreeBufferArray(pricingprob, &consvals);
-   SCIPfreeMemoryArray(pricingprob, &ubs);
-   SCIPfreeMemoryArray(pricingprob, &solvars);
-   SCIPfreeMemoryArray(pricingprob, &solvals);
 
    return SCIP_OKAY;
 }

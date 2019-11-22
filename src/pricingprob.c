@@ -56,7 +56,7 @@ SCIP_RETCODE GCGpricingprobCreate(
    int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
 )
 {
-   SCIP_CALL( SCIPallocMemory(scip, pricingprob) );
+   SCIP_CALL( SCIPallocBlockMemory(scip, pricingprob) );
 
    (*pricingprob)->pricingscip = pricingscip;
    (*pricingprob)->probnr = probnr;
@@ -70,8 +70,9 @@ SCIP_RETCODE GCGpricingprobCreate(
    (*pricingprob)->lowerbound = -SCIPinfinity(scip);
    (*pricingprob)->nimpcols = 0;
    (*pricingprob)->nsolves  = 0;
+   (*pricingprob)->maxcolsround = SCIPcalcMemGrowSize(scip, nroundscol);
 
-   SCIP_CALL( SCIPallocClearMemoryArray(scip, &(*pricingprob)->ncolsround, nroundscol) );
+   SCIP_CALL( SCIPallocClearBlockMemoryArray(scip, &(*pricingprob)->ncolsround, (*pricingprob)->maxcolsround) );
 
 
    return SCIP_OKAY;
@@ -83,10 +84,10 @@ void GCGpricingprobFree(
    GCG_PRICINGPROB**     pricingprob         /**< pricing problem to be freed */
 )
 {
-   SCIPfreeMemoryArrayNull(scip, &(*pricingprob)->branchduals);
-   SCIPfreeMemoryArrayNull(scip, &(*pricingprob)->branchconss);
-   SCIPfreeMemoryArray(scip, &(*pricingprob)->ncolsround);
-   SCIPfreeMemory(scip, pricingprob);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*pricingprob)->branchduals, (*pricingprob)->branchconsssize);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*pricingprob)->branchconss, (*pricingprob)->branchconsssize);
+   SCIPfreeBlockMemoryArray(scip, &(*pricingprob)->ncolsround, (*pricingprob)->maxcolsround);
+   SCIPfreeBlockMemory(scip, pricingprob);
    *pricingprob = NULL;
 }
 
@@ -128,22 +129,22 @@ SCIP_RETCODE GCGpricingprobAddGenericBranchData(
    /* allocate memory, if necessary */
    if( pricingprob->branchconsssize == pricingprob->nbranchconss )
    {
+      int newsize = SCIPcalcMemGrowSize(scip, pricingprob->branchconsssize+1);
+
       assert((pricingprob->branchconsssize == 0) == (pricingprob->branchconss == NULL));
       assert((pricingprob->branchconsssize == 0) == (pricingprob->branchduals == NULL));
 
-      pricingprob->branchconsssize = SCIPcalcMemGrowSize(scip, pricingprob->branchconsssize+1);
-
       if( pricingprob->branchconss == NULL )
       {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &pricingprob->branchconss, pricingprob->branchconsssize) );
-         SCIP_CALL( SCIPallocMemoryArray(scip, &pricingprob->branchduals, pricingprob->branchconsssize) );
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricingprob->branchconss, newsize) );
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricingprob->branchduals, newsize) );
       }
       else
       {
-         SCIP_CALL( SCIPreallocMemoryArray(scip, &pricingprob->branchconss, pricingprob->branchconsssize) );
-         SCIP_CALL( SCIPreallocMemoryArray(scip, &pricingprob->branchduals, pricingprob->branchconsssize) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &pricingprob->branchconss, pricingprob->branchconsssize, newsize) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &pricingprob->branchduals, pricingprob->branchconsssize, newsize) );
       }
-
+      pricingprob->branchconsssize = newsize;
    }
 
    /* add constraint and dual solution value */
