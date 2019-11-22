@@ -57,7 +57,7 @@ extern "C" {
  */
 struct GCG_PQueue
 {
-   SCIP_Real             sizefac;            /**< memory growing factor */
+   SCIP*                 scip;               /**< SCIP data structure */
    SCIP_DECL_SORTPTRCOMP((*ptrcomp));        /**< compares two data elements */
    void**                slots;              /**< array of element slots */
    int                   len;                /**< number of used element slots */

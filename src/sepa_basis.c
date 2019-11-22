@@ -63,7 +63,6 @@
 #define SEPA_DELAY                 TRUE  /**< should separation method be delayed, if other separators found cuts? */
 
 #define STARTMAXCUTS 50       /**< maximal cuts used at the beginning */
-#define MAXCUTSINC   20       /**< increase of allowed number of cuts */
 
 
 /*
@@ -128,12 +127,10 @@ SCIP_RETCODE ensureSizeCuts(
 
    if( sepadata->maxcuts < size )
    {
-      while ( sepadata->maxcuts < size )
-      {
-         sepadata->maxcuts += MAXCUTSINC;
-      }
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(sepadata->origcuts), sepadata->maxcuts) );
+      int newmaxcuts = SCIPcalcMemGrowSize(scip, size);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts, newmaxcuts) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(sepadata->origcuts), sepadata->maxcuts, newmaxcuts) );
+      sepadata->maxcuts = newmaxcuts;
    }
    assert(sepadata->maxcuts >= size);
 
@@ -156,11 +153,9 @@ SCIP_RETCODE ensureSizeNewCuts(
 
    if( sepadata->maxnewcuts < size )
    {
-      while ( sepadata->maxnewcuts < size )
-      {
-         sepadata->maxnewcuts += MAXCUTSINC;
-      }
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(sepadata->newcuts), sepadata->maxnewcuts) );
+      int newmaxnewcuts = SCIPcalcMemGrowSize(scip, size);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(sepadata->newcuts), sepadata->maxnewcuts, newmaxnewcuts) );
+      sepadata->maxnewcuts = newmaxnewcuts;
    }
    assert(sepadata->maxnewcuts >= size);
 
@@ -832,7 +827,7 @@ SCIP_DECL_SEPAFREE(sepaFreeBasis)
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
 
-   SCIPfreeMemory(scip, &sepadata);
+   SCIPfreeBlockMemory(scip, &sepadata);
 
    return SCIP_OKAY;
 }
@@ -871,10 +866,10 @@ SCIP_DECL_SEPAINIT(sepaInitBasis)
    enable = sepadata->enable;
    enableobj = sepadata->enableobj;
 
-   sepadata->maxcuts = STARTMAXCUTS;
+   sepadata->maxcuts = SCIPcalcMemGrowSize(scip, STARTMAXCUTS);
    sepadata->norigcuts = 0;
    sepadata->nmastercuts = 0;
-   sepadata->maxnewcuts = 0;
+   sepadata->maxnewcuts = SCIPcalcMemGrowSize(scip, STARTMAXCUTS);
    sepadata->nnewcuts = 0;
    sepadata->objrow = NULL;
    /* if separator is disabled do nothing */
@@ -883,9 +878,9 @@ SCIP_DECL_SEPAINIT(sepaInitBasis)
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->origcuts), STARTMAXCUTS) ); /*lint !e506*/
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->mastercuts), STARTMAXCUTS) ); /*lint !e506*/
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->newcuts), STARTMAXCUTS) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(sepadata->origcuts), sepadata->maxcuts) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(sepadata->newcuts), sepadata->maxnewcuts) ); /*lint !e506*/
 
    /* if objective row is enabled create row with objective coefficients */
    if( enableobj )
@@ -936,9 +931,9 @@ SCIP_DECL_SEPAEXIT(sepaExitBasis)
    if( enableobj )
       SCIP_CALL( SCIPreleaseRow(origscip, &(sepadata->objrow)) );
 
-   SCIPfreeMemoryArrayNull(scip, &(sepadata->origcuts));
-   SCIPfreeMemoryArrayNull(scip, &(sepadata->mastercuts));
-   SCIPfreeMemoryArrayNull(scip, &(sepadata->newcuts));
+   SCIPfreeBlockMemoryArrayNull(scip, &(sepadata->origcuts), sepadata->maxcuts);
+   SCIPfreeBlockMemoryArrayNull(scip, &(sepadata->mastercuts), sepadata->maxcuts);
+   SCIPfreeBlockMemoryArrayNull(scip, &(sepadata->newcuts), sepadata->maxnewcuts);
 
    return SCIP_OKAY;
 }
@@ -1270,7 +1265,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          SCIPdebugMessage("add reduced cost cut for relevant pricing problems\n");
 
-         SCIP_CALL( SCIPallocMemoryArray(scip, &dualsolconv, GCGgetNPricingprobs(origscip)) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &dualsolconv, GCGgetNPricingprobs(origscip)) );
          SCIP_CALL( GCGsetPricingObjs(scip, dualsolconv) );
 
          for( i = 0; i < GCGgetNPricingprobs(origscip); ++i )
@@ -1278,7 +1273,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             SCIP_CALL( addPPObjConss(origscip, sepa, i, dualsolconv[i], FALSE, TRUE) );
          }
 
-         SCIPfreeMemoryArray(scip, &dualsolconv);
+         SCIPfreeBufferArray(scip, &dualsolconv);
       }
 
       /* initialize objective of probing LP */
@@ -1623,7 +1618,7 @@ SCIP_RETCODE SCIPincludeSepaBasis(
    SCIP_SEPADATA* sepadata;
 
    /* create master separator data */
-   SCIP_CALL( SCIPallocMemory(scip, &sepadata) );
+   SCIP_CALL( SCIPallocBlockMemory(scip, &sepadata) );
 
    sepadata->mastercuts = NULL;
    sepadata->origcuts = NULL;
@@ -1835,7 +1830,7 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &pricingvars, nvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars, nvars) );
 
    for( i = 0; i < nvars; ++i )
    {
@@ -1886,7 +1881,7 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
       SCIP_CALL( SCIPreleaseRow(origscip, &origcut) );
    }
 
-   SCIPfreeMemoryArray(scip, &pricingvars);
+   SCIPfreeBufferArray(scip, &pricingvars);
 
    return SCIP_OKAY;
 }

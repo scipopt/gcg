@@ -63,10 +63,10 @@ Stabilization::Stabilization(
       stabcenterconv((SCIP_Real*) NULL), nstabcenterconv(0), dualdiffnorm(0.0),
       subgradientconsvals(NULL), subgradientconsvalssize(0), nsubgradientconsvals(0),
       subgradientcutvals(NULL), subgradientcutvalssize(0), nsubgradientcutvals(0),
-      subgradientlinkingconsvals(NULL), nsubgradientlinkingconsvals(0),
+      subgradientlinkingconsvals(NULL),
       subgradientnorm(0.0), hybridfactor(0.0),
       pricingtype(pricingtype_), alpha(0.8), alphabar(0.8), hybridascent(hybridascent_), beta(0.0), nodenr(-1), k(0), t(0), hasstabilitycenter(FALSE),stabcenterbound(-SCIPinfinity(scip)),
-      inmispricingschedule(FALSE), subgradientproduct(0.0)
+      inmispricingschedule(FALSE), subgradientproduct(0.0), stabcenterlinkingconsvalssize(0)
 {
 
 }
@@ -75,10 +75,10 @@ Stabilization::~Stabilization()
 {
    SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconsvals, stabcenterconsvalssize); /*lint !e64*/
    SCIPfreeBlockMemoryArrayNull(scip_, &stabcentercutvals, stabcentercutvalssize); /*lint !e64*/
-   SCIPfreeMemoryArrayNull(scip_, &stabcenterlinkingconsvals); /*lint !e64*/
+   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterlinkingconsvals, stabcenterlinkingconsvalssize); /*lint !e64*/
    SCIPfreeBlockMemoryArrayNull(scip_, &subgradientconsvals, subgradientconsvalssize); /*lint !e64*/
    SCIPfreeBlockMemoryArrayNull(scip_, &subgradientcutvals, subgradientcutvalssize); /*lint !e64*/
-   SCIPfreeMemoryArrayNull(scip_, &subgradientlinkingconsvals); /*lint !e64*/
+   SCIPfreeBlockMemoryArrayNull(scip_, &subgradientlinkingconsvals, subgradientlinkingconsvalssize); /*lint !e64*/
    SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconv, nstabcenterconv); /*lint !e64*/
    scip_ = (SCIP*) NULL;
    stabcenterconsvals = (SCIP_Real*) NULL;
@@ -187,18 +187,22 @@ SCIP_RETCODE Stabilization::updateSubgradientcutvals()
 
 
 SCIP_RETCODE Stabilization::setNLinkingconsvals(
-      int nlinkingconssnew
-      )
+   int nlinkingconssnew
+   )
 {
-
-   SCIPfreeMemoryArrayNull(scip_, &stabcenterlinkingconsvals); /*lint !e64*/
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &stabcenterlinkingconsvals, nlinkingconssnew) );
-
-   if( hybridascent )
+   if( nlinkingconssnew > stabcenterlinkingconsvalssize)
    {
-      SCIPfreeMemoryArrayNull(scip_, &subgradientlinkingconsvals); /*lint !e64*/
-      SCIP_CALL( SCIPallocMemoryArray(scip_, &subgradientlinkingconsvals, nlinkingconssnew) );
-      BMSclearMemoryArray(subgradientlinkingconsvals, nlinkingconssnew);
+      int newsize = SCIPcalcMemGrowSize(scip_, nlinkingconssnew);
+      SCIP_CALL(SCIPreallocBlockMemoryArray(scip_, &stabcenterlinkingconsvals, stabcenterlinkingconsvalssize, newsize));
+
+
+      if( hybridascent )
+      {
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &subgradientlinkingconsvals, stabcenterlinkingconsvalssize,
+            newsize) );
+         BMSclearMemoryArray(subgradientlinkingconsvals, nlinkingconssnew);
+      }
+      stabcenterlinkingconsvalssize = newsize;
    }
 
    nstabcenterlinkingconsvals = nlinkingconssnew;
@@ -209,8 +213,8 @@ SCIP_RETCODE Stabilization::setNLinkingconsvals(
 }
 
 SCIP_RETCODE Stabilization::setNConvconsvals(
-      int nconvconssnew
-      )
+   int nconvconssnew
+   )
 {
    SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconv, nstabcenterconv); /*lint !e64*/
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &stabcenterconv, nconvconssnew) );

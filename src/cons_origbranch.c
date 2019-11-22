@@ -75,6 +75,7 @@ struct SCIP_ConsData
    SCIP_CONS*            parentcons;         /**< the origbranch constraint of the parent node */
    SCIP_CONS**           childconss;         /**< array of the masterbranch constraints of child nodes */
    int                   nchildconss;        /**< number of the masterbranch constraints of child nodes */
+   int                   maxchildconss;      /**< capacity of childconss */
    SCIP_CONS*            probingtmpcons;     /**< pointer to save the last child in the childconss array if it is overwritten in probing mode */
    SCIP_CONS*            mastercons;         /**< the masterbranch constraint of the corresponding node
                                               *   in the master program */
@@ -275,9 +276,10 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
       (*consdata)->branchdata = NULL;
    }
 
-   SCIPfreeMemoryArrayNull(scip, &(*consdata)->childconss);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->childconss, (*consdata)->maxchildconss);
    (*consdata)->childconss = NULL;
    (*consdata)->nchildconss = 0;
+   (*consdata)->maxchildconss = 0;
 
    /* free constraint data */
    SCIPfreeBlockMemory(scip, consdata);
@@ -476,6 +478,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    consdata->parentcons = parentcons;
    consdata->childconss = NULL;
    consdata->nchildconss = 0;
+   consdata->maxchildconss = 0;
    consdata->probingtmpcons = NULL;
    consdata->mastercons = NULL;
    consdata->branchdata = branchdata;
@@ -501,17 +504,20 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
       }
       else
       {
+         int newsize;
          ++parentdata->nchildconss;
+         newsize = SCIPcalcMemGrowSize(scip, parentdata->nchildconss);
          if( parentdata->nchildconss == 1 )
          {
-            SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childconss), parentdata->nchildconss) );
+            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(parentdata->childconss), newsize) );
             parentdata->childconss[0] = NULL;
          }
          else
          {
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childconss), parentdata->nchildconss) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(parentdata->childconss), parentdata->maxchildconss, newsize) );
             parentdata->childconss[parentdata->nchildconss - 1] = NULL;
          }
+         parentdata->maxchildconss = newsize;
          parentdata->childconss[parentdata->nchildconss-1] = *cons;
       }
    }

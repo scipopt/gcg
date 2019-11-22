@@ -116,8 +116,8 @@ SCIP_RETCODE createColumnFromRay(
    probvars = SCIPgetOrigVars(pricingprob);
    nprobvars = SCIPgetNOrigVars(pricingprob);
    nsolvars = 0;
-   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvars, nprobvars) );
-   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvals, nprobvars) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &solvars, nprobvars) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &solvals, nprobvars) );
 
    /* store the primal ray values */
    for ( i = 0; i < nprobvars; i++ )
@@ -143,8 +143,8 @@ SCIP_RETCODE createColumnFromRay(
    /* todo: is it okay to write pricingprob into column structure? */
    SCIP_CALL( GCGcreateGcgCol(pricingprob, newcol, probnr, solvars, solvals, nsolvars, TRUE, SCIPinfinity(pricingprob)) );
 
-   SCIPfreeMemoryArray(pricingprob, &solvars);
-   SCIPfreeMemoryArray(pricingprob, &solvals);
+   SCIPfreeBufferArray(pricingprob, &solvals);
+   SCIPfreeBufferArray(pricingprob, &solvars);
 
    SCIPdebugMessage("pricingproblem has an unbounded ray!\n");
 

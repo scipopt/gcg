@@ -120,6 +120,7 @@ struct SCIP_BranchruleData
    int*                  nvarbranchings;     /**< array to store number of branchings per variable */
    int*                  nvarprobings;       /**< array to store number of probings per variable */
    int                   nvars;              /**< number of variables that are in hashmap */
+   int                   maxvars;            /**< capacity of nvarbranchings and nvarprobings */
 };
 
 /** data for pending bound changes */
@@ -658,7 +659,7 @@ SCIP_RETCODE getVarProbingbranch(
    SCIP_CALL( SCIPgetVarsData(scip, &probvars, NULL, &nbinvars, &nintvars, NULL, NULL) );
    nvars = nbinvars + nintvars; /* continuous variables are not considered here */
 
-   SCIP_CALL( SCIPduplicateMemoryArray(scip, &vars, probvars, nvars) );
+   SCIP_CALL( SCIPduplicateBufferArray(scip, &vars, probvars, nvars) );
 
    /* capture variables to make sure the variables are not deleted */
    for( i = 0; i < nvars; ++i )
@@ -823,7 +824,7 @@ SCIP_RETCODE getVarProbingbranch(
    {
       SCIP_CALL( SCIPreleaseVar(scip, &vars[i]) );
    }
-   SCIPfreeMemoryArray(scip, &vars);
+   SCIPfreeBufferArray(scip, &vars);
 
 
    return SCIP_OKAY;
@@ -857,8 +858,9 @@ SCIP_RETCODE addBranchcandsToData(
       assert(branchruledata->varhashmap == NULL);
       SCIP_CALL( SCIPhashmapCreate(&(branchruledata->varhashmap), SCIPblkmem(scip), HASHSIZE_VARS) );
 
-      SCIP_CALL( SCIPallocMemoryArray(scip, &branchruledata->nvarprobings, nbranchcands) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &branchruledata->nvarbranchings, nbranchcands) );
+      branchruledata->maxvars = SCIPcalcMemGrowSize(scip, nbranchcands);
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->nvarprobings, branchruledata->maxvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->nvarbranchings, branchruledata->maxvars) );
       branchruledata->nvars = nbranchcands;
 
       /* store each variable in hashmap and initialize array entries */
@@ -885,9 +887,13 @@ SCIP_RETCODE addBranchcandsToData(
          /* if variable is not in hashmap insert it and increase array sizes */
          if( !SCIPhashmapExists(branchruledata->varhashmap, var) )
          {
+            int newsize = SCIPcalcMemGrowSize(scip, nvars + 1);
             SCIP_CALL( SCIPhashmapInsert(branchruledata->varhashmap, var, (void*) (size_t)nvars) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &branchruledata->nvarprobings, (size_t)nvars + 1) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &branchruledata->nvarbranchings, (size_t)nvars + 1) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchruledata->nvarprobings, branchruledata->maxvars,
+               newsize) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchruledata->nvarbranchings, branchruledata->maxvars,
+               newsize) );
+            branchruledata->maxvars = newsize;
 
             branchruledata->nvarprobings[nvars] = 0;
             branchruledata->nvarbranchings[nvars] = 0;
@@ -1402,6 +1408,7 @@ SCIP_DECL_BRANCHINITSOL(branchInitsolRelpsprob)
    branchruledata->nvarbranchings = NULL;
    branchruledata->nvarprobings = NULL;
    branchruledata->nvars = 0;
+   branchruledata->maxvars = 0;
 
    return SCIP_OKAY;
 }
@@ -1423,8 +1430,8 @@ SCIP_DECL_BRANCHEXITSOL(branchExitsolRelpsprob)
 
 
    /* free arrays for variables & hashmap */
-   SCIPfreeMemoryArrayNull(scip, &branchruledata->nvarprobings);
-   SCIPfreeMemoryArrayNull(scip, &branchruledata->nvarbranchings);
+   SCIPfreeBlockMemoryArrayNull(scip, &branchruledata->nvarprobings, branchruledata->maxvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &branchruledata->nvarbranchings, branchruledata->maxvars);
    branchruledata->nvars = 0;
 
    if( branchruledata->varhashmap != NULL )

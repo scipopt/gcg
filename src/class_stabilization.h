@@ -53,6 +53,7 @@ private:
    int nstabcentercutvals;
    SCIP_Real* stabcenterlinkingconsvals;
    int nstabcenterlinkingconsvals;
+   int stabcenterlinkingconsvalssize;
    SCIP_Real* stabcenterconv;
    int nstabcenterconv;
    SCIP_Real dualdiffnorm; /**< norm of difference between stabcenter and current duals */
@@ -63,7 +64,7 @@ private:
    int subgradientcutvalssize;
    int nsubgradientcutvals;
    SCIP_Real* subgradientlinkingconsvals;
-   int nsubgradientlinkingconsvals;
+   int subgradientlinkingconsvalssize;
    SCIP_Real subgradientnorm;
    SCIP_Real hybridfactor;
    PricingType* pricingtype;

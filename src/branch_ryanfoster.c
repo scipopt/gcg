@@ -322,6 +322,7 @@ SCIP_RETCODE createChildNodesRyanfoster(
    SCIP_VAR** origvars1;
    SCIP_VAR** origvars2;
    int norigvars1;
+   int maxorigvars1;
    int v;
 
    SCIP_NODE* child1;
@@ -392,10 +393,13 @@ SCIP_RETCODE createChildNodesRyanfoster(
 
    if( norigvars1 > 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchconss1, norigvars1) );
-      BMSclearMemoryArray(origbranchconss1, norigvars1);
-      SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchconss2, norigvars1) );
-      BMSclearMemoryArray(origbranchconss2, norigvars1);
+      maxorigvars1 = SCIPcalcMemGrowSize(masterscip, norigvars1);
+      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &origbranchconss1, maxorigvars1) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &origbranchconss2, maxorigvars1) );
+   }
+   else
+   {
+      maxorigvars1 = 0;
    }
 
    /* add branching decision as varbound constraints to original problem */
@@ -423,9 +427,11 @@ SCIP_RETCODE createChildNodesRyanfoster(
 
    /* create and add the masterbranch constraints */
    SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons1, samename, child1,
-      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchsamedata, origbranchconss1, norigvars1) );
+      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchsamedata, origbranchconss1, norigvars1,
+      maxorigvars1) );
    SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons2, differname, child2,
-      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdifferdata, origbranchconss2, norigvars1) );
+      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdifferdata, origbranchconss2, norigvars1,
+      maxorigvars1) );
    SCIP_CALL( SCIPaddConsNode(masterscip, child1, cons1, NULL) );
    SCIP_CALL( SCIPaddConsNode(masterscip, child2, cons2, NULL) );
 
