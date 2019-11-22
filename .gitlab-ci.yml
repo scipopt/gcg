@@ -26,7 +26,7 @@ build_job:
       - webpack-stats.json
       - .cache/pip
   before_script:
-      - *init_ssh
+      - *init_ssh2
       - git submodule sync --recursive
       - git submodule update --init --recursive
   script:
