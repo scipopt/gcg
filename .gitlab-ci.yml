@@ -33,6 +33,8 @@ build_job:
       - git submodule update --init --recursive
       - cd lib && ln -s scip-git scip && cd ..
   script:
+      - make deps
+      - make
       - make doc
 #  only:
 #    - tags
