@@ -11,18 +11,6 @@ set(GCG_VERSION_PATCH 0)
 set(GCG_VERSION_SUB 0)
 set(GCG_VERSION_API 2)
 
-# TODO: In SCIP, license is in COPYING file and not in LICENSE.
-# TODO: SCIP has src/scipbuildflag.c which adds a function that returns the used build flags. Do we also want this?
-# TODO: Symmetry handling is separate from the remaining code: there is a symmetry/* code that is compiled differently depending on whether BLISS was found or not. the other tools (presol_sym*) is always included, but can query the symmetry code whether it can actually detect symmetry. This is slightly cleaner from a build system point of view.
-
-set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
-set(CPACK_PACKAGE_VERSION_MAJOR "${SCIP_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${SCIP_VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${SCIP_VERSION_PATCH}")
-set(CPACK_PACKAGE_VENDOR "Operations Research, RWTH Aachen University and Zuse Institute Berlin (ZIB)")
-set(CPACK_PACKAGE_CONTACT "http://www.or.rwth-aachen.de/gcg")
-include(CPack)
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -49,6 +37,7 @@ option(CLIQUER "should cliquer be linked" ON)
 option(CPLEX "should Cplex be used for solving pricing MIPs" OFF)
 option(HMETIS "should hmetis be called" ON)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
+option(GCG_DEV_BUILD "try to build SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
 
 # OPENMP
 if(OPENMP)
@@ -170,8 +159,18 @@ set(CMAKE_CXX_STANDARD 11)
 
 #search the selected symmetry computation program
 if(SYM STREQUAL "bliss")
-
-   find_package(BLISS)
+   if(NOT DEFINED GCG_DEV_BUILD_BLISS_PATH)
+      set(GCG_DEV_BUILD_BLISS_PATH ${PROJECT_SOURCE_DIR}/lib/bliss-git)
+   endif()
+   if(NOT GCG_DEV_BUILD)
+      find_package(BLISS)
+   endif()
+   if(((NOT BLISS_FOUND) OR GCG_DEV_BUILD) AND (EXISTS ${GCG_DEV_BUILD_BLISS_PATH}) AND UNIX)
+      message(STATUS "Using '${GCG_DEV_BUILD_BLISS_PATH}'")
+      set(BLISS_DIR ${CMAKE_BINARY_DIR})
+      add_subdirectory(${GCG_DEV_BUILD_BLISS_PATH})
+      find_package(BLISS CONFIG)
+   endif()
    if(BLISS_FOUND)
       include_directories(${BLISS_INCLUDE_DIRS})
       set(SYM_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
@@ -190,11 +189,49 @@ else()
 endif()
 
 # SCIP
-find_package(SCIP REQUIRED CONFIG)
+if(NOT GCG_DEV_BUILD)
+   find_package(SCIP CONFIG)
+endif()
+
+if(NOT DEFINED GCG_DEV_BUILD_SOPLEX_PATH)
+   set(GCG_DEV_BUILD_SOPLEX_PATH ${PROJECT_SOURCE_DIR}/lib/soplex-git)
+endif()
+
+if(NOT DEFINED GCG_DEV_BUILD_SCIP_PATH)
+   set(GCG_DEV_BUILD_SCIP_PATH ${PROJECT_SOURCE_DIR}/lib/scip-git)
+endif()
+
+if((NOT SCIP_FOUND) AND (EXISTS ${GCG_DEV_BUILD_SCIP_PATH}) AND (EXISTS ${GCG_DEV_BUILD_SOPLEX_PATH}))
+   message(STATUS "Using '${GCG_DEV_BUILD_SOPLEX_PATH}'")
+   message(STATUS "Using '${GCG_DEV_BUILD_SCIP_PATH}'")
+   set(SOPLEX_DIR ${CMAKE_BINARY_DIR})
+   set(SCIP_DIR ${CMAKE_BINARY_DIR})
+   add_subdirectory(${GCG_DEV_BUILD_SOPLEX_PATH})
+   add_subdirectory(${GCG_DEV_BUILD_SCIP_PATH})
+elseif(GCG_DEV_BUILD)
+   message(WARNING "GCG_DEV_BUILD option is set but could not find SCIP and SoPlex in the lib/ subdirectory. Please specify GCG_DEV_BUILD_SOPLEX_PATH and GCG_DEV_BUILD_SCIP_PATH")
+endif()
+
+if(NOT SCIP_FOUND)
+   find_package(SCIP REQUIRED CONFIG)
+endif()
+
 if(SCIP_FOUND)
    # SCIP headers can be directly included
    include_directories(${SCIP_INCLUDE_DIRS})
 endif()
+
+# TODO: In SCIP, license is in COPYING file and not in LICENSE.
+# TODO: SCIP has src/scipbuildflag.c which adds a function that returns the used build flags. Do we also want this?
+# TODO: Symmetry handling is separate from the remaining code: there is a symmetry/* code that is compiled differently depending on whether BLISS was found or not. the other tools (presol_sym*) is always included, but can query the symmetry code whether it can actually detect symmetry. This is slightly cleaner from a build system point of view.
+
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
+set(CPACK_PACKAGE_VERSION_MAJOR "${SCIP_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${SCIP_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${SCIP_VERSION_PATCH}")
+set(CPACK_PACKAGE_VENDOR "Operations Research, RWTH Aachen University and Zuse Institute Berlin (ZIB)")
+set(CPACK_PACKAGE_CONTACT "http://www.or.rwth-aachen.de/gcg")
+include(CPack)
 
 # go to src/ and compile the code
 add_subdirectory(src)
