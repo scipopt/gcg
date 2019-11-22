@@ -1,16 +1,16 @@
-#.init_ssh: &init_ssh |
-#  eval $(ssh-agent -s)
-#  echo "$PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
-#  mkdir -p ~/.ssh
-#  chmod 700 ~/.ssh
-#  [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+.init_ssh: &init_ssh |
+  eval $(ssh-agent -s)
+  echo "$PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+  mkdir -p ~/.ssh
+  chmod 700 ~/.ssh
+  [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
 
 stages:
-#  - build
-#  - deploy
+  - build
+  - deploy
 
 
-#build_job:
+build_job:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: build
   artifacts:
@@ -32,7 +32,7 @@ stages:
 #  image: pivotaldata/concourse-ssh
 #  stage: deploy
 #  dependencies: 
-    - build_job
+#    - build_job
 #  environment:
 #    name: Production
 #    url: https://orweb.or.rwth-aachen.de
