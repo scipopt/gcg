@@ -7,6 +7,12 @@ add_custom_target(gcg_check
    COMMAND ${CMAKE_CTEST_COMMAND} -R "-default" --output-on-failure --schedule-random
    DEPENDS gcg)
 
+file(RELATIVE_PATH GCG_REL_PATH ${PROJECT_SOURCE_DIR} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gcg)
+add_custom_target(gcg_cluster
+   COMMAND ${CMAKE_COMMAND} -E env "GCG_BINARY=${GCG_REL_PATH}" ${PROJECT_SOURCE_DIR}/check/cmake_wrapper.sh cluster
+   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/check/
+   DEPENDS gcg)
+
 #
 # define the instance sets and settings.
 #
