@@ -4,6 +4,13 @@
   mkdir -p ~/.ssh
   chmod 700 ~/.ssh
   [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+  
+.init_ssh2: &init_ssh2 |
+  eval $(ssh-agent -s)
+  ssh-add "$PRIVATE_KEY" > /dev/null
+  mkdir -p ~/.ssh
+  chmod 700 ~/.ssh
+  [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
 
 stages:
   - build
