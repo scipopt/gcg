@@ -5,12 +5,12 @@
 #  chmod 700 ~/.ssh
 #  [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
 
-#stages:
+stages:
 #  - build
 #  - deploy
 
 
-build_job:
+#build_job:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: build
   artifacts:
