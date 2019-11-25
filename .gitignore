@@ -30,4 +30,3 @@ build*
 CMakeFiles/
 cmake-build-*/
 .idea/
-parameters.set
