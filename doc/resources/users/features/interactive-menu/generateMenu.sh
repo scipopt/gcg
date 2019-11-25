@@ -13,3 +13,5 @@ sed '/^$/d' menu.txt | sed -e "s/</\&lt;/g" | sed -e "s/>/\&gt;/g" | awk '{$2="<
 
 echo "</ul>" >> menu.html
 echo "</div>" >> menu.html
+
+rm menu.txt
