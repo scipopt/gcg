@@ -7,6 +7,8 @@
 # Stop on error.
 set -e
 
+if [[ -z ${BINDIR} ]]; then BINDIR="$PWD/../bin"; fi
+
 ./resources/devs/howtoadd/createindexes.sh
 ./resources/devs/howtouse/createindexes.sh
 ./resources/devs/detection/classifiers/createindexes.sh
@@ -61,7 +63,7 @@ cp -r ./resources/devs/howtouse/visualizations/img/* ./html/doc/img/visu
 echo "Generating parameters file."
 echo "  Please ensure that GCG was installed correctly."
 cd ..
-bin/gcg -c "set default set save doc/resources/misc/parameters.set quit" > /dev/null 2>&1
+"$BINDIR"/gcg -c "set default set save doc/resources/misc/parameters.set quit" > /dev/null 2>&1
 cd doc
 
 echo "Generating Doxygen docu..."

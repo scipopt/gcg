@@ -24,7 +24,8 @@ def getSubmenu(command = "help", level = 0):
     goBackCommand += "'"
 
     #print(f'Executing "{command}"')
-    execstring = "./../../../../../bin/gcg {} {} {} | grep -A100 -m1 'user parameter file' | tail -n+4 | sed 's/^  //g' | sed '/\\n/d'".format(execCommand, goBackCommand, quitCommand)
+    bindir = os.environ['BINDIR']
+    execstring = "{}/gcg {} {} {} | grep -A100 -m1 'user parameter file' | tail -n+4 | sed 's/^  //g' | sed '/\\n/d'".format(bindir, execCommand, goBackCommand, quitCommand)
     #print(execstring)
     proc = subprocess.Popen([str(execstring)], shell=True, stdout=subprocess.PIPE,universal_newlines=True)
     try:
