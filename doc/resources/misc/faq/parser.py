@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 helptext='''
 Created on 06.01.2014
 
@@ -50,10 +51,11 @@ questiontag = "QUESTION:"
 answertag = "ANSWER:"
 labeltag = "LABEL:"
 
-def formatitem((question, answer, label)):
+def formatitem(item):
    '''
    returns a fully formatted php array containing all item information
    '''
+   (question, answer, label) = item
    return """
           array(
               'question'=>'%s',
@@ -61,10 +63,11 @@ def formatitem((question, answer, label)):
               'label'=>'%s'
              )""" % (question, answer, label)
 
-def formatsection((section, items)):
+def formatsection(sec):
    '''
    returns a fully formatted array to represent an entire section together with its items
    '''
+   (section, items) = sec
    sectionlabel = "faq_{}".format(re.sub(r'[^a-zA-Z]', '', section).lower())
    return """
           array(
@@ -109,7 +112,7 @@ if __name__ == '__main__':
          notagline = re.sub(r"'", r"\'", notagline)
 
          # use the substitutions to get working links
-         for key, val in substitutions.items():
+         for key, val in list(substitutions.items()):
              notagline = re.sub(key, val, notagline)
          # print notagline
          if sectiontag in line:
