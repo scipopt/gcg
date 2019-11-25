@@ -40,6 +40,7 @@ build_job:
   script:
       - cmake ..
       - make -j 2
+      - cd ..
       - scp -r doc/html gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
       - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod 744 ./* ;"
 #      - make soplex
