@@ -31,8 +31,13 @@ build_job:
       - *init_ssh2
       - git submodule sync --recursive
       - git submodule update --init --recursive
-      - cd lib && ln -s scip-git scip && cd ..
+      - cd lib
+      - ln -s scip-git scip
+      - ln -s bliss-git bliss
+      - cd ..
   script:
+      - make deps
+      - make
       - make doc
 #  only:
 #    - tags
