@@ -31,15 +31,15 @@ build_job:
       - *init_ssh2
       - git submodule sync --recursive
       - git submodule update --init --recursive
+      - mkdir build
+      - cd build
 #      - cd lib
 #      - ln -s scip-git scip
 #      - ln -s bliss-git bliss
 #      - cd ..
-       - mkdir build
-       - cd build
   script:
-       - cmake ..
-       - make -j 2
+      - cmake ..
+      - make -j 2
 #      - make soplex
 #      - cd lib/scip-git
 #      - mkdir lib
