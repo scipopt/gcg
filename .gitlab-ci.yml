@@ -1,9 +1,9 @@
-.init_ssh: &init_ssh |
-  eval $(ssh-agent -s)
-  echo "$PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
-  mkdir -p ~/.ssh
-  chmod 700 ~/.ssh
-  [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+#.init_ssh: &init_ssh |
+#  eval $(ssh-agent -s)
+#  echo "$PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+#  mkdir -p ~/.ssh
+#  chmod 700 ~/.ssh
+#  [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
   
 .init_ssh2: &init_ssh2 |
   eval $(ssh-agent -s)
@@ -14,19 +14,19 @@
   chmod 700 ~/.ssh
   [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
 
-stages:
-  - build
-  - deploy
+#stages:
+#  - build
+#  - deploy
 
 
 build_job:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: build
-  artifacts:
-    paths:
-      - static/build/
-      - webpack-stats.json
-      - .cache/pip
+#  artifacts:
+#    paths:
+#      - static/build/
+#      - webpack-stats.json
+#      - .cache/pip
   before_script:
       - *init_ssh2
       - git submodule sync --recursive
@@ -40,6 +40,8 @@ build_job:
   script:
       - cmake ..
       - make -j 2
+      - scp -r doc/html gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
+      - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod 744 ./* ;"
 #      - make soplex
 #      - cd lib/scip-git
 #      - mkdir lib
