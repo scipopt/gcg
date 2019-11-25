@@ -206,7 +206,7 @@ SCIP_RETCODE Pricingcontroller::getGenericBranchconss()
    SCIP_BRANCHRULE* branchrule = GCGconsMasterbranchGetBranchrule(branchcons);
 
    assert(branchcons != NULL);
-   assert(SCIPnodeGetDepth(GCGconsMasterbranchGetNode(branchcons)) == 0 || branchrule != NULL);
+   assert(SCIPnodeGetDepth(GCGconsMasterbranchGetNode(branchcons)) == 0 || branchrule != NULL || SCIPinProbing(scip_));
 
    while( GCGisBranchruleGeneric(branchrule) )
    {
@@ -224,15 +224,15 @@ SCIP_RETCODE Pricingcontroller::getGenericBranchconss()
       assert(mastercons != NULL);
       assert(consblocknr >= 0 || consblocknr == -3);
 
-      if (consblocknr >= 0)
+      if( consblocknr >= 0 )
       {
-         for (i = 0; i < npricingprobs; ++i)
+         for( i = 0; i < npricingprobs; ++i )
          {
             /* search for the pricing problem to which the generic branching decision belongs */
-            if (consblocknr == GCGpricingprobGetProbnr(pricingprobs[i]))
+            if( consblocknr == GCGpricingprobGetProbnr(pricingprobs[i]) )
             {
-               SCIP_CALL(GCGpricingprobAddGenericBranchData(scip_, pricingprobs[i], branchcons,
-                                                            pricingtype_->consGetDual(scip_, mastercons)));
+               SCIP_CALL( GCGpricingprobAddGenericBranchData(scip_, pricingprobs[i], branchcons,
+                  pricingtype_->consGetDual(scip_, mastercons)) );
                break;
             }
          }
@@ -282,8 +282,10 @@ SCIP_RETCODE Pricingcontroller::initSol()
    eagerage = 0;
 
    /* create pricing problem and pricing job data structures */
-   SCIP_CALL_EXC( SCIPallocMemoryArray(scip_, &pricingprobs, GCGgetNRelPricingprobs(origprob)) );
-   SCIP_CALL_EXC( SCIPallocMemoryArray(scip_, &pricingjobs, GCGgetNRelPricingprobs(origprob) * nsolvers) );
+   maxpricingprobs = SCIPcalcMemGrowSize(scip_, GCGgetNRelPricingprobs(origprob));
+   maxpricingjobs = SCIPcalcMemGrowSize(scip_, GCGgetNRelPricingprobs(origprob) * nsolvers);
+   SCIP_CALL_EXC( SCIPallocBlockMemoryArray(scip_, &pricingprobs, maxpricingprobs) );
+   SCIP_CALL_EXC( SCIPallocBlockMemoryArray(scip_, &pricingjobs, maxpricingjobs) );
    for( int i = 0; i < nblocks; ++i )
    {
       if( GCGisPricingprobRelevant(origprob, i) )
@@ -303,7 +305,7 @@ SCIP_RETCODE Pricingcontroller::initSol()
       }
    }
 
-   SCIP_CALL_EXC( GCGpqueueCreate(&pqueue, npricingjobs, 2.0, comparePricingjobs) );
+   SCIP_CALL_EXC( GCGpqueueCreate(scip_, &pqueue, npricingjobs, comparePricingjobs) );
 
    return SCIP_OKAY;
 }
@@ -320,8 +322,8 @@ SCIP_RETCODE Pricingcontroller::exitSol()
    {
       GCGpricingjobFree(scip_, &pricingjobs[i]);
    }
-   SCIPfreeMemoryArray(scip_, &pricingprobs);
-   SCIPfreeMemoryArray(scip_, &pricingjobs);
+   SCIPfreeBlockMemoryArray(scip_, &pricingprobs, maxpricingprobs);
+   SCIPfreeBlockMemoryArray(scip_, &pricingjobs, maxpricingjobs);
 
    return SCIP_OKAY;
 }

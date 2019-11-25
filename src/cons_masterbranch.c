@@ -32,6 +32,7 @@
  * @author Martin Bergner
  * @author Christian Puchert
  * @author Marcel Schmickerath
+ * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -79,6 +80,7 @@ struct SCIP_ConsData
    SCIP_CONS*            parentcons;         /**< the masterbranch constraint of the parent node */
    SCIP_CONS**           childconss;         /**< array of the masterbranch constraints of child nodes */
    int                   nchildconss;        /**< number of the masterbranch constraints of child nodes */
+   int                   maxchildconss;     /**< capacity of childconss array */
    SCIP_CONS*            probingtmpcons;     /**< pointer to save the last child in the childconss array if it is overwritten in probing mode */
    SCIP_CONS*            origcons;           /**< the corresponding origbranch cons in the original program */
 
@@ -95,7 +97,9 @@ struct SCIP_ConsData
 
    int*                  nlocalbndchgstreated; /**< number of bound changes of the nodes on the way from the current node to
                                                 *   the root node that have been treated so far */
+   int                   maxlocalbndchgstreated; /**< capacity of nlocalbndchgstreated */
    int                   nlocalbndchgs;      /**< number of bound changes */
+   int                   maxlocalbndchgs;    /**< capacity of corresponding arrays */
    int                   nbranchingchgs;     /**< number of bound changes due to branching (<= nlocalbndchgs) */
 
    /* local bound changes on original variables that have been directly copied to the master problem */
@@ -108,6 +112,7 @@ struct SCIP_ConsData
    /* constraints that enforce the branching restrictions on the original problem */
    SCIP_CONS**           origbranchconss;    /**< constraints in the original problem that enforce the branching decision */
    int                   norigbranchconss;   /**< number of constraints in the original problem that enforce the branching decision */
+   int                   maxorigbranchconss;/**< capacity of origbranchconss array */
 };
 
 /** constraint handler data */
@@ -127,6 +132,16 @@ struct SCIP_ConshdlrData
    SCIP_Bool             pendingbndsactivated; /**< were pending bound changes already activated? */
    int                   maxpendingbnds;     /**< size of the array corresponding to pending bound changes */
    SCIP_Bool             enforceproper;      /**< should proper variables be enforced? */
+
+   /* information needed by applyLocalBndchgsToPricedMastervars */
+   SCIP_VAR***           collectedbndvars;   /**< collected original variables of bound changes stored for each block */
+   SCIP_Real**           collectedlbnds;     /**< collected upper bound changes for each block */
+   SCIP_Real**           collectedubnds;     /**< collected upper bound changes for each block */
+   int                   maxblocknum;        /**< maximal number of blocks that can be handled by the collected* arrays */
+   int*                  ncollectedbndvars;  /**< number of collected bndvars per block */
+   int*                  maxcollectedbndvars;/**< capacity of the collected* arrays per block */
+   int**                 linkingvaridxs;     /**< position of linking vars in collectedbndvars */
+   int                   maxlinkingvaridxs;  /**< capacity of linkingvaridxs */
 };
 
 /*
@@ -223,7 +238,8 @@ SCIP_RETCODE initializeConsdata(
    assert(consdata->parentcons == NULL ||
       SCIPconsGetData(consdata->parentcons)->origcons == GCGconsOrigbranchGetParentcons(consdata->origcons));
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &consdata->nlocalbndchgstreated, (size_t)conshdlrdata->nstack+1) );
+   consdata->maxlocalbndchgstreated = SCIPcalcMemGrowSize(scip, conshdlrdata->nstack+1);
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->nlocalbndchgstreated, (size_t)consdata->maxlocalbndchgstreated) );
 
    /* get all bound changes at the corresponding node in the original problem */
 
@@ -233,10 +249,15 @@ SCIP_RETCODE initializeConsdata(
 
    if( consdata->nlocalbndchgs > 0 )
    {
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->localbndvars, consdata->nlocalbndchgs) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->localbndtypes, consdata->nlocalbndchgs) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->localnewbnds, consdata->nlocalbndchgs) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->localoldbnds, consdata->nlocalbndchgs) );
+      consdata->maxlocalbndchgs = SCIPcalcMemGrowSize(scip, consdata->nlocalbndchgs);
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->localbndvars, consdata->maxlocalbndchgs) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->localbndtypes, consdata->maxlocalbndchgs) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->localnewbnds, consdata->maxlocalbndchgs) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->localoldbnds, consdata->maxlocalbndchgs) );
+   }
+   else
+   {
+      consdata->maxlocalbndchgs = 0;
    }
 
    consdata->nbranchingchgs = 0;
@@ -285,10 +306,19 @@ SCIP_RETCODE initializeConsdata(
 
             diff = ndomboundchgs - parentdata->nlocalbndchgstreated[i];
 
-            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &consdata->localbndvars, consdata->nlocalbndchgs, (size_t)consdata->nlocalbndchgs + diff) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &consdata->localbndtypes, consdata->nlocalbndchgs, (size_t)consdata->nlocalbndchgs + diff) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &consdata->localnewbnds, consdata->nlocalbndchgs, (size_t)consdata->nlocalbndchgs + diff) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &consdata->localoldbnds, consdata->nlocalbndchgs, (size_t)consdata->nlocalbndchgs + diff) );
+            if( consdata->maxlocalbndchgs < consdata->nlocalbndchgs + diff )
+            {
+               int newmaxsize = SCIPcalcMemGrowSize(scip, consdata->nlocalbndchgs + diff);
+               SCIP_CALL(SCIPreallocBlockMemoryArray(scip, &consdata->localbndvars, consdata->maxlocalbndchgs,
+                                                     (size_t) newmaxsize));
+               SCIP_CALL(SCIPreallocBlockMemoryArray(scip, &consdata->localbndtypes, consdata->maxlocalbndchgs,
+                                                     (size_t) newmaxsize));
+               SCIP_CALL(SCIPreallocBlockMemoryArray(scip, &consdata->localnewbnds, consdata->maxlocalbndchgs,
+                                                     (size_t) newmaxsize));
+               SCIP_CALL(SCIPreallocBlockMemoryArray(scip, &consdata->localoldbnds, consdata->maxlocalbndchgs,
+                                                     (size_t) newmaxsize));
+               consdata->maxlocalbndchgs = newmaxsize;
+            }
 
             /* add bound changes to the boundchanges array */
             for( j = 0; j < ndomboundchgs; ++j )
@@ -360,7 +390,7 @@ SCIP_RETCODE addPendingBndChg(
    /* reallocate memory if needed */
    if( conshdlrdata->npendingbnds >= conshdlrdata->maxpendingbnds )
    {
-      int newsize = conshdlrdata->npendingbnds+5;
+      int newsize = SCIPcalcMemGrowSize(scip, conshdlrdata->npendingbnds+5);
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->pendingvars), conshdlrdata->maxpendingbnds, newsize) );
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->pendingbndtypes), conshdlrdata->maxpendingbnds, newsize) );
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->pendingoldbnds), conshdlrdata->maxpendingbnds, newsize) );
@@ -522,7 +552,6 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
    SCIP_VAR** vars;
    int nvars;
    int i;
-   int j;
    int k;
 
    assert(scip != NULL);
@@ -549,7 +578,7 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
       {
          SCIP_Bool ismastervarrelevant;
          SCIP_VAR** origvars;
-         SCIP_Real* origvals;
+         SCIP_HASHMAP* origvals;
          int norigvars;
          int blocknr;
          blocknr = GCGvarGetBlock(vars[i]);
@@ -558,7 +587,7 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
          assert(GCGvarIsMaster(vars[i]));
          norigvars = GCGmasterVarGetNOrigvars(vars[i]);
          origvars = GCGmasterVarGetOrigvars(vars[i]);
-         origvals = GCGmasterVarGetOrigvals(vars[i]);
+         origvals = GCGmasterVarGetOrigvalmap(vars[i]);
 
          assert(blocknr < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
          assert(norigvars >= 0);
@@ -611,28 +640,10 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
 
             assert(bndchgorigvars[0] != NULL);
 
-            /* val is the value of the bound change variable in the current mastervar,
-             * we set it to 0.0, since variables with 0 coefficient are not stored in the origvars array,
-             * if we do not find the original variable in this array, it has value 0.0
-             */
-            val = 0.0;
-
-            for( j = 0; j < norigvars; j++ )
-            {
-               /* Make sure that the original variable and the master variable belong to the same block
-                * or that, in case of linking variables, the linking variable is in that block
-                */
-               assert(GCGvarGetBlock(origvars[j]) == blocknr || (GCGisLinkingVarInBlock(origvars[j], blocknr))); /*lint !e613*/
-
-               /* check whether the original variable contained in the master variable equals the variable
-                * on which the bound change was performed
-                */
-               if( origvars[j] == bndchgorigvars[0] ) /*lint !e613*/
-               {
-                  val = origvals[j];
-                  break;
-               }
-            }
+            val = SCIPhashmapGetImageReal(origvals, bndchgorigvars[0]);
+            /* variables belong to the same block -> set origval to 0.0 if not in map */
+            if( val == SCIP_INVALID )
+               val = 0.0;
 
             /* if the variable contains a part of the branching variable that violates the bound,
              * fix the master variable to 0
@@ -640,6 +651,8 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
             /* @todo: This is the wrong way to treat bound changes on original variable copies in the master problem;
              * I think they have already been treated during constraint activation
              */
+
+            assert(GCGvarGetBlock(bndchgorigvars[0]) == blocknr || (GCGisLinkingVarInBlock(bndchgorigvars[0], blocknr))); /*lint !e613*/
 
             /* new lower bound */
             if( conshdlrdata->pendingbndtypes[k] == SCIP_BOUNDTYPE_LOWER &&
@@ -1092,6 +1105,44 @@ SCIP_RETCODE undoLocalBndchgsToPricingprobs(
    return SCIP_OKAY;
 }
 
+static
+SCIP_RETCODE ensureCollectedBndvarsSize(
+   SCIP* scip,
+   SCIP_CONSHDLRDATA *conshdlrdata,
+   int blocknr,
+   int minsize
+   )
+{
+   int oldsize = conshdlrdata->maxcollectedbndvars[blocknr];
+   if( oldsize < minsize )
+   {
+      int newsize = SCIPcalcMemGrowSize(scip, minsize);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->collectedbndvars[blocknr]), oldsize, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->collectedlbnds[blocknr]), oldsize, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->collectedubnds[blocknr]), oldsize, newsize) );
+      conshdlrdata->maxcollectedbndvars[blocknr] = newsize;
+   }
+   return SCIP_OKAY;
+}
+
+static
+SCIP_RETCODE ensureLinkingvarIndxsSize(
+   SCIP* scip,
+   SCIP_CONSHDLRDATA *conshdlrdata,
+   int minsize
+)
+{
+   int oldsize = conshdlrdata->maxlinkingvaridxs;
+   if( oldsize < minsize )
+   {
+      int newsize = SCIPcalcMemGrowSize(scip, minsize);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->linkingvaridxs), oldsize, newsize) );
+      BMSclearMemoryArray(&conshdlrdata->linkingvaridxs[oldsize], (newsize - oldsize));
+      conshdlrdata->maxlinkingvaridxs = newsize;
+   }
+   return SCIP_OKAY;
+}
+
 /** apply local bound changes on the original variables on newly generated master variables */
 static
 SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
@@ -1100,17 +1151,12 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
    int*                  propcount           /**< number of applied bound changes */
    )
 {
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   SCIP_CONSDATA* consdata;
-   SCIP_CONS* curcons;
-   SCIP_CONSDATA* curconsdata;
-   SCIP_VAR** vars;
+   SCIP_CONSHDLR *conshdlr;
+   SCIP_CONSHDLRDATA *conshdlrdata;
+   SCIP_CONSDATA *consdata;
+   SCIP_CONSDATA *curconsdata;
+   SCIP_VAR **vars;
    int nvars;
-   int nlocalbndchgs;
-   int i;
-   int j;
-   int k;
 
    assert(scip != NULL);
    assert(GCGisMaster(scip));
@@ -1131,128 +1177,222 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
    vars = GCGmasterGetPricedvars(scip);
    nvars = GCGmasterGetNPricedvars(scip);
 
-   /* propagate local bound changes on the path from the current node to the root */
-   curcons = cons;
-   while( curcons != NULL )
+   if( consdata->npropvars < nvars )
    {
-      curconsdata = SCIPconsGetData(curcons);
-      assert(curconsdata != NULL);
+      SCIP_CONS *curcons;
+      SCIP_HASHMAP *origvar2idx;
+      int nbndvars;
+      int nlocalbndchgs;
+      int i;
+      int j;
+      int k;
+      SCIP_VAR*** collectedbndvars;
+      SCIP_Real** collectedlbnds;
+      SCIP_Real** collectedubnds;
+      int* ncollectedbndvars;
+      int hashmapsize;
+      int nblocks;
+      int blocknr;
+      SCIP_VAR *bndvar;
+      int idx;
+      SCIP_Real bnd;
+      SCIP_Bool islinking;
+      int* linkingvaridxs;
+      int nlinkingvars;
 
-      /* propagate all bound changes or only the branching bound changes, depending on the setting for the enforcement of proper variables */
-      nlocalbndchgs = (conshdlrdata->enforceproper ? curconsdata->nlocalbndchgs : curconsdata->nbranchingchgs);
+      nblocks = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
+      nlinkingvars = 0;
 
-      /* iterate over all master variables created after the current node was left the last time */
-      for( i = consdata->npropvars; i < nvars; i++ )
+      collectedbndvars = conshdlrdata->collectedbndvars;
+      collectedlbnds = conshdlrdata->collectedlbnds;
+      collectedubnds = conshdlrdata->collectedubnds;
+      ncollectedbndvars = conshdlrdata->ncollectedbndvars;
+
+      BMSclearMemoryArray(ncollectedbndvars, conshdlrdata->maxblocknum);
+
+      /* propagate local bound changes on the path from the current node to the root */
+      curcons = cons;
+      hashmapsize = 0;
+      while ( curcons != NULL )
       {
-         SCIP_VAR** origvars;
-         int norigvars;
-         SCIP_Real* origvals;
-         int blocknr;
+         curconsdata = SCIPconsGetData(curcons);
+         assert(curconsdata != NULL);
+         //if( curconsdata->npropvars == nvars )
+         //   break;
+         hashmapsize += (conshdlrdata->enforceproper ? curconsdata->nlocalbndchgs : curconsdata->nbranchingchgs);
+         curcons = curconsdata->parentcons;
+      }
+      if( hashmapsize > SCIPgetNVars(GCGmasterGetOrigprob(scip)))
+         hashmapsize = SCIPgetNVars(GCGmasterGetOrigprob(scip));
 
-         assert(GCGvarIsMaster(vars[i]));
-         blocknr = GCGvarGetBlock(vars[i]);
-         assert(blocknr >= 0 && blocknr < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
+      SCIP_CALL(SCIPhashmapCreate(&origvar2idx, SCIPblkmem(scip), hashmapsize));
 
-         origvals = GCGmasterVarGetOrigvals(vars[i]);
-         norigvars = GCGmasterVarGetNOrigvars(vars[i]);
-         origvars = GCGmasterVarGetOrigvars(vars[i]);
-         /** @todo check if this really works with linking variables */
+      curcons = cons;
+      nbndvars = 0;
+      while ( curcons != NULL)
+      {
+         curconsdata = SCIPconsGetData(curcons);
+         assert(curconsdata != NULL);
+         //if( curconsdata->npropvars == nvars )
+         //   break;
 
-         /* ignore master variables that contain no original variables */
-         if( origvars == NULL || origvars[0] == NULL )
-            continue;
-
-         /* only look at variables not already fixed to 0 or that belong to no block */
-         if( (SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) )
-            continue;
+         /* propagate all bound changes or only the branching bound changes, depending on the setting for the enforcement of proper variables */
+         nlocalbndchgs = (conshdlrdata->enforceproper ? curconsdata->nlocalbndchgs : curconsdata->nbranchingchgs);
 
          /* iterate over bound changes performed at the current node's equivalent in the original tree */
-         for( k = 0; k < nlocalbndchgs; k++ )
+         for ( k = 0; k < nlocalbndchgs; ++k )
          {
-#ifdef SCIP_DEBUG
-            SCIP_Bool contained = FALSE;
-            SCIP_Bool handled = FALSE;
-#endif
-            int bndchgblocknr;
-            SCIP_Real val;
+            linkingvaridxs = NULL;
+            bndvar = curconsdata->localbndvars[k];
+            islinking = GCGoriginalVarIsLinking(bndvar);
 
             /* get the block the original variable is in */
-            bndchgblocknr = GCGvarGetBlock(curconsdata->localbndvars[k]);
-            assert(GCGvarIsOriginal(curconsdata->localbndvars[k]));
-            assert(bndchgblocknr < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
+            blocknr = GCGvarGetBlock(bndvar);
+            assert(GCGvarIsOriginal(bndvar));
+            assert(blocknr < nblocks);
 
-            /* the boundchange was performed on a variable in another block, continue */
-            if( (!GCGoriginalVarIsLinking(curconsdata->localbndvars[k]) && bndchgblocknr != blocknr) ||
-               (GCGoriginalVarIsLinking(curconsdata->localbndvars[k]) && !GCGisLinkingVarInBlock(curconsdata->localbndvars[k], blocknr)) )
+            if( blocknr >= 0 || islinking)
+            {
+               idx = SCIPhashmapGetImageInt(origvar2idx, bndvar);
+               bnd = curconsdata->localnewbnds[k];
+
+               if( islinking )
+               {
+                  blocknr = 0;
+                  if( idx < INT_MAX )
+                  {
+                     linkingvaridxs = conshdlrdata->linkingvaridxs[idx];
+                  }
+                  else
+                  {
+                     ensureLinkingvarIndxsSize(scip, conshdlrdata, nlinkingvars + 1);
+                     linkingvaridxs = conshdlrdata->linkingvaridxs[nlinkingvars];
+                     if( linkingvaridxs == NULL )
+                     {
+                        SCIP_CALL( SCIPallocBlockMemoryArray(scip, &linkingvaridxs, conshdlrdata->maxblocknum) );
+                        conshdlrdata->linkingvaridxs[nlinkingvars] = linkingvaridxs;
+                     }
+                     SCIPhashmapInsertInt(origvar2idx, bndvar, nlinkingvars);
+                     ++nlinkingvars;
+
+                     for( i = 0; i < nblocks; ++i )
+                        linkingvaridxs[i] = INT_MAX;
+                  }
+               }
+
+               do
+               {
+                  assert(blocknr >= 0 && blocknr < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
+
+                  if( islinking )
+                  {
+                     if( !GCGisLinkingVarInBlock(bndvar, blocknr) )
+                        continue;
+
+                     idx = linkingvaridxs[blocknr];
+                  }
+
+                  if( curconsdata->localbndtypes[k] == SCIP_BOUNDTYPE_LOWER )
+                  {
+                     if( idx < INT_MAX )
+                     {
+                        if( collectedlbnds[blocknr][idx] == SCIP_INVALID || collectedlbnds[blocknr][idx] < bnd )
+                           collectedlbnds[blocknr][idx] = bnd;
+                     }
+                     else
+                     {
+                        SCIP_CALL(
+                           ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1));
+                        if ( islinking )
+                           linkingvaridxs[blocknr] = ncollectedbndvars[blocknr];
+                        else
+                           SCIPhashmapInsertInt(origvar2idx, bndvar, ncollectedbndvars[blocknr]);
+                        collectedbndvars[blocknr][ncollectedbndvars[blocknr]] = bndvar;
+                        collectedlbnds[blocknr][ncollectedbndvars[blocknr]] = bnd;
+                        collectedubnds[blocknr][ncollectedbndvars[blocknr]] = SCIP_INVALID;
+                        ++ncollectedbndvars[blocknr];
+                        ++nbndvars;
+                     }
+                  }
+                  else
+                  {
+                     if( idx < INT_MAX )
+                     {
+                        if( collectedubnds[blocknr][idx] == SCIP_INVALID || collectedubnds[blocknr][idx] > bnd )
+                           collectedubnds[blocknr][idx] = bnd;
+                     }
+                     else
+                     {
+                        SCIP_CALL(
+                           ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1));
+                        if ( islinking )
+                           linkingvaridxs[blocknr] = ncollectedbndvars[blocknr];
+                        else
+                           SCIPhashmapInsertInt(origvar2idx, bndvar, ncollectedbndvars[blocknr]);
+                        collectedbndvars[blocknr][ncollectedbndvars[blocknr]] = bndvar;
+                        collectedubnds[blocknr][ncollectedbndvars[blocknr]] = bnd;
+                        collectedlbnds[blocknr][ncollectedbndvars[blocknr]] = SCIP_INVALID;
+                        ++ncollectedbndvars[blocknr];
+                        ++nbndvars;
+                     }
+                  }
+               }
+               while( islinking && (++blocknr) < nblocks );
+            }
+         }
+         /* proceed with the parent node */
+         curcons = curconsdata->parentcons;
+      }
+
+      if( nbndvars > 0 )
+      {
+         SCIP_Real lbnd;
+         SCIP_Real ubnd;
+         SCIP_HASHMAP* origvals;
+         SCIP_Real origval;
+
+         /* iterate over all master variables created after the current node was left the last time */
+         for ( i = consdata->npropvars; i < nvars; i++ )
+         {
+            assert(GCGvarIsMaster(vars[i]));
+            blocknr = GCGvarGetBlock(vars[i]);
+            assert(blocknr >= 0 && blocknr < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
+
+            /** @todo check if this really works with linking variables */
+
+            /* only look at variables not already fixed to 0 or that belong to no block */
+            if((SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))))
                continue;
 
-            assert(bndchgblocknr != -1);
+            origvals = GCGmasterVarGetOrigvalmap(vars[i]);
 
-            /* val is the value of the branching variable in the current mastervar,
-             * we set it to 0.0, since variables with 0 coefficient are not stored in the origvars array,
-             * if we do not find the branching variable in this array, it has value 0.0
-             */
-            val = 0.0;
-
-            /* iterate over all original variables contained in the current master variable */
-            for( j = 0; j < norigvars; j++ )
+            /* iterate over all original variables whose bound was changed */
+            for ( j = 0; j < ncollectedbndvars[blocknr]; j++ )
             {
-               assert(GCGvarGetBlock(origvars[j]) == blocknr || GCGisLinkingVarInBlock(origvars[j], blocknr));
+               bndvar = collectedbndvars[blocknr][j];
 
-               /* check whether the original variable contained in the master variable equals the variable
-                * on which the current branching was performed
-                */
-               if( origvars[j] == curconsdata->localbndvars[k] )
+               assert(GCGvarGetBlock(bndvar) == blocknr || (GCGoriginalVarIsLinking(bndvar) && GCGisLinkingVarInBlock(bndvar, blocknr)));
+
+               origval = SCIPhashmapGetImageReal(origvals, bndvar);
+               /* variables belong to the same block -> set origval to 0.0 if not in map */
+               if( origval == SCIP_INVALID )
+                  origval = 0.0;
+               lbnd = collectedlbnds[blocknr][j];
+               ubnd = collectedubnds[blocknr][j];
+
+               /* branching imposes new bound */
+               if( (lbnd != SCIP_INVALID && SCIPisFeasLT(scip, origval, lbnd))
+                   || (ubnd != SCIP_INVALID && SCIPisFeasGT(scip, origval, ubnd)) )
                {
-#ifdef SCIP_DEBUG
-                  contained = TRUE;
-#endif
-                  val = origvals[j];
+                  SCIPdebugMessage("Changing upper bound of var %s\n", SCIPvarGetName(vars[i]));
+                  SCIP_CALL(SCIPchgVarUb(scip, vars[i], 0.0));
+                  ++(*propcount);
                   break;
                }
             }
-
-            /* if the variable contains a part of the branching variable that violates the bound,
-             * fix the master variable to 0
-             */
-
-            /* branching imposes new lower bound */
-            if( curconsdata->localbndtypes[k] == SCIP_BOUNDTYPE_LOWER && SCIPisFeasLT(scip, val, curconsdata->localnewbnds[k]) )
-            {
-               SCIPdebugMessage("Changing lower bound of var %s\n", SCIPvarGetName(vars[i]));
-               SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
-               ++(*propcount);
-#ifdef SCIP_DEBUG
-               handled = TRUE;
-#endif
-               break;
-            }
-            /* branching imposes new upper bound */
-            if( curconsdata->localbndtypes[k] == SCIP_BOUNDTYPE_UPPER && SCIPisFeasGT(scip, val, curconsdata->localnewbnds[k]) )
-            {
-               SCIPdebugMessage("Changing upper bound of var %s\n", SCIPvarGetName(vars[i]));
-               SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
-               ++(*propcount);
-
-
-#ifdef SCIP_DEBUG
-               handled = TRUE;
-#endif
-               break;
-            }
-#ifdef SCIP_DEBUG
-            if( contained || !handled )
-            {
-               SCIPdebugMessage("orig var %s is contained in %s but not handled val = %f \n", SCIPvarGetName(curconsdata->localbndvars[k]), SCIPvarGetName(vars[i]), val);
-
-            }
-            assert(j == norigvars || contained);
-#endif
          }
       }
-
-      /* proceed with the parent node */
-      curcons = curconsdata->parentcons;
+      SCIPhashmapFree(&origvar2idx);
    }
 
    SCIPdebugMessage("Finished propagation of newly created variables: %d changed bounds\n", *propcount);
@@ -1347,6 +1487,7 @@ static
 SCIP_DECL_CONSINIT(consInitMasterbranch)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -1361,12 +1502,27 @@ SCIP_DECL_CONSINIT(consInitMasterbranch)
 
    /* prepare pending bound changes */
    conshdlrdata->npendingbnds = 0;
-   conshdlrdata->maxpendingbnds = 5;
+   conshdlrdata->maxpendingbnds = SCIPcalcMemGrowSize(scip, 1);
    conshdlrdata->pendingbndsactivated = TRUE;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->pendingvars), conshdlrdata->maxpendingbnds) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->pendingbndtypes), conshdlrdata->maxpendingbnds) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->pendingoldbnds), conshdlrdata->maxpendingbnds) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->pendingnewbnds), conshdlrdata->maxpendingbnds) );
+
+   conshdlrdata->maxblocknum = SCIPcalcMemGrowSize(scip, GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->collectedbndvars),  conshdlrdata->maxblocknum) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->collectedlbnds),  conshdlrdata->maxblocknum) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->collectedubnds),  conshdlrdata->maxblocknum) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->ncollectedbndvars),  conshdlrdata->maxblocknum) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->maxcollectedbndvars),  conshdlrdata->maxblocknum) );
+   BMSclearMemoryArray(conshdlrdata->collectedbndvars, conshdlrdata->maxblocknum);
+   BMSclearMemoryArray(conshdlrdata->collectedlbnds, conshdlrdata->maxblocknum);
+   BMSclearMemoryArray(conshdlrdata->collectedubnds, conshdlrdata->maxblocknum);
+   BMSclearMemoryArray(conshdlrdata->ncollectedbndvars, conshdlrdata->maxblocknum);
+   BMSclearMemoryArray(conshdlrdata->maxcollectedbndvars, conshdlrdata->maxblocknum);
+
+   conshdlrdata->maxlinkingvaridxs = 0;
+   conshdlrdata->linkingvaridxs = NULL;
 
    return SCIP_OKAY;
 }
@@ -1387,7 +1543,7 @@ SCIP_DECL_CONSINITSOL(consInitsolMasterbranch)
    assert(conshdlrdata != NULL);
 
    /* create masterbranch constraint for the root node */
-   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons, "root-masterbranch", NULL,  NULL, NULL, NULL, NULL, 0) );
+   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons, "root-masterbranch", NULL,  NULL, NULL, NULL, NULL, 0, 0) );
    GCGconsOrigbranchSetMastercons(GCGconsOrigbranchGetActiveCons(GCGmasterGetOrigprob(scip)), cons);
 
    conshdlrdata->nstack = 1;
@@ -1402,6 +1558,7 @@ static
 SCIP_DECL_CONSEXIT(consExitMasterbranch)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -1417,6 +1574,30 @@ SCIP_DECL_CONSEXIT(consExitMasterbranch)
    SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->pendingbndtypes), conshdlrdata->maxpendingbnds);
    SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->pendingoldbnds), conshdlrdata->maxpendingbnds);
    SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->pendingnewbnds), conshdlrdata->maxpendingbnds);
+
+   for( i = 0; i < conshdlrdata->maxblocknum; ++i )
+   {
+      if( conshdlrdata->maxcollectedbndvars[i] > 0)
+      {
+         SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->collectedbndvars[i]), conshdlrdata->maxcollectedbndvars[i]);
+         SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->collectedlbnds[i]), conshdlrdata->maxcollectedbndvars[i]);
+         SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->collectedubnds[i]), conshdlrdata->maxcollectedbndvars[i]);
+      }
+   }
+   SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->collectedbndvars), conshdlrdata->maxblocknum);
+   SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->collectedlbnds), conshdlrdata->maxblocknum);
+   SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->collectedubnds), conshdlrdata->maxblocknum);
+   SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->ncollectedbndvars), conshdlrdata->maxblocknum);
+   SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->maxcollectedbndvars), conshdlrdata->maxblocknum);
+
+   for( i = 0; i < conshdlrdata->maxlinkingvaridxs; ++i )
+   {
+      if( conshdlrdata->linkingvaridxs[i] != NULL)
+         SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->linkingvaridxs[i]), conshdlrdata->maxblocknum);
+      else
+         break;
+   }
+   SCIPfreeBlockMemoryArrayNull(scip, &(conshdlrdata->linkingvaridxs), conshdlrdata->maxlinkingvaridxs);
 
    return SCIP_OKAY;
 }
@@ -1611,13 +1792,13 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    }
 
    /* free arrays with local bound changes on original variables belonging to a unique block */
-   SCIPfreeMemoryArrayNull(scip, &(*consdata)->nlocalbndchgstreated);
-   if( (*consdata)->nlocalbndchgs > 0 )
+   SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->nlocalbndchgstreated, (*consdata)->maxlocalbndchgstreated);
+   if( (*consdata)->maxlocalbndchgs > 0 )
    {
-      SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->localoldbnds, (*consdata)->nlocalbndchgs);
-      SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->localnewbnds, (*consdata)->nlocalbndchgs);
-      SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->localbndtypes, (*consdata)->nlocalbndchgs);
-      SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->localbndvars, (*consdata)->nlocalbndchgs);
+      SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->localoldbnds, (*consdata)->maxlocalbndchgs);
+      SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->localnewbnds, (*consdata)->maxlocalbndchgs);
+      SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->localbndtypes, (*consdata)->maxlocalbndchgs);
+      SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->localbndvars, (*consdata)->maxlocalbndchgs);
    }
 
    /* delete branchdata if the corresponding origcons has already been deleted;
@@ -1653,8 +1834,8 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    nchildconss = (*consdata)->nchildconss;
    if( nchildconss > 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &childconsdatas, nchildconss) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &childconss, nchildconss) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &childconsdatas, nchildconss) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &childconss, nchildconss) );
 
       for( i = 0; i < nchildconss; ++i )
       {
@@ -1683,8 +1864,8 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
          }
       }
 
-      SCIPfreeMemoryArrayNull(scip, &childconsdatas);
-      SCIPfreeMemoryArrayNull(scip, &childconss);
+      SCIPfreeBufferArray(scip, &childconss);
+      SCIPfreeBufferArray(scip, &childconsdatas);
    }
    assert((*consdata)->nchildconss == 0);
 
@@ -1719,7 +1900,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       assert(childdeleted || isinprobing);
    }
 
-   SCIPfreeMemoryArrayNull(scip, &(*consdata)->childconss);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->childconss, (*consdata)->maxchildconss);
 
    if( (*consdata)->name != NULL )
    {
@@ -2104,7 +2285,8 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
    GCG_BRANCHDATA*       branchdata,         /**< branching data */
    SCIP_CONS**           origbranchconss,    /**< original constraints enforcing the branching decision */
-   int                   norigbranchconss    /**< number of original constraints */
+   int                   norigbranchconss,   /**< number of original constraints */
+   int                   maxorigbranchconss  /**< capacity of origbranchconss */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -2134,6 +2316,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->parentcons = parentcons;
    consdata->childconss = NULL;
    consdata->nchildconss = 0;
+   consdata->maxchildconss = 0;
    consdata->probingtmpcons = NULL;
    consdata->origcons = NULL;
 
@@ -2145,7 +2328,9 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->localnewbnds = NULL;
    consdata->localoldbnds = NULL;
    consdata->nlocalbndchgstreated = NULL;
+   consdata->maxlocalbndchgstreated = 0;
    consdata->nlocalbndchgs = 0;
+   consdata->maxlocalbndchgs = 0;
    consdata->nbranchingchgs = 0;
 
    consdata->copiedvars = NULL;
@@ -2154,6 +2339,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->ncopiedvarbnds = 0;
    consdata->maxcopiedvarbnds = 0;
 
+   consdata->maxorigbranchconss = maxorigbranchconss;
    consdata->origbranchconss = origbranchconss;
    consdata->norigbranchconss = norigbranchconss;
 
@@ -2179,17 +2365,20 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
       }
       else
       {
+         int newmaxsize;
          ++parentdata->nchildconss;
+         newmaxsize = SCIPcalcMemGrowSize(scip, parentdata->nchildconss);
          if( parentdata->nchildconss == 1 )
          {
-            SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childconss), parentdata->nchildconss) );
+            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(parentdata->childconss), newmaxsize) );
             parentdata->childconss[0] = NULL;
          }
          else
          {
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childconss), parentdata->nchildconss) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(parentdata->childconss), parentdata->maxchildconss, newmaxsize) );
             parentdata->childconss[parentdata->nchildconss - 1] = NULL;
          }
+         parentdata->maxchildconss = newmaxsize;
 
          assert(parentdata->childconss[parentdata->nchildconss - 1] == NULL);
          parentdata->childconss[parentdata->nchildconss - 1] = *cons;
@@ -2427,9 +2616,10 @@ SCIP_RETCODE GCGconsMasterbranchReleaseOrigbranchConss(
       {
          SCIP_CALL( SCIPreleaseCons(origscip, &consdata->origbranchconss[c]) );
       }
-      SCIPfreeMemoryArray(masterscip, &consdata->origbranchconss);
+      SCIPfreeBlockMemoryArray(masterscip, &consdata->origbranchconss, consdata->maxorigbranchconss);
       consdata->origbranchconss = NULL;
       consdata->norigbranchconss = 0;
+      consdata->maxorigbranchconss = 0;
    }
 
    return SCIP_OKAY;

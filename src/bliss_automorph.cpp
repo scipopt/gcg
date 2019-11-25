@@ -50,11 +50,8 @@
 
 #include <cstring>
 
-typedef struct struct_hook2 AUT_HOOK2;
-
-
 /** saves information of the permutation */
-struct struct_hook2
+struct AUT_HOOK2
 {
    SCIP_Bool aut;                            /**< true if there is an automorphism */
    unsigned int n;                           /**< number of permutations */
@@ -65,13 +62,13 @@ struct struct_hook2
    int* conssperm;                            /**< mapping of constraints */
    gcg::Seeedpool* seeedpool;                /**< problem information the automorphism should be searched for */
    gcg::Seeed*     seeed;                    /**< decomposition information */
-   std::vector<int> blocks;                  /**< array of blocks the automporphisms are searched for */
+   std::vector<int>* blocks;                  /**< array of blocks the automporphisms are searched for */
    SCIP*            scip;
    int ncalls;
 
 
    /** constructor for the hook struct*/
-   struct_hook2(
+   AUT_HOOK2(
       SCIP_HASHMAP* varmap,                  /**< hashmap for permutated variables */
       SCIP_HASHMAP* consmap,                 /**< hashmap for permutated constraints */
       SCIP_Bool aut,                         /**< true if there is an automorphism */
@@ -80,7 +77,7 @@ struct struct_hook2
       );
 
    /** destructor for hook struct */
-   ~struct_hook2();
+   ~AUT_HOOK2();
 
 
    /** getter for the bool aut */
@@ -93,7 +90,7 @@ struct struct_hook2
    void setNewDetectionStuff(
       gcg::Seeedpool* seeedpool,
       gcg::Seeed*     seeed,
-      std::vector<int> blocks
+      std::vector<int>* blocks
       );
 
    /** getter for the number of nodes */
@@ -114,16 +111,16 @@ struct struct_hook2
 
 
 
-void struct_hook2::setBool( SCIP_Bool aut_ )
+void AUT_HOOK2::setBool( SCIP_Bool aut_ )
 {
    aut = aut_;
 }
 
 
-void struct_hook2::setNewDetectionStuff(
+void AUT_HOOK2::setNewDetectionStuff(
    gcg::Seeedpool* givenseeedpool,
    gcg::Seeed*     givenseeed,
-   std::vector<int> givenblocks
+   std::vector<int>* givenblocks
 )
 {
    this->seeedpool = givenseeedpool;
@@ -136,8 +133,9 @@ void struct_hook2::setNewDetectionStuff(
 
 }
 
-struct_hook2::~struct_hook2()
+AUT_HOOK2::~AUT_HOOK2()
 {   /*lint -esym(1540,struct_hook::conssperm) */
+   SCIPfreeMemoryArrayNull(scip, &nodemap);
    if( conssperm != NULL )
       SCIPfreeMemoryArrayNull(scip, &conssperm);
    conssperm  = NULL;
@@ -147,33 +145,33 @@ struct_hook2::~struct_hook2()
 
 
 
-SCIP_Bool struct_hook2::getBool()
+SCIP_Bool AUT_HOOK2::getBool()
 {
    return aut;
 }
 
-unsigned int struct_hook2::getNNodes()
+unsigned int AUT_HOOK2::getNNodes()
 {
    return n;
 }
 
-SCIP_HASHMAP* struct_hook2::getVarHash()
+SCIP_HASHMAP* AUT_HOOK2::getVarHash()
 {
    return varmap;
 }
 
-SCIP_HASHMAP* struct_hook2::getConsHash()
+SCIP_HASHMAP* AUT_HOOK2::getConsHash()
 {
    return consmap;
 }
 
-SCIP** struct_hook2::getScips()
+SCIP** AUT_HOOK2::getScips()
 {
    return scips;
 }
 
 /** constructor of the hook struct */
-struct_hook2::struct_hook2(
+AUT_HOOK2::AUT_HOOK2(
    SCIP_HASHMAP*         varmap_,            /**< hashmap of permutated variables */
    SCIP_HASHMAP*         consmap_,           /**< hahsmap of permutated constraints */
    SCIP_Bool             aut_,               /**< true if there is an automorphism */
@@ -194,7 +192,7 @@ struct_hook2::struct_hook2(
    conssperm = NULL;
    seeedpool = NULL;
    seeed = NULL;
-   blocks = std::vector<int>(0);
+   blocks = NULL;
 
    ncalls = 0;
 }
@@ -287,11 +285,11 @@ void fhook(
 
 
    if( newdetection )
-      nvars = seeed->getNVarsForBlock(hook->blocks[0]);
+      nvars = seeed->getNVarsForBlock((*hook->blocks)[0]);
    else
       nvars = SCIPgetNVars(hook->getScips()[0]);
    if( newdetection )
-      assert(nvars == seeed->getNVarsForBlock(hook->blocks[1]) );
+      assert(nvars == seeed->getNVarsForBlock((*hook->blocks)[1]) );
    else
       assert(nvars == SCIPgetNVars(hook->getScips()[1]));
 
@@ -301,22 +299,22 @@ void fhook(
 
       SCIP_CALL_ABORT(SCIPallocBufferArray(seeedscip, &vars1, nvars ));
       SCIP_CALL_ABORT(SCIPallocBufferArray(seeedscip, &vars2, nvars ));
-      nconss = seeed->getNConssForBlock(hook->blocks[0]);
-      assert(nconss == seeed->getNConssForBlock(hook->blocks[1]));
+      nconss = seeed->getNConssForBlock((*hook->blocks)[0]);
+      assert(nconss == seeed->getNConssForBlock((*hook->blocks)[1]));
 
       SCIP_CALL_ABORT( SCIPallocBufferArray(seeedscip, &conss1, nconss ) );
       SCIP_CALL_ABORT( SCIPallocBufferArray(seeedscip, &conss2, nconss ) );
 
       for( int v = 0; v < nvars; ++v )
       {
-         vars1[v] = seeedpool->getVarForIndex(seeed->getVarsForBlock(hook->blocks[0])[v]);
-         vars2[v] = seeedpool->getVarForIndex(seeed->getVarsForBlock(hook->blocks[1])[v]);
+         vars1[v] = seeedpool->getVarForIndex(seeed->getVarsForBlock((*hook->blocks)[0])[v]);
+         vars2[v] = seeedpool->getVarForIndex(seeed->getVarsForBlock((*hook->blocks)[1])[v]);
       }
 
       for( int c = 0; c < nconss; ++c )
       {
-         conss1[c] = seeedpool->getConsForIndex(seeed->getConssForBlock(hook->blocks[0])[c]);
-         conss2[c] = seeedpool->getConsForIndex(seeed->getConssForBlock(hook->blocks[1])[c]);
+         conss1[c] = seeedpool->getConsForIndex(seeed->getConssForBlock((*hook->blocks)[0])[c]);
+         conss2[c] = seeedpool->getConsForIndex(seeed->getConssForBlock((*hook->blocks)[1])[c]);
       }
    }
    else
@@ -414,6 +412,7 @@ static SCIP_RETCODE allocMemory(
    SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarraycoefs, ((size_t) nconss * nvars)));
    SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayvars, (size_t) nvars));
    SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayconss, (size_t) nconss));
+   colorinfo->alloccoefsarray = nconss * nvars;
    return SCIP_OKAY;
 }
 
@@ -427,6 +426,7 @@ static SCIP_RETCODE allocMemoryNewDetection(
    )
 {
    SCIP_CALL( SCIPallocMemoryArray(seeedpool->getScip(), &colorinfo->ptrarraycoefs, ((size_t) ncoeffs )));
+   colorinfo->alloccoefsarray = ncoeffs;
    SCIP_CALL( SCIPallocMemoryArray(seeedpool->getScip(), &colorinfo->ptrarrayvars, (size_t) nvars));
    SCIP_CALL( SCIPallocMemoryArray(seeedpool->getScip(), &colorinfo->ptrarrayconss, (size_t) nconss));
    return SCIP_OKAY;
@@ -442,7 +442,8 @@ static SCIP_RETCODE reallocMemory(
    int                   nvars               /**< number of variables */
    )
 {
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &colorinfo->ptrarraycoefs, (size_t) colorinfo->lencoefsarray + ((size_t) nconss * nvars)));
+   SCIP_CALL(SCIPreallocMemoryArray(scip, &colorinfo->ptrarraycoefs, (size_t) colorinfo->lencoefsarray + ((size_t) nconss * nvars)));
+   colorinfo->alloccoefsarray = colorinfo->lencoefsarray + nconss * nvars;
    SCIP_CALL( SCIPreallocMemoryArray(scip, &colorinfo->ptrarrayvars, (size_t) colorinfo->lenvarsarray + nvars));
    SCIP_CALL( SCIPreallocMemoryArray(scip, &colorinfo->ptrarrayconss, (size_t) colorinfo->lenconssarray + nconss));
    return SCIP_OKAY;
@@ -639,7 +640,6 @@ SCIP_RETCODE setuparraysnewdetection(
    int b;
    int nconss;
    int nvars;
-   int ncoeffs;
    SCIP_Bool added;
 
 
@@ -650,8 +650,6 @@ SCIP_RETCODE setuparraysnewdetection(
    //allocate max n of coefarray, varsarray, and boundsarray in origscip
    nconss = seeed->getNConssForBlock(blocks[0]) ;
    nvars = seeed->getNVarsForBlock(blocks[0]) ;
-   ncoeffs = seeed->getNCoeffsForBlock( blocks[0]);
-   SCIP_CALL( allocMemoryNewDetection(seeedpool, colorinfo, nconss*nblocks+seeed->getNMasterconss(), nvars*nblocks, ncoeffs*nblocks + seeed->getNCoeffsForMaster() ) );
    colorinfo->setOnlySign(FALSE);
 
    for( b = 0; b < nblocks && *result == SCIP_SUCCESS; ++b )
@@ -802,9 +800,9 @@ SCIP_RETCODE createGraph(
 
    int* pricingnonzeros = NULL;
    int* mastercoefindex = NULL;
-   SCIP_CALL( SCIPallocMemoryArray(origscip, &pricingnonzeros, nscips) );
-   SCIP_CALL( SCIPallocMemoryArray(origscip, &nnodesoffset, nscips) );
-   SCIP_CALL( SCIPallocMemoryArray(origscip, &mastercoefindex, nscips) );
+   SCIP_CALL( SCIPallocBufferArray(origscip, &pricingnonzeros, nscips) );
+   SCIP_CALL( SCIPallocBufferArray(origscip, &nnodesoffset, nscips) );
+   SCIP_CALL( SCIPallocBufferArray(origscip, &mastercoefindex, nscips) );
    BMSclearMemoryArray(pricingnonzeros, nscips);
    BMSclearMemoryArray(nnodesoffset, nscips);
    BMSclearMemoryArray(mastercoefindex, nscips);
@@ -1018,10 +1016,9 @@ SCIP_RETCODE createGraph(
    }
 
    //free all allocated memory
-   SCIP_CALL( freeMemory(origscip, &colorinfo) );
-   SCIPfreeMemoryArray(origscip, &mastercoefindex);
-   SCIPfreeMemoryArray(origscip, &nnodesoffset);
-   SCIPfreeMemoryArray(origscip, &pricingnonzeros);
+   SCIPfreeBufferArray(origscip, &mastercoefindex);
+   SCIPfreeBufferArray(origscip, &nnodesoffset);
+   SCIPfreeBufferArray(origscip, &pricingnonzeros);
 
    return SCIP_OKAY;
 }
@@ -1066,15 +1063,15 @@ SCIP_RETCODE createGraphNewDetection(
 
    scip = seeedpool->getScip();
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &mastercoefindex, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &mastercoefindex, nblocks) );
    BMSclearMemoryArray(mastercoefindex, nblocks);
 
    nconss = seeed->getNConssForBlock(blocks[0]);
    nvars = seeed->getNVarsForBlock(blocks[0]);
 
-   SCIP_CALL( SCIPallocMemoryArray(origscip, &nnodesoffset, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nnodesoffset, nblocks) );
    BMSclearMemoryArray(nnodesoffset, nblocks);
-   SCIP_CALL( SCIPallocMemoryArray(origscip, &pricingnonzeros, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &pricingnonzeros, nblocks) );
    BMSclearMemoryArray(pricingnonzeros, nblocks);
 
    for( b = 0; b < nblocks && *result == SCIP_SUCCESS; ++b )
@@ -1322,10 +1319,9 @@ SCIP_RETCODE createGraphNewDetection(
 
 
    //free all allocated memory
-   SCIP_CALL( freeMemory(scip, &colorinfo) );
-   SCIPfreeMemoryArray(scip, &mastercoefindex);
-   SCIPfreeMemoryArray(scip, &nnodesoffset);
-   SCIPfreeMemoryArray(scip, &pricingnonzeros);
+   SCIPfreeBufferArray(scip, &pricingnonzeros);
+   SCIPfreeBufferArray(scip, &nnodesoffset);
+   SCIPfreeBufferArray(scip, &mastercoefindex);
 
    return SCIP_OKAY;
 }
@@ -1343,7 +1339,9 @@ SCIP_RETCODE cmpGraphPair(
    int                   prob2,              /**< index of second pricing prob */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
    SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap             /**< hashmap to save permutation of constraints */
+   SCIP_HASHMAP*         consmap,            /**< hashmap to save permutation of constraints */
+   unsigned int          searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
+   unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version) */
    )
 {
    bliss::Graph graph;
@@ -1367,8 +1365,12 @@ SCIP_RETCODE cmpGraphPair(
 
    SCIP_CALL( setuparrays(origscip, scips, nscips, &colorinfo, result) );
    SCIP_CALL( createGraph(origscip, scips, nscips, pricingindices, colorinfo, &graph,  &pricingnodes, result) );
+   SCIP_CALL( freeMemory(origscip, &colorinfo) );
 
    ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, scips);
+#ifdef BLISS_PATCH_PRESENT
+   graph.set_search_limits(searchnodelimit, generatorlimit);
+#endif
    graph.find_automorphisms(bstats, fhook, ptrhook);
 
    SCIPverbMessage(origscip, SCIP_VERBLEVEL_FULL , NULL, "finished calling bliss: number of reporting function calls (=number of generators): %d \n", ptrhook->ncalls);
@@ -1376,7 +1378,6 @@ SCIP_RETCODE cmpGraphPair(
    if( !ptrhook->getBool() )
       *result = SCIP_DIDNOTFIND;
 
-   SCIPfreeMemoryArrayNull(scip, &ptrhook->nodemap);
    delete ptrhook;
    return SCIP_OKAY;
 }
@@ -1390,7 +1391,9 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    int                   block2,             /**< index of second pricing prob */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
    SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap             /**< hashmap to save permutation of constraints */
+   SCIP_HASHMAP*         consmap,            /**< hashmap to save permutation of constraints */
+   unsigned int          searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
+   unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version) */
    )
 {
    bliss::Graph graph;
@@ -1402,6 +1405,9 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    gcg::Seeedpool* seeedpoolunpresolved;
    gcg::Seeedpool* seeedpoolpresolved;
    gcg::Seeed* seeed;
+   int nconss;
+   int nvars;
+   int ncoeffs;
 
    int pricingnodes;
 
@@ -1429,15 +1435,23 @@ SCIP_RETCODE cmpGraphPairNewdetection(
 
    assert(seeedpool != NULL);
 
+   //allocate max n of coefarray, varsarray, and boundsarray in origscip
+   nconss = seeed->getNConssForBlock(blocks[0]) ;
+   nvars = seeed->getNVarsForBlock(blocks[0]) ;
+   ncoeffs = seeed->getNCoeffsForBlock( blocks[0]);
+   SCIP_CALL( allocMemoryNewDetection(seeedpool, &colorinfo, nconss*2+seeed->getNMasterconss(), nvars*2, ncoeffs*2 + seeed->getNCoeffsForMaster() ) );
    SCIP_CALL( setuparraysnewdetection(seeedpool, seeed, 2, blocks, &colorinfo, result) );
    SCIPdebugMessage("finished setup array method.\n");
    SCIP_CALL( createGraphNewDetection(seeedpool, seeed, 2, blocks, colorinfo, &graph,  &pricingnodes, result) );
+   SCIP_CALL( freeMemory(scip, &colorinfo) );
    SCIPdebugMessage("finished create graph.\n");
    ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, NULL);
    SCIPdebugMessage("finished creating aut hook.\n");
-   ptrhook->setNewDetectionStuff(seeedpool, seeed, blocks);
+   ptrhook->setNewDetectionStuff(seeedpool, seeed, &blocks);
 
-
+#ifdef BLISS_PATCH_PRESENT
+   graph.set_search_limits(searchnodelimit, generatorlimit);
+#endif
    graph.find_automorphisms(bstats, fhook, ptrhook);
    SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL , NULL, "finished calling bliss: number of reporting function calls (=number of generators): %d \n", ptrhook->ncalls);
 
@@ -1446,7 +1460,6 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    if( !ptrhook->getBool() )
       *result = SCIP_DIDNOTFIND;
 
-   SCIPfreeMemoryArrayNull(scip, &ptrhook->nodemap);
    delete ptrhook;
    return SCIP_OKAY;
 }

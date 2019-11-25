@@ -70,6 +70,7 @@ struct GCG_PricingProb
    /* statistics */
    int                  nsolves;            /**< number of times the pricing problem was solved during the loop */
    int*                 ncolsround;         /**< number of improving columns found in the last rounds */
+   int                  maxcolsround;       /**< capacity of ncolsround */
 };
 
 #ifdef __cplusplus

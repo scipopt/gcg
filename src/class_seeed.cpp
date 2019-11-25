@@ -61,6 +61,7 @@
 #ifdef WITH_BLISS
 #include "pub_bliss.h"
 #include "bliss_automorph.h"
+#include "bliss/graph.hh"
 #endif
 
 
@@ -99,7 +100,7 @@ Seeed::Seeed(
    varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
    conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
    masterconsssorted(true), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isagginfoalreadytoexpensive(false), isFinishedByFinisher( false ),
-   agginfocalculated(FALSE), nrepblocks(0), reptoblocks(std::vector<std::vector<int>>(0)), blockstorep(std::vector<int>(0) ), pidtopidvarmaptofirst(std::vector<std::vector<std::vector<int> > >(0)),
+   nrepblocks(0), reptoblocks(std::vector<std::vector<int>>(0)), blockstorep(std::vector<int>(0) ), pidtopidvarmaptofirst(std::vector<std::vector<std::vector<int> > >(0)),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
    nNewBlocks( 0 ), usedClassifier( 0 ), classesToMaster( 0 ), classesToLinking( 0 ), listofancestorids( 0 ),
@@ -188,7 +189,6 @@ Seeed::Seeed(
    linkingvarssorted = seeedtocopy->linkingvarssorted;
    mastervarssorted = seeedtocopy->mastervarssorted;
 
-   agginfocalculated = FALSE;
    nrepblocks  = seeedtocopy->nrepblocks;
    reptoblocks = seeedtocopy->reptoblocks;
    blockstorep = seeedtocopy->blockstorep;
@@ -1122,7 +1122,7 @@ void Seeed::initOnlyBinMaster(){
 
 }
 
-SCIP_Bool Seeed::isAgginfoToExpensive()
+SCIP_Bool Seeed::isAgginfoTooExpensive()
 {
 
    int limitfornconss;
@@ -1165,127 +1165,136 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
 }
 
 
-  void Seeed::calcAggregationInformation(
-     )
-  {
+void Seeed::calcAggregationInformation(
+   bool ignoreDetectionLimits
+   )
+{
 #ifdef WITH_BLISS
-     SCIP_Bool tooexpensive;
+   SCIP_Bool tooexpensive;
+   SCIP_Bool usebliss;
+   int searchnodelimit;
+   int generatorlimit;
 #endif
-     SCIP_Bool aggisnotactive;
-     SCIP_Bool discretization;
-     SCIP_Bool aggregation;
+   SCIP_Bool aggisnotactive;
+   SCIP_Bool discretization;
+   SCIP_Bool aggregation;
 
-     int nreps = 1;
+   int nreps = 1;
 
-     if( agginfocalculated )
-        return;
+   if( aggInfoCalculated() )
+     return;
 
-     if( !isComplete() )
-        return;
+   if( !isComplete() )
+     return;
 
 #ifdef WITH_BLISS
-     if( isAgginfoToExpensive() )
-        tooexpensive = TRUE;
-     else
-        tooexpensive = FALSE;
+   if(
+#ifdef BLISS_PATCH_PRESENT
+      !ignoreDetectionLimits &&
+#endif
+      isAgginfoTooExpensive()
+      )
+     tooexpensive = TRUE;
+   else
+     tooexpensive = FALSE;
+   SCIPgetBoolParam(seeedpool->getScip(), "relaxing/gcg/bliss/enabled", &usebliss);
+   SCIPgetIntParam(seeedpool->getScip(), "relaxing/gcg/bliss/searchnodelimit", &searchnodelimit);
+   SCIPgetIntParam(seeedpool->getScip(), "relaxing/gcg/bliss/generatorlimit", &generatorlimit);
 #endif
 
-     SCIPgetBoolParam(seeedpool->getScip(), "relaxing/gcg/aggregation", &aggregation);
-     SCIPgetBoolParam(seeedpool->getScip(), "relaxing/gcg/discretization", &discretization);
+   SCIPgetBoolParam(seeedpool->getScip(), "relaxing/gcg/aggregation", &aggregation);
+   SCIPgetBoolParam(seeedpool->getScip(), "relaxing/gcg/discretization", &discretization);
 
-     if( discretization && aggregation )
-        aggisnotactive = FALSE;
-     else
-        aggisnotactive = TRUE;
+   if( discretization && aggregation )
+     aggisnotactive = FALSE;
+   else
+     aggisnotactive = TRUE;
 
-     std::vector<std::vector<int>> identblocksforblock( getNBlocks(), std::vector<int>(0) );
+   std::vector<std::vector<int>> identblocksforblock( getNBlocks(), std::vector<int>(0) );
 
-     blockstorep = std::vector<int>(getNBlocks(), -1);
+   blockstorep = std::vector<int>(getNBlocks(), -1);
 
-     for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
+   for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
+   {
+     std::vector<int> currrep = std::vector<int>(0);
+     std::vector< std::vector<int> > currrepvarmapforthisrep =std::vector<std::vector<int>>(0);
+     std::vector<int> identityvec = std::vector<int>(0);
+
+
+     if( !identblocksforblock[b1].empty() )
+        continue;
+
+     for( int i = 0; i  < getNVarsForBlock(b1); ++i )
+        identityvec.push_back(i);
+
+     currrep.push_back(b1);
+     currrepvarmapforthisrep.push_back(identityvec);
+
+
+     for( int b2 = b1+1; b2 < getNBlocks(); ++b2 )
      {
-        std::vector<int> currrep = std::vector<int>(0);
-        std::vector< std::vector<int> > currrepvarmapforthisrep =std::vector<std::vector<int>>(0);
-        std::vector<int> identityvec = std::vector<int>(0);
+        SCIP_Bool identical;
+        SCIP_Bool notidentical;
+        std::vector<int> varmap;
+        SCIP_HASHMAP* varmap2;
 
+        notidentical = FALSE;
+        identical = FALSE;
 
-        if( !identblocksforblock[b1].empty() )
+        if( !identblocksforblock[b2].empty() )
            continue;
 
-        for( int i = 0; i  < getNVarsForBlock(b1); ++i )
-           identityvec.push_back(i);
-
-        currrep.push_back(b1);
-        currrepvarmapforthisrep.push_back(identityvec);
+        if( aggisnotactive )
+           continue;
 
 
-        for( int b2 = b1+1; b2 < getNBlocks(); ++b2 )
+        SCIP_CALL_ABORT( SCIPhashmapCreate(  &varmap2,
+                       SCIPblkmem(seeedpool->getScip()),
+                       5 * getNVarsForBlock(b1)+1) ); /* +1 to deal with empty subproblems */
+
+        SCIPdebugMessage("Check identity for block %d and block %d!\n", b1, b2);
+
+        checkIdenticalBlocksTrivial( b1, b2, &notidentical);
+
+        if( !notidentical )
         {
-           SCIP_Bool identical;
-           SCIP_Bool notidentical;
-           std::vector<int> varmap;
-           SCIP_HASHMAP* varmap2;
-
-           notidentical = FALSE;
-           identical = FALSE;
-
-           if( !identblocksforblock[b2].empty() )
-              continue;
-
-           if( aggisnotactive )
-              continue;
-
-
-           SCIP_CALL_ABORT( SCIPhashmapCreate(  &varmap2,
-                          SCIPblkmem(seeedpool->getScip()),
-                          5 * getNVarsForBlock(b1)+1) ); /* +1 to deal with empty subproblems */
-
-           SCIPdebugMessage("Check identity for block %d and block %d!\n", b1, b2);
-
-           checkIdenticalBlocksTrivial( b1, b2, &notidentical);
-
-           if( !notidentical )
-           {
-              checkIdenticalBlocksBrute( b1, b2, varmap, varmap2, &identical);
+           checkIdenticalBlocksBrute( b1, b2, varmap, varmap2, &identical);
 
 #ifdef WITH_BLISS
-              if( !tooexpensive && !identical )
-                 checkIdenticalBlocksBliss(b1, b2, varmap, varmap2, &identical);
+           if( usebliss && !tooexpensive && !identical )
+              checkIdenticalBlocksBliss(b1, b2, varmap, varmap2, &identical,
+                 searchnodelimit >= 0 ? searchnodelimit : 0u, generatorlimit >= 0 ? generatorlimit : 0u);
 #endif
-           }
-           else
-              identical = FALSE;
-
-           if( identical )
-           {
-              SCIPdebugMessage("Block %d is identical to block %d!\n", b1, b2);
-              identblocksforblock[b1].push_back(b2);
-              identblocksforblock[b2].push_back(b1);
-              currrep.push_back(b2);
-              /* handle varmap */
-              currrepvarmapforthisrep.push_back(varmap);
-
-           }
-           else
-           {
-              SCIPdebugMessage("Block %d is not identical to block %d!\n", b1, b2);
-           }
-           SCIPhashmapFree(&varmap2);
         }
+        else
+           identical = FALSE;
 
-        reptoblocks.push_back( currrep );
-        pidtopidvarmaptofirst.push_back(currrepvarmapforthisrep);
-        for( size_t i = 0; i < currrep.size(); ++i )
-           blockstorep[currrep[i]] = nreps-1;
-        ++nreps;
+        if( identical )
+        {
+           SCIPdebugMessage("Block %d is identical to block %d!\n", b1, b2);
+           identblocksforblock[b1].push_back(b2);
+           identblocksforblock[b2].push_back(b1);
+           currrep.push_back(b2);
+           /* handle varmap */
+           currrepvarmapforthisrep.push_back(varmap);
 
+        }
+        else
+        {
+           SCIPdebugMessage("Block %d is not identical to block %d!\n", b1, b2);
+        }
+        SCIPhashmapFree(&varmap2);
      }
-     nrepblocks = nreps-1;
 
-     agginfocalculated = TRUE;
+     reptoblocks.push_back( currrep );
+     pidtopidvarmaptofirst.push_back(currrepvarmapforthisrep);
+     for( size_t i = 0; i < currrep.size(); ++i )
+        blockstorep[currrep[i]] = nreps-1;
+     ++nreps;
 
-     return;
-  }
+   }
+   nrepblocks = nreps-1;
+}
 
 
 void Seeed::calcHashvalue()
@@ -1986,7 +1995,9 @@ void Seeed::checkIdenticalBlocksBliss(
    int                  b2,
    std::vector<int>&    varmap,
    SCIP_HASHMAP*        varmap2,
-   SCIP_Bool*           identical
+   SCIP_Bool*           identical,
+   unsigned int         searchnodelimit,
+   unsigned int         generatorlimit
    )
 {
    *identical = FALSE;
@@ -2002,7 +2013,8 @@ void Seeed::checkIdenticalBlocksBliss(
 
    SCIPdebugMessage("obvious test fails, start building graph \n");
 
-   cmpGraphPairNewdetection(seeedpool->getScip(), (SEEED_WRAPPER*) this, b1, b2, &result, varmap2, consmap );
+   cmpGraphPairNewdetection(seeedpool->getScip(), (SEEED_WRAPPER*) this, b1, b2, &result, varmap2, consmap,
+      searchnodelimit, generatorlimit);
    if ( result == SCIP_SUCCESS )
    {
       *identical = TRUE;
@@ -3289,7 +3301,7 @@ SCIP_RETCODE Seeed::deleteOpenvar(
 
 SCIP_RETCODE Seeed::displayAggregationInformation()
 {
-   if( !agginfocalculated )
+   if( !aggInfoCalculated() )
    {
       SCIPinfoMessage(scip, NULL, " Aggregation information is not calculated yet \n ");
       return SCIP_OKAY;
@@ -3828,7 +3840,7 @@ SCIP_Real Seeed::evaluate(
    if( getNOpenconss() != 0 || getNOpenvars() != 0 )
       SCIPwarningMessage( scip, "Evaluation for seeeds is not implemented for seeeds with open conss or open vars.\n" );
 
-   calcAggregationInformation();
+   calcAggregationInformation(false);
 
    {
       std::vector<int> nlinkingvarsforblock(getNBlocks(), 0);
@@ -7195,7 +7207,7 @@ void Seeed::calcmaxforeseeingwhitescoreagg(){
    SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
    SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
 
-   calcAggregationInformation();
+   calcAggregationInformation(false);
 
    for( int lv = 0; lv < getNLinkingvars(); ++lv )
    {
@@ -7364,6 +7376,11 @@ void Seeed::calcblockareascoreagg(){
    SCIP_CALL_ABORT(SCIPfreeClock( seeedpool->getScip(), &clock) );
 
    return;
+}
+
+bool Seeed::aggInfoCalculated()
+{
+   return getNBlocks() == 0 || getNReps() > 0;
 }
 
 } /* namespace gcg */

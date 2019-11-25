@@ -86,6 +86,9 @@
 #define DEFAULT_DISPINFOS FALSE
 #define DEFAULT_MODE DEC_DECMODE_DANTZIGWOLFE  /**< the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default),
                                                     1: Benders' decomposition, 2: solve original problem) */
+#define DEFAULT_BLISS TRUE
+#define DEFAULT_BLISS_SEARCH_NODE_LIMIT 0
+#define DEFAULT_BLISS_GENERATOR_LIMIT 0
 #define DELVARS
 
 /*
@@ -130,6 +133,7 @@ struct SCIP_RelaxData
    SCIP_SOL*             lastmastersol;      /**< last feasible master solution that was added to the original problem */
    SCIP_CONS**           markedmasterconss;  /**< array of conss that are marked to be in the master */
    int                   nmarkedmasterconss; /**< number of elements in array of conss that are marked to be in the master */
+   int                   maxmarkedmasterconss; /**< capacity of markedmasterconss */
    SCIP_Longint          lastsolvednodenr;   /**< node number of the node that was solved at the last call of the relaxator */
 
    /* branchrule data */
@@ -145,6 +149,9 @@ struct SCIP_RelaxData
    SCIP_Bool             dispinfos;          /**< should additional information be displayed? */
    DEC_DECMODE           mode;               /**< the decomposition mode for GCG. 0: Dantzig-Wolfe (default), 1: Benders' decomposition, 2: automatic */
    int                   origverblevel;      /**< the verbosity level of the original problem */
+   SCIP_Bool             usebliss;           /**< should bliss be used to check for identical blocks? */
+   int                   searchnodelimit;    /**< bliss search node limit (requires patched bliss version) */
+   int                   generatorlimit;     /**< bliss generator limit (requires patched bliss version) */
 
    /* data for probing */
    SCIP_Bool             masterinprobing;    /**< is the master problem in probing mode? */
@@ -234,9 +241,8 @@ SCIP_RETCODE markConsMaster(
    /* allocate array, if not yet done */
    if( relaxdata->markedmasterconss == NULL )
    {
-      int nconss;
-      nconss = SCIPgetNConss(scip);
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->markedmasterconss), nconss) );
+      relaxdata->maxmarkedmasterconss = SCIPcalcMemGrowSize(scip, SCIPgetNConss(scip));
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->markedmasterconss), relaxdata->maxmarkedmasterconss) );
       relaxdata->nmarkedmasterconss = 0;
    }
    assert(relaxdata->nmarkedmasterconss <= SCIPgetNConss(scip));
@@ -583,7 +589,6 @@ SCIP_RETCODE checkSetppcStructure(
    return SCIP_OKAY;
 }
 
-#ifndef WITH_BLISS
 /** checks whether two arrays of SCIP_Real's are identical */
 static
 SCIP_Bool realArraysAreEqual(
@@ -786,7 +791,6 @@ SCIP_RETCODE checkIdentical(
    *identical = TRUE;
    return SCIP_OKAY;
 }
-#endif
 
 /* checks whether two pricingproblems represent identical blocks */
 static
@@ -871,15 +875,25 @@ SCIP_RETCODE pricingprobsAreIdentical(
 
    *identical = FALSE;
 
-#ifndef WITH_BLISS
    checkIdentical(scip, relaxdata, probnr1, probnr2, varmap, identical, scip1, scip2);
-#else
-   SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1)+1) );
-   SCIP_CALL( cmpGraphPair(scip, scip2, scip1, probnr2, probnr1, &result, varmap, consmap) );
 
-   *identical = (result == SCIP_SUCCESS);
+#ifdef WITH_BLISS
+   if( !*identical && relaxdata->usebliss )
+   {
+      unsigned int searchnodelimit;
+      unsigned int generatorlimit;
 
-   SCIPhashmapFree(&consmap);
+      searchnodelimit = relaxdata->searchnodelimit >= 0 ? relaxdata->searchnodelimit: 0u;
+      generatorlimit = relaxdata->generatorlimit >= 0 ? relaxdata->generatorlimit : 0u;
+
+      SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1) + 1) );
+      SCIP_CALL( cmpGraphPair(scip, scip2, scip1, probnr2, probnr1, &result, varmap, consmap,
+         searchnodelimit, generatorlimit) );
+
+      *identical = (result == SCIP_SUCCESS);
+
+      SCIPhashmapFree(&consmap);
+   }
 #endif
 
    return SCIP_OKAY;
@@ -2556,7 +2570,7 @@ SCIP_RETCODE initRelaxator(
    relaxdata->lastsolvednodenr = -1;
 
    SCIP_CALL( SCIPtransformProb(masterprob) );
-   SCIP_CALL( SCIPduplicateMemoryArray(scip, &oldconss, relaxdata->masterconss, relaxdata->nmasterconss) );
+   SCIP_CALL( SCIPduplicateBufferArray(scip, &oldconss, relaxdata->masterconss, relaxdata->nmasterconss) );
 
    /* transform the master constraints */
    SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss,
@@ -2565,7 +2579,7 @@ SCIP_RETCODE initRelaxator(
    {
       SCIP_CALL( SCIPreleaseCons(masterprob, &(oldconss[i])) );
    }
-   SCIPfreeMemoryArray(scip, &oldconss);
+   SCIPfreeBufferArray(scip, &oldconss);
 
    /* transform the decomposition */
    SCIP_CALL( DECdecompTransform(scip, relaxdata->decdecomp) );
@@ -2661,6 +2675,7 @@ void initRelaxdata(
    relaxdata->lastmastersol = NULL;
    relaxdata->lastmasterlpiters = 0;
    relaxdata->markedmasterconss = NULL;
+   relaxdata->maxmarkedmasterconss = 0;
    relaxdata->masterinprobing = FALSE;
    relaxdata->probingheur = NULL;
 
@@ -2851,8 +2866,9 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       relaxdata->hashorig2origvar = NULL;
    }
 
-   SCIPfreeMemoryArrayNull(scip, &(relaxdata->markedmasterconss));
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->markedmasterconss), relaxdata->maxmarkedmasterconss);
    relaxdata->markedmasterconss = NULL;
+   relaxdata->maxmarkedmasterconss = 0;
 
    /* free arrays for constraints */
    for( i = 0; i < relaxdata->nmasterconss; i++ )
@@ -3396,7 +3412,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 #ifdef WITH_BLISS
    {
       char name[SCIP_MAXSTRLEN];
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "bliss %s", GCGgetBlissVersion());
+      GCGgetBlissName(name, SCIP_MAXSTRLEN);
       SCIP_CALL( SCIPincludeExternalCodeInformation(scip, name, "A Tool for Computing Automorphism Groups of Graphs by T. Junttila and P. Kaski (http://www.tcs.hut.fi/Software/bliss/)") );
    }
 #endif
@@ -3486,6 +3502,21 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
             "the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition, "
             "2: no decomposition will be performed)",
             (int*)&(relaxdata->mode), FALSE, (int)DEFAULT_MODE, 0, 2, NULL, NULL) );
+#ifdef WITH_BLISS
+   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/bliss/enabled",
+         "should bliss be used to check for identical blocks?",
+         &(relaxdata->usebliss), FALSE, DEFAULT_BLISS, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/bliss/searchnodelimit",
+         "bliss search node limit (0: unlimited), requires patched bliss version",
+         &(relaxdata->searchnodelimit), TRUE, (int)DEFAULT_BLISS_SEARCH_NODE_LIMIT, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/bliss/generatorlimit",
+         "bliss generator limit (0: unlimited), requires patched bliss version",
+         &(relaxdata->generatorlimit), TRUE, (int)DEFAULT_BLISS_GENERATOR_LIMIT, 0, INT_MAX, NULL, NULL) );
+#else
+   relaxdata->usebliss = FALSE;
+   relaxdata->searchnodelimit = 0;
+   relaxdata->generatorlimit = 0;
+#endif
 
    return SCIP_OKAY;
 }
@@ -4395,7 +4426,7 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
    probingnode = SCIPgetCurrentNode(masterprob);
    assert(GCGconsMasterbranchGetActiveCons(masterprob) != NULL);
    SCIP_CALL( GCGcreateConsMasterbranch(masterprob, &probingcons, "mprobingcons", probingnode,
-      GCGconsMasterbranchGetActiveCons(masterprob), NULL, NULL, NULL, 0) );
+      GCGconsMasterbranchGetActiveCons(masterprob), NULL, NULL, NULL, 0, 0) );
    SCIP_CALL( SCIPaddConsNode(masterprob, probingnode, probingcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(masterprob, &probingcons) );
 

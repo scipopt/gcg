@@ -63,13 +63,15 @@ SCIP_RETCODE pqueueResize(
    int                   minsize             /**< minimal number of storable elements */
    )
 {
+   int newsize;
    assert(pqueue != NULL);
 
    if( minsize <= pqueue->size )
       return SCIP_OKAY;
 
-   pqueue->size = MAX(minsize, (int)(pqueue->size * pqueue->sizefac));
-   SCIP_ALLOC( BMSreallocMemoryArray(&pqueue->slots, pqueue->size) );
+   newsize = SCIPcalcMemGrowSize(pqueue->scip, minsize);
+   SCIP_CALL( SCIPreallocBlockMemoryArray(pqueue->scip, &pqueue->slots, pqueue->size, newsize) );
+   pqueue->size = newsize;
 
    return SCIP_OKAY;
 }
@@ -114,9 +116,9 @@ SCIP_RETCODE pqueueHeapify(
 
 /** creates priority queue */
 SCIP_RETCODE GCGpqueueCreate(
+   SCIP*                 scip,               /**< SCIP data structure */
    GCG_PQUEUE**          pqueue,             /**< pointer to a priority queue */
    int                   initsize,           /**< initial number of available element slots */
-   SCIP_Real             sizefac,            /**< memory growing factor applied, if more element slots are needed */
    SCIP_DECL_SORTPTRCOMP((*ptrcomp))         /**< data element comparator */
    )
 {
@@ -124,12 +126,11 @@ SCIP_RETCODE GCGpqueueCreate(
    assert(ptrcomp != NULL);
 
    initsize = MAX(1, initsize);
-   sizefac = MAX(1.0, sizefac);
 
-   SCIP_ALLOC( BMSallocMemory(pqueue) );
+   SCIP_CALL( SCIPallocBlockMemory(scip, pqueue) );
    (*pqueue)->len = 0;
    (*pqueue)->size = 0;
-   (*pqueue)->sizefac = sizefac;
+   (*pqueue)->scip = scip;
    (*pqueue)->slots = NULL;
    (*pqueue)->ptrcomp = ptrcomp;
    SCIP_CALL( pqueueResize(*pqueue, initsize) );
@@ -144,8 +145,8 @@ void GCGpqueueFree(
 {
    assert(pqueue != NULL);
 
-   BMSfreeMemoryArray(&(*pqueue)->slots);
-   BMSfreeMemory(pqueue);
+   SCIPfreeBlockMemoryArray((*pqueue)->scip, &(*pqueue)->slots, (*pqueue)->size);
+   SCIPfreeBlockMemory((*pqueue)->scip, pqueue);
 }
 
 /** clears the priority queue, but doesn't free the data elements themselves */

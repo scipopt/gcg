@@ -70,10 +70,10 @@ SCIP_RETCODE pricestoreEnsureColsMem(
       int newsize;
 
       newsize = SCIPcalcMemGrowSize(pricestore->scip, num);
-      SCIP_CALL( SCIPreallocMemoryArray(pricestore->scip, &pricestore->cols, newsize) );
-      SCIP_CALL( SCIPreallocMemoryArray(pricestore->scip, &pricestore->objparallelisms, newsize) );
-      SCIP_CALL( SCIPreallocMemoryArray(pricestore->scip, &pricestore->orthogonalities, newsize) );
-      SCIP_CALL( SCIPreallocMemoryArray(pricestore->scip, &pricestore->scores, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->cols, pricestore->colssize, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->objparallelisms, pricestore->colssize, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->orthogonalities, pricestore->colssize, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->scores, pricestore->colssize, newsize) );
       pricestore->colssize = newsize;
    }
    assert(num <= pricestore->colssize);
@@ -95,7 +95,7 @@ SCIP_RETCODE GCGpricestoreCreate(
 {
    assert(pricestore != NULL);
 
-   SCIP_CALL( SCIPallocMemory(scip, pricestore) );
+   SCIP_CALL( SCIPallocBlockMemory(scip, pricestore) );
 
    SCIP_CALL( SCIPcreateClock(scip, &(*pricestore)->priceclock) );
 
@@ -139,11 +139,11 @@ SCIP_RETCODE GCGpricestoreFree(
    /* free clock */
    SCIP_CALL( SCIPfreeClock(scip, &(*pricestore)->priceclock) );
 
-   SCIPfreeMemoryArrayNull(scip, &(*pricestore)->cols);
-   SCIPfreeMemoryArrayNull(scip, &(*pricestore)->objparallelisms);
-   SCIPfreeMemoryArrayNull(scip, &(*pricestore)->orthogonalities);
-   SCIPfreeMemoryArrayNull(scip, &(*pricestore)->scores);
-   SCIPfreeMemory(scip, pricestore);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*pricestore)->cols, (*pricestore)->colssize);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*pricestore)->objparallelisms, (*pricestore)->colssize);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*pricestore)->orthogonalities, (*pricestore)->colssize);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*pricestore)->scores, (*pricestore)->colssize);
+   SCIPfreeBlockMemory(scip, pricestore);
 
    return SCIP_OKAY;
 }
@@ -670,7 +670,11 @@ void GCGpricestoreClearCols(
    /* if we have just finished the initial LP construction, free the (potentially large) cols array */
    if( pricestore->infarkas )
    {
-      SCIPfreeMemoryArrayNull(pricestore->scip, &pricestore->cols);
+      SCIPfreeBlockMemoryArrayNull(pricestore->scip, &pricestore->cols, pricestore->colssize);
+      SCIPfreeBlockMemoryArrayNull(pricestore->scip, &pricestore->objparallelisms, pricestore->colssize);
+      SCIPfreeBlockMemoryArrayNull(pricestore->scip, &pricestore->orthogonalities, pricestore->colssize);
+      SCIPfreeBlockMemoryArrayNull(pricestore->scip, &pricestore->scores, pricestore->colssize);
+
       pricestore->colssize = 0;
    }
 }

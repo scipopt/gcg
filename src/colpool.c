@@ -139,7 +139,7 @@ SCIP_RETCODE colpoolEnsureColsMem(
       int newsize;
 
       newsize = SCIPcalcMemGrowSize(colpool->scip, num);
-      SCIP_CALL( SCIPreallocMemoryArray(colpool->scip, &colpool->cols, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(colpool->scip, &colpool->cols, colpool->colssize, newsize) );
       colpool->colssize = newsize;
    }
    assert(num <= colpool->colssize);
@@ -212,7 +212,7 @@ SCIP_RETCODE GCGcolpoolFree(
    /* free hash table */
    SCIPhashtableFree(&(*colpool)->hashtable);
 
-   SCIPfreeMemoryArrayNull(scip, &(*colpool)->cols);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*colpool)->cols, (*colpool)->colssize);
    SCIPfreeMemory(scip, colpool);
 
    return SCIP_OKAY;

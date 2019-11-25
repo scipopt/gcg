@@ -56,7 +56,7 @@ SCIP_RETCODE GCGpricingjobCreate(
    int                   chunk               /**< chunk that the pricing problem should belong to */
 )
 {
-   SCIP_CALL( SCIPallocMemory(scip, pricingjob) );
+   SCIP_CALL( SCIPallocBlockMemory(scip, pricingjob) );
 
    (*pricingjob)->pricingprob = pricingprob;
    (*pricingjob)->solver = solver;
@@ -74,7 +74,7 @@ void GCGpricingjobFree(
    GCG_PRICINGJOB**      pricingjob          /**< pricing job to be freed */
 )
 {
-   SCIPfreeMemory(scip, pricingjob);
+   SCIPfreeBlockMemory(scip, pricingjob);
    *pricingjob = NULL;
 }
 

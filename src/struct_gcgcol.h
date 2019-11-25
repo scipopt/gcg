@@ -53,6 +53,7 @@ struct GCG_Col
    SCIP_VAR**           vars;               /**< (sorted) array of variables of corresponding pricing problem */
    SCIP_Real*           vals;               /**< array of solution values (belonging to vars) */
    int                  nvars;              /**< number of variables */
+   int                  maxvars;            /**< capacity of vars */
    SCIP_Bool            isray;              /**< is the column a ray? */
    SCIP_Real            redcost;            /**< last known reduced cost */
    int                  age;                /**< age of column (number of iterations since it was created;
@@ -60,11 +61,14 @@ struct GCG_Col
    int                  pos;                /**< position in column pool (or -1) */
    SCIP_Real*           mastercoefs;        /**< array of master coefficients */
    int                  nmastercoefs;       /**< number of master coefficients */
+   int                  maxmastercoefs;     /**< capacity of mastercoefs */
    SCIP_Real*           mastercuts;         /**< array of master cut coefficients */
    int                  nmastercuts;        /**< number of master cut coefficients */
+   int                  maxmastercuts;      /**< capacity of mastercuts */
    SCIP_Real            norm;               /**< norm of the coefficients in the master */
    int*                 linkvars;           /**< array of indices of variables in var-array which are linking variables */
    int                  nlinkvars;          /**< number of variables in var-array which are linking variables */
+   int                  maxlinkvars;        /**< capacity of linkvars */
    SCIP_Bool            initcoefs;          /**< returns if mastercoefs and linkvars have been computed */
 };
 

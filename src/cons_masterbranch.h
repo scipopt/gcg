@@ -61,7 +61,8 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
    GCG_BRANCHDATA*       branchdata,         /**< branching data */
    SCIP_CONS**           origbranchconss,    /**< original constraints enforcing the branching decision */
-   int                   norigbranchconss    /**< number of original constraints */
+   int                   norigbranchconss,   /**< number of original constraints */
+   int                   maxorigbranchconss  /**< capacity origbranchconss */
    );
 
 /** returns the name of the constraint */
