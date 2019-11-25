@@ -39,7 +39,7 @@ build_job:
 #      - cd ..
   script:
       - cmake ..
-      - make -j 2
+      - make gcg_doc -j 2
       - cd ..
       - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
       - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod -R 755 ./* ; chown -R gitGCGdoc:apache ./*;"
