@@ -452,7 +452,7 @@ endif
 
 .PHONY: doc
 doc:
-		cd doc; $(SHELL) builddoc.sh;
+		cd doc; export BINDIR=$(BINDIR);$(SHELL) builddoc.sh;
 
 .PHONY: $(MAINSHORTLINK)
 $(MAINSHORTLINK):	$(MAINFILE)

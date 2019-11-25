@@ -7,7 +7,7 @@
 # Stop on error.
 set -e
 
-if [[ -z ${BINDIR} ]]; then BINDIR="$PWD/../bin"; fi
+if [[ -z ${BINDIR} ]]; then export BINDIR="$PWD/../bin"; fi
 
 ./resources/devs/howtoadd/createindexes.sh
 ./resources/devs/howtouse/createindexes.sh
