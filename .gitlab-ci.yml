@@ -37,7 +37,9 @@ build_job:
       - cd ..
   script:
       - make soplex
-      - cd lib/scip/lib
+      - cd lib/scip-git
+      - mkdir lib
+      - cd lib
       - mkdir include
       - ln -s ../../../soplex-git/src/ include/spxinc
       - mkdir static
