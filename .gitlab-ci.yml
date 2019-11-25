@@ -31,22 +31,26 @@ build_job:
       - *init_ssh2
       - git submodule sync --recursive
       - git submodule update --init --recursive
-      - cd lib
-      - ln -s scip-git scip
-      - ln -s bliss-git bliss
-      - cd ..
+#      - cd lib
+#      - ln -s scip-git scip
+#      - ln -s bliss-git bliss
+#      - cd ..
+       - mkdir build
+       - cd build
   script:
-      - make soplex
-      - cd lib/scip-git
-      - mkdir lib
-      - cd lib
-      - mkdir include
-      - ln -s ../../../soplex-git/src/ include/spxinc
-      - mkdir static
-      - ln -s ../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a static/libsoplex.linux.x86_64.gnu.opt.a
-      - cd ../../../
-      - make ZIMPL=false
-      - make doc
+       - cmake ..
+       - make -j 2
+#      - make soplex
+#      - cd lib/scip-git
+#      - mkdir lib
+#      - cd lib
+#      - mkdir include
+#      - ln -s ../../../soplex-git/src/ include/spxinc
+#      - mkdir static
+#      - ln -s ../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a static/libsoplex.linux.x86_64.gnu.opt.a
+#      - cd ../../../
+#      - make ZIMPL=false
+#      - make doc
 #  only:
 #    - tags
 #    - merge_requests
