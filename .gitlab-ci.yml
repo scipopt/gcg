@@ -36,8 +36,14 @@ build_job:
       - ln -s bliss-git bliss
       - cd ..
   script:
-      - make deps
-      - make
+      - make soplex
+      - cd lib/scip/lib
+      - mkdir include
+      - ln -s ../../../soplex-git/src/ include/spxinc
+      - mkdir static
+      - ln -s ../../../soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a static/libsoplex.linux.x86_64.gnu.opt.a
+      - cd ../../../
+      - make ZIMPL=false
       - make doc
 #  only:
 #    - tags
