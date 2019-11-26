@@ -3,14 +3,14 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <title>GCG</title>
     <!--   load css styles -->
-    <link rel="stylesheet" type="text/css" href="http://scip.zib.de/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="http://scip.zib.de/bootstrap/css/custom.css">
+    <link rel="stylesheet" type="text/css" href="//scip.zib.de/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="//scip.zib.de/bootstrap/css/custom.css">
     <link rel="stylesheet" type="text/css" href="bootstrap/css/custom-gcg.css">
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://code.jquery.com/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="http://scip.zib.de/bootstrap/js/custom.js"></script>
-    <script src="http://scip.zib.de/bootstrap/js/bootstrap.min.js"></script>
+    <script src="//scip.zib.de/bootstrap/js/custom.js"></script>
+    <script src="//scip.zib.de/bootstrap/js/bootstrap.min.js"></script>
   </head>
   <body>
 
@@ -19,7 +19,7 @@
     <div class="bs-header" id="content">
       <div class="container">
         <a href="http://scip.zib.de">
-          <img style="float:right" src="https://scip.zib.de/images/newscippy.png" height="130" title="Scippy" alt="Scippy"/>
+          <img style="float:right" src="//scip.zib.de/images/newscippy.png" height="130" title="Scippy" alt="Scippy"/>
         </a>
         <h1>GCG</h1>
         <p>Generic column generation</p>
