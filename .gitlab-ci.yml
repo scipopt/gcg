@@ -42,7 +42,8 @@ build_job:
       - make gcg_doc -j 2
       - cd ..
       - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
-      - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod -R 755 ./* ; chown -R gitGCGdoc:apache ./*;"
+      - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod -R 755 ./* ; "
+      #chown -R gitGCGdoc:apache ./*;"
 #      - make soplex
 #      - cd lib/scip-git
 #      - mkdir lib
