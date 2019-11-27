@@ -2338,6 +2338,7 @@ SCIP_RETCODE solveDiagonalBlocks(
    if( GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Block diagonal structure detected, solving blocks individually.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "There is an objective function offet of %f.\n", SCIPgetTransObjoffset(scip));
    }
 
    /* if the original problem is solved directly, then we call  solveBlockProblem with the master problem */
