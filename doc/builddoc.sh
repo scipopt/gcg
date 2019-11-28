@@ -19,7 +19,6 @@ cd $(dirname $0)
 mkdir -p html
 cp -r resources/misc/scripts html
 
-# Bypassed through usage of a direct link
 if [ "$1" == "--mathjax" ]
 then
    DOXYGEN_USE_MATHJAX="YES"
