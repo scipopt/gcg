@@ -54,7 +54,7 @@ build_job:
       - curl https://code.jquery.com/jquery.min.js --output doc/html/js/jquery.min.js
       # upload
       - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
-      - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod -R 755 ./* ; ln -s es5/latest.js MathJax/MathJax.js ; "
+      - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod -R 755 ./* ; "
       #chown -R gitGCGdoc:apache ./*;"
 #      - make soplex
 #      - cd lib/scip-git
