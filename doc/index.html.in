@@ -3,14 +3,14 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <title>GCG</title>
     <!--   load css styles -->
-    <link rel="stylesheet" type="text/css" href="//scip.zib.de/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="//scip.zib.de/bootstrap/css/custom.css">
+    <link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="bootstrap/css/custom.css">
     <link rel="stylesheet" type="text/css" href="bootstrap/css/custom-gcg.css">
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://code.jquery.com/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="//scip.zib.de/bootstrap/js/custom.js"></script>
-    <script src="//scip.zib.de/bootstrap/js/bootstrap.min.js"></script>
+    <script src="bootstrap/js/custom.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
   </head>
   <body>
 
