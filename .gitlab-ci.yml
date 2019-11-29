@@ -41,6 +41,9 @@ build_job:
       - cmake ..
       - make gcg_doc -j 2
       - cd ..
+      - curl https://scip.zib.de/bootstrap/css/bootstrap.min.css --output doc/html/bootstrap/css/bootstrap.min.css
+      - curl https://scip.zib.de/bootstrap/css/custom.css --output doc/html/bootstrap/css/custom.css
+      - curl https://code.jquery.com/jquery.min.js --output doc/html/js/jquery.min.js
       - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
       - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod -R 755 ./* ; "
       #chown -R gitGCGdoc:apache ./*;"
