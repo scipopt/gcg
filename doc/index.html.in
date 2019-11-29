@@ -19,7 +19,7 @@
     <div class="bs-header" id="content">
       <div class="container">
         <a href="http://scip.zib.de">
-          <img style="float:right" src="images/newscippy.png" height="130" title="Scippy" alt="Scippy"/>
+          <img style="float:right" src="pictures/newscippy.png" height="130" title="Scippy" alt="Scippy"/>
         </a>
         <h1>GCG</h1>
         <p>Generic column generation</p>
