@@ -44,7 +44,7 @@ build_job:
       # js
       - curl https://scip.zib.de/bootstrap/css/bootstrap.min.css --output doc/html/bootstrap/css/bootstrap.min.css
       - curl https://scip.zib.de/bootstrap/css/custom.css --output doc/html/bootstrap/css/custom.css
-      - sed -i 's,https://scip.zib.de/images,pictures,g' doc/html/bootstrap/css/custom.css
+      - sed -i 's,https://scip.zib.de/images,../../pictures,g' doc/html/bootstrap/css/custom.css
       - curl https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css --output doc/html/css/font-awesome.min.css
       #- curl https://fonts.googleapis.com/css?family=Open+Sans --output doc/html/css/font-googleapis.css
       #- curl https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFW50bbck.woff2 --output doc/html/css/font-googleapis.woff2
