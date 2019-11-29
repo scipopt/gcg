@@ -27,11 +27,13 @@ then
       echo "Updating git repository for MathJax."
       cd html/MathJax
       git checkout 2.7.7
+      rm *.md
       cd ../..
    else
       echo "Cloning git repository for MathJax."
       cd html
       git clone https://github.com/mathjax/MathJax.git --branch=2.7.7 --single-branch --depth 1
+      rm MathJax/*.md
       cd ..
    fi
 else
