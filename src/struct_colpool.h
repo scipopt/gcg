@@ -38,7 +38,7 @@ extern "C" {
 struct GCG_Colpool
 {
    SCIP*                 scip;               /**< SCIP data structure */
-   SCIP_Longint          nodenr;             /**< node at which columns in colpool respect branching decisions */
+   SCIP_NODE*            node;               /**< node at which columns in colpool respect branching decisions */
    SCIP_Bool             infarkas;           /**< in Farkas pricing? */
    SCIP_Longint          ncalls;             /**< number of times, the colpool was separated */
    SCIP_Longint          ncolsfound;         /**< total number of cols that were separated from the pool */

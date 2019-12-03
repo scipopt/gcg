@@ -120,7 +120,7 @@ SCIP_RETCODE GCGcolpoolDelCol(
    SCIP_Bool             freecol             /**< should the col be freed? */
    );
 
-/** gets array of cols in the col pool */
+/** update node at which columns of column pool are feasible */
 SCIP_EXPORT
 SCIP_RETCODE GCGcolpoolUpdateNode(
    GCG_COLPOOL*         colpool             /**< col pool */

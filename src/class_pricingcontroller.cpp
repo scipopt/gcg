@@ -254,7 +254,8 @@ SCIP_Bool Pricingcontroller::pricingprobIsDone(
    return GCGpricingprobGetNImpCols(pricingprob) > 0
       || (GCGpricingprobGetStatus(pricingprob) == GCG_PRICINGSTATUS_OPTIMAL && GCGpricingprobGetBranchconsIdx(pricingprob) == 0)
       || GCGpricingprobGetStatus(pricingprob) == GCG_PRICINGSTATUS_INFEASIBLE
-      || GCGpricingprobGetStatus(pricingprob) == GCG_PRICINGSTATUS_UNBOUNDED;
+      || GCGpricingprobGetStatus(pricingprob) == GCG_PRICINGSTATUS_UNBOUNDED
+      || SCIPisStopped(scip_);
 }
 
 /** check whether the next generic branching constraint of a pricing problem must be considered */
@@ -614,6 +615,9 @@ SCIP_Bool Pricingcontroller::canPricingloopBeAborted(
 
    if( eagerage == eagerfreq )
       return FALSE;
+
+   if( SCIPisStopped(scip_) )
+      return TRUE;
 
    return !((nfoundcols < pricingtype->getMaxcolsround())
          && nsuccessfulprobs < pricingtype->getMaxsuccessfulprobs()
