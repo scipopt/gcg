@@ -174,7 +174,7 @@ SCIP_RETCODE GCGcolpoolCreate(
          hashGetKeyCol, hashKeyEqCol, hashKeyValCol, (void*) scip) );
 
    (*colpool)->scip = scip;
-   (*colpool)->nodenr = -1;
+   (*colpool)->node = NULL;
    (*colpool)->infarkas = FALSE;
    (*colpool)->cols = NULL;
    (*colpool)->colssize = 0;
@@ -424,22 +424,22 @@ SCIP_RETCODE GCGcolpoolPrice(
    return SCIP_OKAY;
 }
 
-/** gets array of cols in the col pool */
+/** update node at which columns of column pool are feasible */
 SCIP_RETCODE GCGcolpoolUpdateNode(
    GCG_COLPOOL*         colpool             /**< col pool */
    )
 {
    assert(colpool != NULL);
 
-   if( colpool->nodenr < 0 )
+   if( colpool->node == NULL )
    {
-      colpool->nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip));
+      colpool->node = SCIPgetCurrentNode(colpool->scip);
    }
-   else if( colpool->nodenr != SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip)) )
+   else if( colpool->node != SCIPgetCurrentNode(colpool->scip) )
    {
       SCIP_CALL( GCGcolpoolClear(colpool) );
 
-      colpool->nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip));
+      colpool->node = SCIPgetCurrentNode(colpool->scip);
    }
 
    return SCIP_OKAY;
