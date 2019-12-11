@@ -90,7 +90,7 @@ body {
     /* For scrollyspy */
     padding-top: 50px;
     /* Account for fixed navbar */
-    background-image: url("https://scip.zib.de/images/scribble_light_@2X.png");
+    background-image: url("../../img/scribble_light_@2X.png");
 }
 body > #main .bs-docs-container {
     box-shadow: 0 10px 30px #777;
@@ -324,7 +324,7 @@ body > .container {
     padding-top: 40px;
 }
 /* Janky fix for preventing navbar from overlapping */
- h1[id] {
+ h1[id], h2[id], h3[id] {
     padding-top: 80px;
     margin-top: -45px;
 }

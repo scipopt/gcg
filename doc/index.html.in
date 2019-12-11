@@ -19,7 +19,7 @@
     <div class="bs-header" id="content">
       <div class="container">
         <a href="http://scip.zib.de">
-          <img style="float:right" src="pictures/newscippy.png" height="130" title="Scippy" alt="Scippy"/>
+          <img style="float:right" src="img/newscippy.png" height="130" title="Scippy" alt="Scippy"/>
         </a>
         <h1>GCG</h1>
         <p>Generic column generation</p>
@@ -67,11 +67,11 @@
             <table style="margin:2em 0 2em">
               <tr>
                 <td style="text-align:left;">
-                  <img src="pictures/germany50-UUM.png" style="width: 90%" alt="before detection">
+                  <img src="img/germany50-UUM.png" style="width: 90%" alt="before detection">
                   <figcaption><b>Fig.1:</b> Nonzero entries before decomposition</figcaption>
                 </td>
                 <td style="text-align:left;">
-                  <img src="pictures/germany50-UUM-decomp.png" style="width: 90%" alt="after detection">
+                  <img src="img/germany50-UUM-decomp.png" style="width: 90%" alt="after detection">
                   <figcaption><b>Fig. 2:</b> Nonzero entries after decomposition</figcaption>
                 </td>
               </tr>
@@ -391,7 +391,7 @@
   	      <tbody>
         		<tr>
               <td class="al-r"><a href="http://www.zib.de">
-        		      <img src="pictures/logo_zib.png" alt="ZIB Logo" style="padding-right:20px; height: 80px;"></a>
+        		      <img src="img/logo_zib.png" alt="ZIB Logo" style="padding-right:20px; height: 80px;"></a>
         		  </td>
               <td class="w-350"><a href="http://www.zib.de">Konrad-Zuse-Zentrum für Informationstechnik Berlin</a></td>
         		</tr>
