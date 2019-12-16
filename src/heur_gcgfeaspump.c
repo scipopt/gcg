@@ -135,7 +135,7 @@ SCIP_RETCODE setupDivingSCIP(
    *success = FALSE;
 
    /* copy SCIP instance */
-   SCIP_CALL( SCIPcopy(scip, *divingscip, *varmapfw, NULL, "gcgfeaspump", FALSE, FALSE, TRUE, success) );
+   SCIP_CALL( SCIPcopy(scip, *divingscip, *varmapfw, NULL, "gcgfeaspump", FALSE, FALSE, FALSE, TRUE, success) );
 
    if( copycuts )
    {
@@ -268,7 +268,7 @@ SCIP_RETCODE setupProbingSCIP(
    *success = FALSE;
 
    /* copy SCIP instance */
-   SCIP_CALL( SCIPcopy(scip, *probingscip, *varmapfw, NULL, "gcgfeaspump_probing", FALSE, FALSE, TRUE, success) );
+   SCIP_CALL( SCIPcopy(scip, *probingscip, *varmapfw, NULL, "gcgfeaspump_probing", FALSE, FALSE, FALSE, TRUE, success) );
 
    if( copycuts )
    {

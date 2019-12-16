@@ -113,8 +113,8 @@ SCIP_DECL_HASHKEYVAL(hashKeyValCol)
    assert(col != NULL);
 
    /* TODO: Improve hash function (but then we would have to store additional values for each col) */
-   keyval = SCIPhashTwo(SCIPrealHashCode(col->nvars > 0 ? col->vals[0] : 0.0),
-      SCIPcombineThreeInt(col->probnr, col->nvars, col->isray));
+   keyval = SCIPhashFour(SCIPrealHashCode(col->nvars > 0 ? col->vals[0] : 0.0), col->probnr, col->nvars,
+      col->isray);
 
    return keyval;
 }

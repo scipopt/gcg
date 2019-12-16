@@ -482,7 +482,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
 
       valid = FALSE;
 
-      SCIP_CALL( SCIPcopy(scip, restmaster, varmapfw, NULL, "restmaster", TRUE, FALSE, TRUE, &valid) ); /** @todo check for thread safeness */
+      SCIP_CALL( SCIPcopy(scip, restmaster, varmapfw, NULL, "restmaster", TRUE, FALSE, FALSE, TRUE, &valid) ); /** @todo check for thread safeness */
 
       if( heurdata->copycuts )
       {
