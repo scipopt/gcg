@@ -304,7 +304,7 @@ limits/stallnodes = -1
 # [type: real, advanced: FALSE, range: [0,8796093022208], default: 8796093022208]
 limits/memory = 8796093022208
 
-# solving stops, if the relative gap = |primal - dual|/MIN(|dual|,|primal|) is below the given value
+# solving stops, if the relative gap = |primal - dual|/MIN(|dual|,|primal|) is below the given value, the gap is 'Infinity', if primal and dual bound have opposite signs
 # [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 0]
 limits/gap = 0
 
@@ -592,9 +592,9 @@ misc/scaleobj = TRUE
 # [type: real, advanced: FALSE, range: [-1.79769313486232e+308,1.79769313486232e+308], default: 1e+99]
 misc/referencevalue = 1e+99
 
-# used symmetry handling technique (0: off; 1: polyhedral; 2: orbital fixing)
-# [type: int, advanced: FALSE, range: [0,2], default: 2]
-misc/usesymmetry = 2
+# bitset describing used symmetry handling technique (0: off; 1: polyhedral (orbitopes and/or symresacks); 2: orbital fixing; 3: orbitopes and orbital fixing), see type_symmetry.h.
+# [type: int, advanced: FALSE, range: [0,3], default: 3]
+misc/usesymmetry = 3
 
 # global shift of all random seeds in the plugins and the LP random seed
 # [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
@@ -5129,8 +5129,8 @@ separating/closecuts/maxlpiterfactor = 10
 separating/rapidlearning/priority = -1200000
 
 # frequency for calling separator <rapidlearning> (-1: never, 0: only in root node)
-# [type: int, advanced: FALSE, range: [-1,65534], default: -1]
-separating/rapidlearning/freq = -1
+# [type: int, advanced: FALSE, range: [-1,65534], default: 5]
+separating/rapidlearning/freq = 5
 
 # maximal relative distance from current node's dual bound to primal bound compared to best node's dual bound for applying separator <rapidlearning> (0.0: only on current best node, 1.0: on all nodes)
 # [type: real, advanced: TRUE, range: [0,1], default: 1]
@@ -5205,8 +5205,8 @@ separating/rapidlearning/contvarsquot = 0.3
 separating/rapidlearning/lpiterquot = 0.2
 
 # minimal degeneracy threshold to allow local rapid learning
-# [type: real, advanced: TRUE, range: [0,1], default: 0.8]
-separating/rapidlearning/mindegeneracy = 0.8
+# [type: real, advanced: TRUE, range: [0,1], default: 0.7]
+separating/rapidlearning/mindegeneracy = 0.7
 
 # minimal threshold of inf/obj leaves to allow local rapid learning
 # [type: real, advanced: TRUE, range: [0,1.79769313486232e+308], default: 10]

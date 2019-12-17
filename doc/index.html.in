@@ -150,23 +150,8 @@
       <p>
         <b>We recommend you to download the <a href="https://scip.zib.de/index.php#download">SCIP Optimization Suite</a></b>, a complete source
         code bundle of SCIP, SoPlex, ZIMPL, GCG and UG with an easy-to-use Makefile.<br/>
-        <b>However</b>, you can also download the source code:
+        <b>However</b>, you can also download the <a href="https://gcg.or.rwth-aachen.de/dev/files/?C=M;O=D">source code</a>.
       </p>
-      <ul>
-        <li><a href="files/gcg-3.1.0.tgz">gcg-3.1.0.tgz</a> (?kB, released 10/Jul/2019)</li>
-        <p id="olderdownloads" class="reveal">Older versions</p>
-    	    <div style="display: block; margin-top: -10px;" id="olderdownloads_ans" class="answer">
-              <li><a href="files/gcg-3.0.0.tgz">gcg-3.0.0.tgz</a> (1803kB, released 02/Jul/2018)</li>
-              <li><a href="files/gcg-2.1.2.tgz">gcg-2.1.2.tgz</a> (1118kB, released 09/Mar/2017)</li>
-              <li><a href="files/gcg-2.1.1.tgz">gcg-2.1.1.tgz</a> (1100kB, released 29/Feb/2016)</li>
-              <li><a href="files/gcg-2.1.0.tgz">gcg-2.1.0.tgz</a> (1096kB, released 01/Jul/2015)</li>
-              <li><a href="files/gcg-2.0.1.tgz">gcg-2.0.1.tgz</a> (1053kB, released 18/Dec/2014)</li>
-              <li><a href="files/gcg-2.0.0.tgz">gcg-2.0.0.tgz</a> (1007kB, released 26/Feb/2014)</li>
-              <li><a href="files/gcg-1.1.1.tgz">gcg-1.1.1.tgz</a> (664kB, released 16/Oct/2013)</li>
-              <li><a href="files/gcg-1.1.0.tgz">gcg-1.1.0.tgz</a> (664kB, released 04/Jan/2013)</li>
-              <li><a href="files/gcg-1.0.0.tgz">gcg-1.0.0.tgz</a> (670kB, released 01/Aug/2012)</li>
-    	    </div>
-      </ul>
       <p>
         <i>The files you can download here come without any warranty.
         Use at your own risk!</i>
@@ -223,12 +208,7 @@
   <div>
     <h1 id="bugs">Bugs</h1>
       <h3>Known Bugs</h3>
-	    <p>
-	      Here is a list of known bugs in the current version:
-	    </p>
-	    <ul>
-	      <li>There might be problems branching on discretized and aggregated problems. If you encounter such an issue, try to turn off either aggregation or discretization.</li>
-	    </ul>
+	    <p>Known Bugs of the current version can be found in the <a href="doc-3.1.0/compatibility.html#known-bugs">Documentation</a>.</p>
     <h3>Reporting Bugs</h3>
 	    <p>
 	      GCG has more than 50,000 lines of source code and

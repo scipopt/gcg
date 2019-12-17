@@ -1915,7 +1915,7 @@ function myFunction() {
 <li><a href="#"><code>fix</code>: limits absgap solving stops, if the absolute gap = |primalbound - dualbound| is below the given value [not fixed]</a></li>
 <li><a href="#"><code>fix</code>: limits autorestartnodes if solve exceeds this number of nodes for the first time, an automatic restart is triggered (-1: no automatic restart) [not fixed]</a></li>
 <li><a href="#"><code>fix</code>: limits bestsol solving stops, if the given number of solution improvements were found (-1: no limit) [not fixed]</a></li>
-<li><a href="#"><code>fix</code>: limits gap solving stops, if the relative gap = |primal - dual|/MIN(|dual|,|primal|) is below the given value [not fixed]</a></li>
+<li><a href="#"><code>fix</code>: limits gap solving stops, if the relative gap = |primal - dual|/MIN(|dual|,|primal|) is below the given value, the gap is 'Infinity', if primal and dual bound have opposite signs [not fixed]</a></li>
 <li><a href="#"><code>fix</code>: limits maxorigsol maximal number of solutions candidates to store in the solution storage of the original problem [not fixed]</a></li>
 <li><a href="#"><code>fix</code>: limits maxsol maximal number of solutions to store in the solution storage [not fixed]</a></li>
 <li><a href="#"><code>fix</code>: limits memory maximal memory usage in MB; reported memory usage is lower than real memory usage! [not fixed]</a></li>
@@ -1991,7 +1991,7 @@ function myFunction() {
 <li><a href="#"><code>fix</code>: misc transsolsorig should SCIP try to transfer transformed solutions to the original space (after solving)? [not fixed]</a></li>
 <li><a href="#"><code>fix</code>: misc useconstable should a hashtable be used to map from constraint names to constraints? [not fixed]</a></li>
 <li><a href="#"><code>fix</code>: misc usesmalltables should smaller hashtables be used? yields better performance for small problems with about 100 variables [not fixed]</a></li>
-<li><a href="#"><code>fix</code>: misc usesymmetry used symmetry handling technique (0: off; 1: polyhedral; 2: orbital fixing) [not fixed]</a></li>
+<li><a href="#"><code>fix</code>: misc usesymmetry bitset describing used symmetry handling technique (0: off; 1: polyhedral (orbitopes and/or symresacks); 2: orbital fixing; 3: orbitopes and orbital fixing), see type_symmetry.h. [not fixed]</a></li>
 <li><a href="#"><code>fix</code>: misc usevartable should a hashtable be used to map from variable names to variables? [not fixed]</a></li>
 <li><a href="#"><code>fix</code>: &lt;nlp&gt; fix parameters for nonlinear programming relaxations</a></li>
 <li><a href="#"><code>fix</code>: nlp disable should the NLP relaxation be always disabled (also for NLPs/MINLPs)? [not fixed]</a></li>
