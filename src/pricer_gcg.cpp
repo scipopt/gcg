@@ -2752,10 +2752,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       omp_set_num_threads(GCGgetNRelPricingprobs(origprob));
 #endif
 
-   /*
-    * @todo: HACK: store current node in column pool and free columns from previous nodes;
-    * thus, we avoid checking for feasibility of the columns
-    */
+   /* todo: We avoid checking for feasibility of the columns using this hack */
    if( pricerdata->usecolpool )
       SCIP_CALL( GCGcolpoolUpdateNode(colpool) );
 
