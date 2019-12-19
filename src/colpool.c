@@ -366,6 +366,7 @@ SCIP_RETCODE GCGcolpoolPrice(
    assert(colpool->firstunprocessed <= colpool->ncols);
    assert(colpool->firstunprocessedsol <= colpool->ncols);
    assert(foundvars != NULL);
+   assert(SCIPnodeGetType(SCIPgetCurrentNode(colpool->scip)) != SCIP_NODETYPE_PROBINGNODE);
 
    colpool->ncalls++;
 
@@ -430,6 +431,7 @@ SCIP_RETCODE GCGcolpoolUpdateNode(
    )
 {
    assert(colpool != NULL);
+   assert(SCIPnodeGetType(SCIPgetCurrentNode(colpool->scip)) != SCIP_NODETYPE_PROBINGNODE);
 
    if( colpool->nodenr < 0 )
    {
