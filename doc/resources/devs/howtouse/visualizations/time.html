@@ -1,0 +1,37 @@
+<div style="text-align: center; align: center">
+  <div class="pre-spoiler">
+  <input name="button" type="button" onClick="
+  if (this.parentNode.getElementsByTagName('div')[0].style.display != 'none') {
+     this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'Show Time Distribution Plots'; }
+  else { this.parentNode.getElementsByTagName('div')[0].style.display = 'block'; this.value = 'Hide';
+}" value="Show Time Distribution Plots">
+  <div class="spoiler" style="display: none;">
+
+    <h4>Bar Chart</h4>
+    <img src="img/visu/general/goodinstances.timedist_bar_SMALL.png" style="width:80%">
+    <figcaption style="font-size:small; line-height:1.1">A bar chart of the time distribution of all instances in the test set "goodinstancesnodec" that had a detection time of 3 or more seconds, a pricing time between 10 and 40 seconds, an arbitrary heuristics time and a total time of 2 to 1000 seconds. This plot gives an impression of how strong the detection times and pricing times vary from instance to instance.
+    </figcaption>
+
+    <h4>Grouped Bar Chart</h4>
+    <img src="img/visu/general/goodinstances.timedist_grouped_bar_SMALL.png" style="width:80%">
+    <figcaption style="font-size:small; line-height:1.1">A grouped bar chart of the time distribution of all instances in the test set "goodinstancesnodec" that had a detection time of at least 2 seconds. Brings the previous chart into a context of CPU times by linking certain facets, e.g. a long detection duration, to instances that ran for a long time.
+    </figcaption>
+
+    <h4>Pie Chart</h4>
+    <img src="img/visu/general/goodinstancesnodec.timedist_pie.png" style="width:80%">
+    <figcaption style="font-size:small; line-height:1.1">A cumulated pie chart of all instances in the test set "goodinstancesnodec". Takes the mean of all instances inside and can be used as a standalone impression on how a whole test set is handled by GCG.
+    </figcaption>
+
+    <h4>Pie Comparison Chart</h4>
+    <img src="img/visu/general/goodinstances.timedist_comparepie.png" style="width:80%">
+    <figcaption style="font-size:small; line-height:1.1">A comparison pie chart of all instances in the test set "goodinstancesnodec", tested once with a time limit of 3600s (outer circle) and once with a limit of 10800s (inner circle). Takes the mean of all instances inside each test set and compares them. Can be used intuitively to compare different settings or versions.
+    </figcaption>
+
+    <h4>Bar Comparison Chart</h4>
+    <img src="img/visu/general/goodinstancesnodec.timedist_compare.png" style="width:80%">
+    <figcaption style="font-size:small; line-height:1.1">A bar chart as a comparison between two runs. Has similar expressive power as the pie comparison chart, but serves as an alternative, which can be better depending on the comparison made. For example, for more than 4 instances, the bar chart might be a better alternative for reasons of readability.
+    </figcaption>
+
+  </div>
+  </div>
+</div>
