@@ -59,7 +59,7 @@ mkdir -p html/img
 # Getting Bootstrap stuff
 wget https://scip.zib.de/bootstrap/css/bootstrap.min.css --output-document html/bootstrap/css/bootstrap.min.css --quiet
 wget https://scip.zib.de/bootstrap/css/custom.css --output-document html/bootstrap/css/custom.css --quiet
-sed -i 's/https:\/\/scip.zib.de\/images/..\/..\/img/g' html/bootstrap/css/custom.css
+sed -i'' 's/https:\/\/scip.zib.de\/images/..\/..\/img/g' html/bootstrap/css/custom.css
 # Getting fonts and css
 wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css --output-document html/css/font-awesome.min.css --quiet
 wget https://fonts.googleapis.com/css?family=Open+Sans --output-document html/css/font-googleapis.css --quiet

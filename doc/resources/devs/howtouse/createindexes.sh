@@ -3,8 +3,8 @@
 
 cd $(dirname $0)
 # Remove ending and subpages of .dox file
-sed -i '/\*\//d' ./howtouse.dox
-sed -i '/\\subpage /d' ./howtouse.dox
+sed -i '/\*\//d' howtouse.dox
+sed -i '/\\subpage /d' howtouse.dox
 
 # Get index list and append to .dox
 ls | egrep '\.md$|\.dox$' | sed 's/.dox//' | sed 's/.md//' | sed 's/^/- \\subpage /' | sed '/howto/d' >> howtouse.dox
