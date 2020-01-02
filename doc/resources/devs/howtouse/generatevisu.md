@@ -1,4 +1,5 @@
 # Visualization Generation {#generatevisu}
+[TOC]
 
 # Prerequisites
 ### Software requirements

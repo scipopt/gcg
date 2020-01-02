@@ -2,7 +2,7 @@
 
 # Testset Report {#testset-report}
 > This feature is still under development. Please be patient.
-> Meanwhile, you can [use the scripts manually](generatevisu).
+> Meanwhile, you can @ref generatevisu "use the scripts manually".
 
 # Tree Visualizations # {#visu-tree}
 In order to generate pictures of the Branch and Bound tree that GCG used during solving, you can use the [vbctool](https://informatik.uni-koeln.de/ls-juenger/vbctool/). Since the executable might have issues with the linking of the libraries, it is suggested to download the source code (and additionally the Motif Framework). Before you start with the [Build Instructions](https://informatik.uni-koeln.de/fileadmin/projects/vbctool/INSTALL), you have to install a packet:
