@@ -14,6 +14,14 @@
 (used to read the current interactive menu and settings file)
 - a javascript-enabled browser
 
+#### Additional Notes
+**For macOS Users (tested with Catalina):**<br>
+Please install gnu-sed and add it to your path:
+```
+brew install gnu-sed
+PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
+```
+
 ### Instructions
 The documentation for your installed GCG version including its code can be
 generated using a simple

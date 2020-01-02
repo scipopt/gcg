@@ -3,11 +3,12 @@
 
 |   | 32 bit | 64 bit | Supported Extensions | Comments |
 |---|:---:|:---:|---|---|
-| Windows 10 (Visual Studio) | no | no |  | tested with Visual Studio 2017 |
-| Windows 10 (minGW) | ? | ? |  |  |
-| Debian 9 | ? | yes | GMP, hmetis, bliss |  |
-| Ubuntu 18.04 | ? | yes | GMP, hmetis, bliss |  |
-| macOS | ? | ? |   |  |
+| Windows 10 ([WSL](https://docs.microsoft.com/de-de/windows/wsl/install-win10)) |  | yes | GMP, hmetis, bliss | |
+| Windows 10 ([Visual Studio](https://visualstudio.microsoft.com/de/)) | no | no |  | tested with Visual Studio 2017 |
+| Windows 10 ([minGW](http://www.mingw.org/)) |  |  |  |  |
+| Debian 9 |  | yes | GMP, hmetis, bliss |  |
+| Ubuntu 18.04 |  | yes | GMP, hmetis, bliss |  |
+| macOS Catalina | - | yes | GMP, hmetis |  |
 
 # Supported Compilers {#compiler-support}
 | Compiler | Support |
