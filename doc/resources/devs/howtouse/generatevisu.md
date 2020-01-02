@@ -56,8 +56,8 @@ The following arguments are common across all following scripts (except for the 
 \n
 #### Parsing without Plotting, Plotting without Parsing
 
-    -s, --savepickle      parses the given .out-file without plotting
-    -l, --loadpickle      loads the given .pkl-file and plots it
+    -save, --savepickle      parses the given .out-file without plotting
+    -load, --loadpickle      loads the given .pkl-file and plots it
 
 \n
 
