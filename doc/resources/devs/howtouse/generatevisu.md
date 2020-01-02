@@ -61,7 +61,7 @@ The following arguments are common across all following scripts (except for the 
 
 \n
 
-## Performance Profile Plotter: `performance_profile.py`
+## Performance Profile Plotter
 Using this plotter, one can generate performance profiles.
 In those, the x-axis represents the factor by which the respective run is worse than the
 optimal run, while the y-axis is the corresponding probability.
@@ -73,7 +73,7 @@ with `FILES` being some (space-separated) `.res` or `.out` files in the format a
 
 \htmlinclude performance_profile.html
 \n
-## General Plotter: `plotter_general.py`
+## General Plotter
 The general plotter is able to plot two or more arguments parsed by the `general_parser.py` script in different ways.
 You can find all parsed arguments @ref general-args "here".
 \n
@@ -84,6 +84,7 @@ You can find all parsed arguments @ref general-args "here".
 with `FILES` being either some pickles, or some outfiles, and [args] being as defined below. \n
 
 \n
+### Arguments
 #### Defining Data to be plotted
 > **Times** are the most common arguments to plot (that's the reason for the naming),
 > but you can use whatever argument parsed you want. You can find a list of those @subpage visu-args "here".
@@ -134,8 +135,9 @@ runs to have been on the same testset.
 
 
 \htmlinclude visualizations/general.html
+\htmlinclude visualizations/time.html
 \n
-## Bounds Plotter: `plotter_bounds.py`
+## Bounds Plotter
 The Bounds Plotter generates a plot showing the development of the primal and dual bound and gap in the root node, as well as the basic variables generated.
 #### Execution
 
@@ -145,7 +147,7 @@ with `FILES` being one or more `.out` files.
 
 \htmlinclude visualizations/bounds.html
 \n
-## Classification and Detection Plotter: `plotter_detection.py`
+## Classification and Detection Plotter
 This plotter works on a whole testset and makes plots similar to performance profiles, showing the performance of the classifiers and detectors.
 #### Execution
 
@@ -155,7 +157,7 @@ with `FILES` being one or more `.out` files.
 
 \htmlinclude visualizations/detection.html
 \n
-## Pricing Plotter: `plotter_pricing.py`
+## Pricing Plotter
 The Pricing Plotter generates 7 different plots illustrating the pricing procedure during a single instance's solving process.
 When given an outfile with more than one instance, it generates the plots sequentially.
 #### Execution
@@ -166,7 +168,7 @@ with `FILES` being one `.out` file and `VBC` being the directory where all corre
 
 \htmlinclude visualizations/pricing.html
 \n
-## Tree Plotter: `plotter_tree.py`
+## Tree Plotter
 The Tree Plotter, just like the Pricing Plotter, needs the `vbc` files to function correctly. It will plot how many nodes were opened on each level.
 #### Execution
 
@@ -177,7 +179,7 @@ with `FILES` being some `.vbc` files.
 \htmlinclude visualizations/tree.html
 \n
 
-## Comparison Table: `comparison_table.sh`
+## Comparison Table
 A (quite raw) comparison of testruns can be done using this script
 in the `general`-folder. This script just puts the statistics of all runs that are
 given as arguments into a `.tex`-file and prints it as ASCII on the console.
@@ -191,7 +193,9 @@ with run1, run2, ... being a `.res` file in the format as shown in @ref what-fil
 \n
 
 # Test set selection
-> A guide on this is coming soon.
+> A complete guide on this is coming soon.
+
+Test sets can be filtered using the instructions under "General Plotter -> Arguments -> Defining Filters for the Data".
 
 # Custom Visualizations
 When creating custom visualizations, one has to know exactly what data is needed to make the visualization. With these arguments in mind, one can then look if they are already parsed. A list of the currently parsed data is located @ref visu-args "here". If so, one of the parsers (<code>parser_general.py</code>, <code>parser_bounds.py</code> or <code>parser_detection.py</code>) can be used, or otherwise, for the <code>plotter_pricing.py</code>, the <code>--savepickle</code> argument of the plotter shall be used each time to parse the runtime data and save it to the pickle, to then read it again for the plotter. Then, the <code>plotter_</code> script can be created which should import the parser that already gets the data needed with a simple <code>import parser_...</code>. Finally, the parser can be used just like in the other plotters.
