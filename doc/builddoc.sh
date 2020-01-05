@@ -133,8 +133,8 @@ mv html/doc html/doc-${CURRENT_VERSION}
 
 # Remove citelist.html (the Bibliography) manually from the menu (but still reachable via link)
 cd html/doc-${CURRENT_VERSION}
-sed -i "/citelist/d" pages.html
-sed -i "/citelist/d" navtreedata.js
-sed -i "s/\:\[5/\:\[4/g" navtreeindex*.js # citelist is the third item in the navigation (after Users Guide and Devs Guide,
-sed -i "s/\:\[6/\:\[5/g" navtreeindex*.js # since Installation counts as homepage and thus 0)
+sed -i.bak "/citelist/d" pages.html && rm pages.html.bak
+sed -i.bak "/citelist/d" navtreedata.js && rm navtreedata.js.bak
+sed -i.bak "s/\:\[5/\:\[4/g" navtreeindex*.js && rm navtreeindex*.js.bak # citelist is the third item in the navigation (after Users Guide and Devs Guide,
+sed -i.bak "s/\:\[6/\:\[5/g" navtreeindex*.js && rm navtreeindex*.js.bak # since Installation counts as homepage and thus 0)
 echo "Done."
