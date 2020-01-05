@@ -9,12 +9,28 @@ set -e
 
 if [[ -z ${BINDIR} ]]; then export BINDIR="$PWD/../bin"; fi
 
-./resources/devs/howtoadd/createindexes.sh
-./resources/devs/howtouse/createindexes.sh
-./resources/devs/detection/classifiers/createindexes.sh
-./resources/devs/detection/detectors/createindexes.sh
+makeSubpageIndexing () {
+  # Adds new .md pages to the table of contents in the folder
+  # with a file named as the folder (.md).
+  DIR=$1
+  TITLE=$2
+  cd $DIR
+  OUT=$(basename $PWD).md
+  echo "# $TITLE {#$(echo $OUT | sed 's/.md//')}" > $OUT
+  # Get index list and append to .md
+  ls | egrep '\.md$' | sed "/$OUT/d" | sed 's/.md//' | sed 's/^/- \@subpage /' >> $OUT
+
+  #echo "Subpage indexing for ${DIR} built sucessfully."
+  cd - > /dev/null 2>&1
+}
+
+makeSubpageIndexing "resources/devs/howtoadd/" "How to add"
+makeSubpageIndexing "resources/devs/howtouse/" "How to use"
+makeSubpageIndexing "resources/devs/detection/classifiers/clsvar/" "Variable Classifiers"
+makeSubpageIndexing "resources/devs/detection/classifiers/clscons/" "Constraint Classifiers"
+makeSubpageIndexing "resources/devs/detection/classifiers/clsindex/" "Index Classifiers"
+
 ./resources/users/features/interactive-menu/generateMenu.sh
-cd $(dirname $0)
 
 mkdir -p html
 
@@ -59,7 +75,7 @@ mkdir -p html/img
 # Getting Bootstrap stuff
 wget https://scip.zib.de/bootstrap/css/bootstrap.min.css --output-document html/bootstrap/css/bootstrap.min.css --quiet
 wget https://scip.zib.de/bootstrap/css/custom.css --output-document html/bootstrap/css/custom.css --quiet
-sed -i'' 's/https:\/\/scip.zib.de\/images/..\/..\/img/g' html/bootstrap/css/custom.css
+sed -i.bak 's/https:\/\/scip.zib.de\/images/..\/..\/img/g' html/bootstrap/css/custom.css && rm html/bootstrap/css/custom.css.bak
 # Getting fonts and css
 wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css --output-document html/css/font-awesome.min.css --quiet
 wget https://fonts.googleapis.com/css?family=Open+Sans --output-document html/css/font-googleapis.css --quiet

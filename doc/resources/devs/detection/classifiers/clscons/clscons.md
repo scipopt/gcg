@@ -1,4 +1,4 @@
-# Constraint Classifier {#clscons}
+# Constraint Classifiers {#clscons}
 - @subpage clscons_consnamelevenshtein
 - @subpage clscons_consnamenonumbers
 - @subpage clscons_miplibconstypes

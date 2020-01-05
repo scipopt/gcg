@@ -1,5 +1,4 @@
 # How to add {#howtoadd}
-
 - @subpage branchingrules
 - @subpage pricingsolvers
 - @subpage primalheuristics
