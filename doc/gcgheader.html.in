@@ -32,6 +32,7 @@
     <link href="bootstrap/css/navsidebar.css" rel="stylesheet" type="text/css"/>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script type="text/javascript" src="$relpath^dynsections.js"></script>
+    <script type="text/javascript" src="bootstrap/js/custom.js"></script>
     <script type="text/javascript" src="bootstrap/js/bootstrap.js"></script>
     <script type="text/javascript" src="js/navsidebar.js"></script>
   </head>
