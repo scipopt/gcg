@@ -7,19 +7,6 @@
     <!--BEGIN PROJECT_NAME--><title>$projectname: $title</title><!--END PROJECT_NAME-->
     <!--BEGIN !PROJECT_NAME--><title>$title</title><!--END !PROJECT_NAME-->
 
-    <!-- search and treeview need jquery to be included first-->
-    <script type="text/javascript" src="js/jquery.min.js"></script>
-
-    <!-- this is old but needed for the sidenav -->
-    <script type="text/javascript" src="$relpath^jquery.js"></script>
-
-    <!-- instead of
-    $treeview
-     -->
-    <link href="navtree.css" rel="stylesheet" type="text/css"/>
-    <script type="text/javascript" src="navtreedata.js"></script>
-    <script type="text/javascript" src="navtree.js"></script>
-
     <!-- Matomo -->
     <script type="text/javascript">
       var _paq = window._paq || [];
@@ -38,6 +25,19 @@
     </script>
     <noscript><p><img src="https://piwik.or.rwth-aachen.de/matomo.php?idsite=6&amp;rec=1" style="border:0;" alt="" /></p></noscript>
     <!-- End Matomo Code -->
+
+    <!-- search and treeview need jquery to be included first-->
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+
+    <!-- this is old but needed for the sidenav -->
+    <script type="text/javascript" src="$relpath^jquery.js"></script>
+
+    <!-- instead of
+    $treeview
+     -->
+    <link href="navtree.css" rel="stylesheet" type="text/css"/>
+    <script type="text/javascript" src="navtreedata.js"></script>
+    <script type="text/javascript" src="navtree.js"></script>
 
     $search
     $mathjax
