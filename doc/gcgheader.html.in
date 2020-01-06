@@ -8,7 +8,7 @@
     <!--BEGIN !PROJECT_NAME--><title>$title</title><!--END !PROJECT_NAME-->
 
     <!-- search and treeview need jquery to be included first-->
-    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/jquery.min.js"></script>
 
     <!-- this is old but needed for the sidenav -->
     <script type="text/javascript" src="$relpath^jquery.js"></script>
