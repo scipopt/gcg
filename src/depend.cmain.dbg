@@ -141,13 +141,12 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
