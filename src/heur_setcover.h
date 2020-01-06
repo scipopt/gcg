@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 /** creates the setcover primal heuristic and includes it in SCIP */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE SCIPincludeHeurSetcover(
    SCIP*                 scip                /**< SCIP data structure */
    );

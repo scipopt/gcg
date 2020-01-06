@@ -44,93 +44,93 @@ extern "C" {
 #endif
 
 /** compares two solvers w. r. t. their priorities */
-EXTERN
+SCIP_EXPORT
 SCIP_DECL_SORTPTRCOMP(GCGsolverComp);
 
 /** gets user data of GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 GCG_SOLVERDATA* GCGsolverGetData(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** sets user data of GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 void GCGsolverSetData(
    GCG_SOLVER*           solver,             /**< pricing solver */
    GCG_SOLVERDATA*       solverdata          /**< pricing solver data */
    );
 
 /** gets name of GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 const char* GCGsolverGetName(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets description of GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 const char* GCGsolverGetDesc(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets priority of GCG pricing solver */
-EXTERN
+SCIP_EXPORT
 int GCGsolverGetPriority(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets whether GCG pricing solver is enabled */
-EXTERN
+SCIP_EXPORT
 SCIP_Bool GCGsolverIsEnabled(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets number of exact Farkas pricing calls of pricing solver */
-EXTERN
+SCIP_EXPORT
 int GCGsolverGetOptFarkasCalls(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets number of exact reduced cost pricing calls of pricing solver */
-EXTERN
+SCIP_EXPORT
 int GCGsolverGetOptRedcostCalls(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets number of heuristic Farkas pricing calls of pricing solver */
-EXTERN
+SCIP_EXPORT
 int GCGsolverGetHeurFarkasCalls(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets number of heuristic reduced cost pricing calls of pricing solver */
-EXTERN
+SCIP_EXPORT
 int GCGsolverGetHeurRedcostCalls(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets exact Farkas pricing time of pricing solver */
-EXTERN
+SCIP_EXPORT
 SCIP_Real GCGsolverGetOptFarkasTime(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets exact reduced cost pricing time of pricing solver */
-EXTERN
+SCIP_EXPORT
 SCIP_Real GCGsolverGetOptRedcostTime(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets heuristic Farkas pricing time of pricing solver */
-EXTERN
+SCIP_EXPORT
 SCIP_Real GCGsolverGetHeurFarkasTime(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets heuristic reduced cost pricing time of pricing solver */
-EXTERN
+SCIP_EXPORT
 SCIP_Real GCGsolverGetHeurRedcostTime(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_SOLVER*           solver              /**< pricing solver */

@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 /** creates the gcgveclendiving heuristic and includes it in GCG */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGincludeHeurGcgveclendiving(
    SCIP*                 scip                /**< SCIP data structure */
    );

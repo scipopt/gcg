@@ -49,7 +49,7 @@ extern "C" {
 #endif
 
 /** creates the mastercoefdiving heuristic and includes it in GCG */
-EXTERN
+SCIP_EXPORT
 SCIP_RETCODE GCGincludeHeurMastercoefdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );

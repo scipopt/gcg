@@ -42,7 +42,7 @@
 extern "C" {
 #endif
 
-EXTERN
+SCIP_EXPORT
 /** creates the cutpacking detector and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectorCutpacking(
       SCIP*                 scip                /**< SCIP data structure */
