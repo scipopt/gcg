@@ -5288,7 +5288,7 @@ SCIP_Real Seeed::getScore(
    {
       SCIP_CONS* cons;
       cons = getSeeedpool()->getScipCons(getMasterconss()[mc]);
-      if( GCGconsGetType(cons) == consType::indicator )
+      if( GCGconsGetType(scip, cons) == consType::indicator )
          return 0.;
    }
 
