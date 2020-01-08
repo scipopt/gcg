@@ -29,7 +29,7 @@ GCG Version 3.0.1
 Command line interface:
 -----------------------
 
-- 'write matrix' and 'write origmatrix' for writing a gnuplot file showing the coefficient matrix
+- 'write matrix' and 'write transmatrix' for writing a gnuplot file showing the (original and presolved) coefficient matrix
 
 New/changed parameters:
 -----------------------
