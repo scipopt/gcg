@@ -2277,7 +2277,7 @@ SCIP_RETCODE createChildNodesGeneric(
 
    assert( SCIPisEQ(scip, lhsSum, 1.0*(GCGgetNIdenticalBlocks(scip, blocknr) + Ssize)) );
 
-   SCIPfreeMemoryArray(scip, &mastervars2);
+   SCIPfreeBufferArray(scip, &mastervars2);
 
    if( nchildnodes <= 0 )
    {
