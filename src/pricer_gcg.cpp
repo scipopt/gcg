@@ -2695,6 +2695,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    int j;
    int nfoundvars;
    SCIP_Bool optimal;
+   bool probingnode;
 
 #ifdef SCIP_STATISTIC
    SCIP_Real** olddualvalues;
@@ -2724,6 +2725,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       *lowerbound = -SCIPinfinity(scip_);
 
    maxniters = pricingcontroller->getMaxNIters();
+
+   // disable colpool while probing mode is active (can be removed after a feasibility check (#586) is implemented)
+   probingnode = (SCIPnodeGetType(SCIPgetCurrentNode(scip_)) == SCIP_NODETYPE_PROBINGNODE);
 
    SCIP_CALL( SCIPgetLPI(scip_, &lpi) );
 
@@ -2760,11 +2764,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       omp_set_num_threads(GCGgetNRelPricingprobs(origprob));
 #endif
 
-   /*
-    * @todo: HACK: store current node in column pool and free columns from previous nodes;
-    * thus, we avoid checking for feasibility of the columns
-    */
-   if( pricerdata->usecolpool )
+   /* todo: We avoid checking for feasibility of the columns using this hack */
+   if( pricerdata->usecolpool && !probingnode )
       SCIP_CALL( GCGcolpoolUpdateNode(colpool) );
 
    colpoolupdated = FALSE;
@@ -2853,7 +2854,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       }
 
       /* todo: do this inside the updateRedcostColumnPool */
-      if( !colpoolupdated && pricerdata->usecolpool )
+      if( !colpoolupdated && pricerdata->usecolpool && !probingnode )
       {
          /* update reduced cost of cols in colpool */
          SCIP_CALL( GCGcolpoolUpdateRedcost(colpool) );
@@ -2862,7 +2863,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       }
 
       /* check if colpool already contains columns with negative reduced cost */
-      if( pricerdata->usecolpool )
+      if( pricerdata->usecolpool && !probingnode )
       {
          SCIP_Bool foundvarscolpool;
          int oldnfoundcols;
@@ -3075,7 +3076,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIPdebugMessage("*** Pricing loop finished, found %d improving columns.\n", nfoundvars);
 
    /* Add new columns as variables to the master problem or move them to the column pool */
-   SCIP_CALL( GCGpricestoreApplyCols(pricestore, colpool, pricerdata->usecolpool, &nfoundvars) );
+   SCIP_CALL( GCGpricestoreApplyCols(pricestore, colpool, (pricerdata->usecolpool && !probingnode), &nfoundvars) );
 
    SCIPdebugMessage("Added %d new variables.\n", nfoundvars);
 

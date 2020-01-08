@@ -175,7 +175,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   for( int i = 0; i < seeedOrig->getNOpenconss(); ++i)
   {
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeedOrig->getOpenconss()[i]);
-      consType cT = GCGconsGetType(cons);
+      consType cT = GCGconsGetType(scip, cons);
 
       /* find constype or not */
       std::vector<consType>::const_iterator constypeIter = foundConstypes.begin();
@@ -187,7 +187,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
 
       if( constypeIter  == foundConstypes.end()  )
       {
-         foundConstypes.push_back(GCGconsGetType(cons) );
+         foundConstypes.push_back(GCGconsGetType(scip, cons) );
       }
   }
 
@@ -213,7 +213,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
           for(size_t constypeId = 0; constypeId < subsetsOfConstypes[subset].size(); ++constypeId )
           {
               cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
-              if( GCGconsGetType   (cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] )
+              if( GCGconsGetType(scip, cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] )
               {
                   seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
               }

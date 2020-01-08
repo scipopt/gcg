@@ -108,7 +108,7 @@ SCIP_Bool isConsMaster(
    assert(cons != NULL);
 
    SCIPdebugMessage("cons %s is ", SCIPconsGetName(cons));
-   if( GCGconsGetType(cons) == setcovering || GCGconsGetType(cons) == setpartitioning || GCGconsGetType(cons) == logicor )
+   if( GCGconsGetType(scip, cons) == setcovering || GCGconsGetType(scip, cons) == setpartitioning || GCGconsGetType(scip, cons) == logicor )
    {
       SCIPdebugPrintf("setcov, part or logicor.\n");
       return TRUE;

@@ -3584,7 +3584,7 @@ ConsClassifier* Seeedpool::createConsClassifierForSCIPConstypes()
       SCIP_CONS* cons;
       bool found = false;
       cons = getConsForIndex( i );
-      consType cT = GCGconsGetType( cons );
+      consType cT = GCGconsGetType( scip, cons );
       size_t constype;
 
       /* check whether the constraint's constype is new */
@@ -3599,7 +3599,7 @@ ConsClassifier* Seeedpool::createConsClassifierForSCIPConstypes()
       /* if it is new, create a new classindex */
       if( ! found )
       {
-         foundConstypes.push_back( GCGconsGetType( cons ) );
+         foundConstypes.push_back( GCGconsGetType( scip, cons ) );
          classForCons[i] = foundConstypes.size() - 1;
       }
       else
