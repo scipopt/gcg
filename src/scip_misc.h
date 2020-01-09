@@ -63,6 +63,7 @@ SCIP_Bool GCGisVarRelevant(
 /** returns the type of an arbitrary SCIP constraint */
 extern
 consType GCGconsGetType(
+   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get type for */
    );
 

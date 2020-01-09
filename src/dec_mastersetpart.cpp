@@ -147,7 +147,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpart)
    for( int i = 0; i < seeed->getNOpenconss(); ++i)
    {
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
-      if( GCGconsGetType   (cons) == setpartitioning )
+      if( GCGconsGetType(scip, cons) == setpartitioning )
       {
           seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
       }

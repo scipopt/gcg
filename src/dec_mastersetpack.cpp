@@ -149,7 +149,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpack)
    for( int i = 0; i < seeed->getNOpenconss(); ++i )
       {
          cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
-         if( GCGconsGetType   (cons) == setpacking )
+         if( GCGconsGetType(scip, cons) == setpacking )
          {
              seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
          }

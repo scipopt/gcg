@@ -178,13 +178,12 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -404,13 +403,12 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -644,13 +642,12 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -882,13 +879,12 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -1120,13 +1116,12 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -1358,13 +1353,12 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -1585,13 +1579,12 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -1811,13 +1804,12 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -2041,13 +2033,12 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -2278,13 +2269,12 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -2515,13 +2505,12 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -2742,13 +2731,12 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -2970,13 +2958,12 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -3198,13 +3185,12 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -3428,13 +3414,12 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -3668,13 +3653,12 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
@@ -3899,13 +3883,12 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_symbreak.h lib/scip/src/scip/presol_qpkktref.h \
+ lib/scip/src/scip/presol_qpkktref.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
  lib/scip/src/scip/presol_sparsify.h lib/scip/src/scip/presol_stuffing.h \
- lib/scip/src/scip/presol_symmetry.h \
- lib/scip/src/symmetry/type_symmetry.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_nlobbt.h \
- lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/prop_orbitalfixing.h \
+ lib/scip/src/scip/prop_obbt.h  \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \

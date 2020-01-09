@@ -155,12 +155,12 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
    {
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
       /* set open setpacking constraints to master */
-      if( GCGconsGetType(cons) == setpacking )
+      if( GCGconsGetType(scip, cons) == setpacking )
       {
           seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
       }
       /* set constraints with -infinity lhs and nonnegative rhs to master */
-      else if(GCGconsGetType(cons) != logicor && GCGconsGetType(cons) != setcovering && GCGconsGetType(cons) != setpartitioning )
+      else if(GCGconsGetType(scip, cons) != logicor && GCGconsGetType(scip, cons) != setcovering && GCGconsGetType(scip, cons) != setpartitioning )
       {
          relevant = true;
          nvars = GCGconsGetNVars(scip, cons);

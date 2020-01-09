@@ -113,8 +113,8 @@ SCIP_DECL_HASHKEYVAL(hashKeyValCol)
    assert(col != NULL);
 
    /* TODO: Improve hash function (but then we would have to store additional values for each col) */
-   keyval = SCIPhashTwo(SCIPrealHashCode(col->nvars > 0 ? col->vals[0] : 0.0),
-      SCIPcombineThreeInt(col->probnr, col->nvars, col->isray));
+   keyval = SCIPhashFour(SCIPrealHashCode(col->nvars > 0 ? col->vals[0] : 0.0), col->probnr, col->nvars,
+      col->isray);
 
    return keyval;
 }
@@ -174,7 +174,7 @@ SCIP_RETCODE GCGcolpoolCreate(
          hashGetKeyCol, hashKeyEqCol, hashKeyValCol, (void*) scip) );
 
    (*colpool)->scip = scip;
-   (*colpool)->node = NULL;
+   (*colpool)->nodenr = -1;
    (*colpool)->infarkas = FALSE;
    (*colpool)->cols = NULL;
    (*colpool)->colssize = 0;
@@ -366,6 +366,7 @@ SCIP_RETCODE GCGcolpoolPrice(
    assert(colpool->firstunprocessed <= colpool->ncols);
    assert(colpool->firstunprocessedsol <= colpool->ncols);
    assert(foundvars != NULL);
+   assert(SCIPnodeGetType(SCIPgetCurrentNode(colpool->scip)) != SCIP_NODETYPE_PROBINGNODE);
 
    colpool->ncalls++;
 
@@ -430,16 +431,17 @@ SCIP_RETCODE GCGcolpoolUpdateNode(
    )
 {
    assert(colpool != NULL);
+   assert(SCIPnodeGetType(SCIPgetCurrentNode(colpool->scip)) != SCIP_NODETYPE_PROBINGNODE);
 
-   if( colpool->node == NULL )
+   if( colpool->nodenr < 0 )
    {
-      colpool->node = SCIPgetCurrentNode(colpool->scip);
+      colpool->nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip));
    }
-   else if( colpool->node != SCIPgetCurrentNode(colpool->scip) )
+   else if( colpool->nodenr != SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip)) )
    {
       SCIP_CALL( GCGcolpoolClear(colpool) );
 
-      colpool->node = SCIPgetCurrentNode(colpool->scip);
+      colpool->nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip));
    }
 
    return SCIP_OKAY;

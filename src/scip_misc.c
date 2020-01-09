@@ -49,6 +49,7 @@ SCIP_Bool GCGisVarRelevant(
 
 /** returns the type of an arbitrary SCIP constraint */
 consType GCGconsGetType(
+   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get type for */
    )
 {
@@ -65,7 +66,7 @@ consType GCGconsGetType(
    }
    else if( strcmp(conshdlrname, "setppc") == 0 )
    {
-      switch ( SCIPgetTypeSetppc(NULL, cons) ) {
+      switch ( SCIPgetTypeSetppc(scip, cons) ) {
       case SCIP_SETPPCTYPE_COVERING:
          return setcovering;
       case SCIP_SETPPCTYPE_PACKING:
@@ -778,7 +779,7 @@ SCIP_Bool GCGgetConsIsSetppc(
    *setppctype = SCIP_SETPPCTYPE_PACKING;
    SCIPdebugMessage("cons %s is ", SCIPconsGetName(cons));
 
-   if( GCGconsGetType(cons) == setcovering || GCGconsGetType(cons) == setpartitioning || GCGconsGetType(cons) == logicor )
+   if( GCGconsGetType(scip, cons) == setcovering || GCGconsGetType(scip, cons) == setpartitioning || GCGconsGetType(scip, cons) == logicor )
    {
       SCIPdebugPrintf("setcov, part or logicor.\n");
       return TRUE;
@@ -861,7 +862,7 @@ SCIP_Bool GCGgetConsIsCardinalityCons(
 
    SCIPdebugMessage("cons %s is ", SCIPconsGetName(cons));
 
-   if(  GCGconsGetType(cons) == setpartitioning  )
+   if(  GCGconsGetType(scip, cons) == setpartitioning  )
    {
       return TRUE;
    }
