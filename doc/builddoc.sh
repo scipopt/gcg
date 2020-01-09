@@ -88,7 +88,7 @@ wget https://code.jquery.com/jquery.min.js --output-document html/js/jquery.min.
 echo "Generating FAQ..."
 echo " Requirement: Correctly installed php."
 cd resources/misc/faq
-python parser.py --linkext $HTML_FILE_EXTENSION  && php localfaq.php > faq.inc
+python3 parser.py --linkext $HTML_FILE_EXTENSION  && php localfaq.php > faq.inc
 cd ../../../
 echo "<li><a href='../doc-${CURRENT_VERSION}/index.html'>GCG ${CURRENT_VERSION}</a></li>" > docversions.html
 
