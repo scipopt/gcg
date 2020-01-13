@@ -21,7 +21,10 @@ detected                     6              0
     5   14     1      1      0      0      0 0.000      nC  yes      0      0   no
 Please enter command or decomposition id to select (or "h" for help) :
 ```
-
+In this table you can find very useful information about the decomposition GCG found
+for your problem. For example, the column `history` contains the sequence of detectors
+in the order that they worked on your problem. What exactly the letters mean can
+be found @subpage det-letters 'here'.
 When typing `h`, you will get a list of possible commands:
 ```
 GCG/explore> help
