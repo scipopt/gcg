@@ -32,14 +32,14 @@
             <ul class="nav bs-sidenav">
               <li><a href="#about">About GCG</a></li>
               <li><a href="#download">Downloads</a></li>
-              <li><a href="#guide" style="margin:0;padding:0;">
-              <a href="doc-3.1.0/install.html">Installation</a>
+              <li><a href="#guides">Installation, Guides<br> and Documentation</a>
+              <!-- <a href="doc-3.1.0/install.html">Installation</a>
               <a href="doc-3.1.0/users.html">User's Guide</a>
-              <a href="doc-3.1.0/devs.html">Developer's Guide</a></a>
+              <a href="doc-3.1.0/devs.html">Developer's Guide</a></a> -->
               </li>
               <hr>
               <!--<li><a href="#news">News</a></li>-->
-              <li><a href="#bugs">Bugs</a></li>
+              <!-- <li><a href="#bugs">Bugs</a></li> -->
               <li><a href="#developers">Developers</a></li>
               <li><a href="#more">More Information</a></li>
               <!--<li><a href="#work">Related Work</a></li>
@@ -150,19 +150,72 @@
       <p>
         <b>We recommend you to download the <a href="https://scip.zib.de/index.php#download">SCIP Optimization Suite</a></b>, a complete source
         code bundle of SCIP, SoPlex, ZIMPL, GCG and UG with an easy-to-use Makefile.<br/>
-        <b>However</b>, you can also download the <a href="https://gcg.or.rwth-aachen.de/dev/files/?C=M;O=D">source code</a>.
+        <b>However</b>, you can also download the <a href="https://gcg.or.rwth-aachen.de/dev/files/?C=M;O=D">GCG source code</a>.
       </p>
       <p>
         <i>The files you can download here come without any warranty.
         Use at your own risk!</i>
       </p>
     </div>
+    <!-- Style for the button in this section -->
+    <style>
+    .mywrapper {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .mybutton {
+      display: inline-block;
+      border-radius: 4px;
+      background-color: #fa0;
+      border: none;
+      color: #FFFFFF;
+      text-align: center;
+      font-size: 14px;
+      padding: 5px;
+      width: 200px;
+      transition: all 0.5s;
+      cursor: pointer;
+      margin: auto;
+    }
 
+    .mybutton span {
+      cursor: pointer;
+      display: inline-block;
+      position: relative;
+      transition: 0.3s;
+    }
+
+    .mybutton span:after {
+      content: '\00bb';
+      position: absolute;
+      opacity: 0;
+      top: 0;
+      right: -20px;
+      transition: 0.5s;
+    }
+
+    .mybutton:hover span {
+      padding-right: 25px;
+    }
+
+    .mybutton:hover span:after {
+      opacity: 1;
+      right: 0;
+    }
+    </style>
     <div>
-      <h1 id="guide">Installation and Guides</h1>
-      <p>Information on how to install and use and extend GCG can be found in the documentation
-         under <a href="doc-3.1.0/install.html">Installation</a>, <a href="doc-3.1.0/devs.html">User's Guide</a> and <a href="doc-3.1.0/users.html">Developer's Guide</a>.</p>
+      <h1 id="guides">Installation, Guides and Documentation</h1>
+      <p>Apart from this landing page, we also have a version-dependent documentation.
+        Besides the usual C-API, it also includes other useful information, such as helpful
+        guides, use cases and examples.
+         <a href="doc-3.1.0/install.html" target="_blank">Installation</a>,
+         <a href="doc-3.1.0/devs.html" target="_blank">User's Guide</a> and
+         <a href="doc-3.1.0/users.html" target="_blank">Developer's Guide</a>.</p>
+         <div class="mywrapper">
+           <button class="mybutton" style="vertical-align:middle; align:middle;" onclick="javascript:document.location='doc-3.1.0/index.html'"><span>GCG Documentation </span></button>
+         </div>
     </div>
+
 <!--
     <div>
       <h1 id="news">News</h1>
@@ -204,7 +257,7 @@
      </table>
 
 	</div>
--->
+
   <div>
     <h1 id="bugs">Bugs</h1>
       <h3>Known Bugs</h3>
@@ -219,7 +272,7 @@
 	      If you find a bug, please write an email to <a href="mailto:gcg-bugs@or.rwth-aachen.de">gcg-bugs@or.rwth-aachen.de</a>.
 	    </p>
   </div>
-
+-->
   <div>
     <h1 id="developers">Developers</h1>
     <h3>Project head</h3>
@@ -347,21 +400,53 @@
 
       <div>
       <h3 id="work">Related Work</h3>
+      <p>
+        GCG has already been used for many projects. Below, you can find some papers that are known to have used GCG.</br>
+        If you know about further projects or papers, please drop an Email under <a href="mailto:gcg@or.rwth-aachen.de">gcg@or.rwth-aachen.de</a>.
+      </p>
   	    <p id="papers" class="reveal">Papers That Use GCG</p>
   	    <li style="display: block;" id="papers_ans" class="answer">
     		  <ul>
-      		  <li><a href="http://dx.doi.org/10.1145/2851492">A Branch-Price-and-Cut Algorithm for Packing Cuts in Undirected Graphs</a>
-            Martin Bergner, Marco E. Lübbecke, Jonas T. Witt, Journal of Experimental Algorithmics (JEA) 21 (2016-): Article No. 1.2</li>
-            <li><a href="http://doi.org/10.1080/10556788.2013.768993">Solving a vehicle routing problem with resource conflicts and makespan objective with an application in car body manufacturing</a>
-      		  Jörg Rambau, Cornelius Schwarz, Optimization Methods and Software, Vol. 29, Iss. 2, 2014</li>
-      		  <li><a href="http://www.patatconference.org/patat2014/proceedings/2_26.pdf">Branch-and-price and improved bounds to the traveling umpire problem</a>
-      		  Túlio A. M. Toffolo, Sam van Malderen, Tony Wauters, Greet van den Berghe, Proceedings of the 10th international conference of the practice and theory of automated timetabling, 2014, pp. 420-32</li>
+            <li>M. Appel, M. Walther, and U. Konigorski.</br>
+            <a href="http://dx.doi.org/10.1515/auto-2018-0127"><b>Distributed trajectory planning for multi-agent discrete event systems</b></a></br>
+            at - Automatisierungstechnik, 67(9):751-761, 2019.</li>
+
+            <li>M. Bastubbe, M. Lübbecke, and J.T. Witt.</br>
+            <a href="http://dx.doi.org/10.4230/LIPIcs.SEA.2018.11"><b>A computational investigation on the strength of Dantzig-Wolfe reformulations</b></a></br>
+            In D'Angelo, G., Experimental Algorithms - SEA 2018, pp. 11:1—11:12, 2018.
+            Schloss Dagstuhl-Leibniz-Zentrum für Informatik. Leibniz International Proceedings in Informatics (LIPIcs), vol. 103</li>
+
+            <li>M. Bergner, M.E. Lübbecke, and J.T. Witt.</br>
+            <a href="http://dx.doi.org/10.1145/2851492"><b>A branch-price-and-cut algorithm for packing cuts in undirected graphs</b></a></br>
+            Journal of Experimental Algorithmics (JEA) 21: Article No. 1.2</li>
+
+            <li>M. Kruber, M. Lübbecke, and A. Parmentier.</br>
+            <a href="http://dx.doi.org/10.1007/978-3-319-59776-8_16"><b>Learning when to use a decomposition</b></a></br>
+            In Salvagnin, D. and Lombardi, M., Integration of AI and OR Techniques in Constraint Programming, pp. 202—210, 2017. Springer. Lecture Notes in Computer Science, vol 10335.</li>
+
+            <li>M. Lübbecke, Chr. Puchert.</br>
+            <a href="http://dx.doi.org/10.1007/978-3-642-29210-1_11"><b>Primal heuristics for branch-and-price algorithms</b></a></br>
+            In Klatte D., Lüthi HJ., Schmedders K. (eds)
+            Operations Research Proceedings 2011.
+            Springer, Berlin, Heidelberg, 2012.</li>
+
+            <li>M. Lübbecke and J.T. Witt.<br>
+            <a href="http://dx.doi.org/10.1007/978-3-319-20086-6_9"><b>Separation of generic cutting planes in branch-and-price using a basis</b></a></br>
+            In Bampis, E., Experimental Algorithms - SEA 2015, pp.110—121, 2015. Springer. Lecture Notes in Computer Science, vol 9125.</li>
+
+            <li>P. Lutter</br>
+            <a href="http://dx.doi.org/10.1016/j.cor.2015.10.003"><b>Optimized load planning for motorail transportation</b></a></br>
+            Computers & Operations Research 68:63–74, 2016.</li>
+
+            <li>J. Rambau and C. Schwarz.</br>
+            <a href="http://doi.org/10.1080/10556788.2013.768993"><b>Solving a vehicle routing problem with resource conflicts and makespan objective with an application in car body manufacturing</b></a></br>
+            Optimization Methods and Software, 29(2):353-375, 2014</li>
+
+            <li>T.A.M. Toffolo, S. van Malderen, T. Wauters, and G. van den Berghe.</br>
+            <a href="http://www.patatconference.org/patat2014/proceedings/2_26.pdf"><b>Branch-and-price and improved bounds to the traveling umpire problem</b></a></br>
+            Proceedings of the 10th international conference of the practice and theory of automated timetabling, 2014, pp. 420-432</li>
     		 </ul>
   	   </li>
-  	    <p>
-  	      If you know about further projects or papers that use GCG, please let us <a href="http://www.or.rwth-aachen.de/puchert">
-  		know</a>.
-  	    </p>
       </div>
 
       <div>
