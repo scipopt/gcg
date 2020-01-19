@@ -1,1 +1,1 @@
-# GCG as a Library {#useaslibrary} #
+# GCG as a Library {#useaslibrary}

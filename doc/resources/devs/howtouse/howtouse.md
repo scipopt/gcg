@@ -2,4 +2,5 @@
 - @subpage doc
 - @subpage dotesting
 - @subpage generatevisu
+- @subpage master-menu
 - @subpage useaslibrary

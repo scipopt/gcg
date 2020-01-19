@@ -1,4 +1,6 @@
 # The Explore Menu {#explore-menu}
+> The explore menu is a **submenu** in the interactive console.
+> You can leave submenus (e.g. <explore> or <master>) with `quit`.
 
 ## Enter the explore menu
 First, you have to `read` and `optimize`, or at least `detect` your problem. Then, like with all commands, just type `explore` in the interactive shell. GCG will show
@@ -101,3 +103,7 @@ Please specify the new score:
 8: strong decomposition score
 Note: Sets the detection/scoretype parameter to the given score.
 ```
+
+### Solve again with a different decomposition with `free`
+If you now want to solve your problem with a different decomposition, you first have to
+clear the problem from GCG's memory with `free`. Then, read it in again and you are ready to select a different decomposition.

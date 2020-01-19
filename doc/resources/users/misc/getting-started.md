@@ -15,12 +15,11 @@ GCG>
 
 ```
 
+> GCG has an interactive console.
+
 You can now enter commands into the interactive console.
 
 # Basic commands {#basic-commands}
-> In the interactive console, you can always leave a submenu with `..`. \n
-> If you want to quit GCG, just type `quit`.
-
 Now let's go ahead and read some problem:
 
 ### Make GCG know your problem with `read`
@@ -90,11 +89,6 @@ x#4#14                                              1 	(obj:0)
 ...
 
 ```
-
-### Start from new with `free`
-If you now want to start all over and read a different problem, that's no problem. `free` will happily
-remove the current LP from memory, such that you can then read another.
-
 
 ## Advanced Commands
 After these basic commands, you might want to change some more settings or give GCG information about your problem.
