@@ -8,11 +8,10 @@ for example compatibility and known bugs.
   - \subpage os-support
   - \subpage compiler-support
   - \subpage input-formats
-  - \subpage known-bugs
+- \subpage known-bugs
 - \subpage CHG
 - \subpage PARAMETERS
 - \subpage AUTHORS
-- \subpage PAPERS
 
 */
 

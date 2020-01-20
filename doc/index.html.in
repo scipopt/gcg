@@ -78,7 +78,7 @@
             </table>
             <p>
               Above, you see a problem before and after detection, showing what a 'decomposition' found by GCG looks like. If you want to know what that exactly what all of that means and how
-              it is done, just visit the <a href="doc-3.1.0/devs.html">Developer's Guide</a>.
+              it is done, just visit the <a href="doc-<CURRGCG/>/devs.html">Developer's Guide</a>.
             </p>
           </div>
 
@@ -205,14 +205,12 @@
     </style>
     <div>
       <h1 id="guides">Installation, Guides and Documentation</h1>
-      <p>Apart from this landing page, we also have a version-dependent documentation.
-        Besides the usual C-API, it also includes other useful information, such as helpful
-        guides, use cases and examples.
-         <a href="doc-3.1.0/install.html" target="_blank">Installation</a>,
-         <a href="doc-3.1.0/devs.html" target="_blank">User's Guide</a> and
-         <a href="doc-3.1.0/users.html" target="_blank">Developer's Guide</a>.</p>
+      <p>Apart from this landing page, we also have a <b>version-dependent documentation</b>.
+        Besides the usual <b>C-API</b>, it also includes <b>Installation Instructions</b> and other useful information, such as helpful
+        <b>guides</b>, <b>use-cases</b> and <b>application examples</b></a>.
+        .</p>
          <div class="mywrapper">
-           <button class="mybutton" style="vertical-align:middle; align:middle;" onclick="javascript:document.location='doc-3.1.0/index.html'"><span>GCG Documentation </span></button>
+           <button class="mybutton" style="vertical-align:middle; align:middle;" onclick="javascript:document.location='doc-<CURRGCG/>/index.html'"><span>GCG Documentation </span></button>
          </div>
     </div>
 

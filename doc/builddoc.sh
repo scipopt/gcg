@@ -118,7 +118,7 @@ SCIPOPTSUITEHEADER=`sed 's/\//\\\\\//g' scipoptsuiteheader.html.in | tr -d '\n'`
 DOCVERSIONS=`sed 's/\//\\\\\//g' docversions.html | tr -d '\n'`
 YEAR=`date +"%Y"`
 
-sed -e "s/<SCIPOPTSUITEHEADER\/>/${SCIPOPTSUITEHEADER}/g" -e "s/<DOCVERSIONS\/>/${DOCVERSIONS}/g" -e "s/..\/doc/doc/g" -e "s/<YEAR\/>/${YEAR}/g" < index.html.in > html/index.html
+sed -e "s/<SCIPOPTSUITEHEADER\/>/${SCIPOPTSUITEHEADER}/g" -e "s/<DOCVERSIONS\/>/${DOCVERSIONS}/g" -e "s/..\/doc/doc/g" -e "s/<YEAR\/>/${YEAR}/g" -e "s/<CURRGCG\/>/${CURRENT_VERSION}/g" < index.html.in > html/index.html
 sed -e "s/<SCIPOPTSUITEHEADER\/>/${SCIPOPTSUITEHEADER}/g" -e "s/<DOCVERSIONS\/>/${DOCVERSIONS}/g" < gcgheader.html.in > gcgheader.html
 
 # Build the gcg documentation.
