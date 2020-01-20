@@ -10,7 +10,7 @@
 | Windows 10 ([Visual Studio](https://visualstudio.microsoft.com/de/)) | no | no |  | tested with Visual Studio 2017 |
 | Windows 10 ([minGW](http://www.mingw.org/)) |  |  |  |  |
 
-For Windows, please also refer to our @ref windows-install .
+For Windows, please also refer to our @subpage windows-install .
 # Supported Compilers {#compiler-support}
 | Compiler | Support |
 |:---:     |:---:    |
