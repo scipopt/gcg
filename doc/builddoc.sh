@@ -90,7 +90,9 @@ echo " Requirement: Correctly installed php."
 cd resources/misc/faq
 python3 parser.py --linkext $HTML_FILE_EXTENSION  && php localfaq.php > faq.inc
 cd ../../../
-echo "<li><a href='../doc-${CURRENT_VERSION}/index.html'>GCG ${CURRENT_VERSION}</a></li>" > docversions.html
+echo "<li><a href='../doc-${CURRENT_VERSION}/index.html'>GCG ${CURRENT_VERSION}</a></li>" >> docversions.html
+# remove duplicates
+sort -u docversions.html -o docversions.html
 
 echo " Moving resources to doc folder..."
 cp -r resources/misc/scripts html
@@ -129,7 +131,7 @@ DOXYGEN_USE_MATHJAX=${DOXYGEN_USE_MATHJAX} doxygen gcg.dxy
 #sed -i 's/https:\/\/scip.zib.de\/images//g' html/doc/bootstrap/css/custom.css
 
 printf "\nCleaning up...\n"
-rm -rf html/doc-${CURRENT_VERSION} docversions.html gcgheader.html
+rm -rf html/doc-${CURRENT_VERSION} gcgheader.html
 mv html/doc html/doc-${CURRENT_VERSION}
 
 # Remove citelist.html (the Bibliography) manually from the menu (but still reachable via link)

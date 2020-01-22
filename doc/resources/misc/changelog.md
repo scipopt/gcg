@@ -1,6 +1,6 @@
 # GCG Changelog {#CHG}
 
-New features, peformance improvements, and interface changes between different versions of GCG are documented in the
+New features, performance improvements, and interface changes between different versions of GCG are documented in the
 release notes:
 
 - @subpage RN31
@@ -15,4 +15,3 @@ release notes:
 - @subpage RN06
 - @subpage RN05
 - @subpage RN04
-
