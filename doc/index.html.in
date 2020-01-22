@@ -150,7 +150,7 @@
       <p>
         <b>We recommend you to download the <a href="https://scip.zib.de/index.php#download">SCIP Optimization Suite</a></b>, a complete source
         code bundle of SCIP, SoPlex, ZIMPL, GCG and UG with an easy-to-use Makefile.<br/>
-        <b>However</b>, you can also download the <a href="https://gcg.or.rwth-aachen.de/dev/files/?C=M;O=D">GCG source code</a>.
+        <b>However</b>, you can also download the <a href="https://gcg.or.rwth-aachen.de/dev/files/">GCG source code</a>.
       </p>
       <p>
         <i>The files you can download here come without any warranty.
