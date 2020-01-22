@@ -8,7 +8,7 @@ for example compatibility and known bugs.
   - @subpage os-support
   - @subpage compiler-support
   - @subpage input-formats
-  - @subpage windows-install
+  - @ref windows-install
 - @subpage known-bugs
 - @subpage CHG
 - @subpage PARAMETERS

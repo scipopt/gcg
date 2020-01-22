@@ -1,2 +1,2 @@
 # FAQ Frequently Asked Questions (FAQ) {#FAQ}
-\htmlinclude faqfaq.inc
+@htmlinclude faq/faq.inc
