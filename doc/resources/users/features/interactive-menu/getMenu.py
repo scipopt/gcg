@@ -7,6 +7,12 @@ import os
 This script gets the menu of the currently compiled GCG version recursively.
 '''
 
+
+startstring = "<li>\n  <a href=\"#\" class=\"collapsible\"><code>"
+midstring   = "</code></a>\n  <div class=\"content\"><p>" # between command and description
+endstring   = "</p></div>\n</li>\n"
+
+
 def getSubmenu(command = "help", level = 0):
     #print("Command to be executed: " + command)
     quitCommand     = " -c 'quit'"
@@ -37,6 +43,10 @@ def getSubmenu(command = "help", level = 0):
     outs = str(outs).split("\n")
     return outs
 
+def escape(str):
+    # escapes a strings > and <, but recovers closing html 'code' tags
+    return str.replace(midstring, "<MIDSTRING/>").replace("<","&lt;").replace(">","&gt;").replace("&lt;MIDSTRING/&gt;", midstring)
+
 def getMenu(menu, level = 1, previousCmd = ""):
     #print("Trying to get submenu: " + str(menu))
     menu_temp = []
@@ -55,15 +65,15 @@ def getMenu(menu, level = 1, previousCmd = ""):
             #print("= WARNING: No options for menu {} =".format(menu[i]))
             #print("========================================")
             continue
-        elif menu[i].startswith("<set>") and level == 1:
+        #elif menu[i].startswith("<set>") and level == 1:
             #print("========================================")
             #print("= INFORMATION: Skipping <set> submenu. =")
             #print("========================================")
-            continue
+        #    continue
         elif menu[i] == '':
             continue
         else:
-            menu_temp.append(menu[i])
+            menu_temp.append(menu[i].split()[0] + midstring + str(menu[i].split(' ', 1)[1]).lstrip(' '))
         # check whether this item has a submenu and get it recursively
         if menu[i].startswith("<"):
             for item in getMenu(getSubmenu(previousCmd + menu[i].split('<')[1].split('>')[0],level=level), level = level+1, previousCmd = previousCmd + menu_temp[-1].split('<')[1].split('>')[0]+ " "):
@@ -78,9 +88,8 @@ def main():
     menu = getMenu(menu, level = 1)
     f = open("menu.txt", "w+")
     for entry in menu:
-        f.write(entry + "\n")
+        f.write(startstring + escape(entry) + endstring)
 
 
 if __name__ == '__main__':
     main()
-    

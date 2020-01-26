@@ -33,29 +33,35 @@
 #myUL li a:hover:not(.header) {
   background-color: #eee; /* Add a hover effect to all links, except for headers */
 }
+ü
+.collapsible {
+  background-color: #777;
+  color: white;
+  cursor: pointer;
+  padding: 18px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+}
+
+.active, .collapsible:hover {
+  background-color: #555;
+}
+
+.content {
+  padding: 0 18px;
+  display: none;
+  overflow: hidden;
+  background-color: #f1f1f1;
+}
 </style>
 <script>
-function myFunction() {
-  // Declare variables
-  var input, filter, ul, li, a, i, txtValue;
-  input = document.getElementById('myInput');
-  filter = input.value.toUpperCase();
-  ul = document.getElementById("myUL");
-  li = ul.getElementsByTagName('li');
 
-  // Loop through all list items, and hide those who don't match the search query
-  for (i = 0; i < li.length; i++) {
-    a = li[i].getElementsByTagName("a")[0];
-    txtValue = a.textContent || a.innerText;
-    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-      li[i].style.display = "";
-    } else {
-      li[i].style.display = "none";
-    }
-  }
-}
 </script>
 
+
 <div class="data">
-<input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for names..">
+<input type="text" id="myInput" onkeyup="search()" placeholder="Search for names..">
 <ul id="myUL">
