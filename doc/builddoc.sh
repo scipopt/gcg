@@ -77,9 +77,12 @@ wget https://scip.zib.de/bootstrap/css/bootstrap.min.css --output-document html/
 wget https://scip.zib.de/bootstrap/css/custom.css --output-document html/bootstrap/css/custom.css --quiet
 sed -i.bak 's/https:\/\/scip.zib.de\/images/..\/..\/img/g' html/bootstrap/css/custom.css && rm html/bootstrap/css/custom.css.bak
 # Getting fonts and css
-wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css --output-document html/bootstrap/css/font-awesome.min.css --quiet
-wget https://fonts.googleapis.com/css?family=Open+Sans --output-document html/bootstrap/css/font-googleapis.css --quiet
-wget https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFW50bbck.woff2 --output-document html/bootstrap/css/font-googleapis.woff2 --quiet
+wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css --output-document html/bootstrap/fonts/font-awesome.min.css --quiet
+wget https://fonts.googleapis.com/css?family=Open+Sans --output-document html/bootstrap/fonts/font-googleapis.css --quiet
+wget https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFW50bbck.woff2 --output-document html/bootstrap/fonts/font-googleapis.woff2 --quiet
+wget https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFW50bbck.woff2 --output-document html/bootstrap/fonts/font-googleapis.woff2 --quiet
+wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.woff2 --output-document html/bootstrap/fonts/fontawesome-webfont.woff2 --quiet
+
 # Getting js
 wget https://scip.zib.de/bootstrap/js/custom.js --output-document html/bootstrap/js/custom.js --quiet
 wget https://scip.zib.de/bootstrap/js/bootstrap.min.js --output-document html/bootstrap/js/bootstrap.min.js --quiet
