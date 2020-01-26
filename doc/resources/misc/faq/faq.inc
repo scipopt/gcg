@@ -131,7 +131,11 @@ After you obtained the required file, get started with our <a href="getting-star
     <div id="createsettingsfile_ans" class="answer">
       <p>
 A settings file should be located in the settings folder inside the root directory.
-In each line, a parameter can be set. This parameter is of the same form that it is in GCG,
+The most common way to generate a settings file is through the <code>set diffsave</code>
+command inside GCG that exports a <code>.set</code>-file with all parameters that
+you changed.\n
+Otherwise, you can also define a settings file by yourself. In each line, a parameter
+can be set. This parameter is of the same form that it is in GCG,
 for example "detection/detectors/connected/enabled". Often, these parameters are bools,
 so turning on the connected detector could be done by "detection/detectors/connected/enabled = TRUE".
 All possible parameters of GCG's current version can be found <a href="PARAMETERS.html">here</a>.

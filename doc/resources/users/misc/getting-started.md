@@ -1,4 +1,5 @@
 # Getting started {#getting-started}
+[TOC]
 # Start GCG {#start-gcg}
 If you did a "global" install with `make install` of the SCIP Optimization Suite,
 just type `gcg` into your console. \n
@@ -15,15 +16,36 @@ GCG>
 
 ```
 
-> GCG has an interactive console.
-
-You can now enter commands into the interactive console.
+What you see is an **interactive console**, i.e. you enter commands and get responses, after which you can then
+again enter a command. This means that you can also enter sequences to go deeper into the menu.
+First, let us ask what GCG can do for us.
 
 # Basic commands {#basic-commands}
-Now let's go ahead and read some problem:
+### Find out you can do here with `help`
+Everywhere in GCG, you can always execute `help` to find out what commands are expected in the place where you currently are.
+```
+GCG> help
+
+  <change>              change the problem
+  <display>             display information
+  <set>                 load/save/change parameters
+
+  ...
+
+  help                  display this help
+  optimize              solve the problem
+  read                  read a problem
+  quit                  leave GCG
+
+GCG>
+```
+As you can see, **some points are marked with brackets** `<...>`. This means that if you e.g. execute `change`,
+you will be prompted **additional commands** on what exactly you want to change. All **other points directly execute** the given command.\n
+
+> To search through the interactive menu, please consult our feature guide @ref interactive-menu.
 
 ### Make GCG know your problem with `read`
-With this command, GCG reads your LP file. If you, for example, go to `/check/instances/bpp` from your GCG root
+With this command, GCG **reads your problem file**. If you, for example, go to `/check/instances/bpp` from your GCG root
 directory, you can read the problem "N1C3W1_A.lp". The output looks as following:
 ```
 GCG> read
@@ -36,7 +58,7 @@ original problem has 1224 variables (0 bin, 1224 int, 0 impl, 0 cont) and 74 con
 
 ```
 
-You can obviously also read your own problem, as long as it is in a format as described in @subpage input-formats.
+To read your own problem, please use a format as described in @subpage input-formats (otherwise, you can also @ref reader "add your own reader").
 
 ### Solve your problem with `optimize`
 Here the magic happens: GCG optimizes what you previously read.
@@ -61,7 +83,6 @@ Matrix has 24 blocks, using 1 aggregated pricing problem.
    0.2s|     1 |     0 |      0 |      0 |     - |  14M|   0 |  48 |  75 |  52 |   0 |  0 | 1.587333e+01 | 2.200000e+01 |   0.00%|  38.60%
 Starting reduced cost pricing...
 *r 0.2s|     1 |     0 |    515 |    515 |     - |  15M|   0 | 122 |  75 |  52 |   0 |  0 | 1.587333e+01 | 1.600000e+01 |  12.13%|   0.80%
-   0.2s|     1 |     0 |    515 |    515 |     - |  15M|   0 | 122 |  75 |  52 |   0 |  0 | 1.587333e+01 | 1.600000e+01 |  12.13%|   0.80%
    0.2s|     1 |     0 |    516 |    516 |     - |  15M|   0 | 122 |  75 |  52 |   0 |  0 | 1.600000e+01 | 1.600000e+01 |  12.13%|   0.00%
    0.2s|     1 |     0 |    516 |    516 |     - |  15M|   0 | 122 |  75 |  52 |   0 |  0 | 1.600000e+01 | 1.600000e+01 |   --   |   0.00%
 
@@ -71,9 +92,11 @@ Solving Nodes      : 1
 Primal Bound       : +1.60000000000000e+01 (3 solutions)
 Dual Bound         : +1.60000000000000e+01
 Gap                : 0.00 %
-
-
 ```
+
+This log might look familiar if you already know SCIP. If you want to know more about the @ref dantzig "Dantzig-Wolfe Reformulation", @ref detection "Decomposition" or @ref pricing "Reduced Cost Pricing",
+please have a look into our @ref devs.
+
 
 ### Show the solution with `display solution`
 To get your solution, you can let GCG show you the solution with `display solution` or directly write it
@@ -90,7 +113,7 @@ x#4#14                                              1 	(obj:0)
 
 ```
 
-## Advanced Commands
+# Advanced Commands
 After these basic commands, you might want to change some more settings or give GCG information about your problem.
 
 ### GCG decompositions
