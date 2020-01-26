@@ -8,7 +8,7 @@ This script gets the menu of the currently compiled GCG version recursively.
 '''
 
 
-startstring = "<li>\n  <a href=\"#\" class=\"collapsible\"><code>"
+startstring = "<li>\n  <a class=\"collapsible\"><code>"
 midstring   = "</code></a>\n  <div class=\"content\"><p>" # between command and description
 endstring   = "</p></div>\n</li>\n"
 
