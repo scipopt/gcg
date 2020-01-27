@@ -1,8 +1,9 @@
 Installation {#install}
 ------------------
 
-> This guide shows you how to install GCG on your Linux or Mac computer. Note that
-> GCG cannot be installed on a windows machine. As a user, you can either
+> This guide shows you how to install GCG on your **Linux or Mac** computer. Note that
+> GCG cannot be installed on a **Windows** machine out of the box (see @ref windows-install "Windows Installation Guide" for more information).
+> As a user, you can either
 > * @ref install-scipopt including GCG (recommended) or do a
 > * @ref install-manually.<br>
 >
@@ -23,11 +24,11 @@ Install the required system libraries:
 
 
 ### Step 2: Get the SCIP Optimization Suite
-Download the archive and unzip it:
+Download the most recent SCIPOptSuite from the [SCIP Page](https://scip.zib.de/index.php#download).
+Unzip it and go into the folder, replacing `X.X.X` by the version you downloaded.
 
-    wget https://scip.zib.de/download.php?fname=scipoptsuite-6.0.1.tgz
-    tar xvzf scipoptsuite-6.0.1.tgz
-    cd scipoptsuite-6.0.1
+    tar xvzf scipoptsuite-X.X.X.tgz
+    cd scipoptsuite-X.X.X
 
 
 ### Step 3: Compile via CMake

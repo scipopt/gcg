@@ -9,7 +9,10 @@
           array(
               'question'=>'What is GCG?',
               'answer'=>'<p>
-GCG is...
+GCG is a <b>branch-price-and-cut solver</b> that also enables easy inclusion of own methods.
+With its different techniques such as Dantzig-Wolfe and Benders decomposition,
+GCG is able to solve some <b>instances much quicker</b> than other solvers, so
+it is always worth to let GCG solve your instance.
 </p>
 ',
               'label'=>'whatisgcg'
@@ -18,8 +21,12 @@ GCG is...
           array(
               'question'=>'When should I use GCG?',
               'answer'=>'<p>
-If you are looking for a speedup on many instances while using SCIP, a fast non-commercial MIP/MINLP-solver.
-GCG allows you to implement your own methods and take full control of the solving process.
+You should use GCG if you want to...
+<ul>
+<li>solve a problem that might have a <b>structure in it</b> (whether known or unknown) much faster (see <a href="gcg-vs-scip.html">GCG vs SCIP</a>)</li>
+<li>find out about how your problem is structured (see <a href="explore-menu.html">Explore Menu</a>)</li>
+<li>implement your own rules, heuristics and methods <b>without having to implement branch-and-price (see <a href="example-projects.html">Example Projects</a>)</b></li>
+</ul>
 </p>
 ',
               'label'=>'whenusegcg'
