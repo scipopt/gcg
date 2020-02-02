@@ -1,6 +1,6 @@
-# SCIP Variable Types Classifier {#clsvar_scipvartypes}
+# Type Classifier (SCIP Variable Type) {#clsvar_scipvartypes}
 
-This classifier adds variables to the master- or sub problem according to their **domain given by SCIP**.
+This classifier adds variables to classes according to their **domain given by SCIP**.
 There are four different variable types supported:
 
  * Binary (`bin`)
@@ -50,4 +50,4 @@ We look at a "text-book" mixed-integer program for the Lot-Sizing problem.
 
 We see that there are two different types of variables, which is detected by GCG:
 
-  Varclassifier "vartypes" yields a classification with 2 different variable classes
+    Varclassifier "vartypes" yields a classification with 2 different variable classes

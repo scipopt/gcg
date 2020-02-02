@@ -1,5 +1,4 @@
-# Objvaluesigns Classifier {#clsvar_objvaluesigns}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
+# Objective Function Coefficient Classifier (Signs) {#clsvar_objvaluesigns}
 
 This classifier adds variables \f$x_i\f$ to classes according to the **sign of their respective
 coefficient** \f$c_i\f$ in the objective function.
