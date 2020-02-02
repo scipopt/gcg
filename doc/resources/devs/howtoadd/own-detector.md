@@ -1,4 +1,4 @@
-# Detectors (deprecated) {#structure-detectors}
+# Your own Detector (deprecated) {#own-detector}
 
 Structure detectors are used to detect or enforce a structure suitable for Dantzig-Wolfe Reformulation (DWR).
 \n

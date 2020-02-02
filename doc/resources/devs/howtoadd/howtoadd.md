@@ -1,7 +1,8 @@
 # How to add {#howtoadd}
-- @subpage branchingrules
-- @subpage pricingsolvers
-- @subpage primalheuristics
-- @subpage reader
+- @subpage own-branching-rule
+- @subpage own-classifier
+- @subpage own-detector
+- @subpage own-pricing-solver
+- @subpage own-primal-heuristic
+- @subpage own-reader
 - @subpage storestructure
-- @subpage structure-detectors
