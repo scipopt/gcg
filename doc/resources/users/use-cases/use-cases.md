@@ -9,3 +9,5 @@ If you're new here, we recommend starting with the first one.
  Use Case 3: @subpage u3 \n
  Use Case 4: @subpage u4 \n
  Use Case 5: @subpage u5 \n
+ Use Case 6: @subpage u6 \n
+ Use Case 7: @subpage u7 \n
