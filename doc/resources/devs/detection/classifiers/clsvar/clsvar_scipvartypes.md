@@ -27,12 +27,9 @@ The handling for Benders' decomposition is as follows:
   * Binary variables will be added to the linking variables
   * Integer Variables, Implicit Integer Variables and Continuous Variables will be added to the block variables
 
-### Background
-
- * Different domains of variables usually hint to a different purpose of those.
-
-
 ### Example
+Different domains of variables usually hint to a different purpose of those.
+Thus, we find an example for a problem that one usually models using different variable types.<br>
 We look at a "text-book" mixed-integer program for the Lot-Sizing problem.
 
 **Given:** single product, \f$T\f$ periods, holding cost \f$l\f$ per unit, setup cost \f$r\f$ per lot, demand \f$b_t\f$ in period \f$t\f$ <br>
