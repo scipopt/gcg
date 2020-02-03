@@ -13,11 +13,10 @@ There, we implicitly (heuristically) go through "all" possible variables (*colum
 If a column yields a negative reduced cost, it will improve our currently best
 solution and thus we take it into our Restricted Master Problem.
 
-\n
 If you want to know more about this process, please check out the respective explanation pages
 for the components used during the pricing.
 
-@subpage pricing-loop\n
+@subpage pricing-process\n
 @subpage pricing-solvers
 
 \n

@@ -1,4 +1,4 @@
-# The Pricing Process {#pricing-process}
+# Pricing Process {#pricing-process}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 In every iteration of the branch-and-bound tree, instead of an LP solver, the GCG relaxator
