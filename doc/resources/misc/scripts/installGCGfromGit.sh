@@ -5,7 +5,7 @@ RED='\033[0;31m'
 W='\e[0m\n'
 B='\n\e[1m'
 
-FOLDER='gcg'
+FOLDER='gcg_myrepo'
 BRANCH='master'
 SYS='make'
 MODE='default'
