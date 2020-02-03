@@ -1,6 +1,6 @@
 # The GCG Detection {#detection}
 
-> The detection of structures in a given model is one of the main features that
+> The **detection of structures** in a given model is one of the main features that
 > distinguishes GCG from SCIP. It accelerates the solving speed of many problems.
 > For further reading, please consult the @ref use-cases "Use-Cases", in particular @ref u2 "the second one".
 
@@ -20,5 +20,12 @@ Our **detection** is executed in a **loop**, where all detectors are called one 
 Furthermore, one can also activate an alternative different detection mode, namely the
 **benders detection**. A description of both is given on the following subpages.
 
-@subpage detectionloop\n
+@subpage detection-process\n
 @subpage benders\n
+
+\n
+If you want to **write your own** classifiers and detectors, please consult the "How to"
+for that.
+
+@ref own-classifier\n
+@ref own-detector\n

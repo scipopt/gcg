@@ -89,7 +89,7 @@ You may also add user parameters for your detector, see the parameters documenta
 the method SCIPincludeDetectionBorderheur() in dec_connected.c for an example.
 
 
-# Fundamental Callback Methods of a Detector {#DEC_FUNDAMENTALCALLBACKS'}
+# Fundamental Callback Methods of a Detector {#DEC_FUNDAMENTALCALLBACKS}
 
 The fundamental callback methods of the plug-ins are the ones that have to be implemented in order to obtain
 an operational algorithm. Detector plug-ins have only one fundamental callback method, namely the DETECTSTRUCTURE method.

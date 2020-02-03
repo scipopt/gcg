@@ -7491,7 +7491,7 @@
 </li>
 <li>
   <a class="collapsible"><code>fix limits gap</code></a>
-  <div class="content"><p>solving stops, if the relative gap = |primal - dual|/MIN(|dual|,|primal|) is below the given value [not fixed]</p></div>
+  <div class="content"><p>solving stops, if the relative gap = |primal - dual|/MIN(|dual|,|primal|) is below the given value, the gap is 'Infinity', if primal and dual bound have opposite signs [not fixed]</p></div>
 </li>
 <li>
   <a class="collapsible"><code>fix limits maxorigsol</code></a>
@@ -7795,7 +7795,7 @@
 </li>
 <li>
   <a class="collapsible"><code>fix misc usesymmetry</code></a>
-  <div class="content"><p>used symmetry handling technique (0: off; 1: polyhedral; 2: orbital fixing) [not fixed]</p></div>
+  <div class="content"><p>bitset describing used symmetry handling technique (0: off; 1: polyhedral (orbitopes and/or symresacks); 2: orbital fixing; 3: orbitopes and orbital fixing), see type_symmetry.h. [not fixed]</p></div>
 </li>
 <li>
   <a class="collapsible"><code>fix misc usevartable</code></a>
@@ -18059,7 +18059,7 @@
 </li>
 <li>
   <a class="collapsible"><code>set limits gap</code></a>
-  <div class="content"><p>solving stops, if the relative gap = |primal - dual|/MIN(|dual|,|primal|) is below the given value [0.0]</p></div>
+  <div class="content"><p>solving stops, if the relative gap = |primal - dual|/MIN(|dual|,|primal|) is below the given value, the gap is 'Infinity', if primal and dual bound have opposite signs [0.0]</p></div>
 </li>
 <li>
   <a class="collapsible"><code>set limits maxorigsol</code></a>
@@ -18367,7 +18367,7 @@
 </li>
 <li>
   <a class="collapsible"><code>set misc usesymmetry</code></a>
-  <div class="content"><p>used symmetry handling technique (0: off; 1: polyhedral; 2: orbital fixing) [2]</p></div>
+  <div class="content"><p>bitset describing used symmetry handling technique (0: off; 1: polyhedral (orbitopes and/or symresacks); 2: orbital fixing; 3: orbitopes and orbital fixing), see type_symmetry.h. [3]</p></div>
 </li>
 <li>
   <a class="collapsible"><code>set misc usevartable</code></a>
@@ -20763,7 +20763,7 @@
 </li>
 <li>
   <a class="collapsible"><code>set separating rapidlearning advanced mindegeneracy</code></a>
-  <div class="content"><p>minimal degeneracy threshold to allow local rapid learning [0.8]</p></div>
+  <div class="content"><p>minimal degeneracy threshold to allow local rapid learning [0.7]</p></div>
 </li>
 <li>
   <a class="collapsible"><code>set separating rapidlearning advanced mininflpratio</code></a>
