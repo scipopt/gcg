@@ -33,4 +33,4 @@ Currently this is being implemented in the method DECcreateDecompFromMasterconss
  * allowing decompositions with only one pricing problem by just removing generalized covering and partitioning constraints.
 
 ### Links
-Documentation: http://www.or.rwth-aachen.de/gcg/doc/dec__connected_8c.html
+* Documentation: [dec__connected_8cpp.html](dec__connected_8cpp.html)

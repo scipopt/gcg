@@ -18,4 +18,4 @@ no parameters; we should introduce a parameter to determine the value of nbits
 Test the detector with nbits > 2. Try different types of color classes (maybe also depending on number of non-zeros or something else)
 
 ### Links
- * Documentation: http://www.or.rwth-aachen.de/gcg/doc/dec__colors_8cpp.html
+ * Documentation: [dec__colors_8cpp.html](dec__colors_8cpp.html)

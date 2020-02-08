@@ -32,6 +32,7 @@ In the current implementation, a Push-Relabel algorithm with the Gap Relabeling 
 Different ways to construct decompositions from Gomory-Hu trees need to be developed as contracting tree-edges of maximum weight does not always lead to good decompositions. For example, this rule does not take into account the sizes of the blocks that are merged together. This often results in decompositions with few big blocks and some blocks that only contain single constraints.
 
 ### Links
+ * Documentation: [dec__gomory_8cpp.html](dec__gomory_8cpp.html)
 * [[1] Dan Gusfield, Very Simple Methods for All Pairs Network Flow Analysis](http://epubs.siam.org/doi/abs/10.1137/0219009)
 * [[2] Regina Klimmek, Frank Wagner, A Simple Hypergraph Min Cut Algorithm](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.31.4535)
 * [[3] E.L. Lawler, Cutsets and partitions of hypergraphs](http://onlinelibrary.wiley.com/doi/10.1002/net.3230030306/abstract)

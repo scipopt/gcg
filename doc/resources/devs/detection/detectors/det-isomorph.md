@@ -1,7 +1,7 @@
 # Isomorph Detector (deprecated) {#det-isomorph}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-> Does not exist anymore.
+> This detector does not exist anymore. It was replaced by the colors detector @todo check
 
 This detector finds subproblems that can be aggregated thus reducing the symmetry of the problem using color preserving automorphisms and bliss.
 
@@ -24,7 +24,6 @@ To find subproblems the detector proceeds as follows:
 
 ```
 ```
-
 
 ### Future work
 

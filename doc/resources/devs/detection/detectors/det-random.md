@@ -13,4 +13,4 @@ Assigns to every constraint randomly equally
 
 
 ### Links
- * Documentation: http://www.or.rwth-aachen.de/gcg/doc/dec__random_8c.html
+ * Documentation: [dec__random_8cpp.html](dec__random_8cpp.html)

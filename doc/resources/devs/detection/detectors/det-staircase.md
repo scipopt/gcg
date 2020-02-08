@@ -19,4 +19,4 @@ This detector detects staircase structures in the constraint matrix by searching
 Each BFS layer does not necessarily form a connected connected component of the graph and therefore it could be split up into different blocks if it is not connected.
 
 ### Links
- * Documentation:http://www.or.rwth-aachen.de/gcg/doc/dec__staircase_8c.html
+ * Documentation: [dec__staircase_lsp_8cpp.html](dec__staircase_lsp_8cpp.html)
