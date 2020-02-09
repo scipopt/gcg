@@ -17,11 +17,11 @@ Here is what you have to do to implement a detector:
    \n
    Make sure to adjust your Makefile such that these files are compiled and linked to your project.
 - Open the new files with a text editor and replace all occurrences of "xyz" by "mydetector".
-- Adjust the properties of the detector (see \ref DEC_PROPERTIES).
-- Define the detector data (see \ref DEC_DATA). This is optional.
-- Implement the interface methods (see \ref DEC_INTERFACE).
-- Implement the fundamental callback methods (see ???).
-- Implement the additional callback methods (see \ref DEC_ADDITIONALCALLBACKS). This is optional.
+- Adjust the properties of the detector (see @ref DEC_PROPERTIES).
+- Define the detector data (see @ref DEC_DATA). This is optional.
+- Implement the interface methods (see @ref DEC_INTERFACE).
+- Implement the fundamental callback methods (see @ref DEC_FUNDAMENTALCALLBACKS).
+- Implement the additional callback methods (see @ref DEC_ADDITIONALCALLBACKS). This is optional.
 
 
 # Properties of a Detector {#DEC_PROPERTIES}
@@ -92,20 +92,18 @@ the method SCIPincludeDetectionBorderheur() in dec_connected.c for an example.
 # Fundamental Callback Methods of a Detector {#DEC_FUNDAMENTALCALLBACKS}
 
 The fundamental callback methods of the plug-ins are the ones that have to be implemented in order to obtain
-an operational algorithm. Detector plug-ins have only one fundamental callback method, namely the DETECTSTRUCTURE method.
-This method has to be implemented for every detector; the other callback methods are optional.
+an operational algorithm. Detector plug-ins have three main functions:
+ * Propagating (assigning variables/constraints to block or master),
+ * Finishing (given a partialdec (incomplete decomposition), find finished partialdecs) and
+ * Postprocessing (postprocess a given finished partialdec to find a different yet promising one).
+At least one of the following methods has to be implemented for every detector; the other callback methods are optional.
 
 Additional documentation to the callback methods, in particular to their input parameters,
 can be found in type_detector.h.
 
-## DETECTSTRUCTURE
-
-The DETECTSTRUCTURE callback is called during the detection loop and should perform the actual detection.
-It should inspect the problem instance at hand and deduct some structure from the constraint matrix.
-It needs to store the structure information in ??? and needs to allocate the array where to store the
-information.
-
-Typical methods called by a detector are, for example, SCIPgetVars(), SCIPGetConss(), DECcreateDecompFromMasterconss(), etc. .
+## DEC_DECL_PROPAGATEPARTIALDEC
+## DEC_DECL_FINISHPARTIALDEC
+## DEC_DECL_POSTPROCESSPARTIALDEC
 
 # Additional Callback Methods of a Detector {#DEC_ADDITIONALCALLBACKS}
 
@@ -118,7 +116,7 @@ The difference between the original and the transformed problem is explained in
 
 ## DETECTOREXIT
 
-If you are using detection data (see \ref DEC_DATA and \ref DEC_INTERFACE), you have to implement this method in order to free the detection data.
+If you are using detection data (see @ref DEC_DATA and @ref DEC_INTERFACE), you have to implement this method in order to free the detection data.
 This can be done by the following procedure:
 ```C
 static
