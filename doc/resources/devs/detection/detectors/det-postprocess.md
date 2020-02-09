@@ -3,9 +3,9 @@
 
 This detector is our default postprocessing detector. It is called to add all unassigned constraints/variables to the master.
 
-|         Detector (ID)       | Propagate | Finish | Postprocess |
-|-----------------------------|:---------:|:------:|:-----------:|
-| postprocess                 |   |   | ✓ |
+| ID |          Full Name          | Propagate | Finish | Postprocess |
+|----|-----------------------------|:---------:|:------:|:-----------:|
+| ?  | postprocess                 |   |   | ✓ |
 
 ### Details
 

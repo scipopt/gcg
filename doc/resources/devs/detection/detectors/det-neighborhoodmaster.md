@@ -3,9 +3,9 @@
 
 Brief description missing.
 
-|         Detector (ID)       | Propagate | Finish | Postprocess |
-|-----------------------------|:---------:|:------:|:-----------:|
-| neighborhoodmaster          | ✓ |   |   |
+| ID |          Full Name          | Propagate | Finish | Postprocess |
+|----|-----------------------------|:---------:|:------:|:-----------:|
+| ?  | neighborhoodmaster          | ✓ |   |   |
 
 ### Details
 

@@ -3,9 +3,9 @@
 
 This detector assigns the open cons and open vars of the partialdec greedily.
 
-|         Detector (ID)       | Propagate | Finish | Postprocess |
-|-----------------------------|:---------:|:------:|:-----------:|
-| compgreedily                | ✓ | ✓ |   |
+| ID |          Full Name          | Propagate | Finish | Postprocess |
+|----|-----------------------------|:---------:|:------:|:-----------:|
+| ?  | compgreedily                | ✓ | ✓ |   |
 
 
 ### Details

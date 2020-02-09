@@ -3,9 +3,9 @@
 
 Brief description missing.
 
-|         Detector (ID)       | Propagate | Finish | Postprocess |
-|-----------------------------|:---------:|:------:|:-----------:|
-| mastersetcover              | ✓ |   |   |
+| ID |          Full Name          | Propagate | Finish | Postprocess |
+|----|-----------------------------|:---------:|:------:|:-----------:|
+| ?  | mastersetcover              | ✓ |   |   |
 
 ### Details
 

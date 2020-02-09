@@ -3,9 +3,9 @@
 
 Brief description missing.
 
-|         Detector (ID)       | Propagate | Finish | Postprocess |
-|-----------------------------|:---------:|:------:|:-----------:|
-| generalmastersetpart        | ✓ |   |   |
+| ID |          Full Name          | Propagate | Finish | Postprocess |
+|----|-----------------------------|:---------:|:------:|:-----------:|
+| ?  | generalmastersetpart        | ✓ |   |   |
 
 
 ### Details

@@ -3,9 +3,9 @@
 
 This detector finds staircase structures via matrix reordering algorithms.
 
-|         Detector (ID)       | Propagate | Finish | Postprocess |
-|-----------------------------|:---------:|:------:|:-----------:|
-| stairheur                   | ✓ |   |   |
+| ID |          Full Name          | Propagate | Finish | Postprocess |
+|----|-----------------------------|:---------:|:------:|:-----------:|
+| ?  | stairheur                   | ✓ |   |   |
 
 
 ### Details

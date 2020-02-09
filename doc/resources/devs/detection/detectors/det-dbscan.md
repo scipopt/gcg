@@ -3,9 +3,9 @@
 
 This detector performs DBSCAN clustering.
 
-|         Detector (ID)       | Propagate | Finish | Postprocess |
-|-----------------------------|:---------:|:------:|:-----------:|
-| dbscan                      | ✓ |   |   |
+| ID |          Full Name          | Propagate | Finish | Postprocess |
+|----|-----------------------------|:---------:|:------:|:-----------:|
+| ?  | dbscan                      | ✓ |   |   |
 
 
 ### Details

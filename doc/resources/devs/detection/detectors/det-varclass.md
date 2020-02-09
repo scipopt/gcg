@@ -3,9 +3,9 @@
 
 This detector uses the classes identified by the **variable classifiers**.
 
-|         Detector (ID)       | Propagate | Finish | Postprocess |
-|-----------------------------|:---------:|:------:|:-----------:|
-| varclass                    | ✓ |   |   |
+| ID |          Full Name          | Propagate | Finish | Postprocess |
+|----|-----------------------------|:---------:|:------:|:-----------:|
+| ?  | varclass                    | ✓ |   |   |
 
 ### Details
 

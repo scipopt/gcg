@@ -3,9 +3,9 @@
 
 Brief description missing.
 
-|         Detector (ID)       | Propagate | Finish | Postprocess |
-|-----------------------------|:---------:|:------:|:-----------:|
-| hrgpartition                | ✓ |   |   |
+| ID |          Full Name          | Propagate | Finish | Postprocess |
+|----|-----------------------------|:---------:|:------:|:-----------:|
+| ?  | hrgpartition                | ✓ |   |   |
 
 
 ### Details

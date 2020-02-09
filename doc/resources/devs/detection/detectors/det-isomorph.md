@@ -3,9 +3,9 @@
 
 This detector finds subproblems that can be aggregated thus reducing the symmetry of the problem using color preserving automorphisms and bliss.
 
-|         Detector (ID)       | Propagate | Finish | Postprocess |
-|-----------------------------|:---------:|:------:|:-----------:|
-| isomorph                    | ✓ |   |   |
+| ID |          Full Name          | Propagate | Finish | Postprocess |
+|----|-----------------------------|:---------:|:------:|:-----------:|
+| ?  | isomorph                    | ✓ |   |   |
 
 
 ### Details

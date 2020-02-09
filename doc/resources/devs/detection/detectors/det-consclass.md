@@ -3,9 +3,9 @@
 
 This detector uses the classes identified by the **constraint classifiers**.
 
-|         Detector (ID)       | Propagate | Finish | Postprocess |
-|-----------------------------|:---------:|:------:|:-----------:|
-| consclass                   | ✓ |   |   |
+| ID |          Full Name          | Propagate | Finish | Postprocess |
+|----|-----------------------------|:---------:|:------:|:-----------:|
+| ?  | consclass                   | ✓ |   |   |
 
 
 ### Details

@@ -9,7 +9,7 @@ function out of
 * **finishing** (**assigning all remaining** variables/constraints to a block or the master)
 * **postprocessing** (**reassigning all remaining** variables/constraints to a block or the master to get a better finished decomposition).
 
-For an overview of which detector does what of those three core functionalities, please check the @subpage det-function-overview.
+For an overview of which detector does what of those three core functionalities, please check the @subpage detectors-overview.
 
 ## Detectors
 Detectors based on constraint or variable classes:
