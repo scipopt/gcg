@@ -8,4 +8,4 @@ Brief description missing.
 ### Parameters
 
 ### Links
- * Documentation: [dec__densemasterconss_8cpp.html](dec__densemasterconss_8cpp.html)
+ * Documentation: dec_densemasterconss.cpp

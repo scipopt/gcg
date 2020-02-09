@@ -8,4 +8,4 @@ Brief description missing.
 ### Parameters
 
 ### Links
- * Documentation: [dec__hrgpartition_8cpp.html](dec__hrgpartition_8cpp.html)
+ * Documentation: dec_hrgpartition.cpp

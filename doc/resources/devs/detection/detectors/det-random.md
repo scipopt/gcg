@@ -1,7 +1,7 @@
-# Random Detector {#det-random}
+# Random Detector (not in refactoring) {#det-random}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-Assigns to every constraint randomly equally
+Assigns to every constraint randomly equally.
 
 ### Details
 
@@ -13,4 +13,4 @@ Assigns to every constraint randomly equally
 
 
 ### Links
- * Documentation: [dec__random_8cpp.html](dec__random_8cpp.html)
+ * Documentation: dec_random.cpp

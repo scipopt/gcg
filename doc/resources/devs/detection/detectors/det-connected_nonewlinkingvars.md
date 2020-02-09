@@ -1,4 +1,4 @@
-# Connected_nonewlinkingvars Detector {#det-connected_nonewlinkingvars}
+# Connected Detector (nonewlinkingvars) {#det-connected_nonewlinkingvars}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 Brief description missing.
@@ -8,4 +8,4 @@ Brief description missing.
 ### Parameters
 
 ### Links
- * Documentation: [dec__connected_nonewlinkingvars_8cpp.html](dec__connected_nonewlinkingvars_8cpp.html)
+ * Documentation: dec_connected_noNewLinkingVars.cpp

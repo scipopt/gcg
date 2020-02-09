@@ -1,4 +1,4 @@
-# Colors Detector {#det-colors}
+# Colors Detector (not in refactoring) {#det-colors}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 The detector assigns color classes to constraints and tries combinations of colors in the master.
@@ -11,11 +11,13 @@ To detect decompositions the detector uses the following steps:
 2. For each set X of color classes with cardinality k with 2 <= k <= nbits, where nbits is set to 2, a decomposition with constraints that belong to a color class in X in the master is created.
 
 ### Parameters
+
 ```
 no parameters; we should introduce a parameter to determine the value of nbits
 ```
+
 ### Future work
 Test the detector with nbits > 2. Try different types of color classes (maybe also depending on number of non-zeros or something else)
 
 ### Links
- * Documentation: [dec__colors_8cpp.html](dec__colors_8cpp.html)
+ * Documentation: dec_colors.cpp

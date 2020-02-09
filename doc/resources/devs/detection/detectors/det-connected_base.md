@@ -1,11 +1,12 @@
-# Connected_base Detector {#det-connected_base}
+# Connected Detector (base) {#det-connected_base}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-Brief description missing.
+This detector assigns all constraints and variables to the same block if they are connected,
+A constraint and a variable are adjacent if the variable appears in the constraint.
 
 ### Details
 
 ### Parameters
 
 ### Links
- * Documentation: [dec__connected_base_8cpp.html](dec__connected_base_8cpp.html)
+ * Documentation: dec_connectedbase.cpp

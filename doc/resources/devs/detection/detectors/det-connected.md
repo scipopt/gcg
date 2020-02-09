@@ -1,5 +1,8 @@
-# Connected Detector {#det-connected}
+# Connected Detector (not in refactoring) {#det-connected}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
+
+> This detector was replaced by the @ref det-connected_base and @ref det-connected_nonewlinkingvars.
+> This documentation page will thusly be removed in a later version.
 
 The Connected Detector finds variables shared by constraints and places those constraints into the same block.
 
@@ -33,4 +36,3 @@ Currently this is being implemented in the method DECcreateDecompFromMasterconss
  * allowing decompositions with only one pricing problem by just removing generalized covering and partitioning constraints.
 
 ### Links
-* Documentation: [dec__connected_8cpp.html](dec__connected_8cpp.html)

@@ -8,4 +8,4 @@ This detector uses the classes identified by the **variable classifiers**.
 ### Parameters
 
 ### Links
- * Documentation: [dec__varclass_8cpp.html](dec__varclass_8cpp.html)
+ * Documentation: dec_varclass.cpp

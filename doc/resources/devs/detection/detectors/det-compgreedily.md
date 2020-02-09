@@ -1,11 +1,11 @@
 # Compgreedily Detector {#det-compgreedily}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-Completes the seeed greedily, such that incomplete seeeds can then be used.
+This detector assigns the open cons and open vars of the partialdec greedily.
 
 ### Details
 
 ### Parameters
 
 ### Links
- * Documentation: [dec__compgreedily_8cpp.html](dec__compgreedily_8cpp.html)
+ * Documentation: dec_compgreedily.cpp

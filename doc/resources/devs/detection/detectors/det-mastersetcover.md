@@ -8,4 +8,4 @@ Brief description missing.
 ### Parameters
 
 ### Links
- * Documentation: [dec__mastersetcover_8cpp.html](dec__mastersetcover_8cpp.html)
+ * Documentation: dec_mastersetcover.cpp

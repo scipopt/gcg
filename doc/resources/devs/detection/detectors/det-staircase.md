@@ -1,4 +1,4 @@
-# Staircase Detector {#det-staircase}
+# Staircase Detector (not in refactoring) {#det-staircase}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 This detector detects staircase structures in the constraint matrix by searching for the longest shortest path in the row graph of the matrix.
@@ -19,4 +19,4 @@ This detector detects staircase structures in the constraint matrix by searching
 Each BFS layer does not necessarily form a connected connected component of the graph and therefore it could be split up into different blocks if it is not connected.
 
 ### Links
- * Documentation: [dec__staircase_lsp_8cpp.html](dec__staircase_lsp_8cpp.html)
+ * Documentation: dec_staircase_lsp.cpp

@@ -1,11 +1,3 @@
-# Consname Detector (deprecated) {#det-consname}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
+# Consname Detector (will be removed) {#det-consname}
 
 This detector was replaced by the consclass detector and will be removed in a future version.
-
-### Details
-
-### Parameters
-
-### Links
- * Documentation: [dec__mastersetcover_8cpp.html](dec__mastersetcover_8cpp.html)

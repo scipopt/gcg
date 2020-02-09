@@ -1,4 +1,4 @@
-# Cutpacking Detector {#det-cutpacking}
+# Cutpacking Detector (not in refactoring) {#det-cutpacking}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 This detector tries to find a staircase structure by recursively partitioning the row graph of the matrix.
@@ -40,6 +40,6 @@ The detector proceeds as follows:
 The detector is still quite slow :snail: on larger instances, see issue #78, but there is no big hope to fix this.
 
 ### Links
- * Documentation: [dec__cutpacking_8cpp.html](dec__cutpacking_8cpp.html)
+ * Documentation: dec_cutpacking.cpp
  * [[1] hMETIS - Hypergraph & Circuit Partitioning](http://glaros.dtc.umn.edu/gkhome/metis/hmetis/overview)
  * [[2] Mechthild Stoer, Frank Wagner: A simple min-cut algorithm](http://dl.acm.org/ft_gateway.cfm?id=263872&ftid=11827&dwn=1&CFID=576236458&CFTOKEN=91189897)

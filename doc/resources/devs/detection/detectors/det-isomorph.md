@@ -31,4 +31,4 @@ If the graph is not coherent, BLISS returns more than one generator. To get all 
 
 
 ### Links
- * Documentation: http://www.or.rwth-aachen.de/gcg/doc/dec__isomorph_8cpp.html
+ * Documentation: dec_isomorph.cpp

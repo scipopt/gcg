@@ -8,4 +8,4 @@ Brief description missing.
 ### Parameters
 
 ### Links
- * Documentation: [dec__neighborhoodmaster_8cpp.html](dec__neighborhoodmaster_8cpp.html)
+ * Documentation: dec_neighborhoodmaster.cpp

@@ -8,4 +8,4 @@ Brief description missing.
 ### Parameters
 
 ### Links
- * Documentation: [dec__generalmastersetpart_8cpp.html](dec__generalmastersetpart_8cpp.html)
+ * Documentation: dec_generalmastersetpart.cpp
