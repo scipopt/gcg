@@ -3,6 +3,11 @@
 
 This detector performs minimum spanning tree clustering.
 
+|         Detector (ID)       | Propagate | Finish | Postprocess |
+|-----------------------------|:---------:|:------:|:-----------:|
+| mst                         | ✓ |   |   |
+
+
 ### Details
 
 ### Parameters

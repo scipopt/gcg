@@ -1,9 +1,11 @@
-# Isomorph Detector (deprecated) {#det-isomorph}
+# Isomorph Detector {#det-isomorph}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-> This detector does not exist anymore. It was replaced by the colors detector @todo check
-
 This detector finds subproblems that can be aggregated thus reducing the symmetry of the problem using color preserving automorphisms and bliss.
+
+|         Detector (ID)       | Propagate | Finish | Postprocess |
+|-----------------------------|:---------:|:------:|:-----------:|
+| isomorph                    | ✓ |   |   |
 
 
 ### Details

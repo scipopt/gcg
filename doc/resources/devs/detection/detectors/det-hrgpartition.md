@@ -3,6 +3,11 @@
 
 Brief description missing.
 
+|         Detector (ID)       | Propagate | Finish | Postprocess |
+|-----------------------------|:---------:|:------:|:-----------:|
+| hrgpartition                | ✓ |   |   |
+
+
 ### Details
 
 ### Parameters

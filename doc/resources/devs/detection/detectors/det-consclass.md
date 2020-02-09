@@ -3,6 +3,11 @@
 
 This detector uses the classes identified by the **constraint classifiers**.
 
+|         Detector (ID)       | Propagate | Finish | Postprocess |
+|-----------------------------|:---------:|:------:|:-----------:|
+| consclass                   | ✓ |   |   |
+
+
 ### Details
 
 ### Parameters

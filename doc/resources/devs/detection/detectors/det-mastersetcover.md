@@ -3,6 +3,10 @@
 
 Brief description missing.
 
+|         Detector (ID)       | Propagate | Finish | Postprocess |
+|-----------------------------|:---------:|:------:|:-----------:|
+| mastersetcover              | ✓ |   |   |
+
 ### Details
 
 ### Parameters

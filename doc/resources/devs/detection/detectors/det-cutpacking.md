@@ -1,5 +1,6 @@
 # Cutpacking Detector (not in refactoring) {#det-cutpacking}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
+> This detector will be removed in a future version.\n
+> It was replaced by the @ref det-staircase-lsp and @ref det-staircaseheur.
 
 This detector tries to find a staircase structure by recursively partitioning the row graph of the matrix.
 

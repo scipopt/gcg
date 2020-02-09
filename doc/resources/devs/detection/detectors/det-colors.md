@@ -1,5 +1,6 @@
 # Colors Detector (not in refactoring) {#det-colors}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
+> This detector will be removed in a future version.
+> It was replaced by the @ref det-isomorph
 
 The detector assigns color classes to constraints and tries combinations of colors in the master.
 

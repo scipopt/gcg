@@ -1,5 +1,5 @@
 # Random Detector (not in refactoring) {#det-random}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
+> This detector will be removed in a future version.\n
 
 Assigns to every constraint randomly equally.
 

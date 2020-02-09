@@ -1,8 +1,6 @@
 # Connected Detector (not in refactoring) {#det-connected}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
-
-> This detector was replaced by the @ref det-connected_base and @ref det-connected_nonewlinkingvars.
-> This documentation page will thusly be removed in a later version.
+> This detector will be removed in a future version.\n
+> It was replaced by the @ref det-connected_base and @ref det-connected_nonewlinkingvars.
 
 The Connected Detector finds variables shared by constraints and places those constraints into the same block.
 
