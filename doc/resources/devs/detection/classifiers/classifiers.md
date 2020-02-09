@@ -16,4 +16,3 @@ a short description of their functionality.
 
 - @subpage clsvar "Overview: Variable Classifiers"
 - @subpage clscons "Overview: Constraint Classifiers"
-- @subpage clsindex "Overview: Index Classifiers"
