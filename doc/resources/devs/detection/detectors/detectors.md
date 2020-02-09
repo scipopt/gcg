@@ -13,7 +13,6 @@ Here you find a list of all detectors available in GCG and a short description o
 - @subpage det-generalmastersetcover
 - @subpage det-generalmastersetpack
 - @subpage det-generalmastersetpart
-- @subpage det-gomory
 - @subpage det-hcgpartition
 - @subpage det-hrcgpartition
 - @subpage det-hrgpartition
