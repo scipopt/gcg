@@ -4,8 +4,9 @@ Constraint classifiers can store in `ConsClassDecompInfo` how the constraints of
  * ONLY_MASTER -> assigned to master problem
  * ONLY_PRICING -> assigned to pricing problem
 
-- @subpage clscons_consnamelevenshtein
-- @subpage clscons_consnamenonumbers
-- @subpage clscons_miplibconstypes
-- @subpage clscons_nnonzeros
-- @subpage clscons_scipconstypes
+ The following constraint classifiers are available:
+ - @subpage clscons_scipconstypes
+ - @subpage clscons_miplibconstypes
+ - @subpage clscons_nnonzeros
+ - @subpage clscons_consnamenonumbers
+ - @subpage clscons_consnamelevenshtein

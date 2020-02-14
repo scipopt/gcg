@@ -5,6 +5,7 @@ Variable classifiers can store in `VarClassDecompInfo` how the variables of a cl
  * MASTER = 2 -> as master variables
  * BLOCK = 3  -> as block variables
 
-- @subpage clsvar_objvaluesigns
-- @subpage clsvar_objvalues
+The following variable classifiers are available:
 - @subpage clsvar_scipvartypes
+- @subpage clsvar_objvalues
+- @subpage clsvar_objvaluesigns

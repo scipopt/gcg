@@ -26,8 +26,8 @@ makeSubpageIndexing () {
 
 makeSubpageIndexing "resources/devs/howtoadd/" "How to add"
 makeSubpageIndexing "resources/devs/howtouse/" "How to use"
-makeSubpageIndexing "resources/devs/detection/classifiers/clsvar/" "Variable Classifiers"
-makeSubpageIndexing "resources/devs/detection/classifiers/clscons/" "Constraint Classifiers"
+#makeSubpageIndexing "resources/devs/detection/classifiers/clsvar/" "Variable Classifiers"
+#makeSubpageIndexing "resources/devs/detection/classifiers/clscons/" "Constraint Classifiers"
 
 ./resources/users/features/interactive-menu/generateMenu.sh
 

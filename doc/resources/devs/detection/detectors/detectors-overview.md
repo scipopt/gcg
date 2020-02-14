@@ -28,4 +28,3 @@ more information, see @ref detection.
 | ?  | staircase_lsp               | ✓ | ✓ |   |
 | ?  | stairheur                   | ✓ |   |   |
 | ?  | varclass                    | ✓ |   |   |
-| ?  
