@@ -37,3 +37,4 @@ GCG allows much easier implementation of anything that is somehow related to bra
 It may facilitate the understanding to know about the interaction between GCG and SCIP:
 
 @subpage mirroring "Interaction during Branching"
+@subpage preprocessing

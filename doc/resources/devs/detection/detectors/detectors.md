@@ -26,12 +26,13 @@ Detectors finding **connections** between constraints via variables:
 - @subpage det-connected_base
 - @subpage det-connected_nonewlinkingvars
 
-
-Currently uncategorized detectors:
-- @subpage det-densemasterconss
+Detectors finding **set structures** (covering, partitioning and packing):
 - @subpage det-generalmastersetcover
 - @subpage det-generalmastersetpack
 - @subpage det-generalmastersetpart
+
+Currently uncategorized detectors:
+- @subpage det-densemasterconss
 - @subpage det-hcgpartition
 - @subpage det-hrcgpartition
 - @subpage det-hrgpartition
