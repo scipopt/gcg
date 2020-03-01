@@ -11,7 +11,8 @@ function out of
 
 For an overview of which detector does what of those three core functionalities, please check the @subpage detectors-overview.
 
-## Detectors
+### Detectors
+#### Working detectors
 Detectors based on constraint or variable classes:
 - @subpage det-consclass
 - @subpage det-varclass
@@ -20,12 +21,6 @@ Detectors based on constraint or variable classes:
 Detectors for staircase structures:
 - @subpage det-staircase_lsp
 - @subpage det-stairheur
-
-
-Detectors performing clustering:
-- @subpage det-mst
-- @subpage det-dbscan
-
 
 Detectors finding **connections** between constraints via variables:
 - @subpage det-connected_base
@@ -40,7 +35,6 @@ Currently uncategorized detectors:
 - @subpage det-hcgpartition
 - @subpage det-hrcgpartition
 - @subpage det-hrgpartition
-- @subpage det-isomorph
 - @subpage det-mastersetcover
 - @subpage det-mastersetpack
 - @subpage det-mastersetpart
@@ -51,14 +45,26 @@ Detectors used for detection algorithmics:
 - @subpage det-compgreedily
 - @subpage det-postprocess
 
+<hr>
+#### Existing in the refactoring, but currently not in use
 
-Detectors that will be removed after the refactoring or are already removed:
+Detectors performing clustering (currently not in refactoring):
+- @subpage det-mst
+- @subpage det-dbscan
+
+Other detectors:
+- @subpage det-isomorph
+
+<hr>
+#### Will be removed after the refactoring or are already removed
+
+Legacy Mode detectors:
 - @subpage det-staircase
 - @subpage det-colors
 - @subpage det-cutpacking
 - @subpage det-connected
 - @subpage det-random
 
-Detectors that will be removed:
+Duplicates:
 - @subpage det-constype
 - @subpage det-consname
