@@ -1,4 +1,4 @@
-# Varclass Detector {#det-varclass}
+# Variable Class Detector {#det-varclass}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 This detector uses the classes identified by the **variable classifiers**.
@@ -8,6 +8,17 @@ This detector uses the classes identified by the **variable classifiers**.
 | ?  | varclass                    | ✓ |   |   |
 
 ### Details
+
+The Variable Class Detector creates partial decompositions by fixing some variables to the master problem and some to the linking variables, leaving the remaining variables open (for finishing). This is done as follows:
+ * Iterate over all used variable classifiers
+   * Iterate over all classes this classifier found and sort the respective index into the `linking` and `master` index vectors if the `DecompInfo` was set to `linking`/`master`.
+   * Iterate over all possible subsets of classes (`MASTER`, `BLOCK` and `LINKING`) for this classifier.
+    * Iterate over all open variables
+     * If the variable class is inside the current subset of variable classes, fix it to the linking variables
+     * If the decomposition info says it belongs into the linking variables, fix it to the linking variables
+     * If the decomposition info says it belongs into the master variables, fix it to the master variables
+
+This resuls in all possible partial decompositions where the constraints of one class are either all in the master problem or all in pricing problems.
 
 ### Parameters
 
