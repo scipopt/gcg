@@ -1,10 +1,10 @@
-# Setpacking Detector {#det-generalmastersetpack}
+# General Set Packing Detector {#det-generalmastersetpack}
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | generalmastersetpack        | ✓ |   |   |  
 
 This detector sets the following constraint types as master constraints:
-- set covering constraints
+- set packing constraints
 - constraints with \f$\text{rhs}\geq 0\f$ and \f$\text{lhs}=-\infty\f$
 
 

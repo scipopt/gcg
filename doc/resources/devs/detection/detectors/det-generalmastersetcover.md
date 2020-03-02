@@ -1,4 +1,4 @@
-# Setcovering Detector {#det-generalmastersetcover}
+# General Set Covering Detector {#det-generalmastersetcover}
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | generalmastersetcover       | ✓ |   |   |  

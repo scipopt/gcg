@@ -1,12 +1,11 @@
 # Constraint Class Detector {#det-consclass}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-This detector uses the classes identified by the **constraint classifiers**.
-
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | consclass                   | ✓ |   |   |
 
+This detector uses the classes identified by the **constraint classifiers**.
 
 ### Details
 The Consclass Detector creates partial decompositions by fixing some constraints to the master problem and leaving the remaining constraints open (for finishing). This is done as follows:

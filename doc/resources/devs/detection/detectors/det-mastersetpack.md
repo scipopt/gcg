@@ -1,14 +1,16 @@
-# Mastersetpack Detector {#det-mastersetpack}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
-
-Brief description missing.
+#  Set Packing Detector {#det-mastersetpack}
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | mastersetpack               | ✓ |   |   |
 
+This detector sets the following constraint types as master constraints:
+- set packing constraints
 
 ### Details
+This detector adds the aforementioned constraints to the master. This is done as follows:
+* Iterate over all open constraints
+ * If the constraint's type (determined in [preprocessing](#preprocessing)) is `setpacking`, fix it to the master
 
 ### Parameters
 

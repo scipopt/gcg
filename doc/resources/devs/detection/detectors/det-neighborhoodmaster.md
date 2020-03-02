@@ -1,11 +1,11 @@
 # Neighborhoodmaster Detector {#det-neighborhoodmaster}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-Brief description missing.
-
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | neighborhoodmaster          | ✓ |   |   |
+
+This detector calculates cons-cons adjacency (if not already done) and sorts constraints according to the size of their neighborhood. It then searches for two consecutive constraints with largest size difference (according neighborhood size) in the sorted constraints. All constraints having a larger neighborhood than the second one are then assigned to the master.
 
 ### Details
 

@@ -13,12 +13,12 @@ For an overview of which detector does what of those three core functionalities,
 
 ### Detectors
 #### Working detectors
-Detectors based on constraint or variable classes:
+Detectors based on **constraint or variable classes**:
 - @subpage det-consclass
 - @subpage det-varclass
 
 
-Detectors for staircase structures:
+Detectors finding **staircase structures**:
 - @subpage det-staircase_lsp
 - @subpage det-stairheur
 
@@ -27,20 +27,21 @@ Detectors finding **connections** between constraints via variables:
 - @subpage det-connected_nonewlinkingvars
 
 Detectors finding **set structures** (covering, partitioning and packing):
+- @subpage det-mastersetcover
 - @subpage det-generalmastersetcover
+- @subpage det-mastersetpack
 - @subpage det-generalmastersetpack
+- @subpage det-mastersetpart
 - @subpage det-generalmastersetpart
 
-Currently uncategorized detectors:
-- @subpage det-densemasterconss
+Detectors finding **arrowhead structures**:
 - @subpage det-hcgpartition
 - @subpage det-hrcgpartition
 - @subpage det-hrgpartition
-- @subpage det-mastersetcover
-- @subpage det-mastersetpack
-- @subpage det-mastersetpart
-- @subpage det-neighborhoodmaster
 
+Currently uncategorized detectors:
+- @subpage det-densemasterconss
+- @subpage det-neighborhoodmaster
 
 Detectors used for detection algorithmics:
 - @subpage det-compgreedily

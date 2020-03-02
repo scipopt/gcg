@@ -1,10 +1,10 @@
-# Setpartitioning Detector {#det-generalmastersetpart}
+# General Set Partitioning Detector {#det-generalmastersetpart}
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | generalmastersetpart        | ✓ |   |   |  
 
 This detector sets the following constraint types as master constraints:
-- set covering constraints
+- set partitioning constraints
 - constraints with \f$\text{rhs}\geq 0\f$ and \f$\text{rhs}\geq 0\f$ and \f$\text{rhs} = \text{lhs}\f$
 
 

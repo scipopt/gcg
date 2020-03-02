@@ -1,12 +1,15 @@
 # Hcgpartition Detector {#det-hcgpartition}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-Brief description missing.
-
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | hcgpartition                | ✓ | ✓ |   |
 
+This detector detects [arrowhead](#arrowhead) structures as well as structures
+with only linking variables or linking constraints.
+
+**Note:** This detector needs hmetis and works only under Linux/MacOS, it further needs the Z-shell (zsh)
+to enforce memory and time limits on hmetis as this is the only shell reliably doing that.
 
 ### Details
 

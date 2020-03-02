@@ -1,12 +1,11 @@
-# Staircase Detector (heuristically) {#det-stairheur}
+# Staircase Detector (Matrix Reordering) {#det-stairheur}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
-
-This detector finds staircase structures via matrix reordering algorithms.
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | stairheur                   | ✓ |   |   |
 
+This detector finds staircase structures via **matrix reordering** algorithms.
 
 ### Details
 

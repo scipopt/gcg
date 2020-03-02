@@ -1,13 +1,16 @@
-# Mastersetcover Detector {#det-mastersetcover}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
-
-Brief description missing.
+# Set Covering Detector {#det-mastersetcover}
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | mastersetcover              | ✓ |   |   |
 
+This detector sets the following constraint types as master constraints:
+- set covering constraints
+
 ### Details
+This detector adds the aforementioned constraints to the master. This is done as follows:
+* Iterate over all open constraints
+ * If the constraint's type (determined in [preprocessing](#preprocessing)) is `setcovering` or `logicor`, fix it to the master
 
 ### Parameters
 
