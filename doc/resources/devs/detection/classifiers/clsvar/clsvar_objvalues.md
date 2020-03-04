@@ -1,5 +1,4 @@
 # Objective Function Coefficient Classifier (Values) {#clsvar_objvalues}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 This classifier adds variables \f$x_i\f$ to classes according to the **value of their respective
 coefficient** \f$c_i\f$ in the objective function.

@@ -1,5 +1,4 @@
 # Coefficient Classifier (N-nonzeros) {#clscons_nnonzeros}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 This classifier adds constraints to classes according to the **number of different variable coefficients**.
 

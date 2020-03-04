@@ -1,5 +1,4 @@
 # Type Classifier (SCIP Constraint Type) {#clscons_scipconstypes}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 This classifier adds constraints to classes according to their **type given by SCIP**.
 There are different constraint types supported:

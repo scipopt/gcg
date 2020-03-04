@@ -1,5 +1,4 @@
 # Type Classifier (MIPLIB Constraint Type) {#clscons_miplibconstypes}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 This classifier adds constraints to classes according to their **type as defined by the MIPLIB and given by SCIP**.
 There are different constraint types supported:
