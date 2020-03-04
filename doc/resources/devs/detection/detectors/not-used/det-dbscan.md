@@ -10,6 +10,13 @@ This detector performs DBSCAN clustering.
 
 ### Details
 
+For the distance measure, different similarities can be used. Those are:
+ * Johnson Similarity
+ * Intersection Similarity
+ * Jaccard Similarity
+ * Cosine Similarity
+ * Simpson Similarity
+
 ### Parameters
 ```
 

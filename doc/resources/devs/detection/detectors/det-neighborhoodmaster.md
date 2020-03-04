@@ -1,4 +1,4 @@
-# Neighborhoodmaster Detector {#det-neighborhoodmaster}
+# Constraint Neighborhood Detector {#det-neighborhoodmaster}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |

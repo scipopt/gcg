@@ -17,14 +17,17 @@ Detectors based on **constraint or variable classes**:
 - @subpage det-consclass
 - @subpage det-varclass
 
-
 Detectors finding **staircase structures**:
 - @subpage det-staircase_lsp
 - @subpage det-stairheur
 
-Detectors finding **connections** between constraints via variables:
+Detectors finding **inter-constraint connections**:
 - @subpage det-connected_base
 - @subpage det-connected_nonewlinkingvars
+- @subpage det-neighborhoodmaster
+
+Detectors finding **intra-constraint connections**:
+- @subpage det-densemasterconss
 
 Detectors finding **set structures** (covering, partitioning and packing):
 - @subpage det-mastersetcover
@@ -34,14 +37,10 @@ Detectors finding **set structures** (covering, partitioning and packing):
 - @subpage det-mastersetpart
 - @subpage det-generalmastersetpart
 
-Detectors finding **arrowhead structures**:
+Detectors finding **arrowhead** and **single-bordered structures**:
 - @subpage det-hcgpartition
-- @subpage det-hrcgpartition
 - @subpage det-hrgpartition
-
-Currently uncategorized detectors:
-- @subpage det-densemasterconss
-- @subpage det-neighborhoodmaster
+- @subpage det-hrcgpartition
 
 Detectors used for detection algorithmics:
 - @subpage det-compgreedily
