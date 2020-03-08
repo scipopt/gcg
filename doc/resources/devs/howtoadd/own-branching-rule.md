@@ -1,4 +1,5 @@
 # Your own Branching Rule (deprecated) {#own-branching-rule}
+> **This page is currently being refactored. Some things might still be outdated.**
 
  Branching in the branch-cut-and-price context is a bit more complicated than in a branch-and-cut algorithm.
  GCG manages two SCIP instances, one for the original instance and one for the reformulated instance, that are solved jointly.

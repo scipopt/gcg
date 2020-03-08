@@ -69,3 +69,9 @@ Legacy Mode detectors:
 Duplicates:
 - @subpage det-constype
 - @subpage det-consname
+
+\n
+If you want to **write your own** detector, please consult the "How to"
+for that.
+
+@ref own-detector\n

@@ -1,32 +1,30 @@
-# Your own Detector (deprecated) {#own-detector}
+# Your own Detector {#own-detector}
+> **This page is currently being refactored. Some things might still be outdated.**
+
+[TOC]
 
 Structure detectors are used to detect or enforce a structure suitable for Dantzig-Wolfe Reformulation (DWR).
 \n
-A complete list of all detectors/enforcers contained in this release can be found "here" (please add).
+A complete list of all detectors contained in this release can be found [here](#detectors).
 
-In the following, we explain how the user can add its own structure enforcement plug-in.
-Take the basic detector (dec_connected.c) as an example.
-As all other default plug-ins, it is written in C. There is currently no C++ wrapper available.
 
-Additional documentation for the callback methods of structure detectors, in particular for their input parameters,
-can be found in the file type_detector.h.
-
-Here is what you have to do to implement a detector:
-- Copy the template files src/dec_xyz.c and src/dec_xyz.h into files named "dec_mydetector.c"
-   and "dec_mydetector.h".
-   \n
-   Make sure to adjust your Makefile such that these files are compiled and linked to your project.
-- Open the new files with a text editor and replace all occurrences of "xyz" by "mydetector".
-- Adjust the properties of the detector (see @ref DEC_PROPERTIES).
-- Define the detector data (see @ref DEC_DATA). This is optional.
-- Implement the interface methods (see @ref DEC_INTERFACE).
-- Implement the fundamental callback methods (see @ref DEC_FUNDAMENTALCALLBACKS).
-- Implement the additional callback methods (see @ref DEC_ADDITIONALCALLBACKS). This is optional.
+With the following steps, we explain how you can **add your own structure detection plug-in**:
+1. Choose a name `mydetector` for your detector.
+2. Copy the template files `src/dec_xyz.c` and `src/dec_xyz.h`
+   while renaming `xyz` to `mydetector`.
+3. Adjust your Makefile such that these files are compiled and linked to your project by adding the respective line
+   to the list under `LIBOBJ =` in the file `Makefile` in the root folder.
+4. Open the new files with a text editor and replace all occurrences of `xyz` by `myclassifier`.
+5. Adjust the properties of the detector (see @ref DEC_PROPERTIES).
+6. [optional] Define the detector data (see @ref DEC_DATA).
+7. Implement the interface methods (see @ref DEC_INTERFACE).
+8. Implement the fundamental callback methods (see @ref DEC_FUNDAMENTALCALLBACKS).
+9. [optional] Implement the additional callback methods (see @ref DEC_ADDITIONALCALLBACKS).
 
 
 # Properties of a Detector {#DEC_PROPERTIES}
 
-At the top of the new file "dec_mydetector.c", you can find the detector properties.
+At the top of the new file dec_xyz.c, you can find the detector properties.
 These are given as compiler defines.
 The properties you have to set have the following meaning:
 
@@ -68,14 +66,14 @@ Defining detector data is optional. You can leave this struct empty.
 
 # Interface Methods {#DEC_INTERFACE}
 
-At the bottom of "dec_mydetector.c", you can find the interface method SCIPincludeDetectionMyDetector(),
-which also appears in "dec_mydetector.h".
+At the bottom of "dec_xyz.c", you can find the interface method SCIPincludeDetectorXyz(),
+which also appears in "dec_xyz.h".
 \n
 This method has to be adjusted only slightly.
 It is responsible for notifying GCG (and especially cons_decomp.c) of the presence of the detector by calling the method
 DECincludeDetector().
-SCIPincludeDetectionMyDetector() is called by the user, if he wants to include the detector,
-i.e., if he wants to use the detector in his application.
+SCIPincludeDetectorXyz() is called by the user to include the detector,
+i.e., to use the detector in the application.
 
 If you are using detector data, you have to allocate the memory for the data at this point.
 You can do this by calling
@@ -83,7 +81,7 @@ You can do this by calling
 SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
 ```
 You also have to initialize the fields in struct SCIP_DetectorData afterwards. For freeing the
-detector data, see ???.
+detector data, see @ref DEC_ADDITIONALCALLBACKS.
 
 You may also add user parameters for your detector, see the parameters documentation of \SCIP for how to add user parameters and
 the method SCIPincludeDetectionBorderheur() in dec_connected.c for an example.
@@ -101,20 +99,26 @@ At least one of the following methods has to be implemented for every detector; 
 Additional documentation to the callback methods, in particular to their input parameters,
 can be found in type_detector.h.
 
-## DEC_DECL_PROPAGATEPARTIALDEC
-## DEC_DECL_FINISHPARTIALDEC
-## DEC_DECL_POSTPROCESSPARTIALDEC
+## DEC_DECL_PROPAGATEPARTIALDEC()
+This function will assign variables/constraints to block or master. A commonly called function is
+DECcreateDecompFromMasterconss().
+
+## DEC_DECL_FINISHPARTIALDEC()
+This function will, given a partial decomposition, finish it.
+
+## DEC_DECL_POSTPROCESSPARTIALDEC()
+This function postprocesses a given finished partial decomposition to find a different yet promising one.
 
 # Additional Callback Methods of a Detector {#DEC_ADDITIONALCALLBACKS}
 
-## DETECTORINIT
+## detectorInit()
 
-The INITDETECTOR callback is executed after the problem was transformed.
+The detectorInit() callback is executed after the problem was transformed.
 The detector may, e.g., use this call to initialize his detector data.
 The difference between the original and the transformed problem is explained in
 "What is this thing with the original and the transformed problem about?" on ???.
 
-## DETECTOREXIT
+## detectorExit()
 
 If you are using detection data (see @ref DEC_DATA and @ref DEC_INTERFACE), you have to implement this method in order to free the detection data.
 This can be done by the following procedure:
@@ -136,5 +140,7 @@ DEC_DECL_EXITDETECTOR(decExitMydetector)
 ```
 If you have allocated memory for fields in your detector data, remember to free this memory
 before freeing the detector data itself.
-The DETECTOREXIT callback is executed before the solution process is started.
+The detectorExit callback is executed before the solution process is started.
 In this method, the detector should free all resources that have been allocated for the detection process in ???.
+
+## detectorFree

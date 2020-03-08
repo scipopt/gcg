@@ -14,3 +14,9 @@ a short description of their functionality.
 
 - @subpage clsvar "Overview: Variable Classifiers"
 - @subpage clscons "Overview: Constraint Classifiers"
+
+\n
+If you want to **write your own** classifier, please consult the "How to"
+for that.
+
+@ref own-classifier\n

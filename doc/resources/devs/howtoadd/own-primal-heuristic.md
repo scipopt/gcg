@@ -1,4 +1,5 @@
 # Your own Primal Heuristic (deprecated) # {#own-primal-heuristic}
+> **This page is currently being refactored. Some things might still be outdated.**
 
  For general information on how to add your own primal heuristics to GCG, first check the SCIP documentation.
  However, one has to take into account some peculiarities when implementing heuristics that are included
