@@ -1,6 +1,9 @@
 # Your own Branching Rule (deprecated) {#own-branching-rule}
 > **This page is currently being refactored. Some things might still be outdated.**
 
+> **Important Links:**
+> - [SCIP Documentation: How to add branching rules](https://scip.zib.de/doc-6.0.2/html/BRANCH.php)
+
  Branching in the branch-cut-and-price context is a bit more complicated than in a branch-and-cut algorithm.
  GCG manages two SCIP instances, one for the original instance and one for the reformulated instance, that are solved jointly.
  The original SCIP instance coordinates the solving process, while the reformulated instance builds the tree in the same

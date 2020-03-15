@@ -9,22 +9,27 @@ inside a [detector](#detectors) in a later stage of the [detection](#detection-p
 A complete list of all classifiers contained in this release can be found [here](#classifiers).
 
 With the following steps, we explain how you can **add your own constraint/variable classifier plugin**:
-1. Choose a name `myclassifier` for your classifier.
-2. Copy the template files `src/clsons_XYZ.cpp`/`src/clsvar_XYZ.cpp` and `src/clsons_XYZ.h`/`src/clsvar_XYZ.h`
+1. **Preparations**
+  1. Choose a name `myclassifier` for your classifier.
+  2. Copy the template files `src/clsons_xyz.cpp`/`src/clsvar_xyz.cpp` and `src/clsons_xyz.h`/`src/clsvar_xyz.h`
    while renaming `XYZ` to `myclassifier`.
-3. Adjust your Makefile such that these files are compiled and linked to your project by adding the respective line
-   to the list under `LIBOBJ =` in the file `Makefile` in the root folder.
-4. Open the new files with a text editor and replace all occurrences of `XYZ` by `myclassifier`.
-5. Adjust the properties of the detector (see @ref CLS_PROPERTIES).
-6. [optional] Define the detector data (see @ref CLS_DATA).
-7. Implement the interface methods (see @ref CLS_INTERFACE).
-8. Implement the fundamental callback methods (see @ref CLS_FUNDAMENTALCALLBACKS).
-9. [optional] Implement the additional callback methods (see @ref CLS_ADDITIONALCALLBACKS).
-
+  3. Open the new files with a text editor and replace all occurrences of `XYZ` by `myclassifier`.
+2. **Creating your Classifier**
+  1. Adjust the properties of the detector (see @ref CLS_PROPERTIES).
+  2. [optional] Define the detector data (see @ref CLS_DATA).
+  3. Implement the interface methods (see @ref CLS_INTERFACE).
+  4. Implement the fundamental callback methods (see @ref CLS_FUNDAMENTALCALLBACKS).
+  5. [optional] Implement the additional callback methods (see @ref CLS_ADDITIONALCALLBACKS).
+3. **Make GCG use it**
+  1. Add it to gcgplugins.c by adding the line `#include clscons_myclassifer.h`/`#include clsvar_myclassifer.h` in the `/* classifiers */` section.
+  2. Add it to your build system:
+    1. _Using Makefile:_ Add your classifier `.o` (`clsons_myclassifier.o`/`clsvar_myclassifier.o`) to the list below `LIBOBJ =` in the file `Makefile` in the root folder.
+    2. _Using CMake:_ In `src/CMakeLists.txt`, add your `clscons_myclassifier.cpp`/`clsvar_myclassifier.cpp` below `set(gcgsources` and your
+   `clscons_myclassifier.h`/`clsvar_myclassifier.h` below the line `set(gcgheaders`.
 
 # Properties of a Classifier {#CLS_PROPERTIES}
 
-At the top of the new file clscons_XYZ.cpp/clsvar_XYZ.cpp, you can find the detector properties.
+At the top of the new file clscons_xyz.cpp/clsvar_xyz.cpp, you can find the detector properties.
 These are given as compiler defines.
 The properties you have to set have the following meaning:
 
@@ -35,23 +40,29 @@ This name is used in the interactive shell to address the classifier. Names have
 This string is printed as description of the classifier in the interactive shell.
 
 @par DEC_PRIORITY: priority of classifier
+At the begin of the detection process, the classifiers are called in a predefined order, which is given by the priorities of those. The classifiers are called in the order of decreasing priority.
+
+\par DEC_ENABLED: Flag to indicate whether the detector should be enabled by default.
+Disabled classifiers are not started.
 
 @par DEC_ENABLEDORIG: classify on original problem
+Set this flag to true if the classifier should classify on the original (non-presolved) problem.
 
 @par DEC_ENABLEDPRESOLVED: classify on presolved problem
+Set this flag to true if the classifier should classify on the presolved problem.
 
 # Classifier Data {#CLS_DATA}
 
 Defining classifier data is optional.
 
 # Interface Methods {#CLS_INTERFACE}
-At the bottom of clscons_XYZ.cpp/clsvar_XYZ.cpp, you can find the interface method SCIPincludeConsClassifierXYZ()/SCIPincludeVarClassifierXYZ(),
-which also appears in clscons_XYZ.h/clsvar_XYZ.h.
+At the bottom of clscons_xyz.cpp/clsvar_xyz.cpp, you can find the interface method SCIPincludeConsClassifierXyz()/SCIPincludeVarClassifierXyz(),
+which also appears in clscons_xyz.h/clsvar_xyz.h.
 \n
 This method has to be adjusted only slightly.
 It is responsible for notifying GCG (and especially cons_decomp.c) of the presence of the detector by calling the method
 DECincludeConsClassifier()/DECincludeVarClassifier().
-SCIPincludeConsClassifierXYZ()/SCIPincludeVarClassifierXYZ() is called by the user to include the detector,
+SCIPincludeConsClassifierXyz()/SCIPincludeVarClassifierXyz() is called by the user to include the detector,
 i.e., to use the detector in the application.
 
 If you are using detector data, you have to allocate the memory for the data at this point.

@@ -3,7 +3,7 @@
 
 [TOC]
 
-Structure detectors are used to detect or enforce a structure suitable for Dantzig-Wolfe Reformulation (DWR).
+Structure detectors are used to **detect or enforce a structure suitable for Dantzig-Wolfe Reformulation (DWR)**.
 \n
 A complete list of all detectors contained in this release can be found [here](#detectors).
 
@@ -12,8 +12,10 @@ With the following steps, we explain how you can **add your own structure detect
 1. Choose a name `mydetector` for your detector.
 2. Copy the template files `src/dec_xyz.c` and `src/dec_xyz.h`
    while renaming `xyz` to `mydetector`.
-3. Adjust your Makefile such that these files are compiled and linked to your project by adding the respective line
-   to the list under `LIBOBJ =` in the file `Makefile` in the root folder.
+3. _Using Makefile:_ Adjust your Makefile such that these files are compiled and linked to your project by adding your classifier with ending `.o`
+  (`dec_mydetector.o`) to the list under `LIBOBJ =` in the file `Makefile` in the root folder.\n
+  _Using CMake:_ In `src/CMakeLists.txt`, add your `dec_mydetector.cpp` below `set(gcgsources` and your
+  `dec_mydetector.h` below the line `set(gcgheaders`.
 4. Open the new files with a text editor and replace all occurrences of `xyz` by `myclassifier`.
 5. Adjust the properties of the detector (see @ref DEC_PROPERTIES).
 6. [optional] Define the detector data (see @ref DEC_DATA).
