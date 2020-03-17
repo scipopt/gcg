@@ -13,7 +13,7 @@ With the following steps, we explain how you can **add your own constraint/varia
   1. Choose a name `myclassifier` for your classifier.
   2. Copy the template files `src/clsons_xyz.cpp`/`src/clsvar_xyz.cpp` and `src/clsons_xyz.h`/`src/clsvar_xyz.h`
    while renaming `XYZ` to `myclassifier`.
-  3. Open the new files with a text editor and replace all occurrences of `XYZ` by `myclassifier`.
+  3. Open the new files with a text editor and replace all occurrences of `Xyz` by `Myclassifier` and `xyz` by `myclassifier`.
 2. **Creating your Classifier**
   1. Adjust the properties of the detector (see @ref CLS_PROPERTIES).
   2. [optional] Define the detector data (see @ref CLS_DATA).
@@ -21,7 +21,9 @@ With the following steps, we explain how you can **add your own constraint/varia
   4. Implement the fundamental callback methods (see @ref CLS_FUNDAMENTALCALLBACKS).
   5. [optional] Implement the additional callback methods (see @ref CLS_ADDITIONALCALLBACKS).
 3. **Make GCG use it**
-  1. Add it to gcgplugins.c by adding the line `#include clscons_myclassifer.h`/`#include clsvar_myclassifer.h` in the `/* classifiers */` section.
+  1. Add it to gcgplugins.c by adding
+    1. the line `#include clscons_myclassifer.h`/`#include clsvar_myclassifer.h` in the `/* classifiers */` section.
+    2. the line `SCIP_CALL( SCIPincludeConsClassifierMyclassifier(scip) );` in  the `/* Classifiers */` section.
   2. Add it to your build system:
     1. _Using Makefile:_ Add your classifier `.o` (`clsons_myclassifier.o`/`clsvar_myclassifier.o`) to the list below `LIBOBJ =` in the file `Makefile` in the root folder.
     2. _Using CMake:_ In `src/CMakeLists.txt`, add your `clscons_myclassifier.cpp`/`clsvar_myclassifier.cpp` below `set(gcgsources` and your
@@ -34,15 +36,15 @@ These are given as compiler defines.
 The properties you have to set have the following meaning:
 
 @par DEC_CLASSIFIERNAME: the name of classifier
-This name is used in the interactive shell to address the classifier. Names have to be unique: no two detectors may have the same name.
+This name is used in the interactive shell to address the classifier. Names have to be unique: no two classifiers may have the same name.
 
 @par DEC_DESC: short description of classification
 This string is printed as description of the classifier in the interactive shell.
 
 @par DEC_PRIORITY: priority of classifier
-At the begin of the detection process, the classifiers are called in a predefined order, which is given by the priorities of those. The classifiers are called in the order of decreasing priority.
+At the start of the detection process, the classifiers are called in a predefined order, which is given by the priorities of those. The classifiers are called in the order of decreasing priority.
 
-\par DEC_ENABLED: Flag to indicate whether the detector should be enabled by default.
+\par DEC_ENABLED: Flag to indicate whether the classifier should be enabled by default.
 Disabled classifiers are not started.
 
 @par DEC_ENABLEDORIG: classify on original problem
@@ -71,7 +73,7 @@ You can do this by calling
 SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
 ```
 You also have to initialize the fields in struct SCIP_DetectorData afterwards. For freeing the
-detector data, see .
+detector data, see @ref CLS_FREE.
 
 You may also add user parameters for your detector, see the parameters documentation of \SCIP for how to add user parameters and
 the method SCIPincludeDetectionBorderheur() in dec_connected.c for an example.
@@ -80,15 +82,18 @@ the method SCIPincludeDetectionBorderheur() in dec_connected.c for an example.
 # Fundamental Callback Methods of a Classifier {#CLS_FUNDAMENTALCALLBACKS}
 The fundamental callback methods of the plug-ins are the ones that have to be implemented in order to obtain
 an operational algorithm. Classifier plug-ins have one main function:
- * classify constraints/variables according to some property
-The following method has to be implemented for every classifier.
+ * @ref CLS_CONSCLASSIFY "classify constraints" according to some property  
+ * @ref CLS_VARCLASSIFY "classify variables" according to some property
+
+Exactly one of following methods has to be implemented for every classifier.
 
 Additional documentation for the callback methods of classifiers can be found in the
 files type_consclassifier.h and type_varclassifier.h.
-## DEC_DECL_CONSCLASSIFY
 
+## DEC_DECL_CONSCLASSIFY {#CLS_CONSCLASSIFY}
+## DEC_DECL_VARCLASSIFY {#CLS_VARCLASSIFY}
 
 # Additional Callback Methods of a Classifier {#CLS_ADDITIONALCALLBACKS}
 
-## classifierFree
-## classifierInit
+## classifierFree {#CLS_FREE}
+## classifierInit {#CLS_INIT}
