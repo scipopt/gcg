@@ -405,6 +405,10 @@
   	    <p id="papers" class="reveal">Papers That Use GCG</p>
   	    <li style="display: block;" id="papers_ans" class="answer">
     		  <ul>
+            <li>J. Witt, M. Lübbecke, A. M. Koster, G. Desaulniers.</br>
+            <a href="http://doi.org/10.18154/RWTH-2020-00547"><b>Polyhedral aspects of Dantzig-Wolfe reformulation</b></a></br>
+            RWTH Aachen University, Aachen, 2019.</li>
+
             <li>M. Appel, M. Walther, and U. Konigorski.</br>
             <a href="http://dx.doi.org/10.1515/auto-2018-0127"><b>Distributed trajectory planning for multi-agent discrete event systems</b></a></br>
             at - Automatisierungstechnik, 67(9):751-761, 2019.</li>
