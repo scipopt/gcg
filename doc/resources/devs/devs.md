@@ -10,8 +10,7 @@ for example containing a guide for a git-based installation.
 \n
 The **second part** of this guide includes a comprehensive description of the interaction between GCG and SCIP, to make the reader grasp what the differences are when implementing own code inside GCG in contrast to SCIP.
 
-@subpage gcg-vs-scip \n
- @ref mirroring \n
+@subpage gcg-and-scip \n
 
 \n
 The **third part** describes what's already implemented in GCG and how it can be used to make things much easier than with SCIP.

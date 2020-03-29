@@ -1,7 +1,10 @@
 # Mirroring of Branching Decisions to SCIP {#mirroring}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-GCG mirrors its branching decisions over to SCIP such that SCIP can execute them.
+One of the core features of GCG, the generic column generation, leads to the
+fact that GCG sometimes knows better than SCIP what variables to branch on.
+This is why we synchronize the branch-and-bound tree between the underlying
+SCIP instance and GCG, such that SCIP can execute them.
 
 ## Technical Details
 The code for the communication to SCIP during branching on original variables is inside the
