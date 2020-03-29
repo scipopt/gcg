@@ -14,12 +14,12 @@ With the following steps, we explain how you can **add your own structure detect
   2. Copy the template files `src/solver_xyz.c` and `src/solver_xyz.h`
    while renaming `xyz` to `mysolver`.
   3. Open the new files with a text editor and replace all occurrences of `Xyz` by `Mysolver` and `xyz` by `mysolver`.
-2. **Creating your Classifier**
-  1. Adjust the properties of the detector (see @ref CLS_PROPERTIES).
-  2. [optional] Define the detector data (see @ref CLS_DATA).
-  3. Implement the interface methods (see @ref CLS_INTERFACE).
-  4. Implement the fundamental callback methods (see @ref CLS_FUNDAMENTALCALLBACKS).
-  5. [optional] Implement the additional callback methods (see @ref CLS_ADDITIONALCALLBACKS).
+2. **Creating your Pricing Solver**
+  1. Adjust the properties of the detector (see @ref SOLVER_PROPERTIES).
+  2. [optional] Define the detector data (see @ref SOLVER_DATA).
+  3. Implement the interface methods (see @ref SOLVER_INTERFACE).
+  4. Implement the fundamental callback methods (see @ref SOLVER_FUNDAMENTALCALLBACKS).
+  5. [optional] Implement the additional callback methods (see @ref SOLVER_ADDITIONALCALLBACKS).
 3. **Make GCG use it**
   1. Add it to masterplugins.c by adding
     1. the line `#include solver_mysolver.h`.
