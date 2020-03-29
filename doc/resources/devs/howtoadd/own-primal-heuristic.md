@@ -1,4 +1,4 @@
-# Your own Primal Heuristic (deprecated) # {#own-primal-heuristic}
+# How to add primal heuristics (deprecated) # {#own-primal-heuristic}
 > **This page is currently being refactored. Some things might still be outdated.**
 
 > **Important Links:**

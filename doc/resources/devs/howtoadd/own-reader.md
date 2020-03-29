@@ -1,4 +1,4 @@
-# Your own Reader {#own-reader}
+# How to add file readers {#own-reader}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 > **Important Links:**

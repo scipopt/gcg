@@ -9,6 +9,9 @@ Installation {#install}
 >
 > If you are a GCG developer and need the current master branch, consult
 > * @ref git-install
+>
+> If you want to install one of the @ref example-projects, check the guide
+> * @subpage install-application-examples
 
 If you need to install GCG using arguments, for example if you want to enable parallelization, you can find them under @ref makefiles-args and @ref cmake-args respectively.
 
@@ -72,7 +75,7 @@ In the root folder of the scipoptsuite, you can then compile everything
     make gcg
     make install
 
-Arguments to be added to `make gcg` if needed can be found under \ref makefiles-args.
+Arguments to be added to `make gcg` if needed can be found under @ref makefiles-args.
 
 ### Step 4: Use GCG!
-See our \ref getting-started - Guide for further comments on the usage.
+See our @ref getting-started - Guide for further comments on the usage.

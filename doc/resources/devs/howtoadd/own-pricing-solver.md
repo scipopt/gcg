@@ -1,4 +1,4 @@
-# Your own Pricing Solver (deprecated) {#own-pricing-solver}
+# How to add pricing solver (deprecated) {#own-pricing-solver}
 > **This page is currently being refactored. Some things might still be outdated.**
 
  Pricing problem solvers are called by the pricer to solve a single pricing problem either heuristically or to optimality

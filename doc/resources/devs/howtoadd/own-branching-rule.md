@@ -1,4 +1,4 @@
-# Your own Branching Rule (deprecated) {#own-branching-rule}
+# How to add branching rules (deprecated) {#own-branching-rule}
 > **This page is currently being refactored. Some things might still be outdated.**
 
 > **Important Links:**
@@ -17,7 +17,7 @@
  The linking of the nodes of the two trees is done via two constraint handler, cons_origbranch.h and cons_masterbranch.h,
  that add local constraints to the nodes which know about the corresponding constraint in the other SCIP instance and by
  this also the corresponding node. Therefore, each branching rule in GCG has to add one of the origbranch constraints to each
- child node it creates. This origbranch constraint also stores a branching data, as described \ref BRANCHDATA "below", that
+ child node it creates. This origbranch constraint also stores a branching data, as described @ref BRANCHDATA "below", that
  can be used to store information about the branching decisions.
 
  ```C
@@ -73,11 +73,11 @@
     Make sure to adjust your Makefile such that these files are compiled and linked to your project.
  - Open the new files with a text editor and replace all occurrences of "xyz" by "mybranchrule".
  - Adjust the properties of the branching rule (see SCIP manual).
- - Define the branching rule data (see SCIP manual) and the branching data (see \ref BRANCHDATA). This is optional.
+ - Define the branching rule data (see SCIP manual) and the branching data (see @ref BRANCHDATA). This is optional.
  - Implement the interface methods and the callback methods as described in the SCIP manual.
  Besides including the branching rule in SCIP via SCIPincludeBranchrule(), the branching rule and the additional callbacks
  have to be registered by a call of GCGrelaxIncludeBranchrule(), as it is done in the BANCHINIT callback of branch_mybranchrule.
- - Implement the GCG-specific callback methods (see \ref BRANCH_CALLBACKS).
+ - Implement the GCG-specific callback methods (see @ref BRANCH_CALLBACKS).
 
  # GCG specific branching data {#BRANCHDATA}
 

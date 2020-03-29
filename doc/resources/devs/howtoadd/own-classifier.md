@@ -1,4 +1,4 @@
-# Your own Classifier {#own-classifier}
+# How to add classifiers {#own-classifier}
 > **This page is currently being refactored. Some things might still be outdated.**
 
 [TOC]
@@ -12,7 +12,7 @@ With the following steps, we explain how you can **add your own constraint/varia
 1. **Preparations**
   1. Choose a name `myclassifier` for your classifier.
   2. Copy the template files `src/clsons_xyz.cpp`/`src/clsvar_xyz.cpp` and `src/clsons_xyz.h`/`src/clsvar_xyz.h`
-   while renaming `XYZ` to `myclassifier`.
+   while renaming `xyz` to `myclassifier`.
   3. Open the new files with a text editor and replace all occurrences of `Xyz` by `Myclassifier` and `xyz` by `myclassifier`.
 2. **Creating your Classifier**
   1. Adjust the properties of the detector (see @ref CLS_PROPERTIES).
@@ -28,6 +28,7 @@ With the following steps, we explain how you can **add your own constraint/varia
     1. _Using Makefile:_ Add your classifier `.o` (`clsons_myclassifier.o`/`clsvar_myclassifier.o`) to the list below `LIBOBJ =` in the file `Makefile` in the root folder.
     2. _Using CMake:_ In `src/CMakeLists.txt`, add your `clscons_myclassifier.cpp`/`clsvar_myclassifier.cpp` below `set(gcgsources` and your
    `clscons_myclassifier.h`/`clsvar_myclassifier.h` below the line `set(gcgheaders`.
+
 
 # Properties of a Classifier {#CLS_PROPERTIES}
 
@@ -90,8 +91,11 @@ Exactly one of following methods has to be implemented for every classifier.
 Additional documentation for the callback methods of classifiers can be found in the
 files type_consclassifier.h and type_varclassifier.h.
 
-## DEC_DECL_CONSCLASSIFY {#CLS_CONSCLASSIFY}
-## DEC_DECL_VARCLASSIFY {#CLS_VARCLASSIFY}
+## DEC_DECL_CONSCLASSIFY(classifierClassify) {#CLS_CONSCLASSIFY}
+This function assigns constraints to classes using the assignConsToClass() method of the gcg::ConsClassifier.
+
+## DEC_DECL_VARCLASSIFY(classifierClassify) {#CLS_VARCLASSIFY}
+This function assigns variables to classes using the assignVarToClass() method of the gcg::VarClassifier.
 
 # Additional Callback Methods of a Classifier {#CLS_ADDITIONALCALLBACKS}
 

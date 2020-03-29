@@ -1,4 +1,4 @@
-# Your own Detector {#own-detector}
+# How to add detectors {#own-detector}
 > **This page is currently being refactored. Some things might still be outdated.**
 
 [TOC]
@@ -10,13 +10,13 @@ A complete list of all detectors contained in this release can be found [here](#
 
 With the following steps, we explain how you can **add your own structure detection plug-in**:
 1. Choose a name `mydetector` for your detector.
-2. Copy the template files `src/dec_xyz.c` and `src/dec_xyz.h`
+2. Copy the template files `src/dec_xyz.cpp` and `src/dec_xyz.h`
    while renaming `xyz` to `mydetector`.
 3. _Using Makefile:_ Adjust your Makefile such that these files are compiled and linked to your project by adding your classifier with ending `.o`
   (`dec_mydetector.o`) to the list under `LIBOBJ =` in the file `Makefile` in the root folder.\n
-  _Using CMake:_ In `src/CMakeLists.txt`, add your `dec_mydetector.cpp` below `set(gcgsources` and your
+  _Using CMake:_ In `src/CMakeLists.txt`, add your `dec_mydetector.cpppp` below `set(gcgsources` and your
   `dec_mydetector.h` below the line `set(gcgheaders`.
-4. Open the new files with a text editor and replace all occurrences of `xyz` by `myclassifier`.
+4. Open the new files with a text editor and replace all occurrences of `xyz` by `mydetector`.
 5. Adjust the properties of the detector (see @ref DEC_PROPERTIES).
 6. [optional] Define the detector data (see @ref DEC_DATA).
 7. Implement the interface methods (see @ref DEC_INTERFACE).
@@ -26,7 +26,7 @@ With the following steps, we explain how you can **add your own structure detect
 
 # Properties of a Detector {#DEC_PROPERTIES}
 
-At the top of the new file dec_xyz.c, you can find the detector properties.
+At the top of the new file dec_xyz.cpp, you can find the detector properties.
 These are given as compiler defines.
 The properties you have to set have the following meaning:
 
@@ -68,11 +68,11 @@ Defining detector data is optional. You can leave this struct empty.
 
 # Interface Methods {#DEC_INTERFACE}
 
-At the bottom of "dec_xyz.c", you can find the interface method SCIPincludeDetectorXyz(),
+At the bottom of "dec_xyz.cpp", you can find the interface method SCIPincludeDetectorXyz(),
 which also appears in "dec_xyz.h".
 \n
 This method has to be adjusted only slightly.
-It is responsible for notifying GCG (and especially cons_decomp.c) of the presence of the detector by calling the method
+It is responsible for notifying GCG (and especially cons_decomp.cpp) of the presence of the detector by calling the method
 DECincludeDetector().
 SCIPincludeDetectorXyz() is called by the user to include the detector,
 i.e., to use the detector in the application.
@@ -86,7 +86,7 @@ You also have to initialize the fields in struct SCIP_DetectorData afterwards. F
 detector data, see @ref DEC_ADDITIONALCALLBACKS.
 
 You may also add user parameters for your detector, see the parameters documentation of \SCIP for how to add user parameters and
-the method SCIPincludeDetectionBorderheur() in dec_connected.c for an example.
+the method SCIPincludeDetectionBorderheur() in dec_connected.cpp for an example.
 
 
 # Fundamental Callback Methods of a Detector {#DEC_FUNDAMENTALCALLBACKS}
@@ -102,8 +102,7 @@ Additional documentation to the callback methods, in particular to their input p
 can be found in type_detector.h.
 
 ## DEC_DECL_PROPAGATEPARTIALDEC()
-This function will assign variables/constraints to block or master. A commonly called function is
-DECcreateDecompFromMasterconss().
+This function will assign variables/constraints to block or master. You can either create the decomposition by calling DECcreateDecompFromMasterconss() or DECfilloutDecompFromConstoblock() or use the getter and setter functions in pub_decomp.h to fill the decomposition structure.
 
 ## DEC_DECL_FINISHPARTIALDEC()
 This function will, given a partial decomposition, finish it.
