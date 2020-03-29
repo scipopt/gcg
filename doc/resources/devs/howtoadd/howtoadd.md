@@ -5,4 +5,3 @@
 - @subpage own-pricing-solver
 - @subpage own-primal-heuristic
 - @subpage own-reader
-- @subpage storestructure

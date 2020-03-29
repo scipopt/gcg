@@ -169,7 +169,7 @@ constraints, or to initialize other elements of his solver data.
 ## SOLVEREXIT {#SOLVER_EXIT}
 
 The SOLVEREXIT callback is executed before the transformed problem is freed.
-In this method the pricing problem solver should free all resources that have been allocated for the solving process in [SOLVERINIT(#SOLVER_INIT).
+In this method the pricing problem solver should free all resources that have been allocated for the solving process in [SOLVERINIT](#SOLVER_INIT).
 
 ## SOLVERINITSOL {#SOLVER_INITSOL}
 

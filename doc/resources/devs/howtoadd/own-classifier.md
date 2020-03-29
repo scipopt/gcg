@@ -55,7 +55,6 @@ Set this flag to true if the classifier should classify on the original (non-pre
 Set this flag to true if the classifier should classify on the presolved problem.
 
 # Classifier Data {#CLS_DATA}
-
 Defining classifier data is optional.
 
 # Interface Methods {#CLS_INTERFACE}
@@ -91,13 +90,16 @@ Exactly one of following methods has to be implemented for every classifier.
 Additional documentation for the callback methods of classifiers can be found in the
 files type_consclassifier.h and type_varclassifier.h.
 
-## DEC_DECL_CONSCLASSIFY(classifierClassify) {#CLS_CONSCLASSIFY}
+## DEC_DECL_CONSCLASSIFY {#CLS_CONSCLASSIFY}
 This function assigns constraints to classes using the assignConsToClass() method of the gcg::ConsClassifier.
 
-## DEC_DECL_VARCLASSIFY(classifierClassify) {#CLS_VARCLASSIFY}
+## DEC_DECL_VARCLASSIFY {#CLS_VARCLASSIFY}
 This function assigns variables to classes using the assignVarToClass() method of the gcg::VarClassifier.
 
 # Additional Callback Methods of a Classifier {#CLS_ADDITIONALCALLBACKS}
 
-## classifierFree {#CLS_FREE}
-## classifierInit {#CLS_INIT}
+## DEC_DECL_FREECLASSIFIER {#CLS_FREE}
+The destructor of the classifier to free user data (called when GCG is exiting) has to be defined in `DEC_DECL_FREECLASSIFIER(classifierFreeXyz)`.
+
+## DEC_DECL_INITCLASSIFIER {#CLS_INIT}
+classifier initialization method (called after problem was transformed) has to be defined in `DEC_DECL_INITCLASSIFIER(classifierInitXyz)`.
