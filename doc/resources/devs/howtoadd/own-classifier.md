@@ -11,7 +11,7 @@ A complete list of all classifiers contained in this release can be found [here]
 With the following steps, we explain how you can **add your own constraint/variable classifier plugin**:
 1. **Preparations**
   1. Choose a name `myclassifier` for your classifier.
-  2. Copy the template files `src/clsons_xyz.cpp`/`src/clsvar_xyz.cpp` and `src/clsons_xyz.h`/`src/clsvar_xyz.h`
+  2. Copy the template files `src/clscons_xyz.cpp`/`src/clsvar_xyz.cpp` and `src/clscons_xyz.h`/`src/clsvar_xyz.h`
    while renaming `xyz` to `myclassifier`.
   3. Open the new files with a text editor and replace all occurrences of `Xyz` by `Myclassifier` and `xyz` by `myclassifier`.
 2. **Creating your Classifier**
@@ -25,9 +25,9 @@ With the following steps, we explain how you can **add your own constraint/varia
     1. the line `#include clscons_myclassifer.h`/`#include clsvar_myclassifer.h` in the `/* classifiers */` section.
     2. the line `SCIP_CALL( SCIPincludeConsClassifierMyclassifier(scip) );` in  the `/* Classifiers */` section.
   2. Add it to your build system:
-    1. _Using Makefile:_ Add your classifier `.o` (`clsons_myclassifier.o`/`clsvar_myclassifier.o`) to the list below `LIBOBJ =` in the file `Makefile` in the root folder.
+    1. _Using Makefile:_ Add your classifier `.o` (`clscons_myclassifier.o`/`clsvar_myclassifier.o`) to the list below `LIBOBJ =` in the file `Makefile` in the root folder.
     2. _Using CMake:_ In `src/CMakeLists.txt`, add your `clscons_myclassifier.cpp`/`clsvar_myclassifier.cpp` below `set(gcgsources` and your
-   `clscons_myclassifier.h`/`clsvar_myclassifier.h` below the line `set(gcgheaders`.
+   `clscons_myclassifier.h`/`clsvar_myclassifier.h` below `set(gcgheaders`.
 
 
 # Properties of a Classifier {#CLS_PROPERTIES}
@@ -66,7 +66,7 @@ This method has to be adjusted only slightly.
 It is responsible for notifying GCG (and especially cons_decomp.c) of the presence of the detector by calling the method
 DECincludeConsClassifier()/DECincludeVarClassifier().
 SCIPincludeConsClassifierXyz()/SCIPincludeVarClassifierXyz() is called by the user to include the detector,
-i.e., to use the detector in the application.
+i.e., to use the detector in the application (see 3.1.1. at the top of the page).
 
 If you are using detector data, you have to allocate the memory for the data at this point.
 You can do this by calling
