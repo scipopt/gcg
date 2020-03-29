@@ -1,4 +1,4 @@
-# How to add pricing solver (deprecated) {#own-pricing-solver}
+# How to add pricing solvers {#own-pricing-solver}
 > **This page is currently being refactored. Some things might still be outdated.**
 
 [TOC]
@@ -21,13 +21,13 @@ With the following steps, we explain how you can **add your own structure detect
   4. Implement the fundamental callback methods (see @ref CLS_FUNDAMENTALCALLBACKS).
   5. [optional] Implement the additional callback methods (see @ref CLS_ADDITIONALCALLBACKS).
 3. **Make GCG use it**
-  1. Add it to gcgplugins.c by adding
-    1. the line `#include solver_myclassifer.h` in the `/* solvers */` section.
-    2. the line `SCIP_CALL( SCIPincludeConsClassifierMysolver(scip) );` in  the `/* Classifiers */` section.
+  1. Add it to masterplugins.c by adding
+    1. the line `#include solver_mysolver.h`.
+    2. the line `SCIP_CALL( GCGincludeSolverMysolver(scip) );` in the method SCIPincludeGcgPlugins().
   2. Add it to your build system:
-    1. _Using Makefile:_ Add your solver `.o` (`clsons_mysolver.o`) to the list below `LIBOBJ =` in the file `Makefile` in the root folder.
+    1. _Using Makefile:_ Add your solver `.o` (`solver_mysolver.o`) to the list below `LIBOBJ =` in the file `Makefile` in the root folder.
     2. _Using CMake:_ In `src/CMakeLists.txt`, add your `solver_mysolver.c` below `set(gcgsources` and your
-   `solver_mysolver.h` below the line `set(gcgheaders`.
+   `solver_mysolver.h` below `set(gcgheaders`.
 
 
 # Properties of a pricing problem solver {#SOLVER_PROPERTIES}
@@ -70,12 +70,8 @@ which also appears in "solver_mysolver.h".
 This method has to be adjusted only slightly.
 It is responsible for notifying GCG (and especially the pricer in the master SCIP instance) of the presence of the solver by
 calling the method GCGpricerIncludeSolver().
-SCIPincludeSolverMysolver() should be called by the user, if he wants to include the solver,
-i.e., if he wants to use the solver in his application. This can done for example by adding
-```C
-SCIP_CALL( GCGincludeSolverMysolver(scip) );
-```
-to masterplugins.c
+SCIPincludeSolverMysolver() is called by the user to include the solver,
+i.e., to use the solver in the application (see 3.1.1. at the top of the page).
 
 If you are using solver data, you have to allocate the memory for the data at this point.
 You can do this by calling
@@ -83,7 +79,7 @@ You can do this by calling
 SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
 ```
 You can also initialize the fields in struct SCIP_SolverData afterwards. For freeing the
-solver data, see <a href="#solverexit">SOLVEREXIT</a>. Alternatively, you can also initialize and free the fields in the solver data
+solver data, see [SOLVEREXIT](#SOLVER_EXIT). Alternatively, you can also initialize and free the fields in the solver data
 in the SOLVERINITSOL and SOLVEREXITSOL callback methods, respectively. For an example, see solver_mip.c.
 
 You may also add user parameters for your solver, see the SCIP documentation for how to add user parameters and
@@ -94,14 +90,14 @@ the method SCIPincludeSolverMip() in solver_mip.c for an example.
 
 The fundamental callback methods of the plug-ins are the ones that have to be implemented in order to obtain
 an operational algorithm. Pricing problem solvers do not have fundamental callback methods, but they should
-implement at least of the SOLVERSOLVE and SOVLERSOLVEHEUR methods.
+implement at least of the [SOLVERSOLVE](#SOLVER_SOLVE) and [SOVLERSOLVEHEUR](#SOLVER_SOLVEHEUR) methods.
 
 Additional documentation to the callback methods, in particular to their input parameters,
 can be found in type_solver.h.
 
 # Additional Callback Methods of a Solver {#SOLVER_ADDITIONALCALLBACKS}
 
-## SOLVERSOLVE
+## SOLVERSOLVE {#SOLVER_SOLVE}
 
 The SOLVERSOLVE callback is called when the variable pricer in the master SCIP instance wants to solve a pricing problem
 to optimality.
@@ -127,18 +123,18 @@ The given SCIP instance representing the pricing problem can be seen as a contai
 problem. During the solving process, especially the objective function coefficients change according to the current dual
 solution and branching might change bounds in the pricing problem or add constraints.
 If the structure of the problem is independent of the changes that can occur with the selected branching rule, the structure
-detection for the pricing problems can also be done in the SOLVERINITSOL callback and stored internally to avoid doing it every
+detection for the pricing problems can also be done in the [SOLVERINITSOL](#SOLVER_INITSOL) callback and stored internally to avoid doing it every
 time a pricing problem is solved.
 
-## SOLVERSOLVEHEUR
+## SOLVERSOLVEHEUR {#SOLVER_SOLVEHEUR}
 
 The SOLVERSOLVEHEUR callback is called during heuristic pricing when the variable pricer in the master SCIP instance
 wants to solve a pricing problem heuristically.
-It has the same input and return parameters as the SOLVERSOLVE callback. It does not need to solve the pricing problem to
+It has the same input and return parameters as the [SOLVERSOLVE](#SOLVER_SOLVE) callback. It does not need to solve the pricing problem to
 optimality, but should try to construct good feasible solutions using fast methods. Nevertheless, it can return a lower bound
 for the optimal solution value of the problem, if it computes one.
 
-## SOLVERFREE
+## SOLVERFREE {#SOLVER_FREE}
 
 If you are using solver data, you have to implement this method in order to free the solver data.
 This can be done by the following procedure:
@@ -164,23 +160,23 @@ GCG_DECL_SOLVERFREE(solverFreeMysolver)
 If you have allocated memory for fields in your solver data, remember to free this memory
 before freeing the pricing solver data itself.
 
-## SOLVERINIT
+## SOLVERINIT {#SOLVER_INIT}
 
 The SOLVERINIT callback is executed after the problem is transformed.
 The pricing problem solver may, e.g., use this call to replace the original constraints stored in its solver data by transformed
 constraints, or to initialize other elements of his solver data.
 
-## <a name="solverexit">SOLVEREXIT</a>
+## SOLVEREXIT {#SOLVER_EXIT}
 
 The SOLVEREXIT callback is executed before the transformed problem is freed.
-In this method the pricing problem solver should free all resources that have been allocated for the solving process in SOLVERINIT.
+In this method the pricing problem solver should free all resources that have been allocated for the solving process in [SOLVERINIT(#SOLVER_INIT).
 
-## SOLVERINITSOL
+## SOLVERINITSOL {#SOLVER_INITSOL}
 
 The SOLVERINITSOL callback is executed when the presolving is finished and the branch-and-bound process is about to begin.
 The pricing problem solver may use this call to initialize its branch-and-bound specific data.
 
-## SOLVEREXITSOL
+## SOLVEREXITSOL {#SOLVER_EXITSOL}
 
 The SOLVEREXITSOL callback is executed before the branch-and-bound process is freed.
 The pricing problem solver should use this call to clean up its branch-and-bound data, which was allocated in SOLVERINITSOL.
