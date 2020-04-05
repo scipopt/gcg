@@ -101,7 +101,16 @@
    * @brief This page contains a list of all detectors which are currently available.
    *
    * A detailed description what a detector does and how to add a detector to GCG can be found
-   * \ref DETECT "here".
+   * \ref detection "here".
+   */
+
+  /**@defgroup CLASSIFIERS Classifiers
+   * @ingroup PUBLICPLUGINAPI
+   * @brief This page contains a list of all classifiers which are currently available.
+   *
+   * A detailed description what a classifier does can be found \ref classifiers "here"
+   * and a guide on how to add a classifier to GCG can be found \ref own-classifier "here".
+   * .
    */
 
   /**@defgroup DIALOGS Dialogs

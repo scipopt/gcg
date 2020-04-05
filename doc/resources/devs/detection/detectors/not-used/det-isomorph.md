@@ -7,6 +7,7 @@ This detector finds subproblems that can be aggregated thus reducing the symmetr
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | isomorph                    | ✓ |   |   |
 
+Note: This detector requires BLISS, i.e. a `make` with `BLISS=true`.
 
 ### Details
 

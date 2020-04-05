@@ -20,5 +20,5 @@ Other times, **GCG needs to interact with SCIP** directly. Note that this can on
 be done within the limits of the current SCIP stage.
 
 @subpage stages "SCIP Solving Stages"  \n
-@subpage transformed-vs-original
+@subpage original-vs-transformed \n
 @subpage mirroring "Interaction during Branching"  

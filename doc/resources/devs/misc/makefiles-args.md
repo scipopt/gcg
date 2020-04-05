@@ -12,6 +12,7 @@ scripts, you'll need `STATISTICS=true` to be set **during compilation**. Importa
 
 #### Additional Packages (only for `make`)
 
+    LPS[=cpx/spx/...]           toggle between LP solvers                     
     READLINE[=B]                enables READLINE, required for command line interaction (default: true)
     ZIMPL[=B]                   enables ZIMPL, required to convert .zpl files to .lp/.mps files
     GAMS[=B]                    enables GAMS, required to convert .gms files to .lp/.mps files
@@ -19,6 +20,7 @@ scripts, you'll need `STATISTICS=true` to be set **during compilation**. Importa
     HMETIS[=B]                  enables hMETIS (Hypergraph & Circuit Partitioning)
     OPENMP[=B]                  enables parallelization using OpenMP
     GSL[=B]                     enables the GNU Scientific Library, needed for one detector
+    CPLEXSOLVER[=B]             enables CPLEX for solving of pricing problems
 
 #### Limits and Modes (only for `make test`)
 
