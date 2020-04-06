@@ -22,7 +22,7 @@ With the following steps, we explain how you can **add your own structure detect
   5. [optional] Implement the additional callback methods (see @ref SOLVER_ADDITIONALCALLBACKS).
 3. **Make GCG use it**
   1. Add it to masterplugins.c by adding
-    1. the line `#include solver_mysolver.h`.
+    1. the line <tt>\#include solver_mysolver.h</tt>.
     2. the line `SCIP_CALL( GCGincludeSolverMysolver(scip) );` in the method SCIPincludeGcgPlugins().
   2. Add it to your build system:
     1. _Using Makefile:_ Add your solver `.o` (`solver_mysolver.o`) to the list below `LIBOBJ =` in the file `Makefile` in the root folder.

@@ -42,7 +42,7 @@ GCG>
 As you can see, **some points are marked with brackets** `<...>`. This means that if you e.g. execute `change`,
 you will be prompted **additional commands** on what exactly you want to change. All **other points directly execute** the given command.\n
 
-> To search through the interactive menu, please consult our feature guide @ref interactive-menu.
+> To search through the interactive menu, please consult our feature guide @ref menu.
 
 ### Make GCG know your problem with `read`
 With this command, GCG **reads your problem file**. If you, for example, go to `/check/instances/bpp` from your GCG root
@@ -58,7 +58,7 @@ original problem has 1224 variables (0 bin, 1224 int, 0 impl, 0 cont) and 74 con
 
 ```
 
-To read your own problem, please use a format as described in @subpage input-formats (otherwise, you can also @ref reader "add your own reader").
+To read your own problem, please use a format as described in @subpage input-formats (otherwise, you can also @ref own-reader "add your own reader").
 
 ### Solve your problem with `optimize`
 Here the magic happens: GCG optimizes what you previously read.
@@ -94,8 +94,7 @@ Dual Bound         : +1.60000000000000e+01
 Gap                : 0.00 %
 ```
 
-This log might look familiar if you already know SCIP. If you want to know more about the @ref dantzig "Dantzig-Wolfe Reformulation", @ref detection "Decomposition" or @ref pricing "Reduced Cost Pricing",
-please have a look into our @ref devs.
+This log might look familiar if you already know SCIP. If you want to know more about the @ref dantzig "Dantzig-Wolfe Reformulation", @ref detection "Decomposition", @ref pricing or @ref cg, please have a look into our @ref devs.
 
 
 ### Show the solution with `display solution`
@@ -120,12 +119,12 @@ After these basic commands, you might want to change some more settings or give 
 **Detecting without solving:** This is possible with a simple `detect`. The instance already has to be read.\n
 **Marking your own .dec file:** \n
 **Reading your decomposition:** You can read decomposition files (with formats as given @ref input-formats "here") with a simple `read`.
-The behavior when giving own decomposition files is described @ref detectionloop "here".\n
+The behavior when giving own decomposition files is described @ref detection-process "here".\n
 **Saving your decomposition:** You can save all decompositions found with `write alldecompositions`. To just save single ones, you have
 to select a decomposition in the @ref explore-menu "Explore Menu" with `explore select <nr>` and then `write selecteddecompositions`.
 
 ### GCG settings
-Everything related to settings can be found in the `set` submenu. All possible settings that can be done there, can be found @ref params "here".\n
+Everything related to settings can be found in the `set` submenu. All possible settings that can be done there, can be found @ref PARAMETERS "here".\n
 **Making your own settings file:** If you want to create a whole settings file from the scratch, you can find information
 about that <a href="FAQ.html#createsettingsfile">here</a>.\n
 **Saving your settings:** Otherwise, you can just set everything you want (e.g. `set display 1` to make GCG display solving information

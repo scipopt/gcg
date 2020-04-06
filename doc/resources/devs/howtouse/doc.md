@@ -52,7 +52,7 @@ The FAQ are generated using PHP. The questions can be added in the file
 You can move and create folders and pages (see below) as you like inside the folder `resources`,
 but remember to add new folder paths to INPUT in gcg.dxy (vicinity of line 787).
 Note that the pages will not automatically be subpages of the containing folder's main page.
-To make this the case, you have to add a tag `@subpage` to the containing page.
+To make this the case, you have to add a tag `\@subpage` to the containing page.
 
 ### .md files
 The first line has to be of the form
@@ -61,7 +61,7 @@ The first line has to be of the form
 ```
 in the right folder.\n
 **Important**: For all pages that are referenced by the subpage indexing scripts
-(see above), the filename has to match the page identifier (xy.md <-> `{#xy}`).
+(see above), the filename has to match the page identifier (xy.md <-> `\{\#xy\}`).
 
 Some of the main features of .md files are explained in the following.
 #### HTML compatibility

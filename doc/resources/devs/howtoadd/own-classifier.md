@@ -22,7 +22,7 @@ With the following steps, we explain how you can **add your own constraint/varia
   5. [optional] Implement the additional callback methods (see @ref CLS_ADDITIONALCALLBACKS).
 3. **Make GCG use it**
   1. Add it to gcgplugins.c by adding
-    1. the line `#include clscons_myclassifer.h`/`#include clsvar_myclassifer.h` in the `/* classifiers */` section.
+    1. the line <tt>\#include clscons_myclassifer.h</tt> / <tt>\#include clsvar_myclassifer.h</tt> in the `/* classifiers */` section.
     2. the line `SCIP_CALL( SCIPincludeConsClassifierMyclassifier(scip) );` in  the `/* Classifiers */` section.
   2. Add it to your build system:
     1. _Using Makefile:_ Add your classifier `.o` (`clscons_myclassifier.o`/`clsvar_myclassifier.o`) to the list below `LIBOBJ =` in the file `Makefile` in the root folder.

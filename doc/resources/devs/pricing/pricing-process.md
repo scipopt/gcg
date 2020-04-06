@@ -4,16 +4,16 @@
 In every iteration of the branch-and-bound tree, instead of an LP solver, the GCG relaxator
 (see `relax_gcg.c`) and perform a Dantzig-Wolfe reformulation and then do Column Generation.
 
-## Dantzig-Wolfe Reformulation
+# Dantzig-Wolfe Reformulation {#dantzig}
 
-## The Restricted Master Problem (RMP)
+# The Restricted Master Problem (RMP) {#rmp}
 `SCIPsolve` is called again for the RMP.
 
-## The Pricing Problem (PP)
+# The Pricing Problem (PP) {#pp}
 
-## Column Generation
+# Column Generation {#cg}
 
-### Pricing Solver
+## Pricing Solver
 The pricing problem is then solved as follows:
 - Loop through pricing subproblems in rounds
 - Combine next pricing subproblem in queue with pricing solver

@@ -3,7 +3,7 @@
 > to read the section "Where to begin?" (see below) completely to avoid unnecessary
 > misunderstandings.
 
-## Structure of this Documentation
+# Structure of this Documentation
 The GCG documentation and manual is structured into two guides, a misc section
 with everything that does not belong into these guides and the C-API
 @htmlinclude structureofmanual.html

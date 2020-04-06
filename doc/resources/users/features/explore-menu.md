@@ -2,6 +2,7 @@
 > The explore menu is a **submenu** in the interactive console.
 > You can leave submenus (e.g. `<explore>` or `<master>`) with `quit`.
 
+# Using the explore menu
 ## Enter the explore menu
 First, you have to `read` and `optimize`, or at least `detect` your problem. Then, like with all commands, just type `explore` in the interactive shell. GCG will show
 an overview of all found decompositions:

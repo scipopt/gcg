@@ -725,8 +725,6 @@ QUIET                  = YES
 # Tip: Turn warnings on while writing the documentation.
 # The default value is: YES.
 
-### CHANGE TO NO DURING REFACTORING
-
 WARNINGS               = YES
 
 # If the WARN_IF_UNDOCUMENTED tag is set to YES then doxygen will generate
@@ -742,9 +740,7 @@ WARN_IF_UNDOCUMENTED   = NO
 # markup commands wrongly.
 # The default value is: YES.
 
-### CHANGE TO YES DURING REFACTORING
-
-WARN_IF_DOC_ERROR      = NO
+WARN_IF_DOC_ERROR      = YES
 
 # This WARN_NO_PARAMDOC option can be enabled to get warnings for functions that
 # are documented, but have no documentation for their parameters or return
@@ -752,13 +748,17 @@ WARN_IF_DOC_ERROR      = NO
 # parameter documentation, but not about the absence of documentation.
 # The default value is: NO.
 
-### CHANGE TO YES DURING REFACTORING
-
-WARN_NO_PARAMDOC       = NO
+WARN_NO_PARAMDOC       = YES
 
 # If the WARN_AS_ERROR tag is set to YES then doxygen will immediately stop when
 # a warning is encountered.
 # The default value is: NO.
+
+# @todo SET THIS TO "YES" after
+# - merging the docu branch into the master and
+# - having documented everything that throws warnings
+# to add a hook that generates the docu upon merging into the master to avoid
+# undocumented code from being in the master
 
 WARN_AS_ERROR          = NO
 

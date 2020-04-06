@@ -3,7 +3,7 @@
 
 [TOC]
 
-## List of Pricing Solvers
+# List of Pricing Solvers
 We currently have three different pricing solvers:
 
 - MIP
@@ -13,8 +13,8 @@ We currently have three different pricing solvers:
 All three of those can solve pricing problems heuristically or exact.
 For the Cliquer solver to work, GCG must have been compiled with `CLIQUER=TRUE`
 
-## Mixed Integer Problem Solver
+# Mixed Integer Problem Solver
 
-## Knapsack Solver
+# Knapsack Solver
 
-## Cliquer Solver
+# Cliquer Solver
