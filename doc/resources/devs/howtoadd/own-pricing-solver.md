@@ -8,15 +8,15 @@ problem** either heuristically or to optimality and return a set of solutions.
 \n
 A complete list of all pricing problem solvers contained in this release can be found [here](#pricing-solvers).
 
-With the following steps, we explain how you can **add your own structure detection plug-in**:
+With the following steps, we explain how you can **add your own pricing problem solver plug-in**:
 1. **Preparations**
   1. Choose a name `mysolver` for your solver.
   2. Copy the template files `src/solver_xyz.c` and `src/solver_xyz.h`
    while renaming `xyz` to `mysolver`.
   3. Open the new files with a text editor and replace all occurrences of `Xyz` by `Mysolver` and `xyz` by `mysolver`.
 2. **Creating your Pricing Solver**
-  1. Adjust the properties of the detector (see @ref SOLVER_PROPERTIES).
-  2. [optional] Define the detector data (see @ref SOLVER_DATA).
+  1. Adjust the properties of the pricing solver (see @ref SOLVER_PROPERTIES).
+  2. [optional] Define the pricing solver data (see @ref SOLVER_DATA).
   3. Implement the interface methods (see @ref SOLVER_INTERFACE).
   4. Implement the fundamental callback methods (see @ref SOLVER_FUNDAMENTALCALLBACKS).
   5. [optional] Implement the additional callback methods (see @ref SOLVER_ADDITIONALCALLBACKS).
