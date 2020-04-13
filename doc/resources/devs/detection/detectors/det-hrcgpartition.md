@@ -1,6 +1,8 @@
 # Hypergraph Partitioning Detector (Columns & Rows) {#det-hrcgpartition}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
+### Overview
+
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | hrcgpartition               | ✓ | ✓ |   |
@@ -11,7 +13,9 @@ This detector detects [arrowhead](#arrowhead) structures through graph partition
 **Note:** This detector needs hmetis and works only under Linux/MacOS, it further needs the Z-shell (zsh)
 to enforce memory and time limits on hmetis as this is the only shell reliably doing that.
 
-### Details
+### Algorithmic Details
+
+### Theoretical Details
 
 ### Parameters
 

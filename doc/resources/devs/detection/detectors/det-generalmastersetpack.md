@@ -1,4 +1,6 @@
 # General Set Packing Detector {#det-generalmastersetpack}
+### Overview
+
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | generalmastersetpack        | ✓ |   |   |  
@@ -8,11 +10,13 @@ This detector sets the following constraint types as master constraints:
 - constraints with \f$\text{rhs}\geq 0\f$ and \f$\text{lhs}=-\infty\f$
 
 
-### Details
+### Algorithmic Details
 This detector adds the aforementioned constraints to the master. This is done as follows:
 * Iterate over all open constraints
  * If the constraint's type (determined in [preprocessing](#preprocessing)) is `setpacking`, fix it to the master
  * If the constraint's type is not `logicor` and not `setcovering` and not `setpartitioning`, but its right hand side is non-negative and its left hand side is -infinity, fix it to the master
+
+### Theoretical Details
 
 ### Parameters
 

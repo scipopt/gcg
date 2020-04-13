@@ -1,13 +1,17 @@
 # Postprocess Detector {#det-postprocess}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
+### Overview
+
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | postprocess                 |   |   | ✓ |
 
 This detector is our default postprocessing detector. It is called to add all unassigned constraints/variables to the master.
 
-### Details
+### Algorithmic Details
+
+### Theoretical Details
 
 ### Parameters
 

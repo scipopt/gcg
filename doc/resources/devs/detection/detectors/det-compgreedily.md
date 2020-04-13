@@ -1,14 +1,17 @@
 # Complete Greedily Detector {#det-compgreedily}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-This detector assigns the open cons and open vars of the partialdec greedily.
+### Overview
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | compgreedily                | ✓ | ✓ |   |
 
+This detector assigns the open cons and open vars of the partialdec greedily.
 
-### Details
+### Algorithmic Details
+
+### Theoretical Details
 
 ### Parameters
 

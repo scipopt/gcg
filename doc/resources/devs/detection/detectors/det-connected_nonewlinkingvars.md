@@ -1,13 +1,17 @@
 # Connected Detector (nonewlinkingvars) {#det-connected_nonewlinkingvars}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-This detector assigns all dependent open constraints and variables and completes the partialdec by breadth-first search.
+### Overview
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | connected_noNewLinkingVars  | ✓ | ✓ |   |
 
-### Details
+This detector assigns all dependent open constraints and variables and completes the partialdec by breadth-first search.
+
+### Algorithmic Details
+
+### Theoretical Details
 
 ### Parameters
 

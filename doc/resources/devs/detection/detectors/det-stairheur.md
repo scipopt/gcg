@@ -1,13 +1,20 @@
 # Staircase Detector (Matrix Reordering) {#det-stairheur}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
+### Overview
+
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | stairheur                   | ✓ |   |   |
 
-This detector finds staircase structures via **matrix reordering** algorithms.
+This detector finds staircase structures via a modified version of a
+ **matrix reordering** algorithm, Rank-Order-Clustering (ROC)[2].
 
-### Details
+### Algorithmic Details
+The algorithmic details can be found in [2].
+
+### Theoretical Details
+The theoretical details can be found in [1].
 
 ### Parameters
 
@@ -39,4 +46,6 @@ This detector finds staircase structures via **matrix reordering** algorithms.
 
 ### Links
  * Documentation: dec_stairheur.cpp
- * [[1] Jayakumar, Maliyakal D., and Ranga V. Ramasesh. "A clustering heuristic to detect staircase structures in large scale linear programming models." European journal of operational research 76.1 (1994): 229-239.](https://www.sciencedirect.com/science/article/abs/pii/0377221794900191)
+ * [1] [Luers, M., Lübbecke, M. "Eine Heuristik zum Erkennen von
+Staircase-Strukturen in Matrizen" RWTH Aachen University. Aachen, 2012.](https://www.or.rwth-aachen.de/de/abschlussarbeiten.html?file=files/research/theses/2012/MA_Luers.pdf)
+ * [2] [Jayakumar, Maliyakal D., and Ranga V. Ramasesh. "A clustering heuristic to detect staircase structures in large scale linear programming models." European journal of operational research 76.1 (1994): 229-239.](https://www.sciencedirect.com/science/article/abs/pii/0377221794900191)
