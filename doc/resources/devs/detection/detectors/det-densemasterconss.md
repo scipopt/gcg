@@ -1,4 +1,4 @@
-# Dense Constraints Detector {#det-densemasterconss}
+# Constraint Density Detector {#det-densemasterconss}
 
 ### Overview
 
@@ -10,13 +10,14 @@ This detector adds all constraints that have at least two variable coefficients 
 
 ### Algorithmic Details
 
-* Iterate over all open constraints
- * Get variables of the constraint
- * Sort variables in ascending order.
-  * Iterate over all variables
-   * If the difference between two successive variable coefficients is greater than or equal to \f$\Delta_{\text{max}}\f$ (per default \f$1\f$), stop counting
-   * Else set \f$\Delta_{\text{max}}\f$ to the current difference and continue counting. (this leads to a stop in counting once the difference increases for the first time)
-   * If a maximal ratio (\f$0.2\f$) of variables being very similar to each other is reached, stop counting
+* Iterate over all open constraints (\f$N\f$ many)
+ * For each constraint, get the number of nonzeros (\f$n_{\text{nonzeros}}=\f$getNVarsForCons()) and make a tuple of the two: \f$(n,c)\f$, with \f$c\f$ the constraint and add it to the list `l`
+* Sort the tuples in `l` in ascending order by the first element (the neighborhood, higher means more dense).
+* Set the `last index` to be \f$r_{max}*N\f$, with \f$r_{max}\f$ being the parameter "maximal ratio" (by default \f$0.2\f$)
+* Iterate over all constraints
+  * If the `last index` (i.e. by default the first \f$20\%\f$ of the constraints, starting with the greatest number of nonzeros) is reached, stop.
+  * If the difference in nonzeros between the current item `l[i]` and the next item `l[i+1]` is smaller than the default `maximum difference index`=\f$1\f$, set `i` to be the `maximum difference index`, i.e. if there is a jump between two constraints in their number of nonzero entries, stop.
+* Set all constraints up until the `maximum difference index` to be master constraints, i.e. at max the first \f$20\%\f$ of the constraints with the highest and similar neighborhood size.
 
 ### Theoretical Details
 
