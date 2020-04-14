@@ -7,9 +7,21 @@
 |----|-----------------------------|:---------:|:------:|:-----------:|
 | ?  | connected_noNewLinkingVars  | ✓ | ✓ |   |
 
-This detector assigns all dependent open constraints and variables and completes the partialdec by breadth-first search.
+This detector assigns all dependent open constraints and variables and completes the partial decomposition by breadth-first search.
 
 ### Algorithmic Details
+* If the number of blocks in the given partial decomposition is below 0, set it to 0.
+* Create two boolean vectors with number of cons/vars as length. Vector value is true iff the con/var is open.
+* While there are open constraints remaining (initialize queue with the first open constraint)
+  * add the current constraint to the neighborConss vector
+  * Iterate over open variables in this constraint (all other variables are linking variables and are skipped)
+    * Iterate over open constraints using this variable
+      * add this constraint to the neighborConss vector
+      * add the current constraint to the queue
+    * add this variable to the neighborVars vector
+  * define a new block with the neighborConss and neighborVars
+  * remove all neighborConss and neighborVars from the open variables
+* assign all remaining variables to block 0, if it exists, and to master otherwise
 
 ### Theoretical Details
 

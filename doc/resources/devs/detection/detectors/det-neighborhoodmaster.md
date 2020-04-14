@@ -1,5 +1,4 @@
 # Constraint Neighborhood Detector {#det-neighborhoodmaster}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 ### Overview
 
@@ -11,9 +10,9 @@ This detector calculates cons-cons adjacency (if not already done) and sorts con
 
 ### Algorithmic Details
 * Iterate over all open constraints (\f$N\f$ many)
- * For each constraint, get the neighborhood size (\f$n_{\text{neighborhood}}=\f$getNConssForCons()) and make a tuple of the two: \f$(n,c)\f$, with \f$c\f$ the constraint and add it to the list `l`
+ * For each constraint, get the neighborhood size (\f$n_{\text{neighborhood}}=\f$`getNConssForCons()`) and make a tuple of the two: \f$(n,c)\f$, with \f$c\f$ the constraint and add it to the list `l`
 * Sort the tuples in `l` in ascending order by the first element (the neighborhood, higher means more dense).
-* Set the `last index` to be \f$r_{max}*N\f$, with \f$r_{max}\f$ being the parameter "maximal ratio" (by default \f$0.2\f$)
+* Set the `last index` to be \f$r_{max}*N\f$, with \f$r_{max}\f$ being the parameter `maxratio` (by default \f$0.2\f$)
 * Iterate over all constraints
   * If the `last index` (i.e. by default the first \f$20\%\f$ of the constraints, starting with the greatest neighborhood size) is reached, stop.
   * If the difference in neighborhood size between the current item `l[i]` and the next item `l[i+1]` is smaller than the default `maximum difference index`=\f$1\f$, set `i` to be the `maximum difference index`, i.e. if there is a jump between two constraints in their neighborhood size, stop.

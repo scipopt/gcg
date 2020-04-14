@@ -11,7 +11,7 @@ This detector adds all constraints that have at least two variable coefficients 
 ### Algorithmic Details
 
 * Iterate over all open constraints (\f$N\f$ many)
- * For each constraint, get the number of nonzeros (\f$n_{\text{nonzeros}}=\f$getNVarsForCons()) and make a tuple of the two: \f$(n,c)\f$, with \f$c\f$ the constraint and add it to the list `l`
+ * For each constraint, get the number of nonzeros (\f$n_{\text{nonzeros}}=\f$`getNVarsForCons()`) and make a tuple of the two: \f$(n,c)\f$, with \f$c\f$ the constraint and add it to the list `l`
 * Sort the tuples in `l` in ascending order by the first element (the neighborhood, higher means more dense).
 * Set the `last index` to be \f$r_{max}*N\f$, with \f$r_{max}\f$ being the parameter "maximal ratio" (by default \f$0.2\f$)
 * Iterate over all constraints
