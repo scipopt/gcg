@@ -105,7 +105,7 @@ public:
 
    /** creates a graph with open constraints and open variables of the partialdec */
    virtual SCIP_RETCODE createFromPartialMatrix(
-      DETPROBDATA*          detprobdata,        /**< detprobdata */
+      DETPROBDATA*          detprobdata,        /**< detection process information and data */
       PARTIALDECOMP*        partialdec,         /**< partial decomposition to use for matrix */
       DISTANCE_MEASURE      dist,               /**< Here we define the distance measure between two rows */
       WEIGHT_TYPE           w_type              /**< Depending on the algorithm we can build distance or similarity graph */

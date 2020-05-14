@@ -1020,8 +1020,8 @@ SCIP_RETCODE createGraph(
 static
 SCIP_RETCODE createGraphNewDetection(
    SCIP*                 scip,               /**< SCIP data structure */
-   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata */
-   gcg::PARTIALDECOMP*   partialdec,         /**< partialdec */
+   gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
+   gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition */
    int                   nblocks,            /**< number of blocks the symmetry should be checked for */
    std::vector<int>      blocks,             /**< vectors of block indices the symmetry be checked for */
    AUT_COLOR             colorinfo,          /**< data structure to save intermediate data  */

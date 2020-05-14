@@ -578,7 +578,7 @@ static
 SCIP_RETCODE createRowindexList(
    SCIP*                 scip,               /**< SCIP data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use for matrix */
-   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata */
+   gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
    DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    SCIP_HASHMAP*         indexcons,          /**< hashmap index -> constraint */
    SCIP_HASHMAP*         varindex,           /**< hashmap variable -> index*/
@@ -787,7 +787,7 @@ static
 SCIP_RETCODE rankOrderClusteringIteration(
    SCIP*                 scip,               /**< SCIP data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use for permutation */
-   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata */
+   gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
    DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    INDEXMAP*             inputmap,           /**< indexmap for input */
    INDEXMAP*             outputmap           /**< indexmap for output */
@@ -867,7 +867,7 @@ static
 SCIP_RETCODE rankOrderClustering(
    SCIP*                 scip,               /**< SCIP data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use for clustering */
-   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata */
+   gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
    DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
    int                   max_iterations,     /**< number of maximal iterations */
    int*                  iterations          /**< number of performed iterations */

@@ -111,7 +111,7 @@ SCIP_RETCODE createGraphFromPartialMatrix(
    SCIP*                 scip,               /**< SCIP data structure */
    TCLIQUE_GRAPH**       graph,              /**< Graph data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use for matrix */
-   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata */
+   gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
    DEC_DETECTORDATA*     detectordata        /**< detector data data structure */
    )
 {

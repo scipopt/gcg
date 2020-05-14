@@ -110,7 +110,7 @@ public:
 
    /** creates a graph with open constraints and open variables of the partialdec */
    virtual SCIP_RETCODE createFromPartialMatrix(
-      DETPROBDATA*          detprobdata,     /**< detprobdata */
+      DETPROBDATA*          detprobdata,     /**< detection process information and data */
       PARTIALDECOMP*        partialdec       /**< partial decomposition to use for graph */
       );
 
@@ -122,7 +122,7 @@ public:
    virtual SCIP_RETCODE createPartialdecFromPartition(
       PARTIALDECOMP**      firstpartialdec,         /**< pointer to buffer the new partialdec created by dint of the graph */
       PARTIALDECOMP**      secondpartialdec,        /**< pointer to buffer the new partialdec whose border is amplified by dint of the graph */
-      DETPROBDATA*         detprobdata              /**< detprobdata */
+      DETPROBDATA*         detprobdata              /**< detection process information and data */
       );
 
    /** amplifies a partialdec by dint of a graph created with open constraints and open variables of the partialdec */
@@ -130,7 +130,7 @@ public:
       PARTIALDECOMP*      oldpartialdec,            /**< partialdec which should be amplifies */
       PARTIALDECOMP**     firstpartialdec,          /**< pointer to buffer the new partialdec amplified by dint of the graph */
       PARTIALDECOMP**     secondpartialdec,         /**< pinter to buffer the new partialdec whose border is amplified by dint of the graph */
-      DETPROBDATA*        detprobdata               /**< detprobdata */
+      DETPROBDATA*        detprobdata               /**< detection process information and data */
       );
 };
 

@@ -102,8 +102,8 @@ struct struct_hook
    unsigned int n;                           /**< number of permutations */
    SCIP* scip;                               /**< scip to search for automorphisms */
    int* conssperm;                           /**< permutations of conss*/
-   gcg::PARTIALDECOMP* partialdec;                        /**< partialdec to propagate */
-   gcg::DETPROBDATA* detprobdata;                /**< detprobdata */
+   gcg::PARTIALDECOMP* partialdec;           /**< partialdec to propagate */
+   gcg::DETPROBDATA* detprobdata;            /**< detection process information and data */
 
    /** constructor for the hook struct*/
    struct_hook(SCIP_Bool aut,  /**< true if there is an automorphism */
@@ -115,8 +115,8 @@ struct struct_hook
    struct_hook(SCIP_Bool aut,  /**< true if there is an automorphism */
       unsigned int          n,                  /**< number of permutations */
       SCIP*                 scip,               /**< scip to search for automorphisms */
-      gcg::PARTIALDECOMP*   partialdec,         /**< partialdec */
-      gcg::DETPROBDATA*     detprobdata         /**< detprobdata */
+      gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition */
+      gcg::DETPROBDATA*     detprobdata         /**< detection process information and data */
    );
 
    ~struct_hook();
@@ -190,8 +190,8 @@ struct_hook::struct_hook(
    SCIP_Bool             aut_,               /**< true if there is an automorphism */
    unsigned int          n_,                 /**< number of permutations */
    SCIP*                 scip_,              /**< array of scips to search for automorphisms */
-   gcg::PARTIALDECOMP*           partialdec_,             /**< partialdec to Propagate */
-   gcg::DETPROBDATA*       detprobdata_          /**< detprobdata */
+   gcg::PARTIALDECOMP*   partialdec_,        /**< partialdec to propagate */
+   gcg::DETPROBDATA*     detprobdata_        /**< detection process information and data */
    ) : conssperm(NULL)
 {
    aut = aut_;
@@ -455,7 +455,7 @@ SCIP_RETCODE setupArrays(
    AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partialdec to set up help structure for */
-   gcg::DETPROBDATA*     detprobdata         /**< detprobdata */
+   gcg::DETPROBDATA*     detprobdata         /**< detection process information and data */
    )
 { /*lint -esym(593,scoef) */
    int i;
@@ -690,7 +690,7 @@ SCIP_RETCODE createGraph(
    bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partialdec to create graph for */
-   gcg::DETPROBDATA*     detprobdata         /**< detprobdata */
+   gcg::DETPROBDATA*     detprobdata         /**< detection process information and data */
    )
 {
    int i;
@@ -826,11 +826,11 @@ SCIP_RETCODE createGraph(
  */
 SCIP_RETCODE createPartialdecFromMasterconss(
    SCIP*                 scip,                /**< SCIP data structure */
-   gcg::PARTIALDECOMP**          newPartialdec,            /**< partialdec data structure */
+   gcg::PARTIALDECOMP**  newPartialdec,       /**< partialdec data structure */
    int*                  masterconss,         /**< constraints to be put in the master */
    int                   nmasterconss,        /**< number of constraints in the master */
-   gcg::PARTIALDECOMP*           partialdec,               /**< partialdec to propagate */
-   gcg::DETPROBDATA*       detprobdata,            /**< detprobdata */
+   gcg::PARTIALDECOMP*   partialdec,          /**< partialdec to propagate */
+   gcg::DETPROBDATA*     detprobdata,         /**< detection process information and data */
    SCIP_Bool             exact                /** does this partialdec stems from exact graph construction ( or was onlysign = TRUE ) was used */
    )
 {
@@ -1202,7 +1202,7 @@ std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
 /** reorder such that the best permutation is represented by 0, the second best by 1, etc. */
 SCIP_RETCODE reorderPermutations(
    SCIP*                 scip,               /**< SCIP data structure */
-   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata */
+   gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
    int*                  permutation,        /**< the permutation */
    int                   permsize,           /**< size of the permutation */
    int                   nperms              /**< number of permutations */
