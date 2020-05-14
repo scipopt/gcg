@@ -68,33 +68,13 @@ separating/strongcg/freq = -1
 # [type: int, advanced: FALSE, range: [-1,65534], default: 10]
 separating/zerohalf/freq = -1
 
-# indicates whether detection should only consist of legacy mode detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/legacymode/onlylegacymode = TRUE
-
-# indicates whether detection consist of legacy mode detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/legacymode/enabled = TRUE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <connected> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/connected/legacymode = FALSE
-
 # flag to indicate whether detector <consclass> is enabled
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/consclass/enabled = FALSE
 
-# flag to indicate whether detector <consclass> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/consclass/origenabled = FALSE
-
 # flag to indicate whether detector <consname> is enabled
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/consname/enabled = TRUE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <consname> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/consname/legacymode = TRUE
 
 # All cons whose name match this regular expression will be mastercons
 # [type: string, advanced: FALSE, default: "(consname)(.*)"]
@@ -104,39 +84,10 @@ detection/detectors/consname/regex = "(CONSNAME)(.*)"
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/densemasterconss/enabled = FALSE
 
-# flag to indicate whether detector <densemasterconss> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/densemasterconss/origenabled = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <staircase> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/staircase/legacymode = FALSE
-
-# the maximal number of blocks, -1 defaults to avgconsperblock
-# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
-detection/detectors/random/maxblocks = 0
-
 # flag to indicate whether detector <hrgpartition> is enabled
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/hrgpartition/enabled = FALSE
 
-# flag to indicate whether detector <hrgpartition> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/hrgpartition/origenabled = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <hrcgpartition> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/hrcgpartition/legacymode = FALSE
-
 # flag to indicate whether detector <varclass> is enabled
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/varclass/enabled = FALSE
-
-# flag to indicate whether detector <varclass> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/varclass/origenabled = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <isomorph> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/isomorph/legacymode = FALSE
-

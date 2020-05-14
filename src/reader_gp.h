@@ -31,7 +31,7 @@
  * @author Hanna Franzen
  * @ingroup FILEREADERS
  *
- * This reader can write visualizations of seeeds to a .gp file.
+ * This reader can write visualizations of partialdecs to a .gp file.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -54,14 +54,26 @@ SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** Writes a visualization for the given seeed
+/** Writes a visualization for the given partialdec
  * @returns SCIP status */
-extern SCIP_RETCODE GCGwriteGpVisualization(
+extern
+SCIP_RETCODE GCGwriteGpVisualization(
    SCIP* scip,             /**< SCIP data structure */
    char* filename,         /**< filename (including path), location of the output*/
    char* outputname,       /**< outputname is the name of the file for the compiled gnuplot output file */
-   int seeedid             /**< id of seeed to visualize */
+   int partialdecid             /**< id of partialdec to visualize */
    );
+
+/** Creates a block matrix and outputs its visualization as .png file
+ * @returns SCIP return code
+ * */
+extern
+SCIP_RETCODE GCGWriteGpDecompMatrix(
+   SCIP*                 scip,               /**< scip data structure */
+   const char*           filename,           /**< filename the output should be written to (including directory) */
+   const char*           workfolder,         /**< directory in which should be worked */
+   SCIP_Bool             originalmatrix      /**< should the original (or transformed) matrix be written */
+);
 
 #ifdef __cplusplus
 }

@@ -96,103 +96,103 @@ extern void SCIPvisuSetColorscheme(
  *  @returns nothing*/
 extern void SCIPvisuSetColorManMasterconss(
    SCIP* scip,          /**< SCIP data structure */
-   char* newcolor       /**< new color */
+   const char* newcolor /**< new color */
    );
 
 /** sets manual color for mastervar block in current color scheme
  * @returns nothing */
 extern void SCIPvisuSetColorManMastervars(
    SCIP* scip,          /**< SCIP data structure */
-   char* newcolor       /**< new color */
+   const char* newcolor /**< new color */
    );
 
 /** sets manual color for linking blocks in current color scheme
  * @returns nothing */
 extern void SCIPvisuSetColorManLinking(
    SCIP* scip,          /**< SCIP data structure */
-   char* newcolor       /**< new color */
+   const char* newcolor /**< new color */
    );
 
 /** sets manual color for stairlinking blocks in current color scheme
  * @returns nothing */
 extern void SCIPvisuSetColorManStairlinking(
    SCIP* scip,          /**< SCIP data structure */
-   char* newcolor       /**< new color */
+   const char* newcolor /**< new color */
    );
 
 /** sets manual color for normal decomp blocks in current color scheme
  * @returns nothing */
 extern void SCIPvisuSetColorManBlock(
    SCIP* scip,          /**< SCIP data structure */
-   char* newcolor       /**< new color */
+   const char* newcolor /**< new color */
    );
 
 /** sets manual color for open blocks in current color scheme
  * @returns nothing */
 extern void SCIPvisuSetColorManOpen(
    SCIP* scip,          /**< SCIP data structure */
-   char* newcolor       /**< new color */
+   const char* newcolor /**< new color */
    );
 
 /** sets manual color for non-zero points in current color scheme
  * @returns nothing */
 extern void SCIPvisuSetColorManNonzero(
    SCIP* scip,          /**< SCIP data structure */
-   char* newcolor       /**< new color */
+   const char* newcolor /**< new color */
    );
 
 /** sets manual color for lines in current color scheme
  * @returns nothing */
 extern void SCIPvisuSetColorManLine(
    SCIP* scip,          /**< SCIP data structure */
-   char* newcolor       /**< new color */
+   const char* newcolor /**< new color */
    );
 
 /** gets color for mastercons block in current color scheme
  * @returns mastercons color */
-extern char* SCIPvisuGetColorMasterconss(
+extern const char* SCIPvisuGetColorMasterconss(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for mastervar block in current color scheme
  * @returns mastervar color */
-extern char* SCIPvisuGetColorMastervars(
+extern const char* SCIPvisuGetColorMastervars(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for linking blocks in current color scheme
  * @returns linking color */
-extern char* SCIPvisuGetColorLinking(
+extern const char* SCIPvisuGetColorLinking(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for stairlinking blocks in current color scheme
  * @returns stairlinking color */
-extern char* SCIPvisuGetColorStairlinking(
+extern const char* SCIPvisuGetColorStairlinking(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for normal decomp blocks in current color scheme
  * @returns block color */
-extern char* SCIPvisuGetColorBlock(
+extern const char* SCIPvisuGetColorBlock(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for open blocks in current color scheme
  * @returns open color */
-extern char* SCIPvisuGetColorOpen(
+extern const char* SCIPvisuGetColorOpen(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for non-zero points in current color scheme
  * @returns non-zero color */
-extern char* SCIPvisuGetColorNonzero(
+extern const char* SCIPvisuGetColorNonzero(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for lines in current color scheme
  * @returns line color */
-extern char* SCIPvisuGetColorLine(
+extern const char* SCIPvisuGetColorLine(
    SCIP* scip  /**< SCIP data structure */
    );
 
@@ -215,7 +215,7 @@ extern SCIP_Bool GCGgetUseGp(
 
 /** gets the name of the pdf reader that should be used
  * @returns name of pdf reader */
-extern char* GCGVisuGetPdfReader(
+extern const char* GCGVisuGetPdfReader(
    SCIP* scip  /**< SCIP data structure */
    );
 
@@ -246,12 +246,6 @@ extern SCIP_Bool GCGreportGetShowToc(
 /** gets whether statistics should be included for each decomp in reports
  * @returns true iff statistics for each decomp should be generated */
 extern SCIP_Bool GCGreportGetShowStatistics(
-   SCIP* scip  /**< SCIP data structure */
-   );
-
-/** gets the max number of finished decomps to be included in family tree
- * @returns max number of finished decomps */
-extern int GCGfamtreeGetMaxNDecomps(
    SCIP* scip  /**< SCIP data structure */
    );
 

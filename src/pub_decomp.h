@@ -55,7 +55,7 @@ struct Dec_Scores
    SCIP_Real             densityscore;       /**< score of block densities */
    SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
    SCIP_Real             totalscore;         /**< accumulated score */
-   SCIP_Real             maxwhitescore;      /** score related to max white measure (i.e. fraction of white (nonblock and nonborder) matrix area ) */
+   SCIP_Real             maxwhitescore;      /**< score related to max white measure (i.e. fraction of white (nonblock and nonborder) matrix area ) */
 };
 typedef struct Dec_Scores DEC_SCORES;
 
@@ -68,21 +68,21 @@ const char *DECgetStrType(
 extern
 SCIP_RETCODE DECdecompCreate(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP**          decdecomp           /**< pointer to the decomposition data structure */
+   DEC_DECOMP**          decomp              /**< pointer to the decomposition data structure */
    );
 
 /** frees the decomposition */
 extern
 SCIP_RETCODE DECdecompFree(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP**          decdecomp           /**< pointer to the decomposition data structure */
+   DEC_DECOMP**          decomp              /**< pointer to the decomposition data structure */
    );
 
 /** sets the type of the decomposition */
 extern
 SCIP_RETCODE DECdecompSetType(
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
-   DEC_DECTYPE           type               /**< type of the decomposition */
+   DEC_DECTYPE           type                /**< type of the decomposition */
    );
 
 /** gets the type of the decomposition */
@@ -99,10 +99,9 @@ SCIP_Real DECdecompGetMaxwhiteScore(
 extern
 void DECsetMaxWhiteScore(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp,          /**< decomposition data structure */
-   SCIP_Real             maxwhitescore
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_Real             maxwhitescore       /**< score related to max white measure (i.e. fraction of white (nonblock and nonborder) matrix area ) */
    );
-
 
 /** sets the presolved flag for decomposition */
 extern
@@ -352,19 +351,11 @@ int DECdecompGetDetectorChainSize(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
-/** sets the id of the original seeed */
+/** gets the id of the original partialdec */
 extern
-void DECdecompSetSeeedID(
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   int                   seeedID
-   );
-
-/** gets the id of the original seeed */
-extern
-int DECdecompGetSeeedID(
+int DECdecompGetPartialdecID(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
-
 
 /** sets the detector clock times of the detectors of the detector chain */
 extern
@@ -385,7 +376,7 @@ extern
 SCIP_RETCODE DECdecompSetDetectorChainString(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   char*                 detectorchainstring
+   const char*           detectorchainstring
    );
 
 
@@ -495,9 +486,6 @@ int* DECdecompGetNNewBlocks(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
-
-
-
 /** transforms all constraints and variables, updating the arrays */
 extern
 SCIP_RETCODE DECdecompTransform(
@@ -511,7 +499,7 @@ SCIP_RETCODE DECdecompTransform(
 extern
 SCIP_RETCODE DECdecompRemoveDeletedConss(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /**
@@ -619,11 +607,11 @@ SCIP_RETCODE DECgetVarLockData(
    );
 
 /**
- * returns the maximum white score ( if it is not calculated yet is decdecomp is evaluated)
+ * returns the maximum white score ( if it is not calculated yet is decomp is evaluated)
  */
 SCIP_Real DECgetMaxWhiteScore(
       SCIP*                 scip,               /**< SCIP data structure */
-      DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+      DEC_DECOMP*           decomp              /**< decomposition data structure */
       );
 
 
@@ -646,7 +634,8 @@ int DECdecompGetNConss(
 extern
 SCIP_RETCODE GCGprintDecompStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file                /**< output file or NULL for standard output */
+   FILE*                 file,               /**< output file or NULL for standard output */
+   DEC_DECOMP*           decomp              /**< decomp that should be evaluated */
    );
 
 /** returns whether both structures lead to the same decomposition */

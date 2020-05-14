@@ -128,11 +128,11 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
 }
 
 template <class T>
-SCIP_RETCODE RowGraph<T>::createSeeedFromPartition(
-   Seeed*      oldSeeed,
-   Seeed**     firstSeeed,
-   Seeed**     secondSeeed,
-   Seeedpool*  seeedpool
+SCIP_RETCODE RowGraph<T>::createPartialdecFromPartition(
+   PARTIALDECOMP*      oldpartialdec,
+   PARTIALDECOMP**     firstpartialdec,
+   PARTIALDECOMP**     secondpartialdec,
+   DETPROBDATA*  detprobdata
    )
 {
    int nblocks;
@@ -144,19 +144,19 @@ SCIP_RETCODE RowGraph<T>::createSeeedFromPartition(
 
    //fillout conssForGraph
    std::vector<int> conssForGraph; /** stores the conss included by the graph */
-   std::vector<bool> conssBool(oldSeeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+   std::vector<bool> conssBool(oldpartialdec->getNConss(), false); /**< true, if the cons will be part of the graph */
    bool found;
 
-   for(int c = 0; c < oldSeeed->getNOpenconss(); ++c)
+   for(int c = 0; c < oldpartialdec->getNOpenconss(); ++c)
    {
-      int cons = oldSeeed->getOpenconss()[c];
+      int cons = oldpartialdec->getOpenconss()[c];
       found = false;
-      for(int v = 0; v < oldSeeed->getNOpenvars() && !found; ++v)
+      for(int v = 0; v < oldpartialdec->getNOpenvars() && !found; ++v)
       {
-         int var = oldSeeed->getOpenvars()[v];
-         for(i = 0; i < seeedpool->getNVarsForCons(cons) && !found; ++i)
+         int var = oldpartialdec->getOpenvars()[v];
+         for(i = 0; i < detprobdata->getNVarsForCons(cons) && !found; ++i)
          {
-            if(var == seeedpool->getVarsForCons(cons)[i])
+            if(var == detprobdata->getVarsForCons(cons)[i])
             {
                conssBool[cons] = true;
                found = true;
@@ -165,9 +165,9 @@ SCIP_RETCODE RowGraph<T>::createSeeedFromPartition(
       }
    }
 
-   for(int c = 0; c < oldSeeed->getNOpenconss(); ++c)
+   for(int c = 0; c < oldpartialdec->getNOpenconss(); ++c)
    {
-      int cons = oldSeeed->getOpenconss()[c];
+      int cons = oldpartialdec->getOpenconss()[c];
       if(conssBool[cons])
          conssForGraph.push_back(cons);
    }
@@ -198,15 +198,9 @@ SCIP_RETCODE RowGraph<T>::createSeeedFromPartition(
 
    }
 
-
-   // TODO: remove- FOR DEBUG ONLY!!!
-   std::vector<int> nsubscipconss_dbg(nblocks);
-
    /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
    for( i = 0; i < nblocks; ++i )
    {
-      // TODO: remove- FOR DEBUG ONLY!!!
-      nsubscipconss_dbg[i] = nsubscipconss[i];
       if( nsubscipconss[i] == 0 )
       {
          SCIPdebugMessage("Block %d does not have any constraints!\n", i);
@@ -216,16 +210,29 @@ SCIP_RETCODE RowGraph<T>::createSeeedFromPartition(
 
    if( !emptyblocks )
    {
-      (*firstSeeed) = new Seeed(oldSeeed);
-      SCIP_CALL( (*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks) );
-      (*secondSeeed) = new Seeed(oldSeeed);
-      SCIP_CALL( (*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks) );
+      if( firstpartialdec != NULL )
+      {
+         (*firstpartialdec) = new PARTIALDECOMP(oldpartialdec);
+         SCIP_CALL((*firstpartialdec)->assignPartialdecFromConstoblock(constoblock, nblocks));
+      }
+      if( secondpartialdec != NULL )
+      {
+         (*secondpartialdec) = new PARTIALDECOMP(oldpartialdec);
+         SCIP_CALL((*secondpartialdec)->assignBorderFromConstoblock(constoblock, nblocks));
+      }
       SCIPhashmapFree(&constoblock);
    }
-   else {
+   else
+   {
       SCIPhashmapFree(&constoblock);
-      (*firstSeeed) = NULL;
-      (*secondSeeed) = NULL;
+      if( firstpartialdec != NULL )
+      {
+         (*firstpartialdec) = NULL;
+      }
+      if( secondpartialdec != NULL )
+      {
+         (*secondpartialdec) = NULL;
+      }
    }
 
    SCIPfreeBufferArray(this->scip_, &nsubscipconss);

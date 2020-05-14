@@ -36,11 +36,31 @@
 #define GCG_DECOMP_H__
 
 #include "type_decomp.h"
+#include "type_detector.h"
+#include "scip/scip.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/** sets the detectors for the given decomposition 
+ * 
+ * @note make sure you know what you are doing, only use at initialization
+*/
+extern
+SCIP_RETCODE DECdecompSetDetectorChain(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   DEC_DETECTOR**        detectors,          /**< new detector chain */
+   int                   ndetectors          /**< number of new detectors (i.e. length of the detector array) */
+   );
+
+/** sets the id of the original partialdec */
+extern
+void DECdecompSetPartialdecID(
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   int                   id                   /**< ID of partialdec */
+   );
 
 #ifdef __cplusplus
 }

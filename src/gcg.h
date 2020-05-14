@@ -87,7 +87,7 @@ SCIP_RETCODE GCGprintInstanceName(
 );
 
 SCIP_RETCODE GCGprintMiplibStructureInformation(
-   SCIP*                scip,
+   SCIP*                 scip,              /**< SCIP data structure */
    SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */
    );
 
@@ -104,7 +104,7 @@ SCIP_RETCODE GCGprintCompleteDetectionTime(
 );
 
 
-SCIP_RETCODE GCGprintClassifierInformation(
+SCIP_RETCODE GCGprintPartitionInformation(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
 );
@@ -266,32 +266,6 @@ extern
 SCIP_Bool GCGisMasterSetPartitioning(
    SCIP*                 scip                /**< SCIP data structure */
    );
-
-
-/** sets the structure information */
-SCIP_RETCODE GCGsetStructDecdecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
-   );
-
-/** sets the filename information*/
-SCIP_RETCODE GCGsetFilename(
-   SCIP*                 scip,               /**< SCIP data structure */
-   const char*           filename           /**< input file name */
-   );
-
-
-/** gets the structure information */
-extern
-DEC_DECOMP* GCGgetStructDecdecomp(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** sets the filename information*/
-const char* GCGgetFilename(
-   SCIP*                 scip               /**< SCIP data structure */
-   );
-
 
 /** returns whether the relaxator has been initialized */
 extern

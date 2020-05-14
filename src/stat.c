@@ -66,7 +66,7 @@ SCIP_RETCODE GCGwriteDecompositionData(
 
    assert(scip != NULL);
 
-   decomposition = DECgetBestDecomp(scip);
+   decomposition = DECgetBestDecomp(scip, TRUE);
    type = DECdecompGetType(decomposition);
    typeName = DECgetStrType(type);
 

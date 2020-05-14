@@ -7,12 +7,10 @@ detection/detectors/stairheur/maxcallround = 1
 detection/detectors/isomorph/maxcallround = 0
 
 detection/detectors/compgreedily/enabled = FALSE
-detection/detectors/connected/enabled = FALSE
 detection/detectors/connectedbase/enabled = FALSE
 detection/detectors/connectedbase/enabledfinishing = TRUE
 detection/detectors/compgreedily/enabled = FALSE
 detection/detectors/compgreedily/enabledfinishing = FALSE
-detection/detectors/connected/enabled = FALSE
 detection/detectors/connected_nonewlinkingvars/enabled = FALSE
 detection/detectors/mastersetpack/enabled = FALSE
 detection/detectors/generalmastersetpack/enabled = FALSE
@@ -20,7 +18,6 @@ detection/detectors/generalmastersetpart/enabled = FALSE
 detection/detectors/generalmastersetcover/enabled = FALSE
 detection/detectors/mastersetpart/enabled = FALSE
 detection/detectors/mastersetcover/enabled = FALSE
-detection/detectors/staircase/enabled = FALSE
 detection/detectors/constype/enabled = FALSE
 detection/detectors/staircase_lsp/enabled = FALSE
 

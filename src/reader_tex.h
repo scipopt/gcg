@@ -30,7 +30,7 @@
  * @author Hanna Franzen
  * @ingroup FILEREADERS
 
- * This reader can write visualizations, family trees and reports of seeeds to a .tex LaTeX file.
+ * This reader can write visualizations, family trees and reports of partialdecs to a .tex LaTeX file.
  * The gp reader might be required for visualizations.
 
  */
@@ -56,39 +56,29 @@ extern SCIP_RETCODE SCIPincludeReaderTex(
    SCIP* scip     /**< SCIP data structure */
    );
 
-/** Writes visualization LaTeX code for the given seeed
+/** Writes visualization LaTeX code for the given partialdec
  *
  * @returns SCIP status */
 extern SCIP_RETCODE GCGwriteTexVisualization(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< file in which to write the LaTeX code */
-   int seeedid,            /**< id of seeed to visualize */
+   int partialdecid,            /**< id of partialdec to visualize */
    SCIP_Bool statistics,   /**< additionally to picture show statistics */
    SCIP_Bool usegp         /**< true if the gp reader should be used for the image generation (instead of tikz) */
    );
 
-/** Writes a visualization of the family tree of the current seeedpool
+/** Writes a report for the given partialdecs
  *
- * @returns SCIP status */
-extern SCIP_RETCODE GCGwriteTexFamilyTree(
-   SCIP* scip,                /**< SCIP data structure */
-   FILE* file,                /**< file in which to put the LaTeX code */
-   const char* workfolder,    /**< directory in which should be worked, includes generation of intermediate files */
-   SEEED_WRAPPER** seeedswr,  /**< seeed wrapper for the seeeds the family tree should be constructed for */
-   int* nseeeds               /**< number of seeeds the family tree should be constructed for */
-   );
-
-/** Writes a report for the given seeeds
- *
+ * @note  *npartialdecs will be set to the number of actually written decompositions.
  * @returns SCIP status */
 extern SCIP_RETCODE GCGwriteTexReport(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< file in which to put the LaTeX code */
-   int* seeedids,          /**< ids of seeeds to visualize */
-   int* nseeeds,           /**< number of seeeds to visualize */
+   int* partialdecids,     /**< ids of partialdecs to visualize */
+   int* npartialdecs,      /**< number of partialdecs to visualize */
    SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
    SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
-   SCIP_Bool statistics,   /**< true if statistics for each seeed should be included */
+   SCIP_Bool statistics,   /**< true if statistics for each partialdec should be included */
    SCIP_Bool usegp         /**< true if the gp reader should be used for the image generation */
    );
 

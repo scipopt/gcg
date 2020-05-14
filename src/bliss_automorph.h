@@ -36,7 +36,6 @@
 #include "scip/type_scip.h"
 #include "scip/type_result.h"
 #include "scip/type_misc.h"
-#include "cons_decomp.h"
 
 #ifndef BLISS_AUTOMORPH_H_
 #define BLISS_AUTOMORPH_H_
@@ -60,20 +59,6 @@ SCIP_RETCODE cmpGraphPair(
    unsigned int          searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
    unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version) */
    );
-
-/** compare two graphs w.r.t. automorphism */
-SCIP_RETCODE cmpGraphPairNewdetection(
-   SCIP*                 scip,               /** SCIP data structure */
-   SEEED_WRAPPER*        seeedwr,            /** id of the seeed the graphs should be compared for */
-   int                   block1,             /**< index of first pricing prob */
-   int                   block2,             /**< index of second pricing prob */
-   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
-   SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap,            /**< hashmap to save permutation of constraints */
-   unsigned int          searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
-   unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version) */
-   );
-
 
 #ifdef __cplusplus
 }

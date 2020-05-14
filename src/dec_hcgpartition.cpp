@@ -26,8 +26,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_hcgpartition.cpp
- * @brief  arrowhead and bordered detector via graph partitioning (uses hmetis)
  * @ingroup DETECTORS
+ * @brief  arrowhead and bordered detector via graph partitioning (uses hmetis)
  * @author Martin Bergner
  * @author Michael Bastubbe
  *
@@ -53,7 +53,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-
+#include <queue>
 
 #include "cons_decomp.h"
 #include "struct_decomp.h"
@@ -66,8 +66,8 @@
 #include "graph/hypercolgraph.h"
 #include "graph/graph_tclique.h"
 #include "graph/weights.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 #include "scip/clock.h"
 
 
@@ -80,20 +80,18 @@ using gcg::Weights;
 #define DEC_DETECTORNAME         "hcgpartition"    /**< name of the detector */
 #define DEC_DESC                 "enforces arrowhead structures using graph partitioning" /**< description of detector */
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          0     /**< last round the detector gets called                              */
+#define DEC_MAXCALLROUND          0             /**< last round the detector gets called                              */
 #define DEC_MINCALLROUND          0           /**< first round the detector gets called                              */
 #define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  0     /**< last round the detector gets called while detecting the original problem                            */
-#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
+#define DEC_MAXCALLROUNDORIGINAL  0                /**< last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0             /**< first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              1000           /**< priority of the detector */
 #define DEC_DECCHAR               'G'            /**< display character of detector */
 #define DEC_ENABLED               FALSE           /**< should detector be called by default */
-#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE          /**< should detector be called by default */
 #define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */
-#define DEC_USEFULRECALL          TRUE           /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_USEFULRECALL          TRUE           /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
 
 /* Default parameter settings */
@@ -231,7 +229,7 @@ SCIP_RETCODE callMetis(
    DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
    char                  tempfile[SCIP_MAXSTRLEN],
-   int                   nblocks,            /** number of blocks */
+   int                   nblocks,            /**< number of blocks */
    SCIP_RESULT*          result              /**< result indicating whether the detection was successful */
    )
 {
@@ -335,8 +333,8 @@ SCIP_RETCODE callMetis(
 static
 SCIP_RETCODE createMetisFile(
    SCIP*                 scip,               /**< SCIP data struture */
-   DEC_DETECTORDATA*     detectordata,        /**< detector data structure */
-   int                   seeedID,             /**< used for speaking filenames */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   int                   partialdecid,       /**< used for speaking filenames */
    MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
    char tempfile[SCIP_MAXSTRLEN]
    )
@@ -351,11 +349,11 @@ SCIP_RETCODE createMetisFile(
 
    if( !detectordata->realname )
    {
-      (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-%c-%d.metis.XXXXXX", DEC_DECCHAR, seeedID );
+      (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-%c-%d.metis.XXXXXX", DEC_DECCHAR, partialdecid );
    }
    else
    {
-      (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-%s-%c-%d.metis.XXXXXX", SCIPgetProbName(scip), DEC_DECCHAR, seeedID);
+      (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-%s-%c-%d.metis.XXXXXX", SCIPgetProbName(scip), DEC_DECCHAR, partialdecid);
    }
 
    fd = mkstemp(tempfile);
@@ -368,20 +366,20 @@ SCIP_RETCODE createMetisFile(
 /** returns, whether the hypercolgraph is connected */
 static
 bool connected(
-   gcg::Seeedpool*  seeedpool,
-   gcg::Seeed*      seeed
+   gcg::DETPROBDATA*  detprobdata,
+   gcg::PARTIALDECOMP*      partialdec
    )
 {
    std::vector<int> queue;
    std::vector<int> visited;
-   std::vector<bool> inqueue(seeedpool->getNConss(), false);
-   std::vector<bool> isvisited(seeedpool->getNConss(), false);
+   std::vector<bool> inqueue(detprobdata->getNConss(), false);
+   std::vector<bool> isvisited(detprobdata->getNConss(), false);
    int start = -1;
 
-   if(seeed->getNOpenconss() < 2)
+   if(partialdec->getNOpenconss() < 2)
       return false;
 
-   start = seeed->getOpenconss()[0];
+   start = partialdec->getOpenconss()[0];
 
    queue.push_back(start);
    inqueue[start] = true;
@@ -392,15 +390,15 @@ bool connected(
       inqueue[node] = false;
       visited.push_back(node);
       isvisited[node] = true;
-      for(int v = 0; v < seeedpool->getNVarsForCons(node); ++v)
+      for(int v = 0; v < detprobdata->getNVarsForCons(node); ++v)
       {
-         int var = seeedpool->getVarsForCons(node)[v];
-         if(!seeed->isVarOpenvar(var))
+         int var = detprobdata->getVarsForCons(node)[v];
+         if(!partialdec->isVarOpenvar(var))
             continue;
-         for(int c = 0; c < seeedpool->getNConssForVar(var); ++c)
+         for(int c = 0; c < detprobdata->getNConssForVar(var); ++c)
          {
-            int cons = seeedpool->getConssForVar(var)[c];
-            if(!seeed->isConsOpencons(cons))
+            int cons = detprobdata->getConssForVar(var)[c];
+            if(!partialdec->isConsOpencons(cons))
                continue;
             if( isvisited[cons] )
                continue;
@@ -412,24 +410,23 @@ bool connected(
       }
    } while(!queue.empty());
 
-   if((int)visited.size() != seeed->getNOpenconss())
+   if((int)visited.size() != partialdec->getNOpenconss())
       return false;
    else
       return true;
 }
 
-/** detection function for seeeds */
+/** detection function for partialdecs */
 static
 SCIP_RETCODE detection(
    SCIP*                   scip,                         /**< SCIP data structure */
    DEC_DETECTORDATA*       detectordata,                 /**< detectordata of the detector */
-   Seeed_Propagation_Data* seeedPropagationData,         /**< seeedPropagationData (including the seeedpool) where to store the new Seeeds */
-   gcg::Seeed*             seeed,                        /**< seeed to propagate */
-   bool                    border,                       /**< whether new seeeds should be stored in which this detector only assignes conss to master */
+   Partialdec_Detection_Data*   partialdecdetectiondata, /**< partialdecdetectiondata where to store the new Partialdecs */
+   gcg::PARTIALDECOMP*     partialdec,                   /**< partialdec to propagate */
+   bool                    allowopenpartialdecs,         /**< whether new partialdecs should be stored in which this detector only assigns conss to master */
    SCIP_RESULT*            result                        /**< pointer where to store the result */
 )
 {
-
    /* add hcgpartition presolver parameters */
    char setstr[SCIP_MAXSTRLEN];
    char decinfo[SCIP_MAXSTRLEN];
@@ -437,9 +434,9 @@ SCIP_RETCODE detection(
    int k;
    int j;
    int s;
-   int nMaxSeeeds;
-   int nNewSeeeds = 0;
-   gcg::Seeed** newSeeeds;
+   int nMaxPartialdecs;
+   int nnewpartialdecs = 0;
+   gcg::PARTIALDECOMP** newpartialdecs;
    SCIP_CLOCK* clock;
    SCIP_CLOCK* temporaryClock;
    std::vector<SCIP_Real> clockTimes;        /* vector containing times in seconds  */
@@ -448,13 +445,13 @@ SCIP_RETCODE detection(
    MatrixGraph<gcg::GraphTclique>* graph;    /* the graph of the matrix */
    char tempfile[SCIP_MAXSTRLEN];            /* filename for the metis input file */
 
-
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
 
    *result = SCIP_DIDNOTFIND;
 
-   std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getSortedCandidatesNBlocks();
+   std::vector<int> numberOfBlocks;
+   partialdecdetectiondata->detprobdata->getSortedCandidatesNBlocks(numberOfBlocks);
    if(numberOfBlocks.empty())
       numberOfBlocks.push_back(8);
 
@@ -467,31 +464,31 @@ SCIP_RETCODE detection(
    assert(detectordata != NULL);
 
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
-   nMaxSeeeds = detectordata->maxblocks-detectordata->minblocks+1;
+   nMaxPartialdecs = detectordata->maxblocks-detectordata->minblocks+1;
 
    /* allocate space for output data */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(newpartialdecs), 2 * nMaxPartialdecs) );
 
    /* build the hypergraph structure from the original problem */
 
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
    graph = new HypercolGraph<gcg::GraphTclique>(scip, w);
 
-   SCIP_CALL( graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed) );
-   SCIP_CALL( createMetisFile(scip, detectordata, seeed->getID(), graph, tempfile) );
+   SCIP_CALL( graph->createFromPartialMatrix(partialdecdetectiondata->detprobdata, partialdec) );
+   SCIP_CALL( createMetisFile(scip, detectordata, partialdec->getID(), graph, tempfile) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
-
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
 
    for( j = 0, k = 0; k < maxnblockcandidates; ++k)
    {
-      int nblocks = numberOfBlocks[k] - seeed->getNBlocks();
+      int nblocks = numberOfBlocks[k] - partialdec->getNBlocks();
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       SCIP_RETCODE retcode;
-      if( nblocks > seeed->getNOpenconss() || nblocks <= 1 )
+
+      if( nblocks > partialdec->getNOpenconss() || nblocks <= 1 )
       {
          SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
          SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
@@ -507,150 +504,63 @@ SCIP_RETCODE detection(
          continue;
       }
 
-      SCIP_CALL( graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool));
-      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      if( (newSeeeds)[j] != NULL )
+      if( allowopenpartialdecs )
       {
-         nNewSeeeds = nNewSeeeds + 2;
+         SCIP_CALL( graph->createPartialdecFromPartition(partialdec, &newpartialdecs[j], &newpartialdecs[j+1], partialdecdetectiondata->detprobdata));
+      }
+      else
+      {
+         SCIP_CALL( graph->createPartialdecFromPartition(partialdec, &newpartialdecs[j], NULL, partialdecdetectiondata->detprobdata));
+      }
+
+      if( newpartialdecs[j] != NULL )
+      {
+         if( !allowopenpartialdecs )
+         {
+            newpartialdecs[j]->considerImplicits();
+            newpartialdecs[j]->refineToBlocks();
+            assert(newpartialdecs[j]->getNOpenconss() == 0);
+            assert(newpartialdecs[j]->getNOpenvars() == 0);
+         }
+         SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+
          detectordata->found = TRUE;
+         nnewpartialdecs++;
          (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hc\\_%d", numberOfBlocks[k]);
-         newSeeeds[j]->addDetectorChainInfo(decinfo);
-         newSeeeds[j+1]->addDetectorChainInfo(decinfo);
+         newpartialdecs[j]->addDetectorChainInfo(decinfo);
 
-         clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock));
-         clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock)); // 2x because two seeeds where created
-      }
-      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
-      j = j + 2;
-   }
-
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock ) );
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d seeeds found.\n",  nNewSeeeds);
-
-   delete graph;
-   graph = NULL;
-
-   assert(nNewSeeeds % 2 == 0);
-   if(border)
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds) );
-      seeedPropagationData->nNewSeeeds = nNewSeeeds;
-      for(j = 0, s = 0; s < nNewSeeeds; ++j)
-      {
-         if(newSeeeds[j] != NULL)
+         if( allowopenpartialdecs )
          {
-            seeedPropagationData->newSeeeds[s] = newSeeeds[j];
-            ++s;
+            nnewpartialdecs++;
+            clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock) / 2);
+            clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock) / 2);
+            newpartialdecs[j + 1]->addDetectorChainInfo(decinfo);
+            j += 2;
+         }
+         else
+         {
+            clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock));
+            j++;
          }
       }
-   }
-   else
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds/2) );
-      seeedPropagationData->nNewSeeeds = nNewSeeeds/2;
-      for(j = 0, s = 0; s < nNewSeeeds/2; j+=2)
-      {
-         if(newSeeeds[j] != NULL)
-         {
-            seeedPropagationData->newSeeeds[s] = newSeeeds[j];
-            ++s;
-         }
-      }
+      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
    }
 
-
-   SCIPfreeMemoryArray(scip, &newSeeeds);
-
-   if( detectordata->tidy )
-   {
-      int status = remove( tempfile );
-      if( status == -1 )
-      {
-         SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
-         SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
-         SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
-         return SCIP_WRITEERROR;
-      }
-   }
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
-   if(border)
-   {
-      for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime(scip, clock) + clockTimes[s] );
-   }
-   else
-   {
-      for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime(scip, clock) + clockTimes[2*s] );
-   }
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
-
-   *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
-   return SCIP_OKAY;
-}
-
-
-/** detector structure detection method, tries to detect a structure in the problem */
-static
-DEC_DECL_DETECTSTRUCTURE(detectHcgpartition)
-{
-   int i;
-   int j;
-   int ndecs;
-
-   MatrixGraph<gcg::GraphTclique>* graph;    /* the graph of the matrix */
-   char tempfile[SCIP_MAXSTRLEN];            /* filename for the metis input file */
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-   assert(decdecomps != NULL);
-   assert(ndecdecomps != NULL);
-
-   SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
-   ndecs = detectordata->maxblocks-detectordata->minblocks+1;
-   *ndecdecomps = 0;
-
-   /* allocate space for output data */
-   assert(detectordata->maxblocks >= detectordata->minblocks);
-   SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
-
-   /* build the hypergraph structure from the original problem */
-
-   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   graph = new HypercolGraph<gcg::GraphTclique>(scip, w);
-
-   SCIP_CALL( graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-   SCIP_CALL( createMetisFile(scip, detectordata, 0, graph, tempfile) );
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
-   for( j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
-   {
-      SCIP_RETCODE retcode;
-      /* get the partitions for the new variables from metis */
-      retcode = callMetis(scip, detectordata, graph, tempfile, i, result);
-
-      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY )
-      {
-         continue;
-      }
-
-      SCIP_CALL( graph->createDecompFromPartition(&(*decdecomps)[j]) );
-      if( (*decdecomps)[j] != NULL )
-      {
-         *ndecdecomps += 1;
-         ++j;
-         detectordata->found = TRUE;
-      }
-   }
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d decompositions found.\n",  *ndecdecomps);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d partialdecs found.\n",  nnewpartialdecs);
 
    delete graph;
-   graph = NULL;
 
-   SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), nnewpartialdecs) );
+   partialdecdetectiondata->nnewpartialdecs = nnewpartialdecs;
+   for( s = 0; s < nnewpartialdecs; ++s )
+   {
+      partialdecdetectiondata->newpartialdecs[s] = newpartialdecs[j];
+      partialdecdetectiondata->newpartialdecs[s]->addClockTime(clockTimes[s] + SCIPgetClockTime(scip, temporaryClock) / nnewpartialdecs);
+   }
+
+   SCIPfreeMemoryArray(scip, &newpartialdecs);
+   SCIP_CALL_ABORT( SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPfreeClock(scip, &clock) );
 
    if( detectordata->tidy )
    {
@@ -662,95 +572,245 @@ DEC_DECL_DETECTSTRUCTURE(detectHcgpartition)
       }
    }
 
-
    *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
    return SCIP_OKAY;
 }
+
+
 #endif
 
 
+/**
+ * @brief computes components by connectedness of conss and vars
+ *
+ * computes components corresponding to connectedness of conss and vars
+ * and assigns them accordingly (all but one of largest components)
+ *
+ * strategy: assigns all conss same block if they are connected
+ * two constraints are adjacent if there is a common variable
+ *
+ * @note this relies on the consadjacency structure of the detprobdata
+ *  hence it cannot be applied in presence of linking variables
+ *
+ *  @return scip return code
+ */
 static
-DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
+SCIP_RETCODE assignSmallestComponentsButOneConssAdjacency(
+   SCIP* scip,                      /**< scip data structure */
+   gcg::PARTIALDECOMP* partialdec   /**< partialdecomp to complete */
+   )
 {
-   gcg::Seeed* seeed;
-   seeed = seeedPropagationData->seeedToPropagate;
+   int cons;
 
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   /* tools to check if the openvars can still be found in a constraint yet */
+   std::vector<int> varinblocks; /* stores, in which block the variable can be found */
 
+   /* tools to update openvars */
+   std::vector<int> oldOpenconss;
+   std::vector<int> openvarsToDelete;
+   gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
 
-  //assert( seeed->checkConsistency( seeedPropagationData->seeedpool ));
-
-   seeed->considerImplicits();
-  //assert( seeed->checkConsistency( seeedPropagationData->seeedpool ));
-
-   seeed->refineToMaster();
-
-   //assert( seeed->checkConsistency( seeedPropagationData->seeedpool ));
-
-   if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
+   if( partialdec->getNLinkingvars() != 0 )
    {
-      seeed->assignSmallestComponentsButOneConssAdjacency();
+      partialdec->complete();
+      return SCIP_OKAY;
    }
 
-   detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, result);
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-
-
-   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
+   if( !GCGconshdlrDecompGetConssAdjCalculated(scip) )
    {
-      seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
+      detprobdata->createConssAdjacency();
+      GCGconshdlrDecompSetConssAdjCalculated(scip, TRUE);
    }
 
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   int nconss = detprobdata->getNConss();
+   int nvars = detprobdata->getNVars();
 
+   std::vector<bool> isConsOpen( nconss, false );
+   std::vector<bool> isConsVisited( nconss, false );
+
+   std::vector<std::vector<int>> conssfornewblocks(0);
+   std::vector<std::vector<int>> varsfornewblocks(0);
+
+   int newblocks;
+   int largestcomponent;
+   int sizelargestcomponent;
+
+   auto constoconsider = partialdec->getOpenconssVec();
+
+   varinblocks = std::vector<int>(nvars, -1);
+   newblocks = 0;
+   largestcomponent = -1;
+   sizelargestcomponent = 0;
+
+   std::queue<int> helpqueue = std::queue<int>();
+   std::vector<int> neighborConss( 0 );
+
+   int nblocks = partialdec->getNBlocks();
+   assert( (int) partialdec->getConssForBlocks().size() == nblocks );
+   assert( partialdec->getNVarsForBlocks() == nblocks );
+   assert( partialdec->getNTotalStairlinkingvars() == nblocks );
+
+   assert(partialdec->checkConsistency() );
+
+   if( nblocks < 0 )
+      nblocks = 0;
+
+   /* do breadth first search to find connected conss */
+   while( !constoconsider.empty() )
+   {
+      std::vector<int> newconss(0);
+      std::vector<int> newvars(0);
+
+      assert( helpqueue.empty() );
+      helpqueue.push( constoconsider[0] );
+      neighborConss.clear();
+      neighborConss.push_back( constoconsider[0] );
+      isConsVisited[constoconsider[0]] = true;
+
+      while( !helpqueue.empty() )
+      {
+         int nodeCons = helpqueue.front();
+         assert( partialdec->isConsOpencons( nodeCons ) );
+         helpqueue.pop();
+         for( int c = 0; c < detprobdata->getNConssForCons( nodeCons ); ++ c )
+         {
+            int othercons;
+            othercons = detprobdata->getConssForCons( nodeCons )[c];
+
+            if( isConsVisited[othercons] || partialdec->isConsMastercons( othercons ) || !isConsOpen[othercons] )
+               continue;
+
+            assert( partialdec->isConsOpencons( othercons ) );
+            isConsVisited[othercons] = true;
+            neighborConss.push_back( othercons );
+            helpqueue.push( othercons );
+         }
+      }
+
+      /* assign found conss and vars to a new block */
+      ++newblocks;
+      for( size_t i = 0; i < neighborConss.size(); ++ i )
+      {
+         std::vector<int>::iterator consiter;
+         cons = neighborConss[i];
+         consiter = std::lower_bound(constoconsider.begin(), constoconsider.end(), cons);
+         assert(consiter != constoconsider.end() );
+         constoconsider.erase(consiter);
+         assert( partialdec->isConsOpencons( cons ) );
+         newconss.push_back(cons);
+
+         for( int j = 0; j < detprobdata->getNVarsForCons(cons); ++ j )
+         {
+            int newvar = detprobdata->getVarsForCons(cons)[j];
+
+            if( partialdec->isVarLinkingvar(newvar) || varinblocks[newvar] != -1 )
+               continue;
+
+            assert(! partialdec->isVarMastervar( newvar) );
+            newvars.push_back(newvar);
+            varinblocks[newvar] = newblocks;
+         }
+      }
+      conssfornewblocks.push_back(newconss);
+      varsfornewblocks.push_back(newvars);
+   }
+
+   for( int i = 0; i < newblocks; ++i )
+   {
+      if( (int)conssfornewblocks[i].size() > sizelargestcomponent )
+      {
+         sizelargestcomponent = (int)conssfornewblocks[i].size();
+         largestcomponent = i;
+      }
+   }
+
+   if( newblocks > 1 )
+   {
+      int oldnblocks;
+      bool largestdone = false;
+      oldnblocks = partialdec->getNBlocks();
+      partialdec->setNBlocks(newblocks - 1 + partialdec->getNBlocks());
+
+      for( int i = 0; i < newblocks; ++i)
+      {
+         if( i == largestcomponent )
+         {
+            largestdone = true;
+            continue;
+         }
+         for( int c = 0; c < (int) conssfornewblocks[i].size() ; ++c)
+         {
+            partialdec->fixConsToBlock(conssfornewblocks[i][c], oldnblocks + i - (largestdone ? 1 : 0) );
+         }
+
+         for( int v = 0; v < (int) varsfornewblocks[i].size() ; ++v )
+         {
+            partialdec->fixVarToBlock(varsfornewblocks[i][v], oldnblocks + i - (largestdone ? 1 : 0) );
+         }
+      }
+      partialdec->prepare();
+   }
+
+   assert( partialdec->checkConsistency( ) );
 
    return SCIP_OKAY;
 }
 
 
 static
-DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
+DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHcgpartition)
 {
-
    SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
+
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
+   partialdec->considerImplicits();
+   partialdec->refineToMaster();
 
-   gcg::Seeed* seeed = seeedPropagationData->seeedToPropagate;
-
-   seeed->considerImplicits();
-   seeed->refineToBlocks();
-
-   if( !connected(seeedPropagationData->seeedpool, seeed ) )
+   if( !connected(partialdecdetectiondata->detprobdata, partialdec) || partialdec->alreadyAssignedConssToBlocks() )
    {
-      seeed->assignSmallestComponentsButOneConssAdjacency();
+      assignSmallestComponentsButOneConssAdjacency(scip, partialdec);
    }
 
-   detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, FALSE, result);
+   detection(scip, DECdetectorGetData(detector), partialdecdetectiondata, partialdec, true, result);
 
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-
-
-   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-   {
-      seeedPropagationData->newSeeeds[s]->considerImplicits();
-      seeedPropagationData->newSeeeds[s]->refineToBlocks();
-      seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
-      assert(seeedPropagationData->newSeeeds[s]->getNOpenconss() == 0);
-      assert(seeedPropagationData->newSeeeds[s]->getNOpenvars() == 0);
-   }
-
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-
 
    return SCIP_OKAY;
 }
 
-#define detectorPostprocessSeeedHcgpartition NULL
+
+static
+DEC_DECL_FINISHPARTIALDEC(finishPartialdecHcgpartition)
+{
+   SCIP_CLOCK* temporaryClock;
+   gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
+
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
+   partialdec->considerImplicits();
+   partialdec->refineToBlocks();
+
+   if( !connected(partialdecdetectiondata->detprobdata, partialdec ) )
+   {
+      assignSmallestComponentsButOneConssAdjacency(scip, partialdec);
+   }
+
+   detection(scip, DECdetectorGetData(detector), partialdecdetectiondata, partialdec, false, result);
+
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
+   return SCIP_OKAY;
+}
+
+#define detectorPostprocessPartialdecHcgpartition NULL
 
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHcgpartition)
@@ -763,13 +823,10 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHcgpartition)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
 
-     (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxcallround", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxcallround", name);
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
    ++newval;
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
@@ -822,9 +879,6 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultHcgpartition)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
@@ -865,9 +919,6 @@ DEC_DECL_SETPARAMFAST(setParamFastHcgpartition)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
@@ -917,13 +968,13 @@ SCIP_RETCODE SCIPincludeDetectorHcgpartition(
    assert(detectordata != NULL);
 
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectHcgpartition, freeHcgpartition, initHcgpartition, exitHcgpartition, propagateSeeedHcgpartition, finishSeeedHcgpartition, detectorPostprocessSeeedHcgpartition, setParamAggressiveHcgpartition, setParamDefaultHcgpartition, setParamFastHcgpartition) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeHcgpartition, initHcgpartition, exitHcgpartition, propagatePartialdecHcgpartition, finishPartialdecHcgpartition, detectorPostprocessPartialdecHcgpartition, setParamAggressiveHcgpartition, setParamDefaultHcgpartition, setParamFastHcgpartition) );
 
 
    /* add hcgpartition detector parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/maxnblockcandidates", "The maximal number of block number candidates", &detectordata->maxnblockcandidates, FALSE, DEFAULT_MAXNBLOCKCANDIDATES, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/maxblocks", "The maximal number of blocks (only used in legacy mode; detector is called for all block numbers in [minblocks,maxblocks])", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/minblocks", "The minimal number of blocks (only used in legacy mode; detector is called for all block numbers in [minblocks,maxblocks])", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/maxblocks", "The maximal number of blocks (detector is called for all block numbers in [minblocks,maxblocks])", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/minblocks", "The minimal number of blocks (detector is called for all block numbers in [minblocks,maxblocks])", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/beta", "Factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
    SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/alpha", "Factor on how heavy the standard deviation of the coefficients is measured", &detectordata->alpha, FALSE, DEFAULT_ALPHA, 0.0, 1E20, NULL, NULL ) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/varWeight", "Weight of a variable hyperedge", &detectordata->varWeight, FALSE, DEFAULT_VARWEIGHT, 0, 1000000, NULL, NULL) );

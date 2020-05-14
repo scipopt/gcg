@@ -39,13 +39,13 @@
  * – each line in a section provides one value
  * – key words for sections are:
  *   – consdefaultmaster:
- *     + optional; followed by line with possible values: {0, 1}; default: 1; description: if set to 1 then (directly after file is read) each unassigned constraint is assigned to the master (needed for backward compatibility)
+ *     – optional; followed by line with possible values: {0, 1}; default: 1; description: if set to 1 then (directly after file is read) each unassigned constraint is assigned to the master (needed for backward compatibility)
  * – presolved:
- *   + mandatory; followed by line with possible values: {0, 1}; description: if set to 0 (1) then the decomposition is considered for the unpresolved (presolved) problem
+ *   – mandatory; followed by line with possible values: {0, 1}; description: if set to 0 (1) then the decomposition is considered for the unpresolved (presolved) problem
  * – nblocks
- *   + mandatory; possible values: N; description: number of (possibly empty) blocks this decomposition file has information for
+ *   – mandatory; possible values: N; description: number of (possibly empty) blocks this decomposition file has information for
  * – block (alternatives: blockconss or blockcons)
- * + optional; directly followed by block index (starting with 1); each following line contains name of a constraint belonging to this block
+ *   – optional; directly followed by block index (starting with 1); each following line contains name of a constraint belonging to this block
  * – masterconss (alternative: mastercons)
  *   + optional; each following line contains name of a constraint belonging to the master
  * – blockvars

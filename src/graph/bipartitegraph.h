@@ -60,8 +60,8 @@ public:
 
 
    virtual SCIP_RETCODE createFromPartialMatrix(
-     Seeedpool*                              seeedpool,
-     Seeed*                                  seeed
+     DETPROBDATA*                              detprobdata,
+     PARTIALDECOMP*                            partialdec
    );
 
    int getNConsNodes();

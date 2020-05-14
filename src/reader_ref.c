@@ -47,6 +47,7 @@
 #include "gcg.h"
 #include "scip/cons_linear.h"
 #include "cons_decomp.h"
+#include "relax_gcg.h"
 
 #define READER_NAME             "refreader"
 #define READER_DESC             "file reader for blocks corresponding to a mip in lpb format"
@@ -652,11 +653,11 @@ SCIP_RETCODE writeREFFile(
    assert(reader != NULL);
    assert(file != NULL);
 
-   decomp = DECgetBestDecomp(scip);
+   decomp = DECgetBestDecomp(scip, TRUE);
 
    if( decomp == NULL )
    {
-      decomp = GCGgetStructDecdecomp(scip);
+      decomp = GCGgetStructDecomp(scip);
    }
 
    if( decomp == NULL )
@@ -824,7 +825,7 @@ SCIP_RETCODE SCIPreadRef(
 
    if( retcode == SCIP_OKAY )
    {
-      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
+      SCIP_CALL( GCGconshdlrDecompAddPreexistingDecomp(scip, decomp) );
       SCIPdebugMessage("Read %d/%d conss in ref-file\n", refinput.totalreadconss, refinput.totalconss);
       SCIPdebugMessage("Assigned %d variables to %d blocks.\n", refinput.nassignedvars, refinput.nblocks);
 #ifdef SCIP_DEBUG
@@ -839,11 +840,8 @@ SCIP_RETCODE SCIPreadRef(
       }
 #endif
    }
-   else
-   {
-      SCIP_CALL( DECdecompFree(scip, &decomp) );
-   }
 
+   SCIP_CALL( DECdecompFree(scip, &decomp) );
 
    /* free dynamically allocated memory */
    SCIPfreeMemoryArray(scip, &refinput.token);

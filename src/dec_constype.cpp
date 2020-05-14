@@ -35,8 +35,8 @@
 
 #include "dec_constype.h"
 #include "cons_decomp.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 #include "gcg.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
@@ -57,12 +57,10 @@
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               't'         /**< display character of detector */
 #define DEC_ENABLED               FALSE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       FALSE  /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
 #define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
-#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 /*
  * Data structures
  */
@@ -108,73 +106,34 @@ std::vector< std::vector<int> > getSubsets(std::vector<int> set)
 #define freeConstype NULL
 
 /** destructor of detector to free detector data (called before the solving process begins) */
-#if 0
-static
-DEC_DECL_EXITDETECTOR(exitConstype)
-{ /*lint --e{715}*/
-
-   SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define exitConstype NULL
-#endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
-#if 0
-static
-DEC_DECL_INITDETECTOR(initConstype)
-{ /*lint --e{715}*/
-
-   SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define initConstype NULL
-#endif
 
-/** detection function of detector */
-//static DEC_DECL_DETECTSTRUCTURE(detectConstype)
-//{ /*lint --e{715}*/
-//   *result = SCIP_DIDNOTFIND;
-//
-//   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
-//;   SCIPABORT(); /*lint --e{527}*/
-//
-//   return SCIP_OKAY;
-//}
-
-#define detectConstype NULL
-
-static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
+static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
 {
-  *result = SCIP_DIDNOTFIND;
-  char decinfo[SCIP_MAXSTRLEN];
+   *result = SCIP_DIDNOTFIND;
+   char decinfo[SCIP_MAXSTRLEN];
 
-  SCIP_CLOCK* temporaryClock;
-  SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-  SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-  SCIP_CONS* cons;
+   SCIP_CONS* cons;
 
-  int seeedCounter = 0;
-  gcg::Seeed* seeedOrig;
-  gcg::Seeed* seeed;
+   int partialdecCounter = 0;
+   gcg::PARTIALDECOMP* partialdecOrig;
+   gcg::PARTIALDECOMP* partialdec;
 
-  std::vector<consType> foundConstypes(0);
-  std::vector<int> constypesIndices(0);
+   std::vector<consType> foundConstypes(0);
+   std::vector<int> constypesIndices(0);
 
-  seeedOrig = seeedPropagationData->seeedToPropagate;
+   partialdecOrig = partialdecdetectiondata->workonpartialdec;
 
-
-
-  for( int i = 0; i < seeedOrig->getNOpenconss(); ++i)
-  {
-      cons = seeedPropagationData->seeedpool->getConsForIndex(seeedOrig->getOpenconss()[i]);
+   for( int i = 0; i < partialdecOrig->getNOpenconss(); ++i)
+   {
+      cons = partialdecdetectiondata->detprobdata->getConsForIndex(partialdecOrig->getOpenconss()[i]);
       consType cT = GCGconsGetType(scip, cons);
 
       /* find constype or not */
@@ -189,58 +148,66 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
       {
          foundConstypes.push_back(GCGconsGetType(scip, cons) );
       }
-  }
+   }
 
-  for(size_t i = 0; i < foundConstypes.size(); ++i)
-  {
+   for(size_t i = 0; i < foundConstypes.size(); ++i)
+   {
       constypesIndices.push_back(i);
-  }
+   }
 
-  std::vector< std::vector<int> > subsetsOfConstypes = getSubsets(constypesIndices);
+   std::vector< std::vector<int> > subsetsOfConstypes = getSubsets(constypesIndices);
 
-  SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), subsetsOfConstypes.size() - 1) );
-  seeedPropagationData->nNewSeeeds = subsetsOfConstypes.size() - 1;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), subsetsOfConstypes.size() - 1) );
+   partialdecdetectiondata->nnewpartialdecs = subsetsOfConstypes.size() - 1;
 
-  for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
-  {
+   for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
+   {
       if(subsetsOfConstypes[subset].size() == 0)
           continue;
 
-      seeed = new gcg::Seeed(seeedOrig);
+      partialdec = new gcg::PARTIALDECOMP(partialdecOrig);
       /* set open cons that have type of the current subset to Master */
-      for( int i = 0; i < seeed->getNOpenconss(); ++i)
+      auto& openconss = partialdec->getOpenconssVec();
+      for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
       {
-          for(size_t constypeId = 0; constypeId < subsetsOfConstypes[subset].size(); ++constypeId )
-          {
-              cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
-              if( GCGconsGetType(scip, cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] )
-              {
-                  seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
-              }
-          }
+         cons = partialdecdetectiondata->detprobdata->getConsForIndex(*itr);
+         bool found = false;
+         for(size_t constypeId = 0; constypeId < subsetsOfConstypes[subset].size(); ++constypeId )
+         {
+            if( GCGconsGetType(scip, cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] )
+            {
+               itr = partialdec->fixConsToMaster(itr);
+               found = true;
+               break;
+            }
+         }
+         if( !found )
+         {
+            ++itr;
+         }
       }
-      seeed->flushBooked();
-      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "constype");
-      seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
+      partialdec->sort();
+      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "constype-%llu", subset);
+      partialdec->addDetectorChainInfo(decinfo);
+      partialdecdetectiondata->newpartialdecs[partialdecCounter] = partialdec;
+      partialdecCounter++;
+   }
 
-      seeedPropagationData->newSeeeds[seeedCounter] = seeed;
-      seeedCounter++;
-  }
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
+   for( int s = 0; s < partialdecdetectiondata->nnewpartialdecs; ++s )
+   {
+      partialdecdetectiondata->newpartialdecs[s]->addClockTime(partialdecdetectiondata->detectiontime / partialdecdetectiondata->nnewpartialdecs);
+   }
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
-  SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-  for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-  {
-     seeedPropagationData->newSeeeds[s]->addClockTime( SCIPgetClockTime( scip, temporaryClock )  );
-  }
-  SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-
-  *result = SCIP_SUCCESS;
+   *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
 }
 
-#define finishSeeedConstype NULL
-#define detectorPostprocessSeeedConstype NULL
+#define finishPartialdecConstype NULL
+#define detectorPostprocessPartialdecConstype NULL
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConstype)
 {
@@ -250,23 +217,26 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConstype)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
    return SCIP_OKAY;
-
 }
 
 
 static
 DEC_DECL_SETPARAMDEFAULT(setParamDefaultConstype)
 {
+   char setstr[SCIP_MAXSTRLEN];
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
    return SCIP_OKAY;
-
 }
 
 static
@@ -279,9 +249,6 @@ DEC_DECL_SETPARAMFAST(setParamFastConstype)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
@@ -289,7 +256,6 @@ DEC_DECL_SETPARAMFAST(setParamFastConstype)
    return SCIP_OKAY;
 
 }
-
 
 
 /*
@@ -307,8 +273,8 @@ SCIP_RETCODE SCIPincludeDetectorConstype(SCIP* scip /**< SCIP data structure */
 
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectConstype,
-         freeConstype, initConstype, exitConstype, propagateSeeedConstype, finishSeeedConstype, detectorPostprocessSeeedConstype, setParamAggressiveConstype, setParamDefaultConstype, setParamFastConstype));
+         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
+         freeConstype, initConstype, exitConstype, propagatePartialdecConstype, finishPartialdecConstype, detectorPostprocessPartialdecConstype, setParamAggressiveConstype, setParamDefaultConstype, setParamFastConstype));
 
    /**@todo add constype detector parameters */
 

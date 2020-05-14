@@ -8,19 +8,7 @@ lp/solvefreq = -1
 # [type: int, range: [-1,2147483647], default: -1]
 presolving/maxrestarts = 0
 
-# flag to indicate whether detector <connected> is enabled
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/connected/enabled = TRUE
-
 # flag to indicate whether detector <arrowheur> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/arrowheur/enabled = FALSE
-
-# flag to indicate whether detector <random> is enabled
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/random/enabled = FALSE
-
-# flag to indicate whether detector <cutpacking> is enabled
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/staircase/enabled = FALSE
 

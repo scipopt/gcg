@@ -1,8 +1,6 @@
 detection/origprob/enabled  = TRUE
 detection/detectors/hrcgpartition/enabled  = TRUE
-detection/detectors/hrcgpartition/origenabled  = TRUE
 detection/detectors/hrcgpartition/maxnblockcandidates  = 10
 detection/detectors/hrgpartition/maxnblockcandidates  = 10
-detection/detectors/varclass/origenabled = FALSE
 detection/detectors/varclass/enabled = FALSE
 detection/maxrounds = 1

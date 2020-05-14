@@ -25,9 +25,10 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   solver_xyz.c
- * @brief  xyz solver for pricing problems
- * @author Gerald Gamrath
+/**@file    solver_xyz.c
+ * @ingroup PRICINGSOLVERS
+ * @brief   xyz solver for pricing problems (put your description here)
+ * @author  Gerald Gamrath
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -38,9 +39,9 @@
 #include "pricer_gcg.h"
 #include "pub_solver.h"
 
-#define SOLVER_NAME          "xyz"
-#define SOLVER_DESC          "xyz solver for pricing problems"
-#define SOLVER_PRIORITY      0
+#define DEC_CLASSIFIERNAME   "xyz pricing problem solver"    /**< name of pricing solver */
+#define DEC_DESC             "pricing solver template"       /**< short description of classification */
+#define SOLVER_PRIORITY      0                               /**< priority of this pricing solver */
 
 #define SOLVER_HEURENABLED   TRUE            /**< indicates whether the heuristic solving method of the solver should be enabled */
 #define SOLVER_EXACTENABLED  TRUE            /**< indicates whether the exact solving method of the solver should be enabled */

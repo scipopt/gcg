@@ -45,8 +45,8 @@
 #include "cons_decomp.h"
 #include "scip_misc.h"
 #include "gcg.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 #include "scip/clock.h"
 
 #include "bliss/graph.hh"
@@ -71,20 +71,13 @@
 #define DEC_DECCHAR               'I'         /**< display character of detector */
 
 #define DEC_ENABLED               FALSE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
 #define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  TRUE        /**< should the detector be skipped if others found decompositions */
-#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            TRUE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
-
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
 #define DEFAULT_MAXDECOMPSEXACT  6           /**< default maximum number of decompositions */
 #define DEFAULT_MAXDECOMPSEXTEND 4           /**< default maximum number of decompositions */
-
-#define DEFAULT_LEGACYEXACT       TRUE       /**< is exact version activated when doing legacy mode  */
-#define DEFAULT_LEGACYEXTEND      FALSE      /**< is extended version activated when doing legacy mode */
-
 
 #define SET_MULTIPLEFORSIZETRANSF 12500
 
@@ -98,8 +91,6 @@ struct DEC_DetectorData
    SCIP_RESULT          result;            /**< result pointer to indicate success or failure */
    int                  maxdecompsexact;   /**< maximum number of decompositions for exact emthod */
    int                  maxdecompsextend;  /**< maximum number of decompositions for extend method*/
-   SCIP_Bool            legacyextend;      /**< legacy parameter if extend mode is activated when doing legacy mode*/
-   SCIP_Bool            legacyexact;       /**< legacy parameter if exact mode is activated when doing legacy mode*/
 };
 
 typedef struct struct_hook AUT_HOOK;
@@ -111,8 +102,8 @@ struct struct_hook
    unsigned int n;                           /**< number of permutations */
    SCIP* scip;                               /**< scip to search for automorphisms */
    int* conssperm;                           /**< permutations of conss*/
-   gcg::Seeed* seeed;                        /**< seeed to propagate */
-   gcg::Seeedpool* seeedpool;                /**< seeedpool */
+   gcg::PARTIALDECOMP* partialdec;                        /**< partialdec to propagate */
+   gcg::DETPROBDATA* detprobdata;                /**< detprobdata */
 
    /** constructor for the hook struct*/
    struct_hook(SCIP_Bool aut,  /**< true if there is an automorphism */
@@ -120,12 +111,12 @@ struct struct_hook
       SCIP*              scip                /**< scip to search for automorphisms */
    );
 
-   /** constructor for the hook struct with a seeed */
+   /** constructor for the hook struct with a partialdec */
    struct_hook(SCIP_Bool aut,  /**< true if there is an automorphism */
-      unsigned int       n,                  /**< number of permutations */
-      SCIP*              scip,               /**< scip to search for automorphisms */
-      gcg::Seeed*        seeed,              /**< seeed to propagate */
-      gcg::Seeedpool*    seeedpool           /**< seeedpool */
+      unsigned int          n,                  /**< number of permutations */
+      SCIP*                 scip,               /**< scip to search for automorphisms */
+      gcg::PARTIALDECOMP*   partialdec,         /**< partialdec */
+      gcg::DETPROBDATA*     detprobdata         /**< detprobdata */
    );
 
    ~struct_hook();
@@ -138,11 +129,11 @@ struct struct_hook
    /** getter for the SCIP */
    SCIP* getScip();
 
-   /** getter for the seeed */
-   gcg::Seeed* getSeeed();
+   /** getter for the partialdec */
+   gcg::PARTIALDECOMP* getPartialdec();
 
-   /** getter for the seeedpool */
-   gcg::Seeedpool* getSeeedpool();
+   /** getter for the detprobdata */
+   gcg::DETPROBDATA* getDetprobdata();
 };
 
 SCIP* struct_hook::getScip()
@@ -150,14 +141,14 @@ SCIP* struct_hook::getScip()
    return this->scip;
 }
 
-gcg::Seeed* struct_hook::getSeeed()
+gcg::PARTIALDECOMP* struct_hook::getPartialdec()
 {
-   return this->seeed;
+   return this->partialdec;
 }
 
-gcg::Seeedpool* struct_hook::getSeeedpool()
+gcg::DETPROBDATA* struct_hook::getDetprobdata()
 {
-   return this->seeedpool;
+   return this->detprobdata;
 }
 
 SCIP_Bool struct_hook::getBool()
@@ -190,8 +181,8 @@ struct_hook::struct_hook(
    n = n_;
    scip = scip_;
    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &conssperm, SCIPgetNConss(scip)) ); /*lint !e666*/
-   seeed = NULL;
-   seeedpool = NULL;
+   partialdec = NULL;
+   detprobdata = NULL;
 }
 
 /** constructor of the hook struct */
@@ -199,16 +190,16 @@ struct_hook::struct_hook(
    SCIP_Bool             aut_,               /**< true if there is an automorphism */
    unsigned int          n_,                 /**< number of permutations */
    SCIP*                 scip_,              /**< array of scips to search for automorphisms */
-   gcg::Seeed*           seeed_,             /**< seeed to Propagate */
-   gcg::Seeedpool*       seeedpool_          /**< seeedpool */
+   gcg::PARTIALDECOMP*           partialdec_,             /**< partialdec to Propagate */
+   gcg::DETPROBDATA*       detprobdata_          /**< detprobdata */
    ) : conssperm(NULL)
 {
    aut = aut_;
    n = n_;
    scip = scip_;
-   SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &conssperm, seeedpool_->getNConss() ) ); /*lint !e666*/
-   seeed = seeed_;
-   seeedpool = seeedpool_;
+   SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &conssperm, detprobdata_->getNConss() ) ); /*lint !e666*/
+   partialdec = partialdec_;
+   detprobdata = detprobdata_;
 }
 
 struct_hook::~struct_hook()
@@ -262,7 +253,7 @@ void fhook(
 
 /** hook function to save the permutation of the graph */
 static
-void fhookForSeeeds(
+void fhookForPartialdecs(
    void*                 user_param,         /**< data structure to save hashmaps with permutation */
    unsigned int          N,                  /**< number of permutations */
    const unsigned int*   aut                 /**< array of permutations */
@@ -273,24 +264,24 @@ void fhookForSeeeds(
    AUT_HOOK* hook = (AUT_HOOK*) user_param;
    int auti;
    int ind;
-   gcg::Seeed*  seeed;
-   gcg::Seeedpool*       seeedpool;
+   gcg::PARTIALDECOMP*  partialdec;
+   gcg::DETPROBDATA*       detprobdata;
 
-   seeed = hook->getSeeed();
-   seeedpool = hook->getSeeedpool() ;
-   assert(seeed != NULL);
-   assert(seeedpool != NULL);
-   nconss = seeed->getNOpenconss();
+   partialdec = hook->getPartialdec();
+   detprobdata = hook->getDetprobdata() ;
+   assert(partialdec != NULL);
+   assert(detprobdata != NULL);
+   nconss = partialdec->getNOpenconss();
 
    for( i = 0; i < nconss; i++ )
    {
-      SCIP_CONS* cons = seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+      SCIP_CONS* cons = detprobdata->getConsForIndex(partialdec->getOpenconss()[i]);
       assert(aut[i] < INT_MAX);
       if( (size_t) i != aut[i])
       {
          auti = (int) aut[i];
 
-         SCIPdebugMessage("%d <%s> <-> %d <%s>\n", i, SCIPconsGetName(cons), auti, SCIPconsGetName(seeedpool->getConsForIndex(seeed->getOpenconss()[auti])));
+         SCIPdebugMessage("%d <%s> <-> %d <%s>\n", i, SCIPconsGetName(cons), auti, SCIPconsGetName(detprobdata->getConsForIndex(partialdec->getOpenconss()[auti])));
 
          ind = MIN(i, auti);
 
@@ -457,14 +448,14 @@ SCIP_RETCODE setupArrays(
    return SCIP_OKAY;
 }
 
-/** set up a help structure for graph creation (for seeeeds) */
+/** set up a help structure for graph creation (for partialdecs) */
 static
 SCIP_RETCODE setupArrays(
    SCIP*                 scip,               /**< SCIP to compare */
    AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
-   gcg::Seeed*           seeed,              /**< seeed to propagate */
-   gcg::Seeedpool*       seeedpool           /**< seeedpool */
+   gcg::PARTIALDECOMP*   partialdec,         /**< partialdec to set up help structure for */
+   gcg::DETPROBDATA*     detprobdata         /**< detprobdata */
    )
 { /*lint -esym(593,scoef) */
    int i;
@@ -477,8 +468,8 @@ SCIP_RETCODE setupArrays(
    SCIP_Bool onlysign;
 
    //allocate max n of coefarray, varsarray, and boundsarray in scip
-   nconss = seeed->getNOpenconss();
-   nvars = seeed->getNVars();
+   nconss = partialdec->getNOpenconss();
+   nvars = partialdec->getNVars();
    SCIP_CALL( allocMemory(scip, colorinfo, nconss, nvars) );
 
    onlysign = colorinfo->getOnlySign();
@@ -486,7 +477,7 @@ SCIP_RETCODE setupArrays(
    //save the properties of variables in a struct array and in a sorted pointer array
    for( i = 0; i < nvars; i++ )
    {
-      SCIP_VAR* var = seeedpool->getVarForIndex(i);
+      SCIP_VAR* var = detprobdata->getVarForIndex(i);
       AUT_VAR* svar = new AUT_VAR(scip, var);
       //add to pointer array iff it doesn't exist
       SCIP_CALL( colorinfo->insert(svar, &added) );
@@ -499,10 +490,10 @@ SCIP_RETCODE setupArrays(
    //save the properties of constraints in a struct array and in a sorted pointer array
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
-      int consindex = seeed->getOpenconss()[i];
-      SCIP_CONS* cons = seeedpool->getConsForIndex(consindex);
+      int consindex = partialdec->getOpenconss()[i];
+      SCIP_CONS* cons = detprobdata->getConsForIndex(consindex);
 
-      int ncurvars = seeedpool->getNVarsForCons(consindex);
+      int ncurvars = detprobdata->getNVarsForCons(consindex);
       if( ncurvars == 0 )
          continue;
 
@@ -522,13 +513,13 @@ SCIP_RETCODE setupArrays(
 
          if( !onlysign )
          {
-            scoef = new AUT_COEF(scip, seeedpool->getValsForCons(consindex)[j]);
+            scoef = new AUT_COEF(scip, detprobdata->getValsForCons(consindex)[j]);
          }
          else
          {
-            if( SCIPisPositive(scip, seeedpool->getValsForCons(consindex)[j]) )
+            if( SCIPisPositive(scip, detprobdata->getValsForCons(consindex)[j]) )
                scoef = new AUT_COEF(scip, 1.0);
-            else if( SCIPisNegative(scip, seeedpool->getValsForCons(consindex)[j]) )
+            else if( SCIPisNegative(scip, detprobdata->getValsForCons(consindex)[j]) )
                scoef = new AUT_COEF(scip, -1.0);
             else
                scoef = new AUT_COEF(scip, 0.0);
@@ -691,15 +682,15 @@ SCIP_RETCODE createGraph(
    return SCIP_OKAY;
 }
 
-/** create a graph out of an array of scips (for seeeds) */
+/** create a graph out of an array of scips (for partialdecs) */
 static
 SCIP_RETCODE createGraph(
    SCIP*                 scip,               /**< SCIP to compare */
    AUT_COLOR             colorinfo,          /**< data structure to save intermediate data */
    bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
-   gcg::Seeed*           seeed,
-   gcg::Seeedpool*       seeedpool
+   gcg::PARTIALDECOMP*   partialdec,         /**< partialdec to create graph for */
+   gcg::DETPROBDATA*     detprobdata         /**< detprobdata */
    )
 {
    int i;
@@ -715,16 +706,16 @@ SCIP_RETCODE createGraph(
    nnodes = 0;
    //building the graph out of the arrays
    bliss::Graph* h = graph;
-   nconss = seeed->getNOpenconss();
-   nvars = seeed->getNVars();
+   nconss = partialdec->getNOpenconss();
+   nvars = partialdec->getNVars();
    z = 0;
    onlysign = colorinfo.getOnlySign();
 
    //add a node for every constraint
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
-      ncurvars = seeedpool->getNVarsForCons(seeed->getOpenconss()[i]);
-      SCIP_CONS* cons = seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+      ncurvars = detprobdata->getNVarsForCons(partialdec->getOpenconss()[i]);
+      SCIP_CONS* cons = detprobdata->getConsForIndex(partialdec->getOpenconss()[i]);
 
       AUT_CONS scons(scip, cons);
       color = colorinfo.get(scons);
@@ -742,7 +733,7 @@ SCIP_RETCODE createGraph(
    //add a node for every variable
    for( i = 0; i < nvars && *result == SCIP_SUCCESS; i++ )
    {
-      SCIP_VAR* var = seeedpool->getVarForIndex(i);
+      SCIP_VAR* var = detprobdata->getVarForIndex(i);
       AUT_VAR svar(scip, var);
       color = colorinfo.get(svar);
 
@@ -758,17 +749,17 @@ SCIP_RETCODE createGraph(
    //it is necessary, since only nodes have colors
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
-      int consindex = seeed->getOpenconss()[i];
-      SCIP_CONS* cons = seeedpool->getConsForIndex(consindex);
+      int consindex = partialdec->getOpenconss()[i];
+      SCIP_CONS* cons = detprobdata->getConsForIndex(consindex);
       AUT_CONS scons(scip, cons);
-      ncurvars = seeedpool->getNVarsForCons(seeed->getOpenconss()[i]);
+      ncurvars = detprobdata->getNVarsForCons(partialdec->getOpenconss()[i]);
       if( ncurvars == 0 )
          continue;
 
       for( j = 0; j < ncurvars; j++ )
       {
-         int varindex = seeedpool->getVarsForCons(consindex)[j];
-         SCIP_VAR* var = seeedpool->getVarForIndex(varindex);
+         int varindex = detprobdata->getVarsForCons(consindex)[j];
+         SCIP_VAR* var = detprobdata->getVarForIndex(varindex);
 
 
 //              if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
@@ -778,13 +769,13 @@ SCIP_RETCODE createGraph(
 
          if( !onlysign )
          {
-            val = seeedpool->getValsForCons(consindex)[j];
+            val = detprobdata->getValsForCons(consindex)[j];
          }
          else
          {
-            if( SCIPisPositive(scip, seeedpool->getValsForCons(consindex)[j]) )
+            if( SCIPisPositive(scip, detprobdata->getValsForCons(consindex)[j]) )
                val = 1.0;
-            else if( SCIPisNegative(scip, seeedpool->getValsForCons(consindex)[j]) )
+            else if( SCIPisNegative(scip, detprobdata->getValsForCons(consindex)[j]) )
                val = -1.0;
             else
                val = 0.0;
@@ -829,18 +820,18 @@ SCIP_RETCODE createGraph(
 }
 
 
-/** creates a seeed with provided constraints in the master
+/** creates a partialdec with provided constraints in the master
  * The function will put the remaining constraints in one or more pricing problems
  * depending on whether the subproblems decompose with no variables in common.
  */
-SCIP_RETCODE createSeeedFromMasterconss(
+SCIP_RETCODE createPartialdecFromMasterconss(
    SCIP*                 scip,                /**< SCIP data structure */
-   gcg::Seeed**          newSeeed,            /**< seeed data structure */
+   gcg::PARTIALDECOMP**          newPartialdec,            /**< partialdec data structure */
    int*                  masterconss,         /**< constraints to be put in the master */
    int                   nmasterconss,        /**< number of constraints in the master */
-   gcg::Seeed*           seeed,               /**< seeed to propagate */
-   gcg::Seeedpool*       seeedpool,            /**< seeedpool */
-   SCIP_Bool             exact                /** does this seeed stems from exact graph construction ( or was onlysign = TRUE ) was used */
+   gcg::PARTIALDECOMP*           partialdec,               /**< partialdec to propagate */
+   gcg::DETPROBDATA*       detprobdata,            /**< detprobdata */
+   SCIP_Bool             exact                /** does this partialdec stems from exact graph construction ( or was onlysign = TRUE ) was used */
    )
 {
 
@@ -856,15 +847,15 @@ SCIP_RETCODE createSeeedFromMasterconss(
    int* vartoblock;
    int ncurvars;
 
-   std::vector<int> constoblock( seeedpool->getNConss(), -1);
-   std::vector<int> newconstoblock( seeedpool->getNConss(), -1);
+   std::vector<int> constoblock( detprobdata->getNConss(), -1);
+   std::vector<int> newconstoblock( detprobdata->getNConss(), -1);
 
    assert(scip != NULL);
    assert(nmasterconss == 0 || masterconss != NULL);
    assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
 
-   nconss = seeed->getNOpenconss();
-   nvars = seeed->getNVars();
+   nconss = partialdec->getNOpenconss();
+   nvars = partialdec->getNVars();
 
    assert( nmasterconss <= nconss );
 
@@ -882,7 +873,7 @@ SCIP_RETCODE createSeeedFromMasterconss(
 
    for( i = 0; i < nconss; ++i )
    {
-      consismaster[i] = ( constoblock[seeed->getOpenconss()[i]] != -1 );
+      consismaster[i] = ( constoblock[partialdec->getOpenconss()[i]] != -1 );
    }
 
    for( i = 0; i < nvars; ++i )
@@ -901,13 +892,13 @@ SCIP_RETCODE createSeeedFromMasterconss(
    for( i = 0; i < nconss; ++i )
    {
       int consblock;
-      int cons = seeed->getOpenconss()[i];
+      int cons = partialdec->getOpenconss()[i];
 
       if( consismaster[i] )
          continue;
 
       /* get variables of constraint; ignore empty constraints */
-      ncurvars = seeedpool->getNVarsForCons(seeed->getOpenconss()[i]);
+      ncurvars = detprobdata->getNVarsForCons(partialdec->getOpenconss()[i]);
       assert(ncurvars >= 0);
 
       assert( constoblock[cons] == -1 );
@@ -923,7 +914,7 @@ SCIP_RETCODE createSeeedFromMasterconss(
       {
          int var;
          int varblock;
-         var = seeedpool->getVarsForCons(cons)[j];
+         var = detprobdata->getVarsForCons(cons)[j];
 
          assert(var >= 0);
 
@@ -965,18 +956,18 @@ SCIP_RETCODE createSeeedFromMasterconss(
          ++(nextblock);
       }
 
-      SCIPdebugMessage("Cons %s will be in block %d (next %d)\n", SCIPconsGetName(seeedpool->getConsForIndex(cons)), consblock, nextblock);
+      SCIPdebugMessage("Cons %s will be in block %d (next %d)\n", SCIPconsGetName(detprobdata->getConsForIndex(cons)), consblock, nextblock);
 
       for( j = 0; j < ncurvars; ++j )
       {
          int var;
          int oldblock;
-         var = seeedpool->getVarsForCons(cons)[j];
+         var = detprobdata->getVarsForCons(cons)[j];
 
          oldblock = vartoblock[var];
          assert((oldblock > 0) && (oldblock <= nextblock));
 
-         SCIPdebugMessage("\tVar %s ", SCIPvarGetName(seeedpool->getVarForIndex(var)));
+         SCIPdebugMessage("\tVar %s ", SCIPvarGetName(detprobdata->getVarForIndex(var)));
          if( oldblock != consblock )
          {
             SCIPdebugPrintf("reset from %d to block %d.\n", oldblock, consblock);
@@ -1008,12 +999,12 @@ SCIP_RETCODE createSeeedFromMasterconss(
       /* store the constraint block */
       if( consblock != -1 )
       {
-         SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(seeedpool->getConsForIndex(cons)), consblock);
+         SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(detprobdata->getConsForIndex(cons)), consblock);
          constoblock[cons] = consblock;
       }
       else
       {
-         SCIPdebugMessage("ignoring %s\n", SCIPconsGetName(seeedpool->getConsForIndex(cons)));
+         SCIPdebugMessage("ignoring %s\n", SCIPconsGetName(detprobdata->getConsForIndex(cons)));
       }
    }
 
@@ -1052,7 +1043,7 @@ SCIP_RETCODE createSeeedFromMasterconss(
    {
       int consblock;
 
-      int cons = seeed->getOpenconss()[i];
+      int cons = partialdec->getOpenconss()[i];
 
       if( consismaster[i] )
       {
@@ -1069,23 +1060,23 @@ SCIP_RETCODE createSeeedFromMasterconss(
       consblock = blockrepresentative[consblock];
       assert(consblock <= nblocks);
       newconstoblock[cons] = consblock;
-      SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(seeedpool->getConsForIndex(cons)));
+      SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(detprobdata->getConsForIndex(cons)));
    }
-   (*newSeeed) = new gcg::Seeed(seeed);
-   SCIP_CALL( (*newSeeed)->assignSeeedFromConstoblockVector(newconstoblock, nblocks) );
+   (*newPartialdec) = new gcg::PARTIALDECOMP(partialdec);
+   SCIP_CALL( (*newPartialdec)->assignPartialdecFromConstoblockVector(newconstoblock, nblocks) );
 
-   (*newSeeed)->considerImplicits();
-   (*newSeeed)->refineToBlocks();
+   (*newPartialdec)->considerImplicits();
+   (*newPartialdec)->refineToBlocks();
 
    if( exact )
       (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "isomorph\\_exact");
    else
       (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "isomorph\\_extended" );
-   (*newSeeed)->addDetectorChainInfo(decinfo);
+   (*newPartialdec)->addDetectorChainInfo(decinfo);
 
 
 
-   //(*newSeeed)->showScatterPlot(seeedpool);
+   //(*newPartialdec)->showScatterPlot(detprobdata);
 
    SCIPfreeMemoryArray(scip, &vartoblock);
    SCIPfreeMemoryArray(scip, &consismaster);
@@ -1211,7 +1202,7 @@ std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
 /** reorder such that the best permutation is represented by 0, the second best by 1, etc. */
 SCIP_RETCODE reorderPermutations(
    SCIP*                 scip,               /**< SCIP data structure */
-   gcg::Seeedpool*       seeedpool,          /**< seeedpool */
+   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata */
    int*                  permutation,        /**< the permutation */
    int                   permsize,           /**< size of the permutation */
    int                   nperms              /**< number of permutations */
@@ -1297,7 +1288,7 @@ SCIP_RETCODE reorderPermutations(
 
       if( orbitsizesIter  == orbitsizes.end()  )
       {
-         seeedpool->addCandidatesNBlocks(orbitsize);
+         GCGconshdlrDecompAddCandidatesNBlocks(scip, detprobdata->isAssignedToOrigProb(), orbitsize);
 
          orbitsizes.push_back(orbitsize);
       }
@@ -1318,7 +1309,7 @@ SCIP_RETCODE reorderPermutations(
          greatestCD = gcd( greatestCD, subsetsOfOrbitsizes[subset][j] );
       }
 
-      seeedpool->addCandidatesNBlocks(greatestCD);
+      GCGconshdlrDecompAddCandidatesNBlocks(scip, detprobdata->isAssignedToOrigProb(), greatestCD);
    }
 
 
@@ -1329,176 +1320,17 @@ SCIP_RETCODE reorderPermutations(
    return SCIP_OKAY;
 }
 
-/** detection function of isomorph detector */
+
+/** detection function of isomorph detector for partialdecs */
 static
 SCIP_RETCODE detectIsomorph(
    SCIP*                 scip,               /**< SCIP data structure */
-   int*                  ndecdecomps,        /**< pointer to store number of decompositions */
-   DEC_DECOMP***         decdecomps,         /**< pointer to store decompositions */
+   PARTIALDEC_DETECTION_DATA* detectiondata, /**< detection data */
    DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
    SCIP_RESULT*          result,             /**< pointer to store result */
    SCIP_Bool             onlysign,           /**< use only sign of coefficients instead of coefficients? */
    int                   maxdecomps          /**< maximum number of new decompositions */
-)
-{
-   bliss::Graph graph;
-   bliss::Stats bstats;
-   AUT_HOOK *ptrhook;
-   AUT_COLOR *colorinfo;
-
-   int nconss = SCIPgetNConss(scip);
-   int i;
-   int unique;
-   int oldndecdecomps;
-
-   oldndecdecomps = *ndecdecomps;
-
-   detectordata->result = SCIP_SUCCESS;
-
-   colorinfo = new AUT_COLOR();
-
-   colorinfo->setOnlySign(onlysign);
-
-   if( !onlysign )
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
-   else
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting almost aggregatable structure: ");
-
-   SCIP_CALL( setupArrays(scip, colorinfo, &detectordata->result) );
-   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result) );
-
-   ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
-   for( i = 0; i < nconss; i++ )
-   {
-      ptrhook->conssperm[i] = -1;
-   }
-
-   graph.find_automorphisms(bstats, fhook, ptrhook);
-
-   if( !ptrhook->getBool() )
-      detectordata->result = SCIP_DIDNOTFIND;
-
-   if( detectordata->result == SCIP_SUCCESS )
-   {
-      int nperms;
-      DEC_DECOMP* newdecomp;
-      int nmasterconss;
-      SCIP_CONS** masterconss = NULL;
-      int p;
-
-      // assign to a permutation circle only one number
-      collapsePermutation(ptrhook->conssperm, nconss);
-      // renumbering from 0 to number of permutations
-      nperms = renumberPermutations(ptrhook->conssperm, nconss);
-
-      // reorder decomposition (corresponding to orbit size)
-      //SCIP_CALL( reorderPermutations(scip, ptrhook->conssperm, nconss, nperms) );
-
-      if( *ndecdecomps == 0 )
-         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(maxdecomps, nperms)) ); /*lint !e506*/
-      else
-         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(maxdecomps, nperms)) ); /*lint !e506*/
-
-      int pos = *ndecdecomps;
-      for( p = *ndecdecomps; p < *ndecdecomps + MIN(maxdecomps, nperms); ++p )
-      {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
-
-         SCIPdebugMessage("masterconss of decomp %d:\n", p);
-
-         nmasterconss = 0;
-         for( i = 0; i < nconss; i++ )
-         {
-            if( p - *ndecdecomps != ptrhook->conssperm[i] )
-            {
-               masterconss[nmasterconss] = SCIPgetConss(scip)[i];
-               SCIPdebugMessage("%s\n", SCIPconsGetName(masterconss[nmasterconss]));
-               nmasterconss++;
-            }
-         }
-         SCIPdebugMessage("%d\n", nmasterconss);
-
-         if( nmasterconss < SCIPgetNConss(scip) )
-         {
-            SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decdecomps)[pos]), masterconss, nmasterconss) );
-
-            SCIPfreeMemoryArray(scip, &masterconss);
-         }
-         else
-         {
-            SCIPfreeMemoryArray(scip, &masterconss);
-
-            continue;
-         }
-
-
-         SCIP_CALL( DECcreatePolishedDecomp(scip, (*decdecomps)[pos], &newdecomp) );
-         if( newdecomp != NULL )
-         {
-            SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[pos])) );
-            (*decdecomps)[pos] = newdecomp;
-         }
-
-         ++pos;
-      }
-      *ndecdecomps = pos;
-
-      if( *ndecdecomps > 0 )
-      {
-         unique = DECfilterSimilarDecompositions(scip, *decdecomps, *ndecdecomps);
-      }
-      else
-      {
-         unique = *ndecdecomps;
-      }
-
-      for( p = unique; p < *ndecdecomps; ++p )
-      {
-         SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[p])) );
-         (*decdecomps)[p] = NULL;
-      }
-
-      *ndecdecomps = unique;
-
-      if( *ndecdecomps > 0 )
-      {
-         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
-      }
-
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d (new) decompositions.\n", *ndecdecomps - oldndecdecomps);
-   }
-   else
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "not found.\n");
-   }
-
-   if( *ndecdecomps == 0 )
-   {
-      SCIPfreeMemoryArrayNull(scip, decdecomps);
-   }
-
-   delete colorinfo;
-
-   delete ptrhook;
-
-   *result = detectordata->result;
-
-   return SCIP_OKAY;
-}
-
-/** detection function of isomorph detector for seeeds */
-static
-SCIP_RETCODE detectIsomorph(
-   SCIP*                 scip,               /**< SCIP data structure */
-   gcg::Seeed*           seeed,              /**< seeed to propagate */
-   gcg::Seeedpool*       seeedpool,          /**< seeedpool */
-   int*                  nNewSeeeds,         /**< pointer to store number of seeeds */
-   gcg::Seeed***         newSeeeds,          /**< pointer to store seeeds */
-   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
-   SCIP_RESULT*          result,             /**< pointer to store result */
-   SCIP_Bool             onlysign,           /**< use only sign of coefficients instead of coefficients? */
-   int                   maxdecomps          /**< maximum number of new decompositions */
-)
+   )
 {
    SCIP_CLOCK* temporaryClock;
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
@@ -1508,12 +1340,13 @@ SCIP_RETCODE detectIsomorph(
    bliss::Stats bstats;
    AUT_HOOK *ptrhook;
    AUT_COLOR *colorinfo;
+   gcg::PARTIALDECOMP* partialdec = detectiondata->workonpartialdec;
+   gcg::DETPROBDATA* detprobdata = detectiondata->detprobdata;
 
-   int nconss = seeed->getNOpenconss();
+   int nconss = partialdec->getNOpenconss();
    int i;
-   int oldnseeeds;
 
-   oldnseeeds = *nNewSeeeds;
+   assert(detectiondata->nnewpartialdecs == 0);
 
    detectordata->result = SCIP_SUCCESS;
 
@@ -1527,16 +1360,16 @@ SCIP_RETCODE detectIsomorph(
    else
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting almost aggregatable structure: ");
 
-   SCIP_CALL( setupArrays(scip, colorinfo, &detectordata->result, seeed, seeedpool) );
-   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, seeed, seeedpool) );
+   SCIP_CALL( setupArrays(scip, colorinfo, &detectordata->result, partialdec, detprobdata) );
+   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, partialdec, detprobdata) );
 
-   ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip, seeed, seeedpool);
+   ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip, partialdec, detprobdata);
    for( i = 0; i < nconss; i++ )
    {
       ptrhook->conssperm[i] = -1;
    }
 
-   graph.find_automorphisms(bstats, fhookForSeeeds, ptrhook);
+   graph.find_automorphisms(bstats, fhookForPartialdecs, ptrhook);
 
    if( !ptrhook->getBool() )
       detectordata->result = SCIP_DIDNOTFIND;
@@ -1554,33 +1387,25 @@ SCIP_RETCODE detectIsomorph(
       nperms = renumberPermutations(ptrhook->conssperm, nconss);
 
       // reorder decomposition (corresponding to orbit size)
-      SCIP_CALL( reorderPermutations(scip, seeedpool, ptrhook->conssperm, nconss, nperms) );
+      SCIP_CALL( reorderPermutations(scip, detprobdata, ptrhook->conssperm, nconss, nperms) );
 
-      if( *nNewSeeeds == 0 )
-         SCIP_CALL( SCIPallocMemoryArray(scip, newSeeeds, *nNewSeeeds + MIN(maxdecomps, nperms)) ); /*lint !e506*/
-      else
-         SCIP_CALL( SCIPreallocMemoryArray(scip, newSeeeds, *nNewSeeeds + MIN(maxdecomps, nperms)) ); /*lint !e506*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(detectiondata->newpartialdecs), MIN(maxdecomps, nperms)) ); /*lint !e506*/
 
-      int pos = *nNewSeeeds;
+      int pos = 0;
 
-      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      SCIP_Real tempTime = SCIPgetClockTime(scip, temporaryClock);
-
-      for( p = *nNewSeeeds; p < *nNewSeeeds + nperms && pos < *nNewSeeeds + maxdecomps; ++p )
+      for( p = 0; p < nperms && pos < maxdecomps; ++p )
       {
-         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
-         SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
          SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
 
-         SCIPdebugMessage("masterconss of seeed %d:\n", p);
+         SCIPdebugMessage("masterconss of partialdec %d:\n", p);
 
          nmasterconss = 0;
          for( i = 0; i < nconss; i++ )
          {
-            if( p - *nNewSeeeds != ptrhook->conssperm[i] )
+            if( p != ptrhook->conssperm[i] )
             {
-               masterconss[nmasterconss] = seeed->getOpenconss()[i];
-               SCIPdebugMessage("%s\n", SCIPconsGetName(seeedpool->getConsForIndex(masterconss[nmasterconss])));
+               masterconss[nmasterconss] = partialdec->getOpenconss()[i];
+               SCIPdebugMessage("%s\n", SCIPconsGetName(detprobdata->getConsForIndex(masterconss[nmasterconss])));
                nmasterconss++;
             }
          }
@@ -1591,23 +1416,17 @@ SCIP_RETCODE detectIsomorph(
             SCIP_Bool isduplicate;
             int q;
 
-            SCIP_CALL( createSeeedFromMasterconss(scip, &((*newSeeeds)[pos]), masterconss, nmasterconss, seeed, seeedpool, !onlysign) );
-
-            ((*newSeeeds)[pos])->calcHashvalue();
-            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-            (*newSeeeds)[pos]->addClockTime( tempTime + SCIPgetClockTime(scip, temporaryClock) );
+            SCIP_CALL( createPartialdecFromMasterconss(scip, &(detectiondata->newpartialdecs[pos]), masterconss, nmasterconss, partialdec, detprobdata, !onlysign) );
 
             isduplicate = FALSE;
-
             for( q = 0; q < pos && !isduplicate; ++q )
             {
-               SCIP_CALL( ((*newSeeeds)[pos])->isEqual((*newSeeeds)[q], &isduplicate, TRUE) );
+               SCIP_CALL( detectiondata->newpartialdecs[pos]->isEqual(detectiondata->newpartialdecs[q], &isduplicate, TRUE) );
             }
-
 
             if( isduplicate )
             {
-               delete (*newSeeeds)[pos];
+               delete detectiondata->newpartialdecs[pos];
             }
             else
             {
@@ -1615,43 +1434,44 @@ SCIP_RETCODE detectIsomorph(
             }
 
             SCIPfreeMemoryArray(scip, &masterconss);
-
-
          }
 
          else
          {
             SCIPfreeMemoryArray(scip, &masterconss);
-
             SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-
             continue;
          }
       }
-      *nNewSeeeds = pos;
+      detectiondata->nnewpartialdecs = pos;
 
-      if( *nNewSeeeds > 0 )
+      if( detectiondata->nnewpartialdecs > 0 )
       {
-         SCIP_CALL( SCIPreallocMemoryArray(scip, newSeeeds, *nNewSeeeds) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &(detectiondata->newpartialdecs), detectiondata->nnewpartialdecs) );
       }
 
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d (new) decompositions.\n", *nNewSeeeds - oldnseeeds);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d (new) decompositions.\n", detectiondata->nnewpartialdecs);
    }
    else
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "not found.\n");
    }
 
-   if( *nNewSeeeds == 0 )
+   delete colorinfo;
+   delete ptrhook;
+
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+
+   if( detectiondata->nnewpartialdecs == 0 )
    {
-      SCIPfreeMemoryArrayNull(scip, newSeeeds);
+      SCIPfreeMemoryArrayNull(scip, &(detectiondata->newpartialdecs));
    }
 
-
-   delete colorinfo;
-
-
-   delete ptrhook;
+   detectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
+   for( i = 0; i < detectiondata->nnewpartialdecs; ++i )
+   {
+      detectiondata->newpartialdecs[i]->addClockTime(detectiondata->detectiontime / detectiondata->nnewpartialdecs);
+   }
 
    *result = detectordata->result;
 
@@ -1661,60 +1481,39 @@ SCIP_RETCODE detectIsomorph(
 }
 
 
-//#define detectorPropagateSeeedIsomorph NULL
-DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedIsomorph)
+DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecIsomorph)
 {
    *result = SCIP_DIDNOTFIND;
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
-   gcg::Seeed* seeed =  seeedPropagationData->seeedToPropagate ;
+   gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec ;
 
-   seeedPropagationData->nNewSeeeds = 0;
-   seeedPropagationData->newSeeeds = NULL;
+   partialdecdetectiondata->nnewpartialdecs = 0;
+   partialdecdetectiondata->newpartialdecs = NULL;
 
-   if(seeed->getNBlocks() != 0 || seeed->getNOpenvars() != seeed->getNVars())
+   if(partialdec->getNBlocks() != 0 || partialdec->getNOpenvars() != partialdec->getNVars())
    {
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
    }
 
    if( detectordata->maxdecompsextend > 0 )
-      SCIP_CALL( detectIsomorph(scip, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->nNewSeeeds), &(seeedPropagationData->newSeeeds), detectordata, result, TRUE, detectordata->maxdecompsextend) );
+      SCIP_CALL( detectIsomorph(scip, partialdecdetectiondata, detectordata, result, TRUE, detectordata->maxdecompsextend) );
 
    if( detectordata->maxdecompsexact > 0 )
-      SCIP_CALL( detectIsomorph(scip, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->nNewSeeeds), &(seeedPropagationData->newSeeeds), detectordata, result, FALSE, detectordata->maxdecompsexact) );
+      SCIP_CALL( detectIsomorph(scip, partialdecdetectiondata, detectordata, result, FALSE, detectordata->maxdecompsexact) );
 
-   for( int i = 0; i < seeedPropagationData->nNewSeeeds; ++i )
+   for( int i = 0; i < partialdecdetectiondata->nnewpartialdecs; ++i )
    {
-      seeedPropagationData->newSeeeds[i]->refineToMaster();
+      partialdecdetectiondata->newpartialdecs[i]->refineToMaster();
    }
 
    return SCIP_OKAY;
 }
 #define detectorExitIsomorph NULL
 
+#define detectorFinishPartialdecIsomorph NULL
 
-/** detection function of detector */
-static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
-{ /*lint -esym(429,ptrhook)*/
-
-   *result = SCIP_DIDNOTFIND;
-
-   *ndecdecomps = 0;
-   *decdecomps = NULL;
-
-
-   if( detectordata->legacyextend)
-      SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, TRUE, detectordata->maxdecompsextend) );
-
-   /* do exact detection */
-   if( detectordata->legacyexact)
-      SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, FALSE, detectordata->maxdecompsexact) );
-
-   return SCIP_OKAY;
-}
-#define detectorFinishSeeedIsomorph NULL
-
-#define detectorPostprocessSeeedIsomorph NULL
+#define detectorPostprocessPartialdecIsomorph NULL
 
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
@@ -1727,13 +1526,10 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
-     (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxcallround", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxcallround", name);
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
    ++newval;
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
@@ -1782,7 +1578,6 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
    return SCIP_OKAY;
-
 }
 
 
@@ -1797,9 +1592,6 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultIsomorph)
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
@@ -1841,10 +1633,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultIsomorph)
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
-
-
    return SCIP_OKAY;
-
 }
 
 static
@@ -1856,9 +1645,6 @@ DEC_DECL_SETPARAMFAST(setParamFastIsomorph)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
@@ -1891,7 +1677,6 @@ DEC_DECL_SETPARAMFAST(setParamFastIsomorph)
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
-
    return SCIP_OKAY;
 
 }
@@ -1917,8 +1702,8 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 
 
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph, detectorFinishSeeedIsomorph, detectorPostprocessSeeedIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+      detectordata, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagatePartialdecIsomorph, detectorFinishPartialdecIsomorph, detectorPostprocessPartialdecIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
 
    /* add isomorph constraint handler parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/isomorph/maxdecompsexact",
@@ -1928,15 +1713,6 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/isomorph/maxdecompsextend",
       "Maximum number of solutions/decompositions with extended detection", &detectordata->maxdecompsextend, FALSE,
       DEFAULT_MAXDECOMPSEXTEND, 0, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/isomorph/legacyextend",
-      "is extended detection activated when doing legacy detection", &detectordata->legacyextend, FALSE,
-      DEFAULT_LEGACYEXTEND, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/isomorph/legacyexact",
-         "is exact detection activated when doing legacy detection", &detectordata->legacyexact, FALSE,
-         DEFAULT_LEGACYEXACT, NULL, NULL) );
-
 
    return SCIP_OKAY;
 }

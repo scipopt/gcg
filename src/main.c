@@ -147,18 +147,23 @@ SCIP_RETCODE fromCommandLine(
    SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
    SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
    SCIP_CALL( SCIPtransformProb(scip) );
-   SCIP_CALL( GCGsetFilename(scip, filename) );
 
    if( decname != NULL )
    {
       SCIPinfoMessage(scip, NULL, "\nread decomposition <%s>\n", decname);
       SCIPinfoMessage(scip, NULL, "==================\n\n");
       SCIP_CALL( SCIPreadProb(scip, decname, NULL) );
-      SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+      if( GCGconshdlrDecompOrigPartialdecExists(scip) )
+      {
+         SCIP_CALL(SCIPsetIntParam(scip, "presolving/maxrounds", 0));
+      }
    }
-   else
+
+   SCIP_CALL( SCIPpresolve(scip) );
+   GCGconshdlrDecompTranslateOrigPartialdecs(scip);
+
+   if( GCGconshdlrDecompGetNPartialdecs(scip) == 0 )
    {
-      SCIP_CALL( SCIPpresolve(scip) );
       SCIP_CALL( DECdetectStructure(scip, &result) );
    }
 
@@ -217,6 +222,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
    const char* dualrefstring;
    const char* primalrefstring;
    int i;
+
 
    /********************
     * Parse parameters *
