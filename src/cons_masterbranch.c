@@ -1487,7 +1487,6 @@ static
 SCIP_DECL_CONSINIT(consInitMasterbranch)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrdata;
-   int i;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);

@@ -18,7 +18,6 @@ detection/detectors/generalmastersetcover/enabled = FALSE
 detection/detectors/mastersetpart/enabled = FALSE
 detection/detectors/mastersetcover/enabled = FALSE
 detection/detectors/mastersetpack/enabled = FALSE
-detection/detectors/staircase/enabled = FALSE
 detection/detectors/constype/enabled = FALSE
 detection/detectors/staircase_lsp/enabled = FALSE
 
@@ -27,9 +26,7 @@ detection/origprob/enabled = FALSE
 detection/origprob/classificationenabled = FALSE
 
 detection/consclassifier/consnamelevenshtein/enabled = FALSE
-detection/consclassifier/consnamelevenshtein/origenabled = FALSE
 detection/consclassifier/consnamenonumbers/enabled = FALSE
-detection/consclassifier/consnamenonumbers/origenabled = FALSE
 
 
 timing/clocktype = 2

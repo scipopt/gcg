@@ -39,8 +39,8 @@
 #define GCG_HYPERCOLGRAPH_DEF_H_
 
 #include "hypercolgraph.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 #include <set>
 #include <algorithm>
 #include <vector>
@@ -224,8 +224,8 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
 
 template <class T>
 SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
-      Seeedpool*        seeedpool,
-      Seeed*            seeed
+      DETPROBDATA*        detprobdata,
+      PARTIALDECOMP*            partialdec
    )
 {
    int i;
@@ -233,21 +233,21 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
    TCLIQUE_WEIGHT weight;
    std::vector< std::vector<int> > hyperedges;
    unordered_map<int, int> oldToNewConsIndex;
-   vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
-   vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+   vector<bool> varsBool(partialdec->getNVars(), false); /**< true, if the var will be part of the graph */
+   vector<bool> conssBool(partialdec->getNConss(), false); /**< true, if the cons will be part of the graph */
    vector<int> conssForGraph; /** stores the conss included by the graph */
    vector<int> varsForGraph; /** stores the vars included by the graph */
 
    //fillout conssForGraph and varsForGraph
-   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   for(int c = 0; c < partialdec->getNOpenconss(); ++c)
    {
-      int cons = seeed->getOpenconss()[c];
-      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      int cons = partialdec->getOpenconss()[c];
+      for(int v = 0; v < partialdec->getNOpenvars(); ++v)
       {
-         int var = seeed->getOpenvars()[v];
-         for(i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+         int var = partialdec->getOpenvars()[v];
+         for(i = 0; i < detprobdata->getNVarsForCons(cons); ++i)
          {
-            if(var == seeedpool->getVarsForCons(cons)[i])
+            if(var == detprobdata->getVarsForCons(cons)[i])
             {
                varsBool[var] = true;
                conssBool[cons] = true;
@@ -256,15 +256,15 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
       }
    }
 
-   for(int v = 0; v < seeed->getNOpenvars(); ++v)
+   for(int v = 0; v < partialdec->getNOpenvars(); ++v)
    {
-      int var = seeed->getOpenvars()[v];
+      int var = partialdec->getOpenvars()[v];
       if(varsBool[var])
          varsForGraph.push_back(var);
    }
-   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   for(int c = 0; c < partialdec->getNOpenconss(); ++c)
    {
-      int cons = seeed->getOpenconss()[c];
+      int cons = partialdec->getOpenconss()[c];
       if(conssBool[cons])
          conssForGraph.push_back(cons);
    }
@@ -278,7 +278,7 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
       int oldConsId = conssForGraph[i];
 
       /* calculate weight of node */
-      weight = this->weights.calculate(seeedpool->getConsForIndex(oldConsId));
+      weight = this->weights.calculate(detprobdata->getConsForIndex(oldConsId));
 
       oldToNewConsIndex.insert({oldConsId,i});
 
@@ -293,15 +293,15 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
       std::vector<int> hyperedge;
       int oldVarId = varsForGraph[i];
 
-      for( j = 0; j < seeedpool->getNConssForVar(oldVarId); ++j )
+      for( j = 0; j < detprobdata->getNConssForVar(oldVarId); ++j )
       {
-         int oldConsId = seeedpool->getConssForVar(oldVarId)[j];
+         int oldConsId = detprobdata->getConssForVar(oldVarId)[j];
          if(!conssBool[oldConsId])
             continue;
          hyperedge.insert(hyperedge.end(), oldToNewConsIndex[oldConsId]);
       }
       /* calculate weight of hyperedge */
-      weight = this->weights.calculate(seeedpool->getVarForIndex(oldVarId));
+      weight = this->weights.calculate(detprobdata->getVarForIndex(oldVarId));
       this->graph.addHyperedge(hyperedge, weight);
    }
 
@@ -344,10 +344,10 @@ SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
 }
 
 template <class T>
-SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
-   Seeed**     firstSeeed,
-   Seeed**     secondSeeed,
-   Seeedpool*  seeedpool
+SCIP_RETCODE HypercolGraph<T>::createPartialdecFromPartition(
+   PARTIALDECOMP**     firstpartialdec,
+   PARTIALDECOMP**     secondpartialdec,
+   DETPROBDATA*  detprobdata
    )
 {
    SCIP_HASHMAP* constoblock;
@@ -385,29 +385,35 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
        }
    }
 
-
    for( int c = 0; c < this->nconss; ++c )
    {
        int consblock = partition[c]+1;
        consblock -= nEmptyBlocksBefore[partition[c] ];
-       SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) seeedpool->getIndexForCons(conss[c]), (void*) (size_t) consblock) );
+       SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) detprobdata->getIndexForCons(conss[c]), (void*) (size_t) consblock) );
    }
 
-   (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool);
-   SCIP_CALL((*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks));
-   (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool);
-   SCIP_CALL((*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks));
+   bool original = detprobdata->isAssignedToOrigProb();
+   if( firstpartialdec != NULL )
+   {
+      (*firstpartialdec) = new PARTIALDECOMP(this->scip_, original);
+      SCIP_CALL((*firstpartialdec)->filloutPartialdecFromConstoblock(constoblock, nblocks));
+   }
+   if( secondpartialdec != NULL )
+   {
+      (*secondpartialdec) = new PARTIALDECOMP(this->scip_, original);
+      SCIP_CALL((*secondpartialdec)->filloutBorderFromConstoblock(constoblock, nblocks));
+   }
    SCIPhashmapFree(&constoblock);
 
    return SCIP_OKAY;
 }
 
 template <class T>
-SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
-   Seeed*      oldSeeed,
-   Seeed**     firstSeeed,
-   Seeed**     secondSeeed,
-   Seeedpool*  seeedpool
+SCIP_RETCODE HypercolGraph<T>::createPartialdecFromPartition(
+   PARTIALDECOMP*      oldpartialdec,
+   PARTIALDECOMP**     firstpartialdec,
+   PARTIALDECOMP**     secondpartialdec,
+   DETPROBDATA*  detprobdata
    )
 {
    SCIP_HASHMAP* constoblock;
@@ -418,8 +424,8 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
 
    if(this->nconss == 0)
    {
-      (*firstSeeed) = NULL;
-      (*secondSeeed) = NULL;
+      (*firstpartialdec) = NULL;
+      (*secondpartialdec) = NULL;
       return SCIP_OKAY;
    }
 
@@ -427,19 +433,19 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
 
    //fillout conssForGraph
    vector<int> conssForGraph; /** stores the conss included by the graph */
-   vector<bool> conssBool(oldSeeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+   vector<bool> conssBool(oldpartialdec->getNConss(), false); /**< true, if the cons will be part of the graph */
    bool found;
 
-   for(int c = 0; c < oldSeeed->getNOpenconss(); ++c)
+   for(int c = 0; c < oldpartialdec->getNOpenconss(); ++c)
    {
-      int cons = oldSeeed->getOpenconss()[c];
+      int cons = oldpartialdec->getOpenconss()[c];
       found = false;
-      for(int v = 0; v < oldSeeed->getNOpenvars() && !found; ++v)
+      for(int v = 0; v < oldpartialdec->getNOpenvars() && !found; ++v)
       {
-         int var = oldSeeed->getOpenvars()[v];
-         for(int i = 0; i < seeedpool->getNVarsForCons(cons) && !found; ++i)
+         int var = oldpartialdec->getOpenvars()[v];
+         for(int i = 0; i < detprobdata->getNVarsForCons(cons) && !found; ++i)
          {
-            if(var == seeedpool->getVarsForCons(cons)[i])
+            if(var == detprobdata->getVarsForCons(cons)[i])
             {
                conssBool[cons] = true;
                found = true;
@@ -448,9 +454,9 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
       }
    }
 
-   for(int c = 0; c < oldSeeed->getNOpenconss(); ++c)
+   for(int c = 0; c < oldpartialdec->getNOpenconss(); ++c)
    {
-      int cons = oldSeeed->getOpenconss()[c];
+      int cons = oldpartialdec->getOpenconss()[c];
       if(conssBool[cons])
          conssForGraph.push_back(cons);
    }
@@ -487,10 +493,16 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
 
    nblocks -= nEmptyBlocks;
 
-   (*firstSeeed) = new Seeed(oldSeeed);
-   SCIP_CALL((*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks));
-   (*secondSeeed) = new Seeed(oldSeeed);
-   SCIP_CALL((*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks ));
+   if( firstpartialdec != NULL )
+   {
+      (*firstpartialdec) = new PARTIALDECOMP(oldpartialdec);
+      SCIP_CALL((*firstpartialdec)->assignPartialdecFromConstoblock(constoblock, nblocks));
+   }
+   if( secondpartialdec != NULL )
+   {
+      (*secondpartialdec) = new PARTIALDECOMP(oldpartialdec);
+      SCIP_CALL((*secondpartialdec)->assignBorderFromConstoblock(constoblock, nblocks));
+   }
    SCIPhashmapFree(&constoblock);
 
    return SCIP_OKAY;

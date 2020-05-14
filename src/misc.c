@@ -86,8 +86,8 @@ GCG_DECL_SORTPTRCOMP(mastervarcomp)
    int norigvars;
    int i;
 
-   mastervar1 = elem1;
-   mastervar2 = elem2;
+   mastervar1 = (SCIP_VAR*) elem1;
+   mastervar2 = (SCIP_VAR*) elem2;
 
    assert(mastervar1 != NULL);
    assert(mastervar2 != NULL);
@@ -725,12 +725,16 @@ SCIP_RETCODE GCGprintStatistics(
    }
    if( GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL )
    {
-      SCIP_CALL( GCGprintDetectorStatistics(scip, file) );
+      SCIP_CALL( GCGconshdlrDecompPrintDetectorStatistics(scip, file) );
    }
    if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING && GCGgetNPricingprobs(scip) > 0 )
    {
+      DEC_DECOMP* decomp;
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
-      SCIP_CALL( GCGprintDecompStatistics(scip, file) );
+
+      decomp = GCGgetStructDecomp(scip);
+      if( decomp != NULL )
+         SCIP_CALL( GCGprintDecompStatistics(scip, file, decomp) );
    }
    return SCIP_OKAY;
 }
@@ -742,7 +746,12 @@ SCIP_RETCODE GCGprintInstanceName(
    FILE*                 file                /* output file or NULL for standard output */
 )
 {
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "filename: %s \n", GCGgetFilename(scip) );
+   char problemname[SCIP_MAXSTRLEN];
+   char* outputname;
+   (void) SCIPsnprintf(problemname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+   SCIPsplitFilename(problemname, NULL, &outputname, NULL, NULL);
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "filename: %s \n", outputname );
    return SCIP_OKAY;
 }
 
@@ -756,7 +765,7 @@ SCIP_RETCODE GCGprintCompleteDetectionStatistics(
 {
    assert(scip != NULL);
 
-   if( !GCGdetectionTookPlace(scip) )
+   if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) )
    {
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nDetection did not take place so far\n");
       return SCIP_OKAY;
@@ -770,7 +779,7 @@ SCIP_RETCODE GCGprintCompleteDetectionStatistics(
 
    GCGprintCompleteDetectionTime(scip, file);
 
-   GCGprintClassifierInformation(scip, file);
+   GCGprintPartitionInformation(scip, file);
 
    GCGprintDecompInformation(scip, file);
 

@@ -58,12 +58,10 @@ using gcg::GraphGCG;
 #define DEC_PRIORITY              910         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'M'         /**< display character of detector */
 #define DEC_ENABLED               FALSE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
 #define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
-#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
 /* Default parameter settings*/
 #define DEFAULT_N_ITERATIONS              51
@@ -82,7 +80,6 @@ using gcg::GraphGCG;
 /** detector handler data */
 struct DEC_DetectorData
 {
-   std::vector< RowGraphWeighted<GraphGCG>*> *graphs;    /**< the graph of the matrix */
    SCIP_RESULT result;                                 /**< result pointer to indicate success or failure */
    SCIP_Bool found;
    int n_iterations;
@@ -167,15 +164,6 @@ DEC_DECL_FREEDETECTOR(freeMST)
 static
 DEC_DECL_EXITDETECTOR(exitMST)
 {
-   DEC_DETECTORDATA* detectordata;
-   assert(scip != NULL);
-
-   detectordata = DECdetectorGetData(detector);
-   assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-
-   delete detectordata->graphs;
-
    return SCIP_OKAY;
 }
 
@@ -195,29 +183,28 @@ DEC_DECL_INITDETECTOR(initMST)
 
    detectordata->n_similarities = -1;
    detectordata->found = FALSE;
-   detectordata->graphs = new std::vector< RowGraphWeighted<GraphGCG>*>();
    return SCIP_OKAY;
 }
 
 /** are there conss and vars to be included by the graph and have the conss common vars included by the graph */
 static
 bool graphCompletible(
-   gcg::Seeedpool*  seeedpool,
-   gcg::Seeed*      seeed
+   gcg::DETPROBDATA*  detprobdata,
+   gcg::PARTIALDECOMP*      partialdec
    )
 {
    bool completible;
 
    //have the open conss open vars?
-   for(int c = 0; c < seeed->getNOpenconss() && !completible; ++c)
+   for(int c = 0; c < partialdec->getNOpenconss() && !completible; ++c)
    {
-      int cons = seeed->getOpenconss()[c];
-      for(int v = 0; v < seeed->getNOpenvars() && !completible; ++v)
+      int cons = partialdec->getOpenconss()[c];
+      for(int v = 0; v < partialdec->getNOpenvars() && !completible; ++v)
       {
-         int var = seeed->getOpenvars()[v];
-         for(int i = 0; i < seeedpool->getNVarsForCons(cons) && !completible; ++i)
+         int var = partialdec->getOpenvars()[v];
+         for(int i = 0; i < detprobdata->getNVarsForCons(cons) && !completible; ++i)
          {
-            if(var == seeedpool->getVarsForCons(cons)[i])
+            if(var == detprobdata->getVarsForCons(cons)[i])
             {
                completible = true;
             }
@@ -228,20 +215,20 @@ bool graphCompletible(
       return false;
 
    //have the open conss common open vars?
-   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   for(int c = 0; c < partialdec->getNOpenconss(); ++c)
    {
-      int cons1 = seeed->getOpenconss()[c];
-      for(int d = c + 1; d < seeed->getNOpenconss(); ++d)
+      int cons1 = partialdec->getOpenconss()[c];
+      for(int d = c + 1; d < partialdec->getNOpenconss(); ++d)
       {
-         int cons2 = seeed->getOpenconss()[d];
-         for(int v = 0; v < seeedpool->getNVarsForCons(cons1); ++v)
+         int cons2 = partialdec->getOpenconss()[d];
+         for(int v = 0; v < detprobdata->getNVarsForCons(cons1); ++v)
          {
-            int var1 = seeedpool->getVarsForCons(cons1)[v];
-            if(!seeed->isVarOpenvar(var1))
+            int var1 = detprobdata->getVarsForCons(cons1)[v];
+            if(!partialdec->isVarOpenvar(var1))
                continue;
-            for(int w = 0; w < seeedpool->getNVarsForCons(cons2); ++w)
+            for(int w = 0; w < detprobdata->getNVarsForCons(cons2); ++w)
             {
-               int var2 = seeedpool->getVarsForCons(cons2)[w];
+               int var2 = detprobdata->getVarsForCons(cons2)[w];
                if(var1 == var2)
                   return true;
             }
@@ -251,198 +238,42 @@ bool graphCompletible(
    return false;
 }
 
-/** detection function of detector */
-static
-DEC_DECL_DETECTSTRUCTURE(detectMST)
-{ /*lint --e{715}*/
 
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-   assert(decdecomps != NULL);
-   *result = SCIP_DIDNOTFIND;
-
-   Weights w(1, 1, 1, 1, 1, 1);
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting MST structure:");
-
-   time_t start, cp0, cp1, d_s, d_e;
-   time(&start);
-
-   std::vector<std::string> sim;
-
-   if(detectordata->johnsonenable)
-   {
-      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
-      SCIP_CALL( g->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip),
-            gcg::DISTANCE_MEASURE::JOHNSON, gcg::WEIGHT_TYPE::DIST));
-      detectordata->graphs->push_back(g);
-      sim.push_back("Johnson");
-   }
-   if(detectordata->intersectionenable)
-   {
-      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
-      SCIP_CALL( g->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip),
-            gcg::DISTANCE_MEASURE::INTERSECTION, gcg::WEIGHT_TYPE::DIST));
-      detectordata->graphs->push_back(g);
-      sim.push_back("Intersection");
-   }
-   if(detectordata->jaccardenable)
-   {
-      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
-      SCIP_CALL( g->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip),
-            gcg::DISTANCE_MEASURE::JACCARD, gcg::WEIGHT_TYPE::DIST));
-      detectordata->graphs->push_back(g);
-      sim.push_back("Jaccard");
-   }
-   if(detectordata->cosineenable)
-   {
-      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
-      SCIP_CALL( g->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip),
-            gcg::DISTANCE_MEASURE::COSINE, gcg::WEIGHT_TYPE::DIST));
-      detectordata->graphs->push_back(g);
-      sim.push_back("Cosine");
-   }
-   if(detectordata->simpsonenable)
-   {
-      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
-      SCIP_CALL( g->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip),
-            gcg::DISTANCE_MEASURE::SIMPSON, gcg::WEIGHT_TYPE::DIST));
-      detectordata->graphs->push_back(g);
-      sim.push_back("Simspon");
-   }
-   time(&cp0);
-   detectordata->n_similarities = (int) detectordata->graphs->size();
-
-   double q = 10; // quantile to search for the percentile needed for the mid of the eps list
-   std::vector<double> mids(detectordata->graphs->size());      // middle values for each eps list
-   std::vector<std::vector<double> > epsLists(detectordata->graphs->size());
-   for(int i = 0; i < (int)detectordata->graphs->size(); i++)
-   {
-      mids[i] = detectordata->graphs->at(i)->getEdgeWeightPercentile(q);
-      if(i == 1 && detectordata->intersectionenable)
-      {
-         epsLists[i] = getEpsList(detectordata->n_iterations, mids[i], true); // case for intersection
-      }
-      else
-      {
-         epsLists[i] = getEpsList(detectordata->n_iterations, mids[i], false); // case for all except intersection
-      }
-
-   }
-
-   time(&cp1);
-
-   int max_ndecs = detectordata->n_iterations * detectordata->graphs->size();
-   SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, max_ndecs) );
-
-   const int max_blocks = std::min((int)round(0.3 * SCIPgetNConss(scip)), MAX_N_BLOCKS);
-
-   *ndecdecomps = 0;
-   time(&d_s);
-   for(int i = 0; i < (int)detectordata->graphs->size(); i++)
-   {
-      RowGraphWeighted<GraphGCG>* graph = detectordata->graphs->at(i);
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n  %s similarity: ", sim[i].c_str());
-      int old_n_blocks = -1;
-      int old_non_cl = -1;
-      for(int j = 0; j < (int)epsLists[i].size() ; j++ )
-      {
-         double eps = epsLists[i][j];
-         if(eps <= 0.0)
-         {
-            continue;
-         }
-         if(eps >= 1.0)
-         {
-            break;
-         }
-
-         // run MST with different eps
-         SCIP_CALL( graph->computePartitionMST(eps, detectordata->postprocenable) );
-
-
-         int n_blocks;
-         SCIP_CALL( graph->getNBlocks(n_blocks) );
-         int non_cl;
-
-         SCIP_CALL( graph->nonClustered(non_cl) );
-
-         // skip the case if we have too many blocks (it means we must increase eps) or if the clustering is the same as the last one
-         if( n_blocks > max_blocks || n_blocks == 0 || (n_blocks == old_n_blocks && non_cl == old_non_cl) )
-         {
-            continue;
-         }
-         // stop. eps is already too big
-         if( n_blocks == 1 && non_cl == 0)
-         {
-            break;
-         }
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n    Blocks: %d, Master Conss: %d/%d, ", n_blocks, non_cl, SCIPgetNConss(scip));
-         old_n_blocks = n_blocks;
-         old_non_cl = non_cl;
-
-
-         SCIP_CALL( graph->createDecompFromPartition(&(*decdecomps)[*ndecdecomps]) );
-
-         auto check = DECdecompGetNLinkingvars((*decdecomps)[*ndecdecomps]);
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Link Vars: %d. ", check);
-
-         if( (*decdecomps)[*ndecdecomps] != NULL )
-         {
-            *ndecdecomps += 1;
-            detectordata->found = TRUE;
-         }
-      }
-      delete detectordata->graphs->at(i);
-      detectordata->graphs->at(i) = NULL;
-   }
-
-   detectordata->graphs->clear();
-   time(&d_e);
-   double elapsed_graphs = difftime(cp0, start);
-   double elapsed_mst = difftime(d_e, d_s);
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d similarities used, %d decompositions found.\n", detectordata->n_similarities, *ndecdecomps);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "MST runtime: graphs: %.2lf, mst: %.2lf. \n", elapsed_graphs, elapsed_mst);
-
-   SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
-
-   *result = *ndecdecomps > 0 ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
-   if( *ndecdecomps == 0 )
-   {
-      SCIPfreeMemoryArrayNull(scip, decdecomps);
-   }
-   return SCIP_OKAY;
-}
-
-//#define propagateSeeedMST NULL
+//#define propagatePartialdecMST NULL
 
 static
-DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
+DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMST)
 { /*lint --e{715}*/
 
-   int nNewSeeeds;
-   gcg::Seeed* seeed;
-   gcg::Seeed** newSeeeds;
+   int nnewpartialdecs;
+   gcg::PARTIALDECOMP* partialdec;
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
    std::vector<SCIP_Real> clockTimes1;        /* vector containing times in seconds  */
    std::vector<SCIP_Real> clockTimes2;        /* vector containing times in seconds  */
-   std::vector<SCIP_Real> clockTimes3;        /* vector containing times in seconds  */
+   std::vector< RowGraphWeighted<GraphGCG>*> graphs;
+   SCIP_CLOCK* overallClock;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
    *result = SCIP_DIDNOTFIND;
 
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
-   seeed->refineToBlocks();
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &overallClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, overallClock) );
 
-   if(!graphCompletible(seeedPropagationData->seeedpool, seeed))
+   partialdec = partialdecdetectiondata->workonpartialdec;
+   partialdec->refineToBlocks();
+
+   if( !graphCompletible(partialdecdetectiondata->detprobdata, partialdec) )
    {
-      delete seeed;
-      seeedPropagationData->nNewSeeeds = 0;
+      delete partialdec;
+      partialdecdetectiondata->nnewpartialdecs = 0;
+      SCIP_CALL_ABORT( SCIPstopClock(scip, overallClock) );
+      partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, overallClock);
+      SCIP_CALL_ABORT(SCIPfreeClock(scip, &overallClock) );
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
    }
+
    Weights w(1, 1, 1, 1, 1, 1);
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting MST structure:");
@@ -451,16 +282,16 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
    time(&start);
 
    std::vector<std::string> sim;
-
    SCIP_CLOCK* temporaryClock;
+
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
 
    if(detectordata->johnsonenable)
    {
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
-      SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed, gcg::DISTANCE_MEASURE::JOHNSON, gcg::WEIGHT_TYPE::DIST));
-      detectordata->graphs->push_back(g);
+      SCIP_CALL( g->createFromPartialMatrix(partialdecdetectiondata->detprobdata, partialdec, gcg::DISTANCE_MEASURE::JOHNSON, gcg::WEIGHT_TYPE::DIST));
+      graphs.push_back(g);
       sim.push_back("Johnson");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
       clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
@@ -471,8 +302,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
    {
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
-      SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed, gcg::DISTANCE_MEASURE::INTERSECTION, gcg::WEIGHT_TYPE::DIST));
-      detectordata->graphs->push_back(g);
+      SCIP_CALL( g->createFromPartialMatrix(partialdecdetectiondata->detprobdata, partialdec, gcg::DISTANCE_MEASURE::INTERSECTION, gcg::WEIGHT_TYPE::DIST));
+      graphs.push_back(g);
       sim.push_back("Intersection");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
       clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
@@ -483,8 +314,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
    {
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
-      SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed, gcg::DISTANCE_MEASURE::JACCARD, gcg::WEIGHT_TYPE::DIST));
-      detectordata->graphs->push_back(g);
+      SCIP_CALL( g->createFromPartialMatrix(partialdecdetectiondata->detprobdata, partialdec, gcg::DISTANCE_MEASURE::JACCARD, gcg::WEIGHT_TYPE::DIST));
+      graphs.push_back(g);
       sim.push_back("Jaccard");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
       clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
@@ -495,8 +326,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
    {
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
-      SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed,gcg::DISTANCE_MEASURE::COSINE, gcg::WEIGHT_TYPE::DIST));
-      detectordata->graphs->push_back(g);
+      SCIP_CALL( g->createFromPartialMatrix(partialdecdetectiondata->detprobdata, partialdec,gcg::DISTANCE_MEASURE::COSINE, gcg::WEIGHT_TYPE::DIST));
+      graphs.push_back(g);
       sim.push_back("Cosine");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
       clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
@@ -507,8 +338,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
    {
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
-      SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed,gcg::DISTANCE_MEASURE::SIMPSON, gcg::WEIGHT_TYPE::DIST));
-      detectordata->graphs->push_back(g);
+      SCIP_CALL( g->createFromPartialMatrix(partialdecdetectiondata->detprobdata, partialdec,gcg::DISTANCE_MEASURE::SIMPSON, gcg::WEIGHT_TYPE::DIST));
+      graphs.push_back(g);
       sim.push_back("Simspon");
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
       clockTimes1.push_back(SCIPgetClockTime(scip, temporaryClock));
@@ -516,15 +347,15 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    time(&cp0);
-   detectordata->n_similarities = (int) detectordata->graphs->size();
+   detectordata->n_similarities = (int) graphs.size();
 
    double q = 10; // quantile to search for the percentile needed for the mid of the eps list
-   std::vector<double> mids(detectordata->graphs->size());      // middle values for each eps list
-   std::vector<std::vector<double> > epsLists(detectordata->graphs->size());
-   for(int i = 0; i < (int)detectordata->graphs->size(); i++)
+   std::vector<double> mids(graphs.size());      // middle values for each eps list
+   std::vector<std::vector<double> > epsLists(graphs.size());
+   for(int i = 0; i < (int)graphs.size(); i++)
    {
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-      mids[i] = detectordata->graphs->at(i)->getEdgeWeightPercentile(q);
+      mids[i] = graphs.at(i)->getEdgeWeightPercentile(q);
       if(i == 1 && detectordata->intersectionenable)
       {
          epsLists[i] = getEpsList(detectordata->n_iterations, mids[i], true); // case for intersection
@@ -533,49 +364,52 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       {
          epsLists[i] = getEpsList(detectordata->n_iterations, mids[i], false); // case for all except intersection
       }
-      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
       clockTimes2.push_back(SCIPgetClockTime(scip, temporaryClock));
-      clockTimes2.push_back(SCIPgetClockTime(scip, temporaryClock));
-      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
    }
 
    time(&cp1);
 
-   int nMaxSeeeds = detectordata->n_iterations * detectordata->graphs->size();
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
-
+   int nMaxPartialdecs = detectordata->n_iterations * graphs.size();
    const int max_blocks = std::min((int)round(0.3 * SCIPgetNConss(scip)), MAX_N_BLOCKS);
+   char decinfo[SCIP_MAXSTRLEN];
 
-   int n_seeeds_found = 0;
-   nNewSeeeds = 0;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 2 * nMaxPartialdecs) );
+
+   nnewpartialdecs = 0;
    time(&d_s);
-   for(int i = 0; i < (int)detectordata->graphs->size(); i++)
+   for( int i = 0; i < (int)graphs.size(); i++ )
    {
-      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-      RowGraphWeighted<GraphGCG>* graph = detectordata->graphs->at(i);
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n  %s similarity: ", sim[i].c_str());
+      RowGraphWeighted<GraphGCG>* graph = graphs.at(i);
       int old_n_blocks = -1;
       int old_non_cl = -1;
-      for(int j = 0; j < (int)epsLists[i].size() ; j++ )
+      std::vector<gcg::PARTIALDECOMP*> createddecomps;
+      std::vector<std::pair<double, SCIP_Real>> clockTimes3;
+      gcg::PARTIALDECOMP *decomp1 = NULL, *decomp2 = NULL;
+
+      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n  %s similarity: ", sim[i].c_str());
+      createddecomps.reserve(2 * epsLists[i].size());
+      clockTimes3.reserve(epsLists[i].size());
+
+      for( double eps : epsLists[i] )
       {
-         double eps = epsLists[i][j];
-         if(eps <= 0.0)
+         if( eps <= 0.0 )
          {
             continue;
          }
-         if(eps >= 1.0)
+         if( eps >= 1.0 )
          {
             break;
          }
 
          // run MST with different eps
-         SCIP_CALL( graph->computePartitionMSTForPartialGraph(seeedPropagationData->seeedpool, seeed, eps, detectordata->postprocenable) );
-
+         SCIP_CALL( graph->computePartitionMSTForPartialGraph(partialdecdetectiondata->detprobdata, partialdec, eps, detectordata->postprocenable) );
 
          int n_blocks;
-         SCIP_CALL( graph->getNBlocks(n_blocks) );
          int non_cl;
-
+         SCIP_CALL( graph->getNBlocks(n_blocks) );
          SCIP_CALL( graph->nonClustered(non_cl) );
 
          // skip the case if we have too many blocks (it means we must increase eps) or if the clustering is the same as the last one
@@ -592,65 +426,109 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
          old_n_blocks = n_blocks;
          old_non_cl = non_cl;
 
+         SCIP_CALL( graph->createPartialdecFromPartition(partialdec, &decomp1, &decomp2, partialdecdetectiondata->detprobdata));
+         SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
 
-         SCIP_CALL( graph->createSeeedFromPartition(seeed,&newSeeeds[n_seeeds_found], &newSeeeds[n_seeeds_found+1], seeedPropagationData->seeedpool));
-
-         if((newSeeeds)[n_seeeds_found] != NULL)
+         if( decomp1 != NULL )
          {
-            nNewSeeeds += 2;
+            assert(decomp2 != NULL);
             detectordata->found = TRUE;
+            createddecomps.push_back(decomp1);
+            createddecomps.push_back(decomp2);
+            clockTimes3.emplace_back(eps, SCIPgetClockTime(scip, temporaryClock));
          }
-         n_seeeds_found += 2;
+
+         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
       }
-      delete detectordata->graphs->at(i);
-      detectordata->graphs->at(i) = NULL;
 
-      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes3.push_back(SCIPgetClockTime(scip, temporaryClock));
-      clockTimes3.push_back(SCIPgetClockTime(scip, temporaryClock));
-      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
-   }
-
-   delete seeed;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds) );
-   seeedPropagationData->nNewSeeeds = nNewSeeeds;
-   for(int j = 0, s = 0; s < nNewSeeeds; ++j)
-   {
-      if(newSeeeds[j] != NULL)
+      size_t ncreateddecomps = createddecomps.size();
+      for( unsigned int j = 0; j < ncreateddecomps; ++j )
       {
-         seeedPropagationData->newSeeeds[s] = newSeeeds[j];
-         seeedPropagationData->newSeeeds[s]->addClockTime(clockTimes1[j] + clockTimes2[j] + clockTimes3[j]);
-         seeedPropagationData->newSeeeds[s]->setDetectorPropagated(detector);
-         ++s;
+         double eps = clockTimes3[j / 2].first;
+         SCIP_Real epstime = clockTimes3[j / 2].second;
+         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "mst_%s_%f", sim[i].c_str(), eps);
+         createddecomps[j]->addDetectorChainInfo(decinfo);
+         createddecomps[j]->addClockTime(clockTimes1[i] / ncreateddecomps + clockTimes2[i] / ncreateddecomps + epstime / 2.0);
+         partialdecdetectiondata->newpartialdecs[nnewpartialdecs + j] = createddecomps[j];
       }
-   }
-   SCIPfreeMemoryArray(scip, &newSeeeds);
+      nnewpartialdecs += ncreateddecomps;
 
-   detectordata->graphs->clear();
+      delete graphs.at(i);
+      graphs[i] = NULL;
+   }
+
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), nnewpartialdecs) );
+   partialdecdetectiondata->nnewpartialdecs = nnewpartialdecs;
+   SCIP_CALL_ABORT( SCIPstopClock(scip, overallClock) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, overallClock);
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &overallClock) );
+
    time(&d_e);
    double elapsed_graphs = difftime(cp0, start);
    double elapsed_mst = difftime(d_e, d_s);
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d similarities used, %d decompositions found.\n", detectordata->n_similarities, nNewSeeeds);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d similarities used, %d decompositions found.\n", detectordata->n_similarities, nnewpartialdecs);
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "MST runtime: graphs: %.2lf, mst: %.2lf. \n", elapsed_graphs, elapsed_mst);
 
-   *result = nNewSeeeds > 0 ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
-   if( nNewSeeeds == 0 )
+   *result = nnewpartialdecs > 0 ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
+   if( nnewpartialdecs == 0 )
    {
-      SCIPfreeMemoryArrayNull(scip, &(seeedPropagationData->newSeeeds));
+      SCIPfreeMemoryArrayNull(scip, &(partialdecdetectiondata->newpartialdecs));
    }
 
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
    return SCIP_OKAY;
 }
 
-#define finishSeeedMST NULL
+#define finishPartialdecMST NULL
 
-#define detectorPostprocessSeeedMST NULL
+#define detectorPostprocessPartialdecMST NULL
 
-#define setParamAggressiveMST NULL
-#define setParamDefaultMST NULL
-#define setParamFastMST NULL
+static
+DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveMST)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+   return SCIP_OKAY;
+}
+
+
+static
+DEC_DECL_SETPARAMDEFAULT(setParamDefaultMST)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+
+   return SCIP_OKAY;
+}
+
+static
+DEC_DECL_SETPARAMFAST(setParamFastMST)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+   return SCIP_OKAY;
+}
 
 
 /*
@@ -671,8 +549,8 @@ SCIP_RETCODE SCIPincludeDetectorMST(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectMST, freeMST, initMST, exitMST, propagateSeeedMST, finishSeeedMST, detectorPostprocessSeeedMST, setParamAggressiveMST, setParamDefaultMST, setParamFastMST) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+      detectordata, freeMST, initMST, exitMST, propagatePartialdecMST, finishPartialdecMST, detectorPostprocessPartialdecMST, setParamAggressiveMST, setParamDefaultMST, setParamFastMST) );
 
    /* add arrowheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/mst/niterations", "Number of iterations to run mst with different eps.", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 11, 1001, NULL, NULL) );

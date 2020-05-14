@@ -35,8 +35,8 @@
 
 #include "dec_neighborhoodmaster.h"
 #include "cons_decomp.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 #include "gcg.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
@@ -64,12 +64,10 @@ This detector calculates cons-cons adjacency (if not already done), and sorts co
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'n'         /**< display character of detector */
 #define DEC_ENABLED               TRUE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       FALSE       /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the detection be enabled */
 #define DEC_ENABLEDPOSTPROCESSING FALSE       /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
-#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
 #define DEFAULT_MAXRATIO          0.2
 
@@ -124,103 +122,99 @@ DEC_DECL_FREEDETECTOR(freeNeighborhoodmaster)
 /** detection initialization function of detector (called before solving is about to begin) */
 #define initNeighborhoodmaster NULL
 
-#define detectNeighborhoodmaster NULL
+#define finishPartialdecNeighborhoodmaster NULL
 
-#define finishSeeedNeighborhoodmaster NULL
-
-static DEC_DECL_PROPAGATESEEED(propagateSeeedNeighborhoodmaster)
+static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecNeighborhoodmaster)
 {
-  *result = SCIP_DIDNOTFIND;
-  char decinfo[SCIP_MAXSTRLEN];
+   *result = SCIP_DIDNOTFIND;
+   char decinfo[SCIP_MAXSTRLEN];
 
-  SCIP_CLOCK* temporaryClock;
+   SCIP_CLOCK* temporaryClock;
 
-  gcg::Seeedpool* seeedpool;
-  std::vector<gcg::Seeed*> foundseeeds(0);
+   gcg::DETPROBDATA* detprobdata;
+   std::vector<gcg::PARTIALDECOMP*> foundpartialdecs(0);
 
-  gcg::Seeed* seeedOrig;
-  gcg::Seeed* seeed;
+   gcg::PARTIALDECOMP* partialdecOrig;
+   gcg::PARTIALDECOMP* partialdec;
 
-  DEC_DetectorData* detectorData;
+   DEC_DetectorData* detectorData;
 
-  detectorData = DECdetectorGetData(detector);
+   detectorData = DECdetectorGetData(detector);
 
-  seeedOrig = seeedPropagationData->seeedToPropagate;
-  std::stringstream decdesc;
+   partialdecOrig = partialdecdetectiondata->workonpartialdec;
+   std::stringstream decdesc;
 
-  int maxdiff = -1;
-  int maxdiffindex = -1;
-  int lastindex = -1;
+   int maxdiff = -1;
+   int maxdiffindex = -1;
+   int lastindex = -1;
 
-  seeedpool = seeedPropagationData->seeedpool;
+   detprobdata = partialdecdetectiondata->detprobdata;
+   partialdec = new gcg::PARTIALDECOMP(partialdecOrig);
 
-  if ( !seeedpool->isConssAdjInitilized() )
-     seeedpool->createConssAdjacency();
+   if ( !detprobdata->isConssAdjInitialized() )
+     detprobdata->createConssAdjacency();
 
-  seeed = new gcg::Seeed(seeedOrig);
-  std::vector<std::pair<int,int>> neighborhoodsize = std::vector<std::pair<int,int>>(seeed->getNOpenconss(), std::pair<int, int>(0,-1)  );
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-  SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-  SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   lastindex = (int) (detectorData->maxratio * partialdec->getNOpenconss());
 
-  lastindex = (int) (detectorData->maxratio * seeed->getNOpenconss());
+   /** fix open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
+   std::vector<std::pair<int,int>> neighborhoodsize;
+   neighborhoodsize.reserve(partialdec->getNOpenconss());
+   for( int opencons : partialdec->getOpenconssVec() )
+   {
+      neighborhoodsize.emplace_back(std::pair<int,int>(detprobdata->getNConssForCons(opencons), opencons));
+   }
 
-  /** book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
-  for( int i = 0; i < seeed->getNOpenconss(); ++i )
-  {
-     int cons = seeed->getOpenconss()[i];
-     int neighborhoodsizecons = seeedpool->getNConssForCons(cons);
+   std::sort(neighborhoodsize.begin(), neighborhoodsize.end(), sort_pred() );
 
-     neighborhoodsize[i] = std::pair<int,int>(neighborhoodsizecons, i);
-  }
-
-  std::sort(neighborhoodsize.begin(), neighborhoodsize.end(), sort_pred() );
-
-  for( int i = 0; i < lastindex && i < (int) neighborhoodsize.size() - 1; ++i )
-  {
+   for( int i = 0; i < lastindex && i < (int) neighborhoodsize.size() - 1; ++i )
+   {
      if( maxdiff < neighborhoodsize[i].first - neighborhoodsize[i+1].first )
      {
         maxdiff = neighborhoodsize[i].first - neighborhoodsize[i+1].first;
         maxdiffindex = i;
      }
-  }
+   }
+
+   for( int i = 0; i <= maxdiffindex; ++i )
+   {
+      partialdec->fixConsToMaster(neighborhoodsize[i].second);
+   }
+
+   decdesc << "neighborhoodmaster" << "\\_" << maxdiffindex ;
+
+   partialdec->sort();
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
+   partialdec->addDetectorChainInfo(decinfo);
+
+   foundpartialdecs.push_back(partialdec);
 
 
-  for( int i = 0; i <= maxdiffindex; ++i )
-  {
-     seeed->bookAsMasterCons(seeed->getOpenconss()[neighborhoodsize[i].second]);
-  }
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
 
-  decdesc << "neighborhoodmaster" << "\\_" << maxdiffindex ;
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
 
-  seeed->flushBooked();
-  (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
-  seeed->addDetectorChainInfo(decinfo);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), foundpartialdecs.size() ) );
+   partialdecdetectiondata->nnewpartialdecs  = foundpartialdecs.size();
 
-  foundseeeds.push_back(seeed);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "dec_neighborhoodmaster found %d new partialdec \n", partialdecdetectiondata->nnewpartialdecs  );
 
+   for( int s = 0; s < partialdecdetectiondata->nnewpartialdecs; ++s )
+   {
+      partialdecdetectiondata->newpartialdecs[s] = foundpartialdecs[s];
+      partialdecdetectiondata->newpartialdecs[s]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+   }
 
-  SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
-  SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), foundseeeds.size() ) );
-  seeedPropagationData->nNewSeeeds  = foundseeeds.size();
-
-  SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "dec_neighborhoodmaster found %d new seeed \n", seeedPropagationData->nNewSeeeds  );
-
-  for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-  {
-     seeedPropagationData->newSeeeds[s] = foundseeeds[s];
-     seeedPropagationData->newSeeeds[s]->addClockTime(SCIPgetClockTime(scip, temporaryClock ) );
-  }
-
-  SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-
-  *result = SCIP_SUCCESS;
+   *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
 }
 
-#define detectorPostprocessSeeedNeighborhoodmaster NULL
+#define detectorPostprocessPartialdecNeighborhoodmaster NULL
 
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveNeighborhoodmaster)
@@ -231,15 +225,10 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveNeighborhoodmaster)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
-
    return SCIP_OKAY;
-
 }
 
 
@@ -252,14 +241,10 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultNeighborhoodmaster)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL ) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
    return SCIP_OKAY;
-
 }
 
 static
@@ -271,15 +256,10 @@ DEC_DECL_SETPARAMFAST(setParamFastNeighborhoodmaster)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
-
    return SCIP_OKAY;
-
 }
 
 
@@ -302,10 +282,10 @@ SCIP_RETCODE SCIPincludeDetectorNeighborhoodmaster(SCIP* scip /**< SCIP data str
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
-         DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
-         DEC_LEGACYMODE, detectordata, detectNeighborhoodmaster, freeNeighborhoodmaster, initNeighborhoodmaster,
-         exitNeighborhoodmaster, propagateSeeedNeighborhoodmaster, finishSeeedNeighborhoodmaster,
-         detectorPostprocessSeeedNeighborhoodmaster, setParamAggressiveNeighborhoodmaster,
+         DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+         detectordata, freeNeighborhoodmaster, initNeighborhoodmaster,
+         exitNeighborhoodmaster, propagatePartialdecNeighborhoodmaster, finishPartialdecNeighborhoodmaster,
+         detectorPostprocessPartialdecNeighborhoodmaster, setParamAggressiveNeighborhoodmaster,
          setParamDefaultNeighborhoodmaster, setParamFastNeighborhoodmaster));
 
    SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/neighborhoodmaster/maxratio",

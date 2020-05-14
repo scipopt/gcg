@@ -166,30 +166,19 @@
 #include "event_bestsol.h"
 #include "event_mastersol.h"
 
-/* Martin's detection stuff */
-#include "cons_decomp.h"
-#include "dec_connected.h"
-
 /* visualization */
 #include "reader_gp.h"
 #include "reader_tex.h"
 #include "reader_cls.h"
 
-#ifdef WITH_BLISS
-#include "dec_isomorph.h"
-#endif
-
-/* new detection stuff */
+/* detection */
+#include "cons_decomp.h"
 #include "dec_constype.h"
 #include "dec_consclass.h"
 #include "dec_densemasterconss.h"
 #include "dec_stairheur.h"
-#include "dec_staircase.h"
-#include "dec_random.h"
-#include "dec_colors.h"
 #include "dec_compgreedily.h"
 #include "dec_staircase_lsp.h"
-#include "dec_consname.h"
 #include "dec_postprocess.h"
 #include "dec_mastersetpack.h"
 #include "dec_mastersetpart.h"
@@ -206,6 +195,9 @@
 #include "dec_staircase_lsp.h"
 #include "dec_varclass.h"
 
+#ifdef WITH_BLISS
+#include "dec_isomorph.h"
+#endif
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -227,16 +219,24 @@
 #include "heur_xprins.h"
 
 /* Friedrike's detection stuff */
-#include "dec_cutpacking.h"
 #include "scip_misc.h"
 #include "scip/table_default.h"
 
 /* Igor's detection with clustering */
 #include "dec_dbscan.h"
 #include "dec_mst.h"
-#ifdef WITH_GSL
-#include "dec_mcl.h"
-#endif
+
+/* classifiers */
+#include "clscons_miplibconstypes.h"
+#include "clscons_nnonzeros.h"
+#include "clscons_consnamelevenshtein.h"
+#include "clscons_consnamenonumbers.h"
+#include "clscons_scipconstypes.h"
+
+#include "clsvar_objvalues.h"
+#include "clsvar_scipvartypes.h"
+#include "clsvar_objvaluesigns.h"
+
 
 /** includes default plugins for generic column generation into SCIP */
 SCIP_RETCODE SCIPincludeGcgPlugins(
@@ -367,25 +367,16 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    /* Detectors and decompositions */
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
-   SCIP_CALL( SCIPincludeDetectorConnected(scip) );
    SCIP_CALL( SCIPincludeDetectorConstype(scip) );
    SCIP_CALL( SCIPincludeDetectorPostprocess(scip) );
    SCIP_CALL( SCIPincludeDetectorConsclass(scip) );
-   SCIP_CALL( SCIPincludeDetectorConsname(scip) );
    SCIP_CALL( SCIPincludeDetectorDensemasterconss(scip) );
    SCIP_CALL( SCIPincludeDetectorNeighborhoodmaster(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
-   SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
-   SCIP_CALL( SCIPincludeDetectorRandom(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircaseLsp(scip) );
-   SCIP_CALL( SCIPincludeDetectorColors(scip) );
-#ifdef WITH_HMETIS
-   SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
-#endif
 #ifdef WITH_GSL
    SCIP_CALL( SCIPincludeDetectorDBSCAN(scip) );
    SCIP_CALL( SCIPincludeDetectorMST(scip) );
-   SCIP_CALL( SCIPincludeDetectorMCL(scip) );
 #endif
    SCIP_CALL( SCIPincludeDetectorCompgreedily(scip) );
    SCIP_CALL( SCIPincludeDetectorMastersetcover(scip) );
@@ -401,10 +392,22 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorGeneralmastersetcover(scip) );
    SCIP_CALL( SCIPincludeDetectorVarclass(scip) );
 
+   #ifdef WITH_BLISS
+      SCIP_CALL( SCIPincludeDetectorIsomorphism(scip) );
+   #endif
 
-#ifdef WITH_BLISS
-   SCIP_CALL( SCIPincludeDetectorIsomorphism(scip) );
-#endif
+
+   /* Classifiers */
+   SCIP_CALL( SCIPincludeConsClassifierNNonzeros(scip) );
+   SCIP_CALL( SCIPincludeConsClassifierScipConstypes(scip) );
+   SCIP_CALL( SCIPincludeConsClassifierMiplibConstypes(scip) );
+   SCIP_CALL( SCIPincludeConsClassifierConsnameLevenshtein(scip) );
+   SCIP_CALL( SCIPincludeConsClassifierForConsnamesDigitFreeIdentical(scip) );
+
+   SCIP_CALL( SCIPincludeVarClassifierScipVartypes(scip) );
+   SCIP_CALL( SCIPincludeVarClassifierObjValues(scip) );
+   SCIP_CALL( SCIPincludeVarClassifierObjValueSigns(scip) );
+
 
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeEventHdlrOrigdiving(scip) );

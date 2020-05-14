@@ -2,5 +2,5 @@
 
 detection/emphfast/enabled = TRUE
 detection/smartscore/enabled = FALSE
-detection/maxnclassesperclassifier = 5
-detection/maxnclassesperclassifierforlargeprobs = 2
+detection/classification/maxnclassesperpartition = 5
+detection/classification/maxnclassesperpartitionforlargeprobs = 2

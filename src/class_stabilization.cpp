@@ -59,14 +59,14 @@ Stabilization::Stabilization(
    SCIP_Bool hybridascent_
    ) :scip_(scip), stabcenterconsvals((SCIP_Real*) NULL), stabcenterconsvalssize(0), nstabcenterconsvals(0),
       stabcentercutvals((SCIP_Real*) NULL), stabcentercutvalssize(0), nstabcentercutvals(0),
-      stabcenterlinkingconsvals((SCIP_Real*) NULL), nstabcenterlinkingconsvals(0),
+      stabcenterlinkingconsvals((SCIP_Real*) NULL), nstabcenterlinkingconsvals(0), stabcenterlinkingconsvalssize(0),
       stabcenterconv((SCIP_Real*) NULL), nstabcenterconv(0), dualdiffnorm(0.0),
       subgradientconsvals(NULL), subgradientconsvalssize(0), nsubgradientconsvals(0),
       subgradientcutvals(NULL), subgradientcutvalssize(0), nsubgradientcutvals(0),
       subgradientlinkingconsvals(NULL),
       subgradientnorm(0.0), hybridfactor(0.0),
       pricingtype(pricingtype_), alpha(0.8), alphabar(0.8), hybridascent(hybridascent_), beta(0.0), nodenr(-1), k(0), t(0), hasstabilitycenter(FALSE),stabcenterbound(-SCIPinfinity(scip)),
-      inmispricingschedule(FALSE), subgradientproduct(0.0), stabcenterlinkingconsvalssize(0)
+      inmispricingschedule(FALSE), subgradientproduct(0.0)
 {
 
 }

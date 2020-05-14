@@ -44,9 +44,9 @@
 #include "gcg.h"
 #include "scip/cons_linear.h"
 #include "pub_bliss.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
-#include "wrapper_seeed.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
+#include "cons_decomp.hpp"
 
 #include <cstring>
 
@@ -59,10 +59,10 @@ struct AUT_HOOK2
    SCIP_HASHMAP* consmap;                    /**< hashmap for permutated constraints */
    SCIP** scips;                             /**< array of scips to search for automorphisms */
    int* nodemap;                             /**< mapping of the nodes; filled generator-wise */
-   int* conssperm;                            /**< mapping of constraints */
-   gcg::Seeedpool* seeedpool;                /**< problem information the automorphism should be searched for */
-   gcg::Seeed*     seeed;                    /**< decomposition information */
-   std::vector<int>* blocks;                  /**< array of blocks the automporphisms are searched for */
+   int* conssperm;                           /**< mapping of constraints */
+   gcg::DETPROBDATA* detprobdata;            /**< problem information the automorphism should be searched for */
+   gcg::PARTIALDECOMP* partialdec;           /**< decomposition information */
+   std::vector<int>* blocks;                 /**< array of blocks the automporphisms are searched for */
    SCIP*            scip;
    int ncalls;
 
@@ -88,8 +88,8 @@ struct AUT_HOOK2
 
    /** setter for new detection stuff */
    void setNewDetectionStuff(
-      gcg::Seeedpool* seeedpool,
-      gcg::Seeed*     seeed,
+      gcg::DETPROBDATA* detprobdata,
+      gcg::PARTIALDECOMP* partialdec,
       std::vector<int>* blocks
       );
 
@@ -109,8 +109,6 @@ struct AUT_HOOK2
 };
 
 
-
-
 void AUT_HOOK2::setBool( SCIP_Bool aut_ )
 {
    aut = aut_;
@@ -118,18 +116,18 @@ void AUT_HOOK2::setBool( SCIP_Bool aut_ )
 
 
 void AUT_HOOK2::setNewDetectionStuff(
-   gcg::Seeedpool* givenseeedpool,
-   gcg::Seeed*     givenseeed,
+   gcg::DETPROBDATA* givendetprobdata,
+   gcg::PARTIALDECOMP* givenpartialdec,
    std::vector<int>* givenblocks
-)
+   )
 {
-   this->seeedpool = givenseeedpool;
-   this->seeed = givenseeed;
+   this->detprobdata = givendetprobdata;
+   this->partialdec = givenpartialdec;
    this->blocks = givenblocks;
 
-   SCIP_CALL_ABORT( SCIPallocMemoryArray(seeedpool->getScip(), &(this->conssperm), seeedpool->getNConss() ) ); /*lint !e666*/
+   SCIP_CALL_ABORT( SCIPallocMemoryArray(givenscip, &(this->conssperm), detprobdata->getNConss() ) ); /*lint !e666*/
 
-   scip = seeedpool->getScip();
+   scip = givendetprobdata->getScip();
 
 }
 
@@ -139,8 +137,8 @@ AUT_HOOK2::~AUT_HOOK2()
    if( conssperm != NULL )
       SCIPfreeMemoryArrayNull(scip, &conssperm);
    conssperm  = NULL;
-   seeedpool = NULL;
-   seeed = NULL;
+   detprobdata = NULL;
+   partialdec = NULL;
 }
 
 
@@ -190,8 +188,8 @@ AUT_HOOK2::AUT_HOOK2(
       nodemap[i] = -1;
 
    conssperm = NULL;
-   seeedpool = NULL;
-   seeed = NULL;
+   detprobdata = NULL;
+   partialdec = NULL;
    blocks = NULL;
 
    ncalls = 0;
@@ -217,19 +215,19 @@ void fhook(
    SCIP_CONS** conss1;
    SCIP_CONS** conss2;
    SCIP_Bool newdetection;
-   SCIP* seeedscip;
-   gcg::Seeedpool* seeedpool;
-   gcg::Seeed* seeed;
+   SCIP* partialdecscip;
+   gcg::DETPROBDATA* detprobdata;
+   gcg::PARTIALDECOMP* partialdec;
    AUT_HOOK2* hook = (AUT_HOOK2*) user_param;
 
    j = 0;
    n = hook->getNNodes();
 
    /* new detection stuff */
-   newdetection = (hook->seeedpool != NULL) ;
-   seeed = hook->seeed;
-   seeedpool = hook->seeedpool;
-   seeedscip = NULL;
+   newdetection = (hook->detprobdata != NULL) ;
+   partialdec = hook->partialdec;
+   detprobdata = hook->detprobdata;
+   partialdecscip = NULL;
 
    if(hook->getBool())
       return;
@@ -285,36 +283,36 @@ void fhook(
 
 
    if( newdetection )
-      nvars = seeed->getNVarsForBlock((*hook->blocks)[0]);
+      nvars = partialdec->getNVarsForBlock((*hook->blocks)[0]);
    else
       nvars = SCIPgetNVars(hook->getScips()[0]);
    if( newdetection )
-      assert(nvars == seeed->getNVarsForBlock((*hook->blocks)[1]) );
+      assert(nvars == partialdec->getNVarsForBlock((*hook->blocks)[1]) );
    else
       assert(nvars == SCIPgetNVars(hook->getScips()[1]));
 
    if( newdetection )
    {
-      seeedscip = seeedpool->getScip();
+      partialdecscip = detprobdata->getScip();
 
-      SCIP_CALL_ABORT(SCIPallocBufferArray(seeedscip, &vars1, nvars ));
-      SCIP_CALL_ABORT(SCIPallocBufferArray(seeedscip, &vars2, nvars ));
-      nconss = seeed->getNConssForBlock((*hook->blocks)[0]);
-      assert(nconss == seeed->getNConssForBlock((*hook->blocks)[1]));
+      SCIP_CALL_ABORT(SCIPallocBufferArray(partialdecscip, &vars1, nvars ));
+      SCIP_CALL_ABORT(SCIPallocBufferArray(partialdecscip, &vars2, nvars ));
+      nconss = partialdec->getNConssForBlock((*hook->blocks)[0]);
+      assert(nconss == partialdec->getNConssForBlock((*hook->blocks)[1]));
 
-      SCIP_CALL_ABORT( SCIPallocBufferArray(seeedscip, &conss1, nconss ) );
-      SCIP_CALL_ABORT( SCIPallocBufferArray(seeedscip, &conss2, nconss ) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(partialdecscip, &conss1, nconss ) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(partialdecscip, &conss2, nconss ) );
 
       for( int v = 0; v < nvars; ++v )
       {
-         vars1[v] = seeedpool->getVarForIndex(seeed->getVarsForBlock((*hook->blocks)[0])[v]);
-         vars2[v] = seeedpool->getVarForIndex(seeed->getVarsForBlock((*hook->blocks)[1])[v]);
+         vars1[v] = detprobdata->getVarForIndex(partialdec->getVarsForBlock((*hook->blocks)[0])[v]);
+         vars2[v] = detprobdata->getVarForIndex(partialdec->getVarsForBlock((*hook->blocks)[1])[v]);
       }
 
       for( int c = 0; c < nconss; ++c )
       {
-         conss1[c] = seeedpool->getConsForIndex(seeed->getConssForBlock((*hook->blocks)[0])[c]);
-         conss2[c] = seeedpool->getConsForIndex(seeed->getConssForBlock((*hook->blocks)[1])[c]);
+         conss1[c] = detprobdata->getConsForIndex(partialdec->getConssForBlock((*hook->blocks)[0])[c]);
+         conss2[c] = detprobdata->getConsForIndex(partialdec->getConssForBlock((*hook->blocks)[1])[c]);
       }
    }
    else
@@ -359,13 +357,14 @@ void fhook(
 
    if( newdetection )
    {
-      seeedscip = seeedpool->getScip();
-      SCIPfreeBufferArray(seeedscip, &conss1);
-      SCIPfreeBufferArray(seeedscip, &conss2);
-      SCIPfreeBufferArray(seeedscip, &vars1);
-      SCIPfreeBufferArray(seeedscip, &vars2);
+      partialdecscip = detprobdata->getScip();
+      SCIPfreeBufferArray(partialdecscip, &conss1);
+      SCIPfreeBufferArray(partialdecscip, &conss2);
+      SCIPfreeBufferArray(partialdecscip, &vars1);
+      SCIPfreeBufferArray(partialdecscip, &vars2);
    }
 }
+
 
 /** tests if two scips have the same number of variables */
 static
@@ -381,8 +380,6 @@ SCIP_RETCODE testScipVars(
    }
    return SCIP_OKAY;
 }
-
-
 
 
 /** tests if two scips have the same number of constraints */
@@ -418,17 +415,18 @@ static SCIP_RETCODE allocMemory(
 
 /** constructor for colorinfo arrays */
 static SCIP_RETCODE allocMemoryNewDetection(
-   gcg::Seeedpool*       seeedpool,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   gcg::DETPROBDATA*     detprobdata,        /**< SCIP data structure */
    AUT_COLOR*            colorinfo,          /**< struct to save intermediate information */
    int                   nconss,             /**< number of constraints */
-   int                   nvars,               /**< number of variables */
+   int                   nvars,              /**< number of variables */
    int                   ncoeffs
    )
 {
-   SCIP_CALL( SCIPallocMemoryArray(seeedpool->getScip(), &colorinfo->ptrarraycoefs, ((size_t) ncoeffs )));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarraycoefs, ((size_t) ncoeffs )));
    colorinfo->alloccoefsarray = ncoeffs;
-   SCIP_CALL( SCIPallocMemoryArray(seeedpool->getScip(), &colorinfo->ptrarrayvars, (size_t) nvars));
-   SCIP_CALL( SCIPallocMemoryArray(seeedpool->getScip(), &colorinfo->ptrarrayconss, (size_t) nconss));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayvars, (size_t) nvars));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayconss, (size_t) nconss));
    return SCIP_OKAY;
 }
 
@@ -626,15 +624,15 @@ SCIP_RETCODE setuparrays(
 /** set up a help structure for graph creation for new detection loop*/
 static
 SCIP_RETCODE setuparraysnewdetection(
-   gcg::Seeedpool*       seeedpool,           /**< seeedpool corresponing to presolved or unpresolved problem */
-   gcg::Seeed*           seeed,              /**< partial decomp the  symmetry for two blocks is checked for */
+   SCIP*                 scip,               /**< SCIP data structure */
+   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata corresponing to presolved or unpresolved problem */
+   gcg::PARTIALDECOMP*   partialdec,         /**< partial decomp the  symmetry for two blocks is checked for */
    int                   nblocks,            /**< number of blocks the symmetry should be checked for */
    std::vector<int>      blocks,             /**< vectors of block indices the symmetry be checked for */
    AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
    SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
 { /*lint -esym(593, scoef) */
-   SCIP* scip;
    int i;
    int j;
    int b;
@@ -642,28 +640,28 @@ SCIP_RETCODE setuparraysnewdetection(
    int nvars;
    SCIP_Bool added;
 
-
    added = FALSE;
 
-   scip = seeedpool->getScip();
-
    //allocate max n of coefarray, varsarray, and boundsarray in origscip
-   nconss = seeed->getNConssForBlock(blocks[0]) ;
-   nvars = seeed->getNVarsForBlock(blocks[0]) ;
+   nconss = partialdec->getNConssForBlock(blocks[0]) ;
+   nvars = partialdec->getNVarsForBlock(blocks[0]) ;
    colorinfo->setOnlySign(FALSE);
 
    for( b = 0; b < nblocks && *result == SCIP_SUCCESS; ++b )
    {
       int block = blocks[b];
 
-      SCIPdebugMessage("Handling block %i (id %d %d x %d)\n", b, block, seeed->getNConssForBlock(blocks[b]), seeed->getNVarsForBlock(blocks[b]));
+      assert( partialdec->getNVarsForBlock(blocks[b]) == nvars );
+      assert( partialdec->getNConssForBlock(blocks[b]) == nconss );
+
+      SCIPdebugMessage("Handling block %i (id %d %d x %d)\n", b, block, partialdec->getNConssForBlock(blocks[b]), partialdec->getNVarsForBlock(blocks[b]));
       //save the properties of variables in a struct array and in a sorted pointer array
       for( i = 0; i < nvars; i++ )
       {
          SCIP_VAR* var;
          AUT_VAR* svar;
 
-         var = seeedpool->getVarForIndex( seeed->getVarsForBlock(block)[i] );
+         var = detprobdata->getVarForIndex( partialdec->getVarsForBlock(block)[i] );
          svar = new AUT_VAR(scip, var);
          //add to pointer array iff it doesn't exist
          SCIP_CALL( colorinfo->insert(svar, &added) );
@@ -682,10 +680,10 @@ SCIP_RETCODE setuparraysnewdetection(
          int consid;
          SCIP_CONS* cons;
 
-         consid = seeed->getConssForBlock(block)[i];
-         cons = seeedpool->getConsForIndex( consid );
+         consid = partialdec->getConssForBlock(block)[i];
+         cons = detprobdata->getConsForIndex( consid );
 
-         if( seeedpool->getNVarsForCons(consid) == 0 )
+         if( detprobdata->getNVarsForCons(consid) == 0 )
             continue;
 
          AUT_CONS* scons = new AUT_CONS(scip, cons);
@@ -701,14 +699,14 @@ SCIP_RETCODE setuparraysnewdetection(
             delete scons;
 
          //save the properties of variables of the constraints in a struct array and in a sorted pointer array
-         for( j = 0; j < seeedpool->getNVarsForCons(consid); j++ )
+         for( j = 0; j < detprobdata->getNVarsForCons(consid); j++ )
          {
             SCIP_Real val;
             AUT_COEF* scoef;
-            val = seeedpool->getVal(consid, seeedpool->getVarsForCons(consid)[j]);
+            val = detprobdata->getVal(consid, detprobdata->getVarsForCons(consid)[j]);
             scoef = new AUT_COEF(scip, val );
             //test, whether the coefficient is not zero
-            if( !SCIPisZero(seeedpool->getScip(), scoef->getVal()) )
+            if( !SCIPisZero(scip, scoef->getVal()) )
             {
                //add to pointer array iff it doesn't exist
                SCIP_CALL( colorinfo->insert(scoef, &added) );
@@ -726,36 +724,33 @@ SCIP_RETCODE setuparraysnewdetection(
    }
 
    /* add color information for master constraints */
-
-
-
-   for( i = 0; i < seeed->getNMasterconss() && *result == SCIP_SUCCESS; ++i )
+   for( i = 0; i < partialdec->getNMasterconss() && *result == SCIP_SUCCESS; ++i )
    {
       int masterconsid;
       SCIP_CONS* mastercons;
 
-      masterconsid = seeed->getMasterconss()[i];
-      mastercons = seeedpool->getConsForIndex(masterconsid);
+      masterconsid = partialdec->getMasterconss()[i];
+      mastercons = detprobdata->getConsForIndex(masterconsid);
 
       /* add right color for master constraint */
-      AUT_CONS* scons = new AUT_CONS(seeedpool->getScip(), mastercons);
+      AUT_CONS* scons = new AUT_CONS(scip, mastercons);
       SCIP_CALL( colorinfo->insert(scons, &added) );
 
       /* if it hasn't been added, it is already present */
       if(!added)
          delete scons;
 
-      for( j = 0; j < seeedpool->getNVarsForCons(masterconsid); ++j )
+      for( j = 0; j < detprobdata->getNVarsForCons(masterconsid); ++j )
       {
          AUT_COEF* scoef;
          int varid;
 
-         varid = seeedpool->getVarsForCons(masterconsid)[j];
-         scoef= new AUT_COEF(seeedpool->getScip(), seeedpool->getVal(masterconsid, varid) );
+         varid = detprobdata->getVarsForCons(masterconsid)[j];
+         scoef= new AUT_COEF(scip, detprobdata->getVal(masterconsid, varid) );
 
          added = FALSE;
 
-         if( !SCIPisZero(seeedpool->getScip(), scoef->getVal()) )
+         if( !SCIPisZero(scip, scoef->getVal()) )
          {
             SCIP_CALL( colorinfo->insert(scoef, &added) );
          }
@@ -767,7 +762,6 @@ SCIP_RETCODE setuparraysnewdetection(
 
    return SCIP_OKAY;
 }
-
 
 
 /** create a graph out of an array of scips */
@@ -923,7 +917,6 @@ SCIP_RETCODE createGraph(
                continue;
             }
 
-
             color = colorinfo.get(AUT_COEF(origscip, curvals[j]));
             assert(color != -1);
             color += colorinfo.getLenCons() + colorinfo.getLenVar(); /*lint !e864 */
@@ -1026,8 +1019,9 @@ SCIP_RETCODE createGraph(
 /** create a graph out of an array of scips */
 static
 SCIP_RETCODE createGraphNewDetection(
-   gcg::Seeedpool*       seeedpool,               /** SCIP data structure */
-   gcg::Seeed*           seeed,            /** id of the seeed the graphs should be compared for */
+   SCIP*                 scip,               /**< SCIP data structure */
+   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata */
+   gcg::PARTIALDECOMP*   partialdec,         /**< partialdec */
    int                   nblocks,            /**< number of blocks the symmetry should be checked for */
    std::vector<int>      blocks,             /**< vectors of block indices the symmetry be checked for */
    AUT_COLOR             colorinfo,          /**< data structure to save intermediate data  */
@@ -1036,7 +1030,6 @@ SCIP_RETCODE createGraphNewDetection(
    SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
 {
-   SCIP* scip;
    int i;
    int j;
    int b;
@@ -1051,7 +1044,7 @@ SCIP_RETCODE createGraphNewDetection(
    int* mastercoefindex;
    std::vector<bool> masterconssrelevant;
 
-   masterconssrelevant = std::vector<bool>(seeed->getNMasterconss(), false);
+   masterconssrelevant = std::vector<bool>(partialdec->getNMasterconss(), false);
 
    pricingnonzeros = NULL;
    mastercoefindex = NULL;
@@ -1061,13 +1054,13 @@ SCIP_RETCODE createGraphNewDetection(
    //building the graph out of the arrays
    h = graph;
 
-   scip = seeedpool->getScip();
+   scip = detprobdata->getScip();
 
    SCIP_CALL( SCIPallocBufferArray(scip, &mastercoefindex, nblocks) );
    BMSclearMemoryArray(mastercoefindex, nblocks);
 
-   nconss = seeed->getNConssForBlock(blocks[0]);
-   nvars = seeed->getNVarsForBlock(blocks[0]);
+   nconss = partialdec->getNConssForBlock(blocks[0]);
+   nvars = partialdec->getNVarsForBlock(blocks[0]);
 
    SCIP_CALL( SCIPallocBufferArray(scip, &nnodesoffset, nblocks) );
    BMSclearMemoryArray(nnodesoffset, nblocks);
@@ -1092,9 +1085,9 @@ SCIP_RETCODE createGraphNewDetection(
          int consid;
          SCIP_CONS* cons;
 
-         consid = seeed->getConssForBlock(block)[i];
-         ncurvars = seeedpool->getNVarsForCons(consid);
-         cons = seeedpool->getConsForIndex(consid);
+         consid = partialdec->getConssForBlock(block)[i];
+         ncurvars = detprobdata->getNVarsForCons(consid);
+         cons = detprobdata->getConsForIndex(consid);
 
          if( ncurvars == 0 )
             continue;
@@ -1116,8 +1109,8 @@ SCIP_RETCODE createGraphNewDetection(
          int varid;
          SCIP_VAR* var;
 
-         varid = seeed->getVarsForBlock(block)[i];
-         var = seeedpool->getVarForIndex(varid);
+         varid = partialdec->getVarsForBlock(block)[i];
+         var = detprobdata->getVarForIndex(varid);
 
          color = colorinfo.get( AUT_VAR(scip, var) );
 
@@ -1138,9 +1131,9 @@ SCIP_RETCODE createGraphNewDetection(
          SCIP_CONS* cons;
          int conscolor;
 
-         consid = seeed->getConssForBlock(block)[i];
-         ncurvars = seeedpool->getNVarsForCons(consid);
-         cons = seeedpool->getConsForIndex(consid);
+         consid = partialdec->getConssForBlock(block)[i];
+         ncurvars = detprobdata->getNVarsForCons(consid);
+         cons = detprobdata->getConsForIndex(consid);
          conscolor = colorinfo.get(AUT_CONS(scip, cons));
 
          if( ncurvars == 0 )
@@ -1153,10 +1146,10 @@ SCIP_RETCODE createGraphNewDetection(
             SCIP_VAR* var;
             SCIP_Real val;
 
-            varid = seeedpool->getVarsForCons(consid)[j];
-            var = seeedpool->getVarForIndex(varid);
+            varid = detprobdata->getVarsForCons(consid)[j];
+            var = detprobdata->getVarForIndex(varid);
 
-            val = seeedpool->getVal(consid, varid);
+            val = detprobdata->getVal(consid, varid);
 
             varcolor = colorinfo.get( AUT_VAR(scip, var )) + colorinfo.getLenCons(); /*lint !e864 */
             color = colorinfo.get( AUT_COEF(scip, val ));
@@ -1169,7 +1162,7 @@ SCIP_RETCODE createGraphNewDetection(
             (void) h->add_vertex((unsigned int) color);
             nnodes++;
             h->add_edge((unsigned int) nnodesoffset[b] + i, (unsigned int) nnodesoffset[b] + nconss + nvars + z);
-            h->add_edge((unsigned int) nnodesoffset[b] + nconss + nvars + z, (unsigned int) nnodesoffset[b]+nconss + seeed->getVarProbindexForBlock(varid, block)     );
+            h->add_edge((unsigned int) nnodesoffset[b] + nconss + nvars + z, (unsigned int) nnodesoffset[b]+nconss + partialdec->getVarProbindexForBlock(varid, block)     );
             SCIPdebugMessage("nz: c <%s> (id: %d, color: %d) -> nz (id: %d) (value: %f, color: %d) -> var <%s> (id: %d, color: %d) \n",
                               SCIPconsGetName(cons),
                               nnodesoffset[b] + i,
@@ -1178,7 +1171,7 @@ SCIP_RETCODE createGraphNewDetection(
                               val,
                               color+colorinfo.getLenCons() + colorinfo.getLenVar(), /*lint !e864 */
                               SCIPvarGetName(var),
-                              nnodesoffset[b]+nconss + seeed->getVarProbindexForBlock(varid, block),
+                              nnodesoffset[b]+nconss + partialdec->getVarProbindexForBlock(varid, block),
                               varcolor);
             z++;
          }
@@ -1186,12 +1179,12 @@ SCIP_RETCODE createGraphNewDetection(
       pricingnonzeros[b] = z;
 
       /* add coefficient nodes for nonzeros in the master */
-      for( i = 0; i < seeed->getNMasterconss() && *result == SCIP_SUCCESS; ++i )
+      for( i = 0; i < partialdec->getNMasterconss() && *result == SCIP_SUCCESS; ++i )
       {
          int masterconsid;
 
-         masterconsid = seeed->getMasterconss()[i];
-         ncurvars = seeedpool->getNVarsForCons(masterconsid);
+         masterconsid = partialdec->getMasterconss()[i];
+         ncurvars = detprobdata->getNVarsForCons(masterconsid);
 
          for( j = 0; j < ncurvars; ++j )
          {
@@ -1199,17 +1192,17 @@ SCIP_RETCODE createGraphNewDetection(
             SCIP_VAR* var;
             SCIP_Real val;
 
-            varid = seeedpool->getVarsForCons(masterconsid)[j];
+            varid = detprobdata->getVarsForCons(masterconsid)[j];
             /* ignore if the variable belongs to a different block */
-            if( !seeed->isVarBlockvarOfBlock(varid, block) )
+            if( !partialdec->isVarBlockvarOfBlock(varid, block) )
             {
-//               SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(seeedpool->getVarForIndex(varid) ), block);
+//               SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(detprobdata->getVarForIndex(varid) ), block);
                continue;
             }
 
-            var = seeedpool->getVarForIndex(varid);
-            val = seeedpool->getVal(masterconsid, varid);
-            color = colorinfo.get(AUT_COEF(seeedpool->getScip(), val));
+            var = detprobdata->getVarForIndex(varid);
+            val = detprobdata->getVal(masterconsid, varid);
+            color = colorinfo.get(AUT_COEF(scip, val));
             assert(color != -1);
             color += colorinfo.getLenCons() + colorinfo.getLenVar(); /*lint !e864 */
 
@@ -1227,10 +1220,10 @@ SCIP_RETCODE createGraphNewDetection(
    }
    /* connect the created graphs with nodes for the master problem */
 
-   SCIPdebugMessage( "handling %d masterconss\n", seeed->getNMasterconss());
+   SCIPdebugMessage( "handling %d masterconss\n", partialdec->getNMasterconss());
    *pricingnodes = nnodes;
 
-   for( i = 0; i < seeed->getNMasterconss() && *result == SCIP_SUCCESS; ++i )
+   for( i = 0; i < partialdec->getNMasterconss() && *result == SCIP_SUCCESS; ++i )
    {
       int masterconsid;
       SCIP_CONS* mastercons;
@@ -1242,13 +1235,11 @@ SCIP_RETCODE createGraphNewDetection(
          continue;
       /*experimental end */
 
-
-      masterconsid= seeed->getMasterconss()[i];
-      mastercons = seeedpool->getConsForIndex(masterconsid);
-      ncurvars = seeedpool->getNVarsForCons(masterconsid);
+      masterconsid= partialdec->getMasterconss()[i];
+      mastercons = detprobdata->getConsForIndex(masterconsid);
+      ncurvars = detprobdata->getNVarsForCons(masterconsid);
 
       SCIPdebugMessage("Handling cons <%s>\n", SCIPconsGetName(mastercons));
-
 
       /* create node for masterconss and get right color */
       conscolor = colorinfo.get(AUT_CONS(scip, mastercons) );
@@ -1269,13 +1260,13 @@ SCIP_RETCODE createGraphNewDetection(
 
          blockid = -1;
          bid = -1;
-         varid = seeedpool->getVarsForCons(masterconsid)[j];
+         varid = detprobdata->getVarsForCons(masterconsid)[j];
 
-         var = seeedpool->getVarForIndex(varid);
+         var = detprobdata->getVarForIndex(varid);
 
          for( b = 0; b < nblocks; ++b )
          {
-            if( seeed->isVarBlockvarOfBlock(varid, blocks[b]) )
+            if( partialdec->isVarBlockvarOfBlock(varid, blocks[b]) )
             {
                bid = b;
                blockid = blocks[b];
@@ -1289,7 +1280,7 @@ SCIP_RETCODE createGraphNewDetection(
             //SCIPdebugMessage("Var <%s> belongs to a different block \n", SCIPvarGetName(var));
             continue;
          }
-         val = seeedpool->getVal(masterconsid, varid);
+         val = detprobdata->getVal(masterconsid, varid);
 
          color = colorinfo.get(AUT_COEF(scip, val));
          assert(color != -1);
@@ -1313,7 +1304,7 @@ SCIP_RETCODE createGraphNewDetection(
             nnodesoffset[bid] + nconss + varid, varcolor);
 
          /* get node index for pricing variable and connect masterconss, coeff and pricingvar nodes */
-         h->add_edge((unsigned int) coefnodeindex, (unsigned int) nnodesoffset[bid] + nconss + seeed->getVarProbindexForBlock(varid, blockid) );
+         h->add_edge((unsigned int) coefnodeindex, (unsigned int) nnodesoffset[bid] + nconss + partialdec->getVarProbindexForBlock(varid, blockid) );
       }
    }
 
@@ -1325,8 +1316,6 @@ SCIP_RETCODE createGraphNewDetection(
 
    return SCIP_OKAY;
 }
-
-
 
 
 /** compare two graphs w.r.t. automorphism */
@@ -1359,7 +1348,6 @@ SCIP_RETCODE cmpGraphPair(
    nscips = 2;
    *result = SCIP_SUCCESS;
 
-
    SCIP_CALL( testScipVars(scips[0], scips[1], result) );
    SCIP_CALL( testScipCons(scips[0], scips[1], result) );
 
@@ -1383,17 +1371,16 @@ SCIP_RETCODE cmpGraphPair(
 }
 
 /** compare two graphs w.r.t. automorphism */
-extern "C"
-SCIP_RETCODE cmpGraphPairNewdetection(
-   SCIP*                 scip,               /** SCIP data structure */
-   SEEED_WRAPPER*        seeedwr,            /** id of the seeed the graphs should be compared for */
-   int                   block1,             /**< index of first pricing prob */
-   int                   block2,             /**< index of second pricing prob */
-   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
-   SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap,            /**< hashmap to save permutation of constraints */
-   unsigned int          searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
-   unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version) */
+SCIP_RETCODE cmpGraphPair(
+   SCIP*                   scip,               /** SCIP data structure */
+   gcg::PARTIALDECOMP*     partialdec,         /** partialdec the graphs should be compared for */
+   int                     block1,             /**< index of first pricing prob */
+   int                     block2,             /**< index of second pricing prob */
+   SCIP_RESULT*            result,             /**< result pointer to indicate success or failure */
+   SCIP_HASHMAP*           varmap,             /**< hashmap to save permutation of variables */
+   SCIP_HASHMAP*           consmap,            /**< hashmap to save permutation of constraints */
+   unsigned int            searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
+   unsigned int            generatorlimit      /**< bliss generator limit (requires patched bliss version) */
    )
 {
    bliss::Graph graph;
@@ -1401,53 +1388,42 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    AUT_HOOK2 *ptrhook;
    AUT_COLOR colorinfo;
    std::vector<int> blocks;
-   gcg::Seeedpool* seeedpool;
-   gcg::Seeedpool* seeedpoolunpresolved;
-   gcg::Seeedpool* seeedpoolpresolved;
-   gcg::Seeed* seeed;
+   gcg::DETPROBDATA* detprobdata;
    int nconss;
    int nvars;
    int ncoeffs;
 
    int pricingnodes;
 
-   seeed = (gcg::Seeed*) seeedwr;
    *result = SCIP_SUCCESS;
 
-   assert(seeed != NULL );
+   assert(partialdec != NULL );
 
    blocks = std::vector<int>(2, -1);
    blocks[0] = block1;
    blocks[1] = block2;
    pricingnodes = 0;
 
-   Seeed_Wrapper sw;
-   SCIPconshdlrDecompGetSeeedpool(scip, &sw);
-   seeedpoolpresolved = sw.seeedpool;
-   Seeed_Wrapper swu;
-   SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &swu);
-   seeedpoolunpresolved = swu.seeedpool;
-
-   if (seeed->isFromUnpresolved() )
-      seeedpool = seeedpoolunpresolved;
+   if (partialdec->isAssignedToOrigProb() )
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
    else
-      seeedpool = seeedpoolpresolved;
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
 
-   assert(seeedpool != NULL);
+   assert(detprobdata != NULL);
 
    //allocate max n of coefarray, varsarray, and boundsarray in origscip
-   nconss = seeed->getNConssForBlock(blocks[0]) ;
-   nvars = seeed->getNVarsForBlock(blocks[0]) ;
-   ncoeffs = seeed->getNCoeffsForBlock( blocks[0]);
-   SCIP_CALL( allocMemoryNewDetection(seeedpool, &colorinfo, nconss*2+seeed->getNMasterconss(), nvars*2, ncoeffs*2 + seeed->getNCoeffsForMaster() ) );
-   SCIP_CALL( setuparraysnewdetection(seeedpool, seeed, 2, blocks, &colorinfo, result) );
+   nconss = partialdec->getNConssForBlock(blocks[0]) ;
+   nvars = partialdec->getNVarsForBlock(blocks[0]) ;
+   ncoeffs = partialdec->getNCoeffsForBlock( blocks[0]);
+   SCIP_CALL( allocMemoryNewDetection(scip, detprobdata, &colorinfo, nconss*2+partialdec->getNMasterconss(), nvars*2, ncoeffs*2 + partialdec->getNCoeffsForMaster() ) );
+   SCIP_CALL( setuparraysnewdetection(scip, detprobdata, partialdec, 2, blocks, &colorinfo, result) );
    SCIPdebugMessage("finished setup array method.\n");
-   SCIP_CALL( createGraphNewDetection(seeedpool, seeed, 2, blocks, colorinfo, &graph,  &pricingnodes, result) );
+   SCIP_CALL( createGraphNewDetection(scip, detprobdata, partialdec, 2, blocks, colorinfo, &graph,  &pricingnodes, result) );
    SCIP_CALL( freeMemory(scip, &colorinfo) );
    SCIPdebugMessage("finished create graph.\n");
    ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, NULL);
    SCIPdebugMessage("finished creating aut hook.\n");
-   ptrhook->setNewDetectionStuff(seeedpool, seeed, &blocks);
+   ptrhook->setNewDetectionStuff(detprobdata, partialdec, &blocks);
 
 #ifdef BLISS_PATCH_PRESENT
    graph.set_search_limits(searchnodelimit, generatorlimit);

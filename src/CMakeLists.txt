@@ -20,29 +20,33 @@ set(gcgsources
     branch_orig.c
     branch_relpsprob.c
     branch_ryanfoster.c
-    class_consclassifier.cpp
-    class_indexclassifier.cpp
-    class_miscvisualization.cpp
+    class_conspartition.cpp
+    class_indexpartition.cpp
+    miscvisualization.cpp
     class_pricingcontroller.cpp
     class_pricingtype.cpp
-    class_seeed.cpp
-    class_seeedpool.cpp
+    class_partialdecomp.cpp
+    class_detprobdata.cpp
     class_stabilization.cpp
-    class_varclassifier.cpp
+    class_varpartition.cpp
+    clscons_miplibconstypes.cpp
+    clscons_nnonzeros.cpp
+    clscons_consnamenonumbers.cpp
+    clscons_consnamelevenshtein.cpp
+    clscons_scipconstypes.cpp
+    clsvar_objvalues.cpp
+    clsvar_scipvartypes.cpp
+    clsvar_objvaluesigns.cpp
     colpool.c
     cons_decomp.cpp
     cons_integralorig.c
     cons_masterbranch.c
     cons_origbranch.c
-    dec_colors.cpp
     dec_compgreedily.cpp
-    dec_connected.c
     dec_connected_noNewLinkingVars.cpp
     dec_connectedbase.cpp
     dec_consclass.cpp
-    dec_consname.cpp
     dec_constype.cpp
-    dec_cutpacking.c
     dec_dbscan.cpp
     dec_densemasterconss.cpp
     dec_generalmastersetcover.cpp
@@ -54,12 +58,9 @@ set(gcgsources
     dec_mastersetcover.cpp
     dec_mastersetpack.cpp
     dec_mastersetpart.cpp
-    dec_mcl.cpp
     dec_mst.cpp
     dec_neighborhoodmaster.cpp
     dec_postprocess.cpp
-    dec_random.c
-    dec_staircase.c
     dec_staircase_lsp.cpp
     dec_stairheur.cpp
     dec_varclass.cpp
@@ -131,6 +132,7 @@ set(gcgsources
     reader_tex.cpp
     relax_gcg.c
     scip_misc.c
+    scoretype.c
     sepa_basis.c
     sepa_master.c
     solver.c
@@ -145,17 +147,18 @@ set(gcgheaders
     branch_orig.h
     branch_relpsprob.h
     branch_ryanfoster.h
-    class_consclassifier.h
-    class_indexclassifier.h
-    class_miscvisualization.h
+    class_conspartition.h
+    class_indexpartition.h
+    miscvisualization.h
     class_pricingcontroller.h
     class_pricingtype.h
-    class_seeed.h
-    class_seeedpool.h
+    class_partialdecomp.h
+    class_detprobdata.h
     class_stabilization.h
-    class_varclassifier.h
+    class_varpartition.h
     colpool.h
     cons_decomp.h
+    cons_decomp.hpp
     cons_integralorig.h
     cons_masterbranch.h
     cons_origbranch.h
@@ -165,7 +168,6 @@ set(gcgheaders
     dec_connected_noNewLinkingVars.h
     dec_connectedbase.h
     dec_consclass.h
-    dec_consname.h
     dec_constype.h
     dec_cutpacking.h
     dec_dbscan.h
@@ -179,12 +181,10 @@ set(gcgheaders
     dec_mastersetcover.h
     dec_mastersetpack.h
     dec_mastersetpart.h
-    dec_mcl.h
     dec_mst.h
     dec_neighborhoodmaster.h
     dec_postprocess.h
     dec_random.h
-    dec_staircase.h
     dec_staircase_lsp.h
     dec_stairheur.h
     dec_varclass.h
@@ -284,6 +284,7 @@ set(gcgheaders
     reader_tex.h
     relax_gcg.h
     scip_misc.h
+    scoretype.h
     sepa_basis.h
     sepa_master.h
     solver.h
@@ -316,7 +317,8 @@ set(gcgheaders
     type_pricingprob.h
     type_pricingstatus.h
     type_solver.h
-    wrapper_seeed.h
+    wrapper_detprobdata.h
+    wrapper_partialdecomp.h
 )
 
 if(BLISS_FOUND AND SYM STREQUAL "bliss")
@@ -327,6 +329,7 @@ if(BLISS_FOUND AND SYM STREQUAL "bliss")
    )
    set(gcgheaders ${gcgheaders} 
       bliss_automorph.h
+      bliss_automorph.hpp
       dec_isomorph.h
    )
 endif()

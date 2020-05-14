@@ -35,9 +35,9 @@
 
 #include "dec_consclass.h"
 #include "cons_decomp.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
-#include "class_consclassifier.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
+#include "class_conspartition.h"
 #include "gcg.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
@@ -61,12 +61,10 @@
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'c'         /**< display character of detector */
 #define DEC_ENABLED               TRUE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       FALSE       /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the detection be enabled */
 #define DEC_ENABLEDPOSTPROCESSING FALSE       /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
-#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
 #define DEFAULT_MAXIMUMNCLASSES     5
 #define AGGRESSIVE_MAXIMUMNCLASSES  9
@@ -99,190 +97,162 @@ struct DEC_DetectorData
 #define freeConsclass NULL
 
 /** destructor of detector to free detector data (called before the solving process begins) */
-#if 0
-static
-DEC_DECL_EXITDETECTOR(exitConsclass)
-{ /*lint --e{715}*/
-
-   SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define exitConsclass NULL
-#endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
-#if 0
-static
-DEC_DECL_INITDETECTOR(initConsclass)
-{ /*lint --e{715}*/
-
-   SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define initConsclass NULL
-#endif
-
-/** detection function of detector */
-//static DEC_DECL_DETECTSTRUCTURE(detectConsclass)
-//{ /*lint --e{715}*/
-//   *result = SCIP_DIDNOTFIND;
-//
-//   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
-//;   SCIPABORT(); /*lint --e{527}*/
-//
-//   return SCIP_OKAY;
-//}
 
 #define detectConsclass NULL
 
-#define finishSeeedConsclass NULL
+#define finishPartialdecConsclass NULL
 
-static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
+static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConsclass)
 {
-  *result = SCIP_DIDNOTFIND;
-  char decinfo[SCIP_MAXSTRLEN];
+   *result = SCIP_DIDNOTFIND;
+   char decinfo[SCIP_MAXSTRLEN];
 
-  SCIP_CLOCK* temporaryClock;
+   SCIP_CLOCK* temporaryClock;
 
-  SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-  SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-  std::vector<gcg::Seeed*> foundseeeds(0);
+   std::vector<gcg::PARTIALDECOMP*> foundpartialdecs(0);
 
-  gcg::Seeed* seeedOrig;
-  gcg::Seeed* seeed;
+   gcg::PARTIALDECOMP* partialdecOrig;
+   gcg::PARTIALDECOMP* partialdec;
 
-  int maximumnclasses;
+   int maximumnclasses;
 
-  if( seeedPropagationData->seeedpool->getNConss() + seeedPropagationData->seeedpool->getNVars() >= 50000 )
-      SCIPgetIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs", &maximumnclasses);
+   if( partialdecdetectiondata->detprobdata->getNConss() + partialdecdetectiondata->detprobdata->getNVars() >= 50000 )
+      SCIPgetIntParam(scip, "detection/classification/maxnclassesperpartitionforlargeprobs", &maximumnclasses);
    else
-      SCIPgetIntParam(scip, "detection/maxnclassesperclassifier", &maximumnclasses);
+      SCIPgetIntParam(scip, "detection/classification/maxnclassesperpartition", &maximumnclasses);
 
-  SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " in dec_consclass: there are %d different constraint classes   \n ", seeedPropagationData->seeedpool->getNConsClassifiers() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " in dec_consclass: there are %d different constraint classes   \n ",
+                  partialdecdetectiondata->detprobdata->getNConsPartitions() );
 
 
-  for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNConsClassifiers(); ++classifierIndex )
-  {
-    gcg::ConsClassifier* classifier = seeedPropagationData->seeedpool->getConsClassifier( classifierIndex );
-    std::vector<int> consclassindices_master = std::vector<int>(0);
+   for( int classifierIndex = 0; classifierIndex < partialdecdetectiondata->detprobdata->getNConsPartitions(); ++classifierIndex )
+   {
+      gcg::ConsPartition* classifier = partialdecdetectiondata->detprobdata->getConsPartition(classifierIndex);
+      std::vector<int> consclassindices_master;
 
-    if ( classifier->getNClasses() > maximumnclasses )
-    {
-       std::cout << " the current consclass distribution includes " <<  classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of cons class detector" << std::endl;
-       continue;
-    }
+      if ( classifier->getNClasses() > maximumnclasses )
+      {
+         std::cout << " the current consclass distribution includes " <<  classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagatePartialdec() of cons class detector" << std::endl;
+         continue;
+      }
 
-    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " the current constraint classifier \"%s\" consists of %d different classes   \n ", classifier->getName(), classifier->getNClasses() );
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " the current constraint classifier \"%s\" consists of %d different classes   \n ", classifier->getName(), classifier->getNClasses() );
 
-    seeedOrig = seeedPropagationData->seeedToPropagate;
+      partialdecOrig = partialdecdetectiondata->workonpartialdec;
 
-    for( int i = 0; i < classifier->getNClasses(); ++ i )
-    {
-       if ( classifier->getClassDecompInfo( i ) == gcg::ONLY_MASTER )
-             consclassindices_master.push_back( i );
-    }
+      for( int i = 0; i < classifier->getNClasses(); ++ i )
+      {
+         if ( classifier->getClassDecompInfo(i) == gcg::ONLY_MASTER )
+            consclassindices_master.push_back(i);
+      }
 
-    std::vector< std::vector<int> > subsetsOfConsclasses = classifier->getAllSubsets( true, false, false );
+      std::vector< std::vector<int> > subsetsOfConsclasses = classifier->getAllSubsets( true, false, false );
 
-    for( size_t subset = 0; subset < subsetsOfConsclasses.size(); ++subset )
-    {
-       if( subsetsOfConsclasses[subset].size() == 0 && consclassindices_master.size() == 0 )
-          continue;
+      for( auto& subset : subsetsOfConsclasses )
+      {
+         if( subset.empty() && consclassindices_master.empty() )
+            continue;
 
-       seeed = new gcg::Seeed(seeedOrig);
+         partialdec = new gcg::PARTIALDECOMP(partialdecOrig);
 
-       /* book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
-       for( int i = 0; i < seeed->getNOpenconss(); ++i )
-       {
-          bool foundCons = false;
-          for( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
-          {
-              if( classifier->getClassOfCons( seeed->getOpenconss()[i] ) == subsetsOfConsclasses[subset][consclassId] )
-              {
-                  seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+         /* fix open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
+         auto& openconss = partialdec->getOpenconssVec();
+         for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
+         {
+            bool foundCons = false;
+            for( int consclassId : subset )
+            {
+               if( classifier->getClassOfCons(*itr) == consclassId )
+               {
+                  itr = partialdec->fixConsToMaster(itr);
                   foundCons = true;
                   break;
-              }
-          }
-          /* only check consclassindices_master if current cons has not already been found in a subset */
-          if ( !foundCons )
-          {
-             for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
-             {
-                if( classifier->getClassOfCons( seeed->getOpenconss()[i] ) == consclassindices_master[consclassId] )
-                {
-                   seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
-                   break;
-                }
-             }
-          }
-       }
+               }
+            }
+            /* only check consclassindices_master if current cons has not already been found in a subset */
+            if ( !foundCons )
+            {
+               for(int consclassId : consclassindices_master )
+               {
+                  if( classifier->getClassOfCons(*itr) == consclassId )
+                  {
+                     itr = partialdec->fixConsToMaster(itr);
+                     foundCons = true;
+                     break;
+                  }
+               }
+            }
+            if( !foundCons )
+            {
+               ++itr;
+            }
+         }
 
-        /* set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
-       std::stringstream decdesc;
-       decdesc << "consclass" << "\\_" << classifier->getName() << ": \\\\ ";
-       std::vector<int> curmasterclasses( consclassindices_master );
-       for ( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
-       {
-          if ( consclassId > 0 )
-          {
-             decdesc << "-";
-          }
-          decdesc << classifier->getClassName( subsetsOfConsclasses[subset][consclassId] );
+         /* set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
+         std::stringstream decdesc;
+         decdesc << "consclass" << "\\_" << classifier->getName() << ": \\\\ ";
+         std::vector<int> curmasterclasses( consclassindices_master );
+         for( size_t consclassId = 0; consclassId < subset.size(); ++consclassId )
+         {
+            if( consclassId > 0 )
+            {
+               decdesc << "-";
+            }
+            decdesc << classifier->getClassName(subset[consclassId]);
+            if( std::find( consclassindices_master.begin(), consclassindices_master.end(),
+               subset[consclassId] ) == consclassindices_master.end() )
+            {
+               curmasterclasses.push_back(subset[consclassId]);
+            }
+         }
+         for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
+         {
+            if( consclassId > 0 || !subset.empty() )
+            {
+               decdesc << "-";
+            }
+            decdesc << classifier->getClassName(consclassindices_master[consclassId]);
+         }
 
-          if( std::find( consclassindices_master.begin(), consclassindices_master.end(),
-             subsetsOfConsclasses[subset][consclassId] ) == consclassindices_master.end() )
-          {
-             curmasterclasses.push_back( subsetsOfConsclasses[subset][consclassId] );
-          }
-       }
-       for ( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
-       {
-          if ( consclassId > 0 || subsetsOfConsclasses[subset].size() > 0)
-          {
-             decdesc << "-";
-          }
-          decdesc << classifier->getClassName( consclassindices_master[consclassId] );
-       }
+         partialdec->sort();
+         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
+         partialdec->addDetectorChainInfo(decinfo);
+         partialdec->setConsPartitionStatistics(partialdec->getNDetectors(), classifier, curmasterclasses);
 
-       seeed->flushBooked();
-       (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
-       seeed->addDetectorChainInfo(decinfo);
-       seeed->setConsClassifierStatistics( seeed->getNDetectors(), classifier, curmasterclasses );
+         foundpartialdecs.push_back(partialdec);
+      }
+   }
 
-       foundseeeds.push_back(seeed);
-    }
-  }
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
 
-  SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), foundpartialdecs.size()) );
+   partialdecdetectiondata->nnewpartialdecs  = foundpartialdecs.size();
 
-  SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), foundseeeds.size() ) );
-  seeedPropagationData->nNewSeeeds  = foundseeeds.size();
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "dec_consclass found %d new partialdecs \n", partialdecdetectiondata->nnewpartialdecs  );
 
-  SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "dec_consclass found %d new seeeds \n", seeedPropagationData->nNewSeeeds  );
+   for( int s = 0; s < partialdecdetectiondata->nnewpartialdecs; ++s )
+   {
+      partialdecdetectiondata->newpartialdecs[s] = foundpartialdecs[s];
+      partialdecdetectiondata->newpartialdecs[s]->addClockTime(partialdecdetectiondata->detectiontime / partialdecdetectiondata->nnewpartialdecs);
+   }
 
-  for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-  {
-     seeedPropagationData->newSeeeds[s] = foundseeeds[s];
-     seeedPropagationData->newSeeeds[s]->addClockTime(SCIPgetClockTime( scip, temporaryClock )  );
-  }
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
-  SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-
-  *result = SCIP_SUCCESS;
+   *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
 }
 
 
-#define detectorPostprocessSeeedConsclass NULL
+#define detectorPostprocessPartialdecConsclass NULL
 
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsclass)
@@ -294,9 +264,6 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsclass)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
@@ -337,13 +304,10 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultConsclass)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
    if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
    {
@@ -380,9 +344,6 @@ DEC_DECL_SETPARAMFAST(setParamFastConsclass)
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
@@ -430,8 +391,8 @@ SCIP_RETCODE SCIPincludeDetectorConsclass(SCIP* scip /**< SCIP data structure */
 
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectConsclass,
-         freeConsclass, initConsclass, exitConsclass, propagateSeeedConsclass, finishSeeedConsclass, detectorPostprocessSeeedConsclass, setParamAggressiveConsclass, setParamDefaultConsclass, setParamFastConsclass));
+         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
+         freeConsclass, initConsclass, exitConsclass, propagatePartialdecConsclass, finishPartialdecConsclass, detectorPostprocessPartialdecConsclass, setParamAggressiveConsclass, setParamDefaultConsclass, setParamFastConsclass));
 
    /**@todo add consclass detector parameters */
 

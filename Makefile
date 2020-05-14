@@ -196,29 +196,32 @@ LIBOBJ = \
 			branch_orig.o \
 			branch_relpsprob.o \
 			branch_ryanfoster.o \
-			class_consclassifier.o \
-			class_indexclassifier.o \
-			class_miscvisualization.o \
+			class_conspartition.o \
+			class_indexpartition.o \
 			class_pricingcontroller.o \
 			class_pricingtype.o \
-			class_seeed.o \
-			class_seeedpool.o \
+			class_partialdecomp.o \
+			class_detprobdata.o \
 			class_stabilization.o \
-			class_varclassifier.o \
+			class_varpartition.o \
+			clscons_miplibconstypes.o \
+			clscons_nnonzeros.o \
+			clscons_consnamenonumbers.o \
+			clscons_consnamelevenshtein.o \
+			clscons_scipconstypes.o \
+			clsvar_objvalues.o \
+			clsvar_scipvartypes.o \
+			clsvar_objvaluesigns.o \
 			colpool.o \
 			cons_decomp.o \
 			cons_integralorig.o \
 			cons_masterbranch.o \
 			cons_origbranch.o \
-			dec_colors.o \
 			dec_compgreedily.o \
-			dec_connected.o \
 			dec_connected_noNewLinkingVars.o \
 			dec_connectedbase.o \
 			dec_consclass.o \
-			dec_consname.o \
 			dec_constype.o \
-			dec_cutpacking.o \
 			dec_dbscan.o \
 			dec_densemasterconss.o \
 			dec_generalmastersetcover.o \
@@ -230,12 +233,9 @@ LIBOBJ = \
 			dec_mastersetcover.o \
 			dec_mastersetpack.o \
 			dec_mastersetpart.o \
-			dec_mcl.o \
 			dec_mst.o \
 			dec_neighborhoodmaster.o \
 			dec_postprocess.o \
-			dec_random.o \
-			dec_staircase.o \
 			dec_staircase_lsp.o \
 			dec_stairheur.o \
 			dec_varclass.o \
@@ -292,6 +292,7 @@ LIBOBJ = \
 			masterplugins.o \
 			bendersplugins.o \
 			misc.o \
+			miscvisualization.o \
 			nodesel_master.o \
 			objdialog.o \
 			params_visu.o \
@@ -308,6 +309,7 @@ LIBOBJ = \
 			reader_tex.o \
 			relax_gcg.o \
 			scip_misc.o \
+			scoretype.o \
 			sepa_basis.o \
 			sepa_master.o \
 			solver.o \

@@ -42,8 +42,8 @@
 #include "pub_decomp.h"
 #include "bridge.h"
 #include "graph_interface.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 #include <exception>
 #include <vector>
 #include <string>
@@ -95,12 +95,12 @@ public:
 
 
 
-   /** amplifies a seeed by dint of a graph created with open constraints and open variables of the seeed */
-   virtual SCIP_RETCODE createSeeedFromPartition(
-      Seeed*      oldSeeed,            /**< seeed which should be amplifies */
-      Seeed**     firstSeeed,          /**< pointer to buffer the new seeed amplified by dint of the graph */
-      Seeed**     secondSeeed,         /**< pinter to buffer the new seeed whose border is amplified by dint of the graph */
-      Seeedpool*  seeedpool
+   /** amplifies a partialdec by dint of a graph created with open constraints and open variables of the partialdec */
+   virtual SCIP_RETCODE createPartialdecFromPartition(
+      PARTIALDECOMP*      oldpartialdec,            /**< partialdec which should be amplifies */
+      PARTIALDECOMP**     firstpartialdec,          /**< pointer to buffer the new partialdec amplified by dint of the graph */
+      PARTIALDECOMP**     secondpartialdec,         /**< pinter to buffer the new partialdec whose border is amplified by dint of the graph */
+      DETPROBDATA*  detprobdata
       )
    {
       return SCIP_ERROR;
@@ -142,10 +142,10 @@ public:
       int                   nvars_               /**< number of variables */
       ) { return SCIP_ERROR; }
 
-   /** creates a graph with open constraints and open variables of the seeed */
+   /** creates a graph with open constraints and open variables of the partialdec */
    virtual SCIP_RETCODE createFromPartialMatrix(
-      Seeedpool*           seeedpool,
-      Seeed*               seeed
+      DETPROBDATA*           detprobdata,
+      PARTIALDECOMP*               partialdec
       ) { return SCIP_ERROR; }
 
 

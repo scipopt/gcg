@@ -35,8 +35,8 @@
 
 #include "dec_mastersetcover.h"
 #include "cons_decomp.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 #include "gcg.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
@@ -56,13 +56,11 @@
 #define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               '?'         /**< display character of detector */
-#define DEC_ENABLED               FALSE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLED               TRUE        /**< should the detection be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
 #define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
-#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
 
 /*
@@ -90,49 +88,13 @@ struct DEC_DetectorData
 #define freeMastersetcover NULL
 
 /** destructor of detector to free detector data (called before the solving process begins) */
-#if 0
-static
-DEC_DECL_EXITDETECTOR(exitMastersetcover)
-{ /*lint --e{715}*/
-
-   SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define exitMastersetcover NULL
-#endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
-#if 0
-static
-DEC_DECL_INITDETECTOR(initMastersetcover)
-{ /*lint --e{715}*/
-
-   SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define initMastersetcover NULL
-#endif
 
-/** detection function of detector */
-//static DEC_DECL_DETECTSTRUCTURE(detectMastersetcover)
-//{ /*lint --e{715}*/
-//   *result = SCIP_DIDNOTFIND;
-//
-//   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
-//;   SCIPABORT(); /*lint --e{527}*/
-//
-//   return SCIP_OKAY;
-//}
 
-#define detectMastersetcover NULL
-
-static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
+static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetcover)
 {
    *result = SCIP_DIDNOTFIND;
 
@@ -142,30 +104,34 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
 
    SCIP_CONS* cons;
 
-   gcg::Seeed* seeed;
+   gcg::PARTIALDECOMP* partialdec;
 
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
+   partialdec = new gcg::PARTIALDECOMP(partialdecdetectiondata->workonpartialdec);
 
-     /* set open setcovering constraints to Master */
-   for( int i = 0; i < seeed->getNOpenconss(); ++i )
+   /* set open setcovering constraints to Master */
+   auto& openconss = partialdec->getOpenconssVec();
+   for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
    {
-      cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+      cons = partialdecdetectiondata->detprobdata->getConsForIndex(*itr);
       if( GCGconsGetType(scip, cons) == setcovering || GCGconsGetType(scip, cons) == logicor )
       {
-          seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+          itr = partialdec->fixConsToMaster(itr);
+      }
+      else
+      {
+         ++itr;
       }
    }
 
-   seeed->flushBooked();
+   partialdec->sort();
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
 
-   //assert(false);
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-   seeedPropagationData->newSeeeds[0] = seeed;
-   seeedPropagationData->nNewSeeeds = 1;
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+   partialdecdetectiondata->newpartialdecs[0] = partialdec;
+   partialdecdetectiondata->nnewpartialdecs = 1;
+   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(DEC_DETECTORNAME);
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
@@ -176,13 +142,11 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
  * detector specific interface methods
  */
 
-#define finishSeeedMastersetcover NULL
-#define detectorPostprocessSeeedMastersetcover NULL
+#define finishPartialdecMastersetcover NULL
+#define detectorPostprocessPartialdecMastersetcover NULL
 #define setParamAggressiveMastersetcover NULL
 #define setParamDefaultMastersetcover NULL
 #define setParamFastMastersetcover NULL
-
-
 
 
 /** creates the handler for mastersetcover detector and includes it in SCIP */
@@ -196,9 +160,9 @@ SCIP_RETCODE SCIPincludeDetectorMastersetcover(SCIP* scip /**< SCIP data structu
 
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
-         DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP,
-         DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectMastersetcover, freeMastersetcover,
-         initMastersetcover, exitMastersetcover, propagateSeeedMastersetcover, finishSeeedMastersetcover, detectorPostprocessSeeedMastersetcover, setParamAggressiveMastersetcover, setParamDefaultMastersetcover, setParamFastMastersetcover));
+         DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP,
+         DEC_USEFULRECALL, detectordata, freeMastersetcover,
+         initMastersetcover, exitMastersetcover, propagatePartialdecMastersetcover, finishPartialdecMastersetcover, detectorPostprocessPartialdecMastersetcover, setParamAggressiveMastersetcover, setParamDefaultMastersetcover, setParamFastMastersetcover));
 
    /**@todo add mastersetcover detector parameters */
 

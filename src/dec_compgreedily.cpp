@@ -1,4 +1,3 @@
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
@@ -28,7 +27,7 @@
 
 /**@file   dec_compgreedily.cpp
  * @ingroup DETECTORS
- * @brief  detector compgreedily (assigns the open cons and open vars of the seeed greedily)
+ * @brief  detector compgreedily (assigns the open cons and open vars of the partialdec greedily)
  * @author Michael Bastubbe
  */
 
@@ -36,8 +35,8 @@
 
 #include "dec_compgreedily.h"
 #include "cons_decomp.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 #include "scip/clock.h"
 #include <iostream>
 
@@ -53,12 +52,10 @@
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'g'         /**< display character of detector */
 #define DEC_ENABLED               FALSE       /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
-#define DEC_ENABLEDFINISHING      FALSE        /**< should the finishing be enabled */
-#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the finishing be enabled */
+#define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE       /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
-#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
 /** parameter limits for emphasis default */
 
@@ -84,6 +81,225 @@ struct DEC_DetectorData
 
 /* put your local methods here, and declare them static */
 
+/**
+ * @brief assigns all open constraints and open variables
+ *
+ *  strategy: assigns a cons (and related vars) to a new block if possible,
+ *  if not to an existing block if possible (by means of prior var assignments)
+ *  and finally to master, if there does not exist such a block
+ */
+static
+void completeGreedily(
+   gcg::PARTIALDECOMP* partialdec      /** partialdec to complete */
+   )
+{
+   bool checkvar;
+   bool isvarinblock;
+   bool notassigned;
+
+   gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
+
+   /* tools to check if the openvars can still be found in a constraint yet*/
+   std::vector<int> varinblocks; /* stores in which block the variable can be found */
+
+   if( partialdec->getNBlocks() == 0 && partialdec->getNOpenconss() > 0 )
+   {
+      int block = partialdec->addBlock();
+      std::vector<int>& openconss = partialdec->getOpenconssVec();
+      partialdec->fixConsToBlock( openconss[0], block );
+   }
+   
+   std::vector<int> del;
+
+   /* check if the openvars can already be found in a constraint */
+   std::vector<int> openvars = partialdec->getOpenvarsVec();
+   for( int i = 0; i < partialdec->getNOpenvars(); ++ i )
+   {
+      varinblocks.clear();
+
+      /* test if the variable can be found in blocks */
+      for( int b = 0; b < partialdec->getNBlocks(); ++ b )
+      {
+         isvarinblock = false;
+         std::vector<int>& conssforblock = partialdec->getConssForBlock(b);
+         for( int k = 0; k < partialdec->getNConssForBlock(b) && !isvarinblock; ++ k )
+         {
+            for( int l = 0; l < detprobdata->getNVarsForCons( conssforblock[k] ); ++ l )
+            {
+               if( openvars[i] == detprobdata->getVarsForCons( conssforblock[k] )[l] )
+               {
+                  varinblocks.push_back( b );
+                  isvarinblock = true;
+                  break;
+               }
+            }
+         }
+      }
+      if( varinblocks.size() == 1 ) /* if the variable can be found in one block set the variable to a variable of the block*/
+      {
+         partialdec->setVarToBlock(openvars[i], varinblocks[0]);
+         del.push_back(openvars[i]);
+         continue; /* the variable doesn't need to be checked any more */
+      }
+      else if( varinblocks.size() == 2 ) /* if the variable can be found in two blocks check if it is a linking var or a stairlinking var*/
+      {
+         if( varinblocks[0] + 1 == varinblocks[1] )
+         {
+            partialdec->setVarToStairlinking(openvars[i], varinblocks[0], varinblocks[1]);
+            del.push_back(openvars[i]);
+            continue; /* the variable doesn't need to be checked any more */
+         }
+         else
+         {
+            partialdec->setVarToLinking(openvars[i]);
+            del.push_back(openvars[i]);
+            continue; /* the variable doesn't need to be checked any more */
+         }
+      }
+      else if( varinblocks.size() > 2 ) /* if the variable can be found in more than two blocks it is a linking var */
+      {
+         partialdec->setVarToLinking(openvars[i]);
+            del.push_back(openvars[i]);
+         continue; /* the variable doesn't need to be checked any more */
+      }
+
+      checkvar = true;
+
+      /* if the variable can be found in an open constraint it is still an open var */
+      for( int j = 0; j < partialdec->getNOpenconss(); ++ j )
+      {
+         checkvar = true;
+         for( int k = 0; k < detprobdata->getNVarsForCons( j ); ++ k )
+         {
+            if( openvars[i] == detprobdata->getVarsForCons( j )[k] )
+            {
+               checkvar = false;
+               break;
+            }
+         }
+         if( ! checkvar )
+         {
+            break;
+         }
+      }
+
+      /* test if the variable can be found in a master constraint yet */
+        for( int k = 0; k < detprobdata->getNConssForVar( openvars[i] ) && checkvar; ++ k )
+        {
+           if( partialdec->isConsMastercons(detprobdata->getConssForVar(openvars[i])[k]) )
+           {
+              partialdec->setVarToMaster(openvars[i]);
+              del.push_back(openvars[i]);
+              checkvar = false; /* the variable does'nt need to be checked any more */
+              break;
+           }
+        }
+   }
+
+   /* remove assigned vars from list of open vars */
+   for(auto v : del)
+      partialdec->deleteOpenvar(v);
+
+   del.clear();
+   partialdec->sort();
+
+   std::vector<int> delconss;
+   std::vector<int>& openconss = partialdec->getOpenconssVec();
+
+   /* assign open conss greedily */
+   for( int i = 0; i < partialdec->getNOpenconss(); ++ i )
+   {
+      std::vector<int> vecOpenvarsOfBlock; /* stores the open vars of the blocks */
+      bool consGotBlockcons = false; /* if the constraint can be assigned to a block */
+
+      /* check if the constraint can be assigned to a block */
+      for( int j = 0; j < partialdec->getNBlocks(); ++ j )
+      {
+         /* check if all vars of the constraint are a block var of the current block, an open var, a linkingvar or a mastervar*/
+         consGotBlockcons = true;
+         for( int k = 0; k < detprobdata->getNVarsForCons( openconss[i] ); ++ k )
+         {
+            if( partialdec->isVarBlockvarOfBlock( detprobdata->getVarsForCons( openconss[i] )[k], j )
+               || partialdec->isVarOpenvar( detprobdata->getVarsForCons( openconss[i] )[k] )
+               || partialdec->isVarLinkingvar( detprobdata->getVarsForCons( openconss[i] )[k] )
+               || partialdec->isVarStairlinkingvarOfBlock( detprobdata->getVarsForCons( openconss[i] )[k], j )
+               || ( j != 0 && partialdec->isVarStairlinkingvarOfBlock( detprobdata->getVarsForCons( openconss[i] )[k], j - 1 ) ) )
+            {
+               if( partialdec->isVarOpenvar( detprobdata->getVarsForCons( openconss[i] )[k] ) )
+               {
+                  vecOpenvarsOfBlock.push_back( detprobdata->getVarsForCons( openconss[i] )[k] );
+               }
+            }
+            else
+            {
+               vecOpenvarsOfBlock.clear(); /* the open vars don't get vars of the block */
+               consGotBlockcons = false; /* the constraint can't be constraint of the block, check the next block */
+               break;
+            }
+         }
+         if( consGotBlockcons ) /* the constraint can be assigned to the current block */
+         {
+            partialdec->setConsToBlock( openconss[i], j );
+            delconss.push_back(openconss[i]);
+            for( size_t k = 0; k < vecOpenvarsOfBlock.size(); ++ k ) /* the openvars in the constraint get block vars */
+            {
+               partialdec->setVarToBlock( vecOpenvarsOfBlock[k], j );
+               partialdec->deleteOpenvar( vecOpenvarsOfBlock[k] );
+            }
+            vecOpenvarsOfBlock.clear();
+
+            break;
+         }
+      }
+
+      if( !consGotBlockcons ) /* the constraint can not be assigned to a block, set it to master */
+      {
+         partialdec->setConsToMaster( openconss[i] );
+         delconss.push_back(openconss[i]);
+      }
+   }
+
+   /* remove assigned conss from list of open conss */
+   for(auto c : delconss)
+      partialdec->deleteOpencons(c);
+
+   partialdec->sort();
+
+   /* assign open vars greedily */
+   for( int i = 0; i < partialdec->getNOpenvars(); ++ i )
+   {
+      notassigned = true;
+      std::vector<int>& masterconss = partialdec->getMasterconss();
+      for( int j = 0; j < partialdec->getNMasterconss() && notassigned; ++ j )
+      {
+         for( int k = 0; k < detprobdata->getNVarsForCons( masterconss[j] ); ++ k )
+         {
+            if( openvars[i] == detprobdata->getVarsForCons( masterconss[j] )[k] )
+            {
+               partialdec->setVarToMaster(openvars[i]);
+               del.push_back(openvars[i]);
+               notassigned = false;
+               break;
+            }
+         }
+      }
+   }
+
+   /* remove assigned vars from list of open vars */
+   for(auto v : del)
+      partialdec->deleteOpenvar(v);
+
+   partialdec->sort();
+
+   /* check if the open conss are all assigned */
+   assert( partialdec->checkAllConssAssigned() );
+
+   /* check if the open vars are all assigned */
+   assert( partialdec->getNOpenvars() == 0 );
+
+   assert( partialdec->checkConsistency( ) );
+}
+
 
 /*
  * detector callback methods
@@ -94,51 +310,13 @@ struct DEC_DetectorData
 #define freeCompgreedily NULL
 
 /** destructor of detector to free detector data (called before the solving process begins) */
-#if 0
-static
-DEC_DECL_EXITDETECTOR(exitCompgreedily)
-{  /*lint --e{715}*/
 
-   SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define exitCompgreedily NULL
-#endif
 
-/** detection initialization function of detector (called before solving is about to begin) */
-#if 0
-static
-DEC_DECL_INITDETECTOR(initCompgreedily)
-{  /*lint --e{715}*/
-
-   SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define initCompgreedily NULL
-#endif
-
-/** detection function of detector */
-//static
-//DEC_DECL_DETECTSTRUCTURE(detectCompgreedily)
-//{ /*lint --e{715}*/
-//   *result = SCIP_DIDNOTFIND;
-//
-//   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-//   SCIPABORT();  /*lint --e{527}*/
-//
-//   return SCIP_OKAY;
-//}
-
-#define detectCompgreedily NULL
 
 static
-DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
+DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecCompgreedily)
 {
    *result = SCIP_DIDNOTFIND;
 
@@ -147,23 +325,22 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-   gcg::Seeed* seeed = seeedPropagationData->seeedToPropagate;
+   gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
 
    //assign open conss and vars greedily
-   seeed->completeGreedily();
+   completeGreedily(partialdec);
 
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
 
-   seeed->setDetectorPropagated(detector);
+   partialdecdetectiondata->detectiontime =  SCIPgetClockTime(scip, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+   partialdecdetectiondata->newpartialdecs[0] = partialdec;
+   partialdecdetectiondata->nnewpartialdecs = 1;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-   seeedPropagationData->newSeeeds[0] = seeed;
-   seeedPropagationData->nNewSeeeds = 1;
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime( scip, temporaryClock )  );
+   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "compgreed");
-   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
+   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
 
    *result = SCIP_SUCCESS;
 
@@ -171,7 +348,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
 }
 
 static
-DEC_DECL_FINISHSEEED(finishSeeedCompgreedily)
+DEC_DECL_FINISHPARTIALDEC(finishPartialdecCompgreedily)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
@@ -180,20 +357,21 @@ DEC_DECL_FINISHSEEED(finishSeeedCompgreedily)
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-   gcg::Seeed* seeed = NULL;
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
+   gcg::PARTIALDECOMP* partialdec = new gcg::PARTIALDECOMP(partialdecdetectiondata->workonpartialdec);
 
    //assign open conss and vars greedily
-   seeed->completeGreedily();
+   completeGreedily(partialdec);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-   seeedPropagationData->newSeeeds[0] = seeed;
-   seeedPropagationData->nNewSeeeds = 1;
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+
+   partialdecdetectiondata->detectiontime =  SCIPgetClockTime(scip, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+   partialdecdetectiondata->newpartialdecs[0] = partialdec;
+   partialdecdetectiondata->nnewpartialdecs = 1;
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "compgreed");
-   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
+   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
 
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime( scip, temporaryClock ) );
+   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
 
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
@@ -202,7 +380,7 @@ DEC_DECL_FINISHSEEED(finishSeeedCompgreedily)
    return SCIP_OKAY;
 }
 
-#define detectorPostprocessSeeedCompgreedily NULL
+#define detectorPostprocessPartialdecCompgreedily NULL
 
 
 static
@@ -215,15 +393,10 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveCompgreedily)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
-
    return SCIP_OKAY;
-
 }
 
 
@@ -235,20 +408,12 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultCompgreedily)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM && SCIPgetNOrigConss(scip) + SCIPgetNOrigVars(scip) < DEFAULT_LIMITHALFPERIMETERENABLEDORIGINAL )
-      SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
-   else
-      SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
-
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
    return SCIP_OKAY;
-
 }
 
 static
@@ -261,18 +426,12 @@ DEC_DECL_SETPARAMFAST(setParamFastCompgreedily)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
    return SCIP_OKAY;
 
 }
-
-
-
 
 
 /*
@@ -289,7 +448,7 @@ SCIP_RETCODE SCIPincludeDetectorCompgreedily(
    /**@todo create compgreedily detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectCompgreedily, freeCompgreedily,initCompgreedily, exitCompgreedily, propagateSeeedCompgreedily, finishSeeedCompgreedily, detectorPostprocessSeeedCompgreedily, setParamAggressiveCompgreedily, setParamDefaultCompgreedily, setParamFastCompgreedily) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeCompgreedily,initCompgreedily, exitCompgreedily, propagatePartialdecCompgreedily, finishPartialdecCompgreedily, detectorPostprocessPartialdecCompgreedily, setParamAggressiveCompgreedily, setParamDefaultCompgreedily, setParamFastCompgreedily) );
 
    /**@todo add compgreedily detector parameters */
 

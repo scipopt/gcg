@@ -55,25 +55,22 @@ struct DEC_Detector {
    int                   minCallRoundOriginal; /** first round the detector gets calles (offset in detection loop) while detecting the original problem */
    int                   priority;           /**< detector priority */
    SCIP_Bool             enabled;            /**< flag to indicate whether detector is enabled */
-   SCIP_Bool             enabledOrig;   /**< flag to indicate whether detector is enabled for the original problem */
    SCIP_Bool             enabledFinishing;   /**< flag to indicate whether finishing is enabled */
-   SCIP_Bool             enabledPostprocessing;   /**< flag to indicate whether finishing is enabled */
+   SCIP_Bool             enabledPostprocessing; /**< flag to indicate whether finishing is enabled */
    SCIP_Bool             skip;               /**< should detector be skipped if other detectors found decompositions */
-   SCIP_Bool             usefulRecall;       /** is it useful to call this detector on a descendant of the propagated seeed */
-   SCIP_Bool             legacymode;         /**< flag to indicate whether (old) DETECTSTRUCTURE method should also be used for detection */
+   SCIP_Bool             usefulRecall;       /** is it useful to call this detector on a descendant of the propagated partialdec */
    SCIP_Bool             overruleemphasis;   /**< should the emphasis settings be overruled */
-   DEC_DECOMP**          decomps;            /**< decompositions this detector has found */
-   int                   ndecomps;           /**< number of decompositions the detector has found */
+   int                   ndecomps;           /**< number of decompositions the detector has worked on */
+   int                   ncompletedecomps;   /**< number of complete decompositions the detector has worked on (including decompositions that were finished by other detectors) */
    SCIP_Real             dectime;            /**< time the detector took to find decompositions */
 
    DEC_DECL_FREEDETECTOR((*freeDetector));                  /**< destructor of detector */
    DEC_DECL_INITDETECTOR((*initDetector));                  /**< initialization method of detector */
    DEC_DECL_EXITDETECTOR((*exitDetector));                  /**< deinitialization method of detector */
-   DEC_DECL_DETECTSTRUCTURE((*detectStructure));            /**< structure detection method of detector */
    DEC_DECL_EXITDETECTOR((*exitDetection));                 /**< deinitialization method of detector */
-   DEC_DECL_PROPAGATESEEED((*propagateSeeed));              /**< propagation method of detector (or NULL) */
-   DEC_DECL_FINISHSEEED((*finishSeeed));                    /**< finish method of detector (or NULL) */
-   DEC_DECL_POSTPROCESSSEEED((*postprocessSeeed));          /**< postprocess method of detector (or NULL) */
+   DEC_DECL_PROPAGATEPARTIALDEC((*propagatePartialdec));    /**< propagation method of detector (or NULL) */
+   DEC_DECL_FINISHPARTIALDEC((*finishPartialdec));          /**< finish method of detector (or NULL) */
+   DEC_DECL_POSTPROCESSPARTIALDEC((*postprocessPartialdec)); /**< postprocess method of detector (or NULL) */
    DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressive));      /**< set method for aggressive parameters of detector (or NULL) */
    DEC_DECL_SETPARAMDEFAULT((*setParamDefault));            /**< set method for default parameters of detector (or NULL) */
    DEC_DECL_SETPARAMFAST((*setParamFast));                  /**< set method for fast parameters of detector (or NULL) */
