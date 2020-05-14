@@ -100,7 +100,7 @@ public:
       PARTIALDECOMP*      oldpartialdec,            /**< partialdec which should be amplifies */
       PARTIALDECOMP**     firstpartialdec,          /**< pointer to buffer the new partialdec amplified by dint of the graph */
       PARTIALDECOMP**     secondpartialdec,         /**< pinter to buffer the new partialdec whose border is amplified by dint of the graph */
-      DETPROBDATA*  detprobdata
+      DETPROBDATA*        detprobdata               /**< detprobdata */
       )
    {
       return SCIP_ERROR;

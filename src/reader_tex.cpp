@@ -142,7 +142,7 @@ SCIP_RETCODE getRgbFromHex(
 }
 
 
-/** Converts a hex color code into a tex-conform line of code that defines the color as \colorname
+/** Converts a hex color code into a tex-conform line of code that defines the color as "colorname"
  *
  * @returns SCIP status */
 static
