@@ -502,7 +502,7 @@ SCIP_RETCODE DECdecompCreate(
    decomp->detectorchain = NULL;
    decomp->sizedetectorchain = 0;
    decomp->detectorchainstring = NULL;
-   decomp->seeedid = -1;
+   decomp->partialdecid = -1;
    decomp->detectorclocktimes = NULL;
    decomp->pctvarstoborder= NULL;
    decomp->pctconsstoborder= NULL;
@@ -513,9 +513,9 @@ SCIP_RETCODE DECdecompCreate(
    decomp->nnewblocks= NULL;
    decomp->maxwhitescore = -1.;
 
-   ncalls = SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(scip);
+   ncalls = GCGconshdlrDecompIncreaseNCallsCreateDecomp(scip);
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "ncalls of createdecompfromseeed: %d \n", ncalls);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "ncalls of createdecompfrompartialdec: %d \n", ncalls);
 
    return SCIP_OKAY;
 }
@@ -630,9 +630,9 @@ SCIP_RETCODE DECdecompFree(
 
    SCIPfreeMemoryNull(scip, decdecomp);
 
-   ncalls = SCIPconshdlrDecompDecreaseAndGetNCallsCreateDecomp(scip);
+   ncalls = GCGconshdlrDecompDecreaseNCallsCreateDecomp(scip);
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "ncalls of createdecompfromseeed: %d \n", ncalls);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "ncalls of createdecompfrompartialdec: %d \n", ncalls);
 
    return SCIP_OKAY;
 }
@@ -1024,8 +1024,6 @@ SCIP_RETCODE DECdecompSetLinkingvars(
 
    return SCIP_OKAY;
 }
-
-
 
 
 /** returns the linkingvars array of the given decomposition */
@@ -1604,6 +1602,33 @@ DEC_DETECTOR** DECdecompGetDetectorChain(
    return decomp->detectorchain;
 }
 
+
+SCIP_RETCODE DECdecompSetDetectorChain(
+   SCIP*                 scip,
+   DEC_DECOMP*           decomp,
+   DEC_DETECTOR**        detectors,
+   int                   ndetectors
+   )
+{
+   int d;
+   
+   /* resize detectorchain */
+   int size = SCIPcalcMemGrowSize( scip, ndetectors);
+   SCIP_CALL_ABORT( SCIPallocBlockMemoryArray( scip, &decomp->detectorchain, size ) );
+
+   /* clear former */
+   BMSclearMemoryArray(decomp->detectorchain, size);
+
+   for( d = 0; d < ndetectors; ++d )
+   {
+      decomp->detectorchain[d] = detectors[d];
+   }
+
+   decomp->sizedetectorchain = ndetectors;
+   return SCIP_OKAY;
+}
+
+
 /** gets the number of detectors for the given decomposition */
 int DECdecompGetDetectorChainSize(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
@@ -1614,27 +1639,26 @@ int DECdecompGetDetectorChainSize(
    return decomp->sizedetectorchain;
 }
 
-/** sets the id of the original seeed */
-void DECdecompSetSeeedID(
+
+/** sets the id of the original partialdec */
+void DECdecompSetPartialdecID(
    DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   int                   seeedID
+   int                   id
    )
 {
-
    assert(decomp != NULL);
-   assert(seeedID >= 0);
+   assert(id >= 0);
 
-   decomp->seeedid = seeedID;
-
+   decomp->partialdecid = id;
 }
 
-/** gets the id of the original seeed */
-int DECdecompGetSeeedID(
+/** gets the id of the original partialdec */
+int DECdecompGetPartialdecID(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
    assert(decomp != NULL);
-   return decomp->seeedid;
+   return decomp->partialdecid;
 }
 
 
@@ -1662,7 +1686,6 @@ void DECdecompSetDetectorClockTimes(
    }
 
    return;
-
 }
 
 /** gets the detector clock times of the detectors of the detector chain */
@@ -1678,10 +1701,9 @@ extern
 SCIP_RETCODE DECdecompSetDetectorChainString(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   char*                 detectorchainstring
+   const char*           detectorchainstring
    )
 {
-
    SCIP_CALL (SCIPduplicateBlockMemoryArray(scip, &(decomp->detectorchainstring), detectorchainstring, SCIP_MAXSTRLEN ) );
    return SCIP_OKAY;
 
@@ -2465,7 +2487,7 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
    SCIP_HASHMAP*         constoblock,        /**< hashmap from constraints to block numbers, to be filled */
    int*                  vartoblock,         /**< array mapping variables to block numbers, initially all -1, to be set */
    int*                  nextblock,          /**< index of next free block to which no constraints have been assigned yet */
-   int*                  blockrepresentative /**<  */
+   int*                  blockrepresentative /**< array of blockrepresentatives */
    )
 {
 
@@ -2640,13 +2662,13 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
 /** */
 static
 SCIP_RETCODE fillConstoblock(
-   SCIP_CONS**           conss,
-   int                   nconss,
-   SCIP_Bool*            consismaster,       /**< */
-   int                   nblocks,            /**< */
-   SCIP_HASHMAP*         constoblock,        /**< */
+   SCIP_CONS**           conss,              /**< array of all constraints */
+   int                   nconss,             /**< number of constraints */
+   SCIP_Bool*            consismaster,       /**< array of flags whether a constraint belongs to the master problem */
+   int                   nblocks,            /**< number of blocks */
+   SCIP_HASHMAP*         constoblock,        /**< hashmap from constraints to block numbers, to be filled */
    SCIP_HASHMAP*         newconstoblock,     /**< */
-   int*                  blockrepresentative /**< */
+   int*                  blockrepresentative /**< array of blockrepresentatives */
    )
 {
    int i;
@@ -3225,7 +3247,7 @@ SCIP_RETCODE DECgetVarLockData(
 void DECsetMaxWhiteScore(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decomposition data structure */
-   SCIP_Real             maxwhitescore
+   SCIP_Real             maxwhitescore       /**< score related to max white measure (i.e. fraction of white (nonblock and nonborder) matrix area ) */
    )
 {
    assert(maxwhitescore >= 0);
@@ -3749,10 +3771,10 @@ SCIP_RETCODE computeNonzeros(
 /** display statistics about the decomposition */
 SCIP_RETCODE GCGprintDecompStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file                /**< output file or NULL for standard output */
+   FILE*                 file,               /**< output file or NULL for standard output */
+   DEC_DECOMP*           decomp              /**< decomp that should be evaluated */
    )
 {
-   DEC_DECOMP* decomp;
    DEC_SCORES scores;
    SCIP_VAR** vars;
    SCIP_CONS** conss;
@@ -3794,17 +3816,9 @@ SCIP_RETCODE GCGprintDecompStatistics(
    int* intnzeros;
 
    assert(scip != NULL);
-
-   decomp = DECgetBestDecomp(scip);
-
-   if( decomp == NULL )
-   {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "No decomposition available. Cannot output decomposition statistics.\n");
-      return SCIP_OKAY;
-   }
    assert(decomp != NULL);
-   nblocks = DECdecompGetNBlocks(decomp);
 
+   nblocks = DECdecompGetNBlocks(decomp);
    nvars = SCIPgetNVars(scip);
    nconss = DECdecompGetNConss(decomp);
 
@@ -3911,8 +3925,6 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPfreeBlockMemoryArray(scip, &nintvars, nblocks);
    SCIPfreeBlockMemoryArray(scip, &nimplvars, nblocks);
    SCIPfreeBlockMemoryArray(scip, &ncontvars, nblocks);
-
-   DECdecompFree(scip, &decomp);
 
    return SCIP_OKAY;
 }
@@ -4024,7 +4036,7 @@ int DECfilterSimilarDecompositions(
  *   - either variables from more than one block (plus linking variables or master only variables)
  *   - or linking variables only
  */
-/** @fixme: For linking variables, we should check which blocks they actually link */
+/** @todo: For linking variables, we should check which blocks they actually link */
 /** @todo: maybe this is possible in such a way that a staircase structure is preserved */
 SCIP_RETCODE DECdetermineConsBlock(
    SCIP*                 scip,               /**< SCIP data structure */

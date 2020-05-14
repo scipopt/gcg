@@ -35,9 +35,9 @@
 
 #include "dec_varclass.h"
 #include "cons_decomp.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
-#include "class_varclassifier.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
+#include "class_varpartition.h"
 #include "gcg.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
@@ -61,12 +61,10 @@
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'v'         /**< display character of detector */
 #define DEC_ENABLED               TRUE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE        /**< should the finishing be enabled */
 #define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
-#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
 #define DEFAULT_MAXIMUMNCLASSES     8
 #define AGGRESSIVE_MAXIMUMNCLASSES  10
@@ -99,215 +97,185 @@ struct DEC_DetectorData
 #define freeVarclass NULL
 
 /** destructor of detector to free detector data (called before the solving process begins) */
-#if 0
-static
-DEC_DECL_EXITDETECTOR(exitVarclass)
-{ /*lint --e{715}*/
-
-   SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define exitVarclass NULL
-#endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
-#if 0
-static
-DEC_DECL_INITDETECTOR(initConsclass)
-{ /*lint --e{715}*/
-
-   SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define initVarclass NULL
-#endif
 
-/** detection function of detector */
-//static DEC_DECL_DETECTSTRUCTURE(detectVarclass)
-//{ /*lint --e{715}*/
-//   *result = SCIP_DIDNOTFIND;
-//
-//   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
-//;   SCIPABORT(); /*lint --e{527}*/
-//
-//   return SCIP_OKAY;
-//}
+#define finishPartialdecVarclass NULL
 
-#define detectVarclass NULL
-
-#define finishSeeedVarclass NULL
-
-static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
+static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
 {
-  *result = SCIP_DIDNOTFIND;
-  char decinfo[SCIP_MAXSTRLEN];
+   *result = SCIP_DIDNOTFIND;
+   char decinfo[SCIP_MAXSTRLEN];
 
-  SCIP_CLOCK* temporaryClock;
+   SCIP_CLOCK* temporaryClock;
 
-  if (seeedPropagationData->seeedToPropagate->getNOpenconss() != seeedPropagationData->seeedpool->getNConss() ||  seeedPropagationData->seeedToPropagate->getNOpenvars() != seeedPropagationData->seeedpool->getNVars() )
-  {
+   if (partialdecdetectiondata->workonpartialdec->getNOpenconss() != partialdecdetectiondata->detprobdata->getNConss() ||  partialdecdetectiondata->workonpartialdec->getNOpenvars() != partialdecdetectiondata->detprobdata->getNVars() )
+   {
     *result = SCIP_SUCCESS;
      return SCIP_OKAY;
-  }
+   }
 
-  SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-  SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-  std::vector<gcg::Seeed*> foundseeeds(0);
+   std::vector<gcg::PARTIALDECOMP*> foundpartialdecs(0);
 
-  gcg::Seeed* seeedOrig;
-  gcg::Seeed* seeed;
+   gcg::PARTIALDECOMP* partialdecOrig;
+   gcg::PARTIALDECOMP* partialdec;
 
-  int maximumnclasses;
+   int maximumnclasses;
 
-  if( seeedPropagationData->seeedpool->getNConss() + seeedPropagationData->seeedpool->getNVars() >= 50000 )
-        SCIPgetIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs", &maximumnclasses);
-     else
-        SCIPgetIntParam(scip, "detection/maxnclassesperclassifier", &maximumnclasses);
+   if( partialdecdetectiondata->detprobdata->getNConss() + partialdecdetectiondata->detprobdata->getNVars() >= 50000 )
+      SCIPgetIntParam(scip, "detection/classification/maxnclassesperpartitionforlargeprobs", &maximumnclasses);
+   else
+      SCIPgetIntParam(scip, "detection/classification/maxnclassesperpartition", &maximumnclasses);
 
-  for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNVarClassifiers(); ++classifierIndex )
-  {
-    gcg::VarClassifier* classifier = seeedPropagationData->seeedpool->getVarClassifier( classifierIndex );
-    std::vector<int> varclassindices_master = std::vector<int>(0);
-    std::vector<int> varclassindices_linking = std::vector<int>(0);
+   for( int classifierIndex = 0; classifierIndex < partialdecdetectiondata->detprobdata->getNVarPartitions(); ++classifierIndex )
+   {
+      gcg::VarPartition* classifier = partialdecdetectiondata->detprobdata->getVarPartition(classifierIndex);
+      std::vector<int> varclassindices_master = std::vector<int>(0);
+      std::vector<int> varclassindices_linking = std::vector<int>(0);
 
-    if ( classifier->getNClasses() > maximumnclasses )
-    {
-       std::cout << " the current varclass distribution includes " <<  classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of var class detector" << std::endl;
-       continue;
-    }
+      if ( classifier->getNClasses() > maximumnclasses )
+      {
+         std::cout << " the current varclass distribution includes " <<  classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagatePartialdec() of var class detector" << std::endl;
+         continue;
+      }
 
-    seeedOrig = seeedPropagationData->seeedToPropagate;
+      partialdecOrig = partialdecdetectiondata->workonpartialdec;
 
-    for( int i = 0; i < classifier->getNClasses(); ++ i )
-    {
-       switch( classifier->getClassDecompInfo( i ) )
-       {
-          case gcg::ALL:
-             break;
-          case gcg::LINKING:
-             varclassindices_linking.push_back( i );
-             break;
-          case gcg::MASTER:
-             varclassindices_master.push_back( i );
-             break;
-          case gcg::BLOCK:
-             break;
-       }
-    }
+      for( int i = 0; i < classifier->getNClasses(); ++ i )
+      {
+         switch( classifier->getClassDecompInfo(i) )
+         {
+            case gcg::ALL:
+               break;
+            case gcg::LINKING:
+               varclassindices_linking.push_back(i);
+               break;
+            case gcg::MASTER:
+               varclassindices_master.push_back(i);
+               break;
+            case gcg::BLOCK:
+               break;
+         }
+      }
 
-    std::vector< std::vector<int> > subsetsOfVarclasses = classifier->getAllSubsets( true, false, false, false );
+      std::vector< std::vector<int> > subsetsOfVarclasses = classifier->getAllSubsets( true, false, false, false );
 
-    for( size_t subset = 0; subset < subsetsOfVarclasses.size(); ++subset )
-    {
-       if( subsetsOfVarclasses[subset].size() == 0 && varclassindices_master.size() == 0 && varclassindices_linking.size() == 0 )
-          continue;
+      for( auto& subset : subsetsOfVarclasses )
+      {
+         if( subset.empty() && varclassindices_master.empty() && varclassindices_linking.empty() )
+            continue;
 
-       seeed = new gcg::Seeed(seeedOrig);
+         partialdec = new gcg::PARTIALDECOMP(partialdecOrig);
 
-       /* book open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
-       for( int i = 0; i < seeed->getNOpenvars(); ++i )
-       {
-          bool foundVar = false;
-          for( size_t varclassId = 0; varclassId < subsetsOfVarclasses[subset].size(); ++varclassId )
-          {
-              if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == subsetsOfVarclasses[subset][varclassId] )
-              {
-                  seeed->bookAsLinkingVar(seeed->getOpenvars()[i]);
+         /* fix open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
+         auto& openvars = partialdec->getOpenvarsVec();
+         for( auto itr = openvars.cbegin(); itr != openvars.cend(); )
+         {
+            bool foundVar = false;
+            for( int varclassId : subset )
+            {
+               if( classifier->getClassOfVar(*itr) == varclassId )
+               {
+                  itr = partialdec->fixVarToLinking(itr);
                   foundVar = true;
                   break;
-              }
-          }
-          /* only check varclassindices_linking if current var has not already been found in a subset */
-          if ( !foundVar )
-          {
-             for( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
-             {
-                if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_linking[varclassId] )
-                {
-                   seeed->bookAsLinkingVar(seeed->getOpenvars()[i]);
-                   foundVar = true;
-                   break;
-                }
-             }
-          }
-          /* only check varclassindices_master if current var has not already been found in a subset */
-          if ( !foundVar )
-          {
-             for( size_t varclassId = 0; varclassId < varclassindices_master.size(); ++varclassId )
-             {
-                if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_master[varclassId] )
-                {
-                   seeed->bookAsMasterVar(seeed->getOpenvars()[i]);
-                   break;
-                }
-             }
-          }
-       }
+               }
+            }
+            /* only check varclassindices_linking if current var has not already been found in a subset */
+            if ( !foundVar )
+            {
+               for( int varclassId : varclassindices_linking )
+               {
+                  if( classifier->getClassOfVar(*itr) == varclassId )
+                  {
+                     itr = partialdec->fixVarToLinking(itr);
+                     foundVar = true;
+                     break;
+                  }
+               }
+            }
+            /* only check varclassindices_master if current var has not already been found in a subset */
+            if ( !foundVar )
+            {
+               for( int varclassId : varclassindices_master )
+               {
+                  if( classifier->getClassOfVar(*itr) == varclassId )
+                  {
+                     itr = partialdec->fixVarToMaster(itr);
+                     foundVar = true;
+                     break;
+                  }
+               }
+            }
+            if( !foundVar )
+            {
+               ++itr;
+            }
+         }
 
-       /* set decinfo to: varclass_<classfier_name>:<linking_class_name#1>-...-<linking_class_name#n> */
-       std::stringstream decdesc;
-       decdesc << "varclass" << "\\_" << classifier->getName() << ": \\\\ ";
-       std::vector<int> curlinkingclasses( varclassindices_linking );
-       for ( size_t varclassId = 0; varclassId < subsetsOfVarclasses[subset].size(); ++varclassId )
-       {
-          if ( varclassId > 0 )
-          {
-             decdesc << "-";
-          }
-          decdesc << classifier->getClassName( subsetsOfVarclasses[subset][varclassId] );
+         /* set decinfo to: varclass_<classfier_name>:<linking_class_name#1>-...-<linking_class_name#n> */
+         std::stringstream decdesc;
+         decdesc << "varclass" << "\\_" << classifier->getName() << ": \\\\ ";
+         std::vector<int> curlinkingclasses( varclassindices_linking );
+         for ( size_t varclassId = 0; varclassId < subset.size(); ++varclassId )
+         {
+            if ( varclassId > 0 )
+            {
+               decdesc << "-";
+            }
+            decdesc << classifier->getClassName(subset[varclassId]);
 
-          if( std::find( varclassindices_linking.begin(), varclassindices_linking.end(),
-             subsetsOfVarclasses[subset][varclassId] ) == varclassindices_linking.end() )
-          {
-             curlinkingclasses.push_back( subsetsOfVarclasses[subset][varclassId] );
-          }
-       }
-       for ( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
-       {
-          if ( varclassId > 0 || subsetsOfVarclasses[subset].size() > 0)
-          {
-             decdesc << "-";
-          }
-          decdesc << classifier->getClassName( varclassindices_linking[varclassId] );
-       }
+            if( std::find( varclassindices_linking.begin(), varclassindices_linking.end(),
+               subset[varclassId] ) == varclassindices_linking.end() )
+            {
+               curlinkingclasses.push_back(subset[varclassId]);
+            }
+         }
+         for( int varclassId : varclassindices_linking )
+         {
+            if( varclassId > 0 || !subset.empty() )
+            {
+               decdesc << "-";
+            }
+            decdesc << classifier->getClassName(varclassId);
+         }
 
-       seeed->flushBooked();
-       (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
-       seeed->addDetectorChainInfo(decinfo);
-       seeed->setVarClassifierStatistics( seeed->getNDetectors(), classifier, curlinkingclasses,
-          varclassindices_master );
+         partialdec->sort();
+         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
+         partialdec->addDetectorChainInfo(decinfo);
+         partialdec->setVarPartitionStatistics(partialdec->getNDetectors(), classifier, curlinkingclasses,
+                                               varclassindices_master);
 
-       foundseeeds.push_back(seeed);
-    }
-  }
+         foundpartialdecs.push_back(partialdec);
+      }
+   }
 
-  SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
 
-  SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), foundseeeds.size() ) );
-  seeedPropagationData->nNewSeeeds = foundseeeds.size();
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), foundpartialdecs.size()) );
+   partialdecdetectiondata->nnewpartialdecs = foundpartialdecs.size();
 
-  for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-  {
-     seeedPropagationData->newSeeeds[s] = foundseeeds[s];
-     seeedPropagationData->newSeeeds[s]->addClockTime(SCIPgetClockTime(scip, temporaryClock )  );
-  }
+   for( int s = 0; s < partialdecdetectiondata->nnewpartialdecs; ++s )
+   {
+      partialdecdetectiondata->newpartialdecs[s] = foundpartialdecs[s];
+      partialdecdetectiondata->newpartialdecs[s]->addClockTime(partialdecdetectiondata->detectiontime / partialdecdetectiondata->nnewpartialdecs);
+   }
 
-  SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
-  *result = SCIP_SUCCESS;
+   *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
 }
 
 
-#define detectorPostprocessSeeedVarclass NULL
+#define detectorPostprocessPartialdecVarclass NULL
 
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveVarclass)
@@ -319,9 +287,6 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveVarclass)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
@@ -344,9 +309,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveVarclass)
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "\n%s = %d\n", setstr, newval);
 
-
    return SCIP_OKAY;
-
 }
 
 
@@ -361,9 +324,6 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultVarclass)
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL ) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
@@ -401,9 +361,6 @@ DEC_DECL_SETPARAMFAST(setParamFastVarclass)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
@@ -427,7 +384,6 @@ DEC_DECL_SETPARAMFAST(setParamFastVarclass)
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "\n%s = %d\n", setstr, newval);
 
    return SCIP_OKAY;
-
 }
 
 
@@ -448,8 +404,8 @@ SCIP_RETCODE SCIPincludeDetectorVarclass(SCIP* scip /**< SCIP data structure */
 
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectVarclass,
-         freeVarclass, initVarclass, exitVarclass, propagateSeeedVarclass, finishSeeedVarclass, detectorPostprocessSeeedVarclass, setParamAggressiveVarclass, setParamDefaultVarclass, setParamFastVarclass));
+         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,detectordata,
+         freeVarclass, initVarclass, exitVarclass, propagatePartialdecVarclass, finishPartialdecVarclass, detectorPostprocessPartialdecVarclass, setParamAggressiveVarclass, setParamDefaultVarclass, setParamFastVarclass));
 
    /**@todo add varclass detector parameters */
 

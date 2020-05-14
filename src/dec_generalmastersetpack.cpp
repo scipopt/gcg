@@ -27,16 +27,21 @@
 
 /**@file   dec_generalmastersetpack.cpp
  * @ingroup DETECTORS
- * @brief  detector generalmastersetpack (sets setcovering  and constraint with -infinity lhs and nonnegative rhs to master)
+ * @brief  detector for set packing constraints
  * @author Martin Bergner
+ *
+ * This detector sets the following constraints to master:
+ * - set packing constraints
+ * - constraints with -infinity lhs and nonnegative rhs
+ *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "dec_generalmastersetpack.h"
 #include "cons_decomp.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 #include "gcg.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
@@ -56,14 +61,11 @@
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               '?'         /**< display character of detector */
-#define DEC_ENABLED               FALSE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLED               TRUE        /**< should the detection be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
 #define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
-#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
-
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
 /*
  * Data structures
@@ -90,49 +92,13 @@ struct DEC_DetectorData
 #define freeGeneralmastersetpack NULL
 
 /** destructor of detector to free detector data (called before the solving process begins) */
-#if 0
-static
-DEC_DECL_EXITDETECTOR(exitGeneralmastersetpack)
-{ /*lint --e{715}*/
-
-   SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define exitGeneralmastersetpack NULL
-#endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
-#if 0
-static
-DEC_DECL_INITDETECTOR(initGeneralmastersetpack)
-{ /*lint --e{715}*/
-
-   SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define initGeneralmastersetpack NULL
-#endif
 
-/** detection function of detector */
-//static DEC_DECL_DETECTSTRUCTURE(detectGeneralmastersetpack)
-//{ /*lint --e{715}*/
-//   *result = SCIP_DIDNOTFIND;
-//
-//   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
-//;   SCIPABORT(); /*lint --e{527}*/
-//
-//   return SCIP_OKAY;
-//}
 
-#define detectGeneralmastersetpack NULL
-
-static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
+static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetpack)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
@@ -148,16 +114,18 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
    bool relevant = true;
 
 
-   gcg::Seeed* seeed;
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
-
-   for( int i = 0; i < seeed->getNOpenconss(); ++i)
+   gcg::PARTIALDECOMP* partialdec;
+   partialdec = new gcg::PARTIALDECOMP(partialdecdetectiondata->workonpartialdec);
+   auto& openconss = partialdec->getOpenconssVec();
+   for( auto itr = openconss.cbegin(); itr!= openconss.cend(); )
    {
-      cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+      bool found = false;
+      cons = partialdecdetectiondata->detprobdata->getConsForIndex(*itr);
       /* set open setpacking constraints to master */
       if( GCGconsGetType(scip, cons) == setpacking )
       {
-          seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+          itr = partialdec->fixConsToMaster(itr);
+          found = true;
       }
       /* set constraints with -infinity lhs and nonnegative rhs to master */
       else if(GCGconsGetType(scip, cons) != logicor && GCGconsGetType(scip, cons) != setcovering && GCGconsGetType(scip, cons) != setpartitioning )
@@ -198,22 +166,26 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
 
          if(relevant)
          {
-             seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+             itr = partialdec->fixConsToMaster(itr);
+             found = true;
          }
+      }
+      if( !found )
+      {
+         ++itr;
       }
    }
 
-   seeed->flushBooked();
+   partialdec->sort();
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-   seeedPropagationData->newSeeeds[0] = seeed;
-   seeedPropagationData->nNewSeeeds = 1;
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+   partialdecdetectiondata->newpartialdecs[0] = partialdec;
+   partialdecdetectiondata->nnewpartialdecs = 1;
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "genmastersetpack");
-   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
-
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
+   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
+   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
@@ -221,8 +193,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
    return SCIP_OKAY;
 }
 
-#define finishSeeedGeneralmastersetpack NULL
-#define detectorPostprocessSeeedGeneralmastersetpack NULL
+#define finishPartialdecGeneralmastersetpack NULL
+#define detectorPostprocessPartialdecGeneralmastersetpack NULL
 
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveGeneralmastersetpack)
@@ -234,11 +206,8 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveGeneralmastersetpack)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxcallround", name);
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
@@ -267,9 +236,6 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultGeneralmastersetpack)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
@@ -285,9 +251,6 @@ DEC_DECL_SETPARAMFAST(setParamFastGeneralmastersetpack)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
@@ -313,7 +276,7 @@ SCIP_RETCODE SCIPincludeDetectorGeneralmastersetpack(SCIP* scip /**< SCIP data s
    detectordata = NULL;
 
    SCIP_CALL(
-      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectGeneralmastersetpack, freeGeneralmastersetpack, initGeneralmastersetpack, exitGeneralmastersetpack, propagateSeeedGeneralmastersetpack, finishSeeedGeneralmastersetpack, detectorPostprocessSeeedGeneralmastersetpack, setParamAggressiveGeneralmastersetpack, setParamDefaultGeneralmastersetpack, setParamFastGeneralmastersetpack));
+      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeGeneralmastersetpack, initGeneralmastersetpack, exitGeneralmastersetpack, propagatePartialdecGeneralmastersetpack, finishPartialdecGeneralmastersetpack, detectorPostprocessPartialdecGeneralmastersetpack, setParamAggressiveGeneralmastersetpack, setParamDefaultGeneralmastersetpack, setParamFastGeneralmastersetpack));
 
    /**@todo add generalmastersetpack detector parameters */
 

@@ -51,12 +51,11 @@
 #include "pub_gcgvar.h"
 
 #include "cons_decomp.h"
+#include "cons_decomp.hpp"
 #include "pub_decomp.h"
 
-#include "class_seeed.h"
-#include "wrapper_seeed.h"
-
-typedef gcg::Seeed* SeeedPtr;
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 
 #define READER_NAME             "decreader"
 #define READER_DESC             "file reader for blocks in dec format"
@@ -101,23 +100,20 @@ struct DecInput
    int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
    DECSECTION section;                       /**< current section */
    SCIP_Bool haserror;                       /**< flag to indicate an error occurence */
-   SeeedPtr seeed;                           /**< incomplete decomposition */
+   gcg::PARTIALDECOMP* partialdec;           /**< incomplete decomposition */
 };
 typedef struct DecInput DECINPUT;
 
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-   SCIP_HASHMAP*         constoblock;        /**< hashmap key=constaint value=block*/
+
 };
 static const int NOVALUE = -1;
 static const int LINKINGVALUE = -2;
 static const char delimchars[] = " \f\n\r\t\v";
 static const char tokenchars[] = "-+:<>=";
 static const char commentchars[] = "\\";
-
-
-
 
 /*
  * Local methods (for reading)
@@ -158,7 +154,6 @@ SCIP_Bool hasError(
    )
 {
    assert(decinput != NULL);
-
    return decinput->haserror;
 }
 
@@ -288,7 +283,7 @@ SCIP_Bool getNextToken(
    {
       if( buf[decinput->linepos] == '\0' )
       {
-         if( ! getNextLine(decinput) )
+         if( !getNextLine(decinput) )
          {
             decinput->section = DEC_END;
             SCIPdebugMessage("(line %d) end of file\n", decinput->linenumber);
@@ -333,7 +328,7 @@ SCIP_Bool getNextToken(
          if( tokenlen == 1 && isTokenChar(decinput->token[0]) )
             break;
       }
-      while( ! isDelimChar(buf[decinput->linepos]) && ! isTokenChar(buf[decinput->linepos]) );
+      while( !isDelimChar(buf[decinput->linepos]) && ! isTokenChar(buf[decinput->linepos]) );
 
       /* if the token is an equation sense '<', '>', or '=', skip a following '='
        * if the token is an equality token '=' and the next character is a '<' or '>', replace the token by the inequality sense
@@ -537,8 +532,6 @@ SCIP_Bool isNewSection(
       return TRUE;
    }
 
-
-
    return FALSE;
 }
 
@@ -555,10 +548,10 @@ SCIP_RETCODE readStart(
    do
    {
       /* get token */
-      if( ! getNextToken(decinput) )
+      if( !getNextToken(decinput) )
          return SCIP_OKAY;
    }
-   while( ! isNewSection(scip, decinput) );
+   while( !isNewSection(scip, decinput) );
 
    return SCIP_OKAY;
 }
@@ -590,14 +583,14 @@ SCIP_RETCODE readIncomplete(
             decinput->incomplete = FALSE;
          else
             syntaxError(scip, decinput, "incomplete parameter must be 0 or 1");
-         SCIPdebugMessage("The constraints that are not specified in this decomposition are %s  forced to the master\n",
+
+         SCIPdebugMessage("The constraints that are not specified in this decomposition are %s forced to the master\n",
             decinput->incomplete ? "" : " not");
       }
    }
 
    return SCIP_OKAY;
 }
-
 
 
 /** reads the presolved section */
@@ -629,7 +622,6 @@ SCIP_RETCODE readPresolved(
          else if ( presolved == 0 )
          {
             decinput->presolved = FALSE;
-
          }
          else
             syntaxError(scip, decinput, "presolved parameter must be 0 or 1");
@@ -645,15 +637,14 @@ SCIP_RETCODE readPresolved(
 static
 SCIP_RETCODE readNBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
-   DECINPUT*             decinput,           /**< DEC reading data */
-   gcg::Seeed*           seeed               /**< seeed to edit */
+   DECINPUT*             decinput            /**< DEC reading data */
    )
 {
    int nblocks;
 
    assert(scip != NULL);
    assert(decinput != NULL);
-   assert(seeed != NULL);
+   assert(decinput->partialdec != NULL);
 
    while( getNextToken(decinput) )
    {
@@ -672,7 +663,7 @@ SCIP_RETCODE readNBlocks(
          if( decinput->nblocks == NOVALUE )
          {
             decinput->nblocks = nblocks;
-            seeed->setNBlocks(nblocks);
+            decinput->partialdec->setNBlocks(nblocks);
          }
          else
             syntaxError(scip, decinput, "2 integer values in nblocks section");
@@ -688,7 +679,6 @@ static
 SCIP_RETCODE readBlockconss(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput,           /**< DEC reading data */
-   gcg::Seeed*           seeed,              /**< seeed to edit */
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
@@ -698,7 +688,7 @@ SCIP_RETCODE readBlockconss(
    SCIP_Bool success;
    assert(decinput != NULL);
    assert(readerdata != NULL);
-   assert(seeed != NULL);
+   assert(decinput->partialdec != NULL);
 
    currblock = 0;
 
@@ -728,8 +718,7 @@ SCIP_RETCODE readBlockconss(
 
       if( !SCIPconsIsActive(cons) && decinput->presolved )
       {
-         assert( !SCIPhashmapExists(readerdata->constoblock, cons));
-         SCIPdebugMessage("scic cons is not active, scip it \n");
+         SCIPdebugMessage("cons is not active, skip it \n");
          continue;
       }
 
@@ -763,9 +752,8 @@ SCIP_RETCODE readBlockconss(
 
       if( !conshasvar )
       {
-         SCIPdebugMessage("Cons <%s> has been deleted by presolving or has no variable at all, skipped.\n",  SCIPconsGetName(cons) );
-         SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (currblock+1)) );
-         SCIP_CALL( seeed->bookAsBlockConsByName(decinput->token, currblock) );
+         SCIPdebugMessage("Cons <%s> has been deleted by presolving or has no variable at all.\n",  SCIPconsGetName(cons) );
+         decinput->partialdec->fixConsToBlockByName(decinput->token, currblock);
          ++currblock;
          currblock = currblock % decinput->nblocks;
          continue;
@@ -774,16 +762,15 @@ SCIP_RETCODE readBlockconss(
        * saving block <-> constraint
        */
 
-      if( (SCIPhashmapGetImage(readerdata->constoblock, cons) != (void*)(size_t) LINKINGVALUE ) && ( SCIPhashmapGetImage(readerdata->constoblock, cons) != (void*) (size_t) (blockid+1) )  )
+      if( !decinput->partialdec->isConsOpencons(decinput->partialdec->getDetprobdata()->getIndexForCons(cons))  )
       {
          decinput->haserror = TRUE;
-         SCIPwarningMessage(scip, "cons %s is already assigned to block %d but is supposed to assigned to %d\n", SCIPconsGetName(cons), SCIPhashmapGetImage(readerdata->constoblock, cons), (blockid+1)  );
+         SCIPwarningMessage(scip, "cons %s is already assigned but is supposed to assigned to %d\n", SCIPconsGetName(cons), (blockid+1));
          return SCIP_OKAY;
       }
 
       SCIPdebugMessage("cons %s is in block %d\n", SCIPconsGetName(cons), blockid);
-      SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (blockid+1)) );
-      SCIP_CALL( seeed->bookAsBlockConsByName(decinput->token, blockid) );
+      decinput->partialdec->fixConsToBlockByName(decinput->token, blockid);
    }
 
    return SCIP_OKAY;
@@ -794,7 +781,6 @@ static
 SCIP_RETCODE readBlockvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput,           /**< DEC reading data */
-   gcg::Seeed*           seeed,              /**< seeed to edit */
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
@@ -802,7 +788,7 @@ SCIP_RETCODE readBlockvars(
 
    assert(decinput != NULL);
    assert(readerdata != NULL);
-   assert(seeed != NULL);
+   assert(decinput->partialdec != NULL);
 
    while( getNextToken(decinput) )
    {
@@ -827,57 +813,44 @@ SCIP_RETCODE readBlockvars(
       }
 
       blockid = decinput->blocknr;
-      SCIP_CALL( seeed->bookAsBlockVarByName(decinput->token, blockid) );
+      decinput->partialdec->fixVarToBlockByName(decinput->token, blockid);
    }
 
    return SCIP_OKAY;
 }
-
-
 
 /** reads the masterconss section */
 static
 SCIP_RETCODE readMasterconss(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput,           /**< DEC reading data */
-   gcg::Seeed*           seeed,              /**< seeed to edit */
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
    assert(scip != NULL);
    assert(decinput != NULL);
    assert(readerdata != NULL);
-   assert(seeed != NULL);
+   assert(decinput->partialdec != NULL);
 
    while( getNextToken(decinput) )
    {
-      SCIP_CONS* cons;
+      int cons;
 
       /* check if we reached a new section */
       if( isNewSection(scip, decinput) )
          break;
 
       /* the token must be the name of an existing constraint */
-      if (decinput->presolved )
-         cons = SCIPfindCons(scip, decinput->token);
-      else
-         cons = SCIPfindOrigCons(scip, decinput->token);
-      if( cons == NULL )
+      cons = decinput->partialdec->getDetprobdata()->getIndexForCons(decinput->token);
+
+      if( cons < 0 )
       {
-         syntaxError(scip, decinput, "unknown constraint in masterconss section");
+         syntaxError(scip, decinput, "unknown or deleted constraint in masterconss section");
          break;
       }
       else
       {
-         if( !SCIPhashmapExists( readerdata->constoblock, cons) )
-         {
-            SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving, skipping.\n", SCIPconsGetName(cons));
-            continue;
-         }
-
-         assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) LINKINGVALUE);
-
-         SCIP_CALL( seeed->bookAsMasterConsByName(decinput->token) );
+         decinput->partialdec->fixConsToMaster(cons);
          SCIPdebugMessage("cons %s is linking constraint\n", decinput->token);
       }
    }
@@ -890,14 +863,13 @@ static
 SCIP_RETCODE readMastervars(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput,           /**< DEC reading data */
-   gcg::Seeed*           seeed,              /**< seeed to edit */
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
    assert(scip != NULL);
    assert(decinput != NULL);
    assert(readerdata != NULL);
-   assert(seeed != NULL);
+   assert(decinput->partialdec != NULL);
 
    while( getNextToken(decinput) )
    {
@@ -922,7 +894,7 @@ SCIP_RETCODE readMastervars(
             continue;
          }
 
-         SCIP_CALL( seeed->bookAsMasterVarByName(decinput->token) );
+         decinput->partialdec->fixVarToMasterByName(decinput->token);
 
          SCIPdebugMessage("var %s is master constraint\n", decinput->token);
       }
@@ -936,14 +908,13 @@ static
 SCIP_RETCODE readLinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput,           /**< DEC reading data */
-   gcg::Seeed*           seeed,              /**< seeed to edit */
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
    assert(scip != NULL);
    assert(decinput != NULL);
    assert(readerdata != NULL);
-   assert(seeed != NULL);
+   assert(decinput->partialdec != NULL);
 
    while( getNextToken(decinput) )
    {
@@ -968,7 +939,7 @@ SCIP_RETCODE readLinkingvars(
             continue;
          }
 
-         SCIP_CALL( seeed->bookAsLinkingVarByName(decinput->token) );
+         decinput->partialdec->fixVarToLinkingByName(decinput->token);
 
          SCIPdebugMessage("cons %s is linking constraint\n", decinput->token);
       }
@@ -977,6 +948,25 @@ SCIP_RETCODE readLinkingvars(
    return SCIP_OKAY;
 }
 
+/** Reads the file and sets the decinput->presolved flag. Resets the file stream afterward.*/
+static
+SCIP_RETCODE setPresolved(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput            /**< DEC reading data */
+   )
+{
+   while( getNextToken(decinput) )
+   {
+      if( isNewSection(scip, decinput) && decinput->section == DEC_PRESOLVED )
+      {
+         SCIP_CALL( readPresolved(scip, decinput) );
+         break;
+      }
+   }
+   SCIPrewind(decinput->file);
+   decinput->section = DEC_START;
+   return SCIP_OKAY;
+}
 
 /** reads a DEC file */
 static
@@ -987,21 +977,15 @@ SCIP_RETCODE readDECFile(
    const char*           filename            /**< name of the input file */
    )
 {
-   SCIP_RETCODE retcode;
    SCIP_READERDATA* readerdata;
-   SCIP_CONS** conss;
-   int nconss;
-   int i;
 
    assert(decinput != NULL);
    assert(scip != NULL);
    assert(reader != NULL);
 
-
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, will not read structure!\n");
-
       return SCIP_OKAY;
    }
 
@@ -1019,10 +1003,18 @@ SCIP_RETCODE readDECFile(
 
    /* parse the file */
    decinput->section = DEC_START;
-   retcode = SCIP_OKAY;
-   gcg::Seeed* newseeed;
-   Seeed_Wrapper swpool;
-   while( decinput->section != DEC_END && ! hasError(decinput) && retcode == SCIP_OKAY )
+
+   setPresolved(scip, decinput);
+   if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+   {
+      SCIPinfoMessage(scip, NULL, "read presolved decomposition but problem is not presolved yet -> presolve()\n");
+      SCIPpresolve(scip);
+      assert(decinput->haspresolvesection);
+   }
+
+   decinput->partialdec = new gcg::PARTIALDECOMP(scip, !decinput->presolved);
+
+   while( decinput->section != DEC_END && !hasError(decinput) )
    {
       switch( decinput->section )
       {
@@ -1032,56 +1024,17 @@ SCIP_RETCODE readDECFile(
          case DEC_INCOMPLETE:
             SCIP_CALL( readIncomplete(scip, decinput) );
             break;
-
          case DEC_PRESOLVED:
-            SCIP_CALL( readPresolved(scip, decinput) );
-            if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+            while( getNextToken(decinput) )
             {
-               SCIPinfoMessage(scip, NULL, "read presolved decomposition but problem is not presolved yet -> presolve()\n");
-               SCIPpresolve(scip);
-
-               assert(decinput->haspresolvesection);
+               if( isNewSection(scip, decinput) )
+               {
+                  break;
+               }
             }
-            /* call cons_decomp to create seeed (and correct seeedpool if necessary) seeed from the right seeedpool */
-            if ( decinput->presolved )
-            {
-               SCIPconshdlrDecompCreateSeeedpool(scip);
-            }
-            else
-            {
-               SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
-            }
-            /* cons -> block mapping */
-            if( decinput->presolved )
-            {
-               conss = SCIPgetConss(scip);
-               nconss = SCIPgetNConss(scip);
-            }
-            else
-            {
-               conss = SCIPgetOrigConss(scip);
-               nconss = SCIPgetNOrigConss(scip);
-            }
-            SCIP_CALL( SCIPhashmapCreate(&readerdata->constoblock, SCIPblkmem(scip), nconss) );
-            for( i = 0; i < nconss; i ++ )
-            {
-               assert( !SCIPhashmapExists(readerdata->constoblock, conss[i] ) );
-               SCIP_CALL( SCIPhashmapInsert(readerdata->constoblock, conss[i], (void*) (size_t) LINKINGVALUE) );
-               SCIPdebugMessage("init cons block of %s to %ld\n", SCIPconsGetName(conss[i]), (long) SCIPhashmapGetImage(readerdata->constoblock, conss[i]) );
-            }
-
-            decinput->presolved ? SCIPconshdlrDecompGetSeeedpool(scip, &swpool)
-                  : SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &swpool);
-            newseeed = new gcg::Seeed(scip, swpool.seeedpool->getNewIdForSeeed(), swpool.seeedpool);
-            newseeed->setIsFromUnpresolved( !decinput->presolved );
-            if(decinput->incomplete)
-               newseeed->setUsergiven(gcg::USERGIVEN::PARTIAL);
-            else
-               newseeed->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
             break;
-
          case DEC_NBLOCKS:
-            SCIP_CALL( readNBlocks(scip, decinput, newseeed) );
+            SCIP_CALL( readNBlocks(scip, decinput) );
             if( decinput->haspresolvesection && !decinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
             {
                SCIPwarningMessage(scip, "decomposition belongs to the unpresolved problem, but the problem is already presolved, please consider to re-read the problem and read the decomposition without presolving when transforming do not succeed.\n");
@@ -1095,23 +1048,23 @@ SCIP_RETCODE readDECFile(
             break;
 
          case DEC_BLOCKCONSS:
-            SCIP_CALL( readBlockconss(scip, decinput, newseeed, readerdata) );
+            SCIP_CALL( readBlockconss(scip, decinput, readerdata) );
             break;
 
          case DEC_MASTERCONSS:
-            SCIP_CALL( readMasterconss(scip, decinput, newseeed, readerdata) );
+            SCIP_CALL( readMasterconss(scip, decinput, readerdata) );
             break;
 
          case DEC_BLOCKVARS:
-            SCIP_CALL( readBlockvars(scip, decinput, newseeed, readerdata) );
+            SCIP_CALL( readBlockvars(scip, decinput, readerdata) );
             break;
 
          case DEC_MASTERVARS:
-            SCIP_CALL( readMastervars(scip, decinput, newseeed, readerdata) );
+            SCIP_CALL( readMastervars(scip, decinput, readerdata) );
             break;
 
          case DEC_LINKINGVARS:
-            SCIP_CALL( readLinkingvars(scip, decinput, newseeed, readerdata) );
+            SCIP_CALL( readLinkingvars(scip, decinput, readerdata) );
             break;
 
          case DEC_END: /* this is already handled in the while() loop */
@@ -1121,25 +1074,144 @@ SCIP_RETCODE readDECFile(
       }
    }
 
+   if(decinput->incomplete)
+      decinput->partialdec->setUsergiven(gcg::USERGIVEN::PARTIAL);
+   else
+      decinput->partialdec->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
+
    if( decinput->haserror)
    {
       SCIPinfoMessage(scip, NULL, "error occured while reading dec file");
-      delete newseeed;
+      delete decinput->partialdec;
    }
    else
    {
       SCIPinfoMessage(scip, NULL, "just read dec file:");
-      Seeed_Wrapper sw;
-      sw.seeed = newseeed;
-      SCIPconshdlrDecompRefineAndAddSeeed(scip, &sw);
-   }
+      decinput->partialdec->sort();
+      GCGconshdlrDecompAddPreexisitingPartialDec(scip, decinput->partialdec);
 
-   SCIPhashmapFree(&readerdata->constoblock);
+      /* if the partialdec was to be completed, add a "vanilla" version as well */
+      if( decinput->partialdec->shouldCompletedByConsToMaster() )
+      {
+         gcg::PARTIALDECOMP* partial = new gcg::PARTIALDECOMP(decinput->partialdec);
+         decinput->partialdec->setUsergiven(gcg::USERGIVEN::PARTIAL);
+         GCGconshdlrDecompAddPreexisitingPartialDec(scip, partial);
+      }
+   }
 
    /* close file */
    SCIPfclose(decinput->file);
 
-   return retcode;
+   return SCIP_OKAY;
+}
+
+
+/**
+ * @brief write partialdec to file in dec format
+
+ * @return scip return code
+ */
+static
+SCIP_RETCODE writePartialdec(
+   SCIP* scip,             /**< SCIP data structure */
+   FILE* file,             /**< pointer to file to write to */
+   gcg::PARTIALDECOMP* partialdec,      /**< partialdec to write */
+   SCIP_RESULT* result     /**< will be set to SCIP_SUCCESS if writing was successful */
+   )
+{
+   int nconss;
+   int nvars;
+   std::vector<int> consindex(0);
+   std::vector<int> varindex(0);
+
+   assert(partialdec != NULL);
+
+   gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
+
+   nconss = detprobdata->getNConss();
+   nvars = detprobdata->getNVars();
+
+   consindex = std::vector<int>(nconss);
+   varindex = std::vector<int>(nvars);
+
+   for( int i = 0; i < nconss; ++i )
+      consindex[i] = i;
+   for( int i = 0; i < nvars; ++i )
+      varindex[i] = i;
+
+   /* write meta data of decomposition as comment */
+   auto& detectorchain = partialdec->getDetectorchain();
+   auto& detectorchaininfo = partialdec->getDetectorchainInfo();
+   SCIPinfoMessage(scip, file, "%s%s ndetectors \n", commentchars, commentchars);
+   SCIPinfoMessage(scip, file, "%s%s %d \n", commentchars, commentchars, detectorchain.size());
+
+   SCIPinfoMessage(scip, file, 
+      "%s%s name info time nnewblocks %%ofnewborderconss %%ofnewblockconss %%ofnewlinkingvars %%ofnewblockvars\n",
+      commentchars, commentchars);
+
+   for( unsigned int i = 0; i < detectorchain.size(); ++i )
+   {
+      SCIPinfoMessage(scip, file, "%s%s %s %s %f %d %f %f %f %f \n", commentchars, commentchars,
+      DECdetectorGetName(detectorchain[i]), detectorchaininfo[i].c_str(), partialdec->getDetectorClockTimes().at(i),
+         partialdec->getNNewBlocks(i), partialdec->getPctConssToBorder(i), partialdec->getPctConssToBlock(i),
+         partialdec->getPctVarsToBorder(i), partialdec->getPctVarsToBlock(i)) ;
+   }
+
+   if( !partialdec->isComplete() )
+         SCIPinfoMessage(scip, file, "INCOMPLETE\n1\n" );
+
+   if( partialdec->isAssignedToOrigProb() )
+      SCIPinfoMessage(scip, file, "PRESOLVED\n0\n" );
+   else
+      SCIPinfoMessage(scip, file, "PRESOLVED\n1\n" );
+
+   SCIPinfoMessage(scip, file, "NBLOCKS\n%d\n", partialdec->getNBlocks() );
+
+   for( int b = 0; b < partialdec->getNBlocks(); ++b )
+   {
+      SCIPinfoMessage(scip, file, "BLOCK %d\n", b+1 );
+      for( int c = 0; c < partialdec->getNConssForBlock(b); ++c )
+      {
+         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(detprobdata->getConsForIndex( partialdec->getConssForBlock(b)[c] )) );
+      }
+   }
+
+   SCIPinfoMessage(scip, file, "MASTERCONSS\n" );
+   for( int mc = 0; mc < partialdec->getNMasterconss(); ++mc )
+   {
+      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(detprobdata->getConsForIndex( partialdec->getMasterconss()[mc])) );
+   }
+
+   if( partialdec->isComplete() )
+   {
+      *result = SCIP_SUCCESS;
+      return SCIP_OKAY;
+   }
+
+   SCIPinfoMessage(scip, file, "LINKINGVARS\n" );
+   for( int lv = 0; lv < partialdec->getNLinkingvars(); ++lv )
+   {
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVarForIndex( partialdec->getLinkingvars()[lv])) );
+   }
+
+   SCIPinfoMessage(scip, file, "MASTERVARS\n%s%s aka STATICVARS\n", commentchars, commentchars );
+   for( int mv = 0; mv < partialdec->getNMastervars(); ++mv )
+   {
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVarForIndex( partialdec->getMastervars()[mv])) );
+   }
+
+   for( int b = 0; b < partialdec->getNBlocks(); ++b )
+   {
+      SCIPinfoMessage(scip, file, "BLOCKVARS %d\n", b+1 );
+      for( int v = 0; v < partialdec->getNVarsForBlock(b); ++v )
+      {
+         SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVarForIndex( partialdec->getVarsForBlock(b)[v])) );
+      }
+   }
+
+   *result = SCIP_SUCCESS;
+
+   return SCIP_OKAY;
 }
 
 
@@ -1184,7 +1256,14 @@ SCIP_DECL_READERWRITE(readerWriteDec)
    assert(scip != NULL);
    assert(reader != NULL);
 
-   SCIPconshdlrDecompWriteDec(scip, file, transformed, result);
+   gcg::PARTIALDECOMP* partialdec = DECgetPartialdecToWrite(scip, transformed);
+
+   if(partialdec == NULL) {
+      SCIPwarningMessage(scip, "There is no writable partialdec!\n");
+      return SCIP_OKAY;
+   }
+
+   writePartialdec(scip, file, partialdec, result);
 
    return SCIP_OKAY;
 }
@@ -1194,8 +1273,7 @@ SCIP_DECL_READERWRITE(readerWriteDec)
  */
 
 /** includes the dec file reader in SCIP */
-SCIP_RETCODE
-SCIPincludeReaderDec(
+SCIP_RETCODE SCIPincludeReaderDec(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

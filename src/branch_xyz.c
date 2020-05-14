@@ -25,9 +25,10 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   branch_xyz.c
- * @brief  xyz branching rule
- * @author Gerald Gamrath
+/**@file    branch_xyz.c
+ * @ingroup BRANCHINGRULES
+ * @brief   xyz branching rule (put your description here)
+ * @author  Gerald Gamrath
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -38,11 +39,13 @@
 #include "type_branchgcg.h"
 
 
-#define BRANCHRULE_NAME            "xyz"
-#define BRANCHRULE_DESC            "branching rule template"
-#define BRANCHRULE_PRIORITY        0
-#define BRANCHRULE_MAXDEPTH        -1
-#define BRANCHRULE_MAXBOUNDDIST    1.0
+#define BRANCHRULE_NAME        "xyz branching rule"           /**< name of branching rule */
+#define BRANCHRULE_DESC        "branching rule template"      /**< short description of branching rule */
+#define BRANCHRULE_PRIORITY        0                          /**< priority of this branching rule */
+#define BRANCHRULE_MAXDEPTH        -1                         /**< maximal depth level of the branching rule */
+#define BRANCHRULE_MAXBOUNDDIST    1.0                        /**< maximal relative distance from current node's
+                                                                   dual bound to primal bound compared to best node's
+                                                                   dual bound for applying branching */
 
 
 /*

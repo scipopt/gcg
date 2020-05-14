@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_tex.cpp
- * @brief  tex file reader for writing seeeds to LaTeX files
+ * @brief  tex file reader for writing partialdecs to LaTeX files
  * @author Hanna Franzen
  */
 
@@ -45,24 +45,24 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <algorithm>    // std::sort
 
 #include "reader_tex.h"
 #include "scip_misc.h"
 #include "pub_gcgvar.h"
 #include "reader_gp.h"
 #include "cons_decomp.h"
+#include "cons_decomp.hpp"
 #include "pub_decomp.h"
 #include "struct_decomp.h"
-
-#include "class_miscvisualization.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
-#include "wrapper_seeed.h"
-
+#include "miscvisualization.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 #include "params_visu.h"
+#include "scoretype.h"
 
 #define READER_NAME             "texreader"
-#define READER_DESC             "LaTeX file writer for seeed visualization"
+#define READER_DESC             "LaTeX file writer for partialdec visualization"
 #define READER_EXTENSION        "tex"
 
 #define DEFAULT_USEGP            FALSE
@@ -86,22 +86,22 @@ SCIP_DECL_READERREAD(readerReadTex)
 /** Problem writing method of reader */
 SCIP_DECL_READERWRITE(readerWriteTex)
 {
-   SEEED_WRAPPER swr;
+   PARTIALDECOMP* pd;
    assert(scip != NULL);
    assert(reader != NULL);
 
 
-   /* get seeed to write */
-   DECgetSeeedToWrite(scip, transformed, &swr);
+   /* get partialdec to write */
+   pd = DECgetPartialdecToWrite(scip, transformed);
 
-   if( swr.seeed == NULL )
+   if( pd == NULL )
    {
-      SCIPerrorMessage("Could not find best Seeed!\n");
+      SCIPerrorMessage("Could not find Partialdecomp to write!\n");
       *result = SCIP_DIDNOTRUN;
    }
    else
    {
-      GCGwriteTexVisualization(scip, file, swr.seeed->getID(), TRUE, FALSE);
+      GCGwriteTexVisualization(scip, file, pd->getID(), TRUE, FALSE);
       *result = SCIP_SUCCESS;
    }
 
@@ -114,10 +114,10 @@ SCIP_DECL_READERWRITE(readerWriteTex)
  * @returns SCIP status */
 static
 SCIP_RETCODE getRgbFromHex(
-   char*    hex,     /**< input hex rgb code of form "#000000" */
-   int*     red,     /**< output decimal r */
-   int*     green,   /**< output decimal g */
-   int*     blue     /**< output decimal b */
+   const char* hex,  /**< input hex rgb code of form "#000000" */
+   int*        red,  /**< output decimal r */
+   int*        green,/**< output decimal g */
+   int*        blue  /**< output decimal b */
    )
 {
    char temp[SCIP_MAXSTRLEN];
@@ -147,7 +147,7 @@ SCIP_RETCODE getRgbFromHex(
  * @returns SCIP status */
 static
 SCIP_RETCODE getTexColorFromHex(
-   char* hex,              /**< hex code for color */
+   const char* hex,        /**< hex code for color */
    const char* colorname,  /**< name of color */
    char* code              /**< output resulting code line */
    )
@@ -221,63 +221,63 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "%% * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.* \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
    SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n");
-   SCIPinfoMessage(scip, file, "%%                                                                               \n");
-   SCIPinfoMessage(scip, file, "%% @author Hanna Franzen                                                         \n");
-   SCIPinfoMessage(scip, file, "                                                                                 \n");
-   SCIPinfoMessage(scip, file, "                                                                                 \n");
-   SCIPinfoMessage(scip, file, "\\documentclass[a4paper,10pt]{article}                                           \n");
-   SCIPinfoMessage(scip, file, "                                                                                 \n");
-   SCIPinfoMessage(scip, file, "%% packages                                                                      \n");
-   SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     \n");
-   SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                \n");
-   SCIPinfoMessage(scip, file, "\\usepackage{pdfpages}                                                           \n");
-   SCIPinfoMessage(scip, file, "\\usepackage{fancybox}                                                           \n");
+   SCIPinfoMessage(scip, file, "%%\n");
+   SCIPinfoMessage(scip, file, "%% @author Hanna Franzen\n");
+   SCIPinfoMessage(scip, file, "\n");
+   SCIPinfoMessage(scip, file, "\n");
+   SCIPinfoMessage(scip, file, "\\documentclass[a4paper,10pt]{article}\n");
+   SCIPinfoMessage(scip, file, "\n");
+   SCIPinfoMessage(scip, file, "%% packages\n");
+   SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}\n");
+   SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}\n");
+   SCIPinfoMessage(scip, file, "\\usepackage{pdfpages}\n");
+   SCIPinfoMessage(scip, file, "\\usepackage{fancybox}\n");
    if(!GCGgetUseGp(scip))
    {
-      SCIPinfoMessage(scip, file, "\\usepackage{pgfplots}                                                          \n");
-      SCIPinfoMessage(scip, file, "\\pgfplotsset{compat=1.12}                                                      \n");
+      SCIPinfoMessage(scip, file, "\\usepackage{pgfplots}\n");
+      SCIPinfoMessage(scip, file, "\\pgfplotsset{compat=1.12}\n");
 //      SCIPinfoMessage(scip, file, "\\pgfplotsset{compat=newest}                                                    \n");
 //      SCIPinfoMessage(scip, file, "\\pgfplotsset{legend image with text/.style={\nlegend image code/.code={%       \n");
 //      SCIPinfoMessage(scip, file, "\\node[anchor=center] at (0.3cm,0cm) {#1};\n}},}\n"                                );
 //      SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
-      SCIPinfoMessage(scip, file, "\\usetikzlibrary{positioning}                                                   \n");
+      SCIPinfoMessage(scip, file, "\\usetikzlibrary{positioning}\n");
       if(externalizepics)
       {
-         SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                     \n");
-         SCIPinfoMessage(scip, file, " \\tikzexternalize                                                              \n");
+         SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}\n");
+         SCIPinfoMessage(scip, file, " \\tikzexternalize\n");
       }
    }
-   SCIPinfoMessage(scip, file, "                                                                                 \n");
+   SCIPinfoMessage(scip, file, "\n");
 
   /* introduce colors of current color scheme */
    getTexColorFromHex(SCIPvisuGetColorMasterconss(scip), "colormasterconss", temp);
-   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+   SCIPinfoMessage(scip, file, "%s\n", temp);
 
    getTexColorFromHex(SCIPvisuGetColorMastervars(scip), "colormastervars", temp);
-   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+   SCIPinfoMessage(scip, file, "%s\n", temp);
 
    getTexColorFromHex(SCIPvisuGetColorLinking(scip), "colorlinking", temp);
-   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+   SCIPinfoMessage(scip, file, "%s\n", temp);
 
    getTexColorFromHex(SCIPvisuGetColorStairlinking(scip), "colorstairlinking", temp);
-   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+   SCIPinfoMessage(scip, file, "%s\n", temp);
 
    getTexColorFromHex(SCIPvisuGetColorBlock(scip), "colorblock", temp);
-   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+   SCIPinfoMessage(scip, file, "%s\n", temp);
 
    getTexColorFromHex(SCIPvisuGetColorOpen(scip), "coloropen", temp);
-   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+   SCIPinfoMessage(scip, file, "%s\n", temp);
 
    getTexColorFromHex(SCIPvisuGetColorNonzero(scip), "colornonzero", temp);
-   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+   SCIPinfoMessage(scip, file, "%s\n", temp);
 
    getTexColorFromHex(SCIPvisuGetColorLine(scip), "colorline", temp);
-   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+   SCIPinfoMessage(scip, file, "%s\n", temp);
 
    /* start writing the document */
-   SCIPinfoMessage(scip, file, "                                                                                 \n");
-   SCIPinfoMessage(scip, file, "\\begin{document}                                                                \n");
-   SCIPinfoMessage(scip, file, "                                                                                 \n");
+   SCIPinfoMessage(scip, file, "\n");
+   SCIPinfoMessage(scip, file, "\\begin{document}\n");
+   SCIPinfoMessage(scip, file, "\n");
 
    return SCIP_OKAY;
 }
@@ -290,53 +290,59 @@ static
 SCIP_RETCODE writeTexTitlepage(
    SCIP*                scip,               /**< SCIP data structure */
    FILE*                file,               /**< File pointer to write to */
-   int*                 npresentedseeeds    /**< Number of decompositions to be shown in the file or NULL if unknown */
+   int*                 npresentedpartialdecs    /**< Number of decompositions to be shown in the file or NULL if unknown */
    )
 {
    char* pname;
    char ppath[SCIP_MAXSTRLEN];
    int ndecomps;
 
-   ndecomps = SCIPconshdlrDecompGetNFinishedDecomps(scip);
+   ndecomps = GCGconshdlrDecompGetNDecomps(scip);
    strcpy(ppath, SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
 
-   SCIPinfoMessage(scip, file, "\\begin{titlepage}                                                            \n");
-   SCIPinfoMessage(scip, file, "  \\centering                                                                 \n");
-   SCIPinfoMessage(scip, file, "  \\thispagestyle{empty}                                                      \n");
-   SCIPinfoMessage(scip, file, "  {\\Huge Report: %s} \\\\ \\today                                            \n",
+   SCIPinfoMessage(scip, file, "\\begin{titlepage}\n");
+   SCIPinfoMessage(scip, file, "  \\centering\n");
+   SCIPinfoMessage(scip, file, "  \\thispagestyle{empty}\n");
+   SCIPinfoMessage(scip, file, "  {\\Huge Report: %s} \\\\ \\today \n",
       pname);
-   SCIPinfoMessage(scip, file, "                                                                              \n");
-   SCIPinfoMessage(scip, file, "\\vspace{2cm}                                                                 \n");
-   SCIPinfoMessage(scip, file, "\\begin{tabular}{{lp{10cm}}}                                                  \n");
-   SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & \\begin{minipage}{10cm}                                \n");
-   SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}                   \n",
+   SCIPinfoMessage(scip, file, "\n");
+   SCIPinfoMessage(scip, file, "\\vspace{2cm}\n");
+   SCIPinfoMessage(scip, file, "\\begin{tabular}{{lp{10cm}}}\n");
+   SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & \\begin{minipage}{10cm}\n");
+   SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}\n",
       pname);
-   SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\                                   \n");
-   SCIPinfoMessage(scip, file, "  Number of variables in original problem: & %i  \\\\                         \n",
+   SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\ \n");
+   SCIPinfoMessage(scip, file, "  Number of variables in original problem: & %i  \\\\ \n",
       SCIPgetNOrigVars(scip));
-   SCIPinfoMessage(scip, file, "  \\vspace{0.5cm}                                                             \n");
-   SCIPinfoMessage(scip, file, "  Number of constraints in original problem: & %i  \\\\                       \n",
+   SCIPinfoMessage(scip, file, "  \\vspace{0.5cm}\n");
+   SCIPinfoMessage(scip, file, "  Number of constraints in original problem: & %i  \\\\ \n",
       SCIPgetNOrigConss(scip));
-   SCIPinfoMessage(scip, file, "  Number of found finished decompositions: & %i  \\\\                         \n",
-      SCIPconshdlrDecompGetNFinishedDecomps(scip));
-   SCIPinfoMessage(scip, file, "  Number of found incomplete decompositions: & %i  \\\\                       \n",
-      SCIPconshdlrDecompGetNSeeeds(scip) - SCIPconshdlrDecompGetNFinishedDecomps(scip));
-   if(npresentedseeeds != NULL){
-      if( ndecomps > *npresentedseeeds )
+   SCIPinfoMessage(scip, file, "  Number of found finished decompositions: & %i  \\\\ \n",
+      GCGconshdlrDecompGetNDecomps(scip));
+   SCIPinfoMessage(scip, file, "  Number of found incomplete decompositions: & %i  \\\\ \n",
+      GCGconshdlrDecompGetNPartialdecs(scip) - GCGconshdlrDecompGetNDecomps(scip));
+   if(npresentedpartialdecs != NULL){
+      if( ndecomps > *npresentedpartialdecs )
       {
          SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\ \n",
-            *npresentedseeeds);
+            *npresentedpartialdecs);
       }
       else
       {
          SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\ \n", ndecomps);
       }
    }
-   SCIPinfoMessage(scip, file, "\\end{tabular}                                                                \n");
-   SCIPinfoMessage(scip, file, "                                                                              \n");
-   SCIPinfoMessage(scip, file, "\\end{titlepage}                                                              \n");
-   SCIPinfoMessage(scip, file, "\\newpage                                                                     \n");
+   
+   SCIPinfoMessage(scip, file, "Score info: & \\begin{minipage}{5cm}\n");
+   SCIPinfoMessage(scip, file, "                  %s\n",
+                   GCGscoretypeGetDescription(GCGconshdlrDecompGetScoretype(scip)));
+   SCIPinfoMessage(scip, file, "              \\end{minipage} \\\\ \n");
+   
+   SCIPinfoMessage(scip, file, "\\end{tabular}\n");
+   SCIPinfoMessage(scip, file, "\n");
+   SCIPinfoMessage(scip, file, "\\end{titlepage}\n");
+   SCIPinfoMessage(scip, file, "\\newpage\n");
 
    return SCIP_OKAY;
 }
@@ -351,10 +357,10 @@ SCIP_RETCODE writeTexTableOfContents(
    FILE*                file                /**< File pointer to write to */
    )
 {
-   SCIPinfoMessage(scip, file, "\\thispagestyle{empty}                                                        \n");
-   SCIPinfoMessage(scip, file, "\\tableofcontents                                                             \n");
-   SCIPinfoMessage(scip, file, "\\newpage                                                                     \n");
-   SCIPinfoMessage(scip, file, "                                                                              \n");
+   SCIPinfoMessage(scip, file, "\\thispagestyle{empty}\n");
+   SCIPinfoMessage(scip, file, "\\tableofcontents\n");
+   SCIPinfoMessage(scip, file, "\\newpage\n");
+   SCIPinfoMessage(scip, file, "\n");
 
    return SCIP_OKAY;
 }
@@ -391,38 +397,38 @@ static
 SCIP_RETCODE writeTikzNonzeros(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< file to write to  */
-   Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
+   PARTIALDECOMP* partialdec,           /**< PARTIALDECOMP for which the nonzeros should be visualized */
    float radius,           /**< radius of the dots */
    int xmax,               /**< maximum x axis value */
    int ymax                /**< maximum y axis value */
    )
 {
-   std::vector<int> orderToRows(seeed->getNConss(), -1);
-   std::vector<int> rowToOrder(seeed->getNConss(), -1);
-   std::vector<int> orderToCols(seeed->getNVars(), -1);
-   std::vector<int> colsToOrder(seeed->getNVars(), -1);
+   std::vector<int> orderToRows(partialdec->getNConss(), -1);
+   std::vector<int> rowToOrder(partialdec->getNConss(), -1);
+   std::vector<int> orderToCols(partialdec->getNVars(), -1);
+   std::vector<int> colsToOrder(partialdec->getNVars(), -1);
    int counterrows = 0;
    int countercols = 0;
-   Seeedpool* seeedpool;
+   DETPROBDATA* detprobdata;
 
-   seeedpool = seeed->getSeeedpool();
+   detprobdata = partialdec->getDetprobdata();
 
    /* order of constraints */
    /* master constraints */
-   for( int i = 0; i < seeed->getNMasterconss() ; ++i )
+   for( int i = 0; i < partialdec->getNMasterconss() ; ++i )
    {
-      int rowidx = seeed->getMasterconss()[i];
+      int rowidx = partialdec->getMasterconss()[i];
       orderToRows[counterrows] = rowidx;
       rowToOrder[rowidx] = counterrows;
       ++counterrows;
    }
 
    /* block constraints */
-   for( int b = 0; b < seeed->getNBlocks(); ++b )
+   for( int b = 0; b < partialdec->getNBlocks(); ++b )
    {
-      for(int i = 0; i < seeed->getNConssForBlock(b); ++i )
+      for(int i = 0; i < partialdec->getNConssForBlock(b); ++i )
       {
-         int rowidx = seeed->getConssForBlock(b)[i];
+         int rowidx = partialdec->getConssForBlock(b)[i];
          orderToRows[counterrows] = rowidx;
          rowToOrder[rowidx] = counterrows;
          ++counterrows;
@@ -430,9 +436,9 @@ SCIP_RETCODE writeTikzNonzeros(
    }
 
    /* open constraints */
-   for( int i = 0; i < seeed->getNOpenconss(); ++i )
+   for( int i = 0; i < partialdec->getNOpenconss(); ++i )
    {
-      int rowidx = seeed->getOpenconss()[i];
+      int rowidx = partialdec->getOpenconss()[i];
       orderToRows[counterrows] = rowidx;
       rowToOrder[rowidx] = counterrows;
       ++counterrows;
@@ -441,36 +447,36 @@ SCIP_RETCODE writeTikzNonzeros(
    /* order of variables */
 
    /* linking variables */
-   for( int i = 0; i < seeed->getNLinkingvars() ; ++i )
+   for( int i = 0; i < partialdec->getNLinkingvars() ; ++i )
    {
-      int colidx = seeed->getLinkingvars()[i];
+      int colidx = partialdec->getLinkingvars()[i];
       orderToCols[countercols] = colidx;
       colsToOrder[colidx] = countercols;
       ++countercols;
    }
 
    /* master variables */
-   for( int i = 0; i < seeed->getNMastervars() ; ++i )
+   for( int i = 0; i < partialdec->getNMastervars() ; ++i )
    {
-      int colidx = seeed->getMastervars()[i];
+      int colidx = partialdec->getMastervars()[i];
       orderToCols[countercols] = colidx;
       colsToOrder[colidx] = countercols;
       ++countercols;
    }
 
    /* block variables */
-   for( int b = 0; b < seeed->getNBlocks(); ++b )
+   for( int b = 0; b < partialdec->getNBlocks(); ++b )
    {
-      for(int i = 0; i < seeed->getNVarsForBlock(b); ++i )
+      for(int i = 0; i < partialdec->getNVarsForBlock(b); ++i )
       {
-         int colidx = seeed->getVarsForBlock(b)[i];
+         int colidx = partialdec->getVarsForBlock(b)[i];
          orderToCols[countercols] = colidx;
          colsToOrder[colidx] = countercols;
          ++countercols;
       }
-      for(int i = 0; i < seeed->getNStairlinkingvars(b); ++i )
+      for(int i = 0; i < partialdec->getNStairlinkingvars(b); ++i )
       {
-         int colidx = seeed->getStairlinkingvars(b)[i];
+         int colidx = partialdec->getStairlinkingvars(b)[i];
          orderToCols[countercols] = colidx;
          colsToOrder[colidx] = countercols;
          ++countercols;
@@ -478,22 +484,22 @@ SCIP_RETCODE writeTikzNonzeros(
    }
 
    /* open vars */
-   for( int i = 0; i < seeed->getNOpenvars() ; ++i )
+   for( int i = 0; i < partialdec->getNOpenvars() ; ++i )
    {
-      int colidx = seeed->getOpenvars()[i];
+      int colidx = partialdec->getOpenvars()[i];
       orderToCols[countercols] = colidx;
       colsToOrder[colidx] = countercols;
       ++countercols;
    }
 
    /* write scatter plot */
-   for( int row = 0; row < seeed->getNConss(); ++row )
+   for( int row = 0; row < partialdec->getNConss(); ++row )
    {
-      for ( int col = 0; col < seeed->getNVars(); ++col )
+      for ( int col = 0; col < partialdec->getNVars(); ++col )
       {
          assert( orderToRows[row] != -1 );
          assert( orderToCols[col] != -1 );
-         if( seeedpool->getVal( orderToRows[row], orderToCols[col] ) != 0 )
+         if( detprobdata->getVal( orderToRows[row], orderToCols[col] ) != 0 )
          {
             SCIPinfoMessage(scip, file,
                "    \\draw [fill] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) circle [radius=%f*0.75];\n",
@@ -506,15 +512,15 @@ SCIP_RETCODE writeTikzNonzeros(
 }
 
 
-/** Writes LaTeX code that contains a figure with a tikz picture of the given seeed
+/** Writes LaTeX code that contains a figure with a tikz picture of the given partialdec
  *
  * @returns SCIP status */
 static
-SCIP_RETCODE writeTexSeeed(
-   SCIP* scip,             /**< SCIP data structure */
-   FILE* file,             /**< file to write to */
-   Seeed* seeed,           /**< Seeed to be visualized */
-   SCIP_Bool nofigure      /**< if true there will be no figure environment around tikz code*/
+SCIP_RETCODE writeTexPartialdec(
+   SCIP* scip,                /**< SCIP data structure */
+   FILE* file,                /**< file to write to */
+   PARTIALDECOMP* partialdec, /**< PARTIALDECOMP to be visualized */
+   SCIP_Bool nofigure         /**< if true there will be no figure environment around tikz code*/
    )
 {
    int rowboxcounter = 0;
@@ -522,110 +528,109 @@ SCIP_RETCODE writeTexSeeed(
    int nvars;
    int nconss;
 
-   nvars = seeed->getNVars();
-   nconss = seeed->getNConss();
+   nvars = partialdec->getNVars();
+   nconss = partialdec->getNConss();
 
    if(!nofigure)
    {
-      SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
-      SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
+      SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]\n");
+      SCIPinfoMessage(scip, file, "  \\begin{center}\n");
    }
-   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}[yscale=-1]                                     \n");
+   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}[yscale=-1]\n");
    /* --- draw boxes ---*/
 
    /* linking vars */
-   if(seeed->getNLinkingvars() != 0)
+   if(partialdec->getNLinkingvars() != 0)
    {
-      writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
+      writeTikzBox(scip, file, nvars, nconss, 0, 0, partialdec->getNLinkingvars(), partialdec->getNConss(),
          (const char*) "colorlinking");
-      colboxcounter += seeed->getNLinkingvars();
+      colboxcounter += partialdec->getNLinkingvars();
    }
 
    /* masterconss */
-   if(seeed->getNMasterconss() != 0)
+   if(partialdec->getNMasterconss() != 0)
    {
-      writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
+      writeTikzBox(scip, file, nvars, nconss, 0, 0, partialdec->getNVars(), partialdec->getNMasterconss(),
          (const char*) "colormasterconss");
-      rowboxcounter += seeed->getNMasterconss();
+      rowboxcounter += partialdec->getNMasterconss();
    }
 
    /* mastervars */
-   if(seeed->getNMastervars() != 0)
+   if(partialdec->getNMastervars() != 0)
    {
-      writeTikzBox(scip, file, nvars, nconss, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
-         seeed->getNMasterconss(), (const char*) "colormastervars");
-      colboxcounter += seeed->getNMastervars();
+      writeTikzBox(scip, file, nvars, nconss, colboxcounter, 0, partialdec->getNMastervars()+colboxcounter,
+         partialdec->getNMasterconss(), (const char*) "colormastervars");
+      colboxcounter += partialdec->getNMastervars();
    }
 
    /* blocks (blocks are not empty) */
-   for( int b = 0; b < seeed->getNBlocks() ; ++b )
+   for( int b = 0; b < partialdec->getNBlocks() ; ++b )
    {
       writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter,
-         colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b),
+         colboxcounter + partialdec->getNVarsForBlock(b), rowboxcounter + partialdec->getNConssForBlock(b),
          (const char*) "colorblock");
-      colboxcounter += seeed->getNVarsForBlock(b);
+      colboxcounter += partialdec->getNVarsForBlock(b);
 
-      if( seeed->getNStairlinkingvars(b) != 0 )
+      if( partialdec->getNStairlinkingvars(b) != 0 )
       {
          writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter,
-            colboxcounter + seeed->getNStairlinkingvars(b),
-            rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1),
+            colboxcounter + partialdec->getNStairlinkingvars(b),
+            rowboxcounter + partialdec->getNConssForBlock(b) + partialdec->getNConssForBlock(b+1),
             (const char*) "colorstairlinking");
       }
-      colboxcounter += seeed->getNStairlinkingvars(b);
-      rowboxcounter += seeed->getNConssForBlock(b);
+      colboxcounter += partialdec->getNStairlinkingvars(b);
+      rowboxcounter += partialdec->getNConssForBlock(b);
    }
 
    /* open */
-   if(seeed->getNOpenvars() != 0)
+   if(partialdec->getNOpenvars() != 0)
    {
-      writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
-         rowboxcounter+seeed->getNOpenconss(), (const char*) "coloropen" );
-      colboxcounter += seeed->getNOpenvars();
-      rowboxcounter += seeed->getNOpenconss();
+      writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter, colboxcounter + partialdec->getNOpenvars(),
+         rowboxcounter+partialdec->getNOpenconss(), (const char*) "coloropen" );
+      colboxcounter += partialdec->getNOpenvars();
+      rowboxcounter += partialdec->getNOpenconss();
    }
 
    /* --- draw nonzeros --- */
    if(SCIPvisuGetDraftmode(scip) == FALSE)
    {
-      writeTikzNonzeros(scip, file, seeed, SCIPvisuGetNonzeroRadius(scip, seeed->getNVars(), seeed->getNConss(), 1),
+      writeTikzNonzeros(scip, file, partialdec, SCIPvisuGetNonzeroRadius(scip, partialdec->getNVars(), partialdec->getNConss(), 1),
          nvars, nconss);
    }
 
-   SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                               \n");
+   SCIPinfoMessage(scip, file, "  \\end{tikzpicture}\n");
    if(!nofigure)
    {
-      SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
-      SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
+      SCIPinfoMessage(scip, file, "  \\end{center}\n");
+      SCIPinfoMessage(scip, file, "\\end {figure}\n");
    }
 
    return SCIP_OKAY;
 }
 
 
-/** Writes LaTeX code for some statistics about the seeed:
+/** Writes LaTeX code for some statistics about the partialdec:
  * - amount of blocks
  * - amount of master, linking, stairlinking variables
  * - amount of master constraints
- * - max white score
+ * - score
  *
  * @returns SCIP status */
 static
-SCIP_RETCODE writeTexSeeedStatistics(
+SCIP_RETCODE writeTexPartialdecStatistics(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< file to write to */
-   Seeed* seeed            /**< statistics are about this seeed */
+   PARTIALDECOMP* partialdec            /**< statistics are about this partialdec */
    )
 {
-   DEC_DETECTOR** detectorchain;
    char fulldetectorstring[SCIP_MAXSTRLEN];
    int sizedetectorchain;
    int i;
 
    /* get detector chain full-text string*/
-   detectorchain = seeed->getDetectorchain();
-   sizedetectorchain = seeed->getNDetectors();
-   if( detectorchain[0] != NULL)
+   std::vector<DEC_DETECTOR*>& detectorchain = partialdec->getDetectorchain();
+   sizedetectorchain = partialdec->getNDetectors();
+   if(sizedetectorchain != 0 && detectorchain[0] != NULL)
       sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
    else
       sprintf(fulldetectorstring, "%s", "user");
@@ -634,28 +639,28 @@ SCIP_RETCODE writeTexSeeedStatistics(
       sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );
    }
 
-   SCIPinfoMessage(scip, file, "                                                                \n");
-   SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                 \n");
-   SCIPinfoMessage(scip, file, "\\begin{tabular}{lp{10cm}}                                      \n");
+   SCIPinfoMessage(scip, file, "\n");
+   SCIPinfoMessage(scip, file, "\\vspace{0.3cm}\n");
+   SCIPinfoMessage(scip, file, "\\begin{tabular}{lp{10cm}}\n");
    SCIPinfoMessage(scip, file,
       "  Found by detector(s): & \\begin{minipage}{10cm}\\begin{verbatim}%s\\end{verbatim}\\end{minipage} \\\\ \n",
       fulldetectorstring);
-   SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\                                                   \n",
-      seeed->getNBlocks());
-   SCIPinfoMessage(scip, file, "  Number of master variables: & %i \\\\                                         \n",
-      seeed->getNMastervars());
-   SCIPinfoMessage(scip, file, "  Number of master constraints: & %i \\\\                                       \n",
-      seeed->getNMasterconss());
-   SCIPinfoMessage(scip, file, "  Number of linking variables: & %i \\\\                                        \n",
-      seeed->getNLinkingvars());
-   SCIPinfoMessage(scip, file, "  Number of stairlinking variables: & %i \\\\                                   \n",
-      seeed->getNTotalStairlinkingvars());
-   SCIPinfoMessage(scip, file, "  Max white score: & %f \\\\                                                    \n",
-      seeed->getMaxWhiteScore());
-   SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  \n");
+   SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\ \n",
+      partialdec->getNBlocks());
+   SCIPinfoMessage(scip, file, "  Number of master variables: & %i \\\\ \n",
+      partialdec->getNMastervars());
+   SCIPinfoMessage(scip, file, "  Number of master constraints: & %i \\\\ \n",
+      partialdec->getNMasterconss());
+   SCIPinfoMessage(scip, file, "  Number of linking variables: & %i \\\\ \n",
+      partialdec->getNLinkingvars());
+   SCIPinfoMessage(scip, file, "  Number of stairlinking variables: & %i \\\\ \n",
+      partialdec->getNTotalStairlinkingvars());
+   SCIPinfoMessage(scip, file, "  Score: & %f \\\\ \n",
+      partialdec->getScore(GCGconshdlrDecompGetScoretype(scip)));
+   SCIPinfoMessage(scip, file, "\\end{tabular}\n");
 
-   SCIPinfoMessage(scip, file, "\\clearpage                                                                     \n");
-   SCIPinfoMessage(scip, file, "                                                                                \n");
+   SCIPinfoMessage(scip, file, "\\clearpage\n");
+   SCIPinfoMessage(scip, file, "\n");
 
    return SCIP_OKAY;
 }
@@ -675,503 +680,140 @@ SCIP_RETCODE writeTexEnding(
    return SCIP_OKAY;
 }
 
-/** Help function for GCGwriteTexFamilyTree:
- *  writes edges between nodes that are labeled corresponding to involved detectors
- *
- *  @returns SCIP status */
-static
-SCIP_RETCODE writeSeeedDetectorChainInfoLatex(
-   SCIP* scip,       /**< SCIP data structure */
-   FILE* file,       /**< file to write to */
-   SeeedPtr seeed,   /**< seeed to write about */
-   int currheight,   /**< current tree height */
-   int visucounter   /**< position iterator for labeling nodes */
-   )
-{
-   char relposition[SCIP_MAXSTRLEN];
-   int position = visucounter % 3;
-   if( position == 0 )
-      strcpy(relposition, "above");
-   else if ( position == 1)
-      strcpy(relposition, " ");
-   else if ( position == 2)
-      strcpy(relposition, "below");
-   else
-      strcpy(relposition, "below left");
 
-   if( currheight != 1)
-      strcpy(relposition, " ");
-
-   if( currheight > seeed->getNDetectorchainInfo() )
-   {
-      SCIPinfoMessage(scip, file, "edge from parent node [%s] {no info%d-%d } ", relposition, seeed->getID(),
-         currheight - 1);
-   }
-   else
-   {
-      std::string oldinfo = seeed->getDetectorchainInfo( currheight - 1 );
-      /* take latexified detectorchaininfo */
-      size_t index = 0;
-      while(true)
-      {
-         /* Locate the substring to replace. */
-         index = oldinfo.find("_", index);
-         if(index == std::string::npos)
-            break;
-         if( index > 0 && oldinfo.at(index-1) == '\\' )
-         {
-            ++index;
-            continue;
-         }
-
-         /* Make the replacement. */
-         oldinfo.replace(index, 1, "\\_");
-
-         /* Advance index forward so the next iteration doesn't pick it up as well. */
-         index += 2;
-      }
-
-      SCIPinfoMessage(scip, file, "edge from parent node [%s] {%s} ", relposition, oldinfo.c_str());
-   }
-
-   return SCIP_OKAY;
-}
-
-
-/** Sets child to finished and checks whether to finish afterwards
- *
- * @returns whether child is the last (potentially) unfinished child
- */
-static
-SCIP_Bool finishNextChild(
-   std::vector<int>& children,               /**< vector of child ids */
-   std::vector<SCIP_Bool>& childrenfinished, /**< vector of finished stati of all children (in same order as children vector) */
-   int child                                 /**< next child */
-   )
-{
-   for( size_t s = 0; s < childrenfinished.size(); ++s )
-   {
-      if( !childrenfinished[s] )
-      {
-         assert(children[s] == child);
-         childrenfinished[s] = TRUE;
-         return s == childrenfinished.size() - 1;
-      }
-   }
-   return FALSE;
-}
-
-/** Checks whether an unfinished child exists
- *
- * @returns true if an unfinished child exists, otherwise false */
-static
-SCIP_Bool unfinishedChildExists(
-   std::vector<SCIP_Bool> const& childrenfinished /**< vector of finished stati of all children */
-   )
-{
-   for( size_t s = 0; s < childrenfinished.size(); ++s )
-   {
-      if( !childrenfinished[s] )
-         return true;
-   }
-   return false;
-}
-
-
-/** Looks for the first unfinished child in the childrenfinished vector
- *
- * @returns child id of first unfinished child */
-static
-int getFirstUnfinishedChild(
-   std::vector<SCIP_Bool> const& childrenfinished,   /**< vector of finished stati of all children */
-   std::vector<int> const& children                  /**< vector of child ids (in same order as childrenfinished */
-   )
-{
-   for( size_t s = 0; s < childrenfinished.size(); ++s )
-   {
-      if( !childrenfinished[s] )
-         return children[s];
-   }
-   return -1;
-}
-
-
-/* Writes a report for the given seeeds */
+/* Writes a report for the given partialdecs */
 SCIP_RETCODE GCGwriteTexReport(
    SCIP* scip,             /* SCIP data structure */
    FILE* file,             /* file to write to */
-   int* seeedids,          /* ids of seeeds to visualize */
-   int* nseeeds,           /* number of seeeds to visualize */
+   int* partialdecids,     /* ids of partialdecs to visualize */
+   int* npartialdecs,      /* number of partialdecs to visualize */
    SCIP_Bool titlepage,    /* true if a title page should be included in the document */
    SCIP_Bool toc,          /* true if an interactive table of contents should be included */
-   SCIP_Bool statistics,   /* true if statistics for each seeed should be included */
-   SCIP_Bool usegp         /* true if the gp reader should be used to visualize the individual seeeds */
+   SCIP_Bool statistics,   /* true if statistics for each partialdec should be included */
+   SCIP_Bool usegp         /* true if the gp reader should be used to visualize the individual partialdecs */
    )
 {
-   MiscVisualization* misc = new MiscVisualization();
-   SEEED_WRAPPER seeedwr;
-   Seeed* seeed;
-   char* gppath;
-   char* filepath;
+   PARTIALDECOMP* partialdec;
+   char gppath[PATH_MAX];
+   char filepath[PATH_MAX];
    char* path;
    char gpname[SCIP_MAXSTRLEN];
    char pdfname[SCIP_MAXSTRLEN];
 
-   if(*nseeeds > GCGreportGetMaxNDecomps(scip))
-      *nseeeds = GCGreportGetMaxNDecomps(scip);
-
    /* write tex code into file */
    writeTexHeader(scip, file, TRUE);
    if(titlepage)
-      writeTexTitlepage(scip, file, nseeeds);
+      writeTexTitlepage(scip, file, npartialdecs);
    if(toc)
       writeTexTableOfContents(scip, file);
-   for(int i = 0; i < *nseeeds; i++)
+
+   /* get partialdec pointers and sort them according to current score */
+   std::vector<PARTIALDECOMP*> partialdecs;
+   partialdecs.reserve(*npartialdecs);
+   for(int i = 0; i < *npartialdecs; i++)
    {
-      /* get and write each seeed */
-      int tempindex = seeedids[i];
-      GCGgetSeeedFromID(scip, &tempindex, &seeedwr);
-      seeed = seeedwr.seeed;
+      partialdecs.push_back(GCGconshdlrDecompGetPartialdecFromID(scip, partialdecids[i]));
+   }
+   SCORETYPE sctype = GCGconshdlrDecompGetScoretype(scip);
+   std::sort(partialdecs.begin(), partialdecs.end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(sctype) > b->getScore(sctype)); });
+
+   /* if there are more decomps than the maximum, reset npartialdecs */
+   if(*npartialdecs > GCGreportGetMaxNDecomps(scip))
+      *npartialdecs = GCGreportGetMaxNDecomps(scip);
+
+   for(int i = 0; i < *npartialdecs; i++)
+   {
+      /* write each partialdec */
+      partialdec = partialdecs.at(i);
 
       if(toc)
       {
          char decompname[SCIP_MAXSTRLEN];
-         SCIPsnprintf( decompname, SCIP_MAXSTRLEN, "%s-%d", seeed->getDetectorChainString(), seeed->getID() );
+         char buffer[SCIP_MAXSTRLEN];
+         partialdec->buildDecChainString(buffer);
+         SCIPsnprintf( decompname, SCIP_MAXSTRLEN, "%s-%d-%d", buffer, partialdec->getID(), partialdec->getNBlocks() );
 
-         SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                   \n", decompname);
-         if(toc)
-            SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
-         SCIPinfoMessage(scip, file, "                                                                \n");
+         SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}\n", decompname);
+         SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}\n", decompname);
+         SCIPinfoMessage(scip, file, "\n");
       }
 
       if(!usegp)
       {
-         writeTexSeeed(scip, file, seeed, FALSE);
+         writeTexPartialdec(scip, file, partialdec, FALSE);
       }
       else
       {
          /* in case a gp file should be generated include it in the tex code */
-         misc->GCGgetVisualizationFilename(scip, seeed, "gp", gpname);
-         misc->GCGgetVisualizationFilename(scip, seeed, "pdf", pdfname);
+         GCGgetVisualizationFilename(scip, partialdec, "gp", gpname);
+         GCGgetVisualizationFilename(scip, partialdec, "pdf", pdfname);
          strcat(pdfname, ".pdf");
 
-         filepath = misc->GCGgetFilePath(scip, file);
+         GCGgetFilePath(file, filepath);
          SCIPsplitFilename(filepath, &path, NULL, NULL, NULL);
 
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &gppath, SCIP_MAXSTRLEN) );
+         SCIPsnprintf(gppath, PATH_MAX, "%s/%s.gp", path, gpname);
 
-         strcpy(gppath, path);
-         strcat(gppath, "/");
-         strcat(gppath, gpname);
-         strcat(gppath, ".gp");
+         GCGwriteGpVisualization(scip, gppath, pdfname, partialdecids[i]);
 
-         GCGwriteGpVisualization( scip, gppath, pdfname, seeedids[i] );
-
-         SCIPfreeBlockMemoryArray(scip, &gppath, SCIP_MAXSTRLEN);
-
-         SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
-         SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
-         SCIPinfoMessage(scip, file, "    \\includegraphics{%s}                                          \n", pdfname);
-         SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
-         SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
+         SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]\n");
+         SCIPinfoMessage(scip, file, "  \\begin{center}\n");
+         SCIPinfoMessage(scip, file, "    \\includegraphics{%s}\n", pdfname);
+         SCIPinfoMessage(scip, file, "  \\end{center}\n");
+         SCIPinfoMessage(scip, file, "\\end {figure}\n");
       }
       if(statistics)
-         writeTexSeeedStatistics(scip, file, seeed);
+         writeTexPartialdecStatistics(scip, file, partialdec);
    }
    writeTexEnding(scip, file);
 
    GCGtexWriteMakefileAndReadme(scip, file, usegp, FALSE);
 
-   delete misc;
-
    return SCIP_OKAY;
 }
 
 
-/* Writes a visualization of the family tree of the current seeedpool */
-SCIP_RETCODE GCGwriteTexFamilyTree(
-   SCIP* scip,                /* SCIP data structure */
-   FILE* file,                /* file to write to */
-   const char* workfolder,    /* directory in which should be worked, includes generation of intermediate files */
-   SEEED_WRAPPER** seeedswr,  /* seeed wrapper for the seeeds the family tree should be constructed for */
-   int* nseeeds               /* number of seeeds the family tree should be constructed for */
-   )
-{
-   MiscVisualization* miscvisu = new MiscVisualization();
-   SCIP_Real firstsibldist = -1.;
-   int curr = -1;
-   int currheight = 0;
-   int helpvisucounter;    /* help counter for family tree visualization to iterate the heights */
-
-   /* collection of treeseeds */
-   std::vector<SeeedPtr> treeseeeds(0);
-   std::vector<int> treeseeedids(0);
-   SEEED_WRAPPER** allrelevantseeedswr;
-   int nallrelevantseeeds = 0;
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &allrelevantseeedswr, SCIPconshdlrDecompGetNSeeeds(scip)) );
-   SCIPconshdlrDecompGetAllRelevantSeeeds(scip, allrelevantseeedswr, &nallrelevantseeeds);
-
-   std::vector<SCIP_Bool> isseeedintree(nallrelevantseeeds, FALSE);
-
-   int root = -1;
-   int root2 = -1;
-   std::vector<int> parents(nallrelevantseeeds, -1);
-   std::vector< std::vector<int> > children (nallrelevantseeeds, std::vector<int>(0));
-   std::vector< std::vector<SCIP_Bool> > childrenfinished(nallrelevantseeeds, std::vector<SCIP_Bool>(0));
-   std::vector<SCIP_Bool> visited(nallrelevantseeeds, FALSE);
-
-   helpvisucounter = 0;
-
-   /* check allrelevant seeeds */
-   for( int s = 0; s < nallrelevantseeeds; ++s )
-   {
-      assert(allrelevantseeedswr[s]->seeed == NULL || (int) s == allrelevantseeedswr[s]->seeed->getID() );
-   }
-
-   /* 1) find relevant seeeds in tree and build tree */
-   for( int s = 0; s < *nseeeds; ++s )
-   {
-      int currid;
-      if ( seeedswr[s]->seeed == NULL )
-         continue;
-      currid = seeedswr[s]->seeed->getID();
-      if( !isseeedintree[seeedswr[s]->seeed->getID()] )
-      {
-         isseeedintree[seeedswr[s]->seeed->getID()] = TRUE;
-         treeseeeds.push_back(seeedswr[s]->seeed);
-         treeseeedids.push_back(seeedswr[s]->seeed->getID());
-      }
-      else
-         break;
-
-      for( int i = 0; i < seeedswr[s]->seeed->getNAncestors(); ++i )
-      {
-         int ancestorid;
-         ancestorid = seeedswr[s]->seeed->getAncestorID( seeedswr[s]->seeed->getNAncestors() - i - 1 );
-         parents[currid] = ancestorid;
-         children[ancestorid].push_back(currid);
-         childrenfinished[ancestorid].push_back(FALSE);
-
-         if( !isseeedintree[ancestorid] )
-         {
-            isseeedintree[ancestorid] = TRUE;
-            assert(allrelevantseeedswr[ancestorid]->seeed != NULL);
-            treeseeeds.push_back( allrelevantseeedswr[ancestorid]->seeed );
-            treeseeedids.push_back(ancestorid);
-            if( i == seeedswr[s]->seeed->getNAncestors() -1 )
-            {
-               if( root == -1 )
-                  root = ancestorid;
-               else if( ancestorid != root )
-                  root2 = ancestorid;
-            }
-            currid = ancestorid;
-         }
-         else
-            break;
-      }
-   }
-
-   for( size_t i = 0; i < treeseeeds.size(); ++i )
-   {
-      SeeedPtr seeed;
-      char imagefilename[SCIP_MAXSTRLEN];
-      char decompfilename[SCIP_MAXSTRLEN];
-      char temp[SCIP_MAXSTRLEN];
-
-      seeed = treeseeeds[i];
-      strcpy( imagefilename, workfolder );
-      strcat( imagefilename, "/" );
-
-      /* gp files have to be generated and included later in the figure */
-      miscvisu->GCGgetVisualizationFilename(scip, seeed, "gp", temp);
-      strcat( imagefilename, temp );
-      strcat( imagefilename, ".gp" );
-      miscvisu->GCGgetVisualizationFilename(scip, seeed, "pdf", temp);
-      strcpy( decompfilename, temp );
-      strcat( decompfilename, ".pdf" );
-
-      GCGwriteGpVisualization(scip, imagefilename, decompfilename, seeed->getID());
-   }
-
-   /* merge both roots in the first one*/
-   for( size_t s = 0; root2 != -1 && s < treeseeeds.size(); ++s )
-   {
-      int seeedid = treeseeeds[s]->getID();
-      if ( parents[seeedid] == root2 )
-      {
-         parents[seeedid] = root;
-      }
-   }
-
-   for( size_t s = 0; root2 != -1 && s < children[root2].size(); ++s )
-   {
-      children[root].push_back(children[root2][s] );
-      childrenfinished[root].push_back(FALSE );
-   }
-
-   firstsibldist = 1. / (children[root].size() - 1 );
-   if( children[root].size() == 1 ){
-      firstsibldist = 1;
-   }
-
-   /* start document with header */
-   writeTexHeader(scip, file, FALSE);
-//   SCIPinfoMessage(scip, file, "\\begin{center}\n");
-
-   /* beginning of tree */
-   SCIPinfoMessage(scip, file,
-      "\\begin{tikzpicture}[level/.style={sibling distance=%f\\textwidth/#1}, level distance=12em, ->, dashed]\n",
-      firstsibldist);
-
-   /* iterate tree and write file */
-   curr = root;
-
-   if(curr != -1)
-      SCIPinfoMessage(scip, file, "\\node ");
-
-   while ( curr != -1 )
-   {
-      if( !visited[curr] )
-      {
-         /* write node */
-         SCIPinfoMessage(scip, file, "(s%d) ", allrelevantseeedswr[curr]->seeed->getID());
-
-         char temp[SCIP_MAXSTRLEN];
-         miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, "pdf", temp);
-         SCIPinfoMessage(scip, file, "{ \\includegraphics[width=0.15\\textwidth]{%s.pdf} }", temp);
-
-         /* set node visited */
-         visited[curr] = TRUE;
-         if( parents[curr] != -1 )
-            finishNextChild(children[parents[curr]], childrenfinished[parents[curr]], curr);
-
-      }
-      if ( unfinishedChildExists(childrenfinished[curr] ) )
-      {
-         int unfinishedchild = getFirstUnfinishedChild(childrenfinished[curr], children[curr] );
-         /* is first child unfinihsed? */
-         //         if( unfinishedchild == children[curr][0] )
-         SCIPinfoMessage(scip, file, "\n child { node ");
-         curr = unfinishedchild;
-         ++currheight;
-      }
-      else
-      {
-         if ( parents[curr] != -1 ){
-            writeSeeedDetectorChainInfoLatex(scip, file, allrelevantseeedswr[curr]->seeed, currheight, helpvisucounter);
-            ++helpvisucounter;
-         }
-         --currheight;
-         curr = parents[curr];
-         if( curr != -1)
-            SCIPinfoMessage(scip, file, " } ");
-      }
-   }
-
-   if(root != -1)
-   {
-      SCIPinfoMessage(scip, file, ";\n");
-      for( size_t i = 0; i < treeseeeds.size(); ++i)
-      {
-         if ( treeseeeds[i]->getID() == root2 )
-            continue;
-         SCIPinfoMessage(scip, file, "\\node[below = \\belowcaptionskip of s%d] (caps%d) {\\scriptsize %s}; \n",
-            treeseeeds[i]->getID(), treeseeeds[i]->getID(), treeseeeds[i]->getShortCaption());
-      }
-   }
-   else
-   {
-      /* this case should only appear for decompositions that were read instead of detected, therefore no root */
-      SCIP_Bool isnodefirst = true;
-      for( size_t i = 0; i < treeseeeds.size(); ++i)
-      {
-         if ( treeseeeds[i]->getID() == root2 )
-         {
-            isnodefirst = false;
-            continue;
-         }
-         if(isnodefirst)
-         {
-            /* in this case the picture is not included as a loop yet and has to be added */
-            char temp[SCIP_MAXSTRLEN];
-            miscvisu->GCGgetVisualizationFilename(scip, treeseeeds[i], "pdf", temp);
-            SCIPinfoMessage(scip, file, "\\node[] (s%d) { \\includegraphics[width=0.15\\textwidth]{%s.pdf} };",
-               treeseeeds[i]->getID(), temp);
-            SCIPinfoMessage(scip, file, "\\node[below = \\belowcaptionskip of s%d] (caps%d) {\\scriptsize %s}; \n",
-               treeseeeds[i]->getID(), treeseeeds[i]->getID(), treeseeeds[i]->getShortCaption());
-         }
-         else
-            SCIPinfoMessage(scip, file, "\\node[below = \\belowcaptionskip of s%d] (caps%d) {\\scriptsize %s}; \n",
-               treeseeeds[i]->getID(), treeseeeds[i]->getID(), treeseeeds[i]->getShortCaption());
-         isnodefirst = false;
-      }
-   }
-
-   SCIPinfoMessage(scip, file, "\\end{tikzpicture}\n");
-//   SCIPinfoMessage(scip, file, "\\end{center}\n");
-   writeTexEnding(scip, file);
-
-   for( int i = 0; i < nallrelevantseeeds; ++i )
-   {
-      SCIPfreeBlockMemory( scip, &(allrelevantseeedswr[i]) );
-   }
-   SCIPfreeBlockMemoryArray(scip, &allrelevantseeedswr, SCIPconshdlrDecompGetNSeeeds(scip));
-
-   GCGtexWriteMakefileAndReadme(scip, file, TRUE, FALSE);
-
-   delete miscvisu;
-
-   return SCIP_OKAY;
-}
-
-
-/* Writes a visualization for the given seeed */
+/* Writes a visualization for the given partialdec */
 SCIP_RETCODE GCGwriteTexVisualization(
    SCIP* scip,             /* SCIP data structure */
    FILE* file,             /* file to write to */
-   int seeedid,            /* id of seeed to visualize */
+   int partialdecid,            /* id of partialdec to visualize */
    SCIP_Bool statistics,   /* additionally to picture show statistics */
-   SCIP_Bool usegp         /* true if the gp reader should be used to visualize the individual seeeds */
+   SCIP_Bool usegp         /* true if the gp reader should be used to visualize the individual partialdecs */
    )
 {
-   MiscVisualization* misc = new MiscVisualization();
-   SEEED_WRAPPER seeedwr;
-   Seeed* seeed;
+   PARTIALDECOMP* partialdec;
    char gpname[SCIP_MAXSTRLEN];
    char pdfname[SCIP_MAXSTRLEN];
 
-   /* get seeed */
-   GCGgetSeeedFromID(scip, &seeedid, &seeedwr);
-   seeed = seeedwr.seeed;
+   /* get partialdec */
+   partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
 
    /* write tex code into file */
    writeTexHeader(scip, file, FALSE);
 
    if(!usegp)
    {
-      writeTexSeeed(scip, file, seeed, FALSE);
+      writeTexPartialdec(scip, file, partialdec, FALSE);
    }
    else
    {
       /* in case a gp file should be generated include it */
-       misc->GCGgetVisualizationFilename(scip, seeed, "gp", gpname);
-       misc->GCGgetVisualizationFilename(scip, seeed, "pdf", pdfname);
+       GCGgetVisualizationFilename(scip, partialdec, "gp", gpname);
+       GCGgetVisualizationFilename(scip, partialdec, "pdf", pdfname);
 
-      GCGwriteGpVisualization(scip, gpname, pdfname, seeedid);
+      GCGwriteGpVisualization(scip, gpname, pdfname, partialdecid);
 
-      SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
-      SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
-      SCIPinfoMessage(scip, file, "    \\input{%s}                                           \n", pdfname);
-      SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
-      SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
+      SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]\n");
+      SCIPinfoMessage(scip, file, "  \\begin{center}\n");
+      SCIPinfoMessage(scip, file, "    \\input{%s}\n", pdfname);
+      SCIPinfoMessage(scip, file, "  \\end{center}\n");
+      SCIPinfoMessage(scip, file, "\\end {figure}\n");
    }
    if(statistics)
-      writeTexSeeedStatistics(scip, file, seeed);
+      writeTexPartialdecStatistics(scip, file, partialdec);
 
    writeTexEnding(scip, file);
-
-   delete misc;
 
    return SCIP_OKAY;
 }
@@ -1190,27 +832,19 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    FILE* readme;
    char* filepath;
    char* filename;
-   char* pfile;
-   char pfilecpy[SCIP_MAXSTRLEN];
-   char makefilename[SCIP_MAXSTRLEN];
-   char readmename[SCIP_MAXSTRLEN];
-   char name[SCIP_MAXSTRLEN];
+   char pfile[PATH_MAX];
+   char makefilename[PATH_MAX];
+   char readmename[PATH_MAX];
+   char name[PATH_MAX];
    const char makename[SCIP_MAXSTRLEN] = "makepdf";
 
    /* --- create a Makefile --- */
 
    /* get path to write to and put it into makefilename */
-   MiscVisualization* miscvisu = new MiscVisualization();
-   pfile = miscvisu->GCGgetFilePath(scip, file);
-   strcpy(pfilecpy, pfile);
-   SCIPsplitFilename(pfilecpy, &filepath, &filename, NULL, NULL);
-   strcpy(makefilename, filepath);
-   strcat(makefilename, "/");
-   strcpy(name, makename);
-   strcat(name, "_");
-   strcat(name, filename);
-   strcat(name, ".make");
-   strcat(makefilename, name);
+   GCGgetFilePath(file, pfile);
+   SCIPsplitFilename(pfile, &filepath, &filename, NULL, NULL);
+   SCIPsnprintf(name, PATH_MAX, "%s_%s.make", makename, filename);
+   SCIPsnprintf(makefilename, PATH_MAX, "%s/%s", filepath, name);
 
    /* open and write makefile */
    makefile = fopen(makefilename, "w");
@@ -1228,27 +862,27 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
       /* will only be applied if the filename ends with "-tex.tex" due to the standard naming scheme */
       SCIPinfoMessage(scip, makefile, "TEXFILES := $(wildcard *-pdf.tex)\n");
    }
-   SCIPinfoMessage(scip, makefile, "                                                                             \n");
-   SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               \n");
+   SCIPinfoMessage(scip, makefile, "\n");
+   SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files\n");
    SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex\n",
       filename, filename);
    if( usegp )
    {
-      SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
-      SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
-      SCIPinfoMessage(scip, makefile, "\t@echo Compiling gp files to tex                                            \n");
-      SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
-      SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
+      SCIPinfoMessage(scip, makefile, "\t@echo ------------\n");
+      SCIPinfoMessage(scip, makefile, "\t@echo \n");
+      SCIPinfoMessage(scip, makefile, "\t@echo Compiling gp files to tex\n");
+      SCIPinfoMessage(scip, makefile, "\t@echo \n");
+      SCIPinfoMessage(scip, makefile, "\t@echo ------------\n");
       SCIPinfoMessage(scip, makefile, "\t$(SHELL) -ec  'for i in $(GPFILES); \\\n");
       SCIPinfoMessage(scip, makefile, "\t\tdo \\\n");
       SCIPinfoMessage(scip, makefile, "\t\tgnuplot $$i; \\\n");
       SCIPinfoMessage(scip, makefile, "\t\tdone'\n");
    }
-   SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
-   SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
-   SCIPinfoMessage(scip, makefile, "\t@echo Compiling tex code. This may take a while.                           \n");
-   SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
-   SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
+   SCIPinfoMessage(scip, makefile, "\t@echo ------------\n");
+   SCIPinfoMessage(scip, makefile, "\t@echo \n");
+   SCIPinfoMessage(scip, makefile, "\t@echo Compiling tex code. This may take a while.\n");
+   SCIPinfoMessage(scip, makefile, "\t@echo \n");
+   SCIPinfoMessage(scip, makefile, "\t@echo ------------\n");
    if( compiletex )
    {
       SCIPinfoMessage(scip, makefile, "\t$(SHELL) -ec  'for j in $(TEXFILES); \\\n");
@@ -1258,23 +892,23 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    }
    SCIPinfoMessage(scip, makefile,
       "\t@latexmk -pdf -pdflatex=\"pdflatex -interaction=batchmode -shell-escape\" -use-make %s.tex \n", filename);
-   SCIPinfoMessage(scip, makefile, "\t@make -f %s clean                                                          \n", name);
-   SCIPinfoMessage(scip, makefile, "                                                                             \n");
-   SCIPinfoMessage(scip, makefile, "clean:                                                                       \n");
-   SCIPinfoMessage(scip, makefile, "\t@latexmk -c                                                                \n");
-   SCIPinfoMessage(scip, makefile, "\t@rm -f report_*figure*.*                                                   \n");
-   SCIPinfoMessage(scip, makefile, "\t@rm -f *.auxlock                                                           \n");
-   SCIPinfoMessage(scip, makefile, "\t@rm -f *figure*.md5                                                        \n");
-   SCIPinfoMessage(scip, makefile, "\t@rm -f *figure*.log                                                        \n");
-   SCIPinfoMessage(scip, makefile, "\t@rm -f *figure*.dpth                                                       \n");
+   SCIPinfoMessage(scip, makefile, "\t@make -f %s clean\n", name);
+   SCIPinfoMessage(scip, makefile, "\n");
+   SCIPinfoMessage(scip, makefile, "clean:\n");
+   SCIPinfoMessage(scip, makefile, "\t@latexmk -c\n");
+   SCIPinfoMessage(scip, makefile, "\t@rm -f report_*figure*.*\n");
+   SCIPinfoMessage(scip, makefile, "\t@rm -f *.auxlock\n");
+   SCIPinfoMessage(scip, makefile, "\t@rm -f *figure*.md5\n");
+   SCIPinfoMessage(scip, makefile, "\t@rm -f *figure*.log\n");
+   SCIPinfoMessage(scip, makefile, "\t@rm -f *figure*.dpth\n");
    if( usegp )
    {
-      SCIPinfoMessage(scip, makefile, "\t@rm -f *.gp                                                             \n");
+      SCIPinfoMessage(scip, makefile, "\t@rm -f *.gp\n");
    }
-   SCIPinfoMessage(scip, makefile, "                                                                             \n");
-   SCIPinfoMessage(scip, makefile, "cleanall:                                                                    \n");
-   SCIPinfoMessage(scip, makefile, "\t@latexmk -C                                                                \n");
-   SCIPinfoMessage(scip, makefile, "\t@make -f %s clean                                                          \n", name);
+   SCIPinfoMessage(scip, makefile, "\n");
+   SCIPinfoMessage(scip, makefile, "cleanall:\n");
+   SCIPinfoMessage(scip, makefile, "\t@latexmk -C\n");
+   SCIPinfoMessage(scip, makefile, "\t@make -f %s clean\n", name);
 
    /* close makefile */
    fclose(makefile);
@@ -1282,10 +916,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    /* --- create a readme file --- */
 
    /* use same file path as the makefile */
-   strcpy(readmename, filepath);
-   strcat(readmename, "/");
-   strcat(readmename, "README_");
-   strcat(readmename, makename);
+   SCIPsnprintf(readmename, PATH_MAX, "%s/README_%s", filepath, makename);
 
    /* open and write readme */
    readme = fopen(readmename, "w");
@@ -1294,23 +925,21 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
       return SCIP_FILECREATEERROR;
    }
 
-   SCIPinfoMessage(scip, readme, "README: How to create a PDF file from the .tex file(s) using the %s file.    \n", name);
-   SCIPinfoMessage(scip, readme, "Note: The package pdflatex is required.                                      \n", name);
-   SCIPinfoMessage(scip, readme, "                                                                             \n");
-   SCIPinfoMessage(scip, readme, "Use the command\n\t'make -f %s'\nto compile.                                  \n", name);
-   SCIPinfoMessage(scip, readme, "Depending on the size of your problem that may take some time.               \n");
+   SCIPinfoMessage(scip, readme, "README: How to create a PDF file from the .tex file(s) using the %s file.\n", name);
+   SCIPinfoMessage(scip, readme, "Note: The package pdflatex is required.\n");
+   SCIPinfoMessage(scip, readme, "\n");
+   SCIPinfoMessage(scip, readme, "Use the command\n\t'make -f %s'\nto compile.\n", name);
+   SCIPinfoMessage(scip, readme, "Depending on the size of your problem that may take some time.\n");
    SCIPinfoMessage(scip, readme,
-      "Please do not delete any new files that might be generated during the compile process.                  \n");
+      "Please do not delete any new files that might be generated during the compile process.\n");
    SCIPinfoMessage(scip, readme, "All access files will be deleted automatically once the compilation is complete.\n");
-   SCIPinfoMessage(scip, readme, "                                                                             \n");
-   SCIPinfoMessage(scip, readme, "Clean options:                                                               \n");
-   SCIPinfoMessage(scip, readme, "\t'make -f %s clean' clears all present intermediate files (if any exist)    \n", name);
-   SCIPinfoMessage(scip, readme, "\t'make -f %s cleanall' clears all generated files INCLUDING .pdf            \n", name);
+   SCIPinfoMessage(scip, readme, "\n");
+   SCIPinfoMessage(scip, readme, "Clean options:\n");
+   SCIPinfoMessage(scip, readme, "\t'make -f %s clean' clears all present intermediate files (if any exist)\n", name);
+   SCIPinfoMessage(scip, readme, "\t'make -f %s cleanall' clears all generated files INCLUDING .pdf\n", name);
 
    /* close readme file */
    fclose(readme);
-
-   delete miscvisu;
 
    return SCIP_OKAY;
 }

@@ -180,7 +180,8 @@ SCIP_RETCODE DialogReadGraphs<T, G>::scip_exec(SCIP* scip, SCIP_DIALOG* dialog, 
       SCIP_CALL( graph->createDecompFromPartition(&decomp) );
       delete graph;
 
-      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
+      SCIP_CALL( GCGconshdlrDecompAddPreexistingDecomp(scip, decomp) );
+      DECdecompFree(scip, &decomp);
       SCIPdialogMessage(scip, NULL, "decomposition read from <%s>\n", extension);
    }
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);

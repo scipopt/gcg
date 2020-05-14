@@ -36,8 +36,8 @@
 #include "dec_postprocess.h"
 #include "cons_decomp.h"
 #include "gcg.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 #include "scip/scip.h"
 #include "scip_misc.h"
 #include "scip/clock.h"
@@ -58,12 +58,10 @@
 #define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
 #define DEC_DECCHAR               'p'         /**< display character of detector */
 #define DEC_ENABLED               FALSE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       FALSE  /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE        /**< should the finishing be enabled */
 #define DEC_ENABLEDPOSTPROCESSING TRUE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
-#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 #define DEFAULT_USECONSSADJ       TRUE
 /*
  * Data structures
@@ -113,52 +111,16 @@ DEC_DECL_FREEDETECTOR(freePostprocess)
 
 
 /** destructor of detector to free detector data (called before the solving process begins) */
-#if 0
-static
-DEC_DECL_EXITDETECTOR(exitPostprocess)
-{  /*lint --e{715}*/
-
-   SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-#else
 #define exitPostprocess NULL
-#endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
-#if 0
-static
-DEC_DECL_INITDETECTOR(initPostprocess)
-{  /*lint --e{715}*/
-
-   SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define initPostprocess NULL
-#endif
 
-/** detection function of detector */
-//static
-//DEC_DECL_DETECTSTRUCTURE(detectPostprocess)
-//{ /*lint --e{715}*/
-//   *result = SCIP_DIDNOTFIND;
-//
-//   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-//   SCIPABORT();  /*lint --e{527}*/
-//
-//   return SCIP_OKAY;
-//}
-
-#define detectPostprocess NULL
-#define propagateSeeedPostprocess NULL
-#define finishSeeedPostprocess NULL
+#define propagatePartialdecPostprocess NULL
+#define finishPartialdecPostprocess NULL
 
 static
-DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
+DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
 {
    *result = SCIP_DIDNOTFIND;
 
@@ -170,43 +132,106 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
    SCIP_Bool byconssadj;
    SCIP_Bool conssadjcalculated;
 
-   gcg::Seeed* seeed;
+   gcg::PARTIALDECOMP* partialdec;
 
-   assert(seeedPropagationData->seeedToPropagate->getSeeedpool() == seeedPropagationData->seeedpool);
-   seeed  = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
-   assert(scip == seeedPropagationData->seeedpool->getScip() );
+   assert(partialdecdetectiondata->workonpartialdec->getDetprobdata() == partialdecdetectiondata->detprobdata);
+   partialdec  = new gcg::PARTIALDECOMP(partialdecdetectiondata->workonpartialdec);
 
    SCIPgetBoolParam(scip, "detection/detectors/postprocess/useconssadj", &byconssadj);
-   SCIPgetBoolParam(scip, "detection/conssadjcalculated", &conssadjcalculated);
+   conssadjcalculated = GCGconshdlrDecompGetConssAdjCalculated(scip);
 
-
-   //complete the seeed by bfs
+   //complete the partialdec by bfs
    if ( byconssadj && conssadjcalculated)
-      seeed->postprocessMasterToBlocksConssAdjacency( &success );
-   else
-      seeed->postprocessMasterToBlocks( &success );
+   {
+      success = FALSE;
+      std::vector<int> constoreassign(0);
+      std::vector<int> blockforconstoreassign(0);
+      gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
 
+      partialdec->sort();
+
+      std::vector<int> blockforvar(partialdec->getNVars(), -1 );
+
+      for( int b = 0; b < partialdec->getNBlocks(); ++b )
+      {
+         for( size_t j  = 0; j < (size_t) partialdec->getNVarsForBlock(b); ++j )
+         {
+            blockforvar[partialdec->getVarsForBlock(b)[j] ] = b;
+         }
+      }
+
+      for( int mc = 0; mc < partialdec->getNMasterconss(); ++mc )
+      {
+         int masterconsid = partialdec->getMasterconss()[mc];
+         int hittenblock  = -1;
+
+         SCIP_Bool hitsmastervar = FALSE;
+         SCIP_Bool varhitsotherblock = FALSE;
+
+         for( int var = 0; var < detprobdata->getNVarsForCons(masterconsid); ++var )
+         {
+            int varid = detprobdata->getVarsForCons(masterconsid)[var];
+            if( partialdec->isVarMastervar(varid) )
+            {
+               hitsmastervar = TRUE;
+               break;
+            }
+
+            if ( blockforvar[varid] != -1 )
+            {
+               if( hittenblock == -1 )
+                  hittenblock = blockforvar[varid];
+               else if( hittenblock != blockforvar[varid] )
+               {
+                  varhitsotherblock = TRUE;
+                  break;
+               }
+            }
+         }
+
+         if( hitsmastervar || varhitsotherblock )
+            continue;
+
+         if ( hittenblock != -1 )
+         {
+            constoreassign.push_back(masterconsid);
+            blockforconstoreassign.push_back(hittenblock);
+         }
+      }
+
+      for( size_t i = 0; i < constoreassign.size() ; ++i )
+      {
+         partialdec->setConsToBlock(constoreassign[i], blockforconstoreassign[i]);
+         partialdec->removeMastercons(constoreassign[i]);
+      }
+
+      if( constoreassign.size() > 0 )
+         success = TRUE;
+
+      partialdec->prepare();
+   }
+   else
+      success = FALSE;
 
    if ( !success )
    {
-     seeedPropagationData->nNewSeeeds = 0;
-     delete seeed;
+     partialdecdetectiondata->nnewpartialdecs = 0;
+     delete partialdec;
      *result = SCIP_DIDNOTFIND;
      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
      SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
      return SCIP_OKAY;
    }
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-   seeedPropagationData->newSeeeds[0] = seeed;
-   seeedPropagationData->nNewSeeeds = 1;
-   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "postprocess");
-   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
-
-   seeedPropagationData->newSeeeds[0]->buildDecChainString();
-
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
+
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+   partialdecdetectiondata->newpartialdecs[0] = partialdec;
+   partialdecdetectiondata->nnewpartialdecs = 1;
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "postprocess");
+   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
+
+   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
@@ -224,9 +249,6 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressivePostprocess)
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
@@ -250,9 +272,6 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultPostprocess)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING) );
 
@@ -272,9 +291,6 @@ DEC_DECL_SETPARAMFAST(setParamFastPostprocess)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
@@ -308,9 +324,9 @@ SCIP_RETCODE SCIPincludeDetectorPostprocess(
 
    detectordata->useconssadj = TRUE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectPostprocess, freePostprocess,
-      initPostprocess, exitPostprocess, propagateSeeedPostprocess, finishSeeedPostprocess,
-      postprocessSeeedPostprocess, setParamAggressivePostprocess, setParamDefaultPostprocess, setParamFastPostprocess) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freePostprocess,
+      initPostprocess, exitPostprocess, propagatePartialdecPostprocess, finishPartialdecPostprocess,
+      postprocessPartialdecPostprocess, setParamAggressivePostprocess, setParamDefaultPostprocess, setParamFastPostprocess) );
 
    /* add consname detector parameters */
       /**@todo add postprocess detector parameters */

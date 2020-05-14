@@ -48,8 +48,8 @@
 #include "scip_misc.h"
 #include "pub_decomp.h"
 #include "tclique/tclique.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include "class_partialdecomp.h"
+#include "class_detprobdata.h"
 #include "scip/clock.h"
 
 
@@ -65,12 +65,10 @@
 #define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
 #define DEC_DECCHAR               'S'            /**< display character of detector */
 #define DEC_ENABLED               FALSE           /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
 #define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */
-#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
 #define TCLIQUE_CALL(x) do                                                                                    \
                        {                                                                                      \
@@ -106,131 +104,15 @@ struct DEC_DetectorData
 
 /* put your local methods here, and declare them static */
 
-static SCIP_DECL_SORTPTRCOMP(cmp)
-{
-   if( elem1 == elem2 )
-      return 0;
-   else if( elem1 < elem2 )
-      return -1;
-   else {
-      assert(elem1 > elem2);
-      return 1;
-   }
-}
-
-/** creates the graph from the constraint matrix */
-static
-SCIP_RETCODE createGraph(
-   SCIP*                 scip,               /**< SCIP data structure */
-   TCLIQUE_GRAPH**       graph               /**< Graph data structure */
-   )
-{
-   int i;
-   int j;
-   int v;
-   int v1;
-   int v2;
-   int nconss;
-   SCIP_CONS** conss;
-   SCIP_Bool useprobvars = FALSE;
-   bool foundEdge;
-
-   assert(scip != NULL);
-   assert(graph != NULL);
-
-   nconss = SCIPgetNConss(scip);
-   conss = SCIPgetConss(scip);
-
-   TCLIQUE_CALL( tcliqueCreate(graph) );
-   assert(*graph != NULL);
-
-   for( i = 0; i < nconss; ++i )
-   {
-      TCLIQUE_CALL( tcliqueAddNode(*graph, i, 0) );
-   }
-
-   useprobvars = ( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED );
-
-   /* Be aware: the following has n*n*m*log(m) complexity but doesn't need any additional memory
-    * With additional memory, we can get it down to probably n*m + m*m*n
-    */
-   for( i = 0; i < nconss; ++i )
-   {
-      SCIP_VAR** curvars1;
-      int ncurvars1;
-
-      ncurvars1 = GCGconsGetNVars(scip, conss[i]);
-      if( ncurvars1 == 0 )
-         continue;
-
-      SCIP_CALL( SCIPallocMemoryArray(scip, &curvars1, ncurvars1) );
-
-      SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars1, ncurvars1) );
-
-      if( useprobvars )
-      {
-         /* replace all variables by probvars */
-         for( v = 0; v < ncurvars1; ++v )
-         {
-            curvars1[v] = SCIPvarGetProbvar(curvars1[v]);
-            assert( SCIPvarIsActive(curvars1[v]) );
-         }
-      }
-
-      SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
-
-      for( j = i+1; j < nconss; ++j )
-      {
-         SCIP_VAR** curvars2;
-         int ncurvars2;
-
-         ncurvars2 = GCGconsGetNVars(scip, conss[j]);
-         if( ncurvars2 == 0 )
-            continue;
-
-         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars2, ncurvars2) );
-
-         SCIP_CALL( GCGconsGetVars(scip, conss[j], curvars2, ncurvars2) );
-
-         foundEdge = false;
-
-         for( v2 = 0; v2 < ncurvars2 && !foundEdge; ++v2 )
-         {
-            if( useprobvars )
-            {
-               curvars2[v2] = SCIPvarGetProbvar(curvars2[v2]);
-               assert( SCIPvarIsActive(curvars2[v2]) );
-            }
-
-            for( v1 = 0; v1 < ncurvars1 && !foundEdge; ++v1 )
-            {
-               if( curvars2[v2] == curvars1[v1] )
-               {
-                  tcliqueAddEdge( *graph, i, j );
-                  foundEdge = true;
-               }
-            }
-         }
-         SCIPfreeMemoryArray(scip, &curvars2);
-      }
-
-      SCIPfreeMemoryArray(scip, &curvars1);
-   }
-
-   TCLIQUE_CALL( tcliqueFlush(*graph) );
-   /*SCIPdebug(tcliquePrintGraph(*graph));*/
-
-   return SCIP_OKAY;
-}
 
 /** creates the graph from the constraint matrix */
 static
 SCIP_RETCODE createGraphFromPartialMatrix(
    SCIP*                 scip,               /**< SCIP data structure */
    TCLIQUE_GRAPH**       graph,              /**< Graph data structure */
-   gcg::Seeed*           seeed,
-   gcg::Seeedpool*       seeedpool,
-   DEC_DETECTORDATA*     detectordata
+   gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use for matrix */
+   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata */
+   DEC_DETECTORDATA*     detectordata        /**< detector data data structure */
    )
 {
    int i;
@@ -247,43 +129,39 @@ SCIP_RETCODE createGraphFromPartialMatrix(
    if(detectordata->oldToNew != NULL)
          delete detectordata->oldToNew;
 
-   detectordata->oldToNew = new std::vector<int>(seeedpool->getNConss(), -1) ;
-   detectordata->newToOld = new std::vector<int>(seeed->getNOpenconss(), -1) ;
+   detectordata->oldToNew = new std::vector<int>(detprobdata->getNConss(), -1) ;
+   detectordata->newToOld = new std::vector<int>(partialdec->getNOpenconss(), -1) ;
 
-   for( i = 0; i < seeed->getNOpenconss(); ++i )
+   for( i = 0; i < partialdec->getNOpenconss(); ++i )
    {
-      int cons = seeed->getOpenconss()[i];
+      int cons = partialdec->getOpenconss()[i];
       detectordata->oldToNew->at(cons) = i;
       detectordata->newToOld->at(i) = cons;
       TCLIQUE_CALL( tcliqueAddNode(*graph, i, 0) );
    }
 
-   /*
-    *
-    */
-
-   std::vector<bool> alreadyConsidered(seeedpool->getNConss(), false );
+   std::vector<bool> alreadyConsidered(detprobdata->getNConss(), false );
 
 
-   for( i = 0; i < seeed->getNOpenconss(); ++i )
+   for( i = 0; i < partialdec->getNOpenconss(); ++i )
    {
-      int cons = seeed->getOpenconss()[i];
+      int cons = partialdec->getOpenconss()[i];
       std::vector<int> neighborNodes(0);
-      std::vector<bool> isNeighbor(seeedpool->getNConss(), false);
+      std::vector<bool> isNeighbor(detprobdata->getNConss(), false);
 
       alreadyConsidered[cons] = true;
 
-      for( v = 0; v < seeedpool->getNVarsForCons(cons ) ; ++v )
+      for( v = 0; v < detprobdata->getNVarsForCons(cons ) ; ++v )
       {
-         int var = seeedpool->getVarsForCons(cons)[v];
+         int var = detprobdata->getVarsForCons(cons)[v];
 
-         if(!seeed->isVarOpenvar(var) )
+         if(!partialdec->isVarOpenvar(var) )
             continue;
 
-         for( int c = 0; c < seeedpool->getNConssForVar(var); ++c )
+         for( int c = 0; c < detprobdata->getNConssForVar(var); ++c )
          {
-            int otherCons = seeedpool->getConssForVar(var)[c];
-            if( isNeighbor[otherCons] || alreadyConsidered[otherCons] || !seeed->isConsOpencons(otherCons) )
+            int otherCons = detprobdata->getConssForVar(var)[c];
+            if( isNeighbor[otherCons] || alreadyConsidered[otherCons] || !partialdec->isConsOpencons(otherCons) )
                continue;
             isNeighbor[otherCons] = true;
 
@@ -304,7 +182,7 @@ SCIP_RETCODE createGraphFromPartialMatrix(
 /** finds the diameter of a connected component of a graph and computes all distances from some vertex of maximum eccentricity to all other vertices */
 static
 SCIP_RETCODE findDiameter(
-   SCIP *scip,
+   SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
    int*                  maxdistance,        /**< diameter of the graph */
    int*                  ncomp,              /**< number of vertices the component contains */
@@ -565,23 +443,6 @@ SCIP_RETCODE findConnectedComponents(
    return SCIP_OKAY;
 }
 
-/** copy conshdldata data to decdecomp */
-static
-SCIP_RETCODE copyToDecdecomp(
-   SCIP*              scip,                  /**< SCIP data structure */
-   DEC_DETECTORDATA*  detectordata,          /**< constraint handler data structure */
-   DEC_DECOMP*        decdecomp              /**< decdecomp data structure */
-   )
-{
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-   assert(decdecomp != NULL);
-
-   SCIP_CALL( DECfilloutDecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, TRUE) );
-
-   return SCIP_OKAY;
-}
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
@@ -657,108 +518,13 @@ DEC_DECL_EXITDETECTOR(detectorExitStaircaseLsp)
    return SCIP_OKAY;
 }
 
-/** detector structure detection method, tries to detect a structure in the problem */
-static
-DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircaseLsp)
-{
-   int i;
-   int j;
-   int* nodes;
-   int nnodes;
-   int* distances;
-   int* blocks;
-   int nblocks = 0;
 
-   *result = SCIP_DIDNOTFIND;
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting staircase structure:");
-
-   SCIP_CALL( createGraph(scip, &(detectordata->graph)) );
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
-
-   if( tcliqueGetNNodes(detectordata->graph) > 0 )
-   {
-      nnodes = tcliqueGetNNodes(detectordata->graph);
-      /* find connected components of the graph. the result will be stored in 'detectordata->components' */
-      SCIP_CALL( findConnectedComponents(scip, detectordata) );
-
-      SCIP_CALL( SCIPallocMemoryArray(scip, &nodes, nnodes) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &distances, nnodes) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &blocks, nnodes) );
-
-      for( i = 0; i < nnodes; ++i)
-         blocks[i] = -1;
-
-      /* find the diameter of each connected component */
-      for( i = 0; i < detectordata->ncomponents; ++i )
-      {
-         int diameter = 0;
-         int ncompsize = 0;
-
-         SCIP_CALL( findDiameter(scip, detectordata, &diameter, &ncompsize, nodes, distances, i) );
-         SCIPdebugMessage("component %i has %i vertices and diameter %i\n", i, ncompsize, diameter);
-
-         for( j = 0; j < ncompsize; j++ )
-         {
-            assert(nodes[j] >= 0);
-            assert(nodes[j] < nnodes);
-            assert(distances[j] >= 0);
-            assert(distances[j] <= diameter);
-            assert(distances[j] + nblocks < nnodes);
-
-            blocks[nodes[j]] = nblocks + distances[j];
-            SCIPdebugMessage("\tnode %i to block %i\n", nodes[j], nblocks + distances[j]);
-         }
-
-         nblocks += (diameter + 1);
-      }
-
-      if( nblocks > 0 )
-      {
-         SCIP_CONS** conss = SCIPgetConss(scip);
-
-         detectordata->nblocks = nblocks;
-
-         for( i = 0; i < nnodes; ++i )
-         {
-            assert(blocks[i] >= 0);
-            SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*) (size_t) (blocks[i] + 1)) );
-         }
-
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", detectordata->nblocks);
-         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
-         SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[0])) );
-         SCIP_CALL( copyToDecdecomp(scip, detectordata, (*decdecomps)[0]) );
-         *ndecdecomps = 1;
-         *result = SCIP_SUCCESS;
-      }
-
-      SCIPfreeMemoryArray(scip, &blocks);
-      SCIPfreeMemoryArray(scip, &nodes);
-      SCIPfreeMemoryArray(scip, &distances);
-      SCIPfreeMemoryArray(scip, &(detectordata->components));
-   }
-
-   if( *result != SCIP_SUCCESS )
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
-      if( detectordata->constoblock != NULL )
-         SCIPhashmapFree(&detectordata->constoblock);
-      if( detectordata->vartoblock != NULL )
-         SCIPhashmapFree(&detectordata->vartoblock);
-   }
-
-   tcliqueFree(&detectordata->graph);
-
-   return SCIP_OKAY;
-}
-
-/** detection function for seeeds */
+/** detection function for partialdecs */
 static
 SCIP_RETCODE detection(
    SCIP*                   scip,                         /**< SCIP data structure */
    DEC_DETECTORDATA*       detectordata,                 /**< detectordata of the detector */
-   Seeed_Propagation_Data* seeedPropagationData          /**< seeedPropagationData (including the seeedpool) where to store the new Seeeds */
+   Partialdec_Detection_Data*   partialdecdetectiondata  /**< partialdecdetectiondata (including the detprobdata) where to store the new Partialdecs */
 )
 {
    int i;
@@ -771,23 +537,23 @@ SCIP_RETCODE detection(
 
    char decinfo[SCIP_MAXSTRLEN];
 
-   gcg::Seeedpool* seeedpool = seeedPropagationData->seeedpool;
-   gcg::Seeed* currseeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
+   gcg::DETPROBDATA* detprobdata = partialdecdetectiondata->detprobdata;
+   gcg::PARTIALDECOMP* currpartialdec = new gcg::PARTIALDECOMP(partialdecdetectiondata->workonpartialdec);
 
    SCIP_CLOCK* temporaryClock;
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-   currseeed->refineToMaster();
+   currpartialdec->refineToMaster();
 
-   currseeed->sort();
+   currpartialdec->sort();
 
-   //currseeed->showScatterPlot(seeedpool);
+   //currpartialdec->showScatterPlot(detprobdata);
 
    //SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting staircase structure:");
 
-   SCIP_CALL( createGraphFromPartialMatrix(scip, &(detectordata->graph), currseeed, seeedpool, detectordata) );
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), seeedpool->getNConss() ) );
+   SCIP_CALL( createGraphFromPartialMatrix(scip, &(detectordata->graph), currpartialdec, detprobdata, detectordata) );
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), detprobdata->getNConss() ) );
 
    if( tcliqueGetNNodes(detectordata->graph) > 0 )
    {
@@ -843,34 +609,30 @@ SCIP_RETCODE detection(
       SCIPfreeMemoryArray(scip, &(detectordata->components));
    }
 
-   SCIP_CALL( currseeed->assignSeeedFromConstoblock(detectordata->constoblock, nblocks) );
+   SCIP_CALL( currpartialdec->assignPartialdecFromConstoblock(detectordata->constoblock, nblocks) );
 
-   currseeed->assignCurrentStairlinking();
-   currseeed->considerImplicits();
-   currseeed->sort();
+   currpartialdec->assignCurrentStairlinking();
+   currpartialdec->prepare();
 
    if( detectordata->constoblock != NULL )
       SCIPhashmapFree(&detectordata->constoblock);
    if( detectordata->vartoblock != NULL )
       SCIPhashmapFree(&detectordata->vartoblock);
 
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
 
-   assert(currseeed->checkConsistency( ) );
+   assert(currpartialdec->checkConsistency());
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-   seeedPropagationData->newSeeeds[0] = currseeed;
-   seeedPropagationData->nNewSeeeds = 1;
-
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+   partialdecdetectiondata->newpartialdecs[0] = currpartialdec;
+   partialdecdetectiondata->nnewpartialdecs = 1;
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "staircase\\_lsp");
-   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
+   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
+   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
 
    tcliqueFree(&detectordata->graph);
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-
-
 
    return SCIP_OKAY;
 }
@@ -878,16 +640,10 @@ SCIP_RETCODE detection(
 
 /** detector structure detection method, tries to detect a structure in the problem */
 static
-DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
+DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStaircaseLsp)
 {
 
    DEC_DETECTORDATA* detectordata;
-   char decinfo[SCIP_MAXSTRLEN];
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-
-
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
@@ -902,16 +658,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
 
    *result = SCIP_DIDNOTFIND;
 
-   detection(scip, detectordata, seeedPropagationData);
-
-   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "staircase-lsp");
-   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-
-
+   detection(scip, detectordata, partialdecdetectiondata);
 
    delete detectordata->newToOld;
    delete detectordata->oldToNew;
@@ -924,15 +671,9 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
 }
 
 static
-DEC_DECL_FINISHSEEED(detectorFinishSeeedStaircaseLsp)
+DEC_DECL_FINISHPARTIALDEC(detectorFinishPartialdecStaircaseLsp)
 {
    DEC_DETECTORDATA* detectordata;
-   char decinfo[SCIP_MAXSTRLEN];
-
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
@@ -945,19 +686,9 @@ DEC_DECL_FINISHSEEED(detectorFinishSeeedStaircaseLsp)
    detectordata->components = NULL;
    detectordata->ncomponents = 0;
 
-
    *result = SCIP_DIDNOTFIND;
 
-   detection(scip, detectordata, seeedPropagationData);
-
-
-   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "staircase-lsp");
-    seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
-
-    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock )  );
-    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-
+   detection(scip, detectordata, partialdecdetectiondata);
 
    delete detectordata->newToOld;
    delete detectordata->oldToNew;
@@ -970,7 +701,7 @@ DEC_DECL_FINISHSEEED(detectorFinishSeeedStaircaseLsp)
 }
 //#define detectorExitStaircase NULL
 
-#define detectorPostprocessSeeedStaircaseLsp NULL
+#define detectorPostprocessPartialdecStaircaseLsp NULL
 
 
 static
@@ -980,9 +711,6 @@ DEC_DECL_SETPARAMFAST(setParamAggressiveStaircaseLsp)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
@@ -1001,9 +729,6 @@ DEC_DECL_SETPARAMFAST(setParamDefaultStaircaseLsp)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
-
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
@@ -1020,9 +745,6 @@ DEC_DECL_SETPARAMFAST(setParamFastStaircaseLsp)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
@@ -1058,9 +780,9 @@ SCIP_RETCODE SCIPincludeDetectorStaircaseLsp(
 
 
    SCIP_CALL( DECincludeDetector( scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
-         DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP,
-         DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectorDetectStaircaseLsp, detectorFreeStaircaseLsp,
-         detectorInitStaircaseLsp, detectorExitStaircaseLsp, detectorPropagateSeeedStaircaseLsp, detectorFinishSeeedStaircaseLsp, detectorPostprocessSeeedStaircaseLsp, setParamAggressiveStaircaseLsp, setParamDefaultStaircaseLsp, setParamFastStaircaseLsp) );
+         DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP,
+         DEC_USEFULRECALL, detectordata, detectorFreeStaircaseLsp,
+         detectorInitStaircaseLsp, detectorExitStaircaseLsp, detectorPropagatePartialdecStaircaseLsp, detectorFinishPartialdecStaircaseLsp, detectorPostprocessPartialdecStaircaseLsp, setParamAggressiveStaircaseLsp, setParamDefaultStaircaseLsp, setParamFastStaircaseLsp) );
 
 
    return SCIP_OKAY;

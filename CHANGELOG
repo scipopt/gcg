@@ -4,17 +4,51 @@
 
 New features:
 -------------
-- new detector neighborhoodmaster: calculating cons-cons adjacency (if not already done), sorting according size of neighborhood. Searching two consecutive constraints with largest size difference (according neighborhood size) in sorted constraints. All constraints having a larger neighborhood than the second one are assigned to the master.
 
-Code cleanup
-------------
-- Clean up 'explore' menu
-- Removed toolbox feature from 'explore' menu
-- Removed 'toolbox' command
+- New detector neighborhoodmaster: calculating cons-cons adjacency (if not already done), sorting according size of neighborhood. Searching two consecutive constraints with largest size difference (according neighborhood size) in sorted constraints. All constraints having a larger neighborhood than the second one are assigned to the master.
+- On reading an incomplete decomposition, the program will not necessarily assign all open elements to the master problem but detect the rest of the structure.
 
-Documentation:
---------------
-- todo
+New/changed parameters:
+-----------------------
+
+- New parameter 'detection/enabled' for easier en-/disabling of the detection
+- New Parameter 'detection/postprocess' enables the postprocessing of decompositions
+- Removed paramaters 'detection/detectors/<name>/legacymode'
+- Removed parameter 'detection/conssadjcalculated'
+- Removed parameter 'detection/legacymode/onlylegacymode'
+- Removed parameter 'detection/legacymode/enabled'
+- Removed parameter 'detection/legacymode/stairlinkingheur'
+- Removed parameter 'visual/report/showtype'
+- Removed parameter 'constraints/decomp/createbasicdecomp'
+- Removed parameters 'detection/detectors/<name>/origenabled'
+- Moved parameters 'detection/consclassifier/<name>/enabled' to 'detection/classification/consclassifier/<name>/enabled'
+- Removed parameters 'detection/consclassifier/<name>/origenabled'
+- Moved parameters 'detection/varclassifier/<name>/enabled' to 'detection/classification/varclassifier/<name>/enabled'
+- Removed parameters 'detection/varclassifier/<name>/origenabled'
+- Moved parameter 'detection/allowclassifierduplicates/enabled' to 'detection/classification/allowduplicates'
+- Moved parameter 'detection/maxnclassesfornblockcandidates' to 'detection/blocknrcandidates/maxnclasses'
+- Moved parameter 'detection/addblocknr' to 'set/detection/blocknrcandidates/addblocknr'
+- Moved parameter 'detection/maxnclassesperclassifier' to 'detection/classification/maxnclassesperpartition'
+- Moved parameter 'detection/maxnclassesperclassifierforlargeprobs' to 'detection/classification/maxnclassesperpartitionforlargeprobs'
+- Moved parameter 'detection/strong_detection/dualvalrandommethod' to 'detection/score/strong_detection/dualvalrandommethod'
+- Moved parameter 'detection/strong_detection/coeffactororigvsrandom' to 'detection/score/strong_detection/coeffactororigvsrandom'
+- Moved parameter 'detection/scoretype' to 'detection/score/scoretype'
+
+New/changed menu commands:
+-----------------------
+
+- Removed 'toolbox' feature from 'explore' menu
+- Removed command 'toolbox'
+- Removed command 'write/miplib2017features'
+- Removed command 'write/miplib2017plotsanddecs'
+- Removed command 'write/miplib2017shortbasefeatures'
+- Removed command 'write/miplib2017featurefilepath'
+- Removed command 'write/miplib2017matrixfilepath'
+- Removed command 'write/miplib2017decompfilepath'
+- Removed command 'write alloriginaldecompositions'
+- Removed command 'write allpresolveddecompositions'
+- Renamed command 'write reportdecompositions' to 'write report'
+- Renamed command 'write selecteddecompositions' to 'write selected'
 
 
 @page RN30 Release notes for GCG 3.0
@@ -23,13 +57,22 @@ Documentation:
 
 Visualization and testing:
 --------------------------
+
 - check/compareversions.sh runs tests on several git versions, summarizes performace results
 
 Code cleanup:
 -------------
-- Clean up 'explore' menu
-- Removed toolbox feature from 'explore' menu
-- Removed 'toolbox' command
+
+- Cleaned up 'explore' menu
+- Refactored detection loop
+- Removed legacymode, including detectors 'connected', 'staircase', 'random', 'cutpacking', 'colors', 'mcl'
+- Renamed class Seeed to PARTIALDECOMP
+- Renamed class Seeedpool to DETPROBDATA
+- Renamed SEEED_WRAPPER to PARTIALDECOMP_WRAPPER
+- Renamed {Index,Cons,Var}Classifier to {Index,Cons,Var}Partition
+
+GCG Version 3.0.2
+=================
 
 Bug fixes
 ---------

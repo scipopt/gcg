@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_cls.cpp
- * @brief  CLS reader for writing files containing classifier data
+ * @brief  CLS reader for writing files containing classification data
  * @author Michael Bastubbe
  * @author Julius Hense
  */
@@ -43,21 +43,19 @@
 
 #include "reader_cls.h"
 #include "cons_decomp.h"
-#include "class_seeedpool.h"
-#include "class_consclassifier.h"
-#include "class_varclassifier.h"
-#include "wrapper_seeed.h"
+#include "cons_decomp.hpp"
+#include "class_detprobdata.h"
+#include "class_conspartition.h"
+#include "class_varpartition.h"
 
 
 #define READER_NAME             "clsreader"
-#define READER_DESC             "reader for writing classifier data"
+#define READER_DESC             "reader for writing classification data"
 #define READER_EXTENSION        "cls"
 #define DEFAULT_USETRANSFORM    TRUE
 
 struct SCIP_ConshdlrData
 {
-   gcg::Seeedpool* seeedpoolunpresolved;
-   gcg::Seeedpool* seeedpool;
 };
 
 
@@ -73,74 +71,38 @@ struct SCIP_ReaderData
  */
 
 
-/** write a DEC file for a given decomposition */
+/** write classification data */
 SCIP_RETCODE GCGwriteCls(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< File pointer to write to */
    )
 {
-   assert(scip != NULL);
-
-   /* TODO
-    * format description:
-    * a) <number of classifiers>
-    * for each classifier:
-    *    b1) VAR or CONS
-    *    b2) <name of classifier>>
-    *    b3) <number of classes>
-    *    b4) for each class:
-    *       c1) <name of class>: <description of class>
-    *       c2) <number of class elements>
-    *       c3) for each element of class:
-    *          d1) <name of element> (e.g. variable or constraint name, concerning transformed [default] or original problem)
-    *
-    *
-    * 1. Write cons_decomp method(s) to get all relevant data, i.e.
-    *    - for all cons and var classifier in both presolved and unpresolved seeedpool:
-    *      - Class to index mapping, class names, class descriptions (and maybe class decomp info)
-    *      - Cons/var to classes mapping
-    *    - index to SCIPcons/SCIPvar mapping from unpresolved seeedpool (and maybe seeedpool)
-    *
-    * 2. Write an output method to write these information into a file
-    *
-    */
    SCIP_Bool transformed;
-   gcg::Seeedpool* seeedpool;
-
+   gcg::DETPROBDATA* detprobdata;
 
    assert(scip != NULL);
 
    SCIP_CALL( SCIPgetBoolParam(scip,
          "reading/clsreader/usetransform", &transformed));
 
-
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       transformed = FALSE;
 
-   Seeed_Wrapper swpool;
    if( !transformed )
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+   else
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+
+   if( detprobdata->conspartitioncollection.empty() )
    {
-      SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
-      SCIPconshdlrDecompGetSeeedpoolUnpresolved(scip, &swpool);
-      seeedpool = swpool.seeedpool;
+      GCGconshdlrDecompClassify(scip, !detprobdata->isAssignedToOrigProb());
+      GCGconshdlrDecompCalcCandidatesNBlocks(scip, !detprobdata->isAssignedToOrigProb());
    }
 
-   if( transformed )
-   {
-      SCIPconshdlrDecompCreateSeeedpool(scip);
-      SCIPconshdlrDecompGetSeeedpool(scip, &swpool);
-      seeedpool = swpool.seeedpool;
-   }
-
-   SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
-
-   if( seeedpool->consclassescollection.size() == 0 )
-      seeedpool->calcClassifierAndNBlockCandidates(scip);
-
-   SCIPinfoMessage(scip, file, "# a1) <number of classifiers>\n" );
-   SCIPinfoMessage(scip, file, "# a2) for each classifier:\n" );
+   SCIPinfoMessage(scip, file, "# a1) <number of partitions>\n" );
+   SCIPinfoMessage(scip, file, "# a2) for each partition:\n" );
    SCIPinfoMessage(scip, file, "# b1)    VAR or CONS\n" );
-   SCIPinfoMessage(scip, file, "# b2)    <name of classifier>\n" );
+   SCIPinfoMessage(scip, file, "# b2)    <name of partition>\n" );
    SCIPinfoMessage(scip, file, "# b3)    <number of classes>\n" );
    SCIPinfoMessage(scip, file, "# b4)    for each class:\n" );
    SCIPinfoMessage(scip, file, "# c1)       <name of class>: <description of class>\n" );
@@ -149,63 +111,62 @@ SCIP_RETCODE GCGwriteCls(
    SCIPinfoMessage(scip, file, "# d1)          <name of element> (e.g. variable or constraint name, concerning transformed [default] or original problem)\n" );
    SCIPinfoMessage(scip, file, "###########################################\n" );
 
-
    /* a */
-   SCIPinfoMessage(scip, file, "%d\n", (int) seeedpool->consclassescollection.size() + (int) seeedpool->varclassescollection.size() );
+   SCIPinfoMessage(scip, file, "%d\n", (int) detprobdata->conspartitioncollection.size() + (int) detprobdata->varpartitioncollection.size() );
 
-   for( size_t c = 0; c < seeedpool->consclassescollection.size() ; ++c )
+   for( size_t c = 0; c < detprobdata->conspartitioncollection.size() ; ++c )
    {
-      gcg::ConsClassifier* classifier = seeedpool->consclassescollection[c];
+      gcg::ConsPartition* partition = detprobdata->conspartitioncollection[c];
 
-      std::vector<std::vector<int> > conssofclasses = std::vector<std::vector<int> >(classifier->getNClasses()) ;
-      for( int cons = 0; cons < seeedpool->getNConss(); ++cons )
-         conssofclasses[classifier->getClassOfCons(cons)].push_back(cons);
+      std::vector<std::vector<int> > conssofclasses = std::vector<std::vector<int> >(partition->getNClasses()) ;
+      for( int cons = 0; cons < detprobdata->getNConss(); ++cons )
+         conssofclasses[partition->getClassOfCons(cons)].push_back(cons);
 
       /* b1 */
       SCIPinfoMessage(scip, file, "CONS\n" );
       /* b2 */
-      SCIPinfoMessage(scip, file, "%s \n", classifier->getName());
+      SCIPinfoMessage(scip, file, "%s \n", partition->getName());
       /* b3 */
-      SCIPinfoMessage(scip, file, "%d\n", classifier->getNClasses() );
-      for( int cl = 0; cl < classifier->getNClasses(); ++cl )
+      SCIPinfoMessage(scip, file, "%d\n", partition->getNClasses() );
+      for( int cl = 0; cl < partition->getNClasses(); ++cl )
       {
          /* c1 */
-         SCIPinfoMessage(scip, file, "%s: %s\n", classifier->getClassName(cl), classifier->getClassDescription(cl) );
+         SCIPinfoMessage(scip, file, "%s: %s\n", partition->getClassName(cl), partition->getClassDescription(cl) );
          /* c2 */
          SCIPinfoMessage(scip, file, "%d\n",  conssofclasses[cl].size() );
          /* c3 */
          for( size_t clm = 0; clm < conssofclasses[cl].size(); ++clm )
          {
-            SCIPinfoMessage(scip, file, "%s\n",  SCIPconsGetName( seeedpool->getConsForIndex( conssofclasses[cl][clm])) );
+            SCIPinfoMessage(scip, file, "%s\n",  SCIPconsGetName( detprobdata->getConsForIndex( conssofclasses[cl][clm])) );
          }
       }
    }
 
 
-   for( size_t c = 0; c < seeedpool->varclassescollection.size() ; ++c )
+   for( size_t c = 0; c < detprobdata->varpartitioncollection.size() ; ++c )
    {
-      gcg::VarClassifier* classifier = seeedpool->varclassescollection[c];
+      gcg::VarPartition* partition = detprobdata->varpartitioncollection[c];
 
-      std::vector<std::vector<int> > varsofclasses = std::vector<std::vector<int> >(classifier->getNClasses()) ;
-      for( int var = 0; var < seeedpool->getNVars(); ++var )
-         varsofclasses[classifier->getClassOfVar(var)].push_back(var);
+      std::vector<std::vector<int> > varsofclasses = std::vector<std::vector<int> >(partition->getNClasses()) ;
+      for( int var = 0; var < detprobdata->getNVars(); ++var )
+         varsofclasses[partition->getClassOfVar(var)].push_back(var);
 
       /* b1 */
       SCIPinfoMessage(scip, file, "VAR\n" );
       /* b2 */
-      SCIPinfoMessage(scip, file, "%s \n", classifier->getName());
+      SCIPinfoMessage(scip, file, "%s \n", partition->getName());
       /* b3 */
-      SCIPinfoMessage(scip, file, "%d\n", classifier->getNClasses() );
-      for( int cl = 0; cl < classifier->getNClasses(); ++cl )
+      SCIPinfoMessage(scip, file, "%d\n", partition->getNClasses() );
+      for( int cl = 0; cl < partition->getNClasses(); ++cl )
       {
          /* c1 */
-         SCIPinfoMessage(scip, file, "%s: %s\n", classifier->getClassName(cl), classifier->getClassDescription(cl) );
+         SCIPinfoMessage(scip, file, "%s: %s\n", partition->getClassName(cl), partition->getClassDescription(cl) );
          /* c2 */
-         SCIPinfoMessage(scip, file, "%d\n",  classifier->getNVarsOfClasses()[cl] );
+         SCIPinfoMessage(scip, file, "%d\n", partition->getNVarsOfClasses()[cl] );
          /* c3 */
          for( size_t clm = 0; clm <varsofclasses[cl].size(); ++clm )
          {
-            SCIPinfoMessage(scip, file, "%s\n",  SCIPvarGetName( seeedpool->getVarForIndex( varsofclasses[cl][clm])) );
+            SCIPinfoMessage(scip, file, "%s\n",  SCIPvarGetName( detprobdata->getVarForIndex( varsofclasses[cl][clm])) );
          }
       }
    }

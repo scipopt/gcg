@@ -218,8 +218,8 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
 
 template <class T>
 SCIP_RETCODE RowGraphWeighted<T>::createFromPartialMatrix(
-   Seeedpool*            seeedpool,
-   Seeed*                seeed,
+   DETPROBDATA*            detprobdata,
+   PARTIALDECOMP*                partialdec,
    DISTANCE_MEASURE      dist,               /**< Here we define the distance measure between two rows */
    WEIGHT_TYPE           w_type             /**< Depending on the algorithm we can build distance or similarity graph */
    )
@@ -232,20 +232,20 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromPartialMatrix(
    int m;
    vector<int> conssForGraph; /** stores the conss included by the graph */
    vector<int> varsForGraph; /** stores the vars included by the graph */
-   vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
-   vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+   vector<bool> varsBool(partialdec->getNVars(), false); /**< true, if the var will be part of the graph */
+   vector<bool> conssBool(partialdec->getNConss(), false); /**< true, if the cons will be part of the graph */
    unordered_map<int, int> oldToNewConsIndex; /** stores new index of the conss */
    unordered_map<int, int> oldToNewVarIndex; /** stores new index of the vars */
 
-   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   for(int c = 0; c < partialdec->getNOpenconss(); ++c)
    {
-      int cons = seeed->getOpenconss()[c];
-      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      int cons = partialdec->getOpenconss()[c];
+      for(int v = 0; v < partialdec->getNOpenvars(); ++v)
       {
-         int var = seeed->getOpenvars()[v];
-         for(i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+         int var = partialdec->getOpenvars()[v];
+         for(i = 0; i < detprobdata->getNVarsForCons(cons); ++i)
          {
-            if(var == seeedpool->getVarsForCons(cons)[i])
+            if(var == detprobdata->getVarsForCons(cons)[i])
             {
                varsBool[var] = true;
                conssBool[cons] = true;
@@ -254,15 +254,15 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromPartialMatrix(
       }
    }
 
-   for(int v = 0; v < seeed->getNOpenvars(); ++v)
+   for(int v = 0; v < partialdec->getNOpenvars(); ++v)
    {
-      int var = seeed->getOpenvars()[v];
+      int var = partialdec->getOpenvars()[v];
       if(varsBool[var])
          varsForGraph.push_back(var);
    }
-   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   for(int c = 0; c < partialdec->getNOpenconss(); ++c)
    {
-      int cons = seeed->getOpenconss()[c];
+      int cons = partialdec->getOpenconss()[c];
       if(conssBool[cons])
          conssForGraph.push_back(cons);
    }
@@ -303,16 +303,16 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromPartialMatrix(
          int c = 0;   // number of variables that appear ONLY in the first row
 
 
-         for( k = 0; k < seeedpool->getNVarsForCons(cons1); ++k)
+         for( k = 0; k < detprobdata->getNVarsForCons(cons1); ++k)
          {
-            int var1 = seeedpool->getVarsForCons(cons1)[k];
+            int var1 = detprobdata->getVarsForCons(cons1)[k];
             if(!varsBool[var1])
                continue;
             assert(varsBool[var1]);
 
-            for(l = 0; l < seeedpool->getNVarsForCons(cons2); ++l)
+            for(l = 0; l < detprobdata->getNVarsForCons(cons2); ++l)
             {
-               int var2 = seeedpool->getVarsForCons(cons2)[l];
+               int var2 = detprobdata->getVarsForCons(cons2)[l];
                if(!varsBool[var2])
                   continue;
 
@@ -322,17 +322,17 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromPartialMatrix(
                   break;   // stop comparing the variable from the 1st const. with the rest of vars. in the 2nd const.
                }
             }
-            for(m = 0; m < seeedpool->getNVarsForCons(cons2); ++m)
+            for(m = 0; m < detprobdata->getNVarsForCons(cons2); ++m)
             {
-               int var = seeedpool->getVarsForCons(cons2)[m];
+               int var = detprobdata->getVarsForCons(cons2)[m];
                if(varsBool[var])
                   b++;
             }
             b = b - a;
 
-            for(m = 0; m < seeedpool->getNVarsForCons(cons1); ++m)
+            for(m = 0; m < detprobdata->getNVarsForCons(cons1); ++m)
             {
-               int var = seeedpool->getVarsForCons(cons1)[m];
+               int var = detprobdata->getVarsForCons(cons1)[m];
                if(varsBool[var])
                   c++;
             }
@@ -610,7 +610,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
 }
 
 template <>
-SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, vector<int>& labels, bool enabled)
+SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::DETPROBDATA* detprobdata, gcg::PARTIALDECOMP* partialdec, vector<int>& labels, bool enabled)
 {
    assert((int)labels.size() == graph.getNNodes());
    set<int> diff_blocks_beginning;
@@ -629,20 +629,20 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::Seeedpo
       //fillout conssForGraph and varsForGraph
       vector<int> conssForGraph; /* stores the conss included by the graph */
       vector<int> varsForGraph; /* stores the vars included by the graph */
-      vector<bool> varsBool(seeed->getNVars(), false); /* true, if the var will be part of the graph */
-      vector<bool> conssBool(seeed->getNConss(), false); /* true, if the cons will be part of the graph */
+      vector<bool> varsBool(partialdec->getNVars(), false); /* true, if the var will be part of the graph */
+      vector<bool> conssBool(partialdec->getNConss(), false); /* true, if the cons will be part of the graph */
       unordered_map<int, int> oldToNewConsIndex; /* stores new index of the conss */
       unordered_map<int, int> oldToNewVarIndex; /* stores new index of the vars */
 
-      for(int c = 0; c < seeed->getNOpenconss(); ++c)
+      for(int c = 0; c < partialdec->getNOpenconss(); ++c)
       {
-         int cons = seeed->getOpenconss()[c];
-         for(int v = 0; v < seeed->getNOpenvars(); ++v)
+         int cons = partialdec->getOpenconss()[c];
+         for(int v = 0; v < partialdec->getNOpenvars(); ++v)
          {
-            int var = seeed->getOpenvars()[v];
-            for(int i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+            int var = partialdec->getOpenvars()[v];
+            for(int i = 0; i < detprobdata->getNVarsForCons(cons); ++i)
             {
-               if(var == seeedpool->getVarsForCons(cons)[i])
+               if(var == detprobdata->getVarsForCons(cons)[i])
                {
                   varsBool[var] = true;
                   conssBool[cons] = true;
@@ -651,15 +651,15 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::Seeedpo
          }
       }
 
-      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      for(int v = 0; v < partialdec->getNOpenvars(); ++v)
       {
-         int var = seeed->getOpenvars()[v];
+         int var = partialdec->getOpenvars()[v];
          if(varsBool[var] == true)
             varsForGraph.push_back(var);
       }
-      for(int c = 0; c < seeed->getNOpenconss(); ++c)
+      for(int c = 0; c < partialdec->getNOpenconss(); ++c)
       {
-         int cons = seeed->getOpenconss()[c];
+         int cons = partialdec->getOpenconss()[c];
          if(conssBool[cons] == true)
             conssForGraph.push_back(cons);
       }
@@ -701,9 +701,9 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::Seeedpo
           int consIndex = oldToNewConsIndex[cons];
           assert(consIndex >= 0);
           assert(consIndex < this->nconss);
-          for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
+          for(int v = 0; v < detprobdata->getNVarsForCons(cons); ++v)
           {
-             int var = seeedpool->getVarsForCons(cons)[v];
+             int var = detprobdata->getVarsForCons(cons)[v];
              if(find(varsForGraph.begin(), varsForGraph.end(), var) == varsForGraph.end())
                 continue;
              int varIndex = oldToNewVarIndex[var];
@@ -740,9 +740,9 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::Seeedpo
           int consIndex = oldToNewConsIndex[cons];
           assert(consIndex >= 0);
           assert(consIndex < this->nconss);
-          for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
+          for(int v = 0; v < detprobdata->getNVarsForCons(cons); ++v)
           {
-             int var = seeedpool->getVarsForCons(cons)[v];
+             int var = detprobdata->getVarsForCons(cons)[v];
              if(find(varsForGraph.begin(), varsForGraph.end(), var) == varsForGraph.end())
                 continue;
              int varIndex = oldToNewVarIndex[var];
@@ -1019,7 +1019,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
 
 // this function is obsolete
 template <>
-SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSetForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, vector<int>& labels, bool enabled)
+SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSetForPartialGraph(gcg::DETPROBDATA* detprobdata, gcg::PARTIALDECOMP* partialdec, vector<int>& labels, bool enabled)
 {
    assert((int)labels.size() == graph.getNNodes());
    set<int> diff_blocks_beginning;
@@ -1041,20 +1041,20 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSetForPartialGraph(gcg
       //fillout conssForGraph and varsForGraph
       vector<int> conssForGraph; /** stores the conss included by the graph */
       vector<int> varsForGraph; /** stores the vars included by the graph */
-      vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
-      vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+      vector<bool> varsBool(partialdec->getNVars(), false); /**< true, if the var will be part of the graph */
+      vector<bool> conssBool(partialdec->getNConss(), false); /**< true, if the cons will be part of the graph */
       unordered_map<int, int> oldToNewConsIndex; /** stores new index of the conss */
       unordered_map<int, int> oldToNewVarIndex; /** stores new index of the vars */
 
-      for(int c = 0; c < seeed->getNOpenconss(); ++c)
+      for(int c = 0; c < partialdec->getNOpenconss(); ++c)
       {
-         int cons = seeed->getOpenconss()[c];
-         for(int v = 0; v < seeed->getNOpenvars(); ++v)
+         int cons = partialdec->getOpenconss()[c];
+         for(int v = 0; v < partialdec->getNOpenvars(); ++v)
          {
-            int var = seeed->getOpenvars()[v];
-            for(int i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+            int var = partialdec->getOpenvars()[v];
+            for(int i = 0; i < detprobdata->getNVarsForCons(cons); ++i)
             {
-               if(var == seeedpool->getVarsForCons(cons)[i])
+               if(var == detprobdata->getVarsForCons(cons)[i])
                {
                   varsBool[var] = true;
                   conssBool[cons] = true;
@@ -1063,15 +1063,15 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSetForPartialGraph(gcg
          }
       }
 
-      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      for(int v = 0; v < partialdec->getNOpenvars(); ++v)
       {
-         int var = seeed->getOpenvars()[v];
+         int var = partialdec->getOpenvars()[v];
          if(varsBool[var] == true)
             varsForGraph.push_back(var);
       }
-      for(int c = 0; c < seeed->getNOpenconss(); ++c)
+      for(int c = 0; c < partialdec->getNOpenconss(); ++c)
       {
-         int cons = seeed->getOpenconss()[c];
+         int cons = partialdec->getOpenconss()[c];
          if(conssBool[cons] == true)
             conssForGraph.push_back(cons);
       }
@@ -1130,17 +1130,17 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSetForPartialGraph(gcg
 
             /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
             /** @todo Do more then one entry per variable actually work? */
-            for(int v = 0; v < seeedpool->getNVarsForCons(cons1); ++v)
+            for(int v = 0; v < detprobdata->getNVarsForCons(cons1); ++v)
             {
-               int var1 = seeedpool->getVarsForCons(cons1)[v];
+               int var1 = detprobdata->getVarsForCons(cons1)[v];
                if(find(varsForGraph.begin(), varsForGraph.end(), var1) == varsForGraph.end())
                   continue;
                int varIndex1 = oldToNewVarIndex[var1];
                assert(varIndex1 >= 0);
                assert(varIndex1 < this->nvars);
-               for(int w = 0; w < seeedpool->getNVarsForCons(cons2); ++w)
+               for(int w = 0; w < detprobdata->getNVarsForCons(cons2); ++w)
                {
-                  int var2 = seeedpool->getVarsForCons(cons2)[w];
+                  int var2 = detprobdata->getVarsForCons(cons2)[w];
                      if(find(varsForGraph.begin(), varsForGraph.end(), var2) == varsForGraph.end())
                         continue;
                      int varIndex2 = oldToNewVarIndex[var2];
@@ -1240,13 +1240,13 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionDBSCAN(double eps, bool
 }
 
 template <>
-SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionDBSCANForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, double eps, bool postprocenable)
+SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionDBSCANForPartialGraph(gcg::DETPROBDATA* detprobdata, gcg::PARTIALDECOMP* partialdec, double eps, bool postprocenable)
 {
    vector<int> labels;
    labels = GraphAlgorithms<GraphGCG>::dbscan(graph, eps);
    assert((int)labels.size() == graph.getNNodes());
 
-   SCIP_CALL( postProcessForPartialGraph(seeedpool, seeed, labels, postprocenable) );
+   SCIP_CALL( postProcessForPartialGraph(detprobdata, partialdec, labels, postprocenable) );
    return SCIP_OKAY;
 }
 
@@ -1263,13 +1263,13 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionMST(double eps, bool po
 }
 
 template <>
-SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionMSTForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, double eps, bool postprocenable)
+SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionMSTForPartialGraph(gcg::DETPROBDATA* detprobdata, gcg::PARTIALDECOMP* partialdec, double eps, bool postprocenable)
 {
    vector<int> labels;
    labels = GraphAlgorithms<GraphGCG>::mst(graph, eps);
    assert((int)labels.size() == graph.getNNodes());
 
-   SCIP_CALL( postProcessForPartialGraph(seeedpool, seeed, labels, postprocenable) );
+   SCIP_CALL( postProcessForPartialGraph(detprobdata, partialdec, labels, postprocenable) );
    return SCIP_OKAY;
 }
 
@@ -1285,13 +1285,13 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionMCL(int& stoppedAfter, 
 }
 
 template <>
-SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionMCLForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, int& stoppedAfter, double inflatefactor, bool postprocenable)
+SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionMCLForPartialGraph(gcg::DETPROBDATA* detprobdata, gcg::PARTIALDECOMP* partialdec, int& stoppedAfter, double inflatefactor, bool postprocenable)
 {
    vector<int> labels;
    labels = GraphAlgorithms<GraphGCG>::mcl(graph, stoppedAfter, inflatefactor);
    assert((int)labels.size() == graph.getNNodes());
 
-   SCIP_CALL( postProcessForPartialGraph(seeedpool, seeed, labels, postprocenable) );
+   SCIP_CALL( postProcessForPartialGraph(detprobdata, partialdec, labels, postprocenable) );
    return SCIP_OKAY;
 }
 

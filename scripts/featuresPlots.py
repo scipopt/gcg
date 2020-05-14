@@ -8,14 +8,6 @@ import commands
 def main(argv):
     presolved = (argv[5] == 'presolved') or (argv[5] == 'True')
     presolvedstring = ""
-    olderinstancepathhelp = argv[9].split("/")
-    olderinstancepath = ""
-    for i in range(3, len(olderinstancepathhelp) ):
-        if i == 3:
-            olderinstancepath = olderinstancepath + olderinstancepathhelp[i]
-        else:
-            olderinstancepath = olderinstancepath + "/" + olderinstancepathhelp[i]
-
 
     if presolved:
         presolvedstring = " set presolving maxrounds 0 presolve"
@@ -26,7 +18,6 @@ def main(argv):
     gcgcommand = gcgcommand + " set write miplib2017matrixfilepath " + argv[7]
     gcgcommand = gcgcommand + " set write miplib2017decompfilepath " + argv[8]
     gcgcommand = gcgcommand + " set visual colorscheme 1"
-    gcgcommand = gcgcommand + " change instancename " + olderinstancepath
     gcgcommand = gcgcommand +  presolvedstring
     gcgcommand = gcgcommand + " detect"
 
@@ -52,4 +43,4 @@ if __name__ == "__main__":
     if len(sys.argv) == 10:
         main(sys.argv)
     else:
-        print "usage: featuresPlots.py <path_instance> <instancename> <path_gcg> <settings> <presolved> <path_features> <path_matrix_plots> <path_decomp_files> <path_orig_instance>"
+        print "usage: featuresPlots.py <path_instance> <instancename> <path_gcg> <settings> <presolved> <path_features> <path_matrix_plots> <path_decomp_files>"

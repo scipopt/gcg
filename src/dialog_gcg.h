@@ -63,10 +63,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecPrintDetectionInformation);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr);
 
-/** dialog execution method add an instance name, used for make test with statistic reading */
-extern
-SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddInstancename);
-
 /** dialog execution method for the display detectors command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDetectors);

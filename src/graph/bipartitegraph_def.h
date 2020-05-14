@@ -149,29 +149,29 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
 
 template <class T>
 SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
-                   Seeedpool*                                                   seeedpool,
-                   Seeed*                                                       seeed
+                   DETPROBDATA*                                                   detprobdata,
+                   PARTIALDECOMP*                                               partialdec
      ){
 
      int i;
      int j;
      unordered_map<int, int> oldToNewVarIndex;
      unordered_map<int, int> oldToNewConsIndex;
-     std::vector<bool> varsBool(seeed->getNVars(), false); /* true, if the var will be part of the graph */
-     std::vector<bool> conssBool(seeed->getNConss(), false); /* true, if the cons will be part of the graph */
+     std::vector<bool> varsBool(partialdec->getNVars(), false); /* true, if the var will be part of the graph */
+     std::vector<bool> conssBool(partialdec->getNConss(), false); /* true, if the cons will be part of the graph */
      std::vector<int> conssForGraph; /* stores the conss included by the graph */
      std::vector<int> varsForGraph; /* stores the vars included by the graph */
 
      //fillout conssForGraph and varsForGraph
-     for(int c = 0; c < seeed->getNOpenconss(); ++c)
+     for(int c = 0; c < partialdec->getNOpenconss(); ++c)
      {
-        int cons = seeed->getOpenconss()[c];
-        for(int v = 0; v < seeed->getNOpenvars(); ++v)
+        int cons = partialdec->getOpenconss()[c];
+        for(int v = 0; v < partialdec->getNOpenvars(); ++v)
         {
-           int var = seeed->getOpenvars()[v];
-           for(i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+           int var = partialdec->getOpenvars()[v];
+           for(i = 0; i < detprobdata->getNVarsForCons(cons); ++i)
            {
-              if(var == seeedpool->getVarsForCons(cons)[i])
+              if(var == detprobdata->getVarsForCons(cons)[i])
               {
                  varsBool[var] = true;
                  conssBool[cons] = true;
@@ -180,15 +180,15 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
         }
      }
 
-     for(int v = 0; v < seeed->getNOpenvars(); ++v)
+     for(int v = 0; v < partialdec->getNOpenvars(); ++v)
      {
-        int var = seeed->getOpenvars()[v];
+        int var = partialdec->getOpenvars()[v];
         if(varsBool[var])
            varsForGraph.push_back(var);
      }
-     for(int c = 0; c < seeed->getNOpenconss(); ++c)
+     for(int c = 0; c < partialdec->getNOpenconss(); ++c)
      {
-        int cons = seeed->getOpenconss()[c];
+        int cons = partialdec->getOpenconss()[c];
         if(conssBool[cons])
            conssForGraph.push_back(cons);
      }
@@ -204,7 +204,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
          int var = varsForGraph[i];
 
          /* note that the first nvars nodes correspond to variables */
-         weight = this->weights.calculate(seeedpool->getVarForIndex(var));
+         weight = this->weights.calculate(detprobdata->getVarForIndex(var));
          oldToNewVarIndex.insert({var,i});
          this->graph.addNode(i, weight);
      }
@@ -217,7 +217,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
         int cons = conssForGraph[j];
 
         /* note that the first nvars nodes correspond to variables (legacy implementation) */
-        weight = this->weights.calculate( seeedpool->getConsForIndex(cons) );
+        weight = this->weights.calculate( detprobdata->getConsForIndex(cons) );
         oldToNewConsIndex.insert({cons, j});
         this->graph.addNode( this->nvars + j, weight);
      }
@@ -227,9 +227,9 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
      {
         int oldConsId = conssForGraph[i];
 
-        for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
+        for( j = 0; j < detprobdata->getNVarsForCons(oldConsId); ++j )
         {
-           int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
+           int oldVarId = detprobdata->getVarsForCons(oldConsId)[j];
            if(!varsBool[oldVarId])
               continue;
            SCIP_CALL( this->graph.addEdge(oldToNewVarIndex[oldVarId], this->nvars+i) );

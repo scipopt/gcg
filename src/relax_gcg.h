@@ -234,6 +234,12 @@ DEC_DECMODE GCGgetMasterDecompMode(
    SCIP*                 masterprob          /**< the master problem SCIP instance */
    );
 
+/** gets the structure information */
+extern
+DEC_DECOMP* GCGgetStructDecomp(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 /** returns the visualization parameters */
 extern
 GCG_PARAMDATA* GCGgetParamsVisu(

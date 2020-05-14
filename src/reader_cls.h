@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_cls.h
- * @brief  CLS reader for writing files containing classifier data
+ * @brief  CLS reader for writing files containing classification data
  * @author Julius Hense
  * @ingroup FILEREADERS
  *
