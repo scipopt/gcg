@@ -19,7 +19,7 @@ CURRENT_VERSION=`grep '@version' resources/main.md | awk '{ printf("%s", $2); }'
 
 # Adds new .md pages to the table of contents in the folder
 # with a file named as the folder (.md).
-makeSubpageIndexing () {
+makeSubpageIndexing () {( set -e
   DIR=$1
   TITLE=$2
   cd $DIR
@@ -30,10 +30,10 @@ makeSubpageIndexing () {
 
   #echo "Subpage indexing for ${DIR} built sucessfully."
   cd - > /dev/null 2>&1
-}
+)}
 
 # Get GCG Menu for interactive menu page
-makeInteractiveMenuDocu () {
+makeInteractiveMenuDocu () {( set -e
   cd resources/users/features/interactive-menu
   rm -f menu.html
   
@@ -46,10 +46,10 @@ makeInteractiveMenuDocu () {
   # Remove the text file that contains all menu entries (except for submenus, e.g. master/explore)
   rm menu.txt
   cd - > /dev/null 2>&1 
-}
+)}
 
 # Check if mathjax is wanted and clone repository on a fixed working version
-checkMathjax () {
+checkMathjax () {( set -e
   if [ "$1" == "--mathjax" ]
   then
      DOXYGEN_USE_MATHJAX="YES"
@@ -70,7 +70,7 @@ checkMathjax () {
   else
      DOXYGEN_USE_MATHJAX="NO"
   fi
-}
+)}
 
 # Download SCIP css files, fonts etc. such that no accesses to American sites etc. are performed
 getAdditionalResources () {( set -e
@@ -108,30 +108,30 @@ getAdditionalResources () {( set -e
 )}
 
 # Generate interactively created FAQ (txt -> php)
-generateFAQ () {
+generateFAQ () {( set -e
   cd resources/misc/faq
   python3 parser.py --linkext shtml  && php localfaq.php > faq.inc
   cd - > /dev/null 2>&1
-}
+)}
 
 # Generate parameter file (includes SCIP params)
-generateParamsFile () {
+generateParamsFile () {( set -e
   cd ..
   "$BINDIR"/gcg -c "set default set save doc/resources/misc/parameters.set quit" > /dev/null 2>&1
   cd - > /dev/null 2>&1
-}
+)}
 
 # Remove citelist.html (the Bibliography) manually from the menu (but still reachable via link)
-removeBibliography () {
+removeBibliography () {( set -e
   cd html/doc-${CURRENT_VERSION}
   sed -i.bak "/citelist/d" pages.html && rm pages.html.bak
   sed -i.bak "/citelist/d" navtreedata.js && rm navtreedata.js.bak
   sed -i.bak "s/\:\[5/\:\[4/g" navtreeindex*.js && rm navtreeindex*.js.bak # citelist is the third item in the navigation (after Users Guide and Devs Guide,
   sed -i.bak "s/\:\[6/\:\[5/g" navtreeindex*.js && rm navtreeindex*.js.bak # since Installation counts as homepage and thus 0)
-}
+)}
 
 # Create Doxygen documentation for pages and source code
-generateDoxy () {
+generateDoxy () {( set -e
   # add version to the dropdown
   echo "<li><a href='../doc-${CURRENT_VERSION}/index.html'>GCG ${CURRENT_VERSION}</a></li>" >> docversions.html
 
@@ -150,7 +150,7 @@ generateDoxy () {
   printf "${R}"
   DOXYGEN_USE_MATHJAX=${DOXYGEN_USE_MATHJAX} doxygen gcg.dxy
   printf "${W}"
-}
+)}
 
 main () {
   # The ||-structure below is a try-catch workaround for bash to alert the user 
