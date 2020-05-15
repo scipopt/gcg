@@ -121,14 +121,14 @@ public:
    virtual SCIP_RETCODE createPartialdecFromPartition(
       PARTIALDECOMP**      firstpartialdec,         /**< pointer to buffer the new partialdec created by dint of the graph */
       PARTIALDECOMP**      secondpartialdec,        /**< pointer to buffer the new partialdec whose border is amplified by dint of the graph */
-      DETPROBDATA*         detprobdata               /**< detection process information and data */
+      DETPROBDATA*         detprobdata              /**< detection process information and data */
       );
 
    virtual SCIP_RETCODE createFromMatrix(
       SCIP_CONS**           conss,              /**< constraints for which graph should be created */
       SCIP_VAR**            vars,               /**< variables for which graph should be created */
-      int                   nconss_,             /**< number of constraints */
-      int                   nvars_               /**< number of variables */
+      int                   nconss_,            /**< number of constraints */
+      int                   nvars_              /**< number of variables */
       );
 
    /** creates a graph with open constraints and open variables of the partialdec */

@@ -27,7 +27,7 @@
 
 /**@file   dec_mst.cpp
  * @ingroup DETECTORS
- * @brief  detector MST
+ * @brief  minimum spanning tree clustering detector
  * @author Igor Pesic
  */
 
@@ -41,6 +41,7 @@
 #include "graph/graph_gcg.h"
 #include "scip/clock.h"
 
+
 using gcg::RowGraphWeighted;
 using gcg::Weights;
 using gcg::GraphGCG;
@@ -49,17 +50,17 @@ using gcg::GraphGCG;
 /* constraint handler properties */
 #define DEC_DETECTORNAME          "mst"                               /**< name of detector */
 #define DEC_DESC                  "detector based on MST clustering"  /**< description of detector*/
-#define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          INT_MAX     /**< last round the detector gets called                              */
-#define DEC_MINCALLROUND          0           /**< first round the detector gets called                              */
-#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /**< last round the detector gets called while detecting the original problem                            */
-#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              910         /**< priority of the constraint handler for separation */
+#define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          INT_MAX     /**< last round the detector gets called */
+#define DEC_MINCALLROUND          0           /**< first round the detector gets called */
+#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem */
+#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /**< last round the detector gets called while detecting the original problem */
+#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem  */
 #define DEC_DECCHAR               'M'         /**< display character of detector */
-#define DEC_ENABLED               FALSE        /**< should the detection be enabled */
+#define DEC_ENABLED               FALSE       /**< should the detection be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
-#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE       /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 

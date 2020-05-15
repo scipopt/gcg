@@ -44,27 +44,17 @@ Detectors used for detection algorithmics:
 - @subpage det-compgreedily
 - @subpage det-postprocess
 
-<hr>
-#### Existing in the refactoring, but currently not in use
-
-Detectors performing clustering (currently not in refactoring):
+Detectors performing clustering (require GSL):
 - @subpage det-mst
 - @subpage det-dbscan
 
-Other detectors:
-- @subpage det-isomorph
+Other detectors (require bliss):
+- @subpage det-isomorph 
 
 <hr>
-#### Will be removed after the refactoring or are already removed
+#### Will be removed in a future version:
 
-Legacy Mode detectors:
-- @subpage det-staircase
-- @subpage det-colors
-- @subpage det-cutpacking
-- @subpage det-connected
-- @subpage det-random
-
-Duplicates:
+Duplicates of the consclass detector:
 - @subpage det-constype
 - @subpage det-consname
 

@@ -552,7 +552,7 @@ public:
       );
 
    /**
-    * @brief returns whether a constraint is a cardinality constraint, i.e. of the \sum){i} x_i == b
+    * @brief returns whether a constraint is a cardinality constraint, i.e. of the \f$\sum_{i} x_i = b\f$
     * @param consindexd index of constraint that is be checked
     * @return returns whether a constraint is a cardinality constraint
     */

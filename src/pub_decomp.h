@@ -380,9 +380,9 @@ SCIP_Real* DECdecompGetDetectorClockTimes(
 /** sets the detector clock times of the detectors of the detector chain */
 extern
 SCIP_RETCODE DECdecompSetDetectorChainString(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,                /**< SCIP data structure */
    DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   const char*           detectorchainstring
+   const char*           detectorchainstring  /**< string for the detector information working on that decomposition */
    );
 
 
@@ -482,8 +482,8 @@ SCIP_Real* DECdecompGetDetectorPctConssFromOpen(
 extern
 void DECdecompSetNNewBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   int*                  nNewBlocks
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   int*                  nNewBlocks          /**< number of new blocks on this decomposition */
    );
 
 /** gets the number of new blocks corresponding detectors (of the detector chain) on this decomposition */

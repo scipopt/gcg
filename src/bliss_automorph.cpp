@@ -420,7 +420,7 @@ static SCIP_RETCODE allocMemoryNewDetection(
    AUT_COLOR*            colorinfo,          /**< struct to save intermediate information */
    int                   nconss,             /**< number of constraints */
    int                   nvars,              /**< number of variables */
-   int                   ncoeffs
+   int                   ncoeffs             /**< number of coefficients */
    )
 {
    SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarraycoefs, ((size_t) ncoeffs )));

@@ -2,10 +2,6 @@ body, table, div, p, dl {
    font-family: 'Open Sans', sans-serif;
 }
 
-.reveal:hover, .reveal_faq:hover {
-    text-shadow: 1px 1px 1px #777;
-}
-
 /* scroll up headings a bit to compensate for the header */
 .reveal, .reveal_faq {
   color:#06c;
@@ -62,6 +58,7 @@ font-family:monospace;
 }
 .center {
    position:center;
+   text-align:center;
 }
 .al-r {
    text-align: right;

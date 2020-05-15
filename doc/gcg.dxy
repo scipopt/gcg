@@ -757,6 +757,7 @@ WARN_NO_PARAMDOC       = YES
 # @todo SET THIS TO "YES" after
 # - merging the docu branch into the master and
 # - having documented everything that throws warnings
+#
 # to add a hook that generates the docu upon merging into the master to avoid
 # undocumented code from being in the master
 

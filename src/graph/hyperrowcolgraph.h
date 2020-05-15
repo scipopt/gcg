@@ -62,8 +62,8 @@ public:
 
    /** creates a graph with open constraints and open variables of the partialdec */
    virtual SCIP_RETCODE createFromPartialMatrix(
-      DETPROBDATA*           detprobdata,
-      PARTIALDECOMP*               partialdec
+      DETPROBDATA*          detprobdata,        /**< detection process information and data */
+      PARTIALDECOMP*        partialdec          /**< partial decomposition to use for matrix */
       );
 
    /** writes the graph to the given file.
@@ -71,7 +71,7 @@ public:
     */
    virtual SCIP_RETCODE writeToFile(
       int                fd,                  /**< file descriptor where the graph should be written to */
-      SCIP_Bool          writeweights        /**< whether to write weights */
+      SCIP_Bool          writeweights         /**< whether to write weights */
     );
 
 

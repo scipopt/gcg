@@ -1701,7 +1701,7 @@ extern
 SCIP_RETCODE DECdecompSetDetectorChainString(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   const char*           detectorchainstring
+   const char*           detectorchainstring  /**< string for the detector information working on that decomposition */
    )
 {
    SCIP_CALL (SCIPduplicateBlockMemoryArray(scip, &(decomp->detectorchainstring), detectorchainstring, SCIP_MAXSTRLEN ) );
@@ -1939,8 +1939,8 @@ SCIP_Real* DECdecompGetDetectorPctConssFromOpen(
 /** sets the number of new blocks of the corresponding detectors (of the detector chain) on this decomposition */
 void DECdecompSetNNewBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   int*                  nNewBlocks
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   int*                  nNewBlocks          /**< number of newly found blocks in this decomposition */
    )
 {
    int d;
