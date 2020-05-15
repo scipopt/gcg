@@ -454,7 +454,7 @@ endif
 
 .PHONY: doc
 doc:
-		cd doc; export BINDIR=$(PWD)/$(BINDIR); $(SHELL) builddoc.sh --mathjax;
+		@cd doc; export BINDIR=$(PWD)/$(BINDIR); $(SHELL) builddoc.sh --mathjax;
 
 .PHONY: $(MAINSHORTLINK)
 $(MAINSHORTLINK):	$(MAINFILE)
