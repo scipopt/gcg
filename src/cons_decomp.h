@@ -609,16 +609,6 @@ DEC_DECOMP** GCGconshdlrDecompGetDecomps(
    SCIP* scip  /**< SCIP data structure */
    );
 
-/** @brief gets detector history of partialdec with given id
- * @returns detector history of partialdec
- */
-extern
-void GCGconshdlrDecompGetDetectorHistoryByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
-   int id,        /**< id of partialdec */
-   char* history  /**< char buffer */
-   );
-
 /** @brief Gets an array of all detectors
  *
  * @returns array of detectors */

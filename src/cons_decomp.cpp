@@ -5068,16 +5068,17 @@ DEC_DECOMP** GCGconshdlrDecompGetDecomps(
 }
 
 
-void GCGconshdlrDecompGetDetectorHistoryByPartialdecId(
+std::string GCGconshdlrDecompGetDetectorHistoryByPartialdecId(
    SCIP* scip,
-   int id,
-   char* history
+   int id
    )
 {
+   char buffer[SCIP_MAXSTRLEN];
    /* get partialdec and returns its detector history */
    PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
    assert(partialdec != NULL);
-   partialdec->buildDecChainString(history);
+   partialdec->buildDecChainString(buffer);
+   return std::string(buffer);
 }
 
 
