@@ -21,7 +21,7 @@ Detectors finding **staircase structures**:
 - @subpage det-staircase_lsp
 - @subpage det-stairheur
 
-Detectors finding **inter-** and **intra-constraint connections**:
+Detectors finding **inter- and intra-constraint connections**:
 - @subpage det-connected_base
 - @subpage det-connected_nonewlinkingvars
 - @subpage det-neighborhoodmaster

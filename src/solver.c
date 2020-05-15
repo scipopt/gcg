@@ -258,9 +258,9 @@ SCIP_RETCODE GCGsolverUpdate(
    SCIP*                 pricingprob,        /**< the pricing problem that should be solved */
    GCG_SOLVER*           solver,             /**< pricing solver */
    int                   probnr,             /**< number of the pricing problem */
-   SCIP_Bool             varobjschanged,     /**<  */
-   SCIP_Bool             varbndschanged,     /**<  */
-   SCIP_Bool             consschanged        /**<  */
+   SCIP_Bool             varobjschanged,     /**< have the objective coefficients changed? */
+   SCIP_Bool             varbndschanged,     /**< have the lower and upper bounds changed? */
+   SCIP_Bool             consschanged        /**< have the constraints changed? */
    )
 {
    assert(pricingprob != NULL);

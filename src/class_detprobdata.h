@@ -181,7 +181,6 @@ public:
    /**
     * @brief constructor
     * @param scip SCIP data structure
-    * @param conshdlrName name of the conshandler maintaining the detprobdata, should be "decomp"
     * @param _originalProblem true iff the detprobdata is created for the presolved problem
     */
    DETPROBDATA(
@@ -578,8 +577,8 @@ public:
 
    /**
     * @brief is cons with specified index partitioning packing, or covering constraint?
-    * @param consindex indec of cons to be checked
-    * @return  whether a constraint  is partitioning packing, or covering constraint?
+    * @param consindexd index of cons to be checked
+    * @return whether a constraint is partitioning packing, or covering constraint?
     */
    bool isConsSetppc(
       int  consindexd

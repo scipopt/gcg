@@ -359,7 +359,7 @@ SCIP_RETCODE partialdecVecToIdArray(
 static
 std::vector<PARTIALDECOMP*> getSelectedPartialdecs(
    SCIP* scip,  /**< SCIP data structure */
-   std::vector<PARTIALDECOMP*>& selectedpartialdecs
+   std::vector<PARTIALDECOMP*>& selectedpartialdecs  /**< vector of partialdecs (input) */
    )
 {
    /* get all partialdecs */

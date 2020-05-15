@@ -367,8 +367,8 @@ int DECdecompGetPartialdecID(
 extern
 void DECdecompSetDetectorClockTimes(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   SCIP_Real*            detectorClockTimes
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_Real*            detectorClockTimes  /**< time used by the detectors */
    );
 
 /** gets the detector clock times of the detectors of the detector chain */

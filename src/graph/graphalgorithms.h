@@ -87,7 +87,7 @@ public:
    /** run MCL on the similarity graph */
    static std::vector<int> mcl(
       Graph<GraphGCG>& graph,       /**< the graph with weighted edges */
-      int& stoppedAfter,            /**< */
+      int& stoppedAfter,            /**< number of iterations after which the clustering terminated */
       double inflatefac,            /**< inflate factor */
       int maxiters = 25,            /**< max number of iterations, set to 25 per default */
       int expandfac = 2             /**< expand factor, should be always set to 2 */

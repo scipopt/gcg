@@ -1,4 +1,4 @@
-# SCIP version 6.0.1.3
+# SCIP version 7.0.0
 
 # branching score function ('s'um, 'p'roduct, 'q'uotient)
 # [type: char, advanced: TRUE, range: {spq}, default: p]
@@ -67,6 +67,10 @@ conflict/enable = FALSE fix
 # should conflicts based on an old cutoff bound be removed from the conflict pool after improving the primal bound?
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
 conflict/cleanboundexceedings = TRUE
+
+# use local rows to construct infeasibility proofs
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
+conflict/uselocalrows = TRUE
 
 # should propagation conflict analysis be used?
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
@@ -304,7 +308,7 @@ limits/stallnodes = -1
 # [type: real, advanced: FALSE, range: [0,8796093022208], default: 8796093022208]
 limits/memory = 8796093022208
 
-# solving stops, if the relative gap = |primal - dual|/MIN(|dual|,|primal|) is below the given value
+# solving stops, if the relative gap = |primal - dual|/MIN(|dual|,|primal|) is below the given value, the gap is 'Infinity', if primal and dual bound have opposite signs
 # [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 0]
 limits/gap = 0
 
@@ -582,7 +586,7 @@ misc/allowstrongdualreds = TRUE
 
 # should weak dual reductions be allowed in propagation and presolving?
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-misc/allowweakdualsreds = TRUE
+misc/allowweakdualreds = TRUE
 
 # should the objective function be scaled so that it is always integer?
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
@@ -592,9 +596,9 @@ misc/scaleobj = TRUE
 # [type: real, advanced: FALSE, range: [-1.79769313486232e+308,1.79769313486232e+308], default: 1e+99]
 misc/referencevalue = 1e+99
 
-# used symmetry handling technique (0: off; 1: polyhedral; 2: orbital fixing)
-# [type: int, advanced: FALSE, range: [0,2], default: 2]
-misc/usesymmetry = 2
+# bitset describing used symmetry handling technique (0: off; 1: polyhedral (orbitopes and/or symresacks); 2: orbital fixing; 3: orbitopes and orbital fixing), see type_symmetry.h.
+# [type: int, advanced: FALSE, range: [0,3], default: 3]
+misc/usesymmetry = 3
 
 # global shift of all random seeds in the plugins and the LP random seed
 # [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
@@ -640,9 +644,9 @@ numerics/feastol = 1e-06
 # [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 1]
 numerics/checkfeastolfac = 1
 
-# primal feasibility tolerance of LP solver
-# [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-06]
-numerics/lpfeastol = 1e-06
+# factor w.r.t. primal feasibility tolerance that determines default (and maximal) primal feasibility tolerance of LP solver
+# [type: real, advanced: FALSE, range: [1e-06,1], default: 1]
+numerics/lpfeastolfactor = 1
 
 # feasibility tolerance for reduced costs in LP solution
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-07]
@@ -688,6 +692,10 @@ presolving/maxrestarts = -1
 # [type: real, advanced: TRUE, range: [0,1], default: 0.025]
 presolving/restartfac = 0.025
 
+# limit on number of entries in clique table relative to number of problem nonzeros
+# [type: real, advanced: TRUE, range: [0,1.79769313486232e+308], default: 2]
+presolving/clqtablefac = 2
+
 # fraction of integer variables that were fixed in the root node triggering an immediate restart with preprocessing
 # [type: real, advanced: TRUE, range: [0,1], default: 0.1]
 presolving/immrestartfac = 0.1
@@ -727,6 +735,18 @@ pricing/delvars = FALSE
 # should variables created at the root node be deleted when the root is solved in case they are not present in the LP anymore?
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 pricing/delvarsroot = FALSE
+
+# should the variables be labelled for the application of Benders' decomposition?
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+decomposition/benderslabels = FALSE
+
+# if a decomposition exists, should Benders' decomposition be applied?
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+decomposition/applybenders = FALSE
+
+# maximum number of edges in block graph computation, or -1 for no limit
+# [type: int, advanced: FALSE, range: [-1,2147483647], default: 10000]
+decomposition/maxgraphedge = 10000
 
 # the tolerance used for checking optimality in Benders' decomposition. tol where optimality is given by LB + tol > UB.
 # [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 1e-06]
@@ -881,8 +901,8 @@ separating/objparalfac = 0.1
 separating/dircutoffdistfac = 0.5
 
 # factor to scale efficacy of cut in score calculation
-# [type: real, advanced: TRUE, range: [0,1e+98], default: 1]
-separating/efficacyfac = 1
+# [type: real, advanced: TRUE, range: [0,1e+98], default: 0.6]
+separating/efficacyfac = 0.6
 
 # factor to scale integral support of cut in separation score calculation
 # [type: real, advanced: TRUE, range: [0,1e+98], default: 0.1]
@@ -1240,9 +1260,17 @@ constraints/linear/rangedrowfreq = 1
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
 constraints/linear/multaggrremove = FALSE
 
-# maximum coefficient dynamism (ie. maxabsval / minabsval) for multiaggregation
+# maximum coefficient dynamism (ie. maxabsval / minabsval) for primal multiaggregation
 # [type: real, advanced: TRUE, range: [1,1.79769313486232e+308], default: 1000]
-constraints/linear/maxmultiaggrquot = 1000
+constraints/linear/maxmultaggrquot = 1000
+
+# maximum coefficient dynamism (ie. maxabsval / minabsval) for dual multiaggregation
+# [type: real, advanced: TRUE, range: [1,1.79769313486232e+308], default: 1e+20]
+constraints/linear/maxdualmultaggrquot = 1e+20
+
+# should Cliques be extracted?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/extractcliques = TRUE
 
 # frequency for separating cuts (-1: never, 0: only in root node)
 # [type: int, advanced: FALSE, range: [-1,65534], default: 10]
@@ -2273,8 +2301,8 @@ propagating/redcost/presoltiming = 28
 propagating/redcost/continuous = FALSE
 
 # should implications be used to strength the reduced cost for binary variables?
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-propagating/redcost/useimplics = TRUE
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+propagating/redcost/useimplics = FALSE
 
 # should the propagator be forced even if active pricer are present?
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
@@ -2597,8 +2625,8 @@ heuristics/clique/maxbacktracks = 10
 heuristics/coefdiving/priority = -1001000
 
 # frequency for calling primal heuristic <coefdiving> (-1: never, 0: only at depth freqofs)
-# [type: int, advanced: FALSE, range: [-1,65534], default: 10]
-heuristics/coefdiving/freq = 10
+# [type: int, advanced: FALSE, range: [-1,65534], default: -1]
+heuristics/coefdiving/freq = -1
 
 # frequency offset for calling primal heuristic <coefdiving>
 # [type: int, advanced: FALSE, range: [0,65534], default: 1]
@@ -3869,8 +3897,8 @@ heuristics/rins/maxnodes = 5000
 heuristics/rins/minnodes = 50
 
 # contingent of sub problem nodes in relation to the number of nodes of the original problem
-# [type: real, advanced: FALSE, range: [0,1], default: 0.1]
-heuristics/rins/nodesquot = 0.1
+# [type: real, advanced: FALSE, range: [0,1], default: 0.3]
+heuristics/rins/nodesquot = 0.3
 
 # number of nodes without incumbent change that heuristic should wait
 # [type: int, advanced: TRUE, range: [0,2147483647], default: 200]
@@ -4059,6 +4087,10 @@ heuristics/shiftandpropagate/selectbest = FALSE
 # maximum percentage of allowed cutoffs before stopping the heuristic
 # [type: real, advanced: TRUE, range: [0,2], default: 0]
 heuristics/shiftandpropagate/maxcutoffquot = 0
+
+# minimum fixing rate over all variables (including continuous) to solve LP
+# [type: real, advanced: TRUE, range: [0,1], default: 0]
+heuristics/shiftandpropagate/minfixingratelp = 0
 
 # priority of heuristic <shifting>
 # [type: int, advanced: TRUE, range: [-536870912,536870911], default: -5000]
@@ -5129,8 +5161,8 @@ separating/closecuts/maxlpiterfactor = 10
 separating/rapidlearning/priority = -1200000
 
 # frequency for calling separator <rapidlearning> (-1: never, 0: only in root node)
-# [type: int, advanced: FALSE, range: [-1,65534], default: -1]
-separating/rapidlearning/freq = -1
+# [type: int, advanced: FALSE, range: [-1,65534], default: 5]
+separating/rapidlearning/freq = 5
 
 # maximal relative distance from current node's dual bound to primal bound compared to best node's dual bound for applying separator <rapidlearning> (0.0: only on current best node, 1.0: on all nodes)
 # [type: real, advanced: TRUE, range: [0,1], default: 1]
@@ -5205,8 +5237,8 @@ separating/rapidlearning/contvarsquot = 0.3
 separating/rapidlearning/lpiterquot = 0.2
 
 # minimal degeneracy threshold to allow local rapid learning
-# [type: real, advanced: TRUE, range: [0,1], default: 0.8]
-separating/rapidlearning/mindegeneracy = 0.8
+# [type: real, advanced: TRUE, range: [0,1], default: 0.7]
+separating/rapidlearning/mindegeneracy = 0.7
 
 # minimal threshold of inf/obj leaves to allow local rapid learning
 # [type: real, advanced: TRUE, range: [0,1.79769313486232e+308], default: 10]
@@ -5300,10 +5332,6 @@ visual/colors/colorlines = "#000000"
 # [type: int, advanced: FALSE, range: [1,2147483647], default: 20]
 visual/report/maxndecomps = 20
 
-# only decompositions of type: 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered
-# [type: int, advanced: FALSE, range: [0,4], default: 0]
-visual/report/showtype = 0
-
 # if true a title page is included
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 visual/report/showtitle = TRUE
@@ -5319,10 +5347,6 @@ visual/report/showstatistics = TRUE
 # if true gnuplot is used for sub-visualizations in report, otherwise LaTeX/Tikz
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 visual/report/usegp = FALSE
-
-# maximum number of finished decompositions in family tree
-# [type: int, advanced: FALSE, range: [1,2147483647], default: 5]
-visual/famtree/maxndecomps = 5
 
 # priority of relaxation handler <gcg>
 # [type: int, advanced: FALSE, range: [-536870912,536870911], default: -1]
@@ -5820,229 +5844,97 @@ constraints/decomp/delayprop = FALSE
 # [type: int, advanced: TRUE, range: [4,60], default: 28]
 constraints/decomp/presoltiming = 28
 
-# indicates whether to create a decomposition with all constraints in the master if no other specified
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-constraints/decomp/createbasicdecomp = FALSE
-
-# indicates whether classifier duplicates are allowed (for statistical reasons)
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/allowclassifierduplicates/enabled = FALSE
-
-# conss adjecency datastructures should be calculated
+# Enables detection
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/conssadjcalculated = TRUE
+detection/enabled = TRUE
 
-# indicates whether to start detection for the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/origprob/enabled = FALSE
-
-# indicates whether to classify constraints and variables for the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/origprob/classificationenabled = FALSE
-
-# indicates whether constraint classifier for nonzero entries is enabled
+# Enables postprocessing of complete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/consclassifier/nnonzeros/enabled = TRUE
-
-# indicates whether constraint classifier for nonzero entries is enabled for the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/consclassifier/nnonzeros/origenabled = TRUE
-
-# indicates whether constraint classifier for scipconstype is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/consclassifier/scipconstype/enabled = TRUE
-
-# indicates whether constraint classifier for scipconsstype is enabled for the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/consclassifier/scipconstype/origenabled = TRUE
-
-# indicates whether constraint classifier for miplib constypes is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/consclassifier/miplibconstype/enabled = TRUE
-
-# indicates whether constraint classifier for miplib consstype is enabled for the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/consclassifier/miplibconstype/origenabled = TRUE
-
-# indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/consclassifier/consnamenonumbers/enabled = FALSE
-
-# indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/consclassifier/consnamenonumbers/origenabled = FALSE
-
-# indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/consclassifier/consnamelevenshtein/enabled = FALSE
-
-# indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/consclassifier/consnamelevenshtein/origenabled = FALSE
-
-# indicates whether variable classifier for scipvartypes is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/varclassifier/scipvartype/enabled = TRUE
-
-# indicates whether variable classifier for scipvartypes is enabled for the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/varclassifier/scipvartype/origenabled = TRUE
-
-# indicates whether variable classifier for objective function values is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/varclassifier/objectivevalues/enabled = TRUE
-
-# should for block number candidates calcluation the medianvarspercons calculation be considered
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/blocknumbercandidates/medianvarspercons = FALSE
-
-# indicates whether only decomposition with only continiuous variables in the subproblems should be searched
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/benders/onlycontsubpr = FALSE
-
-# indicates whether only decomposition with only binary variables in the master should be searched
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/benders/onlybinmaster = FALSE
-
-# indicates whether variable classifier for objective function values is enabled for the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/varclassifier/objectivevalues/origenabled = TRUE
-
-# indicates whether variable classifier for objective function value signs is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/varclassifier/objectivevaluesigns/enabled = TRUE
-
-# indicates whether variable classifier for objective function value signs is enabled for the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/varclassifier/objectivevaluesigns/origenabled = TRUE
-
-# indicates whether detection should only consist of legacy mode detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/legacymode/onlylegacymode = FALSE
-
-# indicates whether detection consist of legacy mode detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/legacymode/enabled = FALSE
-
-# indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/legacymode/stairlinkingheur = FALSE
-
-# indicates whether benders detection is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/benders/enabled = FALSE
-
-# Method for random dual values use for strong decomposition: 1) naive, 2) expected equality exponential distributed, 3) expected overestimation exponential distributed 
-# [type: int, advanced: FALSE, range: [1,3], default: 1]
-detection/strong_detection/dualvalrandommethod = 1
-
-#  convex coefficient for orig dual val (1-this coef is factor for random dual value) 
-# [type: real, advanced: FALSE, range: [0,1], default: 0.5]
-detection/strong_detection/coeffactororigvsrandom = 0.5
+detection/postprocess = TRUE
 
 # Maximum number of detection loop rounds
 # [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
 detection/maxrounds = 1
 
-# Maximum number of classes a classifier can have to be used for voting nblockcandidates
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 18]
-detection/maxnclassesfornblockcandidates = 18
+# Maximum detection time in seconds
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 600]
+detection/maxtime = 600
 
-# Maximum number of classes per classifier
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 9]
-detection/maxnclassesperclassifier = 9
+# Enables detection for the original problem
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/origprob/enabled = TRUE
 
-# if this limit on the number of constraints of a block is exceeded the aggregation information for this block is not calculated 
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 300]
-detection/aggregation/limitnconssperblock = 300
-
-# if this limit on the number of variables of a block is exceeded the aggregation information for this block is not calculated 
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 300]
-detection/aggregation/limitnvarsperblock = 300
-
-# Maximum number of classes per classifier for large problems (nconss + nvars >= 50000)
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 5]
-detection/maxnclassesperclassifierforlargeprobs = 5
-
-# Weighting method when comparing decompositions for presolved and unpresolved problem
+# Weighting method when comparing decompositions for presolved and orig problem
 # [type: int, advanced: TRUE, range: [0,3], default: 0]
 detection/origprob/weightinggpresolvedoriginaldecomps = 0
 
-# indicates which score should be used for comparing (partial) decompositions (0: max white, 1: border area, 2:classic, 3:max foreseeing white, 4: ppc-max-white, 5:max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info, 7: experimental benders score, 8:strong decomposition score): 
+# Limits the number of constraints of a block (aggregation information for block is not calculated when exceeded)
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 300]
+detection/aggregation/limitnconssperblock = 300
+
+# Limits the number of variables of a block (aggregation information for block is not calculated when exceeded)
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 300]
+detection/aggregation/limitnvarsperblock = 300
+
+# If enabled only decomposition with only continiuous variables in the subproblems are searched
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/benders/onlycontsubpr = FALSE
+
+# If enabled only decomposition with only binary variables in the master are searched
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/benders/onlybinmaster = FALSE
+
+# Enables benders detection
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/benders/enabled = FALSE
+
+# Enables classification
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/classification/enabled = TRUE
+
+# If enabled partition duplicates are allowed (for statistical reasons)
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/classification/allowduplicates = FALSE
+
+# Enables classification for the original problem
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/origprob/classificationenabled = TRUE
+
+# Maximum number of classes per partition
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 9]
+detection/classification/maxnclassesperpartition = 9
+
+# Maximum number of classes per partition for large problems (nconss + nvars >= 50000)
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 5]
+detection/classification/maxnclassesperpartitionforlargeprobs = 5
+
+# Maximum number of classes a partition can use for voting nblockcandidates
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 18]
+detection/blocknrcandidates/maxnclasses = 18
+
+# Enables the use of medianvarspercons calculation for block number candidates calculation 
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/blocknrcandidates/medianvarspercons = FALSE
+
+# Score calculation for comparing (partial) decompositions (0: max white, 1: border area, 2: classic, 3: max foreseeing white, 4: ppc-max-white, 5: max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info, 7: experimental benders score, 8: strong decomposition score)
 # [type: int, advanced: FALSE, range: [0,8], default: 4]
-detection/scoretype = 4
+detection/score/scoretype = 4
 
-# flag to indicate whether detector <connected> is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/connected/enabled = FALSE
+# Timelimit for strong decompositions score calculation per partialdec in seconds
+# [type: real, advanced: FALSE, range: [0,2147483647], default: 30]
+detection/score/strong_detection/timelimit = 30
 
-# flag to indicate whether detector <connected> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/connected/origenabled = FALSE
+# Method for random dual values use for strong decomposition: 1: naive, 2: expected equality exponential distributed, 3: expected overestimation exponential distributed 
+# [type: int, advanced: FALSE, range: [1,3], default: 1]
+detection/score/strong_detection/dualvalrandommethod = 1
 
-# flag to indicate whether detector <connected> is enabled for finishing of incomplete decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/connected/finishingenabled = FALSE
-
-# flag to indicate whether detector <connected> is enabled for postprocessing of finished decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/connected/postprocessingenabled = FALSE
-
-# flag to indicate whether detector <connected> should be skipped if others found decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/connected/skip = FALSE
-
-# flag to indicate whether detector <connected> should be called on descendants of the current seeed
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/connected/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <connected> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/connected/legacymode = TRUE
-
-# flag to indicate whether emphasis settings for detector <connected> should be overruled by normal settings
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/connected/overruleemphasis = FALSE
-
-# frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <connected>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
-detection/detectors/connected/freqcallround = 1
-
-# maximum round the detector gets called in detection loop <connected>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
-detection/detectors/connected/maxcallround = 2147483647
-
-# minimum round the detector gets called in detection loop <connected>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
-detection/detectors/connected/mincallround = 0
-
-# frequency the detector gets called in detection loop,i.e., it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <connected>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
-detection/detectors/connected/origfreqcallround = 1
-
-# maximum round the detector gets called in detection loop <connected>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
-detection/detectors/connected/origmaxcallround = 2147483647
-
-# minimum round the detector gets called in detection loop <connected>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
-detection/detectors/connected/origmincallround = 0
-
-# priority of detector <connected>
-# [type: int, advanced: FALSE, range: [-2147483648,2147483647], default: 0]
-detection/detectors/connected/priority = 0
-
-# Controls whether SETPPC constraints chould be ignored while detecting and be directly placed in the master
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/connected/setppcinmaster = TRUE
+# Convex coefficient for orig dual val, i.e. (1-this coef) is factor for random dual value
+# [type: real, advanced: FALSE, range: [0,1], default: 0.5]
+detection/score/strong_detection/coeffactororigvsrandom = 0.5
 
 # flag to indicate whether detector <constype> is enabled
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/constype/enabled = FALSE
-
-# flag to indicate whether detector <constype> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/constype/origenabled = FALSE
 
 # flag to indicate whether detector <constype> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6056,13 +5948,9 @@ detection/detectors/constype/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/constype/skip = FALSE
 
-# flag to indicate whether detector <constype> should be called on descendants of the current seeed
+# flag to indicate whether detector <constype> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/constype/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <constype> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/constype/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <constype> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6100,10 +5988,6 @@ detection/detectors/constype/priority = 0
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/postprocess/enabled = FALSE
 
-# flag to indicate whether detector <postprocess> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/postprocess/origenabled = FALSE
-
 # flag to indicate whether detector <postprocess> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/postprocess/finishingenabled = FALSE
@@ -6116,13 +6000,9 @@ detection/detectors/postprocess/postprocessingenabled = TRUE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/postprocess/skip = FALSE
 
-# flag to indicate whether detector <postprocess> should be called on descendants of the current seeed
+# flag to indicate whether detector <postprocess> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/postprocess/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <postprocess> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/postprocess/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <postprocess> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6164,10 +6044,6 @@ detection/detectors/postprocess/useconssadj = TRUE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/consclass/enabled = TRUE
 
-# flag to indicate whether detector <consclass> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/consclass/origenabled = TRUE
-
 # flag to indicate whether detector <consclass> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/consclass/finishingenabled = FALSE
@@ -6180,13 +6056,9 @@ detection/detectors/consclass/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/consclass/skip = FALSE
 
-# flag to indicate whether detector <consclass> should be called on descendants of the current seeed
+# flag to indicate whether detector <consclass> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/consclass/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <consclass> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/consclass/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <consclass> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6224,77 +6096,9 @@ detection/detectors/consclass/priority = 0
 # [type: int, advanced: FALSE, range: [1,2147483647], default: 5]
 detection/detectors/consclass/maxnclasses = 5
 
-# flag to indicate whether detector <consname> is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/consname/enabled = FALSE
-
-# flag to indicate whether detector <consname> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/consname/origenabled = FALSE
-
-# flag to indicate whether detector <consname> is enabled for finishing of incomplete decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/consname/finishingenabled = FALSE
-
-# flag to indicate whether detector <consname> is enabled for postprocessing of finished decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/consname/postprocessingenabled = FALSE
-
-# flag to indicate whether detector <consname> should be skipped if others found decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/consname/skip = FALSE
-
-# flag to indicate whether detector <consname> should be called on descendants of the current seeed
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/consname/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <consname> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/consname/legacymode = FALSE
-
-# flag to indicate whether emphasis settings for detector <consname> should be overruled by normal settings
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/consname/overruleemphasis = FALSE
-
-# frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <consname>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
-detection/detectors/consname/freqcallround = 1
-
-# maximum round the detector gets called in detection loop <consname>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
-detection/detectors/consname/maxcallround = 2147483647
-
-# minimum round the detector gets called in detection loop <consname>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
-detection/detectors/consname/mincallround = 0
-
-# frequency the detector gets called in detection loop,i.e., it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <consname>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
-detection/detectors/consname/origfreqcallround = 1
-
-# maximum round the detector gets called in detection loop <consname>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
-detection/detectors/consname/origmaxcallround = 2147483647
-
-# minimum round the detector gets called in detection loop <consname>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
-detection/detectors/consname/origmincallround = 0
-
-# priority of detector <consname>
-# [type: int, advanced: FALSE, range: [-2147483648,2147483647], default: 0]
-detection/detectors/consname/priority = 0
-
-# All cons whose name match this regular expression will be mastercons
-# [type: string, advanced: FALSE, default: "(consname)(.*)"]
-detection/detectors/consname/regex = "(consname)(.*)"
-
 # flag to indicate whether detector <densemasterconss> is enabled
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/densemasterconss/enabled = TRUE
-
-# flag to indicate whether detector <densemasterconss> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/densemasterconss/origenabled = TRUE
 
 # flag to indicate whether detector <densemasterconss> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6308,13 +6112,9 @@ detection/detectors/densemasterconss/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/densemasterconss/skip = FALSE
 
-# flag to indicate whether detector <densemasterconss> should be called on descendants of the current seeed
+# flag to indicate whether detector <densemasterconss> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/densemasterconss/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <densemasterconss> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/densemasterconss/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <densemasterconss> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6352,10 +6152,6 @@ detection/detectors/densemasterconss/priority = 0
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/neighborhoodmaster/enabled = TRUE
 
-# flag to indicate whether detector <neighborhoodmaster> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/neighborhoodmaster/origenabled = TRUE
-
 # flag to indicate whether detector <neighborhoodmaster> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/neighborhoodmaster/finishingenabled = FALSE
@@ -6368,13 +6164,9 @@ detection/detectors/neighborhoodmaster/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/neighborhoodmaster/skip = FALSE
 
-# flag to indicate whether detector <neighborhoodmaster> should be called on descendants of the current seeed
+# flag to indicate whether detector <neighborhoodmaster> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/neighborhoodmaster/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <neighborhoodmaster> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/neighborhoodmaster/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <neighborhoodmaster> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6416,10 +6208,6 @@ detection/detectors/neighborhoodmaster/maxratio = 0.2
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/stairheur/enabled = FALSE
 
-# flag to indicate whether detector <stairheur> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/stairheur/origenabled = FALSE
-
 # flag to indicate whether detector <stairheur> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/stairheur/finishingenabled = FALSE
@@ -6432,13 +6220,9 @@ detection/detectors/stairheur/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/stairheur/skip = FALSE
 
-# flag to indicate whether detector <stairheur> should be called on descendants of the current seeed
+# flag to indicate whether detector <stairheur> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/stairheur/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <stairheur> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/stairheur/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <stairheur> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6508,141 +6292,9 @@ detection/detectors/stairheur/multipledecomps = TRUE
 # [type: int, advanced: FALSE, range: [-1,1000000], default: 1000000]
 detection/detectors/stairheur/maxiterationsROC = 1000000
 
-# flag to indicate whether detector <staircase> is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/staircase/enabled = FALSE
-
-# flag to indicate whether detector <staircase> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/staircase/origenabled = FALSE
-
-# flag to indicate whether detector <staircase> is enabled for finishing of incomplete decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/staircase/finishingenabled = FALSE
-
-# flag to indicate whether detector <staircase> is enabled for postprocessing of finished decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/staircase/postprocessingenabled = FALSE
-
-# flag to indicate whether detector <staircase> should be skipped if others found decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/staircase/skip = FALSE
-
-# flag to indicate whether detector <staircase> should be called on descendants of the current seeed
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/staircase/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <staircase> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/staircase/legacymode = TRUE
-
-# flag to indicate whether emphasis settings for detector <staircase> should be overruled by normal settings
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/staircase/overruleemphasis = FALSE
-
-# frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <staircase>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
-detection/detectors/staircase/freqcallround = 1
-
-# maximum round the detector gets called in detection loop <staircase>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
-detection/detectors/staircase/maxcallround = 2147483647
-
-# minimum round the detector gets called in detection loop <staircase>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
-detection/detectors/staircase/mincallround = 0
-
-# frequency the detector gets called in detection loop,i.e., it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <staircase>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
-detection/detectors/staircase/origfreqcallround = 1
-
-# maximum round the detector gets called in detection loop <staircase>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
-detection/detectors/staircase/origmaxcallround = 2147483647
-
-# minimum round the detector gets called in detection loop <staircase>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
-detection/detectors/staircase/origmincallround = 0
-
-# priority of detector <staircase>
-# [type: int, advanced: FALSE, range: [-2147483648,2147483647], default: 200]
-detection/detectors/staircase/priority = 200
-
-# flag to indicate whether detector <random> is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/random/enabled = FALSE
-
-# flag to indicate whether detector <random> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/random/origenabled = FALSE
-
-# flag to indicate whether detector <random> is enabled for finishing of incomplete decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/random/finishingenabled = FALSE
-
-# flag to indicate whether detector <random> is enabled for postprocessing of finished decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/random/postprocessingenabled = FALSE
-
-# flag to indicate whether detector <random> should be skipped if others found decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/random/skip = FALSE
-
-# flag to indicate whether detector <random> should be called on descendants of the current seeed
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/random/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <random> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/random/legacymode = FALSE
-
-# flag to indicate whether emphasis settings for detector <random> should be overruled by normal settings
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/random/overruleemphasis = FALSE
-
-# frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <random>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
-detection/detectors/random/freqcallround = 1
-
-# maximum round the detector gets called in detection loop <random>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
-detection/detectors/random/maxcallround = 2147483647
-
-# minimum round the detector gets called in detection loop <random>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
-detection/detectors/random/mincallround = 0
-
-# frequency the detector gets called in detection loop,i.e., it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <random>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
-detection/detectors/random/origfreqcallround = 1
-
-# maximum round the detector gets called in detection loop <random>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
-detection/detectors/random/origmaxcallround = 2147483647
-
-# minimum round the detector gets called in detection loop <random>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
-detection/detectors/random/origmincallround = 0
-
-# priority of detector <random>
-# [type: int, advanced: FALSE, range: [-2147483648,2147483647], default: -10]
-detection/detectors/random/priority = -10
-
-# the maximal number of blocks, -1 defaults to avgconsperblock
-# [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
-detection/detectors/random/maxblocks = -1
-
-# average constraints per block
-# [type: int, advanced: FALSE, range: [1,10000], default: 100]
-detection/detectors/random/avgconsperblock = 100
-
 # flag to indicate whether detector <staircase_lsp> is enabled
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/staircase_lsp/enabled = FALSE
-
-# flag to indicate whether detector <staircase_lsp> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/staircase_lsp/origenabled = FALSE
 
 # flag to indicate whether detector <staircase_lsp> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6656,13 +6308,9 @@ detection/detectors/staircase_lsp/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/staircase_lsp/skip = FALSE
 
-# flag to indicate whether detector <staircase_lsp> should be called on descendants of the current seeed
+# flag to indicate whether detector <staircase_lsp> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/staircase_lsp/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <staircase_lsp> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/staircase_lsp/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <staircase_lsp> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6696,73 +6344,9 @@ detection/detectors/staircase_lsp/origmincallround = 0
 # [type: int, advanced: FALSE, range: [-2147483648,2147483647], default: 200]
 detection/detectors/staircase_lsp/priority = 200
 
-# flag to indicate whether detector <colors> is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/colors/enabled = FALSE
-
-# flag to indicate whether detector <colors> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/colors/origenabled = FALSE
-
-# flag to indicate whether detector <colors> is enabled for finishing of incomplete decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/colors/finishingenabled = FALSE
-
-# flag to indicate whether detector <colors> is enabled for postprocessing of finished decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/colors/postprocessingenabled = FALSE
-
-# flag to indicate whether detector <colors> should be skipped if others found decompositions
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/colors/skip = FALSE
-
-# flag to indicate whether detector <colors> should be called on descendants of the current seeed
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/colors/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <colors> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/colors/legacymode = FALSE
-
-# flag to indicate whether emphasis settings for detector <colors> should be overruled by normal settings
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/colors/overruleemphasis = FALSE
-
-# frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <colors>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
-detection/detectors/colors/freqcallround = 1
-
-# maximum round the detector gets called in detection loop <colors>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
-detection/detectors/colors/maxcallround = 2147483647
-
-# minimum round the detector gets called in detection loop <colors>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
-detection/detectors/colors/mincallround = 0
-
-# frequency the detector gets called in detection loop,i.e., it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <colors>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
-detection/detectors/colors/origfreqcallround = 1
-
-# maximum round the detector gets called in detection loop <colors>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
-detection/detectors/colors/origmaxcallround = 2147483647
-
-# minimum round the detector gets called in detection loop <colors>
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
-detection/detectors/colors/origmincallround = 0
-
-# priority of detector <colors>
-# [type: int, advanced: FALSE, range: [-2147483648,2147483647], default: 0]
-detection/detectors/colors/priority = 0
-
 # flag to indicate whether detector <compgreedily> is enabled
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/compgreedily/enabled = FALSE
-
-# flag to indicate whether detector <compgreedily> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/compgreedily/origenabled = FALSE
 
 # flag to indicate whether detector <compgreedily> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6776,13 +6360,9 @@ detection/detectors/compgreedily/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/compgreedily/skip = FALSE
 
-# flag to indicate whether detector <compgreedily> should be called on descendants of the current seeed
+# flag to indicate whether detector <compgreedily> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/compgreedily/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <compgreedily> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/compgreedily/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <compgreedily> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6817,12 +6397,8 @@ detection/detectors/compgreedily/origmincallround = 0
 detection/detectors/compgreedily/priority = 0
 
 # flag to indicate whether detector <mastersetcover> is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/mastersetcover/enabled = FALSE
-
-# flag to indicate whether detector <mastersetcover> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/mastersetcover/origenabled = FALSE
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/mastersetcover/enabled = TRUE
 
 # flag to indicate whether detector <mastersetcover> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6836,13 +6412,9 @@ detection/detectors/mastersetcover/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/mastersetcover/skip = FALSE
 
-# flag to indicate whether detector <mastersetcover> should be called on descendants of the current seeed
+# flag to indicate whether detector <mastersetcover> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/mastersetcover/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <mastersetcover> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/mastersetcover/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <mastersetcover> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6877,12 +6449,8 @@ detection/detectors/mastersetcover/origmincallround = 0
 detection/detectors/mastersetcover/priority = 0
 
 # flag to indicate whether detector <mastersetpack> is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/mastersetpack/enabled = FALSE
-
-# flag to indicate whether detector <mastersetpack> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/mastersetpack/origenabled = FALSE
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/mastersetpack/enabled = TRUE
 
 # flag to indicate whether detector <mastersetpack> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6896,13 +6464,9 @@ detection/detectors/mastersetpack/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/mastersetpack/skip = FALSE
 
-# flag to indicate whether detector <mastersetpack> should be called on descendants of the current seeed
+# flag to indicate whether detector <mastersetpack> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/mastersetpack/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <mastersetpack> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/mastersetpack/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <mastersetpack> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6937,12 +6501,8 @@ detection/detectors/mastersetpack/origmincallround = 0
 detection/detectors/mastersetpack/priority = 0
 
 # flag to indicate whether detector <mastersetpart> is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/mastersetpart/enabled = FALSE
-
-# flag to indicate whether detector <mastersetpart> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/mastersetpart/origenabled = FALSE
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/mastersetpart/enabled = TRUE
 
 # flag to indicate whether detector <mastersetpart> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -6956,13 +6516,9 @@ detection/detectors/mastersetpart/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/mastersetpart/skip = FALSE
 
-# flag to indicate whether detector <mastersetpart> should be called on descendants of the current seeed
+# flag to indicate whether detector <mastersetpart> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/mastersetpart/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <mastersetpart> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/mastersetpart/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <mastersetpart> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7000,10 +6556,6 @@ detection/detectors/mastersetpart/priority = 0
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/hcgpartition/enabled = FALSE
 
-# flag to indicate whether detector <hcgpartition> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/hcgpartition/origenabled = FALSE
-
 # flag to indicate whether detector <hcgpartition> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/hcgpartition/finishingenabled = FALSE
@@ -7016,13 +6568,9 @@ detection/detectors/hcgpartition/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/hcgpartition/skip = FALSE
 
-# flag to indicate whether detector <hcgpartition> should be called on descendants of the current seeed
+# flag to indicate whether detector <hcgpartition> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/hcgpartition/usefullrecall = TRUE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <hcgpartition> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/hcgpartition/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <hcgpartition> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7060,11 +6608,11 @@ detection/detectors/hcgpartition/priority = 1000
 # [type: int, advanced: FALSE, range: [0,1000000], default: 1]
 detection/detectors/hcgpartition/maxnblockcandidates = 1
 
-# The maximal number of blocks (only used in legacy mode; detector is called for all block numbers in [minblocks,maxblocks])
+# The maximal number of blocks (detector is called for all block numbers in [minblocks,maxblocks])
 # [type: int, advanced: FALSE, range: [2,1000000], default: 20]
 detection/detectors/hcgpartition/maxblocks = 20
 
-# The minimal number of blocks (only used in legacy mode; detector is called for all block numbers in [minblocks,maxblocks])
+# The minimal number of blocks (detector is called for all block numbers in [minblocks,maxblocks])
 # [type: int, advanced: FALSE, range: [2,1000000], default: 2]
 detection/detectors/hcgpartition/minblocks = 2
 
@@ -7136,10 +6684,6 @@ detection/detectors/hcgpartition/realname = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/hrgpartition/enabled = FALSE
 
-# flag to indicate whether detector <hrgpartition> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/hrgpartition/origenabled = FALSE
-
 # flag to indicate whether detector <hrgpartition> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/hrgpartition/finishingenabled = FALSE
@@ -7152,13 +6696,9 @@ detection/detectors/hrgpartition/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/hrgpartition/skip = FALSE
 
-# flag to indicate whether detector <hrgpartition> should be called on descendants of the current seeed
+# flag to indicate whether detector <hrgpartition> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/hrgpartition/usefullrecall = TRUE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <hrgpartition> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/hrgpartition/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <hrgpartition> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7204,11 +6744,11 @@ detection/detectors/hrgpartition/enabledforlargeproblems = FALSE
 # [type: int, advanced: FALSE, range: [0,1000000], default: 3]
 detection/detectors/hrgpartition/maxnblockcandidates = 3
 
-# The maximal number of blocks (only used in legacy mode; detector is called for all block numbers in [minblocks,maxblocks])
+# The maximal number of blocks (detector is called for all block numbers in [minblocks,maxblocks])
 # [type: int, advanced: FALSE, range: [2,1000000], default: 20]
 detection/detectors/hrgpartition/maxblocks = 20
 
-# The minimal number of blocks (only used in legacy mode; detector is called for all block numbers in [minblocks,maxblocks])
+# The minimal number of blocks (detector is called for all block numbers in [minblocks,maxblocks])
 # [type: int, advanced: FALSE, range: [2,1000000], default: 2]
 detection/detectors/hrgpartition/minblocks = 2
 
@@ -7280,10 +6820,6 @@ detection/detectors/hrgpartition/realname = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/hrcgpartition/enabled = FALSE
 
-# flag to indicate whether detector <hrcgpartition> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/hrcgpartition/origenabled = FALSE
-
 # flag to indicate whether detector <hrcgpartition> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/hrcgpartition/finishingenabled = FALSE
@@ -7296,13 +6832,9 @@ detection/detectors/hrcgpartition/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/hrcgpartition/skip = FALSE
 
-# flag to indicate whether detector <hrcgpartition> should be called on descendants of the current seeed
+# flag to indicate whether detector <hrcgpartition> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/hrcgpartition/usefullrecall = TRUE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <hrcgpartition> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/hrcgpartition/legacymode = TRUE
 
 # flag to indicate whether emphasis settings for detector <hrcgpartition> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7340,11 +6872,11 @@ detection/detectors/hrcgpartition/priority = 1000
 # [type: int, advanced: FALSE, range: [0,1000000], default: 3]
 detection/detectors/hrcgpartition/maxnblockcandidates = 3
 
-# The maximal number of blocks (only used in legacy mode; detector is called for all block numbers in [minblocks,maxblocks])
+# The maximal number of blocks (detector is called for all block numbers in [minblocks,maxblocks])
 # [type: int, advanced: FALSE, range: [2,1000000], default: 20]
 detection/detectors/hrcgpartition/maxblocks = 20
 
-# The minimal number of blocks (only used in legacy mode; detector is called for all block numbers in [minblocks,maxblocks])
+# The minimal number of blocks (detector is called for all block numbers in [minblocks,maxblocks])
 # [type: int, advanced: FALSE, range: [2,1000000], default: 2]
 detection/detectors/hrcgpartition/minblocks = 2
 
@@ -7416,10 +6948,6 @@ detection/detectors/hrcgpartition/realname = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/connectedbase/enabled = FALSE
 
-# flag to indicate whether detector <connectedbase> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/connectedbase/origenabled = FALSE
-
 # flag to indicate whether detector <connectedbase> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/connectedbase/finishingenabled = TRUE
@@ -7432,13 +6960,9 @@ detection/detectors/connectedbase/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/connectedbase/skip = FALSE
 
-# flag to indicate whether detector <connectedbase> should be called on descendants of the current seeed
+# flag to indicate whether detector <connectedbase> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/connectedbase/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <connectedbase> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/connectedbase/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <connectedbase> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7480,10 +7004,6 @@ detection/detectors/connectedbase/useconssadj = TRUE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/connected_nonewlinkingvars/enabled = FALSE
 
-# flag to indicate whether detector <connected_nonewlinkingvars> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/connected_nonewlinkingvars/origenabled = FALSE
-
 # flag to indicate whether detector <connected_nonewlinkingvars> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/connected_nonewlinkingvars/finishingenabled = FALSE
@@ -7496,13 +7016,9 @@ detection/detectors/connected_nonewlinkingvars/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/connected_nonewlinkingvars/skip = FALSE
 
-# flag to indicate whether detector <connected_nonewlinkingvars> should be called on descendants of the current seeed
+# flag to indicate whether detector <connected_nonewlinkingvars> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/connected_nonewlinkingvars/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <connected_nonewlinkingvars> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/connected_nonewlinkingvars/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <connected_nonewlinkingvars> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7537,12 +7053,8 @@ detection/detectors/connected_nonewlinkingvars/origmincallround = 0
 detection/detectors/connected_nonewlinkingvars/priority = 0
 
 # flag to indicate whether detector <generalmastersetpack> is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/generalmastersetpack/enabled = FALSE
-
-# flag to indicate whether detector <generalmastersetpack> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/generalmastersetpack/origenabled = FALSE
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/generalmastersetpack/enabled = TRUE
 
 # flag to indicate whether detector <generalmastersetpack> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7556,13 +7068,9 @@ detection/detectors/generalmastersetpack/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/generalmastersetpack/skip = FALSE
 
-# flag to indicate whether detector <generalmastersetpack> should be called on descendants of the current seeed
+# flag to indicate whether detector <generalmastersetpack> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/generalmastersetpack/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <generalmastersetpack> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/generalmastersetpack/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <generalmastersetpack> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7597,12 +7105,8 @@ detection/detectors/generalmastersetpack/origmincallround = 0
 detection/detectors/generalmastersetpack/priority = 0
 
 # flag to indicate whether detector <generalmastersetpart> is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/generalmastersetpart/enabled = FALSE
-
-# flag to indicate whether detector <generalmastersetpart> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/generalmastersetpart/origenabled = FALSE
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/generalmastersetpart/enabled = TRUE
 
 # flag to indicate whether detector <generalmastersetpart> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7616,13 +7120,9 @@ detection/detectors/generalmastersetpart/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/generalmastersetpart/skip = FALSE
 
-# flag to indicate whether detector <generalmastersetpart> should be called on descendants of the current seeed
+# flag to indicate whether detector <generalmastersetpart> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/generalmastersetpart/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <generalmastersetpart> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/generalmastersetpart/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <generalmastersetpart> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7657,12 +7157,8 @@ detection/detectors/generalmastersetpart/origmincallround = 0
 detection/detectors/generalmastersetpart/priority = 0
 
 # flag to indicate whether detector <generalmastersetcover> is enabled
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/generalmastersetcover/enabled = FALSE
-
-# flag to indicate whether detector <generalmastersetcover> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/generalmastersetcover/origenabled = FALSE
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/generalmastersetcover/enabled = TRUE
 
 # flag to indicate whether detector <generalmastersetcover> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7676,13 +7172,9 @@ detection/detectors/generalmastersetcover/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/generalmastersetcover/skip = FALSE
 
-# flag to indicate whether detector <generalmastersetcover> should be called on descendants of the current seeed
+# flag to indicate whether detector <generalmastersetcover> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/generalmastersetcover/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <generalmastersetcover> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/generalmastersetcover/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <generalmastersetcover> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7720,10 +7212,6 @@ detection/detectors/generalmastersetcover/priority = 0
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
 detection/detectors/varclass/enabled = TRUE
 
-# flag to indicate whether detector <varclass> is enabled for detecting in the original problem
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
-detection/detectors/varclass/origenabled = TRUE
-
 # flag to indicate whether detector <varclass> is enabled for finishing of incomplete decompositions
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/varclass/finishingenabled = FALSE
@@ -7736,13 +7224,9 @@ detection/detectors/varclass/postprocessingenabled = FALSE
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/varclass/skip = FALSE
 
-# flag to indicate whether detector <varclass> should be called on descendants of the current seeed
+# flag to indicate whether detector <varclass> should be called on descendants of the current partialdec
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 detection/detectors/varclass/usefullrecall = FALSE
-
-# flag to indicate whether (old) DETECTSTRUCTURE method of detector <varclass> should also be used for detection
-# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
-detection/detectors/varclass/legacymode = FALSE
 
 # flag to indicate whether emphasis settings for detector <varclass> should be overruled by normal settings
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7779,6 +7263,38 @@ detection/detectors/varclass/priority = 0
 # maximum number of classes 
 # [type: int, advanced: FALSE, range: [1,2147483647], default: 8]
 detection/detectors/varclass/maxnclasses = 8
+
+# flag to indicate whether constraint classifier for <nnonezero entries> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/classification/consclassifier/nnonzeros/enabled = TRUE
+
+# flag to indicate whether constraint classifier for <scip constypes> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/classification/consclassifier/scipconstype/enabled = TRUE
+
+# flag to indicate whether constraint classifier for <miplib constypes> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/classification/consclassifier/miplibconstype/enabled = TRUE
+
+# flag to indicate whether constraint classifier for <constraint names (according to levenshtein distance graph)> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/classification/consclassifier/consnamelevenshtein/enabled = FALSE
+
+# flag to indicate whether constraint classifier for <constraint names (remove digits; check for identity)> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/classification/consclassifier/consnamenonumbers/enabled = FALSE
+
+# flag to indicate whether variable classifier for <scipvartypes> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/classification/varclassifier/scipvartype/enabled = TRUE
+
+# flag to indicate whether variable classifier for <objective function values> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/classification/varclassifier/objectivevalues/enabled = TRUE
+
+# flag to indicate whether variable classifier for <objective function value signs> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/classification/varclassifier/objectivevaluesigns/enabled = TRUE
 
 # priority of heuristic <gcgcoefdiving>
 # [type: int, advanced: TRUE, range: [-536870912,536870911], default: -1001000]

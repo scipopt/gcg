@@ -356,7 +356,7 @@ SCIP_Real GCGmasterVarGetOrigval(
 /** returns a hash map that stores the fraction of original variables the master variable is contained in */
 extern
 SCIP_HASHMAP* GCGmasterVarGetOrigvalmap(
-      SCIP_VAR*             mastervar         /**< master variable data structure */
+      SCIP_VAR*             var              /**< master variable data structure */
 );
 #endif
 
