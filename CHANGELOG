@@ -71,6 +71,20 @@ Code cleanup:
 - Renamed SEEED_WRAPPER to PARTIALDECOMP_WRAPPER
 - Renamed {Index,Cons,Var}Classifier to {Index,Cons,Var}Partition
 
+
+GCG Version 3.0.3
+=================
+
+Bug fixes
+---------
+
+- Fix several segmentation faults.
+- Skip Farkas pricing only if at least one solution of the original problem was successfully added to the master variable space.
+- Interrupt the pricing loop if SCIP reports that the solving process should be stopped.
+- Disable the column pool in probing mode.
+- 'write matrix' and 'write transmatrix' set PDF as file format in the created gnuplot file.
+
+
 GCG Version 3.0.2
 =================
 
@@ -93,7 +107,7 @@ Bug fixes
 Command line interface:
 -----------------------
 
-- 'write matrix' and 'write origmatrix' for writing a gnuplot file showing the coefficient matrix
+- 'write matrix' and 'write transmatrix' for writing a gnuplot file showing the (original and presolved) coefficient matrix
 
 - 'write selecteddecompositions' for writing all selected (in explore submenu) decompositions
 
