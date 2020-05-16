@@ -1601,7 +1601,7 @@ SCIP_RETCODE blocking(
 
    SCIP_Real timeperdec = (time + tempTime) / detectiondata->nnewpartialdecs;
    SCIP_Real timeperdecdyn = tempTimeDynamicBlocking / ndynamicblocking;
-   assert(detectiondata->nnewpartialdecs == clocktimes.size());
+   assert(detectiondata->nnewpartialdecs == (int) clocktimes.size());
    for( int i = 0; i < detectiondata->nnewpartialdecs; ++i)
    {
       if( i < ndynamicblocking )

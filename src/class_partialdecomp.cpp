@@ -3649,7 +3649,7 @@ int PARTIALDECOMP::getNStairlinkingvars(
    )
 {
    assert( block >= 0 && block < nblocks );
-   assert( stairlinkingvars.size() > block );
+   assert( (int) stairlinkingvars.size() > block );
    return (int) stairlinkingvars[block].size();
 }
 
@@ -3672,7 +3672,7 @@ int PARTIALDECOMP::getNVarsForBlock(
 int PARTIALDECOMP::getNVarsForBlocks()
 {
    int count = 0;
-   for(auto block : varsforblocks)
+   for( auto block : varsforblocks )
    {
       count += (int) block.size();
    }
@@ -3843,14 +3843,15 @@ std::vector<SCIP_Real> PARTIALDECOMP::getPctConssFromFreeVector()
 
 int PARTIALDECOMP::getRepForBlock(
    int blockid
-   ){
+   )
+{
      return blockstorep[blockid];
 }
 
 std::vector<int> & PARTIALDECOMP::getRepVarmap(
-      int repid,
-      int blockrepid
-      )
+   int repid,
+   int blockrepid
+   )
 {
    return pidtopidvarmaptofirst[repid][blockrepid];
 }
