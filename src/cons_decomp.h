@@ -93,6 +93,27 @@ SCIP_RETCODE DECdetectStructure(
    );
 
 /**
+ * @brief searches for the consclassifier with the given name and returns it or NULL if classifier is not found
+ * @returns consclassifier pointer or NULL if consclassifier with given name is not found
+ */
+extern
+DEC_CONSCLASSIFIER* DECfindConsClassifier(
+   SCIP* scip,          /**< SCIP data structure  */
+   const char* name     /**< the name of the searched consclassifier */
+   );
+
+/**
+ * @brief searches for the varclassifier with the given name and returns it or NULL if classifier is not found
+ * @returns varclassifier pointer or NULL if varclassifier with given name is not found
+ */
+extern
+DEC_VARCLASSIFIER* DECfindVarClassifier(
+   SCIP* scip,          /**< SCIP data structure  */
+   const char* name     /**< the name of the searched varclassifier */
+   );
+
+
+/**
  * @brief searches for the detector with the given name and returns it or NULL if detector is not found
  * @returns detector pointer or NULL if detector with given name is not found
  */

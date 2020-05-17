@@ -2740,6 +2740,68 @@ SCIP_RETCODE DECdetectStructure(
 }
 
 
+DEC_CONSCLASSIFIER* DECfindConsClassifier(
+   SCIP*                 scip,
+   const char*           name
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   if( conshdlr == NULL )
+      return NULL;
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   for( i = 0; i < conshdlrdata->nconsclassifiers; ++i )
+   {
+      DEC_CONSCLASSIFIER *classifier;
+      classifier = conshdlrdata->consclassifiers[i];
+      assert(classifier != NULL);
+      if( strcmp(classifier->name, name) == 0 )
+      {
+         return classifier;
+      }
+   }
+
+   return NULL;
+}
+
+
+DEC_VARCLASSIFIER* DECfindVarClassifier(
+   SCIP*                 scip,
+   const char*           name
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   if( conshdlr == NULL )
+      return NULL;
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   for( i = 0; i < conshdlrdata->nvarclassifiers; ++i )
+   {
+      DEC_VARCLASSIFIER *classifier;
+      classifier = conshdlrdata->varclassifiers[i];
+      assert(classifier != NULL);
+      if( strcmp(classifier->name, name) == 0 )
+      {
+         return classifier;
+      }
+   }
+
+   return NULL;
+}
+
+
 DEC_DETECTOR* DECfindDetector(
    SCIP*                 scip,
    const char*           name
