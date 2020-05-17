@@ -58,6 +58,11 @@ ould have received a copy of the GNU Lesser General Public License  */
  * Data structures
  */
 
+/** classifier handler data */
+struct DEC_ClassifierData
+{
+};
+
 
 /*
  * Local methods
@@ -252,8 +257,10 @@ SCIP_RETCODE SCIPincludeConsClassifierConsnameLevenshtein(
 
    SCIP *scip                /**< SCIP data structure */
 ) {
+   DEC_CLASSIFIERDATA* classifierdata = NULL;
+
    SCIP_CALL(
-      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierInit,
+      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierInit,
          classifierFree, classifierClassify));
 
    return SCIP_OKAY;

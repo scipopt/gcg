@@ -141,6 +141,7 @@ SCIP_Real DECgetRemainingTime(
  * @param description describing main idea of this classifier
  * @param enabledOrig whether classifier is enabled by default for the original problem
  * @param enabledPresolved whether classifier is enabled by default for the original problem
+ * @param classifierdata the associated classifier data (or NULL)
  * @param DEC_DECL_FREEDETECTOR((*freeDetector)) destructor of classifier (or NULL)
  * @param DEC_DECL_INITDETECTOR((*initDetector)) initialization method of classifier (or NULL)
  * @param DEC_DECL_CLASSIFIER((*exitDetector)) the method that will classify constraints or variables (must not be NULL)
@@ -153,6 +154,7 @@ SCIP_RETCODE DECincludeConsClassifier(
    const char*           description,
    int                   priority,
    SCIP_Bool             enabled,
+   DEC_CLASSIFIERDATA*   classifierdata,
    DEC_DECL_FREECONSCLASSIFIER((*freeClassifier)),
    DEC_DECL_INITCONSCLASSIFIER((*initClassifier)),
    DEC_DECL_CONSCLASSIFY((*classify))
@@ -227,6 +229,7 @@ SCIP_RETCODE DECincludeDetector(
  * @param priority priority how early classifier is invoked
  * @param enabledOrig whether classifier is enabled by default for the original problem
  * @param enabledPresolved whether classifier is enabled by default for the original problem
+ * @param classifierdata the associated classifier data (or NULL)
  * @param DEC_DECL_FREEDETECTOR((*freeDetector)) destructor of classifier (or NULL)
  * @param DEC_DECL_INITDETECTOR((*initDetector)) initialization method of classifier (or NULL)
  * @param DEC_DECL_CLASSIFIER method that will classify variables (must not be NULL)
@@ -239,6 +242,7 @@ SCIP_RETCODE DECincludeVarClassifier(
    const char*           description,
    int                   priority,
    SCIP_Bool             enabled,
+   DEC_CLASSIFIERDATA*   classifierdata,
    DEC_DECL_FREEVARCLASSIFIER((*freeClassifier)),
    DEC_DECL_INITVARCLASSIFIER((*initClassifier)),
    DEC_DECL_VARCLASSIFY((*classify))

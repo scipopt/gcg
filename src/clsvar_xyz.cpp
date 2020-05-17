@@ -50,13 +50,19 @@
 #define DEC_DESC                  "variable classifier template"      /**< short description of classification */
 #define DEC_PRIORITY              0                                   /**< priority of this classifier */
 
-#define DEC_ENABLEDORIG           TRUE                                /**< classify on original problem? */
-#define DEC_ENABLEDPRESOLVED      TRUE                                /**< classify on presolved problem? */
+#define DEC_ENABLED               TRUE
 
 
 /*
  * Data structures
  */
+
+/** @todo fill in the necessary classifier data */
+
+/** classifier handler data */
+struct DEC_ClassifierData
+{
+};
 
 
 /*
@@ -130,7 +136,12 @@ SCIP_RETCODE SCIPincludeVarClassifierXyz(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {
-   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLEDORIG, DEC_ENABLEDPRESOLVED, classifierInit, classifierFree, classifierClassify) );
+   DEC_CLASSIFIERDATA* classifierdata;
+
+   /**@todo create xyz classifier data here*/
+   classifierdata = NULL;
+
+   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierInit, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

@@ -40,6 +40,7 @@
 #include "scip/type_result.h"
 
 typedef struct DEC_ConsClassifier DEC_CONSCLASSIFIER;
+//typedef struct DEC_ClassifierData DEC_CLASSIFIERDATA;
 
 
 /** destructor of classifier to free classifier data (called when GCG is exiting)

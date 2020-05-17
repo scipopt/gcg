@@ -2871,6 +2871,7 @@ SCIP_RETCODE DECincludeConsClassifier(
    const char*           description,
    int                   priority,
    SCIP_Bool             enabled,
+   DEC_CLASSIFIERDATA*   classifierdata,
    DEC_DECL_FREECONSCLASSIFIER((*freeClassifier)),
    DEC_DECL_INITCONSCLASSIFIER((*initClassifier)),
    DEC_DECL_CONSCLASSIFY((*classify))
@@ -2893,6 +2894,7 @@ SCIP_RETCODE DECincludeConsClassifier(
    classifier->description = description;
    classifier->priority = priority;
    classifier->enabled = enabled;
+   classifier->clsdata = classifierdata;
 
    classifier->freeClassifier = freeClassifier;
    classifier->initClassifier = initClassifier;
@@ -3101,6 +3103,7 @@ SCIP_RETCODE DECincludeVarClassifier(
    const char*           description,
    int                   priority,
    SCIP_Bool             enabled,
+   DEC_CLASSIFIERDATA*   classifierdata,
    DEC_DECL_FREEVARCLASSIFIER((*freeClassifier)),
    DEC_DECL_INITVARCLASSIFIER((*initClassifier)),
    DEC_DECL_VARCLASSIFY((*classify))
@@ -3123,6 +3126,7 @@ SCIP_RETCODE DECincludeVarClassifier(
    classifier->description = description;
    classifier->priority = priority;
    classifier->enabled = enabled;
+   classifier->clsdata = classifierdata;
 
    classifier->freeClassifier = freeClassifier;
    classifier->initClassifier = initClassifier;

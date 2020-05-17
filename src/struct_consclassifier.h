@@ -36,6 +36,7 @@
 #define GCG_STRUCT_CONSCLASSIFIER_H__
 
 #include "type_consclassifier.h"
+#include "type_varclassifier.h"
 
 
 /** detector data structure */
@@ -45,6 +46,8 @@ struct DEC_ConsClassifier {
    int                   priority;           /**< classifier priority */
 
    SCIP_Bool             enabled;        /* is enabled by default */
+
+   DEC_CLASSIFIERDATA*   clsdata;            /**< custom data structure of the classifiers */
 
    DEC_DECL_FREECONSCLASSIFIER((*freeClassifier));                  /**< destructor of detector */
    DEC_DECL_INITCONSCLASSIFIER((*initClassifier));                  /**< initialization method of detector */

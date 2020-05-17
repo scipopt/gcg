@@ -40,6 +40,7 @@
 #include "scip/type_result.h"
 
 typedef struct DEC_VarClassifier DEC_VARCLASSIFIER;
+typedef struct DEC_ClassifierData DEC_CLASSIFIERDATA;
 
 /** destructor of classifier to free classifier data (called when GCG is exiting)
  *
