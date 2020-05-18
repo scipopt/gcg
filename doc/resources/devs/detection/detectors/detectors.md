@@ -37,16 +37,16 @@ Detectors finding **arrowhead** and **single-bordered structures**:
 - @subpage det-hrgpartition
 - @subpage det-hrcgpartition
 
-Detectors used for detection algorithmics:
-- @subpage det-compgreedily
-- @subpage det-postprocess
-
-Detectors performing clustering (require GSL):
+Detectors performing **clustering** (require [GSL](https://gist.github.com/TysonRayJones/af7bedcdb8dc59868c7966232b4da903)):
 - @subpage det-mst
 - @subpage det-dbscan
 
-Other detectors (require bliss):
+**Symmetry** detectors (require [bliss](http://www.tcs.hut.fi/Software/bliss/)):
 - @subpage det-isomorph 
+
+Detectors used for detection algorithmics:
+- @subpage det-compgreedily
+- @subpage det-postprocess
 
 <hr>
 #### Will be removed in a future version:
