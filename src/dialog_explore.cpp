@@ -456,6 +456,7 @@ SCIP_RETCODE GCGdialogShowMenu(
 
    /* at the end of the table add a line */
    outputCharXTimes(scip, '=', linelength);
+   SCIPdialogMessage(scip, NULL, "\n");
 
    return SCIP_OKAY;
 }
