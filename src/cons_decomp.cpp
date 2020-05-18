@@ -2532,6 +2532,42 @@ int DECgetNDecomps(
 }
 
 
+DEC_CLASSIFIERDATA* DECconsClassifierGetData(
+   DEC_CONSCLASSIFIER*   classifier
+   )
+{
+   assert(classifier != NULL);
+   return classifier->clsdata;
+}
+
+
+const char* DECconsClassifierGetName(
+   DEC_CONSCLASSIFIER*   classifier
+   )
+{
+   assert(classifier != NULL);
+   return classifier->name;
+}
+
+
+DEC_CLASSIFIERDATA* DECvarClassifierGetData(
+   DEC_VARCLASSIFIER*    classifier
+   )
+{
+   assert(classifier != NULL);
+   return classifier->clsdata;
+}
+
+
+const char* DECvarClassifierGetName(
+   DEC_VARCLASSIFIER*   classifier
+   )
+{
+   assert(classifier != NULL);
+   return classifier->name;
+}
+
+
 char DECdetectorGetChar(
    DEC_DETECTOR*         detector
    )

@@ -58,6 +58,41 @@ typedef struct Partialdecomp_Wrapper PARTIALDECOMP_WRAPPER;
 
 struct Detprobdata_Wrapper;
 
+/**
+ * @brief returns the data of the provided consclassifier
+ * @returns data of the provided consclassifier
+ */
+extern
+DEC_CLASSIFIERDATA* DECconsClassifierGetData(
+   DEC_CONSCLASSIFIER* classifier  /**< Classifier data structure */
+   );
+
+/**
+ * @brief returns the name of the provided classifier
+ * @returns name of the given classifier
+ */
+extern
+const char* DECconsClassifierGetName(
+   DEC_CONSCLASSIFIER* classifier  /**< classifier data structure */
+   );
+
+/**
+ * @brief returns the data of the provided varclassifier
+ * @returns data of the provided varclassifier
+ */
+extern
+DEC_CLASSIFIERDATA* DECvarClassifierGetData(
+   DEC_VARCLASSIFIER* classifier  /**< Classifier data structure */
+   );
+
+/**
+ * @brief returns the name of the provided classifier
+ * @returns name of the given classifier
+ */
+extern
+const char* DECvarClassifierGetName(
+   DEC_VARCLASSIFIER* classifier  /**< classifier data structure */
+   );
 
 /** @brief Gets the character of the detector
  * @returns detector character */
