@@ -25,9 +25,9 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    clsvar_xyz.cpp
+/**@file    clscons_xyz.cpp
  * @ingroup CLASSIFIERS
- * @brief   xyz variable classifier (put your description here)
+ * @brief   xyz constraint classifier (put your description here)
  * @author
  */
 
@@ -35,7 +35,7 @@
 
 #include "clscons_xyz.h"
 #include "cons_decomp.h"
-#include "cons_decomp.hpp
+#include "cons_decomp.hpp"
 #include <vector>
 #include <stdio.h>
 #include <sstream>
