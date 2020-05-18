@@ -19,7 +19,7 @@ scripts, you'll need `STATISTICS=true` to be set **during compilation**. Importa
     CLIQUER[=B]                 enables the Cliquer
     HMETIS[=B]                  enables hMETIS (Hypergraph & Circuit Partitioning)
     OPENMP[=B]                  enables parallelization using OpenMP
-    GSL[=B]                     enables the GNU Scientific Library, needed for one detector
+    GSL[=B]                     enables the GNU Scientific Library, needed for one detector (requires `libgsl-dev`)
     CPLEXSOLVER[=B]             enables CPLEX for solving of pricing problems
 
 #### Limits and Modes (only for `make test`)

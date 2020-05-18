@@ -1,8 +1,5 @@
 # Detectors {#detectors}
 
-> **Important: The documentation here is fully based on the refactoring branch as of commit 6237731b.**  \n
-> Thus, links to source files might not work, since the documentation branch branches from the master.
-
 Here you find a list of all detectors available in GCG. Each of those fulfills at least one
 function out of
 * **propagating** (**assigning** variables/constraints to a block or the master)
