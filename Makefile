@@ -210,6 +210,7 @@ LIBOBJ = \
 			clscons_consnamelevenshtein.o \
 			clscons_scipconstypes.o \
 			clscons_gamssymbol.o \
+			clsvar_gamssymbol.o \
 			clsvar_objvalues.o \
 			clsvar_scipvartypes.o \
 			clsvar_objvaluesigns.o \

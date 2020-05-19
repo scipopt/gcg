@@ -79,7 +79,7 @@ struct DEC_ClassifierData
 /** destructor of classifier to free user data (called when GCG is exiting) */
 #if 0
 static
-DEC_DECL_FREECLASSIFIER(classifierFreeXyz)
+DEC_DECL_FREEVARCLASSIFIER(classifierFreeXyz)
 {  /*lint --e{715}*/
 
    SCIPerrorMessage("Free function of classifier <%s> not implemented!\n", DEC_CLASSIFIERNAME);
@@ -94,7 +94,7 @@ DEC_DECL_FREECLASSIFIER(classifierFreeXyz)
 /** classifier initialization method (called after problem was transformed) */
 #if 0
 static
-DEC_DECL_INITCLASSIFIER(classifierInitXyz)
+DEC_DECL_INITVARCLASSIFIER(classifierInitXyz)
 {  /*lint --e{715}*/
 
    SCIPerrorMessage("Init function of classifier <%s> not implemented!\n", DEC_CLASSIFIERNAME);
@@ -120,7 +120,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
    }
 
    // CLASSIFICATION
-   gcg::PartitionClassifier* partition;
+   gcg::VarPartition* partition;
    // TODO initialize partition
 
    detprobdata->addVarPartition(partition);
