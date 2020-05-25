@@ -3464,7 +3464,7 @@ SCIP_Real PARTIALDECOMP::getScore(
    for( int mc = 0; mc < getNMasterconss(); ++mc )
    {
       SCIP_CONS* cons;
-      cons = getDetprobdata()->getConsById(getMasterconss()[mc]);
+      cons = getDetprobdata()->getConsForIndex(getMasterconss()[mc]);
       if( GCGconsGetType(scip, cons) == consType::indicator )
          return 0.;
    }

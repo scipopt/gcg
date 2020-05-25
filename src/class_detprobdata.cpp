@@ -726,14 +726,6 @@ PARTIALDECOMP* DETPROBDATA::getAncestorPartialdec(
 }
 
 
-SCIP_CONS* DETPROBDATA::getConsById(
-   int consid
-   )
-{
-   return relevantconss[consid];
-}
-
-
 ConsPartition* DETPROBDATA::getConsPartition(
    int partitionIndex
    )
@@ -976,14 +968,6 @@ std::vector<SCIP_Real>& DETPROBDATA::getValsForCons(
    )
 {
    return valsforconss[cons];
-}
-
-
-SCIP_VAR* DETPROBDATA::getVarById(
-   int varid
-   )
-{
-   return relevantvars[varid];
 }
 
 
