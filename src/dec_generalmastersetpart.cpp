@@ -121,7 +121,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetpart)
    for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
    {
       bool found = false;
-      cons = partialdecdetectiondata->detprobdata->getConsForIndex(*itr);
+      cons = partialdecdetectiondata->detprobdata->getCons(*itr);
       /* set open setpartitioning constraints to master */
       if( GCGconsGetType(scip, cons) == setpartitioning )
       {

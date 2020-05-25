@@ -95,22 +95,22 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
    }
 
    // CLASSIFICATION
-   std::vector<SCIP_Real> foundobjvals( 0 ); /* all found objective function values */
-   std::vector<int> classforvars( detprobdata->getNVars(), -1 ); /* vector assigning a class index to each variable */
+   std::vector<SCIP_Real> foundobjvals; /* all found objective function values */
+   std::vector<int> classforvars(detprobdata->getNVars(), -1); /* vector assigning a class index to each variable */
    int curclassindex; /* stores a var's classindex if the objective value of a var has already been found for another var */
    SCIP_Real curobjval;
    gcg::VarPartition* classifier; /* new VarPartition */
 
    for( int v = 0; v < detprobdata->getNVars(); ++v )
    {
-      assert( detprobdata->getVarForIndex( v ) != NULL );
-      curobjval = SCIPvarGetObj( detprobdata->getVarForIndex( v ) );
+      assert( detprobdata->getVar(v) != NULL );
+      curobjval = SCIPvarGetObj(detprobdata->getVar(v));
       curclassindex = -1;
 
       /* check whether current objective funtion value already exists */
       for( size_t c = 0; c < foundobjvals.size(); ++c )
       {
-         if( SCIPisEQ( scip, curobjval, foundobjvals[c] ) )
+         if( SCIPisEQ(scip, curobjval, foundobjvals[c]) )
          {
             curclassindex = c;
             break;
@@ -120,7 +120,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
       /* assign var to class and save objective function value, if it is new */
       if( curclassindex == -1 )
       {
-         foundobjvals.push_back( curobjval );
+         foundobjvals.push_back(curobjval);
          classforvars[v] = foundobjvals.size() - 1;
       }
       else
@@ -129,7 +129,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
       }
    }
 
-   classifier = new gcg::VarPartition(scip, "varobjvals", (int) foundobjvals.size(), detprobdata->getNVars() );
+   classifier = new gcg::VarPartition(scip, "varobjvals", (int) foundobjvals.size(), detprobdata->getNVars());
 
    /* set up class information */
    for ( int c = 0; c < classifier->getNClasses(); ++c )
@@ -140,17 +140,17 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
       name << std::setprecision( 5 ) << foundobjvals[c];
       text << "This class contains all variables with objective function value " << name.str() << ".";
 
-      classifier->setClassName( c, name.str().c_str() );
-      classifier->setClassDescription( c, text.str().c_str() );
+      classifier->setClassName(c, name.str().c_str());
+      classifier->setClassDescription(c, text.str().c_str());
    }
 
    /* assign vars according to classforvars vactor */
    for ( int v = 0; v < classifier->getNVars(); ++v )
    {
-      classifier->assignVarToClass( v, classforvars[v] );
+      classifier->assignVarToClass(v, classforvars[v]);
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses()) ;
 
    detprobdata->addVarPartition(classifier);
    return SCIP_OKAY;

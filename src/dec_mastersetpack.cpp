@@ -110,7 +110,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetpack)
    auto& openconss = partialdec->getOpenconssVec();
    for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
    {
-      cons = partialdecdetectiondata->detprobdata->getConsForIndex(*itr);
+      cons = partialdecdetectiondata->detprobdata->getCons(*itr);
       if( GCGconsGetType(scip, cons) == setpacking )
       {
           itr = partialdec->fixConsToMaster(itr);

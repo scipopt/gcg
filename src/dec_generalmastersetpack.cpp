@@ -120,7 +120,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetpack)
    for( auto itr = openconss.cbegin(); itr!= openconss.cend(); )
    {
       bool found = false;
-      cons = partialdecdetectiondata->detprobdata->getConsForIndex(*itr);
+      cons = partialdecdetectiondata->detprobdata->getCons(*itr);
       /* set open setpacking constraints to master */
       if( GCGconsGetType(scip, cons) == setpacking )
       {

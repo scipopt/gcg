@@ -303,7 +303,7 @@ public:
     * @brief returns the SCIP constraint related to a constraint index
     * @return the SCIP constraint related to a constraint index
     */
-   SCIP_CONS* getConsForIndex(
+   SCIP_CONS* getCons(
       int consIndex /**< index of the constraint to be considered */
       );
 
@@ -521,7 +521,7 @@ public:
     * @brief returns SCIP variable related to a variable index
     * @return SCIP variable pointer related to a variable index
     */
-   SCIP_VAR* getVarForIndex(
+   SCIP_VAR* getVar(
       int varIndex /**< index of the variable to be considered */
       );
 

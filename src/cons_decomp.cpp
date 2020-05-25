@@ -979,31 +979,31 @@ SCIP_RETCODE createPartialdecFromDecomp(
    DETPROBDATA* detprobdata = decomp->presolved ? GCGconshdlrDecompGetDetprobdataPresolved(scip) : GCGconshdlrDecompGetDetprobdataOrig(scip);
 
    /* create new partialdec and initialize its data */
-   PARTIALDECOMP* partialdec = new PARTIALDECOMP( scip, !decomp->presolved );
-   partialdec->setNBlocks( DECdecompGetNBlocks( decomp ) );
+   PARTIALDECOMP* partialdec = new PARTIALDECOMP(scip, !decomp->presolved);
+   partialdec->setNBlocks( DECdecompGetNBlocks(decomp));
 
-   SCIP_CONS** linkingconss = DECdecompGetLinkingconss( decomp );
-   int nlinkingconss = DECdecompGetNLinkingconss( decomp );
-   SCIP_HASHMAP* constoblock = DECdecompGetConstoblock( decomp );
+   SCIP_CONS** linkingconss = DECdecompGetLinkingconss(decomp);
+   int nlinkingconss = DECdecompGetNLinkingconss(decomp);
+   SCIP_HASHMAP* constoblock = DECdecompGetConstoblock(decomp);
    int nblock;
 
    /* set linking conss */
    for( int c = 0; c < nlinkingconss; ++c )
    {
-      partialdec->fixConsToMaster( detprobdata->getIndexForCons( linkingconss[c] ) );
+      partialdec->fixConsToMaster(detprobdata->getIndexForCons(linkingconss[c]));
    }
 
    /* set block conss */
    for( int c = 0; c < detprobdata->getNConss(); ++c )
    {
-      nblock = (int) (size_t) SCIPhashmapGetImage( constoblock, (void*) (size_t) detprobdata->getConsForIndex( c ) );
+      nblock = (int) (size_t) SCIPhashmapGetImage(constoblock, (void*) (size_t) detprobdata->getCons(c));
       if( nblock >= 1 && nblock <= partialdec->getNBlocks() )
       {
-         partialdec->fixConsToBlock( c, nblock - 1 );
+         partialdec->fixConsToBlock(c, nblock - 1);
       }
    }
 
-   SCIP_VAR*** stairlinkingvars = DECdecompGetStairlinkingvars( decomp );
+   SCIP_VAR*** stairlinkingvars = DECdecompGetStairlinkingvars(decomp);
    SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock(decomp);
    assert( vartoblock != NULL );
 
@@ -1029,18 +1029,18 @@ SCIP_RETCODE createPartialdecFromDecomp(
    /* set other vars */
    for( int v = 0; v < detprobdata->getNVars(); ++v )
    {
-      nblock = (int) (size_t) SCIPhashmapGetImage( vartoblock, (void*) (size_t) SCIPvarGetProbvar( detprobdata->getVarForIndex( v ) ) );
-      if( nblock == partialdec->getNBlocks() + 2 && !partialdec->isVarStairlinkingvar( v ) )
+      nblock = (int) (size_t) SCIPhashmapGetImage(vartoblock, (void*) (size_t) SCIPvarGetProbvar(detprobdata->getVar(v)));
+      if( nblock == partialdec->getNBlocks() + 2 && !partialdec->isVarStairlinkingvar(v) )
       {
-         partialdec->fixVarToLinking( v );
+         partialdec->fixVarToLinking(v);
       }
       else if( nblock == partialdec->getNBlocks() + 1 )
       {
-         partialdec->fixVarToMaster( v );
+         partialdec->fixVarToMaster(v);
       }
       else if( nblock >= 1 && nblock <= partialdec->getNBlocks() )
       {
-         partialdec->fixVarToBlock( v, nblock - 1 );
+         partialdec->fixVarToBlock(v, nblock - 1);
       }
    }
 
@@ -1050,22 +1050,22 @@ SCIP_RETCODE createPartialdecFromDecomp(
    assert( partialdec->isComplete() );
 
    /*set all detector-related information*/
-   for( int i = 0; i < DECdecompGetDetectorChainSize( decomp ); ++i )
+   for( int i = 0; i < DECdecompGetDetectorChainSize(decomp); ++i )
    {
-      partialdec->setDetectorPropagated( DECdecompGetDetectorChain( decomp )[i] );
-      partialdec->addClockTime( DECdecompGetDetectorClockTimes( decomp )[i] );
-      partialdec->addPctConssFromFree( 1 - *(DECdecompGetDetectorPctConssFromOpen( decomp )) );
-      partialdec->addPctConssToBlock( *(DECdecompGetDetectorPctConssToBlock( decomp )) );
-      partialdec->addPctConssToBorder( *(DECdecompGetDetectorPctConssToBorder( decomp )) );
-      partialdec->addPctVarsFromFree( 1 - *(DECdecompGetDetectorPctVarsFromOpen( decomp )) );
-      partialdec->addPctVarsToBlock( *(DECdecompGetDetectorPctVarsToBlock( decomp )) );
-      partialdec->addPctVarsToBorder( *(DECdecompGetDetectorPctVarsToBorder( decomp )) );
-      partialdec->addNNewBlocks( *(DECdecompGetNNewBlocks( decomp )) );
+      partialdec->setDetectorPropagated(DECdecompGetDetectorChain(decomp)[i]);
+      partialdec->addClockTime(DECdecompGetDetectorClockTimes(decomp)[i]);
+      partialdec->addPctConssFromFree(1 - *(DECdecompGetDetectorPctConssFromOpen(decomp)));
+      partialdec->addPctConssToBlock(*(DECdecompGetDetectorPctConssToBlock(decomp)));
+      partialdec->addPctConssToBorder(*(DECdecompGetDetectorPctConssToBorder(decomp)));
+      partialdec->addPctVarsFromFree(1 - *(DECdecompGetDetectorPctVarsFromOpen(decomp)));
+      partialdec->addPctVarsToBlock(*(DECdecompGetDetectorPctVarsToBlock(decomp)));
+      partialdec->addPctVarsToBorder(*(DECdecompGetDetectorPctVarsToBorder(decomp)));
+      partialdec->addNNewBlocks(*(DECdecompGetNNewBlocks(decomp)));
    }
 
    /* calc maxwhitescore and hashvalue */
    partialdec->prepare();
-   partialdec->calcStairlinkingVars( );
+   partialdec->calcStairlinkingVars();
 
    *newpartialdec = partialdec;
    return SCIP_OKAY;
@@ -1108,7 +1108,7 @@ SCIP_RETCODE createDecompFromPartialdec(
    int v;
    int c;
 
-   assert( partialdec->checkConsistency( ) );
+   assert( partialdec->checkConsistency() );
 
    DETPROBDATA* detprobdata = partialdec->getDetprobdata();
    assert(detprobdata != NULL);
@@ -2056,7 +2056,7 @@ SCIP_RETCODE calculateDualvalsOptimalOrigLP(
       SCIP_CONS* copiedcons;
       SCIP_CONS* transcons = NULL;
 
-      cons = detprobdata->getConsForIndex(c);
+      cons = detprobdata->getCons(c);
       if( !transformed )
       {
          SCIPgetTransformedCons(scip, cons, &transcons);
@@ -2143,7 +2143,7 @@ SCIP_RETCODE shuffleDualvalsRandom(
          SCIP_Real factor;
          SCIP_CONS* cons;
 
-         cons = detprobdata->getConsForIndex(c);
+         cons = detprobdata->getCons(c);
          if( SCIPisInfinity( scip, -GCGconsGetLhs(scip, cons) ))
          {
             SCIP_Real modifier;
@@ -2180,13 +2180,13 @@ SCIP_RETCODE shuffleDualvalsRandom(
    {
       SCIP_Real largec  = 0.;
       for( int v = 0; v < SCIPgetNVars(scip); ++v )
-         largec += ABS( SCIPvarGetObj( detprobdata->getVarForIndex(v) ) );
+         largec += ABS( SCIPvarGetObj(detprobdata->getVar(v)) );
 
       for( int c = 0; c < nconss; ++c )
       {
          SCIP_Real dualval;
          SCIP_CONS* cons;
-         cons = detprobdata->getConsForIndex(c);
+         cons = detprobdata->getCons(c);
          double lambda;
 
          SCIP_Real divisor = 0.;
@@ -2196,7 +2196,7 @@ SCIP_RETCODE shuffleDualvalsRandom(
          SCIP_Real* valsincons;
 
          /* get values of variables in this constraint */
-         SCIP_CALL_ABORT( SCIPallocBufferArray( scip, &valsincons, nvarsincons ) );
+         SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &valsincons, nvarsincons) );
          GCGconsGetVals(scip, cons, valsincons, nvarsincons);
 
          /* add coefficients to divisor */
@@ -2218,7 +2218,7 @@ SCIP_RETCODE shuffleDualvalsRandom(
          while (randomval == 0.0 || randomval == 1.0);
          randomval = -std::log(randomval) / lambda;
 
-         if( SCIPisInfinity( scip, -GCGconsGetLhs(scip, cons) ))
+         if( SCIPisInfinity(scip, -GCGconsGetLhs(scip, cons)) )
          {
             SCIP_Real modifier;
             modifier = 1.;
@@ -2227,7 +2227,7 @@ SCIP_RETCODE shuffleDualvalsRandom(
 
             dualval = modifier * randomval;
          }
-         else if( SCIPisInfinity( scip, GCGconsGetRhs(scip, cons) ) )
+         else if( SCIPisInfinity(scip, GCGconsGetRhs(scip, cons)) )
          {
             SCIP_Real modifier;
             modifier = 1.;
@@ -2329,7 +2329,7 @@ SCIP_RETCODE createTestPricingprobConss(
    {
       SCIP_CONS* cons;
 
-      cons = detprobdata->getConsForIndex( partialdec->getConssForBlock(block)[c] );
+      cons = detprobdata->getCons(partialdec->getConssForBlock(block)[c]);
 
       SCIPdebugMessage("copying %s to pricing problem %d\n", SCIPconsGetName(cons), block);
       if( !SCIPconsIsActive(cons) )
@@ -4509,9 +4509,9 @@ SCIP_RETCODE GCGconshdlrDecompCalcStrongDecompositionScore(
          varid = partialdec->getVarsForBlock(block)[var];
 
          if ( partialdec->isAssignedToOrigProb() )
-            origprobvar = detprobdata->getVarForIndex(varid);
+            origprobvar = detprobdata->getVar(varid);
          else
-            origprobvar = SCIPvarGetProbvar(detprobdata->getVarForIndex(varid));
+            origprobvar = SCIPvarGetProbvar(detprobdata->getVar(varid));
 
          /* calculate obj val from shuffled */
          obj = SCIPvarGetObj(origprobvar);
@@ -4912,7 +4912,7 @@ SCIP_RETCODE GCGconshdlrDecompCreateVarmapForPartialdecId(
       assert(var1originblockid>=0);
       var1origid = partialdec->getVarsForBlock(blockid1)[var1originblockid];
       assert(var1origid>=0);
-      var1orig = currdetprobdata->getVarForIndex(var1origid) ;
+      var1orig = currdetprobdata->getVar(var1origid) ;
       assert(var1orig != NULL);
       var1 = (SCIP_VAR*) SCIPhashmapGetImage(hashorig2pricingvar[blockid1], (void*) var1orig ) ;
       assert(var1 != NULL);

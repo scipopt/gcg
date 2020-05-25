@@ -496,7 +496,7 @@ DETPROBDATA::~DETPROBDATA()
    {
       SCIP_CONS* cons;
 
-      cons = getConsForIndex(c);
+      cons = getCons(c);
       SCIPreleaseCons(scip, &cons);
    }
 
@@ -736,7 +736,7 @@ ConsPartition* DETPROBDATA::getConsPartition(
 }
 
 
-SCIP_CONS* DETPROBDATA::getConsForIndex(
+SCIP_CONS* DETPROBDATA::getCons(
    int consIndex
    )
 {
@@ -987,7 +987,7 @@ std::vector<VarPartition*> DETPROBDATA::getVarPartitions()
 }
 
 
-SCIP_VAR* DETPROBDATA::getVarForIndex(
+SCIP_VAR* DETPROBDATA::getVar(
    int varIndex
    )
 {

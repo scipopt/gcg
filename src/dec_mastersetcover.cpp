@@ -112,7 +112,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetcover)
    auto& openconss = partialdec->getOpenconssVec();
    for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
    {
-      cons = partialdecdetectiondata->detprobdata->getConsForIndex(*itr);
+      cons = partialdecdetectiondata->detprobdata->getCons(*itr);
       if( GCGconsGetType(scip, cons) == setcovering || GCGconsGetType(scip, cons) == logicor )
       {
           itr = partialdec->fixConsToMaster(itr);

@@ -120,7 +120,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetcover)
    for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
    {
       bool found = false;
-      cons = partialdecdetectiondata->detprobdata->getConsForIndex(*itr);
+      cons = partialdecdetectiondata->detprobdata->getCons(*itr);
 
       /* set open setcovering and logicor constraints to master */
       if( GCGconsGetType(scip, cons) == setcovering || GCGconsGetType(scip, cons) == logicor )

@@ -204,7 +204,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
          int var = varsForGraph[i];
 
          /* note that the first nvars nodes correspond to variables */
-         weight = this->weights.calculate(detprobdata->getVarForIndex(var));
+         weight = this->weights.calculate(detprobdata->getVar(var));
          oldToNewVarIndex.insert({var,i});
          this->graph.addNode(i, weight);
      }
@@ -217,7 +217,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
         int cons = conssForGraph[j];
 
         /* note that the first nvars nodes correspond to variables (legacy implementation) */
-        weight = this->weights.calculate( detprobdata->getConsForIndex(cons) );
+        weight = this->weights.calculate(detprobdata->getCons(cons));
         oldToNewConsIndex.insert({cons, j});
         this->graph.addNode( this->nvars + j, weight);
      }
