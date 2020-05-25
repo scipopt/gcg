@@ -86,7 +86,7 @@ Note that the #-symbol will start comments.
              ),
 
           array(
-              'question'=>'How do I create my own decomposition file?',
+              'question'=>'How do I create or export my own decomposition file?',
               'answer'=>'<p>
 First off; we do not recommend to write any decomposition files. Instead, you
 should make GCG detect your desired decomposition by using the settings. For example,
@@ -94,6 +94,7 @@ you could look up which detector decomposes your instance in the way you want it
 and then only activate this detector. To find out which detector you need, look up
 which structure each detector finds <a href="detectors.html">here</a>. Then, create your
 <a href"#createsettingsfile">own settings file</a>, where only this detector is enabled.
+After detecting, perform a <code>write alldecompositions</code> to export all decompositions.
 </p>
 <p>
 If you still want to write your .dec-file by hand, you can find the required syntax <a href="reader__dec_8h.html">here</a>.

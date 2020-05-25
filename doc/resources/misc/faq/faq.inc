@@ -37,7 +37,7 @@
   </li>
     <li>
     <a class="reveal_faq" href="#createdecfile">
-      How do I create my own decomposition file?    </a>
+      How do I create or export my own decomposition file?    </a>
   </li>
     <li>
     <a class="reveal_faq" href="#decvisu">
@@ -152,7 +152,7 @@ Note that the #-symbol will start comments.
   </li>
     <li id="createdecfile" class="anchor">
     <h4>
-      <a class="reveal_faq" href="#createdecfile">How do I create my own decomposition file?</a>
+      <a class="reveal_faq" href="#createdecfile">How do I create or export my own decomposition file?</a>
 
       <a href="#" class="pull-right"><span class="fa fa-caret-up" title="go to top"></span></a>
     </h4>
@@ -164,6 +164,7 @@ you could look up which detector decomposes your instance in the way you want it
 and then only activate this detector. To find out which detector you need, look up
 which structure each detector finds <a href="detectors.html">here</a>. Then, create your
 <a href"#createsettingsfile">own settings file</a>, where only this detector is enabled.
+After detecting, perform a <code>write alldecompositions</code> to export all decompositions.
 </p>
 <p>
 If you still want to write your .dec-file by hand, you can find the required syntax <a href="reader__dec_8h.html">here</a>.

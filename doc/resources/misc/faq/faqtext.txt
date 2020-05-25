@@ -66,7 +66,7 @@ SECTION: General Questions about GCG
       Note that the #-symbol will start comments.
     </p>
 
-    QUESTION: How do I create my own decomposition file?
+    QUESTION: How do I create or export my own decomposition file?
     LABEL:createdecfile
     ANSWER:
     <p>
@@ -76,6 +76,7 @@ SECTION: General Questions about GCG
       and then only activate this detector. To find out which detector you need, look up
       which structure each detector finds <a href="detectors.html">here</a>. Then, create your
       <a href"#createsettingsfile">own settings file</a>, where only this detector is enabled.
+      After detecting, perform a <code>write alldecompositions</code> to export all decompositions.
     </p>
     <p>
       If you still want to write your .dec-file by hand, you can find the required syntax <a href="reader__dec_8h.html">here</a>.
