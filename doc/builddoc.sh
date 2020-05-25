@@ -29,7 +29,7 @@ makeSubpageIndexing () {( set -e
   ls | egrep '\.md$' | sed "/$OUT/d" | sed 's/.md//' | sed 's/^/- \@subpage /' >> $OUT
 
   #echo "Subpage indexing for ${DIR} built sucessfully."
-  cd - > /dev/null 2>&1
+  cd -  > /dev/null 2>&1
 )}
 
 # Get GCG Menu for interactive menu page
@@ -45,7 +45,7 @@ makeInteractiveMenuDocu () {( set -e
 
   # Remove the text file that contains all menu entries (except for submenus, e.g. master/explore)
   rm menu.txt
-  cd - > /dev/null 2>&1 
+  cd - 
 )}
 
 # Check if mathjax is wanted and clone repository on a fixed working version
@@ -57,13 +57,13 @@ checkMathjax () {( set -e
      then
         printf ": updating repository\n"
         cd html/MathJax
-        git checkout 2.7.7 > /dev/null 2>&1 
+        git checkout 2.7.7  > /dev/null 2>&1
         rm -f *.md
         cd ../..
      else
         printf ": cloning repository\n"
         cd html
-        git clone https://github.com/mathjax/MathJax.git --branch=2.7.7 --single-branch --depth 1 > /dev/null 2>&1 
+        git clone https://github.com/mathjax/MathJax.git --branch=2.7.7 --single-branch --depth 1  > /dev/null 2>&1
         rm MathJax/*.md
         cd ..
      fi
@@ -81,19 +81,19 @@ getAdditionalResources () {( set -e
   mkdir -p html/js
   mkdir -p html/img
   # Getting Bootstrap stuff
-  wget https://scip.zib.de/bootstrap/css/bootstrap.min.css --output-document html/bootstrap/css/bootstrap.min.css --quiet
-  wget https://scip.zib.de/bootstrap/css/custom.css --output-document html/bootstrap/css/custom.css --quiet
+  wget https://scip.zib.de/bootstrap/css/bootstrap.min.css --output-document html/bootstrap/css/bootstrap.min.css --no-check-certificate
+  wget https://scip.zib.de/bootstrap/css/custom.css --output-document html/bootstrap/css/custom.css --no-check-certificate
   sed -i.bak 's/https:\/\/scip.zib.de\/images/..\/..\/img/g' html/bootstrap/css/custom.css && rm html/bootstrap/css/custom.css.bak
   # Getting fonts and css
-  wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css --output-document html/bootstrap/fonts/font-awesome.min.css --quiet
-  wget https://fonts.googleapis.com/css?family=Open+Sans --output-document html/bootstrap/fonts/font-googleapis.css --quiet
-  wget https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFW50bbck.woff2 --output-document html/bootstrap/fonts/font-googleapis.woff2 --quiet
-  wget https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFW50bbck.woff2 --output-document html/bootstrap/fonts/font-googleapis.woff2 --quiet
-  wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.woff2 --output-document html/bootstrap/fonts/fontawesome-webfont.woff2 --quiet
+  wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css --output-document html/bootstrap/fonts/font-awesome.min.css
+  wget https://fonts.googleapis.com/css?family=Open+Sans --output-document html/bootstrap/fonts/font-googleapis.css
+  wget https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFW50bbck.woff2 --output-document html/bootstrap/fonts/font-googleapis.woff2
+  wget https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFW50bbck.woff2 --output-document html/bootstrap/fonts/font-googleapis.woff2
+  wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.woff2 --output-document html/bootstrap/fonts/fontawesome-webfont.woff2
   # Getting js
-  wget https://scip.zib.de/bootstrap/js/custom.js --output-document html/bootstrap/js/custom.js --quiet
-  wget https://scip.zib.de/bootstrap/js/bootstrap.min.js --output-document html/bootstrap/js/bootstrap.min.js --quiet
-  wget https://code.jquery.com/jquery.min.js --output-document html/js/jquery.min.js --quiet
+  wget https://scip.zib.de/bootstrap/js/custom.js --output-document html/bootstrap/js/custom.js --no-check-certificate
+  wget https://scip.zib.de/bootstrap/js/bootstrap.min.js --output-document html/bootstrap/js/bootstrap.min.js --no-check-certificate
+  wget https://code.jquery.com/jquery.min.js --output-document html/js/jquery.min.js
   # move additional resources to html folder 
   cp -r resources/misc/scripts html
   mkdir -p html/doc/img/visu
@@ -106,20 +106,21 @@ getAdditionalResources () {( set -e
   cp -r html/css html/doc
   cp -r html/img/newscippy.png html/doc/img/
   cp -r html/img/scribble_light_@2X.png html/doc/img/
+  echo $?
 )}
 
 # Generate interactively created FAQ (txt -> php)
 generateFAQ () {( set -e
   cd resources/misc/faq
   python3 parser.py --linkext shtml  && php localfaq.php > faq.inc
-  cd - > /dev/null 2>&1
+  cd -
 )}
 
 # Generate parameter file (includes SCIP params)
 generateParamsFile () {( set -e
   cd ..
-  "$BINDIR"/gcg -c "set default set save doc/resources/misc/parameters.set quit" > /dev/null 2>&1
-  cd - > /dev/null 2>&1
+  "$BINDIR"/gcg -c "set default set save doc/resources/misc/parameters.set quit"
+  cd -
 )}
 
 # Remove citelist.html (the Bibliography) manually from the menu (but still reachable via link)
@@ -129,7 +130,7 @@ removeBibliography () {( set -e
   sed -i.bak "/citelist/d" navtreedata.js && rm navtreedata.js.bak
   sed -i.bak "s/\:\[5/\:\[4/g" navtreeindex*.js && rm navtreeindex*.js.bak # citelist is the third item in the navigation (after Users Guide and Devs Guide,
   sed -i.bak "s/\:\[6/\:\[5/g" navtreeindex*.js && rm navtreeindex*.js.bak # since Installation counts as homepage and thus 0)
-  cd - > /dev/null 2>&1
+  cd -
 )}
 
 # Create Doxygen documentation for pages and source code
@@ -174,7 +175,7 @@ main () {
     
   # Requirement: Internet connection
   echo "[${i}/${n}] Downloading additional resources"; let "i++"
-    getAdditionalResources
+    getAdditionalResources  > /dev/null 2>&1
     if [ $? -ne 0 ]; then printf " ${R}Error:${W} Please check your internet connection.\n"; fi
 
   # Requirement: none
@@ -184,28 +185,28 @@ main () {
   
   # Requirement: Correctly installed php
   echo "[${i}/${n}] Generating FAQ"; let "i++"
-    generateFAQ
+    generateFAQ  > /dev/null 2>&1
     if [ $? -ne 0 ]; then printf " ${R}Error:${W} Have you installed PHP and python3 correctly?\n"; fi
     
   # Requirement: Correctly installed GCG
   echo "[${i}/${n}] Generating GCG parameters file"; let "i++"
-    generateParamsFile
+    generateParamsFile  > /dev/null 2>&1
     if [ $? -ne 0 ]; then printf " ${R}Error:${W} Have you installed GCG correctly?\n"; fi
     
   # Requirement: Correctly installed GCG
   echo "[${i}/${n}] Generating GCG interactive menu documentation"; let "i++"
-    makeInteractiveMenuDocu
+    makeInteractiveMenuDocu  > /dev/null 2>&1
     if [ $? -ne 0 ]; then printf " ${R}Error:${W} Have you installed GCG and python3 correctly?\n"; fi
   
   # Requirement: Doxygen, graphviz
   echo "[${i}/${n}] Generating Doxygen documentation"; let "i++"
-    generateDoxy   
+    generateDoxy #> /dev/null 2>&1 # Show doxygen warnings!
     if [ $? -ne 0 ]; then printf " ${R}Error:${W} Have you installed Doxygen and graphviz correctly?\n"; fi
   
   # Requirement: none
   echo "[${i}/${n}] Finalizing"
     # remove bibliography page (used for the use case pages)
-    removeBibliography
+    removeBibliography  > /dev/null 2>&1
     # remove old documentation under this name
     rm -rf html/doc-${CURRENT_VERSION} gcgheader.html
     # move freshly generated docu into the desired (versionized) folder
