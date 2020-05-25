@@ -5,7 +5,7 @@ RED='\033[0;31m'
 W='\e[0m\n'
 B='\n\e[1m'
 
-FOLDER='gcg_myrepo'
+FOLDER='gcg'
 BRANCH='master'
 SYS='make'
 MODE='default'
@@ -13,20 +13,15 @@ MODE='default'
 function usage(){
   echo "Usage: ./installGCGFromGit.sh [options]"
   echo "Options:"
-  echo "  -f, --folder    folder to install GCG to (default: 'gcg')"
-  echo "  -s, --system    buildsystem (make/cmake, default: 'make')"
-  echo "  -b, --branch    branch to clone (default: 'master')"
-  echo "  -m, --mode      "
-  echo "                  default: clone everything (recommended)"
-  echo "                  fast:    only clone given branch"
-  echo "                  fastest: only clone given branch and newest submodules"
+  echo "  -d, --directory  folder to install GCG to (default: 'gcg')"
+  echo "  -s, --system     buildsystem (make/cmake, default: 'make')"
+  echo "  -b, --branch     branch to clone (default: 'master')"
+  echo "  -f, --flags      flags to use for the compilation (for the whole suite)"
+  echo "  -m, --mode       "
+  echo "                   default: clone everything (recommended)"
+  echo "                   fast:    only clone given branch"
+  echo "                   fastest: only clone given branch and newest submodules"
   exit
-}
-
-function getArgs(){
-  echo $1
-
-  echo "OK"
 }
 
 function start(){
@@ -185,9 +180,10 @@ while true; do
   while [ "$1" != "" ]; do
     case $1 in
         -b | --branch )         shift
-                                BRANCH=$1
+                                BRANCH=$1;
+                                if [ ! -z $FOLDER ]; then FOLDER=$(echo gcg_$BRANCH | sed -e 's/[^A-Za-z0-9._-]/_/g'); fi
                                 ;;
-        -f | --folder )         shift
+        -d | --directory )      shift
                                 FOLDER=$1
                                 ;;
         -m | --mode )           shift
@@ -195,6 +191,9 @@ while true; do
                                 ;;
         -s | --system )         shift
                                 SYS=$1
+                                ;;
+        -f | --flags )          shift
+                                FLAGS=" "$1
                                 ;;
         -h | --help )           usage
                                 exit
@@ -204,14 +203,22 @@ while true; do
     esac
     shift
   done
-  printf "${B}GCG, SCIP and SoPlex will be installed from Git.${W}"
-  echo "  Installation Mode: ${MODE}"
+  
+  # check for BOOST, set it to false if not installed
+  dpkg -l boost > /dev/null 2>&1
+  if [ $? != "0" ];
+    then FLAGS+=" BOOST=false";
+    #echo "Information: No BOOST installation found. Compiling without BOOST.";
+  fi
+  
+  printf "${B}GCG, SCIP and SoPlex will be installed from Git.\e[0m [Install Mode: ${MODE}]\n"
   if [ $MODE == 'fastest' ]; then
     echo "    WARNING: Installation Mode 'fastest' is experimental."
   fi
   echo "  Buildsystem:       ${SYS}"
-  echo "  Folder:            ${FOLDER}"
   echo "  Branch:            ${BRANCH}"
+  echo "  Flags:            ${FLAGS}"
+  echo "  Directory:         ${FOLDER}"
 
   read -p "Do you wish to continue? [Y/n] " yn
   case $yn in
