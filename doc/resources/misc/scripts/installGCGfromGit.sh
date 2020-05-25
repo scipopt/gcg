@@ -1,5 +1,6 @@
 #!/bin/bash
-# This is an automated installer Script for a GCG installation from the RWTH Gitlab.
+# This is an automated installer script for a GCG installation from the RWTH Gitlab.
+# It requires that the ssh key has already been installed.
 
 RED='\033[0;31m'
 W='\e[0m\n'
@@ -9,6 +10,7 @@ FOLDER='gcg'
 BRANCH='master'
 SYS='make'
 MODE='default'
+FLAGS=''
 
 function usage(){
   echo "Usage: ./installGCGFromGit.sh [options]"
@@ -111,16 +113,6 @@ function setLinks(){
   ln -sfn $PWD/lib/soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a $PWD/lib/scip/lib/static/libsoplex.linux.x86_64.gnu.opt.a
 }
 
-function compile(){
-  # Make SCIP and SoPlex
-  printf "${B}Compiling dependencies...${W}"
-  make deps
-
-  # Make GCG
-  printf "${B}Compiling GCG...${W}"
-  make
-}
-
 function test(){
   while true; do
     read -p "Do you want to test GCG? (this should not take long) [Y/n] " yn
@@ -147,7 +139,7 @@ function fcmake(){
   mkdir build
   cd build
   cmake .. | tail -n +91
-  make
+  make ${FLAGS}
   test
 }
 
@@ -156,11 +148,11 @@ function fmake(){
 
   # Make SCIP and SoPlex
   printf "${B}Compiling dependencies...${W}"
-  make deps
+  make deps ${FLAGS}
 
   # Make GCG
   printf "${B}Compiling GCG...${W}"sudo
-  make
+  make ${FLAGS}
   test
 }
 
@@ -181,7 +173,7 @@ while true; do
     case $1 in
         -b | --branch )         shift
                                 BRANCH=$1;
-                                if [ ! -z $FOLDER ]; then FOLDER=$(echo gcg_$BRANCH | sed -e 's/[^A-Za-z0-9._-]/_/g'); fi
+                                if [ -z $FOLDER ]; then FOLDER=$(echo gcg_$BRANCH | sed -e 's/[^A-Za-z0-9._-]/_/g'); fi
                                 ;;
         -d | --directory )      shift
                                 FOLDER=$1
