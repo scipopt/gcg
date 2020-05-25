@@ -5764,6 +5764,18 @@ relaxing/gcg/dispinfos = FALSE
 # [type: int, advanced: FALSE, range: [0,2], default: 0]
 relaxing/gcg/mode = 0
 
+# should bliss be used to check for identical blocks?
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+relaxing/gcg/bliss/enabled = TRUE
+
+# bliss search node limit (0: unlimited), requires patched bliss version
+# [type: int, advanced: TRUE, range: [0,2147483647], default: 0]
+relaxing/gcg/bliss/searchnodelimit = 0
+
+# bliss generator limit (0: unlimited), requires patched bliss version
+# [type: int, advanced: TRUE, range: [0,2147483647], default: 0]
+relaxing/gcg/bliss/generatorlimit = 0
+
 # priority of branching rule <empty>
 # [type: int, advanced: FALSE, range: [-536870912,536870911], default: 1000000]
 branching/empty/priority = 1000000
@@ -6343,6 +6355,166 @@ detection/detectors/staircase_lsp/origmincallround = 0
 # priority of detector <staircase_lsp>
 # [type: int, advanced: FALSE, range: [-2147483648,2147483647], default: 200]
 detection/detectors/staircase_lsp/priority = 200
+
+# flag to indicate whether detector <dbscan> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/dbscan/enabled = FALSE
+
+# flag to indicate whether detector <dbscan> is enabled for finishing of incomplete decompositions
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/dbscan/finishingenabled = FALSE
+
+# flag to indicate whether detector <dbscan> is enabled for postprocessing of finished decompositions
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/dbscan/postprocessingenabled = FALSE
+
+# flag to indicate whether detector <dbscan> should be skipped if others found decompositions
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/dbscan/skip = FALSE
+
+# flag to indicate whether detector <dbscan> should be called on descendants of the current partialdec
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/dbscan/usefullrecall = FALSE
+
+# flag to indicate whether emphasis settings for detector <dbscan> should be overruled by normal settings
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/dbscan/overruleemphasis = FALSE
+
+# frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <dbscan>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
+detection/detectors/dbscan/freqcallround = 1
+
+# maximum round the detector gets called in detection loop <dbscan>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
+detection/detectors/dbscan/maxcallround = 2147483647
+
+# minimum round the detector gets called in detection loop <dbscan>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
+detection/detectors/dbscan/mincallround = 0
+
+# frequency the detector gets called in detection loop,i.e., it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <dbscan>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
+detection/detectors/dbscan/origfreqcallround = 1
+
+# maximum round the detector gets called in detection loop <dbscan>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
+detection/detectors/dbscan/origmaxcallround = 2147483647
+
+# minimum round the detector gets called in detection loop <dbscan>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
+detection/detectors/dbscan/origmincallround = 0
+
+# priority of detector <dbscan>
+# [type: int, advanced: FALSE, range: [-2147483648,2147483647], default: 901]
+detection/detectors/dbscan/priority = 901
+
+# Number of iterations to run dbscan with different eps.
+# [type: int, advanced: FALSE, range: [11,1001], default: 51]
+detection/detectors/dbscan/niterations = 51
+
+# Enable johson distance measure.
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/dbscan/johson = TRUE
+
+# Enable intersection distance measure.
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/dbscan/intersection = FALSE
+
+# Enable jaccard distance measure.
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/dbscan/jaccard = FALSE
+
+# Enable cosine distance measure.
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/dbscan/cosine = FALSE
+
+# Enable simpson distance measure.
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/dbscan/simpson = FALSE
+
+# Enable post-processing step.
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/dbscan/postprocenable = TRUE
+
+# flag to indicate whether detector <mst> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/mst/enabled = FALSE
+
+# flag to indicate whether detector <mst> is enabled for finishing of incomplete decompositions
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/mst/finishingenabled = FALSE
+
+# flag to indicate whether detector <mst> is enabled for postprocessing of finished decompositions
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/mst/postprocessingenabled = FALSE
+
+# flag to indicate whether detector <mst> should be skipped if others found decompositions
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/mst/skip = FALSE
+
+# flag to indicate whether detector <mst> should be called on descendants of the current partialdec
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/mst/usefullrecall = FALSE
+
+# flag to indicate whether emphasis settings for detector <mst> should be overruled by normal settings
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/mst/overruleemphasis = FALSE
+
+# frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <mst>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
+detection/detectors/mst/freqcallround = 1
+
+# maximum round the detector gets called in detection loop <mst>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
+detection/detectors/mst/maxcallround = 2147483647
+
+# minimum round the detector gets called in detection loop <mst>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
+detection/detectors/mst/mincallround = 0
+
+# frequency the detector gets called in detection loop,i.e., it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <mst>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
+detection/detectors/mst/origfreqcallround = 1
+
+# maximum round the detector gets called in detection loop <mst>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 2147483647]
+detection/detectors/mst/origmaxcallround = 2147483647
+
+# minimum round the detector gets called in detection loop <mst>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
+detection/detectors/mst/origmincallround = 0
+
+# priority of detector <mst>
+# [type: int, advanced: FALSE, range: [-2147483648,2147483647], default: 910]
+detection/detectors/mst/priority = 910
+
+# Number of iterations to run mst with different eps.
+# [type: int, advanced: FALSE, range: [11,1001], default: 51]
+detection/detectors/mst/niterations = 51
+
+# Enable johson distance measure.
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/mst/johson = TRUE
+
+# Enable intersection distance measure.
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/mst/intersection = FALSE
+
+# Enable jaccard distance measure.
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/mst/jaccard = FALSE
+
+# Enable cosine distance measure.
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/mst/cosine = FALSE
+
+# Enable simpson distance measure.
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/mst/simpson = FALSE
+
+# Enable post-processing step.
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/mst/postprocenable = TRUE
 
 # flag to indicate whether detector <compgreedily> is enabled
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
@@ -7263,6 +7435,66 @@ detection/detectors/varclass/priority = 0
 # maximum number of classes 
 # [type: int, advanced: FALSE, range: [1,2147483647], default: 8]
 detection/detectors/varclass/maxnclasses = 8
+
+# flag to indicate whether detector <isomorph> is enabled
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/isomorph/enabled = FALSE
+
+# flag to indicate whether detector <isomorph> is enabled for finishing of incomplete decompositions
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/isomorph/finishingenabled = FALSE
+
+# flag to indicate whether detector <isomorph> is enabled for postprocessing of finished decompositions
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/isomorph/postprocessingenabled = FALSE
+
+# flag to indicate whether detector <isomorph> should be skipped if others found decompositions
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+detection/detectors/isomorph/skip = TRUE
+
+# flag to indicate whether detector <isomorph> should be called on descendants of the current partialdec
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/isomorph/usefullrecall = FALSE
+
+# flag to indicate whether emphasis settings for detector <isomorph> should be overruled by normal settings
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
+detection/detectors/isomorph/overruleemphasis = FALSE
+
+# frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <isomorph>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
+detection/detectors/isomorph/freqcallround = 1
+
+# maximum round the detector gets called in detection loop <isomorph>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
+detection/detectors/isomorph/maxcallround = 0
+
+# minimum round the detector gets called in detection loop <isomorph>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
+detection/detectors/isomorph/mincallround = 0
+
+# frequency the detector gets called in detection loop,i.e., it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <isomorph>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
+detection/detectors/isomorph/origfreqcallround = 1
+
+# maximum round the detector gets called in detection loop <isomorph>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
+detection/detectors/isomorph/origmaxcallround = 0
+
+# minimum round the detector gets called in detection loop <isomorph>
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 0]
+detection/detectors/isomorph/origmincallround = 0
+
+# priority of detector <isomorph>
+# [type: int, advanced: FALSE, range: [-2147483648,2147483647], default: 100]
+detection/detectors/isomorph/priority = 100
+
+# Maximum number of solutions/decompositions with exact detection
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 6]
+detection/detectors/isomorph/maxdecompsexact = 6
+
+# Maximum number of solutions/decompositions with extended detection
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 4]
+detection/detectors/isomorph/maxdecompsextend = 4
 
 # flag to indicate whether constraint classifier for <nnonezero entries> is enabled
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]

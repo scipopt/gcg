@@ -33,6 +33,8 @@
  * @author Jonas Witt
  * @author Michael Bastubbe
  *
+ * @note requires package to be installed: BLISS, requires flag to be set: `BLISS=true`
+ *
  * This detector finds subproblems that can be aggregated thus reducing the symmetry of the problem using color preserving
  * automorphisms and bliss.
  */
@@ -60,24 +62,24 @@
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME          "isomorph"  /**< name of detector */
-#define DEC_DESC                  "Detector for pricing problems suitable for aggregation" /**< description of detector*/
+#define DEC_DESC                  "detector for pricing problems suitable for aggregation" /**< description of detector */
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          0           /**< last round the detector gets called                              */
-#define DEC_MINCALLROUND          0           /**< first round the detector gets called                              */
-#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  0     /**< last round the detector gets called while detecting the original problem                            */
-#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
+#define DEC_MAXCALLROUND          0           /**< last round the detector gets called */
+#define DEC_MINCALLROUND          0           /**< first round the detector gets called */
+#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem */
+#define DEC_MAXCALLROUNDORIGINAL  0           /**< last round the detector gets called while detecting the original problem */
+#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem */
 #define DEC_PRIORITY              100         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'I'         /**< display character of detector */
 
-#define DEC_ENABLED               FALSE        /**< should the detection be enabled */
+#define DEC_ENABLED               FALSE       /**< should the detection be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
-#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE       /**< should the postprocessing be enabled */
 #define DEC_SKIP                  TRUE        /**< should the detector be skipped if others found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
-#define DEFAULT_MAXDECOMPSEXACT  6           /**< default maximum number of decompositions */
-#define DEFAULT_MAXDECOMPSEXTEND 4           /**< default maximum number of decompositions */
+#define DEFAULT_MAXDECOMPSEXACT  6            /**< default maximum number of decompositions */
+#define DEFAULT_MAXDECOMPSEXTEND 4            /**< default maximum number of decompositions */
 
 #define SET_MULTIPLEFORSIZETRANSF 12500
 

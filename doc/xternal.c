@@ -29,7 +29,7 @@
  * @brief  documentation page for GCG's C-API (no other pages)
  */
 
-/**@defgroup PUBLICAPI Public API of \GCG
+/**@defgroup PUBLICAPI Public API of GCG
  * @brief methods and headers of the public C-API of \GCG
  *
  * The public API of \GCG is separated into a Core API and a Plugin API.
@@ -101,7 +101,7 @@
 
 
 
-/**@defgroup PUBLICPLUGINAPI Plugin API of \GCG
+/**@defgroup PUBLICPLUGINAPI Plugin API of GCG
   * @ingroup PUBLICAPI
   * @brief core API extensions provided by the default plugins of \GCG.
   *
