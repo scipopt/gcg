@@ -435,7 +435,6 @@ SCIP_RETCODE detection(
    int j;
    int s;
    int nMaxPartialdecs;
-   int nnewpartialdecs = 0;
    gcg::PARTIALDECOMP** newpartialdecs;
    SCIP_CLOCK* clock;
    SCIP_CLOCK* temporaryClock;
@@ -525,13 +524,11 @@ SCIP_RETCODE detection(
          SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
 
          detectordata->found = TRUE;
-         nnewpartialdecs++;
          (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hc\\_%d", numberOfBlocks[k]);
          newpartialdecs[j]->addDetectorChainInfo(decinfo);
 
          if( allowopenpartialdecs )
          {
-            nnewpartialdecs++;
             clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock) / 2);
             clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock) / 2);
             newpartialdecs[j + 1]->addDetectorChainInfo(decinfo);
@@ -545,16 +542,15 @@ SCIP_RETCODE detection(
       }
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
    }
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d partialdecs found.\n",  nnewpartialdecs);
-
    delete graph;
 
+   int nnewpartialdecs = j;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d partialdecs found.\n",  nnewpartialdecs);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), nnewpartialdecs) );
    partialdecdetectiondata->nnewpartialdecs = nnewpartialdecs;
    for( s = 0; s < nnewpartialdecs; ++s )
    {
-      partialdecdetectiondata->newpartialdecs[s] = newpartialdecs[j];
+      partialdecdetectiondata->newpartialdecs[s] = newpartialdecs[s];
       partialdecdetectiondata->newpartialdecs[s]->addClockTime(clockTimes[s] + SCIPgetClockTime(scip, temporaryClock) / nnewpartialdecs);
    }
 

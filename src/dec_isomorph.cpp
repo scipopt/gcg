@@ -1347,8 +1347,6 @@ SCIP_RETCODE detectIsomorph(
    int nconss = partialdec->getNOpenconss();
    int i;
 
-   assert(detectiondata->nnewpartialdecs == 0);
-
    detectordata->result = SCIP_SUCCESS;
 
    colorinfo = new AUT_COLOR();
@@ -1390,9 +1388,9 @@ SCIP_RETCODE detectIsomorph(
       // reorder decomposition (corresponding to orbit size)
       SCIP_CALL( reorderPermutations(scip, detprobdata, ptrhook->conssperm, nconss, nperms) );
 
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(detectiondata->newpartialdecs), MIN(maxdecomps, nperms)) ); /*lint !e506*/
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(detectiondata->newpartialdecs), detectiondata->nnewpartialdecs + MIN(maxdecomps, nperms)) ); /*lint !e506*/
 
-      int pos = 0;
+      int pos = detectiondata->nnewpartialdecs;
 
       for( p = 0; p < nperms && pos < maxdecomps; ++p )
       {
