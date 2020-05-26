@@ -1086,17 +1086,16 @@ SCIP_RETCODE readDECFile(
    }
    else
    {
-      SCIPinfoMessage(scip, NULL, "just read dec file:");
+      SCIPinfoMessage(scip, NULL, "just read dec file:\n");
       decinput->partialdec->sort();
-      GCGconshdlrDecompAddPreexisitingPartialDec(scip, decinput->partialdec);
-
       /* if the partialdec was to be completed, add a "vanilla" version as well */
       if( decinput->partialdec->shouldCompletedByConsToMaster() )
       {
          gcg::PARTIALDECOMP* partial = new gcg::PARTIALDECOMP(decinput->partialdec);
-         decinput->partialdec->setUsergiven(gcg::USERGIVEN::PARTIAL);
+         partial->setUsergiven(gcg::USERGIVEN::PARTIAL);
          GCGconshdlrDecompAddPreexisitingPartialDec(scip, partial);
       }
+      GCGconshdlrDecompAddPreexisitingPartialDec(scip, decinput->partialdec);
    }
 
    /* close file */

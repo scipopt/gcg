@@ -3419,6 +3419,7 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
    )
 {
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   bool assignedconss = false;
    assert(conshdlrdata != NULL);
    assert( partialdec != NULL );
 
@@ -3428,15 +3429,21 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
       for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
       {
          itr = partialdec->fixConsToMaster(itr);
+         assignedconss = true;
       }
       partialdec->sort();
    }
 
    partialdec->prepare();
+#ifndef NDEBUG
+   if( partialdec->getUsergiven() == USERGIVEN::COMPLETE || partialdec->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER )
+      assert( partialdec->isComplete() );
+#endif
 
    if( partialdec->isComplete() )
    {
-      partialdec->setUsergiven( USERGIVEN::COMPLETE );
+      if( !assignedconss )
+         partialdec->setUsergiven( USERGIVEN::COMPLETE );
       addPartialdec(scip, partialdec);
 
       /* if detprobdata for presolved problem already exist try to translate partialdec */
