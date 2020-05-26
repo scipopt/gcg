@@ -1121,8 +1121,8 @@ SCIP_RETCODE writePartialdec(
 {
    int nconss;
    int nvars;
-   std::vector<int> consindex(0);
-   std::vector<int> varindex(0);
+   std::vector<int> consindex;
+   std::vector<int> varindex;
 
    assert(partialdec != NULL);
 
@@ -1140,6 +1140,10 @@ SCIP_RETCODE writePartialdec(
       varindex[i] = i;
 
    /* write meta data of decomposition as comment */
+   if( partialdec->getUsergiven() == gcg::USERGIVEN::PARTIAL )
+      SCIPinfoMessage(scip, file, "%s%s stems from a partial decomposition provided by the user\n", commentchars, commentchars);
+   else if( partialdec->getUsergiven() != gcg::USERGIVEN::NOT )
+      SCIPinfoMessage(scip, file, "%s%s provided by the user\n", commentchars, commentchars);
    auto& detectorchain = partialdec->getDetectorchain();
    auto& detectorchaininfo = partialdec->getDetectorchainInfo();
    SCIPinfoMessage(scip, file, "%s%s ndetectors \n", commentchars, commentchars);

@@ -3571,10 +3571,7 @@ std::vector<std::string>& PARTIALDECOMP::getDetectorchainInfo()
 
 int PARTIALDECOMP::getNDetectors()
 {
-   if ( usergiven == USERGIVEN::NOT )
-      return (int) detectorchain.size();
-   else
-      return 0;
+   return (int) detectorchain.size();
 }
 
 

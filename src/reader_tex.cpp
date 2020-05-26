@@ -616,19 +616,17 @@ SCIP_RETCODE writeTexPartialdecStatistics(
    )
 {
    std::ostringstream fulldetectorstring;
-   int sizedetectorchain;
-   int i;
 
    /* get detector chain full-text string*/
-   std::vector<DEC_DETECTOR*>& detectorchain = partialdec->getDetectorchain();
-   sizedetectorchain = partialdec->getNDetectors();
-   if(sizedetectorchain != 0 && detectorchain[0] != NULL)
-      fulldetectorstring << DECdetectorGetName(detectorchain[0]);
-   else
-      fulldetectorstring << "user";
-   for( i=1; i < sizedetectorchain; ++i )
+   if( partialdec->getUsergiven() != gcg::USERGIVEN::NOT )
    {
-      fulldetectorstring << ", " << DECdetectorGetName(detectorchain[i]);
+      fulldetectorstring << "user";
+   }
+   for( auto detector : partialdec->getDetectorchain() )
+   {
+      if( fulldetectorstring.tellp() > 0 )
+         fulldetectorstring << ", ";
+      fulldetectorstring << DECdetectorGetName(detector);
    }
 
    SCIPinfoMessage(scip, file, "\n");
