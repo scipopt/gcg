@@ -868,6 +868,12 @@ int DETPROBDATA::getNFinishedPartialdecs()
 }
 
 
+int DETPROBDATA::getNPartialdecs()
+{
+   return (int) (finishedpartialdecs.size() + openpartialdecs.size());
+}
+
+
 int DETPROBDATA::getNNonzeros()
 {
    return nnonzeros;

@@ -5293,6 +5293,62 @@ int GCGconshdlrDecompGetNOpenVarsByPartialdecId(
 }
 
 
+unsigned int GCGconshdlrDecompGetNFinishedPartialdecsOrig(
+   SCIP*       scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->detprobdataorig == NULL )
+      return 0;
+
+   return (int) conshdlrdata->detprobdataorig->getNFinishedPartialdecs();
+}
+
+
+unsigned int GCGconshdlrDecompGetNFinishedPartialdecsTransformed(
+   SCIP*       scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->detprobdatapres == NULL )
+      return 0;
+
+   return (int) conshdlrdata->detprobdatapres->getNFinishedPartialdecs();
+}
+
+
+unsigned int GCGconshdlrDecompGetNOpenPartialdecsOrig(
+   SCIP*       scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->detprobdataorig == NULL )
+      return 0;
+
+   return (int) conshdlrdata->detprobdataorig->getNOpenPartialdecs();
+}
+
+
+unsigned int GCGconshdlrDecompGetNOpenPartialdecsTransformed(
+   SCIP*       scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->detprobdatapres == NULL )
+      return 0;
+
+   return (int) conshdlrdata->detprobdatapres->getNOpenPartialdecs();
+}
+
+
 unsigned int GCGconshdlrDecompGetNPartialdecs(
    SCIP*       scip
    )
@@ -5301,6 +5357,34 @@ unsigned int GCGconshdlrDecompGetNPartialdecs(
    assert(conshdlrdata != NULL);
 
    return (int) conshdlrdata->partialdecs->size();
+}
+
+
+unsigned int GCGconshdlrDecompGetNPartialdecsOrig(
+   SCIP*       scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->detprobdataorig == NULL )
+      return 0;
+
+   return (int) conshdlrdata->detprobdataorig->getNPartialdecs();
+}
+
+
+unsigned int GCGconshdlrDecompGetNPartialdecsTransformed(
+   SCIP*       scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->detprobdatapres == NULL )
+      return 0;
+
+   return (int) conshdlrdata->detprobdatapres->getNPartialdecs();
 }
 
 
@@ -5464,7 +5548,7 @@ SCIP_Bool GCGconshdlrDecompOrigPartialdecExists(
    if( conshdlrdata->detprobdataorig == NULL )
       return FALSE;
 
-   return( conshdlrdata->detprobdataorig->getNFinishedPartialdecs() > 0 );
+   return conshdlrdata->detprobdataorig->getNPartialdecs() > 0;
 }
 
 

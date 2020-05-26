@@ -428,6 +428,12 @@ public:
    int getNFinishedPartialdecs();
 
    /**
+    * returns the number of stored partialdecs
+    * @return  number of stored partialdecs
+    */
+   int getNPartialdecs();
+
+   /**
     * @brief returns the number of nonzero entries in the coefficient matrix
     * @return the number of nonzero entries in the coefficient matrix
     */

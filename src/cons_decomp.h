@@ -742,10 +742,52 @@ int GCGconshdlrDecompGetNOpenVarsByPartialdecId(
    int id         /**< id of partialdec */
    );
 
+/** @brief Gets the number of finished partialdecs available for the original problem
+ * @returns number of partialdecs */
+extern
+unsigned int GCGconshdlrDecompGetNFinishedPartialdecsOrig(
+   SCIP*       scip  /**< SCIP data structure */
+   );
+
+/** @brief Gets the number of finished partialdecs available for the transformed problem
+ * @returns number of partialdecs */
+extern
+unsigned int GCGconshdlrDecompGetNFinishedPartialdecsTransformed(
+   SCIP*       scip  /**< SCIP data structure */
+   );
+
+/** @brief Gets the number of open partialdecs available for the original problem
+ * @returns number of partialdecs */
+extern
+unsigned int GCGconshdlrDecompGetNOpenPartialdecsOrig(
+   SCIP*       scip  /**< SCIP data structure */
+);
+
+/** @brief Gets the number of open partialdecs available for the transformed problem
+ * @returns number of partialdecs */
+extern
+unsigned int GCGconshdlrDecompGetNOpenPartialdecsTransformed(
+   SCIP*       scip  /**< SCIP data structure */
+);
+
 /** @brief Gets the number of all partialdecs
  * @returns number of Partialdecs */
 extern
 unsigned int GCGconshdlrDecompGetNPartialdecs(
+   SCIP*       scip  /**< SCIP data structure */
+   );
+
+/** @brief Gets the number of partialdecs available for the original problem
+ * @returns number of partialdecs */
+extern
+unsigned int GCGconshdlrDecompGetNPartialdecsOrig(
+   SCIP*       scip  /**< SCIP data structure */
+   );
+
+/** @brief Gets the number of partialdecs available for the transformed problem
+ * @returns number of partialdecs */
+extern
+unsigned int GCGconshdlrDecompGetNPartialdecsTransformed(
    SCIP*       scip  /**< SCIP data structure */
    );
 
