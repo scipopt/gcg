@@ -846,16 +846,6 @@ SCIP_RETCODE GCGconshdlrDecompGetSelectedPartialdecs(
    );
 
 /**
- * @brief returns whether or not there exists at least one (complete or incomplete) decomposition
- * @param scip SCIP data structure
- * @returns TRUE if there exists at least one (complete or incomplete) decomposition
- */
-extern
-SCIP_Bool GCGconshdlrDecompHasDecomp(
-   SCIP*    scip
-   );
-
-/**
  * @brief counts up the counter for created decompositions and returns it
  * @returns number of created decompositions that was recently increased
  */

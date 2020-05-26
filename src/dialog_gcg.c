@@ -806,7 +806,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_PRESOLVED:
       assert(GCGconshdlrDecompCheckConsistency(scip) );
 
-      if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && !GCGconshdlrDecompHasDecomp(scip) && GCGconshdlrDecompGetNPartialdecs(scip) == 0 )
+      if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
       {
          SCIP_CALL( DECdetectStructure(scip, &result) );
          if( result == SCIP_DIDNOTFIND )
@@ -818,7 +818,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
             SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
          }
       }
-      else if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && !GCGconshdlrDecompHasDecomp(scip) && GCGconshdlrDecompGetNPartialdecs(scip) > 0 )
+      else if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) > 0 )
       {
 #ifndef NDEBUG
          DEC_DECOMP* bestdecomp;
@@ -827,7 +827,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 #endif
          SCIPdialogMessage(scip, NULL, "Preexisting decomposition found. Solution process started...\n");
       }
-      else if( !GCGconshdlrDecompHasDecomp(scip) )
+      else if( GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
       {
          SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
       }

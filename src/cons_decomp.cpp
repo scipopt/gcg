@@ -5485,17 +5485,6 @@ SCIP_RETCODE GCGconshdlrDecompGetSelectedPartialdecs(
 }
 
 
-SCIP_Bool GCGconshdlrDecompHasDecomp(
-   SCIP*    scip
-   )
-{
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-   assert(conshdlrdata != NULL);
-
-   return (conshdlrdata->partialdecs->size() > 0);
-}
-
-
 int GCGconshdlrDecompIncreaseNCallsCreateDecomp(
    SCIP*                 scip
    )
