@@ -564,15 +564,25 @@ SCIP_Retcode detect(
             // If is already complete => store for POSTPROCESSING
             if( newpartialdec->isComplete() )
             {
-               detprobdata->addPartialdecToFinished(newpartialdec);
+               if( !detprobdata->addPartialdecToFinished(newpartialdec) )
+               {
+                  delete newpartialdec;
+                  newpartialdec = NULL;
+               }
             }
             else
             {
                // Store for further PROPAGATION
-               partialdecqueue.push_back(newpartialdec);
-               detprobdata->addPartialdecToOpen(newpartialdec);
+               if( detprobdata->addPartialdecToOpen(newpartialdec) )
+                  partialdecqueue.push_back(newpartialdec);
+               else
+               {
+                  delete newpartialdec;
+                  newpartialdec = NULL;
+               }
             }
-            detprobdata->addPartialdecToAncestor(newpartialdec);
+            if( newpartialdec != NULL )
+               detprobdata->addPartialdecToAncestor(newpartialdec);
          }
          deletePartialdecDetectionData(scip, partialdecdetdata);
       }
@@ -602,7 +612,8 @@ SCIP_Retcode detect(
 
             newpartialdec->prepare();
             newpartialdec->addDecChangesFromAncestor(partialdecomp);
-            detprobdata->addPartialdecToFinished(newpartialdec);
+            if( !detprobdata->addPartialdecToFinished(newpartialdec) )
+               delete newpartialdec;
          }
          deletePartialdecDetectionData(scip, finishingdata);
       }
@@ -642,16 +653,10 @@ SCIP_Retcode detect(
                newpartialdec->setFinishedByFinisher(true );
                newpartialdec->prepare();
 
-               if( !detprobdata->isPartialdecDuplicateofFinished(newpartialdec ) )
-               {
-                  assert(newpartialdec->getID() >= 0 );
-                  detprobdata->addPartialdecToFinishedUnchecked(newpartialdec);
-                  numpostprocessed += 1;
-               }
-               else
-               {
+               if( !detprobdata->addPartialdecToFinished(newpartialdec) )
                   delete newpartialdec;
-               }
+               else
+                  numpostprocessed += 1;
 
             }
             deletePartialdecDetectionData(scip, partialdecdetdata);

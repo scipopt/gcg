@@ -1120,6 +1120,9 @@ SCIP_RETCODE GCGdialogExecExplore(
       GCGdialogExecCommand(scip, dialoghdlr, dialog, columns, command, startindex, menulength, finished, idlist, sortasc, sortby, listopenpartialdecs);
    }
 
+   for( auto column : columns )
+      delete column;
+
    return SCIP_OKAY;
 }
 
