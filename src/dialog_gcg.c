@@ -759,10 +759,21 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
 SCIP_DECL_DIALOGEXEC(GCGdialogExecTransform)
 {  /*lint --e{715}*/
 
-   if( SCIPgetStage(scip) <= SCIP_STAGE_PROBLEM )
-         SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
-
-   SCIPdialogExecTransform(scip, dialog, dialoghdlr, nextdialog);
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      *nextdialog = SCIPdialogGetParent(dialog);
+      SCIPdialogMessage(scip, NULL, "no problem exists\n");
+   }
+   else if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+   {
+      SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
+      SCIPdialogExecTransform(scip, dialog, dialoghdlr, nextdialog);
+   }
+   else
+   {
+      *nextdialog = SCIPdialogGetParent(dialog);
+      SCIPdialogMessage(scip, NULL, "problem is already transformed\n");
+   }
 
    return SCIP_OKAY;
 }
@@ -771,11 +782,22 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecTransform)
 /** dialog execution method for the presolve command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecPresolve)
 {  /*lint --e{715}*/
-
-   if( SCIPgetStage(scip) <= SCIP_STAGE_PROBLEM )
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      *nextdialog = SCIPdialogGetParent(dialog);
+      SCIPdialogMessage(scip, NULL, "no problem exists\n");
+   }
+   else if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+   {
+      if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
          SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
-
-   SCIPdialogExecPresolve(scip, dialog, dialoghdlr, nextdialog);
+      SCIPdialogExecPresolve(scip, dialog, dialoghdlr, nextdialog);
+   }
+   else
+   {
+      *nextdialog = SCIPdialogGetParent(dialog);
+      SCIPdialogMessage(scip, NULL, "problem is already presolved\n");
+   }
 
    return SCIP_OKAY;
 }
@@ -789,13 +811,12 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
-
    if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
       SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
 
    if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
    {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "starting detection\n");
       SCIPdebugMessage("Start DECdetectstructure!\n");
       SCIP_CALL( DECdetectStructure(scip, &result) );
       if( result == SCIP_SUCCESS )
@@ -804,7 +825,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was not successful.\n");
    }
    else
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "no problem exists\n");
 
    SCIP_CALL( GCGprintOptionalOutput(scip, dialoghdlr) );
 
