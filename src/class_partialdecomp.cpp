@@ -949,9 +949,9 @@ void PARTIALDECOMP::assignSmallestComponentsButOneConssAdjacency()
    std::queue<int> helpqueue;
    std::vector<int> neighborConss;
 
-   assert( conssforblocks.size() == getNBlocks() );
-   assert( varsforblocks.size() == getNBlocks() );
-   assert( stairlinkingvars.size() == getNBlocks() );
+   assert( (int) conssforblocks.size() == getNBlocks() );
+   assert( (int)varsforblocks.size() == getNBlocks() );
+   assert( (int)stairlinkingvars.size() == getNBlocks() );
 
    if( getNBlocks() < 0 )
       setNBlocks(0);
@@ -2149,9 +2149,9 @@ void PARTIALDECOMP::completeByConnected()
    std::vector<int> neighborConss;
    std::vector<int> neighborVars;
 
-   assert( conssforblocks.size() == getNBlocks() );
-   assert( varsforblocks.size() == getNBlocks() );
-   assert( stairlinkingvars.size() == getNBlocks() );
+   assert( (int) conssforblocks.size() == getNBlocks() );
+   assert( (int) varsforblocks.size() == getNBlocks() );
+   assert( (int) stairlinkingvars.size() == getNBlocks() );
 
    refineToMaster();
 
@@ -2270,9 +2270,9 @@ void PARTIALDECOMP::completeByConnectedConssAdjacency()
    std::queue<int> helpqueue;
    std::vector<int> neighborConss;
 
-   assert( conssforblocks.size() == getNBlocks() );
-   assert( varsforblocks.size() == getNBlocks() );
-   assert( stairlinkingvars.size() == getNBlocks() );
+   assert( (int) conssforblocks.size() == getNBlocks() );
+   assert( (int) varsforblocks.size() == getNBlocks() );
+   assert( (int) stairlinkingvars.size() == getNBlocks() );
 
    refineToMaster();
 
