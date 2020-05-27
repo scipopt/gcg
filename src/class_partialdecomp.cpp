@@ -745,12 +745,11 @@ void PARTIALDECOMP::assignOpenPartialHittingConsToMaster(
 }
 
 
-SCIP_RETCODE PARTIALDECOMP::assignOpenPartialHittingToMaster(
+void PARTIALDECOMP::assignOpenPartialHittingToMaster(
    )
 {
    assignOpenPartialHittingConsToMaster( );
    assignOpenPartialHittingVarsToMaster( );
-   return SCIP_OKAY;
 }
 
 
@@ -911,6 +910,143 @@ SCIP_RETCODE PARTIALDECOMP::assignPartialdecFromConstoblockVector(
    sort();
    assert( checkConsistency( ) );
    return SCIP_OKAY;
+}
+
+
+void PARTIALDECOMP::assignSmallestComponentsButOneConssAdjacency()
+{
+   /* tools to check if the openvars can still be found in a constraint yet */
+   std::vector<int> varinblocks(nvars, -1); /* stores, in which block the variable can be found */
+
+   /* tools to update openvars */
+   std::vector<int> oldOpenconss;
+   std::vector<int> openvarsToDelete;
+   gcg::DETPROBDATA* detprobdata = getDetprobdata();
+
+   if( getNLinkingvars() != 0 )
+   {
+      complete();
+      return;
+   }
+
+   if ( !detprobdata->isConssAdjInitialized() )
+      detprobdata->createConssAdjacency();
+
+   std::vector<bool> isConsOpen(nconss, false);
+   std::vector<bool> isConsVisited(nconss, false);
+
+   std::vector<std::vector<int>> conssfornewblocks;
+   std::vector<std::vector<int>> varsfornewblocks;
+
+   int newblocks;
+   int largestcomponent;
+   int sizelargestcomponent;
+
+   newblocks = 0;
+   largestcomponent = -1;
+   sizelargestcomponent = 0;
+
+   std::queue<int> helpqueue;
+   std::vector<int> neighborConss;
+
+   assert( conssforblocks.size() == getNBlocks() );
+   assert( varsforblocks.size() == getNBlocks() );
+   assert( stairlinkingvars.size() == getNBlocks() );
+
+   if( getNBlocks() < 0 )
+      setNBlocks(0);
+
+   /* do breadth first search to find connected conss */
+   auto constoconsider = getOpenconssVec();
+   while( !constoconsider.empty() )
+   {
+      std::vector<int> newconss;
+      std::vector<int> newvars;
+
+      assert( helpqueue.empty() );
+      helpqueue.push(constoconsider[0]);
+      neighborConss.clear();
+      neighborConss.push_back(constoconsider[0]);
+      isConsVisited[constoconsider[0]] = true;
+
+      while( !helpqueue.empty() )
+      {
+         int nodeCons = helpqueue.front();
+         assert( isConsOpencons(nodeCons) );
+         helpqueue.pop();
+         for( int cons :  detprobdata->getConssForCons(nodeCons) )
+         {
+            if( isConsVisited[cons] || isConsMastercons(cons) || !isConsOpen[cons] )
+               continue;
+
+            assert( isConsOpencons(cons) );
+            isConsVisited[cons] = true;
+            neighborConss.push_back(cons);
+            helpqueue.push(cons);
+         }
+      }
+
+      /* assign found conss and vars to a new block */
+      ++newblocks;
+      for( int cons : neighborConss )
+      {
+         std::vector<int>::iterator consiter = std::lower_bound(constoconsider.begin(), constoconsider.end(), cons);
+         assert(consiter != constoconsider.end() );
+         constoconsider.erase(consiter);
+         assert( isConsOpencons(cons) );
+         newconss.push_back(cons);
+
+         for( int var : detprobdata->getVarsForCons(cons) )
+         {
+            if( isVarLinkingvar(var) || varinblocks[var] != -1 )
+               continue;
+
+            assert( !isVarMastervar(var) );
+            newvars.push_back(var);
+            varinblocks[var] = newblocks;
+         }
+      }
+      conssfornewblocks.push_back(newconss);
+      varsfornewblocks.push_back(newvars);
+   }
+
+   for( int i = 0; i < newblocks; ++i )
+   {
+      if( (int)conssfornewblocks[i].size() > sizelargestcomponent )
+      {
+         sizelargestcomponent = (int)conssfornewblocks[i].size();
+         largestcomponent = i;
+      }
+   }
+
+   if( newblocks > 1 )
+   {
+      int oldnblocks = getNBlocks();;
+      bool largestdone = false;
+
+      setNBlocks(newblocks - 1 + getNBlocks());
+
+      for( int i = 0; i < newblocks; ++i)
+      {
+         if( i == largestcomponent )
+         {
+            largestdone = true;
+            continue;
+         }
+         for( int c = 0; c < (int) conssfornewblocks[i].size() ; ++c)
+         {
+            fixConsToBlock(conssfornewblocks[i][c], oldnblocks + i - (largestdone ? 1 : 0) );
+         }
+
+         for( int v = 0; v < (int) varsfornewblocks[i].size() ; ++v )
+         {
+            fixVarToBlock(varsfornewblocks[i][v], oldnblocks + i - (largestdone ? 1 : 0) );
+         }
+      }
+      prepare();
+   }
+
+   assert( checkConsistency() );
 }
 
 
@@ -2000,6 +2136,231 @@ void PARTIALDECOMP::complete()
 }
 
 
+void PARTIALDECOMP::completeByConnected()
+{
+   /* tools to update openvars */
+   std::vector<int> openvarsToDelete;
+   std::vector<int> oldOpenconss;
+
+   std::vector<bool> isConsVisited( nconss, false );
+   std::vector<bool> isVarVisited( nvars, false );
+
+   std::queue<int> helpqueue;
+   std::vector<int> neighborConss;
+   std::vector<int> neighborVars;
+
+   assert( conssforblocks.size() == getNBlocks() );
+   assert( varsforblocks.size() == getNBlocks() );
+   assert( stairlinkingvars.size() == getNBlocks() );
+
+   refineToMaster();
+
+   if( getNBlocks() < 0 )
+   {
+      setNBlocks(0);
+   }
+
+   gcg::DETPROBDATA* detprobdata = getDetprobdata();
+
+   /* do breadth first search to find connected conss and vars */
+   while( !openconss.empty() )
+   {
+      int newBlockNr;
+
+      assert( helpqueue.empty() );
+      helpqueue.push(openconss[0]);
+      neighborConss.clear();
+      neighborConss.push_back(openconss[0]);
+      isConsVisited[openconss[0]] = true;
+      neighborVars.clear();
+
+      while( !helpqueue.empty() )
+      {
+         int nodeCons = helpqueue.front();
+         assert( isConsOpencons(nodeCons) );
+         helpqueue.pop();
+         for( int var : detprobdata->getVarsForCons(nodeCons) )
+         {
+            assert( isVarOpenvar(var) || isVarLinkingvar(var) );
+
+            if( isVarVisited[var] || isVarLinkingvar(var) )
+               continue;
+
+            for( int cons : detprobdata->getConssForVar(var) )
+            {
+               if( !isConsOpencons(cons) || isConsVisited[cons] )
+               {
+                  continue;
+               }
+               assert( isConsOpencons(cons) );
+               isConsVisited[cons] = true;
+               neighborConss.push_back(cons);
+               helpqueue.push(cons);
+            }
+            isVarVisited[var] = true;
+            neighborVars.push_back(var);
+         }
+      }
+
+      /* assign found conss and vars to a new block */
+      newBlockNr = getNBlocks() + 1;
+      setNBlocks(newBlockNr);
+      for( int cons : neighborConss )
+      {
+         setConsToBlock(cons, newBlockNr - 1);
+         if( isConsOpencons(cons) )
+            deleteOpencons(cons);
+      }
+      for( int var : neighborVars )
+      {
+         setVarToBlock(var, newBlockNr - 1);
+         if( isVarOpenvar(var) )
+            deleteOpenvar(var);
+      }
+   }
+
+   /* assign left open vars to block 0, if it exists, and to master, otherwise */
+   for( int var : openvars )
+   {
+      if( getNBlocks() != 0 )
+         setVarToBlock(var, 0);
+      else
+         setVarToMaster(var);
+      openvarsToDelete.push_back(var);
+   }
+
+   for( int var : openvarsToDelete )
+   {
+      if( isVarOpenvar(var) )
+         deleteOpenvar(var);
+   }
+
+   assert( getNOpenconss() == 0 );
+   assert( getNOpenvars() == 0 );
+
+   prepare();
+
+   assert( checkConsistency() );
+}
+
+
+/**
+* @brief assigns all open constraints and open variables
+*
+*  strategy: assigns all conss and vars to the same block if they are connected
+*  a cons and a var are adjacent if the var appears in the cons
+*  \note this relies on the consadjacency structure of the detprobdata
+*  hence it cannot be applied in presence of linking variables
+*/
+void PARTIALDECOMP::completeByConnectedConssAdjacency()
+{
+   /* tools to check if the openvars can still be found in a constraint yet */
+   std::vector<int> varinblocks(nvars, -1); /* stores in which block the variable can be found */
+
+   /* tools to update openvars */
+   std::vector<int> oldOpenconss;
+   std::vector<int> openvarsToDelete;
+
+   // note: this should not happen
+   if( getNLinkingvars() != 0 )
+      completeByConnected();
+
+   std::vector<bool> isConsVisited(nconss, false);
+
+   std::queue<int> helpqueue;
+   std::vector<int> neighborConss;
+
+   assert( conssforblocks.size() == getNBlocks() );
+   assert( varsforblocks.size() == getNBlocks() );
+   assert( stairlinkingvars.size() == getNBlocks() );
+
+   refineToMaster();
+
+   assert( checkConsistency() );
+   gcg::DETPROBDATA* detprobdata = getDetprobdata();
+
+   if( getNBlocks() < 0 )
+   {
+      setNBlocks(0);
+   }
+
+   /* do breadth first search to find connected conss */
+   while( !openconss.empty() )
+   {
+      int newBlockNr;
+
+      assert( helpqueue.empty() );
+      helpqueue.push(openconss[0]);
+      neighborConss.clear();
+      neighborConss.push_back(openconss[0]);
+      isConsVisited[openconss[0]] = true;
+
+      while( !helpqueue.empty() )
+      {
+         int nodeCons = helpqueue.front();
+         assert( isConsOpencons(nodeCons) );
+         helpqueue.pop();
+         for( int cons : detprobdata->getConssForCons(nodeCons) )
+         {
+            if( isConsVisited[cons] || isConsMastercons(cons) || !isConsOpencons(cons) )
+               continue;
+
+            assert( isConsOpencons(cons) );
+            isConsVisited[cons] = true;
+            neighborConss.push_back(cons);
+            helpqueue.push(cons);
+         }
+      }
+
+      /* assign found conss and vars to a new block */
+      newBlockNr = getNBlocks() + 1;
+      setNBlocks( newBlockNr );
+      for( int cons : neighborConss )
+      {
+         setConsToBlock(cons, newBlockNr - 1);
+         if(isConsOpencons(cons))
+            deleteOpencons(cons);
+
+         for( int var : detprobdata->getVarsForCons(cons) )
+         {
+
+            if( isVarLinkingvar(var) || varinblocks[var] != -1 )
+               continue;
+
+            assert( !isVarMastervar(var) );
+            setVarToBlock(var, newBlockNr - 1);
+            varinblocks[var] = newBlockNr - 1;
+            if( isVarOpenvar(var) )
+               deleteOpenvar(var);
+         }
+      }
+   }
+
+   /* assign left open vars to block 0, if it exists, and to master, otherwise */
+   for( int var : openvars )
+   {
+      if( getNBlocks() != 0 )
+         setVarToBlock(var, 0);
+      else
+         setVarToMaster(var);
+      openvarsToDelete.push_back(var);
+   }
+
+   for( int var : openvarsToDelete )
+   {
+      if( isVarOpenvar(var) )
+         deleteOpenvar(var);
+   }
+
+   assert( getNOpenconss() == 0 );
+   assert( getNOpenvars() == 0 );
+
+   prepare();
+
+   assert( checkConsistency() );
+}
+
+
 void PARTIALDECOMP::removeMastercons(
    int consid
    )
@@ -2020,7 +2381,7 @@ bool PARTIALDECOMP::consPartitionUsed(
 }
 
 
-SCIP_RETCODE PARTIALDECOMP::considerImplicits(
+void PARTIALDECOMP::considerImplicits(
    )
 {
    int cons;
@@ -2193,8 +2554,6 @@ SCIP_RETCODE PARTIALDECOMP::considerImplicits(
    for(auto v : del)
       deleteOpenvar(v);
    sort();
-
-   return SCIP_OKAY;
 }
 
 
@@ -3671,7 +4030,7 @@ int PARTIALDECOMP::getNVarsForBlock(
 int PARTIALDECOMP::getNVarsForBlocks()
 {
    int count = 0;
-   for( auto block : varsforblocks )
+   for( auto& block : varsforblocks )
    {
       count += (int) block.size();
    }
@@ -4282,13 +4641,11 @@ void PARTIALDECOMP::refineToBlocks(
 }
 
 
-SCIP_RETCODE PARTIALDECOMP::refineToMaster(
+void PARTIALDECOMP::refineToMaster(
     )
 {
-   SCIP_CALL( considerImplicits() );
-   SCIP_CALL( assignOpenPartialHittingToMaster() );
-
-   return SCIP_OKAY;
+   considerImplicits();
+   assignOpenPartialHittingToMaster();
 }
 
 

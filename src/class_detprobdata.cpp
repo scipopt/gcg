@@ -477,11 +477,7 @@ DETPROBDATA::DETPROBDATA(
       SCIPfreeBufferArrayNull( scip, & currVars );
    }
 
-   createconssadj = GCGconshdlrDecompGetConssAdjCalculated(scip);
-   createconssadj = createconssadj && (getNConss() < 1000);
-
-   if( !createconssadj )
-      GCGconshdlrDecompSetConssAdjCalculated(scip, FALSE);
+   createconssadj = (getNConss() < 1000);
 
    if( createconssadj )
    {

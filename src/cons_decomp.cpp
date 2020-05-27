@@ -97,7 +97,6 @@
 #define DEFAULT_MAXNCLASSES                           9           /**< maximum number of classes allowed for detectors, partitions with more classes are reduced to the maximum number of classes */
 #define DEFAULT_MAXNCLASSESFORNBLOCKCANDIDATES        18          /**< maximum number of classes a partition can have to be used for voting nblockcandidates */
 #define DEFAULT_ENABLEORIGDETECTION                   TRUE        /**< indicates whether to start detection for the original problem */
-#define DEFAULT_CONSSADJCALCULATED                    TRUE        /**< indicates whether conss adjacency datastructures should be calculated, this might slow down initialization, but accelerating refinement methods*/
 
 /* classifier */
 
@@ -179,7 +178,6 @@ struct SCIP_ConshdlrData
 
    SCIP_Bool             classify;                                /**< indicates whether classification should take place */
    SCIP_Bool             allowpartitionduplicates;               /**< indicates whether partition duplicates are allowed (for statistical reasons) */
-   SCIP_Bool             conssadjcalculated;                      /**< indicates whether conss adjacency datastructures should be calculated, this might slow down initialization, but accelerating refinement methods*/
    SCIP_Bool             enableorigdetection;                     /**< indicates whether to start detection for the original problem */
    SCIP_Bool             enableorigclassification;                /**< indicates whether to start constraint classification for the original problem */
 
@@ -5039,15 +5037,6 @@ SCIP_Real GCGconshdlrDecompGetCompleteDetectionTime(
 }
 
 
-SCIP_Bool GCGconshdlrDecompGetConssAdjCalculated(
-   SCIP* scip
-   )
-{
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-   return conshdlrdata->conssadjcalculated;
-}
-
-
 DEC_DECOMP** GCGconshdlrDecompGetDecomps(
    SCIP*                 scip
    )
@@ -5605,16 +5594,6 @@ void GCGconshdlrDecompRegisterPartialdec(
 }
 
 
-void GCGconshdlrDecompSetConssAdjCalculated(
-   SCIP* scip,
-   SCIP_Bool calculated
-   )
-{
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-   conshdlrdata->conssadjcalculated = calculated;
-}
-
-
 SCIP_RETCODE GCGconshdlrDecompSetDetection(
    SCIP*                 scip,
    SCIP_PARAMSETTING     paramsetting,
@@ -5803,7 +5782,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
    conshdlrdata->hasrun = FALSE;
    conshdlrdata->hasrunoriginal = FALSE;
-   conshdlrdata->conssadjcalculated = DEFAULT_CONSSADJCALCULATED;
    conshdlrdata->ncallscreatedecomp = 0;
    conshdlrdata->detprobdatapres = NULL;
    conshdlrdata->detprobdataorig = NULL;

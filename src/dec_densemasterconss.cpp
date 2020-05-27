@@ -114,10 +114,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDensemasterconss)
    SCIP_CLOCK* temporaryClock;
 
    gcg::DETPROBDATA* detprobdata;
-   gcg::PARTIALDECOMP* partialdecOrig;
-   gcg::PARTIALDECOMP* partialdec;
-
-   partialdecOrig = partialdecdetectiondata->workonpartialdec;
+   gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
    std::stringstream decdesc;
 
    SCIP_Real maxratio = 0.2;
@@ -129,9 +126,6 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDensemasterconss)
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-
-
-   partialdec = new gcg::PARTIALDECOMP(partialdecOrig);
 
    lastindex =  maxratio * detprobdata->getNConss();
    /* fix open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
@@ -174,6 +168,8 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDensemasterconss)
 
    partialdecdetectiondata->newpartialdecs[0] = partialdec;
    partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+   // we used the provided partialdec -> prevent deletion
+   partialdecdetectiondata->workonpartialdec = NULL;
 
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 

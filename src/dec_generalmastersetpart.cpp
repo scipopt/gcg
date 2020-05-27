@@ -115,8 +115,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetpart)
    bool relevant = true;
    SCIP_Real value;
 
-   gcg::PARTIALDECOMP* partialdec;
-   partialdec = new gcg::PARTIALDECOMP(partialdecdetectiondata->workonpartialdec);
+   gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
    auto& openconss = partialdec->getOpenconssVec();
    for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
    {
@@ -186,6 +185,8 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetpart)
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "genmastersetpart");
    partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
    partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+   // we used the provided partialdec -> prevent deletion
+   partialdecdetectiondata->workonpartialdec = NULL;
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
    *result = SCIP_SUCCESS;

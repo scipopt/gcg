@@ -102,9 +102,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetpack)
 
    SCIP_CONS* cons;
 
-   gcg::PARTIALDECOMP* partialdec;
-
-   partialdec = new gcg::PARTIALDECOMP(partialdecdetectiondata->workonpartialdec);
+   gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
 
    /* set open setpacking constraints to Master */
    auto& openconss = partialdec->getOpenconssVec();
@@ -130,6 +128,8 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetpack)
    partialdecdetectiondata->nnewpartialdecs = 1;
    partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
    partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(DEC_DETECTORNAME);
+   // we used the provided partialdec -> prevent deletion
+   partialdecdetectiondata->workonpartialdec = NULL;
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
    *result = SCIP_SUCCESS;

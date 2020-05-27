@@ -588,15 +588,6 @@ SCIP_Real GCGconshdlrDecompGetCompleteDetectionTime(
     SCIP*                 scip
     );
 
-/** @brief gets whether conss adjacency datastructures should be calculated
- * 
- * @returns whether conss adjacency datastructures should be calculated
-*/
-extern
-SCIP_Bool GCGconshdlrDecompGetConssAdjCalculated(
-   SCIP* scip          /**< SCIP data structure */
-   );
-
 /** @brief returns an array containing all decompositions
  *
  *  Updates the decomp decomposition structure by converting all finished partialdecs into decompositions and replacing the
@@ -905,14 +896,6 @@ extern
 SCIP_RETCODE GCGconshdlrDecompPrintDetectorStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
-   );
-
-/** @brief sets whether conss adjacency datastructures should be calculated
-*/
-extern
-void GCGconshdlrDecompSetConssAdjCalculated(
-   SCIP* scip,                /**< SCIP data structure */
-   SCIP_Bool calculated       /**< whether datastructure should be calculated */
    );
 
 /** @brief sets detector parameters values
