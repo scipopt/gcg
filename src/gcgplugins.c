@@ -232,6 +232,7 @@
 #include "clscons_consnamelevenshtein.h"
 #include "clscons_consnamenonumbers.h"
 #include "clscons_scipconstypes.h"
+#include "clscons_gamsdomain.h"
 #include "clscons_gamssymbol.h"
 
 #include "clsvar_gamssymbol.h"
@@ -405,6 +406,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeConsClassifierMiplibConstypes(scip) );
    SCIP_CALL( SCIPincludeConsClassifierConsnameLevenshtein(scip) );
    SCIP_CALL( SCIPincludeConsClassifierForConsnamesDigitFreeIdentical(scip) );
+   SCIP_CALL( SCIPincludeConsClassifierGamsdomain(scip) );
    SCIP_CALL( SCIPincludeConsClassifierGamssymbol(scip) );
 
    SCIP_CALL( SCIPincludeVarClassifierGamssymbol(scip) );

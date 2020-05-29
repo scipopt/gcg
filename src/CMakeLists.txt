@@ -34,6 +34,7 @@ set(gcgsources
     clscons_consnamenonumbers.cpp
     clscons_consnamelevenshtein.cpp
     clscons_scipconstypes.cpp
+    clscons_gamsdomain.cpp
     clscons_gamssymbol.cpp
     clsvar_gamssymbol.cpp
     clsvar_objvalues.cpp
