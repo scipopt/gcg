@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,33 +25,29 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_consclassifier.h
- * @brief  data structures for constraint classifiers
- * @author William Ma
+/**@file   type_classifier.h
+ * @ingroup TYPEDEFINITIONS
+ * @brief  type definitions for classifier in GCG project
+ * @author Stefanie Koß
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_CONSCLASSIFIER_H__
-#define GCG_STRUCT_CONSCLASSIFIER_H__
+#ifndef GCG_TYPE_CLASSIFIER_H__
+#define GCG_TYPE_CLASSIFIER_H__
 
-#include "type_consclassifier.h"
+//#include "scip/type_scip.h"
 
-
-/** detector data structure */
-struct DEC_ConsClassifier {
-   const char*           name;               /**< name of the detector */
-   const char*           description;        /**< description of the detector */
-   int                   priority;           /**< classifier priority */
-
-   SCIP_Bool             enabled;        /* is enabled by default */
-
-   DEC_CLASSIFIERDATA*   clsdata;            /**< custom data structure of the classifiers */
-
-   DEC_DECL_FREECONSCLASSIFIER((*freeClassifier));                  /**< destructor of detector */
-   DEC_DECL_INITCONSCLASSIFIER((*initClassifier));                  /**< initialization method of detector */
-   DEC_DECL_CONSCLASSIFY((*classify));            /**< structure detection method of detector */
-};
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
-#endif //GCG_STRUCT_CONSCLASSIFIER_H__
+typedef struct DEC_ClassifierData DEC_CLASSIFIERDATA;   /**< CLASSIFIER data */
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
