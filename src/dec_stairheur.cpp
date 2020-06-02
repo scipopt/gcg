@@ -1454,16 +1454,15 @@ SCIP_RETCODE blocking(
             }
 
             detectiondata->newpartialdecs[*nnewpartialdecs] = new gcg::PARTIALDECOMP(partialdec);
-            (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "stairheu_db_md_%d", tau);
-            detectiondata->newpartialdecs[*nnewpartialdecs]->addDetectorChainInfo(decinfo);
             SCIP_CALL(detectiondata->newpartialdecs[*nnewpartialdecs]->assignPartialdecFromConstoblock(detectordata->constoblock, detectordata->blocks) );
             detectiondata->newpartialdecs[*nnewpartialdecs]->assignCurrentStairlinking();
-
-    //        detectordata->constoblock = NULL;
 
             SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
             clocktimes.push_back(SCIPgetClockTime(scip, temporaryClock));
             SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
+
+            (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "stairheu_db_md_%d", tau);
+            detectiondata->newpartialdecs[*nnewpartialdecs]->addDetectorChainInfo(decinfo);
 
             (*nnewpartialdecs) += 1;
             ndynamicblocking++;
@@ -1479,15 +1478,15 @@ SCIP_RETCODE blocking(
          if( detectordata->blocks > 1 )
          {
             detectiondata->newpartialdecs[*nnewpartialdecs] = new gcg::PARTIALDECOMP(partialdec);
-            (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "stairheu_db");
-            detectiondata->newpartialdecs[*nnewpartialdecs]->addDetectorChainInfo(decinfo);
             SCIP_CALL(detectiondata->newpartialdecs[*nnewpartialdecs]->assignPartialdecFromConstoblock(detectordata->constoblock, detectordata->blocks) );
             detectiondata->newpartialdecs[*nnewpartialdecs]->assignCurrentStairlinking();
- //           detectordata->constoblock = NULL;
 
             SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
             clocktimes.push_back(SCIPgetClockTime(scip, temporaryClock));
             SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
+
+            (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "stairheu_db");
+            detectiondata->newpartialdecs[*nnewpartialdecs]->addDetectorChainInfo(decinfo);
 
             (*nnewpartialdecs) += 1;
             ndynamicblocking++;
@@ -1514,15 +1513,15 @@ SCIP_RETCODE blocking(
       if( detectordata->blocks > 1 )
       {
          detectiondata->newpartialdecs[*nnewpartialdecs] = new gcg::PARTIALDECOMP(partialdec);
-         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "stairheu_sb");
-         detectiondata->newpartialdecs[*nnewpartialdecs]->addDetectorChainInfo(decinfo);
          SCIP_CALL(detectiondata->newpartialdecs[*nnewpartialdecs]->assignPartialdecFromConstoblock(detectordata->constoblock, detectordata->blocks) );
          detectiondata->newpartialdecs[*nnewpartialdecs]->assignCurrentStairlinking();
-//         detectordata->constoblock = NULL;
 
          SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
          clocktimes.push_back(SCIPgetClockTime(scip, temporaryClock));
          SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
+
+         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "stairheu_sb");
+         detectiondata->newpartialdecs[*nnewpartialdecs]->addDetectorChainInfo(decinfo);
 
          (*nnewpartialdecs) += 1;
       }
@@ -1555,15 +1554,15 @@ SCIP_RETCODE blocking(
             }
 
             detectiondata->newpartialdecs[*nnewpartialdecs] = new gcg::PARTIALDECOMP(partialdec);
-            (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "stairheu_asap_md_%d", tau);
-            detectiondata->newpartialdecs[*nnewpartialdecs]->addDetectorChainInfo(decinfo);
             SCIP_CALL(detectiondata->newpartialdecs[*nnewpartialdecs]->assignPartialdecFromConstoblock(detectordata->constoblock, detectordata->blocks) );
             detectiondata->newpartialdecs[*nnewpartialdecs]->assignCurrentStairlinking();
- //           detectordata->constoblock = NULL;
 
             SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
             clocktimes.push_back(SCIPgetClockTime(scip, temporaryClock));
             SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
+
+            (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "stairheu_asap_md_%d", tau);
+            detectiondata->newpartialdecs[*nnewpartialdecs]->addDetectorChainInfo(decinfo);
 
             *nnewpartialdecs += 1;
          }
@@ -1577,8 +1576,6 @@ SCIP_RETCODE blocking(
          if( detectordata->blocks > 1)
          {
             detectiondata->newpartialdecs[*nnewpartialdecs] = new gcg::PARTIALDECOMP(partialdec);
-            (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "stairheu_asap");
-            detectiondata->newpartialdecs[*nnewpartialdecs]->addDetectorChainInfo(decinfo);
             SCIP_CALL(detectiondata->newpartialdecs[*nnewpartialdecs]->assignPartialdecFromConstoblock(detectordata->constoblock, detectordata->blocks) );
             detectiondata->newpartialdecs[*nnewpartialdecs]->assignCurrentStairlinking();
             if( detectordata->constoblock != NULL )
@@ -1588,6 +1585,9 @@ SCIP_RETCODE blocking(
             SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
             clocktimes.push_back(SCIPgetClockTime(scip, temporaryClock));
             SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
+
+            (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "stairheu_asap");
+            detectiondata->newpartialdecs[*nnewpartialdecs]->addDetectorChainInfo(decinfo);
 
             *nnewpartialdecs += 1;
          }
@@ -1601,7 +1601,7 @@ SCIP_RETCODE blocking(
 
    SCIP_Real timeperdec = (time + tempTime) / detectiondata->nnewpartialdecs;
    SCIP_Real timeperdecdyn = tempTimeDynamicBlocking / ndynamicblocking;
-   assert(detectiondata->nnewpartialdecs == clocktimes.size());
+   assert(detectiondata->nnewpartialdecs == (int) clocktimes.size());
    for( int i = 0; i < detectiondata->nnewpartialdecs; ++i)
    {
       if( i < ndynamicblocking )

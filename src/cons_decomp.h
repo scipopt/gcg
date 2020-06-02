@@ -588,15 +588,6 @@ SCIP_Real GCGconshdlrDecompGetCompleteDetectionTime(
     SCIP*                 scip
     );
 
-/** @brief gets whether conss adjacency datastructures should be calculated
- * 
- * @returns whether conss adjacency datastructures should be calculated
-*/
-extern
-SCIP_Bool GCGconshdlrDecompGetConssAdjCalculated(
-   SCIP* scip          /**< SCIP data structure */
-   );
-
 /** @brief returns an array containing all decompositions
  *
  *  Updates the decomp decomposition structure by converting all finished partialdecs into decompositions and replacing the
@@ -607,16 +598,6 @@ SCIP_Bool GCGconshdlrDecompGetConssAdjCalculated(
 extern
 DEC_DECOMP** GCGconshdlrDecompGetDecomps(
    SCIP* scip  /**< SCIP data structure */
-   );
-
-/** @brief gets detector history of partialdec with given id
- * @returns detector history of partialdec
- */
-extern
-void GCGconshdlrDecompGetDetectorHistoryByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
-   int id,        /**< id of partialdec */
-   char* history  /**< char buffer */
    );
 
 /** @brief Gets an array of all detectors
@@ -752,10 +733,52 @@ int GCGconshdlrDecompGetNOpenVarsByPartialdecId(
    int id         /**< id of partialdec */
    );
 
+/** @brief Gets the number of finished partialdecs available for the original problem
+ * @returns number of partialdecs */
+extern
+unsigned int GCGconshdlrDecompGetNFinishedPartialdecsOrig(
+   SCIP*       scip  /**< SCIP data structure */
+   );
+
+/** @brief Gets the number of finished partialdecs available for the transformed problem
+ * @returns number of partialdecs */
+extern
+unsigned int GCGconshdlrDecompGetNFinishedPartialdecsTransformed(
+   SCIP*       scip  /**< SCIP data structure */
+   );
+
+/** @brief Gets the number of open partialdecs available for the original problem
+ * @returns number of partialdecs */
+extern
+unsigned int GCGconshdlrDecompGetNOpenPartialdecsOrig(
+   SCIP*       scip  /**< SCIP data structure */
+);
+
+/** @brief Gets the number of open partialdecs available for the transformed problem
+ * @returns number of partialdecs */
+extern
+unsigned int GCGconshdlrDecompGetNOpenPartialdecsTransformed(
+   SCIP*       scip  /**< SCIP data structure */
+);
+
 /** @brief Gets the number of all partialdecs
  * @returns number of Partialdecs */
 extern
 unsigned int GCGconshdlrDecompGetNPartialdecs(
+   SCIP*       scip  /**< SCIP data structure */
+   );
+
+/** @brief Gets the number of partialdecs available for the original problem
+ * @returns number of partialdecs */
+extern
+unsigned int GCGconshdlrDecompGetNPartialdecsOrig(
+   SCIP*       scip  /**< SCIP data structure */
+   );
+
+/** @brief Gets the number of partialdecs available for the transformed problem
+ * @returns number of partialdecs */
+extern
+unsigned int GCGconshdlrDecompGetNPartialdecsTransformed(
    SCIP*       scip  /**< SCIP data structure */
    );
 
@@ -811,16 +834,6 @@ SCIP_RETCODE GCGconshdlrDecompGetSelectedPartialdecs(
    SCIP*          scip,       /**< SCIP data structure */
    int**          idlist,     /**< id list to output to */
    int*           listlength  /**< length of output list */
-   );
-
-/**
- * @brief returns whether or not there exists at least one (complete or incomplete) decomposition
- * @param scip SCIP data structure
- * @returns TRUE if there exists at least one (complete or incomplete) decomposition
- */
-extern
-SCIP_Bool GCGconshdlrDecompHasDecomp(
-   SCIP*    scip
    );
 
 /**
@@ -883,14 +896,6 @@ extern
 SCIP_RETCODE GCGconshdlrDecompPrintDetectorStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
-   );
-
-/** @brief sets whether conss adjacency datastructures should be calculated
-*/
-extern
-void GCGconshdlrDecompSetConssAdjCalculated(
-   SCIP* scip,                /**< SCIP data structure */
-   SCIP_Bool calculated       /**< whether datastructure should be calculated */
    );
 
 /** @brief sets detector parameters values

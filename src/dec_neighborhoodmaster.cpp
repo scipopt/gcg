@@ -128,31 +128,20 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecNeighborhoodmaster)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
-
    SCIP_CLOCK* temporaryClock;
-
    gcg::DETPROBDATA* detprobdata;
-   std::vector<gcg::PARTIALDECOMP*> foundpartialdecs(0);
-
-   gcg::PARTIALDECOMP* partialdecOrig;
    gcg::PARTIALDECOMP* partialdec;
-
-   DEC_DetectorData* detectorData;
-
-   detectorData = DECdetectorGetData(detector);
-
-   partialdecOrig = partialdecdetectiondata->workonpartialdec;
+   DEC_DetectorData* detectorData = DECdetectorGetData(detector);
    std::stringstream decdesc;
-
    int maxdiff = -1;
    int maxdiffindex = -1;
    int lastindex = -1;
 
    detprobdata = partialdecdetectiondata->detprobdata;
-   partialdec = new gcg::PARTIALDECOMP(partialdecOrig);
+   partialdec = partialdecdetectiondata->workonpartialdec;
 
    if ( !detprobdata->isConssAdjInitialized() )
-     detprobdata->createConssAdjacency();
+      detprobdata->createConssAdjacency();
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
@@ -189,23 +178,18 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecNeighborhoodmaster)
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
    partialdec->addDetectorChainInfo(decinfo);
 
-   foundpartialdecs.push_back(partialdec);
-
-
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
 
    partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), foundpartialdecs.size() ) );
-   partialdecdetectiondata->nnewpartialdecs  = foundpartialdecs.size();
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+   partialdecdetectiondata->nnewpartialdecs  = 1;
+   partialdecdetectiondata->newpartialdecs[0] = partialdec;
+   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+   // we used the provided partialdec -> prevent deletion
+   partialdecdetectiondata->workonpartialdec = NULL;
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "dec_neighborhoodmaster found %d new partialdec \n", partialdecdetectiondata->nnewpartialdecs  );
-
-   for( int s = 0; s < partialdecdetectiondata->nnewpartialdecs; ++s )
-   {
-      partialdecdetectiondata->newpartialdecs[s] = foundpartialdecs[s];
-      partialdecdetectiondata->newpartialdecs[s]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
-   }
 
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 

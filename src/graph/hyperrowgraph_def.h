@@ -556,7 +556,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromPartialMatrix(
         assert(varsBool[oldVarId]);
 
         /* calculate weight of node */
-        weight = this->weights.calculate(detprobdata->getVarForIndex(oldVarId));
+        weight = this->weights.calculate(detprobdata->getVar(oldVarId));
 
         oldToNewVarIndex.insert({oldVarId,i});
         this->graph.addNode(i, weight);
@@ -578,7 +578,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromPartialMatrix(
            hyperedge.insert(hyperedge.end(), oldToNewVarIndex[oldVarId]);
         }
         /* calculate weight of hyperedge */
-        weight = this->weights.calculate(detprobdata->getConsForIndex(oldConsId));
+        weight = this->weights.calculate(detprobdata->getCons(oldConsId));
         this->graph.addHyperedge(hyperedge, weight);
      }
 

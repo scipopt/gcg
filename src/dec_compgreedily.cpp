@@ -341,6 +341,8 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecCompgreedily)
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "compgreed");
    partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
+   // we used the provided partialdec -> prevent deletion
+   partialdecdetectiondata->workonpartialdec = NULL;
 
    *result = SCIP_SUCCESS;
 
@@ -357,7 +359,7 @@ DEC_DECL_FINISHPARTIALDEC(finishPartialdecCompgreedily)
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-   gcg::PARTIALDECOMP* partialdec = new gcg::PARTIALDECOMP(partialdecdetectiondata->workonpartialdec);
+   gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
 
    //assign open conss and vars greedily
    completeGreedily(partialdec);
@@ -370,8 +372,9 @@ DEC_DECL_FINISHPARTIALDEC(finishPartialdecCompgreedily)
    partialdecdetectiondata->nnewpartialdecs = 1;
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "compgreed");
    partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
-
    partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+   // we used the provided partialdec -> prevent deletion
+   partialdecdetectiondata->workonpartialdec = NULL;
 
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 

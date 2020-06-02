@@ -1086,17 +1086,16 @@ SCIP_RETCODE readDECFile(
    }
    else
    {
-      SCIPinfoMessage(scip, NULL, "just read dec file:");
+      SCIPinfoMessage(scip, NULL, "just read dec file:\n");
       decinput->partialdec->sort();
-      GCGconshdlrDecompAddPreexisitingPartialDec(scip, decinput->partialdec);
-
       /* if the partialdec was to be completed, add a "vanilla" version as well */
       if( decinput->partialdec->shouldCompletedByConsToMaster() )
       {
          gcg::PARTIALDECOMP* partial = new gcg::PARTIALDECOMP(decinput->partialdec);
-         decinput->partialdec->setUsergiven(gcg::USERGIVEN::PARTIAL);
+         partial->setUsergiven(gcg::USERGIVEN::PARTIAL);
          GCGconshdlrDecompAddPreexisitingPartialDec(scip, partial);
       }
+      GCGconshdlrDecompAddPreexisitingPartialDec(scip, decinput->partialdec);
    }
 
    /* close file */
@@ -1121,8 +1120,8 @@ SCIP_RETCODE writePartialdec(
 {
    int nconss;
    int nvars;
-   std::vector<int> consindex(0);
-   std::vector<int> varindex(0);
+   std::vector<int> consindex;
+   std::vector<int> varindex;
 
    assert(partialdec != NULL);
 
@@ -1140,6 +1139,10 @@ SCIP_RETCODE writePartialdec(
       varindex[i] = i;
 
    /* write meta data of decomposition as comment */
+   if( partialdec->getUsergiven() == gcg::USERGIVEN::PARTIAL )
+      SCIPinfoMessage(scip, file, "%s%s stems from a partial decomposition provided by the user\n", commentchars, commentchars);
+   else if( partialdec->getUsergiven() != gcg::USERGIVEN::NOT )
+      SCIPinfoMessage(scip, file, "%s%s provided by the user\n", commentchars, commentchars);
    auto& detectorchain = partialdec->getDetectorchain();
    auto& detectorchaininfo = partialdec->getDetectorchainInfo();
    SCIPinfoMessage(scip, file, "%s%s ndetectors \n", commentchars, commentchars);
@@ -1158,28 +1161,28 @@ SCIP_RETCODE writePartialdec(
    }
 
    if( !partialdec->isComplete() )
-         SCIPinfoMessage(scip, file, "INCOMPLETE\n1\n" );
+      SCIPinfoMessage(scip, file, "INCOMPLETE\n1\n");
 
    if( partialdec->isAssignedToOrigProb() )
-      SCIPinfoMessage(scip, file, "PRESOLVED\n0\n" );
+      SCIPinfoMessage(scip, file, "PRESOLVED\n0\n");
    else
-      SCIPinfoMessage(scip, file, "PRESOLVED\n1\n" );
+      SCIPinfoMessage(scip, file, "PRESOLVED\n1\n");
 
-   SCIPinfoMessage(scip, file, "NBLOCKS\n%d\n", partialdec->getNBlocks() );
+   SCIPinfoMessage(scip, file, "NBLOCKS\n%d\n", partialdec->getNBlocks());
 
    for( int b = 0; b < partialdec->getNBlocks(); ++b )
    {
       SCIPinfoMessage(scip, file, "BLOCK %d\n", b+1 );
       for( int c = 0; c < partialdec->getNConssForBlock(b); ++c )
       {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(detprobdata->getConsForIndex( partialdec->getConssForBlock(b)[c] )) );
+         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(detprobdata->getCons(partialdec->getConssForBlock(b)[c])));
       }
    }
 
    SCIPinfoMessage(scip, file, "MASTERCONSS\n" );
    for( int mc = 0; mc < partialdec->getNMasterconss(); ++mc )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(detprobdata->getConsForIndex( partialdec->getMasterconss()[mc])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(detprobdata->getCons(partialdec->getMasterconss()[mc])));
    }
 
    if( partialdec->isComplete() )
@@ -1191,13 +1194,13 @@ SCIP_RETCODE writePartialdec(
    SCIPinfoMessage(scip, file, "LINKINGVARS\n" );
    for( int lv = 0; lv < partialdec->getNLinkingvars(); ++lv )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVarForIndex( partialdec->getLinkingvars()[lv])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVar(partialdec->getLinkingvars()[lv])));
    }
 
    SCIPinfoMessage(scip, file, "MASTERVARS\n%s%s aka STATICVARS\n", commentchars, commentchars );
    for( int mv = 0; mv < partialdec->getNMastervars(); ++mv )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVarForIndex( partialdec->getMastervars()[mv])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVar(partialdec->getMastervars()[mv])));
    }
 
    for( int b = 0; b < partialdec->getNBlocks(); ++b )
@@ -1205,7 +1208,7 @@ SCIP_RETCODE writePartialdec(
       SCIPinfoMessage(scip, file, "BLOCKVARS %d\n", b+1 );
       for( int v = 0; v < partialdec->getNVarsForBlock(b); ++v )
       {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVarForIndex( partialdec->getVarsForBlock(b)[v])) );
+         SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVar(partialdec->getVarsForBlock(b)[v])));
       }
    }
 

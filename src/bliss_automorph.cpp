@@ -305,14 +305,14 @@ void fhook(
 
       for( int v = 0; v < nvars; ++v )
       {
-         vars1[v] = detprobdata->getVarForIndex(partialdec->getVarsForBlock((*hook->blocks)[0])[v]);
-         vars2[v] = detprobdata->getVarForIndex(partialdec->getVarsForBlock((*hook->blocks)[1])[v]);
+         vars1[v] = detprobdata->getVar(partialdec->getVarsForBlock((*hook->blocks)[0])[v]);
+         vars2[v] = detprobdata->getVar(partialdec->getVarsForBlock((*hook->blocks)[1])[v]);
       }
 
       for( int c = 0; c < nconss; ++c )
       {
-         conss1[c] = detprobdata->getConsForIndex(partialdec->getConssForBlock((*hook->blocks)[0])[c]);
-         conss2[c] = detprobdata->getConsForIndex(partialdec->getConssForBlock((*hook->blocks)[1])[c]);
+         conss1[c] = detprobdata->getCons(partialdec->getConssForBlock((*hook->blocks)[0])[c]);
+         conss2[c] = detprobdata->getCons(partialdec->getConssForBlock((*hook->blocks)[1])[c]);
       }
    }
    else
@@ -661,7 +661,7 @@ SCIP_RETCODE setuparraysnewdetection(
          SCIP_VAR* var;
          AUT_VAR* svar;
 
-         var = detprobdata->getVarForIndex( partialdec->getVarsForBlock(block)[i] );
+         var = detprobdata->getVar(partialdec->getVarsForBlock(block)[i]);
          svar = new AUT_VAR(scip, var);
          //add to pointer array iff it doesn't exist
          SCIP_CALL( colorinfo->insert(svar, &added) );
@@ -681,7 +681,7 @@ SCIP_RETCODE setuparraysnewdetection(
          SCIP_CONS* cons;
 
          consid = partialdec->getConssForBlock(block)[i];
-         cons = detprobdata->getConsForIndex( consid );
+         cons = detprobdata->getCons(consid);
 
          if( detprobdata->getNVarsForCons(consid) == 0 )
             continue;
@@ -730,7 +730,7 @@ SCIP_RETCODE setuparraysnewdetection(
       SCIP_CONS* mastercons;
 
       masterconsid = partialdec->getMasterconss()[i];
-      mastercons = detprobdata->getConsForIndex(masterconsid);
+      mastercons = detprobdata->getCons(masterconsid);
 
       /* add right color for master constraint */
       AUT_CONS* scons = new AUT_CONS(scip, mastercons);
@@ -1087,7 +1087,7 @@ SCIP_RETCODE createGraphNewDetection(
 
          consid = partialdec->getConssForBlock(block)[i];
          ncurvars = detprobdata->getNVarsForCons(consid);
-         cons = detprobdata->getConsForIndex(consid);
+         cons = detprobdata->getCons(consid);
 
          if( ncurvars == 0 )
             continue;
@@ -1110,7 +1110,7 @@ SCIP_RETCODE createGraphNewDetection(
          SCIP_VAR* var;
 
          varid = partialdec->getVarsForBlock(block)[i];
-         var = detprobdata->getVarForIndex(varid);
+         var = detprobdata->getVar(varid);
 
          color = colorinfo.get( AUT_VAR(scip, var) );
 
@@ -1133,7 +1133,7 @@ SCIP_RETCODE createGraphNewDetection(
 
          consid = partialdec->getConssForBlock(block)[i];
          ncurvars = detprobdata->getNVarsForCons(consid);
-         cons = detprobdata->getConsForIndex(consid);
+         cons = detprobdata->getCons(consid);
          conscolor = colorinfo.get(AUT_CONS(scip, cons));
 
          if( ncurvars == 0 )
@@ -1147,7 +1147,7 @@ SCIP_RETCODE createGraphNewDetection(
             SCIP_Real val;
 
             varid = detprobdata->getVarsForCons(consid)[j];
-            var = detprobdata->getVarForIndex(varid);
+            var = detprobdata->getVar(varid);
 
             val = detprobdata->getVal(consid, varid);
 
@@ -1196,11 +1196,11 @@ SCIP_RETCODE createGraphNewDetection(
             /* ignore if the variable belongs to a different block */
             if( !partialdec->isVarBlockvarOfBlock(varid, block) )
             {
-//               SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(detprobdata->getVarForIndex(varid) ), block);
+//               SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(detprobdata->getVar(varid) ), block);
                continue;
             }
 
-            var = detprobdata->getVarForIndex(varid);
+            var = detprobdata->getVar(varid);
             val = detprobdata->getVal(masterconsid, varid);
             color = colorinfo.get(AUT_COEF(scip, val));
             assert(color != -1);
@@ -1236,7 +1236,7 @@ SCIP_RETCODE createGraphNewDetection(
       /*experimental end */
 
       masterconsid= partialdec->getMasterconss()[i];
-      mastercons = detprobdata->getConsForIndex(masterconsid);
+      mastercons = detprobdata->getCons(masterconsid);
       ncurvars = detprobdata->getNVarsForCons(masterconsid);
 
       SCIPdebugMessage("Handling cons <%s>\n", SCIPconsGetName(mastercons));
@@ -1262,7 +1262,7 @@ SCIP_RETCODE createGraphNewDetection(
          bid = -1;
          varid = detprobdata->getVarsForCons(masterconsid)[j];
 
-         var = detprobdata->getVarForIndex(varid);
+         var = detprobdata->getVar(varid);
 
          for( b = 0; b < nblocks; ++b )
          {

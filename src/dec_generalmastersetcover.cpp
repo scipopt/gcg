@@ -114,13 +114,12 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetcover)
    bool relevant = true;
 
 
-   gcg::PARTIALDECOMP* partialdec;
-   partialdec = new gcg::PARTIALDECOMP(partialdecdetectiondata->workonpartialdec);
+   gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
    auto& openconss = partialdec->getOpenconssVec();
    for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
    {
       bool found = false;
-      cons = partialdecdetectiondata->detprobdata->getConsForIndex(*itr);
+      cons = partialdecdetectiondata->detprobdata->getCons(*itr);
 
       /* set open setcovering and logicor constraints to master */
       if( GCGconsGetType(scip, cons) == setcovering || GCGconsGetType(scip, cons) == logicor )
@@ -186,6 +185,8 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetcover)
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "genmastersetcover");
    partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
    partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+   // we used the provided partialdec -> prevent deletion
+   partialdecdetectiondata->workonpartialdec = NULL;
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
