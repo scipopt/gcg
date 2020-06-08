@@ -277,13 +277,14 @@ void fhookForPartialdecs(
 
    for( i = 0; i < nconss; i++ )
    {
-      SCIP_CONS* cons = detprobdata->getConsForIndex(partialdec->getOpenconss()[i]);
+      SCIP_CONS* cons = detprobdata->getCons(partialdec->getOpenconss()[i]);
       assert(aut[i] < INT_MAX);
       if( (size_t) i != aut[i])
       {
          auti = (int) aut[i];
 
-         SCIPdebugMessage("%d <%s> <-> %d <%s>\n", i, SCIPconsGetName(cons), auti, SCIPconsGetName(detprobdata->getConsForIndex(partialdec->getOpenconss()[auti])));
+         SCIPdebugMessage("%d <%s> <-> %d <%s>\n", i, SCIPconsGetName(cons), auti,
+            SCIPconsGetName(detprobdata->getCons(partialdec->getOpenconss()[auti])));
 
          ind = MIN(i, auti);
 
@@ -479,7 +480,7 @@ SCIP_RETCODE setupArrays(
    //save the properties of variables in a struct array and in a sorted pointer array
    for( i = 0; i < nvars; i++ )
    {
-      SCIP_VAR* var = detprobdata->getVarForIndex(i);
+      SCIP_VAR* var = detprobdata->getVar(i);
       AUT_VAR* svar = new AUT_VAR(scip, var);
       //add to pointer array iff it doesn't exist
       SCIP_CALL( colorinfo->insert(svar, &added) );
@@ -493,7 +494,7 @@ SCIP_RETCODE setupArrays(
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
       int consindex = partialdec->getOpenconss()[i];
-      SCIP_CONS* cons = detprobdata->getConsForIndex(consindex);
+      SCIP_CONS* cons = detprobdata->getCons(consindex);
 
       int ncurvars = detprobdata->getNVarsForCons(consindex);
       if( ncurvars == 0 )
@@ -717,7 +718,7 @@ SCIP_RETCODE createGraph(
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
       ncurvars = detprobdata->getNVarsForCons(partialdec->getOpenconss()[i]);
-      SCIP_CONS* cons = detprobdata->getConsForIndex(partialdec->getOpenconss()[i]);
+      SCIP_CONS* cons = detprobdata->getCons(partialdec->getOpenconss()[i]);
 
       AUT_CONS scons(scip, cons);
       color = colorinfo.get(scons);
@@ -735,7 +736,7 @@ SCIP_RETCODE createGraph(
    //add a node for every variable
    for( i = 0; i < nvars && *result == SCIP_SUCCESS; i++ )
    {
-      SCIP_VAR* var = detprobdata->getVarForIndex(i);
+      SCIP_VAR* var = detprobdata->getVar(i);
       AUT_VAR svar(scip, var);
       color = colorinfo.get(svar);
 
@@ -752,7 +753,7 @@ SCIP_RETCODE createGraph(
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
       int consindex = partialdec->getOpenconss()[i];
-      SCIP_CONS* cons = detprobdata->getConsForIndex(consindex);
+      SCIP_CONS* cons = detprobdata->getCons(consindex);
       AUT_CONS scons(scip, cons);
       ncurvars = detprobdata->getNVarsForCons(partialdec->getOpenconss()[i]);
       if( ncurvars == 0 )
@@ -761,7 +762,7 @@ SCIP_RETCODE createGraph(
       for( j = 0; j < ncurvars; j++ )
       {
          int varindex = detprobdata->getVarsForCons(consindex)[j];
-         SCIP_VAR* var = detprobdata->getVarForIndex(varindex);
+         SCIP_VAR* var = detprobdata->getVar(varindex);
 
 
 //              if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
@@ -958,7 +959,7 @@ SCIP_RETCODE createPartialdecFromMasterconss(
          ++(nextblock);
       }
 
-      SCIPdebugMessage("Cons %s will be in block %d (next %d)\n", SCIPconsGetName(detprobdata->getConsForIndex(cons)), consblock, nextblock);
+      SCIPdebugMessage("Cons %s will be in block %d (next %d)\n", SCIPconsGetName(detprobdata->getCons(cons)), consblock, nextblock);
 
       for( j = 0; j < ncurvars; ++j )
       {
@@ -969,7 +970,7 @@ SCIP_RETCODE createPartialdecFromMasterconss(
          oldblock = vartoblock[var];
          assert((oldblock > 0) && (oldblock <= nextblock));
 
-         SCIPdebugMessage("\tVar %s ", SCIPvarGetName(detprobdata->getVarForIndex(var)));
+         SCIPdebugMessage("\tVar %s ", SCIPvarGetName(detprobdata->getVar(var)));
          if( oldblock != consblock )
          {
             SCIPdebugPrintf("reset from %d to block %d.\n", oldblock, consblock);
@@ -1001,12 +1002,12 @@ SCIP_RETCODE createPartialdecFromMasterconss(
       /* store the constraint block */
       if( consblock != -1 )
       {
-         SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(detprobdata->getConsForIndex(cons)), consblock);
+         SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(detprobdata->getCons(cons)), consblock);
          constoblock[cons] = consblock;
       }
       else
       {
-         SCIPdebugMessage("ignoring %s\n", SCIPconsGetName(detprobdata->getConsForIndex(cons)));
+         SCIPdebugMessage("ignoring %s\n", SCIPconsGetName(detprobdata->getCons(cons)));
       }
    }
 
@@ -1062,7 +1063,7 @@ SCIP_RETCODE createPartialdecFromMasterconss(
       consblock = blockrepresentative[consblock];
       assert(consblock <= nblocks);
       newconstoblock[cons] = consblock;
-      SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(detprobdata->getConsForIndex(cons)));
+      SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(detprobdata->getCons(cons)));
    }
    (*newPartialdec) = new gcg::PARTIALDECOMP(partialdec);
    SCIP_CALL( (*newPartialdec)->assignPartialdecFromConstoblockVector(newconstoblock, nblocks) );
@@ -1348,8 +1349,6 @@ SCIP_RETCODE detectIsomorph(
    int nconss = partialdec->getNOpenconss();
    int i;
 
-   assert(detectiondata->nnewpartialdecs == 0);
-
    detectordata->result = SCIP_SUCCESS;
 
    colorinfo = new AUT_COLOR();
@@ -1391,9 +1390,9 @@ SCIP_RETCODE detectIsomorph(
       // reorder decomposition (corresponding to orbit size)
       SCIP_CALL( reorderPermutations(scip, detprobdata, ptrhook->conssperm, nconss, nperms) );
 
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(detectiondata->newpartialdecs), MIN(maxdecomps, nperms)) ); /*lint !e506*/
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(detectiondata->newpartialdecs), detectiondata->nnewpartialdecs + MIN(maxdecomps, nperms)) ); /*lint !e506*/
 
-      int pos = 0;
+      int pos = detectiondata->nnewpartialdecs;
 
       for( p = 0; p < nperms && pos < maxdecomps; ++p )
       {
@@ -1407,7 +1406,7 @@ SCIP_RETCODE detectIsomorph(
             if( p != ptrhook->conssperm[i] )
             {
                masterconss[nmasterconss] = partialdec->getOpenconss()[i];
-               SCIPdebugMessage("%s\n", SCIPconsGetName(detprobdata->getConsForIndex(masterconss[nmasterconss])));
+               SCIPdebugMessage("%s\n", SCIPconsGetName(detprobdata->getCons(masterconss[nmasterconss])));
                nmasterconss++;
             }
          }

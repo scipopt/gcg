@@ -128,7 +128,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify)
       int nvars;
       int i;
 
-      cons = detprobdata->getConsForIndex( c );
+      cons = detprobdata->getCons(c);
 
       nvars =  GCGconsGetNVars(scip, cons );
 

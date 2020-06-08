@@ -409,6 +409,21 @@ public:
       );
 
    /**
+    * @brief computes components by connectedness of conss and vars
+    *
+    * computes components corresponding to connectedness of conss and vars
+    * and assigns them accordingly (all but one of largest components)
+    *
+    * strategy: assigns all conss same block if they are connected
+    * two constraints are adjacent if there is a common variable
+    *
+    * @note this relies on the consadjacency structure of the detprobdata
+    *  hence it cannot be applied in presence of linking variables
+    */
+   void assignSmallestComponentsButOneConssAdjacency(
+      );
+
+   /**
     * @brief reassigns linking vars to stairlinkingvars if possible
     *
     *  potentially reorders blocks for making a maximum number of linking vars stairlinking
@@ -458,11 +473,31 @@ public:
    void complete(
       );
 
+   /**
+    * @brief assigns all open constraints and open variables
+    *
+    *  strategy: assigns all conss and vars to the same block if they are connected,
+    *  a cons and a var are adjacent if the var appears in the cons
+    */
+   void completeByConnected(
+      );
+
+   /**
+    * @brief assigns all open constraints and open variables
+    *
+    *  strategy: assigns all conss and vars to the same block if they are connected
+    *  a cons and a var are adjacent if the var appears in the cons
+    *  \note this relies on the consadjacency structure of the detprobdata
+    *  hence it cannot be applied in presence of linking variables
+    */
+   void completeByConnectedConssAdjacency(
+      );
+
    /** @brief removes the given cons from master
     */
    void removeMastercons(
       int consid      /**< id of cons */
-   );
+      );
 
    /**
     * @brief: assigns every open cons/var
@@ -473,10 +508,9 @@ public:
     *  - and every cons to master that hits a master var
     *  - and every var to master if it does not hit any blockcons and has no open cons
     *  - leave the cons/variableopen if nothing from the above holds
-    *  @return scip return code
     *  */
-   SCIP_RETCODE considerImplicits(
-        );
+   void considerImplicits(
+      );
 
    /**
     * @brief copies the given partialdec's partition statistics
@@ -1220,9 +1254,8 @@ public:
     *
     * strategy: do obvious ( @see considerImplicits()) assignments and
     *  assign other conss and vars to master if possible (@see assignOpenPartialHittingToMaster())
-    * @return scip return code
     */
-   SCIP_RETCODE refineToMaster(
+   void refineToMaster(
       );
 
    /**
@@ -1823,9 +1856,8 @@ private:
 
    /**
     * @brief assigns open conss/vars that hit exactly one block and at least one open var/cons to border
-    * @return scip return code
     */
-   SCIP_RETCODE assignOpenPartialHittingToMaster(
+   void assignOpenPartialHittingToMaster(
       );
 
    /**

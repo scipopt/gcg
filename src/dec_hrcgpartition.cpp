@@ -472,7 +472,6 @@ SCIP_RETCODE detection(
    int j;
    int s;
    int nMaxPartialdecs;
-   int nnewpartialdecs = 0;
    gcg::PARTIALDECOMP** newpartialdecs;
    SCIP_CLOCK* clock;
    SCIP_CLOCK* temporaryClock;
@@ -558,13 +557,11 @@ SCIP_RETCODE detection(
          SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
 
          detectordata->found = TRUE;
-         nnewpartialdecs++;
          (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hrc\\_%d", numberOfBlocks[k]);
          newpartialdecs[j]->addDetectorChainInfo(decinfo);
 
          if( allowopenpartialdecs )
          {
-            nnewpartialdecs++;
             clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock) / 2);
             clockTimes.push_back(SCIPgetClockTime(scip, temporaryClock) / 2);
             newpartialdecs[j + 1]->addDetectorChainInfo(decinfo);
@@ -578,16 +575,15 @@ SCIP_RETCODE detection(
       }
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d partialdecs found.\n",  nnewpartialdecs);
-
    delete graph;
 
+   int nnewpartialdecs = j;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d partialdecs found.\n",  nnewpartialdecs);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), nnewpartialdecs) );
    partialdecdetectiondata->nnewpartialdecs = nnewpartialdecs;
    for( s = 0; s < nnewpartialdecs; ++s )
    {
-      partialdecdetectiondata->newpartialdecs[s] = newpartialdecs[j];
+      partialdecdetectiondata->newpartialdecs[s] = newpartialdecs[s];
       partialdecdetectiondata->newpartialdecs[s]->addClockTime(clockTimes[s] + SCIPgetClockTime(scip, temporaryClock) / nnewpartialdecs);
    }
 
@@ -612,183 +608,6 @@ SCIP_RETCODE detection(
 #endif
 
 
-/**
- * @brief computes components by connectedness of conss and vars
- *
- * computes components corresponding to connectedness of conss and vars
- * and assigns them accordingly (all but one of largest components)
- *
- * strategy: assigns all conss same block if they are connected
- * two constraints are adjacent if there is a common variable
- *
- * @note this relies on the consadjacency structure of the detprobdata
- *  hence it cannot be applied in presence of linking variables
- *
- *  @return scip return code
- */
-static
-SCIP_RETCODE assignSmallestComponentsButOneConssAdjacency(
-   SCIP* scip,                      /**< scip data structure */
-   gcg::PARTIALDECOMP* partialdec   /**< partialdecomp to complete */
-   )
-{
-   int cons;
-
-   /* tools to check if the openvars can still be found in a constraint yet */
-   std::vector<int> varinblocks; /* stores, in which block the variable can be found */
-
-   /* tools to update openvars */
-   std::vector<int> oldOpenconss;
-   std::vector<int> openvarsToDelete;
-   gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
-
-   if( partialdec->getNLinkingvars() != 0 )
-   {
-      partialdec->complete();
-      return SCIP_OKAY;
-   }
-
-   if( !GCGconshdlrDecompGetConssAdjCalculated(scip) )
-   {
-      detprobdata->createConssAdjacency();
-      GCGconshdlrDecompSetConssAdjCalculated(scip, TRUE);
-   }
-
-   int nconss = detprobdata->getNConss();
-   int nvars = detprobdata->getNVars();
-
-   std::vector<bool> isConsOpen( nconss, false );
-   std::vector<bool> isConsVisited( nconss, false );
-
-   std::vector<std::vector<int>> conssfornewblocks(0);
-   std::vector<std::vector<int>> varsfornewblocks(0);
-
-   int newblocks;
-   int largestcomponent;
-   int sizelargestcomponent;
-
-   auto constoconsider = partialdec->getOpenconssVec();
-
-   varinblocks = std::vector<int>(nvars, -1);
-   newblocks = 0;
-   largestcomponent = -1;
-   sizelargestcomponent = 0;
-
-   std::queue<int> helpqueue = std::queue<int>();
-   std::vector<int> neighborConss( 0 );
-
-   int nblocks = partialdec->getNBlocks();
-   assert( (int) partialdec->getConssForBlocks().size() == nblocks );
-   assert( partialdec->getNVarsForBlocks() == nblocks );
-   assert( partialdec->getNTotalStairlinkingvars() == nblocks );
-
-   assert(partialdec->checkConsistency() );
-
-   if( nblocks < 0 )
-      nblocks = 0;
-
-   /* do breadth first search to find connected conss */
-   while( !constoconsider.empty() )
-   {
-      std::vector<int> newconss(0);
-      std::vector<int> newvars(0);
-
-      assert( helpqueue.empty() );
-      helpqueue.push( constoconsider[0] );
-      neighborConss.clear();
-      neighborConss.push_back( constoconsider[0] );
-      isConsVisited[constoconsider[0]] = true;
-
-      while( !helpqueue.empty() )
-      {
-         int nodeCons = helpqueue.front();
-         assert( partialdec->isConsOpencons( nodeCons ) );
-         helpqueue.pop();
-         for( int c = 0; c < detprobdata->getNConssForCons( nodeCons ); ++ c )
-         {
-            int othercons;
-            othercons = detprobdata->getConssForCons( nodeCons )[c];
-
-            if( isConsVisited[othercons] || partialdec->isConsMastercons( othercons ) || !isConsOpen[othercons] )
-               continue;
-
-            assert( partialdec->isConsOpencons( othercons ) );
-            isConsVisited[othercons] = true;
-            neighborConss.push_back( othercons );
-            helpqueue.push( othercons );
-         }
-      }
-
-      /* assign found conss and vars to a new block */
-      ++newblocks;
-      for( size_t i = 0; i < neighborConss.size(); ++ i )
-      {
-         std::vector<int>::iterator consiter;
-         cons = neighborConss[i];
-         consiter = std::lower_bound(constoconsider.begin(), constoconsider.end(), cons);
-         assert(consiter != constoconsider.end() );
-         constoconsider.erase(consiter);
-         assert( partialdec->isConsOpencons( cons ) );
-         newconss.push_back(cons);
-
-         for( int j = 0; j < detprobdata->getNVarsForCons(cons); ++ j )
-         {
-            int newvar = detprobdata->getVarsForCons(cons)[j];
-
-            if( partialdec->isVarLinkingvar(newvar) || varinblocks[newvar] != -1 )
-               continue;
-
-            assert(! partialdec->isVarMastervar( newvar) );
-            newvars.push_back(newvar);
-            varinblocks[newvar] = newblocks;
-         }
-      }
-      conssfornewblocks.push_back(newconss);
-      varsfornewblocks.push_back(newvars);
-   }
-
-   for( int i = 0; i < newblocks; ++i)
-   {
-      if( (int)conssfornewblocks[i].size() > sizelargestcomponent )
-      {
-         sizelargestcomponent = (int)conssfornewblocks[i].size();
-         largestcomponent = i;
-      }
-   }
-
-   if( newblocks > 1 )
-   {
-      int oldnblocks;
-      bool largestdone = false;
-      oldnblocks = partialdec->getNBlocks();
-      partialdec->setNBlocks(newblocks - 1 + partialdec->getNBlocks());
-
-      for( int i = 0; i < newblocks; ++i)
-      {
-         if( i == largestcomponent )
-         {
-            largestdone = true;
-            continue;
-         }
-         for( int c = 0; c < (int) conssfornewblocks[i].size() ; ++c)
-         {
-            partialdec->fixConsToBlock(conssfornewblocks[i][c], oldnblocks + i - (largestdone ? 1 : 0) );
-         }
-
-         for( int v = 0; v < (int) varsfornewblocks[i].size() ; ++v )
-         {
-            partialdec->fixVarToBlock(varsfornewblocks[i][v], oldnblocks + i - (largestdone ? 1 : 0) );
-         }
-      }
-      partialdec->prepare();
-   }
-
-   assert( partialdec->checkConsistency( ) );
-
-   return SCIP_OKAY;
-}
-
-
 static
 DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrcgpartition)
 {
@@ -803,7 +622,7 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrcgpartition)
 
    if( !connected(partialdecdetectiondata->detprobdata, partialdec) || partialdec->alreadyAssignedConssToBlocks() )
    {
-      assignSmallestComponentsButOneConssAdjacency(scip, partialdec);
+      partialdec->assignSmallestComponentsButOneConssAdjacency();
    }
 
    detection(scip, DECdetectorGetData(detector), partialdecdetectiondata, partialdec, true, result);
@@ -830,7 +649,7 @@ DEC_DECL_FINISHPARTIALDEC(finishPartialdecHrcgpartition)
 
    if( !connected(partialdecdetectiondata->detprobdata, partialdec) )
    {
-      assignSmallestComponentsButOneConssAdjacency(scip, partialdec);
+      partialdec->assignSmallestComponentsButOneConssAdjacency();
    }
 
    detection(scip, DECdetectorGetData(detector), partialdecdetectiondata, partialdec, false, result);

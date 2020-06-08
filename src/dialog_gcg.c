@@ -679,10 +679,21 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
 SCIP_DECL_DIALOGEXEC(GCGdialogExecTransform)
 {  /*lint --e{715}*/
 
-   if( SCIPgetStage(scip) <= SCIP_STAGE_PROBLEM )
-         SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
-
-   SCIPdialogExecTransform(scip, dialog, dialoghdlr, nextdialog);
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      *nextdialog = SCIPdialogGetParent(dialog);
+      SCIPdialogMessage(scip, NULL, "no problem exists\n");
+   }
+   else if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+   {
+      SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
+      SCIPdialogExecTransform(scip, dialog, dialoghdlr, nextdialog);
+   }
+   else
+   {
+      *nextdialog = SCIPdialogGetParent(dialog);
+      SCIPdialogMessage(scip, NULL, "problem is already transformed\n");
+   }
 
    return SCIP_OKAY;
 }
@@ -691,13 +702,23 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecTransform)
 /** dialog execution method for the presolve command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecPresolve)
 {  /*lint --e{715}*/
-
-   if( SCIPgetStage(scip) <= SCIP_STAGE_PROBLEM )
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      *nextdialog = SCIPdialogGetParent(dialog);
+      SCIPdialogMessage(scip, NULL, "no problem exists\n");
+   }
+   else if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+   {
+      if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
          SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
-
-   SCIPdialogExecPresolve(scip, dialog, dialoghdlr, nextdialog);
-
-   GCGconshdlrDecompTranslateOrigPartialdecs(scip);
+      SCIPdialogExecPresolve(scip, dialog, dialoghdlr, nextdialog);
+      GCGconshdlrDecompTranslateOrigPartialdecs(scip);
+   }
+   else
+   {
+      *nextdialog = SCIPdialogGetParent(dialog);
+      SCIPdialogMessage(scip, NULL, "problem is already presolved\n");
+   }
 
    return SCIP_OKAY;
 }
@@ -709,8 +730,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    SCIP_RESULT result;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
 
    if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
       SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
@@ -725,6 +744,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
          }
          else
          {
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "starting detection\n");
             SCIP_CALL( DECdetectStructure(scip, &result) );
          }
       }
@@ -736,13 +756,14 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
          }
          else
          {
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "starting detection\n");
             SCIP_CALL( DECdetectStructure(scip, &result) );
          }
       }
    }
    else
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "no problem exists\n");
    }
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
@@ -806,7 +827,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_PRESOLVED:
       assert(GCGconshdlrDecompCheckConsistency(scip) );
 
-      if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && !GCGconshdlrDecompHasDecomp(scip) && GCGconshdlrDecompGetNPartialdecs(scip) == 0 )
+      if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
       {
          SCIP_CALL( DECdetectStructure(scip, &result) );
          if( result == SCIP_DIDNOTFIND )
@@ -818,7 +839,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
             SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
          }
       }
-      else if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && !GCGconshdlrDecompHasDecomp(scip) && GCGconshdlrDecompGetNPartialdecs(scip) > 0 )
+      else if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) > 0 )
       {
 #ifndef NDEBUG
          DEC_DECOMP* bestdecomp;
@@ -827,7 +848,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 #endif
          SCIPdialogMessage(scip, NULL, "Preexisting decomposition found. Solution process started...\n");
       }
-      else if( !GCGconshdlrDecompHasDecomp(scip) )
+      else if( GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
       {
          SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
       }

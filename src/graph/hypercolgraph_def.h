@@ -278,7 +278,7 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
       int oldConsId = conssForGraph[i];
 
       /* calculate weight of node */
-      weight = this->weights.calculate(detprobdata->getConsForIndex(oldConsId));
+      weight = this->weights.calculate(detprobdata->getCons(oldConsId));
 
       oldToNewConsIndex.insert({oldConsId,i});
 
@@ -301,7 +301,7 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
          hyperedge.insert(hyperedge.end(), oldToNewConsIndex[oldConsId]);
       }
       /* calculate weight of hyperedge */
-      weight = this->weights.calculate(detprobdata->getVarForIndex(oldVarId));
+      weight = this->weights.calculate(detprobdata->getVar(oldVarId));
       this->graph.addHyperedge(hyperedge, weight);
    }
 

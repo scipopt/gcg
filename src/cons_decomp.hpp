@@ -132,4 +132,13 @@ SCIP_RETCODE GCGconshdlrDecompChooseCandidatesFromSelected(
    SCIP_Bool printwarnings
    );
 
+/** @brief gets detector history of partialdec with given id
+ * @returns detector history of partialdec as string
+ */
+extern
+std::string GCGconshdlrDecompGetDetectorHistoryByPartialdecId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of partialdec */
+   );
+
 #endif //GCG_CONS_DECOMP_HPP

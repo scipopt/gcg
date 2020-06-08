@@ -102,7 +102,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
    for (int i = 0; i < detprobdata->getNConss(); ++i) {
       SCIP_CONS *cons;
       bool found = false;
-      cons = detprobdata->getConsForIndex(i);
+      cons = detprobdata->getCons(i);
       consType cT = GCGconsGetType(scip, cons);
       size_t constype;
 

@@ -109,7 +109,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
    {
       SCIP_VAR* var;
       bool found = false;
-      var = detprobdata->getVarForIndex( i );
+      var = detprobdata->getVar(i);
       SCIP_VARTYPE vT = SCIPvarGetType( var );
       size_t vartype;
 

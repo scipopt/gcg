@@ -477,11 +477,7 @@ DETPROBDATA::DETPROBDATA(
       SCIPfreeBufferArrayNull( scip, & currVars );
    }
 
-   createconssadj = GCGconshdlrDecompGetConssAdjCalculated(scip);
-   createconssadj = createconssadj && (getNConss() < 1000);
-
-   if( !createconssadj )
-      GCGconshdlrDecompSetConssAdjCalculated(scip, FALSE);
+   createconssadj = (getNConss() < 1000);
 
    if( createconssadj )
    {
@@ -496,7 +492,7 @@ DETPROBDATA::~DETPROBDATA()
    {
       SCIP_CONS* cons;
 
-      cons = getConsForIndex(c);
+      cons = getCons(c);
       SCIPreleaseCons(scip, &cons);
    }
 
@@ -726,14 +722,6 @@ PARTIALDECOMP* DETPROBDATA::getAncestorPartialdec(
 }
 
 
-SCIP_CONS* DETPROBDATA::getConsById(
-   int consid
-   )
-{
-   return relevantconss[consid];
-}
-
-
 ConsPartition* DETPROBDATA::getConsPartition(
    int partitionIndex
    )
@@ -744,7 +732,7 @@ ConsPartition* DETPROBDATA::getConsPartition(
 }
 
 
-SCIP_CONS* DETPROBDATA::getConsForIndex(
+SCIP_CONS* DETPROBDATA::getCons(
    int consIndex
    )
 {
@@ -876,6 +864,12 @@ int DETPROBDATA::getNFinishedPartialdecs()
 }
 
 
+int DETPROBDATA::getNPartialdecs()
+{
+   return (int) (finishedpartialdecs.size() + openpartialdecs.size());
+}
+
+
 int DETPROBDATA::getNNonzeros()
 {
    return nnonzeros;
@@ -979,14 +973,6 @@ std::vector<SCIP_Real>& DETPROBDATA::getValsForCons(
 }
 
 
-SCIP_VAR* DETPROBDATA::getVarById(
-   int varid
-   )
-{
-   return relevantvars[varid];
-}
-
-
 VarPartition* DETPROBDATA::getVarPartition(
    int partitionIndex
    )
@@ -1003,7 +989,7 @@ std::vector<VarPartition*> DETPROBDATA::getVarPartitions()
 }
 
 
-SCIP_VAR* DETPROBDATA::getVarForIndex(
+SCIP_VAR* DETPROBDATA::getVar(
    int varIndex
    )
 {

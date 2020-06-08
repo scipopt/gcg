@@ -32,29 +32,24 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 
 #if defined(_WIN32) || defined(_WIN64)
 #else
 #include <strings.h> /*lint --e{766}*/ /* needed for strcasecmp() */
 #endif
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <fstream>
+#include <cstdio>
 #include <vector>
 #include <sstream>
 #include <algorithm>    // std::sort
 
 #include "reader_tex.h"
 #include "scip_misc.h"
-#include "pub_gcgvar.h"
 #include "reader_gp.h"
 #include "cons_decomp.h"
 #include "cons_decomp.hpp"
 #include "pub_decomp.h"
-#include "struct_decomp.h"
 #include "miscvisualization.h"
 #include "class_partialdecomp.h"
 #include "class_detprobdata.h"
@@ -64,9 +59,6 @@
 #define READER_NAME             "texreader"
 #define READER_DESC             "LaTeX file writer for partialdec visualization"
 #define READER_EXTENSION        "tex"
-
-#define DEFAULT_USEGP            FALSE
-#define DEFAULT_PICTURESONLY     FALSE
 
 using namespace gcg;
 
@@ -623,20 +615,18 @@ SCIP_RETCODE writeTexPartialdecStatistics(
    PARTIALDECOMP* partialdec            /**< statistics are about this partialdec */
    )
 {
-   char fulldetectorstring[SCIP_MAXSTRLEN];
-   int sizedetectorchain;
-   int i;
+   std::ostringstream fulldetectorstring;
 
    /* get detector chain full-text string*/
-   std::vector<DEC_DETECTOR*>& detectorchain = partialdec->getDetectorchain();
-   sizedetectorchain = partialdec->getNDetectors();
-   if(sizedetectorchain != 0 && detectorchain[0] != NULL)
-      sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
-   else
-      sprintf(fulldetectorstring, "%s", "user");
-   for( i=1; i < sizedetectorchain; ++i )
+   if( partialdec->getUsergiven() != gcg::USERGIVEN::NOT )
    {
-      sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );
+      fulldetectorstring << "user";
+   }
+   for( auto detector : partialdec->getDetectorchain() )
+   {
+      if( fulldetectorstring.tellp() > 0 )
+         fulldetectorstring << ", ";
+      fulldetectorstring << DECdetectorGetName(detector);
    }
 
    SCIPinfoMessage(scip, file, "\n");
@@ -644,7 +634,7 @@ SCIP_RETCODE writeTexPartialdecStatistics(
    SCIPinfoMessage(scip, file, "\\begin{tabular}{lp{10cm}}\n");
    SCIPinfoMessage(scip, file,
       "  Found by detector(s): & \\begin{minipage}{10cm}\\begin{verbatim}%s\\end{verbatim}\\end{minipage} \\\\ \n",
-      fulldetectorstring);
+      fulldetectorstring.str().c_str());
    SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\ \n",
       partialdec->getNBlocks());
    SCIPinfoMessage(scip, file, "  Number of master variables: & %i \\\\ \n",

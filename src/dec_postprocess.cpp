@@ -125,28 +125,27 @@ DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
    *result = SCIP_DIDNOTFIND;
 
    SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
    char decinfo[SCIP_MAXSTRLEN];
    SCIP_Bool success;
    SCIP_Bool byconssadj;
-   SCIP_Bool conssadjcalculated;
 
-   gcg::PARTIALDECOMP* partialdec;
-
-   assert(partialdecdetectiondata->workonpartialdec->getDetprobdata() == partialdecdetectiondata->detprobdata);
-   partialdec  = new gcg::PARTIALDECOMP(partialdecdetectiondata->workonpartialdec);
+   gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
+   gcg::DETPROBDATA* detprobdata = partialdecdetectiondata->detprobdata;
+   assert(partialdecdetectiondata->workonpartialdec->getDetprobdata() == detprobdata);
 
    SCIPgetBoolParam(scip, "detection/detectors/postprocess/useconssadj", &byconssadj);
-   conssadjcalculated = GCGconshdlrDecompGetConssAdjCalculated(scip);
+
+   if ( byconssadj && !detprobdata->isConssAdjInitialized() )
+      detprobdata->createConssAdjacency();
 
    //complete the partialdec by bfs
-   if ( byconssadj && conssadjcalculated)
+   if ( byconssadj )
    {
       success = FALSE;
-      std::vector<int> constoreassign(0);
-      std::vector<int> blockforconstoreassign(0);
-      gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
+      std::vector<int> constoreassign;
+      std::vector<int> blockforconstoreassign;
 
       partialdec->sort();
 
@@ -156,7 +155,7 @@ DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
       {
          for( size_t j  = 0; j < (size_t) partialdec->getNVarsForBlock(b); ++j )
          {
-            blockforvar[partialdec->getVarsForBlock(b)[j] ] = b;
+            blockforvar[partialdec->getVarsForBlock(b)[j]] = b;
          }
       }
 
@@ -205,7 +204,7 @@ DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
          partialdec->removeMastercons(constoreassign[i]);
       }
 
-      if( constoreassign.size() > 0 )
+      if( !constoreassign.empty() )
          success = TRUE;
 
       partialdec->prepare();
@@ -216,7 +215,6 @@ DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
    if ( !success )
    {
      partialdecdetectiondata->nnewpartialdecs = 0;
-     delete partialdec;
      *result = SCIP_DIDNOTFIND;
      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
      SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
@@ -230,9 +228,10 @@ DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
    partialdecdetectiondata->nnewpartialdecs = 1;
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "postprocess");
    partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
-
    partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   // we used the provided partialdec -> prevent deletion
+   partialdecdetectiondata->workonpartialdec = NULL;
 
    *result = SCIP_SUCCESS;
 

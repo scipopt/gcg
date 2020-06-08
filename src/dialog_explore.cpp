@@ -15,7 +15,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dialog_explore.cpp
+/**@file   dialog_explore.c
  * @brief  dialog menu for exploring decompositions
  * @author Michael Bastubbe
  * @author Hanna Franzen
@@ -26,35 +26,37 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include <assert.h>
-#include <stddef.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstddef>
+#include <cstdlib>
 
 #include <string>
 #include <iostream>
 #include <regex>
 #include <map>
 #include <sstream>
+#include <iomanip>
 
 #include "class_partialdecomp.h"
 #include "cons_decomp.h"
-#include "wrapper_partialdecomp.h"
 #include "cons_decomp.hpp"
 #include "scoretype.h"
 
 /* column headers */
 #define DEFAULT_COLUMN_MIN_WIDTH  4 /**< min width of a column in the menu table */
-#define DEFAULT_COLUMN_MAX_WIDTH 10 /**< max width of a column (also determines max width of column header abbreviation) */
-#define DEFAULT_COLUMNS "nr id nbloc nmacon nlivar nmavar nstlva score history pre nopcon nopvar sel" /**< default column headers */
 #define DEFAULT_SORT_HEADER "score"
 
 #define DEFAULT_MENULENGTH 10 /**< initial number of entries in menu */
 
+/**< default column headers */
+const char* DEFAULT_COLUMNS[] {"nr", "id", "nbloc", "nmacon", "nlivar", "nmavar", "nstlva", "score", "history", "pre", "nopcon", "nopvar", "sel"};
+
 namespace gcg
 {
 
-/** rettype is used to store the return type of a callback function */
-enum RETTYPE{
+/** RETTYPE is used to store the return type of a callback function */
+enum RETTYPE
+{
    UNKNOWN,    /**< dummy default to catch errors */
    INTEGER,    /**< integer */
    FLOAT,      /**< float */
@@ -62,19 +64,74 @@ enum RETTYPE{
    STRING      /**< char* */
 };
 
-/** callback for getters of column infos */
-typedef void (*callback)(SCIP*, int);
+using UNKNOWN_DUMMY_TYPE = bool;
+static
+UNKNOWN_DUMMY_TYPE UNKNOWN_DUMMY_CALLBACK(SCIP* scip, int id)
+{
+   return UNKNOWN_DUMMY_TYPE();
+}
 
 /** storage for column information */
-struct Columninfo{
-   std::string header;  /**< table header for the column */
-   std::string desc;    /**< description of the column entries used in the menu help */
-   callback getter;     /**< callback to get the infos displayed in the column for a given scip & partialdec id */
-   RETTYPE type;        /**< return type of the getter */
+class AbstractColumn
+{
+public:
+   AbstractColumn(const char* columnHeader, const char* columnDesc, RETTYPE columnType) :
+         header(columnHeader), desc(columnDesc), type(columnType) {}
 
-    Columninfo(std::string nheader, std::string ndesc, callback ngetter, RETTYPE ntype) :
-    header(nheader), desc(ndesc), getter(ngetter), type(ntype) {}
-    /**< constructor for easier initialization */
+   virtual ~AbstractColumn() = default;
+
+   virtual int compareValues(SCIP* scip, int firstId, int secondId) = 0;
+
+   virtual std::string getValueAsString(SCIP* scip, int id) = 0;
+
+   RETTYPE getReturnType() const { return type; }
+
+   std::string header;  /**< table header of the column */
+   std::string desc;    /**< description of the column entries used in the menu help */
+
+private:
+   RETTYPE type;        /**< return type of the getter */
+};
+
+template <class T>
+class Column: public AbstractColumn
+{
+public:
+   Column(const char* columnHeader, const char* columnDesc, T (*columnCallback)(SCIP*, int), RETTYPE columnType) :
+         AbstractColumn(columnHeader, columnDesc, columnType), callback(columnCallback) {}
+
+   ~Column() override = default;
+
+   T getValue(SCIP* scip, int id) { return callback(scip, id); }
+
+   std::string getValueAsString(SCIP* scip, int id) override
+   {
+      std::ostringstream sstream;
+      sstream << std::fixed << std::setprecision(2) << getValue(scip, id);
+      return sstream.str();
+   }
+
+   int compareValues(SCIP* scip, int firstId, int secondId) override
+   {
+       if( getReturnType() == UNKNOWN )
+       {
+          return 0;
+       }
+       else
+       {
+          T val1 = getValue(scip, firstId);
+          T val2 = getValue(scip, secondId);
+          if( val1 == val2 )
+             return 0;
+          else if( val1 < val2 )
+             return -1;
+          else
+             return 1;
+       }
+   }
+
+private:
+   T (*callback)(SCIP*, int);
 };
 
 bool updateIdList(
@@ -112,54 +169,30 @@ bool updateIdList(
  */
 static
 void sortPartialdecList(
-   SCIP* scip,                      /**< SCIP data structure */
-   std::vector<int>& idlist,        /**< current list of partialdec ids */
-   std::string header,              /**< header of column to sort by */
-   std::vector<Columninfo*> columns,/**< column infos */
-   bool asc                         /**< whether to sort ascending or descending */
+   SCIP* scip,                             /**< SCIP data structure */
+   std::vector<int>& idlist,               /**< current list of partialdec ids */
+   std::string& header,                    /**< header of column to sort by */
+   std::vector<AbstractColumn*>& columns,  /**< vector of pointers to columns */
+   bool asc                                /**< whether to sort ascending or descending */
    )
 {
    /* find the column infos for the given header */
-   for(auto column : columns)
+   for( auto column : columns )
    {
-      if( column->header.find( header ) == 0 )
+      if( column->header.find(header) == 0 )
       {
          /* sort the id list according to given order using the callback getter of the column */
-         if(column->type == INTEGER)
+         if( column->getReturnType() != UNKNOWN )
          {
             /* the callback has to be parsed to expect an int output */
-            if(asc)
-               std::sort(idlist.begin(), idlist.end(), [&](const int a, const int b) {return ((*( (int(*)(SCIP*, int)) column->getter))(scip, a) < (*( (int(*)(SCIP*, int)) column->getter))(scip, b)); });
+            if( asc )
+               std::stable_sort(idlist.begin(), idlist.end(), [&](const int a, const int b) { return column->compareValues(scip, a, b) < 0; });
             else
-               std::sort(idlist.begin(), idlist.end(), [&](const int a, const int b) {return ((*( (int(*)(SCIP*, int)) column->getter))(scip, a) > (*( (int(*)(SCIP*, int)) column->getter))(scip, b)); });
-         }
-         else if(column->type == FLOAT)
-         {
-            /* the callback has to be parsed to expect a float output */
-            if(asc)
-               std::sort(idlist.begin(), idlist.end(), [&](const int a, const int b) {return ((*( (float(*)(SCIP*, int)) column->getter))(scip, a) < (*( (float(*)(SCIP*, int)) column->getter))(scip, b)); });
-            else
-               std::sort(idlist.begin(), idlist.end(), [&](const int a, const int b) {return ((*( (float(*)(SCIP*, int)) column->getter))(scip, a) > (*( (float(*)(SCIP*, int)) column->getter))(scip, b)); });
-         }
-         else if(column->type == BOOLEAN)
-         {
-            /* the callback has to be parsed to expect a SCIP_Bool output */
-            if(asc)
-               std::sort(idlist.begin(), idlist.end(), [&](const int a, const int b) {return ((*( (SCIP_Bool(*)(SCIP*, int)) column->getter))(scip, a) < (*( (SCIP_Bool(*)(SCIP*, int)) column->getter))(scip, b)); });
-            else
-               std::sort(idlist.begin(), idlist.end(), [&](const int a, const int b) {return ((*( (SCIP_Bool(*)(SCIP*, int)) column->getter))(scip, a) > (*( (SCIP_Bool(*)(SCIP*, int)) column->getter))(scip, b)); });
-         }
-         else if(column->type == STRING)
-         {
-            /* the callback has to be parsed to expect a char* output, the comparison requires another cast into string */
-            if(asc)
-               std::sort(idlist.begin(), idlist.end(), [&](const int a, const int b) {return ( (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, a)) < (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, b))); });
-            else
-               std::sort(idlist.begin(), idlist.end(), [&](const int a, const int b) {return ( (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, a)) > (std::string) ((*( (char*(*)(SCIP*, int)) column->getter))(scip, b))); });
+               std::stable_sort(idlist.begin(), idlist.end(), [&](const int a, const int b) { return column->compareValues(scip, b, a) < 0; });
          }
          break;
-     }
-  }
+      }
+   }
 }
 
 
@@ -281,7 +314,7 @@ SCIP_RETCODE outputCharXTimes(
 static
 SCIP_RETCODE GCGdialogShowMenu(
    SCIP* scip,                            /**< SCIP data structure */
-   std::vector<Columninfo*> columns,      /**< list of column headers/ info sources */
+   std::vector<AbstractColumn*>& columns, /**< vector of pointers to columns */
    unsigned int& npartialdecs,            /**< max number of partialdecs */
    const int startindex,                  /**< index (in partialdec list) of uppermost partialdec in extract */
    int menulength,                        /**< number of menu entries */
@@ -336,12 +369,12 @@ SCIP_RETCODE GCGdialogShowMenu(
    borderline = " ";
 
    /* add each column header */
-   for(auto column : columns)
+   for( auto column : columns )
    {
       /* "score" is a wildcard for the current score, relace it with actual scoretype */
       std::string header = column->header;
       std::string newheader;
-      if(header != "score")
+      if( header != "score" )
          newheader = header;
       else
          newheader = GCGscoretypeGetShortName(GCGconshdlrDecompGetScoretype(scip));
@@ -350,9 +383,9 @@ SCIP_RETCODE GCGdialogShowMenu(
       assert(columnlength.find(header) == columnlength.end());
       columnlength.insert(std::pair<std::string,int>(header, 0));
       /* if header is smaller than min column width, add spaces to header first */
-      if(newheader.size() < DEFAULT_COLUMN_MIN_WIDTH)
+      if( newheader.size() < DEFAULT_COLUMN_MIN_WIDTH )
       {
-         for(int i = 0; i < (DEFAULT_COLUMN_MIN_WIDTH - (int) newheader.size()); i++)
+         for( int i = 0; i < (DEFAULT_COLUMN_MIN_WIDTH - (int) newheader.size()); i++ )
          {
             headerline += " ";
             borderline += "-";
@@ -361,7 +394,7 @@ SCIP_RETCODE GCGdialogShowMenu(
       }
       /* add header to headerline and add #chars of header as '-' to borderline*/
       headerline += newheader;
-      for(int i = 0; i < (int) newheader.size(); i++)
+      for( int i = 0; i < (int) newheader.size(); i++ )
          borderline += "-";
       columnlength.at(header) += (int) newheader.size();
       /* add space to both lines as column border */
@@ -388,7 +421,7 @@ SCIP_RETCODE GCGdialogShowMenu(
 
    /* go through all partialdecs that should currently be displayed,
     * so from startindex on menulength many entries if there are that much left in the list */
-   for(int i = startindex; i < startindex + menulength && i < (int) idlist.size(); ++i)
+   for( int i = startindex; i < startindex + menulength && i < (int) idlist.size(); ++i )
    {
       /* get current partialdec id */
       int partialdecid = idlist.at(i);
@@ -397,52 +430,24 @@ SCIP_RETCODE GCGdialogShowMenu(
       SCIPdialogMessage(scip, NULL, " ");
 
       /* go through the columns and write the entry for each one */
-      for(auto column : columns)
+      for( auto column : columns )
       {
-         std::string towrite;
-         /* get the type of the callback function that is the getter for this column */
-         RETTYPE type = column->type;
-         /* get the header of this column */
+         std::ostringstream sstream;
          std::string header = column->header;
 
+         /* write spaces to fill out the columnwidth */
+         sstream << std::setw(columnlength.at(header));
+
          /* call the getter of the column depending on the given return type */
-         if(type == UNKNOWN)
+         if( header == "nr" )
          {
-            /* "nr" and "id" are special cases and should be the only ones where the type is UNKNOWN */
-            if(header == "nr")
-               /* "nr" is the current position of the partialdec in the menu list */
-               towrite = std::to_string(i);
-            else if(header == "id")
-               /* "id" is the partialdec's id */
-               towrite = std::to_string(partialdecid);
-         }
-         else if(type == INTEGER)
-            /* convert the callback function to int rettype, call it on (scip, partialdecid) and convert the result to a string */
-            towrite = std::to_string( (*( (int(*)(SCIP*, int)) column->getter ))(scip, partialdecid) );
-         else if(type == FLOAT)
-         {
-            /* convert the callback function to float rettype, call it on (scip, partialdecid) */
-            float number = (*( (float(*)(SCIP*, int)) column->getter ))(scip, partialdecid);
-            /* convert the result to a string and set the number of digits (i.e.letters) to the width of the column */
-            towrite = std::to_string(number).substr(0, columnlength.at(header));
-         }
-         else if(type == BOOLEAN)
-            /* convert the callback function to SCIP_Bool rettype, call it on (scip, partialdecid) and check the result */
-            towrite = ( (*( (SCIP_Bool(*)(SCIP*, int)) column->getter ))(scip, partialdecid) ) ? "yes" : "no";
-         else if(type == STRING)
-         {
-            /* convert the callback function and call it on (scip, partialdecid, char*) */
-            char buffer[SCIP_MAXSTRLEN];
-            (*((void *(*)(SCIP *, int, char*)) column->getter))(scip, partialdecid, buffer);
-            towrite = buffer;
+            sstream << i;
          }
          else
-            towrite = " ";
-
-         /* write spaces to fill out the columnwidth until towrite */
-         outputCharXTimes(scip, ' ', (columnlength.at(header) - (int) towrite.size()));
-         /* write actual value of the column +1 space for border */
-         SCIPdialogMessage(scip, NULL, "%s ", towrite.c_str());
+         {
+            sstream << column->getValueAsString(scip, partialdecid);
+         }
+         SCIPdialogMessage(scip, NULL, "%s ", sstream.str().c_str());
       }
 
       /* continue to next line */
@@ -451,6 +456,7 @@ SCIP_RETCODE GCGdialogShowMenu(
 
    /* at the end of the table add a line */
    outputCharXTimes(scip, '=', linelength);
+   SCIPdialogMessage(scip, NULL, "\n");
 
    return SCIP_OKAY;
 }
@@ -461,8 +467,8 @@ SCIP_RETCODE GCGdialogShowMenu(
  * @returns SCIP status */
 static
 SCIP_RETCODE GCGdialogShowLegend(
-   SCIP* scip,                         /**< SCIP data structure */
-   std::vector<Columninfo*> columns    /**< list of column headers/ info sources */
+   SCIP* scip,                            /**< SCIP data structure */
+   std::vector<AbstractColumn*>& columns  /**< vector of pointers to columns */
    )
 {
    assert(scip != NULL);
@@ -499,13 +505,13 @@ SCIP_RETCODE GCGdialogShowLegend(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "------------", "-----------");
 
    /* add legend entry for each header abbreviation */
-   for(auto column : columns)
+   for( auto column : columns )
    {
       /* get table header */
-      std::string header = column->header;
+      std::string& header = column->header;
 
       /* print the header with the description */
-      if(header != "score")
+      if( header != "score" )
       {
          SCIPdialogMessage(scip, NULL, "%30s     %s\n", header.c_str(), column->desc.c_str());
       }
@@ -569,7 +575,7 @@ SCIP_RETCODE GCGdialogSelectVisualize(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
-   std::vector<int>        idlist      /**< current list of partialdec ids */
+   std::vector<int>&       idlist      /**< current list of partialdec ids */
    )
 {
    char* ntovisualize;
@@ -612,7 +618,7 @@ SCIP_RETCODE GCGdialogInspectPartialdec(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
-   std::vector<int>        idlist      /**< current list of partialdec ids */
+   std::vector<int>&       idlist      /**< current list of partialdec ids */
    )
 {
    char* ntoinspect;
@@ -754,14 +760,14 @@ SCIP_RETCODE GCGdialogSortAsc(
  */
 static
 bool isHeader(
-   std::string header,                 /**< header to check */
-   std::vector<Columninfo*> columns    /**< list of column headers/ info sources */
+   std::string& header,                  /**< header to check */
+   std::vector<AbstractColumn*>& columns /**< vector of pointers to columns */
    )
 {
    /* check if the given header is a (prefix of a) registered table header */
-   for(auto column : columns)
+   for( auto column : columns )
    {
-      if(column->header.find( header ) == 0 )
+      if(column->header.find(header) == 0 )
          return true;
    }
    /* else return false */
@@ -777,7 +783,7 @@ SCIP_RETCODE GCGdialogSortBy(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
-   std::vector<Columninfo*> columns,   /**< list of column headers/ info sources */
+   std::vector<AbstractColumn*>& columns, /**< vector of pointers to columns */
    std::string&            sortby      /**< table header, identifies by which column to sort by */
    )
 {
@@ -794,13 +800,13 @@ SCIP_RETCODE GCGdialogSortBy(
 
    /* if the input is a valid table header, change sortby */
    std::string input = newsort;
-   if(commandlen != 0)
+   if( commandlen != 0 )
    {
       /* all headers (including the "score" wildcard) are valid */
-      if(isHeader(input, columns))
+      if( isHeader(input, columns) )
          sortby = input;
       /* if the score abbreviation is entered, the header would not be in the column info */
-      else if(input == GCGscoretypeGetShortName(GCGconshdlrDecompGetScoretype(scip)))
+      else if( input == GCGscoretypeGetShortName(GCGconshdlrDecompGetScoretype(scip)) )
          sortby = "score";
    }
    return SCIP_OKAY;
@@ -848,7 +854,7 @@ SCIP_RETCODE GCGdialogExecCommand(
    SCIP*                   scip,          /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr,    /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,        /**< dialog for user input management */
-   std::vector<Columninfo*> columns,      /**< list of column headers/ info sources */
+   std::vector<AbstractColumn*>& columns, /**< vector of pointers to columns */
    char*                   command,       /**< the command that was entered */
    int&                    startindex,    /**< number of partialdec there the menu extract starts */
    int&                    menulength,    /**< current menu length to be modified */
@@ -940,6 +946,15 @@ SCIP_RETCODE GCGdialogExecCommand(
    return SCIP_OKAY;
 }
 
+static
+int partialdecIdDummyGetter(
+   SCIP*                   scip,
+   int                     id
+   )
+{
+   return id;
+}
+
 extern "C" {
 
 SCIP_RETCODE GCGdialogExecExplore(
@@ -968,106 +983,121 @@ SCIP_RETCODE GCGdialogExecExplore(
 
    /* set initial columns */
    /* the column information has the header, a getter for the column info and the return type of the getter */
-   std::vector<Columninfo*> columns;
-   char columnstr[] = DEFAULT_COLUMNS;
-   char* tempcolumns = strtok(columnstr, " ");
+   std::vector<AbstractColumn*> columns;
    /* go through each column header and determine its getter */
-   while(tempcolumns != NULL)
+   for( auto columnname : DEFAULT_COLUMNS )
    {
-      /* get each column header of default */
-      char newchar[DEFAULT_COLUMN_MAX_WIDTH]; // cutting string at max column width if longer
-      strcpy(newchar, tempcolumns);
-      /* 'score' is a wildcard! replace by score name later */
+      /**@note devs: if you want to add new headers, please specify their getters here! */
+      AbstractColumn* column;
 
-      /* determine what callback the header should receive as its getter */
-      if( strcmp(newchar, "nr") == 0)
-         /* "nr" represents the position in the menu table and is determined by the menu */
-         columns.push_back(new Columninfo(newchar, "number of the decomposition (use this number for selecting the decomposition)", NULL, UNKNOWN));
-      else if(strcmp(newchar, "id") == 0)
-         /* "id" is the partialdec id, the list of ids is known to the menu */
-         columns.push_back(new Columninfo(newchar, "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)", NULL, UNKNOWN));
-      else
+      if( strcmp(columnname, "nr") == 0 )
       {
-         /* devs: if you want to add new headers, please specify their getters here! */
-         RETTYPE type = UNKNOWN;
-         callback funct;
-         std::string desc;
-
-         if(strcmp(newchar, "nbloc") == 0)
-         {
-            funct = (void(*)(SCIP*, int)) &GCGconshdlrDecompGetNBlocksByPartialdecId;
-            type = INTEGER;
-            desc = "number of blocks";
-         }
-         else if(strcmp(newchar, "nmacon") == 0)
-         {
-            funct = (void(*)(SCIP*, int)) &GCGconshdlrDecompGetNMasterConssByPartialdecId;
-            type = INTEGER;
-            desc = "number of master constraints";
-         }
-         else if(strcmp(newchar, "nmavar") == 0)
-         {
-            funct = (void(*)(SCIP*, int)) &GCGconshdlrDecompGetNMasterVarsByPartialdecId;
-            type = INTEGER;
-            desc = "number of \"master only\" variables (also called \"static\", do not occur in blocks)";
-         }
-         else if(strcmp(newchar, "nlivar") == 0)
-         {
-            funct = (void(*)(SCIP*, int)) &GCGconshdlrDecompGetNLinkingVarsByPartialdecId;
-            type = INTEGER;
-            desc = "number of linking variables";
-         }
-         else if(strcmp(newchar, "nstlva") == 0)
-         {
-            funct = (void(*)(SCIP*, int)) &GCGconshdlrDecompGetNStairlinkingVarsByPartialdecId;
-            type = INTEGER;
-            desc = "number of stair linking variables";
-         }
-         else if(strcmp(newchar, "score") == 0)
-         {
-            funct = (void(*)(SCIP*, int)) &GCGconshdlrDecompGetScoreByPartialdecId;
-            type = FLOAT;
-            /* "score" is a wildcard, its description is determined only when needed */
-            desc = " ";
-         }
-         else if(strcmp(newchar, "history") == 0)
-         {
-            funct = (void(*)(SCIP*, int)) &GCGconshdlrDecompGetDetectorHistoryByPartialdecId;
-            type = STRING;
-            desc = "list of detectors (their chars) which  worked on this decomposition ";
-         }
-         else if(strcmp(newchar, "pre") == 0)
-         {
-            funct = (void(*)(SCIP*, int)) &GCGconshdlrDecompIsPresolvedByPartialdecId;
-            type = BOOLEAN;
-            desc = "is this decomposition for the presolved problem?";
-         }
-         else if(strcmp(newchar, "nopcon") == 0)
-         {
-            funct = (void(*)(SCIP*, int)) &GCGconshdlrDecompGetNOpenConssByPartialdecId;
-            type = INTEGER;
-            desc = "number of open (=unassigned) constraints";
-         }
-         else if(strcmp(newchar, "nopvar") == 0)
-         {
-            funct = (void(*)(SCIP*, int)) &GCGconshdlrDecompGetNOpenVarsByPartialdecId;
-            type = INTEGER;
-            desc = "number of open (=unassigned) variables";
-         }
-         else if(strcmp(newchar, "sel") == 0)
-         {
-            funct = (void(*)(SCIP*, int)) &GCGconshdlrDecompIsSelectedByPartialdecId;
-            type = BOOLEAN;
-            desc = "is this decomposition selected?";
-         }
-
-         /* add the column if a corresponding callback was found */
-         if(type != UNKNOWN)
-            columns.push_back(new Columninfo(newchar, desc, funct, type));
+         /* special case: "nr" represents the position in the menu table and is determined by the menu */
+         column = new Column<UNKNOWN_DUMMY_TYPE>(
+            columnname,
+            "number of the decomposition (use this number for selecting the decomposition)",
+            &UNKNOWN_DUMMY_CALLBACK,
+            UNKNOWN);
+      }
+      else if( strcmp(columnname, "id") == 0 )
+      {
+         /* "id" is the partialdec id, the list of ids is known to the menu */
+         column = new Column<int>(
+            columnname,
+            "id of the decomposition (identifies the decomposition in reports/statistics/visualizations/etc.)",
+            &partialdecIdDummyGetter,
+            INTEGER);
+      }
+      else if( strcmp(columnname, "nbloc") == 0 )
+      {
+         column = new Column<int>(
+            columnname,
+            "number of blocks",
+            &GCGconshdlrDecompGetNBlocksByPartialdecId,
+            INTEGER);
+      }
+      else if( strcmp(columnname, "nmacon") == 0 )
+      {
+         column = new Column<int>(
+            columnname,
+            "number of master constraints",
+            &GCGconshdlrDecompGetNMasterConssByPartialdecId,
+            INTEGER);
+      }
+      else if( strcmp(columnname, "nmavar") == 0 )
+      {
+         column = new Column<int>(
+            columnname,
+            "number of \"master only\" variables (also called \"static\", do not occur in blocks)",
+            &GCGconshdlrDecompGetNMasterVarsByPartialdecId,
+            INTEGER);
+      }
+      else if( strcmp(columnname, "nlivar") == 0 )
+      {
+         column = new Column<int>(
+            columnname,
+            "number of linking variables",
+            &GCGconshdlrDecompGetNLinkingVarsByPartialdecId,
+            INTEGER);
+      }
+      else if( strcmp(columnname, "nstlva") == 0 )
+      {
+         column = new Column<int>(
+            columnname,
+            "number of stair linking variables",
+            &GCGconshdlrDecompGetNStairlinkingVarsByPartialdecId,
+            INTEGER);
+      }
+      else if( strcmp(columnname, "score") == 0 )
+      {
+         column = new Column<float>(
+            columnname,
+            " ",
+            &GCGconshdlrDecompGetScoreByPartialdecId,
+            FLOAT);
+      }
+      else if( strcmp(columnname, "history") == 0 )
+      {
+         column = new Column<std::string>(
+            columnname,
+            "list of detectors (their chars) which  worked on this decomposition",
+            &GCGconshdlrDecompGetDetectorHistoryByPartialdecId,
+            STRING);
+      }
+      else if( strcmp(columnname, "pre") == 0 )
+      {
+         column = new Column<SCIP_Bool>(
+            columnname,
+            "is this decomposition for the presolved problem?",
+            &GCGconshdlrDecompIsPresolvedByPartialdecId,
+            BOOLEAN);
+      }
+      else if( strcmp(columnname, "nopcon") == 0 )
+      {
+         column = new Column<int>(
+            columnname,
+            "number of open (=unassigned) constraints",
+            &GCGconshdlrDecompGetNOpenConssByPartialdecId,
+            INTEGER);
+      }
+      else if( strcmp(columnname, "nopvar") == 0 )
+      {
+         column = new Column<int>(
+            columnname,
+            "number of open (=unassigned) variables",
+            &GCGconshdlrDecompGetNOpenVarsByPartialdecId,
+            INTEGER);
+      }
+      else if( strcmp(columnname, "sel") == 0 )
+      {
+         column = new Column<SCIP_Bool>(
+            columnname,
+            "is this decomposition selected?",
+            &GCGconshdlrDecompIsSelectedByPartialdecId,
+            BOOLEAN);
       }
 
-      /* get the next item in the list of headers */
-      tempcolumns = strtok (NULL, " ");
+      columns.push_back(column);
    }
 
    /* check that the given default sorting header is valid */
@@ -1089,6 +1119,9 @@ SCIP_RETCODE GCGdialogExecExplore(
 
       GCGdialogExecCommand(scip, dialoghdlr, dialog, columns, command, startindex, menulength, finished, idlist, sortasc, sortby, listopenpartialdecs);
    }
+
+   for( auto column : columns )
+      delete column;
 
    return SCIP_OKAY;
 }
