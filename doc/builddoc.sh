@@ -83,7 +83,7 @@ getAdditionalResources () {( set -e
   # Getting Bootstrap stuff
   wget https://scip.zib.de/bootstrap/css/bootstrap.min.css --output-document html/bootstrap/css/bootstrap.min.css --no-check-certificate
   wget https://scip.zib.de/bootstrap/css/custom.css --output-document html/bootstrap/css/custom.css --no-check-certificate
-  sed -i.bak 's/https:\/\/scip.zib.de\/images/..\/..\/img/g' html/bootstrap/css/custom.css && rm html/bootstrap/css/custom.css.bak
+  sed -i.bak 's/https:\/\/scipopt\.org\/images/..\/..\/img/g' html/bootstrap/css/custom.css && rm html/bootstrap/css/custom.css.bak
   # Getting fonts and css
   wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css --output-document html/bootstrap/fonts/font-awesome.min.css
   wget https://fonts.googleapis.com/css?family=Open+Sans --output-document html/bootstrap/fonts/font-googleapis.css
