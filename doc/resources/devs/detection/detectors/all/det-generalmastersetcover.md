@@ -3,7 +3,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | generalmastersetcover       | ✓ |   |   |  
+| `d` | generalmastersetcover       | ✓ |   |   |
 
 This detector sets the following constraint types as master constraints:
 - set covering constraints

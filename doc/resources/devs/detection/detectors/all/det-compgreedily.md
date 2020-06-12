@@ -5,7 +5,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | compgreedily                | ✓ | ✓ |   |
+| `g` | compgreedily                | ✓ | ✓ |   |
 
 This detector assigns the open cons and open vars of the partialdec greedily.
 

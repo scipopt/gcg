@@ -5,7 +5,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | hcgpartition                | ✓ | ✓ |   |
+| `G` | hcgpartition                | ✓ | ✓ |   |
 
 This detector detects [single-bordered](#single-bordered) structures through graph partitioning on **column hypergraphs**. This leads to decompositions without linking constraints.
 

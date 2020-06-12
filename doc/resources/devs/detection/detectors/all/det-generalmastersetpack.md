@@ -3,7 +3,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | generalmastersetpack        | ✓ |   |   |  
+| `?` | generalmastersetpack        | ✓ |   |   | 
 
 This detector sets the following constraint types as master constraints:
 - set packing constraints

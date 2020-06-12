@@ -5,7 +5,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | hrcgpartition               | ✓ | ✓ |   |
+| `a` | hrcgpartition               | ✓ | ✓ |   |
 
 
 This detector detects [arrowhead](#arrowhead) structures through graph partitioning on **column-row hypergraphs**.

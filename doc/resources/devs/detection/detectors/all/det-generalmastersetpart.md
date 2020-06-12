@@ -3,7 +3,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | generalmastersetpart        | ✓ |   |   |  
+| `?` | generalmastersetpart        | ✓ |   |   |
 
 This detector sets the following constraint types as master constraints:
 - set partitioning constraints

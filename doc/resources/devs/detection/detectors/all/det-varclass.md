@@ -4,7 +4,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | varclass                    | ✓ |   |   |
+| `v` | varclass                    | ✓ |   |   |
 
 This detector uses the classes identified by the **variable classifiers**.
 

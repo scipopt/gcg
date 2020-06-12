@@ -1,11 +1,10 @@
 # Connected Detector (nonewlinkingvars) {#det-connected_nonewlinkingvars}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 ### Overview
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | connected_noNewLinkingVars  | ✓ | ✓ |   |
+| `?` | connected_noNewLinkingVars  | ✓ | ✓ |   |
 
 This detector assigns all dependent open constraints and variables and completes the partial decomposition by breadth-first search.
 

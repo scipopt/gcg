@@ -5,7 +5,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | stairheur                   | ✓ |   |   |
+| `s` | stairheur                   | ✓ |   |   |
 
 This detector finds staircase structures via a modified version of a
  **matrix reordering** algorithm, Rank-Order-Clustering (ROC)[2].

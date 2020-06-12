@@ -5,7 +5,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | postprocess                 |   |   | ✓ |
+| `p` | postprocess                 |   |   | ✓ |
 
 This detector is our default postprocessing detector. It is called to add all unassigned constraints/variables to the master.
 

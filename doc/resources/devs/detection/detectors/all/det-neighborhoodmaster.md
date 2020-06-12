@@ -4,7 +4,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | neighborhoodmaster          | ✓ |   |   |
+| `n` | neighborhoodmaster          | ✓ |   |   |
 
 This detector calculates cons-cons adjacency (if not already done) and sorts constraints according to the size of their neighborhood. It then searches for two consecutive constraints with largest size difference (according neighborhood size) in the sorted constraints. All constraints having a larger neighborhood than the second one are then assigned to the master.
 

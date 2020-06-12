@@ -4,7 +4,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | consclass                   | ✓ |   |   |
+| `c` | consclass                   | ✓ |   |   |
 
 This detector uses the classes identified by the **constraint classifiers**.
 

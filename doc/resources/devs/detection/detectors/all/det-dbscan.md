@@ -1,12 +1,13 @@
 # Clustering (DBSCAN) {#det-dbscan}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-This detector performs DBSCAN clustering.
+### Overview
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | dbscan                      | ✓ |   |   |
+| `t` | dbscan                      | ✓ |   |   |
 
+This detector performs DBSCAN clustering.
 
 ### Details
 #### Distance Measure

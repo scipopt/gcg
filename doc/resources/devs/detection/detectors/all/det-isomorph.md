@@ -1,11 +1,13 @@
 # Isomorph Detector {#det-isomorph}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-This detector finds subproblems that can be aggregated thus reducing the symmetry of the problem using color preserving automorphisms and bliss.
+### Overview
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | isomorph                    | ✓ |   |   |
+| `I` | isomorph                    | ✓ |   |   |
+
+This detector finds subproblems that can be aggregated thus reducing the symmetry of the problem using color preserving automorphisms and bliss.
 
 Note: This detector requires BLISS, i.e. a `make` with `BLISS=true`.
 

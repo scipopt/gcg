@@ -5,7 +5,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | hrgpartition                | ✓ |   |   |
+| `r` | hrgpartition                | ✓ |   |   |
 
 This detector detects [single-bordered](#single-bordered) structures through graph partitioning on **row hypergraphs**. This leads to decompositions without linking variables.
 

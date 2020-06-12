@@ -4,7 +4,7 @@
 
 | ID |          Full Name          | Propagate | Finish | Postprocess |
 |----|-----------------------------|:---------:|:------:|:-----------:|
-| ?  | densemasterconss            | ✓ |   |   |
+| `D` | densemasterconss            | ✓ |   |   |
 
 This detector adds all constraints that have at least two variable coefficients that are closer than \f$1\f$ apart from another to the master constraints.
 
