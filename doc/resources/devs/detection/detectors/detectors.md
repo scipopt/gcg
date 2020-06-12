@@ -59,4 +59,5 @@ Duplicates of the consclass detector:
 If you want to **write your own** detector, please consult the "How to"
 for that.
 
-@ref own-detector\n
+@ref own-detector
+\n

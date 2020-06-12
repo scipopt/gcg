@@ -21,12 +21,12 @@ Our **detection** is executed in a **loop**, where all detectors are called one 
 Furthermore, one can also activate an alternative different detection mode, namely the
 **benders detection**. A description of both is given on the following subpages.
 
-@subpage detection-process\n
-@subpage benders\n
+@subpage detection-process \n
+@subpage benders \n
 
 \n
 If you want to **write your own** classifiers and detectors, please consult the "How to"
 for that.
 
-@ref own-classifier\n
-@ref own-detector\n
+@ref own-classifier \n
+@ref own-detector \n

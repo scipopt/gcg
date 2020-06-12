@@ -19,4 +19,5 @@ a short description of their functionality.
 If you want to **write your own** classifier, please consult the "How to"
 for that.
 
-@ref own-classifier\n
+@ref own-classifier
+\n

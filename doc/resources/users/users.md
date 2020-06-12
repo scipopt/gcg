@@ -9,7 +9,7 @@ The **first part** of the User's Guide offers a short introduction to GCG, which
 \n
 The **second part** explains how the interactive menu and more features of GCG can be used.
 
- @subpage menu \n
+ @subpage interactive-menu \n
  @subpage explore-menu \n
  @subpage visu
 

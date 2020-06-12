@@ -62,7 +62,7 @@ SCIP_RETCODE GCGsetHeuristics(
 
 #ifdef __cplusplus
 }
-/* @} */
-#endif
 
+#endif
+/** @} */
 #endif

@@ -47,6 +47,7 @@ extern "C" {
 
 /**
  * @ingroup TYPEDEFINITIONS
+ *
  * @{
  */
 
@@ -661,7 +662,7 @@ void GCGmasterVarSetIndex(
 #ifdef __cplusplus
 }
 
-/* @} */
-#endif
 
+#endif
+/** @} */
 #endif

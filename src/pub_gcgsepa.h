@@ -63,7 +63,7 @@ SCIP_RETCODE GCGsetSeparators(
 
 #ifdef __cplusplus
 }
-/* @} */
-#endif
 
+#endif
+/** @} */
 #endif

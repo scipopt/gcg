@@ -1372,8 +1372,8 @@ SCIP_RETCODE cmpGraphPair(
 
 /** compare two graphs w.r.t. automorphism */
 SCIP_RETCODE cmpGraphPair(
-   SCIP*                   scip,               /** SCIP data structure */
-   gcg::PARTIALDECOMP*     partialdec,         /** partialdec the graphs should be compared for */
+   SCIP*                   scip,               /**< SCIP data structure */
+   gcg::PARTIALDECOMP*     partialdec,         /**< partialdec the graphs should be compared for */
    int                     block1,             /**< index of first pricing prob */
    int                     block2,             /**< index of second pricing prob */
    SCIP_RESULT*            result,             /**< result pointer to indicate success or failure */
@@ -1439,4 +1439,3 @@ SCIP_RETCODE cmpGraphPair(
    delete ptrhook;
    return SCIP_OKAY;
 }
-

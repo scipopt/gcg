@@ -10,6 +10,8 @@ doc/html/index.html
 doc/html/doc-*/
 doc/html/scripts/*
 doc/html/MathJax/
+doc/resources/misc/parameters.set
+doc/resources/users/features/interactive-menu/menu.html
 gcg-*.metis*
 lib/include/bliss
 lib/include/cliquer

@@ -1,6 +1,6 @@
 # Command Line Arguments {#exec-args}
 
-GCG can be started from the command line without the @ref menu "interactive menu".
+GCG can be started from the command line without the @ref interactive-menu "interactive menu".
 For example, this is used by @ref u1 "Use Case 1" of the @ref users "Users Guide". The
 following arguments can be used when executing GCG:
 

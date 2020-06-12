@@ -16,7 +16,7 @@ solution and thus we take it into our Restricted Master Problem.
 If you want to know more about this process, please check out the respective explanation pages
 for the components used during the pricing.
 
-@subpage pricing-process\n
+@subpage pricing-process \n
 @subpage pricing-solvers
 
 \n
@@ -25,10 +25,10 @@ We collected some information about those and also some hints about possibly imp
 **parameter configurations** for specific problems.
 It is assumed that you are rather familiar with the technical details of Branch-and-Price here.
 
-@subpage pricing-params\n
+@subpage pricing-params \n
 
 \n
 If you want to **write your own** pricing solver, please consult the "How to"
 for that.
 
-@ref own-pricing-solver\n
+@ref own-pricing-solver \n

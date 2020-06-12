@@ -162,7 +162,7 @@ struct struct_colorinformation
    SCIP_Bool getOnlySign();
 };
 
-/* @} */
-#endif
 
+#endif
+/** @} */
 #endif /* PUB_BLISS_H_ */

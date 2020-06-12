@@ -42,7 +42,7 @@ GCG>
 As you can see, **some points are marked with brackets** `<...>`. This means that if you e.g. execute `change`,
 you will be prompted **additional commands** on what exactly you want to change. All **other points directly execute** the given command.\n
 
-> To search through the interactive menu, please consult our feature guide @ref menu.
+> To search through the interactive menu, please consult our feature guide @ref interactive-menu.
 
 ### Make GCG know your problem with `read`
 With this command, GCG **reads your problem file**. If you, for example, go to `/check/instances/bpp` from your GCG root

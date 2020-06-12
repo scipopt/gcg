@@ -75,7 +75,7 @@ SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
 You also have to initialize the fields in struct SCIP_DetectorData afterwards. For freeing the
 detector data, see @ref CLS_FREE.
 
-You may also add user parameters for your detector, see the parameters documentation of \SCIP for how to add user parameters and
+You may also add user parameters for your detector, see the parameters documentation of SCIP for how to add user parameters and
 the method SCIPincludeDetectionBorderheur() in dec_connected.c for an example.
 
 

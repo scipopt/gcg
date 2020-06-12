@@ -723,7 +723,7 @@ int DECgetNDecomps(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/* @} */
+/** @} */
 #ifdef __cplusplus
 }
 

@@ -147,7 +147,7 @@ SCIP_Real GCGsolverGetHeurRedcostTime(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
-/* @} */
+/** @} */
 #ifdef __cplusplus
 }
 

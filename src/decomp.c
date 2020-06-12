@@ -1611,7 +1611,7 @@ SCIP_RETCODE DECdecompSetDetectorChain(
    )
 {
    int d;
-   
+
    /* resize detectorchain */
    int size = SCIPcalcMemGrowSize( scip, ndetectors);
    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray( scip, &decomp->detectorchain, size ) );
@@ -1643,7 +1643,7 @@ int DECdecompGetDetectorChainSize(
 /** sets the id of the original partialdec */
 void DECdecompSetPartialdecID(
    DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   int                   id
+   int                   id                   /**< ID of partialdec */
    )
 {
    assert(decomp != NULL);
@@ -2667,7 +2667,7 @@ SCIP_RETCODE fillConstoblock(
    SCIP_Bool*            consismaster,       /**< array of flags whether a constraint belongs to the master problem */
    int                   nblocks,            /**< number of blocks */
    SCIP_HASHMAP*         constoblock,        /**< current hashmap from constraints to block numbers */
-   SCIP_HASHMAP*         newconstoblock,     /**< new hashmap from constraints to block numbers, to be filled */ 
+   SCIP_HASHMAP*         newconstoblock,     /**< new hashmap from constraints to block numbers, to be filled */
    int*                  blockrepresentative /**< array of blockrepresentatives */
    )
 {
