@@ -465,10 +465,8 @@ public:
     * @brief assigns all open constraints and open variables trivially
     *
     *  strategy: assigns all open conss and vars to blocks if they can be refined there, otherwise to the master
-    * 
-    *  @note partialdecomps should usually be completed by a detector, only use this function if you know what you are doing.
     *
-    *  @return scip return code
+    *  @note partialdecomps should usually be completed by a detector, only use this function if you know what you are doing
     */
    void complete(
       );
@@ -1540,7 +1538,6 @@ public:
    /**
     * @brief assigns a variable by name to a block
     * @see fixVarToBlock
-    * @returns SCIP return code
     */
    void fixVarToBlockByName(
       const char*           varname,             /**< name of the variable */
@@ -1550,7 +1547,6 @@ public:
    /**
     * @brief assgins a constraint by name as master
     * @see fixConsToMaster
-    * @returns SCIP return code
     */
    void fixConsToMasterByName(
       const char*           consname   /**< name of cons to fix as master cons */
@@ -1559,7 +1555,6 @@ public:
    /**
     * @brief assigns a variable with given name as master
     * @see fixVarToMaster
-    * @returns SCIP return code
     */
    void fixVarToMasterByName(
       const char*           varname              /**< name of the variable */
@@ -1568,7 +1563,6 @@ public:
    /**
     * @brief assigns a variable by name to the linking variables
     * @see fixVarToLinking
-    * @returns SCIP return code
     */
    void fixVarToLinkingByName(
       const char*           varname              /**< name of the variable */
@@ -1787,15 +1781,17 @@ public:
     * checks if aggregation of sub problems is possible and stores the corresponding aggregation information
     *
     * @param ignoreDetectionLimits Set to true if computation should ignore detection limits. This parameter is ignored if the patched bliss version is not present.
-   */
+    */
    void calcAggregationInformation(
       bool ignoreDetectionLimits
       );
 
-   /**< @brief gets vector of indices of all constraints assigned to blocks
-    * 
-    * @note conssforblocks[k] contains a vector of indices of all constraints assigned to block k 
-    * @returns vector of a vector of indices for each block */
+   /**
+    * @brief gets vector of indices of all constraints assigned to blocks
+    *
+    * @note conssforblocks[k] contains a vector of indices of all constraints assigned to block k
+    * @returns vector of a vector of indices for each block
+    */
    std::vector<std::vector<int>>& getConssForBlocks(
    );
 

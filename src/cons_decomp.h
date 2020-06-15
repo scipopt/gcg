@@ -515,7 +515,6 @@ void GCGconshdlrDecompDeregisterAllPartialdecs(
  * used before calling SCIPfreeTransform(), 
  * set to true to revoke presolving 
  * (e.g. if unpresolved decomposition is used, and transformation is not successful)
- * @returns scip return code
  */
 extern
 void GCGconshdlrDecompFreeOrigOnExit(
@@ -875,7 +874,6 @@ SCIP_RETCODE GCGconshdlrDecompSetDetection(
 
 /**
  * @brief Sets the currently used scoretype
- * @returns SCIP return code
  */
 extern
 void GCGconshdlrDecompSetScoretype(
