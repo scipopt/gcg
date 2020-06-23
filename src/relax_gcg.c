@@ -450,7 +450,6 @@ SCIP_RETCODE ensureSizeMasterConss(
       int newsize = SCIPcalcMemGrowSize(scip, size);
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss, newsize) );
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss, newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss, newsize) );
       relaxdata->maxmasterconss = newsize;
 
    }
@@ -1438,7 +1437,6 @@ SCIP_RETCODE initRelaxProblemdata(
    /* arrays of constraints belonging to the master problems */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss) );
 
    if( relaxdata->npricingprobs > 0 )
    {
@@ -1567,7 +1565,7 @@ SCIP_RETCODE saveOriginalVarMastercoeffs(
    SCIP_VAR**            origvars,           /**< original variables array */
    int                   norigvars,          /**< size of original variables array*/
    int                   nmasterconss,       /**< size of masterconns array */
-   SCIP_CONS**           linearmasterconss,  /**< linear master constraints array */
+   SCIP_CONS**           origmasterconss,    /**< orig master constraints array */
    SCIP_CONS**           masterconss         /**< master constraints */
    )
 {
@@ -1579,7 +1577,7 @@ SCIP_RETCODE saveOriginalVarMastercoeffs(
    assert(norigvars >= 0);
    assert(nmasterconss >= 0);
    assert(masterconss != NULL);
-   assert(linearmasterconss != NULL);
+   assert(origmasterconss != NULL);
 
    /* for original variables, save the coefficients in the master problem */
    for( v = 0; v < norigvars; v++ )
@@ -1598,13 +1596,17 @@ SCIP_RETCODE saveOriginalVarMastercoeffs(
       SCIP_Real* vals;
       int nvars;
 
-      vars = SCIPgetVarsLinear(scip, linearmasterconss[i]);
-      nvars = SCIPgetNVarsLinear(scip, linearmasterconss[i]);
-      vals = SCIPgetValsLinear(scip, linearmasterconss[i]);
+      nvars = GCGconsGetNVars(scip, origmasterconss[i]);
+      SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &vals, nvars) );
+      GCGconsGetVars(scip, origmasterconss[i], vars, nvars);
+      GCGconsGetVals(scip, origmasterconss[i], vals, nvars);
       for( v = 0; v < nvars; v++ )
       {
          SCIP_CALL( GCGoriginalVarAddCoef(scip, vars[v], vals[v], masterconss[i]) );
       }
+      SCIPfreeBufferArray(scip, &vals);
+      SCIPfreeBufferArray(scip, &vars);
    }
 
    return SCIP_OKAY;
@@ -1619,15 +1621,12 @@ SCIP_RETCODE createMasterprobConss(
 {
    SCIP_CONS** masterconss;
    int nmasterconss;
-   SCIP_CONS* newcons;
    SCIP_CONS* mastercons;
    int c;
-   SCIP_Bool success;
    char name[SCIP_MAXSTRLEN];
 
    masterconss = DECdecompGetLinkingconss(relaxdata->decomp);
    nmasterconss = DECdecompGetNLinkingconss(relaxdata->decomp);
-   newcons = NULL;
 
  //  assert(SCIPhashmapGetNElements(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
    for( c = 0; c < nmasterconss; ++c )
@@ -1642,31 +1641,21 @@ SCIP_RETCODE createMasterprobConss(
       if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[c])), "origbranch") == 0 )
          continue;
 
-      /* TODO: In the Benders' decomposition case the copy of the constraint could be used.
-       * Current implementation creates the constraints with the master variables. */
-      success = FALSE;
-      /* copy the constraint (dirty trick, we only need lhs and rhs, because variables are added later) */
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "linear_%s", SCIPconsGetName(masterconss[c]));
-      SCIP_CALL( SCIPgetConsCopy(scip, scip, masterconss[c], &newcons, SCIPconsGetHdlr(masterconss[c]),
-            relaxdata->hashorig2origvar, NULL, name,
-            FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, &success) );
-      assert(success);
-
       /* in the Benders' decomposition mode, all variables from the linking constraints need to be added to the master
        * problem. Additionally, if the original problem is solved directly, then we must ensure that all variables are
        * added to the master problem.
        */
       if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS || GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
       {
-         nconsvars = GCGconsGetNVars(scip, newcons);
+         nconsvars = GCGconsGetNVars(scip, masterconss[c]);
          consvarssize = nconsvars;
 
          SCIP_CALL( SCIPallocBufferArray(scip, &consvars, consvarssize) );
          SCIP_CALL( SCIPallocBufferArray(scip, &consvals, consvarssize) );
          SCIP_CALL( SCIPallocClearBufferArray(scip, &releasevars, consvarssize) );
 
-         SCIP_CALL( GCGconsGetVars(scip, newcons, consvars, nconsvars) );
-         SCIP_CALL( GCGconsGetVals(scip, newcons, consvals, nconsvars) );
+         SCIP_CALL( GCGconsGetVars(scip, masterconss[c], consvars, nconsvars) );
+         SCIP_CALL( GCGconsGetVals(scip, masterconss[c], consvals, nconsvars) );
 
          for( i = 0; i < nconsvars; i++ )
          {
@@ -1723,7 +1712,7 @@ SCIP_RETCODE createMasterprobConss(
       /* create and add corresponding linear constraint in the master problem */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "m_%s", SCIPconsGetName(masterconss[c]));
       SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &mastercons, name, nconsvars, consvars, consvals,
-            SCIPgetLhsLinear(scip, newcons), SCIPgetRhsLinear(scip, newcons),
+            GCGconsGetLhs(scip, masterconss[c]), GCGconsGetRhs(scip, masterconss[c]),
             TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
 
       SCIP_CALL( SCIPaddCons(relaxdata->masterprob, mastercons) );
@@ -1732,7 +1721,6 @@ SCIP_RETCODE createMasterprobConss(
       SCIP_CALL( ensureSizeMasterConss(scip, relaxdata, relaxdata->nmasterconss+1) );
       SCIP_CALL( SCIPcaptureCons(scip, masterconss[c]) );
       relaxdata->origmasterconss[relaxdata->nmasterconss] = masterconss[c];
-      relaxdata->linearmasterconss[relaxdata->nmasterconss] = newcons;
       relaxdata->masterconss[relaxdata->nmasterconss] = mastercons;
       relaxdata->nmasterconss++;
 
@@ -1755,7 +1743,7 @@ SCIP_RETCODE createMasterprobConss(
       }
    }
    assert(relaxdata->nmasterconss == nmasterconss);
-   SCIP_CALL( saveOriginalVarMastercoeffs(scip, SCIPgetVars(scip), SCIPgetNVars(scip), relaxdata->nmasterconss, relaxdata->linearmasterconss, relaxdata->masterconss) );
+   SCIP_CALL( saveOriginalVarMastercoeffs(scip, SCIPgetVars(scip), SCIPgetNVars(scip), relaxdata->nmasterconss, relaxdata->origmasterconss, relaxdata->masterconss) );
 
    return SCIP_OKAY;
 }
@@ -1993,13 +1981,6 @@ SCIP_RETCODE createMaster(
                TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
          SCIP_CALL( SCIPaddCons(relaxdata->masterprob, relaxdata->convconss[i]) );
       }
-   }
-
-   /* set integral objective status in the extended problem, if possible */
-   if( SCIPisObjIntegral(scip) && relaxdata->discretization && SCIPgetNContVars(scip) == 0
-      && relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
-   {
-      SCIP_CALL( SCIPsetObjIntegral(relaxdata->masterprob) );
    }
 
    /* display statistics */
@@ -2457,6 +2438,95 @@ SCIP_RETCODE GCGsetStructDecomp(
 }
 
 
+/** transforms the master problem **/
+static
+SCIP_RETCODE transformMaster(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAX*           relax               /**< relaxator data structure */
+   )
+{
+   SCIP* masterprob;
+   SCIP_VAR** vars;
+   SCIP_CONS** oldconss;
+   SCIP_RELAXDATA* relaxdata;
+   int i;
+   int nvars;
+   int permutationseed;
+   int oxfordcomma;
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
+   SCIP_CALL( SCIPtransformProb(masterprob) );
+   SCIP_CALL( SCIPduplicateBufferArray(scip, &oldconss, relaxdata->masterconss, relaxdata->nmasterconss) );
+
+   /* transform the master constraints */
+   SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss,
+                                 relaxdata->masterconss, relaxdata->masterconss) );
+   for( i = 0; i < relaxdata->nmasterconss; ++i )
+   {
+      SCIP_CALL( SCIPreleaseCons(masterprob, &(oldconss[i])) );
+   }
+   SCIPfreeBufferArray(scip, &oldconss);
+
+   /* transform the convexity constraints */
+   for( i = 0; i < relaxdata->npricingprobs; i++ )
+   {
+      if( relaxdata->convconss[i] != NULL )
+      {
+         SCIP_CONS* oldcons = relaxdata->convconss[i];
+         SCIP_CALL( SCIPreleaseCons(masterprob, &oldcons) );
+         SCIP_CALL( SCIPtransformCons(masterprob, relaxdata->convconss[i], &(relaxdata->convconss[i])) );
+      }
+   }
+
+   nvars = SCIPgetNVars(scip);
+   vars = SCIPgetVars(scip);
+
+   /* transform the linking variable constraints */
+   for( i = 0; i < nvars; ++i )
+   {
+      assert(GCGvarIsOriginal(vars[i]));
+
+      if( GCGoriginalVarIsLinking(vars[i]) )
+      {
+         int j;
+         SCIP_CONS** linkconss;
+         linkconss = GCGlinkingVarGetLinkingConss(vars[i]);
+         /* the linking constraints could be NULL if the Benders' decomposition is used. */
+         if( linkconss != NULL )
+         {
+            for( j = 0; j < relaxdata->npricingprobs; ++j )
+            {
+               if( linkconss[j] != NULL )
+               {
+                  SCIP_CONS* tempcons;
+                  SCIP_CALL( SCIPtransformCons(masterprob, linkconss[j], &(tempcons)) );
+                  GCGlinkingVarSetLinkingCons(vars[i], tempcons, j);
+               }
+            }
+         }
+      }
+   }
+   for( i = 0; i < relaxdata->nvarlinkconss; ++i )
+   {
+      SCIP_CONS* transcons;
+
+      SCIP_CALL( SCIPgetTransformedCons(masterprob, relaxdata->varlinkconss[i], &transcons) );
+      assert(transcons != NULL);
+
+      SCIP_CALL( SCIPreleaseCons(masterprob, &relaxdata->varlinkconss[i]) );
+      relaxdata->varlinkconss[i] = transcons;
+   }
+   return SCIP_OKAY;
+}
+
+
 /** initializes and transforms relaxator data */
 static
 SCIP_RETCODE initRelaxator(
@@ -2464,7 +2534,6 @@ SCIP_RETCODE initRelaxator(
    SCIP_RELAX*           relax               /**< relaxator data structure */
    )
 {
-   SCIP* masterprob;
    SCIP_VAR** vars;
    SCIP_CONS** oldconss;
    SCIP_RELAXDATA* relaxdata;
@@ -2581,80 +2650,12 @@ SCIP_RETCODE initRelaxator(
             relaxdata->npricingprobs) );
    }
 
-   masterprob = relaxdata->masterprob;
-   assert(masterprob != NULL);
-
    relaxdata->lastsolvednodenr = -1;
-
-   SCIP_CALL( SCIPtransformProb(masterprob) );
-   SCIP_CALL( SCIPduplicateBufferArray(scip, &oldconss, relaxdata->masterconss, relaxdata->nmasterconss) );
-
-   /* transform the master constraints */
-   SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss,
-         relaxdata->masterconss, relaxdata->masterconss) );
-   for( i = 0; i < relaxdata->nmasterconss; ++i )
-   {
-      SCIP_CALL( SCIPreleaseCons(masterprob, &(oldconss[i])) );
-   }
-   SCIPfreeBufferArray(scip, &oldconss);
-
-   /* transform the decomposition */
-   SCIP_CALL( DECdecompTransform(scip, relaxdata->decomp) );
-
-   /* transform the convexity constraints */
-   for( i = 0; i < relaxdata->npricingprobs; i++ )
-   {
-      if( relaxdata->convconss[i] != NULL )
-      {
-         SCIP_CONS* oldcons = relaxdata->convconss[i];
-         SCIP_CALL( SCIPreleaseCons(masterprob, &oldcons) );
-         SCIP_CALL( SCIPtransformCons(masterprob, relaxdata->convconss[i], &(relaxdata->convconss[i])) );
-      }
-   }
-
-   nvars = SCIPgetNVars(scip);
-   vars = SCIPgetVars(scip);
-
-   /* transform the linking variable constraints */
-   for( i = 0; i < nvars; ++i )
-   {
-      assert(GCGvarIsOriginal(vars[i]));
-
-      if( GCGoriginalVarIsLinking(vars[i]) )
-      {
-         int j;
-         SCIP_CONS** linkconss;
-         linkconss = GCGlinkingVarGetLinkingConss(vars[i]);
-         /* the linking constraints could be NULL if the Benders' decomposition is used. */
-         if( linkconss != NULL )
-         {
-            for( j = 0; j < relaxdata->npricingprobs; ++j )
-            {
-               if( linkconss[j] != NULL )
-               {
-                  SCIP_CONS* tempcons;
-                  SCIP_CALL( SCIPtransformCons(masterprob, linkconss[j], &(tempcons)) );
-                  GCGlinkingVarSetLinkingCons(vars[i], tempcons, j);
-               }
-            }
-         }
-      }
-   }
-   for( i = 0; i < relaxdata->nvarlinkconss; ++i )
-   {
-      SCIP_CONS* transcons;
-
-      SCIP_CALL( SCIPgetTransformedCons(masterprob, relaxdata->varlinkconss[i], &transcons) );
-      assert(transcons != NULL);
-
-      SCIP_CALL( SCIPreleaseCons(masterprob, &relaxdata->varlinkconss[i]) );
-      relaxdata->varlinkconss[i] = transcons;
-   }
 
    /* set objective limit in master problem if objective limit in original problem is finite */
    if( !SCIPisInfinity(scip, (int) SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) )
    {
-      SCIP_CALL( SCIPsetObjlimit(masterprob, (int) SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) );
+      SCIP_CALL( SCIPsetObjlimit(relaxdata->masterprob, (int) SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) );
    }
 
    return SCIP_OKAY;
@@ -2675,7 +2676,6 @@ void initRelaxdata(
    relaxdata->hashorig2origvar = NULL;
    relaxdata->lastsolvednodenr = 0;
 
-   relaxdata->linearmasterconss = NULL;
    relaxdata->origmasterconss = NULL;
    relaxdata->masterconss = NULL;
    relaxdata->nmasterconss = 0;
@@ -2788,6 +2788,50 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
 }
 
 
+/** initialize the relaxator and master problem for solving the original problem by Dantzig-Wolfe reformulation and
+ * Benders' decomposition
+ */
+static
+SCIP_RETCODE initializeMasterProblemSolve(
+   SCIP*                 scip,               /**< the SCIP data structure */
+   SCIP_RELAX*           relax               /**< the relaxator */
+)
+{
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_Bool cutoff;
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* the relaxator is initialised if it has not been previously initialised */
+   if( !relaxdata->relaxisinitialized )
+   {
+      /* set integral objective status in the extended problem, if possible */
+      if( SCIPisObjIntegral(scip) && relaxdata->discretization && SCIPgetNContVars(scip) == 0
+          && relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
+      {
+         SCIP_CALL( SCIPsetObjIntegral(relaxdata->masterprob) );
+      }
+      SCIP_CALL( transformMaster(scip, relax) );
+      /* transform the decomposition */
+      // SCIP_CALL( DECdecompTransform(scip, relaxdata->decomp) );
+      SCIP_CALL( GCGconsOrigbranchAddRootCons(scip) );
+      relaxdata->relaxisinitialized = TRUE;
+      assert(relaxdata->decomp != NULL);
+   }
+
+   /* construct the LP in the original problem */
+   SCIP_CALL( SCIPconstructLP(scip, &cutoff) );
+   assert(!cutoff);
+   SCIP_CALL( SCIPflushLP(scip) );
+
+   return SCIP_OKAY;
+}
+
+
 /** solving process initialization method of relaxator (called when branch and bound process is about to begin) */
 static
 SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
@@ -2858,6 +2902,8 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
       SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "No reformulation will be performed. Solving the original model.\n");
    }
 
+   SCIP_CALL( initRelaxator(scip, relax) );
+
    return SCIP_OKAY;
 }
 
@@ -2889,7 +2935,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    for( i = 0; i < relaxdata->nmasterconss; i++ )
    {
       SCIP_CALL( SCIPreleaseCons(scip, &relaxdata->origmasterconss[i]) );
-      SCIP_CALL( SCIPreleaseCons(scip, &relaxdata->linearmasterconss[i]) );
       SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->masterconss[i]) );
    }
    for( i = 0; i < relaxdata->npricingprobs; i++ )
@@ -2904,7 +2949,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->varlinkconss), relaxdata->nvarlinkconss);
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->varlinkconsblock), relaxdata->nvarlinkconss);
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss);
-   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss);
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss);
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->convconss), relaxdata->npricingprobs);
 
@@ -2948,42 +2992,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    }
 
    relaxdata->relaxisinitialized = FALSE;
-
-   return SCIP_OKAY;
-}
-
-
-/** initialize the relaxator and master problem for solving the original problem by Dantzig-Wolfe reformulation and
- * Benders' decomposition
- */
-static
-SCIP_RETCODE initializeMasterProblemSolve(
-   SCIP*                 scip,               /**< the SCIP data structure */
-   SCIP_RELAX*           relax               /**< the relaxator */
-   )
-{
-   SCIP_RELAXDATA* relaxdata;
-   SCIP_Bool cutoff;
-
-   assert(scip != NULL);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   /* the relaxator is initialised if it has not been previously initialised */
-   if( !relaxdata->relaxisinitialized )
-   {
-      SCIP_CALL( initRelaxator(scip, relax) );
-      SCIP_CALL( GCGconsOrigbranchAddRootCons(scip) );
-      relaxdata->relaxisinitialized = TRUE;
-      assert(relaxdata->decomp != NULL);
-   }
-
-   /* construct the LP in the original problem */
-   SCIP_CALL( SCIPconstructLP(scip, &cutoff) );
-   assert(!cutoff);
-   SCIP_CALL( SCIPflushLP(scip) );
 
    return SCIP_OKAY;
 }
@@ -3793,7 +3801,6 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
 
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP_CONS* newcons;
    SCIP_CONS* mastercons;
    char name[SCIP_MAXSTRLEN];
 
@@ -3817,20 +3824,10 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   newcons = NULL;
-
-   /* copy the constraint (dirty trick, we only need lhs and rhs, because variables are added later) */
-   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "linear_%s", SCIPconsGetName(cons));
-   SCIP_CALL( SCIPgetConsCopy(scip, scip, cons, &newcons, SCIPconsGetHdlr(cons),
-         relaxdata->hashorig2origvar, NULL, name,
-         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, &success) );
-
-   assert(success && newcons != NULL);
-
    /* create and add corresponding linear constraint in the master problem */
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "m_%s", SCIPconsGetName(cons));
    SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &mastercons, name, 0, NULL, NULL,
-         SCIPgetLhsLinear(scip, newcons), SCIPgetRhsLinear(scip, newcons),
+         GCGconsGetLhs(scip, cons), GCGconsGetRhs(scip, cons),
          TRUE, TRUE, TRUE, TRUE, TRUE, SCIPconsIsLocal(cons), TRUE, FALSE, FALSE,
          SCIPconsIsStickingAtNode(cons)) );
 
@@ -3876,7 +3873,6 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    SCIP_CALL( ensureSizeMasterConss(scip, relaxdata, relaxdata->nmasterconss+1) );
    SCIP_CALL( SCIPcaptureCons(scip, cons) );
    relaxdata->origmasterconss[relaxdata->nmasterconss] = cons;
-   relaxdata->linearmasterconss[relaxdata->nmasterconss] = newcons;
    relaxdata->masterconss[relaxdata->nmasterconss] = mastercons;
 
    SCIP_CALL( GCGmasterAddMasterconsToHashmap(relaxdata->masterprob, relaxdata->masterconss[relaxdata->nmasterconss],
@@ -4135,27 +4131,6 @@ SCIP_CONS** GCGgetOrigMasterConss(
    assert(relaxdata != NULL);
 
    return relaxdata->origmasterconss;
-}
-
-/** returns the linear counterpart of the contraints in the original problem that correspond
- * to the constraints in the master problem
- */
-SCIP_CONS** GCGgetLinearOrigMasterConss(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-
-   assert(scip != NULL);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   return relaxdata->linearmasterconss;
 }
 
 /** returns the convexity constraint for the given block */
