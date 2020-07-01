@@ -582,7 +582,7 @@ SCIP_RETCODE setuparrays(
    }
 
    /* add color information for master constraints */
-   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origscip);
+   SCIP_CONS** origmasterconss = GCGgetOrigMasterConss(origscip);
    int nmasterconss = GCGgetNMasterConss(origscip);
 
    SCIP_CALL( reallocMemory(origscip, colorinfo, nmasterconss, SCIPgetNVars(origscip)) );
@@ -590,8 +590,10 @@ SCIP_RETCODE setuparrays(
    for( i = 0; i < nmasterconss && *result == SCIP_SUCCESS; ++i )
    {
       SCIP_CONS* mastercons = origmasterconss[i];
-      SCIP_Real* curvals = SCIPgetValsLinear(origscip, mastercons);
-      ncurvars = SCIPgetNVarsLinear(origscip, mastercons);
+      ncurvars = GCGconsGetNVars(origscip, mastercons);
+      SCIP_Real* curvals;
+      SCIP_CALL( SCIPallocBufferArray(origscip, &curvals, ncurvars) );
+      GCGconsGetVals(origscip, mastercons, curvals, ncurvars);
 
       /* add right color for master constraint */
       AUT_CONS* scons = new AUT_CONS(origscip, mastercons);
@@ -615,6 +617,7 @@ SCIP_RETCODE setuparrays(
          if( !added )
             delete scoef;
       }
+      SCIPfreeBufferArray(origscip, &curvals);
    }
 
    return SCIP_OKAY;
@@ -801,7 +804,7 @@ SCIP_RETCODE createGraph(
    BMSclearMemoryArray(nnodesoffset, nscips);
    BMSclearMemoryArray(mastercoefindex, nscips);
 
-   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origscip);
+   SCIP_CONS** origmasterconss = GCGgetOrigMasterConss(origscip);
    int nmasterconss = GCGgetNMasterConss(origscip);
 
    for( s = 0; s < nscips && *result == SCIP_SUCCESS; ++s)
@@ -897,9 +900,11 @@ SCIP_RETCODE createGraph(
       for( i = 0; i < nmasterconss && *result == SCIP_SUCCESS; ++i )
       {
          SCIP_CONS* mastercons = origmasterconss[i];
-         curvars = SCIPgetVarsLinear(origscip, mastercons);
-         curvals = SCIPgetValsLinear(origscip, mastercons);
-         ncurvars = SCIPgetNVarsLinear(origscip, mastercons);
+         ncurvars = GCGconsGetNVars(origscip, mastercons);
+         SCIP_CALL( SCIPallocBufferArray(origscip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPallocBufferArray(origscip, &curvals, ncurvars) );
+         GCGconsGetVars(origscip, mastercons, curvars, ncurvars);
+         GCGconsGetVals(origscip, mastercons, curvals, ncurvars);
          for( j = 0; j < ncurvars; ++j )
          {
             if( GCGoriginalVarIsLinking(curvars[j]) )
@@ -927,6 +932,8 @@ SCIP_RETCODE createGraph(
             SCIPdebugMessage("master nz for var <%s> (id: %d) (value: %f, color: %d)\n", SCIPvarGetName(curvars[j]), nnodes, curvals[j], color);
             nnodes++;
          }
+         SCIPfreeBufferArray(origscip, &curvals);
+         SCIPfreeBufferArray(origscip, &curvars);
       }
       SCIPdebugMessage("Iteration %d: nnodes = %d\n", s, nnodes);
       assert(*result == SCIP_SUCCESS && (unsigned int) nnodes == h->get_nof_vertices());
@@ -939,9 +946,11 @@ SCIP_RETCODE createGraph(
    for( i = 0; i < nmasterconss && *result == SCIP_SUCCESS; ++i )
    {
       SCIP_CONS* mastercons = origmasterconss[i];
-      curvars = SCIPgetVarsLinear(origscip, mastercons);
-      curvals = SCIPgetValsLinear(origscip, mastercons);
-      ncurvars = SCIPgetNVarsLinear(origscip, mastercons);
+      ncurvars = GCGconsGetNVars(origscip, mastercons);
+      SCIP_CALL( SCIPallocBufferArray(origscip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPallocBufferArray(origscip, &curvals, ncurvars) );
+      GCGconsGetVars(origscip, mastercons, curvars, ncurvars);
+      GCGconsGetVals(origscip, mastercons, curvals, ncurvars);
 
       SCIPdebugMessage("Handling cons <%s>\n", SCIPconsGetName(mastercons));
 
@@ -1006,6 +1015,8 @@ SCIP_RETCODE createGraph(
          /* get node index for pricing variable and connect masterconss, coeff and pricingvar nodes */
          h->add_edge((unsigned int) coefnodeindex, (unsigned int) nnodesoffset[ind] + SCIPgetNConss(pricingscip) + SCIPvarGetProbindex(pricingvar));
       }
+      SCIPfreeBufferArray(origscip, &curvals);
+      SCIPfreeBufferArray(origscip, &curvars);
    }
 
    //free all allocated memory

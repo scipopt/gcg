@@ -50,6 +50,7 @@
 #include "sepa_master.h"
 #include "objscip/objscip.h"
 #include "scip/cons_linear.h"
+#include "scip_misc.h"
 
 namespace gcg {
 
@@ -525,7 +526,7 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
    )
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
-   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origprob);
+   SCIP_CONS** origmasterconss = GCGgetOrigMasterConss(origprob);
    SCIP_CONS** masterconss = GCGgetMasterConss(origprob);
    SCIP_CONS** linkingconss = GCGgetVarLinkingconss(origprob);
    int nlinkingconss = GCGgetNVarLinkingconss(origprob);
@@ -549,9 +550,11 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       SCIP_Real lhs; /* can also be rhs, but we need only one */
 
       SCIP_CONS* origcons = origmasterconss[i];
-      nvars = SCIPgetNVarsLinear(origprob, origcons);
-      vars = SCIPgetVarsLinear(origprob, origcons);
-      vals = SCIPgetValsLinear(origprob, origcons);
+      nvars = GCGconsGetNVars(origprob, origcons);
+      SCIP_CALL( SCIPallocBufferArray(origprob, &vars, nvars) );
+      SCIP_CALL( SCIPallocBufferArray(origprob, &vals, nvars) );
+      GCGconsGetVars(origprob, origcons, vars, nvars);
+      GCGconsGetVals(origprob, origcons, vals, nvars);
 
       SCIP_Real dual =  pricingtype->consGetDual(scip_, masterconss[i]);
       SCIP_Real stabdual;
@@ -562,14 +565,16 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
 
       if( SCIPisFeasPositive(scip_, stabdual) )
       {
-         lhs = SCIPgetLhsLinear(origprob, origcons);
+         lhs = GCGconsGetLhs(origprob, origcons);
       }
       else if( SCIPisFeasNegative(scip_, stabdual) )
       {
-         lhs = SCIPgetRhsLinear(origprob, origcons);
+         lhs = GCGconsGetRhs(origprob, origcons);
       }
       else
       {
+         SCIPfreeBufferArray(origprob, &vals);
+         SCIPfreeBufferArray(origprob, &vars);
          continue;
       }
 
@@ -608,6 +613,8 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       assert(!SCIPisInfinity(scip_, ABS(lhs)));
 
       gradientproduct += (dual - stabcenterconsvals[i]) * lhs;
+      SCIPfreeBufferArray(origprob, &vals);
+      SCIPfreeBufferArray(origprob, &vars);
    }
 
    /* mastercuts */
@@ -727,7 +734,7 @@ void Stabilization::calculateSubgradient(
 )
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
-   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origprob);
+   SCIP_CONS** origmasterconss = GCGgetOrigMasterConss(origprob);
 
    SCIP_CONS** linkingconss = GCGgetVarLinkingconss(origprob);
    int nlinkingconss = GCGgetNVarLinkingconss(origprob);
@@ -751,9 +758,11 @@ void Stabilization::calculateSubgradient(
       SCIP_Real infeasibility;
 
       SCIP_CONS* origcons = origmasterconss[i];
-      nvars = SCIPgetNVarsLinear(origprob, origcons);
-      vars = SCIPgetVarsLinear(origprob, origcons);
-      vals = SCIPgetValsLinear(origprob, origcons);
+      nvars = GCGconsGetNVars(origprob, origcons);
+      SCIPallocBufferArray(origprob, &vars, nvars);
+      SCIPallocBufferArray(origprob, &vals, nvars);
+      GCGconsGetVars(origprob, origcons, vars, nvars);
+      GCGconsGetVals(origprob, origcons, vals, nvars);
 
       SCIP_Real dual = stabcenterconsvals[i];
       assert(!SCIPisInfinity(scip_, ABS(dual)));
@@ -794,11 +803,11 @@ void Stabilization::calculateSubgradient(
 
       if( SCIPisFeasPositive(scip_, dual) /* || SCIPisInfinity(origprob, SCIPgetRhsLinear(origprob, origcons)) */)
       {
-         infeasibility = SCIPgetLhsLinear(origprob, origcons) - activity;
+         infeasibility = GCGconsGetLhs(origprob, origcons) - activity;
       }
       else if( SCIPisFeasNegative(scip_, dual) /* || SCIPisInfinity(origprob, SCIPgetLhsLinear(origprob, origcons)) */)
       {
-         infeasibility = SCIPgetRhsLinear(origprob, origcons) - activity;
+         infeasibility = GCGconsGetRhs(origprob, origcons) - activity;
       }
 
       assert(subgradientconsvals != NULL);
@@ -808,6 +817,9 @@ void Stabilization::calculateSubgradient(
 
       if( SCIPisPositive(scip_, SQR(infeasibility)) )
          subgradientnorm += SQR(infeasibility);
+
+      SCIPfreeBufferArray(origprob, &vals);
+      SCIPfreeBufferArray(origprob, &vars);
    }
 
    /* mastercuts */

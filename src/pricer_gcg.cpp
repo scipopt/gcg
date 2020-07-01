@@ -733,7 +733,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
-   origconss = GCGgetLinearOrigMasterConss(origprob);
+   origconss = GCGgetOrigMasterConss(origprob);
 
    /* set objective value of all variables in the pricing problems to 0 (for farkas pricing) /
     * to the original objective of the variable (for redcost pricing)
@@ -822,9 +822,11 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 #endif
 
          /* for all variables in the constraint, modify the objective of the corresponding variable in a pricing problem */
-         consvars = SCIPgetVarsLinear(origprob, origconss[i]);
-         consvals = SCIPgetValsLinear(origprob, origconss[i]);
-         nconsvars = SCIPgetNVarsLinear(origprob, origconss[i]);
+         nconsvars = GCGconsGetNVars(origprob, origconss[i]);
+         SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
+         SCIP_CALL( SCIPallocBufferArray(scip_, &consvals, nconsvars) );
+         GCGconsGetVars(origprob, origconss[i], consvars, nconsvars);
+         GCGconsGetVals(origprob, origconss[i], consvals, nconsvars);
          for( j = 0; j < nconsvars; j++ )
          {
             int blocknr;
@@ -848,6 +850,8 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 #endif
             }
          }
+         SCIPfreeBufferArray(scip_, &consvals);
+         SCIPfreeBufferArray(scip_, &consvars);
       }
    }
 
@@ -1756,7 +1760,7 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
-   origconss = GCGgetLinearOrigMasterConss(origprob);
+   origconss = GCGgetOrigMasterConss(origprob);
 
    dualobjval = 0.0;
 
@@ -1812,9 +1816,9 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
 
       if( SCIPisFeasPositive(scip_, dualsol) )
-         boundval = SCIPgetLhsLinear(scip_, origconss[i]);
+         boundval = GCGconsGetLhs(scip_, origconss[i]);
       else if( SCIPisFeasNegative(scip_, dualsol) )
-         boundval = SCIPgetRhsLinear(scip_, origconss[i]);
+         boundval = GCGconsGetRhs(scip_, origconss[i]);
       else
          continue;
 
@@ -1916,9 +1920,11 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
       if( !SCIPisZero(scip_, dualsol) )
       {
          /* for all variables in the constraint, modify the objective of the corresponding variable in a pricing problem */
-         consvars = SCIPgetVarsLinear(origprob, origconss[i]);
-         consvals = SCIPgetValsLinear(origprob, origconss[i]);
-         nconsvars = SCIPgetNVarsLinear(origprob, origconss[i]);
+         nconsvars = GCGconsGetNVars(origprob, origconss[i]);
+         SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
+         SCIP_CALL( SCIPallocBufferArray(scip_, &consvals, nconsvars) );
+         GCGconsGetVars(origprob, origconss[i], consvars, nconsvars);
+         GCGconsGetVals(origprob, origconss[i], consvals, nconsvars);
          for( j = 0; j < nconsvars; j++ )
          {
             SCIP_VAR* mastervar;
@@ -1945,6 +1951,8 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
                stabredcosts[varindex] -= dualsol * consvals[j];
             }
          }
+         SCIPfreeBufferArray(scip_, &consvals);
+         SCIPfreeBufferArray(scip_, &consvars);
       }
    }
 
