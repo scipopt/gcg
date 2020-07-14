@@ -845,6 +845,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          DEC_DECOMP* bestdecomp;
          bestdecomp = DECgetBestDecomp(scip, TRUE);
          assert(bestdecomp != NULL);
+         DECdecompFree(scip, &bestdecomp);
 #endif
          SCIPdialogMessage(scip, NULL, "Preexisting decomposition found. Solution process started...\n");
       }
