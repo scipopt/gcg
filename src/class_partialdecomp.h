@@ -493,6 +493,16 @@ public:
    void completeByConnectedConssAdjacency(
       );
 
+   /**
+    * @brief assigns all open constraints and open variables
+    *
+    *  strategy: assigns a cons (and related vars) to a new block if possible,
+    *  if not to an existing block if possible (by means of prior var assignments)
+    *  and finally to master, if there does not exist such a block
+    */
+   void completeGreedily(
+      );
+
    /** @brief removes the given cons from master
     */
    void removeMastercons(

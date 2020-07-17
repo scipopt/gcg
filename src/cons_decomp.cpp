@@ -5638,6 +5638,56 @@ void GCGconshdlrDecompSetScoretype(
 }
 
 
+SCIP_RETCODE GCGconshdlrDecompTranslateNBestOrigPartialdecs(
+   SCIP*                 scip,
+   int                   n,
+   SCIP_Bool             completeGreedily
+)
+{
+   std::vector<std::pair<PARTIALDECOMP*, SCIP_Real> > candidates;
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->detprobdataorig == NULL )
+   {
+      resetDetprobdata(scip, TRUE);
+      resetDetprobdata(scip, FALSE);
+      return SCIP_OKAY;
+   }
+
+   if( conshdlrdata->detprobdatapres == NULL )
+      resetDetprobdata(scip, FALSE);
+
+   if( conshdlrdata->detprobdataorig->getNOpenPartialdecs() == 0 && conshdlrdata->detprobdataorig->getNFinishedPartialdecs() == 0 )
+   {
+      return SCIP_OKAY;
+   }
+
+   GCGconshdlrDecompChooseCandidatesFromSelected(scip, candidates, TRUE, TRUE);
+   if ( !candidates.empty() )
+   {
+      n = MIN(n, candidates.size());
+
+      std::vector<PARTIALDECOMP *> origpartialdecs(n);
+      for( int i = 0; i < n; ++i )
+         origpartialdecs[i] = candidates[i].first;
+
+      std::vector<PARTIALDECOMP *> partialdecstranslated = conshdlrdata->detprobdatapres->translatePartialdecs(
+         conshdlrdata->detprobdataorig, origpartialdecs);
+
+      if( !partialdecstranslated.empty())
+      {
+         PARTIALDECOMP *newpartialdec = partialdecstranslated[0];
+         if( completeGreedily && !newpartialdec->isComplete() )
+            newpartialdec->completeGreedily();
+         SCIP_CALL(addPartialdec(scip, newpartialdec));
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+
 SCIP_RETCODE GCGconshdlrDecompTranslateOrigPartialdecs(
    SCIP*                 scip
    )
