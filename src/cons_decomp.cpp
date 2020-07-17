@@ -2404,14 +2404,14 @@ SCIP_Real calcBlockAreaScore(
 
    for( int i = 0; i < partialdec->getNBlocks(); ++ i )
    {
-      blockarea += (unsigned long) partialdec->getNConssForBlock( i ) * ( (unsigned long) partialdec->getNVarsForBlock( i ) );
+      blockarea += (unsigned long) partialdec->getNConssForBlock(i) * ( (unsigned long) partialdec->getNVarsForBlock(i) );
    }
 
-   SCIP_Real blockareascore = 1. - ( (SCIP_Real) blockarea / (SCIP_Real) matrixarea );
+   SCIP_Real blockareascore = 1. - (matrixarea == 0 ? 0 : ( (SCIP_Real) blockarea / (SCIP_Real) matrixarea ));
 
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
+   SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
+   SCIP_CALL_ABORT( SCIPfreeClock(scip, &clock) );
 
    return blockareascore;
 }
@@ -3741,7 +3741,7 @@ SCIP_RETCODE GCGconshdlrDecompCalcBorderAreaScore(
    borderarea += (unsigned long) ( partialdec->getNLinkingvars() + partialdec->getNTotalStairlinkingvars() ) * (unsigned long) partialdec->getNConss();
    borderarea += (unsigned long) partialdec->getNMasterconss() * ( (unsigned long) partialdec->getNVars() - ( partialdec->getNLinkingvars() + partialdec->getNTotalStairlinkingvars() ) ) ;
 
-   *score = 1. - ( (SCIP_Real) borderarea / (SCIP_Real) matrixarea );
+   *score = 1. - (matrixarea == 0 ? 0 : ( (SCIP_Real) borderarea / (SCIP_Real) matrixarea ));
 
    partialdec->setBorderAreaScore(*score);
 
@@ -5725,7 +5725,6 @@ SCIP_RETCODE GCGconshdlrDecompTranslateOrigPartialdecs(
 
    for(; partialdeciter != partialdeciterend; ++partialdeciter )
    {
-      (*partialdeciter)->prepare();
       SCIP_CALL(addPartialdec(scip, *partialdeciter) );
    }
 
