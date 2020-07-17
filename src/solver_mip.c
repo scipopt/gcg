@@ -95,9 +95,10 @@ struct GCG_SolverData
  */
 
 /** extracts ray from pricing problem */
-static
 SCIP_RETCODE createColumnFromRay(
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
+   SCIP*                 subproblem,
+   SCIP_HASHMAP*         varmap,
    int                   probnr,             /**< problem number */
    GCG_COL**             newcol              /**< column pointer to store new column */
 )
@@ -108,10 +109,16 @@ SCIP_RETCODE createColumnFromRay(
    int nprobvars;
    int nsolvars;
    int i;
+   SCIP* solprob;
+
+   if (subproblem == NULL)
+      solprob = pricingprob;
+   else
+      solprob = subproblem;
 
    assert(pricingprob != NULL);
    assert(newcol != NULL);
-   assert(SCIPhasPrimalRay(pricingprob));
+   assert(SCIPhasPrimalRay(solprob));
 
    probvars = SCIPgetOrigVars(pricingprob);
    nprobvars = SCIPgetNOrigVars(pricingprob);
@@ -122,23 +129,30 @@ SCIP_RETCODE createColumnFromRay(
    /* store the primal ray values */
    for ( i = 0; i < nprobvars; i++ )
    {
-      if ( SCIPisZero(pricingprob, SCIPgetPrimalRayVal(pricingprob, probvars[i])) )
+      double solval;
+
+      if (varmap == NULL)
+         solval = SCIPgetPrimalRayVal(pricingprob, probvars[i]);
+      else
+         solval = SCIPgetPrimalRayVal(subproblem, SCIPhashmapGetImage(varmap, probvars[i]));
+
+      if ( SCIPisZero(solprob, solval) )
          continue;
 
-      assert(!SCIPisInfinity(pricingprob, SCIPgetPrimalRayVal(pricingprob, probvars[i])));
-      assert(!SCIPisInfinity(pricingprob, -SCIPgetPrimalRayVal(pricingprob, probvars[i])));
+      assert(!SCIPisInfinity(solprob, solval));
+      assert(!SCIPisInfinity(solprob, -solval));
 
       solvars[nsolvars] = probvars[i];
-      solvals[nsolvars] = SCIPgetPrimalRayVal(pricingprob, probvars[i]);
-      assert(!SCIPisInfinity(pricingprob, solvals[nsolvars]));
+      solvals[nsolvars] = solval;
+      assert(!SCIPisInfinity(solprob, solvals[nsolvars]));
       /* todo: check if/ensure that this value is integral! */
       nsolvars++;
 
-      SCIPdebugMessage("%s: %g (obj = %g)\n", SCIPvarGetName(probvars[i]), SCIPgetPrimalRayVal(pricingprob, probvars[i]), SCIPvarGetObj(probvars[i]));
+      SCIPdebugMessage("%s: %g (obj = %g)\n", SCIPvarGetName(probvars[i]), solval, SCIPvarGetObj(probvars[i]));
    }
 
-   SCIP_CALL( SCIPfreeSolve(pricingprob, TRUE) );
-   SCIP_CALL( SCIPtransformProb(pricingprob) );
+   SCIP_CALL( SCIPfreeSolve(solprob, TRUE) );
+   SCIP_CALL( SCIPtransformProb(solprob) );
 
    /* todo: is it okay to write pricingprob into column structure? */
    SCIP_CALL( GCGcreateGcgCol(pricingprob, newcol, probnr, solvars, solvals, nsolvars, TRUE, SCIPinfinity(pricingprob)) );
@@ -228,7 +242,6 @@ SCIP_RETCODE checkSolNew(
 }
 
 /** get the status of the pricing problem */
-static
 GCG_PRICINGSTATUS getPricingstatus(
   SCIP*                 pricingprob         /**< pricing problem SCIP data structure */
   )
@@ -312,33 +325,40 @@ SCIP_Bool solutionHasInfiniteValue(
 }
 
 /** transforms feasible solutions of the pricing problem into columns */
-static
 SCIP_RETCODE getColumnsFromPricingprob(
    SCIP*                 scip,               /**< master problem SCIP data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
+   SCIP*                 subproblem,
+   SCIP_HASHMAP*         varmap,
    int                   probnr,             /**< problem number */
    SCIP_Bool             checksols           /**< should solutions be checked extensively */
 )
 {
    SCIP_SOL** probsols;
    int nprobsols;
+   SCIP* solprob;
 
    int s;
 
-   probsols = SCIPgetSols(pricingprob);
-   nprobsols = SCIPgetNSols(pricingprob);
+   if (subproblem == NULL)
+      solprob = pricingprob;
+   else
+      solprob = subproblem;
+
+   probsols = SCIPgetSols(solprob);
+   nprobsols = SCIPgetNSols(solprob);
 
    for( s = 0; s < nprobsols; s++ )
    {
       GCG_COL* col;
       SCIP_Bool feasible;
       assert(probsols[s] != NULL);
-      SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, FALSE, FALSE) );
+      SCIP_CALL( SCIPcheckSolOrig(solprob, probsols[s], &feasible, FALSE, FALSE) );
 
       if( !feasible )
       {
          SCIPwarningMessage(pricingprob, "solution of pricing problem %d not feasible:\n", probnr);
-         SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
+         SCIP_CALL( SCIPcheckSolOrig(solprob, probsols[s], &feasible, TRUE, TRUE) );
       }
 
       /* check whether the solution is equal to one of the previous solutions */
@@ -346,16 +366,16 @@ SCIP_RETCODE getColumnsFromPricingprob(
       {
          SCIP_Bool isnew;
 
-         SCIP_CALL( checkSolNew(pricingprob, probsols, s, &isnew) );
+         SCIP_CALL( checkSolNew(solprob, probsols, s, &isnew) );
 
          if( !isnew )
             continue;
       }
 
       /* Check whether the pricing problem solution has infinite values; if not, transform it to a column */
-      if( !solutionHasInfiniteValue(pricingprob, probsols[s]) )
+      if( !solutionHasInfiniteValue(solprob, probsols[s]) )
       {
-         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &col, probnr, probsols[s], FALSE, SCIPinfinity(pricingprob)) );
+         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, subproblem, varmap, &col, probnr, probsols[s], FALSE, SCIPinfinity(solprob)) );
          SCIP_CALL( GCGpricerAddCol(scip, col) );
       }
       /* If the best solution has infinite values, try to repair it */
@@ -369,11 +389,11 @@ SCIP_RETCODE getColumnsFromPricingprob(
 
          SCIPdebugMessage("solution has infinite values, create a copy with finite values\n");
 
-         SCIP_CALL( SCIPcreateFiniteSolCopy(pricingprob, &newsol, probsols[0], &success) );
+         SCIP_CALL( SCIPcreateFiniteSolCopy(solprob, &newsol, probsols[0], &success) );
          assert(success);
          assert(newsol != NULL);
 
-         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &col, probnr, newsol, FALSE, SCIPinfinity(pricingprob)) );
+         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, subproblem, varmap, &col, probnr, newsol, FALSE, SCIPinfinity(solprob)) );
          SCIP_CALL( GCGpricerAddCol(scip, col) );
       }
    }
@@ -443,7 +463,7 @@ SCIP_RETCODE solveProblem(
       }
 
       SCIPdebugMessage("  -> unbounded, creating column from ray\n");
-      SCIP_CALL( createColumnFromRay(pricingprob, probnr, &col) );
+      SCIP_CALL( createColumnFromRay(pricingprob, NULL, NULL, probnr, &col) );
       SCIP_CALL( GCGpricerAddCol(scip, col) );
 
       break;
@@ -458,7 +478,7 @@ SCIP_RETCODE solveProblem(
           && SCIPgetStatus(pricingprob) != SCIP_STATUS_SOLLIMIT));
 
       /* Transform at most maxcols many solutions from the pricing problem into columns */
-      SCIP_CALL( getColumnsFromPricingprob(scip, pricingprob, probnr, solverdata->checksols) );
+      SCIP_CALL( getColumnsFromPricingprob(scip, pricingprob, NULL, NULL, probnr, solverdata->checksols) );
 
       *lowerbound = SCIPgetDualbound(pricingprob);
 

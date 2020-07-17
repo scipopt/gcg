@@ -43,7 +43,8 @@ extern "C" {
 
 extern
 SCIP_RETCODE GCGincludeMasterPlugins(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             subgcg
    );
 
 #ifdef __cplusplus

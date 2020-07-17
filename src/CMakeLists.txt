@@ -138,6 +138,7 @@ set(gcgsources
     solver.c
     solver_knapsack.c
     solver_mip.c
+    solver_gcg.cpp
     stat.c
 )
 
@@ -295,6 +296,7 @@ set(gcgheaders
     stat.h
     struct_branchgcg.h
     struct_colpool.h
+    solver_gcg.h
     struct_decomp.h
     struct_detector.h
     struct_gcgcol.h

@@ -50,7 +50,8 @@ extern "C" {
 /** creates the GCG relaxator and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeRelaxGcg(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             subgcg
    );
 
 /** includes a branching rule into the relaxator data */

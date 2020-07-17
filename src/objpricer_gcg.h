@@ -263,6 +263,10 @@ public:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
+   GCG_SOLVER** getSolvers() const;
+
+   int getNumSolvers() const;
+
 private:
    ReducedCostPricing*    reducedcostpricing;
    FarkasPricing*         farkaspricing;

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,16 +25,15 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   gcgplugins.h
- * @brief  SCIP plugins for generic column generation
- * @author Gerald Gamrath
+/**@file   solver_gcg.h
+ * @brief  gcg solver for pricing problem
+ * @author Erik Muehmer
  */
 
-/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_GCGPLUGINS_H__
-#define GCG_GCGPLUGINS_H__
-
+#ifndef GCG_SOLVER_GCG_H__
+#define GCG_SOLVER_GCG_H__
 
 #include "scip/scip.h"
 
@@ -42,11 +41,10 @@
 extern "C" {
 #endif
 
-/** includes default SCIP plugins into SCIP */
+/** creates the xyz solver for pricing problems and includes it in GCG */
 extern
-SCIP_RETCODE SCIPincludeGcgPlugins(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool             subgcg
+SCIP_RETCODE GCGincludeSolverGcg(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 #ifdef __cplusplus

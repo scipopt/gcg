@@ -37,6 +37,8 @@
 #define GCG_SOLVER_MIP_H__
 
 #include "scip/scip.h"
+#include "type_pricingstatus.h"
+#include "type_gcgcol.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +48,31 @@ extern "C" {
 extern
 SCIP_RETCODE GCGincludeSolverMip(
    SCIP*                 scip                /**< SCIP data structure */
-   );
+);
+
+extern
+GCG_PRICINGSTATUS getPricingstatus(
+   SCIP*                 pricingprob         /**< pricing problem SCIP data structure */
+);
+
+extern
+SCIP_RETCODE createColumnFromRay(
+   SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
+   SCIP*                 subproblem,
+   SCIP_HASHMAP*         varmap,
+   int                   probnr,             /**< problem number */
+   GCG_COL**             newcol              /**< column pointer to store new column */
+);
+
+extern
+SCIP_RETCODE getColumnsFromPricingprob(
+   SCIP*                 scip,               /**< master problem SCIP data structure */
+   SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
+   SCIP*                 subproblem,
+   SCIP_HASHMAP*         varmap,
+   int                   probnr,             /**< problem number */
+   SCIP_Bool             checksols          /**< should solutions be checked extensively */
+);
 
 #ifdef __cplusplus
 }

@@ -3427,7 +3427,8 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
 /** creates the GCG relaxator and includes it in SCIP */
 SCIP_RETCODE SCIPincludeRelaxGcg(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             subgcg
    )
 {
    SCIP_RELAXDATA* relaxdata;
@@ -3474,7 +3475,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
     */
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
-   SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
+   SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob, subgcg) );
    SCIP_CALL( SCIPsetMessagehdlr(relaxdata->masterprob, SCIPgetMessagehdlr(scip)) );
 
    /* getting the verbosity level of the original problem */

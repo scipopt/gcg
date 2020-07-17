@@ -313,6 +313,7 @@ LIBOBJ = \
 			sepa_basis.o \
 			sepa_master.o \
 			solver.o \
+			solver_gcg.o
 			solver_knapsack.o \
 			solver_mip.o \
 			stat.o \

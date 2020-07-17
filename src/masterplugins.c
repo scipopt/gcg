@@ -140,6 +140,9 @@
 #include "event_solvingstats.h"
 #include "event_display.h"
 
+/* Erik's GCG solver */
+#include "solver_gcg.h"
+
 /* Christian's heuristics */
 #include "heur_greedycolsel.h"
 #include "heur_masterdiving.h"
@@ -163,7 +166,8 @@
 
 /** includes default GCG master plugins */
 SCIP_RETCODE GCGincludeMasterPlugins(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             subgcg
    )
 {
    SCIP_CALL( SCIPincludeConshdlrLinear(scip) ); /* linear must be first due to constraint upgrading */
@@ -283,6 +287,9 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 #ifdef WITH_CPLEXSOLVER
    SCIP_CALL( GCGincludeSolverCplex(scip) );
 #endif
+
+   if (subgcg)
+      SCIP_CALL( GCGincludeSolverGcg(scip) );
 
    /* include masterbranch constraint handler */
    SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
