@@ -2162,7 +2162,7 @@ SCIP_RETCODE solveBlockProblem(
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Solving block %i.\n", blocknum+1);
    }
 
-   SCIP_CALL( SCIPsetIntParam(blockprob, "display/verblevel", (int)SCIP_VERBLEVEL_NORMAL) );
+   SCIP_CALL( SCIPsetIntParam(blockprob, "display/verblevel", relaxdata->origverblevel) );
 
    /* give the pricing problem 2% more time then the original scip has left */
    if( SCIPgetStage(blockprob) > SCIP_STAGE_PROBLEM )

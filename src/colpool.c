@@ -204,7 +204,7 @@ SCIP_RETCODE GCGcolpoolFree(
    /* remove all cols from the pool */
    SCIP_CALL( GCGcolpoolClear(*colpool) );
 
-   SCIPinfoMessage(scip, NULL, "Pricing time in colpool = %f sec\n", GCGcolpoolGetTime(*colpool));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Pricing time in colpool = %f sec\n", GCGcolpoolGetTime(*colpool));
 
    /* free clock */
    SCIP_CALL( SCIPfreeClock(scip, &(*colpool)->poolclock) );
