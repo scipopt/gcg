@@ -543,13 +543,14 @@ int GCGconshdlrDecompDecreaseNCallsCreateDecomp(
   SCIP*                 scip                /**< SCIP data structure **/
    );
 
-/** @brief deregisters ALL partialdecs in the conshdlr
+/** @brief deregisters partialdecs in the conshdlr
  *
  * Use this function for deletion of ALL the partialdecs.
  */
 extern
-void GCGconshdlrDecompDeregisterAllPartialdecs(
-   SCIP* scip  /**< SCIP data structure */
+void GCGconshdlrDecompDeregisterPartialdecs(
+   SCIP* scip,  /**< SCIP data structure */
+   SCIP_Bool original
 );
 
 /**

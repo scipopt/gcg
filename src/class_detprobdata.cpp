@@ -462,7 +462,7 @@ DETPROBDATA::~DETPROBDATA()
    }
 
    // Delete all partialdecs
-   GCGconshdlrDecompDeregisterAllPartialdecs(scip);
+   GCGconshdlrDecompDeregisterPartialdecs(scip, original);
 
    for( size_t i = 0; i < conspartitioncollection.size(); ++ i )
    {
