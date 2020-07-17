@@ -234,8 +234,6 @@ void DETPROBDATA::getTranslatedPartialdecs(
    {
       PARTIALDECOMP* newpartialdec;
 
-      std::vector<int> probvarismatchedinfo = std::vector<int>(getNVars(), -1);
-
       SCIPverbMessage(this->scip, SCIP_VERBLEVEL_FULL, NULL, " transform partialdec %d \n", otherpartialdec->getID());
 
       newpartialdec = new PARTIALDECOMP(scip, original);
@@ -267,36 +265,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
          }
       }
 
-      /* set linking and master vars according to their representatives in the orig partialdec */
-      for( int j = 0; j < otherpartialdec->getNLinkingvars(); j ++ )
-      {
-         int thisvar = colothertothis[otherpartialdec->getLinkingvars()[j]];
-         if( thisvar != - 1 && probvarismatchedinfo[thisvar] == -1 )
-         {
-            probvarismatchedinfo[thisvar] = 1;
-            newpartialdec->fixVarToLinking(thisvar);
-         }
-         else
-            if(  thisvar != - 1 )
-            {
-               assert( probvarismatchedinfo[thisvar] == 1 ); /* if this not fulfilled this probvar was assigned as master only variable but should be linking var*/
-            }
-      }
-
-      for( int j = 0; j < otherpartialdec->getNMastervars(); j ++ )
-      {
-         int thisvar = colothertothis[otherpartialdec->getMastervars()[j]];
-         if( thisvar != - 1 && probvarismatchedinfo[thisvar] == -1 )
-         {
-            probvarismatchedinfo[thisvar] = 2;
-            newpartialdec->fixVarToMaster(thisvar);
-         }
-         else
-            if(  thisvar != - 1 )
-            {
-               assert( probvarismatchedinfo[thisvar] == 2 ); /* if this not fulfilled this probvar was assigned as linking only variable but should be master var*/
-            }
-      }
+      // we do not assign variables as the previous assignment might be invalid due to presolving
 
       newpartialdec->setDetectorchain(otherpartialdec->getDetectorchain());
       newpartialdec->setAncestorList(otherpartialdec->getAncestorList());
@@ -328,10 +297,6 @@ void DETPROBDATA::getTranslatedPartialdecs(
       newpartialdec->setFinishedByFinisher(otherpartialdec->getFinishedByFinisher());
       newpartialdec->prepare();
 
-      SCIP_Bool benders;
-      SCIPgetBoolParam(scip, "detection/benders/enabled", &benders);
-
-      newpartialdec->deleteEmptyBlocks(benders);
       newpartialdec->getScore(GCGconshdlrDecompGetScoretype(scip)) ;
 
       if( newpartialdec->checkConsistency() )
