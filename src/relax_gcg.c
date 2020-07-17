@@ -2902,7 +2902,8 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
       SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "No reformulation will be performed. Solving the original model.\n");
    }
 
-   SCIP_CALL( initRelaxator(scip, relax) );
+   if( !SCIPisStopped(scip) )
+      SCIP_CALL( initRelaxator(scip, relax) );
 
    return SCIP_OKAY;
 }
