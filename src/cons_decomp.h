@@ -927,6 +927,19 @@ void GCGconshdlrDecompSetScoretype(
    );
 
 /**
+ * @brief translates n best unpresolved partialdec to a complete presolved one
+ * @param scip SCIP data structure
+ * @param n number of partialdecs that should be translated
+ * @returns SCIP return code
+ */
+extern
+SCIP_RETCODE GCGconshdlrDecompTranslateNBestOrigPartialdecs(
+   SCIP*                 scip,
+   int                   n,
+   SCIP_Bool             completeGreedily
+);
+
+/**
  * @brief translates unpresolved partialdec to a complete presolved one
  * @param scip SCIP data structure
  * @returns SCIP return code

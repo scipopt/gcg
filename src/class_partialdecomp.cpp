@@ -2361,6 +2361,212 @@ void PARTIALDECOMP::completeByConnectedConssAdjacency()
 }
 
 
+void PARTIALDECOMP::completeGreedily(
+   )
+{
+   bool checkvar;
+   bool isvarinblock;
+   bool notassigned;
+   DETPROBDATA* detprobdata = getDetprobdata();
+
+   /* tools to check if the openvars can still be found in a constraint yet*/
+   std::vector<int> varinblocks; /* stores in which block the variable can be found */
+
+   if( getNBlocks() == 0 && getNOpenconss() > 0 )
+   {
+      int block = addBlock();
+      fixConsToBlock( openconss[0], block );
+   }
+
+   std::vector<int> del;
+
+   /* check if the openvars can already be found in a constraint */
+   for( int i = 0; i < getNOpenvars(); ++ i )
+   {
+      varinblocks.clear();
+
+      /* test if the variable can be found in blocks */
+      for( int b = 0; b < getNBlocks(); ++ b )
+      {
+         isvarinblock = false;
+         std::vector<int>& conssforblock = getConssForBlock(b);
+         for( int k = 0; k < getNConssForBlock(b) && !isvarinblock; ++ k )
+         {
+            for( int l = 0; l < detprobdata->getNVarsForCons( conssforblock[k] ); ++ l )
+            {
+               if( openvars[i] == detprobdata->getVarsForCons( conssforblock[k] )[l] )
+               {
+                  varinblocks.push_back( b );
+                  isvarinblock = true;
+                  break;
+               }
+            }
+         }
+      }
+      if( varinblocks.size() == 1 ) /* if the variable can be found in one block set the variable to a variable of the block*/
+      {
+         setVarToBlock(openvars[i], varinblocks[0]);
+         del.push_back(openvars[i]);
+         continue; /* the variable doesn't need to be checked any more */
+      }
+      else if( varinblocks.size() == 2 ) /* if the variable can be found in two blocks check if it is a linking var or a stairlinking var*/
+      {
+         if( varinblocks[0] + 1 == varinblocks[1] )
+         {
+            setVarToStairlinking(openvars[i], varinblocks[0], varinblocks[1]);
+            del.push_back(openvars[i]);
+            continue; /* the variable doesn't need to be checked any more */
+         }
+         else
+         {
+            setVarToLinking(openvars[i]);
+            del.push_back(openvars[i]);
+            continue; /* the variable doesn't need to be checked any more */
+         }
+      }
+      else if( varinblocks.size() > 2 ) /* if the variable can be found in more than two blocks it is a linking var */
+      {
+         setVarToLinking(openvars[i]);
+         del.push_back(openvars[i]);
+         continue; /* the variable doesn't need to be checked any more */
+      }
+
+      checkvar = true;
+
+      /* if the variable can be found in an open constraint it is still an open var */
+      for( int j = 0; j < getNOpenconss(); ++ j )
+      {
+         checkvar = true;
+         for( int k = 0; k < detprobdata->getNVarsForCons( j ); ++ k )
+         {
+            if( openvars[i] == detprobdata->getVarsForCons( j )[k] )
+            {
+               checkvar = false;
+               break;
+            }
+         }
+         if( ! checkvar )
+         {
+            break;
+         }
+      }
+
+      /* test if the variable can be found in a master constraint yet */
+      for( int k = 0; k < detprobdata->getNConssForVar( openvars[i] ) && checkvar; ++ k )
+      {
+         if( isConsMastercons(detprobdata->getConssForVar(openvars[i])[k]) )
+         {
+            setVarToMaster(openvars[i]);
+            del.push_back(openvars[i]);
+            checkvar = false; /* the variable does'nt need to be checked any more */
+            break;
+         }
+      }
+   }
+
+   /* remove assigned vars from list of open vars */
+   for(auto v : del)
+      deleteOpenvar(v);
+
+   del.clear();
+   sort();
+
+   std::vector<int> delconss;
+
+   /* assign open conss greedily */
+   for( int i = 0; i < getNOpenconss(); ++ i )
+   {
+      std::vector<int> vecOpenvarsOfBlock; /* stores the open vars of the blocks */
+      bool consGotBlockcons = false; /* if the constraint can be assigned to a block */
+
+      /* check if the constraint can be assigned to a block */
+      for( int j = 0; j < getNBlocks(); ++ j )
+      {
+         /* check if all vars of the constraint are a block var of the current block, an open var, a linkingvar or a mastervar*/
+         consGotBlockcons = true;
+         for( int k = 0; k < detprobdata->getNVarsForCons( openconss[i] ); ++ k )
+         {
+            if( isVarBlockvarOfBlock( detprobdata->getVarsForCons( openconss[i] )[k], j )
+                || isVarOpenvar( detprobdata->getVarsForCons( openconss[i] )[k] )
+                || isVarLinkingvar( detprobdata->getVarsForCons( openconss[i] )[k] )
+                || isVarStairlinkingvarOfBlock( detprobdata->getVarsForCons( openconss[i] )[k], j )
+                || ( j != 0 && isVarStairlinkingvarOfBlock( detprobdata->getVarsForCons( openconss[i] )[k], j - 1 ) ) )
+            {
+               if( isVarOpenvar( detprobdata->getVarsForCons( openconss[i] )[k] ) )
+               {
+                  vecOpenvarsOfBlock.push_back( detprobdata->getVarsForCons( openconss[i] )[k] );
+               }
+            }
+            else
+            {
+               vecOpenvarsOfBlock.clear(); /* the open vars don't get vars of the block */
+               consGotBlockcons = false; /* the constraint can't be constraint of the block, check the next block */
+               break;
+            }
+         }
+         if( consGotBlockcons ) /* the constraint can be assigned to the current block */
+         {
+            setConsToBlock( openconss[i], j );
+            delconss.push_back(openconss[i]);
+            for( size_t k = 0; k < vecOpenvarsOfBlock.size(); ++ k ) /* the openvars in the constraint get block vars */
+            {
+               setVarToBlock( vecOpenvarsOfBlock[k], j );
+               deleteOpenvar( vecOpenvarsOfBlock[k] );
+            }
+            vecOpenvarsOfBlock.clear();
+
+            break;
+         }
+      }
+
+      if( !consGotBlockcons ) /* the constraint can not be assigned to a block, set it to master */
+      {
+         setConsToMaster( openconss[i] );
+         delconss.push_back(openconss[i]);
+      }
+   }
+
+   /* remove assigned conss from list of open conss */
+   for(auto c : delconss)
+      deleteOpencons(c);
+
+   sort();
+
+   /* assign open vars greedily */
+   for( int i = 0; i < getNOpenvars(); ++ i )
+   {
+      notassigned = true;
+      for( int j = 0; j < getNMasterconss() && notassigned; ++ j )
+      {
+         for( int k = 0; k < detprobdata->getNVarsForCons(masterconss[j]); ++ k )
+         {
+            if( openvars[i] == detprobdata->getVarsForCons(masterconss[j])[k] )
+            {
+               setVarToMaster(openvars[i]);
+               del.push_back(openvars[i]);
+               notassigned = false;
+               break;
+            }
+         }
+      }
+   }
+
+   /* remove assigned vars from list of open vars */
+   for(auto v : del)
+      deleteOpenvar(v);
+
+   sort();
+
+   /* check if the open conss are all assigned */
+   assert( checkAllConssAssigned() );
+
+   /* check if the open vars are all assigned */
+   assert( getNOpenvars() == 0 );
+
+   assert( checkConsistency() );
+}
+
+
 void PARTIALDECOMP::removeMastercons(
    int consid
    )
