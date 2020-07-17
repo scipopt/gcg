@@ -4947,16 +4947,21 @@ int GCGconshdlrDecompDecreaseNCallsCreateDecomp(
 }
 
 
-void GCGconshdlrDecompDeregisterAllPartialdecs(
-   SCIP* scip
+void GCGconshdlrDecompDeregisterPartialdecs(
+   SCIP* scip,
+   SCIP_Bool original
    )
 {
    SCIP_CONSHDLRDATA *conshdlrdata = getConshdlrdata(scip);
 
-   while( !conshdlrdata->partialdecs->empty() )
+   for( int i = (int) conshdlrdata->partialdecs->size() - 1; i >= 0; --i)
    {
-      // ~PARTIALDECOMP will clean up references
-      delete conshdlrdata->partialdecs->at(0);
+      PARTIALDECOMP* partialdec = (*conshdlrdata->partialdecs)[i];
+      if( partialdec->isAssignedToOrigProb() == (bool) original )
+      {
+         // ~PARTIALDECOMP will clean up references
+         delete partialdec;
+      }
    }
 }
 
@@ -4975,7 +4980,7 @@ void GCGconshdlrDecompDeregisterPartialdec(
    int id = partialdec->getID();
 
    // remove partialdec from list
-   for(i = 0; i < (int) conshdlrdata->partialdecs->size(); i++)
+   for(i = (int) conshdlrdata->partialdecs->size() - 1; i >= 0 ; i--)
    {
       // as registering checks for dublicates,
       // assumption that the partialdecs are unique in the list
