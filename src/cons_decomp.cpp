@@ -1169,7 +1169,7 @@ SCIP_RETCODE createDecompFromPartialdec(
 
    if( partialdec->getNBlocks() - ndeletedblocks == 0 )
    {
-      SCIPwarningMessage(scip, "All blocks have been deleted since only deleted constraints are contained, no reformulation is done.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "All blocks have been deleted since only deleted constraints are contained, no reformulation is done.\n");
    }
 
    /* prepare constraints data structures */
