@@ -2791,71 +2791,52 @@ void PARTIALDECOMP::deleteEmptyBlocks(
    while( emptyBlocks )
    {
       emptyBlocks = false;
-      for( b = 0; b < nblocks; ++ b )
+      for( b = nblocks - 1; b >= 0; --b )
       {
-         if( conssforblocks[b].size() == 0 &&  ( variables ? varsforblocks[b].size() == 0 : true) )
+         if( conssforblocks[b].empty() &&  ( variables ? varsforblocks[b].empty() : true) )
          {
             emptyBlocks = true;
             block = b;
+            break;
          }
-         if( benders && ( conssforblocks[b].size() == 0 ||  varsforblocks[b].size() == 0) )
+         if( benders && ( conssforblocks[b].empty() || varsforblocks[b].empty()) )
          {
             emptyBlocks = true;
             block = b;
+            break;
          }
 
       }
       if( emptyBlocks )
       {
-         nblocks --;
+         nblocks--;
 
-         std::vector<std::vector<int>>::iterator it;
+         stairlinkingvars.erase(stairlinkingvars.begin() + block);
 
-         it = stairlinkingvars.begin();
-         for( b = 0; b < block; ++ b )
-            it ++;
-         stairlinkingvars.erase( it );
-
-         it = conssforblocks.begin();
-         for( b = 0; b < block; ++ b )
-            it ++;
-         for( size_t j = 0; j < conssforblocks[block].size(); ++j )
+         for( int j : conssforblocks[block] )
          {
-            masterconss.push_back(conssforblocks[block][j]);
-            isconsmaster[conssforblocks[block][j]] = true;
+            masterconss.push_back(j);
+            isconsmaster[j] = true;
          }
-         std::sort( masterconss.begin(), masterconss.end() );
-         conssforblocks.erase( it );
+         std::sort(masterconss.begin(), masterconss.end());
+         conssforblocks.erase(conssforblocks.begin() + block);
 
-         it = varsforblocks.begin();
-         for( b = 0; b < block; ++ b )
-            it ++;
-         for( size_t j = 0; j < varsforblocks[block].size(); ++ j )
+         for( int j : varsforblocks[block] )
          {
-            mastervars.push_back( varsforblocks[block][j] );
-            isvarmaster[varsforblocks[block][j]] = true;
+            mastervars.push_back(j);
+            isvarmaster[j] = true;
          }
-         varsforblocks.erase( it );
+         varsforblocks.erase(varsforblocks.begin() + block);
          std::sort( mastervars.begin(), mastervars.end() );
 
          //set stairlinkingvars of the previous block to block vars
-         if( block != 0 && (int) stairlinkingvars[block - 1].size() != 0 )
+         if( block != 0 && !stairlinkingvars[block - 1].empty() )
          {
-            std::vector<int>::iterator iter = stairlinkingvars[block - 1].begin();
-            std::vector<int>::iterator iterEnd = stairlinkingvars[block - 1].end();
-            std::vector<int> stairlinkingvarsOfPreviousBlock;
-            for( ; iter != iterEnd; ++ iter )
+            for( int j : stairlinkingvars[block - 1] )
             {
-               fixVarToBlock( * iter, block - 1 );
-               stairlinkingvarsOfPreviousBlock.push_back( * iter );
+               fixVarToBlock(j, block - 1);
             }
-            for( size_t i = 0; i < stairlinkingvarsOfPreviousBlock.size(); ++ i )
-            {
-               iter = find( stairlinkingvars[block - 1].begin(), stairlinkingvars[block - 1].end(),
-                  stairlinkingvarsOfPreviousBlock[i] );
-               assert( iter != stairlinkingvars[block - 1].end() );
-               stairlinkingvars[block - 1].erase( iter );
-            }
+            stairlinkingvars[block - 1].clear();
             sort();
          }
       }
