@@ -569,6 +569,7 @@ SCIP_RETCODE freeBlockMemory(
       {
          if (solverdata->pricingprobs[i] != NULL)
          {
+            GCGconshdlrDecompFreeDetprobdata(solverdata->pricingprobs[i]);
             SCIPhashmapFree(&(solverdata->varmaps[i]));
             SCIP_CALL( SCIPfree(&(solverdata->pricingprobs[i])) );
             solverdata->pricingprobs[i] = NULL;
