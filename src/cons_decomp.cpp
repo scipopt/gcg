@@ -801,18 +801,7 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       }
    }
 
-   /* remove the presolved detprobdata */
-   delete conshdlrdata->detprobdatapres;
-   conshdlrdata->detprobdatapres = NULL;
-
-   /* if parameter is set, free orig detprobdata */
-   if( conshdlrdata->freeorig )
-   {
-      if( conshdlrdata->detprobdataorig != NULL )
-         delete conshdlrdata->detprobdataorig;
-      conshdlrdata->detprobdataorig = NULL;
-      conshdlrdata->hasrunoriginal = FALSE;
-   }
+   GCGconshdlrDecompFreeDetprobdata(scip);
 
    /* remove selection of partialdecs */
    unselectAllPartialdecs(scip);
@@ -4998,6 +4987,27 @@ void GCGconshdlrDecompDeregisterPartialdec(
    for(i = 0; i < (int) conshdlrdata->partialdecs->size(); i++)
    {
       conshdlrdata->partialdecs->at(i)->removeAncestorID(id);
+   }
+}
+
+
+void GCGconshdlrDecompFreeDetprobdata(
+   SCIP* scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   /* remove the presolved detprobdata */
+   delete conshdlrdata->detprobdatapres;
+   conshdlrdata->detprobdatapres = NULL;
+
+   /* if parameter is set, free orig detprobdata */
+   if( conshdlrdata->freeorig )
+   {
+      delete conshdlrdata->detprobdataorig;
+      conshdlrdata->detprobdataorig = NULL;
+      conshdlrdata->hasrunoriginal = FALSE;
    }
 }
 
