@@ -551,7 +551,15 @@ extern
 void GCGconshdlrDecompDeregisterPartialdecs(
    SCIP* scip,  /**< SCIP data structure */
    SCIP_Bool original
-);
+   );
+
+/** @brief Frees Detprobdata of the original and transformed/presolved problem.
+ *
+ * @note Does not free Detprobdata of the original problem if GCGconshdlrDecompFreeOrigOnExit is set to false.
+ */
+void GCGconshdlrDecompFreeDetprobdata(
+   SCIP* scip  /**< SCIP data structure */
+   );
 
 /**
  * @brief sets freeing of detection data of original problem during exit to true
@@ -559,7 +567,6 @@ void GCGconshdlrDecompDeregisterPartialdecs(
  * used before calling SCIPfreeTransform(), 
  * set to true to revoke presolving 
  * (e.g. if unpresolved decomposition is used, and transformation is not successful)
- * @returns scip return code
  */
 extern
 void GCGconshdlrDecompFreeOrigOnExit(
