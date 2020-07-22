@@ -2,6 +2,6 @@
 
 On this page, we give an overview of the example projects that have been
 carried out using GCG. If you want to start your own project, please refer to
-the guide on @ref install-application-examples.
+the guide on @subpage install-examples.
 
 - @subpage p1

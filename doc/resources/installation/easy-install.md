@@ -1,25 +1,9 @@
-Installation {#install}
-------------------
+# Easy Installation {#easy-install}
 
-> This guide shows you how to install GCG on your **Linux or Mac** computer. Note that
-> GCG cannot be installed on a **Windows** machine out of the box (see @ref windows-install "Windows Installation Guide" for more information).
-> As a user, you can either
-> * @ref install-scipopt including GCG (recommended) or do a
-> * @ref install-manually.<br>
->
-> If you are a GCG developer and need the current master branch, consult
-> * @ref git-install
->
-> If you want to install one of the @ref example-projects, check the guide
-> * @subpage install-application-examples
+> This installation guide will only function for Linux and Mac computers out of the box. 
+> If you only have a Windows computer, please see @ref windows-install "Windows Installation Guide" for more information.  
 
-If you need to install GCG using arguments, for example if you want to enable parallelization, you can find them under @ref makefiles-args and @ref cmake-args respectively.
-
-# Install the SCIP Optimization Suite {#install-scipopt}
-
-The following steps are all executed automatically within
-<a href="../scripts/installGCG.sh">this install script</a>, if you prefer it. Note that we don't take any responsibility if you use it.
-
+# Install GCG and the SCIP Optimization Suite {#install-scipopt}
 ### Step 1: Prerequisites
 Install the required system libraries:
 
