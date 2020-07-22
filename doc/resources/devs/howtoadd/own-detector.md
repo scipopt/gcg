@@ -1,5 +1,4 @@
 # How to add detectors {#own-detector}
-> **This page is currently being refactored. Some things might still be outdated.**
 
 [TOC]
 
@@ -9,29 +8,35 @@ A complete list of all detectors contained in this release can be found [here](#
 
 
 With the following steps, we explain how you can **add your own structure detection plug-in**:
-1. Choose a name `mydetector` for your detector.
-2. Copy the template files `src/dec_xyz.cpp` and `src/dec_xyz.h`
-   while renaming `xyz` to `mydetector`.
-3. _Using Makefile:_ Adjust your Makefile such that these files are compiled and linked to your project by adding your classifier with ending `.o`
-  (`dec_mydetector.o`) to the list under `LIBOBJ =` in the file `Makefile` in the root folder.\n
-  _Using CMake:_ In `src/CMakeLists.txt`, add your `dec_mydetector.cpppp` below `set(gcgsources` and your
-  `dec_mydetector.h` below the line `set(gcgheaders`.
-4. Open the new files with a text editor and replace all occurrences of `xyz` by `mydetector`.
-5. Adjust the properties of the detector (see @ref DEC_PROPERTIES).
-6. [optional] Define the detector data (see @ref DEC_DATA).
-7. Implement the interface methods (see @ref DEC_INTERFACE).
-8. Implement the fundamental callback methods (see @ref DEC_FUNDAMENTALCALLBACKS).
-9. [optional] Implement the additional callback methods (see @ref DEC_ADDITIONALCALLBACKS).
+1. **Preparations**
+  1. Choose a name `mydetector` for your detector.
+  2. Copy the template files `src/dec_xyz.cpp` and `src/dec_xyz.h`
+     while renaming `xyz` to `mydetector`.
+  3. Open the new files with a text editor and replace all occurrences of `Xyz` by `Mydetector` and `xyz` by `mydetector`.
+2. **Creating your Detector**
+  1. Adjust the properties of the detector (see @ref DEC_PROPERTIES).
+  2. [optional] Define the detector data (see @ref DEC_DATA).
+  3. Implement the interface methods (see @ref DEC_INTERFACE).
+  4. Implement the fundamental callback methods (see @ref DEC_FUNDAMENTALCALLBACKS).
+  5. [optional] Implement the additional callback methods (see @ref DEC_ADDITIONALCALLBACKS).
+3. **Make GCG use it**
+  1. Add it to gcgplugins.c by adding
+    1. the line <tt>\#include dec_mydetector.h</tt> in the `/* detection */` section.
+    2. the line `SCIP_CALL( SCIPincludeDetectorMydetector(scip) );` in  the `/* Detectors and decompositions */` section.
+  2. Add it to your build system:
+    1. _Using Makefile:_ Adjust your Makefile such that these files are compiled and linked to your project by adding your detector with ending `.o` (`dec_mydetector.o`) to the list under `LIBOBJ =` in the file `Makefile` in the root folder.
+    2. _Using CMake:_ In `src/CMakeLists.txt`, add your `dec_mydetector.cpp` below `set(gcgsources` and your `dec_mydetector.h` below the line `set(gcgheaders`.
+
 
 
 # Properties of a Detector {#DEC_PROPERTIES}
-At the top of the new file dec_xyz.cpp, you can find the detector properties.
+At the top of the new file `dec_mydetector.cpp`, you can find the detector properties.
 These are given as compiler defines.
 The properties you have to set have the following meaning:
 
 \par DEC_DETECTORNAME: the name of the detector.
 This name is used in the interactive shell to address the detector.
-Additionally, if you are searching for a detector with SCIPfindDetector(), this name is looked up.
+Additionally, if you are searching for a detector with `SCIPfindDetector()`, this name is looked up.
 Names have to be unique: no two detectors may have the same name.
 
 \par DEC_DESC: the description of the detector.
@@ -65,13 +70,13 @@ Defining detector data is optional. You can leave this struct empty.
 
 
 # Interface Methods {#DEC_INTERFACE}
-At the bottom of "dec_xyz.cpp", you can find the interface method SCIPincludeDetectorXyz(),
-which also appears in "dec_xyz.h".
+At the bottom of `dec_mydetector.cpp`, you can find the interface method `SCIPincludeDetectorMydetector()`,
+which also appears in `dec_mydetector.h`.
 \n
 This method has to be adjusted only slightly.
 It is responsible for notifying GCG (and especially cons_decomp.cpp) of the presence of the detector by calling the method
-DECincludeDetector().
-SCIPincludeDetectorXyz() is called by the user to include the detector,
+`DECincludeDetector()`.
+`SCIPincludeDetectorMydetector()` is called by the user to include the detector,
 i.e., to use the detector in the application.
 
 If you are using detector data, you have to allocate the memory for the data at this point.
@@ -82,8 +87,7 @@ SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
 You also have to initialize the fields in struct SCIP_DetectorData afterwards. For freeing the
 detector data, see @ref DEC_ADDITIONALCALLBACKS.
 
-You may also add user parameters for your detector, see the parameters documentation of \SCIP for how to add user parameters and
-the method SCIPincludeDetectionBorderheur() in dec_connected.cpp for an example.
+You may also add user parameters for your detector, see the parameters documentation of SCIP for how to add user parameters.
 
 
 # Fundamental Callback Methods of a Detector {#DEC_FUNDAMENTALCALLBACKS}
@@ -97,28 +101,28 @@ At least one of the following methods has to be implemented for every detector; 
 Additional documentation to the callback methods, in particular to their input parameters,
 can be found in type_detector.h.
 
-## DEC_DECL_PROPAGATEPARTIALDEC
-The function `DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecXyz)` should assign variables/constraints to block or master. You can either create the decomposition by calling DECcreateDecompFromMasterconss() or DECfilloutDecompFromConstoblock() or use the getter and setter functions in pub_decomp.h to fill the decomposition structure.
+## PROPAGATEPARTIALDEC
+The `DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMydetector)` callback should assign variables/constraints to block or master. You can either create the decomposition by calling `DECcreateDecompFromMasterconss()` or `DECfilloutDecompFromConstoblock()` or use the getter and setter functions in pub_decomp.h to fill the decomposition structure.
 
-## DEC_DECL_FINISHPARTIALDEC
-The function `DEC_DECL_FINISHPARTIALDEC(finishPartialdecXyz)` should, given a partial decomposition, finish it.
+## FINISHPARTIALDEC
+The `DEC_DECL_FINISHPARTIALDEC(finishPartialdecMydetector)` callback should, given a partial decomposition, finish it.
 
-## DEC_DECL_POSTPROCESSPARTIALDEC
-The function `DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecXyz)` should postprocess a given finished partial decomposition to find a different yet promising one.
+## POSTPROCESSPARTIALDEC
+The `DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecMydetector)` callback should postprocess a given finished partial decomposition to find a different yet promising one.
 
 # Additional Callback Methods of a Detector {#DEC_ADDITIONALCALLBACKS}
-## DEC_DECL_INITDETECTOR
-The `DEC_DECL_INITDETECTOR(detectorInitXyz)` callback is executed after the problem was transformed.
+## INITDETECTOR {#DEC_INIT}
+The `DEC_DECL_INITDETECTOR(detectorInitMydetector)` callback is executed after the problem was transformed.
 The detector may, e.g., use this call to initialize his detector data.
 The difference between the original and the transformed problem is explained in
-[What is this thing with the original and the transformed problem about?](#original-vs-transformed).
+@ref original-vs-transformed.
 
-## EXITDETECTOR
-If you are using detection data (see @ref DEC_DATA and @ref DEC_INTERFACE), you have to implement this method in order to free the detection data.
+## EXITDETECTOR {#DEC_EXIT}
+The `DEC_DECL_EXITDETECTOR(detectorExitMydetector)` callback has to be implemented if you are using detection data (see @ref DEC_DATA and @ref DEC_INTERFACE) in order to free the detection data.
 This can be done by the following procedure:
 ```C
 static
-DEC_DECL_EXITDETECTOR(detectorExitXyz)
+DEC_DECL_EXITDETECTOR(detectorExitMydetector)
 {
    DEC_DETECTORDATA* detectordata;
 
@@ -135,16 +139,16 @@ DEC_DECL_EXITDETECTOR(detectorExitXyz)
 If you have allocated memory for fields in your detector data, remember to free this memory
 before freeing the detector data itself.
 The detectorExit callback is executed before the solution process is started.
-In this method, the detector should free all resources that have been allocated for the detection process in ???.
+In this method, the detector should free all resources that have been allocated for the detection process in @ref DEC_INIT.
 
-## FREEDETECTOR
-The destructor of the detector to free user data (called when GCG is exiting) has to be defined in `DEC_DECL_FREEDETECTOR(detectorFreeXyz)`.
+## FREEDETECTOR {#DEC_FREE}
+The destructor of the detector to free user data (called when GCG is exiting) has to be defined in `DEC_DECL_FREEDETECTOR(detectorFreeMydetector)`.
 
-## SETPARAMAGGRESSIVE {#DEC_DECL_SETPARAMAGGRESSIVE}
-The parameters for the setting "aggressive" can be modified using the method `DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveXyz)`.
+## SETPARAMAGGRESSIVE {#DEC_PARAM_AGG}
+The parameters for the setting "aggressive" can be modified using the method `DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveMydetector)`.
 
-## SETPARAMDEFAULT {#DEC_DECL_SETPARAMDEFAULT}
-The parameters for the setting "aggressive" can be modified using the method `DEC_DECL_SETPARAMDEFAULT(setParamDefaultXyz)`.
+## SETPARAMDEFAULT {#DEC_PARAM_DEF}
+The parameters for the setting "default" can be modified using the method `DEC_DECL_SETPARAMDEFAULT(setParamDefaultMydetector)`.
 
-## SETPARAMFAST {#DEC_DECL_SETPARAMFAST}
-The parameters for the setting "aggressive" can be modified using the method `DEC_DECL_SETPARAMFAST(setParamFastXyz)`.
+## SETPARAMFAST {#DEC_PARAM_FAST}
+The parameters for the setting "fast" can be modified using the method `DEC_DECL_SETPARAMFAST(setParamFastMydetector)`.

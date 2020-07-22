@@ -1,9 +1,8 @@
 # How to add classifiers {#own-classifier}
-> **This page is currently being refactored. Some things might still be outdated.**
 
 [TOC]
 
-Classifiers are used to **sort variables and constraints into groups** to use this knowledge
+Classifiers are called to **sort variables and constraints into groups** to use this knowledge
 inside a [detector](#detectors) in a later stage of the [detection](#detection-process).
 \n
 A complete list of all classifiers contained in this release can be found [here](#classifiers).
@@ -15,8 +14,8 @@ With the following steps, we explain how you can **add your own constraint/varia
    while renaming `xyz` to `myclassifier`.
   3. Open the new files with a text editor and replace all occurrences of `Xyz` by `Myclassifier` and `xyz` by `myclassifier`.
 2. **Creating your Classifier**
-  1. Adjust the properties of the detector (see @ref CLS_PROPERTIES).
-  2. [optional] Define the detector data (see @ref CLS_DATA).
+  1. Adjust the properties of the classifier (see @ref CLS_PROPERTIES).
+  2. [optional] Define the classifier data (see @ref CLS_DATA).
   3. Implement the interface methods (see @ref CLS_INTERFACE).
   4. Implement the fundamental callback methods (see @ref CLS_FUNDAMENTALCALLBACKS).
   5. [optional] Implement the additional callback methods (see @ref CLS_ADDITIONALCALLBACKS).
@@ -32,7 +31,7 @@ With the following steps, we explain how you can **add your own constraint/varia
 
 # Properties of a Classifier {#CLS_PROPERTIES}
 
-At the top of the new file clscons_xyz.cpp/clsvar_xyz.cpp, you can find the detector properties.
+At the top of the new file `clscons_myclassifier.cpp`/`clsvar_myclassifier.cpp`, you can find the classifier properties.
 These are given as compiler defines.
 The properties you have to set have the following meaning:
 
@@ -58,25 +57,23 @@ Set this flag to true if the classifier should classify on the presolved problem
 Defining classifier data is optional.
 
 # Interface Methods {#CLS_INTERFACE}
-At the bottom of clscons_xyz.cpp/clsvar_xyz.cpp, you can find the interface method SCIPincludeConsClassifierXyz()/SCIPincludeVarClassifierXyz(),
-which also appears in clscons_xyz.h/clsvar_xyz.h.
+At the bottom of `clscons_myclassifier.cpp`/`clsvar_myclassifier.cpp`, you can find the interface method `SCIPincludeConsClassifierXyz()`/`SCIPincludeVarClassifierXyz()`,
+which also appears in `clscons_myclassifier.h`/`clsvar_myclassifier.h`.
 \n
 This method has to be adjusted only slightly.
-It is responsible for notifying GCG (and especially cons_decomp.c) of the presence of the detector by calling the method
-DECincludeConsClassifier()/DECincludeVarClassifier().
-SCIPincludeConsClassifierXyz()/SCIPincludeVarClassifierXyz() is called by the user to include the detector,
-i.e., to use the detector in the application (see 3.1.1. at the top of the page).
+It is responsible for notifying GCG (and especially cons_decomp.c) of the presence of the classifier by calling the method
+`DECincludeConsClassifier()`/`DECincludeVarClassifier()`.
+`SCIPincludeConsClassifierXyz()`/`SCIPincludeVarClassifierXyz()` is called by the user to include the classifier,
+i.e., to use the classifier in the application (see 3.1.1. at the top of the page).
 
-If you are using detector data, you have to allocate the memory for the data at this point.
+If you are using classifier data, you have to allocate the memory for the data at this point.
 You can do this by calling
 ```C
-SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
 ```
-You also have to initialize the fields in struct SCIP_DetectorData afterwards. For freeing the
-detector data, see @ref CLS_FREE.
+For freeing the classifier data, see @ref CLS_FREE.
 
-You may also add user parameters for your detector, see the parameters documentation of SCIP for how to add user parameters and
-the method SCIPincludeDetectionBorderheur() in dec_connected.c for an example.
+You may also add user parameters for your classifier, see the parameters documentation of SCIP for how to add user parameters.
 
 
 # Fundamental Callback Methods of a Classifier {#CLS_FUNDAMENTALCALLBACKS}
@@ -90,16 +87,15 @@ Exactly one of following methods has to be implemented for every classifier.
 Additional documentation for the callback methods of classifiers can be found in the
 files type_consclassifier.h and type_varclassifier.h.
 
-## DEC_DECL_CONSCLASSIFY {#CLS_CONSCLASSIFY}
-This function assigns constraints to classes using the assignConsToClass() method of the gcg::ConsClassifier.
+## CONSCLASSIFY {#CLS_CONSCLASSIFY}
+The `DEC_DECL_CONSCLASSIFY(classifierClassify)` callback assigns constraints to classes using the `assignConsToClass()` method of the `gcg::ConsClassifier`.
 
-## DEC_DECL_VARCLASSIFY {#CLS_VARCLASSIFY}
-This function assigns variables to classes using the assignVarToClass() method of the gcg::VarClassifier.
+## VARCLASSIFY {#CLS_VARCLASSIFY}
+The `DEC_DECL_VARCLASSIFY(classifierClassify)` callback  assigns variables to classes using the `assignVarToClass()` method of the `gcg::VarClassifier`.
 
 # Additional Callback Methods of a Classifier {#CLS_ADDITIONALCALLBACKS}
+## FREECLASSIFIER {#CLS_FREE}
+The `DEC_DECL_FREECLASSIFIER(classifierFreeXyz)` callback is called upon exiting GCG to free user data.
 
-## DEC_DECL_FREECLASSIFIER {#CLS_FREE}
-The destructor of the classifier to free user data (called when GCG is exiting) has to be defined in `DEC_DECL_FREECLASSIFIER(classifierFreeXyz)`.
-
-## DEC_DECL_INITCLASSIFIER {#CLS_INIT}
-classifier initialization method (called after problem was transformed) has to be defined in `DEC_DECL_INITCLASSIFIER(classifierInitXyz)`.
+## INITCLASSIFIER {#CLS_INIT}
+The `DEC_DECL_INITCLASSIFIER(classifierInitXyz)` callback is called after problem was transformed to initialize the classifier.
