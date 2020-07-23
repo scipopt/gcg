@@ -1,2 +1,0 @@
-# GCG Preprocessing {#preprocessing}
-
