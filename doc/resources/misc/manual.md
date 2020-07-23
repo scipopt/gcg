@@ -8,48 +8,15 @@ The GCG documentation and manual is structured into two guides, a misc section
 with everything that does not belong into these guides and the C-API
 @htmlinclude structureofmanual.html
 
-## Where to begin?
+# Where to begin?
 ### Installation
-In any case, you will have to start with the installation.
-- For a new user, we suggest a complete @ref install "SCIP Optimization Suite Installation".
-- For a developer or if you need the most recent dev version of GCG, you will have to @ref git-install "install GCG and SCIP using Git".
-- <span style="color:grey !important;">If needed, GCG can also be installed @ref install-manually "manually".</span>
+In any case, you will have to start with the installation. To make this as seemless as possible for you, we prepared different
+guides, based on user types. \n
+⇨ @ref install "Install GCG now!"
 
-### Using and developing with GCG
-The following sections are very short descriptions of the longer use cases that
-we offer guides for.
-\n\n
-
-#### Using GCG as a solver from the *command line*
-If you intend to use GCG only as a solver to get optimal solutions for
-all your programs without any menu, you can just call GCG from the command line
-and advise it to terminate after solving.\n
-⇨ @ref u1
-\n\n
-
-#### Using GCG as a solver with the *interactive console*
-If you intend to use GCG only as a solver to get optimal solutions for
-all your programs, you can just @ref start-gcg "start GCG" and you
-will be completely satistied with the @ref basic-commands "basic commands".\n
-⇨ @ref u2
-\n\n
-
-#### Using GCG to gain new *knowledge about the structure* of your model (Explore Menu)
-To get to know about how your GCG sees your instance and why, we recommend
-to check out the @ref explore-menu "Explore Menu". With it, you can make GCG show the structure that its
-@ref detectors "detectors" found. \n
-⇨ @ref u3
-\n\n
-
-#### Using GCG to gain new *knowledge about how GCG ran* on your instance (Visualization Suite)
-To see how GCG ran with your instance, for example how long it detected or how performant
-the pricing was, you should check out the @ref visu "Visualization Suite". It illustrates not only
-timings, but also algorithmic behaviour.\n
-⇨ @ref u4
-\n\n
-
-#### Develop new plugins for GCG
-If you are not satisfied with the time GCG needs to solve your instance, then
-you should consider @ref howtoadd "adding your own plugins" that speed up the solving of your instance.\n
-⇨ @ref u5
-\n\n
+### Using GCG and developing with GCG
+Again, depending on what type of user you are, you might go a different way, but these are the most common ones.
+1. No matter what user you are, you should always start with the @ref getting-started guide.
+2. Then, if you want to use some features of GCG, dive into the **first few** @ref use-cases of the @ref users.
+3. After that, you might want to take a look at the **more complicated** @ref use-cases, for example by @ref u5.
+4. Finally, you can start **developing your own plug-ins** for GCG, starting with the final use case @ref u7 and the @ref example-projects.

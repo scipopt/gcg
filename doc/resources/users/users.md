@@ -14,7 +14,7 @@ The **second part** explains how the interactive menu and more features of GCG c
  @subpage visu
 
 \n
-Then, **the remainder** of the user's guide is divided into 5 different use cases
+Then, **the remainder** of the user's guide is divided into different use cases
 which are ordered according to their complexity.\n
 If you're new here, we recommend starting with the first one.
 
@@ -24,3 +24,5 @@ If you're new here, we recommend starting with the first one.
  - @ref u3
  - @ref u4
  - @ref u5
+ - @ref u6
+ - @ref u7
