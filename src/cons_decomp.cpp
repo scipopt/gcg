@@ -4693,7 +4693,7 @@ SCIP_RETCODE GCGconshdlrDecompChooseCandidatesFromSelected(
       return SCIP_ERROR;
    }
 
-   if( !original && conshdlrdata->detprobdatapres == NULL )
+   if( (!original && conshdlrdata->detprobdatapres == NULL) || (original && conshdlrdata->detprobdataorig == NULL) )
    {
        return SCIP_OKAY;
    }
