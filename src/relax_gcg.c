@@ -158,7 +158,7 @@ struct SCIP_RelaxData
    SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
 
    /* filename information */
-   const char*           filename;
+   char*                 filename;
 };
 
 
@@ -2703,7 +2703,7 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
    }
 
-   SCIPfreeBlockMemoryArrayNull(scip, &relaxdata->filename, SCIP_MAXSTRLEN);
+   SCIPfreeMemoryArrayNull(scip, &relaxdata->filename);
 
    SCIPfreeMemory(scip, &relaxdata);
 
@@ -4829,9 +4829,9 @@ SCIP_RETCODE GCGsetFilename(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->filename), SCIP_MAXSTRLEN);
-
-   SCIP_CALL( SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, filename, SCIP_MAXSTRLEN ) );
+   SCIPfreeMemoryArrayNull(scip, &(relaxdata->filename));
+   SCIPallocMemoryArray(scip, &(relaxdata->filename), SCIP_MAXSTRLEN);
+   SCIPstrncpy(relaxdata->filename, filename, SCIP_MAXSTRLEN);
 
    return SCIP_OKAY;
 }
@@ -4875,10 +4875,9 @@ const char* GCGgetFilename(
 
    if( relaxdata->filename == NULL )
    {
-      char help[SCIP_MAXSTRLEN] = "";
-
-      (void) strncat( help, "unknown", 8 );
-      SCIP_CALL_ABORT(SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, help, SCIP_MAXSTRLEN ) );
+      char unknownstr[] = "unknown";
+      SCIPallocMemoryArray(scip, &(relaxdata->filename), SCIP_MAXSTRLEN);
+      SCIPstrncpy(relaxdata->filename, unknownstr, SCIP_MAXSTRLEN);
    }
 
    return relaxdata->filename;
