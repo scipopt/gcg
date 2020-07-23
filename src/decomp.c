@@ -2298,7 +2298,9 @@ SCIP_RETCODE DECdecompCheckConsistency(
          SCIP_CONS* cons = DECdecompGetSubscipconss(decdecomp)[b][c];
 
          SCIPdebugMessage("Cons <%s> in block %d = %d\n", SCIPconsGetName(cons), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1);  /*lint !e507*/
-         assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
+         // @todo: remove if check when SCIPfindCons() can be called in stage SCIP_STAGE_INITSOLVE
+         if( SCIPgetStage(scip) != SCIP_STAGE_INITSOLVE)
+            assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
          assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) - 1 == b); /*lint !e507*/
          ncurvars = GCGconsGetNVars(scip, cons);
          if ( ncurvars == 0 )

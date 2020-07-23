@@ -240,14 +240,6 @@ SCIP_CONS** GCGgetOrigMasterConss(
    );
 
 
-/** returns the linear counterpart of the contraints in the original problem that correspond
- * to the constraints in the master problem
- */
-extern
-SCIP_CONS** GCGgetLinearOrigMasterConss(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
 /** returns the convexity constraint for the given block */
 extern
 SCIP_CONS* GCGgetConvCons(
