@@ -235,6 +235,7 @@
 #include "clscons_gamsdomain.h"
 #include "clscons_gamssymbol.h"
 
+#include "clsvar_gamsdomain.h"
 #include "clsvar_gamssymbol.h"
 #include "clsvar_objvalues.h"
 #include "clsvar_scipvartypes.h"
@@ -409,6 +410,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeConsClassifierGamsdomain(scip) );
    SCIP_CALL( SCIPincludeConsClassifierGamssymbol(scip) );
 
+   SCIP_CALL( SCIPincludeVarClassifierGamsdomain(scip) );
    SCIP_CALL( SCIPincludeVarClassifierGamssymbol(scip) );
    SCIP_CALL( SCIPincludeVarClassifierScipVartypes(scip) );
    SCIP_CALL( SCIPincludeVarClassifierObjValues(scip) );

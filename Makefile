@@ -211,6 +211,7 @@ LIBOBJ = \
 			clscons_scipconstypes.o \
 			clscons_gamsdomain.o \
 			clscons_gamssymbol.o \
+			clsvar_gamsdomain.o \
 			clsvar_gamssymbol.o \
 			clsvar_objvalues.o \
 			clsvar_scipvartypes.o \

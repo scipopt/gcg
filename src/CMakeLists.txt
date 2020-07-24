@@ -36,6 +36,7 @@ set(gcgsources
     clscons_scipconstypes.cpp
     clscons_gamsdomain.cpp
     clscons_gamssymbol.cpp
+    clsvar_gamsdomain.cpp
     clsvar_gamssymbol.cpp
     clsvar_objvalues.cpp
     clsvar_scipvartypes.cpp
