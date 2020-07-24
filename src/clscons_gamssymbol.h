@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clscons_gamssymbol.h
- * @brief  Constraints which originate from same line in gamsfile are put into same class
+ * @brief  Constraints which have the same symbol are put into same class
  * @author Stefanie Koß
  */
 
@@ -43,7 +43,7 @@
 extern "C" {
 #endif
 
-/** adds an entry to clsdata->symbolcons */
+/** adds an entry to clsdata->constosymbol */
 extern
 SCIP_RETCODE DECconsClassifierGamssymbolAddEntry(
    DEC_CONSCLASSIFIER*   classifier,

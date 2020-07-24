@@ -59,10 +59,9 @@
 /*
  * Data structures
  */
-// SHOW
 struct DEC_ClassifierData
 {
-   std::map<std::string, std::set<int>>     constodom;          /**< maps constraint name to the corresponding symbol index */
+   std::map<std::string, std::set<int>>     constodomain;       /**< maps constraint name to the corresponding set of domain indices */
 };
 
 /*
@@ -99,7 +98,6 @@ DEC_DECL_FREECONSCLASSIFIER(classifierFree)
 #define classifierInit NULL
 #endif
 
-// SHOW
 static
 DEC_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA* detprobdata;
@@ -125,15 +123,15 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
    assert(classdata != NULL);
 
    /* firstly, assign all constraints to classindices */
-   // iterate over constraints in detection and lookup in classdata->constodom
+   // iterate over constraints in detection and lookup in classdata->constodomain
    for( int consid = 0; consid < detprobdata->getNConss(); ++ consid )
    {
       SCIP_CONS* cons = detprobdata->getConsForIndex(consid);
       std::string consname = std::string( SCIPconsGetName( cons ) );
 
-      auto domainiter = classdata->constodom.find(consname);
+      auto domainiter = classdata->constodomain.find(consname);
       std::set<int> domain;
-      if( domainiter != classdata->constodom.end() )
+      if( domainiter != classdata->constodomain.end() )
       {
          domain = domainiter->second;
       }
@@ -205,8 +203,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
  * classifier specific interface methods
  */
 
-// SHOW
-/** adds an entry to clsdata->constodom */
+/** adds an entry to clsdata->constodomain */
 SCIP_RETCODE DECconsClassifierGamsdomainAddEntry(
    DEC_CONSCLASSIFIER*   classifier,
    SCIP_CONS*            cons,
@@ -224,7 +221,7 @@ SCIP_RETCODE DECconsClassifierGamsdomainAddEntry(
    {
       domainset.insert(symDomIdx[i]);
    }
-   classdata->constodom.insert({consname, domainset});
+   classdata->constodomain.insert({consname, domainset});
 
    return SCIP_OKAY;
 }
@@ -238,7 +235,7 @@ SCIP_RETCODE SCIPincludeConsClassifierGamsdomain(
 
    SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
    assert(classifierdata != NULL);
-   classifierdata->constodom = std::map<std::string, std::set<int>>();
+   classifierdata->constodomain = std::map<std::string, std::set<int>>();
 
    SCIP_CALL(
       DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierInit, classifierFree, classifierClassify) );

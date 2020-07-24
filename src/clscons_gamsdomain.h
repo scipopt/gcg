@@ -43,7 +43,7 @@
 extern "C" {
 #endif
 
-/** adds an entry to clsdata->symbolcons */
+/** adds an entry to clsdata->constodomain */
 extern
 SCIP_RETCODE DECconsClassifierGamsdomainAddEntry(
    DEC_CONSCLASSIFIER*   classifier,

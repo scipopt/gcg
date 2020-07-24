@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -59,10 +59,9 @@
 /*
  * Data structures
  */
-// SHOW
 struct DEC_ClassifierData
 {
-   std::map<std::string, int>       symbolcons;             /**< constraints defined for line*/
+   std::map<std::string, int>       constosymbol;             /**< maps constraint name to the corresponding symbol index */
 };
 
 /*
@@ -99,7 +98,6 @@ DEC_DECL_FREECONSCLASSIFIER(classifierFree)
 #define classifierInit NULL
 #endif
 
-// SHOW
 static
 DEC_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA* detprobdata;
@@ -125,17 +123,17 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
    assert(classdata != NULL);
 
    /* firstly, assign all constraints to classindices */
-   // iterate over constraints in detection and lookup in classdata->symbolcons
-   // iterating over classdata->symbolcons and lookup constraints with getIndexForCons fails with assertion if constraint is not found -> should return error value?
+   // iterate over constraints in detection and lookup in classdata->constosymbol
+   // iterating over classdata->constosymbol and lookup constraints with getIndexForCons fails with assertion if constraint is not found -> should return error value?
    for( int consid = 0; consid < detprobdata->getNConss(); ++ consid )
    {
       // int consid = detprobdata->getIndexForCons(iter.second);
       SCIP_CONS* cons = detprobdata->getConsForIndex(consid);
       std::string consname = std::string( SCIPconsGetName( cons ) );
 
-      auto symbolidxiter = classdata->symbolcons.find(consname);
+      auto symbolidxiter = classdata->constosymbol.find(consname);
       int symbolidx;
-      if( symbolidxiter != classdata->symbolcons.end() )
+      if( symbolidxiter != classdata->constosymbol.end() )
       {
          symbolidx = symbolidxiter->second;
       }
@@ -199,8 +197,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
  * classifier specific interface methods
  */
 
-// SHOW
-/** adds an entry to clsdata->symbolcons */
+/** adds an entry to clsdata->constosymbol */
 SCIP_RETCODE DECconsClassifierGamssymbolAddEntry(
    DEC_CONSCLASSIFIER*   classifier,
    SCIP_CONS*            cons,
@@ -212,8 +209,7 @@ SCIP_RETCODE DECconsClassifierGamssymbolAddEntry(
    assert(classdata != NULL);
 
    std::string consname = SCIPconsGetName( cons );
-   classdata->symbolcons.insert({consname, symbolIdx});
-   //classdata->symbolcons[symbolIdx] = cons;
+   classdata->constosymbol.insert({consname, symbolIdx});
 
    return SCIP_OKAY;
 }
@@ -227,7 +223,7 @@ SCIP_RETCODE SCIPincludeConsClassifierGamssymbol(
 
    SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
    assert(classifierdata != NULL);
-   classifierdata->symbolcons = std::map<std::string, int>();
+   classifierdata->constosymbol = std::map<std::string, int>();
 
    SCIP_CALL(
       DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierInit, classifierFree, classifierClassify) );
