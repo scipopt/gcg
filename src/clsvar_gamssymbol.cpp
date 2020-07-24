@@ -60,7 +60,7 @@
 /** classifier handler data */
 struct DEC_ClassifierData
 {
-   std::map<int, int>       vartosymbol;            /**< maps variable name to the corresponding symbol index */
+   std::map<std::string, int>       vartosymbol;            /**< maps variable name to the corresponding symbol index */
 };
 
 /*
@@ -136,9 +136,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
    {
       SCIP_VAR* var = detprobdata->getVarForIndex(varid);
       std::string varname = std::string( SCIPvarGetName( var ) );
-      int varidx = SCIPvarGetIndex( var );
-
-      auto symbolidxiter = classdata->vartosymbol.find(varidx);
+      auto symbolidxiter = classdata->vartosymbol.find(varname);
       int symbolidx;
       if( symbolidxiter != classdata->vartosymbol.end() )
       {
@@ -217,9 +215,11 @@ SCIP_RETCODE DECvarClassifierGamssymbolAddEntry(
    assert(classdata != NULL);
 
    std::string varname = SCIPvarGetName( var );
-   int varidx = SCIPvarGetIndex( var );
-   //classdata->vartosymbol.insert({varname, symbolIdx});
-   classdata->vartosymbol.insert({varidx, symbolIdx});
+   char varnametrans[SCIP_MAXSTRLEN];
+   (void) SCIPsnprintf(varnametrans, SCIP_MAXSTRLEN, "t_%s", varname.c_str());
+   std::string nametrans(varnametrans);
+   classdata->vartosymbol.insert({varname, symbolIdx});
+   classdata->vartosymbol.insert({varnametrans, symbolIdx});
 
    return SCIP_OKAY;
 }
@@ -233,7 +233,7 @@ SCIP_RETCODE SCIPincludeVarClassifierGamssymbol(
 
    SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
    assert(classifierdata != NULL);
-   classifierdata->vartosymbol = std::map<int, int>();
+   classifierdata->vartosymbol = std::map<std::string, int>();
 
    SCIP_CALL(
       DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierInit, classifierFree, classifierClassify) );

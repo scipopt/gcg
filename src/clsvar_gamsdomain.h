@@ -43,7 +43,7 @@
 extern "C" {
 #endif
 
-/** adds an entry to clsdata->vartodom */
+/** adds an entry to clsdata->vartodomain */
 SCIP_RETCODE DECvarClassifierGamsdomainAddEntry(
    DEC_VARCLASSIFIER*   classifier,
    SCIP_VAR*            var,
