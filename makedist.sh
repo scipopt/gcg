@@ -2,7 +2,7 @@
 
 # For release versions, only use VERSION="x.x.x".
 # For development versions, use VERSION="x.x.x.x" with subversion number.
-VERSION="3.0.3"
+VERSION="3.0.4"
 NAME="gcg-$VERSION"
 rm -f $NAME
 ln -s . $NAME

@@ -1,3 +1,13 @@
+GCG Version 3.0.4
+=================
+
+Bug fixes
+---------
+
+- Fix segmentation fault.
+- Fix commands 'transform' and 'presolve': Check SCIP_STAGE before calling SCIPdialogExecTransform() and SCIPdialogExecPresolve().
+
+
 GCG Version 3.0.3
 =================
 
