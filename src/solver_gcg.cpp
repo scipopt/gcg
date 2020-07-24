@@ -634,6 +634,10 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->cursollimit), npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->curstallnodelimit), npricingprobs) );
 
+   SCIPcreateClock(scip, &solverdata->inittime);
+   SCIPcreateClock(scip, &solverdata->updatetime);
+   SCIPcreateClock(scip, &solverdata->solvingtime);
+   SCIPcreateClock(scip, &solverdata->postprocessingtime);
 
    for (i = 0; i < npricingprobs; ++i)
    {
@@ -992,11 +996,6 @@ SCIP_RETCODE GCGincludeSolverGcg(
    solverdata->varmaps = NULL;
    solverdata->nbasicpricingconss = NULL;
    solverdata->settingsfile = NULL;
-
-   SCIPcreateClock(scip, &solverdata->inittime);
-   SCIPcreateClock(scip, &solverdata->updatetime);
-   SCIPcreateClock(scip, &solverdata->solvingtime);
-   SCIPcreateClock(scip, &solverdata->postprocessingtime);
 
    /* include pricing problem solver */
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_HEU_ENABLED, SOLVER_ENABLED,
