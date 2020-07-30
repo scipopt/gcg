@@ -5231,57 +5231,81 @@ std::vector<int>::const_iterator PARTIALDECOMP::fixVarToStairlinking(
 }
 
 
-void PARTIALDECOMP::fixConsToBlockByName(
+bool PARTIALDECOMP::fixConsToBlockByName(
    const char*           consname,            /**< name of the constraint */
    int                   blockid              /**< block index (counting from 0) */
    )
 {
    int consindex = getDetprobdata()->getIndexForCons(consname);
 
-   if( blockid >= nblocks )
-         nblocks = blockid+1;
-   fixConsToBlock(consindex, blockid);
+   if( consindex >= 0 )
+   {
+      if( blockid >= nblocks )
+         nblocks = blockid + 1;
+      fixConsToBlock(consindex, blockid);
+      return true;
+   }
+   return false;
 }
 
 
-void PARTIALDECOMP::fixVarToBlockByName(
+bool PARTIALDECOMP::fixVarToBlockByName(
    const char*           varname,
    int                   blockid
    )
 {
    int varindex = getDetprobdata()->getIndexForVar(varname);
 
-   // if the block id is higher than expected, set the block to master
-   if( blockid >= nblocks )
-      nblocks = blockid+1;
-   fixVarToBlock(varindex, blockid);
+   if( varindex >= 0 )
+   {
+      if( blockid >= nblocks )
+         nblocks = blockid + 1;
+      fixVarToBlock(varindex, blockid);
+      return true;
+   }
+   return false;
 }
 
 
-void PARTIALDECOMP::fixConsToMasterByName(
+bool PARTIALDECOMP::fixConsToMasterByName(
    const char*           consname   /**< name of cons to fix as master cons */
    )
 {
    int consindex = getDetprobdata()->getIndexForCons(consname);
-   fixConsToMaster(consindex);
+   if( consindex >= 0 )
+   {
+      fixConsToMaster(consindex);
+      return true;
+   }
+   return false;
 }
 
 
-void PARTIALDECOMP::fixVarToMasterByName(
+bool PARTIALDECOMP::fixVarToMasterByName(
    const char*           varname
    )
 {
    int varindex = getDetprobdata()->getIndexForVar(varname);
-   fixVarToMaster(varindex);
+   if( varindex >= 0 )
+   {
+      fixVarToMaster(varindex);
+      return true;
+   }
+   return false;
 }
 
 
-void PARTIALDECOMP::fixVarToLinkingByName(
+bool PARTIALDECOMP::fixVarToLinkingByName(
    const char*           varname              /**< name of the variable */
    )
 {
    int varindex = getDetprobdata()->getIndexForVar(varname);
-   fixVarToLinking(varindex);
+   if( varindex >= 0 )
+   {
+      fixVarToLinking(varindex);
+      return true;
+   }
+   return false;
 }
 
 

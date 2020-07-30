@@ -1541,46 +1541,47 @@ public:
    /**
     * @brief assigns a constraint by name to a block
     * @see fixConsToBlock
+    * @returns true iff successful
     */
-   void fixConsToBlockByName(
+   bool fixConsToBlockByName(
       const char*           consname,            /**< name of the constraint */
-      int                   blockid              /**< block index ( counting from 0) */
+      int                   blockid              /**< block index (counting from 0) */
       );
 
    /**
     * @brief assigns a variable by name to a block
     * @see fixVarToBlock
-    * @returns SCIP return code
+    * @returns true iff successful
     */
-   void fixVarToBlockByName(
+   bool fixVarToBlockByName(
       const char*           varname,             /**< name of the variable */
-      int                   blockid              /**< block index ( counting from 0) */
+      int                   blockid              /**< block index (counting from 0) */
       );
 
    /**
     * @brief assgins a constraint by name as master
     * @see fixConsToMaster
-    * @returns SCIP return code
+    * @returns true iff successful
     */
-   void fixConsToMasterByName(
+   bool fixConsToMasterByName(
       const char*           consname   /**< name of cons to fix as master cons */
       );
 
    /**
     * @brief assigns a variable with given name as master
     * @see fixVarToMaster
-    * @returns SCIP return code
+    * @returns true iff successful
     */
-   void fixVarToMasterByName(
+   bool fixVarToMasterByName(
       const char*           varname              /**< name of the variable */
       );
 
    /**
     * @brief assigns a variable by name to the linking variables
     * @see fixVarToLinking
-    * @returns SCIP return code
+    * @returns true iff successful
     */
-   void fixVarToLinkingByName(
+   bool fixVarToLinkingByName(
       const char*           varname              /**< name of the variable */
       );
 
