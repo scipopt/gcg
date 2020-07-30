@@ -66,6 +66,7 @@ CLIQUER     =   false
 HMETIS      =   false
 OPENMP      =   false
 GSL         =   false
+YAML        =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER)
 
@@ -173,6 +174,25 @@ endif
 
 ifeq ($(CPLEXSOLVER),true)
 FLAGS		+=	-DWITH_CPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
+endif
+
+#-----------------------------------------------------------------------------
+# YAML
+#-----------------------------------------------------------------------------
+
+ifeq ($(YAML),true)
+FLAGS		+=	-DWITH_YAML
+LDFLAGS		+= 	-lyaml
+ifeq ($(COMP),gnu)
+FLAGS		+=	-isystem$(LIBDIR)/include
+else
+FLAGS		+=	-I$(LIBDIR)/include
+endif
+SOFTLINKS	+=	$(LIBDIR)/include/yaml
+SOFTLINKS	+=	$(LIBDIR)/static/libyaml.$(STATICLIBEXT)
+LINKMSG		+=	"LibYAML library (disable by compiling with \"make YAML=false\"):\n"
+LINKMSG		+=	" -> yaml is the path to the yaml include files\n"
+LINKMSG		+=	" -> \"libyaml.$(STATICLIBEXT)\" is the path to the yaml library\n"
 endif
 
 #-----------------------------------------------------------------------------

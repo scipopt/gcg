@@ -159,6 +159,10 @@
 #include "relax_gcg.h"
 #include "branch_empty.h"
 
+#if WITH_YAML
+#include "reader_ndec.h"
+#endif
+
 #include "cons_origbranch.h"
 #include "disp_gcg.h"
 #include "dialog_gcg.h"
@@ -355,6 +359,9 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
    SCIP_CALL( SCIPincludeReaderDec(scip) );
    SCIP_CALL( SCIPincludeReaderRef(scip) );
+#if WITH_YAML
+   SCIP_CALL( SCIPincludeReaderNDec(scip) );
+#endif
    SCIP_CALL( SCIPincludeBranchruleEmpty(scip) );
 
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );

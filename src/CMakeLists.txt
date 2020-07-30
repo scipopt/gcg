@@ -357,6 +357,18 @@ if(HMETIS_FOUND)
    configure_file(hmetis.h.in hmetis.h)
 endif()
 
+if(YAML_FOUND)
+    set(gcgsources ${gcgsources}
+        reader_ndec.cpp
+    )
+    set(gcgheaders ${gcgheaders}
+        reader_ndec.h
+        reader_ndec.hpp
+    )
+else()
+    SET(YAML_LIBRARIES)
+endif()
+
 # all source files should be compiled with a c++ compiler
 if(CXXONLY)
     set_source_files_properties(main.c ${gcgsources} PROPERTIES LANGUAGE CXX)
@@ -374,11 +386,11 @@ target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
 
 if(SHARED)
     set(SCIP_NEEDED 0)
-    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES} ${CLIQUER_PIC_LIBRARIES} ${CPLEX_PIC_LIBRARIES} ${GSL_PIC_LIBRARIES})
+    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES} ${CLIQUER_PIC_LIBRARIES} ${CPLEX_PIC_LIBRARIES} ${GSL_PIC_LIBRARIES} ${YAML_PIC_LIBRARIES})
     add_executable(gcg main.c ${gcgsources})
 else()
     set(SCIP_NEEDED ${SCIP_FOUND})
-    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES})
+    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES} ${YAML_LIBRARIES})
     add_executable(gcg main.c)
     target_link_libraries(gcg libgcg)
 endif()
@@ -390,7 +402,7 @@ endif()
 
 target_compile_definitions(gcg PRIVATE EXTERN=extern)
 
-target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES})
+target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES} ${YAML_LIBRARIES})
 
 add_dependencies(libgcg gcg_update_githash)
 add_dependencies(gcg gcg_update_githash)
