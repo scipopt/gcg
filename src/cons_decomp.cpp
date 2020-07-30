@@ -449,6 +449,9 @@ SCIP_RETCODE resetDetprobdata(
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+      SCIP_CALL( SCIPtransformProb(scip) );
+
    // for the orig detprobdata, reset only the current partialdecs as the rest will stay the same in any case
    if(original)
    {
