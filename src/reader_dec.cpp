@@ -1074,14 +1074,14 @@ SCIP_RETCODE readDECFile(
       }
    }
 
-   if(decinput->incomplete)
-      decinput->partialdec->setUsergiven(gcg::USERGIVEN::PARTIAL);
-   else
+   decinput->partialdec->prepare();
+
+   if( !decinput->partialdec->isComplete() && !decinput->incomplete )
       decinput->partialdec->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
 
    if( decinput->haserror)
    {
-      SCIPinfoMessage(scip, NULL, "error occured while reading dec file");
+      SCIPinfoMessage(scip, NULL, "error occurred while reading dec file");
       delete decinput->partialdec;
    }
    else
