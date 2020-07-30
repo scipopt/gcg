@@ -74,7 +74,38 @@ SCIP_RETCODE readNDec(
    filehandler.initialize();
    if( filehandler.readNDec(rootparser) )
    {
-      // todo
+      if( data.rootdecomposition )
+      {
+         int nblocks = data.rootdecomposition->blocks.size();
+
+         if( data.presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+         {
+            SCIPinfoMessage(scip, NULL,
+               "Reading presolved decomposition but problem is not presolved yet. Calling SCIPpresolve()\n");
+            SCIPpresolve(scip);
+         }
+
+         gcg::PARTIALDECOMP* partialdec = new gcg::PARTIALDECOMP(scip, !data.presolved);
+         for( auto& cons : data.rootdecomposition->masterconstraints )
+         {
+            if( !partialdec->fixConsToMasterByName(cons.c_str()) )
+               SCIPwarningMessage(scip, "Could not set constraint %s as master constraint.\n", cons.c_str());
+         }
+         partialdec->setNBlocks(nblocks);
+         for( int block = 0; block < nblocks; ++block )
+         {
+            for( auto& cons : data.rootdecomposition->blocks[block].constraints )
+            {
+               if( !partialdec->fixConsToBlockByName(cons.c_str(), block) )
+                  SCIPwarningMessage(scip, "Could not set constraint %s as block constraint.\n", cons.c_str());
+            }
+         }
+         // todo: nested decompositions
+         partialdec->prepare();
+         GCGconshdlrDecompAddPreexisitingPartialDec(scip, partialdec);
+      }
+      else
+         SCIPwarningMessage(scip, "No root decomposition is specified.\n");
       *result = SCIP_SUCCESS;
    }
    else
@@ -100,12 +131,6 @@ SCIP_RETCODE writePartialdec(
 NestedDecompositionData::~NestedDecompositionData()
 {
    for( DecompositionData* data : decompositions )
-      delete data;
-}
-
-DecompositionData::~DecompositionData()
-{
-   for( BlockData* data : blocks )
       delete data;
 }
 
@@ -521,9 +546,8 @@ bool DecompositionElementParser::handleMappingStart(
    bool processed = false;
    if( parsingblocks )
    {
-      BlockData* blockdata = new BlockData();
-      decdata_.blocks.push_back(blockdata);
-      BlockElementParser blockparser(scip_, filehandler_, data_, *blockdata);
+      decdata_.blocks.emplace_back();
+      BlockElementParser blockparser(scip_, filehandler_, data_, decdata_.blocks.back());
       if( !filehandler_.parseElement(blockparser) )
          error_ = true;
       processed = true;

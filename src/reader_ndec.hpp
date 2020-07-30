@@ -56,10 +56,10 @@ struct BlockData
 struct DecompositionData
 {
    DecompositionData() = default;
-   ~DecompositionData();
+   ~DecompositionData() = default;
 
    std::vector<std::string> masterconstraints;
-   std::vector<BlockData*> blocks;
+   std::vector<BlockData> blocks;
 };
 
 struct NestedDecompositionData
