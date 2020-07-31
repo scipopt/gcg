@@ -4004,6 +4004,21 @@ int PARTIALDECOMP::getNCoeffsForMaster(
 }
 
 
+BLOCK_STRUCTURE* PARTIALDECOMP::getBlockStructure(
+   int block
+   )
+{
+   assert(block >= 0 && block < nblocks);
+   return blockstructures[block];
+}
+
+
+std::vector<BLOCK_STRUCTURE*>& PARTIALDECOMP::getBlockStructures()
+{
+   return blockstructures;
+}
+
+
 SCIP_Real PARTIALDECOMP::getScore(
    SCORETYPE type
 )
@@ -4625,6 +4640,12 @@ bool PARTIALDECOMP::isEqual(
 }
 
 
+bool PARTIALDECOMP::isNested()
+{
+   return !blockstructures.empty();
+}
+
+
 bool PARTIALDECOMP::isPropagatedBy(
    DEC_DETECTOR* detector
    )
@@ -4991,7 +5012,24 @@ void PARTIALDECOMP::setNBlocks(
       stairlinkingvars.emplace_back(0);
    }
 
+   if( !blockstructures.empty() )
+      blockstructures.resize(newNBlocks);
+
    nblocks = newNBlocks;
+}
+
+
+void PARTIALDECOMP::setBlockStructure(
+   int block,
+   BLOCK_STRUCTURE* blockstructure
+   )
+{
+   if( block >= nblocks )
+      setNBlocks(block+1);
+   assert( block >= 0 && block < nblocks );
+   if( blockstructures.empty() )
+      blockstructures.resize(nblocks);
+   blockstructures[block] = blockstructure;
 }
 
 

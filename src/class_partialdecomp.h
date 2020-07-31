@@ -66,6 +66,13 @@ enum USERGIVEN
 
 class DETPROBDATA;
 
+struct BLOCK_STRUCTURE
+{
+   std::vector<int> masterconss;
+   std::vector<std::vector<int>> blockconss;
+   std::vector<BLOCK_STRUCTURE*> blockstructures;
+};
+
 
 /*!
  * @brief class to manage partial decompositions
@@ -183,6 +190,7 @@ private:
    DEC_DETECTOR* finishedorigby;          /**< index of finishing detector of orig ancestor partialdec */
 
    int translatedpartialdecid;
+   std::vector<BLOCK_STRUCTURE*> blockstructures;    /**< structure information for each block (empty iff decomposition is not nested)*/
 
 private:
    /**< id of the translated partialdec */
@@ -845,6 +853,18 @@ public:
    int getNDetectors();
 
    /**
+    *  @brief Returns the structure information of a specific block
+    */
+   BLOCK_STRUCTURE* getBlockStructure(
+      int block                          /**< block id */
+   );
+
+   /**
+    *  @brief Returns the structure information of all blocks
+    */
+   std::vector<BLOCK_STRUCTURE*>& getBlockStructures();
+
+   /**
     * @brief Gets size of the vector containing linking vars
     * @return size of the vector containing linking vars
     */
@@ -1163,6 +1183,12 @@ public:
       );
 
    /**
+    *  @brief Checks whether this is a nested decomposition
+    *  @returns true iff the decomposition is nested
+    */
+   bool isNested();
+
+   /**
     * @brief Gets whether this partialdec was propagated by specified detector
     * @param detector pointer to detector to check for
     * @return true iff this partialdec was propagated by detectorID
@@ -1382,6 +1408,14 @@ public:
    void setNBlocks(
       int nblocks
       );
+
+   /**
+    *  @brief sets structure information of a specific block
+    */
+   void setBlockStructure(
+      int block,                          /**< block id */
+      BLOCK_STRUCTURE* blockstructure    /**< structure information */
+   );
 
    /**
     * @brief set the selection status of this partialdecs

@@ -40,6 +40,10 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include "class_partialdecomp.h"
+
+namespace gcg
+{
 
 struct DecompositionData;
 struct NDecFileHandler;
@@ -57,6 +61,7 @@ struct DecompositionData
 {
    DecompositionData() = default;
    ~DecompositionData() = default;
+   BLOCK_STRUCTURE* createBlockStructure(DETPROBDATA* detprobdata);
 
    std::vector<std::string> masterconstraints;
    std::vector<BlockData> blocks;
@@ -252,5 +257,7 @@ private:
    bool parsingdecomps;
    bool parsingsymmetry;
 };
+
+}
 
 #endif //GCG_READER_NDEC_HPP__

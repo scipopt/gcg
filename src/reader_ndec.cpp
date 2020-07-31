@@ -51,6 +51,8 @@
 
 #define NDEC_VERSION             1
 
+using namespace gcg;
+
 static bool checkVersion(int version)
 {
    return version == NDEC_VERSION;
@@ -85,7 +87,8 @@ SCIP_RETCODE readNDec(
             SCIPpresolve(scip);
          }
 
-         gcg::PARTIALDECOMP* partialdec = new gcg::PARTIALDECOMP(scip, !data.presolved);
+         PARTIALDECOMP* partialdec = new PARTIALDECOMP(scip, !data.presolved);
+         DETPROBDATA* detprobdata = partialdec->getDetprobdata();
          for( auto& cons : data.rootdecomposition->masterconstraints )
          {
             if( !partialdec->fixConsToMasterByName(cons.c_str()) )
@@ -94,13 +97,19 @@ SCIP_RETCODE readNDec(
          partialdec->setNBlocks(nblocks);
          for( int block = 0; block < nblocks; ++block )
          {
-            for( auto& cons : data.rootdecomposition->blocks[block].constraints )
+            BlockData& blockdata = data.rootdecomposition->blocks[block];
+            for( auto& cons : blockdata.constraints )
             {
                if( !partialdec->fixConsToBlockByName(cons.c_str(), block) )
                   SCIPwarningMessage(scip, "Could not set constraint %s as block constraint.\n", cons.c_str());
             }
+            if( blockdata.decomposition )
+            {
+               BLOCK_STRUCTURE* nestedstructure = blockdata.decomposition->createBlockStructure(detprobdata);
+               partialdec->setBlockStructure(block, nestedstructure);
+            }
          }
-         // todo: nested decompositions
+         // todo: set symmetry information
          partialdec->prepare();
          GCGconshdlrDecompAddPreexisitingPartialDec(scip, partialdec);
       }
@@ -132,6 +141,34 @@ NestedDecompositionData::~NestedDecompositionData()
 {
    for( DecompositionData* data : decompositions )
       delete data;
+}
+
+BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
+   DETPROBDATA* detprobdata
+   )
+{
+   BLOCK_STRUCTURE* blockstructure = new BLOCK_STRUCTURE();
+   int idx;
+   for( auto& cons : masterconstraints )
+   {
+      idx = detprobdata->getIndexForCons(cons.c_str());
+      if( idx >= 0 )
+         blockstructure->masterconss.push_back(idx);
+
+   }
+   for( auto& blockdata : blocks )
+   {
+      blockstructure->blockconss.emplace_back();
+      for( auto& cons : blockdata.constraints )
+      {
+         idx = detprobdata->getIndexForCons(cons.c_str());
+         if( idx >= 0 )
+            blockstructure->blockconss.back().push_back(idx);
+      }
+      if( blockdata.decomposition )
+         blockstructure->blockstructures.push_back(blockdata.decomposition->createBlockStructure(detprobdata));
+   }
+   return blockstructure;
 }
 
 NDecFileHandler::NDecFileHandler(
@@ -400,8 +437,10 @@ bool RootElementParser::handleMappingStart(
       }
       else if( strcmp(name, "rootdecomposition") == 0 )
       {
+         int idx = data_.decompositions.size();
          parseDecomposition(anchor);
-         data_.rootdecomposition = data_.decompositions.back();
+         assert(idx < data_.decompositions.size());
+         data_.rootdecomposition = data_.decompositions[idx];
          processed = true;
       }
       else
@@ -648,7 +687,10 @@ bool BlockElementParser::handleMappingStart(
    {
       if( strcmp(name, "decomposition") == 0 )
       {
+         int idx = data_.decompositions.size();
          parseDecomposition(anchor);
+         assert(idx < data_.decompositions.size());
+         blockdata_.decomposition = data_.decompositions[idx];
          processed = true;
       }
       else
