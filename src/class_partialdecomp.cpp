@@ -87,6 +87,92 @@ const int PARTIALDECOMP::primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37,
 const int PARTIALDECOMP::nprimes = 70;
 
 
+BLOCK_STRUCTURE::~BLOCK_STRUCTURE()
+{
+   for( auto block : blockstructures )
+      delete block;
+}
+
+
+PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
+   PARTIALDECOMP* parentpartialdec,
+   DETPROBDATA* newdetprobdata,
+   int probnr
+   )
+{
+   DETPROBDATA* olddetprobdata = parentpartialdec->getDetprobdata();
+   PARTIALDECOMP* partialdec = new PARTIALDECOMP(newdetprobdata->getScip(), newdetprobdata->isAssignedToOrigProb());
+   int nblocks = blockconss.size();
+   char consname[SCIP_MAXSTRLEN];
+   for( auto cons : masterconss )
+   {
+      SCIPsnprintf(consname, SCIP_MAXSTRLEN, "p%d_%s", probnr, SCIPconsGetName(olddetprobdata->getCons(cons)));
+      int idx = newdetprobdata->getIndexForCons(consname);
+      if( idx >= 0 )
+         partialdec->fixConsToMaster(idx);
+   }
+   partialdec->setNBlocks(nblocks);
+   for( int block = 0; block < nblocks; ++block )
+   {
+      for( auto cons : blockconss[block] )
+      {
+         SCIPsnprintf(consname, SCIP_MAXSTRLEN, "p%d_%s", probnr, SCIPconsGetName(olddetprobdata->getCons(cons)));
+         int idx = newdetprobdata->getIndexForCons(consname);
+         if( idx >= 0 )
+            partialdec->fixConsToBlock(idx, block);
+      }
+      for( int subblock = 0; subblock < blockstructures.size(); ++subblock )
+      {
+         BLOCK_STRUCTURE* subblockstructure = blockstructures[subblock];
+         if( subblockstructure )
+         {
+            // todo
+            // partialdec->setBlockStructure(subblock, subblockstructure->translateStructure(rowmapping));
+            SCIPwarningMessage(olddetprobdata->getScip(), "Not implemented.\n");
+         }
+         else
+            partialdec->setBlockStructure(subblock, NULL);
+      }
+   }
+   return partialdec;
+}
+
+
+BLOCK_STRUCTURE* BLOCK_STRUCTURE::translateStructure(
+   std::vector<int>& rowmapping
+   )
+{
+   BLOCK_STRUCTURE* blockstructure = new BLOCK_STRUCTURE();
+
+   for( int cons : masterconss )
+   {
+      int idx = rowmapping[cons];
+      if( idx >= 0 )
+         blockstructure->masterconss.push_back(idx);
+   }
+
+   for( auto& conss : blockconss )
+   {
+      blockstructure->blockconss.emplace_back();
+      for( int cons : conss )
+      {
+         int idx = rowmapping[cons];
+         if( idx >= 0 )
+            blockstructure->blockconss.back().push_back(idx);
+      }
+   }
+
+   for( auto block : blockstructures )
+   {
+      if( block )
+         blockstructure->blockstructures.push_back(block->translateStructure(rowmapping));
+      else
+         blockstructure->blockstructures.emplace_back();
+   }
+
+   return blockstructure;
+}
+
 PARTIALDECOMP::PARTIALDECOMP(
    SCIP* _scip,
    bool originalProblem
@@ -220,6 +306,8 @@ PARTIALDECOMP::PARTIALDECOMP(
 PARTIALDECOMP::~PARTIALDECOMP()
 {
    GCGconshdlrDecompDeregisterPartialdec(scip, this);
+   for( auto block : blockstructures )
+      delete block;
 }
 
 

@@ -230,7 +230,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
    std::vector<PARTIALDECOMP*>& translatedpartialdecs
    )
 {
-   for(auto otherpartialdec : origpartialdecs)
+   for( auto otherpartialdec : origpartialdecs )
    {
       PARTIALDECOMP* newpartialdec;
 
@@ -263,6 +263,13 @@ void DETPROBDATA::getTranslatedPartialdecs(
          {
             newpartialdec->fixConsToMaster(thiscons);
          }
+      }
+
+      auto& blockstructures = otherpartialdec->getBlockStructures();
+      for( int b = 0; b < blockstructures.size(); ++ b )
+      {
+         if( blockstructures[b] )
+            newpartialdec->setBlockStructure(b, blockstructures[b]->translateStructure(rowothertothis));
       }
 
       // we do not assign variables as the previous assignment might be invalid due to presolving
@@ -302,9 +309,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
       if( newpartialdec->checkConsistency() )
          translatedpartialdecs.push_back(newpartialdec);
       else
-      {
          delete newpartialdec;
-      }
    }
 }
 

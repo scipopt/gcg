@@ -110,7 +110,6 @@ SCIP_RETCODE readNDec(
             }
          }
          // todo: set symmetry information
-         partialdec->prepare();
          GCGconshdlrDecompAddPreexisitingPartialDec(scip, partialdec);
       }
       else

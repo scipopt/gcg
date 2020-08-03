@@ -32,7 +32,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-//#define SCIP_DEBUG
+// #define SCIP_DEBUG
 
 #include "scip/scip.h"
 #include "gcg.h"
@@ -42,11 +42,14 @@
 #include "struct_solver.h"
 #include "solver_mip.h"
 #include "cons_decomp.h"
+#include "cons_decomp.hpp"
 #include "pub_solver.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 #include "cons_origbranch.h"
-#include <scip/scip_timing.h>
+#include "class_partialdecomp.h"
+#include "scip/scip_timing.h"
+#include "struct_decomp.h"
 
 #define SOLVER_NAME          "gcg"
 #define SOLVER_DESC          "gcg solver for pricing problems"
@@ -270,15 +273,31 @@ SCIP_Bool buildProblem(
 
    SCIPdebugMessage("SUBGCG Detecting structure of problem %i\n", probnr);
    SCIPstartClock(solverdata->origprob, solverdata->inittime);
-   SCIP_CALL( DECdetectStructure(subgcg, &decompresult) );
-
-   if (decompresult != SCIP_SUCCESS)
+   DEC_DECOMP* decomp = GCGgetStructDecomp(solverdata->origprob);
+   assert(decomp);
+   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(solverdata->origprob, decomp->partialdecid);
+   if( partialdec && partialdec->isNested() )
    {
-      SCIPwarningMessage(pricingprob, "No decomposition found!\n");
-      SCIP_CALL( SCIPfree(&subgcg) );
-      solverdata->pricingprobs[probnr] = NULL;
-      return SCIP_OKAY;
+      gcg::BLOCK_STRUCTURE* blockstructure = partialdec->getBlockStructure(probnr);
+      if( blockstructure )
+      {
+         gcg::DETPROBDATA* detprobdata = GCGconshdlrDecompGetDetprobdataOrig(subgcg);
+         gcg::PARTIALDECOMP* newpartialdec = blockstructure->createPartialdec(partialdec, detprobdata, probnr);
+         GCGconshdlrDecompAddPreexisitingPartialDec(subgcg, newpartialdec);
+      }
    }
+   else
+   {
+      SCIP_CALL(DECdetectStructure(subgcg, &decompresult));
+      if (decompresult != SCIP_SUCCESS)
+      {
+         SCIPwarningMessage(pricingprob, "No decomposition found!\n");
+         SCIP_CALL( SCIPfree(&subgcg) );
+         solverdata->pricingprobs[probnr] = NULL;
+         return SCIP_OKAY;
+      }
+   }
+
    SCIPstopClock(solverdata->origprob, solverdata->inittime);
 
    SCIPdebugMessage("SUBGCG Problem %i structure detected, stage: %i\n", probnr, SCIPgetStage(subgcg));
@@ -677,7 +696,7 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolGcg)
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   if(solverdata->depth == 0)
+   if( solverdata->depth == 0 && solverdata->inittime )
       SCIPinfoMessage(
          GCGgetOriginalprob(scip),
          NULL,
@@ -985,6 +1004,7 @@ SCIP_RETCODE GCGincludeSolverGcg(
    /* create gcg solver data */
    SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
    solverdata->depth = 0;
+   solverdata->npricingprobs = 0;
    solverdata->inittime = NULL;
    solverdata->updatetime = NULL;
    solverdata->solvingtime = NULL;

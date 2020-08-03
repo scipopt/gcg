@@ -65,9 +65,14 @@ enum USERGIVEN
 };
 
 class DETPROBDATA;
+class PARTIALDECOMP;
 
 struct BLOCK_STRUCTURE
 {
+   ~BLOCK_STRUCTURE();
+   PARTIALDECOMP* createPartialdec(PARTIALDECOMP* parentpartialdec, DETPROBDATA* newdetprobdata, int probnr);
+   BLOCK_STRUCTURE* translateStructure(std::vector<int>& rowmapping);
+
    std::vector<int> masterconss;
    std::vector<std::vector<int>> blockconss;
    std::vector<BLOCK_STRUCTURE*> blockstructures;
