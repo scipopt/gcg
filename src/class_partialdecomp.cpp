@@ -677,6 +677,18 @@ bool PARTIALDECOMP::assignHittingOpenvars(
 }
 
 
+void PARTIALDECOMP::assignOpenConssToMaster(
+   )
+{
+   for( auto cons : openconss )
+   {
+      setConsToMaster(cons);
+      isconsopen[cons] = false;
+   }
+   openconss.clear();
+}
+
+
 void PARTIALDECOMP::assignOpenPartialHittingConsToMaster(
    )
 {
@@ -2852,7 +2864,7 @@ void PARTIALDECOMP::deleteOpencons(
    std::vector<int>::iterator it;
    it = lower_bound( openconss.begin(), openconss.end(), opencons );
    assert( it != openconss.end() && *it == opencons );
-   openconss.erase( it );
+   openconss.erase(it);
    isconsopen[opencons] = false;
 }
 

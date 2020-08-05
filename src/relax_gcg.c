@@ -2574,24 +2574,12 @@ SCIP_RETCODE initRelaxator(
       relaxdata->decomp = DECgetBestDecomp(scip, TRUE);
       if( relaxdata->decomp == NULL )
       {
-         DEC_DECOMP* decomp;
-         SCIP_RETCODE retcode;
+         int partialdecid;
          SCIPwarningMessage(scip, "No complete decomposition available. Creating basic decomposition.\n");
-         retcode = DECcreateBasicDecomp(scip, &decomp, FALSE);
-         if( retcode != SCIP_OKAY )
-         {
-            SCIPerrorMessage("Could not add decomp to cons_decomp!\n");
-            SCIPABORT();
-            return SCIP_ERROR;
-         }
-
-         assert(decomp != NULL );
-
-         SCIP_CALL( GCGconshdlrDecompAddDecomp(scip, decomp, TRUE) );
-         DECdecompFree(scip, &decomp);
+         partialdecid = GCGconshdlrDecompAddBasicPartialdec(scip, TRUE);
+         SCIP_CALL( GCGconshdlrDecompSelectPartialdec(scip, partialdecid, TRUE) );
 
          relaxdata->decomp = DECgetBestDecomp(scip, FALSE);
-
          assert( relaxdata->decomp != NULL );
       }
    }

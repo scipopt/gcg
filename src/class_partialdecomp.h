@@ -382,6 +382,12 @@ public:
       );
 
    /**
+    * @brief assigns open conss to master
+    */
+   void assignOpenConssToMaster(
+      );
+
+   /**
     * @brief assigns conss structure according to given hashmap
     *
     *  adds blocks and assigns open conss to a new block or to master
