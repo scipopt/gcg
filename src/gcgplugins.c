@@ -248,6 +248,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_Bool             subgcg
    )
 {
+   SCIP_CALL( SCIPincludeDialogGcg(scip) );
    SCIP_CALL( SCIPincludeConshdlrLinear(scip) ); /* linear must be first due to constraint upgrading */
    SCIP_CALL( SCIPincludeConshdlrIndicator(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegral(scip) );
@@ -446,7 +447,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPfixParam(scip, "conflict/enable") );
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );
-   SCIP_CALL( SCIPincludeDialogGcg(scip) );
    SCIP_CALL( GCGincludeDialogsGraph(scip) );
    SCIP_CALL( SCIPincludeTableDefault(scip) );
 

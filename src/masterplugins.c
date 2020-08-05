@@ -170,6 +170,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_Bool             subgcg
    )
 {
+   SCIP_CALL( SCIPincludeDialogMaster(scip) );
    SCIP_CALL( SCIPincludeConshdlrLinear(scip) ); /* linear must be first due to constraint upgrading */
    SCIP_CALL( SCIPincludeConshdlrAnd(scip) );
    SCIP_CALL( SCIPincludeConshdlrBounddisjunction(scip) );
@@ -269,7 +270,6 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
    SCIP_CALL( SCIPincludeSepaMaster(scip) );
-   SCIP_CALL( SCIPincludeDialogMaster(scip) );
    SCIP_CALL( SCIPincludeDispMaster(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
    SCIP_CALL( SCIPincludeTableDefault(scip) );
