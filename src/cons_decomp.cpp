@@ -999,8 +999,6 @@ SCIP_RETCODE createPartialdecFromDecomp(
    }
 
    SCIP_VAR*** stairlinkingvars = DECdecompGetStairlinkingvars(decomp);
-   SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock(decomp);
-   assert( vartoblock != NULL );
 
    if( stairlinkingvars != NULL )
    {
@@ -1022,20 +1020,25 @@ SCIP_RETCODE createPartialdecFromDecomp(
    }
 
    /* set other vars */
-   for( int v = 0; v < detprobdata->getNVars(); ++v )
+   SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock(decomp);
+   if( vartoblock != NULL )
    {
-      nblock = (int) (size_t) SCIPhashmapGetImage(vartoblock, (void*) (size_t) SCIPvarGetProbvar(detprobdata->getVar(v)));
-      if( nblock == partialdec->getNBlocks() + 2 && !partialdec->isVarStairlinkingvar(v) )
+      for( int v = 0; v < detprobdata->getNVars(); ++v )
       {
-         partialdec->fixVarToLinking(v);
-      }
-      else if( nblock == partialdec->getNBlocks() + 1 )
-      {
-         partialdec->fixVarToMaster(v);
-      }
-      else if( nblock >= 1 && nblock <= partialdec->getNBlocks() )
-      {
-         partialdec->fixVarToBlock(v, nblock - 1);
+         nblock = (int) (size_t) SCIPhashmapGetImage(vartoblock,
+            (void*) (size_t) SCIPvarGetProbvar(detprobdata->getVar(v)));
+         if( nblock == partialdec->getNBlocks() + 2 && !partialdec->isVarStairlinkingvar(v))
+         {
+            partialdec->fixVarToLinking(v);
+         }
+         else if( nblock == partialdec->getNBlocks() + 1 )
+         {
+            partialdec->fixVarToMaster(v);
+         }
+         else if( nblock >= 1 && nblock <= partialdec->getNBlocks())
+         {
+            partialdec->fixVarToBlock(v, nblock - 1);
+         }
       }
    }
 
@@ -2658,7 +2661,7 @@ SCIP_RETCODE DECdetectStructure(
 
       /* detection for presolved problem */
 
-      if (SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0)
+      if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
       {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, cannot detect structure!\n");
 
@@ -3286,6 +3289,20 @@ SCIP_RETCODE DECwriteSelectedDecomps(
    }
 
    return SCIP_OKAY;
+}
+
+
+int GCGconshdlrDecompAddBasicPartialdec(
+   SCIP* scip,
+   SCIP_Bool presolved
+   )
+{
+   PARTIALDECOMP* partialdec = new PARTIALDECOMP(scip, !presolved);
+   partialdec->setNBlocks(0);
+   partialdec->assignOpenConssToMaster();
+   partialdec->prepare();
+   addPartialdec(scip, partialdec);
+   return partialdec->getID();
 }
 
 
@@ -5609,6 +5626,21 @@ void GCGconshdlrDecompRegisterPartialdec(
       conshdlrdata->partialdecs->push_back(partialdec);
       conshdlrdata->partialdecsbyid->emplace(partialdec->getID(), partialdec);
    }
+}
+
+
+SCIP_RETCODE GCGconshdlrDecompSelectPartialdec(
+   SCIP* scip,          /**< SCIP data structure */
+   int partialdecid,    /**< id of partialdecomp */
+   SCIP_Bool select     /**< select/unselect */
+   )
+{
+   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   if( partialdec )
+      partialdec->setSelected(select);
+   else
+      return SCIP_INVALIDDATA;
+   return SCIP_OKAY;
 }
 
 

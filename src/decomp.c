@@ -2433,7 +2433,7 @@ SCIP_RETCODE DECcreateBasicDecomp(
       SCIP_CALL( SCIPhashmapInsert(vartoblock, probvar, (void*) (size_t) 1 ) );
       }
 
-   if( solveorigprob )
+   if( solveorigprob || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
       nblocks = 0;
    else
       nblocks = 1;

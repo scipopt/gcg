@@ -291,6 +291,17 @@ SCIP_RETCODE GCGconshdlrDecompAddDecomp(
    );
 
 /**
+ * @brief creates and adds a basic partialdecomp (all cons/vars are assigned to master)
+ *
+ * @returns id of partialdec
+ */
+extern
+int GCGconshdlrDecompAddBasicPartialdec(
+   SCIP* scip,          /**< SCIP data structure */
+   SCIP_Bool presolved  /**< create basic partialdecomp for presolved if true, otherwise for original */
+   );
+
+/**
  * @brief creates a pure matrix partialdecomp (i.e. all cons/vars to one single block)
  * 
  * matrix is added to list of all partialdecs
@@ -904,6 +915,18 @@ extern
 SCIP_RETCODE GCGconshdlrDecompPrintDetectorStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
+   );
+
+/**
+ * @brief selects/unselects a partialdecomp
+ *
+ * @returns SCIP return code
+ */
+extern
+SCIP_RETCODE GCGconshdlrDecompSelectPartialdec(
+   SCIP* scip,          /**< SCIP data structure */
+   int partialdecid,    /**< id of partialdecomp */
+   SCIP_Bool select     /**< select/unselect */
    );
 
 /** @brief sets detector parameters values
