@@ -754,8 +754,10 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
          SCIPwriteParams(subgcg, "params.txt", FALSE, FALSE);
       }
 #endif
+      SCIPstartClock(solverdata->origprob, solverdata->inittime);
       SCIP_CALL( SCIPpresolve(subgcg) );
       GCGconshdlrDecompTranslateNBestOrigPartialdecs(subgcg, 1, TRUE);
+      SCIPstopClock(solverdata->origprob, solverdata->inittime);
 #ifdef SCIP_DEBUG
       if (solverdata->count == 625)
       {
@@ -763,29 +765,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
          SCIPwriteTransProblem(subgcg, "subgcg_p.dec", NULL, FALSE);
       }
 #endif
-
-      /*std::chrono::high_resolution_clock::time_point t1, t2;
-      SCIP_RESULT decompresult;
-      //char fname[SCIP_MAXSTRLEN];
-
-      //SCIPsnprintf(fname, SCIP_MAXSTRLEN, "block%i.dec", probnr);
-      t1 = std::chrono::high_resolution_clock::now();
-      SCIPdebugMessage("SUBGCG Detecting structure of problem %i\n", probnr);
-      //SCIPreadProb(subgcg, fname, NULL);
-      SCIP_CALL( SCIPpresolve(subgcg) );
-      SCIP_CALL( DECdetectStructure(subgcg, &decompresult) );
-
-      if (decompresult != SCIP_SUCCESS)
-      {
-         SCIPwarningMessage(pricingprob, "No decomposition found!\n");
-         SCIP_CALL( SCIPfree(&subgcg) );
-         solverdata->pricingprobs[probnr] = NULL;
-         return SCIP_OKAY;
-      }
-      t2 = std::chrono::high_resolution_clock::now();
-      solverdata->inittime += std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-
-      SCIPdebugMessage("SUBGCG Problem %i structure detected in %li ms, stage: %i\n", probnr, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), SCIPgetStage(subgcg));*/
    }
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
