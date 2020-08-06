@@ -1002,7 +1002,7 @@ public:
     * @brief Gets fraction of variables assigned to the border for detectors in detectorchain
     * @return vector of fractions of variables assigned to the border for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctVarsToBorderVector();
+   std::vector<SCIP_Real>& getPctVarsToBorderVector();
 
    /**
     * @brief Gets fraction of variables assigned to a block for a detector
@@ -1017,7 +1017,7 @@ public:
     * @brief returns fraction of variables assigned to a block for detectors in detectorchain
     * @return vector of fractions of variables assigned to a block for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctVarsToBlockVector();
+   std::vector<SCIP_Real>& getPctVarsToBlockVector();
 
    /**
     * @brief Gets fraction of variables that are not longer open for a detector
@@ -1032,7 +1032,7 @@ public:
     * @brief Gets fraction of variables that are not longer open for detectors in detectorchain
     * @return vector or fractions of variables that are not longer open for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctVarsFromFreeVector();
+   std::vector<SCIP_Real>& getPctVarsFromFreeVector();
 
    /**
     * @brief Gets fraction of constraints assigned to the border for a detector
@@ -1047,7 +1047,7 @@ public:
     * @brief Gets fraction of constraints assigned to the border for detectors in detectorchain
     * @return vector of fractions of constraints assigned to the border for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctConssToBorderVector();
+   std::vector<SCIP_Real>& getPctConssToBorderVector();
 
    /**
     * @brief Gets fraction of constraints assigned to a block for a detector
@@ -1061,7 +1061,7 @@ public:
     * @brief Gets fraction of constraints assigned to a block for detectors in detectorchain
     * @return vector of fractions of constraints assigned to a block for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctConssToBlockVector();
+   std::vector<SCIP_Real>& getPctConssToBlockVector();
 
    /**
     * @brief Gets fraction of constraints that are not longer open for a detector
@@ -1075,7 +1075,7 @@ public:
     * @brief Gets fraction of constraints that are not longer open for detectors in detectorchain
     * @return vector of fractions of constraints that are not longer open for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctConssFromFreeVector();
+   std::vector<SCIP_Real>& getPctConssFromFreeVector();
 
    /**
     * @brief Gets index of the representative block for a block, this might be blockid itself
@@ -1656,7 +1656,7 @@ public:
     * @param newvector vector of fractions of constraints set to blocks per involved detector
     */
    void setPctConssToBlockVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
       );
 
    /**
@@ -1664,7 +1664,7 @@ public:
     * @param newvector vector of fractions of constraints that are not longer open per involved detector
     */
    void setPctConssFromFreeVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
    );
 
    /**
@@ -1672,7 +1672,7 @@ public:
     * @param newvector vector of fractions of constraints assigned to the border per involved detector
     */
    void setPctConssToBorderVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
       );
 
    /**
@@ -1680,7 +1680,7 @@ public:
     * @param newvector vector of fractions of variables assigned to the border per involved detector
     */
    void setPctVarsToBorderVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
       );
 
    /**
@@ -1688,7 +1688,7 @@ public:
     * @param newvector vector of fractions of variables assigned to a block per involved detector
     */
    void setPctVarsToBlockVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
    );
 
    /**
@@ -1696,7 +1696,7 @@ public:
     * @param newvector vector of fractions of variables that are not longer open per involved detector
     */
    void setPctVarsFromFreeVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
       );
 
    /**

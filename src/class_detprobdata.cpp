@@ -306,10 +306,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
 
       newpartialdec->getScore(GCGconshdlrDecompGetScoretype(scip)) ;
 
-      if( newpartialdec->checkConsistency() )
-         translatedpartialdecs.push_back(newpartialdec);
-      else
-         delete newpartialdec;
+      translatedpartialdecs.push_back(newpartialdec);
    }
 }
 
@@ -557,6 +554,7 @@ bool DETPROBDATA::addPartialdecToOpen(
    PARTIALDECOMP* partialdec
    )
 {
+   assert(partialdec->checkConsistency());
    if( partialdecIsNoDuplicateOfPartialdecs(partialdec, openpartialdecs, true) )
    {
       openpartialdecs.push_back(partialdec);
@@ -573,6 +571,7 @@ bool DETPROBDATA::addPartialdecToFinished(
    PARTIALDECOMP* partialdec
    )
 {
+   assert(partialdec->checkConsistency());
    if( partialdec->isComplete() && partialdecIsNoDuplicateOfPartialdecs(partialdec, finishedpartialdecs, false) )
    {
       finishedpartialdecs.push_back(partialdec);
@@ -589,6 +588,7 @@ void DETPROBDATA::addPartialdecToFinishedUnchecked(
    PARTIALDECOMP* partialdec
    )
 {
+   assert(partialdec->checkConsistency());
    finishedpartialdecs.push_back(partialdec);
 }
 

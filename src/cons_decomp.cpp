@@ -630,7 +630,8 @@ SCIP_Retcode detect(
       for( auto postpartialdec: detprobdata->getFinishedPartialdecs() )
       {
          // Check if postprocessing is enabled globally
-         for( int d = 0; d < conshdlrdata->npostprocessingdetectors; ++d ) {
+         for( int d = 0; d < conshdlrdata->npostprocessingdetectors; ++d )
+         {
             DEC_DETECTOR* postdetector = conshdlrdata->postprocessingdetectors[d];
             /* if the postprocessing of the detector is not enabled go on with the next detector */
             if( !postdetector->enabledPostprocessing )
@@ -653,6 +654,7 @@ SCIP_Retcode detect(
                newpartialdec->setDetectorPropagated(postdetector);
                newpartialdec->setFinishedByFinisher(true );
                newpartialdec->prepare();
+               newpartialdec->addDecChangesFromAncestor(postpartialdec);
 
                if( !detprobdata->addPartialdecToFinished(newpartialdec) )
                   delete newpartialdec;
@@ -1432,25 +1434,24 @@ SCIP_RETCODE createDecompFromPartialdec(
       DECdecompSetDetector(*newdecomp, partialdec->getDetectorchain().back());
 
    /* set statistical detector chain data */
-   DECdecompSetPartialdecID( *newdecomp, partialdec->getID() );
+   DECdecompSetPartialdecID(*newdecomp, partialdec->getID());
    if( partialdec->getNDetectors() > 0 )
    {
-      DECdecompSetDetectorClockTimes( scip, * newdecomp, & ( partialdec->getDetectorClockTimes()[0] ) );
-      DECdecompSetDetectorPctVarsToBorder( scip, * newdecomp, & ( partialdec->getPctVarsToBorderVector()[0] ) );
-      DECdecompSetDetectorPctVarsToBlock( scip, * newdecomp, & ( partialdec->getPctVarsToBlockVector()[0] ) );
-      DECdecompSetDetectorPctVarsFromOpen( scip, * newdecomp, & ( partialdec->getPctVarsFromFreeVector()[0] ) );
-      DECdecompSetDetectorPctConssToBorder( scip, * newdecomp, & ( partialdec->getPctConssToBorderVector()[0] ) );
-      DECdecompSetDetectorPctConssToBlock( scip, * newdecomp, & ( partialdec->getPctConssToBlockVector()[0] ) );
-      DECdecompSetDetectorPctConssFromOpen( scip, * newdecomp, & ( partialdec->getPctConssFromFreeVector()[0] ) );
-      DECdecompSetNNewBlocks( scip, * newdecomp, & ( partialdec->getNNewBlocksVector()[0] ) );
+      DECdecompSetDetectorClockTimes(scip, *newdecomp, partialdec->getDetectorClockTimes().data());
+      DECdecompSetDetectorPctVarsToBorder(scip, *newdecomp, partialdec->getPctVarsToBorderVector().data());
+      DECdecompSetDetectorPctVarsToBlock(scip, *newdecomp, partialdec->getPctVarsToBlockVector().data());
+      DECdecompSetDetectorPctVarsFromOpen(scip, *newdecomp, partialdec->getPctVarsFromFreeVector().data());
+      DECdecompSetDetectorPctConssToBorder(scip, *newdecomp, partialdec->getPctConssToBorderVector().data());
+      DECdecompSetDetectorPctConssToBlock(scip, *newdecomp, partialdec->getPctConssToBlockVector().data());
+      DECdecompSetDetectorPctConssFromOpen(scip, *newdecomp, partialdec->getPctConssFromFreeVector().data());
+      DECdecompSetNNewBlocks(scip, *newdecomp, partialdec->getNNewBlocksVector().data());
    }
 
    /* set dectype */
    int newnlinkingvars = DECdecompGetNLinkingvars((*newdecomp));
    int newnlinkingconss = DECdecompGetNLinkingconss((*newdecomp));
 
-   if( newnlinkingvars == partialdec->getNTotalStairlinkingvars() && newnlinkingconss == 0
-       && newnlinkingvars > 0 )
+   if( newnlinkingvars == partialdec->getNTotalStairlinkingvars() && newnlinkingconss == 0 && newnlinkingvars > 0 )
    {
       DECdecompSetType((*newdecomp), DEC_DECTYPE_STAIRCASE);
    }
