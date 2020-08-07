@@ -189,6 +189,7 @@ set(gcgheaders
     dec_stairheur.h
     dec_varclass.h
     decomp.h
+    def.h
     dialog_gcg.h
     dialog_graph.h
     dialog_master.h

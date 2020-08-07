@@ -38,6 +38,7 @@
 #define GCG_H_
 
 #include "scip/scip.h"
+#include "def.h"
 
 #include "type_branchgcg.h"
 #include "type_decomp.h"
