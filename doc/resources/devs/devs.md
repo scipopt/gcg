@@ -10,6 +10,7 @@ The **first part** of this guide includes a comprehensive description of the int
 \n
 The **second part** describes what's already implemented in GCG and how it is and further can be used to make things much easier than with SCIP.
 
+@subpage presolving \n
 @subpage detection \n
 @subpage pricing \n
 @subpage howtouse \n

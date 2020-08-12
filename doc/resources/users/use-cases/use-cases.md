@@ -56,7 +56,7 @@ If you're new here, we recommend starting with the first one.
 
 > <div style="width:80%">
 > <img src="developer.png" style="vertical-align:middle; height:5.7%; position:absolute; right:40px;">
-> #### Tell GCG how to decompose your problem using GCG settings
+> #### Tell GCG how to solve your problem using GCG settings
 > If you don't know _exactly_ how to decompose your problem, which was the case in the previous use case,
 > you can also make GCG only use fixed detectors or classifiers. Furthermore, you can also set which
 > decomposition to use.\n

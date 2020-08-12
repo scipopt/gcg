@@ -29,8 +29,10 @@ to a score (see @subpage detection-scores for a list of scores that can be set t
 the decomposition with the best score is used to proceed to the solving.
 
 ### Before Presolving
-The instance (the problem) you read into GCG is usually not presolved yet (see @ref presolving).
-Then there are three different cases that can happen:
+After reading it in, the instance (the problem) you gave GCG is not presolved yet (see @ref presolving).
+To get decompositions that are not based on the presolved problem, you then have to perform a `detect`,
+since `optimize` will automatically execute a `presolve` first. Apart from that, you can also give 
+an input, where there are three different cases that can happen:
 - You don't give any decomposition.
 - You have a rough idea of how your problem should be decomposed and give a partial decomposition.
 - You know exactly how to decompose and give a complete decomposition.
@@ -42,10 +44,12 @@ in Figure 1.
 <div style="text-align: center;"><b>Fig. 1:</b> First stage of detection (problem is not yet presolved)</div>
 
 ### During/After Presolving
-After the process shown in Figure 1 was executed, the problem you gave will be presolved.
-After presolving, some variables might have been aggregated or even removed and thus, the
-decompositions we found in the first run will be translated to match with the new, semantically equal,
-yet different problem. If you already knew how your problem would look like after presolving,
+After the process shown in Figure 1 was executed, the problem you gave can also be presolved. If you just do
+an `optimize`, you will directly enter this case. In case you performed `detect` and `optimize` (as described above),
+you can now do a `presolve` in the interactive console. After presolving, some 
+variables might have been aggregated or even removed and thus, the decompositions we found in the 
+first run will be translated to match with the new, semantically equal, yet different problem. 
+If you already knew how your problem would look like after presolving,
 you can also give a decomposition file for your problem - but presolved.\n
 The detection process will then be executed as shown in Figure 2.
 

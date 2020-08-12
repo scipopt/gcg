@@ -13,7 +13,7 @@ giving references to our Use Cases.
 There are are some **methods that GCG applies differently** than SCIP that
 might increase solving speed for _structured_ programs.
 
-@subpage presolving  
+@ref presolving  
 
 \n
 Other times, **GCG needs to interact with SCIP** directly. Note that this can only

@@ -1,5 +1,4 @@
 # The GCG Detection {#detection}
-
 > The **detection of structures** in a given model is one of the main features that
 > distinguishes GCG from SCIP. It accelerates the solving speed of many problems.
 > For further reading, please consult the @ref use-cases "Use-Cases", in particular @ref u2 "the second one".
@@ -13,6 +12,7 @@ detectors that GCG offers. For each, we will present what exact structure it fin
 (or what classes, respectively), how it does that and for what instances this might be suited.
 
 @subpage structure-types "List of different structures GCG can find"\n
+@subpage detection-params \n
 @subpage classifiers "Classifiers: Overview Page"\n
 @subpage detectors "Detectors: Overview Page"\n
 
