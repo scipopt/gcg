@@ -1,12 +1,16 @@
-# Modifying Parameters of the GCG Pricing {#pricing-params}
+# Pricing Parameters {#pricing-params}
+# Modifying Parameters of the GCG Pricing
 We have around 2000 parameters for the pricing available, so it might be difficult
 to choose the right ones for your class of problems. In the following, some hints
 about good settings will be given.
 
-# List of Pricing Parameters
-You can modify different parameters of the pricing. 
+### Change Parameters of the Pricing
+You can also modify other parameters of the pricing. 
 You can set them by entering `set` and then `pricing`. 
 In the following, we give a list of all parameters that can then be changed.
+
+# List of Pricing Parameters
+A list of detection parameters can also be seen (and searched) when inserting `set pricing` or `set pricingsolver` into the search box on the page of @ref interactive-menu.
 
 ### Pricer
 ```

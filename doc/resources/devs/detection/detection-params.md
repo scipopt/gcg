@@ -1,8 +1,8 @@
-# Modifying Parameters of the GCG Detection {#detection-params}
+# Detection Parameters {#detection-params}
+# Modifying Parameters of the GCG Detection 
 > GCG performs its detection using @ref classifiers and @ref detectors that
 > classify different variable and constraint types, respectively detect structures each.
 
-## Using (only) specific classifiers and detectors
 There are multiple reasons to deactivate and activate classifiers and detectors.
 Most often, you want to...
   * **Activate** classifiers/detectors that are deactivated by default (and deactivate the respective other ones)
@@ -25,7 +25,7 @@ You can also selectively deactivate one of the two more functionalities except f
 `{finishing,postprocessing}enabled FALSE`. \n
 
 If you want to directly deactivate _all_ detectors (e.g. to activate one single one again), 
-you can also do that using the `off` function of the emphasis setting (see @ref det-emph).
+you can also do that using the `off` function of the emphasis setting (see "Emphasis Settings").
 
 ### Change Priorities of Classifiers and Detectors
 We use the same commands as above to enter the settings for a detector, again e.g. `consclass`. Then, instead of disabling or enabling
@@ -37,7 +37,7 @@ detection/detectors/consclass/priority = 42
 ```
 This detector will now be called before others (see @ref detection).
 
-### Emphasis Settings {#det-emph}
+### Emphasis Settings
 Another method to change parameters of the detection is by using our predefined emphasis settings. 
 There are three different settings that we deliver and an `off` setting that will deactivate all functionalities
 of all detectors.
@@ -48,3 +48,10 @@ of all detectors.
   off                   turns <off> all detectors
 ```
 The different emphasis settings will modify parameters from the activation of specified detectors to the number of rounds they are called (see @ref detection).
+
+### Change Parameters of the Detection
+You can also modify other parameters of the detection. 
+You can set them by entering `set` and then `detection`. 
+In the following, we give a list of all parameters that can then be changed.
+\n
+A list of all detection parameters can be seen (and searched) when inserting `set detection` into the search box on the page of @ref interactive-menu.

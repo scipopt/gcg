@@ -12,7 +12,6 @@ detectors that GCG offers. For each, we will present what exact structure it fin
 (or what classes, respectively), how it does that and for what instances this might be suited.
 
 @subpage structure-types "List of different structures GCG can find"\n
-@subpage detection-params \n
 @subpage classifiers "Classifiers: Overview Page"\n
 @subpage detectors "Detectors: Overview Page"\n
 
@@ -23,6 +22,7 @@ Furthermore, one can also activate an alternative different detection mode, name
 
 @subpage detection-process \n
 @subpage benders \n
+@subpage detection-params \n
 
 \n
 If you want to **write your own** classifiers and detectors, please consult the "How to"

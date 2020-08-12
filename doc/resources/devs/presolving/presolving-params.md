@@ -1,4 +1,5 @@
-# Modifying Parameters of the GCG Presolving {#presolving-params}
+# Presolving Parameters {#presolving-params}
+# Modifying Parameters of the GCG Presolving
 There are different options to influence the presolving done to your problem. You can either
    * **Deactivate** presolving for your instance completely
    * **Change parameters** for the presolving
@@ -14,19 +15,8 @@ there is an original decomposition and problem is not presolved yet -> disable p
 ```
 
 ### Change Parameters of the Presolving
-You can modify different parameters of the presolving. 
+You can also modify other parameters of the presolving. 
 You can set them by entering `set` and then `presolving`. 
-In the following, we give a list of all parameters that can then be changed.
-
-```
-  <advanced>            advanced parameters
-  <boundshift>          converts variables with domain [a,b] to variables with domain [0,b-a]
-  <convertinttobin>     converts integer variables to binaries
-  <domcol>              dominated column presolver
-  <emphasis>            predefined parameter settings
-  <implics>             implication graph aggregator
-  <inttobinary>         converts integer variables with domain [a,a+1] to binaries
-  <trivial>             round fractional bounds on integers, fix variables with equal bounds
-  maxrestarts           maximal number of restarts (-1: unlimited) [0]
-  maxrounds             maximal number of presolving rounds (-1: unlimited, 0: off) [0]
-```
+In the next section, we give a list of all parameters that can then be changed.
+\n
+A list of all presolving parameters can be seen (and searched) when inserting `set presolving` into the search box on the page of @ref interactive-menu.
