@@ -26,7 +26,7 @@ If you're new here, we recommend starting with the first one.
 > </div>
 
 > <div style="width:80%">
-> <img src="advanced-user.png" style="vertical-align:middle; height:6%; position:absolute; right:40px;">
+> <img src="expert.png" style="vertical-align:middle; height:6%; position:absolute; right:40px;">
 > #### Gain knowledge about the structure of your model
 > To get to know about how your GCG sees your instance and why, we recommend
 > to check out the @ref explore-menu "Explore Menu". With it, you can make GCG show the structure that its
@@ -36,7 +36,7 @@ If you're new here, we recommend starting with the first one.
 > </div>
 
 > <div style="width:80%">
-> <img src="advanced-user.png" style="vertical-align:middle; height:6%; position:absolute; right:40px;">
+> <img src="expert.png" style="vertical-align:middle; height:6%; position:absolute; right:40px;">
 > #### Gain knowledge about how GCG solves your instance
 > To see how GCG ran with your instance, for example how long it detected or how performant
 > the pricing was, you should check out the @ref visu "Visualization Suite". It illustrates not only
@@ -46,16 +46,16 @@ If you're new here, we recommend starting with the first one.
 > </div>
 
 > <div style="width:80%">
-> <img src="developer.png" style="vertical-align:middle; height:5.7%; position:absolute; right:40px;">
+> <img src="scientist.png" style="vertical-align:middle; height:5.7%; position:absolute; right:40px;">
 > #### Tell GCG how to decompose your problem using your own knowledge
-> It might happen that you are able to fully or at least partially grasp how your problem should be decomposed. 
+> It might happen that you are able to fully or at least partially grasp how your problem should be decomposed.
 > In this guide, we will teach you how you can do that when using GCG.\n
 > ⇨ @subpage u5
 > \n\n
 > </div>
 
 > <div style="width:80%">
-> <img src="developer.png" style="vertical-align:middle; height:5.7%; position:absolute; right:40px;">
+> <img src="scientist.png" style="vertical-align:middle; height:5.7%; position:absolute; right:40px;">
 > #### Tell GCG how to solve your problem using GCG settings
 > If you don't know _exactly_ how to decompose your problem, which was the case in the previous use case,
 > you can also make GCG only use fixed detectors or classifiers. Furthermore, you can also set which

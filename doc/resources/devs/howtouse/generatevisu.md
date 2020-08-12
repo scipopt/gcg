@@ -27,7 +27,7 @@ The packages needed for the scripts are (space-separated):
 
 ### Run tests
 First, you have to do a testrun to gather the data for the visualizations. A guide on how to
-do that can be found @ref dotesting "here".\n
+do that can be found @ref testing "here".\n
 The scripts sometimes expect a certain flag to be set. The following table gives an overview over
 the requirements for the runtime data for each visualization script.
 
