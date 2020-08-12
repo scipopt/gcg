@@ -130,6 +130,7 @@ removeBibliography () {( set -e
   sed -i.bak "/citelist/d" navtreedata.js && rm navtreedata.js.bak
   sed -i.bak "s/\:\[5/\:\[4/g" navtreeindex*.js && rm navtreeindex*.js.bak # citelist is the third item in the navigation (after Users Guide and Devs Guide,
   sed -i.bak "s/\:\[6/\:\[5/g" navtreeindex*.js && rm navtreeindex*.js.bak # since Installation counts as homepage and thus 0)
+  sed -i.bak "s/initResizable()\;//g" *.html
   cd -
 )}
 
