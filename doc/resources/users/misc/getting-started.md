@@ -117,7 +117,7 @@ After these basic commands, you might want to change some more settings or give 
 
 ### GCG decompositions
 **Detecting without solving:** This is possible with a simple `detect`. The instance already has to be read.\n
-**Marking your own .dec file:** \n
+**Creating your own .dec file:** This can be done using the description in the use case " @ref u5 ".\n
 **Reading your decomposition:** You can read decomposition files (with formats as given @ref input-formats "here") with a simple `read`.
 The behavior when giving own decomposition files is described @ref detection-process "here".\n
 **Saving your decomposition:** You can save all decompositions found with `write alldecompositions`. To just save single ones, you have
@@ -134,3 +134,29 @@ with `.set`.\n
 **Loading your settings:** You can also load your own settings file with `load`. You have to give the path to the settings file (relative to the folder that
 you are in), with the `.set` extension of the file. If some settings could not
 be applied, you will be reminded of that.
+
+
+# Executing GCG from the Command Line only
+
+You can start GCG without the interactive console by executing it with the flag
+`-c`. After that, you give the commands that GCG should do, terminating it with
+a `quit`. Usually, this should at least be
+
+    gcg -f LPFILE
+
+with `LPFILE` being a problem file as needed per the @ref input-formats "format requirements".
+All possible command line arguments can be found @subpage exec-args "here".\n
+The above command will `read` your file, `optimize` it, i.e. calculates the optimal solution
+and finally terminates.\n\n
+Another command could be
+
+    gcg -c "read LPFILE display solution optimize quit"
+
+which will, in addtion to the solving, also print out the solution, i.e. what variables
+have to take which value, onto the console.\n\n
+With the execution from the command line, you can give arbitrary commands inside
+the quote marks, as long as they are complete. For instance, if you wrote `write solution`
+instead of `display solution` in the above command, GCG would also require a name for the
+file that it writes the solution to, i.e. `write solution SOLUFILE`, so watch out for their
+completeness.\n
+> The GCG menu commands can be found @ref interactive-menu "here".
