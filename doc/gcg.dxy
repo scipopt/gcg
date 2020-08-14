@@ -737,7 +737,14 @@ LAYOUT_FILE            = gcglayout.xml
 # LATEX_BIB_STYLE. To use this feature you need bibtex and perl available in the
 # search path. See also \cite for info how to create references.
 
-CITE_BIB_FILES         = gcg.bib
+CITE_BIB_FILES         = gcg.bib, \
+                         resources/users/use-cases/u1/u1.bib, \
+                         resources/users/use-cases/u2/u2.bib, \
+                         resources/users/use-cases/u3/u3.bib, \
+                         resources/users/use-cases/u4/u4.bib, \
+                         resources/users/use-cases/u5/u5.bib, \
+                         resources/users/use-cases/u6/u6.bib, \
+                         resources/users/use-cases/u7/u7.bib
 
 #---------------------------------------------------------------------------
 # Configuration options related to warning and progress messages
@@ -928,12 +935,21 @@ EXAMPLE_RECURSIVE      = NO
 # that contain images that are to be included in the documentation (see the
 # \image command).
 
-IMAGE_PATH             = ./resources/pictures \
+IMAGE_PATH             = ./resources/installation/img \
+                         ./resources/devs/detection/img \
+                         ./resources/devs/howtouse/visualizations/img \
                          ./resources/devs/howtouse/visualizations/img/bounds \
                          ./resources/devs/howtouse/visualizations/img/detection \
                          ./resources/devs/howtouse/visualizations/img/general \
                          ./resources/devs/howtouse/visualizations/img/pricing \
-                         ./resources/devs/howtouse/visualizations/img/tree
+                         ./resources/devs/howtouse/visualizations/img/tree \
+                         ./resources/users/use-cases/u1/img \
+                         ./resources/users/use-cases/u2/img \
+                         ./resources/users/use-cases/u3/img \
+                         ./resources/users/use-cases/u4/img \
+                         ./resources/users/use-cases/u5/img \
+                         ./resources/users/use-cases/u6/img \
+                         ./resources/users/use-cases/u7/img
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
