@@ -58,7 +58,7 @@ Now, GCG can be compiled. The links to SCIP need to point from `gcg-[version]/li
     ../../bliss-[version]/
     ../../bliss-[version]/libbliss.a
 
-Finally, set a link from the GCG directory to hMETIS.
+Finally, set a link from the GCG directory to hMETIS. Please note that only hmetis 2.0 and higher will work! Furthermore, depending on your system, it might be required to change the define `HMETIS_EXECUTABLE` inside the three detectors (`dec_h*partition.cpp`) source code files, e.g. from "hmetis" to "./hmetis".
 
     tar xvfz hmetis-[version]-linux.tar.gz
     cd gcg-[version]/
