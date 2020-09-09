@@ -3796,6 +3796,11 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
    }
 
+   if( SCIPisStopped(scip_) )
+   {
+      return SCIP_OKAY;
+   }
+
    if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && GCGsepaGetNCuts(scip) == 0 && reducedcostpricing->getCalls() > 0
       && GCGmasterIsCurrentSolValid(scip) && pricerdata->artificialused )
    {
