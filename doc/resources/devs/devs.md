@@ -13,6 +13,7 @@ The **second part** describes what's already implemented in GCG and how it is an
 @subpage presolving \n
 @subpage detection \n
 @subpage pricing \n
+@subpage cutting \n
 @subpage howtouse \n
 
 \n

@@ -1,6 +1,47 @@
 # Why use GCG? {#why-gcg}
+> On this page, we give a brief overview of what GCG is capable of (and what it is not). 
 
-@todo add fancy table here
+# Why should you use GCG?
+If you have solved mixed integer linear programs already, you will know that it can take _forever_ to solve
+them, even if they are well thought out. Whether you did think your model through or you didn't, it will always
+be worth a try to solve them with GCG, because we deploy a variety of tools to possibly increase solving speed
+in orders of magnitudes.
+
+## Introduction to GCG
+GCG will decompose your problem into problems that can be solved far more easily (decomposition). Then, we 
+apply a Dantzig-Wolfe reformulation to strengthen your formulation. This reformulation will convexify the 
+"easy" constraints, meaning that the polyhedron (i.e. the space where your solution can lie in) is 
+shrinked down as much as possible. Finally, we solve your problem using Branch-and-Price. In each node
+of the Branch-and-Bound tree we solve the pricing problems, getting variables that are promising.
+
+### Features
+**As an extendible and easy-to-use toolkit, GCG...**
+- solves your problem using complex solving algorithmics **without requiring any input or knowledge from your side**
+- has an **explore** function to investigate identified decompositions
+- can read your **custom decompositions** using the DEC file standard
+- is a framework for **implementing** column generation algorithms
+For further use cases of GCG, please consult the @ref users.
+
+**As a solver, GCG...**
+- **detects hidden or apparent structures** in the constraint matrix in order to apply DWR. Among others, it detects
+  - staircase structures
+  - set partitioning master structures
+  - subproblems that can be aggregated in the Dantzig-Wolfe reformulation
+  - with the additional tool hmetis it can enforce a structure suitable for DWR in arbitrary MIPs 
+- uses a **Dantzig-Wolfe reformulation** (DWR) to solve arbitrary MIPs.
+- offers an automated **Benders'** decomposition algorithm
+- has **branching rules** for automatic branching on any problem.
+- applies **dual variable stabilization** by dual value smoothing
+- has a large number of **primal heuristics** both in the original and the reformulated space
+For more details on what and how GCG does things to solve your problem quickly, please consult the @ref devs.
+
+## When is it sensible to use GCG?
+In order for a decomposition to make sense, **your problem has to exhibit some kind of structure**. In many
+cases, it will have a certain structure (maybe even one that is not known to you), but if it does not have 
+one at all, it can be detrimental to performance to try to use a decomposition anyways. 
+However, if it has a structure there is a **good chance that GCG will be able to solve it much faster** than 
+other state-of-the-art open-source solvers, 
+such as SCIP, and often at least as fast as commercial solvers such as Gurobi or CPLEX.  
 
 <table>
   <tr>
@@ -30,5 +71,3 @@
     </td>
   </tr>
 </table>
-
-GCG allows much easier implementation of anything that is somehow related to branch-and-price, since it has its own universal toolbox of methods.

@@ -94,7 +94,9 @@ Dual Bound         : +1.60000000000000e+01
 Gap                : 0.00 %
 ```
 
-This log might look familiar if you already know SCIP. If you want to know more about the @ref dantzig "Dantzig-Wolfe Reformulation", @ref detection "Decomposition", @ref pricing or @ref cg, please have a look into our @ref devs.
+This log might look familiar if you already know SCIP. If you want to know more about the @ref detection "Decomposition" or the
+ @ref pricing "Branch-and-Price process" including Dantzig-Wolfe Reformulation and Column Generation, please have a look into our 
+ @ref devs.
 
 
 ### Show the solution with `display solution`
