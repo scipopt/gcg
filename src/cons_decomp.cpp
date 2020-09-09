@@ -626,9 +626,13 @@ SCIP_Retcode detect(
       SCIP_CLOCK* postprocessingclock;
       SCIPcreateClock( scip, & postprocessingclock );
       SCIP_CALL_ABORT( SCIPstartClock( scip, postprocessingclock ) );
+      auto& finishedpartialdecs = detprobdata->getFinishedPartialdecs();
       int numpostprocessed = 0;
-      for( auto postpartialdec: detprobdata->getFinishedPartialdecs() )
+      int nfinished = finishedpartialdecs.size();
+      for( int i = 0; i < nfinished; ++i )
       {
+          auto postpartialdec = finishedpartialdecs[i];
+
          // Check if postprocessing is enabled globally
          for( int d = 0; d < conshdlrdata->npostprocessingdetectors; ++d )
          {
