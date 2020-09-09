@@ -3487,15 +3487,6 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
       nconsstoblock += partialdec->getNConssForBlock(b);
    }
 
-   partialdec->addClockTime(0.);
-   partialdec->addPctVarsFromFree( (nvarstoblock + partialdec->getNMastervars() +partialdec->getNLinkingvars())/(SCIP_Real) partialdec->getNVars()  );
-   partialdec->addPctVarsToBlock((nvarstoblock )/(SCIP_Real) partialdec->getNVars() );
-   partialdec->addPctVarsToBorder( (partialdec->getNMastervars() +partialdec->getNLinkingvars())/(SCIP_Real) partialdec->getNVars() ) ;
-   partialdec->addPctConssToBorder( (partialdec->getNMasterconss() ) / (SCIP_Real) partialdec->getNConss() ) ;
-   partialdec->addPctConssFromFree( (partialdec->getNMasterconss() + nconsstoblock ) / (SCIP_Real) partialdec->getNConss() ) ;
-   partialdec->addPctConssToBlock( (nconsstoblock ) / (SCIP_Real) partialdec->getNConss() );
-   partialdec->addNNewBlocks(partialdec->getNBlocks());
-
    partialdec->findVarsLinkingToMaster();
    partialdec->findVarsLinkingToStairlinking();
 
