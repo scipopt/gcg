@@ -308,7 +308,7 @@ SCIP_RETCODE addPartialdec(
    }
 
    if( !success )
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Decomposition to add is already known to gcg!\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "Decomposition to add is already known to gcg!\n");
 
    return SCIP_OKAY;
 }
