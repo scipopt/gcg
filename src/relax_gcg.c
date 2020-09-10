@@ -4024,6 +4024,9 @@ int GCGgetBlockRepresentative(
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
 
+   if( pricingprobnr == -1 )
+      return -1;
+
    assert(scip != NULL);
 
    relax = SCIPfindRelax(scip, RELAX_NAME);
@@ -4032,6 +4035,8 @@ int GCGgetBlockRepresentative(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
+   assert(pricingprobnr >= 0);
+   assert(pricingprobnr < relaxdata->npricingprobs);
    assert(relaxdata->nblocksidentical[pricingprobnr] >= 0);
    assert((relaxdata->blockrepresentative[pricingprobnr] == pricingprobnr)
       == (relaxdata->nblocksidentical[pricingprobnr] > 0));
