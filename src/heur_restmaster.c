@@ -234,8 +234,6 @@ SCIP_RETCODE createNewSol(
    int        nmastervars;
    SCIP_Real* restmastervals;                /* solution values of the subproblem               */
    SCIP_SOL*  newmastersol;                  /* solution for the master problem                 */
-   SCIP_SOL*  newsol;                        /* solution to be created for the original problem */
-   SCIP_Bool  masterfeas;                    /* is the solution feasible for the master problem ? */
 
    assert(origprob != NULL);
    assert(scip != NULL);
@@ -253,33 +251,15 @@ SCIP_RETCODE createNewSol(
    /* copy the solution */
    SCIP_CALL( SCIPgetSolVals(restmaster, restmastersol, nmastervars, restmastervars, restmastervals) );
 
-   /* create new solution for the master problem and translate it to the original problem;
-    * @todo GCG does not recognize that the solution comes from this heuristic */
+   /* create new solution for the master problem */
    SCIP_CALL( SCIPcreateSol(scip, &newmastersol, heur) );
    SCIP_CALL( SCIPsetSolVals(scip, newmastersol, nmastervars, mastervars, restmastervals) );
-   SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, newmastersol, &newsol) );
 
-   /* try to add new solution to original problem and free it immediately */
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPtrySolFree(origprob, &newsol, TRUE, TRUE, TRUE, TRUE, TRUE, success) );
+   SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, TRUE, TRUE, TRUE, TRUE, TRUE, success) );
 #else
-   SCIP_CALL( SCIPtrySolFree(origprob, &newsol, FALSE, FALSE, TRUE, TRUE, TRUE, success) );
+   SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, FALSE, FALSE, TRUE, TRUE, TRUE, success) );
 #endif
-
-   /* if we found a solution for the original problem,
-    * also add the corresponding master solution */
-   if( success )
-   {
-#ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, TRUE, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
-#else
-      SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, FALSE, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
-#endif
-      if( !masterfeas )
-      {
-         SCIPdebugMessage("WARNING: original solution feasible, but no solution has been added to master problem.\n");
-      }
-   }
 
    SCIPfreeBufferArray(scip, &restmastervals);
 

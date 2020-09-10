@@ -291,6 +291,17 @@ SCIP_RETCODE GCGconshdlrDecompAddDecomp(
    );
 
 /**
+ * @brief creates and adds a basic partialdecomp (all cons/vars are assigned to master)
+ *
+ * @returns id of partialdec
+ */
+extern
+int GCGconshdlrDecompAddBasicPartialdec(
+   SCIP* scip,          /**< SCIP data structure */
+   SCIP_Bool presolved  /**< create basic partialdecomp for presolved if true, otherwise for original */
+   );
+
+/**
  * @brief creates a pure matrix partialdecomp (i.e. all cons/vars to one single block)
  * 
  * matrix is added to list of all partialdecs
@@ -543,14 +554,23 @@ int GCGconshdlrDecompDecreaseNCallsCreateDecomp(
   SCIP*                 scip                /**< SCIP data structure **/
    );
 
-/** @brief deregisters ALL partialdecs in the conshdlr
+/** @brief deregisters partialdecs in the conshdlr
  *
  * Use this function for deletion of ALL the partialdecs.
  */
 extern
-void GCGconshdlrDecompDeregisterAllPartialdecs(
+void GCGconshdlrDecompDeregisterPartialdecs(
+   SCIP* scip,  /**< SCIP data structure */
+   SCIP_Bool original
+   );
+
+/** @brief Frees Detprobdata of the original and transformed/presolved problem.
+ *
+ * @note Does not free Detprobdata of the original problem if GCGconshdlrDecompFreeOrigOnExit is set to false.
+ */
+void GCGconshdlrDecompFreeDetprobdata(
    SCIP* scip  /**< SCIP data structure */
-);
+   );
 
 /**
  * @brief sets freeing of detection data of original problem during exit to true
@@ -558,7 +578,6 @@ void GCGconshdlrDecompDeregisterAllPartialdecs(
  * used before calling SCIPfreeTransform(), 
  * set to true to revoke presolving 
  * (e.g. if unpresolved decomposition is used, and transformation is not successful)
- * @returns scip return code
  */
 extern
 void GCGconshdlrDecompFreeOrigOnExit(
@@ -898,6 +917,18 @@ SCIP_RETCODE GCGconshdlrDecompPrintDetectorStatistics(
    FILE*                 file                /**< output file or NULL for standard output */
    );
 
+/**
+ * @brief selects/unselects a partialdecomp
+ *
+ * @returns SCIP return code
+ */
+extern
+SCIP_RETCODE GCGconshdlrDecompSelectPartialdec(
+   SCIP* scip,          /**< SCIP data structure */
+   int partialdecid,    /**< id of partialdecomp */
+   SCIP_Bool select     /**< select/unselect */
+   );
+
 /** @brief sets detector parameters values
  * 
  * sets detector parameters values to
@@ -925,6 +956,19 @@ void GCGconshdlrDecompSetScoretype(
    SCIP*  scip,      /**< SCIP data structure */
    SCORETYPE sctype  /**< new scoretype */
    );
+
+/**
+ * @brief translates n best unpresolved partialdec to a complete presolved one
+ * @param scip SCIP data structure
+ * @param n number of partialdecs that should be translated
+ * @returns SCIP return code
+ */
+extern
+SCIP_RETCODE GCGconshdlrDecompTranslateNBestOrigPartialdecs(
+   SCIP*                 scip,
+   int                   n,
+   SCIP_Bool             completeGreedily
+);
 
 /**
  * @brief translates unpresolved partialdec to a complete presolved one
