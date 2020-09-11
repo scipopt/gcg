@@ -45,6 +45,8 @@ SCIP_RETCODE GCGincludeBendersPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+   /* including the dialog used for the master problem */
+   SCIP_CALL( SCIPincludeDialogMaster(scip) );
    /* including the SCIP default plugins */
    SCIP_CALL( SCIPincludeConshdlrNonlinear(scip) ); /* nonlinear must be before linear, quadratic, abspower, and and due to constraint upgrading */
    SCIP_CALL( SCIPincludeConshdlrQuadratic(scip) ); /* quadratic must be before linear due to constraint upgrading */
@@ -222,8 +224,7 @@ SCIP_RETCODE GCGincludeBendersPlugins(
 
    SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
 
-   /* including the dialog and display used for the master problem */
-   SCIP_CALL( SCIPincludeDialogMaster(scip) );
+   /* including the display used for the master problem */
    SCIP_CALL( SCIPincludeDispMaster(scip) );
    SCIP_CALL( SCIPincludeTableDefault(scip) );
 
