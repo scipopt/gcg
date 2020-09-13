@@ -518,7 +518,7 @@ int GCGconshdlrDecompDecreaseNCallsCreateDecomp(
 extern
 void GCGconshdlrDecompDeregisterPartialdecs(
    SCIP* scip,  /**< SCIP data structure */
-   SCIP_Bool original
+   SCIP_Bool original  /**< iff TRUE the status with respect to the original problem is returned */
    );
 
 /** @brief Frees Detprobdata of the original and transformed/presolved problem.
@@ -917,6 +917,7 @@ void GCGconshdlrDecompSetScoretype(
  * @brief translates n best unpresolved partialdec to a complete presolved one
  * @param scip SCIP data structure
  * @param n number of partialdecs that should be translated
+ * @param completeGreedily whether or not to complete the decomposition greedily
  * @returns SCIP return code
  */
 extern

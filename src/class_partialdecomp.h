@@ -473,8 +473,6 @@ public:
     *  strategy: assigns all open conss and vars to blocks if they can be refined there, otherwise to the master
     *
     *  @note partialdecomps should usually be completed by a detector, only use this function if you know what you are doing.
-    *
-    *  @return scip return code
     */
    void complete(
       );

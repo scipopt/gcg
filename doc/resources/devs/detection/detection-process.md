@@ -25,7 +25,7 @@ a detector yields (and the initial empty one), all other detectors will
 (potentially) work on this decomposition, completing it more and more with each
 iteration of the loop. It can happen that only one detector already completes a decomposition.
 After a number of iterations, the decomposition is complete and can be rated according
-to a score (see @subpage detection-scores for a list of scores that can be set to be used). Then,
+to a score (see @ref detection-scores for a list of scores that can be set to be used). Then,
 the decomposition with the best score is used to proceed to the solving.
 
 ### Before Presolving
