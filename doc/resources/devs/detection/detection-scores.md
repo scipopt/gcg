@@ -13,13 +13,17 @@ modeling languages), we deploy **scores to rate decompositions** for their suita
 ## List of Scores
 Take the scores implemented in GCG with a **big grain of salt**: They all have existing theory in mind, however,
 it is just theory. None of our scores is currently well-tested and thus all scores can be declared as rather
-experimental. Our default score is the set partitioning foreseeing max white score (`spfwh`).
+experimental. Our default score is the set partitioning foreseeing max white score (`spfwh`).\n
+If you want to implement your own score, have a look at the guide @ref own-score.
 
 ### Border Area (`border`)
 Minimizes the area that the borders take:
 \f$ \text{s}_\text{borderarea} = 1 - \frac{\text{borderarea}}{\text{totalarea}} \f$.
 
 ### Classic (`classi`)
+```
+1 - (alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore ) )
+```
 
 ### Max White Score
 In the following, we present all variants of the **white area score** that, if we maximize it, will 
