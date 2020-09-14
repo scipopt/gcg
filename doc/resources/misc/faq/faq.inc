@@ -78,7 +78,7 @@ it is always worth to let GCG solve your instance.
       <p>
 You should use GCG if you want to...
 <ul>
-<li>solve a problem that might have a <b>structure in it</b> (whether known or unknown) much faster (see <a href="gcg-vs-scip.html">GCG vs SCIP</a>)</li>
+<li>solve a problem that might have a <b>structure in it</b> (whether known or unknown) much faster (see <a href="why-gcg.html">Why use GCG?</a>)</li>
 <li>find out about how your problem is structured (see <a href="explore-menu.html">Explore Menu</a>)</li>
 <li>implement your own rules, heuristics and methods <b>without having to implement branch-and-price (see <a href="example-projects.html">Example Projects</a>)</b></li>
 </ul>
@@ -107,7 +107,8 @@ This will not change. For the other cases, check the explanation of the
     </h4>
     <div id="howtogetstarted_ans" class="answer">
       <p>
-For that question, we made a dedicated page: <a href="MANUAL.html">The Manual</a>.
+The <a href="installation.html">installation page</a> will not only explain how you can get GCG up and running but also hint to next steps.
+For most, it is sensible to start with the <a href="getting-started.html">Getting Started Guide</a>.
 </p>
     </div>
   </li>
