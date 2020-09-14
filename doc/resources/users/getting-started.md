@@ -139,15 +139,15 @@ be applied, you will be reminded of that.
 
 
 # Executing GCG from the Command Line only
-
-You can start GCG without the interactive console by executing it with the flag
-`-c`. After that, you give the commands that GCG should do, terminating it with
-a `quit`. Usually, this should at least be
+GCG can be started from the command line without the @ref interactive-menu "interactive menu".
+For example, this is used by @ref u1 "Use Case 1" of the @ref users "Users Guide". 
+Using the flag `-c` and the commands that GCG should execute and terminating it with
+a `quit`, you will just see the input and not be prompted. A minimal example is
 
     gcg -f LPFILE
 
 with `LPFILE` being a problem file as needed per the @ref input-formats "format requirements".
-All possible command line arguments can be found @subpage exec-args "here".\n
+All possible command line arguments can be found in the list down below.\n
 The above command will `read` your file, `optimize` it, i.e. calculates the optimal solution
 and finally terminates.\n\n
 Another command could be
@@ -161,4 +161,17 @@ the quote marks, as long as they are complete. For instance, if you wrote `write
 instead of `display solution` in the above command, GCG would also require a name for the
 file that it writes the solution to, i.e. `write solution SOLUFILE`, so watch out for their
 completeness.\n
-> The GCG menu commands can be found @ref interactive-menu "here".
+
+The following arguments can be used when executing GCG:
+
+    syntax: ./bin/gcg [-l <logfile>] [-q] [-s <settings>] [-f <problem>] [-m <mastersettings>] [-d <decomposition>] [-b <batchfile>] [-c "command"]
+      -l <logfile>           : copy output into log file
+      -q                     : suppress screen messages
+      -s <settings>          : load parameter settings (.set) file
+      -m <mastersettings>    : load master parameter settings (.set) file
+      -f <problem>           : load and solve problem file
+      -d <decomposition>     : load decomposition file
+      -o <primref> <dualref> : pass primal and dual objective reference values for validation at the end of the solve
+      -b <batchfile>         : load and execute dialog command batch file (can be used multiple times)
+      -c "command"           : execute single line of dialog commands (can be used multiple times)
+

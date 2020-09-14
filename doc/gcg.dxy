@@ -936,7 +936,8 @@ EXAMPLE_RECURSIVE      = NO
 # that contain images that are to be included in the documentation (see the
 # \image command).
 
-IMAGE_PATH             = ./resources/installation/img \
+IMAGE_PATH             = ./resources/img \
+                         ./resources/installation/img \
                          ./resources/devs/detection/img \
                          ./resources/devs/howtouse/visualizations/img \
                          ./resources/devs/howtouse/visualizations/img/bounds \

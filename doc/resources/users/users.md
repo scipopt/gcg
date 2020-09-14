@@ -1,5 +1,12 @@
 # User's Guide {#users}
 
+Before we get started with installing and using GCG, we want to establish a quick overview 
+**for whom GCG is perfectly suited** and why, also giving references to our Use Cases.
+
+@subpage why-gcg "Why should you use GCG?"  
+
+\n
+
 The **first part** of the User's Guide offers a short introduction to GCG, which suffices for solving programs.
 
  @ref install \n
