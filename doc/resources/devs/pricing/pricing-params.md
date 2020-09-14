@@ -4,7 +4,10 @@ We have around 2000 parameters for the pricing available, so it might be difficu
 to choose the right ones for your class of problems. In the following, some hints
 about good settings will be given.
 
-### Change Parameters of the Pricing
+### Parameters often having an impact
+@todo @schilling
+
+### Change other Parameters of the Pricing
 You can also modify other parameters of the pricing. 
 You can set them by entering `set` and then `pricing`. 
 In the following, we give a list of all parameters that can then be changed.
