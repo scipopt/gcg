@@ -1,9 +1,9 @@
-# Documenting in this Documentation {#doc}
+# How to build this documentation {#doc}
 <!-- The very first line of the .md document should be the page title and {# name of the site}
      #doc is the name of this site. Needed when making a link to this site. -->
 
-# Requirements and Instructions to Compile the Documentation
-### Requirements
+# Building this Documentation
+## Requirements
 - Rights to write inside the `doc` directory
 - common bash tools (`egrep`, `sed`, ...)
 - Doxygen and graphviz (for graph visualizations)
@@ -14,15 +14,16 @@
 (used to read the current interactive menu and settings file)
 - a javascript-enabled browser
 
-#### Additional Notes
+### Additional Notes
 **For macOS Users (tested with Catalina):**<br>
-Please install gnu-sed and add it to your path:
+To compile the SCIP documentation, please install gnu-sed and add it to your path. 
+(For the GCG documentation, this is not needed.)
 ```
 brew install gnu-sed
 PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
 ```
 
-### Instructions
+## Instructions
 The documentation for your installed GCG version including its code can be
 generated using a simple
 
@@ -47,7 +48,7 @@ The FAQ are generated using PHP. The questions can be added in the file
 `/doc/resources/misc/faq/faqtext.txt`.
 
 
-## How to add new Pages
+## How to add new pages
 ### Folder structure
 You can move and create folders and pages (see below) as you like inside the folder `resources`,
 but remember to add new folder paths to INPUT in gcg.dxy (vicinity of line 787).

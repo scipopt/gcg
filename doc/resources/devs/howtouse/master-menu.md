@@ -1,4 +1,4 @@
-# The Master Submenu {#master-menu}
+# How to use the master submenu {#master-menu}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 > The master menu is a **submenu** in the interactive console.

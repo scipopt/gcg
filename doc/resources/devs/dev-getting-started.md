@@ -12,21 +12,15 @@
 @todo we should describe how the original problem is reformulated
 
 # Getting Started as a Developer
-There are special facets to the **way that things are generall implemented**
-in SCIP and GCG and also some **methods that GCG applies differently** 
-than SCIP to try to increase solving speed for _structured_ programs.
-All of these are necessary to know for experts and developers and are 
-introduced and explained briefly on the following page.
-
-
-## Implementation Style Overview
+## Understanding Implementation and Interplay
+### Fundamental Implementational Details
 In this section, we explain the characteristics that SCIP has that are most important to know about.
 
-### Coding Style Guidelines
+#### Coding Style Guidelines
 Both SCIP and GCG (aim to) comply with a **common set of coding style guidelines**. Those are given by
 the [SCIP documentation](https://www.scipopt.org/doc/html/CODE.php).
 
-### SCIP Stages
+#### SCIP Stages
 At times, **GCG needs to interact with SCIP** directly. This can only be done within the limits of the current SCIP stage, because
 the solving process within SCIP is executed in stages (see Figure 1). For more information, please check the
 SCIP documentation or the [SCIP intro presentation](https://www.scipopt.org/workshop2018/SCIP-Intro.pdf).
@@ -35,7 +29,7 @@ SCIP documentation or the [SCIP intro presentation](https://www.scipopt.org/work
 
 @todo add GCG/SCIP stages/interaction from GCG presentation slides
 
-### Original and Transformed Problems {#original-vs-transformed}
+#### Original and Transformed Problems 
 As you read in your instance, it **will be kept in SCIP and GCG as the "original" problem**. 
 Everything you do to it after reading in is performed on the "transformed" problem 
 (presolving is applied on the "transformed" one). 
@@ -44,8 +38,8 @@ it cannot be manipulated.
 GCG is detecting on the transformed (i.e. also presolved) problem (`opt`), but can also detect on the original 
 (`detect` without `presolve` before it).
 
-## Interplay between GCG and SCIP {#gcg-and-scip}
-### Mirroring of Branching Decisions to SCIP {#mirroring}
+### Interplay between GCG and SCIP 
+#### Mirroring of Branching Decisions to SCIP
 One of the core features of GCG, the generic column generation, leads to the
 fact that GCG sometimes wants to branch differently than SCIP wants to.
 This is why we synchronize the branch-and-bound tree between the underlying
@@ -60,3 +54,12 @@ where they are reconstructed.
 In the case that an aggregation took place, we do not do branching on original variables.
 
 @todo add stuff from presentations?
+
+
+## Starting with Development inside GCG
+After having read the above information, you might want to start developing. For this purpose,
+we have prepared multiple "How to add" guides. You can also use the example projects as
+guidance. \n\n
+
+ ⇨ @subpage example-projects \n
+ ⇨ @subpage howtoadd

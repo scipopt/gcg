@@ -115,8 +115,8 @@ The `DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecMydetector)` callback s
 ### INITDETECTOR {#DEC_INIT}
 The `DEC_DECL_INITDETECTOR(detectorInitMydetector)` callback is executed after the problem was transformed.
 The detector may, e.g., use this call to initialize his detector data.
-The difference between the original and the transformed problem is explained in
-@ref original-vs-transformed.
+The difference between the original and the transformed problem is explained in the
+@ref dev-getting-started.
 
 ### EXITDETECTOR {#DEC_EXIT}
 The `DEC_DECL_EXITDETECTOR(detectorExitMydetector)` callback has to be implemented if you are using detection data (see @ref DEC_DATA and @ref DEC_INTERFACE) in order to free the detection data.
