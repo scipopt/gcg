@@ -1,11 +1,10 @@
 # Developer's Guide {#devs}
 
-@todo we should describe the general *architecture* of GCG with the *original* instance and an *extended* instance which "mirrors" the branching decisions done in the original instance, etc.
-@todo we should describe how the original problem is reformulated
+The **first part** of this guide includes a comprehensive description of how things are implemented in SCIP and GCG
+as well as the interaction between GCG and SCIP, to make the reader grasp what the differences are when implementing 
+own code inside GCG.
 
-The **first part** of this guide includes a comprehensive description of the interaction between GCG and SCIP, to make the reader grasp what the differences are when implementing own code inside GCG in contrast to SCIP.
-
-@subpage gcg-and-scip \n
+@subpage dev-getting-started \n
 
 \n
 The **second part** describes what's already implemented in GCG and how it is and further can be used to make things much easier than with SCIP.
