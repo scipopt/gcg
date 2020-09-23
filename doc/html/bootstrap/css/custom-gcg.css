@@ -47,3 +47,7 @@ label#compile-label:after {
 div#compile-div {
     margin-bottom: 15px;
 }
+
+.bs-docs-container{
+    padding-bottom: 15px;
+}

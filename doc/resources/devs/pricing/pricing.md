@@ -17,7 +17,8 @@ If you want to know more about this process, please check out the respective exp
 for the components used during the pricing.
 
 @subpage pricing-process \n
-@subpage pricing-solvers
+@subpage pricing-solvers \n
+@subpage recursive-dw
 
 \n
 There are many different parameters that can influence the pricing of your problem.
