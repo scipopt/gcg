@@ -26,15 +26,20 @@ For further use cases of GCG, please consult the @ref users.
 
 **As a solver, GCG...**
 - **detects hidden or apparent structures** in the constraint matrix in order to apply DWR. Among others, it detects
-  - staircase structures
-  - set partitioning master structures
-  - subproblems that can be aggregated in the Dantzig-Wolfe reformulation
-  - with the additional tool hmetis it can enforce a structure suitable for DWR in arbitrary MIPs 
+  -  single-bordered structures
+  -  arrowhead structures (using [hmetis](http://glaros.dtc.umn.edu/gkhome/metis/hmetis/overview))
+  -  staircase structures
+  -  set partitioning master structures
+  -  clustered and graph connectivity based structures 
 - uses a **Dantzig-Wolfe reformulation** (DWR) to solve arbitrary MIPs.
+- automatically aggregates subproblems if possible
 - offers an automated **Benders'** decomposition algorithm
-- has **branching rules** for automatic branching on any problem.
-- applies **dual variable stabilization** by dual value smoothing
+- has **branching rules** for automatic branching on any problem, e.g. branching on original, Ryan-Foster branching or generic branching
+- applies a wide variety of **cuts** to the problem, e.g. combinatorially or from basis)
+- rates columns in its (parallel) exact or heuristic **pricing**
 - has a large number of **primal heuristics** both in the original and the reformulated space
+- applies **dual variable stabilization** by dual value smoothing
+
 For more details on what and how GCG does things to solve your problem quickly, please consult the @ref devs.
 
 ## When is it sensible to use GCG?
