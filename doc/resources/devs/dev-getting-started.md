@@ -8,42 +8,49 @@
 > and secondly, **how GCG communicates with SCIP**.
 > </div>
 
-@todo we should describe the general *architecture* of GCG with the *original* instance and an *extended* instance which "mirrors" the branching decisions done in the original instance, etc.
 @todo we should describe how the original problem is reformulated
 
 # Getting Started as a Developer
-## Understanding Implementation and Interplay
 ### Fundamental Implementational Details
-In this section, we explain the characteristics that SCIP has that are most important to know about.
+In this section, we explain the most important characteristics of SCIP's implementation 
+and the interplay between GCG and SCIP.
 
 #### Coding Style Guidelines
-Both SCIP and GCG (aim to) comply with a **common set of coding style guidelines**. Those are given by
-the [SCIP documentation](https://www.scipopt.org/doc/html/CODE.php).
+Both SCIP and GCG (aim to) comply with a **common set of coding style guidelines**. T
+hose are given by the [SCIP documentation](https://www.scipopt.org/doc/html/CODE.php).
 
 #### SCIP Stages
-At times, **GCG needs to interact with SCIP** directly. This can only be done within the limits of the current SCIP stage, because
-the solving process within SCIP is executed in stages (see Figure 1). For more information, please check the
-SCIP documentation or the [SCIP intro presentation](https://www.scipopt.org/workshop2018/SCIP-Intro.pdf).
+At times, **GCG needs to interact with SCIP** directly. This can only be done within the 
+limits of the current SCIP stage, because the solving process within SCIP is executed in 
+stages (see Figure 1). For more information, please check the SCIP documentation or the 
+[SCIP intro presentation](https://www.scipopt.org/workshop2018/SCIP-Intro.pdf).
 
 \image html SCIP-stages.png "Figure 1: A diagram showing the stages that SCIP works in." width=50% 
 
 @todo add GCG/SCIP stages/interaction from GCG presentation slides
 
 #### Original and Transformed Problems 
+> During the solving process, GCG manages two SCIP instances, one holding 
+> the original problem, the other one representing the reformulated problem. 
+
 As you read in your instance, it **will be kept in SCIP and GCG as the "original" problem**. 
 Everything you do to it after reading in is performed on the "transformed" problem 
 (presolving is applied on the "transformed" one). 
 The original problem is **used as a safe copy** to check the feasibility of solutions. In particular,
-it cannot be manipulated.
+it cannot be manipulated. 
 GCG is detecting on the transformed (i.e. also presolved) problem (`opt`), but can also detect on the original 
 (`detect` without `presolve` before it).
 
-### Interplay between GCG and SCIP 
 #### Mirroring of Branching Decisions to SCIP
-One of the core features of GCG, the generic column generation, leads to the
-fact that GCG sometimes wants to branch differently than SCIP wants to.
-This is why we synchronize the branch-and-bound tree between the underlying
-SCIP instance and GCG, such that SCIP can execute them.
+> One of the core features of GCG, the generic column generation, leads to the
+> fact that GCG sometimes wants to branch differently than SCIP wants to.
+> This is why we synchronize the branch-and-bound tree between the underlying
+> SCIP instance and GCG, such that SCIP can execute them.
+
+As teased in the previous section, the original instance coordinates the solving process 
+while the **transformed instance builds the tree in the same way**, transfering branching 
+decisions and bound changes from the original problem and solving the LP relaxation of the 
+extended formulation via column generation.
 
 The code for the communication to SCIP during branching on original variables is inside the
 cons_masterbranch.c and cons_origbranch.c source files. The process is as follows:
