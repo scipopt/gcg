@@ -2,7 +2,7 @@
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 ### Overview
 This separator is our first approach to add strengthening cuts directly to the master problem. At first we just tried to add [Subsetrow cuts]( https://www.researchgate.net/publication/220243923_Subset-Row_Inequalities_Applied_to_the_Vehicle-Routing_Problem_with_Time_Windows). Now it received a small update and uses the heuristic of [Koster et all]( https://www.researchgate.net/publication/220770325_Algorithms_to_Separate_0_12-Chvatal-Gomory_Cuts) to generate arbitrary zero-half cuts in the solving process. 
-**Please note that the subsetrowcut separator is disabled at the start! Look at the ‘Algorithmic Details’ and ‘Parameters’ sections to see why it is enabled and how to enable it. **
+**Please note that the subsetrowcut separator is disabled at the start! Look at the ‘Algorithmic Details’ and ‘Parameters’ sections to see why it is enabled and how to enable it.**
 
 ### Theoretical background
 Consider a general linear program with two sets of constraints:
@@ -21,7 +21,7 @@ s.t. & \sum \limits_{p \in P’}  a_p\lambda_p &\ge b & [\pi] \\
 \f}
 with \f$ P‘ \subseteq P , a_p := A p, c_p = c^T p \f$. The corresponding pricing problem look like this: 
 \f{align}{ 
-\min & (c^T -\pi^TA) x - \pi_0&\\
+\min && (c^T -\pi^TA) x - \pi_0\\
 s.t. & Dx &\ge d \\
  & x &\ge 0 \\
 \f}
@@ -35,7 +35,7 @@ s.t. & \sum \limits_{p \in P’}  a_p\lambda_p &\ge b & [\pi] \\
 \f}
 Note that \f$ g_p = \lfloor A x \rfloor =: g(A)\f$. As we have a restricted master problem, we still need to price variables and while doing so pay attention to the new constrain we added. Therefore, we need to adjust our pricing problem:
 \f{align}{
-\min & (c^T -\pi^TA) x - \pi_0 - \betha g(A)&\\
+\min && (c^T -\pi^TA) x - \pi_0 - \betha g(A)\\
 s.t. & Dx &\ge d \\
  & x &\ge 0 \\
 \f}
@@ -56,7 +56,7 @@ From the algorithmic point of view the above theory is most of all problematic b
 Please keep in mind that the separator is only called in the root node, as the heuristic we use to find a zero-half cut is currently only tested for this case. If you want to change this, please comment out the relevant if clause in the ```SCIP_DECL_SEPAEXECLP```. Further, the separator always adds at most one zero-half cut in a single iteration, no matter how many the corresponding heuristic found. This can be changed in the method ```selectConstraintsForSubsetrowCut_ZEROHALF_Kosteretall```, a detailed tutorial for this will lead to far at this point. In addition to the heuristic of Koster et all we provide to further methods: 
 *  ```selectConstraintsForSubsetrowCut_RANDOM``` selects three random constrains for a Subsetrowcut.  
 * ```selectConstraintsForSubsetrowCut``` lets you specify three indices for rows from which the subsetrowcut will be created.   
-We do not recommend using them, but they provide an example how to implement an own method for selecting rows for the zero-half cuts. If you want to create general Gomory cuts and not just zero-half cuts, you just need to modify the ``` calculateMultipliersAndRHS``` method to meat your needs. 
+We do not recommend using them, but they provide an example how to implement an own method for selecting rows for the zero-half cuts. If you want to create general Gomory cuts and not just zero-half cuts, you just need to modify the ```calculateMultipliersAndRHS``` method to meat your needs. 
 
 At last, we would like to direct your attention to the fact that the separator destroys any kind of structure the pricing problem. Because of this, **we absolutely don’t recommend to use this separator if you want to use specialized solvers for the pricing problems!**
 
@@ -64,5 +64,5 @@ At last, we would like to direct your attention to the fact that the separator d
 Here we list all the different parameters you can tune for this separator which are not already listed in the [SCIP documentation]( https://www.scipopt.org/doc-7.0.1/html/SEPA.php):
 * ```SUBSETROW_EPSILON``` represents the value of the \f$ \varepsilon\f$. Its default value is ```10^{-4}```. **Do not set it smaller!** If possible, we recommend to even raise its value to ```0.1```.  
 * ```MAX_NUMBER_SUBSETROWCUTS``` is the maximal number of zero-half cuts we will create. Its default value is ```1```. If your root relaxation does not take up too much time, we do not recommend increasing this number. Otherwise it can make sense to set it to ```100``` or even larger, since every cut we generate will definitely cut of some fractional solutions.
-* ```STARTMAXCUTS``` is the initial size of the array containing the generated cuts (more exactly pointers to them) from our separators. Because it is quite bothersome to reallocate it, the default value is ```100``` in anticipation that the user will want to generate more that one cut. As long as ```MAX_NUMBER_SUBSETROWCUTS``` is not to large, try to keep ``` STARTMAXCUTS  \ge MAX_NUMBER_SUBSETROWCUTS```.
+* ```STARTMAXCUTS``` is the initial size of the array containing the generated cuts (more exactly pointers to them) from our separators. Because it is quite bothersome to reallocate it, the default value is ```100``` in anticipation that the user will want to generate more that one cut. As long as ```MAX_NUMBER_SUBSETROWCUTS``` is not to large, try to keep \f$ STARTMAXCUTS \ge MAX_NUMBER_SUBSETROWCUTS\f$.
 
