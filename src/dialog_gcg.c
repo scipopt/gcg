@@ -53,11 +53,9 @@
 #include "pub_gcgheur.h"
 #include "pub_gcgsepa.h"
 #include "stat.h"
-#include "reader_dec.h"
 #include "reader_tex.h"
 #include "reader_gp.h"
 #include "params_visu.h"
-#include "reader_tex.h"
 #include "dialog_explore.h"
 
 /** display the reader information
@@ -516,15 +514,12 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
    DEC_DECOMP* decomp;
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   decomp = DECgetBestDecomp(scip, TRUE);
-   if( decomp != NULL )
-   {
-      SCIP_CALL( GCGwriteDecomp(scip, NULL, decomp) );
-      SCIP_CALL(DECdecompFree(scip, &decomp) );
-   } else
-   {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "No decomposition available.\n");
-   }
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+      SCIPdialogMessage(scip, NULL, "no problem exists\n");
+   else if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+      SCIPwriteOrigProblem(scip, NULL, "dec", FALSE);
+   else
+      SCIPwriteTransProblem(scip, NULL, "dec", FALSE);
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 

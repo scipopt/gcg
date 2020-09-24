@@ -7,6 +7,8 @@ inside a [detector](#detectors) in a later stage of the [detection](#detection-p
 \n
 A complete list of all classifiers contained in this release can be found [here](#classifiers).
 
+# Adding your own Classifier
+
 With the following steps, we explain how you can **add your own constraint/variable classifier plugin**:
 1. **Preparations**
   1. Choose a name `myclassifier` for your classifier.
@@ -29,7 +31,7 @@ With the following steps, we explain how you can **add your own constraint/varia
    `clscons_myclassifier.h`/`clsvar_myclassifier.h` below `set(gcgheaders`.
 
 
-# Properties of a Classifier {#CLS_PROPERTIES}
+## Properties of a Classifier {#CLS_PROPERTIES}
 
 At the top of the new file `clscons_myclassifier.cpp`/`clsvar_myclassifier.cpp`, you can find the classifier properties.
 These are given as compiler defines.
@@ -53,10 +55,10 @@ Set this flag to true if the classifier should classify on the original (non-pre
 @par DEC_ENABLEDPRESOLVED: classify on presolved problem
 Set this flag to true if the classifier should classify on the presolved problem.
 
-# Classifier Data {#CLS_DATA}
+## Classifier Data {#CLS_DATA}
 Defining classifier data is optional.
 
-# Interface Methods {#CLS_INTERFACE}
+## Interface Methods {#CLS_INTERFACE}
 At the bottom of `clscons_myclassifier.cpp`/`clsvar_myclassifier.cpp`, you can find the interface method `SCIPincludeConsClassifierXyz()`/`SCIPincludeVarClassifierXyz()`,
 which also appears in `clscons_myclassifier.h`/`clsvar_myclassifier.h`.
 \n
@@ -76,7 +78,7 @@ For freeing the classifier data, see @ref CLS_FREE.
 You may also add user parameters for your classifier, see the parameters documentation of SCIP for how to add user parameters.
 
 
-# Fundamental Callback Methods of a Classifier {#CLS_FUNDAMENTALCALLBACKS}
+## Fundamental Callback Methods of a Classifier {#CLS_FUNDAMENTALCALLBACKS}
 The fundamental callback methods of the plug-ins are the ones that have to be implemented in order to obtain
 an operational algorithm. Classifier plug-ins have one main function:
  * @ref CLS_CONSCLASSIFY "classify constraints" according to some property  
@@ -87,15 +89,15 @@ Exactly one of following methods has to be implemented for every classifier.
 Additional documentation for the callback methods of classifiers can be found in the
 files type_consclassifier.h and type_varclassifier.h.
 
-## CONSCLASSIFY {#CLS_CONSCLASSIFY}
+### CONSCLASSIFY {#CLS_CONSCLASSIFY}
 The `DEC_DECL_CONSCLASSIFY(classifierClassify)` callback assigns constraints to classes using the `assignConsToClass()` method of the `gcg::ConsClassifier`.
 
-## VARCLASSIFY {#CLS_VARCLASSIFY}
+### VARCLASSIFY {#CLS_VARCLASSIFY}
 The `DEC_DECL_VARCLASSIFY(classifierClassify)` callback  assigns variables to classes using the `assignVarToClass()` method of the `gcg::VarClassifier`.
 
-# Additional Callback Methods of a Classifier {#CLS_ADDITIONALCALLBACKS}
-## FREECLASSIFIER {#CLS_FREE}
+## Additional Callback Methods of a Classifier {#CLS_ADDITIONALCALLBACKS}
+### FREECLASSIFIER {#CLS_FREE}
 The `DEC_DECL_FREECLASSIFIER(classifierFreeXyz)` callback is called upon exiting GCG to free user data.
 
-## INITCLASSIFIER {#CLS_INIT}
+### INITCLASSIFIER {#CLS_INIT}
 The `DEC_DECL_INITCLASSIFIER(classifierInitXyz)` callback is called after problem was transformed to initialize the classifier.

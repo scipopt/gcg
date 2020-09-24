@@ -1,4 +1,4 @@
-# Visualization Generation {#generatevisu}
+# How to generate visualizations {#generatevisu}
 [TOC]
 
 # Prerequisites

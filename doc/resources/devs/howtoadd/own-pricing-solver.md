@@ -2,10 +2,12 @@
 
 [TOC]
 
-Pricing problem solvers are called by the pricer to **solve a single pricing
-problem** either heuristically or to optimality and return a set of solutions.
+Pricing problem solvers are called by the pricer to **solve a single pricing problem** 
+either heuristically or to optimality and return a set of solutions.
 \n
 A complete list of all pricing problem solvers contained in this release can be found [here](#pricing-solvers).
+
+# Adding your own Pricing Solver
 
 With the following steps, we explain how you can **add your own pricing problem solver plug-in**:
 1. **Preparations**
@@ -29,7 +31,7 @@ With the following steps, we explain how you can **add your own pricing problem 
    `solver_mysolver.h` below `set(gcgheaders`.
 
 
-# Properties of a pricing problem solver {#SOLVER_PROPERTIES}
+## Properties of a Pricing Problem Solver {#SOLVER_PROPERTIES}
 
 At the top of the new file "solver_mysolver.c", you can find the solver properties.
 These are given as compiler defines.
@@ -52,7 +54,7 @@ The default pricing solver that solves the pricing problem as a MIP using SCIP h
 should have positive priority.
 An easy way to list the priorities and descriptions of all solvers is "display solvers" in the interactive shell of GCG.
 
-# Solver Data {#SOLVER_DATA}
+## Solver Data {#SOLVER_DATA}
 
 Below the header "Data structures" you can find the struct "struct GCG_SolverData".
 In this data structure, you can store the data of your solver. For example, you should store the adjustable parameters
@@ -61,7 +63,7 @@ of the solver in this data structure and also arrays to store the solutions that
 Defining solver data is optional. You can leave this struct empty.
 
 
-# Interface Methods {#SOLVER_INTERFACE}
+## Interface Methods {#SOLVER_INTERFACE}
 
 At the bottom of `solver_myclassifier.c`, you can find the interface method `GCGincludeSolverMysolver()`,
 which also appears in `solver_myclassifier.h`.
@@ -85,7 +87,7 @@ You may also add user parameters for your solver, see the SCIP documentation for
 the method `SCIPincludeSolverMip()` in solver_mip.c for an example.
 
 
-# Fundamental Callback Methods of a Solver {#SOLVER_FUNDAMENTALCALLBACKS}
+## Fundamental Callback Methods of a Solver {#SOLVER_FUNDAMENTALCALLBACKS}
 
 The fundamental callback methods of the plug-ins are the ones that have to be implemented in order to obtain
 an operational algorithm. Pricing problem solvers do not have fundamental callback methods, but they should
@@ -94,9 +96,9 @@ implement at least one of the [SOLVERSOLVE](#SOLVER_SOLVE) and [SOVLERSOLVEHEUR]
 Additional documentation to the callback methods, in particular to their input parameters,
 can be found in type_solver.h.
 
-# Additional Callback Methods of a Solver {#SOLVER_ADDITIONALCALLBACKS}
+## Additional Callback Methods of a Solver {#SOLVER_ADDITIONALCALLBACKS}
 
-## SOLVERSOLVE {#SOLVER_SOLVE}
+### SOLVERSOLVE {#SOLVER_SOLVE}
 
 The `GCG_DECL_SOLVERSOLVE(solverSolveMysolver)` callback is called when the variable pricer in the master SCIP instance wants to solve a pricing problem
 to optimality.
@@ -125,7 +127,7 @@ If the structure of the problem is independent of the changes that can occur wit
 detection for the pricing problems can also be done in the [SOLVERINITSOL](#SOLVER_INITSOL) callback and stored internally to avoid doing it every
 time a pricing problem is solved.
 
-## SOLVERSOLVEHEUR {#SOLVER_SOLVEHEUR}
+### SOLVERSOLVEHEUR {#SOLVER_SOLVEHEUR}
 
 The `GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMysolver)` callback is called during heuristic pricing when the variable pricer in the master SCIP instance
 wants to solve a pricing problem heuristically.
@@ -133,7 +135,7 @@ It has the same input and return parameters as the [SOLVERSOLVE](#SOLVER_SOLVE) 
 optimality, but should try to construct good feasible solutions using fast methods. Nevertheless, it can return a lower bound
 for the optimal solution value of the problem, if it computes one.
 
-## SOLVERFREE {#SOLVER_FREE}
+### SOLVERFREE {#SOLVER_FREE}
 The `GCG_DECL_SOLVERFREE(solverFreeMysolver)` has to be implemented if you are using solver data in order to free the solver data.
 This can be done by the following procedure:
 ```C
@@ -158,23 +160,23 @@ GCG_DECL_SOLVERFREE(solverFreeMysolver)
 If you have allocated memory for fields in your solver data, remember to free this memory
 before freeing the pricing solver data itself.
 
-## SOLVERINIT {#SOLVER_INIT}
+### SOLVERINIT {#SOLVER_INIT}
 
 The `GCG_DECL_SOLVERINIT(solverInitMysolver)` callback is executed after the problem is transformed.
 The pricing problem solver may, e.g., use this call to replace the original constraints stored in its solver data by transformed
 constraints, or to initialize other elements of his solver data.
 
-## SOLVEREXIT {#SOLVER_EXIT}
+### SOLVEREXIT {#SOLVER_EXIT}
 
 The `GCG_DECL_SOLVEREXIT(solverExitMysolver)` callback is executed before the transformed problem is freed.
 In this method the pricing problem solver should free all resources that have been allocated for the solving process in [SOLVERINIT](#SOLVER_INIT).
 
-## SOLVERINITSOL {#SOLVER_INITSOL}
+### SOLVERINITSOL {#SOLVER_INITSOL}
 
 The `GCG_DECL_SOLVERINITSOL(solverInitsolMysolver)` callback is executed when the presolving is finished and the branch-and-bound process is about to begin.
 The pricing problem solver may use this call to initialize its branch-and-bound specific data.
 
-## SOLVEREXITSOL {#SOLVER_EXITSOL}
+### SOLVEREXITSOL {#SOLVER_EXITSOL}
 
 The `GCG_DECL_SOLVEREXITSOL(solverExitsolMysolver)` callback is executed before the branch-and-bound process is freed.
 The pricing problem solver should use this call to clean up its branch-and-bound data, which was allocated in SOLVERINITSOL.

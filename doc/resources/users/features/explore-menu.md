@@ -37,19 +37,22 @@ List of selection commands
 
                        command     description
                        -------     -----------
-                        select     selects/unselects decomposition with given id
+                          help     displays this help
+                        legend     displays the legend for table header and history abbreviations
+                        select     selects/unselects decomposition with given nr
                       previous     displays the preceding decompositions (if there are any)
                           next     displays the subsequent decompositions (if there are any)
                            top     displays the first decompositions
                            end     displays the last decompositions
-                        legend     displays the legend for table header and history abbreviations
-                          help     displays this help
-                number_entries     modifies the number of displayed decompositions
+                       entries     modifies the number of decompositions to display per page
                      visualize     visualizes the specified decomposition (requires gnuplot)
                        inspect     displays detailed information for the specified decomposition
-                     set_score     sets the score by which the "goodness" of decompositions is evaluated
-                      sort_asc     sets whether to sort (by score) in ascending or descending order
+                         score     sets the score by which the quality of decompositions is evaluated
+                          sort     sets the column by which the decompositions are sorted (default: by score)
+                     ascending     sort decompositions in ascending (true) or descending (false) order
+                          list     specify whether all decompositions should be listed
                           quit     return to main menu
+
 
 ==================================================================================
 ```
@@ -87,10 +90,10 @@ With the `visualize` command, you can export a visualization of the selected
 decomposition. Prior to that, you will have to install "gnuplot" by typing
 `sudo apt-get install gnuplot` into your console.
 
-### Use a different score with `set_score`
+### Use a different score with `score`
 By default, GCG uses the so-called max white score. This means that the decomposition with the most zero entries is used. Since this might not always be the best measure, it is possible to choose a different score:
 ```
-GCG/explore> set_score
+GCG/explore> score
 ==================================================================================
 Please specify the new score:
 0: max white,

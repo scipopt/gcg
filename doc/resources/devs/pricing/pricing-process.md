@@ -35,7 +35,8 @@ we have to **iteratively undo each bound we imposed** while going there.
 Each block represents one pricing problem that can be solved independently from all the others and 
 at first even independent of the master constraints. Since we want to generate columns (variables)
 for the Restricted Master Problem that is yet lacking an optimal integer solution, **we solve the 
-pricing problems and add the best variables** ("most negative" reduced costs) to the RMP. 
+pricing problems and add the best variables** ("most negative" reduced costs) to the RMP. For more
+information on how we do that, please read the section on "Storing and Using Columns".
 The SCIP-Instance corresponding to a pricing problem is created inside `relax_gcg.c` and freed in exitSol().
 
 The **pricing problem is then solved** as follows:
@@ -44,3 +45,11 @@ The **pricing problem is then solved** as follows:
 - Queue can be processed in parallel
 
 If the chosen pricing solver is MIP, `SCIPsolve` is called again for the pricing problem.
+
+#### Storing and Using Columns
+When performing Column Generation, it often happens that it is **very expensive to generate variables**.
+Thus, GCG will take _all_ columns that are generated that have negative reduced cost, because we might
+be able to use them at some point. That point might be at different times. For that purpose, we have 
+two different structures storing columns (variables) that are generated during the pricing.
+- `Pricestore`: contained columns survive only in the _current round_.
+- `Column Pool`: contained columns survive into _future rounds_.

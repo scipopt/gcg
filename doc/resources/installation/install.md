@@ -43,7 +43,7 @@ Note that **GCG cannot be installed on Windows out of the box**. If you only hav
 >
 > <div style="width:80%">
 > To get started with experimenting and developing, check out the @ref devs next, where you can find information on how GCG works under the
-> hood and in particular how it works @ref gcg-and-scip "together with SCIP" such that you can finally start @ref howtoadd "adding your own components",
+> hood and in particular how it works @ref dev-getting-started "in general and together with SCIP" such that you can finally start @ref howtoadd "adding your own components",
 > guided by one of our @ref example-projects.
 > </div>
 

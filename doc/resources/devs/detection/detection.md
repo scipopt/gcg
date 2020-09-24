@@ -22,6 +22,7 @@ Furthermore, one can also activate an alternative different detection mode, name
 
 @subpage detection-process \n
 @subpage benders \n
+@subpage detection-scores \n
 @subpage detection-params \n
 
 \n

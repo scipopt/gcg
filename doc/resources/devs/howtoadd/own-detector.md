@@ -6,6 +6,7 @@ Structure detectors are used to **detect or enforce a structure suitable for Dan
 \n
 A complete list of all detectors contained in this release can be found [here](#detectors).
 
+# Adding your own Detector
 
 With the following steps, we explain how you can **add your own structure detection plug-in**:
 1. **Preparations**
@@ -29,7 +30,7 @@ With the following steps, we explain how you can **add your own structure detect
 
 
 
-# Properties of a Detector {#DEC_PROPERTIES}
+## Properties of a Detector {#DEC_PROPERTIES}
 At the top of the new file `dec_mydetector.cpp`, you can find the detector properties.
 These are given as compiler defines.
 The properties you have to set have the following meaning:
@@ -61,7 +62,7 @@ Disabled detectors are not started.
 This flag is useful if the detector acts as a last resort to generate a decomposition. It will not be called if any detector of higher
 priority found a decomposition.
 
-# Detector Data {#DEC_DATA}
+## Detector Data {#DEC_DATA}
 Below the header "Data structures" you can find the struct "struct DEC_DetectorData".
 In this data structure, you can store the data of your detector. For example, you should store the adjustable parameters
 of the detector in this data structure.
@@ -69,7 +70,7 @@ of the detector in this data structure.
 Defining detector data is optional. You can leave this struct empty.
 
 
-# Interface Methods {#DEC_INTERFACE}
+## Interface Methods {#DEC_INTERFACE}
 At the bottom of `dec_mydetector.cpp`, you can find the interface method `SCIPincludeDetectorMydetector()`,
 which also appears in `dec_mydetector.h`.
 \n
@@ -90,7 +91,7 @@ detector data, see @ref DEC_ADDITIONALCALLBACKS.
 You may also add user parameters for your detector, see the parameters documentation of SCIP for how to add user parameters.
 
 
-# Fundamental Callback Methods of a Detector {#DEC_FUNDAMENTALCALLBACKS}
+## Fundamental Callback Methods of a Detector {#DEC_FUNDAMENTALCALLBACKS}
 The fundamental callback methods of the plug-ins are the ones that have to be implemented in order to obtain
 an operational algorithm. Detector plug-ins have three main functions:
  * Propagating (assigning variables/constraints to block or master),
@@ -101,23 +102,23 @@ At least one of the following methods has to be implemented for every detector; 
 Additional documentation to the callback methods, in particular to their input parameters,
 can be found in type_detector.h.
 
-## PROPAGATEPARTIALDEC
+### PROPAGATEPARTIALDEC
 The `DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMydetector)` callback should assign variables/constraints to block or master. You can either create the decomposition by calling `DECcreateDecompFromMasterconss()` or `DECfilloutDecompFromConstoblock()` or use the getter and setter functions in pub_decomp.h to fill the decomposition structure.
 
-## FINISHPARTIALDEC
+### FINISHPARTIALDEC
 The `DEC_DECL_FINISHPARTIALDEC(finishPartialdecMydetector)` callback should, given a partial decomposition, finish it.
 
-## POSTPROCESSPARTIALDEC
+### POSTPROCESSPARTIALDEC
 The `DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecMydetector)` callback should postprocess a given finished partial decomposition to find a different yet promising one.
 
-# Additional Callback Methods of a Detector {#DEC_ADDITIONALCALLBACKS}
-## INITDETECTOR {#DEC_INIT}
+## Additional Callback Methods of a Detector {#DEC_ADDITIONALCALLBACKS}
+### INITDETECTOR {#DEC_INIT}
 The `DEC_DECL_INITDETECTOR(detectorInitMydetector)` callback is executed after the problem was transformed.
 The detector may, e.g., use this call to initialize his detector data.
-The difference between the original and the transformed problem is explained in
-@ref original-vs-transformed.
+The difference between the original and the transformed problem is explained in the
+@ref dev-getting-started.
 
-## EXITDETECTOR {#DEC_EXIT}
+### EXITDETECTOR {#DEC_EXIT}
 The `DEC_DECL_EXITDETECTOR(detectorExitMydetector)` callback has to be implemented if you are using detection data (see @ref DEC_DATA and @ref DEC_INTERFACE) in order to free the detection data.
 This can be done by the following procedure:
 ```C
@@ -141,14 +142,14 @@ before freeing the detector data itself.
 The detectorExit callback is executed before the solution process is started.
 In this method, the detector should free all resources that have been allocated for the detection process in @ref DEC_INIT.
 
-## FREEDETECTOR {#DEC_FREE}
+### FREEDETECTOR {#DEC_FREE}
 The destructor of the detector to free user data (called when GCG is exiting) has to be defined in `DEC_DECL_FREEDETECTOR(detectorFreeMydetector)`.
 
-## SETPARAMAGGRESSIVE {#DEC_PARAM_AGG}
+### SETPARAMAGGRESSIVE {#DEC_PARAM_AGG}
 The parameters for the setting "aggressive" can be modified using the method `DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveMydetector)`.
 
-## SETPARAMDEFAULT {#DEC_PARAM_DEF}
+### SETPARAMDEFAULT {#DEC_PARAM_DEF}
 The parameters for the setting "default" can be modified using the method `DEC_DECL_SETPARAMDEFAULT(setParamDefaultMydetector)`.
 
-## SETPARAMFAST {#DEC_PARAM_FAST}
+### SETPARAMFAST {#DEC_PARAM_FAST}
 The parameters for the setting "fast" can be modified using the method `DEC_DECL_SETPARAMFAST(setParamFastMydetector)`.

@@ -164,7 +164,7 @@ private:
    USERGIVEN usergiven;                               /**< is this partialdec partially or completely given by user */
 
    /* score values (or -1 iff nott computed yet) */
-   
+
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
    SCIP_Real borderareascore;                         /**< 1 - fraction of border area to complete area */
    SCIP_Real classicscore;                            /**< classic score to evaluate the partial */
@@ -382,6 +382,12 @@ public:
       );
 
    /**
+    * @brief assigns open conss to master
+    */
+   void assignOpenConssToMaster(
+      );
+
+   /**
     * @brief assigns conss structure according to given hashmap
     *
     *  adds blocks and assigns open conss to a new block or to master
@@ -466,7 +472,7 @@ public:
     *
     *  strategy: assigns all open conss and vars to blocks if they can be refined there, otherwise to the master
     *
-    *  @note partialdecomps should usually be completed by a detector, only use this function if you know what you are doing
+    *  @note partialdecomps should usually be completed by a detector, only use this function if you know what you are doing.
     */
    void complete(
       );
@@ -489,6 +495,16 @@ public:
     *  hence it cannot be applied in presence of linking variables
     */
    void completeByConnectedConssAdjacency(
+      );
+
+   /**
+    * @brief assigns all open constraints and open variables
+    *
+    *  strategy: assigns a cons (and related vars) to a new block if possible,
+    *  if not to an existing block if possible (by means of prior var assignments)
+    *  and finally to master, if there does not exist such a block
+    */
+   void completeGreedily(
       );
 
    /** @brief removes the given cons from master
@@ -959,7 +975,7 @@ public:
     * @brief Gets fraction of variables assigned to the border for detectors in detectorchain
     * @return vector of fractions of variables assigned to the border for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctVarsToBorderVector();
+   std::vector<SCIP_Real>& getPctVarsToBorderVector();
 
    /**
     * @brief Gets fraction of variables assigned to a block for a detector
@@ -974,7 +990,7 @@ public:
     * @brief returns fraction of variables assigned to a block for detectors in detectorchain
     * @return vector of fractions of variables assigned to a block for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctVarsToBlockVector();
+   std::vector<SCIP_Real>& getPctVarsToBlockVector();
 
    /**
     * @brief Gets fraction of variables that are not longer open for a detector
@@ -989,7 +1005,7 @@ public:
     * @brief Gets fraction of variables that are not longer open for detectors in detectorchain
     * @return vector or fractions of variables that are not longer open for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctVarsFromFreeVector();
+   std::vector<SCIP_Real>& getPctVarsFromFreeVector();
 
    /**
     * @brief Gets fraction of constraints assigned to the border for a detector
@@ -1004,7 +1020,7 @@ public:
     * @brief Gets fraction of constraints assigned to the border for detectors in detectorchain
     * @return vector of fractions of constraints assigned to the border for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctConssToBorderVector();
+   std::vector<SCIP_Real>& getPctConssToBorderVector();
 
    /**
     * @brief Gets fraction of constraints assigned to a block for a detector
@@ -1018,7 +1034,7 @@ public:
     * @brief Gets fraction of constraints assigned to a block for detectors in detectorchain
     * @return vector of fractions of constraints assigned to a block for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctConssToBlockVector();
+   std::vector<SCIP_Real>& getPctConssToBlockVector();
 
    /**
     * @brief Gets fraction of constraints that are not longer open for a detector
@@ -1032,7 +1048,7 @@ public:
     * @brief Gets fraction of constraints that are not longer open for detectors in detectorchain
     * @return vector of fractions of constraints that are not longer open for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctConssFromFreeVector();
+   std::vector<SCIP_Real>& getPctConssFromFreeVector();
 
    /**
     * @brief Gets index of the representative block for a block, this might be blockid itself
@@ -1354,8 +1370,8 @@ public:
       );
 
    /**
-    * @brief sets whether this partialdec was finished by a finishing detector in the original problem 
-    * 
+    * @brief sets whether this partialdec was finished by a finishing detector in the original problem
+    *
     * (in case this partialdec was translated)
     * @param finished was this partialdecs finished by a finishing detector in orig
     */
@@ -1529,42 +1545,47 @@ public:
    /**
     * @brief assigns a constraint by name to a block
     * @see fixConsToBlock
+    * @returns true iff successful
     */
-   void fixConsToBlockByName(
+   bool fixConsToBlockByName(
       const char*           consname,            /**< name of the constraint */
-      int                   blockid              /**< block index ( counting from 0) */
+      int                   blockid              /**< block index (counting from 0) */
       );
 
    /**
     * @brief assigns a variable by name to a block
     * @see fixVarToBlock
+    * @returns true iff successful
     */
-   void fixVarToBlockByName(
+   bool fixVarToBlockByName(
       const char*           varname,             /**< name of the variable */
-      int                   blockid              /**< block index ( counting from 0) */
+      int                   blockid              /**< block index (counting from 0) */
       );
 
    /**
     * @brief assgins a constraint by name as master
     * @see fixConsToMaster
+    * @returns true iff successful
     */
-   void fixConsToMasterByName(
+   bool fixConsToMasterByName(
       const char*           consname   /**< name of cons to fix as master cons */
       );
 
    /**
     * @brief assigns a variable with given name as master
     * @see fixVarToMaster
+    * @returns true iff successful
     */
-   void fixVarToMasterByName(
+   bool fixVarToMasterByName(
       const char*           varname              /**< name of the variable */
       );
 
    /**
     * @brief assigns a variable by name to the linking variables
     * @see fixVarToLinking
+    * @returns true iff successful
     */
-   void fixVarToLinkingByName(
+   bool fixVarToLinkingByName(
       const char*           varname              /**< name of the variable */
       );
 
@@ -1594,7 +1615,7 @@ public:
     * @param newvector vector of fractions of constraints set to blocks per involved detector
     */
    void setPctConssToBlockVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
       );
 
    /**
@@ -1602,7 +1623,7 @@ public:
     * @param newvector vector of fractions of constraints that are not longer open per involved detector
     */
    void setPctConssFromFreeVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
    );
 
    /**
@@ -1610,7 +1631,7 @@ public:
     * @param newvector vector of fractions of constraints assigned to the border per involved detector
     */
    void setPctConssToBorderVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
       );
 
    /**
@@ -1618,7 +1639,7 @@ public:
     * @param newvector vector of fractions of variables assigned to the border per involved detector
     */
    void setPctVarsToBorderVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
       );
 
    /**
@@ -1626,7 +1647,7 @@ public:
     * @param newvector vector of fractions of variables assigned to a block per involved detector
     */
    void setPctVarsToBlockVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
    );
 
    /**
@@ -1634,7 +1655,7 @@ public:
     * @param newvector vector of fractions of variables that are not longer open per involved detector
     */
    void setPctVarsFromFreeVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
       );
 
    /**
@@ -1646,7 +1667,7 @@ public:
       );
 
    /** @brief gets the classic score
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcClassicScore
     * @returns border area score
     */
@@ -1659,7 +1680,7 @@ public:
    );
 
    /** @brief gets the border area score
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcBorderAreaScore
     * @returns border area score
     */
@@ -1672,7 +1693,7 @@ public:
    );
 
     /** @brief gets the maximum white area score
-    * 
+    *
     * "maximum white score" is fraction of the area of the decomposed matrix that is neither block or border
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcMaxWhiteScore
     * @returns maximum  white area score
@@ -1686,7 +1707,7 @@ public:
    );
 
    /** @brief gets the maximum foreseeing white area score
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcMaxForseeingWhiteScore
     * @returns maximum foreseeing white area score
     * */
@@ -1699,7 +1720,7 @@ public:
    );
 
    /** @brief gets the setpartitioning maximum foreseeing white area score
-    * 
+    *
     * @note -1 iff not calculated yet, \see GGCGconshdlrDecompCalcSetPartForseeingWhiteScore
     * @returns setpartitioning maximum foreseeing white area score
     * */
@@ -1712,7 +1733,7 @@ public:
    );
 
    /** @brief gets the maximum foreseeing white area score with respect to aggregatable blocks
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore
     * @returns maximum foreseeing white area score with respect to aggregatable blocks
     * */
@@ -1725,7 +1746,7 @@ public:
    );
 
    /** @brief gets the setpartitioning maximum foreseeing white area score with respect to aggregateable
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcSetPartForWhiteAggScore
     * @returns setpartitioning maximum foreseeing white area score with respect to aggregateable
     */
@@ -1738,7 +1759,7 @@ public:
    );
 
    /** @brief gets the benders score
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcBendersScore
     * @returns benders score
     */
@@ -1751,7 +1772,7 @@ public:
    );
 
    /** @brief gets the strong decomposition score
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcStrongDecompositionScore
     * @returns strong decomposition score
     */
@@ -1763,8 +1784,8 @@ public:
       SCIP_Real score   /**< new score value in [0,1] */
    );
 
-   /** sorts the partialdec and calculates a its implicit assignments, hashvalue and evaluation 
-    * 
+   /** sorts the partialdec and calculates a its implicit assignments, hashvalue and evaluation
+    *
     * @returns SCIP_OKAY if the result is consistent, SCIP_ERROR if there was an inconsistency
    */
    void prepare();
@@ -1781,17 +1802,15 @@ public:
     * checks if aggregation of sub problems is possible and stores the corresponding aggregation information
     *
     * @param ignoreDetectionLimits Set to true if computation should ignore detection limits. This parameter is ignored if the patched bliss version is not present.
-    */
+   */
    void calcAggregationInformation(
       bool ignoreDetectionLimits
       );
 
-   /**
-    * @brief gets vector of indices of all constraints assigned to blocks
+   /**< @brief gets vector of indices of all constraints assigned to blocks
     *
     * @note conssforblocks[k] contains a vector of indices of all constraints assigned to block k
-    * @returns vector of a vector of indices for each block
-    */
+    * @returns vector of a vector of indices for each block */
    std::vector<std::vector<int>>& getConssForBlocks(
    );
 
@@ -2001,7 +2020,7 @@ private:
    bool varPartitionUsed(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
-          
+
 };
 
 
