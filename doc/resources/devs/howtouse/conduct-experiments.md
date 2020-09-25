@@ -82,7 +82,7 @@ the algorithmic machinery
 ## 3. Perform automated tests {#testing}
 > Just like SCIP, GCG supports automatic testing. It uses the same command
 > structure as SCIP, so if any information is missing, you can also consult 
-> the <a href="https://scip.zib.de/doc/html/TEST.php">SCIP documentation</a>.
+> the <a href="https://scipopt.org/doc/html/TEST.php">SCIP documentation</a>.
 
 Finally, we want to **perform the test** with your testset `mytest.test`, located in the 
 folder `check/testset` and your customized settings `modified.set`, located in the

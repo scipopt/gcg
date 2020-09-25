@@ -8,7 +8,7 @@ SECTION: General Questions about SCIP
       and contains all necessary plugins to serve as a <b>standalone solver</b> for MIP and MINLP.
     </p>
     <ul>
-      <li>You can use the <a href="http://scip.zib.de/#download">precompiled binaries</a>
+      <li>You can use the <a href="https://scipopt.org/#download">precompiled binaries</a>
           to solve MIPs and MINLPs. Learn more about the <a href="PATHTODOC/group__FILEREADERS.LINKEXT">file formats supported by SCIP</a>,
           and get <a href="PATHTODOC/WHATPROBLEMS.LINKEXT">an overview</a>
           of the supported problem classes and additional recommendations for solving them.
@@ -36,7 +36,7 @@ SECTION: General Questions about SCIP
     <p>
       As long as you use it for academic, non-commercial purposes: No.
       This will not change. For the other cases, check the explanation of the
-      <a href="http://scip.zib.de/#license">ZIB academic license</a> and always feel free to ask us.
+      <a href="https://scipopt.org/#license">ZIB academic license</a> and always feel free to ask us.
       If you want to use SCIP commercially, please write an e-mail to koch@zib.de.
     </p>
 
@@ -46,7 +46,7 @@ SECTION: General Questions about SCIP
     <p>
       An easy way is to use the SCIP-binaries and call SCIP from a shell, see <a href="PATHTODOC/SHELL.LINKEXT">here</a> for a tutorial.
       For that, you just have to download one of the precompiled binaries from the
-      <a href="http://scip.zib.de/#download">download section</a>, or the zipped source code and compile it
+      <a href="https://scipopt.org/#download">download section</a>, or the zipped source code and compile it
       with your favorite settings. This is described in detail in the <code><a href="PATHTODOC/INSTALL.LINKEXT">INSTALL</a></code> file in the SCIP main directory.
     </p>
     <p>
@@ -80,10 +80,10 @@ SECTION: General Questions about SCIP
       <li><a href="http://www2.isye.gatech.edu/~wcook/qsopt/">QSopt</a> (experimental)</li>
     </ul>
     <p>
-      We also provide some <a href="http://scip.zib.de/#download">precompiled binaries</a>. Besides that,
+      We also provide some <a href="https://scipopt.org/#download">precompiled binaries</a>. Besides that,
       you might need a modeling language like <a href="http://zimpl.zib.de/">ZIMPL</a> to generate *.mps
       or *.lp files. ZIMPL files can also directly be read by SCIP.
-      You can download a package which includes SCIP, SoPlex and ZIMPL <a href="http://scip.zib.de/#download">here</a>.
+      You can download a package which includes SCIP, SoPlex and ZIMPL <a href="https://scipopt.org/#download">here</a>.
     </p>
     <p>
       If you want to use SCIP for mixed integer nonlinear programming, you might want to use an underlying NLP solver (e.g.,
@@ -95,12 +95,12 @@ SECTION: General Questions about SCIP
     ANSWER:
     <p>
       Read the <code><a href="PATHTODOC/INSTALL.LINKEXT">INSTALL</a></code> file in the SCIP root directory. It contains hints of how to get around problems. You can also try
-      the binaries available on the <a href="http://scip.zib.de">SCIP page</a>. <br>
+      the binaries available on the <a href="https://scipopt.org/">SCIP page</a>. <br>
       If you want to use <a href="http://soplex.zib.de/">SoPlex</a> as the underlying LP-solver, you can try the
       following:
     </p>
     <p>
-      First, download the <a href="http://scip.zib.de">SCIP Optimization Suite</a>.
+      First, download the <a href="https://scipopt.org/">SCIP Optimization Suite</a>.
       Then, extract the file, change into the scipoptsuite directory, and enter 'make'.
       As long as you have all the necessary libraries installed in your system, it should generate a SCIP
       binary linked to ZIMPL and Soplex. The necessary system libraries are:
@@ -147,7 +147,7 @@ SECTION: General Questions about SCIP
     <p>
        <a href="#howtodebug">See above.</a> Often, the asserts that show up in debug mode already help to clarify misunderstandings
        and suggest fixes, if you were calling SCIP functions in an unexpected manner. For sending bug reports,
-       please see our <a href="scip.zib.de/#contact">Contact information</a> from which you can directly access an online form for reporting bugs.
+       please see our <a href=""https://scipopt.org/#contact">Contact information</a> from which you can directly access an online form for reporting bugs.
     </p>
 
     QUESTION: I would like to check whether some functionality is implemented in SCIP.

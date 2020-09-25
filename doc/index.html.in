@@ -64,7 +64,7 @@
 
   <div class="bs-header" id="content">
     <div class="container">
-      <a href="http://scip.zib.de">
+      <a href="https://scipopt.org/">
         <img style="float:right" src="img/newscippy.png" height="130" title="Scippy" alt="Scippy"/>
       </a>
       <h1>GCG</h1>
@@ -92,11 +92,18 @@
       <!-- end col-md-3 -->
   <div class="col-md-9">
     <div>
-      <h1 id="welcome">Welcome!</h1>
+      <h1 id="welcome">Decomposition for everyone!</h1>
       <p>
-        GCG is one of the only non-commercial generic branch-price-and-cut solvers for arbitrary mixed integer programs.
-        It also allows for easy modification of algorithmic behavior and facilitates the implementation of own algorithms
-        to refrain developers from needing to develop their own, problem-specific branch-price-and-cut code.
+	GCG is a generic decomposition solver for mixed-integer programs (MIPs).
+	It automatically performs a Dantzig-Wolfe reformulation and runs a full-fledged branch-price-and-cut algorithm;
+	alternatively, it is able to automatically apply a Benders decomposition.
+	An explicit purpose of GCG is to provide decomposition-based MIP solving technology to everyone.
+	When used as a framework,
+        GCG allows for easy modification/extension of algorithmic behavior and components. 
+	As such, it should reduce researchers' coding efforts, facilitate standardized experiments, 
+	and increase comparability and reproducibility of computational experiments using decomposition methods.
+	<!--facilitates the implementation of own algorithms
+        to refrain developers from needing to develop their own, problem-specific branch-price-and-cut code.-->
       </p>
       <style>
       figcaption{
@@ -108,11 +115,11 @@
         <tr>
           <td style="text-align:left;">
             <img src="img/germany50-UUM.png" style="width: 90%" alt="before detection">
-            <figcaption><b>Fig.1:</b> Nonzero entries before decomposition</figcaption>
+            <figcaption><b>Fig.1:</b> Nonzero entries before detection</figcaption>
           </td>
           <td style="text-align:left;">
             <img src="img/germany50-UUM-decomp.png" style="width: 90%" alt="after detection">
-            <figcaption><b>Fig. 2:</b> Nonzero entries after decomposition</figcaption>
+            <figcaption><b>Fig. 2:</b> Nonzero entries after detection</figcaption>
           </td>
         </tr>
       </table>
@@ -127,7 +134,7 @@
       <h1 id="about">About GCG</h1>
       <p>
         GCG is a generic branch-price-and-cut solver for mixed integer linear programs</b> that uses
-        the <a href="https://scip.zib.de/">SCIP</a> (Solving Constraint Integer Programs) framework.
+        the <a href="https://scipopt.org/">SCIP</a> (Solving Constraint Integer Programs) framework.
         It finds structures in models that can be used to apply Dantzig-Wolfe reformulation or
         Benders decomposition. Decompositions can be given and also explored and evaluated manually.
         For the reformulated model, a Branch-Price-and-Cut algorithm is deployed to solve the problem,
@@ -174,7 +181,7 @@
     <div>
       <h1 id="download">Download</h1>
       <p>
-        <b>We recommend you to download the <a href="https://scip.zib.de/index.php#download">SCIP Optimization Suite</a></b>, a complete source
+        <b>We recommend you to download the <a href="https://scipopt.org/index.php#download">SCIP Optimization Suite</a></b>, a complete source
         code bundle of SCIP, SoPlex, ZIMPL, GCG and UG with an easy-to-use Makefile.<br/>
         However, you can also download the <a href="https://gcg.or.rwth-aachen.de/dev/files/">GCG source code</a>.
       </p>
@@ -365,8 +372,12 @@
               <td>Benders decomposition</td>
             </tr>
             <tr>
+              <td><a href="https://www.or.rwth-aachen.de/en/details-staff/muehmer.html">Erik Mühmer</a></td>
+              <td>Recursive GCG, structure detection</td>
+            </tr>
+            <tr>
               <td><a href="https://www.or.rwth-aachen.de/en/details-staff/puchert.html"</a>Christian Puchert</td>
-              <td>Primal heuristics, pricing</td>
+              <td>Primal heuristics, pricing loop</td>
             </tr>
             <tr>
               <td><a href="https://www.or.rwth-aachen.de/en/details-staff/witt.html">Jonas Witt</a></td>
@@ -387,6 +398,10 @@
               <td>Documentation, visualization suite</td>
             </tr>
             <tr>
+              <td>Simon Feiden</td>
+              <td>Chvátal-Gomory master cuts</td>
+            </tr>
+            <tr>
               <td>Hanna Franzen</td>
               <td>Structure detection, visualization, refactoring</td>
             </tr>
@@ -400,7 +415,11 @@
             </tr>
             <tr>
               <td>Lukas Kirchhart</td>
-              <td>Documentation</td>
+              <td>Documentation, strIPlib</td>
+            </tr>
+            <tr>
+              <td>Stefanie Koß</td>
+              <td>GAMS/GCG interface</td>
             </tr>
             <tr>
               <td>Henri Lotze</td>
@@ -412,7 +431,11 @@
             </tr>
             <tr>
               <td>William Ma</td>
-              <td>WWW strIPlib, refactoring</td>
+              <td>Frontend strIPlib, refactoring</td>
+            </tr>
+            <tr>
+              <td>Adam Marciniak</td>
+              <td>Frontend strIPlib</td>
             </tr>
             <tr>
               <td>Friederike Menge</td>
@@ -441,6 +464,10 @@
             <tr>
               <td>Marcel Schmickerath</td>
               <td>Generic (Vanderbeck) branching</td>
+            </tr>
+            <tr>
+              <td>Vladimir Stadnichuk</td>
+              <td>Chvátal-Gomory master cuts</td>
             </tr>
             <tr>
               <td>Annika Thome</td>

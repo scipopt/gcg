@@ -28,4 +28,4 @@ For **further reading** (and coding), we then also recommend the following pages
 
 <a href="modules.html"><b>GCG C API</b></a> \n
 @ref CHG \n
-<a href="https://scip.zib.de/doc-6.0.2/html/CODE.php"><b>SCIP and GCG Coding Style Guidelines</b></a> \n
+<a href="https://scipopt.org/doc-6.0.2/html/CODE.php"><b>SCIP and GCG Coding Style Guidelines</b></a> \n

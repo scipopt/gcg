@@ -59,7 +59,7 @@
 
   <div class="bs-header" id="content">
     <div class="container">
-      <a href="http://scip.zib.de">
+      <a href="https://scipopt.org">
         <img style="float:right" src="img/newscippy.png" height="130" title="Scippy" alt="Scippy"/>
       </a>
       <h1>GCG</h1>

@@ -2,7 +2,7 @@
 > **This page is currently being refactored. Some things might still be outdated.**
 
 > **Important Links:**
-> - [SCIP Documentation: How to add primal heuristics](https://scip.zib.de/doc-6.0.2/html/HEUR.php)
+> - [SCIP Documentation: How to add primal heuristics](https://scipopt.org/doc-6.0.2/html/HEUR.php)
 
 For general information on how to add your own primal heuristics to GCG, first check the SCIP documentation.
 However, one has to take into account some peculiarities when implementing heuristics that are included

@@ -81,8 +81,8 @@ getAdditionalResources () {( set -e
   mkdir -p html/js
   mkdir -p html/img
   # Getting Bootstrap stuff
-  wget https://scip.zib.de/bootstrap/css/bootstrap.min.css --output-document html/bootstrap/css/bootstrap.min.css --no-check-certificate
-  wget https://scip.zib.de/bootstrap/css/custom.css --output-document html/bootstrap/css/custom.css --no-check-certificate
+  wget https://scipopt.org/bootstrap/css/bootstrap.min.css --output-document html/bootstrap/css/bootstrap.min.css --no-check-certificate
+  wget https://scipopt.org/bootstrap/css/custom.css --output-document html/bootstrap/css/custom.css --no-check-certificate
   sed -i.bak 's/https:\/\/scipopt\.org\/images/..\/..\/img/g' html/bootstrap/css/custom.css && rm html/bootstrap/css/custom.css.bak
   # Getting fonts and css
   wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css --output-document html/bootstrap/fonts/font-awesome.min.css
@@ -91,8 +91,8 @@ getAdditionalResources () {( set -e
   wget https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFW50bbck.woff2 --output-document html/bootstrap/fonts/font-googleapis.woff2
   wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.woff2 --output-document html/bootstrap/fonts/fontawesome-webfont.woff2
   # Getting js
-  wget https://scip.zib.de/bootstrap/js/custom.js --output-document html/bootstrap/js/custom.js --no-check-certificate
-  wget https://scip.zib.de/bootstrap/js/bootstrap.min.js --output-document html/bootstrap/js/bootstrap.min.js --no-check-certificate
+  wget https://scipopt.org/bootstrap/js/custom.js --output-document html/bootstrap/js/custom.js --no-check-certificate
+  wget https://scipopt.org/bootstrap/js/bootstrap.min.js --output-document html/bootstrap/js/bootstrap.min.js --no-check-certificate
   wget https://code.jquery.com/jquery.min.js --output-document html/js/jquery.min.js
   # move additional resources to html folder 
   cp -r resources/misc/scripts html

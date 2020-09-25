@@ -251,8 +251,8 @@ TAB_SIZE               = 8
 # commands \{ and \} for these it is advised to use the version @{ and @} or use
 # a double escape (\\{ and \\})
 
-ALIASES                = "GCG=<a href=http://gcg.or.rwth-aachen.de>GCG</a>" \
-                         "SCIP=<a href=http://scip.zib.de>SCIP</a>" \
+ALIASES                = "GCG=<a href=https://gcg.or.rwth-aachen.de>GCG</a>" \
+                         "SCIP=<a href=https://scipopt.org>SCIP</a>" \
                          "ZIMPL=<a href=https://zimpl.zib.de/>ZIMPL</a>"
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources

@@ -11,7 +11,7 @@ Install the required system libraries:
 
 
 ### Step 2: Get the SCIP Optimization Suite
-Download the most recent SCIPOptSuite from the [SCIP Page](https://scip.zib.de/index.php#download).
+Download the most recent SCIPOptSuite from the [SCIP Page](https://scipopt.org/index.php#download).
 Unzip it and go into the folder, replacing `X.X.X` by the version you downloaded.
 
     tar xvzf scipoptsuite-X.X.X.tgz

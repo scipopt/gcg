@@ -63,7 +63,7 @@ function install(){
             esac
         done
   printf "${B}Downloading SCIP Optimization Suite${W}"
-  wget https://scip.zib.de/download/release/scipoptsuite-6.0.1.tgz -q --show-progress
+  wget https://scipopt.org/download/release/scipoptsuite-6.0.1.tgz -q --show-progress
   printf "${B}Unpacking SCIP Optimization Suite${W}"
   sudo rm -r scipoptsuite-6.0.1
   tar xvzf scipoptsuite-6.0.1.tgz > /dev/null 2>&1

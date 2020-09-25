@@ -37,7 +37,7 @@ You should use GCG if you want to...
               'answer'=>'<p>
 Just like for SCIP, as long as you use it for academic, non-commercial purposes: No.
 This will not change. For the other cases, check the explanation of the
-<a href="http://scip.zib.de/#license">ZIB academic license</a> and always feel free to ask us.
+<a href="https://scipopt.org/#license">ZIB academic license</a> and always feel free to ask us.
 </p>
 ',
               'label'=>'licensefaq'
