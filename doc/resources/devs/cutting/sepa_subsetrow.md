@@ -1,5 +1,5 @@
 # Subset Row Separator {#sepa_subsetrow}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
+
 ### Overview
 This separator is our first approach to add strengthening cuts directly to the master problem. At first we just tried to add [Subsetrow cuts]( https://www.researchgate.net/publication/220243923_Subset-Row_Inequalities_Applied_to_the_Vehicle-Routing_Problem_with_Time_Windows). Now it received a small update and uses the heuristic of [Koster et al.]( https://www.researchgate.net/publication/220770325_Algorithms_to_Separate_0_12-Chvatal-Gomory_Cuts) to generate arbitrary zero-half cuts in the solving process. 
 > Please note that the subsetrowcut separator is disabled by default! \n
