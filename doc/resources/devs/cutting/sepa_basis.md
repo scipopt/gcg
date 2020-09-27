@@ -7,28 +7,28 @@ This separator finds cuts in the original problem and then transfers them to the
 ### Theoretical Background
 Consider a general linear program with two sets of constraints:
 \f{align}{
-\min & c^T x &\\
-s.t. &  Ax &\ge b \\
+\min \quad& c^T x &\\
+s.t. \quad &  Ax &\ge b \\
  & Dx &\ge d \\
  & x &\ge 0 \\
 \f}
-As-su-me that GCG chose the constraints \f$ Dx &\ge d \f$ to derive the decomposition from. Set \f$ X = \{x \colon Dx \ge d, x \ge 0\} \f$ and let \f$P\f$ be the set of extreme points of X. Then the restricted master problem has the form 
+As-su-me that GCG chose the constraints \f$ Dx \ge d \f$ to derive the decomposition from. Set \f$ X = \{x \colon Dx \ge d, x \ge 0\} \f$ and let \f$P\f$ be the set of extreme points of \f$ X \f$. Then the restricted master problem has the form 
  \f{align}{ 
 \min & \sum \limits_{p \in P’} c_p  \lambda_p &\\
 s.t. & \sum \limits_{p \in P’}  a_p\lambda_p &\ge b & [\pi] \\
  & \sum \limits_{p \in P’} \lambda_p&= 1& [\pi_0] \\
  & \lambda &\ge 0 \\
 \f}
-with \f$ P‘ \subseteq P , a_p := A p, c_p = c^T p \f$. The corresponding pricing problem look like this: 
+with \f$ P‘ \subseteq P , a_p = A p, c_p = c^T p \f$. The corresponding pricing problem look like this: 
 \f{align}{ 
-\min & (c^T -\pi^TA) x - \pi_0&\\
-s.t. & Dx &\ge d \\
+\min \quad & (c^T -\pi^TA) x - \pi_0&\\
+s.t. \quad & Dx &\ge d \\
  & x &\ge 0 \\
 \f}
-In our setting we find additional constraints \f$ Fx\ge g\f$ for the original problem, which now has the form:
+In our setting we find additional constraints \f$ Fx\ge g\f$ for the original problem which now has the form:
 \f{align}{
-\min & c^T x &\\
-s.t. &  Ax &\ge b \\
+\min \quad& c^T x &\\
+s.t. \quad&  Ax &\ge b \\
  & Dx &\ge d \\
  & Fx & \ge g \\
  & x &\ge 0 \\
