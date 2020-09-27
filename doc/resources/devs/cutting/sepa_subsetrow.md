@@ -61,7 +61,9 @@ From the algorithmic point of view the above theory is most of all problematic b
 
 
 [Scientists, Developers]
-Please keep in mind that the separator is only called in the root node, as the heuristic we use to find a zero-half cut is currently only tested for this case. If you want to change this, please comment out the relevant if clause in the ```SCIP_DECL_SEPAEXECLP```. Further, the separator always adds at most one zero-half cut in a single iteration, no matter how many the corresponding heuristic found. This can be changed in the method ```selectConstraintsForSubsetrowCut_ZEROHALF_Kosteretall```, a detailed tutorial for this will lead to far at this point. In addition to the heuristic of Koster et al. we provide two further methods: 
+Please keep in mind that the separator is only called in the root node, as the heuristic we use to find a zero-half cut is currently only tested for this case. If you want to change this, please comment out the relevant if clause in the ```SCIP_DECL_SEPAEXECLP```. Further, the separator always adds at most one zero-half cut in a single iteration, no matter how many the corresponding heuristic found. This can be changed in the method ```selectConstraintsForSubsetrowCut_ZEROHALF_Kosteretall```, a detailed tutorial for this will lead to far at this point. Further, the separator does not run if we have an aggregated pricing problem because it leads to wrong results.  
+
+In addition to the heuristic of Koster et al. we provide two further methods: 
 *  ```selectConstraintsForSubsetrowCut_RANDOM``` selects three random constrains for a Subsetrowcut.  
 * ```selectConstraintsForSubsetrowCut``` lets you specify three indices for rows from which the subsetrowcut will be created.   
 
