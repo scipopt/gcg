@@ -450,6 +450,10 @@
               <td>Testing</td>
             </tr>
             <tr>
+              <td>Igor Pesic</td>
+              <td>DBSCAN clustering detector</td>
+            </tr>
+            <tr>
               <td>Daniel Peters</td>
               <td>Detection of similar pricing problems</td>
             </tr>
