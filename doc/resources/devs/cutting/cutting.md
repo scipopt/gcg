@@ -8,7 +8,8 @@ In the following, we will present what separators (which generate cutting planes
 GCG, along with some theory and implementational details.
 
 
-@subpage sepa_basis "Basic Separator"\n
+@subpage sepa_basis "Basic Separator" \n
+@subpage sepa_master "Master Separator" \n
 @subpage sepa_subsetrow "Subset Row Cuts Separator"
 
 \n
