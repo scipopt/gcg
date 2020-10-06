@@ -1957,6 +1957,9 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype, infinity, epsilon, sumepsilon,
             feastol, lpfeastolfactor, dualfeastol, enableppcuts) );
       SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) ); /*lint !e613*/
+
+      /* disabling restarts from the tree size estimation */
+      SCIP_CALL( SCIPsetCharParam(relaxdata->pricingprobs[i], "estimation/restarts/restartpolicy", 'n') );
    }
 
    SCIP_CALL( createPricingVariables(scip, relaxdata, hashorig2pricingvar) );
