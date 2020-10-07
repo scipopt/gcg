@@ -231,7 +231,7 @@ SCIP_RETCODE GCGincludeDialogsGraph(
    SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogReadPartition(scip), TRUE) );
 
    SCIP_CALL( (GCGincludeGraphEntries<gcg::GraphTclique,gcg::RowGraph>(scip)) );
-#if 0
+#ifdef SCIP_DISABLED_CODE
    /*SCIP_CALL*/( GCGincludeGraphEntries<gcg::GraphTclique,gcg::BipartiteGraph>(scip) );
    /*SCIP_CALL*/( GCGincludeGraphEntries<gcg::GraphTclique,gcg::ColumnGraph>(scip) );
    /*SCIP_CALL*/( GCGincludeGraphEntries<gcg::GraphTclique,gcg::HyperrowcolGraph>(scip) );

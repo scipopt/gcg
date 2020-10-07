@@ -71,11 +71,7 @@ ould have received a copy of the GNU Lesser General Public License  */
  */
 
 /** destructor of classifier to free user data (called when GCG is exiting) */
-#if 0
-#else
 #define classifierFree NULL
-#endif
-
 
 /** returns levenshtein distance between two strings */
 int calcLevenshteinDistance(

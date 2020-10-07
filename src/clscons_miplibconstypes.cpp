@@ -69,19 +69,7 @@
  */
 
 /** destructor of classifier to free user data (called when GCG is exiting) */
-#if 0
-static
-DEC_DECL_FREECLASSIFIER(classifierFreeXyz)
-{  /*lint --e{715}*/
-
-   SCIPerrorMessage("Free function of classifier <%s> not implemented!\n", DEC_CLASSIFIERNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define classifierFree NULL
-#endif
 
 static
 DEC_DECL_CONSCLASSIFY(classifierClassify)
