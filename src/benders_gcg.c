@@ -513,7 +513,7 @@ SCIP_RETCODE mergeSubproblemsIntoMaster(
  * Callback methods for Benders' decomposition
  */
 
-/* TODO: Implement all necessary Benders' decomposition methods. The methods with an #if 0 ... #else #define ... are optional */
+/* TODO: Implement all necessary Benders' decomposition methods. The methods with an #ifdef SCIP_DISABLED_CODE ... #else #define ... are optional */
 
 /** destructor of Benders' decomposition to free user data (called when SCIP is exiting) */
 static

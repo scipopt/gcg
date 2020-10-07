@@ -70,10 +70,7 @@ ould have received a copy of the GNU Lesser General Public License  */
  */
 
 /** destructor of classifier to free user data (called when GCG is exiting) */
-#if 0
-#else
 #define classifierFree NULL
-#endif
 
 /** removes all digits from string str */
 void removeDigits(

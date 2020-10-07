@@ -72,7 +72,7 @@
  */
 
 /** destructor of classifier to free user data (called when GCG is exiting) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 DEC_DECL_FREECLASSIFIER(classifierFreeXyz)
 {  /*lint --e{715}*/

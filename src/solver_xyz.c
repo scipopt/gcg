@@ -69,10 +69,10 @@ struct GCG_SolverData
  * Callback methods of propagator
  */
 
-/* TODO: Implement all necessary propagator methods. The methods with an #if 0 ... #else #define ... are optional */
+/* TODO: Implement all necessary propagator methods. The methods with an #ifdef SCIP_DISABLED_CODE ... #else #define ... are optional */
 
 /** destructor of pricing solver to free user data (called when SCIP is exiting) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 GCG_DECL_SOLVERFREE(solverFreeXyz)
 {  /*lint --e{715}*/
@@ -86,7 +86,7 @@ GCG_DECL_SOLVERFREE(solverFreeXyz)
 #endif
 
 /** solving process initialization method of pricing solver (called when branch and bound process is about to begin) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 GCG_DECL_SOLVERINITSOL(solverInitsolXyz)
 {  /*lint --e{715}*/
@@ -100,7 +100,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolXyz)
 #endif
 
 /** solving process deinitialization method of pricing solver (called before branch and bound process data is freed) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 GCG_DECL_SOLVEREXITSOL(solverExitsolXyz)
 {  /*lint --e{715}*/
@@ -114,7 +114,7 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolXyz)
 #endif
 
 /** initialization method of pricing solver (called after problem was transformed and solver is active) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 GCG_DECL_SOLVERINIT(solverInitXyz)
 {  /*lint --e{715}*/
@@ -128,7 +128,7 @@ GCG_DECL_SOLVERINIT(solverInitXyz)
 #endif
 
 /** deinitialization method of pricing solver (called before transformed problem is freed and solver is active) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 GCG_DECL_SOLVEREXIT(solverExitXyz)
 {  /*lint --e{715}*/
@@ -142,7 +142,7 @@ GCG_DECL_SOLVEREXIT(solverExitXyz)
 #endif
 
 /** update method for pricing solver, used to update solver specific pricing problem data */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 GCG_DECL_SOLVERUPDATE(solverUpdateXyz)
 {  /*lint --e{715}*/
