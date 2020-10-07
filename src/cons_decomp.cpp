@@ -2875,7 +2875,6 @@ SCIP_RETCODE DECincludeConsClassifier(
    int                   priority,
    SCIP_Bool             enabled,
    DEC_DECL_FREECONSCLASSIFIER((*freeClassifier)),
-   DEC_DECL_INITCONSCLASSIFIER((*initClassifier)),
    DEC_DECL_CONSCLASSIFY((*classify))
    )
 {
@@ -2898,7 +2897,6 @@ SCIP_RETCODE DECincludeConsClassifier(
    classifier->enabled = enabled;
 
    classifier->freeClassifier = freeClassifier;
-   classifier->initClassifier = initClassifier;
    classifier->classify = classify;
 
    char setstr[SCIP_MAXSTRLEN];
@@ -3105,7 +3103,6 @@ SCIP_RETCODE DECincludeVarClassifier(
    int                   priority,
    SCIP_Bool             enabled,
    DEC_DECL_FREEVARCLASSIFIER((*freeClassifier)),
-   DEC_DECL_INITVARCLASSIFIER((*initClassifier)),
    DEC_DECL_VARCLASSIFY((*classify))
    )
 {
@@ -3128,7 +3125,6 @@ SCIP_RETCODE DECincludeVarClassifier(
    classifier->enabled = enabled;
 
    classifier->freeClassifier = freeClassifier;
-   classifier->initClassifier = initClassifier;
    classifier->classify = classify;
 
    char setstr[SCIP_MAXSTRLEN];

@@ -85,21 +85,6 @@ DEC_DECL_FREECLASSIFIER(classifierFreeXyz)
 #define classifierFree NULL
 #endif
 
-/** classifier initialization method (called after problem was transformed) */
-#if 0
-static
-DEC_DECL_INITCLASSIFIER(classifierInitXyz)
-{  /*lint --e{715}*/
-
-   SCIPerrorMessage("Init function of classifier <%s> not implemented!\n", DEC_CLASSIFIERNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
-#define classifierInit NULL
-#endif
-
 static
 DEC_DECL_VARCLASSIFY(classifierClassify)
 {
@@ -130,7 +115,7 @@ SCIP_RETCODE SCIPincludeVarClassifierXyz(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {
-   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLEDORIG, DEC_ENABLEDPRESOLVED, classifierInit, classifierFree, classifierClassify) );
+   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLEDORIG, DEC_ENABLEDPRESOLVED, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

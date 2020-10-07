@@ -75,12 +75,6 @@ ould have received a copy of the GNU Lesser General Public License  */
 #define classifierFree NULL
 #endif
 
-/** classifier initialization method (called after problem was transformed) */
-#if 0
-#else
-#define classifierInit NULL
-#endif
-
 static
 DEC_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA *detprobdata;
@@ -193,7 +187,7 @@ SCIP_RETCODE SCIPincludeConsClassifierScipConstypes(
    SCIP *scip                /**< SCIP data structure */
 ) {
    SCIP_CALL(
-      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierInit,
+      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED,
          classifierFree, classifierClassify));
 
    return SCIP_OKAY;

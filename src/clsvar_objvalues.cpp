@@ -75,12 +75,6 @@
 #define classifierFree NULL
 #endif
 
-/** classifier initialization method (called after problem was transformed) */
-#if 0
-#else
-#define classifierInit NULL
-#endif
-
 static
 DEC_DECL_VARCLASSIFY(classifierClassify)
 {
@@ -164,7 +158,7 @@ SCIP_RETCODE SCIPincludeVarClassifierObjValues(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {
-   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierInit, classifierFree, classifierClassify) );
+   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }
