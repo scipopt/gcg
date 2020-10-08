@@ -71,7 +71,7 @@
  */
 
 /** destructor of classifier to free user data (called when GCG is exiting) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 DEC_DECL_FREECLASSIFIER(classifierFreeXyz)
 {  /*lint --e{715}*/
@@ -83,21 +83,6 @@ DEC_DECL_FREECLASSIFIER(classifierFreeXyz)
 }
 #else
 #define classifierFree NULL
-#endif
-
-/** classifier initialization method (called after problem was transformed) */
-#if 0
-static
-DEC_DECL_INITCLASSIFIER(classifierInitXyz)
-{  /*lint --e{715}*/
-
-   SCIPerrorMessage("Init function of classifier <%s> not implemented!\n", DEC_CLASSIFIERNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
-#define classifierInit NULL
 #endif
 
 static
@@ -130,7 +115,7 @@ SCIP_RETCODE SCIPincludeVarClassifierXyz(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {
-   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLEDORIG, DEC_ENABLEDPRESOLVED, classifierInit, classifierFree, classifierClassify) );
+   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLEDORIG, DEC_ENABLEDPRESOLVED, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

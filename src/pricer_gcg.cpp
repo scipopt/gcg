@@ -4550,7 +4550,11 @@ void GCGpricerPrintStatistics(
    const PricingType* farkas;
    const PricingType* redcost;
    int i;
-   
+#ifdef SCIP_STATISTIC
+   double start;
+   double end;
+#endif
+
    assert(scip != NULL);
 
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));

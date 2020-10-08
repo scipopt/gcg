@@ -47,7 +47,6 @@ struct DEC_VarClassifier {
    SCIP_Bool             enabled;            /* is enabled by default */
 
    DEC_DECL_FREEVARCLASSIFIER((*freeClassifier));                  /**< destructor of detector */
-   DEC_DECL_INITVARCLASSIFIER((*initClassifier));                  /**< initialization method of detector */
    DEC_DECL_VARCLASSIFY((*classify));            /**< structure detection method of detector */
 };
 

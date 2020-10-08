@@ -50,16 +50,6 @@ typedef struct DEC_VarClassifier DEC_VARCLASSIFIER;
 #define DEC_DECL_FREEVARCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, DEC_VARCLASSIFIER* classifier)
 
 /**
- * classifier initialization method
- * It can be used to fill the classifier data with needed information. The implementation is optional.
- *
- * input:
- *  - scip            : SCIP data structure
- *  - classifier      : classifier data structure
- */
-#define DEC_DECL_INITVARCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, DEC_VARCLASSIFIER* classifier)
-
-/**
  * Tries to classify variables with data of the according detprobdata and store the classification in the detprobdata
  *
  * input:

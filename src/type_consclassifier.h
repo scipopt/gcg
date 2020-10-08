@@ -51,17 +51,6 @@ typedef struct DEC_ConsClassifier DEC_CONSCLASSIFIER;
 #define DEC_DECL_FREECONSCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, DEC_CONSCLASSIFIER* classifier)
 
 /**
- * classifier initialization method
- * It can be used to fill the classifier data with needed information. The implementation is optional.
- *
- * input:
- *  - scip            : SCIP data structure
- *  - classifier      : classifier data structure
- */
-#define DEC_DECL_INITCONSCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, DEC_CONSCLASSIFIER* classifier)
-
-
-/**
  * Tries to classify constraints with data of the according detprobdata and store the classification in the detprobdata
  *
  * input:

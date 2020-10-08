@@ -147,7 +147,6 @@ SCIP_RETCODE DECincludeConsClassifier(
    int                   priority,        /**< priority of the classifier */
    SCIP_Bool             enabled,         /**< whether the classifier should be enabled by default */
    DEC_DECL_FREECONSCLASSIFIER((*freeClassifier)),  /**< destructor of classifier (or NULL) */
-   DEC_DECL_INITCONSCLASSIFIER((*initClassifier)),  /**< initialization method of classifier (or NULL) */
    DEC_DECL_CONSCLASSIFY((*classify))               /**< the method that will classify constraints or variables (must not be NULL) */
    );
 
@@ -161,22 +160,22 @@ SCIP_RETCODE DECincludeDetector(
    const char*           name,                    /**< name of the detector */
    const char            decchar,                 /**< char that is used in detector chain history for this detector */
    const char*           description,             /**< describing main idea of this detector */
-   int                   freqCallRound,           /**< frequency the detector gets called in detection loop, i.e. it is called in round r if and only if minCallRound <= r <= maxCallRound AND (r - minCallRound) mod freqCallRound == 0 */       
-   int                   maxCallRound,            /**< last detection round the detector gets called */        
-   int                   minCallRound,            /**< first round the detector gets called (offset in detection loop) */        
-   int                   freqCallRoundOriginal,   /**< frequency the detector gets called in detection loop while detecting of the original problem */       
-   int                   maxCallRoundOriginal,    /**< last round the detector gets called while detecting of the original problem */        
-   int                   minCallRoundOriginal,    /**< first round the detector gets called (offset in detection loop) while detecting of the original problem */        
-   int                   priority,                /**< priority of the detector */        
-   SCIP_Bool             enabled,                 /**< whether the detector should be enabled by default */       
-   SCIP_Bool             enabledFinishing,        /**< whether the finishing should be enabled */        
-   SCIP_Bool             enabledPostprocessing,   /**< whether the postprocessing should be enabled */       
-   SCIP_Bool             skip,                    /**< whether the detector should be skipped if others found structure */        
-   SCIP_Bool             usefulRecall,            /**< is it useful to call this detector on a descendant of the propagated partialdec */        
-   DEC_DETECTORDATA      *detectordata,           /**< the associated detector data (or NULL) */       
-   DEC_DECL_FREEDETECTOR((*freeDetector)),        /**< destructor of detector (or NULL) */        
-   DEC_DECL_INITDETECTOR((*initDetector)),        /**< initialization method of detector (or NULL) */        
-   DEC_DECL_EXITDETECTOR((*exitDetector)),        /**< deinitialization method of detector (or NULL) */  
+   int                   freqCallRound,           /**< frequency the detector gets called in detection loop, i.e. it is called in round r if and only if minCallRound <= r <= maxCallRound AND (r - minCallRound) mod freqCallRound == 0 */
+   int                   maxCallRound,            /**< last detection round the detector gets called */
+   int                   minCallRound,            /**< first round the detector gets called (offset in detection loop) */
+   int                   freqCallRoundOriginal,   /**< frequency the detector gets called in detection loop while detecting of the original problem */
+   int                   maxCallRoundOriginal,    /**< last round the detector gets called while detecting of the original problem */
+   int                   minCallRoundOriginal,    /**< first round the detector gets called (offset in detection loop) while detecting of the original problem */
+   int                   priority,                /**< priority of the detector */
+   SCIP_Bool             enabled,                 /**< whether the detector should be enabled by default */
+   SCIP_Bool             enabledFinishing,        /**< whether the finishing should be enabled */
+   SCIP_Bool             enabledPostprocessing,   /**< whether the postprocessing should be enabled */
+   SCIP_Bool             skip,                    /**< whether the detector should be skipped if others found structure */
+   SCIP_Bool             usefulRecall,            /**< is it useful to call this detector on a descendant of the propagated partialdec */
+   DEC_DETECTORDATA      *detectordata,           /**< the associated detector data (or NULL) */
+   DEC_DECL_FREEDETECTOR((*freeDetector)),        /**< destructor of detector (or NULL) */
+   DEC_DECL_INITDETECTOR((*initDetector)),        /**< initialization method of detector (or NULL) */
+   DEC_DECL_EXITDETECTOR((*exitDetector)),        /**< deinitialization method of detector (or NULL) */
    DEC_DECL_PROPAGATEPARTIALDEC((*propagatePartialdecDetector)),      /**< method to refine a partial decomposition inside detection loop (or NULL) */
    DEC_DECL_FINISHPARTIALDEC((*finishPartialdecDetector)),            /**< method to complete a partial decomposition when called in detection loop (or NULL) */
    DEC_DECL_POSTPROCESSPARTIALDEC((*postprocessPartialdecDetector)),  /**< method to postprocess a complete decomposition, called after detection loop (or NULL) */
@@ -195,9 +194,8 @@ SCIP_RETCODE DECincludeVarClassifier(
    const char*           name,          /**< name of the classifier */
    const char*           description,   /**< description of the classifier */
    int                   priority,      /**< priority how early classifier is invoked */
-   SCIP_Bool             enabled,       /**< whether the detector should be enabled by default */    
+   SCIP_Bool             enabled,       /**< whether the classifier should be enabled by default */
    DEC_DECL_FREEVARCLASSIFIER((*freeClassifier)),   /**< destructor of classifier (or NULL) */
-   DEC_DECL_INITVARCLASSIFIER((*initClassifier)),   /**< initialization method of classifier (or NULL) */
    DEC_DECL_VARCLASSIFY((*classify))                /**< method that will classify variables (must not be NULL) */
    );
 
