@@ -92,18 +92,18 @@
       <!-- end col-md-3 -->
   <div class="col-md-9">
     <div>
-      <h1 id="welcome">Decomposition for everyone!</h1>
+      <h1 id="welcome">Welcome!</h1>
       <p>
 	GCG is a generic decomposition solver for mixed-integer programs (MIPs).
-	It automatically performs a Dantzig-Wolfe reformulation and runs a full-fledged branch-price-and-cut algorithm;
-	alternatively, it is able to automatically apply a Benders decomposition.
-	An explicit purpose of GCG is to provide decomposition-based MIP solving technology to everyone.
+	It automatically performs a Dantzig-Wolfe reformulation and runs a full-fledged branch-price-and-cut algorithm
+	to solve it to optimality. 
+	Alternatively, GCG is able to automatically apply a Benders decomposition.
+	No user interaction is necessary, thus
+	GCG provides decomposition-based MIP solving technology to everyone.
 	When used as a framework,
         GCG allows for easy modification/extension of algorithmic behavior and components. 
 	As such, it should reduce researchers' coding efforts, facilitate standardized experiments, 
 	and increase comparability and reproducibility of computational experiments using decomposition methods.
-	<!--facilitates the implementation of own algorithms
-        to refrain developers from needing to develop their own, problem-specific branch-price-and-cut code.-->
       </p>
       <style>
       figcaption{
@@ -115,31 +115,31 @@
         <tr>
           <td style="text-align:left;">
             <img src="img/germany50-UUM.png" style="width: 90%" alt="before detection">
-            <figcaption><b>Fig.1:</b> Nonzero entries before detection</figcaption>
+            <figcaption><b>Fig.1:</b> Non-zero entries in original matrix</figcaption>
           </td>
           <td style="text-align:left;">
             <img src="img/germany50-UUM-decomp.png" style="width: 90%" alt="after detection">
-            <figcaption><b>Fig. 2:</b> Nonzero entries after detection</figcaption>
+            <figcaption><b>Fig. 2:</b> Non-zero entries after re-arrangement</figcaption>
           </td>
         </tr>
       </table>
       <p>
-        Above, you see a problem before and after detection, showing that, no matter what type of problem you give it, GCG
-        will try to decompose it efficiently to solve it quicker.
-
+	An essential feature of GCG is its ability to detect decomposable model structure in MIPs.
+        The figures above show an example MIP coefficient matrix, before and after structure detection.
       </p>
     </div>
 
     <div>
       <h1 id="about">About GCG</h1>
       <p>
-        GCG is a generic branch-price-and-cut solver for mixed integer linear programs</b> that uses
+        GCG is a generic decomposition solver for mixed integer linear programs that extends
         the <a href="https://scipopt.org/">SCIP</a> (Solving Constraint Integer Programs) framework.
-        It finds structures in models that can be used to apply Dantzig-Wolfe reformulation or
-        Benders decomposition. Decompositions can be given and also explored and evaluated manually.
-        For the reformulated model, a Branch-Price-and-Cut algorithm is deployed to solve the problem,
-        using (easily extendable and modifyable) partly heuristic methods for branching, pricing and
-        cutting that are suitable for a wide range of problems.
+        It finds structures in models that can be used to apply a Dantzig-Wolfe reformulation or
+        Benders decomposition. Decompositions can also be user-given, and explored and evaluated manually.
+        For a Dantzig-Wolfe reformulated model, a branch-price-and-cut algorithm solves the problem,
+  	which features primal heuristics, generic and specific pricing solvers, branching rules, dual 
+	variable stabilization, cutting planes, etc. Like SCIP, also GCG can be used as a framework and
+	extended to suit one's needs.
       </p>
       <p class="reveal" id="features">
         Click for a detailed list of GCG's features ...
@@ -182,16 +182,16 @@
       <h1 id="download">Download</h1>
       <p>
         <b>We recommend you to download the <a href="https://scipopt.org/index.php#download">SCIP Optimization Suite</a></b>, a complete source
-        code bundle of SCIP, SoPlex, ZIMPL, GCG and UG with an easy-to-use Makefile.<br/>
-        However, you can also download the <a href="https://gcg.or.rwth-aachen.de/dev/files/">GCG source code</a>.
+        code bundle of SCIP, SoPlex, ZIMPL, GCG, and UG with an easy-to-use Makefile.<br/>
+        However, you can also download the <a href="https://gcg.or.rwth-aachen.de/dev/files/">GCG source code</a> alone.
       </p>
     </div>
 
     <div>
-      <h1 id="guides">Installation, Guides and Documentation</h1>
+      <h1 id="guides">Installation, Guides, and Documentation</h1>
       <p>Apart from this landing page, we also have a <b>version-dependent documentation</b>.
-        In this documentation, we offer installation instructions, a "Getting Started" guide,
-        explanations for all features of GCG and explanations of components of GCG along
+        In this documentation, we offer installation instructions, a "getting started" guide,
+        explanations for all features of GCG, and explanations of components of GCG along
         with use-cases and example projects.
       </p>
         <div class="mywrapper">
@@ -202,7 +202,7 @@
     <div>
       <h1 id="related" data-target="#related">Related Work</h1>
         <p>
-          GCG has already been used for many projects. Below, you can find some papers that are known to have used GCG.</br>
+          Here is a list of papers that use GCG or describe parts of its functionality.</br>
           If you know about further projects or papers, please drop us a mail under <a href="mailto:gcg@or.rwth-aachen.de">gcg@or.rwth-aachen.de</a>.
         </p>
         <ul>
@@ -212,22 +212,14 @@
               <li><a href="https://doi.org/10.1007/s10479-018-3067-9"><b>
               Random sampling and machine learning to understand good decompositions</b></a></br><em>
               Basso, S.; Ceselli, Alberto; Tettamanzi, Andrea.</em></br>
-              In: Annals of Operations Research volume 284, pages501–526(2020)</li>
+              In: Annals of Operations Research, 284:501–526, 2020</li>
 
-              <li><a href="https://doi.org/10.1007/s10479-018-3115-5"><b>
-              Price-and-verify: a new algorithm for recursive circle packing using Dantzig-Wolfe decomposition</b></a></br><em>
-              Gleixner, Ambros; Maher, Stephen J.; Müller, Benjamin; Pedroso, João Pedro.</em></br>
-              In: Annals of Operations Research volume 284, pages527–555(2020)</li>
-
-              <li><a href="https://doi.org/10.1016/j.ejor.2019.10.016"><b>
-              A branch and price algorithm to solve the quickest multicommodity (k)-splittable flow problem</b></a></br><em>
-              Melchiori, Anna; Sgalambro, Antonino.</em></br>
-              In: European Journal of Operational Research Volume 282, Issue 3, 1 May 2020, Pages 846-857 </li>
-
-              <li><a href="http://doi.org/10.18154/RWTH-2020-00547"><b>
+              <!--
+	      <li><a href="http://doi.org/10.18154/RWTH-2020-00547"><b>
               Polyhedral aspects of Dantzig-Wolfe reformulation</b></a></br><em>
-              J. Witt, M. Lübbecke, A. M. Koster, G. Desaulniers.</em></br>
-              RWTH Aachen University, Aachen, 2019.</li>
+              J. Witt.</em></br>
+              PhD thesis, Lehrstuhl für Operations Research, RWTH Aachen University, Aachen, 2019.</li>
+	      -->
 
               <li><a href="http://dx.doi.org/10.1515/auto-2018-0127"><b>
               Distributed trajectory planning for multi-agent discrete event systems</b></a></br><em>
@@ -239,45 +231,27 @@
               M. Bastubbe, M. Lübbecke, and J.T. Witt.</em></br>
               In D'Angelo, G., Experimental Algorithms - SEA 2018, pp. 11:1—11:12, 2018.</li>
 
-              <li><a href="https://doi.org/10.1007/s12532-017-0128-z"><b>
-              Algorithmic innovations and software for the dual decomposition method applied to stochastic mixed-integer programs</b></a></br><em>
-              Kim, Kibaek; Zavala, Victor M.</em></br>
-              In: Mathematical Programming Computation volume 10, pages225–266(2018)</li>
-
               <li><a href="http://dx.doi.org/10.1007/978-3-319-59776-8_16"><b>
               Learning when to use a decomposition</b></a></br><em>
               M. Kruber, M. Lübbecke, and A. Parmentier.</em></br>
               In: Salvagnin, D. and Lombardi, M.: Integration of AI and OR Techniques in Constraint Programming, pp. 202—210, 2017. Springer. Lecture Notes in Computer Science, vol 10335.</li>
 
-              <li><a href="https://doi.org/10.1007/978-3-662-53015-3_14"><b>
-              Design in type-I, run in type-III: fast and scalable bilinear-type conversion using integer Programming</b></a></br><em>
-              Abe, Masayuki; Hoshino, Fumitaka; Ohkubo, Miyako.</em></br>
-              In: CRYPTO 2016: Advances in Cryptology – CRYPTO 2016 pp 387-415</li>
-
               <li><a href="http://dx.doi.org/10.1145/2851492"><b>
               A branch-price-and-cut algorithm for packing cuts in undirected graphs</b></a></br><em>
               M. Bergner, M.E. Lübbecke, and J.T. Witt.</em></br>
-              In: Journal of Experimental Algorithmics (JEA) 21: Article No. 1.2. January 2016</li>
+              In: Journal of Experimental Algorithmics (JEA) 21: Article No. 1.2., 2016</li>
 
               <li><a href="http://dx.doi.org/10.1016/j.cor.2015.10.003"><b>
               Optimized load planning for motorail transportation</b></a></br><em>
               P. Lutter.</em></br>
               In: Computers & Operations Research 68:63–74, 2016.</li>
 
-              <li><a href="https://doi.org/10.1016/j.ejor.2015.12.044"><b>
-              Increasing the revenue of self-storage warehouses by optimizing order scheduling</b></a></br><em>
-              Zhang, Xiandong; Gong, Yeming (Yale); Zhou, Shuyu; de Koster, René; van de Velde, Steef.</em></br>
-              In: European Journal of Operational Research Volume 252, Issue 1, 1 July 2016, Pages 69-78</li>
-
-              <li><a href="https://doi.org/10.1016/j.ejor.2014.09.066"><b>
-              A branch-and-price-and-cut approach for sustainable crop rotation planning</b></a></br><em>
-              Alfandari, Laurent; Plateau, Agnès; Schepler, Xavier.</em></br>
-              In: European Journal of Operational Research Volume 241, Issue 3, 16 March 2015, Pages 872-879</li>
-
+	      <!--
               <li><a href="https://doi.org/10.1007/s10107-014-0761-5"><b>
               Automatic Dantzig-Wolfe reformulation of mixed integer programs</b></a></br><em>
               Bergner, Martin; Caprara, Alberto; Ceselli, Alberto; Furini, Fabio; Lübbecke, Marco E.; Malaguti, Enrico; Traversi, Emiliano.</em></br>
-              In: Mathematical Programming volume 149, pages391–424(2015)</li>
+              In: Mathematical Programming, 149:391–424, 2015</li>
+              -->
 
               <li><a href="http://dx.doi.org/10.1007/978-3-319-20086-6_9"><b>
               Separation of generic cutting planes in branch-and-price using a basis</b></a></br><em>
@@ -289,25 +263,15 @@
               J. Rambau and C. Schwarz.</em></br>
               In: Optimization Methods and Software, 29(2):353-375, 2014</li>
 
-              <li><a href="https://doi.org/10.1080/10556788.2013.768993"><b>
-              Solving a vehicle routing problem with resource conflicts and makespan objective with an application in car body manufacturing</b></a></br><em>
-              Rambau, Jörg; Schwarz, Cornelius.</em></br>
-              In: Optimization Methods and Software Volume 29, 2014 - Issue 2 Pages 353-375</li>
-
               <li><a href="http://www.patatconference.org/patat2014/proceedings/2_26.pdf"><b>
               Branch-and-price and improved bounds to the traveling umpire problem</b></a></br><em>
               T.A.M. Toffolo, S. van Malderen, T. Wauters, and G. van den Berghe.</em></br>
               In: Proceedings of the 10th international conference of the practice and theory of automated timetabling, 2014, pp. 420-432</li>
 
-              <li><a href="https://doi.org/10.1007/s00186-012-0390-9"><b>
-              Could we use a million cores to solve an integer program?</b></a></br><em>
-              Koch, Thorsten; Ralphs, Ted; Shinano, Yuji.</em></br>
-              In: Mathematical Methods of Operations Research volume 76, pages67–93(2012)</li>
-
               <li><a href="https://doi.org/10.1007/978-3-642-20807-2_4"><b>
               Partial convexification of general MIPs by Dantzig-Wolfe reformulation</b></a></br><em>
               Bergner, Martin; Caprara, Alberto; Furini, Fabio; Lübbecke, Marco E.; Malaguti, Enrico; Traversi, Emiliano.</em></br>
-              In: IPCO 2011: Integer Programming and Combinatoral Optimization pp 39-51</li>
+              In: IPCO 2011: Integer Programming and Combinatoral Optimization, pp. 39-51</li>
 
               <li><a href="http://dx.doi.org/10.1007/978-3-642-29210-1_11"><b>Primal heuristics for branch-and-price algorithms</b></a></br><em>
               M. Lübbecke, Chr. Puchert.</em></br>
@@ -320,6 +284,9 @@
               In: P.Festa (Ed.), Symposium on Experimental Algorithms (SEA 2010), LNCS, 6049, pp. 239-252, 2010, Springer, Berlin.</li>
             </ul>
           </li>
+
+
+	  <!-- for the moment, let us not refer to these projects
           <li><h4 id="innerprojects" class="reveal">Projects at RWTH that use GCG</h4></li>
           <li style="display: block;" id="innerprojects_ans" class="answer">
             <ul>
@@ -334,6 +301,7 @@
               RWTH Aachen University, Aachen, 2017.</li>
               </ul>
             </li>
+          -->
         </ul>
     </div>
 
