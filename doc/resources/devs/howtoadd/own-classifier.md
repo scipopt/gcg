@@ -98,6 +98,3 @@ The `DEC_DECL_VARCLASSIFY(classifierClassify)` callback  assigns variables to cl
 ## Additional Callback Methods of a Classifier {#CLS_ADDITIONALCALLBACKS}
 ### FREECLASSIFIER {#CLS_FREE}
 The `DEC_DECL_FREECLASSIFIER(classifierFreeXyz)` callback is called upon exiting GCG to free user data.
-
-### INITCLASSIFIER {#CLS_INIT}
-The `DEC_DECL_INITCLASSIFIER(classifierInitXyz)` callback is called after problem was transformed to initialize the classifier.
