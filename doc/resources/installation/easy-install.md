@@ -37,6 +37,8 @@ And you're done! To test your installation, you can run a quick check on some in
 
     make check
 
+Arguments to be added to `cmake ..` if needed can be found under @ref cmake-args.
+
 Note that the execution of `make`-commands, e.g. `make test` is only supported
 inside the `build`-folder (in which it requires some more steps to add testsets).
 Therefore, if you intend on using `make test` (and not ctest), you should compile

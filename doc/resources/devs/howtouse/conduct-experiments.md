@@ -150,7 +150,8 @@ The `res` file is also given as embeddable LaTeX code in the `tex` file.<br>
 These files show how the branch-and-bound tree developed. They can be played
 back using [vbctool](https://cs.uni-koeln.de/ls-juenger/software/vbctool),
 allowing us to see how the tree developed and also how e.g. node selection
-heuristics worked.
+heuristics worked. `vbc` files are only generated when the test is conducted with
+`STATISTICS=true`.
 
 > For comparing different runs, we will only need `out` and `vbc` files. 
 > The other files are handy for "manual" comparisons, but will not be required further
