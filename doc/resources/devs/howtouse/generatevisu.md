@@ -61,7 +61,7 @@ The following arguments are common across all following scripts (except for the 
 
 \n
 
-## Performance Profile Plotter
+## Performance Profile Plotter {#performance-profile-plotter}
 Using this plotter, one can generate performance profiles.
 In those, the x-axis represents the factor by which the respective run is worse than the
 optimal run, while the y-axis is the corresponding probability.
@@ -73,7 +73,7 @@ with `FILES` being some (space-separated) `.res` or `.out` files in the format a
 
 \htmlinclude performance_profile.html
 \n
-## General Plotter
+## General Plotter {#general-plotter}
 The general plotter is able to plot two or more arguments parsed by the `general_parser.py` script in different ways.
 You can find all parsed arguments @ref general-args "here".
 \n
@@ -137,7 +137,7 @@ runs to have been on the same testset.
 \htmlinclude visualizations/general.html
 \htmlinclude visualizations/time.html
 \n
-## Bounds Plotter
+## Bounds Plotter {#bounds-plotter}
 The Bounds Plotter generates a plot showing the development of the primal and dual bound and gap in the root node, as well as the basic variables generated.
 #### Execution
 
@@ -147,7 +147,7 @@ with `FILES` being one or more `.out` files.
 
 \htmlinclude visualizations/bounds.html
 \n
-## Classification and Detection Plotter
+## Classification and Detection Plotter {#detection-plotter}
 This plotter works on a whole testset and makes plots similar to performance profiles, showing the performance of the classifiers and detectors.
 #### Execution
 
@@ -157,7 +157,7 @@ with `FILES` being one or more `.out` files.
 
 \htmlinclude visualizations/detection.html
 \n
-## Pricing Plotter
+## Pricing Plotter {#pricing-plotter}
 The Pricing Plotter generates 7 different plots illustrating the pricing procedure during a single instance's solving process.
 When given an outfile with more than one instance, it generates the plots sequentially.
 #### Execution
@@ -168,7 +168,7 @@ with `FILES` being one `.out` file and `VBC` being the directory where all corre
 
 \htmlinclude visualizations/pricing.html
 \n
-## Tree Plotter
+## Tree Plotter {#tree-plotter}
 The Tree Plotter, just like the Pricing Plotter, needs the `vbc` files to function correctly. It will plot how many nodes were opened on each level.
 #### Execution
 
@@ -179,7 +179,7 @@ with `FILES` being some `.vbc` files.
 \htmlinclude visualizations/tree.html
 \n
 
-## Comparison Table
+## Comparison Table {#comparison-table}
 A (quite raw) comparison of testruns can be done using this script
 in the `general`-folder. This script just puts the statistics of all runs that are
 given as arguments into a `.tex`-file and prints it as ASCII on the console.
