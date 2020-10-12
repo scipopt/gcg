@@ -1,7 +1,7 @@
 # How to generate visualizations {#generatevisu}
 [TOC]
 
-# Prerequisites
+# Prerequisites {#visu-prerequisites}
 ### Software requirements
 **Python:** \n
 Except for the comparison_table script, all visualizations are generated using python.

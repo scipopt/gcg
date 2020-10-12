@@ -1,26 +1,49 @@
-# The Visualization Suite # {#visu}
+# The Visualization Suite {#visu}
 
+[TOC]
+
+> On this page, we **present and guide through the main visualization reporting capabilities** of GCG. 
+> If you want to generate a specific visualization and no complete report, please visit the guide on @ref generatevisu.
+> If you are looking for visualizations of decompositions please visit the guide @ref explore-menu. 
+
+In general, we want to visualize runtime and algorithmic behaviour, either for single test runs (@ref testset-report) 
+or for comparisons between different runs (@ref comparison-report). The scripts can automatically conduct test(s), 
+generate all visualizations and afterwards compile them into a captioned
+report. Furthermore, we give a brief guide on how to use a tool to visualize branch-and-cut algorithmics, graphically
+showing how the tree was built during branching.
+
+- @ref testset-report
+- @ref comparison-report
+- @ref vbc-visu
+ 
 # Test Set Report {#testset-report}
-> **Note: This guide concerns the branch `552-testset-report` and the mentioned features are only available on this branch.**
+> **Note: This guide concerns the branch `552-testset-report` and the mentioned features are only available on this branch.**\n
+> Using the test set report feature is currently **not possible with cmake**.
 
 The test set report **generates a PDF that includes all visualizations**, both for all single instances and for aggregated
 statistics for the test set, to give you a compiled and captioned overview of visualizations of  different aspects of GCG's algorithmics.\n
 The report can be generated in two ways:
-1. Execute a test and directly generate the report (continue @ref testset-report-auto "here")
-2. Have runtime data collected already and generate the report afterwards (continue @ref testset-report-manual "here")
+1. Execute a **test and generate** the report (continue @ref testset-report-auto "here")
+2. Have runtime data **collected already and generate** the report afterwards (continue @ref testset-report-manual "here")
 
 ## Automatically generate a Test Set Report {#testset-report-auto}
-> The automatic generation is very simple and straightforward and recommended, especially for beginners. 
+> The automatic generation is very simple and straightforward and recommended, especially for beginners. \n
 > However, it will always (re-)generate all runtime data, which might be undesirable, in particular for very big test sets.
 > For a different method, see @ref testset-report-manual "here".
 ### Preparation
-You do not have to prepare anything except for having **compiled GCG with `make STATISTICS=true`**. This is required because
-GCG will only then print out extensive pricing and bounds statistics.\n
-Before starting the report generation, you can create a script settings file, e.g. `settings.scset`. In there, you can 
-define which plots to generate and which arguments to generate them with. If you have a big testset or just want to check
-if the feature works, you can also enable a draft mode that will generate a reduced version of the report. A full
-list of arguments can be found @subpage report-args "here". To use the script settings, execute the test with 
-`SCRIPTSETTINGS=settings.scset`, with having `settings.scset` lying in the GCG root directory.
+- For a full report, it is required to have **compiled GCG with `make STATISTICS=true`**. Otherwise, GCG will not print 
+out extensive pricing and bounds statistics for the respective visualizations.\n
+- All **other requirements** listed on the @ref visu-prerequisites "visualization script page" have to be fulfilled 
+(e.g. correctly configured python). The script will not print any warnings (e.g. if your python is not configured correctly) 
+unless you set `DEBUG=true` in the settings file (see below). 
+- You **can create a script settings file**, e.g. `settings.scset` where you can define which plots to generate and which 
+arguments to generate them with. Furthermore, if you have a big testset or just want to check if the feature works, 
+you can also enable a draft mode that will generate a reduced version of the report. A full list of possible settings can 
+be found @subpage report-settings "here".
+- To use the script settings, execute the test with `SCRIPTSETTINGS=settings.scset`, while having `settings.scset` 
+lying in the GCG root directory. In general, all **paths have to be relative** to the GCG root directory since 
+they will be modified in the script.
+
 ### Generation
 When wanting to generate the report automatically, you can simply perform a `make test`. It will support all flags, just
 as you are used to when doing tests, and the data generated during the test will remain in the usual place. 
@@ -29,37 +52,51 @@ Now, to generate the report, please add the flag `VISU` to your command, i.e.
     make test VISU=true
 
 This will make the test script call the report generator script afterwards, already with the correct arguments.
+
 ### Output
-As output, the script will create a folder called `report_<testsetname>_<settingsname>_<timestamp>`. Inside this folder,
-you will find a folder `logs` including the out-file, res-file and vbc-folder of your test run. Next, you can find the 
-folder `plots`, where, subdivided into the plots types, the visualizations are located. Finally, **the report
-is inside the directory** as a (LaTeX-generated) PDF, already compiled for you and opened automatically.
+As output, the script will create a folder called `report_<testsetname>_<settingsname>_<timestamp>` inside `check/reports`,
+unless defined otherwise inside the script settings file. Inside the report folder, you will find a folder `logs` including 
+the out-file, res-file and vbc-folder of your test run. Next, you can find the folder `plots`, where, subdivided into the 
+plots types, the visualizations are located. Finally, **the report is inside the directory** as a (LaTeX-generated) PDF, 
+already compiled for you and opened automatically.
+
 
 ## Manually generate a Test Set Report {#testset-report-manual}
-> The manual generation requires setting many variables. 
+> The manual generation requires setting many variables. \n
 > However, leaving them undefined will only lead to the report having an empty place at the respective table entry for
 > most arguments.
 ### Preparation
-First, as above, your (already collected) runtime data has to have been generated with a **GCG version compiled with
-`STATISTICS=true`** and also **tested with `STATISTICS=true`** to yield a complete report.\n
-Then, in addition, you should know the parameters with which you executed the test. They have to be defined either
-via the arguments at the required positions (not recommended) or via the script settings file, as described in the 
-section "Preparation" for the automatic report. 
-A full list of arguments can be found @ref report-args "here", where it is also described which flags _have_ to be defined for the scripts
-to yield results at all and those that can be defined for the report to have full information. As before, to use the script settings, 
-execute the test with `SCRIPTSETTINGS=settings.scset`, with having `settings.scset` lying in the GCG root directory.
+- For a full report, it is required to have generated your runtime data with both, **a GCG compiled with `make STATISTICS=true`**
+and a **test executed with statistics `make test STATISTICS=true`**. Otherwise, GCG will not print out extensive pricing and 
+bounds statistics for the respective visualizations.
+- All **other requirements** listed on the @ref visu-prerequisites "visualization script page" have to be fulfilled 
+(e.g. correctly configured python). The script will not print any warnings (e.g. if your python is not configured correctly)
+unless you set `DEBUG=true` in the settings file (see below). 
+- You **have to create a script settings file**, e.g. `settings.scset`, where you have to define parameters of your
+given test run. A full list of possible settings can be found @ref report-settings "here", where it is also described which flags 
+_have_ to be defined for the scripts to yield results at all and those that can be defined for the report to have full information. 
+- To use the script settings, execute the test with `SCRIPTSETTINGS=settings.scset`, while having `settings.scset` 
+lying in the GCG root directory. In general, all **paths have to be relative** to the GCG root directory since 
+they will be modified in the script.
+
 ### Generation
 In order to generate a **test set report _without_ testing**, you have to call the script directly. This can be done using
 
     make test VISU=true SCRIPTSETTINGS=settings.scset
 
 ### Output
-You will get the same output as with the automated report generation.
+You will get the same output as with the automated report generation. If visualizations are missing, please set the debug flag
+```
+DEBUG=true
+```
+inside your script settings file to troubleshoot.
 
 # Comparison Report {#comparison-report}
 > This feature is coming soon. Stay tuned.
 
-# Tree Visualizations {#visu-tree}
+# Tree Visualizations {#vbc-visu}
+> Note: The following guide concerns external software. We do not provide warranty nor support for it.
+
 In order to generate pictures of the Branch and Bound tree that GCG used during solving, you can use the [vbctool](https://informatik.uni-koeln.de/ls-juenger/vbctool/). Since the executable might have issues with the linking of the libraries, it is suggested to download the source code (and additionally the Motif Framework). Before you start with the [Build Instructions](https://informatik.uni-koeln.de/fileadmin/projects/vbctool/INSTALL), you have to install a packet:
 
     sudo apt-get install libmotif-dev libxext-dev
