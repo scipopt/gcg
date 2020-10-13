@@ -7,7 +7,10 @@ We are offering a Benders decomposition mode (also called variable/Benders parti
 in two-stage stochastic programming), which is said to be the "dual version" of Dantzig-Wolfe and Lagrange.
 With a Benders decomposition, we are generating **cuts instead of variables** (also called row generation)
 and thus we also have a (mixed-) integer master problem, as opposed to a relaxed (continuous) one, as well
-as a linear subproblem. You can find more information on the theory in the paper by Geoffrion (1972) \cite geoffrion1972.
+as a linear subproblem. You can find more information on the theory in the paper by Geoffrion (1972) \cite geoffrion1972.\n
+It is particularly sensible to apply Benders decomposition when there are **very small links between subproblems**,
+for example if you have a production planning program that should be linked to a vehicle routing problem for delivering
+the produced goods.
 
 ## Activating GCG's Benders functionality automatically
 In order to activate the full Benders capabilities, you first have to switch the mode. After starting GCG,

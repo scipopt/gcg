@@ -1,6 +1,11 @@
 # Presolving Process {#presolving-process}
 
 # Presolving in GCG
+## Overview
+Apart from the usual presolving process that is very similar to the one that SCIP is using (see "Differences
+to SCIP" for differences), it is worth noting that **variable types and constraint types are set during
+presolve.**
+
 ## Problems with Presolving
 When using usual presolving, there arises the problem that **blocks can be damaged**, leading to a problem
 that was decomposable, but is not anymore due to presolving. This will result in much higher solving durations

@@ -3,14 +3,17 @@
 
 # Prerequisites {#visu-prerequisites}
 ### Software requirements
-**Python:** \n
+The scripts will mostly give helpful error messages if you have misconfigured anything,
+so please pay attention to their output.\n
+
+#### Python
 Except for the comparison_table script, all visualizations are generated using python.
 For those, you need python3 to be installed correctly on your system:
 
     sudo apt-get install python3
 
 \n
-**Python-Packages:** \n
+#### Python-Packages
 For each script, you will need packages and some are probably
 not yet installed on your computer. You can do that by first installing `pip`:
 
@@ -18,12 +21,22 @@ not yet installed on your computer. You can do that by first installing `pip`:
 
 And then the needed package via
 
-    pip install <packagename>
+    pip3 install <packagename>
 
 The packages needed for the scripts are (space-separated):
 
     numpy matplotlib pandas sklearn
 
+Furthermore, we recommend to install the package
+
+    tqdm
+
+which shows progress bars which can be useful in particular for very large runtime data.\n
+Finally, for the pricing visualizations, a working LaTeX installation is required, i.e.
+
+    sudo apt-get install dvipng texlive-latex-extra texlive-fonts-recommended
+
+should be up to date.
 
 ### Run tests
 First, you have to do a testrun to gather the data for the visualizations. A guide on how to

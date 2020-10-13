@@ -4,8 +4,21 @@ We have around 2000 parameters for the pricing available, so it might be difficu
 to choose the right ones for your class of problems. In the following, some hints
 about good settings will be given.
 
-### Parameters often having an impact
+### Important Parameters
+In this section, we present parameters that are worth trying to change
+in some problems. The results are based upon experiments we conducted.
+
 @todo @schilling
+
+### Partial Pricing
+In order to make GCG perform partial pricing only, please go into `set pricing` and then enter
+the `masterpricer` settings. There, you are able to 
+- set the number of columns after which GCG  **stops solving the pricing problem** 
+(in reduced cost pricing), either in absolute terms (`maxcolsprobredcost`) or in relative terms 
+(`relmaxprobsredcost`).
+- set the number of pricing problems that should be called, i.e. **aborting the pricing round** 
+(in reduced cost pricing) after a specified number of columns generated (`maxcolsroundredcost`)
+- set the **order in which pricing problems are called** in every pricing round (`sorting`)
 
 ### Change other Parameters of the Pricing
 You can also modify other parameters of the pricing. 
