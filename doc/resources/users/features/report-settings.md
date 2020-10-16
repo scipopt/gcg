@@ -30,22 +30,29 @@ Comments are possible.
 
 \n
 ### Additional settings for manual execution
-**Parameters that only have to be defined when generating the report manually. All of them are not initialized otherwise!**
+**Parameters that only have to be defined when generating the report manually.** \n
+X: mandatory for all build systems\n
+C: should be given (otherwise "unknown") when using CMake
+
 |Required|Variable|Type|Description|
 |:-:|---|---|---|
-| |`TSTNAME`|String|Name of your test set to be printed on front page.|
-| |`SETNAME`|String|Name of your settings to be printed on front page.|
+|C|`BINARY_ID`|File|Name of your GCG binary (e.g. `gcg-3.1.0.linux.x86_64.gnu.opt.spx2`).|
+|C|`VERSION`|String|GCG version to be printed on front page.|
+|C|`LPS`|String|LP solver used during your test run to be printed on front page.|
+|C|`THREADS`|Number|Threads used during your test run to be printed on front page.|
+|C|`MODE`|String|Test mode (e.g. `readdec`) to be printed on front page.|
+|C|`FEASTOL`|String|Feasibility tolerance setting (default: `default`) to be printed on front page.|
+|C*|`LAST_STATISTICS`|Binary|Flag to indicate whether you compiled GCG with `STATISTICS=true`.|
 |X|`OUTFILE`|File|Path (absolute or relative to GCG root directory) to your `out` file.|
 |X|`RESFILE`|File|Path (absolute or relative to GCG root directory) to your `res` file.|
 |X|`VBCFILES`|Folder|Path (absolute or relative to GCG root directory) to your `vbc` files folder for this run.|
-|X|`LAST_STATISTICS`|Binary|Flag to indicate whether you compiled GCG with `STATISTICS=true`.|
-| |`BINARY_ID`|File|Name of your GCG binary (e.g. `gcg-3.1.0.linux.x86_64.gnu.opt.spx2`).|
+| |`TSTNAME`|String|Name of your test set to be printed on front page.|
+| |`SETNAME`|String|Name of your settings to be printed on front page.|
 | |`TIMELIMIT`|Number|Time limit of your test run to be printed on front page.|
 | |`MEMLIMIT`|Number|Memory limit of your test run to be printed on front page.|
-| |`THREADS`|Number|Threads used during your test run to be printed on front page.|
-| |`FEASTOL`|String|Feasibility tolerance setting (default: `default`) to be printed on front page.|
-| |`VERSION`|String|GCG version to be printed on front page.|
-| |`MODE`|String|Test mode (e.g. `readdec`) to be printed on front page.|
+| |`NODELIMIT`|Number|Node limit of your test run to be printed on front page.|
+
+*Set to true by default for CMake.
 
 ## Comparison Report Settings
 > This feature is not yet implemented. Please stay tuned.

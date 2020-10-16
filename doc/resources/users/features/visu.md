@@ -18,7 +18,6 @@ showing how the tree was built during branching.
  
 # Test Set Report {#testset-report}
 > **Note: This guide concerns the branch `552-testset-report` and the mentioned features are only available on this branch.**\n
-> Using the test set report feature is currently **not possible with cmake**.
 
 The test set report **generates a PDF that includes all visualizations**, both for all single instances and for aggregated
 statistics for the test set, to give you a compiled and captioned overview of visualizations of  different aspects of GCG's algorithmics.\n
@@ -28,8 +27,15 @@ The report can be generated in two ways:
 
 ## Automatically generate a Test Set Report {#testset-report-auto}
 > The automatic generation is very simple and straightforward and recommended, especially for beginners. \n
-> However, it will always (re-)generate all runtime data, which might be undesirable, in particular for very big test sets.
-> For a different method, see @ref testset-report-manual "here".
+> However, **it will always (re-)generate all runtime data**, which might be undesirable, in particular for very big test sets.
+> For a different method, see @ref testset-report-manual "here". \n
+
+
+> **Remark for CMake users:** 
+> Automatic test set report generation is currently **not supported under CMake builds**. 
+> Please use the @ref testset-report-manual "manual mode", using runtime data generated with a `make` installation or 
+> with `cmake gcg_cluster` (necessary due to `make check` not generating the usual runtime data).
+
 ### Preparation
 - For a full report, it is required to have **compiled GCG with `make STATISTICS=true`**. Otherwise, GCG will not print 
 out extensive pricing and bounds statistics for the respective visualizations.\n
@@ -41,13 +47,12 @@ arguments to generate them with. Furthermore, if you have a big testset or just 
 you can also enable a draft mode that will generate a reduced version of the report. A full list of possible settings can 
 be found @subpage report-settings "here".
 - To use the script settings, execute the test with `SCRIPTSETTINGS=settings.scset`, while having `settings.scset` 
-lying in the GCG root directory. In general, all **paths have to be relative** to the GCG root directory since 
-they will be modified in the script.
+lying in the GCG root directory.
 
 ### Generation
-When wanting to generate the report automatically, you can simply perform a `make test`. It will support all flags, just
-as you are used to when doing tests, and the data generated during the test will remain in the usual place. 
-Now, to generate the report, please add the flag `VISU` to your command, i.e. 
+When wanting to generate the report automatically, you can work with the usual `make test`. It will support all flags, just
+as you are used to when doing tests, and the data generated during the test will remain in the usual place.
+To tell GCG to generate the report after the test has been executed, please add the flag `VISU` to your command, i.e. 
 
     make test VISU=true
 
@@ -62,9 +67,9 @@ already compiled for you and opened automatically.
 
 
 ## Manually generate a Test Set Report {#testset-report-manual}
-> The manual generation requires setting many variables. \n
-> However, leaving them undefined will only lead to the report having an empty place at the respective table entry for
-> most arguments.
+> The manual generation requires you to have the **runtime data available already**.\n
+> You can either give outfile, resfile and vbc folder via the script settings file, else you will be asked for them during runtime.
+
 ### Preparation
 - For a full report, it is required to have generated your runtime data with both, **a GCG compiled with `make STATISTICS=true`**
 and a **test executed with statistics `make test STATISTICS=true`**. Otherwise, GCG will not print out extensive pricing and 
@@ -74,15 +79,15 @@ bounds statistics for the respective visualizations.
 unless you set `DEBUG=true` in the settings file (see below). 
 - You **have to create a script settings file**, e.g. `settings.scset`, where you have to define parameters of your
 given test run. A full list of possible settings can be found @ref report-settings "here", where it is also described which flags 
-_have_ to be defined for the scripts to yield results at all and those that can be defined for the report to have full information. 
+_have_ to be defined for the scripts to yield results at all and those that can be defined for the report to have full information.
+Note that for `make`, none of the optional flags have to be set - they will be found automatically. 
 - To use the script settings, execute the test with `SCRIPTSETTINGS=settings.scset`, while having `settings.scset` 
-lying in the GCG root directory. In general, all **paths have to be relative** to the GCG root directory since 
-they will be modified in the script.
+lying in the GCG root directory.
 
 ### Generation
 In order to generate a **test set report _without_ testing**, you have to call the script directly. This can be done using
 
-    make test VISU=true SCRIPTSETTINGS=settings.scset
+    make visu SCRIPTSETTINGS=settings.scset
 
 ### Output
 You will get the same output as with the automated report generation. If visualizations are missing, please set the debug flag
