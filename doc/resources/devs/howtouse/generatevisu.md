@@ -205,10 +205,18 @@ with run1, run2, ... being a `.res` file in the format as shown in @ref what-fil
 \htmlinclude visualizations/table.html
 \n
 
-# Test set selection
-> A complete guide on this is coming soon.
+# Test Set Selection {#testset-selection}
+Using **existing runtime data**, you can filter using the instructions under "General Plotter -> Arguments -> Defining Filters for the Data". 
+For the strIPlib, we can provide a full data set (`.out` and `.pkl` format) of runtime data (which is also used in the 
+[strIPlib](https://striplib.or.rwth-aachen.de)). To then export a test set including the instances that your filter 
+applies to, you can set the flag `-ts` like that:
 
-Test sets can be filtered using the instructions under "General Plotter -> Arguments -> Defining Filters for the Data".
+    python3 general/plot.py check.gcg.out -ts -t "DETECTION TIME" 10 20 "RMP LP TIME"
+
+Note that the test set file export mode is only implemented in the standard plotter, so please call `plot.py` with your filters and the
+test set export flag. After executing this command, you will get a test set file `filtered.test` in the given output directory, with
+which you can call the `make test` target @ref generate-data "as usual". 
+If `.dec` files were used, they will be included in the exported test set file. 
 
 # Custom Visualizations
 When creating custom visualizations, one has to know exactly what data is needed to make the visualization. With these arguments in mind, one can then look if they are already parsed. A list of the currently parsed data is located @ref visu-args "here". If so, one of the parsers (<code>parser_general.py</code>, <code>parser_bounds.py</code> or <code>parser_detection.py</code>) can be used, or otherwise, for the <code>plotter_pricing.py</code>, the <code>--savepickle</code> argument of the plotter shall be used each time to parse the runtime data and save it to the pickle, to then read it again for the plotter. Then, the <code>plotter_</code> script can be created which should import the parser that already gets the data needed with a simple <code>import parser_...</code>. Finally, the parser can be used just like in the other plotters.
@@ -216,4 +224,4 @@ When creating custom visualizations, one has to know exactly what data is needed
 
 ### Troubleshooting
 **Q: Why don't I get any detection times?**\n
-A: You probably did not run the test with `MODE=0` (use `.dec` files instead of detecting).
+A: You probably did not run the test with a set mode, e.g. `MODE=0`, so GCG fell back to the `readdec` mode, reading any `.dec` files it could find instead of detecting.

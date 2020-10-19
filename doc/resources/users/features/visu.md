@@ -102,7 +102,7 @@ inside your script settings file to troubleshoot.
 # Tree Visualizations {#vbc-visu}
 > Note: The following guide concerns external software. We do not provide warranty nor support for it.
 
-In order to generate pictures of the Branch and Bound tree that GCG used during solving, you can use the [vbctool](https://informatik.uni-koeln.de/ls-juenger/vbctool/). Since the executable might have issues with the linking of the libraries, it is suggested to download the source code (and additionally the Motif Framework). Before you start with the [Build Instructions](https://informatik.uni-koeln.de/fileadmin/projects/vbctool/INSTALL), you have to install a packet:
+In order to generate pictures of the Branch and Bound tree that GCG used during solving, you can use the [vbctool](https://cs.uni-koeln.de/ls-juenger/software/vbctool). Since the executable might have issues with the linking of the libraries, it is suggested to download the source code (and additionally the Motif Framework). Before you start with the [Build Instructions](https://cs.uni-koeln.de/sites/informatik/projects/vbctool/INSTALL), you have to install a packet:
 
     sudo apt-get install libmotif-dev libxext-dev
 

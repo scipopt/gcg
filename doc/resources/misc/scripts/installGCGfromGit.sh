@@ -121,7 +121,7 @@ function test(){
               printf "Running GCG on some sample instances...";
                 if [ $SYS == "cmake" ]
                 then
-                  make check
+                  make gcg_check
                 elif [ $SYS == "make" ]
                 then
                   make test

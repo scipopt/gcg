@@ -8,7 +8,7 @@
 > On this page, we explain **best practices of and give a guide for conducting experiments** 
 > with GCG.   
 
-# Generating Runtime Data
+# Generating Runtime Data {#generate-data}
 The first step to start experimenting is to collect runtime data that the solver outputs.
 This is in particular the log (explained in @ref u1), as well as `vbc` files 
 ("Visualization of Branch Cut algorithms").
@@ -51,13 +51,16 @@ solved in the root node, or those that exhibit a staircase structure etc. Depend
 what you are filtering for, there are different options one usually takes:
 
 -   In some cases, you have the objective to solve a given set of instances quicker. In
-    this case, you can just **assemble the set using these exact instances**. However,
-    to show that your changes do not influence other instances negatively, you should also
-    test using a @ref general-purpose-testsets "general-purpose testset".
--   In most cases, you will know some properties that the instances have to fulfill,
+    this case, you can just **assemble the set using these exact instances**, e.g. because 
+    you already have them lieing around. However, to show that your changes do not influence 
+    other instances negatively, you should also test using a 
+    @ref general-purpose-testsets "general-purpose testset".
+-   In most cases, you will know some properties (the most common property being a 
+    sufficiently low, but not too low runtime) that the instances have to fulfill, 
     but don't have instances at hand. For this case, using our 
     **[strIPlib](https://striplib.or.rwth-aachen.de)** (structured integer programming library), 
     you can **filter for a range of different characteristics** to get a set of instances.
+    If you don't want to use the web frontend, please refer to our guide on @ref testset-selection.
 -   In some cases, you do not know anything about how the changes might affect GCG's
     behavior. For these, we have some (partly very specific) **predefined testset files** 
     inside the folder `/check/testset` (in particular, the @ref general-purpose-testsets "general-purpose testsets"
