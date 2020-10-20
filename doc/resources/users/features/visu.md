@@ -97,7 +97,24 @@ DEBUG=true
 inside your script settings file to troubleshoot.
 
 # Comparison Report {#comparison-report}
-> This feature is coming soon. Stay tuned.
+> **Note: This guide concerns the branch `631-comparison-report` and the mentioned features are still under development, 
+> only available for _experimental_ testing on this branch.**\n
+
+
+### Preparation
+- For a full report, it is required to have **compiled GCG with `make STATISTICS=true`**. Otherwise, GCG will not print 
+out extensive pricing and bounds statistics for the respective visualizations.\n
+- All **other requirements** listed on the @ref visu-prerequisites "visualization script page" have to be fulfilled 
+(e.g. correctly configured python) and additionally, you have to have the python package `tikzplotlib`.
+The script will not print any warnings (e.g. if your python is not configured correctly) 
+unless you set `DEBUG=true` in the settings file (see below). 
+- You **can create a script settings file**, e.g. `settings.scset` where you can define which plots to generate and which 
+arguments to generate them with. Furthermore, if you have a big testset or just want to check if the feature works, 
+you can also enable a draft mode that will generate a reduced version of the report. A full list of possible settings can 
+be found @subpage report-settings "here".
+- To use the script settings, execute the test with `SCRIPTSETTINGS=settings.scset`, while having `settings.scset` 
+lying in the GCG root directory.
+
 
 # Tree Visualizations {#vbc-visu}
 > Note: The following guide concerns external software. We do not provide warranty nor support for it.

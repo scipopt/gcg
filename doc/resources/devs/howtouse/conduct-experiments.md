@@ -160,9 +160,20 @@ heuristics worked. `vbc` files are only generated when the test is conducted wit
 > The other files are handy for "manual" comparisons, but will not be required further
 > in this guide.
 
+# Evaluating a Single Test Set
+> In this part, we explain how to generate a report for a test set, not comparing
+> anything, but just **exploring your instances**.
+
+After collecting the data, you can start analyzing and in particular **visualizing it**.
+We assume that you have collected your runtime data using e.g. `make test`. To then
+generate a **report for the whole testset** including basic statistics and all
+possible visualizations, you can call `make visu`. More details on the test set
+report feature are explained @ref testset-report "here".
+The test set report can be found in `check/reports/` in a uniquely named (using a time stamp) report folder.
+
 # Comparing Runtime Data
-After collecting the data, you can start comparing it. In the following, we will give
-some hints on how to start, depending on what you want to compare. 
+If you do not only have one test run, but multiple ones, you will want to compare it.
+In the following, we will give some hints on how to start, depending on what you want to compare.
 The most common cases are comparing default GCG...
 
 A. against a GCG with different **settings** (continue @ref compare-settings "here") \n
@@ -173,7 +184,108 @@ D. against a **different solver** (continue @ref compare-solvers "here") \n
 
 Depending on what you want to test, skip to the respective section.
 
+In general, please again make sure that you compiled your GCG correctly and executed
+the test with `STATISTICS=true`. Furthermore, have your runtime data
+(`.out`, `.res` and `vbc/` files) ready in a known directory.
+
 ## A. Comparing Settings {#compare-settings}
+> In this part, we explain how to **compare different settings** (with unmodified code)
+> using our automatic comparison report script.
+
+If you want to **compare settings** with otherwise unmodified (and similarly versioned)
+installations of GCG, then you have already collected runtime data, e.g. by two calls,
+`make test SET=settings1` and `make test SET=settings2` and have your runtime data
+(2 or more sets of `.out`, `.res` and `vbc/` files) ready.\n
+To then generate a **comparison report for the two runs** including basic statistics
+and all possible _comparing_ statistics, you can call
+
+    make compare
+
+More details on the comparison report feature are explained @ref comparison-report "here".
+The version comparison report can be found in `check/reports/` in a uniquely named (using a time stamp) report folder.
+
 ## B. Comparing Code {#compare-code}
+> In this part, we explain how to parse own expressions that your custom plug-ins and other
+> code might have generated that you want to visualize.
+
+If you want to **compare different code** with similarly versioned installations of GCG,
+then you have already collected runtime data, e.g. by **a `make test` for the default GCG**
+and **a `make test` for your custom version of GCG** and have your runtime data
+(2 or more sets of `.out`, `.res` and `vbc/` files) ready.\n
+For our visualization scripts to keep on working, you may not change any existing
+GCG logging formats to not get differently formatted `.out`-files that will not be
+parseable anymore by the parsers. Instead, you should print output that you later
+want to visualize in the ways presented in the following:
+
+### Logging Custom Data: Single Data Points
+> **The custom logging feature (single data points) is not yet implemented. Please stay tuned.**
+> This is a sketch of what it will be capable of.
+
+If you want to log just single events, like the overall runtime inside your code,
+which you just have to print once per instance, we recommend that you print lines
+in the following format:
+
+    codeIdentifier id1:val1 id2:val2 id3:val3
+
+Here, `codeIdentifier` must be a unique line start, identifying your code. Commonly,
+this is some short form of your project's name, e.g. `subGCG` or `[subGCG]`.
+The general parser will search for this identifier and **save all data points that come
+after it**. To save them correctly, you have to give an (again unique) data point identifier,
+e.g. `totaltime`, at the place of `id1` and then print the value `val1`, e.g. `42`.
+The same holds for the rest of the ID-value pairs. In the dataframe (where for each
+instance in the test run there is a line), a column with the name `id1` will then
+be introduced for all instances.\n
+In order to make the identifiers known to the parser, you have to give GCG the
+`codeIdentifier` (the other identifiers are always in the line parsed, no need to give them)
+using the flag `-ci [CID]` in one of the four general plotters. A sample call could then be
+
+    python3 general/plot.py check.gcg.out -ci "subGCG" -t "PRICING TIME" 10 20 "totaltime"
+
+As you can see, you can use the data point identifiers directly (caps sensitive) to plot.
+In order to automatically generate comparison reports with your own printed data,
+you can give this setting as
+    
+    GENERALARGS=-ci "subGCG" -t "PRICING TIME" 10 20 "totaltime"
+
+in the @ref comparison-report-settings "script settings" of the @ref comparison-report "comparison report".
+The comparison report can be found in `check/reports/` in a uniquely named (using a time stamp) report folder.
+
+### Logging Custom Data: Streaming Data
+> **The custom logging feature (streaming data) is not yet implemented. Please stay tuned.**
+
 ## C. Comparing (unmodified) Versions {#compare-versions}
+> In this part, we explain how one can **compare different (unmodified) versions of GCG** and its
+> submodules with each other. This requires access to our git and thus is targeted at developers.
+
+### Automated Version Comparison Script
+The version comparison should be started from the chair's computers. The script is localized
+in the check directory and can be called as follows:
+
+    ./compareversions.sh "<GlobalFlags>" "<Version1>" "<Flags1>" "<Version2>" "<Flags2>" ...
+
+The global flags are applied to all compilations (could include e.g. `STATISTICS=true`). The numbered
+flags are only applied to the respective versions of GCG. Each string of flags must be in quotation marks.
+The versions `Version1`, ... correspond to the version numbers that are tagged in git. If you want to
+compare a version vX of GCG with a version vY of GCG (this time with CPLEX as solver), then you can execute   
+
+    ./compareversions.sh "TEST=mytestset SETTINGS=mysettings -j" "vX" "" "vY" "LPS=cpx CPLEXSOLVER=true"
+
+The version comparison report can be found in `check/results/` in a uniquely named (using a time stamp) report folder.
+
+### Manual Version Comparison
+In the results folder generated by the `compareversions.sh` script you can find files with ending `.pkl`.
+In order to create a new report with existing runtime data, move those `.pkl` files into an own folder and call
+the script `plotcomparedres.py` that is located inside the `check` folder:
+
+    ./plotcomparedres.py <folder with pkl files> <output folder>
+
+All files with `.pkl` ending in this folder will be concerned.
+In this manual mode, you yourself have to pay attention to the general comparability of your runtime data
+(same instances, settings, time limits, computer used, ...).
+
 ## D. Comparing different Solvers {#compare-solvers}
+> In this part, we explain how one can **compare completely different solvers**, with the
+> most likely example being GCG vs. SCIP.
+
+For SCIP, the format of the output files should be similar, so the above instructions apply,
+since most (if not all) visualization scripts will still function.

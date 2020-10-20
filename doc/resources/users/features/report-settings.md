@@ -54,5 +54,5 @@ C: should be given (otherwise "unknown") when using CMake
 
 *Set to true by default for CMake.
 
-## Comparison Report Settings
+## Comparison Report Settings {#comparison-report-settings}
 > This feature is not yet implemented. Please stay tuned.
