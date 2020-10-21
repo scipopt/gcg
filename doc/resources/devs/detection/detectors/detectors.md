@@ -9,7 +9,6 @@ function out of
 For an overview of which detector does what of those three core functionalities, please check the @subpage detectors-overview.
 
 ### Detectors
-#### Working detectors
 Detectors based on **constraint or variable classes**:
 - @subpage det-consclass
 - @subpage det-varclass
@@ -32,7 +31,7 @@ Detectors finding **set structures** (covering, partitioning and packing):
 - @subpage det-mastersetpart
 - @subpage det-generalmastersetpart
 
-Detectors finding **arrowhead** and **single-bordered structures**:
+Detectors finding **arrowhead** and **single-bordered structures** (require [hMETIS](http://glaros.dtc.umn.edu/gkhome/metis/hmetis/overview)):
 - @subpage det-hcgpartition
 - @subpage det-hrgpartition
 - @subpage det-hrcgpartition
@@ -49,11 +48,6 @@ Detectors used for detection algorithmics:
 - @subpage det-postprocess
 
 <hr>
-#### Will be removed in a future version:
-
-Duplicates of the consclass detector:
-- @subpage det-constype
-- @subpage det-consname
 
 \n
 If you want to **write your own** detector, please consult the "How to"
