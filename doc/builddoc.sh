@@ -164,7 +164,7 @@ main () {
   # The $? conditions below are a try-catch method to alert the user 
   # about the origin of the issue
 
-  n=8 # number of steps to be performed
+  n=7 # number of steps to be performed
   i=1 # step counter
   
   printf "${B}${U}Building GCG HTML Documentation in html/doc-${CURRENT_VERSION}${W}\n"
@@ -180,9 +180,9 @@ main () {
     if [ $? -ne 0 ]; then printf " ${R}Error:${W} Please check your internet connection.\n"; fi
 
   # Requirement: none
-  echo "[${i}/${n}] Generating subpage indexing"; let "i++"
-    makeSubpageIndexing "resources/devs/howtoadd/" "How to add"
-    makeSubpageIndexing "resources/devs/howtouse/" "How to use"
+  #echo "[${i}/${n}] Generating subpage indexing"; let "i++"
+  #  makeSubpageIndexing "resources/devs/howtoadd/" "How to add"
+  #  makeSubpageIndexing "resources/devs/howtouse/" "How to use"
   
   # Requirement: Correctly installed php
   echo "[${i}/${n}] Generating FAQ"; let "i++"

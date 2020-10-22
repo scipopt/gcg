@@ -68,5 +68,5 @@ After having read the above information, you might want to start developing. For
 we have prepared multiple "How to add" guides. You can also use the example projects as
 guidance. \n\n
 
- ⇨ @subpage example-projects \n
- ⇨ @subpage howtoadd
+ ⇨ @ref example-projects \n
+ ⇨ @ref howtoadd

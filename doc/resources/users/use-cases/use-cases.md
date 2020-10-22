@@ -60,7 +60,7 @@ If you're new here, we recommend starting with the first one.
 > <img src="scientist.png" style="vertical-align:middle; height:5.7%; position:absolute; right:40px;">
 > #### Gain knowledge about how GCG solves your instance
 > To see how GCG ran with your instance, for example how long it detected or how performant
-> the pricing was, you should check out the @ref visu "Visualization Suite". It shows not only
+> the pricing was, you should check out the @ref visu-suite "Visualization Suite". It shows not only
 > timings, but also **illustrates algorithmic behaviour**.\n
 > ⇨ @subpage u6
 > \n\n

@@ -1,9 +1,9 @@
-# The Visualization Suite {#visu}
+# The Visualization Suite {#visu-suite}
 
 [TOC]
 
 > On this page, we **present and guide through the main visualization reporting capabilities** of GCG. 
-> If you want to generate a specific visualization and no complete report, please visit the guide on @ref generatevisu.
+> If you want to generate a specific visualization and no complete report, please visit the guide on @ref visu-manual.
 > If you are looking for visualizations of decompositions please visit the guide @ref explore-menu. 
 
 In general, we want to visualize runtime and algorithmic behaviour, either for single test runs (@ref testset-report) 
@@ -59,7 +59,9 @@ To tell GCG to generate the report after the test has been executed, please add 
 This will make the test script call the report generator script afterwards, already with the correct arguments.
 
 ### Output
-As output, the script will create a folder called `report_<testsetname>_<settingsname>_<timestamp>` inside `check/reports`,
+> An example of the output generated can be found [here]().
+
+As output, the script will create a folder called `testsetreport_<testsetname>_<settingsname>_<timestamp>` inside `check/reports`,
 unless defined otherwise inside the script settings file. Inside the report folder, you will find a folder `logs` including 
 the out-file, res-file and vbc-folder of your test run. Next, you can find the folder `plots`, where, subdivided into the 
 plots types, the visualizations are located. Finally, **the report is inside the directory** as a (LaTeX-generated) PDF, 
@@ -85,7 +87,7 @@ Note that for `make`, none of the optional flags have to be set - they will be f
 lying in the GCG root directory.
 
 ### Generation
-In order to generate a **test set report _without_ testing**, you have to call the script directly. This can be done using
+In order to generate a **test set report _without_ testing**, you can call the visualization target. This can be done using
 
     make visu SCRIPTSETTINGS=settings.scset
 
@@ -97,9 +99,7 @@ DEBUG=true
 inside your script settings file to troubleshoot.
 
 # Comparison Report {#comparison-report}
-> **Note: This guide concerns the branch `631-comparison-report` and the mentioned features are still under development, 
-> only available for _experimental_ testing on this branch.**\n
-
+> **Note: This guide concerns the branch `631-comparison-report` and the mentioned features are only available on this branch.**\n
 
 ### Preparation
 - For a full report, it is required to have **compiled GCG with `make STATISTICS=true`**. Otherwise, GCG will not print 
@@ -114,6 +114,30 @@ you can also enable a draft mode that will generate a reduced version of the rep
 be found @subpage report-settings "here".
 - To use the script settings, execute the test with `SCRIPTSETTINGS=settings.scset`, while having `settings.scset` 
 lying in the GCG root directory.
+
+### Generation
+In order to generate a **comparison report** (always with already existing runtime data), you can call the comparison target. 
+This can be done using
+
+    make compare SCRIPTSETTINGS=settings.scset DATADIR=<folder containing .res and .out files>
+
+The data directory can also be given via the settings file.
+
+### Output
+> An example of the output generated can be found [here]().
+
+As output, the script will create a folder called `comparisonreport_<timestamp>` inside `check/reports`,
+unless defined otherwise inside the script settings file. Inside the report folder, you will find a folder `logs` including 
+the out-files and res-files of your test runs, as well as a `pickle` folder that includes dataframes with your logs, but parsed. 
+Next, you can find the folder `plots`, where, subdivided into the plots types, the _comparing_ visualizations are located. 
+Finally, **the report is inside the directory** as a (LaTeX-generated) PDF, 
+already compiled for you and opened automatically.
+
+If visualizations are missing, please set the debug flag
+```
+DEBUG=true
+```
+inside your script settings file to troubleshoot.
 
 
 # Tree Visualizations {#vbc-visu}

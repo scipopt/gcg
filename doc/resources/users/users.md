@@ -18,7 +18,7 @@ The **second part** explains how the interactive menu and more features of GCG c
 
  @subpage interactive-menu \n
  @subpage explore-menu \n
- @subpage visu
+ @subpage visu-suite
 
 \n
 Then, **the remainder** of the user's guide is divided into different use cases
