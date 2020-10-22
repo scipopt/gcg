@@ -19,7 +19,9 @@ Unzip it and go into the folder, replacing `X.X.X` by the version you downloaded
 
 
 ### Step 3: Compile via CMake
-<i>(recommended for new users)</i><br/>
+> The installation via CMake is **recommended for new users**. It does
+> not offer the testing capabilities that Makefiles offer out-of-the-box.
+
 First, make sure that cmake is installed correctly and up-to-date:
 
     sudo apt-get install cmake
@@ -33,9 +35,10 @@ Then create the build directory and compile the program
     make
     make install  # install scip executable, library and headers
 
-And you're done! To test your installation, you can run a quick check on some instances:
+And you're done! To test your installation, you can run a quick check 
+(from within the build directory) on some instances:
 
-    make check
+    make gcg_check
 
 Arguments to be added to `cmake ..` if needed can be found under @ref cmake-args.
 
@@ -45,19 +48,19 @@ Therefore, if you intend on using `make test` (and not ctest), you should compil
 SCIP and GCG via Makefile.
 
 ### Step 3 (Alternative): Compile via Makefile
-<i>(recommended for developers, if necessary)</i><br/>
-#### Creating softlinks
+> The installation using the Makefiles build system is recommended for developers,
+> since it offers more testing capabilities (see @ref conduct-experiments).
 
+#### Creating softlinks
 In order to create all necessary links, type
 
     make links
 
 #### Compilation
-
 In the root folder of the scipoptsuite, you can then compile everything
 (you should execute them as root, if possible, to avoid certain errors) with:
 
-    make scipoptsuite
+    make scipoptlib
     make gcg
     make install
 
