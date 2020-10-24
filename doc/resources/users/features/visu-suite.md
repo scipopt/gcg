@@ -59,7 +59,7 @@ To tell GCG to generate the report after the test has been executed, please add 
 This will make the test script call the report generator script afterwards, already with the correct arguments.
 
 ### Output
-> An example of the output generated can be found [here]().
+> **An example of the output generated can be found [here](pdf/short.default.testsetreport.pdf).**
 
 As output, the script will create a folder called `testsetreport_<testsetname>_<settingsname>_<timestamp>` inside `check/reports`,
 unless defined otherwise inside the script settings file. Inside the report folder, you will find a folder `logs` including 
@@ -75,9 +75,11 @@ already compiled for you and opened automatically.
 ### Preparation
 - For a full report, it is required to have generated your runtime data with both, **a GCG compiled with `make STATISTICS=true`**
 and a **test executed with statistics `make test STATISTICS=true`**. Otherwise, GCG will not print out extensive pricing and 
-bounds statistics for the respective visualizations.
+bounds statistics for the respective visualizations. Furthermore, **for detection visualizations, `FORVISU=true`** 
+must be set during testing (this flag will also turn on statistics).
 - All **other requirements** listed on the @ref visu-prerequisites "visualization script page" have to be fulfilled 
-(e.g. correctly configured python). The script will not print any warnings (e.g. if your python is not configured correctly)
+(e.g. correctly configured python). 
+The script will not print any warnings (e.g. if your python is not configured correctly)
 unless you set `DEBUG=true` in the settings file (see below). 
 - You **have to create a script settings file**, e.g. `settings.scset`, where you have to define parameters of your
 given test run. A full list of possible settings can be found @ref report-settings "here", where it is also described which flags 
@@ -102,10 +104,13 @@ inside your script settings file to troubleshoot.
 > **Note: This guide concerns the branch `631-comparison-report` and the mentioned features are only available on this branch.**\n
 
 ### Preparation
-- For a full report, it is required to have **compiled GCG with `make STATISTICS=true`**. Otherwise, GCG will not print 
-out extensive pricing and bounds statistics for the respective visualizations.\n
+- For a full report, it is required to have generated your runtime data with both, **a GCG compiled with `make STATISTICS=true`**
+and a **test executed with statistics `make test STATISTICS=true`**. Otherwise, GCG will not print out extensive  bounds statistics
+ for the respective visualizations. Furthermore, **for detection visualizations, `FORVISU=true`** 
+must be set during testing (this flag will also turn on statistics).
 - All **other requirements** listed on the @ref visu-prerequisites "visualization script page" have to be fulfilled 
-(e.g. correctly configured python) and additionally, you have to have the python package `tikzplotlib`.
+(e.g. correctly configured python),
+and additionally, you have to have the python package `tikzplotlib`.
 The script will not print any warnings (e.g. if your python is not configured correctly) 
 unless you set `DEBUG=true` in the settings file (see below). 
 - You **can create a script settings file**, e.g. `settings.scset` where you can define which plots to generate and which 
@@ -113,7 +118,8 @@ arguments to generate them with. Furthermore, if you have a big testset or just 
 you can also enable a draft mode that will generate a reduced version of the report. A full list of possible settings can 
 be found @subpage report-settings "here".
 - To use the script settings, execute the test with `SCRIPTSETTINGS=settings.scset`, while having `settings.scset` 
-lying in the GCG root directory.
+lying in the GCG root directory. By default, the script will assume that you conducted the tests with the flag that was set
+when you _last compiled this binary_. You can overwrite that by giving `LAST_STATISTICS=true` in the script settings file.
 
 ### Generation
 In order to generate a **comparison report** (always with already existing runtime data), you can call the comparison target. 
@@ -124,7 +130,7 @@ This can be done using
 The data directory can also be given via the settings file.
 
 ### Output
-> An example of the output generated can be found [here]().
+> **An example of the output generated can be found [here](pdf/comparisonreport.pdf).**
 
 As output, the script will create a folder called `comparisonreport_<timestamp>` inside `check/reports`,
 unless defined otherwise inside the script settings file. Inside the report folder, you will find a folder `logs` including 

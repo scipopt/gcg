@@ -95,7 +95,8 @@ getAdditionalResources () {( set -e
   wget https://scipopt.org/bootstrap/js/bootstrap.min.js --output-document html/bootstrap/js/bootstrap.min.js --no-check-certificate
   wget https://code.jquery.com/jquery.min.js --output-document html/js/jquery.min.js
   # move additional resources to html folder 
-  cp -r resources/misc/scripts html
+  cp -r resources/misc/scripts html/doc
+  cp -r resources/misc/pdf html/doc
   mkdir -p html/doc/img/visu
   mkdir -p html/doc/bootstrap
   mkdir -p html/doc/js
