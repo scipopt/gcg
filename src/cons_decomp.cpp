@@ -846,22 +846,42 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
       SCIPfreeBlockMemory(scip, &detector);
    }
 
+   /* free all consclassifiers */
+   for( i = 0; i < conshdlrdata->nconsclassifiers; ++i ) {
+      DEC_CONSCLASSIFIER *consclassifier;
+      consclassifier = conshdlrdata->consclassifiers[i];
+      assert(consclassifier != NULL);
+
+      if( consclassifier->freeClassifier != NULL )
+      {
+         SCIPdebugMessage("Calling freeClassifier of consclassifier %s\n", consclassifier->name);
+         SCIP_CALL( (*consclassifier->freeClassifier)(scip, consclassifier) );
+      }
+      SCIPfreeBlockMemory(scip, &conshdlrdata->consclassifiers[i]);
+   }
+
+   /* free all varclassifiers */
+   for( i = 0; i < conshdlrdata->nvarclassifiers; ++i ) {
+      DEC_VARCLASSIFIER *varclassifier;
+      varclassifier = conshdlrdata->varclassifiers[i];
+      assert(varclassifier != NULL);
+
+      if( varclassifier->freeClassifier != NULL )
+      {
+         SCIPdebugMessage("Calling freeClassifier of varclassifier %s\n", varclassifier->name);
+         SCIP_CALL( (*varclassifier->freeClassifier)(scip, varclassifier) );
+      }
+      SCIPfreeBlockMemory(scip, &conshdlrdata->varclassifiers[i]);
+   }
+
    /* remove all remaining data */
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
    SCIPfreeMemoryArray(scip, &conshdlrdata->propagatingdetectors);
    SCIPfreeMemoryArray(scip, &conshdlrdata->finishingdetectors);
    SCIPfreeMemoryArray(scip, &conshdlrdata->postprocessingdetectors);
-
-   for( i = 0; i < conshdlrdata->nconsclassifiers; ++i ) {
-      SCIPfreeBlockMemory(scip, &conshdlrdata->consclassifiers[i]);
-   }
    SCIPfreeMemoryArray(scip, &conshdlrdata->consclassifiers);
    SCIPfreeMemoryArray(scip, &conshdlrdata->consclassifierpriorities);
-
-   for( i = 0; i < conshdlrdata->nvarclassifiers; ++i ) {
-      SCIPfreeBlockMemory(scip, &conshdlrdata->varclassifiers[i]);
-   }
    SCIPfreeMemoryArray(scip, &conshdlrdata->varclassifiers);
    SCIPfreeMemoryArray(scip, &conshdlrdata->varclassifierpriorities);
 
@@ -2970,8 +2990,8 @@ SCIP_RETCODE DECincludeConsClassifier(
    int                   priority,
    SCIP_Bool             enabled,
    DEC_CLASSIFIERDATA*   classifierdata,
-   DEC_DECL_FREECONSCLASSIFIER((*freeClassifier)),
    DEC_DECL_INITCONSCLASSIFIER((*initClassifier)),
+   DEC_DECL_FREECONSCLASSIFIER((*freeClassifier)),
    DEC_DECL_CONSCLASSIFY((*classify))
    )
 {
@@ -3202,8 +3222,8 @@ SCIP_RETCODE DECincludeVarClassifier(
    int                   priority,
    SCIP_Bool             enabled,
    DEC_CLASSIFIERDATA*   classifierdata,
-   DEC_DECL_FREEVARCLASSIFIER((*freeClassifier)),
    DEC_DECL_INITVARCLASSIFIER((*initClassifier)),
+   DEC_DECL_FREEVARCLASSIFIER((*freeClassifier)),
    DEC_DECL_VARCLASSIFY((*classify))
    )
 {
