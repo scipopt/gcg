@@ -92,12 +92,6 @@ DEC_DECL_FREECONSCLASSIFIER(classifierFree)
    return SCIP_OKAY;
 }
 
-/** classifier initialization method (called after problem was transformed) */
-#if 0
-#else
-#define classifierInit NULL
-#endif
-
 static
 DEC_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA* detprobdata;
@@ -128,7 +122,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
    for( int consid = 0; consid < detprobdata->getNConss(); ++ consid )
    {
       // int consid = detprobdata->getIndexForCons(iter.second);
-      SCIP_CONS* cons = detprobdata->getConsForIndex(consid);
+      SCIP_CONS* cons = detprobdata->getCons(consid);
       std::string consname = std::string( SCIPconsGetName( cons ) );
 
       auto symbolidxiter = classdata->constosymbol.find(consname);
@@ -226,7 +220,7 @@ SCIP_RETCODE SCIPincludeConsClassifierGamssymbol(
    classifierdata->constosymbol = std::map<std::string, int>();
 
    SCIP_CALL(
-      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierInit, classifierFree, classifierClassify) );
+      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

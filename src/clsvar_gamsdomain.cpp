@@ -91,21 +91,6 @@ DEC_DECL_FREEVARCLASSIFIER(classifierFree)
    return SCIP_OKAY;
 }
 
-/** classifier initialization method (called after problem was transformed) */
-#if 0
-static
-DEC_DECL_INITVARCLASSIFIER(classifierInitXyz)
-{  /*lint --e{715}*/
-
-   SCIPerrorMessage("Init function of classifier <%s> not implemented!\n", DEC_CLASSIFIERNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
-#define classifierInit NULL
-#endif
-
 static
 DEC_DECL_VARCLASSIFY(classifierClassify)
 {
@@ -136,7 +121,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
    // iterating over classdata->vartosymbol and lookup variables with getIndexForVar fails with assertion if variable is not found -> should return error value?
    for( int varid = 0; varid < detprobdata->getNVars(); ++ varid )
    {
-      SCIP_VAR* var = detprobdata->getVarForIndex(varid);
+      SCIP_VAR* var = detprobdata->getVar(varid);
       std::string varname = std::string( SCIPvarGetName( var ) );
       auto domainiter = classdata->vartodomain.find(varname);
       std::set<int> domain;
@@ -250,7 +235,7 @@ SCIP_RETCODE SCIPincludeVarClassifierGamsdomain(
    classifierdata->vartodomain = std::map<std::string, std::set<int>>();
 
    SCIP_CALL(
-      DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierInit, classifierFree, classifierClassify) );
+      DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }
