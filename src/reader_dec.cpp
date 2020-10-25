@@ -1074,29 +1074,28 @@ SCIP_RETCODE readDECFile(
       }
    }
 
-   if(decinput->incomplete)
-      decinput->partialdec->setUsergiven(gcg::USERGIVEN::PARTIAL);
-   else
+   decinput->partialdec->prepare();
+
+   if( !decinput->partialdec->isComplete() && !decinput->incomplete )
       decinput->partialdec->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
 
    if( decinput->haserror)
    {
-      SCIPinfoMessage(scip, NULL, "error occured while reading dec file");
+      SCIPinfoMessage(scip, NULL, "error occurred while reading dec file");
       delete decinput->partialdec;
    }
    else
    {
-      SCIPinfoMessage(scip, NULL, "just read dec file:");
+      SCIPinfoMessage(scip, NULL, "just read dec file:\n");
       decinput->partialdec->sort();
-      GCGconshdlrDecompAddPreexisitingPartialDec(scip, decinput->partialdec);
-
       /* if the partialdec was to be completed, add a "vanilla" version as well */
       if( decinput->partialdec->shouldCompletedByConsToMaster() )
       {
          gcg::PARTIALDECOMP* partial = new gcg::PARTIALDECOMP(decinput->partialdec);
-         decinput->partialdec->setUsergiven(gcg::USERGIVEN::PARTIAL);
+         partial->setUsergiven(gcg::USERGIVEN::PARTIAL);
          GCGconshdlrDecompAddPreexisitingPartialDec(scip, partial);
       }
+      GCGconshdlrDecompAddPreexisitingPartialDec(scip, decinput->partialdec);
    }
 
    /* close file */
@@ -1121,8 +1120,8 @@ SCIP_RETCODE writePartialdec(
 {
    int nconss;
    int nvars;
-   std::vector<int> consindex(0);
-   std::vector<int> varindex(0);
+   std::vector<int> consindex;
+   std::vector<int> varindex;
 
    assert(partialdec != NULL);
 
@@ -1140,6 +1139,10 @@ SCIP_RETCODE writePartialdec(
       varindex[i] = i;
 
    /* write meta data of decomposition as comment */
+   if( partialdec->getUsergiven() == gcg::USERGIVEN::PARTIAL )
+      SCIPinfoMessage(scip, file, "%s%s stems from a partial decomposition provided by the user\n", commentchars, commentchars);
+   else if( partialdec->getUsergiven() != gcg::USERGIVEN::NOT )
+      SCIPinfoMessage(scip, file, "%s%s provided by the user\n", commentchars, commentchars);
    auto& detectorchain = partialdec->getDetectorchain();
    auto& detectorchaininfo = partialdec->getDetectorchainInfo();
    SCIPinfoMessage(scip, file, "%s%s ndetectors \n", commentchars, commentchars);
@@ -1158,28 +1161,28 @@ SCIP_RETCODE writePartialdec(
    }
 
    if( !partialdec->isComplete() )
-         SCIPinfoMessage(scip, file, "INCOMPLETE\n1\n" );
+      SCIPinfoMessage(scip, file, "INCOMPLETE\n1\n");
 
    if( partialdec->isAssignedToOrigProb() )
-      SCIPinfoMessage(scip, file, "PRESOLVED\n0\n" );
+      SCIPinfoMessage(scip, file, "PRESOLVED\n0\n");
    else
-      SCIPinfoMessage(scip, file, "PRESOLVED\n1\n" );
+      SCIPinfoMessage(scip, file, "PRESOLVED\n1\n");
 
-   SCIPinfoMessage(scip, file, "NBLOCKS\n%d\n", partialdec->getNBlocks() );
+   SCIPinfoMessage(scip, file, "NBLOCKS\n%d\n", partialdec->getNBlocks());
 
    for( int b = 0; b < partialdec->getNBlocks(); ++b )
    {
       SCIPinfoMessage(scip, file, "BLOCK %d\n", b+1 );
       for( int c = 0; c < partialdec->getNConssForBlock(b); ++c )
       {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(detprobdata->getConsForIndex( partialdec->getConssForBlock(b)[c] )) );
+         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(detprobdata->getCons(partialdec->getConssForBlock(b)[c])));
       }
    }
 
    SCIPinfoMessage(scip, file, "MASTERCONSS\n" );
    for( int mc = 0; mc < partialdec->getNMasterconss(); ++mc )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(detprobdata->getConsForIndex( partialdec->getMasterconss()[mc])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(detprobdata->getCons(partialdec->getMasterconss()[mc])));
    }
 
    if( partialdec->isComplete() )
@@ -1191,13 +1194,13 @@ SCIP_RETCODE writePartialdec(
    SCIPinfoMessage(scip, file, "LINKINGVARS\n" );
    for( int lv = 0; lv < partialdec->getNLinkingvars(); ++lv )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVarForIndex( partialdec->getLinkingvars()[lv])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVar(partialdec->getLinkingvars()[lv])));
    }
 
    SCIPinfoMessage(scip, file, "MASTERVARS\n%s%s aka STATICVARS\n", commentchars, commentchars );
    for( int mv = 0; mv < partialdec->getNMastervars(); ++mv )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVarForIndex( partialdec->getMastervars()[mv])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVar(partialdec->getMastervars()[mv])));
    }
 
    for( int b = 0; b < partialdec->getNBlocks(); ++b )
@@ -1205,7 +1208,7 @@ SCIP_RETCODE writePartialdec(
       SCIPinfoMessage(scip, file, "BLOCKVARS %d\n", b+1 );
       for( int v = 0; v < partialdec->getNVarsForBlock(b); ++v )
       {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVarForIndex( partialdec->getVarsForBlock(b)[v])) );
+         SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(detprobdata->getVar(partialdec->getVarsForBlock(b)[v])));
       }
    }
 
@@ -1215,96 +1218,17 @@ SCIP_RETCODE writePartialdec(
 }
 
 
-/*
- * Callback methods of reader
- */
-
-/** destructor of reader to free user data (called when SCIP is exiting) */
-static
-SCIP_DECL_READERFREE(readerFreeDec)
-{
-   SCIP_READERDATA* readerdata;
-
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
-
-   SCIPfreeMemory(scip, &readerdata);
-
-   return SCIP_OKAY;
-}
-
-/** problem reading method of reader */
-static
-SCIP_DECL_READERREAD(readerReadDec)
-{  /*lint --e{715}*/
-
-   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Please read in a problem before reading in the corresponding structure file!\n");
-      return SCIP_OKAY;
-   }
-
-   SCIP_CALL( SCIPreadDec(scip, filename, result) );
-
-   return SCIP_OKAY;
-}
-
-/** problem writing method of reader */
-static
-SCIP_DECL_READERWRITE(readerWriteDec)
-{  /*lint --e{715}*/
-   assert(scip != NULL);
-   assert(reader != NULL);
-
-   gcg::PARTIALDECOMP* partialdec = DECgetPartialdecToWrite(scip, transformed);
-
-   if(partialdec == NULL) {
-      SCIPwarningMessage(scip, "There is no writable partialdec!\n");
-      return SCIP_OKAY;
-   }
-
-   writePartialdec(scip, file, partialdec, result);
-
-   return SCIP_OKAY;
-}
-
-/*
- * reader specific interface methods
- */
-
-/** includes the dec file reader in SCIP */
-SCIP_RETCODE SCIPincludeReaderDec(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_READERDATA* readerdata;
-
-   /* create dec reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-
-   /* include dec reader */
-   SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
-           readerFreeDec, readerReadDec, readerWriteDec, readerdata));
-
-   return SCIP_OKAY;
-}
-
 /* reads problem from file */
-SCIP_RETCODE SCIPreadDec(
+SCIP_RETCODE readDec(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
    SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
-   )
+)
 {
    SCIP_RETCODE retcode;
    SCIP_READER* reader;
    DECINPUT decinput;
    int i;
-
-
-   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
-      SCIP_CALL( SCIPtransformProb(scip) );
-
 
    reader = SCIPfindReader(scip, READER_NAME);
    assert(reader != NULL);
@@ -1354,114 +1278,77 @@ SCIP_RETCODE SCIPreadDec(
    return retcode;
 }
 
-/** write the data optionally using the decomposition data */
+
+/*
+ * Callback methods of reader
+ */
+
+/** destructor of reader to free user data (called when SCIP is exiting) */
 static
-SCIP_RETCODE writeData(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
-   )
+SCIP_DECL_READERFREE(readerFreeDec)
 {
-   SCIP_CONS*** subscipconss;
-   SCIP_CONS** linkingconss;
-   int* nsubscipconss;
-   int nlinkingconss;
-   int nblocks;
-   SCIP_Bool presolved;
-   int i;
-   int j;
+   SCIP_READERDATA* readerdata;
 
-   assert(scip != NULL);
-   assert(decdecomp != NULL);
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
 
-   assert(DECdecompGetType(decdecomp) == DEC_DECTYPE_ARROWHEAD
-           || DECdecompGetType(decdecomp) == DEC_DECTYPE_BORDERED
-           || DECdecompGetType(decdecomp) == DEC_DECTYPE_DIAGONAL
-           || DECdecompGetType(decdecomp) == DEC_DECTYPE_UNKNOWN
-           || DECdecompGetType(decdecomp) == DEC_DECTYPE_STAIRCASE);
-   SCIPdebugMessage("DEC_DECOMP Type: %s\n", DECgetStrType(DECdecompGetType(decdecomp)));
-
-   /* at first: write meta data of decompsition as comment */
-   SCIPinfoMessage(scip, file, "%s%s ndetectors \n", commentchars, commentchars );
-   SCIPinfoMessage(scip, file, "%s%s %d \n", commentchars, commentchars, DECdecompGetDetectorChainSize(decdecomp) );
-
-   SCIPinfoMessage(scip, file, "%s%s name time nnewblocks %%ofnewborderconss %%ofnewblockconss %%ofnewlinkingvars %%ofnewblockvars  \n", commentchars, commentchars );
-
-   for ( i = 0; i < DECdecompGetDetectorChainSize(decdecomp) ; ++i)
-   {
-      SCIPinfoMessage(scip, file, "%s%s %s %f %d %f %f %f %f \n", commentchars, commentchars, DECdetectorGetName(DECdecompGetDetectorChain(decdecomp)[i] ), DECdecompGetDetectorClockTimes(decdecomp)[i],
-      DECdecompGetNNewBlocks(decdecomp)[i], DECdecompGetDetectorPctConssToBorder(decdecomp)[i], DECdecompGetDetectorPctConssToBlock(decdecomp)[i], DECdecompGetDetectorPctVarsToBorder(decdecomp)[i],
-      DECdecompGetDetectorPctVarsToBlock(decdecomp)[i]) ;
-   }
-
-
-   /* if we don't have staircase, but something else, go through the blocks and create the indices */
-   /* subscip conss */
-   subscipconss = DECdecompGetSubscipconss(decdecomp);
-   nsubscipconss = DECdecompGetNSubscipconss(decdecomp);
-   assert(subscipconss != NULL);
-   assert(nsubscipconss != NULL);
-
-   /* linking cons */
-   linkingconss = DECdecompGetLinkingconss(decdecomp);
-   nlinkingconss = DECdecompGetNLinkingconss(decdecomp);
-   assert(nlinkingconss >= 0 && nlinkingconss < SCIPgetNConss(scip));
-   assert(linkingconss != NULL || nlinkingconss == 0 );
-
-   presolved = DECdecompGetPresolved(decdecomp);
-
-   SCIPinfoMessage(scip, file, "PRESOLVED\n");
-   SCIPinfoMessage(scip, file, "%d\n", presolved ? 1 : 0);
-
-   nblocks = DECdecompGetNBlocks(decdecomp);
-
-   SCIPinfoMessage(scip, file, "NBLOCKS\n");
-   SCIPinfoMessage(scip, file, "%d\n", nblocks);
-
-   for( i = 0; i < nblocks; i ++ )
-   {
-      SCIPinfoMessage(scip, file, "BLOCK %d\n", i + 1);
-      for( j = 0; j < nsubscipconss[i]; j ++ )
-      {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(subscipconss[i][j]));
-      }
-   }
-
-   if( nlinkingconss > 0 )
-   {
-      assert(linkingconss != NULL); /* for flexelint */
-      SCIPinfoMessage(scip, file, "MASTERCONSS\n");
-      for( i = 0; i < nlinkingconss; i ++ )
-      {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(linkingconss[i]));
-      }
-   }
+   SCIPfreeMemory(scip, &readerdata);
 
    return SCIP_OKAY;
 }
 
-/** write a DEC file for a given decomposition */
-SCIP_RETCODE GCGwriteDecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
+/** problem reading method of reader */
+static
+SCIP_DECL_READERREAD(readerReadDec)
+{  /*lint --e{715}*/
+
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Please read in a problem before reading in the corresponding structure file!\n");
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( readDec(scip, filename, result) );
+
+   return SCIP_OKAY;
+}
+
+/** problem writing method of reader */
+static
+SCIP_DECL_READERWRITE(readerWriteDec)
+{  /*lint --e{715}*/
+   assert(scip != NULL);
+   assert(reader != NULL);
+
+   gcg::PARTIALDECOMP* partialdec = DECgetPartialdecToWrite(scip, transformed);
+
+   if(partialdec == NULL) {
+      SCIPwarningMessage(scip, "There is no writable partialdec!\n");
+      return SCIP_OKAY;
+   }
+
+   writePartialdec(scip, file, partialdec, result);
+
+   return SCIP_OKAY;
+}
+
+/*
+ * reader specific interface methods
+ */
+
+/** includes the dec file reader in SCIP */
+SCIP_RETCODE SCIPincludeReaderDec(
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   char outname[SCIP_MAXSTRLEN];
-   assert(scip != NULL);
+   SCIP_READERDATA* readerdata;
 
-   if( decdecomp == NULL )
-   {
-      SCIPwarningMessage(scip, "Cannot write decomposed problem if decomposition structure is empty!\n");
+   /* create dec reader data */
+   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
 
-      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
-   }
-   else
-   {
-      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", SCIPgetProbName(scip), DECdecompGetNBlocks(decdecomp));
-
-      SCIP_CALL( writeData(scip, file, decdecomp) );
-   }
+   /* include dec reader */
+   SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
+           readerFreeDec, readerReadDec, readerWriteDec, readerdata));
 
    return SCIP_OKAY;
 }

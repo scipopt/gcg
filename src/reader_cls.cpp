@@ -127,17 +127,17 @@ SCIP_RETCODE GCGwriteCls(
       /* b2 */
       SCIPinfoMessage(scip, file, "%s \n", partition->getName());
       /* b3 */
-      SCIPinfoMessage(scip, file, "%d\n", partition->getNClasses() );
+      SCIPinfoMessage(scip, file, "%d\n", partition->getNClasses());
       for( int cl = 0; cl < partition->getNClasses(); ++cl )
       {
          /* c1 */
-         SCIPinfoMessage(scip, file, "%s: %s\n", partition->getClassName(cl), partition->getClassDescription(cl) );
+         SCIPinfoMessage(scip, file, "%s: %s\n", partition->getClassName(cl), partition->getClassDescription(cl));
          /* c2 */
-         SCIPinfoMessage(scip, file, "%d\n",  conssofclasses[cl].size() );
+         SCIPinfoMessage(scip, file, "%d\n",  conssofclasses[cl].size());
          /* c3 */
          for( size_t clm = 0; clm < conssofclasses[cl].size(); ++clm )
          {
-            SCIPinfoMessage(scip, file, "%s\n",  SCIPconsGetName( detprobdata->getConsForIndex( conssofclasses[cl][clm])) );
+            SCIPinfoMessage(scip, file, "%s\n",  SCIPconsGetName(detprobdata->getCons(conssofclasses[cl][clm])));
          }
       }
    }
@@ -160,13 +160,13 @@ SCIP_RETCODE GCGwriteCls(
       for( int cl = 0; cl < partition->getNClasses(); ++cl )
       {
          /* c1 */
-         SCIPinfoMessage(scip, file, "%s: %s\n", partition->getClassName(cl), partition->getClassDescription(cl) );
+         SCIPinfoMessage(scip, file, "%s: %s\n", partition->getClassName(cl), partition->getClassDescription(cl));
          /* c2 */
          SCIPinfoMessage(scip, file, "%d\n", partition->getNVarsOfClasses()[cl] );
          /* c3 */
          for( size_t clm = 0; clm <varsofclasses[cl].size(); ++clm )
          {
-            SCIPinfoMessage(scip, file, "%s\n",  SCIPvarGetName( detprobdata->getVarForIndex( varsofclasses[cl][clm])) );
+            SCIPinfoMessage(scip, file, "%s\n",  SCIPvarGetName(detprobdata->getVar(varsofclasses[cl][clm])));
          }
       }
    }

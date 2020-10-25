@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -75,16 +75,7 @@ struct DEC_ClassifierData
  */
 
 /** destructor of classifier to free user data (called when GCG is exiting) */
-#if 0
-#else
 #define classifierFree NULL
-#endif
-
-/** classifier initialization method (called after problem was transformed) */
-#if 0
-#else
-#define classifierInit NULL
-#endif
 
 /** removes all digits from string str */
 void removeDigits(
@@ -139,10 +130,10 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
    {
       int nremoved;
       char consname[SCIP_MAXSTRLEN];
-      strcpy( consname, SCIPconsGetName( detprobdata->getConsForIndex( i ) ) );
+      strcpy(consname, SCIPconsGetName(detprobdata->getCons(i)));
 
-      removeDigits( consname, & nremoved );
-      consnamesToCompare[i] = std::string( consname );
+      removeDigits(consname, &nremoved);
+      consnamesToCompare[i] = std::string(consname);
    }
 
    for( int i = 0; i < detprobdata->getNConss(); ++ i )
@@ -152,7 +143,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
 
       for( size_t j = 0; j < nameClasses.size(); ++ j )
       {
-         if( nameClasses[j].compare( consnamesToCompare[i] ) == 0 )
+         if( nameClasses[j] == consnamesToCompare[i] )
          {
             belongstoexistingclass = true;
             classForCons[i] = j;
@@ -161,34 +152,33 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
          }
       }
       /* if not, create a new class */
-      if( ! belongstoexistingclass )
+      if( !belongstoexistingclass )
       {
-         nameClasses.push_back( consnamesToCompare[i] );
-         nConssConstype.push_back( 1 );
+         nameClasses.push_back(consnamesToCompare[i]);
+         nConssConstype.push_back(1);
          classForCons[i] = nameClasses.size() - 1;
-
       }
    }
 
    /* secondly, use these information to create a ConsPartition */
-   classifier = new gcg::ConsPartition(scip, "consnames", (int) nameClasses.size(), detprobdata->getNConss() );
+   classifier = new gcg::ConsPartition(scip, "consnames", (int) nameClasses.size(), detprobdata->getNConss());
 
    /* set all class names and descriptions */
    for( int c = 0; c < classifier->getNClasses(); ++ c )
    {
       std::stringstream text;
-      classifier->setClassName( c, nameClasses[c].c_str() );
+      classifier->setClassName(c, nameClasses[c].c_str());
       text << "This class contains all constraints with name \"" << nameClasses[c] << "\".";
-      classifier->setClassDescription( c, text.str().c_str() );
+      classifier->setClassDescription(c, text.str().c_str());
    }
 
    /* copy the constraint assignment information found in first step */
    for( int i = 0; i < classifier->getNConss(); ++ i )
    {
-      classifier->assignConsToClass( i, classForCons[i] );
+      classifier->assignConsToClass(i, classForCons[i]);
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d different constraint classes \n", classifier->getName(), classifier->getNClasses() );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d different constraint classes \n", classifier->getName(), classifier->getNClasses());
 
    detprobdata->addConsPartition(classifier);
    return SCIP_OKAY;
@@ -204,7 +194,7 @@ SCIP_RETCODE SCIPincludeConsClassifierForConsnamesDigitFreeIdentical(
    DEC_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL(
-      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierInit,
+      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata,
          classifierFree, classifierClassify));
 
    return SCIP_OKAY;

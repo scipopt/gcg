@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -130,6 +130,15 @@ SCIP_RETCODE GCGconshdlrDecompChooseCandidatesFromSelected(
    std::vector<std::pair<gcg::PARTIALDECOMP*, SCIP_Real> >& candidates,
    SCIP_Bool original,
    SCIP_Bool printwarnings
+   );
+
+/** @brief gets detector history of partialdec with given id
+ * @returns detector history of partialdec as string
+ */
+extern
+std::string GCGconshdlrDecompGetDetectorHistoryByPartialdecId(
+   SCIP* scip,    /**< SCIP data structure */
+   int id         /**< id of partialdec */
    );
 
 #endif //GCG_CONS_DECOMP_HPP

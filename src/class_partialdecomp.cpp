@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -421,7 +421,7 @@ SCIP_RETCODE PARTIALDECOMP::assignBorderFromConstoblock(
       deleteOpencons(c);
 
    sort();
-   assert( checkConsistency( ) );
+   assert( checkConsistency() );
    return SCIP_OKAY;
 }
 
@@ -677,6 +677,18 @@ bool PARTIALDECOMP::assignHittingOpenvars(
 }
 
 
+void PARTIALDECOMP::assignOpenConssToMaster(
+   )
+{
+   for( auto cons : openconss )
+   {
+      setConsToMaster(cons);
+      isconsopen[cons] = false;
+   }
+   openconss.clear();
+}
+
+
 void PARTIALDECOMP::assignOpenPartialHittingConsToMaster(
    )
 {
@@ -745,12 +757,11 @@ void PARTIALDECOMP::assignOpenPartialHittingConsToMaster(
 }
 
 
-SCIP_RETCODE PARTIALDECOMP::assignOpenPartialHittingToMaster(
+void PARTIALDECOMP::assignOpenPartialHittingToMaster(
    )
 {
    assignOpenPartialHittingConsToMaster( );
    assignOpenPartialHittingVarsToMaster( );
-   return SCIP_OKAY;
 }
 
 
@@ -911,6 +922,143 @@ SCIP_RETCODE PARTIALDECOMP::assignPartialdecFromConstoblockVector(
    sort();
    assert( checkConsistency( ) );
    return SCIP_OKAY;
+}
+
+
+void PARTIALDECOMP::assignSmallestComponentsButOneConssAdjacency()
+{
+   /* tools to check if the openvars can still be found in a constraint yet */
+   std::vector<int> varinblocks(nvars, -1); /* stores, in which block the variable can be found */
+
+   /* tools to update openvars */
+   std::vector<int> oldOpenconss;
+   std::vector<int> openvarsToDelete;
+   gcg::DETPROBDATA* detprobdata = getDetprobdata();
+
+   if( getNLinkingvars() != 0 )
+   {
+      complete();
+      return;
+   }
+
+   if ( !detprobdata->isConssAdjInitialized() )
+      detprobdata->createConssAdjacency();
+
+   std::vector<bool> isConsOpen(nconss, false);
+   std::vector<bool> isConsVisited(nconss, false);
+
+   std::vector<std::vector<int>> conssfornewblocks;
+   std::vector<std::vector<int>> varsfornewblocks;
+
+   int newblocks;
+   int largestcomponent;
+   int sizelargestcomponent;
+
+   newblocks = 0;
+   largestcomponent = -1;
+   sizelargestcomponent = 0;
+
+   std::queue<int> helpqueue;
+   std::vector<int> neighborConss;
+
+   assert( (int) conssforblocks.size() == getNBlocks() );
+   assert( (int)varsforblocks.size() == getNBlocks() );
+   assert( (int)stairlinkingvars.size() == getNBlocks() );
+
+   if( getNBlocks() < 0 )
+      setNBlocks(0);
+
+   /* do breadth first search to find connected conss */
+   auto constoconsider = getOpenconssVec();
+   while( !constoconsider.empty() )
+   {
+      std::vector<int> newconss;
+      std::vector<int> newvars;
+
+      assert( helpqueue.empty() );
+      helpqueue.push(constoconsider[0]);
+      neighborConss.clear();
+      neighborConss.push_back(constoconsider[0]);
+      isConsVisited[constoconsider[0]] = true;
+
+      while( !helpqueue.empty() )
+      {
+         int nodeCons = helpqueue.front();
+         assert( isConsOpencons(nodeCons) );
+         helpqueue.pop();
+         for( int cons :  detprobdata->getConssForCons(nodeCons) )
+         {
+            if( isConsVisited[cons] || isConsMastercons(cons) || !isConsOpen[cons] )
+               continue;
+
+            assert( isConsOpencons(cons) );
+            isConsVisited[cons] = true;
+            neighborConss.push_back(cons);
+            helpqueue.push(cons);
+         }
+      }
+
+      /* assign found conss and vars to a new block */
+      ++newblocks;
+      for( int cons : neighborConss )
+      {
+         std::vector<int>::iterator consiter = std::lower_bound(constoconsider.begin(), constoconsider.end(), cons);
+         assert(consiter != constoconsider.end() );
+         constoconsider.erase(consiter);
+         assert( isConsOpencons(cons) );
+         newconss.push_back(cons);
+
+         for( int var : detprobdata->getVarsForCons(cons) )
+         {
+            if( isVarLinkingvar(var) || varinblocks[var] != -1 )
+               continue;
+
+            assert( !isVarMastervar(var) );
+            newvars.push_back(var);
+            varinblocks[var] = newblocks;
+         }
+      }
+      conssfornewblocks.push_back(newconss);
+      varsfornewblocks.push_back(newvars);
+   }
+
+   for( int i = 0; i < newblocks; ++i )
+   {
+      if( (int)conssfornewblocks[i].size() > sizelargestcomponent )
+      {
+         sizelargestcomponent = (int)conssfornewblocks[i].size();
+         largestcomponent = i;
+      }
+   }
+
+   if( newblocks > 1 )
+   {
+      int oldnblocks = getNBlocks();;
+      bool largestdone = false;
+
+      setNBlocks(newblocks - 1 + getNBlocks());
+
+      for( int i = 0; i < newblocks; ++i)
+      {
+         if( i == largestcomponent )
+         {
+            largestdone = true;
+            continue;
+         }
+         for( int c = 0; c < (int) conssfornewblocks[i].size() ; ++c)
+         {
+            fixConsToBlock(conssfornewblocks[i][c], oldnblocks + i - (largestdone ? 1 : 0) );
+         }
+
+         for( int v = 0; v < (int) varsfornewblocks[i].size() ; ++v )
+         {
+            fixVarToBlock(varsfornewblocks[i][v], oldnblocks + i - (largestdone ? 1 : 0) );
+         }
+      }
+      prepare();
+   }
+
+   assert( checkConsistency() );
 }
 
 
@@ -1423,7 +1571,7 @@ bool PARTIALDECOMP::checkConsistency(
    /* check for empty (row- and col-wise) blocks */
    for( int b = 0; b < nblocks; ++ b )
    {
-      if( conssforblocks[b].size() == 0 && varsforblocks[b].size() == 0 )
+      if( conssforblocks[b].empty() && varsforblocks[b].empty() )
       {
          SCIPwarningMessage(scip, "In (partialdec %d) block %d is empty! \n" , id, b );
          assert( false );
@@ -1496,7 +1644,7 @@ bool PARTIALDECOMP::checkConsistency(
    /* check if all not assigned variables are open vars */
    for( int v = 0; v < nvars; ++ v )
    {
-      if( openvarsBool[v] == true && isVarOpenvar( v ) == false )
+      if( openvarsBool[v] && !isVarOpenvar(v) )
       {
          SCIPwarningMessage(scip, "In (partialdec %d) variable with index %d is not assigned and not an open var! \n" , id, v );
          assert( false );
@@ -1507,7 +1655,7 @@ bool PARTIALDECOMP::checkConsistency(
    /* check if all open vars are not assigned */
    for( size_t i = 0; i < openvars.size(); ++ i )
    {
-      if( openvarsBool[openvars[i]] == false )
+      if( !openvarsBool[openvars[i]] )
       {
          SCIPwarningMessage(scip, "In (partialdec %d) variable with index %d is an open var but assigned! \n" , id, openvars[i]  );
          assert( false );
@@ -1561,7 +1709,7 @@ bool PARTIALDECOMP::checkConsistency(
    /* check if all not assigned constraints are open cons */
    for( int v = 0; v < nconss; ++ v )
    {
-      if( openconssBool[v] == true && isConsOpencons( v ) == false )
+      if( openconssBool[v] && !isConsOpencons(v) )
       {
          SCIPwarningMessage(scip, "In (partialdec %d) constraint with index %d is not assigned and not an open cons! \n" , id, v  );
          assert( false );
@@ -1572,7 +1720,7 @@ bool PARTIALDECOMP::checkConsistency(
    /* check if all open conss are not assigned */
    for( size_t i = 0; i < openconss.size(); ++ i )
    {
-      if( openconssBool[openconss[i]] == false )
+      if( !openconssBool[openconss[i]] )
       {
          SCIPwarningMessage(scip, "In (partialdec %d) constraint with index %d is an open cons but assigned! \n" , id,  openconss[i] );
          assert( false );
@@ -1586,7 +1734,7 @@ bool PARTIALDECOMP::checkConsistency(
       value = - 1;
       for( int v = 0; v < getNVarsForBlock( b ); ++ v )
       {
-         if( ! ( value < getVarsForBlock( b )[v] ) )
+         if( value >= getVarsForBlock(b)[v] )
          {
             SCIPwarningMessage(scip, "In (partialdec %d) variables of block %d are not sorted! \n" , id,  b );
             assert( false );
@@ -1600,7 +1748,7 @@ bool PARTIALDECOMP::checkConsistency(
       value = - 1;
       for( int v = 0; v < getNStairlinkingvars( b ); ++ v )
       {
-         if( ! ( value < getStairlinkingvars( b )[v] ) )
+         if( value >= getStairlinkingvars(b)[v] )
          {
             SCIPwarningMessage(scip, "In (partialdec %d) stairlinking variables of block %d are not sorted! \n" , id,  b );
             assert( false );
@@ -1612,7 +1760,7 @@ bool PARTIALDECOMP::checkConsistency(
    value = - 1;
    for( int v = 0; v < getNLinkingvars(); ++ v )
    {
-      if( ! ( value < getLinkingvars()[v] ) )
+      if( value >= getLinkingvars()[v] )
       {
          SCIPwarningMessage(scip, "In (partialdec %d) linking variables are not sorted! \n" , id );
          assert( false );
@@ -1623,7 +1771,7 @@ bool PARTIALDECOMP::checkConsistency(
    value = - 1;
    for( int v = 0; v < getNMastervars(); ++ v )
    {
-      if( ! ( value < getMastervars()[v] ) )
+      if( value >= getMastervars()[v] )
       {
          SCIPwarningMessage(scip, "In (partialdec %d) master variables are not sorted! \n" , id );
          assert( false );
@@ -1634,21 +1782,21 @@ bool PARTIALDECOMP::checkConsistency(
    for( int b = 0; b < nblocks; ++ b )
    {
       value = - 1;
-      for( int v = 0; v < getNConssForBlock( b ); ++ v )
+      for( int v = 0; v < getNConssForBlock(b); ++ v )
       {
-         if( ! ( value < getConssForBlock( b )[v] ) )
+         if( value >= getConssForBlock(b)[v] )
          {
             SCIPwarningMessage(scip, "In (partialdec %d) constraints of block %d are not sorted! \n" , id,  b );
             assert( false );
             return false;
          }
-         value = getConssForBlock( b )[v];
+         value = getConssForBlock(b)[v];
       }
    }
    value = - 1;
    for( int v = 0; v < getNMasterconss(); ++ v )
    {
-      if( ! ( value < getMasterconss()[v] ) )
+      if( value >= getMasterconss()[v] )
       {
          SCIPwarningMessage(scip, "In (partialdec %d) master constraints are not sorted! \n" , id);
          assert( false );
@@ -1667,24 +1815,24 @@ bool PARTIALDECOMP::checkConsistency(
          {
             int varid = detprobdata->getVarsForCons( getConssForBlock( b )[c] )[v];
 
-            if( ! ( isVarBlockvarOfBlock( varid, b ) || isVarLinkingvar( varid ) || isVarStairlinkingvarOfBlock( varid, b )
-               || isVarOpenvar( varid ) ) )
+            if( !(isVarBlockvarOfBlock(varid, b) || isVarLinkingvar(varid) || isVarStairlinkingvarOfBlock(varid, b)
+               || isVarOpenvar(varid)) )
             {
                SCIP_Bool partofblock;
 
                partofblock = FALSE;
 
-               SCIPwarningMessage( scip,
+               SCIPwarningMessage(scip,
                   "This should only happen during translation of (partial) decompositions from orginal to transformed problem, and means that translation has failed for this particaluar partial decomposition. Variable %d is not part of block %d or linking or open as constraint %d suggests! \n ", varid, b,
-                  getConssForBlock( b )[c] );
+                  getConssForBlock(b)[c]);
 
                for( int b2 = 0; b2 < getNBlocks(); ++b2 )
                {
-                  if ( isVarBlockvarOfBlock(varid, b2 ) )
+                  if ( isVarBlockvarOfBlock(varid, b2) )
                   {
                      partofblock = TRUE;
-                     SCIPwarningMessage( scip,
-                        "instead Variable %d is part of block %d  \n ", varid, b2 );
+                     SCIPwarningMessage(scip,
+                        "instead Variable %d is part of block %d  \n ", varid, b2);
                      break;
                   }
                }
@@ -1692,11 +1840,9 @@ bool PARTIALDECOMP::checkConsistency(
                if( !partofblock )
                {
                   if( isvarmaster[varid] )
-                     SCIPwarningMessage( scip,
-                                             "instead Variable %d is part of master  \n ", varid );
+                     SCIPwarningMessage(scip, "instead Variable %d is part of master  \n ", varid);
                   else
-                     SCIPwarningMessage( scip,
-                                                               "in fact Variable %d is completely unassigned  \n ", varid );
+                     SCIPwarningMessage(scip, "in fact Variable %d is completely unassigned  \n ", varid);
                }
                assert(false);
                return false;
@@ -1706,6 +1852,14 @@ bool PARTIALDECOMP::checkConsistency(
    }
 
    if( getDetectorchain().size() != getDetectorchainInfo().size() )
+   {
+      assert(false);
+      return false;
+   }
+
+   if( getNDetectors() != pctvarstoblock.size() || getNDetectors() != pctvarstoborder.size()
+      || getNDetectors() != pctvarsfromfree.size() || getNDetectors() != pctconsstoblock.size()
+      || getNDetectors() != pctconsstoborder.size() || getNDetectors() != pctconssfromfree.size() )
    {
       assert(false);
       return false;
@@ -1752,7 +1906,7 @@ void PARTIALDECOMP::checkIdenticalBlocksBliss(
          int var1id;
          auto detprobdata = this->getDetprobdata();
 
-         var2 = detprobdata->getVarForIndex(getVarsForBlock(b2)[var2idinblock]);
+         var2 = detprobdata->getVar(getVarsForBlock(b2)[var2idinblock]);
          var1 = (SCIP_VAR*) SCIPhashmapGetImage(varmap2, (void*) var2);
          var1id = detprobdata->getIndexForVar(var1);
          var1idinblock = getVarProbindexForBlock(var1id, b1);
@@ -1792,8 +1946,8 @@ void PARTIALDECOMP::checkIdenticalBlocksBrute(
       SCIP_VAR* var1;
       SCIP_VAR* var2;
 
-      var1 = detprobdata->getVarForIndex( getVarsForBlock(b1)[i] );
-      var2 = detprobdata->getVarForIndex( getVarsForBlock(b2)[i] );
+      var1 = detprobdata->getVar(getVarsForBlock(b1)[i]);
+      var2 = detprobdata->getVar(getVarsForBlock(b2)[i]);
 
       if( !SCIPisEQ(scip, SCIPvarGetObj(var1), SCIPvarGetObj(var2) ) )
       {
@@ -1821,7 +1975,9 @@ void PARTIALDECOMP::checkIdenticalBlocksBrute(
 
          if( !SCIPisEQ(scip, detprobdata->getVal(getMasterconss()[mc], getVarsForBlock(b1)[i]), detprobdata->getVal(getMasterconss()[mc], getVarsForBlock(b2)[i])  ))
          {
-            SCIPdebugMessage("--> master coefficients differ for var %s (%f) and var %s  (%f) !\n", SCIPvarGetName(  detprobdata->getVarForIndex(getVarsForBlock(b1)[i]) ), detprobdata->getVal(getMasterconss()[mc], getVarsForBlock(b1)[i]), SCIPvarGetName( detprobdata->getVarForIndex(getVarsForBlock(b2)[i])), detprobdata->getVal(getMasterconss()[mc], getVarsForBlock(b2)[i])  );
+            SCIPdebugMessage("--> master coefficients differ for var %s (%f) and var %s  (%f) !\n", SCIPvarGetName(
+               detprobdata->getVar(getVarsForBlock(b1)[i]) ), detprobdata->getVal(getMasterconss()[mc], getVarsForBlock(b1)[i]), SCIPvarGetName(
+               detprobdata->getVar(getVarsForBlock(b2)[i])), detprobdata->getVal(getMasterconss()[mc], getVarsForBlock(b2)[i])  );
             return;
          }
       }
@@ -1844,8 +2000,8 @@ void PARTIALDECOMP::checkIdenticalBlocksBrute(
       cons1id = getConssForBlock(b1)[i];
       cons2id = getConssForBlock(b2)[i];
 
-      cons1 = detprobdata->getConsForIndex(cons1id);
-      cons2 = detprobdata->getConsForIndex(cons2id);
+      cons1 = detprobdata->getCons(cons1id);
+      cons2 = detprobdata->getCons(cons2id);
 
       if( detprobdata->getNVarsForCons(cons1id) != detprobdata->getNVarsForCons(cons2id) )
       {
@@ -1998,6 +2154,437 @@ void PARTIALDECOMP::complete()
 }
 
 
+void PARTIALDECOMP::completeByConnected()
+{
+   /* tools to update openvars */
+   std::vector<int> openvarsToDelete;
+   std::vector<int> oldOpenconss;
+
+   std::vector<bool> isConsVisited( nconss, false );
+   std::vector<bool> isVarVisited( nvars, false );
+
+   std::queue<int> helpqueue;
+   std::vector<int> neighborConss;
+   std::vector<int> neighborVars;
+
+   assert( (int) conssforblocks.size() == getNBlocks() );
+   assert( (int) varsforblocks.size() == getNBlocks() );
+   assert( (int) stairlinkingvars.size() == getNBlocks() );
+
+   refineToMaster();
+
+   if( getNBlocks() < 0 )
+   {
+      setNBlocks(0);
+   }
+
+   gcg::DETPROBDATA* detprobdata = getDetprobdata();
+
+   /* do breadth first search to find connected conss and vars */
+   while( !openconss.empty() )
+   {
+      int newBlockNr;
+
+      assert( helpqueue.empty() );
+      helpqueue.push(openconss[0]);
+      neighborConss.clear();
+      neighborConss.push_back(openconss[0]);
+      isConsVisited[openconss[0]] = true;
+      neighborVars.clear();
+
+      while( !helpqueue.empty() )
+      {
+         int nodeCons = helpqueue.front();
+         assert( isConsOpencons(nodeCons) );
+         helpqueue.pop();
+         for( int var : detprobdata->getVarsForCons(nodeCons) )
+         {
+            assert( isVarOpenvar(var) || isVarLinkingvar(var) );
+
+            if( isVarVisited[var] || isVarLinkingvar(var) )
+               continue;
+
+            for( int cons : detprobdata->getConssForVar(var) )
+            {
+               if( !isConsOpencons(cons) || isConsVisited[cons] )
+               {
+                  continue;
+               }
+               assert( isConsOpencons(cons) );
+               isConsVisited[cons] = true;
+               neighborConss.push_back(cons);
+               helpqueue.push(cons);
+            }
+            isVarVisited[var] = true;
+            neighborVars.push_back(var);
+         }
+      }
+
+      /* assign found conss and vars to a new block */
+      newBlockNr = getNBlocks() + 1;
+      setNBlocks(newBlockNr);
+      for( int cons : neighborConss )
+      {
+         setConsToBlock(cons, newBlockNr - 1);
+         if( isConsOpencons(cons) )
+            deleteOpencons(cons);
+      }
+      for( int var : neighborVars )
+      {
+         setVarToBlock(var, newBlockNr - 1);
+         if( isVarOpenvar(var) )
+            deleteOpenvar(var);
+      }
+   }
+
+   /* assign left open vars to block 0, if it exists, and to master, otherwise */
+   for( int var : openvars )
+   {
+      if( getNBlocks() != 0 )
+         setVarToBlock(var, 0);
+      else
+         setVarToMaster(var);
+      openvarsToDelete.push_back(var);
+   }
+
+   for( int var : openvarsToDelete )
+   {
+      if( isVarOpenvar(var) )
+         deleteOpenvar(var);
+   }
+
+   assert( getNOpenconss() == 0 );
+   assert( getNOpenvars() == 0 );
+
+   prepare();
+
+   assert( checkConsistency() );
+}
+
+
+/**
+* @brief assigns all open constraints and open variables
+*
+*  strategy: assigns all conss and vars to the same block if they are connected
+*  a cons and a var are adjacent if the var appears in the cons
+*  \note this relies on the consadjacency structure of the detprobdata
+*  hence it cannot be applied in presence of linking variables
+*/
+void PARTIALDECOMP::completeByConnectedConssAdjacency()
+{
+   /* tools to check if the openvars can still be found in a constraint yet */
+   std::vector<int> varinblocks(nvars, -1); /* stores in which block the variable can be found */
+
+   /* tools to update openvars */
+   std::vector<int> oldOpenconss;
+   std::vector<int> openvarsToDelete;
+
+   // note: this should not happen
+   if( getNLinkingvars() != 0 )
+      completeByConnected();
+
+   std::vector<bool> isConsVisited(nconss, false);
+
+   std::queue<int> helpqueue;
+   std::vector<int> neighborConss;
+
+   assert( (int) conssforblocks.size() == getNBlocks() );
+   assert( (int) varsforblocks.size() == getNBlocks() );
+   assert( (int) stairlinkingvars.size() == getNBlocks() );
+
+   refineToMaster();
+
+   assert( checkConsistency() );
+   gcg::DETPROBDATA* detprobdata = getDetprobdata();
+
+   if( getNBlocks() < 0 )
+   {
+      setNBlocks(0);
+   }
+
+   /* do breadth first search to find connected conss */
+   while( !openconss.empty() )
+   {
+      int newBlockNr;
+
+      assert( helpqueue.empty() );
+      helpqueue.push(openconss[0]);
+      neighborConss.clear();
+      neighborConss.push_back(openconss[0]);
+      isConsVisited[openconss[0]] = true;
+
+      while( !helpqueue.empty() )
+      {
+         int nodeCons = helpqueue.front();
+         assert( isConsOpencons(nodeCons) );
+         helpqueue.pop();
+         for( int cons : detprobdata->getConssForCons(nodeCons) )
+         {
+            if( isConsVisited[cons] || isConsMastercons(cons) || !isConsOpencons(cons) )
+               continue;
+
+            assert( isConsOpencons(cons) );
+            isConsVisited[cons] = true;
+            neighborConss.push_back(cons);
+            helpqueue.push(cons);
+         }
+      }
+
+      /* assign found conss and vars to a new block */
+      newBlockNr = getNBlocks() + 1;
+      setNBlocks( newBlockNr );
+      for( int cons : neighborConss )
+      {
+         setConsToBlock(cons, newBlockNr - 1);
+         if(isConsOpencons(cons))
+            deleteOpencons(cons);
+
+         for( int var : detprobdata->getVarsForCons(cons) )
+         {
+
+            if( isVarLinkingvar(var) || varinblocks[var] != -1 )
+               continue;
+
+            assert( !isVarMastervar(var) );
+            setVarToBlock(var, newBlockNr - 1);
+            varinblocks[var] = newBlockNr - 1;
+            if( isVarOpenvar(var) )
+               deleteOpenvar(var);
+         }
+      }
+   }
+
+   /* assign left open vars to block 0, if it exists, and to master, otherwise */
+   for( int var : openvars )
+   {
+      if( getNBlocks() != 0 )
+         setVarToBlock(var, 0);
+      else
+         setVarToMaster(var);
+      openvarsToDelete.push_back(var);
+   }
+
+   for( int var : openvarsToDelete )
+   {
+      if( isVarOpenvar(var) )
+         deleteOpenvar(var);
+   }
+
+   assert( getNOpenconss() == 0 );
+   assert( getNOpenvars() == 0 );
+
+   prepare();
+
+   assert( checkConsistency() );
+}
+
+
+void PARTIALDECOMP::completeGreedily(
+   )
+{
+   bool checkvar;
+   bool isvarinblock;
+   bool notassigned;
+   DETPROBDATA* detprobdata = getDetprobdata();
+
+   /* tools to check if the openvars can still be found in a constraint yet*/
+   std::vector<int> varinblocks; /* stores in which block the variable can be found */
+
+   if( getNBlocks() == 0 && getNOpenconss() > 0 )
+   {
+      int block = addBlock();
+      fixConsToBlock( openconss[0], block );
+   }
+
+   std::vector<int> del;
+
+   /* check if the openvars can already be found in a constraint */
+   for( int i = 0; i < getNOpenvars(); ++ i )
+   {
+      varinblocks.clear();
+
+      /* test if the variable can be found in blocks */
+      for( int b = 0; b < getNBlocks(); ++ b )
+      {
+         isvarinblock = false;
+         std::vector<int>& conssforblock = getConssForBlock(b);
+         for( int k = 0; k < getNConssForBlock(b) && !isvarinblock; ++ k )
+         {
+            for( int l = 0; l < detprobdata->getNVarsForCons( conssforblock[k] ); ++ l )
+            {
+               if( openvars[i] == detprobdata->getVarsForCons( conssforblock[k] )[l] )
+               {
+                  varinblocks.push_back( b );
+                  isvarinblock = true;
+                  break;
+               }
+            }
+         }
+      }
+      if( varinblocks.size() == 1 ) /* if the variable can be found in one block set the variable to a variable of the block*/
+      {
+         setVarToBlock(openvars[i], varinblocks[0]);
+         del.push_back(openvars[i]);
+         continue; /* the variable doesn't need to be checked any more */
+      }
+      else if( varinblocks.size() == 2 ) /* if the variable can be found in two blocks check if it is a linking var or a stairlinking var*/
+      {
+         if( varinblocks[0] + 1 == varinblocks[1] )
+         {
+            setVarToStairlinking(openvars[i], varinblocks[0], varinblocks[1]);
+            del.push_back(openvars[i]);
+            continue; /* the variable doesn't need to be checked any more */
+         }
+         else
+         {
+            setVarToLinking(openvars[i]);
+            del.push_back(openvars[i]);
+            continue; /* the variable doesn't need to be checked any more */
+         }
+      }
+      else if( varinblocks.size() > 2 ) /* if the variable can be found in more than two blocks it is a linking var */
+      {
+         setVarToLinking(openvars[i]);
+         del.push_back(openvars[i]);
+         continue; /* the variable doesn't need to be checked any more */
+      }
+
+      checkvar = true;
+
+      /* if the variable can be found in an open constraint it is still an open var */
+      for( int j = 0; j < getNOpenconss(); ++ j )
+      {
+         checkvar = true;
+         for( int k = 0; k < detprobdata->getNVarsForCons( j ); ++ k )
+         {
+            if( openvars[i] == detprobdata->getVarsForCons( j )[k] )
+            {
+               checkvar = false;
+               break;
+            }
+         }
+         if( ! checkvar )
+         {
+            break;
+         }
+      }
+
+      /* test if the variable can be found in a master constraint yet */
+      for( int k = 0; k < detprobdata->getNConssForVar( openvars[i] ) && checkvar; ++ k )
+      {
+         if( isConsMastercons(detprobdata->getConssForVar(openvars[i])[k]) )
+         {
+            setVarToMaster(openvars[i]);
+            del.push_back(openvars[i]);
+            checkvar = false; /* the variable does'nt need to be checked any more */
+            break;
+         }
+      }
+   }
+
+   /* remove assigned vars from list of open vars */
+   for(auto v : del)
+      deleteOpenvar(v);
+
+   del.clear();
+   sort();
+
+   std::vector<int> delconss;
+
+   /* assign open conss greedily */
+   for( int i = 0; i < getNOpenconss(); ++ i )
+   {
+      std::vector<int> vecOpenvarsOfBlock; /* stores the open vars of the blocks */
+      bool consGotBlockcons = false; /* if the constraint can be assigned to a block */
+
+      /* check if the constraint can be assigned to a block */
+      for( int j = 0; j < getNBlocks(); ++ j )
+      {
+         /* check if all vars of the constraint are a block var of the current block, an open var, a linkingvar or a mastervar*/
+         consGotBlockcons = true;
+         for( int k = 0; k < detprobdata->getNVarsForCons( openconss[i] ); ++ k )
+         {
+            if( isVarBlockvarOfBlock( detprobdata->getVarsForCons( openconss[i] )[k], j )
+                || isVarOpenvar( detprobdata->getVarsForCons( openconss[i] )[k] )
+                || isVarLinkingvar( detprobdata->getVarsForCons( openconss[i] )[k] )
+                || isVarStairlinkingvarOfBlock( detprobdata->getVarsForCons( openconss[i] )[k], j )
+                || ( j != 0 && isVarStairlinkingvarOfBlock( detprobdata->getVarsForCons( openconss[i] )[k], j - 1 ) ) )
+            {
+               if( isVarOpenvar( detprobdata->getVarsForCons( openconss[i] )[k] ) )
+               {
+                  vecOpenvarsOfBlock.push_back( detprobdata->getVarsForCons( openconss[i] )[k] );
+               }
+            }
+            else
+            {
+               vecOpenvarsOfBlock.clear(); /* the open vars don't get vars of the block */
+               consGotBlockcons = false; /* the constraint can't be constraint of the block, check the next block */
+               break;
+            }
+         }
+         if( consGotBlockcons ) /* the constraint can be assigned to the current block */
+         {
+            setConsToBlock( openconss[i], j );
+            delconss.push_back(openconss[i]);
+            for( size_t k = 0; k < vecOpenvarsOfBlock.size(); ++ k ) /* the openvars in the constraint get block vars */
+            {
+               setVarToBlock( vecOpenvarsOfBlock[k], j );
+               deleteOpenvar( vecOpenvarsOfBlock[k] );
+            }
+            vecOpenvarsOfBlock.clear();
+
+            break;
+         }
+      }
+
+      if( !consGotBlockcons ) /* the constraint can not be assigned to a block, set it to master */
+      {
+         setConsToMaster( openconss[i] );
+         delconss.push_back(openconss[i]);
+      }
+   }
+
+   /* remove assigned conss from list of open conss */
+   for(auto c : delconss)
+      deleteOpencons(c);
+
+   sort();
+
+   /* assign open vars greedily */
+   for( int i = 0; i < getNOpenvars(); ++ i )
+   {
+      notassigned = true;
+      for( int j = 0; j < getNMasterconss() && notassigned; ++ j )
+      {
+         for( int k = 0; k < detprobdata->getNVarsForCons(masterconss[j]); ++ k )
+         {
+            if( openvars[i] == detprobdata->getVarsForCons(masterconss[j])[k] )
+            {
+               setVarToMaster(openvars[i]);
+               del.push_back(openvars[i]);
+               notassigned = false;
+               break;
+            }
+         }
+      }
+   }
+
+   /* remove assigned vars from list of open vars */
+   for(auto v : del)
+      deleteOpenvar(v);
+
+   sort();
+
+   /* check if the open conss are all assigned */
+   assert( checkAllConssAssigned() );
+
+   /* check if the open vars are all assigned */
+   assert( getNOpenvars() == 0 );
+
+   assert( checkConsistency() );
+}
+
+
 void PARTIALDECOMP::removeMastercons(
    int consid
    )
@@ -2018,7 +2605,7 @@ bool PARTIALDECOMP::consPartitionUsed(
 }
 
 
-SCIP_RETCODE PARTIALDECOMP::considerImplicits(
+void PARTIALDECOMP::considerImplicits(
    )
 {
    int cons;
@@ -2191,8 +2778,6 @@ SCIP_RETCODE PARTIALDECOMP::considerImplicits(
    for(auto v : del)
       deleteOpenvar(v);
    sort();
-
-   return SCIP_OKAY;
 }
 
 
@@ -2224,71 +2809,52 @@ void PARTIALDECOMP::deleteEmptyBlocks(
    while( emptyBlocks )
    {
       emptyBlocks = false;
-      for( b = 0; b < nblocks; ++ b )
+      for( b = nblocks - 1; b >= 0; --b )
       {
-         if( conssforblocks[b].size() == 0 &&  ( variables ? varsforblocks[b].size() == 0 : true) )
+         if( conssforblocks[b].empty() &&  ( variables ? varsforblocks[b].empty() : true) )
          {
             emptyBlocks = true;
             block = b;
+            break;
          }
-         if( benders && ( conssforblocks[b].size() == 0 ||  varsforblocks[b].size() == 0) )
+         if( benders && ( conssforblocks[b].empty() || varsforblocks[b].empty()) )
          {
             emptyBlocks = true;
             block = b;
+            break;
          }
 
       }
       if( emptyBlocks )
       {
-         nblocks --;
+         nblocks--;
 
-         std::vector<std::vector<int>>::iterator it;
+         stairlinkingvars.erase(stairlinkingvars.begin() + block);
 
-         it = stairlinkingvars.begin();
-         for( b = 0; b < block; ++ b )
-            it ++;
-         stairlinkingvars.erase( it );
-
-         it = conssforblocks.begin();
-         for( b = 0; b < block; ++ b )
-            it ++;
-         for( size_t j = 0; j < conssforblocks[block].size(); ++j )
+         for( int j : conssforblocks[block] )
          {
-            masterconss.push_back(conssforblocks[block][j]);
-            isconsmaster[conssforblocks[block][j]] = true;
+            masterconss.push_back(j);
+            isconsmaster[j] = true;
          }
-         std::sort( masterconss.begin(), masterconss.end() );
-         conssforblocks.erase( it );
+         std::sort(masterconss.begin(), masterconss.end());
+         conssforblocks.erase(conssforblocks.begin() + block);
 
-         it = varsforblocks.begin();
-         for( b = 0; b < block; ++ b )
-            it ++;
-         for( size_t j = 0; j < varsforblocks[block].size(); ++ j )
+         for( int j : varsforblocks[block] )
          {
-            mastervars.push_back( varsforblocks[block][j] );
-            isvarmaster[varsforblocks[block][j]] = true;
+            mastervars.push_back(j);
+            isvarmaster[j] = true;
          }
-         varsforblocks.erase( it );
+         varsforblocks.erase(varsforblocks.begin() + block);
          std::sort( mastervars.begin(), mastervars.end() );
 
          //set stairlinkingvars of the previous block to block vars
-         if( block != 0 && (int) stairlinkingvars[block - 1].size() != 0 )
+         if( block != 0 && !stairlinkingvars[block - 1].empty() )
          {
-            std::vector<int>::iterator iter = stairlinkingvars[block - 1].begin();
-            std::vector<int>::iterator iterEnd = stairlinkingvars[block - 1].end();
-            std::vector<int> stairlinkingvarsOfPreviousBlock;
-            for( ; iter != iterEnd; ++ iter )
+            for( int j : stairlinkingvars[block - 1] )
             {
-               fixVarToBlock( * iter, block - 1 );
-               stairlinkingvarsOfPreviousBlock.push_back( * iter );
+               fixVarToBlock(j, block - 1);
             }
-            for( size_t i = 0; i < stairlinkingvarsOfPreviousBlock.size(); ++ i )
-            {
-               iter = find( stairlinkingvars[block - 1].begin(), stairlinkingvars[block - 1].end(),
-                  stairlinkingvarsOfPreviousBlock[i] );
-               assert( iter != stairlinkingvars[block - 1].end() );
-               stairlinkingvars[block - 1].erase( iter );
-            }
+            stairlinkingvars[block - 1].clear();
             sort();
          }
       }
@@ -2304,7 +2870,7 @@ void PARTIALDECOMP::deleteOpencons(
    std::vector<int>::iterator it;
    it = lower_bound( openconss.begin(), openconss.end(), opencons );
    assert( it != openconss.end() && *it == opencons );
-   openconss.erase( it );
+   openconss.erase(it);
    isconsopen[opencons] = false;
 }
 
@@ -2483,10 +3049,10 @@ void PARTIALDECOMP::displayInfo(
    {
       std::cout << " (" << getNLinkingvars() << ")";
       if( getNLinkingvars() > 0 )
-         std::cout << ":  " << SCIPvarGetName( detprobdata->getVarForIndex( getLinkingvars()[0] ) );
+         std::cout << ":  " << SCIPvarGetName(detprobdata->getVar(getLinkingvars()[0]));
       for( int v = 1; v < getNLinkingvars(); ++v )
       {
-         std::cout << ", " << SCIPvarGetName( detprobdata->getVarForIndex( getLinkingvars()[v] ) );
+         std::cout << ", " << SCIPvarGetName(detprobdata->getVar(getLinkingvars()[v]));
       }
       std::cout << std::endl;
    }
@@ -2499,10 +3065,10 @@ void PARTIALDECOMP::displayInfo(
    {
       std::cout << " (" << getNMasterconss() << ")";
       if( getNMasterconss() > 0 )
-         std::cout << ":  " << SCIPconsGetName( detprobdata->getConsForIndex( getMasterconss()[0] ) );
+         std::cout << ":  " << SCIPconsGetName(detprobdata->getCons(getMasterconss()[0]));
       for( int c = 1; c < getNMasterconss(); ++c )
       {
-         std::cout << ", " << SCIPconsGetName( detprobdata->getConsForIndex( getMasterconss()[c] ) );
+         std::cout << ", " << SCIPconsGetName(detprobdata->getCons(getMasterconss()[c]));
       }
       std::cout << std::endl;
    }
@@ -2515,10 +3081,10 @@ void PARTIALDECOMP::displayInfo(
    {
       std::cout << " (" << getNMastervars() << ")";
       if( getNMastervars() > 0 )
-         std::cout << ":  " << SCIPvarGetName( detprobdata->getVarForIndex( getMastervars()[0] ) );
+         std::cout << ":  " << SCIPvarGetName(detprobdata->getVar(getMastervars()[0]));
       for( int v = 1; v < getNMastervars(); ++v )
       {
-         std::cout << ", " << SCIPvarGetName( detprobdata->getVarForIndex( getMastervars()[v] ) );
+         std::cout << ", " << SCIPvarGetName(detprobdata->getVar(getMastervars()[v]));
       }
       std::cout << std::endl;
    }
@@ -2531,10 +3097,10 @@ void PARTIALDECOMP::displayInfo(
    {
       std::cout << " (" << getNOpenconss() << ")";
       if( getNOpenconss() > 0 )
-         std::cout << ":  " << SCIPconsGetName( detprobdata->getConsForIndex( getOpenconss()[0] ) );
+         std::cout << ":  " << SCIPconsGetName(detprobdata->getCons(getOpenconss()[0]));
       for( int c = 1; c < getNOpenconss(); ++c )
       {
-         std::cout << ", " << SCIPconsGetName( detprobdata->getConsForIndex( getOpenconss()[c] ) );
+         std::cout << ", " << SCIPconsGetName(detprobdata->getCons(getOpenconss()[c]));
       }
       std::cout << std::endl;
    }
@@ -2547,10 +3113,10 @@ void PARTIALDECOMP::displayInfo(
    {
       std::cout << " (" << getNOpenvars() << ")";
       if( getNOpenvars() > 0 )
-         std::cout << ":  " << SCIPvarGetName( detprobdata->getVarForIndex( getOpenvars()[0] ) );
+         std::cout << ":  " << SCIPvarGetName(detprobdata->getVar(getOpenvars()[0]));
       for( int v = 1; v < getNOpenvars(); ++v )
       {
-         std::cout << ", " << SCIPvarGetName( detprobdata->getVarForIndex( getOpenvars()[v] ) );
+         std::cout << ", " << SCIPvarGetName(detprobdata->getVar(getOpenvars()[v]));
       }
       std::cout << std::endl;
    }
@@ -2574,52 +3140,52 @@ void PARTIALDECOMP::displayInfo(
          std::cout << "  Constraints";
          if( detailLevel > 1 )
          {
-            std::cout << " (" << getNConssForBlock( b ) << ")";
-            if( getNConssForBlock( b ) > 0 )
-               std::cout << ":  " << SCIPconsGetName( detprobdata->getConsForIndex( getConssForBlock( b )[0] ) );
-            for( int c = 1; c < getNConssForBlock( b ); ++c )
+            std::cout << " (" << getNConssForBlock(b) << ")";
+            if( getNConssForBlock(b) > 0 )
+               std::cout << ":  " << SCIPconsGetName(detprobdata->getCons(getConssForBlock(b)[0]));
+            for( int c = 1; c < getNConssForBlock(b); ++c )
             {
-               std::cout << ", " << SCIPconsGetName( detprobdata->getConsForIndex( getConssForBlock( b )[c] ) );
+               std::cout << ", " << SCIPconsGetName(detprobdata->getCons(getConssForBlock(b)[c]));
             }
             std::cout << std::endl;
          }
          else
          {
-            std::cout << ": " << getNConssForBlock( b ) << std::endl;
+            std::cout << ": " << getNConssForBlock(b) << std::endl;
          }
 
          std::cout << "  Variables";
          if( detailLevel > 1 )
          {
-            std::cout << " (" << getNVarsForBlock( b ) << ")";
-            if( getNVarsForBlock( b ) > 0 )
-               std::cout << ":  " << SCIPvarGetName( detprobdata->getVarForIndex( getVarsForBlock( b )[0] ) );
-            for( int v = 1; v < getNVarsForBlock( b ); ++v )
+            std::cout << " (" << getNVarsForBlock(b) << ")";
+            if( getNVarsForBlock(b) > 0 )
+               std::cout << ":  " << SCIPvarGetName(detprobdata->getVar(getVarsForBlock(b)[0]));
+            for( int v = 1; v < getNVarsForBlock(b); ++v )
             {
-               std::cout << ", " << SCIPvarGetName( detprobdata->getVarForIndex( getVarsForBlock( b )[v] ) );
+               std::cout << ", " << SCIPvarGetName(detprobdata->getVar(getVarsForBlock(b)[v]));
             }
             std::cout << std::endl;
          }
          else
          {
-            std::cout << ": " << getNVarsForBlock( b ) << std::endl;
+            std::cout << ": " << getNVarsForBlock(b) << std::endl;
          }
 
          std::cout << "  Stairlinkingvariables";
          if( detailLevel > 1 )
          {
-            std::cout << " (" << getNStairlinkingvars( b ) << ")";
-            if( getNStairlinkingvars( b ) > 0 )
-               std::cout << ":  " << SCIPvarGetName( detprobdata->getVarForIndex( getStairlinkingvars( b )[0] ) );
-            for( int v = 1; v < getNStairlinkingvars( b ); ++v )
+            std::cout << " (" << getNStairlinkingvars(b) << ")";
+            if( getNStairlinkingvars(b) > 0 )
+               std::cout << ":  " << SCIPvarGetName(detprobdata->getVar(getStairlinkingvars(b)[0]));
+            for( int v = 1; v < getNStairlinkingvars(b); ++v )
             {
-               std::cout << ", " << SCIPvarGetName( detprobdata->getVarForIndex( getStairlinkingvars( b )[v] ) );
+               std::cout << ", " << SCIPvarGetName(detprobdata->getVar(getStairlinkingvars(b)[v]));
             }
             std::cout << std::endl;
          }
          else
          {
-            std::cout << ": " << getNStairlinkingvars( b ) << std::endl;
+            std::cout << ": " << getNStairlinkingvars(b) << std::endl;
          }
       }
    }
@@ -2648,7 +3214,7 @@ SCIP_Bool PARTIALDECOMP::hasSetppccardMaster(
       {
          hassetpartmaster = FALSE;
          if( verbose )
-            std::cout <<   " cons with name  " << SCIPconsGetName( detprobdata->getConsForIndex(consid) ) << " is no setppccard constraint." << std::endl;
+            std::cout << " cons with name  " << SCIPconsGetName(detprobdata->getCons(consid)) << " is no setppccard constraint." << std::endl;
          break;
       }
    }
@@ -2738,7 +3304,7 @@ SCIP_RETCODE PARTIALDECOMP::filloutBorderFromConstoblock(
    nblocks = 0;
    sort();
 
-   assert( checkConsistency( ) );
+   assert( checkConsistency() );
 
    return SCIP_OKAY;
 }
@@ -3197,12 +3763,12 @@ std::string PARTIALDECOMP::getDetectorPartitionInfo(
                {
                   if( first )
                   {
-                     output << SCIPconsGetName( detprobdata->getConsForIndex( c ) );
+                     output << SCIPconsGetName(detprobdata->getCons(c));
                      first = false;
                   }
                   else
                   {
-                     output << ", " << SCIPconsGetName( detprobdata->getConsForIndex( c ) );
+                     output << ", " << SCIPconsGetName(detprobdata->getCons(c));
                   }
                }
             }
@@ -3227,12 +3793,12 @@ std::string PARTIALDECOMP::getDetectorPartitionInfo(
                {
                   if( first )
                   {
-                     output << SCIPconsGetName( detprobdata->getConsForIndex( c ) );
+                     output << SCIPconsGetName(detprobdata->getCons(c));
                      first = false;
                   }
                   else
                   {
-                     output << ", " << SCIPconsGetName( detprobdata->getConsForIndex( c ) );
+                     output << ", " << SCIPconsGetName(detprobdata->getCons(c));
                   }
                }
             }
@@ -3274,12 +3840,12 @@ std::string PARTIALDECOMP::getDetectorPartitionInfo(
                {
                   if( first )
                   {
-                     output << SCIPvarGetName( detprobdata->getVarForIndex( v ) );
+                     output << SCIPvarGetName(detprobdata->getVar(v));
                      first = false;
                   }
                   else
                   {
-                     output << ", " << SCIPvarGetName( detprobdata->getVarForIndex( v ) );
+                     output << ", " << SCIPvarGetName(detprobdata->getVar(v));
                   }
                }
             }
@@ -3304,12 +3870,12 @@ std::string PARTIALDECOMP::getDetectorPartitionInfo(
                {
                   if( first )
                   {
-                     output << SCIPvarGetName( detprobdata->getVarForIndex( v ) );
+                     output << SCIPvarGetName(detprobdata->getVar(v));
                      first = false;
                   }
                   else
                   {
-                     output << ", " << SCIPvarGetName( detprobdata->getVarForIndex( v ) );
+                     output << ", " << SCIPvarGetName(detprobdata->getVar(v));
                   }
                }
             }
@@ -3341,12 +3907,12 @@ std::string PARTIALDECOMP::getDetectorPartitionInfo(
                {
                   if( first )
                   {
-                     output << SCIPvarGetName( detprobdata->getVarForIndex( v ) );
+                     output << SCIPvarGetName(detprobdata->getVar(v));
                      first = false;
                   }
                   else
                   {
-                     output << ", " << SCIPvarGetName( detprobdata->getVarForIndex( v ) );
+                     output << ", " << SCIPvarGetName(detprobdata->getVar(v));
                   }
                }
             }
@@ -3371,12 +3937,12 @@ std::string PARTIALDECOMP::getDetectorPartitionInfo(
                {
                   if( first )
                   {
-                     output << SCIPvarGetName( detprobdata->getVarForIndex( v ) );
+                     output << SCIPvarGetName(detprobdata->getVar(v));
                      first = false;
                   }
                   else
                   {
-                     output << ", " << SCIPvarGetName( detprobdata->getVarForIndex( v ) );
+                     output << ", " << SCIPvarGetName(detprobdata->getVar(v));
                   }
                }
             }
@@ -3388,7 +3954,7 @@ std::string PARTIALDECOMP::getDetectorPartitionInfo(
          }
       }
 
-      if ( !displayConssVars || vartomaster.size() == 0 )
+      if ( !displayConssVars || vartomaster.empty() )
       {
          output << std::endl;
       }
@@ -3464,7 +4030,7 @@ SCIP_Real PARTIALDECOMP::getScore(
    for( int mc = 0; mc < getNMasterconss(); ++mc )
    {
       SCIP_CONS* cons;
-      cons = getDetprobdata()->getConsById(getMasterconss()[mc]);
+      cons = getDetprobdata()->getCons(getMasterconss()[mc]);
       if( GCGconsGetType(scip, cons) == consType::indicator )
          return 0.;
    }
@@ -3569,10 +4135,7 @@ std::vector<std::string>& PARTIALDECOMP::getDetectorchainInfo()
 
 int PARTIALDECOMP::getNDetectors()
 {
-   if ( usergiven == USERGIVEN::NOT )
-      return (int) detectorchain.size();
-   else
-      return 0;
+   return (int) detectorchain.size();
 }
 
 
@@ -3649,7 +4212,7 @@ int PARTIALDECOMP::getNStairlinkingvars(
    )
 {
    assert( block >= 0 && block < nblocks );
-   assert( stairlinkingvars.size() > block );
+   assert( (int) stairlinkingvars.size() > block );
    return (int) stairlinkingvars[block].size();
 }
 
@@ -3672,7 +4235,7 @@ int PARTIALDECOMP::getNVarsForBlock(
 int PARTIALDECOMP::getNVarsForBlocks()
 {
    int count = 0;
-   for(auto block : varsforblocks)
+   for( auto& block : varsforblocks )
    {
       count += (int) block.size();
    }
@@ -3715,14 +4278,14 @@ SCIP_Real PARTIALDECOMP::getPctVarsToBorder(
 }
 
 
-std::vector<SCIP_Real> PARTIALDECOMP::getPctVarsToBorderVector()
+std::vector<SCIP_Real>& PARTIALDECOMP::getPctVarsToBorderVector()
 {
    return pctvarstoborder;
 }
 
 
 void PARTIALDECOMP::setPctVarsToBorderVector(
-   std::vector<SCIP_Real> newvector
+   std::vector<SCIP_Real>& newvector
    )
 {
    pctvarstoborder = newvector;
@@ -3739,7 +4302,7 @@ SCIP_Real PARTIALDECOMP::getPctVarsToBlock(
 }
 
 
-std::vector<SCIP_Real> PARTIALDECOMP::getPctVarsToBlockVector()
+std::vector<SCIP_Real>& PARTIALDECOMP::getPctVarsToBlockVector()
 {
    return pctvarstoblock;
 }
@@ -3747,7 +4310,7 @@ std::vector<SCIP_Real> PARTIALDECOMP::getPctVarsToBlockVector()
 
 
 void PARTIALDECOMP::setPctVarsToBlockVector(
-   std::vector<SCIP_Real> newvector
+   std::vector<SCIP_Real>& newvector
 )
 {
    pctvarstoblock = newvector;
@@ -3764,14 +4327,14 @@ SCIP_Real PARTIALDECOMP::getPctVarsFromFree(
 }
 
 
-std::vector<SCIP_Real> PARTIALDECOMP::getPctVarsFromFreeVector()
+std::vector<SCIP_Real>& PARTIALDECOMP::getPctVarsFromFreeVector()
 {
    return pctvarsfromfree;
 }
 
 
 void PARTIALDECOMP::setPctVarsFromFreeVector(
-   std::vector<SCIP_Real> newvector
+   std::vector<SCIP_Real>& newvector
    )
 {
    pctvarsfromfree = newvector;
@@ -3788,14 +4351,14 @@ SCIP_Real PARTIALDECOMP::getPctConssToBorder(
 }
 
 
-std::vector<SCIP_Real> PARTIALDECOMP::getPctConssToBorderVector()
+std::vector<SCIP_Real>& PARTIALDECOMP::getPctConssToBorderVector()
 {
    return pctconsstoborder;
 }
 
 
 void PARTIALDECOMP::setPctConssToBorderVector(
-   std::vector<SCIP_Real> newvector
+   std::vector<SCIP_Real>& newvector
    )
 {
    pctconsstoborder = newvector;
@@ -3812,14 +4375,15 @@ SCIP_Real PARTIALDECOMP::getPctConssToBlock(
 }
 
 
-std::vector<SCIP_Real> PARTIALDECOMP::getPctConssToBlockVector()
+std::vector<SCIP_Real>& PARTIALDECOMP::getPctConssToBlockVector()
 {
    return pctconsstoblock;
 }
 
 
 void PARTIALDECOMP::setPctConssToBlockVector(
-   std::vector<SCIP_Real> newvector  )
+   std::vector<SCIP_Real>& newvector
+   )
 {
    pctconsstoblock = newvector;
 }
@@ -3835,7 +4399,7 @@ SCIP_Real PARTIALDECOMP::getPctConssFromFree(
 }
 
 
-std::vector<SCIP_Real> PARTIALDECOMP::getPctConssFromFreeVector()
+std::vector<SCIP_Real>& PARTIALDECOMP::getPctConssFromFreeVector()
 {
    return pctconssfromfree;
 }
@@ -3843,14 +4407,15 @@ std::vector<SCIP_Real> PARTIALDECOMP::getPctConssFromFreeVector()
 
 int PARTIALDECOMP::getRepForBlock(
    int blockid
-   ){
+   )
+{
      return blockstorep[blockid];
 }
 
-std::vector<int> & PARTIALDECOMP::getRepVarmap(
-      int repid,
-      int blockrepid
-      )
+std::vector<int>& PARTIALDECOMP::getRepVarmap(
+   int repid,
+   int blockrepid
+   )
 {
    return pidtopidvarmaptofirst[repid][blockrepid];
 }
@@ -3871,7 +4436,8 @@ DETPROBDATA* PARTIALDECOMP::getDetprobdata()
 
 
 void PARTIALDECOMP::setPctConssFromFreeVector(
-   std::vector<SCIP_Real> newvector)
+   std::vector<SCIP_Real>& newvector
+   )
 {
    pctconssfromfree = newvector;
 }
@@ -3913,7 +4479,8 @@ std::vector<int>& PARTIALDECOMP::getVarsForBlock(
 int PARTIALDECOMP::getVarProbindexForBlock(
    int varid,
    int block
-){
+   )
+{
    std::vector<int>::iterator lb = lower_bound( varsforblocks[block].begin(), varsforblocks[block].end(), varid );
 
    if( lb != varsforblocks[block].end() )
@@ -3995,18 +4562,18 @@ bool PARTIALDECOMP::isEqual(
       || getNBlocks() != other->getNBlocks() || getNLinkingvars() != other->getNLinkingvars() )
       return false;
 
-   std::vector<std::pair<int, int>> blockorderthis = std::vector < std::pair<int, int> > ( 0 );
-   std::vector<std::pair<int, int>> blockorderother = std::vector < std::pair<int, int> > ( 0 );
+   std::vector<std::pair<int, int>> blockorderthis;
+   std::vector<std::pair<int, int>> blockorderother;
 
    /* find sorting for blocks (non decreasing according smallest row index) */
    for( int i = 0; i < this->nblocks; ++ i )
    {
-      blockorderthis.push_back( std::pair<int, int>( i, conssforblocks[i][0] ) );
-      blockorderother.push_back( std::pair<int, int>( i, other->conssforblocks[i][0] ) );
+      blockorderthis.emplace_back(i, conssforblocks[i][0]);
+      blockorderother.emplace_back(i, other->conssforblocks[i][0]);
    }
 
-   std::sort( blockorderthis.begin(), blockorderthis.end(), compare_blocks );
-   std::sort( blockorderother.begin(), blockorderother.end(), compare_blocks );
+   std::sort(blockorderthis.begin(), blockorderthis.end(), compare_blocks);
+   std::sort(blockorderother.begin(), blockorderother.end(), compare_blocks);
 
    /* compares the number of stairlinking vars */
    for( int b = 0; b < getNBlocks(); ++ b )
@@ -4014,7 +4581,7 @@ bool PARTIALDECOMP::isEqual(
       int blockthis = blockorderthis[b].first;
       int blockother = blockorderother[b].first;
 
-      if( getNStairlinkingvars( blockthis ) != other->getNStairlinkingvars( blockother ) )
+      if( getNStairlinkingvars(blockthis) != other->getNStairlinkingvars(blockother) )
          return false;
    }
 
@@ -4024,8 +4591,8 @@ bool PARTIALDECOMP::isEqual(
       int blockthis = blockorderthis[b].first;
       int blockother = blockorderother[b].first;
 
-      if( ( getNVarsForBlock( blockthis ) != other->getNVarsForBlock( blockother ) )
-         || ( getNConssForBlock( blockthis ) != other->getNConssForBlock( blockother ) ) )
+      if( ( getNVarsForBlock( blockthis ) != other->getNVarsForBlock(blockother) )
+         || ( getNConssForBlock( blockthis ) != other->getNConssForBlock(blockother) ) )
          return false;
    }
 
@@ -4051,19 +4618,19 @@ bool PARTIALDECOMP::isEqual(
 
       for( int j = 0; j < getNConssForBlock( blockthis ); ++ j )
       {
-         if( getConssForBlock( blockthis )[j] != other->getConssForBlock( blockother )[j] )
+         if( getConssForBlock( blockthis )[j] != other->getConssForBlock(blockother)[j] )
             return false;
       }
 
       for( int j = 0; j < getNVarsForBlock( blockthis ); ++ j )
       {
-         if( getVarsForBlock( blockthis )[j] != other->getVarsForBlock( blockother )[j] )
+         if( getVarsForBlock(blockthis)[j] != other->getVarsForBlock(blockother)[j] )
             return false;
       }
 
       for( int j = 0; j < getNStairlinkingvars( blockthis ); ++ j )
       {
-         if( getStairlinkingvars( blockthis )[j] != other->getStairlinkingvars( blockother )[j] )
+         if( getStairlinkingvars(blockthis)[j] != other->getStairlinkingvars(blockother)[j] )
             return false;
       }
    }
@@ -4083,7 +4650,7 @@ bool PARTIALDECOMP::isPropagatedBy(
    DEC_DETECTOR* detector
    )
 {
-   std::vector<DEC_DETECTOR*>::const_iterator iter = std::find( detectorchain.begin(), detectorchain.end(), detector );
+   std::vector<DEC_DETECTOR*>::const_iterator iter = std::find(detectorchain.begin(), detectorchain.end(), detector);
 
    return iter != detectorchain.end();
 }
@@ -4121,7 +4688,7 @@ bool PARTIALDECOMP::isVarBlockvarOfBlock(
    assert( var >= 0 && var < nvars );
    assert( block >= 0 && block < nconss );
 
-   std::vector<int>::iterator lb = lower_bound( varsforblocks[block].begin(), varsforblocks[block].end(), var );
+   std::vector<int>::iterator lb = lower_bound(varsforblocks[block].begin(), varsforblocks[block].end(), var);
    if( lb != varsforblocks[block].end() &&  *lb == var )
       return true;
    else
@@ -4143,7 +4710,7 @@ bool PARTIALDECOMP::isVarLinkingvar(
    )
 {
    assert( var >= 0 && var < nvars );
-   std::vector<int>::iterator lb = lower_bound( linkingvars.begin(), linkingvars.end(), var );
+   std::vector<int>::iterator lb = lower_bound(linkingvars.begin(), linkingvars.end(), var);
    if( lb != linkingvars.end() &&  *lb == var )
       return true;
    else
@@ -4166,7 +4733,7 @@ bool PARTIALDECOMP::isVarStairlinkingvar(
 {
    for( int b = 0; b < nblocks; ++ b )
    {
-      std::vector<int>::iterator lb = lower_bound( stairlinkingvars[b].begin(), stairlinkingvars[b].end(), var );
+      std::vector<int>::iterator lb = lower_bound(stairlinkingvars[b].begin(), stairlinkingvars[b].end(), var);
       if( lb != stairlinkingvars[b].end() &&  *lb == var )
          return true;
    }
@@ -4181,7 +4748,7 @@ bool PARTIALDECOMP::isVarStairlinkingvarOfBlock(
 {
    assert( var >= 0 && var < nvars );
    assert( block >= 0 && block < nblocks );
-   std::vector<int>::iterator lb = lower_bound( stairlinkingvars[block].begin(), stairlinkingvars[block].end(), var );
+   std::vector<int>::iterator lb = lower_bound(stairlinkingvars[block].begin(), stairlinkingvars[block].end(), var);
    if( lb != stairlinkingvars[block].end() &&  *lb == var )
       return true;
    else
@@ -4190,7 +4757,7 @@ bool PARTIALDECOMP::isVarStairlinkingvarOfBlock(
          return false;
       else
       {
-         lb = lower_bound( stairlinkingvars[block - 1].begin(), stairlinkingvars[block - 1].end(), var );
+         lb = lower_bound(stairlinkingvars[block - 1].begin(), stairlinkingvars[block - 1].end(), var);
          return ( lb != stairlinkingvars[block-1].end() &&  *lb == var );
       }
    }
@@ -4224,7 +4791,7 @@ void PARTIALDECOMP::printPartitionInformation(
       }
    }
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nconspartitions );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nconspartitions);
 
    for( int i = 0; i < nusedpartitions; ++i)
    {
@@ -4232,17 +4799,17 @@ void PARTIALDECOMP::printPartitionInformation(
       {
          /* partition is cons partition */
          int nmasterclasses = (int) classestomaster[i].size();
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedpartition[i]->getName() );
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nmasterclasses  );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedpartition[i]->getName());
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nmasterclasses);
          for ( int mclass = 0; mclass < (int) classestomaster[i].size(); ++mclass )
          {
             int classid = classestomaster[i][mclass];
-            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedpartition[i]->getClassName(classid), usedpartition[i]->getClassDescription(classid)  );
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedpartition[i]->getClassName(classid), usedpartition[i]->getClassDescription(classid));
          }
       }
    }
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nvarpartitions );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nvarpartitions);
 
    for( int i = 0; i < nusedpartitions; ++i)
    {
@@ -4251,19 +4818,19 @@ void PARTIALDECOMP::printPartitionInformation(
          /* partition is var partition */
          int nmasterclasses = (int) classestomaster[i].size();
          int nlinkingclasses = (int) classestolinking[i].size();
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedpartition[i]->getName() );
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nmasterclasses  );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedpartition[i]->getName());
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nmasterclasses);
          for ( int mclass = 0; mclass < (int) classestomaster[i].size();   ++mclass )
          {
             int classid = classestomaster[i][mclass];
-            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s : %s\n", usedpartition[i]->getClassName(classid), usedpartition[i]->getClassDescription(classid)  );
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s : %s\n", usedpartition[i]->getClassName(classid), usedpartition[i]->getClassDescription(classid));
          }
 
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nlinkingclasses  );
          for ( int linkingclass = 0; linkingclass < nlinkingclasses;   ++linkingclass )
          {
             int classid = classestolinking[i][linkingclass];
-            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s : %s\n", usedpartition[i]->getClassName(classid), usedpartition[i]->getClassDescription(classid) );
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s : %s\n", usedpartition[i]->getClassName(classid), usedpartition[i]->getClassDescription(classid));
          }
 
       }
@@ -4277,18 +4844,16 @@ void PARTIALDECOMP::refineToBlocks(
    bool success = true;
 
    while( success )
-      success = assignHittingOpenconss( ) || assignHittingOpenvars( );
+      success = assignHittingOpenconss() || assignHittingOpenvars();
    sort();
 }
 
 
-SCIP_RETCODE PARTIALDECOMP::refineToMaster(
+void PARTIALDECOMP::refineToMaster(
     )
 {
-   SCIP_CALL( considerImplicits( ) );
-   SCIP_CALL( assignOpenPartialHittingToMaster( ) );
-
-   return SCIP_OKAY;
+   considerImplicits();
+   assignOpenPartialHittingToMaster();
 }
 
 
@@ -4390,7 +4955,7 @@ void PARTIALDECOMP::setDetectorPropagated(
    DEC_DETECTOR* detectorID
    )
 {
-   detectorchain.push_back( detectorID );
+   detectorchain.push_back(detectorID);
    addEmptyPartitionStatistics();
 }
 
@@ -4400,7 +4965,7 @@ void PARTIALDECOMP::setDetectorFinished(
    )
 {
    isfinishedbyfinisher = true;
-   detectorchain.push_back( detectorID );
+   detectorchain.push_back(detectorID);
    addEmptyPartitionStatistics();
 }
 
@@ -4442,9 +5007,9 @@ void PARTIALDECOMP::setNBlocks(
 
    for( int b = nblocks; b < newNBlocks; ++ b )
    {
-      conssforblocks.emplace_back( 0 );
-      varsforblocks.emplace_back( 0 );
-      stairlinkingvars.emplace_back( 0 );
+      conssforblocks.emplace_back(0);
+      varsforblocks.emplace_back(0);
+      stairlinkingvars.emplace_back(0);
    }
 
    nblocks = newNBlocks;
@@ -4507,7 +5072,7 @@ void PARTIALDECOMP::setVarToBlock(
    assert( block >= 0 && block < nblocks );
    assert( (int) varsforblocks.size() > block );
 
-   varsforblocks[block].push_back( varToBlock );
+   varsforblocks[block].push_back(varToBlock);
    varsforblocksorted = false;
    hvoutdated = true;
 }
@@ -4687,57 +5252,81 @@ std::vector<int>::const_iterator PARTIALDECOMP::fixVarToStairlinking(
 }
 
 
-void PARTIALDECOMP::fixConsToBlockByName(
+bool PARTIALDECOMP::fixConsToBlockByName(
    const char*           consname,            /**< name of the constraint */
    int                   blockid              /**< block index (counting from 0) */
    )
 {
    int consindex = getDetprobdata()->getIndexForCons(consname);
 
-   if( blockid >= nblocks )
-         nblocks = blockid+1;
-   fixConsToBlock(consindex, blockid);
+   if( consindex >= 0 )
+   {
+      if( blockid >= nblocks )
+         nblocks = blockid + 1;
+      fixConsToBlock(consindex, blockid);
+      return true;
+   }
+   return false;
 }
 
 
-void PARTIALDECOMP::fixVarToBlockByName(
+bool PARTIALDECOMP::fixVarToBlockByName(
    const char*           varname,
    int                   blockid
    )
 {
    int varindex = getDetprobdata()->getIndexForVar(varname);
 
-   // if the block id is higher than expected, set the block to master
-   if( blockid >= nblocks )
-      nblocks = blockid+1;
-   fixVarToBlock(varindex, blockid);
+   if( varindex >= 0 )
+   {
+      if( blockid >= nblocks )
+         nblocks = blockid + 1;
+      fixVarToBlock(varindex, blockid);
+      return true;
+   }
+   return false;
 }
 
 
-void PARTIALDECOMP::fixConsToMasterByName(
+bool PARTIALDECOMP::fixConsToMasterByName(
    const char*           consname   /**< name of cons to fix as master cons */
    )
 {
    int consindex = getDetprobdata()->getIndexForCons(consname);
-   fixConsToMaster(consindex);
+   if( consindex >= 0 )
+   {
+      fixConsToMaster(consindex);
+      return true;
+   }
+   return false;
 }
 
 
-void PARTIALDECOMP::fixVarToMasterByName(
+bool PARTIALDECOMP::fixVarToMasterByName(
    const char*           varname
    )
 {
    int varindex = getDetprobdata()->getIndexForVar(varname);
-   fixVarToMaster(varindex);
+   if( varindex >= 0 )
+   {
+      fixVarToMaster(varindex);
+      return true;
+   }
+   return false;
 }
 
 
-void PARTIALDECOMP::fixVarToLinkingByName(
+bool PARTIALDECOMP::fixVarToLinkingByName(
    const char*           varname              /**< name of the variable */
    )
 {
    int varindex = getDetprobdata()->getIndexForVar(varname);
-   fixVarToLinking(varindex);
+   if( varindex >= 0 )
+   {
+      fixVarToLinking(varindex);
+      return true;
+   }
+   return false;
 }
 
 
@@ -4971,8 +5560,6 @@ void PARTIALDECOMP::prepare()
    considerImplicits();
    deleteEmptyBlocks(true);
    calcHashvalue();
-
-   assert( checkConsistency() );
 }
 
 

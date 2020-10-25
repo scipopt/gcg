@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -292,15 +292,6 @@ public:
       );
 
    /**
-    * @brief returns scip cons for corresponing id
-    * @param consid the index of the constraint
-    * @return pointer of constraint for the given index
-    */
-   SCIP_CONS* getConsById(
-      int consid
-      );
-
-   /**
     * @brief returns pointer to a constraint partition
     * @return pointer to a cosntraint partition with the given index
     */
@@ -312,7 +303,7 @@ public:
     * @brief returns the SCIP constraint related to a constraint index
     * @return the SCIP constraint related to a constraint index
     */
-   SCIP_CONS* getConsForIndex(
+   SCIP_CONS* getCons(
       int consIndex /**< index of the constraint to be considered */
       );
 
@@ -437,6 +428,12 @@ public:
    int getNFinishedPartialdecs();
 
    /**
+    * returns the number of stored partialdecs
+    * @return  number of stored partialdecs
+    */
+   int getNPartialdecs();
+
+   /**
     * @brief returns the number of nonzero entries in the coefficient matrix
     * @return the number of nonzero entries in the coefficient matrix
     */
@@ -513,15 +510,6 @@ public:
       );
 
    /**
-    * @brief returns scip var for corresponding id
-    * @param varid the index of the variable
-    * @return returns scip var for corresponding id
-    */
-   SCIP_VAR* getVarById(
-      int varid
-   );
-
-   /**
     * @brief returns pointer to a variable partition with given index
     * @return pointer to a variable partition with given index
     */
@@ -539,7 +527,7 @@ public:
     * @brief returns SCIP variable related to a variable index
     * @return SCIP variable pointer related to a variable index
     */
-   SCIP_VAR* getVarForIndex(
+   SCIP_VAR* getVar(
       int varIndex /**< index of the variable to be considered */
       );
 

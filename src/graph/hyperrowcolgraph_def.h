@@ -225,7 +225,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
       TCLIQUE_WEIGHT weight;
 
       /* note that the first nvars nodes correspond to variables */
-      weight = this->weights.calculate( detprobdata->getVarForIndex(oldVarId) );
+      weight = this->weights.calculate(detprobdata->getVar(oldVarId));
       oldToNewVarIndex.insert({oldVarId ,i});
 
       this->graph.addNode(i, weight);
@@ -238,9 +238,8 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
       assert(conssBool[oldConsId]);
       TCLIQUE_WEIGHT weight;
 
-
       /* note that the first nvars nodes correspond to variables (legacy implementation) */
-      weight = this->weights.calculate( detprobdata->getConsForIndex(oldConsId) );
+      weight = this->weights.calculate(detprobdata->getCons(oldConsId));
       oldToNewConsIndex.insert({ oldConsId, j});
       this->graph.addNode( this->nvars + j, weight);
    }
@@ -256,7 +255,8 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
          int oldVarId = detprobdata->getVarsForCons(oldConsId)[j];
          if(!varsBool[oldVarId])
             continue;
-         SCIPdebugMessage("Cons <%s> (%d), var <%s> (%d), nonzero %d\n", SCIPconsGetName(detprobdata->getConsForIndex(oldConsId)), i, SCIPvarGetName(detprobdata->getVarForIndex(oldVarId)), oldToNewVarIndex[oldVarId], this->nnonzeroes);
+         SCIPdebugMessage("Cons <%s> (%d), var <%s> (%d), nonzero %d\n", SCIPconsGetName(detprobdata->getCons(oldConsId)), i,
+            SCIPvarGetName(detprobdata->getVar(oldVarId)), oldToNewVarIndex[oldVarId], this->nnonzeroes);
          /* add nonzero node and edge to variable and constraint) */;
          SCIP_CALL( this->graph.addNode( this->nvars+this->nconss+this->nnonzeroes, 0) );
          SCIP_CALL( this->graph.addEdge(oldToNewVarIndex[oldVarId], this->nvars+this->nconss+this->nnonzeroes) );
@@ -265,7 +265,6 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
          this->nnonzeroes++;
       }
    }
-
 
    this->graph.flush();
    return SCIP_OKAY;

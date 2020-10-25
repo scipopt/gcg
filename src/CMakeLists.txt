@@ -385,7 +385,7 @@ else()
     target_link_libraries(gcg libgcg)
 endif()
 
-if(CMAKE_BUILD_TYPE EQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     find_package(Sanitizers)
     add_sanitizers(gcg)
 endif()

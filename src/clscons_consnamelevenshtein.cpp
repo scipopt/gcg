@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -76,17 +76,7 @@ struct DEC_ClassifierData
  */
 
 /** destructor of classifier to free user data (called when GCG is exiting) */
-#if 0
-#else
 #define classifierFree NULL
-#endif
-
-/** classifier initialization method (called after problem was transformed) */
-#if 0
-#else
-#define classifierInit NULL
-#endif
-
 
 /** returns levenshtein distance between two strings */
 int calcLevenshteinDistance(
@@ -146,11 +136,11 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
       detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
    }
 
-   std::vector < std::string > consnamesToCompare( detprobdata->getNConss(), "" );
-   std::vector<int> nConssConstype( 0 );
-   std::vector<int> classForCons = std::vector<int>( detprobdata->getNConss(), - 1 );
-   std::vector<bool> alreadyReached( detprobdata->getNConss(), false );
-   std::queue<int> helpqueue = std::queue<int>();
+   std::vector < std::string > consnamesToCompare(detprobdata->getNConss(), "");
+   std::vector<int> nConssConstype;
+   std::vector<int> classForCons(detprobdata->getNConss(), - 1);
+   std::vector<bool> alreadyReached(detprobdata->getNConss(), false);
+   std::queue<int> helpqueue;
    int nUnreachedConss = detprobdata->getNConss();
    int currentClass = - 1;
    int nmaxconss = 5000;
@@ -158,7 +148,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
 
    std::stringstream classifierName;
    classifierName << "lev-dist-" << connectivity;
-   gcg::ConsPartition* classifier = new gcg::ConsPartition(scip, classifierName.str().c_str(), 0, detprobdata->getNConss() );
+   gcg::ConsPartition* classifier = new gcg::ConsPartition(scip, classifierName.str().c_str(), 0, detprobdata->getNConss());
 
    /* if number of conss exceeds this number, skip calculating such a classifier */
    if( detprobdata->getNConss() > nmaxconss )
@@ -169,12 +159,12 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
       return SCIP_ERROR;
    }
 
-   std::vector < std::vector<int> > levenshteindistances( detprobdata->getNConss(), std::vector<int>( detprobdata->getNConss(), - 1 ) );
+   std::vector<std::vector<int>> levenshteindistances(detprobdata->getNConss(), std::vector<int>( detprobdata->getNConss(), - 1 ));
 
    /* read consnames */
    for( int i = 0; i < detprobdata->getNConss(); ++ i )
    {
-      consnamesToCompare[i] = std::string( SCIPconsGetName( detprobdata->getConsForIndex( i ) ) );
+      consnamesToCompare[i] = std::string(SCIPconsGetName(detprobdata->getCons(i)));
    }
 
    /* calculate levenshtein distances pairwise */
@@ -182,7 +172,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
    {
       for( int j = i + 1; j < detprobdata->getNConss(); ++ j )
       {
-         levenshteindistances[i][j] = calcLevenshteinDistance( consnamesToCompare[i], consnamesToCompare[j] );
+         levenshteindistances[i][j] = calcLevenshteinDistance(consnamesToCompare[i], consnamesToCompare[j]);
          levenshteindistances[j][i] = levenshteindistances[i][j];
       }
    }
@@ -202,7 +192,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
          }
       }
 
-      helpqueue.push( firstUnreached );
+      helpqueue.push(firstUnreached);
       alreadyReached[firstUnreached] = true;
       classForCons[firstUnreached] = currentClass;
       -- nUnreachedConss;
@@ -227,20 +217,20 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
             alreadyReached[j] = true;
             classForCons[j] = currentClass;
             -- nUnreachedConss;
-            helpqueue.push( j );
+            helpqueue.push(j);
          }
       }
 
       /* create a new class with found constraints in ConsPartition*/
       std::stringstream text;
       text << "This class contains all constraints with a name similar to \"" << consnamesToCompare[firstUnreached] << "\".";
-      classifier->addClass( consnamesToCompare[firstUnreached].c_str(), text.str().c_str(), gcg::BOTH );
+      classifier->addClass(consnamesToCompare[firstUnreached].c_str(), text.str().c_str(), gcg::BOTH);
    }
 
    /* assign constraint indices to classes */
    for( int i = 0; i < detprobdata->getNConss(); ++ i )
    {
-      classifier->assignConsToClass( i, classForCons[i] );
+      classifier->assignConsToClass(i, classForCons[i]);
    }
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier levenshtein: connectivity of %d yields a classification with %d different constraint classes. \n", connectivity, currentClass + 1);
@@ -260,7 +250,7 @@ SCIP_RETCODE SCIPincludeConsClassifierConsnameLevenshtein(
    DEC_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL(
-      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierInit,
+      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata,
          classifierFree, classifierClassify));
 
    return SCIP_OKAY;

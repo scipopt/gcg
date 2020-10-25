@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -234,8 +234,6 @@ void DETPROBDATA::getTranslatedPartialdecs(
    {
       PARTIALDECOMP* newpartialdec;
 
-      std::vector<int> probvarismatchedinfo = std::vector<int>(getNVars(), -1);
-
       SCIPverbMessage(this->scip, SCIP_VERBLEVEL_FULL, NULL, " transform partialdec %d \n", otherpartialdec->getID());
 
       newpartialdec = new PARTIALDECOMP(scip, original);
@@ -267,36 +265,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
          }
       }
 
-      /* set linking and master vars according to their representatives in the orig partialdec */
-      for( int j = 0; j < otherpartialdec->getNLinkingvars(); j ++ )
-      {
-         int thisvar = colothertothis[otherpartialdec->getLinkingvars()[j]];
-         if( thisvar != - 1 && probvarismatchedinfo[thisvar] == -1 )
-         {
-            probvarismatchedinfo[thisvar] = 1;
-            newpartialdec->fixVarToLinking(thisvar);
-         }
-         else
-            if(  thisvar != - 1 )
-            {
-               assert( probvarismatchedinfo[thisvar] == 1 ); /* if this not fulfilled this probvar was assigned as master only variable but should be linking var*/
-            }
-      }
-
-      for( int j = 0; j < otherpartialdec->getNMastervars(); j ++ )
-      {
-         int thisvar = colothertothis[otherpartialdec->getMastervars()[j]];
-         if( thisvar != - 1 && probvarismatchedinfo[thisvar] == -1 )
-         {
-            probvarismatchedinfo[thisvar] = 2;
-            newpartialdec->fixVarToMaster(thisvar);
-         }
-         else
-            if(  thisvar != - 1 )
-            {
-               assert( probvarismatchedinfo[thisvar] == 2 ); /* if this not fulfilled this probvar was assigned as linking only variable but should be master var*/
-            }
-      }
+      // we do not assign variables as the previous assignment might be invalid due to presolving
 
       newpartialdec->setDetectorchain(otherpartialdec->getDetectorchain());
       newpartialdec->setAncestorList(otherpartialdec->getAncestorList());
@@ -328,18 +297,9 @@ void DETPROBDATA::getTranslatedPartialdecs(
       newpartialdec->setFinishedByFinisher(otherpartialdec->getFinishedByFinisher());
       newpartialdec->prepare();
 
-      SCIP_Bool benders;
-      SCIPgetBoolParam(scip, "detection/benders/enabled", &benders);
-
-      newpartialdec->deleteEmptyBlocks(benders);
       newpartialdec->getScore(GCGconshdlrDecompGetScoretype(scip)) ;
 
-      if( newpartialdec->checkConsistency() )
-         translatedpartialdecs.push_back(newpartialdec);
-      else
-      {
-         delete newpartialdec;
-      }
+      translatedpartialdecs.push_back(newpartialdec);
    }
 }
 
@@ -348,8 +308,8 @@ DETPROBDATA::DETPROBDATA(
    SCIP* givenScip,
    SCIP_Bool _originalProblem
    ) :
-      scip( givenScip ), openpartialdecs( 0 ), ancestorpartialdecs( 0 ), origfixedtozerovars(0),
-      nvars( SCIPgetNVars( givenScip ) ), nconss( SCIPgetNConss( givenScip ) ), nnonzeros( 0 ), original( _originalProblem ), candidatesNBlocks( 0 ),
+      scip(givenScip), openpartialdecs(0), ancestorpartialdecs( 0 ), origfixedtozerovars(0),
+      nvars(SCIPgetNVars(givenScip)), nconss(SCIPgetNConss(givenScip)), nnonzeros(0), original(_originalProblem), candidatesNBlocks(0),
       classificationtime(0.), nblockscandidatescalctime(0.), postprocessingtime(0.), translatingtime(0.)
 {
    SCIP_CONS** conss;
@@ -358,8 +318,8 @@ DETPROBDATA::DETPROBDATA(
 
    if( original )
    {
-      nvars = SCIPgetNOrigVars( scip );
-      nconss = SCIPgetNOrigConss( scip );
+      nvars = SCIPgetNOrigVars(scip);
+      nconss = SCIPgetNOrigConss(scip);
    }
 
    int relevantVarCounter = 0;
@@ -368,13 +328,13 @@ DETPROBDATA::DETPROBDATA(
    /* initilize matrix datastructures */
    if( original )
    {
-      conss = SCIPgetOrigConss( scip );
-      vars = SCIPgetOrigVars( scip );
+      conss = SCIPgetOrigConss(scip);
+      vars = SCIPgetOrigVars(scip);
    }
    else
    {
-      conss = SCIPgetConss( scip );
-      vars = SCIPgetVars( scip );
+      conss = SCIPgetConss(scip);
+      vars = SCIPgetVars(scip);
    }
 
    /* assign an index to every cons and var
@@ -389,7 +349,7 @@ DETPROBDATA::DETPROBDATA(
       if( conss[i] != NULL )
       {
          constoindex[conss[i]] = relevantConsCounter;
-         relevantconss.push_back( conss[i] );
+         relevantconss.push_back(conss[i]);
          SCIPcaptureCons(scip, conss[i]);
 
          ++relevantConsCounter;
@@ -402,7 +362,7 @@ DETPROBDATA::DETPROBDATA(
 
    for( int i = 0; i < nvars; ++ i )
    {
-      SCIP_VAR* relevantVar = original ? vars[i] : SCIPvarGetProbvar( vars[i] );
+      SCIP_VAR* relevantVar = original ? vars[i] : SCIPvarGetProbvar(vars[i]);
 
       if( varIsFixedToZero(scip, vars[i]) )
       {
@@ -411,7 +371,7 @@ DETPROBDATA::DETPROBDATA(
       else if( relevantVar != NULL )
       {
          vartoindex[relevantVar] = relevantVarCounter;
-         relevantvars.push_back( relevantVar );
+         relevantvars.push_back(relevantVar);
          ++ relevantVarCounter;
       }
    }
@@ -420,9 +380,9 @@ DETPROBDATA::DETPROBDATA(
    nvars = relevantvars.size();
    nconss = relevantconss.size();
    SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, " nvars: %d / nconss: %d \n", nvars, nconss  );
-   varsforconss = std::vector<std::vector<int>>( nconss );
-   valsforconss = std::vector < std::vector < SCIP_Real >> ( nconss );
-   conssforvars = std::vector<std::vector<int>>( nvars );
+   varsforconss.resize(nconss);
+   valsforconss.resize(nconss);
+   conssforvars.resize(nvars);
 
    /* assumption: now every relevant constraint and variable has its index
     * and is stored in the corresponding unordered_map */
@@ -436,16 +396,16 @@ DETPROBDATA::DETPROBDATA(
 
       cons = relevantconss[i];
 
-      nCurrVars = GCGconsGetNVars( scip, cons );
+      nCurrVars = GCGconsGetNVars(scip, cons);
       if( nCurrVars == 0 )
          continue;
 
       assert(SCIPconsGetName( cons) != NULL);
 
-      SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & currVars, nCurrVars ) );
-      SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & currVals, nCurrVars ) );
-      SCIP_CALL_ABORT( GCGconsGetVars( scip, cons, currVars, nCurrVars ) );
-      SCIP_CALL_ABORT( GCGconsGetVals( scip, cons, currVals, nCurrVars ) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & currVars, nCurrVars) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & currVals, nCurrVars) );
+      SCIP_CALL_ABORT( GCGconsGetVars(scip, cons, currVars, nCurrVars) );
+      SCIP_CALL_ABORT( GCGconsGetVals(scip, cons, currVals, nCurrVars) );
 
       for( int currVar = 0; currVar < nCurrVars; ++ currVar )
       {
@@ -457,31 +417,27 @@ DETPROBDATA::DETPROBDATA(
 
          /*@todo remove this after the bug is fixed */
          /* because of the bug of GCGconsGet*()-methods some variables have to be negated */
-         if( ! SCIPvarIsNegated( currVars[currVar] ) )
-            iterVar = vartoindex.find( currVars[currVar] );
+         if( !SCIPvarIsNegated(currVars[currVar]) )
+            iterVar = vartoindex.find(currVars[currVar]);
          else
-            iterVar = vartoindex.find( SCIPvarGetNegatedVar( currVars[currVar] ) );
+            iterVar = vartoindex.find(SCIPvarGetNegatedVar(currVars[currVar]));
 
          if( iterVar == vartoindex.end() )
             continue;
 
          varIndex = iterVar->second;
 
-         varsforconss[i].push_back( varIndex );
-         conssforvars[varIndex].push_back( i );
-         valsforconss[i].push_back( currVals[currVar] );
-         valsMap[std::pair<int, int>( i, varIndex )] = currVals[currVar];
+         varsforconss[i].push_back(varIndex);
+         conssforvars[varIndex].push_back(i);
+         valsforconss[i].push_back(currVals[currVar]);
+         valsMap[std::pair<int, int>(i, varIndex)] = currVals[currVar];
          ++ nnonzeros;
       }
       SCIPfreeBufferArrayNull( scip, & currVals );
       SCIPfreeBufferArrayNull( scip, & currVars );
    }
 
-   createconssadj = GCGconshdlrDecompGetConssAdjCalculated(scip);
-   createconssadj = createconssadj && (getNConss() < 1000);
-
-   if( !createconssadj )
-      GCGconshdlrDecompSetConssAdjCalculated(scip, FALSE);
+   createconssadj = (getNConss() < 1000);
 
    if( createconssadj )
    {
@@ -496,12 +452,12 @@ DETPROBDATA::~DETPROBDATA()
    {
       SCIP_CONS* cons;
 
-      cons = getConsForIndex(c);
+      cons = getCons(c);
       SCIPreleaseCons(scip, &cons);
    }
 
    // Delete all partialdecs
-   GCGconshdlrDecompDeregisterAllPartialdecs(scip);
+   GCGconshdlrDecompDeregisterPartialdecs(scip, original);
 
    for( size_t i = 0; i < conspartitioncollection.size(); ++ i )
    {
@@ -591,6 +547,7 @@ bool DETPROBDATA::addPartialdecToOpen(
    PARTIALDECOMP* partialdec
    )
 {
+   assert(partialdec->checkConsistency());
    if( partialdecIsNoDuplicateOfPartialdecs(partialdec, openpartialdecs, true) )
    {
       openpartialdecs.push_back(partialdec);
@@ -607,6 +564,7 @@ bool DETPROBDATA::addPartialdecToFinished(
    PARTIALDECOMP* partialdec
    )
 {
+   assert(partialdec->checkConsistency());
    if( partialdec->isComplete() && partialdecIsNoDuplicateOfPartialdecs(partialdec, finishedpartialdecs, false) )
    {
       finishedpartialdecs.push_back(partialdec);
@@ -623,6 +581,7 @@ void DETPROBDATA::addPartialdecToFinishedUnchecked(
    PARTIALDECOMP* partialdec
    )
 {
+   assert(partialdec->checkConsistency());
    finishedpartialdecs.push_back(partialdec);
 }
 
@@ -726,14 +685,6 @@ PARTIALDECOMP* DETPROBDATA::getAncestorPartialdec(
 }
 
 
-SCIP_CONS* DETPROBDATA::getConsById(
-   int consid
-   )
-{
-   return relevantconss[consid];
-}
-
-
 ConsPartition* DETPROBDATA::getConsPartition(
    int partitionIndex
    )
@@ -744,7 +695,7 @@ ConsPartition* DETPROBDATA::getConsPartition(
 }
 
 
-SCIP_CONS* DETPROBDATA::getConsForIndex(
+SCIP_CONS* DETPROBDATA::getCons(
    int consIndex
    )
 {
@@ -876,6 +827,12 @@ int DETPROBDATA::getNFinishedPartialdecs()
 }
 
 
+int DETPROBDATA::getNPartialdecs()
+{
+   return (int) (finishedpartialdecs.size() + openpartialdecs.size());
+}
+
+
 int DETPROBDATA::getNNonzeros()
 {
    return nnonzeros;
@@ -979,14 +936,6 @@ std::vector<SCIP_Real>& DETPROBDATA::getValsForCons(
 }
 
 
-SCIP_VAR* DETPROBDATA::getVarById(
-   int varid
-   )
-{
-   return relevantvars[varid];
-}
-
-
 VarPartition* DETPROBDATA::getVarPartition(
    int partitionIndex
    )
@@ -1003,7 +952,7 @@ std::vector<VarPartition*> DETPROBDATA::getVarPartitions()
 }
 
 
-SCIP_VAR* DETPROBDATA::getVarForIndex(
+SCIP_VAR* DETPROBDATA::getVar(
    int varIndex
    )
 {

@@ -137,9 +137,11 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConsclass)
       gcg::ConsPartition* classifier = partialdecdetectiondata->detprobdata->getConsPartition(classifierIndex);
       std::vector<int> consclassindices_master;
 
-      if ( classifier->getNClasses() > maximumnclasses )
+      if( classifier->getNClasses() > maximumnclasses )
       {
-         std::cout << " the current consclass distribution includes " <<  classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagatePartialdec() of cons class detector" << std::endl;
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL,
+            " the current consclass distribution includes %d classes but only %d are allowed for propagatePartialdec() of cons class detector\n",
+            classifier->getNClasses(), maximumnclasses);
          continue;
       }
 
@@ -195,38 +197,43 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConsclass)
             }
          }
 
-         /* set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
-         std::stringstream decdesc;
-         decdesc << "consclass" << "\\_" << classifier->getName() << ": \\\\ ";
-         std::vector<int> curmasterclasses( consclassindices_master );
-         for( size_t consclassId = 0; consclassId < subset.size(); ++consclassId )
+         if( partialdec->getNOpenconss() < partialdecOrig->getNOpenconss() )
          {
-            if( consclassId > 0 )
+            /* set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
+            std::stringstream decdesc;
+            decdesc << "consclass" << "\\_" << classifier->getName() << ": \\\\ ";
+            std::vector<int> curmasterclasses(consclassindices_master);
+            for( size_t consclassId = 0; consclassId < subset.size(); ++consclassId )
             {
-               decdesc << "-";
+               if( consclassId > 0 )
+               {
+                  decdesc << "-";
+               }
+               decdesc << classifier->getClassName(subset[consclassId]);
+               if( std::find(consclassindices_master.begin(), consclassindices_master.end(),
+                             subset[consclassId]) == consclassindices_master.end())
+               {
+                  curmasterclasses.push_back(subset[consclassId]);
+               }
             }
-            decdesc << classifier->getClassName(subset[consclassId]);
-            if( std::find( consclassindices_master.begin(), consclassindices_master.end(),
-               subset[consclassId] ) == consclassindices_master.end() )
+            for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
             {
-               curmasterclasses.push_back(subset[consclassId]);
+               if( consclassId > 0 || !subset.empty())
+               {
+                  decdesc << "-";
+               }
+               decdesc << classifier->getClassName(consclassindices_master[consclassId]);
             }
-         }
-         for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
-         {
-            if( consclassId > 0 || !subset.empty() )
-            {
-               decdesc << "-";
-            }
-            decdesc << classifier->getClassName(consclassindices_master[consclassId]);
-         }
 
-         partialdec->sort();
-         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
-         partialdec->addDetectorChainInfo(decinfo);
-         partialdec->setConsPartitionStatistics(partialdec->getNDetectors(), classifier, curmasterclasses);
+            partialdec->sort();
+            (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
+            partialdec->addDetectorChainInfo(decinfo);
+            partialdec->setConsPartitionStatistics(partialdec->getNDetectors(), classifier, curmasterclasses);
 
-         foundpartialdecs.push_back(partialdec);
+            foundpartialdecs.push_back(partialdec);
+         }
+         else
+            delete partialdec;
       }
    }
 

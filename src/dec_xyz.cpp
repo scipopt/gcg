@@ -91,7 +91,7 @@ struct DEC_DetectorData
 #define detectorFreeXyz NULL
 
 /** propagate PARTIALDECOMP function of detector */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecXyz)
 {  /*lint --e{715}*/
 

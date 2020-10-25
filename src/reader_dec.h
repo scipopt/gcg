@@ -81,23 +81,6 @@ SCIP_RETCODE SCIPincludeReaderDec(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-
-/* reads problem from file */
-extern
-SCIP_RETCODE SCIPreadDec(
-   SCIP*                 scip,               /**< SCIP data structure */
-   const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
-   SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
-   );
-
-
-/** write a DEC file for a given decomposition */
-SCIP_RETCODE GCGwriteDecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
-   );
-
 #ifdef __cplusplus
 }
 #endif

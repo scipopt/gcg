@@ -144,16 +144,18 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
    assert(vartoblock != NULL);
    assert(nblocks >= 0);
    assert(vars != NULL);
-   assert(nvars > 0);
-
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, nvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
 
    nlinkingvars = 0;
    nmastervars = 0;
 
    *haslinking = FALSE;
+
+   if( nvars == 0 )
+      return SCIP_OKAY;
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, nvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
 
    for( i = 0; i < nblocks; ++i )
    {
@@ -261,17 +263,20 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    assert(constoblock != NULL);
    assert(nblocks >= 0);
    assert(conss != NULL);
-   assert(nconss > 0);
    assert(haslinking != NULL);
 
+   *haslinking = FALSE;
+   retcode = SCIP_OKAY;
+
    DECdecompSetConstoblock(decomp, constoblock);
+
+   if( nconss == 0 )
+      return retcode;
 
    SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
 
-   *haslinking = FALSE;
-   retcode = SCIP_OKAY;
    for( i = 0; i < nblocks; ++i )
    {
       SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
@@ -499,6 +504,7 @@ SCIP_RETCODE DECdecompCreate(
    decomp->consindex = NULL;
    decomp->varindex = NULL;
    decomp->detector = NULL;
+   decomp->nmastervars = 0;
 
    decomp->detectorchain = NULL;
    decomp->sizedetectorchain = 0;
@@ -1306,9 +1312,7 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
    nvars = SCIPgetNVars(scip);
 
    assert(vars != NULL);
-   assert(nvars > 0);
    assert(conss != NULL);
-   assert(nconss > 0);
 
    DECdecompSetNBlocks(decomp, nblocks);
 
@@ -2299,7 +2303,9 @@ SCIP_RETCODE DECdecompCheckConsistency(
          SCIP_CONS* cons = DECdecompGetSubscipconss(decdecomp)[b][c];
 
          SCIPdebugMessage("Cons <%s> in block %d = %d\n", SCIPconsGetName(cons), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1);  /*lint !e507*/
-         assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
+         // @todo: remove if check when SCIPfindCons() can be called in stage SCIP_STAGE_INITSOLVE
+         if( SCIPgetStage(scip) != SCIP_STAGE_INITSOLVE)
+            assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
          assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) - 1 == b); /*lint !e507*/
          ncurvars = GCGconsGetNVars(scip, cons);
          if ( ncurvars == 0 )
@@ -2427,7 +2433,7 @@ SCIP_RETCODE DECcreateBasicDecomp(
       SCIP_CALL( SCIPhashmapInsert(vartoblock, probvar, (void*) (size_t) 1 ) );
       }
 
-   if( solveorigprob )
+   if( solveorigprob || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
       nblocks = 0;
    else
       nblocks = 1;

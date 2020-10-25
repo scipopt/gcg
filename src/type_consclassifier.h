@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -50,17 +50,6 @@ typedef struct DEC_ConsClassifier DEC_CONSCLASSIFIER;
  *  - classifier      : classifier data structure
  */
 #define DEC_DECL_FREECONSCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, DEC_CONSCLASSIFIER* classifier)
-
-/**
- * classifier initialization method
- * It can be used to fill the classifier data with needed information. The implementation is optional.
- *
- * input:
- *  - scip            : SCIP data structure
- *  - classifier      : classifier data structure
- */
-#define DEC_DECL_INITCONSCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, DEC_CONSCLASSIFIER* classifier)
-
 
 /**
  * Tries to classify constraints with data of the according detprobdata and store the classification in the detprobdata

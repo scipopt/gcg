@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -49,7 +49,6 @@ struct DEC_VarClassifier {
    DEC_CLASSIFIERDATA*   clsdata;            /**< custom data structure of the classifiers */
 
    DEC_DECL_FREEVARCLASSIFIER((*freeClassifier));                  /**< destructor of detector */
-   DEC_DECL_INITVARCLASSIFIER((*initClassifier));                  /**< initialization method of detector */
    DEC_DECL_VARCLASSIFY((*classify));            /**< structure detection method of detector */
 };
 

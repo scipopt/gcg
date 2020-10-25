@@ -133,7 +133,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
 
    for( int i = 0; i < partialdecOrig->getNOpenconss(); ++i)
    {
-      cons = partialdecdetectiondata->detprobdata->getConsForIndex(partialdecOrig->getOpenconss()[i]);
+      cons = partialdecdetectiondata->detprobdata->getCons(partialdecOrig->getOpenconss()[i]);
       consType cT = GCGconsGetType(scip, cons);
 
       /* find constype or not */
@@ -170,7 +170,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
       auto& openconss = partialdec->getOpenconssVec();
       for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
       {
-         cons = partialdecdetectiondata->detprobdata->getConsForIndex(*itr);
+         cons = partialdecdetectiondata->detprobdata->getCons(*itr);
          bool found = false;
          for(size_t constypeId = 0; constypeId < subsetsOfConstypes[subset].size(); ++constypeId )
          {

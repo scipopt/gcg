@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -74,16 +74,7 @@ struct DEC_ClassifierData
  */
 
 /** destructor of classifier to free user data (called when GCG is exiting) */
-#if 0
-#else
 #define classifierFree NULL
-#endif
-
-/** classifier initialization method (called after problem was transformed) */
-#if 0
-#else
-#define classifierInit NULL
-#endif
 
 static
 DEC_DECL_VARCLASSIFY(classifierClassify)
@@ -116,27 +107,27 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
    /* assign vars */
    for( int v = 0; v < detprobdata->getNVars(); ++v )
    {
-      assert( detprobdata->getVarForIndex( v ) != NULL );
-      curobjval = SCIPvarGetObj( detprobdata->getVarForIndex( v ) );
+      assert( detprobdata->getVar(v) != NULL );
+      curobjval = SCIPvarGetObj(detprobdata->getVar(v));
 
-      if( SCIPisZero( scip, curobjval ) )
+      if( SCIPisZero(scip, curobjval) )
       {
-         classifier->assignVarToClass( v, 0 );
+         classifier->assignVarToClass(v, 0);
       }
-      else if ( SCIPisPositive( scip, curobjval ) )
+      else if ( SCIPisPositive(scip, curobjval) )
       {
-         classifier->assignVarToClass( v, 1 );
+         classifier->assignVarToClass(v, 1);
       }
       else
       {
-         classifier->assignVarToClass( v, 2 );
+         classifier->assignVarToClass(v, 2);
       }
    }
 
    /* remove a class if there is no variable with the respective sign */
    classifier->removeEmptyClasses();
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses()) ;
 
 
    detprobdata->addVarPartition(classifier);
@@ -153,7 +144,7 @@ SCIP_RETCODE SCIPincludeVarClassifierObjValueSigns(
 {
    DEC_CLASSIFIERDATA* classifierdata = NULL;
 
-   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierInit, classifierFree, classifierClassify) );
+   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

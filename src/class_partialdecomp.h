@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2019 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -382,6 +382,12 @@ public:
       );
 
    /**
+    * @brief assigns open conss to master
+    */
+   void assignOpenConssToMaster(
+      );
+
+   /**
     * @brief assigns conss structure according to given hashmap
     *
     *  adds blocks and assigns open conss to a new block or to master
@@ -406,6 +412,21 @@ public:
    SCIP_RETCODE assignPartialdecFromConstoblockVector(
       std::vector<int> constoblock, /**< vector containing an assignment of conss to a block or to master */
       int additionalNBlocks         /**< number of (additional) blocks the vector contains */
+      );
+
+   /**
+    * @brief computes components by connectedness of conss and vars
+    *
+    * computes components corresponding to connectedness of conss and vars
+    * and assigns them accordingly (all but one of largest components)
+    *
+    * strategy: assigns all conss same block if they are connected
+    * two constraints are adjacent if there is a common variable
+    *
+    * @note this relies on the consadjacency structure of the detprobdata
+    *  hence it cannot be applied in presence of linking variables
+    */
+   void assignSmallestComponentsButOneConssAdjacency(
       );
 
    /**
@@ -458,11 +479,41 @@ public:
    void complete(
       );
 
+   /**
+    * @brief assigns all open constraints and open variables
+    *
+    *  strategy: assigns all conss and vars to the same block if they are connected,
+    *  a cons and a var are adjacent if the var appears in the cons
+    */
+   void completeByConnected(
+      );
+
+   /**
+    * @brief assigns all open constraints and open variables
+    *
+    *  strategy: assigns all conss and vars to the same block if they are connected
+    *  a cons and a var are adjacent if the var appears in the cons
+    *  \note this relies on the consadjacency structure of the detprobdata
+    *  hence it cannot be applied in presence of linking variables
+    */
+   void completeByConnectedConssAdjacency(
+      );
+
+   /**
+    * @brief assigns all open constraints and open variables
+    *
+    *  strategy: assigns a cons (and related vars) to a new block if possible,
+    *  if not to an existing block if possible (by means of prior var assignments)
+    *  and finally to master, if there does not exist such a block
+    */
+   void completeGreedily(
+      );
+
    /** @brief removes the given cons from master
     */
    void removeMastercons(
       int consid      /**< id of cons */
-   );
+      );
 
    /**
     * @brief: assigns every open cons/var
@@ -473,10 +524,9 @@ public:
     *  - and every cons to master that hits a master var
     *  - and every var to master if it does not hit any blockcons and has no open cons
     *  - leave the cons/variableopen if nothing from the above holds
-    *  @return scip return code
     *  */
-   SCIP_RETCODE considerImplicits(
-        );
+   void considerImplicits(
+      );
 
    /**
     * @brief copies the given partialdec's partition statistics
@@ -927,7 +977,7 @@ public:
     * @brief Gets fraction of variables assigned to the border for detectors in detectorchain
     * @return vector of fractions of variables assigned to the border for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctVarsToBorderVector();
+   std::vector<SCIP_Real>& getPctVarsToBorderVector();
 
    /**
     * @brief Gets fraction of variables assigned to a block for a detector
@@ -942,7 +992,7 @@ public:
     * @brief returns fraction of variables assigned to a block for detectors in detectorchain
     * @return vector of fractions of variables assigned to a block for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctVarsToBlockVector();
+   std::vector<SCIP_Real>& getPctVarsToBlockVector();
 
    /**
     * @brief Gets fraction of variables that are not longer open for a detector
@@ -957,7 +1007,7 @@ public:
     * @brief Gets fraction of variables that are not longer open for detectors in detectorchain
     * @return vector or fractions of variables that are not longer open for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctVarsFromFreeVector();
+   std::vector<SCIP_Real>& getPctVarsFromFreeVector();
 
    /**
     * @brief Gets fraction of constraints assigned to the border for a detector
@@ -972,7 +1022,7 @@ public:
     * @brief Gets fraction of constraints assigned to the border for detectors in detectorchain
     * @return vector of fractions of constraints assigned to the border for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctConssToBorderVector();
+   std::vector<SCIP_Real>& getPctConssToBorderVector();
 
    /**
     * @brief Gets fraction of constraints assigned to a block for a detector
@@ -986,7 +1036,7 @@ public:
     * @brief Gets fraction of constraints assigned to a block for detectors in detectorchain
     * @return vector of fractions of constraints assigned to a block for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctConssToBlockVector();
+   std::vector<SCIP_Real>& getPctConssToBlockVector();
 
    /**
     * @brief Gets fraction of constraints that are not longer open for a detector
@@ -1000,7 +1050,7 @@ public:
     * @brief Gets fraction of constraints that are not longer open for detectors in detectorchain
     * @return vector of fractions of constraints that are not longer open for detectors in detectorchain
     */
-   std::vector<SCIP_Real> getPctConssFromFreeVector();
+   std::vector<SCIP_Real>& getPctConssFromFreeVector();
 
    /**
     * @brief Gets index of the representative block for a block, this might be blockid itself
@@ -1220,9 +1270,8 @@ public:
     *
     * strategy: do obvious ( @see considerImplicits()) assignments and
     *  assign other conss and vars to master if possible (@see assignOpenPartialHittingToMaster())
-    * @return scip return code
     */
-   SCIP_RETCODE refineToMaster(
+   void refineToMaster(
       );
 
    /**
@@ -1498,46 +1547,47 @@ public:
    /**
     * @brief assigns a constraint by name to a block
     * @see fixConsToBlock
+    * @returns true iff successful
     */
-   void fixConsToBlockByName(
+   bool fixConsToBlockByName(
       const char*           consname,            /**< name of the constraint */
-      int                   blockid              /**< block index ( counting from 0) */
+      int                   blockid              /**< block index (counting from 0) */
       );
 
    /**
     * @brief assigns a variable by name to a block
     * @see fixVarToBlock
-    * @returns SCIP return code
+    * @returns true iff successful
     */
-   void fixVarToBlockByName(
+   bool fixVarToBlockByName(
       const char*           varname,             /**< name of the variable */
-      int                   blockid              /**< block index ( counting from 0) */
+      int                   blockid              /**< block index (counting from 0) */
       );
 
    /**
     * @brief assgins a constraint by name as master
     * @see fixConsToMaster
-    * @returns SCIP return code
+    * @returns true iff successful
     */
-   void fixConsToMasterByName(
+   bool fixConsToMasterByName(
       const char*           consname   /**< name of cons to fix as master cons */
       );
 
    /**
     * @brief assigns a variable with given name as master
     * @see fixVarToMaster
-    * @returns SCIP return code
+    * @returns true iff successful
     */
-   void fixVarToMasterByName(
+   bool fixVarToMasterByName(
       const char*           varname              /**< name of the variable */
       );
 
    /**
     * @brief assigns a variable by name to the linking variables
     * @see fixVarToLinking
-    * @returns SCIP return code
+    * @returns true iff successful
     */
-   void fixVarToLinkingByName(
+   bool fixVarToLinkingByName(
       const char*           varname              /**< name of the variable */
       );
 
@@ -1567,7 +1617,7 @@ public:
     * @param newvector vector of fractions of constraints set to blocks per involved detector
     */
    void setPctConssToBlockVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
       );
 
    /**
@@ -1575,7 +1625,7 @@ public:
     * @param newvector vector of fractions of constraints that are not longer open per involved detector
     */
    void setPctConssFromFreeVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
    );
 
    /**
@@ -1583,7 +1633,7 @@ public:
     * @param newvector vector of fractions of constraints assigned to the border per involved detector
     */
    void setPctConssToBorderVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
       );
 
    /**
@@ -1591,7 +1641,7 @@ public:
     * @param newvector vector of fractions of variables assigned to the border per involved detector
     */
    void setPctVarsToBorderVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
       );
 
    /**
@@ -1599,7 +1649,7 @@ public:
     * @param newvector vector of fractions of variables assigned to a block per involved detector
     */
    void setPctVarsToBlockVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
    );
 
    /**
@@ -1607,7 +1657,7 @@ public:
     * @param newvector vector of fractions of variables that are not longer open per involved detector
     */
    void setPctVarsFromFreeVector(
-      std::vector<SCIP_Real> newvector
+      std::vector<SCIP_Real>& newvector
       );
 
    /**
@@ -1823,9 +1873,8 @@ private:
 
    /**
     * @brief assigns open conss/vars that hit exactly one block and at least one open var/cons to border
-    * @return scip return code
     */
-   SCIP_RETCODE assignOpenPartialHittingToMaster(
+   void assignOpenPartialHittingToMaster(
       );
 
    /**

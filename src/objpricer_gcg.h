@@ -364,7 +364,7 @@ private:
       SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
    );
 
-#if 0
+#ifdef SCIP_DISABLED_CODE
    /** generic method to generate feasible columns from the pricing problem
     * @note This method has to be threadsafe!
     */
