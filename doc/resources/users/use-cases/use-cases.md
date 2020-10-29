@@ -85,3 +85,14 @@ If you're new here, we recommend starting with the first one.
 > ⇨ @subpage u8
 > \n\n
 > </div>
+
+> <div style="width:80%">
+> <img src="user.png" style="vertical-align:middle; height:5.5%; position:absolute; right:40px;">
+> #### Use GCG as solver for models in GAMS
+> If you have a problem instance modeled in GAMS and you want to solve with GCG,
+> this is the right guide for you. We will use GCG as external solver in GAMS.
+> For GAMS files which contain only the model with ... we will use GCG to read in GAMS files and obtain structural
+> information from the original problem description.\n
+> ⇨ @subpage u9
+> \n\n
+> </div>
