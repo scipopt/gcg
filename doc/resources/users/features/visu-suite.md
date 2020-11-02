@@ -2,6 +2,8 @@
 
 [TOC]
 
+> **Note: The features described on this page are available as a preview only on the branch `visu_suite`.**\n
+
 > On this page, we **present and guide through the main visualization reporting capabilities** of GCG. 
 > If you want to generate a specific visualization and no complete report, please visit the guide on @ref visu-manual.
 > If you are looking for visualizations of decompositions please visit the guide @ref explore-menu. 
@@ -15,12 +17,18 @@ showing how the tree was built during branching.
 - @ref testset-report
 - @ref comparison-report
 - @ref vbc-visu
+
+
+##### A Remark for CMake Users
+Generally, we don't recommend to do testing and experiments using a CMake build, which is due to `make check` not generating 
+the usual runtime data, see @ref install-manually for more information). Therefore, automatic test set report generation 
+is currently **not supported under CMake builds**. When using the @ref testset-report-manual "manual mode" instead, 
+you have to give runtime data generated with a `make` installation using `make test` or with a CMake build using the
+`cmake gcg_cluster` target.
  
 # Test Set Report {#testset-report}
-> **Note: This guide concerns the branch `552-testset-report` and the mentioned features are only available on this branch.**\n
-
 The test set report **generates a PDF that includes all visualizations**, both for all single instances and for aggregated
-statistics for the test set, to give you a compiled and captioned overview of visualizations of  different aspects of GCG's algorithmics.\n
+statistics for the test set, to give you a compiled and captioned overview of visualizations of different aspects of GCG's algorithmics.\n
 The report can be generated in two ways:
 1. Execute a **test and generate** the report (continue @ref testset-report-auto "here")
 2. Have runtime data **collected already and generate** the report afterwards (continue @ref testset-report-manual "here")
@@ -30,23 +38,18 @@ The report can be generated in two ways:
 > However, **it will always (re-)generate all runtime data**, which might be undesirable, in particular for very big test sets.
 > For a different method, see @ref testset-report-manual "here". \n
 
-
-> **Remark for CMake users:** 
-> Automatic test set report generation is currently **not supported under CMake builds**. 
-> Please use the @ref testset-report-manual "manual mode", using runtime data generated with a `make` installation or 
-> with `cmake gcg_cluster` (necessary due to `make check` not generating the usual runtime data).
-
 ### Preparation
 - For a full report, it is required to have **compiled GCG with `make STATISTICS=true`**. Otherwise, GCG will not print 
 out extensive pricing and bounds statistics for the respective visualizations.\n
 - All **other requirements** listed on the @ref visu-prerequisites "visualization script page" have to be fulfilled 
-(e.g. correctly configured python). The script will not print any warnings (e.g. if your python is not configured correctly) 
+(e.g. correctly configured python). 
+- The script **will not print any warnings** (e.g. if your python is not configured correctly) 
 unless you set `DEBUG=true` in the settings file (see below). 
-- You **can create a script settings file**, e.g. `settings.scset` where you can define which plots to generate and which 
+- You **can create a script settings file**, e.g. `settings.vset` where you can define which plots to generate and which 
 arguments to generate them with. Furthermore, if you have a big testset or just want to check if the feature works, 
 you can also enable a draft mode that will generate a reduced version of the report. A full list of possible settings can 
 be found @subpage report-settings "here".
-- To use the script settings, execute the test with `SCRIPTSETTINGS=settings.scset`, while having `settings.scset` 
+- To **use the script settings**, execute the test with `VISUSETTINGS=settings.vset`, while having `settings.vset` 
 lying in the GCG root directory.
 
 ### Generation
@@ -75,23 +78,25 @@ already compiled for you and opened automatically.
 ### Preparation
 - For a full report, it is required to have generated your runtime data with both, **a GCG compiled with `make STATISTICS=true`**
 and a **test executed with statistics `make test STATISTICS=true`**. Otherwise, GCG will not print out extensive pricing and 
-bounds statistics for the respective visualizations. Furthermore, **for detection visualizations, `FORVISU=true`** 
-must be set during testing (this flag will also turn on statistics).
+bounds statistics for the respective visualizations. Furthermore, **for detection visualizations, `DETECTIONSTATISTICS=true`** 
+must be set during testing.
 - All **other requirements** listed on the @ref visu-prerequisites "visualization script page" have to be fulfilled 
 (e.g. correctly configured python). 
-The script will not print any warnings (e.g. if your python is not configured correctly)
+- The script **will not print any warnings** (e.g. if your python is not configured correctly)
 unless you set `DEBUG=true` in the settings file (see below). 
-- You **have to create a script settings file**, e.g. `settings.scset`, where you have to define parameters of your
+- You **have to create a script settings file**, e.g. `settings.vset`, where you have to define parameters of your
 given test run. A full list of possible settings can be found @ref report-settings "here", where it is also described which flags 
 _have_ to be defined for the scripts to yield results at all and those that can be defined for the report to have full information.
 Note that for `make`, none of the optional flags have to be set - they will be found automatically. 
-- To use the script settings, execute the test with `SCRIPTSETTINGS=settings.scset`, while having `settings.scset` 
+- To **use the script settings**, execute the test with `VISUSETTINGS=settings.vset`, while having `settings.vset` 
 lying in the GCG root directory.
 
 ### Generation
 In order to generate a **test set report _without_ testing**, you can call the visualization target. This can be done using
 
-    make visu SCRIPTSETTINGS=settings.scset
+    make visu VISUSETTINGS=settings.vset DATADIR=<folder containing .res and .out file and vbc file folder>
+
+The data directory can also be given via the settings file.
 
 ### Output
 You will get the same output as with the automated report generation. If visualizations are missing, please set the debug flag
@@ -101,31 +106,33 @@ DEBUG=true
 inside your script settings file to troubleshoot.
 
 # Comparison Report {#comparison-report}
-> **Note: This guide concerns the branch `631-comparison-report` and the mentioned features are only available on this branch.**\n
+The comparison report **generates a PDF with a comparison table and all comparing visualizations**, 
+to give you a compiled and captioned overview of visualizations of different aspects of your two or more test runs.\n
+**Note:** We do not support an automated mode natively, check the @ref compare-versions "version comparison script" for 
+a possibility to automatically generate the runtime data.
 
 ### Preparation
 - For a full report, it is required to have generated your runtime data with both, **a GCG compiled with `make STATISTICS=true`**
 and a **test executed with statistics `make test STATISTICS=true`**. Otherwise, GCG will not print out extensive  bounds statistics
- for the respective visualizations. Furthermore, **for detection visualizations, `FORVISU=true`** 
-must be set during testing (this flag will also turn on statistics).
+ for the respective visualizations. Furthermore, **for detection visualizations, `DETECTIONSTATISTICS=true`** 
+must be set during testing.
 - All **other requirements** listed on the @ref visu-prerequisites "visualization script page" have to be fulfilled 
-(e.g. correctly configured python),
-and additionally, you have to have the python package `tikzplotlib`.
-The script will not print any warnings (e.g. if your python is not configured correctly) 
+(e.g. correctly configured python), and additionally, you have to have the python package `tikzplotlib`.
+- The script **will not print any warnings** (e.g. if your python is not configured correctly) 
 unless you set `DEBUG=true` in the settings file (see below). 
-- You **can create a script settings file**, e.g. `settings.scset` where you can define which plots to generate and which 
+- You **can create a script settings file**, e.g. `settings.vset` where you can define which plots to generate and which 
 arguments to generate them with. Furthermore, if you have a big testset or just want to check if the feature works, 
 you can also enable a draft mode that will generate a reduced version of the report. A full list of possible settings can 
 be found @subpage report-settings "here".
-- To use the script settings, execute the test with `SCRIPTSETTINGS=settings.scset`, while having `settings.scset` 
+- To **use the script settings**, execute the test with `VISUSETTINGS=settings.vset`, while having `settings.vset` 
 lying in the GCG root directory. By default, the script will assume that you conducted the tests with the flag that was set
 when you _last compiled this binary_. You can overwrite that by giving `LAST_STATISTICS=true` in the script settings file.
 
 ### Generation
-In order to generate a **comparison report** (always with already existing runtime data), you can call the comparison target. 
-This can be done using
+In order to generate a **comparison report** (always with already existing runtime data), you can call the visualization target,
+but with a data directory that contains multiple runs:
 
-    make compare SCRIPTSETTINGS=settings.scset DATADIR=<folder containing .res and .out files>
+    make visu VISUSETTINGS=settings.vset DATADIR=<folder containing multiple .res and .out files>
 
 The data directory can also be given via the settings file.
 

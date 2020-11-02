@@ -1,6 +1,6 @@
 # Settings for Reports {#report-settings}
 ## Giving a Report Settings File
-In every case, the settings file, e.g. `settings.scset`, should simply look like this:
+In every case, the settings file, e.g. `settings.vset`, should simply look like this:
 ```
 # GCG script settings file
 DRAFT=true
