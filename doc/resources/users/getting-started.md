@@ -21,7 +21,7 @@ again enter a command. This means that you can also enter sequences to go deeper
 First, let us ask what GCG can do for us.
 
 # Basic commands {#basic-commands}
-### Find out you can do here with `help`
+### Find out what you can do here with `help`
 Everywhere in GCG, you can always execute `help` to find out what commands are expected in the place where you currently are.
 ```
 GCG> help
@@ -58,7 +58,7 @@ original problem has 1224 variables (0 bin, 1224 int, 0 impl, 0 cont) and 74 con
 
 ```
 
-To read your own problem, please use a format as described in @subpage input-formats (otherwise, you can also @ref own-reader "add your own reader").
+To read in your own problem, please use a format as described in @subpage input-formats (otherwise, you can also @ref own-reader "add your own reader").
 
 ### Solve your problem with `optimize`
 Here the magic happens: GCG optimizes what you previously read.
@@ -94,9 +94,9 @@ Dual Bound         : +1.60000000000000e+01
 Gap                : 0.00 %
 ```
 
-This log might look familiar if you already know SCIP. If you want to know more about the @ref detection "Decomposition" or the
- @ref pricing "Branch-and-Price process" including Dantzig-Wolfe Reformulation and Column Generation, please have a look into our 
- @ref devs.
+This log might look familiar if you already know SCIP. If you still want to have an explanation of the different log components,
+please consult @ref u1 "use case 1", where we roughly explain what the log prints. \\
+If you then also want to know more about the theory and implementation, please have a look into our @ref devs.
 
 
 ### Show the solution with `display solution`
@@ -120,13 +120,16 @@ After these basic commands, you might want to change some more settings or give 
 ### GCG decompositions
 **Detecting without solving:** This is possible with a simple `detect`. The instance already has to be read.\n
 **Creating your own .dec file:** This can be done using the description in the use case " @ref u5 ".\n
-**Reading your decomposition:** You can read decomposition files (with formats as given @ref input-formats "here") with a simple `read`.
+**Reading your decomposition:** You can read in decomposition files (with formats as given @ref input-formats "here") with a simple `read`.
 The behavior when giving own decomposition files is described @ref detection-process "here".\n
 **Saving your decomposition:** You can save all decompositions found with `write alldecompositions`. To just save single ones, you have
 to select a decomposition in the @ref explore-menu "Explore Menu" with `explore select <nr>` and then `write selecteddecompositions`.
 
 ### GCG settings
-Everything related to settings can be found in the `set` submenu. All possible settings that can be done there, can be found @ref PARAMETERS "here".\n
+Everything related to settings can be found in the `set` submenu inside the GCG interactive menu. 
+All possible parameters that can be changed there, can be found @ref PARAMETERS "here" or in the 
+@ref interactive-menu [Interactive Menu Guide].\n
+
 **Making your own settings file:** If you want to create a whole settings file from the scratch, you can find information
 about that <a href="FAQ.html#createsettingsfile">here</a>.\n
 **Saving your settings:** Otherwise, you can just set everything you want (e.g. `set display 1` to make GCG display solving information
@@ -148,16 +151,16 @@ a `quit`, you will just see the input and not be prompted. A minimal example is
 
 with `LPFILE` being a problem file as needed per the @ref input-formats "format requirements".
 All possible command line arguments can be found in the list down below.\n
-The above command will `read` your file, `optimize` it, i.e. calculates the optimal solution
-and finally terminates.\n\n
+The above command will `read` your file, `optimize` it, i.e. calculate the optimal solution
+and finally terminate GCG.\n\n
 Another command could be
 
     gcg -c "read LPFILE display solution optimize quit"
 
-which will, in addtion to the solving, also print out the solution, i.e. what variables
-have to take which value, onto the console.\n\n
+which will, in addition to the solving, also print out the solution, i.e. which variables
+have to take which values, onto the console.\n\n
 With the execution from the command line, you can give arbitrary commands inside
-the quote marks, as long as they are complete. For instance, if you wrote `write solution`
+the quotation marks, as long as they are complete. For instance, if you wrote `write solution`
 instead of `display solution` in the above command, GCG would also require a name for the
 file that it writes the solution to, i.e. `write solution SOLUFILE`, so watch out for their
 completeness.\n

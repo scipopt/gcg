@@ -33,6 +33,7 @@ zlib1g-dev
 bison
 flex
 libncurses-dev
+libboost-all-dev
 ```
 
 ## Compile SCIP, SOPLEX, BLISS using makefiles
