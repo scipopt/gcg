@@ -96,7 +96,7 @@ In order to generate a **test set report _without_ testing**, you can call the v
 
     make visu VISUSETTINGS=settings.vset DATADIR=<folder containing .res and .out file and vbc file folder>
 
-The data directory can also be given via the settings file.
+The data directory can also be given via the settings file. If you give none, you will be asked for it when the script is called.
 
 ### Output
 You will get the same output as with the automated report generation. If visualizations are missing, please set the debug flag
@@ -134,7 +134,7 @@ but with a data directory that contains multiple runs:
 
     make visu VISUSETTINGS=settings.vset DATADIR=<folder containing multiple .res and .out files>
 
-The data directory can also be given via the settings file.
+The data directory can also be given via the settings file. If you give none, you will be asked for it when the script is called.
 
 ### Output
 > **An example of the output generated can be found [here](pdf/comparisonreport.pdf).**

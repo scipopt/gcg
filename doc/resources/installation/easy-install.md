@@ -7,7 +7,7 @@
 ### Step 1: Prerequisites
 Install the required system libraries:
 
-    sudo apt-get install build-essential libreadline-dev libz-dev libgmp3-dev lib32ncurses5-dev
+    sudo apt-get install build-essential libreadline-dev libz-dev libgmp3-dev lib32ncurses5-dev libboost-all-dev
 
 
 ### Step 2: Get the SCIP Optimization Suite
@@ -51,13 +51,7 @@ SCIP and GCG via Makefile.
 > The installation using the Makefiles build system is recommended for developers,
 > since it offers more testing capabilities (see @ref conduct-experiments).
 
-#### Creating softlinks
-In order to create all necessary links, type
-
-    make links
-
-#### Compilation
-In the root folder of the scipoptsuite, you can then compile everything
+In the root folder of the SCIP Optimization Suite, you can then compile everything
 (you should execute them as root, if possible, to avoid certain errors) with:
 
     make scipoptlib
