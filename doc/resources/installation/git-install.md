@@ -38,7 +38,7 @@ libncurses-dev
 ## Compile SCIP, SOPLEX, BLISS using makefiles
 **Note**: Next, ```make``` is used with some arguments that you prefer. Do not use the ```-j``` option on the very first compilation as it is not compatible with the linker. As the linker is not called again once all links are set, using this option on future compilations should be fine.
 
-It should work to compile the depends (scip, soplex, bliss and googletest) with
+Compile the depends (scip, soplex, bliss and googletest) with
 
     make [args] deps
 
@@ -54,12 +54,12 @@ If compiled without flags, this should have been it.<br>
  * lib/cpxinc is in `PATH_TO_CPLEX_DIR/include/ilcplex/` (PATH_TO_CPLEX_DIR = /opt/cplex/cplex/ on orlabXX)
  * lib/libcplex.a is in `PATH_TO_CPLEX_DIR/lib/x86-64_sles10_4.1/static_pic/libcplex.a`
  * lib/libcplex.linux.x86_64.gnu.so is not needed
- * lib/zimplinc/zimpl is `PATH_TO_ZIMPL_DIR/src` (PATH_TO_ZIMPL_DIR=/opt/scipoptsuite-X.X.X/zimpl-X.X.X/ on orlabXX; compile with argument `ZIMPL=false` if not needed)
+ * lib/zimplinc/zimpl is `PATH_TO_ZIMPL_DIR/src/zimpl` (PATH_TO_ZIMPL_DIR=/opt/scipoptsuite-X.X.X/zimpl/ on orlabXX; compile with argument `ZIMPL=false` if not needed)
  * lib/libzimpl.linux.x86_64.gnu.opt.a is `PATH_TO_ZIMPL_DIR/lib/libzimpl.linux.x86_64.gnu.opt.a`
  * lib/libzimpl.linux.x86_64.gnu.opt.so is not needed
 
 ## Compile GCG
-Afterwards, compile GCG with
+Afterward, compile GCG with
 
     make [args]
 
