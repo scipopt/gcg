@@ -1,11 +1,11 @@
 # Git Installation {#git-install}
-> This guide aims at helping you to install GCG from Git. Note that you have to have access to the repository 
+> This page guides you to through the **installation of GCG from Git**. Note that you have to have access to the repository 
 > (it is not public). 
 
 # Install GCG using Git
-If you want to let an automated installer do the work for you, you can download it [here](installGCGfromGit.sh).\n
-**Note:** Your SSH key has to be registered correctly for it to work. Also, it might be required to make the script
-executable using `sudo chmod +x installGCGfromGit.sh`.
+> **If you want to let an automated installer do the work for you, you can download it [here](installGCGfromGit.sh).**\n
+> **Note:** Your SSH key has to be registered correctly for it to work. Also, it might be required to make the script
+> executable using `sudo chmod +x installGCGfromGit.sh`.
 
 ## Git prerequisites
 Please make sure that you have your ssh key saved in your Git account. Otherwise, you won't be able to

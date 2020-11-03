@@ -1,12 +1,12 @@
 # Windows Installation Guide {#windows-install}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
+> This page guides you through installing GCG on a Windows machine.
 
 Currently, GCG cannot be installed on pure Windows. This is due to unportable commands in the GCG source code. Still, there are **ways to get GCG running on your Windows computer**.
 Generally, there are three different options:
 
 1. Install a full Linux on your PC
 2. Install a Virtual Machine on your PC
-3. Use the Windows Subsystem for Linux (WSL) (see our @ref wsl "guide"))
+3. Use the Windows Subsystem for Linux (WSL) (see our @ref wsl "guide")
 
 While the first two options are more comfortable in the long-run, using the **WSL is a quicker variant** and more suitable **for users who are less experienced with Linux**.
 
@@ -36,8 +36,9 @@ We recommend to **create a folder there** (e.g. `myfolder/`) and giving your use
   4. Execute it using `./<installername.sh>` and follow the installation instructions.
 
 ### 4. Using an IDE to develop features for GCG
-When using an IDE, you have to remember to **switch your terminal** to the Linux Subsystem instead of the Windows Powershell or possible different installs like the Git Bash for Windows.
-Other than that, you can simply **open the folder containing your GCG** within the `\\wsl$\Ubuntu...` paths.
+When using an IDE, you have to remember to **switch your terminal** to the Linux Subsystem (called "WSL Bash") instead of the Windows Powershell or possible different installs like the Git Bash for Windows.
+Other than that, you can simply **open the folder containing your GCG** within the `\\wsl$\Ubuntu...` paths (they are classed as network devices!) using the "Remote" feature of your IDE (lower left corner
+in VSCode, see this [guide](https://code.visualstudio.com/docs/remote/wsl)).
 
 #### Caveats when using WSL
 1. The policy management in WSL is not exactly as in usual Linux. There are different things to pay attention to.

@@ -1,8 +1,7 @@
 # Manual Installation {#install-manually}
-> This guide aims to help you with installing GCG as a developer. It is not necessary for most users.
+> This page guides you through **installing GCG manually**. It is not necessary for most users.
 > Please also check out the compiler and OS @ref compatibility and @ref known-bugs. 
 > You can also find all arguments for the installation under @subpage makefiles-args and @subpage cmake-args.
-
 
 # Install GCG manually
 ## Prerequisites

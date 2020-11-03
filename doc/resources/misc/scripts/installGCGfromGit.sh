@@ -67,12 +67,12 @@ function installPrerequisites(){
     case $yn in
       [Yy]* )
               echo "Installing prerequisites..."
+              sudo apt-get update
               if [ '$SYS' == "cmake" ]; then
                 sudo apt-get install cmake
               else
                 sudo apt-get install make
               fi
-              sudo apt-get update
               sudo apt-get install gcc gpp git build-essential libgmp-dev libreadline-dev zlib1g-dev bison flex libncurses-dev libboost-program-options-dev
               break;;
       [Nn]* ) echo "Not checking prerequisites."
