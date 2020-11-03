@@ -72,7 +72,8 @@ function installPrerequisites(){
               else
                 sudo apt-get install make
               fi
-              sudo apt-get install gcc gpp git build-essential libgmp-dev libreadline-dev zlib1g-dev bison flex libncurses-dev
+              sudo apt-get update
+              sudo apt-get install gcc gpp git build-essential libgmp-dev libreadline-dev zlib1g-dev bison flex libncurses-dev libboost-program-options-dev
               break;;
       [Nn]* ) echo "Not checking prerequisites."
               break;;
@@ -198,9 +199,9 @@ while true; do
   
   # check for BOOST, set it to false if not installed
   dpkg -l boost > /dev/null 2>&1
-  if [ $? != "0" ];
-    then FLAGS+=" BOOST=false";
-    #echo "Information: No BOOST installation found. Compiling without BOOST.";
+  if [ $? != "0" ]; then 
+    FLAGS+=" BOOST=false";
+    echo "Information: No BOOST installation found. Compiling without BOOST.";
   fi
   
   printf "${B}GCG, SCIP and SoPlex will be installed from Git.\e[0m [Install Mode: ${MODE}]\n"

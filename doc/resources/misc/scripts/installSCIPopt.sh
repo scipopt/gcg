@@ -40,6 +40,8 @@ function fcmake(){
 }
 
 function fmake(){
+  printf "${B}Updating Make${W}"
+  sudo apt-get install make
   printf "${B}Creating a single library containing SCIP, SoPlex and ZIMPL${W}"
   sudo make scipoptlib
   printf "${B}Compiling GCG${W}"
@@ -50,28 +52,30 @@ function fmake(){
 }
 
 function install(){
+  printf "${B}Updating Package Manager...${W}"
+  sudo apt-get update
   printf "${B}Installing Prerequisites...${W}"
-  sudo apt-get install build-essential libreadline-dev libz-dev libgmp3-dev lib32ncurses5-dev
-  printf "${B}To download SCIP, you have accept the following:${W}"
-        while true; do
-            printf "${RED}I certify that I will use the software only as a member of a noncommercial and academic institute and that I have read and accepted the ZIB Academic License.${W}";
-            read -p "[Y/n] " yn
-            case $yn in
-                [Yy]* ) break;;
-                [Nn]* ) exit "You did not accept the terms of usage. SCIP was not installed.";;
-                * ) printf "Please answer yes or no.";;
-            esac
-        done
-  printf "${B}Downloading SCIP Optimization Suite${W}"
-  wget https://scipopt.org/download/release/scipoptsuite-6.0.1.tgz -q --show-progress
-  printf "${B}Unpacking SCIP Optimization Suite${W}"
-  sudo rm -r scipoptsuite-6.0.1
-  tar xvzf scipoptsuite-6.0.1.tgz > /dev/null 2>&1
-  rm scipoptsuite-6.0.1.tgz
+  sudo apt-get install build-essential libreadline-dev libz-dev libgmp3-dev lib32ncurses5-dev libboost-program-options-dev
+  printf "${B}Initializing Installation...${W}"
+  while [[ ! -f $SCIPtar || -z $SCIPtar ]]; do
+    read -e -p " Please enter path to SCIP Optimization Suite tarball: " SCIPtar
+  done
+  SCIPtar=$(realpath $SCIPtar)
+  printf " SCIP tar found.\n"
+  
+  if [[ -d ${SCIPtar%.tgz} ]]; then
+    printf " Removing old folder: '${SCIPtar%.tgz}'"
+    rm -r ${SCIPtar%.tgz}
+  fi
+
+  printf "\n${B}Unpacking SCIP Optimization Suite${W}"
+  tar xvzf $SCIPtar > /dev/null 2>&1
+  rm $SCIPtar
+  cd ${SCIPtar%.tgz}
   printf "Done.\n"
-  cd scipoptsuite-6.0.1
+
   while true; do
-      printf "${B}Install the SCIP Optimization Suite using${W}"
+      printf "${B}Install the SCIP Optimization Suite using...${W}"
       printf "(1) CMake [recommended for beginners] or\n"
       printf "(2) Makefile [for advanced testing]\n"
       read -p "Please enter how you want to install it. [1/2] " yn
