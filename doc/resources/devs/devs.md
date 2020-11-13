@@ -7,19 +7,22 @@ own code inside GCG.
 @subpage dev-getting-started \n
 
 \n
-The **second part** describes what's already implemented in GCG and how it is and further can be used to make things much easier than with SCIP.
+The **second part** describes what's already implemented in GCG to introduce developers to existing code
+and algorithmics.
 
 @subpage presolving \n
 @subpage detection \n
+@subpage branching \n
 @subpage pricing \n
 @subpage cutting \n
-@subpage howtouse \n
 
 \n
-The **third part** then finally takes you by the hand to implement your own plug-ins for
-GCG. First, the howtos show you a rough outline of what's to be done, and then you can
+The **third part** describes what features exist to support developers (e.g. @ref conduct-experiments) 
+and then takes you by the hand to implement your own plug-ins for GCG. 
+First, the howtos show you a rough outline of what's to be done, and then you can
 consider some example application projects to get a first basis for your very own project in GCG.
 
+@subpage howtouse \n
 @subpage howtoadd \n
 @ref example-projects
 

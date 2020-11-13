@@ -11,6 +11,7 @@ and optionally <a href="http://www.tcs.hut.fi/Software/bliss/">Bliss</a> and <a 
     ls
     bliss-[version].zip  gcg-[version].tgz  hmetis-[version]-linux.tar.gz  scip-[version].tgz  soplex-[version].tgz  zimpl-[version].tgz
 
+Furthermore, the installed packages are just as for the @ref easy-install.
 ## Main Installation
 ### ZIMPL and SoPlex
 ZIMPL and SoPlex can be compiled by a simple `make`.
@@ -51,7 +52,7 @@ Now, GCG can be compiled. The links to SCIP need to point from `gcg-[version]/li
     make
     ../../scip-[version]/
 
-## Optional Packages
+## Optional Packages {#install-optional}
 ### Bliss
 Bliss is used for symmetry detection and required for the @ref det-isomorph. \n
 If you want to compile GCG with Bliss, you first have to build bliss:

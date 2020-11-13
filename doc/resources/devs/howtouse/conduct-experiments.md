@@ -37,7 +37,12 @@ shifted geom. [ 100/10.0/5.0/2.0]     18.3                 0.9                 5
 @01 GCG(3.1.0)SCIP(7.0.0)spx(5.0.0):default
 ```
 
-If it does, go ahead and continue with the next step.
+### Important Remarks for Reproducing Experiments
+If you want to achieve similar results as in past experiments or the strIPlib runtime data,
+always pay attention to the use of similar settings. For example, by default, the 
+@ref arrowhead "arrowhead structure" detectors (and others as well) are disabled 
+(see @ref detectors for more information), which could lead to very different results
+than anticipated.  
 
 ## 2. Defining a test set
 If you have a problem file, e.g. an `lp` file, this is considered to be an "instance"

@@ -18,7 +18,7 @@ Install the required system libraries:
 
     sudo apt-get install build-essential libreadline-dev libz-dev libgmp3-dev lib32ncurses5-dev libboost-program-options-dev
 
-
+To use all detectors, some more packages are required. See @ref install-optional for more information.
 ### Step 2: Get the SCIP Optimization Suite
 Download the most recent SCIPOptSuite from the [SCIP Page](https://scipopt.org/index.php#download).
 Unzip it and go into the folder, replacing `X.X.X` by the version you downloaded.

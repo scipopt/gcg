@@ -123,7 +123,7 @@ unless you set `DEBUG=true` in the settings file (see below).
 - You **can create a script settings file**, e.g. `settings.vset` where you can define which plots to generate and which 
 arguments to generate them with. Furthermore, if you have a big testset or just want to check if the feature works, 
 you can also enable a draft mode that will generate a reduced version of the report. A full list of possible settings can 
-be found @subpage report-settings "here".
+be found @ref report-settings "here".
 - To **use the script settings**, execute the test with `VISUSETTINGS=settings.vset`, while having `settings.vset` 
 lying in the GCG root directory. By default, the script will assume that you conducted the tests with the flag that was set
 when you _last compiled this binary_. You can overwrite that by giving `LAST_STATISTICS=true` in the script settings file.
@@ -156,7 +156,9 @@ inside your script settings file to troubleshoot.
 # Tree Visualizations {#vbc-visu}
 > Note: The following guide concerns external software. We do not provide warranty nor support for it.
 
-In order to generate pictures of the Branch and Bound tree that GCG used during solving, you can use the [vbctool](https://cs.uni-koeln.de/ls-juenger/software/vbctool). Since the executable might have issues with the linking of the libraries, it is suggested to download the source code (and additionally the Motif Framework). Before you start with the [Build Instructions](https://cs.uni-koeln.de/sites/informatik/projects/vbctool/INSTALL), you have to install a packet:
+### Installation
+In order to generate pictures of the Branch and Bound tree that GCG used during solving, you can use the [vbctool](https://cs.uni-koeln.de/ls-juenger/software/vbctool). Since the executable might have issues with the linking of the libraries, it is suggested to **download the vbctool source code** and additionally the **Motif Framework source code**, both available on the website. Unzip the Motif Framework source code tarball into the `lib/` folder of the vbctool. 
+Before starting with the [Build Instructions](https://cs.uni-koeln.de/sites/informatik/projects/vbctool/INSTALL), install the following packages:
 
     sudo apt-get install libmotif-dev libxext-dev
 
@@ -175,6 +177,7 @@ Now you can start the program using
 
     ./vbctool
 
+### Usage
 The files you now have to read (File -> Load) are included in the folder `check/results/vbc`.
 
 \image html tree.jpg "A tree." width=80%

@@ -7,9 +7,9 @@
 The GCG presolving is a modified version of SCIP's own presolving. We describe it more thoroughly on
 the page 
 
-@subpage presolving-process
-
+@subpage presolving-process \n
 \n
+
 If you want to **change parameters** of the GCG presolving, please refer to the guide on
 
-@subpage presolving-params
+@subpage presolving-params \n

@@ -18,9 +18,9 @@ for the components used during the pricing.
 
 @subpage pricing-process \n
 @subpage pricing-solvers \n
-@subpage recursive-dw
+@subpage recursive-dw \n
 
-\n
+
 There are many different parameters that can influence the pricing of your problem.
 We collected some information about those and also some hints about possibly improving
 **parameter configurations** for specific problems.

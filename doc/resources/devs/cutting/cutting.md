@@ -7,9 +7,12 @@ During the **execution of Branch-and-Price-and-Cut**, GCG, as the name suggests,
 In the following, we will present what separators (which generate cutting planes for your problem) are implemented in 
 GCG, along with some theory and implementational details.
 
-
 @subpage sepa_basis "Basic Separator" \n
 @subpage sepa_master "Master Separator" \n
-@subpage sepa_subsetrow "Subset Row Cuts Separator"
-
+@subpage sepa_subsetrow "Subset Row Cuts Separator" \n
 \n
+
+In order to **create your own separator**, please consider SCIP's "How to add" for that. There should be no bigger
+differences when doing it for GCG specifically.
+
+[**How to add Separators (SCIP guide)**](https://scipopt.org/doc/html/SEPA.php) \n

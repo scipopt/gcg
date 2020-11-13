@@ -14,8 +14,8 @@ detectors that GCG offers. For each, we will present what exact structure it fin
 @subpage structure-types "List of different structures GCG can find"\n
 @subpage classifiers "Classifiers: Overview Page"\n
 @subpage detectors "Detectors: Overview Page"\n
-
 \n
+
 Our **detection** is executed in a **loop**, where all detectors are called one by one.
 Furthermore, one can also activate an alternative different detection mode, namely the
 **benders detection**. A description of both is given on the following subpages.
@@ -24,8 +24,8 @@ Furthermore, one can also activate an alternative different detection mode, name
 @subpage benders \n
 @subpage detection-scores \n
 @subpage detection-params \n
-
 \n
+
 If you want to **write your own** classifiers and detectors, please consult the "How to"
 for that.
 
