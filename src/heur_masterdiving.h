@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_masterdiving.h
- * @ingroup PRIMALHEURISTICS
+ * @ingroup DIVINGHEURISTICS
  * @brief  primal heuristic interface for LP diving heuristics on the master variables
  * @author Christian Puchert
  */

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_gcgpscostdiving.h
- * @ingroup PRIMALHEURISTICS
+ * @ingroup DIVINGHEURISTICS
  * @brief  LP diving heuristic that chooses fixings w.r.t. the pseudo cost values
  * @author Tobias Achterberg
  * @author Christian Puchert

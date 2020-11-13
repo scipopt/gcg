@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_mastervecldiving.h
- * @ingroup PRIMALHEURISTICS
+ * @ingroup DIVINGHEURISTICS
  * @brief  master LP diving heuristic that rounds variables with long column vectors
  * @author Tobias Achterberg
  *
