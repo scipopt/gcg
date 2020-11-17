@@ -1,12 +1,12 @@
 # How to conduct experiments with GCG {#conduct-experiments}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
-
-[TOC]
 
 > When trying to find out if own modifications make a difference on solver behavior,
 > especially on runtimes, one has to do let GCG run for both and compare the two (or more). 
 > On this page, we explain **best practices of and give a guide for conducting experiments** 
 > with GCG.   
+
+
+[TOC]
 
 # Generating Runtime Data {#generate-data}
 The first step to start experimenting is to collect runtime data that the solver outputs.

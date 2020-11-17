@@ -6,8 +6,8 @@ On this page, we link to guides for **advanced features that GCG offers**.
 - @subpage visu-manual
 
 #### Using GCG
-- @subpage master-menu
 - @subpage own-dec-file
+- @subpage master-menu
 - @subpage useaslibrary
 
 #### Miscellaneous

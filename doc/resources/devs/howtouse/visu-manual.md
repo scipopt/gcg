@@ -1,7 +1,16 @@
 # How to generate visualizations {#visu-manual}
+
 [TOC]
 
-# Prerequisites {#visu-prerequisites}
+> If you want to generate visualizations for your experiments (see @ref conduct-experiments),
+> you should use the automated generation features of our @ref visu-suite "Visualization Suite".
+> However, you might need to **generate single visualizations manually**, which is what is explained
+> on this page.
+
+## Common Prerequisites {#visu-prerequisites}
+In this section, we describe what is required to generate the visualizations using
+the included visualization scripts. They are also required to be fulfilled if you
+are only using the @ref visu-suite "Visualization Suite".
 ### Software requirements
 The scripts will mostly give helpful error messages if you have misconfigured anything,
 so please pay attention to their output.\n
@@ -12,7 +21,6 @@ For those, you need python3 to be installed correctly on your system:
 
     sudo apt-get install python3
 
-\n
 #### Python-Packages
 For each script, you will need packages and some are probably
 not yet installed on your computer. You can do that by first installing `pip`:
@@ -32,7 +40,9 @@ Furthermore, we recommend to install the package
     tqdm
 
 which shows progress bars which can be useful in particular for very large runtime data.\n
-Finally, for the pricing visualizations, a working LaTeX installation is required, i.e.
+
+#### LaTeX
+For the pricing visualizations, a working LaTeX installation is required, i.e.
 
     sudo apt-get install dvipng texlive-latex-extra texlive-fonts-recommended
 
@@ -44,17 +54,17 @@ do that can be found @ref testing "here".\n
 The scripts sometimes expect a certain flag to be set. The following table gives an overview over
 the requirements for the runtime data for each visualization script.
 
-|                       | Expected Input | Required  compile flags | Required test flags |
+|                       | Expected Input | Required compile flags  | Required test flags |
 |-----------------------|----------------|-------------------------|---------------------|
 | Performance Profile   | .out/.res      | -                       | -                   |
-| General               | .out           |                         | STATISTICS=true     |
-| Bounds                | .out           | -                       | STATISTICS=true     |
-| Classifier/ Detection | .out           | -                       | MODE=detectionstatistics         |
-| Pricing               | .out, .vbc     | STATISTICS=true         | -                   |
+| General               | .out           | -                       | `STATISTICS=true`   |
+| Bounds                | .out           | `STATISTICS=true`       | `STATISTICS=true`   |
+| Classifier/ Detection | .out           | -                       | `DETECTIONSTATISTICS=true`         |
+| Pricing               | .out, .vbc     | `STATISTICS=true`       | -                   |
 | Tree                  | .vbc           |                         | -                   |
 | Comparison Table      | .res           | -                       | -                   |
 
-# Plotting
+# Generate Visualizations Manually
 > You can create different plots with the included scripts in the `stats` folder. All scripts are briefly explained in the following.
 > When describing how to execute them, it is always assumed that you are inside the `stats` folder.
 
