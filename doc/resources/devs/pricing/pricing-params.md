@@ -1,4 +1,6 @@
 # Pricing Parameters {#pricing-params}
+> A list of all pricing parameters can be seen (and searched) when inserting `set pricing` into the search box on the page of @ref interactive-menu. \n
+> If you want a more detailed description of the pricing parameter adjustment, please check the use case @ref u5.
 # Modifying Parameters of the GCG Pricing
 We have around 2000 parameters for the pricing available, so it might be difficult
 to choose the right ones for your class of problems. In the following, some hints

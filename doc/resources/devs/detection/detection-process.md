@@ -58,5 +58,4 @@ The detection process will then be executed as shown in Figure 2.
 
 
 ## Standalone Capability of the Loop
-Todo:
-- write about "standalone" capability of the detection loop
+> A description of the standalone capabilities will follow soon.

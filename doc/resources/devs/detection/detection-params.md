@@ -1,4 +1,6 @@
 # Detection Parameters {#detection-params}
+> A list of all detection parameters can be seen (and searched) when inserting `set detection` into the search box on the page of @ref interactive-menu. \n
+> If you want a more detailed description of the detection parameter adjustment, please check the use case @ref u4.
 # Modifying Parameters of the GCG Detection 
 > GCG performs its detection using @ref classifiers and @ref detectors that
 > classify different variable and constraint types, respectively detect structures each.
