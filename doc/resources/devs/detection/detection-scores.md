@@ -1,7 +1,7 @@
 # Detection Scores {#detection-scores}
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
-# Scoring of Decompositions in GCG
+# The GCG Decomposition Scoring
 As explained in @ref detection, GCG is decomposing problems, reformulating each to finally solve the whole 
 problem more efficiently. The algorithmics are generating a **high number of different decompositions** 
 (see @ref detection-process).
@@ -55,3 +55,11 @@ This score should always and exlusively be used when using the @ref benders "Ben
 
 ### Strong Decomposition Score (`strode`)
 The strong decomposition score is not implemented for decompositions belonging to the original (non-presolved) problem.
+
+<hr>
+
+## Adding own Decomposition Scores
+If you want to **add your own decomposition score**, i.e. define how your decompositions should
+be rated, please consult the "How to" for that.
+
+@ref own-score

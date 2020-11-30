@@ -28,7 +28,8 @@ It is assumed that you are rather familiar with the technical details of Branch-
 
 @subpage pricing-params \n
 
-\n
+<hr>
+
 If you want to **write your own** pricing solver, please consult the "How to"
 for that.
 

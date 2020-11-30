@@ -22,8 +22,10 @@ branching rule for original problem in GCG implementing the Ryan and Foster bran
 Descriptions of those and their code documentation can be
 found @ref BRANCHINGRULES "here".
 
+<hr>
+
 ## Adding own Branching Rules
-If you want to add your own branching rules, i.e. define exactly **how to branch on variables**, 
+If you want to **add your own branching rules**, i.e. define exactly how to branch on variables, 
 please consider our "How to add" for that.
 
- ⇨ @ref own-branching-rule \n
+@ref own-branching-rule

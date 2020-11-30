@@ -22,8 +22,10 @@ LP diving heuristic that rounds variables with long column vectors.
 Descriptions of those and their code documentation can be
 found @ref DIVINGHEURISTICS "here".
 
-## Adding own Diving Heuristics
-If you want to add your own diving heuristics (or other primal heuristics), 
-i.e. define exactly **what variables to branch on**, please consider our "How to add" for that.
+<hr>
 
- ⇨ @ref own-primal-heuristic \n
+## Adding own Diving Heuristics
+If you want to **add your own diving heuristics** (or other primal heuristics), 
+i.e. define exactly what variables to branch on, please consider our "How to add" for that.
+
+@ref own-primal-heuristic \n

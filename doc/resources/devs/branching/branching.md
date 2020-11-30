@@ -18,7 +18,8 @@ As always with GCG, this algorithmic component is highly configurable. Thus, we 
 branch on the variables of your problem.
 
 @subpage branching-params \n
-\n
+
+<hr>
 
 If you want to **write your own plug-ins** for the branching, you might want to consider our and SCIP's how-to
 pages on that, since some algorithmic components are implemented in and executed by SCIP only.

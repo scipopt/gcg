@@ -1,5 +1,11 @@
 # Detectors {#detectors}
 
+# The GCG Detectors
+During the detection, the included detectors will try to **find a suitable decomposition**
+for your problem. For more information on how they are called, please visit the page on
+@ref detection-process.
+
+## List of Detectors
 Here you find a list of all detectors available in GCG. Each of those fulfills at least one
 function out of
 * **propagating** (**assigning** variables/constraints to a block or the master)
@@ -8,7 +14,6 @@ function out of
 
 For an overview of which detector does what of those three core functionalities, please check the @subpage detectors-overview.
 
-### Detectors
 Detectors based on **constraint or variable classes**:
 - @subpage det-consclass
 - @subpage det-varclass
@@ -49,9 +54,8 @@ Detectors used for detection algorithmics:
 
 <hr>
 
-\n
-If you want to **write your own** detector, please consult the "How to"
-for that.
+## Adding own Detectors
+If you want to **write your own detector**, i.e. define how you want to use the information 
+given by the classifiers to decompose your problem, please consult the "How to" for that.
 
 @ref own-detector
-\n

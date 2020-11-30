@@ -1,4 +1,8 @@
 # Detection Process {#detection-process}
+
+Our **detection** is executed in a **loop**, where all detectors are called one by one.
+Furthermore, one can also activate an alternative different detection mode, namely the
+**benders detection**. A description of both is given on the following subpages.
 # The GCG Detection Process
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
