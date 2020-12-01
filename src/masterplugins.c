@@ -128,6 +128,7 @@
 #include "sepa_master.h"
 #include "branch_ryanfoster.h"
 #include "branch_orig.h"
+#include "branch_bpstrong.h"
 #include "branch_relpsprob.h"
 #include "branch_generic.h"
 #include "scip/debug.h"

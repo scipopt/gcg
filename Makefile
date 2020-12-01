@@ -194,6 +194,7 @@ LIBOBJ = \
 			branch_generic.o \
 			benders_gcg.o \
 			branch_orig.o \
+			branch_origstrong.o \
 			branch_relpsprob.o \
 			branch_ryanfoster.o \
 			class_conspartition.o \
