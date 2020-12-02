@@ -494,11 +494,11 @@ static SCIP_RETCODE executeStrongBranching(
          SCIP_Bool cutoff;
          SCIP_Bool lperror;
          SCIP_Bool lpsolved;
-         //SCIP_CALL(SCIPpropagateProbing(scip, -1, &cutoff, NULL));
+         SCIP_CALL(SCIPpropagateProbing(scip, -1, &cutoff, NULL));
 
          /* solve the LP with or without pricing */
          SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
-         if (pricing&&FALSE)
+         if (pricing)
          {
             SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, -1, NULL, NULL,
                      cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
@@ -542,8 +542,8 @@ static SCIP_RETCODE executeStrongBranching(
          //SCIP_CALL(SCIPdelCons(masterscip, cons));
          //SCIP_CALL(SCIPreleaseCons(masterscip, &cons));
          //SCIP_CALL(SCIPendProbing(masterscip));
-         SCIPdebugMessage("probing results in cutoff/lpsolved/lpobj: %s / %s / %g\n",
-               cutoff?"cutoff":"no cutoff", lpsolved?"lpsolved":"lp not solved", cnode == 0? *down : *up);
+         //SCIPdebugMessage("probing results in cutoff/lpsolved/lpobj: %s / %s / %g\n",
+         //      cutoff?"cutoff":"no cutoff", lpsolved?"lpsolved":"lp not solved", cnode == 0? *down : *up);
          SCIP_CALL( GCGrelaxEndProbing(scip) );
       }
    }
@@ -1233,7 +1233,7 @@ SCIP_RETCODE branchExtern(
           * or add remember its score if we look for multiple
           */
          //TODO firstfrac score
-         score = score_function(scip, branchrule, branchcands[indices[i]], branchcandssol[indices[i]], phase == 0, usepseudocosts, FALSE);
+         score = score_function(scip, branchrule, branchcands[indices[i]], branchcandssol[indices[i]], phase == 0, usepseudocosts, phase == 2);
          if( nneededcands == 1 )
          {
             if( score > maxscore )
