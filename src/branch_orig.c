@@ -400,8 +400,6 @@ static SCIP_RETCODE executeStrongBranching(
    char name[SCIP_MAXSTRLEN];
    SCIP* masterscip;
 
-   SCIP_Real lb;
-   SCIP_Real ub;
    SCIP_CONS *cons;
    SCIP_Real downub;
    SCIP_Real uplb;
@@ -424,73 +422,40 @@ static SCIP_RETCODE executeStrongBranching(
    assert(masterscip != NULL);
 
    assert(scip != NULL);
-   //assert(SCIPisFeasIntegral(scip, solval));
 
    /* create child nodes with x <= floor(x'), and x >= ceil(x') */
    downub = SCIPfeasFloor(scip, solval);
    uplb = downub + 1.0;
-   assert(SCIPisEQ(scip, SCIPfeasCeil(scip, solval), uplb));
 
    SCIPdebugMessage("Probing on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
-
 
    /* probe for each child node */
    for (int cnode = 0; cnode <= 1; cnode++)
    {
       if ((cnode == 0 && downub != SCIP_INVALID) || (cnode == 1 && uplb != SCIP_INVALID))
       {
-         lb = 0;
-         ub = 0;
          cons = NULL; 
          origbranchconss = NULL;
          norigbranchconss = 0;
          maxorigbranchconss = 0;
-
-         if (cnode == 0)
-         {
-            lb = -1.0 * SCIPinfinity(scip);
-            ub = SCIPfloor(scip, solval);
-            (void)SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchvar),
-                               "<=", downub);
-         }
-         else
-         {
-            lb = SCIPceil(scip, solval);
-            ub = SCIPinfinity(scip);
-            (void)SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchvar),
-                               ">=", uplb);
-         }
+         
+         (void)SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchvar),
+                           cnode == 0? "<=":">=", cnode == 0? downub : uplb);
 
          /* start probing */
          SCIP_CALL( GCGrelaxStartProbing(scip, NULL) );
          SCIP_CALL( GCGrelaxNewProbingnodeOrig(scip) );
 
-         /* create new probing node and add cons to it*/
-         //SCIP_CALL(SCIPnewProbingNode(masterscip));  
-         //newnode = SCIPgetCurrentNode(masterscip);
-
-         //SCIPdebugMessage(" -> creating probing child: <%s> <> %g\n",
-         //   SCIPvarGetName(branchvar), cnode == 0? ub : lb);
-
          if( cnode == 0 )
          {
-            SCIP_CALL( SCIPchgVarUbProbing(scip, branchvar, ub) );
+            SCIP_CALL( SCIPchgVarUbProbing(scip, branchvar, downub) );
          }
          else
          {
-            SCIP_CALL( SCIPchgVarLbProbing(scip, branchvar, lb) );
+            SCIP_CALL( SCIPchgVarLbProbing(scip, branchvar, uplb) );
          }
 
-          /* create and add the masterbranch constraint */
-         //SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons, name, newnode,
-         //   GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdata, origbranchconss, norigbranchconss,
-         //   maxorigbranchconss) );
-         //SCIPdebugMessage("depth: %f\n", SCIPnodeGetDepth(newnode));
-         //SCIP_CALL( SCIPaddConsNode(masterscip, newnode, cons, NULL) );
-
-         //SCIP_CALL(SCIPaddConsNode(scip, newnode, cons, NULL));
-
-         /* propagate the new b&b-node, i.e. fix vars to 0 that don't contain both node1 and node2 */
+         /* propagate the new b&b-node */
          SCIP_Bool cutoff;
          SCIP_Bool lperror;
          SCIP_Bool lpsolved;
@@ -529,19 +494,6 @@ static SCIP_RETCODE executeStrongBranching(
             *upsolved = lpsolved;
          }
 
-         /* get the changed objective value */
-         //if (cnode == 0)
-         //{
-         //   *down = SCIPgetLPObjval(masterscip);
-         //}
-         //else
-         //{
-         //   *up = SCIPgetLPObjval(masterscip);
-         //}
-
-         //SCIP_CALL(SCIPdelCons(masterscip, cons));
-         //SCIP_CALL(SCIPreleaseCons(masterscip, &cons));
-         //SCIP_CALL(SCIPendProbing(masterscip));
          //SCIPdebugMessage("probing results in cutoff/lpsolved/lpobj: %s / %s / %g\n",
          //      cutoff?"cutoff":"no cutoff", lpsolved?"lpsolved":"lp not solved", cnode == 0? *down : *up);
          SCIP_CALL( GCGrelaxEndProbing(scip) );
@@ -559,18 +511,22 @@ static SCIP_Real score_function(
     SCIP_VAR *var,            // var to be scored
     SCIP_Real solval,         // the var's current solution value
     SCIP_Bool useheuristic,   // should heuristics be used instead of strong branching?
+    SCIP_Bool mostfrac,       // if fractionality is used as a heuristic, should the most fractional variable be chosen (instead of the first one)?
     SCIP_Bool usepseudocosts, // should pseudocosts be used as heuristic (instead of fractionality)?
     SCIP_Bool usecolgen       // should column generation be used during strong branching?
 )
 {
    /* define score functions and calculate score for all variables for sorting dependent on used heuristic */
    // phase 0
-   if (usepseudocosts && useheuristic)
+   if( usepseudocosts && useheuristic )
    {
       return SCIPgetVarPseudocostScore(scip, var, solval);
    }
-   else if (useheuristic) /* no parameter for fractional variable selection? */
+   else if( useheuristic ) /* no parameter for fractional variable selection? */
    {
+      if( !mostfrac )
+         return 1;
+
       SCIP_Real frac;
       frac = solval - SCIPfloor(scip, solval);
       frac = MIN(frac, 1.0 - frac);
@@ -581,8 +537,7 @@ static SCIP_Real score_function(
    //phase 1 & 2
    {
       SCIP* masterscip;
-
-      //TODO continue here
+      
       SCIP_Real down;
       SCIP_Real up;
       SCIP_Real downgain;
@@ -591,7 +546,7 @@ static SCIP_Real score_function(
       SCIP_Bool downsolved;
       SCIP_Real lpobjval;
 
-       /* get master problem */
+      /* get master problem */
       masterscip = GCGgetMasterprob(scip);
       assert(masterscip != NULL);
 
@@ -613,212 +568,6 @@ static SCIP_Real score_function(
       return SCIPgetBranchScore(scip, var, downgain, upgain);
    }
 }
-
-#if FALSE
-/* find up to ncandidates potential branching variables based on their ranking from some heuristic */
-static SCIP_RETCODE selectCandidates(
-    SCIP *scip,
-    SCIP_Real lpobjval,
-    int noutcandidates,        /* number of output candidates */
-    int nincandidates,         /* number of input candidates */
-    int npriobranchcands,
-    SCIP_VAR **branchcands,    /* candidate variables */
-    SCIP_Real *branchcandssol, /* solution values of the branching candidates */
-    SCIP_Bool useheuristic,    /* should the candidates be selected based on some heuristic (instead of strong branching)? */
-    SCIP_Bool usecolgen,        /* should columns be generated during strong branching? */
-    int *selectedcandinds, /* stores the indices of all selected candidates (in order) */  
-    SCIP_RESULT* result            /* stores result of psstrongbranching if used*/
-)
-{
-   SCIP* masterscip;
-
-   int nfoundcandidates;
-   int ncandidates;
-
-   SCIP_Real maxscore;
-
-   int *indices;
-
-   masterscip = GCGgetMasterprob(scip);
-
-   nfoundcandidates = 0;
-   ncandidates = npriobranchcands < nincandidates? npriobranchcands : nincandidates;
-
-   /* parameter data */
-   SCIP_Bool mostfrac;
-   SCIP_Bool usepseudocosts;
-   SCIP_Bool usepsstrong;
-
-   SCIP_CALL( SCIPallocBufferArray(scip, &indices, ncandidates) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &outcandsscore, ncandidates) );
-
-   SCIP_CALL(SCIPgetBoolParam(scip, "branching/orig/mostfrac", &mostfrac));
-   SCIP_CALL(SCIPgetBoolParam(scip, "branching/orig/usepseudocosts", &usepseudocosts));
-   SCIP_CALL(SCIPgetBoolParam(scip, "branching/orig/usepsstrong", &usepsstrong));
-
-   maxscore = -SCIPinfinity(scip);
-
-   //TODO?
-   /*assert( !usepsstrong );
-   if( usepsstrong )
-   {
-      //currently not supported as heuristic for strong branching
-      assert(useheuristic || noutcandidates==1);
-      
-      SCIP_CALL( SCIPgetRelpsprobBranchVar(masterscip, branchcands, branchcandssol, npriobranchcands,
-            npriobranchcands, result, &outcands[0]) );
-      assert(outcands[0] != NULL || *result == SCIP_CUTOFF);
-      assert(*result == SCIP_DIDNOTRUN || *result == SCIP_CUTOFF);
-
-      if( *result == SCIP_CUTOFF )
-         return SCIP_OKAY;
-         
-      outcandssol[nfoundcandidates] = SCIPgetRelaxSolVal(scip, outcands[0]);
-      nfoundcandidates = 1;
-   }
-   */
-
-   /* score all candidates, unless the score is equal for all candidates (e.g. firstfrac), and sort them */
-   for (int i = 0; i < ncandidates; i++)
-   {
-      indices[i] = i;
-   }
-
-   if (!useheuristic || (usepseudocosts || mostfrac))
-   {
-      for (int i = 0; i < ncandidates; i++)
-      {
-         SCIP_Real score;
-         score = score_function(scip, branchcands[i], branchcandssol[i], lpobjval, useheuristic, usepseudocosts, usecolgen);
-         outcandsscore[i] = score;
-      }
-      /* sort index array corresponding to score. If we only need one candidate, we can skip this*/
-      if( noutcandidates>1 )
-      {
-         qsort(indices, ncandidates, sizeof(int), compare_function);
-      }
-   }
-   for (int i = 0; i < ncandidates; i++)
-   {
-      SCIPdebugMessage("%d, %s\n", indices[i], SCIPvarGetName(branchcands[indices[i]]));
-   }
-
-   /* iter = 0: integer variables belonging to a unique block with fractional value,
-      * iter = 1: we did not find a variable to branch on so far, so we look for an integer variable that belongs to no block
-      * but was directly transferred to the master problem and which has fractional value in the current solution
-      */
-   for (int iter = 0; iter <= 1; iter++)
-   {
-      if (nfoundcandidates >= noutcandidates)
-         break;
-
-      for (int i = 0; i < ncandidates; i++)
-      {
-         assert(GCGvarIsOriginal(branchcands[indices[i]]));
-
-         /* continue if variable belongs to a block in second iteration*/
-
-         if (iter == 0)
-         {
-            /* variable belongs to no block */
-            if (GCGvarGetBlock(branchcands[indices[i]]) == -1)
-               continue;
-
-            /* block is not unique (non-linking variables) */
-            if (!GCGoriginalVarIsLinking(branchcands[indices[i]]) && GCGgetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[indices[i]])) != 1)
-               continue;
-
-            /* check that blocks of linking variable are unique */
-            if (GCGoriginalVarIsLinking(branchcands[indices[i]]))
-            {
-               int nvarblocks;
-               int *varblocks;
-               SCIP_Bool unique;
-               int j;
-
-               nvarblocks = GCGlinkingVarGetNBlocks(branchcands[indices[i]]);
-               SCIP_CALL(SCIPallocBufferArray(scip, &varblocks, nvarblocks));
-               SCIP_CALL(GCGlinkingVarGetBlocks(branchcands[indices[i]], nvarblocks, varblocks));
-
-               unique = TRUE;
-               for (j = 0; j < nvarblocks; ++j)
-                  if (GCGgetNIdenticalBlocks(scip, varblocks[j]) != 1)
-                     unique = FALSE;
-
-               SCIPfreeBufferArray(scip, &varblocks);
-
-               if (!unique)
-                  continue;
-            }
-         }
-         else /* iter == 1 */
-         {
-            if (GCGvarGetBlock(branchcands[indices[i]]) != -1)
-               continue;
-         }
-         SCIPdebugMessage("Looking at variable %s\n", SCIPvarGetName(branchcands[indices[i]]));
-
-         /* select the variable as new best candidate (if it is) if we look for only one candidate,
-          * or add it to the output if we look for multiple
-          */
-         if( noutcandidates==1 )
-         {
-            if( outcandsscore[i] > maxscore )
-            {
-               SCIPdebugMessage("Selecting variable %s as new best, current value: %f, current score: %f\n",
-                                 SCIPvarGetName(branchcands[indices[i]]), branchcandssol[indices[i]], outcandsscore[indices[i]]);
-               maxscore = outcandsscore[i];
-
-               selectedcandinds[0] = indices[i];
-               nfoundcandidates = 1;
-            }
-            else
-            {
-               continue;
-            }
-         }
-         else
-         {
-            SCIPdebugMessage("Adding variable %s to remaining candidates, current value: %f, current score: %f\n", 
-                              SCIPvarGetName(branchcands[indices[i]]), branchcandssol[indices[i]], outcandsscore[indices[i]]);
-            selectedcandinds[nfoundcandidates] = indices[i];
-            nfoundcandidates++;
-         }
-         
-
-         if (nfoundcandidates == noutcandidates && !(noutcandidates == 1))
-         {
-            break;
-         }
-      }
-   }
-
-   if (nfoundcandidates == 0)
-   {
-      int phase;
-      if (useheuristic)
-      {
-         phase = 0;
-      }
-      else if (!usecolgen)
-      {
-         phase = 1;
-      }
-      else
-      {
-         phase = 2;
-      }
-
-      SCIPdebugMessage("Strong branching could not find a variable to branch on in phase %d!\n", phase);
-   }
-
-   /*free memory */
-   SCIPfreeBufferArray(scip, &indices);
-   SCIPfreeBufferArray(scip, &outcandsscore);
-
-   return SCIP_OKAY;
-}
-#endif
 
 #if FALSE
 /** branching method for relaxation solutions */
@@ -1184,6 +933,9 @@ SCIP_RETCODE branchExtern(
          break;
    }
 
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &outcandsscore, nvalidcands) );
+
    /* if we are performing strong branching, go through the three phases:
     * - phase 0: select a first selection (50 to 10, based on |T S(v)|) of candidates based on some traditional variable selection
     *            heuristic, some (half) of the variables are new, and some are selected based on previous calls
@@ -1191,15 +943,9 @@ SCIP_RETCODE branchExtern(
     * - phase 2: select the best of the candidates from phase 1 by solving the Master LP with column and cut generation.
     * else, select the candidate that perfroms best on the given heuristic (i.e. phase 0 with only one output candidate)
     */
-   for(int phase = 0; phase<=0 || (usestrong && phase<=2); phase++)
+   for( int phase = 0; phase<=0 || (usestrong && phase<=2); phase++ )
    {
       nfoundcands = 0;
-
-      if( phase>0 )
-      {
-         /*free memory from last phase*/
-         SCIPfreeBufferArray(scip, &outcandsscore);
-      }
 
       if( !usestrong )
       {
@@ -1207,8 +953,6 @@ SCIP_RETCODE branchExtern(
       }
       else
       {
-         SCIP_CALL( SCIPallocBufferArray(scip, &outcandsscore, ncands) );
-
          if( phase == 0 )
          {
             ncands = nvalidcands;
@@ -1232,8 +976,7 @@ SCIP_RETCODE branchExtern(
          /* select the variable as new best candidate (if it is) if we look for only one candidate,
           * or add remember its score if we look for multiple
           */
-         //TODO firstfrac score
-         score = score_function(scip, branchrule, branchcands[indices[i]], branchcandssol[indices[i]], phase == 0, usepseudocosts, phase == 2);
+         score = score_function(scip, branchrule, branchcands[indices[i]], branchcandssol[indices[i]], phase == 0, mostfrac, usepseudocosts, phase == 2);
          if( nneededcands == 1 )
          {
             if( score > maxscore )
@@ -1253,7 +996,7 @@ SCIP_RETCODE branchExtern(
          SCIPdebugMessage("Looked at variable %s with current score: %f\n",
                                  SCIPvarGetName(branchcands[indices[i]]), score);   
       }
-      if( nneededcands >1 )
+      if( nneededcands > 1 )
       {
          qsort(indices, ncands, sizeof(int), compare_function);
       }     
