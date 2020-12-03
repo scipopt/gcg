@@ -94,7 +94,9 @@ SCIP_RETCODE branchVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the original variable branching rule */
    SCIP_VAR*             branchvar,          /**< variable to branch on */
-   SCIP_Real             solval             /**< value of the variable in the current solution */   
+   SCIP_Real             solval,             /**< value of the variable in the current solution */
+   SCIP_Bool             upinf,              /**< have we seen during strong branching that the upbranch is infeasible? */
+   SCIP_Bool             downinf             /**< have we seen during strong branching that the downbranch is infeasible? */
    )
 {
    /* data for b&b child creation */
@@ -184,7 +186,7 @@ SCIP_RETCODE branchVar(
    SCIPdebugMessage("Branching on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
 
 
-   if( uplb != SCIP_INVALID ) /*lint !e777*/
+   if( uplb != SCIP_INVALID && !upinf ) /*lint !e777*/
    {
       SCIP_CONS* cons;
       SCIP_NODE* child;
@@ -248,7 +250,7 @@ SCIP_RETCODE branchVar(
       SCIP_CALL( SCIPaddConsNode(masterscip, child, cons, NULL) );
    }
 
-   if( downub != SCIP_INVALID ) /*lint !e777*/
+   if( downub != SCIP_INVALID && !downinf ) /*lint !e777*/
    {
       SCIP_CONS* cons;
       SCIP_NODE* child;
@@ -384,16 +386,18 @@ static int compare_function(const void *index1, const void *index2)
 
 /* executes strong branching on one variable, with or without pricing */
 static SCIP_RETCODE executeStrongBranching(
-    SCIP *scip,           /**< SCIP data structure */
-    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the original variable branching rule */
-    SCIP_VAR *branchvar,        /**< variable to get strong branching values for */
-    SCIP_Real solval,     /**< value of the variable in the current solution */
-    SCIP_Bool pricing,    /**< should pricing be applied? */
-    int maxpricingrounds, /**< maximal number of pricing rounds, -1 for no limit */
-    SCIP_Real *down,      /**< stores dual bound after branching column down */
-    SCIP_Real *up,         /**< stores dual bound after branching column up */
-    SCIP_Bool *downsolved, /* stores whether the downbranch was solved properly */
-    SCIP_Bool *upsolved    /* stores whether the upbranch was solved properly */
+    SCIP *scip,           /* SCIP data structure */
+    SCIP_BRANCHRULE*      branchrule,         /* pointer to the original variable branching rule */
+    SCIP_VAR *branchvar,        /* variable to get strong branching values for */
+    SCIP_Real solval,     /* value of the variable in the current solution */
+    SCIP_Bool pricing,    /* should pricing be applied? */
+    int maxpricingrounds, /* maximal number of pricing rounds, -1 for no limit */
+    SCIP_Real *up,      /* stores dual bound after branching column up */
+    SCIP_Real *down,         /* stores dual bound after branching column down */
+    SCIP_Bool *upvalid, /* stores whether the upbranch was solved properly */
+    SCIP_Bool *downvalid,    /* stores whether the downbranch was solved properly */
+    SCIP_Bool *upinf,   /*stores whether the upbranch is infeasible */
+    SCIP_Bool *downinf  /*stores whether the downbranch is infeasible */
 )
 {
    /* get bound values */
@@ -414,8 +418,10 @@ static SCIP_RETCODE executeStrongBranching(
 
    downub = SCIP_INVALID;
    uplb = SCIP_INVALID;
-   *downsolved = FALSE;
-   *upsolved = FALSE;
+   *downvalid = FALSE;
+   *upvalid = FALSE;
+   *downinf = FALSE;
+   *upinf = FALSE;
 
     /* get master problem */
    masterscip = GCGgetMasterprob(scip);
@@ -427,7 +433,7 @@ static SCIP_RETCODE executeStrongBranching(
    downub = SCIPfeasFloor(scip, solval);
    uplb = downub + 1.0;
 
-   SCIPdebugMessage("Probing on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
+   //SCIPdebugMessage("Probing on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
 
    /* probe for each child node */
    for (int cnode = 0; cnode <= 1; cnode++)
@@ -474,24 +480,15 @@ static SCIP_RETCODE executeStrongBranching(
                      cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
          }
 
-         /* TODO handle this */
-         if( (cutoff || lperror) && FALSE )
-         {
-            SCIP_CALL(SCIPdelCons(masterscip, cons));
-            SCIP_CALL(SCIPreleaseCons(masterscip, &cons));
-            SCIP_CALL(SCIPendProbing(masterscip));
-            *down = 0;
-            *up = 0;
-            return SCIP_OKAY;
-         }
-
          if( cnode == 0 )
          {
-            *downsolved = lpsolved;
+            *downvalid = lpsolved;
+            *downinf = cutoff && pricing;
          }
          else
          {
-            *upsolved = lpsolved;
+            *upvalid = lpsolved;
+            *upinf = cutoff && pricing;
          }
 
          //SCIPdebugMessage("probing results in cutoff/lpsolved/lpobj: %s / %s / %g\n",
@@ -507,13 +504,15 @@ static SCIP_RETCODE executeStrongBranching(
  */
 static SCIP_Real score_function(
     SCIP *scip,
-    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the original variable branching rule */
-    SCIP_VAR *var,            // var to be scored
-    SCIP_Real solval,         // the var's current solution value
-    SCIP_Bool useheuristic,   // should heuristics be used instead of strong branching?
-    SCIP_Bool mostfrac,       // if fractionality is used as a heuristic, should the most fractional variable be chosen (instead of the first one)?
-    SCIP_Bool usepseudocosts, // should pseudocosts be used as heuristic (instead of fractionality)?
-    SCIP_Bool usecolgen       // should column generation be used during strong branching?
+    SCIP_BRANCHRULE*      branchrule,         /* pointer to the original variable branching rule */
+    SCIP_VAR *var,            /* var to be scored */
+    SCIP_Real solval,         /* the var's current solution value */
+    SCIP_Bool useheuristic,   /* should heuristics be used instead of strong branching? */
+    SCIP_Bool mostfrac,       /* if fractionality is used as a heuristic, should the most fractional variable be chosen (instead of the first one)? */
+    SCIP_Bool usepseudocosts, /* should pseudocosts be used as heuristic (instead of fractionality)? */
+    SCIP_Bool usecolgen,       /* should column generation be used during strong branching? */
+    SCIP_Bool *upinf,         /*stores whether the upbranch is infeasible */
+    SCIP_Bool *downinf        /*stores whether the downbranch is infeasible */
 )
 {
    /* define score functions and calculate score for all variables for sorting dependent on used heuristic */
@@ -542,8 +541,8 @@ static SCIP_Real score_function(
       SCIP_Real up;
       SCIP_Real downgain;
       SCIP_Real upgain;
-      SCIP_Bool upsolved;
-      SCIP_Bool downsolved;
+      SCIP_Bool upvalid;
+      SCIP_Bool downvalid;
       SCIP_Real lpobjval;
 
       /* get master problem */
@@ -556,15 +555,15 @@ static SCIP_Real score_function(
       lpobjval = SCIPgetLPObjval(masterscip);
 
       // usecolgen is True for phase 1 and False for phase 2
-      SCIP_CALL(executeStrongBranching(scip, branchrule, var, solval, usecolgen, -1, &up, &down, &upsolved, &downsolved));
+      SCIP_CALL(executeStrongBranching(scip, branchrule, var, solval, usecolgen, -1, &up, &down, &upvalid, &downvalid, upinf, downinf));
 
       //TODO handle this better
-      down = downsolved? down : upsolved? up : 0;
-      up = upsolved? up : down;
+      down = downvalid? down : upvalid? up : 0;
+      up = upvalid? up : down;
 
       downgain = down - lpobjval;
       upgain = up - lpobjval;
-      SCIPdebugMessage("Variable %s has downgain %f and upgain %f\n", SCIPvarGetName(var), downgain, upgain);
+      //SCIPdebugMessage("Variable %s has downgain %f and upgain %f\n", SCIPvarGetName(var), downgain, upgain);
       return SCIPgetBranchScore(scip, var, downgain, upgain);
    }
 }
@@ -807,6 +806,12 @@ SCIP_RETCODE branchExtern(
    SCIP_Real maxscore;
    SCIP_Real score;
 
+   /* infeasibility results during strong branching */
+   SCIP_Bool upinf;
+   SCIP_Bool downinf;
+   SCIP_Bool bestupinf;
+   SCIP_Bool bestdowninf;
+
    int *indices;
    int nvalidcands;
 
@@ -976,13 +981,15 @@ SCIP_RETCODE branchExtern(
          /* select the variable as new best candidate (if it is) if we look for only one candidate,
           * or add remember its score if we look for multiple
           */
-         score = score_function(scip, branchrule, branchcands[indices[i]], branchcandssol[indices[i]], phase == 0, mostfrac, usepseudocosts, phase == 2);
+         score = score_function(scip, branchrule, branchcands[indices[i]], branchcandssol[indices[i]], phase == 0, mostfrac, usepseudocosts, phase == 2, &upinf, &downinf);
          if( nneededcands == 1 )
          {
             if( score > maxscore )
             {
                indices[0] = indices[i];
                maxscore = score;
+               bestupinf = upinf;
+               bestdowninf = downinf;
                /* if we do not look for the most fractional variable, but for the first fractional variable,
                * we can stop here since we found a variable to branch on */
                if( !mostfrac && !usepseudocosts && !usestrong )
@@ -1022,7 +1029,7 @@ SCIP_RETCODE branchExtern(
    assert(branchvar != NULL);
 
    SCIPdebugMessage("Original branching rule selected variable %s with solval %f\n", SCIPvarGetName(branchvar), solval);
-   SCIP_CALL( branchVar(scip, branchrule, branchvar, solval) );
+   SCIP_CALL( branchVar(scip, branchrule, branchvar, solval, bestupinf, bestdowninf) );
 
    *result = SCIP_BRANCHED;
 
@@ -1359,7 +1366,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 
    assert(branchvar != NULL);
 
-   SCIP_CALL( branchVar(origscip, branchrule, branchvar, solval) );
+   SCIP_CALL( branchVar(origscip, branchrule, branchvar, solval, FALSE, FALSE) );
 
    *result = SCIP_BRANCHED;
 
