@@ -404,17 +404,8 @@ static SCIP_RETCODE executeStrongBranching(
    char name[SCIP_MAXSTRLEN];
    SCIP* masterscip;
 
-   SCIP_CONS *cons;
    SCIP_Real downub;
    SCIP_Real uplb;
-
-   SCIP_NODE *newnode;
-
-   SCIP_CONS** origbranchconss;
-   GCG_BRANCHDATA* branchdata;
-
-   int norigbranchconss;
-   int maxorigbranchconss;
 
    downub = SCIP_INVALID;
    uplb = SCIP_INVALID;
@@ -440,11 +431,6 @@ static SCIP_RETCODE executeStrongBranching(
    {
       if ((cnode == 0 && downub != SCIP_INVALID) || (cnode == 1 && uplb != SCIP_INVALID))
       {
-         cons = NULL; 
-         origbranchconss = NULL;
-         norigbranchconss = 0;
-         maxorigbranchconss = 0;
-         
          (void)SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchvar),
                            cnode == 0? "<=":">=", cnode == 0? downub : uplb);
 
@@ -465,6 +451,7 @@ static SCIP_RETCODE executeStrongBranching(
          SCIP_Bool cutoff;
          SCIP_Bool lperror;
          SCIP_Bool lpsolved;
+
          SCIP_CALL(SCIPpropagateProbing(scip, -1, &cutoff, NULL));
 
          /* solve the LP with or without pricing */
@@ -781,7 +768,6 @@ SCIP_RETCODE branchExtern(
    )
 {
    SCIP* masterscip;
-   int i;
 
    /* parameter data */
    SCIP_Bool mostfrac;
@@ -797,7 +783,6 @@ SCIP_RETCODE branchExtern(
 
    int ncands;
    int nneededcands;
-   int nfoundcands;
 
    /* values for choosing the variable to branch on */
    SCIP_VAR* branchvar;
@@ -950,8 +935,6 @@ SCIP_RETCODE branchExtern(
     */
    for( int phase = 0; phase<=0 || (usestrong && phase<=2); phase++ )
    {
-      nfoundcands = 0;
-
       if( !usestrong )
       {
          ncands = nvalidcands;
@@ -1029,7 +1012,8 @@ SCIP_RETCODE branchExtern(
    assert(branchvar != NULL);
 
    SCIPdebugMessage("Original branching rule selected variable %s with solval %f\n", SCIPvarGetName(branchvar), solval);
-   SCIP_CALL( branchVar(scip, branchrule, branchvar, solval, bestupinf, bestdowninf) );
+   SCIP_CALL( branchVar(scip, branchrule, branchvar, solval, FALSE, FALSE) );
+
 
    *result = SCIP_BRANCHED;
 
@@ -1230,8 +1214,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    int nbranchcands;
    int npriobranchcands;
 
-   SCIPdebugMessage("EXECPS orig branching rule\n");
-
    /* values for choosing the variable to branch on */
    SCIP_VAR* branchvar;
    SCIP_Real solval;
@@ -1242,6 +1224,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
+
+   SCIPdebugMessage("EXECPS orig branching rule\n");
 
    /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
