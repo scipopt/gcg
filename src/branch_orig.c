@@ -179,11 +179,11 @@ SCIP_RETCODE branchVar(
       downub = SCIPfeasFloor(scip, solval);
       uplb = downub + 1.0;
       assert( SCIPisEQ(scip, SCIPfeasCeil(scip, solval), uplb) );
-      SCIPdebugMessage("fractional branch on variable <%s> with value %g, root value %g, priority %d (current lower bound: %g)\n",
-         SCIPvarGetName(branchvar), solval, SCIPvarGetRootSol(branchvar), SCIPvarGetBranchPriority(branchvar), SCIPgetLocalLowerbound(GCGgetMasterprob(scip)));
+      //SCIPdebugMessage("fractional branch on variable <%s> with value %g, root value %g, priority %d (current lower bound: %g)\n",
+         //SCIPvarGetName(branchvar), solval, SCIPvarGetRootSol(branchvar), SCIPvarGetBranchPriority(branchvar), SCIPgetLocalLowerbound(GCGgetMasterprob(scip)));
    }
 
-   SCIPdebugMessage("Branching on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
+   //SCIPdebugMessage("Branching on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
 
 
    if( uplb != SCIP_INVALID && !upinf ) /*lint !e777*/
@@ -453,6 +453,7 @@ static SCIP_RETCODE executeStrongBranching(
          SCIP_Bool lpsolved;
 
          SCIP_CALL(SCIPpropagateProbing(scip, -1, &cutoff, NULL));
+         assert(!cutoff);
 
          /* solve the LP with or without pricing */
          SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
@@ -498,26 +499,24 @@ static SCIP_Real score_function(
     SCIP_Bool mostfrac,       /* if fractionality is used as a heuristic, should the most fractional variable be chosen (instead of the first one)? */
     SCIP_Bool usepseudocosts, /* should pseudocosts be used as heuristic (instead of fractionality)? */
     SCIP_Bool usecolgen,       /* should column generation be used during strong branching? */
-    SCIP_Bool *upinf,         /*stores whether the upbranch is infeasible */
-    SCIP_Bool *downinf        /*stores whether the downbranch is infeasible */
+    SCIP_Real *score,         /* stores the computed score */
+    SCIP_Bool *upinf,         /* stores whether the upbranch is infeasible */
+    SCIP_Bool *downinf        /* stores whether the downbranch is infeasible */
 )
 {
    /* define score functions and calculate score for all variables for sorting dependent on used heuristic */
    // phase 0
    if( usepseudocosts && useheuristic )
    {
-      return SCIPgetVarPseudocostScore(scip, var, solval);
+      *score = SCIPgetVarPseudocostScore(scip, var, solval);
    }
    else if( useheuristic ) /* no parameter for fractional variable selection? */
    {
       if( !mostfrac )
          return 1;
-
-      SCIP_Real frac;
-      frac = solval - SCIPfloor(scip, solval);
-      frac = MIN(frac, 1.0 - frac);
-      assert(frac > 0);
-      return frac;
+         
+      *score = solval - SCIPfloor(scip, solval);
+      *score = MIN(*score, 1.0 - *score);
    }
    else
    //phase 1 & 2
@@ -542,7 +541,7 @@ static SCIP_Real score_function(
       lpobjval = SCIPgetLPObjval(masterscip);
 
       // usecolgen is True for phase 1 and False for phase 2
-      SCIP_CALL(executeStrongBranching(scip, branchrule, var, solval, usecolgen, -1, &up, &down, &upvalid, &downvalid, upinf, downinf));
+      SCIP_CALL( executeStrongBranching(scip, branchrule, var, solval, usecolgen, -1, &up, &down, &upvalid, &downvalid, upinf, downinf) );
 
       //TODO handle this better
       down = downvalid? down : upvalid? up : 0;
@@ -551,8 +550,10 @@ static SCIP_Real score_function(
       downgain = down - lpobjval;
       upgain = up - lpobjval;
       //SCIPdebugMessage("Variable %s has downgain %f and upgain %f\n", SCIPvarGetName(var), downgain, upgain);
-      return SCIPgetBranchScore(scip, var, downgain, upgain);
+      *score = SCIPgetBranchScore(scip, var, downgain, upgain);
    }
+
+   return SCIP_OKAY;
 }
 
 #if FALSE
@@ -935,25 +936,24 @@ SCIP_RETCODE branchExtern(
     */
    for( int phase = 0; phase<=0 || (usestrong && phase<=2); phase++ )
    {
-      if( !usestrong )
+      
+      if( phase == 0 )
       {
          ncands = nvalidcands;
       }
+      else if( phase == 1 )
+      {
+         //TODO
+         nneededcands = nneededcands/2;
+      }
       else
       {
-         if( phase == 0 )
-         {
-            ncands = nvalidcands;
-         }
-         else if( phase == 1 )
-         {
-            //TODO
-            nneededcands = ncands/2;
-         }
-         else
-         {
-            nneededcands = 1;
-         }
+         nneededcands = 1;
+      }
+
+      if( nneededcands >= ncands )
+      {
+         //continue;
       }
 
       /* compute scores */
@@ -964,7 +964,8 @@ SCIP_RETCODE branchExtern(
          /* select the variable as new best candidate (if it is) if we look for only one candidate,
           * or add remember its score if we look for multiple
           */
-         score = score_function(scip, branchrule, branchcands[indices[i]], branchcandssol[indices[i]], phase == 0, mostfrac, usepseudocosts, phase == 2, &upinf, &downinf);
+         SCIP_CALL( score_function(scip, branchrule, branchcands[indices[i]], branchcandssol[indices[i]], phase == 0, mostfrac, usepseudocosts, phase == 2 && TRUE, &score, &upinf, &downinf) );
+         
          if( nneededcands == 1 )
          {
             if( score > maxscore )
@@ -983,12 +984,13 @@ SCIP_RETCODE branchExtern(
          {
             outcandsscore[indices[i]] = score;
          }
-         SCIPdebugMessage("Looked at variable %s with current score: %f\n",
-                                 SCIPvarGetName(branchcands[indices[i]]), score);   
+         //SCIPdebugMessage("Looked at variable %s with current score: %f\n",
+         //                        SCIPvarGetName(branchcands[indices[i]]), score);   
       }
       if( nneededcands > 1 )
       {
          qsort(indices, ncands, sizeof(int), compare_function);
+         ncands = MIN(ncands, nneededcands);
       }     
    }
 
@@ -1125,7 +1127,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 {  /*lint --e{715}*/
    SCIP* origscip;
 
-   SCIPdebugMessage("Execlp method of orig branching\n");
+   //SCIPdebugMessage("Execlp method of orig branching\n");
 
    /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
