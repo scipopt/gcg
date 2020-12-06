@@ -194,7 +194,7 @@
    * variable pricer to \GCG can be found in the SCIP documentation.
    */
 
-  /**@defgroup PRICINGSOLVERS Pricing solvers
+  /**@defgroup PRICINGSOLVERS Pricing Solvers
    * @ingroup PRICING
    * @brief This page contains a list of all pricing solvers which are currently available.
    *
@@ -208,6 +208,14 @@
    *
    * A detailed description what a primal heuristic does and how to add a primal heuristic to \GCG can be found
    * \ref own-primal-heuristic "here".
+   */
+
+   /**@defgroup DIVINGHEURISTICS Diving Heuristics
+   * @ingroup PRIMALHEURISTICS
+   * @brief This page contains a list of all diving heuristics which are currently available.
+   *
+   * A detailed description what a diving heuristic does can be found
+   * \ref diving-heuristics "here".
    */
 
   /**@defgroup RELAXATORS Relaxators

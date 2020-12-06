@@ -65,6 +65,11 @@ def getMenu(menu, level = 1, previousCmd = ""):
             #print("= WARNING: No options for menu {} =".format(menu[i]))
             #print("========================================")
             continue
+        elif menu[i].startswith("<fix>") and level == 1:
+            #print("========================================")
+            #print("= INFORMATION: Skipping <fix> submenu. =")
+            #print("========================================")
+            continue
         #elif menu[i].startswith("<set>") and level == 1:
             #print("========================================")
             #print("= INFORMATION: Skipping <set> submenu. =")

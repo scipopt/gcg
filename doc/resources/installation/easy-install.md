@@ -1,15 +1,24 @@
 # Easy Installation {#easy-install}
-
-> This installation guide will only function for Linux and Mac computers out of the box. 
-> If you only have a Windows computer, please see @ref windows-install "Windows Installation Guide" for more information.  
+> This page guides you through the **default installation of GCG and the SCIP Optimization Suite**. The steps below will only function for Linux and 
+> Mac systems out of the box. At points, it might be required to alter the package management system (here, we use `apt`) according to your system.\n
+> **Windows Users:** If you only have a Windows system, please read the @subpage windows-install "Windows Installation Guide" for more information.  
 
 # Install GCG and the SCIP Optimization Suite {#install-scipopt}
+> **If you want to let an automated installer do the work for you, you can download it [here](installSCIPopt.sh).**\n
+> **Note:** The script requires you to have the SCIP `.tar` file (the source code) downloaded already 
+> (obtainable [here](https://scipopt.org/index.php#download)). Also, it might be required to make the script
+> executable, using e.g. `sudo chmod +x installSCIPopt.sh`.
+
 ### Step 1: Prerequisites
+Update your package lists:
+
+    sudo apt-get update
+
 Install the required system libraries:
 
-    sudo apt-get install build-essential libreadline-dev libz-dev libgmp3-dev lib32ncurses5-dev
+    sudo apt-get install build-essential libreadline-dev libz-dev libgmp3-dev lib32ncurses5-dev libboost-program-options-dev
 
-
+To use all detectors, some more packages are required. See @ref install-optional for more information.
 ### Step 2: Get the SCIP Optimization Suite
 Download the most recent SCIPOptSuite from the [SCIP Page](https://scipopt.org/index.php#download).
 Unzip it and go into the folder, replacing `X.X.X` by the version you downloaded.
@@ -51,13 +60,7 @@ SCIP and GCG via Makefile.
 > The installation using the Makefiles build system is recommended for developers,
 > since it offers more testing capabilities (see @ref conduct-experiments).
 
-#### Creating softlinks
-In order to create all necessary links, type
-
-    make links
-
-#### Compilation
-In the root folder of the scipoptsuite, you can then compile everything
+In the root folder of the SCIP Optimization Suite, you can then compile everything
 (you should execute them as root, if possible, to avoid certain errors) with:
 
     make scipoptlib

@@ -1,12 +1,12 @@
 # How to conduct experiments with GCG {#conduct-experiments}
-> **This page is still in development and may be incomplete. Please excuse any inconveniences.**
-
-[TOC]
 
 > When trying to find out if own modifications make a difference on solver behavior,
 > especially on runtimes, one has to do let GCG run for both and compare the two (or more). 
 > On this page, we explain **best practices of and give a guide for conducting experiments** 
 > with GCG.   
+
+
+[TOC]
 
 # Generating Runtime Data {#generate-data}
 The first step to start experimenting is to collect runtime data that the solver outputs.
@@ -37,7 +37,12 @@ shifted geom. [ 100/10.0/5.0/2.0]     18.3                 0.9                 5
 @01 GCG(3.1.0)SCIP(7.0.0)spx(5.0.0):default
 ```
 
-If it does, go ahead and continue with the next step.
+### Important Remarks for Reproducing Experiments
+If you want to achieve similar results as in past experiments or the strIPlib runtime data,
+always pay attention to the use of similar settings. For example, by default, the 
+@ref arrowhead "arrowhead structure" detectors (and others as well) are disabled 
+(see @ref detectors for more information), which could lead to very different results
+than anticipated.  
 
 ## 2. Defining a test set
 If you have a problem file, e.g. an `lp` file, this is considered to be an "instance"
@@ -195,11 +200,11 @@ the test with `STATISTICS=true`. Furthermore, have your runtime data
 If you want to **compare settings** with otherwise unmodified (and similarly versioned)
 installations of GCG, then you have already collected runtime data, e.g. by two calls,
 `make test SET=settings1` and `make test SET=settings2` and have your runtime data
-(2 or more sets of `.out`, `.res` and `vbc/` files) ready.\n
+(2 or more sets of `.out`, `.res` and `vbc/` files), e.g. in a folder `my_data` ready.\n
 To then generate a **comparison report for the two runs** including basic statistics
 and all possible _comparing_ statistics, you can call
 
-    make compare
+    make visu DATADIR=my_data
 
 More details on the comparison report feature are explained @ref comparison-report "here".
 The version comparison report can be found in `check/reports/` in a uniquely named (using a time stamp) report folder.
@@ -215,7 +220,7 @@ and **a `make test` for your custom version of GCG** and have your runtime data
 For our visualization scripts to keep on working, you may not change any existing
 GCG logging formats to not get differently formatted `.out`-files that will not be
 parseable anymore by the parsers. Instead, you should print output that you later
-want to visualize in the ways presented in the following:
+want to visualize in the ways presented in the following.
 
 ### Logging Custom Data: Single Data Points
 > **The custom logging feature (single data points) is not yet implemented. Please stay tuned.**
@@ -241,7 +246,7 @@ using the flag `-ci [CID]` in one of the four general plotters. A sample call co
 
     python3 general/plot.py check.gcg.out -ci "subGCG" -t "PRICING TIME" 10 20 "totaltime"
 
-As you can see, you can use the data point identifiers directly (caps sensitive) to plot.
+As you can see, you can use the data point identifiers directly (caps-sensitive) to plot.
 In order to automatically generate comparison reports with your own printed data,
 you can give this setting as
     

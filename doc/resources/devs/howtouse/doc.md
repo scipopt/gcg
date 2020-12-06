@@ -1,6 +1,12 @@
-# How to build this documentation {#doc}
+# How to build and document inside this documentation {#doc}
 <!-- The very first line of the .md document should be the page title and {# name of the site}
      #doc is the name of this site. Needed when making a link to this site. -->
+
+[TOC] <!-- Table of Contents will be inserted automatically -->
+
+> On this page, we explain how you can **compile this documentation** on your own and
+> give some basics and **hints on how to document** in markdown pages as well
+> as inside your code (especially when commenting longer sections).
 
 # Building this Documentation
 ## Requirements
@@ -47,7 +53,7 @@ on it upon the next `make doc`.
 The FAQ are generated using PHP. The questions can be added in the file
 `/doc/resources/misc/faq/faqtext.txt`.
 
-
+# Documenting in this Documentation
 ## How to add new pages
 ### Folder structure
 You can move and create folders and pages (see below) as you like inside the folder `resources`,

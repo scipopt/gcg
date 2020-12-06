@@ -1,4 +1,6 @@
 # Presolving Parameters {#presolving-params}
+> A list of all presolving parameters can be seen (and searched) when inserting `set presolving` into the search box on the page of @ref interactive-menu. \n
+> If you want a more detailed description of the presolving parameter adjustment, please check the use case @ref u5.
 # Modifying Parameters of the GCG Presolving
 There are different options to influence the presolving done to your problem. You can either
    * **Deactivate** presolving for your instance completely

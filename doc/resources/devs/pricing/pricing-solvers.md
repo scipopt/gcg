@@ -40,3 +40,11 @@ a commonly known dynamic programming approach to solve a knapsack problem optima
 ### Mixed Integer Program Solver
 This pricing solver is simply a call of SCIP's MIP solving functionality, meaning it is no faster than
 the usual solving. This consequentially leads to poor performance on many instances.
+
+<hr>
+
+## Adding your own Pricing Solver
+If you want to **write your own pricing solver**, i.e. implement algorithmics to solve your
+subproblem efficiently, please consult the "How to" for that.
+
+@ref own-pricing-solver

@@ -18,9 +18,9 @@ for the components used during the pricing.
 
 @subpage pricing-process \n
 @subpage pricing-solvers \n
-@subpage recursive-dw
+@subpage recursive-dw \n
 
-\n
+
 There are many different parameters that can influence the pricing of your problem.
 We collected some information about those and also some hints about possibly improving
 **parameter configurations** for specific problems.
@@ -28,7 +28,8 @@ It is assumed that you are rather familiar with the technical details of Branch-
 
 @subpage pricing-params \n
 
-\n
+<hr>
+
 If you want to **write your own** pricing solver, please consult the "How to"
 for that.
 

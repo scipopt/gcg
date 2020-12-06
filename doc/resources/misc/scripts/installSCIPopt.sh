@@ -10,13 +10,14 @@ function test(){
     read -p "Do you want to test the suite? (this should not take long) [Y/n] " yn
     case $yn in
       [Yy]* )
-              printf "Running SCIP on some sample instances...";
+              printf "Running GCG on some sample instances...";
+              cd gcg/
                 if [ $1 = 1 ]
                 then
-                  sudo make check
+                  make gcg_check
                 elif [ $1 = 2 ]
                 then
-                  sudo make test
+                  make test
                 fi
               printf "${B}Done!${W}";
               break;;
@@ -29,49 +30,68 @@ function test(){
 function fcmake(){
   printf "${B}Updating CMake${W}"
   sudo apt-get install cmake
-  printf "${B}Compiling SCIP Optimization Suite${W}"
+  printf "${B}Compiling the SCIP Optimization Suite${W}"
   mkdir build
   cd build
-  sudo cmake .. | tail -n +91
-  sudo make
+  cmake .. | tail -n +91
+  make
   printf "${B}Creating Executable${W}"
-  sudo make install
+  make install
   test "1"
 }
 
 function fmake(){
-  printf "${B}Creating a single library containing SCIP, SoPlex and ZIMPL${W}"
-  sudo make scipoptlib
+  printf "${B}Updating Make${W}"
+  sudo apt-get install make
+  printf "${B}Compiling SCIP, SoPlex and ZIMPL${W}"
+  make scipoptlib
   printf "${B}Compiling GCG${W}"
-  sudo make gcg
+  make gcg
   printf "${B}Creating Executable${W}"
-  sudo make install
+  make install
   test "2"
 }
 
-function install(){
-  printf "${B}Installing Prerequisites...${W}"
-  sudo apt-get install build-essential libreadline-dev libz-dev libgmp3-dev lib32ncurses5-dev
-  printf "${B}To download SCIP, you have accept the following:${W}"
-        while true; do
-            printf "${RED}I certify that I will use the software only as a member of a noncommercial and academic institute and that I have read and accepted the ZIB Academic License.${W}";
-            read -p "[Y/n] " yn
-            case $yn in
-                [Yy]* ) break;;
-                [Nn]* ) exit "You did not accept the terms of usage. SCIP was not installed.";;
-                * ) printf "Please answer yes or no.";;
-            esac
-        done
-  printf "${B}Downloading SCIP Optimization Suite${W}"
-  wget https://scipopt.org/download/release/scipoptsuite-6.0.1.tgz -q --show-progress
-  printf "${B}Unpacking SCIP Optimization Suite${W}"
-  sudo rm -r scipoptsuite-6.0.1
-  tar xvzf scipoptsuite-6.0.1.tgz > /dev/null 2>&1
-  rm scipoptsuite-6.0.1.tgz
-  printf "Done.\n"
-  cd scipoptsuite-6.0.1
+function installPrerequisites(){
   while true; do
-      printf "${B}Install the SCIP Optimization Suite using${W}"
+    printf "${B}Do you want to check and install the prerequisites?${W}"
+    read -p "Please answer. [Y/n] " yn
+    case $yn in
+      [Yy]* )
+              echo "Updating Package Manager..." 
+              sudo apt-get update
+              echo "Installing prerequisites..."
+              sudo apt-get install build-essential libreadline-dev libz-dev libgmp3-dev lib32ncurses5-dev libboost-program-options-dev
+              break;;
+      [Nn]* ) echo "Not checking prerequisites."
+              break;;
+          * ) printf "Please answer yes or no.";;
+    esac
+  done
+}
+
+function install(){
+  installPrerequisites;
+  printf "${B}Initializing Installation...${W}"
+  while [[ ! -f $SCIPtar || -z $SCIPtar ]]; do
+    read -e -p " Please enter path to SCIP Optimization Suite tarball: " SCIPtar
+  done
+  SCIPtar=$(realpath $SCIPtar)
+  printf " SCIP .tar found."
+  
+  if [[ -d ${SCIPtar%.tgz} ]]; then
+    printf " Removing old folder: '${SCIPtar%.tgz}'\n"
+    rm -r ${SCIPtar%.tgz}
+  fi
+
+  printf "${B}Unpacking SCIP Optimization Suite${W}"
+  tar xvzf $SCIPtar > /dev/null 2>&1
+  rm $SCIPtar
+  cd ${SCIPtar%.tgz}
+  printf "Done.\n"
+
+  while true; do
+      printf "${B}Install the SCIP Optimization Suite using...${W}"
       printf "(1) CMake [recommended for beginners] or\n"
       printf "(2) Makefile [for advanced testing]\n"
       read -p "Please enter how you want to install it. [1/2] " yn
