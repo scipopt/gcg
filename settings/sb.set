@@ -1,0 +1,4 @@
+branching/orig/usestrong = TRUE
+branching/orig/usepseudocosts = FALSE
+branching/orig/mostfrac = TRUE
+numerics/feastol = 1e-07
