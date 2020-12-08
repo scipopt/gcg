@@ -1033,10 +1033,10 @@ SCIP_RETCODE branchExtern(
 
    
 
-   if( !upinf || !downinf )
+   if( !bestupinf || !bestdowninf )
    {
       SCIPdebugMessage("Original branching rule selected variable %s with solval %f\n", SCIPvarGetName(branchvar), solval);
-      SCIP_CALL( branchVar(scip, branchrule, branchvar, solval, upinf, downinf) );
+      SCIP_CALL( branchVar(scip, branchrule, branchvar, solval, bestupinf, bestdowninf) );
       *result = SCIP_BRANCHED;
    }
    else
