@@ -62,6 +62,8 @@
 #define DEFAULT_USEPSEUDO     TRUE
 #define DEFAULT_USEPSSTRONG   FALSE
 #define DEFAULT_USESTRONG     FALSE
+#define DEFAULT_STRONGLITE    FALSE
+#define DEFAULT_STRONGTRAIN   FALSE
 
 /** branching data for branching decisions */
 struct GCG_BranchData
@@ -407,6 +409,10 @@ static SCIP_RETCODE executeStrongBranching(
    SCIP_Real downub;
    SCIP_Real uplb;
 
+   SCIP_Bool cutoff;
+   SCIP_Bool lperror;
+   SCIP_Bool lpsolved;
+
    downub = SCIP_INVALID;
    uplb = SCIP_INVALID;
    *downvalid = FALSE;
@@ -427,7 +433,7 @@ static SCIP_RETCODE executeStrongBranching(
    //SCIPdebugMessage("Probing on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
 
    /* probe for each child node */
-   for (int cnode = 0; cnode <= 1; cnode++)
+   for( int cnode = 0; cnode <= 1; cnode++ )
    {
       if ((cnode == 0 && downub != SCIP_INVALID) || (cnode == 1 && uplb != SCIP_INVALID))
       {
@@ -437,6 +443,10 @@ static SCIP_RETCODE executeStrongBranching(
          /* start probing */
          SCIP_CALL( GCGrelaxStartProbing(scip, NULL) );
          SCIP_CALL( GCGrelaxNewProbingnodeOrig(scip) );
+
+         cutoff = FALSE;
+         lperror = FALSE;
+         lpsolved = FALSE;
 
          if( cnode == 0 )
          {
@@ -448,24 +458,22 @@ static SCIP_RETCODE executeStrongBranching(
          }
 
          /* propagate the new b&b-node */
-         SCIP_Bool cutoff;
-         SCIP_Bool lperror;
-         SCIP_Bool lpsolved;
-
          SCIP_CALL(SCIPpropagateProbing(scip, -1, &cutoff, NULL));
-         assert(!cutoff);
 
          /* solve the LP with or without pricing */
-         SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
-         if (pricing)
+         if( !cutoff )
          {
-            SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, -1, NULL, NULL,
-                     cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
-         }
-         else
-         {
-            SCIP_CALL( GCGrelaxPerformProbing(scip, -1, NULL,
-                     cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
+            SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
+            if (pricing)
+            {
+               SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, -1, NULL, NULL,
+                        cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
+            }
+            else
+            {
+               SCIP_CALL( GCGrelaxPerformProbing(scip, -1, NULL,
+                        cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
+            }
          }
 
          if( cnode == 0 )
@@ -775,6 +783,9 @@ SCIP_RETCODE branchExtern(
    SCIP_Bool usepseudocosts;
    SCIP_Bool usepsstrong;
    SCIP_Bool usestrong;
+   
+   SCIP_Bool lite;
+   SCIP_Bool train;
 
    /* branching candidates */
    SCIP_VAR** branchcands;
@@ -818,6 +829,9 @@ SCIP_RETCODE branchExtern(
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepseudocosts", &usepseudocosts) );
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepsstrong", &usepsstrong) );
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usestrong", &usestrong) );
+
+   SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/stronglite", &lite) );
+   SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/strongtraining", &train) );
 
    /* get the branching candidates */
    SCIP_CALL( SCIPgetExternBranchCands(scip, &branchcands, &branchcandssol, NULL, &nbranchcands,
@@ -943,6 +957,10 @@ SCIP_RETCODE branchExtern(
       }
       else if( phase == 1 )
       {
+         // technically this skips phase 2
+         if( lite )
+            continue;
+
          //TODO
          nneededcands = nneededcands/2;
       }
@@ -953,7 +971,7 @@ SCIP_RETCODE branchExtern(
 
       if( nneededcands >= ncands )
       {
-         //continue;
+         continue;
       }
 
       /* compute scores */
@@ -964,7 +982,7 @@ SCIP_RETCODE branchExtern(
          /* select the variable as new best candidate (if it is) if we look for only one candidate,
           * or add remember its score if we look for multiple
           */
-         SCIP_CALL( score_function(scip, branchrule, branchcands[indices[i]], branchcandssol[indices[i]], phase == 0, mostfrac, usepseudocosts, phase == 2 && TRUE, &score, &upinf, &downinf) );
+         SCIP_CALL( score_function(scip, branchrule, branchcands[indices[i]], branchcandssol[indices[i]], phase == 0, mostfrac, usepseudocosts, phase == 2 && !lite, &score, &upinf, &downinf) );
          
          if( nneededcands == 1 )
          {
@@ -1013,11 +1031,18 @@ SCIP_RETCODE branchExtern(
 
    assert(branchvar != NULL);
 
-   SCIPdebugMessage("Original branching rule selected variable %s with solval %f\n", SCIPvarGetName(branchvar), solval);
-   SCIP_CALL( branchVar(scip, branchrule, branchvar, solval, FALSE, FALSE) );
+   
 
-
-   *result = SCIP_BRANCHED;
+   if( !upinf || !downinf )
+   {
+      SCIPdebugMessage("Original branching rule selected variable %s with solval %f\n", SCIPvarGetName(branchvar), solval);
+      SCIP_CALL( branchVar(scip, branchrule, branchvar, solval, upinf, downinf) );
+      *result = SCIP_BRANCHED;
+   }
+   else
+   {
+      *result = SCIP_CUTOFF;
+   }
 
    return SCIP_OKAY;
 }
@@ -1411,6 +1436,15 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/usestrong",
          "should strong branching be used to determine the variable on which the branching is performed?",
          NULL, FALSE, DEFAULT_USESTRONG, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/stronglite",
+         "should strong branching use column generation during variable evaluation?",
+         NULL, FALSE, DEFAULT_STRONGLITE, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/strongtraining",
+         "should strong branching run as precise as possible (to generate more valuable training data)?",
+         NULL, FALSE, DEFAULT_STRONGTRAIN, NULL, NULL) );
+
 
    /* notify cons_integralorig about the original variable branching rule */
    SCIP_CALL( GCGconsIntegralorigAddBranchrule(scip, branchrule) );
