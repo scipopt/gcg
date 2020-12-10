@@ -76,7 +76,7 @@
       <div class="col-md-3">
         <div class="bs-sidebar hidden-print" role="complementary">
           <ul class="nav bs-sidenav">
-            <li><a href="#welcome">Welcome</a></li>
+            <li class="active"><a href="#welcome">Welcome</a></li>
             <li><a href="#about">About</a></li>
             <li><a href="#download">Downloads</a></li>
             <li><a href="#guides">Installation, Guides<br> and Documentation</a>
