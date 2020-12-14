@@ -67,21 +67,19 @@
 #define DEFAULT_STRONGTRAIN   FALSE
 #define DEFAULT_IMMEDIATEINF  FALSE
 
-#define HASHMAPSIZE           131101
-
 
 /** branching rule data */
 struct SCIP_BranchruleData
 {
    int                   lastcand;           /**< last evaluated candidate of last branching rule execution */
    int                   lastbranchnode;     /**< the last node where we branched (instead of only changing some variable's domain) */
-   int                   nvars;
-   int                   maxvars;
-   SCIP_HASHMAP*         varhashmap;      /**< hashmap mapping variables to their last result in strong branching */
-   SCIP_Real             *outcandsscore;
-   int                   *uniqueblockflags;
-   SCIP_Real             *strongbranchscore;
-   int                   *lastevalnode;
+   int                   nvars;              /**< the number of vars currently in the hashmap */
+   int                   maxvars;            /**< the maximal number of vars that were in the hashmap at the same time */
+   SCIP_HASHMAP*         varhashmap;         /**< hashmap mapping variables to their last result in strong branching */
+   SCIP_Real             *outcandsscore;     /**< the variables' last scores */
+   int                   *uniqueblockflags;  /**< flags assigned by assignUniqueBlockFlags() */
+   SCIP_Real             *strongbranchscore; /**< the variables' last score from strong branching with column generation */
+   int                   *lastevalnode;      /**< the last node at which the variables were evaluated */
 };
 
 /** branching data for branching decisions */
@@ -185,6 +183,7 @@ SCIP_RETCODE addBranchcandsToData(
    { 
       assert(branchruledata->varhashmap != NULL);
 
+      /* create arrays */
       branchruledata->maxvars = SCIPcalcMemGrowSize(scip, npriobranchcands);
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->outcandsscore, branchruledata->maxvars) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars) );
@@ -215,7 +214,7 @@ SCIP_RETCODE addBranchcandsToData(
          assert(var != NULL);
          nvars = branchruledata->nvars;
 
-         /* if variable is not in hashmap insert it and increase array sizes */
+         /* if variable is not in hashmap insert it, initialize its array entries, and increase array sizes */
          if( !SCIPhashmapExists(branchruledata->varhashmap, var) )
          {
             int newsize = SCIPcalcMemGrowSize(scip, nvars + 1);
@@ -230,10 +229,10 @@ SCIP_RETCODE addBranchcandsToData(
             branchruledata->maxvars = newsize;
 
             SCIP_CALL( SCIPhashmapInsert(branchruledata->varhashmap, var, (void*) (size_t)nvars) );
-            branchruledata->outcandsscore[i] = -1;
-            branchruledata->strongbranchscore[i] = -1;
-            branchruledata->lastevalnode[i] = -1;
-            branchruledata->uniqueblockflags[i] = -2;
+            branchruledata->outcandsscore[nvars] = -1;
+            branchruledata->strongbranchscore[nvars] = -1;
+            branchruledata->lastevalnode[nvars] = -1;
+            branchruledata->uniqueblockflags[nvars] = -2;
 
             assert(SCIPhashmapExists(branchruledata->varhashmap, var)
                && (int)(size_t) SCIPhashmapGetImage(branchruledata->varhashmap, var) == nvars); /*lint !e507*/
@@ -979,6 +978,8 @@ SCIP_RETCODE branchExtern(
    int *indices;
    int nvalidcands;
 
+   int hashindex;
+
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
@@ -1051,29 +1052,26 @@ SCIP_RETCODE branchExtern(
    {
       for( int i = 0; i < npriobranchcands; i++ )
       {
-         int index;
-         index = (int)(size_t) SCIPhashmapGetImage(branchruledata->varhashmap, branchcands[i]);     
+         hashindex = (int)(size_t) SCIPhashmapGetImage(branchruledata->varhashmap, branchcands[i]);     
 
          if (iter == 0)
          {
             SCIPdebugMessage("Watching variable %s\n", SCIPvarGetName(branchcands[i]));   
 
-            if( branchruledata->uniqueblockflags[index] < -1 )
+            if( branchruledata->uniqueblockflags[hashindex] < -1 )
             {
-               branchruledata->uniqueblockflags[index] = assignUniqueBlockFlags(scip, branchcands[i]);
+               branchruledata->uniqueblockflags[hashindex] = assignUniqueBlockFlags(scip, branchcands[i]);
             }
             
-            if( branchruledata->uniqueblockflags[index] == 1 )
+            if( branchruledata->uniqueblockflags[hashindex] == 1 )
             {
-               //SCIPdebugMessage("Adding variable %s\n",
-               //                  SCIPvarGetName(branchcands[i]));
                indices[nvalidcands] = i;
                nvalidcands++;
             }
          }
          else /* iter == 1 */
          {
-            if( branchruledata->uniqueblockflags[index] == 0 )
+            if( branchruledata->uniqueblockflags[hashindex] == 0 )
             {
                indices[nvalidcands] = i;
                nvalidcands++;
@@ -1143,99 +1141,7 @@ SCIP_RETCODE branchExtern(
             bestdowninf = downinf;
             break;
          }
-         
-         /*{
-            both child nodes infeasible -> this node is infeasible
-            if( upinf && downinf )
-            {
-               *result = SCIP_CUTOFF;
-               return SCIP_OKAY;
-            }
-            SCIP_Real ub;
-            SCIP_Real lb;
 
-            SCIP_CONS* cons;
-            SCIP_CONS* bndcons;
-            SCIP_NODE* focusnode;
-            SICP_NODE* parentnode;
-            SCIP_CONS* oldcons;
-            SCIP_CONS* parentcons;
-            SCIP_CONS** origbranchconss;
-            GCG_CONSDATA* oldconsdata;
-            char name[SCIP_MAXSTRLEN];
-
-            int maxorigbranchconss;
-
-            ub = upinf? SCIPfeasFloor(scip, branchcandssol[indices[i]]) : SCIPinfinity(scip);
-            lb = downinf? SCIPfeasCeil(scip, branchcandssol[indices[i]]) : -1.0 * SCIPinfinity(scip);
-
-            (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s %s %s %f", "sbInfBnd", SCIPvarGetName(branchcands[indices[i]]),
-               upinf? "<=" : ">=", upinf? ub : lb);
-
-            focusnode = SCIPgetFocusNode(masterscip);
-            parentnode = SCIPnodeGetParent(focusnode);
-
-            oldcons = GCGconsMasterbranchGetActiveCons(masterscip);
-            oldconsdata = SCIPconsGetData(oldcons);
-            parentcons = oldconsdata->parentcons;
-
-            origbranchconss = NULL;
-            maxorigbranchconss = 0;
-
-            create corresponding constraints
-            SCIP_CALL( SCIPcreateConsLinear(scip, &bndcons, name, 0, NULL, NULL,
-               lb, ub,
-               TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE) );
-            SCIP_CALL( SCIPaddCoefLinear(scip, bndcons, branchcands[indices[i]], 1.0) );
-
-            origbranchconss[0] = consdown;
-            branchdata->cons = NULL;
-
-            consdata->norigbranchconss = consdata->norigbranchconss + 1;
-            consdata->maxorigbranchconss = SCIPcalcMemGrowSize(scip, consdata->norigbranchconss);
-            consdata->origbranchconss = origbranchconss;
-
-            branchdata->origvar = branchcands[indices[i]];
-            branchdata->oldvalue = branchcandssol[indices[i]];
-            branchdata->olddualbound = SCIPgetLocalLowerbound(masterscip);
-
-
-            if( upinf )
-            {
-               //SCIP_CALL( SCIPtightenVarUb(masterscip, branchcands[indices[i]], SCIPfeasFloor(masterscip, branchcandssol[indices[i]]), TRUE, &infeasible, NULL) );
-               SCIP_CALL( SCIPtightenVarUb(scip, branchcands[indices[i]], SCIPfeasFloor(scip, branchcandssol[indices[i]]), TRUE, &infeasible, NULL) );
-               //SCIPchgVarUb(scip, branchcands[indices[i]], SCIPfeasFloor(scip, branchcandssol[indices[i]]));
-            }
-            else
-            {
-               branchdata->boundtype = GCG_BOUNDTYPE_LOWER;
-               branchdata->newbound = SCIPfeasCeil(scip, branchcandssol[indices[i]]);
-               branchdata->oldbound = SCIPvarGetLbLocal(branchcands[indices[i]]);
-
-               SCIPdebugMessage(" -> bounding var: <%s> >= %g\n",
-                  SCIPvarGetName(branchcands[indices[i]]), branchdata->newbound);
-
-               (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchdata->origvar),
-                  ">=", branchdata->newbound);
-              
-
-              SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons, name, focusnode,
-                  GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdata, origbranchconss, norigbranchconss,
-                  maxorigbranchconss) );
-               SCIP_CALL( SCIPaddConsNode(masterscip, focusnode, cons, NULL) );
-               //SCIPchgVarLb(scip, branchcands[indices[i]], SCIPfeasCeil(scip, branchcandssol[indices[i]]));
-               SCIP_CALL( SCIPtightenVarLb(scip, branchcands[indices[i]], SCIPfeasCeil(scip, branchcandssol[indices[i]]), TRUE, &infeasible, NULL) );
-            }
-
-            SCIPfreeBufferArray(scip, &indices);
-            SCIPfreeBufferArray(scip, &uniqueblockflags);
-            SCIPfreeBufferArray(scip, &outcandsscore);
-
-            *result = SCIP_REDUCEDDOM;
-            return SCIP_OKAY;
-         }*/
-
-         int hashindex;
          hashindex = (int)(size_t) SCIPhashmapGetImage(branchruledata->varhashmap, branchcands[i]);
 
          if( nneededcands == 1 )
@@ -1509,7 +1415,6 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
    branchruledata->maxvars = 0;
    this_branchruledata = branchruledata;
    SCIP_CALL( SCIPhashmapCreate(&(branchruledata->varhashmap), SCIPblkmem(scip), SCIPgetNVars(scip)) );
-
 
    return SCIP_OKAY;
 }
