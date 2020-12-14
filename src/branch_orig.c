@@ -1395,8 +1395,24 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
 static
 SCIP_DECL_BRANCHFREE(branchFreeOrig)
 {  /*lint --e{715}*/
-   SCIPerrorMessage("method of xyz branching rule not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
+   SCIP_BRANCHRULEDATA* branchruledata;
+   SCIP_HASHMAP* varhashmap;
+
+   branchruledata = SCIPbranchruleGetData(branchrule);
+   varhashmap = branchruledata->varhashmap;
+
+   SCIPfreeBlockMemoryArray(scip, &branchruledata->outcandsscore, branchruledata->maxvars);
+   SCIPfreeBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars);
+   SCIPfreeBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars);
+   SCIPfreeBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars);
+
+   if( branchruledata->varhashmap != NULL )
+   {
+      SCIPhashmapFree(&varhashmap);
+   }
+
+   SCIPfreeMemory(scip, branchruledata);
+   SCIPbranchruleSetData(branchrule, NULL);
 
    return SCIP_OKAY;
 }
@@ -1492,7 +1508,7 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
    branchruledata->nvars = 0;
    branchruledata->maxvars = 0;
    this_branchruledata = branchruledata;
-   SCIP_CALL( SCIPhashmapCreate(&(branchruledata->varhashmap), SCIPblkmem(scip), HASHMAPSIZE) );
+   SCIP_CALL( SCIPhashmapCreate(&(branchruledata->varhashmap), SCIPblkmem(scip), SCIPgetNVars(scip)) );
 
 
    return SCIP_OKAY;
