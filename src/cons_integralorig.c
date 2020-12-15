@@ -184,7 +184,9 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
 
    i = 0;
 
-   while( *result != SCIP_BRANCHED && i < conshdlrdata->nbranchrules )
+   while( *result != SCIP_BRANCHED && 
+          *result != SCIP_REDUCEDDOM && 
+          i < conshdlrdata->nbranchrules )
    {
       assert(conshdlrdata->branchrules[i] != NULL);
 
