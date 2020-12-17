@@ -9,6 +9,10 @@
 > (obtainable [here](https://scipopt.org/index.php#download)). Also, it might be required to make the script
 > executable, using e.g. `sudo chmod +x installSCIPopt.sh`.
 
+@htmlonly
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/7E30DoPyCFc" style="margin:auto; display:block" frameborder="3"  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+@endhtmlonly
+
 ### Step 1: Prerequisites
 Update your package lists:
 

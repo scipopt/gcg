@@ -1,5 +1,5 @@
 # Windows Installation Guide {#windows-install}
-> This page guides you through installing GCG on a Windows machine.
+> This page guides you through **installing GCG on a Windows computer** if you are willing to (partly) use Linux.
 
 Currently, GCG cannot be installed on pure Windows. This is due to unportable commands in the GCG source code. Still, there are **ways to get GCG running on your Windows computer**.
 Generally, there are three different options:
@@ -13,6 +13,11 @@ While the first two options are more comfortable in the long-run, using the **WS
 ## Windows Subsystem for Linux (WSL) {#wsl}
 For the mentioned first two cases, there are guides on the internet after which you can simply use the usual @ref install "Installation Guides". 
 For the WSL, however, we want to provide a more **extensive guide**.
+
+@htmlonly
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/ruItZK9NU6c" style="margin:auto; display:block" frameborder="3" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+@endhtmlonly
+
 ### 1. Checking Requirements
 Using the WSL requires you to have...
 - Windows 10 with 2019-Nov Update installed

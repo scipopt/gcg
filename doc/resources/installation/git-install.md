@@ -7,6 +7,10 @@
 > **Note:** Your SSH key has to be registered correctly for it to work. Also, it might be required to make the script
 > executable using `sudo chmod +x installGCGfromGit.sh`.
 
+@htmlonly
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/nsTiXuPW1WE" style="margin:auto; display:block" frameborder="3"  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+@endhtmlonly
+
 ## Git prerequisites
 Please make sure that you have your ssh key saved in your Git account. Otherwise, you won't be able to
 clone or commit anything, since you have not authorized yourself.
