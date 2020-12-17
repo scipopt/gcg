@@ -73,13 +73,14 @@
 struct SCIP_BranchruleData
 {
    int                   lastcand;           /**< last evaluated candidate of last branching rule execution */
-   SCIP_Bool             lastreduceddom;      /**< did the last strong branching with column generation round result in domain reduction due to infeasibility? */
    int                   nvars;              /**< the number of vars currently in the hashmap */
    int                   maxvars;            /**< the maximal number of vars that were in the hashmap at the same time */
    SCIP_HASHMAP*         varhashmap;         /**< hashmap mapping variables to their last result in strong branching */
-   SCIP_Real             *outcandsscore;     /**< the variables' last scores */
+   SCIP_Real             *score;     /**< the variables' last scores */
    int                   *uniqueblockflags;  /**< flags assigned by assignUniqueBlockFlags() */
    SCIP_Real             *strongbranchscore; /**< the variables' last score from strong branching with column generation */
+   SCIP_Bool             *sbscoreisrecent;   /**< was the score saved in strongbranchscore computed in a parent of the current node *
+                                              *   where all node on the path to the parent were created for domainreduction due to infeasibility? */
    int                   *lastevalnode;      /**< the last node at which the variables were evaluated */
 };
 
@@ -186,9 +187,10 @@ SCIP_RETCODE addBranchcandsToData(
 
       /* create arrays */
       branchruledata->maxvars = SCIPcalcMemGrowSize(scip, npriobranchcands);
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->outcandsscore, branchruledata->maxvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->score, branchruledata->maxvars) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars) );
       branchruledata->nvars = npriobranchcands;
 
@@ -196,8 +198,9 @@ SCIP_RETCODE addBranchcandsToData(
       for( i = 0; i < npriobranchcands; ++i )
       {
          SCIP_CALL( SCIPhashmapInsert(branchruledata->varhashmap, branchcands[i], (void*) (size_t)i) );
-         branchruledata->outcandsscore[i] = -1;
+         branchruledata->score[i] = -1;
          branchruledata->strongbranchscore[i] = -1;
+         branchruledata->sbscoreisrecent[i] = FALSE;
          branchruledata->lastevalnode[i] = -1;
          branchruledata->uniqueblockflags[i] = -2;
       }
@@ -219,9 +222,11 @@ SCIP_RETCODE addBranchcandsToData(
          if( !SCIPhashmapExists(branchruledata->varhashmap, var) )
          {
             int newsize = SCIPcalcMemGrowSize(scip, nvars + 1);
-            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchruledata->outcandsscore, branchruledata->maxvars,
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchruledata->score, branchruledata->maxvars,
                newsize) );
             SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars,
+               newsize) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars,
                newsize) );
             SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars,
                newsize) );
@@ -230,8 +235,9 @@ SCIP_RETCODE addBranchcandsToData(
             branchruledata->maxvars = newsize;
 
             SCIP_CALL( SCIPhashmapInsert(branchruledata->varhashmap, var, (void*) (size_t)nvars) );
-            branchruledata->outcandsscore[nvars] = -1;
+            branchruledata->score[nvars] = -1;
             branchruledata->strongbranchscore[nvars] = -1;
+            branchruledata->sbscoreisrecent[nvars] = FALSE;
             branchruledata->lastevalnode[nvars] = -1;
             branchruledata->uniqueblockflags[nvars] = -2;
 
@@ -543,10 +549,10 @@ SCIP_RETCODE branchVar(
    return SCIP_OKAY;
 }
 
-/* compare two indices corresponding to entries in outcandsscore */
+/* compare two indices corresponding to entries in branchruledata->score/uniqueblockflags */
 static int compare_function(const void *index1, const void *index2)
 {
-   return (this_branchruledata->outcandsscore[*(int *)index1] > this_branchruledata->outcandsscore[*(int *)index2] ||
+   return (this_branchruledata->score[*(int *)index1] > this_branchruledata->score[*(int *)index2] ||
            this_branchruledata->uniqueblockflags[*(int *)index1] > this_branchruledata->uniqueblockflags[*(int *)index2]) ? -1 : 1;
 }
 
@@ -697,9 +703,10 @@ static SCIP_Real score_function(
     SCIP_VAR *var,            /* var to be scored */
     SCIP_Real solval,         /* the var's current solution value */
     SCIP_Bool useheuristic,   /* should heuristics be used instead of strong branching? */
-    SCIP_Bool mostfrac,       /* if fractionality is used as a heuristic, should the most fractional variable be chosen (instead of the first one)? */
+    SCIP_Bool mostfrac,       /* if fractionality is used as heuristic, should the most fractional variable be chosen (instead of the first one)? */
     SCIP_Bool usepseudocosts, /* should pseudocosts be used as heuristic (instead of fractionality)? */
-    SCIP_Bool usecolgen,       /* should column generation be used during strong branching? */
+    SCIP_Bool usehistorical,  /* should historical data from phase 2 be used as heuristic? */
+    SCIP_Bool usecolgen,      /* should column generation be used during strong branching? */
     SCIP_Real *score,         /* stores the computed score */
     SCIP_Bool *upinf,         /* stores whether the upbranch is infeasible */
     SCIP_Bool *downinf        /* stores whether the downbranch is infeasible */
@@ -707,17 +714,33 @@ static SCIP_Real score_function(
 {
    /* define score functions and calculate score for all variables for sorting dependent on used heuristic */
    // phase 0
-   if( usepseudocosts && useheuristic )
+   if( useheuristic)
    {
-      *score = SCIPgetVarPseudocostScore(scip, var, solval);
-   }
-   else if( useheuristic ) /* no parameter for fractional variable selection? */
-   {
-      if( !mostfrac )
-         return 1;
-         
-      *score = solval - SCIPfloor(scip, solval);
-      *score = MIN(*score, 1.0 - *score);
+      if( usehistorical )
+      {
+         SCIP_BRANCHRULEDATA* branchruledata;
+         int hashindex;
+
+         branchruledata = SCIPbranchruleGetData(branchrule);
+         assert(branchruledata != NULL);
+
+         assert(SCIPhashmapExists(branchruledata->varhashmap, var));
+         hashindex = (int)(size_t) SCIPhashmapGetImage(branchruledata->varhashmap, var);
+
+         return branchruledata->strongbranchscore[hashindex];
+      }
+      else if( usepseudocosts )
+      {
+         *score = SCIPgetVarPseudocostScore(scip, var, solval);
+      }
+      else /* no parameter for fractional variable selection? */
+      {
+         if( !mostfrac )
+            return 1;
+            
+         *score = solval - SCIPfloor(scip, solval);
+         *score = MIN(*score, 1.0 - *score);
+      }
    }
    else
    //phase 1 & 2
@@ -750,8 +773,7 @@ static SCIP_Real score_function(
       SCIP_CALL( SCIPgetIntParam(scip, "branching/bp_strong/reevalage", &reevalage) );
 
       if( !usecolgen 
-          || !branchruledata->lastreduceddom 
-          || !branchruledata->strongbranchscore == -1
+          || !branchruledata->sbscoreisrecent[hashindex]
           || !isKAncestor(scip, branchruledata->lastevalnode[hashindex], SCIPgetFocusNode(scip), reevalage) )
       {
          up = -SCIPinfinity(scip);
@@ -774,6 +796,7 @@ static SCIP_Real score_function(
          if( usecolgen && upvalid && downvalid && !*upinf && !*downinf )
          {
             branchruledata->strongbranchscore[hashindex] = *score;
+            branchruledata->sbscoreisrecent[hashindex] = TRUE;
             branchruledata->lastevalnode[hashindex] = currentnodenr;
          }
          //SCIPdebugMessage("Variable %s has downgain %f and upgain %f\n", SCIPvarGetName(var), downgain, upgain);
@@ -1191,14 +1214,10 @@ SCIP_RETCODE branchExtern(
             if( upinf && downinf )
             {
                //TODO actually handle this further up...
-               if( !branchruledata->lastreduceddom )
+               for( int i=0; i<branchruledata->maxvars; i++ )
                {
-                  for( int i=0; i<branchruledata->maxvars; i++ )
-                  {
-                     branchruledata->strongbranchscore[i] = -1;
-                  }
+                  branchruledata->sbscoreisrecent[i] = FALSE;
                }
-               branchruledata->lastreduceddom = FALSE;
                *result = SCIP_CUTOFF;
                SCIPdebugMessage("Original branching rule detected current node to be infeasible!\n");
                return SCIP_OKAY;
@@ -1229,7 +1248,7 @@ SCIP_RETCODE branchExtern(
          else
          {
             hashindex = (int)(size_t) SCIPhashmapGetImage(branchruledata->varhashmap, branchcands[c]);
-            branchruledata->outcandsscore[hashindex] = score;
+            branchruledata->score[hashindex] = score;
          }
          SCIPdebugMessage("Looked at variable %s with current score: %f\n",
                                  SCIPvarGetName(branchcands[indices[c]]), score);   
@@ -1244,7 +1263,7 @@ SCIP_RETCODE branchExtern(
    branchvar = branchcands[indices[0]];
    solval = SCIPgetRelaxSolVal(scip, branchcands[indices[0]]);
 
-   /*free memory */
+   /* free memory */
    SCIPfreeBufferArray(scip, &indices);
 
    if( branchvar == NULL )
@@ -1254,28 +1273,20 @@ SCIP_RETCODE branchExtern(
    }
 
    assert(branchvar != NULL);
-
-   if( !bestupinf || !bestdowninf )
+   assert(!(bestupinf && bestdowninf));
+   
+   SCIPdebugMessage("Original branching rule selected variable %s with solval %f%s\n", SCIPvarGetName(branchvar), solval, (bestupinf || bestdowninf)? ", which is infeasible in one direction" : "");
+   
+   if( !bestupinf && !bestdowninf )
    {
-      SCIPdebugMessage("Original branching rule selected variable %s with solval %f%s\n", SCIPvarGetName(branchvar), solval, (bestupinf || bestdowninf)? ", which is infeasible in one direction" : "");
-      
-      if( !branchruledata->lastreduceddom )
+      for( int i=0; i<branchruledata->maxvars; i++ )
       {
-         for( int i=0; i<branchruledata->maxvars; i++ )
-         {
-            branchruledata->strongbranchscore[i] = -1;
-         }
+         branchruledata->sbscoreisrecent[i] = FALSE;
       }
-      branchruledata->lastreduceddom = upinf || downinf;
-      SCIP_CALL( branchVar(scip, branchrule, branchvar, solval, bestupinf, bestdowninf) );
-      *result = SCIP_BRANCHED;
    }
-   else
-   {
-      assert(FALSE);
-      branchruledata->lastreduceddom = FALSE;
-      *result = SCIP_CUTOFF;
-   }
+
+   SCIP_CALL( branchVar(scip, branchrule, branchvar, solval, bestupinf, bestdowninf) );
+   *result = SCIP_BRANCHED;
 
    return SCIP_OKAY;
 }
@@ -1384,7 +1395,7 @@ SCIP_DECL_BRANCHFREE(branchFreeOrig)
    branchruledata = SCIPbranchruleGetData(branchrule);
    varhashmap = branchruledata->varhashmap;
 
-   SCIPfreeBlockMemoryArray(scip, &branchruledata->outcandsscore, branchruledata->maxvars);
+   SCIPfreeBlockMemoryArray(scip, &branchruledata->score, branchruledata->maxvars);
    SCIPfreeBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars);
    SCIPfreeBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars);
    SCIPfreeBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars);
@@ -1487,7 +1498,6 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
 
    branchruledata = SCIPbranchruleGetData(branchrule);
    branchruledata->lastcand = 0;
-   branchruledata->lastreduceddom = FALSE;
    branchruledata->nvars = 0;
    branchruledata->maxvars = 0;
    this_branchruledata = branchruledata;
