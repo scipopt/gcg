@@ -679,6 +679,9 @@ SCIP_Bool isKAncestor(
       if( SCIPnodeGetNumber(curnode) == ancestornodenr )
          return TRUE;
 
+      if( SCIPnodeGetNumber(curnode) == 1)
+         break;
+
       curnode = SCIPnodeGetParent(curnode);
    }
 
@@ -748,6 +751,7 @@ static SCIP_Real score_function(
 
       if( !usecolgen 
           || !branchruledata->lastreduceddom 
+          || !branchruledata->strongbranchscore == -1
           || !isKAncestor(scip, branchruledata->lastevalnode[hashindex], SCIPgetFocusNode(scip), reevalage) )
       {
          up = -SCIPinfinity(scip);
@@ -1017,6 +1021,8 @@ SCIP_RETCODE branchExtern(
    int ncands;
    int nneededcands;
 
+   int c;
+
    /* values for choosing the variable to branch on */
    SCIP_VAR* branchvar;
    SCIP_Real solval;
@@ -1169,7 +1175,7 @@ SCIP_RETCODE branchExtern(
       }
 
       /* compute scores */
-      for( int i = 0, int c=branchruledata->lastcand; i < ncands; i++, c++ )
+      for( int i = 0, c=branchruledata->lastcand; i < ncands; i++, c++ )
       {
          c = c % ncands;
          assert(GCGvarIsOriginal(branchcands[indices[c]]));
@@ -1185,6 +1191,13 @@ SCIP_RETCODE branchExtern(
             if( upinf && downinf )
             {
                //TODO actually handle this further up...
+               if( !branchruledata->lastreduceddom )
+               {
+                  for( int i=0; i<branchruledata->maxvars; i++ )
+                  {
+                     branchruledata->strongbranchscore[i] = -1;
+                  }
+               }
                branchruledata->lastreduceddom = FALSE;
                *result = SCIP_CUTOFF;
                SCIPdebugMessage("Original branching rule detected current node to be infeasible!\n");
@@ -1218,8 +1231,8 @@ SCIP_RETCODE branchExtern(
             hashindex = (int)(size_t) SCIPhashmapGetImage(branchruledata->varhashmap, branchcands[c]);
             branchruledata->outcandsscore[hashindex] = score;
          }
-         SCIPdebugMessage("Looked at variable %s with current score: %f %f %d\n",
-                                 SCIPvarGetName(branchcands[indices[c]]), score, branchruledata->outcandsscore[hashindex], hashindex);   
+         SCIPdebugMessage("Looked at variable %s with current score: %f\n",
+                                 SCIPvarGetName(branchcands[indices[c]]), score);   
       }
       if( nneededcands > 1 )
       {
@@ -1242,11 +1255,17 @@ SCIP_RETCODE branchExtern(
 
    assert(branchvar != NULL);
 
-   
-
    if( !bestupinf || !bestdowninf )
    {
       SCIPdebugMessage("Original branching rule selected variable %s with solval %f%s\n", SCIPvarGetName(branchvar), solval, (bestupinf || bestdowninf)? ", which is infeasible in one direction" : "");
+      
+      if( !branchruledata->lastreduceddom )
+      {
+         for( int i=0; i<branchruledata->maxvars; i++ )
+         {
+            branchruledata->strongbranchscore[i] = -1;
+         }
+      }
       branchruledata->lastreduceddom = upinf || downinf;
       SCIP_CALL( branchVar(scip, branchrule, branchvar, solval, bestupinf, bestdowninf) );
       *result = SCIP_BRANCHED;
