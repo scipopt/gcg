@@ -1107,7 +1107,7 @@ SCIP_RETCODE branchExtern(
    }
 
    //TODO
-   nneededcands = branchruledata->usestrong? 40 : 1;
+   nneededcands = branchruledata->usestrong? branchruledata->phasezerooutcands : 1;
    nvalidcands = 0;
 
    SCIPdebugMessage("Current Nodenr: %lld\n", SCIPnodeGetNumber(SCIPgetFocusNode(scip)));
@@ -1169,12 +1169,14 @@ SCIP_RETCODE branchExtern(
             break;
 
          case 1:
-            /* technically this skips phase 2 */
-            if( branchruledata->usestronglite )
-               continue;
-
             //TODO
-            nneededcands = nneededcands/2;
+            nneededcands = branchruledata->phaseoneoutcands;
+
+            if( branchruledata->usestronglite 
+               || nneededcands < branchruledata->mincolgencands
+               || ncands < branchruledata->mincolgencands )
+               nneededcands = 1;
+
             break;
 
          case 2:
@@ -1248,6 +1250,10 @@ SCIP_RETCODE branchExtern(
       {
          qsort(indices, ncands, sizeof(int), compare_function);
          ncands = MIN(ncands, nneededcands);
+      }
+      else
+      {
+         break;
       }     
    }
 
