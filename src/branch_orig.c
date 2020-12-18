@@ -71,7 +71,8 @@
 #define DEFAULT_MINCOLGENCANDS 4
 #define DEFAULT_PHASE0OUTCANDS 40
 #define DEFAULT_PHASE1OUTCANDS 20
-#define DEFAULT_GAPWEIGHT      1   
+#define DEFAULT_GAPWEIGHT      1
+#define DEFAULT_HISTWEIGHT     0.5   
 
 
 /** branching rule data */
@@ -102,6 +103,7 @@ struct SCIP_BranchruleData
    int                   phasezerooutcands;  /**< maximum number of output candidates from phase 0 */
    int                   phaseoneoutcands;   /**< maximum number of output candidates from phase 1 */
    SCIP_Real             gapweight;          /**< how much impact should the nodegap have on the number of precisely evaluated candidates? */
+   SCIP_Real             histweight;         /**< how many candidates should be chosen based on historical strong branching scores as opposed to current heuristic scores in phase 0 (e.g. 0.5 = 50%)? */
 };
 
 /** branching data for branching decisions */
@@ -569,10 +571,23 @@ SCIP_RETCODE branchVar(
 }
 
 /* compare two indices corresponding to entries in branchruledata->score/uniqueblockflags */
-static int compare_function(const void *index1, const void *index2)
+static int score_compare_function(const void *index1, const void *index2)
 {
    return (this_branchruledata->score[*(int *)index1] > this_branchruledata->score[*(int *)index2] ||
            this_branchruledata->uniqueblockflags[*(int *)index1] > this_branchruledata->uniqueblockflags[*(int *)index2]) ? -1 : 1;
+}
+
+/* compare two indices corresponding to entries in branchruledata->strongbranchscore/uniqueblockflags */
+static int hist_compare_function(const void *index1, const void *index2)
+{
+   return (this_branchruledata->strongbranchscore[*(int *)index1] > this_branchruledata->strongbranchscore[*(int *)index2] ||
+           this_branchruledata->uniqueblockflags[*(int *)index1] > this_branchruledata->uniqueblockflags[*(int *)index2]) ? -1 : 1;
+}
+
+/* compare two indices based on descending numerical order */
+static int geq_compare_function(const void *index1, const void *index2)
+{
+   return *(int *)index1 < *(int *)index2 ? -1 : 1;
 }
 
 
@@ -1061,7 +1076,10 @@ SCIP_RETCODE branchExtern(
    SCIP_Bool bestdowninf;
 
    int *indices;
+   int *histindices;
    int nvalidcands;
+   int nvalidhistcands;
+   int nneededhistcands;
 
    int hashindex;
 
@@ -1109,6 +1127,7 @@ SCIP_RETCODE branchExtern(
    //TODO
    nneededcands = branchruledata->usestrong? branchruledata->phasezerooutcands : 1;
    nvalidcands = 0;
+   nvalidhistcands = 0;
 
    SCIPdebugMessage("Current Nodenr: %lld\n", SCIPnodeGetNumber(SCIPgetFocusNode(scip)));
 
@@ -1117,6 +1136,10 @@ SCIP_RETCODE branchExtern(
 
    /* allocate memory */
    SCIP_CALL( SCIPallocBufferArray(scip, &indices, branchruledata->usestrong? npriobranchcands : 1) );
+   if( branchruledata->usestrong )
+   {
+      SCIP_CALL( SCIPallocBufferArray(scip, &histindices, branchruledata->usestrong? npriobranchcands : 1) );
+   }
    indices[0] = 0;
 
    /* iter = 0: integer variables belonging to a unique block with fractional value,
@@ -1140,6 +1163,12 @@ SCIP_RETCODE branchExtern(
             {
                indices[nvalidcands] = i;
                nvalidcands++;
+
+               if( branchruledata->strongbranchscore[hashindex] != -1 && branchruledata->usestrong)
+               {
+                  histindices[nvalidhistcands] = i;
+                  nvalidhistcands++;
+               }
             }
          }
          else /* iter == 1 */
@@ -1148,11 +1177,27 @@ SCIP_RETCODE branchExtern(
             {
                indices[nvalidcands] = i;
                nvalidcands++;
+               if( branchruledata->strongbranchscore[hashindex] != -1 && branchruledata->usestrong)
+               {
+                  histindices[nvalidhistcands] = i;
+                  nvalidhistcands++;
+               }
             }
          }
       }
    }
 
+   if( branchruledata->usestrong )
+   {
+      /* the number of candidates we select based on historical strong branching scores needs to depend on the number of
+      * candidates for which we have historical scores, otherwise some candidates would be selected simply because they
+      * have been scored before
+      */
+      nneededhistcands = SCIPfloor(scip, MIN((SCIP_Real)nvalidhistcands/(SCIP_Real)(nvalidcands+nvalidhistcands), branchruledata->histweight) * nvalidcands);
+   
+      qsort(histindices, nvalidhistcands, sizeof(int), hist_compare_function);
+      qsort(histindices, nneededhistcands, sizeof(int), geq_compare_function);
+   }
    /* if we are performing strong branching, go through the three phases:
     * - phase 0: select a first selection (50 to 10, based on |T S(v)|) of candidates based on some traditional variable selection
     *            heuristic, some (half) of the variables are new, and some are selected based on previous calls
@@ -1172,6 +1217,9 @@ SCIP_RETCODE branchExtern(
             //TODO
             nneededcands = branchruledata->phaseoneoutcands;
 
+            /* skip phase 2 if we are in lite mode,
+             * or if the number of available candidates is lower than the min amount for phase 2
+             */
             if( branchruledata->usestronglite 
                || nneededcands < branchruledata->mincolgencands
                || ncands < branchruledata->mincolgencands )
@@ -1232,6 +1280,7 @@ SCIP_RETCODE branchExtern(
                maxscore = score;
                bestupinf = upinf;
                bestdowninf = downinf;
+
                /* if we do not look for the most fractional variable, but for the first fractional variable,
                * we can stop here since we found a variable to branch on */
                if( !branchruledata->mostfrac && !branchruledata->usepseudocosts && !branchruledata->usestrong )
@@ -1248,8 +1297,47 @@ SCIP_RETCODE branchExtern(
       }
       if( nneededcands > 1 )
       {
-         qsort(indices, ncands, sizeof(int), compare_function);
+         qsort(indices, ncands, sizeof(int), score_compare_function);
          ncands = MIN(ncands, nneededcands);
+
+         if( phase == 0 && nneededhistcands )
+         {
+            /* swap out the worst performing "new" candidates with the best performing historical candidates */
+            int *indicescopy;
+            int pos;
+
+            SCIP_CALL( SCIPallocBufferArray(scip, &indicescopy, ncands) );
+            pos = nneededhistcands;
+
+            for( int i = 0; i<ncands; i++ )
+            {
+               indicescopy[i] = indices[i];
+            }
+
+            for( int i = 0; i<nneededhistcands; i++ )
+            {
+               indices[i] = histindices[i];
+            }
+
+            /* concatenate the two arrays, while avoiding duplicates */
+            for( int i = 0; i<ncands && pos<=ncands; i++ )
+            {
+               for( int j = 0; j<=nneededhistcands; j++ )
+               {
+                  if( j == nneededhistcands )
+                  {
+                     indices[pos] = indicescopy[i];
+                     pos++;
+                  }
+                  else if( indices[j] == indicescopy[i] )
+                     break;
+               }
+               
+            }
+            
+            SCIPfreeBufferArray(scip, &indicescopy);
+         }
+
       }
       else
       {
@@ -1262,6 +1350,7 @@ SCIP_RETCODE branchExtern(
 
    /* free memory */
    SCIPfreeBufferArray(scip, &indices);
+   SCIPfreeBufferArray(scip, &histindices);
 
    if( branchvar == NULL )
    {
@@ -1747,6 +1836,10 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/gapweight",
          "how much impact should the nodegap have on the number of precisely evaluated candidates?",
          &branchruledata->gapweight, FALSE, DEFAULT_GAPWEIGHT, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/histweight",
+         "how many candidates should be chosen based on historical strong branching scores as opposed to current heuristic scores in phase 0 (e.g. 0.5 = 50%)?",
+         &branchruledata->histweight, FALSE, DEFAULT_HISTWEIGHT, 0, 1, NULL, NULL) );
 
 
    /* notify cons_integralorig about the original variable branching rule */
