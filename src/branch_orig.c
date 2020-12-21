@@ -67,43 +67,49 @@
 #define DEFAULT_STRONGTRAIN    FALSE
 #define DEFAULT_IMMEDIATEINF   TRUE
 
-#define DEFAULT_REEVALAGE      1
-#define DEFAULT_MINCOLGENCANDS 4
-#define DEFAULT_PHASE0OUTCANDS 40
-#define DEFAULT_PHASE1OUTCANDS 20
-#define DEFAULT_GAPWEIGHT      1
-#define DEFAULT_HISTWEIGHT     0.5   
+#define DEFAULT_REEVALAGE           1
+#define DEFAULT_MINCOLGENCANDS      4
+#define DEFAULT_MINPHASE0OUTCANDS   10
+#define DEFAULT_MAXPHASE0OUTCANDS   50
+#define DEFAULT_PHASE1GAPWEIGHT     0.25
+#define DEFAULT_MINPHASE1OUTCANDS   3
+#define DEFAULT_MAXPHASE1OUTCANDS   20
+#define DEFAULT_PHASE2GAPWEIGHT     1
+#define DEFAULT_HISTWEIGHT          0.5   
 
 
 /** branching rule data */
 struct SCIP_BranchruleData
 {
-   int                   lastcand;           /**< last evaluated candidate of last branching rule execution */
-   int                   nvars;              /**< the number of vars currently in the hashmap */
-   int                   maxvars;            /**< the maximal number of vars that were in the hashmap at the same time */
-   SCIP_HASHMAP*         varhashmap;         /**< hashmap mapping variables to their last result in strong branching */
-   SCIP_Real             *score;             /**< the variables' last scores */
-   int                   *uniqueblockflags;  /**< flags assigned by assignUniqueBlockFlags() */
-   SCIP_Real             *strongbranchscore; /**< the variables' last score from strong branching with column generation */
-   SCIP_Bool             *sbscoreisrecent;   /**< was the score saved in strongbranchscore computed in a parent of the current node *
-                                              *   where all node on the path to the parent were created for domainreduction due to infeasibility? */
-   int                   *lastevalnode;      /**< the last node at which the variables were evaluated */
+   int                   lastcand;              /**< last evaluated candidate of last branching rule execution */
+   int                   nvars;                 /**< the number of vars currently in the hashmap */
+   int                   maxvars;               /**< the maximal number of vars that were in the hashmap at the same time */
+   SCIP_HASHMAP*         varhashmap;            /**< hashmap mapping variables to their last result in strong branching */
+   SCIP_Real             *score;                /**< the variables' last scores */
+   int                   *uniqueblockflags;     /**< flags assigned by assignUniqueBlockFlags() */
+   SCIP_Real             *strongbranchscore;    /**< the variables' last score from strong branching with column generation */
+   SCIP_Bool             *sbscoreisrecent;      /**< was the score saved in strongbranchscore computed in a parent of the current node *
+                                                 *   where all node on the path to the parent were created for domainreduction due to infeasibility? */
+   int                   *lastevalnode;         /**< the last node at which the variables were evaluated */
 
-   SCIP_Bool             enforcebycons;      /**< should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE) */
-   SCIP_Bool             mostfrac;           /**< should branching be performed on the most fractional variable instead of the first variable? */
-   SCIP_Bool             usepseudocosts;     /**< should pseudocosts be used to determine the variable on which the branching is performed? */
-   SCIP_Bool             usepsstrong;        /**< should strong branching with propagation be used to determine the variable on which the branching is performed? */
-   SCIP_Bool             usestrong;          /**< should strong branching be used to determine the variable on which the branching is performed? */
+   SCIP_Bool             enforcebycons;         /**< should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE) */
+   SCIP_Bool             mostfrac;              /**< should branching be performed on the most fractional variable instead of the first variable? */
+   SCIP_Bool             usepseudocosts;        /**< should pseudocosts be used to determine the variable on which the branching is performed? */
+   SCIP_Bool             usepsstrong;           /**< should strong branching with propagation be used to determine the variable on which the branching is performed? */
+   SCIP_Bool             usestrong;             /**< should strong branching be used to determine the variable on which the branching is performed? */
 
-   SCIP_Bool             usestronglite;      /**< should strong branching use column generation during variable evaluation? */
-   SCIP_Bool             usestrongtrain;     /**< should strong branching run as precise as possible (to generate more valuable training data)? */
-   SCIP_Bool             immediateinf;       /**< should infeasibility detected during strong branching be handled immediately, or only if the variable is selected? */
-   int                   reevalage;          /**< how many times can bounds be changed due to infeasibility during strong branching until an already evaluated variable needs to be reevaluated? */
-   int                   mincolgencands;     /**< minimum number of variables for phase 2 to be executed, otherwise the best candidate from phase 1 will be chosen */
-   int                   phasezerooutcands;  /**< maximum number of output candidates from phase 0 */
-   int                   phaseoneoutcands;   /**< maximum number of output candidates from phase 1 */
-   SCIP_Real             gapweight;          /**< how much impact should the nodegap have on the number of precisely evaluated candidates? */
-   SCIP_Real             histweight;         /**< how many candidates should be chosen based on historical strong branching scores as opposed to current heuristic scores in phase 0 (e.g. 0.5 = 50%)? */
+   SCIP_Bool             usestronglite;         /**< should strong branching use column generation during variable evaluation? */
+   SCIP_Bool             usestrongtrain;        /**< should strong branching run as precise as possible (to generate more valuable training data)? */
+   SCIP_Bool             immediateinf;          /**< should infeasibility detected during strong branching be handled immediately, or only if the variable is selected? */
+   int                   reevalage;             /**< how many times can bounds be changed due to infeasibility during strong branching until an already evaluated variable needs to be reevaluated? */
+   int                   mincolgencands;        /**< minimum number of variables for phase 2 to be executed, otherwise the best candidate from phase 1 will be chosen */
+   int                   minphasezerooutcands;  /**< minimum number of output candidates from phase 0 */
+   int                   maxphasezerooutcands;  /**< maximum number of output candidates from phase 0 */
+   SCIP_Real             phaseonegapweight;     /**< how much impact should the nodegap have on the number of precisely evaluated candidates in phase 1? */
+   int                   minphaseoneoutcands;   /**< minimum number of output candidates from phase 1 */
+   int                   maxphaseoneoutcands;   /**< maximum number of output candidates from phase 1 */
+   SCIP_Real             phasetwogapweight;     /**< how much impact should the nodegap have on the number of precisely evaluated candidates in phase 2? */
+   SCIP_Real             histweight;            /**< how many candidates should be chosen based on historical strong branching scores as opposed to current heuristic scores in phase 0 (e.g. 0.5 = 50%)? */
 };
 
 /** branching data for branching decisions */
@@ -121,6 +127,23 @@ struct GCG_BranchData
 
 /* needed for compare_function (for now)*/
 SCIP_BRANCHRULEDATA* this_branchruledata;
+
+/* calculates the number of needed candidates based on the min and max number of candidates as well as the node gap */ 
+static
+int calculateNCands(
+   SCIP* scip,
+   int min,             /**< minimum number of candidates */
+   int max,             /**< maximum number of candidates */
+   SCIP_Real nodegap,   /**< node gap in current focus node */
+   SCIP_Real gapweight  /**< how much influence the node gap should have */
+)
+{
+   int dif = max-min;
+
+   assert( min>=1 );
+
+   return min + (int) SCIPceil(scip, MIN(dif, dif * nodegap * gapweight + dif * (1-gapweight)));
+}
 
 /* return  1: integer variables belonging to a unique block with fractional value
  * return  0: variables that belong to no block but were directly transferred to the 
@@ -1060,7 +1083,11 @@ SCIP_RETCODE branchExtern(
    int ncands;
    int nneededcands;
 
-   int c;
+   SCIP_Real nodegap;
+   SCIP_Real upperbound;
+   SCIP_Real nodelowerbound;
+
+   int hashindex;
 
    /* values for choosing the variable to branch on */
    SCIP_VAR* branchvar;
@@ -1075,13 +1102,14 @@ SCIP_RETCODE branchExtern(
    SCIP_Bool bestupinf;
    SCIP_Bool bestdowninf;
 
+   /* storing best candidates */
    int *indices;
-   int *histindices;
    int nvalidcands;
+
+   /* storing best candidates based on historical strong branching scores */
+   int *histindices;
    int nvalidhistcands;
    int nneededhistcands;
-
-   int hashindex;
 
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
@@ -1111,6 +1139,12 @@ SCIP_RETCODE branchExtern(
    bestupinf = FALSE;
    bestdowninf = FALSE;
 
+   upperbound = SCIPgetUpperbound(scip);
+   nodelowerbound = SCIPnodeGetLowerbound( SCIPgetFocusNode(scip) );
+   nodegap = ((upperbound >= 0) == (nodelowerbound >= 0))? 
+             ABS((upperbound-nodelowerbound)/MIN(ABS(upperbound), ABS(nodelowerbound))) : 1;
+   assert(0<=nodegap && nodegap<=1);
+
    if( branchruledata->usepsstrong )
    {
       SCIP_CALL( SCIPgetRelpsprobBranchVar(masterscip, branchcands, branchcandssol, npriobranchcands,
@@ -1124,12 +1158,11 @@ SCIP_RETCODE branchExtern(
       solval = SCIPgetRelaxSolVal(scip, branchvar);
    }
 
-   //TODO
-   nneededcands = branchruledata->usestrong? branchruledata->phasezerooutcands : 1;
+   /* number of candidates we evaluate precisely should be based on the likely relevance of this branching decision via the nodegap */
+   nneededcands = branchruledata->usestrong? calculateNCands(scip, branchruledata->minphasezerooutcands, branchruledata->maxphasezerooutcands,
+                                                            nodegap, branchruledata->phaseonegapweight) : 1;
    nvalidcands = 0;
    nvalidhistcands = 0;
-
-   SCIPdebugMessage("Current Nodenr: %lld\n", SCIPnodeGetNumber(SCIPgetFocusNode(scip)));
 
    /* insert branchcands into hashmap */
    SCIP_CALL( addBranchcandsToData(scip, branchrule, branchcands, npriobranchcands) );
@@ -1214,8 +1247,8 @@ SCIP_RETCODE branchExtern(
             break;
 
          case 1:
-            //TODO
-            nneededcands = branchruledata->phaseoneoutcands;
+            nneededcands = calculateNCands(scip, branchruledata->minphaseoneoutcands, branchruledata->maxphaseoneoutcands,
+                                           nodegap, branchruledata->phasetwogapweight);
 
             /* skip phase 2 if we are in lite mode,
              * or if the number of available candidates is lower than the min amount for phase 2
@@ -1255,9 +1288,9 @@ SCIP_RETCODE branchExtern(
             if( upinf && downinf )
             {
                //TODO actually handle this further up...
-               for( int i=0; i<branchruledata->maxvars; i++ )
+               for( int k=0; k<branchruledata->maxvars; k++ )
                {
-                  branchruledata->sbscoreisrecent[i] = FALSE;
+                  branchruledata->sbscoreisrecent[k] = FALSE;
                }
                *result = SCIP_CUTOFF;
                SCIPdebugMessage("Original branching rule detected current node to be infeasible!\n");
@@ -1825,17 +1858,29 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
          "minimum number of variables for phase 2 to be executed, otherwise the best candidate from phase 1 will be chosen",
          &branchruledata->mincolgencands, FALSE, DEFAULT_MINCOLGENCANDS, 0, 100000, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/phase0outcands",
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/minphase0outcands",
+         "minimum number of output candidates from phase 0",
+         &branchruledata->minphasezerooutcands, FALSE, DEFAULT_MINPHASE0OUTCANDS, 1, 100000, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/maxphase0outcands",
          "maximum number of output candidates from phase 0",
-         &branchruledata->phasezerooutcands, FALSE, DEFAULT_PHASE0OUTCANDS, 1, 100000, NULL, NULL) );
+         &branchruledata->maxphasezerooutcands, FALSE, DEFAULT_MAXPHASE0OUTCANDS, 1, 100000, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/phase1outcands",
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/phase1gapweight",
+         "how much impact should the nodegap have on the number of precisely evaluated candidates in phase 1?",
+         &branchruledata->phaseonegapweight, FALSE, DEFAULT_PHASE1GAPWEIGHT, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/minphase1outcands",
+         "minimum number of output candidates from phase 1",
+         &branchruledata->minphaseoneoutcands, FALSE, DEFAULT_MINPHASE1OUTCANDS, 1, 100000, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/maxphase1outcands",
          "maximum number of output candidates from phase 1",
-         &branchruledata->phaseoneoutcands, FALSE, DEFAULT_PHASE1OUTCANDS, 1, 100000, NULL, NULL) );
+         &branchruledata->maxphaseoneoutcands, FALSE, DEFAULT_MAXPHASE1OUTCANDS, 1, 100000, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/gapweight",
-         "how much impact should the nodegap have on the number of precisely evaluated candidates?",
-         &branchruledata->gapweight, FALSE, DEFAULT_GAPWEIGHT, 0, 1, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/phase2gapweight",
+         "how much impact should the nodegap have on the number of precisely evaluated candidates in phase 2?",
+         &branchruledata->phasetwogapweight, FALSE, DEFAULT_PHASE2GAPWEIGHT, 0, 1, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/histweight",
          "how many candidates should be chosen based on historical strong branching scores as opposed to current heuristic scores in phase 0 (e.g. 0.5 = 50%)?",
