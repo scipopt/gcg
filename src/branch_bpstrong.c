@@ -751,7 +751,7 @@ SCIP_RETCODE branchExtern(
          c = c % ncands;
          
          assert(GCGvarIsOriginal(branchcands[indices[c]]));
-         //checkvar = branchcands[indices[c]];
+         checkvar = branchcands[indices[c]];
 
          /* select the variable as new best candidate (if it is) if we look for only one candidate,
           * or remember its score if we look for multiple
@@ -759,13 +759,13 @@ SCIP_RETCODE branchExtern(
          SCIP_CALL( score_function(scip, branchrule, branchcands[indices[c]], branchcandssol[indices[c]], phase == 0, FALSE, phase == 2 && !branchruledata->usestronglite, &score, &upinf, &downinf) );
          
          /* variable pointers sometimes change during probing in strong branching */
-         //if( checkvar != branchcands[indices[c]] )
-         //{
-         //   if(phase==2)
-         //      SCIP_CALL( SCIPgetExternBranchCands(scip, &branchcands, &branchcandssol, NULL, NULL,
-         //         NULL, NULL, NULL, NULL) );
+         if( checkvar != branchcands[indices[c]] )
+         {
+            if(phase==2)
+               SCIP_CALL( SCIPgetExternBranchCands(scip, &branchcands, &branchcandssol, NULL, NULL,
+                  NULL, NULL, NULL, NULL) );
          
-         //}
+         }
 
          /* handle infeasibility detected during strong branching */
          if( phase == 2 && !branchruledata->usestronglite && branchruledata->immediateinf && (upinf || downinf) )
