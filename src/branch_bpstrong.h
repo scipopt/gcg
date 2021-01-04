@@ -60,6 +60,21 @@ extern SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingOrig(
     SCIP_RESULT *result              /**< pointer to store result */
 );
 
+extern SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingRyanfoster(
+   SCIP* scip,                      /**< SCIP data structure */
+   SCIP_BRANCHRULE* rfbranchrule,   /**< ryan-foster branchrule */
+   SCIP_VAR **ovar1s,               /**< first elements of candidate pairs */
+   SCIP_VAR **ovar2s,               /**< second elements of candidate pairs */
+   int *nspricingblock,             /**< pricing block numbers corresponding to input pairs */
+   int npairs,                      /**< number of input pairs */
+   SCIP_VAR **ovar1,                /**< pointer to store output var 1 pointer */
+   SCIP_VAR **ovar2,                /**< pointer to store output var 2 pointer */
+   int *pricingblock,               /**< pointer to store output pricing block number */
+   SCIP_Bool *upinf,                /**< pointer to store whether strong branching detected infeasibility in the upbranch */
+   SCIP_Bool *downinf,              /**< pointer to store whether strong branching detected infeasibility in the downbranch */
+   SCIP_RESULT *result              /**< pointer to store result */
+);
+
 #ifdef __cplusplus
 }
 #endif

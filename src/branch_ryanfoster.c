@@ -31,11 +31,12 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+#define SCIP_DEBUG
 #include <assert.h>
 #include <string.h>
 
 #include "branch_ryanfoster.h"
+#include "branch_bpstrong.h"
 #include "gcg.h"
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
@@ -62,6 +63,8 @@
 #define BRANCHRULE_PRIORITY      10
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
+
+#define DEFAULT_USESTRONG        FALSE
 
 
 /** branching data for branching decisions */
@@ -111,8 +114,8 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
    pricingscip = GCGgetPricingprob(origscip, branchdata->blocknr);
    assert(pricingscip != NULL);
 
-   SCIPdebugMessage("branchActiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
-      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
+/*   SCIPdebugMessage("branchActiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
+      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));*/
 
    assert(GCGvarIsOriginal(branchdata->var1));
    /** @todo it is not clear if linking variables interfere with ryan foster branching */
@@ -170,8 +173,8 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
    pricingscip = GCGgetPricingprob(origscip, branchdata->blocknr);
    assert(pricingscip != NULL);
 
-   SCIPdebugMessage("branchDeactiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
-      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
+   /*SCIPdebugMessage("branchDeactiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
+      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));*/
 
    /* remove constraint from the pricing problem that enforces the branching decision */
    assert(branchdata->pricecons != NULL);
@@ -200,8 +203,8 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
 
    assert(GCGmasterGetOrigprob(scip) != NULL);
 
-   SCIPdebugMessage("branchPropMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
-      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
+/*   SCIPdebugMessage("branchPropMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
+      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));*/
 
    *result = SCIP_DIDNOTFIND;
 
@@ -263,8 +266,8 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
       }
    }
 
-   SCIPdebugMessage("Finished propagation of branching decision constraint: %s(%s, %s), %d vars fixed.\n",
-      ( branchdata->same ? "same" : "differ" ), SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2), propcount);
+   /*SCIPdebugMessage("Finished propagation of branching decision constraint: %s(%s, %s), %d vars fixed.\n",
+      ( branchdata->same ? "same" : "differ" ), SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2), propcount);*/
 
    if( propcount > 0 )
    {
@@ -281,8 +284,8 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
    assert(scip != NULL);
    assert(branchdata != NULL);
 
-   SCIPdebugMessage("branchDataDeleteRyanfoster: %s(%s, %s)\n", ( (*branchdata)->same ? "same" : "differ" ),
-      SCIPvarGetName((*branchdata)->var1), SCIPvarGetName((*branchdata)->var2));
+   /*SCIPdebugMessage("branchDataDeleteRyanfoster: %s(%s, %s)\n", ( (*branchdata)->same ? "same" : "differ" ),
+      SCIPvarGetName((*branchdata)->var1), SCIPvarGetName((*branchdata)->var2));*/
 
    /* release constraint that enforces the branching decision */
    if( (*branchdata)->pricecons != NULL )
@@ -457,6 +460,17 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    SCIP_VAR* ovar1;
    SCIP_VAR* ovar2;
 
+   SCIP_Bool usestrong;
+
+   SCIP_VAR** ovar1s;
+   SCIP_VAR** ovar2s;
+   int *nspricingblock;
+   int npairs;
+
+   int pricingblock;
+   SCIP_Bool upinf;
+   SCIP_Bool downinf;
+
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
@@ -496,6 +510,16 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
     * first, get the master problem and all variables of the master problem
     */
    SCIP_CALL( SCIPgetLPBranchCands(scip, &branchcands, NULL, NULL, &nbranchcands, NULL, NULL) );
+
+   SCIP_CALL( SCIPgetBoolParam(origscip, "branching/ryanfoster/usestrong", &usestrong) );
+
+   if( usestrong )
+   {
+      npairs = 0;
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &ovar1s, 0) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &ovar2s, 0) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nspricingblock, 0) );
+   }
 
    /* now search for two (fractional) columns mvar1, mvar2 in the master and 2 original variables ovar1, ovar2
     * s.t. mvar1 contains both ovar1 and ovar2 and mvar2 contains ovar1, but not ovar2
@@ -596,8 +620,23 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
                   continue;
 
                /* if we arrive here, ovar2 is contained in mvar1 but not in mvar2, so everything is fine */
-               feasible = TRUE;
-               break;
+               if( !usestrong )
+               {
+                  feasible = TRUE;
+                  break;
+               }
+               else
+               {
+                  SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar1s, npairs, npairs+1) );
+                  SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar2s, npairs, npairs+1) );
+                  SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &nspricingblock, npairs, npairs+1) );
+                  
+                  ovar1s[npairs] = ovar1;
+                  ovar2s[npairs] = ovar2;
+                  nspricingblock[npairs] = GCGvarGetBlock(mvar1);
+
+                  npairs++;
+               }
             }
 
             /* we did not find an ovar2 contained in mvar1, but not in mvar2,
@@ -636,15 +675,48 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
                      continue;
 
                   /* if we arrive here, ovar2 is contained in mvar2 but not in mvar1, so everything is fine */
-                  feasible = TRUE;
-                  break;
+                  if( !usestrong )
+                  {
+                     feasible = TRUE;
+                     break;
+                  }
+                  else
+                  {
+                     SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar1s, npairs, npairs+1) );
+                     SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar2s, npairs, npairs+1) );
+                     SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &nspricingblock, npairs, npairs+1) );
+                     
+                     ovar1s[npairs] = ovar1;
+                     ovar2s[npairs] = ovar2;
+                     nspricingblock[npairs] = GCGvarGetBlock(mvar1);
+
+                     npairs++;
+                  }
                }
             }
          }
       }
    }
 
-   if( !feasible )
+   if( usestrong )
+   {
+      for( int z = 0; z<npairs; z++ )
+      {
+         SCIPdebugMessage("%s, %s, %d\n", SCIPvarGetName(ovar1s[z]), SCIPvarGetName(ovar2s[z]), nspricingblock[z]);
+      }
+
+      if( npairs>0 )
+      {
+         GCGbranchSelectCandidateStrongBranchingRyanfoster(origscip, branchrule, ovar1s, ovar2s, nspricingblock, npairs,
+                                                            &ovar1, &ovar2, &pricingblock, &upinf, &downinf, result);
+
+         SCIPfreeBlockMemoryArray(scip, &ovar1s, npairs);
+         SCIPfreeBlockMemoryArray(scip, &ovar2s, npairs);
+         SCIPfreeBlockMemoryArray(scip, &nspricingblock, npairs);
+      }
+   }
+
+   if( !feasible && ( !usestrong || npairs==0 ) )
    {
       SCIPdebugMessage("Ryanfoster branching rule could not find variables to branch on!\n");
       return SCIP_OKAY;
@@ -816,6 +888,10 @@ SCIP_RETCODE SCIPincludeBranchruleRyanfoster(
          branchFreeRyanfoster, branchInitRyanfoster, branchExitRyanfoster, branchInitsolRyanfoster,
          branchExitsolRyanfoster, branchExeclpRyanfoster, branchExecextRyanfoster, branchExecpsRyanfoster,
          branchruledata) );
+
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/ryanfoster/usestrong",
+         "should strong branching be used to determine the variables on which the branching is performed?",
+         NULL, FALSE, DEFAULT_USESTRONG, NULL, NULL) );
 
    return SCIP_OKAY;
 }

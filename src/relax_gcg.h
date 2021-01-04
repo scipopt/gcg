@@ -166,6 +166,16 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+extern
+SCIP_RETCODE GCGrelaxNewProbingnodeMasterCons(
+   SCIP*                 scip,                /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
+   GCG_BRANCHDATA*       branchdata,         /**< branching data */
+   SCIP_CONS**           origbranchconss,    /**< original constraints enforcing the branching decision */
+   int                   norigbranchconss,   /**< number of original constraints */
+   int                   maxorigbranchconss  /**< capacity of origbranchconss */
+   );
+
 /** add probing nodes to both the original and master problem;
  *  furthermore, add origbranch and masterbranch constraints to transfer branching decisions
  *  from the original to the master problem
