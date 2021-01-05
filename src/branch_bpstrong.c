@@ -334,12 +334,6 @@ static int score_compare_function(const void *index1, const void *index2)
    return this_branchruledata->score[*(int *)index1] > this_branchruledata->score[*(int *)index2]? -1 : 1;
 }
 
-/* compare two indices corresponding to entries in branchruledata->strongbranchscore */
-static int hist_compare_function(const void *index1, const void *index2)
-{
-   return this_branchruledata->strongbranchscore[*(int *)index1] > this_branchruledata->strongbranchscore[*(int *)index2]? -1 : 1;
-}
-
 /* compare two indices based on descending numerical order */
 static int geq_compare_function(const void *index1, const void *index2)
 {
@@ -465,18 +459,13 @@ SCIP_RETCODE executeStrongBranching(
    SCIP* masterscip;
    SCIP_BRANCHRULEDATA* branchruledata;
 
-   SCIP_Real downub;
-   SCIP_Real uplb;
-
    SCIP_Bool cutoff;
    SCIP_Bool lperror;
    SCIP_Bool lpsolved;
 
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
-
-   downub = SCIP_INVALID;
-   uplb = SCIP_INVALID;
+   
    *downvalid = FALSE;
    *upvalid = FALSE;
    *downinf = FALSE;
@@ -818,7 +807,7 @@ SCIP_RETCODE branchExtern(
    SCIP_CALL( SCIPallocBufferArray(scip, &branchruledata->score, ncands) );
    for( int init = 0; init < ncands; ++init )
    {
-      branchruledata->score[init] = -1;
+      branchruledata->score[init] = branchruledata->strongbranchscore[SCIPhashmapGetImageInt(branchruledata->varhashmap, buildIdentifier(cand1s[init], NULL))];
    }
 
    /* allocate memory */
@@ -895,14 +884,16 @@ SCIP_RETCODE branchExtern(
       nvalidhistcands = ncands;
    }
 
-   /* the number of candidates we select based on historical strong branching scores needs to depend on the number of
-   * candidates for which we have historical scores, otherwise some candidates would be selected simply because they
-   * have been scored before
-   */
-   nneededhistcands = SCIPfloor(scip, MIN((SCIP_Real)nvalidhistcands/(SCIP_Real)(nvalidcands+nvalidhistcands), branchruledata->histweight) * nvalidcands);
-
-   //qsort(histindices, nvalidhistcands, sizeof(int), hist_compare_function);
-   //qsort(histindices, nneededhistcands, sizeof(int), geq_compare_function);
+   if( branchruledata->initiator == ORIG )
+   {
+      /* the number of candidates we select based on historical strong branching scores needs to depend on the number of
+      * candidates for which we have historical scores, otherwise some candidates would be selected simply because they
+      * have been scored before
+      */
+      nneededhistcands = SCIPfloor(scip, MIN((SCIP_Real)nvalidhistcands/(SCIP_Real)(nvalidcands+nvalidhistcands), branchruledata->histweight) * nvalidcands);
+      qsort(histindices, nvalidhistcands, sizeof(int), score_compare_function);
+      qsort(histindices, nneededhistcands, sizeof(int), geq_compare_function);
+   }
 
    /* go through the three phases:
     * - phase 0: select a first selection (50 to 10, based on |T S(v)|) of candidates based on some traditional variable selection
