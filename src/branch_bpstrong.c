@@ -724,8 +724,7 @@ SCIP_RETCODE branchExtern(
    SCIP_VAR* checkvar;
 
    SCIP_HASHMAP* solhashmap;
-
-   //int ncands;
+   
    int nneededcands;
 
    SCIP_Real nodegap;
@@ -799,7 +798,7 @@ SCIP_RETCODE branchExtern(
    assert(0<=nodegap && nodegap<=1);
 
    /* number of candidates we evaluate precisely should be based on the likely relevance of this branching decision via the nodegap */
-   nneededcands =  calculateNCands(scip, branchruledata->minphasezerooutcands, branchruledata->maxphasezerooutcands, nodegap, branchruledata->phaseonegapweight);
+   nneededcands = calculateNCands(scip, branchruledata->minphasezerooutcands, branchruledata->maxphasezerooutcands, nodegap, branchruledata->phaseonegapweight);
 
    /* insert branchcands into hashmap */
    SCIP_CALL( addBranchcandsToData(scip, branchrule, cand1s, cand2s, ncands) );
@@ -807,7 +806,7 @@ SCIP_RETCODE branchExtern(
    SCIP_CALL( SCIPallocBufferArray(scip, &branchruledata->score, ncands) );
    for( int init = 0; init < ncands; ++init )
    {
-      branchruledata->score[init] = branchruledata->strongbranchscore[SCIPhashmapGetImageInt(branchruledata->varhashmap, buildIdentifier(cand1s[init], NULL))];
+      branchruledata->score[init] = branchruledata->strongbranchscore[SCIPhashmapGetImageInt(branchruledata->varhashmap, buildIdentifier(cand1s[init], cand2s==NULL? NULL : cand2s[init]))];
    }
 
    /* allocate memory */
@@ -821,9 +820,9 @@ SCIP_RETCODE branchExtern(
       nvalidhistcands = 0;
 
       /* iter = 0: integer variables belonging to a unique block with fractional value,
-      * iter = 1: we did not find enough variables to branch on so far, so we look for integer variables that belong to no block
-      * but were directly transferred to the master problem and which have a fractional value in the current solution
-      */
+       * iter = 1: we did not find enough variables to branch on so far, so we look for integer variables that belong to no block
+       * but were directly transferred to the master problem and which have a fractional value in the current solution
+       */
       for( int iter = 0; iter <= 1 && nvalidcands < nneededcands; iter++ )
       {
          for( int i = 0; i < ncands; i++ )
@@ -855,7 +854,7 @@ SCIP_RETCODE branchExtern(
                {
                   indices[nvalidcands] = i;
                   nvalidcands++;
-                  if( branchruledata->strongbranchscore[hashindex] != -1)
+                  if( branchruledata->strongbranchscore[hashindex] != -1 )
                   {
                      histindices[nvalidhistcands] = i;
                      nvalidhistcands++;
@@ -875,25 +874,26 @@ SCIP_RETCODE branchExtern(
    }
    else
    {
+      nvalidhistcands = 0;
       for( int i=0; i<ncands; i++)
       {
          indices[i] = i;
+         if( branchruledata->score[i] != -1 )
+         {
+            histindices[nvalidhistcands] = i;
+            nvalidhistcands++;
+         }
       }
-
       nvalidcands = ncands;
-      nvalidhistcands = ncands;
    }
-
-   if( branchruledata->initiator == ORIG )
-   {
-      /* the number of candidates we select based on historical strong branching scores needs to depend on the number of
-      * candidates for which we have historical scores, otherwise some candidates would be selected simply because they
-      * have been scored before
-      */
-      nneededhistcands = SCIPfloor(scip, MIN((SCIP_Real)nvalidhistcands/(SCIP_Real)(nvalidcands+nvalidhistcands), branchruledata->histweight) * nvalidcands);
-      qsort(histindices, nvalidhistcands, sizeof(int), score_compare_function);
-      qsort(histindices, nneededhistcands, sizeof(int), geq_compare_function);
-   }
+   
+   /* the number of candidates we select based on historical strong branching scores needs to depend on the number of
+   * candidates for which we have historical scores, otherwise some candidates would be selected simply because they
+   * have been scored before
+   */
+   nneededhistcands = SCIPfloor(scip, MIN((SCIP_Real)nvalidhistcands/(SCIP_Real)(nvalidcands+nvalidhistcands), branchruledata->histweight) * nvalidcands);
+   qsort(histindices, nvalidhistcands, sizeof(int), score_compare_function);
+   qsort(histindices, nneededhistcands, sizeof(int), geq_compare_function);
 
    /* go through the three phases:
     * - phase 0: select a first selection (50 to 10, based on |T S(v)|) of candidates based on some traditional variable selection
@@ -952,7 +952,7 @@ SCIP_RETCODE branchExtern(
          else
          {
             SCIP_CALL( score_function(scip, branchrule, cand1s[indices[c]], cand2s[indices[c]], SCIPhashmapGetImageReal(solhashmap, cand1s[indices[c]]), SCIPhashmapGetImageReal(solhashmap, cand2s[indices[c]]),
-                                       candinfos[indices[c]], phase == 0||TRUE, FALSE, FALSE && phase == 2 && !branchruledata->usestronglite, &score, &upinf, &downinf) );
+                                       candinfos[indices[c]], phase == 0, FALSE, phase == 2 && !branchruledata->usestronglite, &score, &upinf, &downinf) );
          }
 
          /* variable pointers sometimes change during probing in strong branching */
@@ -1013,7 +1013,7 @@ SCIP_RETCODE branchExtern(
          qsort(indices, ncands, sizeof(int), score_compare_function);
          ncands = MIN(ncands, nneededcands);
 
-         if( phase == 0 && nneededhistcands && branchruledata->initiator == ORIG )
+         if( phase == 0 && nneededhistcands )
          {
             /* swap out the worst performing "new" candidates with the best performing historical candidates */
             int *indicescopy;
@@ -1099,13 +1099,6 @@ SCIP_RETCODE branchExtern(
       {
          branchruledata->sbscoreisrecent[i] = FALSE;
       }
-   }
-
-   *outcand1 = cand1s[0];
-   if( branchruledata->initiator == RYANFOSTER )
-   {
-      *outcand2 = cand2s[0];
-      *outcandinfo = candinfos[0]; 
    }
 
    *result = SCIP_BRANCHED;
