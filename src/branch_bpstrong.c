@@ -250,13 +250,15 @@ SCIP_RETCODE addBranchcandsToData(
    int                   ncands    /**< number of priority branching candidates */
    )
 {
-
+   SCIP* masterscip;
    SCIP_BRANCHRULEDATA* branchruledata;
    int i;
 
    /* get branching rule data */
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
+
+   masterscip = GCGgetMasterprob(scip);
 
    if( branchruledata->nvars == 0 )
    { 
@@ -265,12 +267,12 @@ SCIP_RETCODE addBranchcandsToData(
       assert(branchruledata->varhashmap != NULL);
 
       /* create arrays */
-      branchruledata->maxvars = SCIPcalcMemGrowSize(scip, ncands);
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->score, branchruledata->maxvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars) );
+      branchruledata->maxvars = SCIPcalcMemGrowSize(masterscip, ncands);
+      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->score, branchruledata->maxvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->uniqueblockflags, branchruledata->maxvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->strongbranchscore, branchruledata->maxvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->sbscoreisrecent, branchruledata->maxvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->lastevalnode, branchruledata->maxvars) );
       branchruledata->nvars = ncands;
 
       /* store each variable in hashmap and initialize array entries */
@@ -300,16 +302,16 @@ SCIP_RETCODE addBranchcandsToData(
          /* if variable is not in hashmap insert it, initialize its array entries, and increase array sizes */
          if( !SCIPhashmapExists(branchruledata->varhashmap, buildIdentifier(var1s[i], var2s!=NULL? var2s[i] : NULL)) )
          {
-            int newsize = SCIPcalcMemGrowSize(scip, nvars + 1);
-            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchruledata->score, branchruledata->maxvars,
+            int newsize = SCIPcalcMemGrowSize(masterscip, nvars + 1);
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->score, branchruledata->maxvars,
                newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars,
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->strongbranchscore, branchruledata->maxvars,
                newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars,
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->sbscoreisrecent, branchruledata->maxvars,
                newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars,
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->lastevalnode, branchruledata->maxvars,
                newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars,
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->uniqueblockflags, branchruledata->maxvars,
                newsize) );
             branchruledata->maxvars = newsize;
 
@@ -1091,7 +1093,7 @@ SCIP_RETCODE branchExtern(
    }
    else
    {
-      SCIPdebugMessage("Strong branching selected variables %s and %s%s\n", SCIPvarGetName(*outcand1), SCIPvarGetName(*outcand1), (*bestupinf || *bestdowninf)? ", branching on which is infeasible in one direction" : "");
+      SCIPdebugMessage("Strong branching selected variables %s and %s%s\n", SCIPvarGetName(*outcand1), SCIPvarGetName(*outcand2), (*bestupinf || *bestdowninf)? ", branching on which is infeasible in one direction" : "");
    }
    if( branchruledata->initiator == RYANFOSTER && (branchruledata->usepseudocosts || branchruledata->mostfrac ) )
    {
@@ -1132,11 +1134,12 @@ SCIP_DECL_BRANCHFREE(branchFreeBPStrong)
 
    branchruledata = SCIPbranchruleGetData(branchrule);
    varhashmap = branchruledata->varhashmap;
-
-   SCIPfreeBlockMemoryArray(scip, &branchruledata->score, branchruledata->maxvars);
+   
+   SCIPfreeBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars);
+   SCIPfreeBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars);
    SCIPfreeBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars);
    SCIPfreeBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars);
-   SCIPfreeBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars);
+   SCIPfreeBlockMemoryArray(scip, &branchruledata->score, branchruledata->maxvars);
 
    if( branchruledata->varhashmap != NULL )
    {
