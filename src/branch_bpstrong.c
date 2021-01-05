@@ -328,18 +328,16 @@ SCIP_RETCODE addBranchcandsToData(
    return SCIP_OKAY;
 }
 
-/* compare two indices corresponding to entries in branchruledata->score/uniqueblockflags */
+/* compare two indices corresponding to entries in branchruledata->score */
 static int score_compare_function(const void *index1, const void *index2)
 {
-   return (this_branchruledata->score[*(int *)index1] > this_branchruledata->score[*(int *)index2] ||
-           this_branchruledata->uniqueblockflags[*(int *)index1] > this_branchruledata->uniqueblockflags[*(int *)index2]) ? -1 : 1;
+   return this_branchruledata->score[*(int *)index1] > this_branchruledata->score[*(int *)index2]? -1 : 1;
 }
 
-/* compare two indices corresponding to entries in branchruledata->strongbranchscore/uniqueblockflags */
+/* compare two indices corresponding to entries in branchruledata->strongbranchscore */
 static int hist_compare_function(const void *index1, const void *index2)
 {
-   return (this_branchruledata->strongbranchscore[*(int *)index1] > this_branchruledata->strongbranchscore[*(int *)index2] ||
-           this_branchruledata->uniqueblockflags[*(int *)index1] > this_branchruledata->uniqueblockflags[*(int *)index2]) ? -1 : 1;
+   return this_branchruledata->strongbranchscore[*(int *)index1] > this_branchruledata->strongbranchscore[*(int *)index2]? -1 : 1;
 }
 
 /* compare two indices based on descending numerical order */
@@ -862,7 +860,7 @@ SCIP_RETCODE branchExtern(
                   }
                }
             }
-            else /* iter == 1 */
+            else if( nvalidcands == 0 )
             {
                if( branchruledata->uniqueblockflags[hashindex] == 0 )
                {
