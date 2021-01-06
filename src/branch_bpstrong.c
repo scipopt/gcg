@@ -275,7 +275,7 @@ SCIP_RETCODE addBranchcandsToData(
       branchruledata->nvars = ncands;
 
       /* store each variable in hashmap and initialize array entries */
-      for( i = 0; i < branchruledata->maxvars; ++i )
+      for( i = 0; i < ncands; i++ )
       {
          SCIP_CALL( SCIPhashmapInsertInt(branchruledata->varhashmap, buildIdentifier(var1s[i], var2s!=NULL? var2s[i] : NULL), i) );
          branchruledata->strongbranchscore[i] = -1;
@@ -721,8 +721,6 @@ SCIP_RETCODE branchExtern(
    SCIP_Real* branchcandssol;
    int npriobranchcands;
 
-   SCIP_VAR* checkvar;
-
    SCIP_HASHMAP* solhashmap;
    
    int nneededcands;
@@ -939,8 +937,6 @@ SCIP_RETCODE branchExtern(
       {
          c = c % ncands;
 
-         checkvar = cand1s[indices[c]];
-
          /* select the variable as new best candidate (if it is) if we look for only one candidate,
           * or remember its score if we look for multiple
           */
@@ -956,7 +952,7 @@ SCIP_RETCODE branchExtern(
          }
 
          /* variable pointers sometimes change during probing in strong branching */
-         if( branchruledata->initiator == ORIG && phase ==2 && checkvar != cand1s[indices[c]] )
+         if( branchruledata->initiator == ORIG && phase>=1)
          {
             SCIP_CALL( SCIPgetExternBranchCands(scip, &cand1s, &branchcandssol, NULL, NULL,
                NULL, NULL, NULL, NULL) );

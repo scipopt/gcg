@@ -700,11 +700,6 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 
    if( usestrong )
    {
-      for( int z = 0; z<npairs; z++ )
-      {
-         SCIPdebugMessage("%s, %s, %d\n", SCIPvarGetName(ovar1s[z]), SCIPvarGetName(ovar2s[z]), nspricingblock[z]);
-      }
-
       if( npairs>0 )
       {
          GCGbranchSelectCandidateStrongBranchingRyanfoster(origscip, branchrule, ovar1s, ovar2s, nspricingblock, npairs,
