@@ -31,7 +31,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define SCIP_DEBUG
+/*#define SCIP_DEBUG*/
 #include <assert.h>
 #include <string.h>
 
@@ -114,8 +114,8 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
    pricingscip = GCGgetPricingprob(origscip, branchdata->blocknr);
    assert(pricingscip != NULL);
 
-/*   SCIPdebugMessage("branchActiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
-      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));*/
+   SCIPdebugMessage("branchActiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
+      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
 
    assert(GCGvarIsOriginal(branchdata->var1));
    /** @todo it is not clear if linking variables interfere with ryan foster branching */
@@ -173,8 +173,8 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
    pricingscip = GCGgetPricingprob(origscip, branchdata->blocknr);
    assert(pricingscip != NULL);
 
-   /*SCIPdebugMessage("branchDeactiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
-      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));*/
+   SCIPdebugMessage("branchDeactiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
+      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
 
    /* remove constraint from the pricing problem that enforces the branching decision */
    assert(branchdata->pricecons != NULL);
@@ -203,8 +203,8 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
 
    assert(GCGmasterGetOrigprob(scip) != NULL);
 
-/*   SCIPdebugMessage("branchPropMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
-      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));*/
+   SCIPdebugMessage("branchPropMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
+      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
 
    *result = SCIP_DIDNOTFIND;
 
@@ -266,8 +266,8 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
       }
    }
 
-   /*SCIPdebugMessage("Finished propagation of branching decision constraint: %s(%s, %s), %d vars fixed.\n",
-      ( branchdata->same ? "same" : "differ" ), SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2), propcount);*/
+   SCIPdebugMessage("Finished propagation of branching decision constraint: %s(%s, %s), %d vars fixed.\n",
+      ( branchdata->same ? "same" : "differ" ), SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2), propcount);
 
    if( propcount > 0 )
    {
@@ -284,8 +284,8 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
    assert(scip != NULL);
    assert(branchdata != NULL);
 
-   /*SCIPdebugMessage("branchDataDeleteRyanfoster: %s(%s, %s)\n", ( (*branchdata)->same ? "same" : "differ" ),
-      SCIPvarGetName((*branchdata)->var1), SCIPvarGetName((*branchdata)->var2));*/
+   SCIPdebugMessage("branchDataDeleteRyanfoster: %s(%s, %s)\n", ( (*branchdata)->same ? "same" : "differ" ),
+      SCIPvarGetName((*branchdata)->var1), SCIPvarGetName((*branchdata)->var2));
 
    /* release constraint that enforces the branching decision */
    if( (*branchdata)->pricecons != NULL )
