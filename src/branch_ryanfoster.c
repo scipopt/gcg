@@ -324,7 +324,9 @@ SCIP_RETCODE createChildNodesRyanfoster(
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    SCIP_VAR*             ovar1,              /**< first original variable */
    SCIP_VAR*             ovar2,              /**< second original variable */
-   int                   blocknr             /**< number of the pricing block */
+   int                   blocknr,            /**< number of the pricing block */
+   SCIP_Bool             sameinf,            /**< is the samebranch known to be infeasible? */
+   SCIP_Bool             differinf           /**< is the differbranch known to be infeasible? */
    )
 {
    SCIP* masterscip;
@@ -367,35 +369,44 @@ SCIP_RETCODE createChildNodesRyanfoster(
 
    /* for cons_masterbranch */
 
-   /* create two child-nodes of the current node in the b&b-tree */
-   SCIP_CALL( SCIPcreateChild(masterscip, &child1, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-   SCIP_CALL( SCIPcreateChild(masterscip, &child2, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
+   if(!sameinf)
+   {
+      /* create child-node of the current node in the b&b-tree */
+      SCIP_CALL( SCIPcreateChild(masterscip, &child1, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
 
-   /* allocate branchdata for same child and store information */
-   SCIP_CALL( SCIPallocBlockMemory(scip, &branchsamedata) );
-   branchsamedata->var1 = ovar1;
-   branchsamedata->var2 = ovar2;
-   branchsamedata->same = TRUE;
-   branchsamedata->blocknr = blocknr;
-   branchsamedata->pricecons = NULL;
+      /* allocate branchdata and store information */
+      SCIP_CALL( SCIPallocBlockMemory(scip, &branchsamedata) );
+      branchsamedata->var1 = ovar1;
+      branchsamedata->var2 = ovar2;
+      branchsamedata->same = TRUE;
+      branchsamedata->blocknr = blocknr;
+      branchsamedata->pricecons = NULL;
 
-   /* allocate branchdata for differ child and store information */
-   SCIP_CALL( SCIPallocBlockMemory(scip, &branchdifferdata) );
-   branchdifferdata->var1 = ovar1;
-   branchdifferdata->var2 = ovar2;
-   branchdifferdata->same = FALSE;
-   branchdifferdata->blocknr = blocknr;
-   branchdifferdata->pricecons = NULL;
+      /* define name for origbranch constraints */
+      (void) SCIPsnprintf(samename, SCIP_MAXSTRLEN, "same(%s,%s)", SCIPvarGetName(branchsamedata->var1),
+         SCIPvarGetName(branchsamedata->var2));
+   }
 
-   /* define names for origbranch constraints */
-   (void) SCIPsnprintf(samename, SCIP_MAXSTRLEN, "same(%s,%s)", SCIPvarGetName(branchsamedata->var1),
-      SCIPvarGetName(branchsamedata->var2));
+   if(!differinf)
+   {
+      /* create child-node of the current node in the b&b-tree */
+      SCIP_CALL( SCIPcreateChild(masterscip, &child2, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
 
-   (void) SCIPsnprintf(differname, SCIP_MAXSTRLEN, "differ(%s,%s)", SCIPvarGetName(branchsamedata->var1),
-      SCIPvarGetName(branchsamedata->var2));
+      /* allocate branchdata and store information */
+      SCIP_CALL( SCIPallocBlockMemory(scip, &branchdifferdata) );
+      branchdifferdata->var1 = ovar1;
+      branchdifferdata->var2 = ovar2;
+      branchdifferdata->same = FALSE;
+      branchdifferdata->blocknr = blocknr;
+      branchdifferdata->pricecons = NULL;
 
-   pricingvar1 = GCGoriginalVarGetPricingVar(branchdifferdata->var1);
-   pricingvar2 = GCGoriginalVarGetPricingVar(branchdifferdata->var2);
+      /* define name for origbranch constraints */
+      (void) SCIPsnprintf(differname, SCIP_MAXSTRLEN, "differ(%s,%s)", SCIPvarGetName(branchsamedata->var1),
+         SCIPvarGetName(branchsamedata->var2));
+   }
+
+   pricingvar1 = GCGoriginalVarGetPricingVar( !differinf? branchdifferdata->var1 : branchsamedata->var1 );
+   pricingvar2 = GCGoriginalVarGetPricingVar( !differinf? branchdifferdata->var2 : branchsamedata->var2 );
    assert(GCGvarIsPricing(pricingvar1));
    assert(GCGvarIsPricing(pricingvar2));
    assert(GCGvarGetBlock(pricingvar1) == GCGvarGetBlock(pricingvar2));
@@ -410,8 +421,10 @@ SCIP_RETCODE createChildNodesRyanfoster(
    if( norigvars1 > 0 )
    {
       maxorigvars1 = SCIPcalcMemGrowSize(masterscip, norigvars1);
-      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &origbranchconss1, maxorigvars1) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &origbranchconss2, maxorigvars1) );
+      if(!sameinf)
+         SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &origbranchconss1, maxorigvars1) );
+      if(!differinf)
+         SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &origbranchconss2, maxorigvars1) );
    }
    else
    {
@@ -425,35 +438,53 @@ SCIP_RETCODE createChildNodesRyanfoster(
       SCIP_CONS* origcons2;
 
       assert(GCGvarGetBlock(origvars1[v]) == GCGvarGetBlock(origvars2[v]));
-      assert(origbranchconss1 != NULL);
-      assert(origbranchconss2 != NULL);
+      assert(origbranchconss1 != NULL || sameinf );
+      assert(origbranchconss2 != NULL || differinf );
 
       /* create constraint for same-child */
-      SCIP_CALL( SCIPcreateConsVarbound(scip, &origcons, samename, origvars1[v], origvars2[v],
+      if( !sameinf )
+      {
+         SCIP_CALL( SCIPcreateConsVarbound(scip, &origcons, samename, origvars1[v], origvars2[v],
             -1.0, 0.0, 0.0, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
 
-      origbranchconss1[v] = origcons;
+         origbranchconss1[v] = origcons;
+      }
 
       /* create constraint for differ-child */
-      SCIP_CALL( SCIPcreateConsVarbound(scip, &origcons2, differname, origvars1[v], origvars2[v],
-            1.0, -SCIPinfinity(scip), 1.0, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
+      if( !differinf )
+      {
+         SCIP_CALL( SCIPcreateConsVarbound(scip, &origcons2, differname, origvars1[v], origvars2[v],
+               1.0, -SCIPinfinity(scip), 1.0, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
 
-      origbranchconss2[v] = origcons2;
+         origbranchconss2[v] = origcons2;
+      }
    }
 
-   /* create and add the masterbranch constraints */
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons1, samename, child1,
-      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchsamedata, origbranchconss1, norigvars1,
-      maxorigvars1) );
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons2, differname, child2,
-      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdifferdata, origbranchconss2, norigvars1,
-      maxorigvars1) );
-   SCIP_CALL( SCIPaddConsNode(masterscip, child1, cons1, NULL) );
-   SCIP_CALL( SCIPaddConsNode(masterscip, child2, cons2, NULL) );
+   if( !sameinf )
+   {
+      /* create and add the masterbranch constraints */
+      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons1, samename, child1,
+         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchsamedata, origbranchconss1, norigvars1,
+         maxorigvars1) );
 
-   /* release constraints */
-   SCIP_CALL( SCIPreleaseCons(masterscip, &cons1) );
-   SCIP_CALL( SCIPreleaseCons(masterscip, &cons2) );
+      SCIP_CALL( SCIPaddConsNode(masterscip, child1, cons1, NULL) );
+
+      /* release constraints */
+      SCIP_CALL( SCIPreleaseCons(masterscip, &cons1) );
+   }
+
+   if( !differinf )
+   {
+      /* create and add the masterbranch constraints */
+      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons2, differname, child2,
+         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdifferdata, origbranchconss2, norigvars1,
+         maxorigvars1) );
+
+      SCIP_CALL( SCIPaddConsNode(masterscip, child2, cons2, NULL) );
+
+      /* release constraints */
+      SCIP_CALL( SCIPreleaseCons(masterscip, &cons2) );
+   } 
    return SCIP_OKAY;
 }
 
@@ -481,8 +512,8 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    int npairs;
 
    int pricingblock;
-   SCIP_Bool upinf;
-   SCIP_Bool downinf;
+   SCIP_Bool sameinf;
+   SCIP_Bool differinf;
 
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
@@ -495,6 +526,9 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    assert(origscip != NULL);
 
    *result = SCIP_DIDNOTRUN;
+
+   sameinf = FALSE;
+   differinf = FALSE;
 
    /* do not perform Ryan & Foster branching if we have neither a set partitioning nor a set covering structure */
    if( !GCGisMasterSetCovering(origscip) && !GCGisMasterSetPartitioning(origscip) )
@@ -716,7 +750,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
       if( npairs>0 )
       {
          GCGbranchSelectCandidateStrongBranchingRyanfoster(origscip, branchrule, ovar1s, ovar2s, nspricingblock, npairs,
-                                                            &ovar1, &ovar2, &pricingblock, &upinf, &downinf, result);
+                                                            &ovar1, &ovar2, &pricingblock, &sameinf, &differinf, result);
 
          SCIPfreeBlockMemoryArray(scip, &ovar1s, npairs);
          SCIPfreeBlockMemoryArray(scip, &ovar2s, npairs);
@@ -731,7 +765,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    }
 
    /* create the two child nodes in the branch-and-bound tree */
-   SCIP_CALL( createChildNodesRyanfoster(origscip, branchrule, ovar1, ovar2, GCGvarGetBlock(mvar1)) );
+   SCIP_CALL( createChildNodesRyanfoster(origscip, branchrule, ovar1, ovar2, GCGvarGetBlock(mvar1), sameinf, differinf) );
 
    *result = SCIP_BRANCHED;
 
@@ -844,7 +878,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
    }
 
    /* create the two child nodes in the branch-and-bound tree */
-   SCIP_CALL( createChildNodesRyanfoster(origscip, branchrule, ovar1, ovar2, GCGvarGetBlock(ovar1)) );
+   SCIP_CALL( createChildNodesRyanfoster(origscip, branchrule, ovar1, ovar2, GCGvarGetBlock(ovar1), FALSE, FALSE) );
 
    *result = SCIP_BRANCHED;
 
