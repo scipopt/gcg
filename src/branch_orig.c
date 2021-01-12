@@ -31,6 +31,7 @@
  * @author Marcel Schmickerath
  * @author Christian Puchert
  * @author Jonas Witt
+ * @author Oliver Gaul
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -63,20 +64,19 @@
 #define DEFAULT_USEPSEUDO      TRUE
 #define DEFAULT_USEPSSTRONG    FALSE
 
-#define DEFAULT_USESTRONG      FALSE
-#define DEFAULT_STRONGLITE     FALSE
-#define DEFAULT_STRONGTRAIN    FALSE
-#define DEFAULT_IMMEDIATEINF   TRUE
+/* strong branching */
+#define DEFAULT_USESTRONG        FALSE
 
-#define DEFAULT_REEVALAGE           1
-#define DEFAULT_MINCOLGENCANDS      4
-#define DEFAULT_MINPHASE0OUTCANDS   10
-#define DEFAULT_MAXPHASE0OUTCANDS   50
-#define DEFAULT_PHASE1GAPWEIGHT     0.25
-#define DEFAULT_MINPHASE1OUTCANDS   3
-#define DEFAULT_MAXPHASE1OUTCANDS   20
-#define DEFAULT_PHASE2GAPWEIGHT     1
-#define DEFAULT_HISTWEIGHT          0.5   
+#define DEFAULT_MINPHASE0OUTCANDS      10
+#define DEFAULT_MAXPHASE0OUTCANDS      50
+#define DEFAULT_MAXPHASE0OUTCANDSFRAC  0.7
+#define DEFAULT_PHASE1GAPWEIGHT        0.25
+
+#define DEFAULT_MINPHASE1OUTCANDS      3
+#define DEFAULT_MAXPHASE1OUTCANDS      20
+#define DEFAULT_MAXPHASE1OUTCANDSFRAC  0.7
+#define DEFAULT_PHASE2GAPWEIGHT        1
+/**/   
 
 
 /** branching rule data */
@@ -1017,6 +1017,39 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/usestrong",
          "should strong branching be used to determine the variable on which the branching is performed?",
          &branchruledata->usestrong, FALSE, DEFAULT_USESTRONG, NULL, NULL) );
+
+   /* strong branching */
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/minphase0outcands",
+         "minimum number of output candidates from phase 0 during strong branching",
+         NULL, FALSE, DEFAULT_MINPHASE0OUTCANDS, 1, 100000, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/maxphase0outcands",
+         "maximum number of output candidates from phase 0 during strong branching",
+         NULL, FALSE, DEFAULT_MAXPHASE0OUTCANDS, 1, 100000, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/orig/maxphase0outcandsfrac",
+         "maximum number of output candidates from phase 0 as fraction of total cands during strong branching",
+         NULL, FALSE, DEFAULT_MAXPHASE0OUTCANDSFRAC, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/orig/phase1gapweight",
+         "how much impact should the nodegap have on the number of precisely evaluated candidates in phase 1 during strong branching?",
+         NULL, FALSE, DEFAULT_PHASE1GAPWEIGHT, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/minphase1outcands",
+         "minimum number of output candidates from phase 1 during strong branching",
+         NULL, FALSE, DEFAULT_MINPHASE1OUTCANDS, 1, 100000, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/maxphase1outcands",
+         "maximum number of output candidates from phase 1 during strong branching",
+         NULL, FALSE, DEFAULT_MAXPHASE1OUTCANDS, 1, 100000, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/orig/maxphase1outcandsfrac",
+         "maximum number of output candidates from phase 1 as fraction of phase 1 cands during strong branching",
+         NULL, FALSE, DEFAULT_MAXPHASE1OUTCANDSFRAC, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/orig/phase2gapweight",
+         "how much impact should the nodegap have on the number of precisely evaluated candidates in phase 2 during strong branching?",
+         NULL, FALSE, DEFAULT_PHASE2GAPWEIGHT, 0, 1, NULL, NULL) );
 
    /* notify cons_integralorig about the original variable branching rule */
    SCIP_CALL( GCGconsIntegralorigAddBranchrule(scip, branchrule) );

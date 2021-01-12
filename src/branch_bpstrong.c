@@ -79,16 +79,6 @@
 #define DEFAULT_REEVALAGE              1
 #define DEFAULT_MINCOLGENCANDS         4
 
-#define DEFAULT_MINPHASE0OUTCANDS      10
-#define DEFAULT_MAXPHASE0OUTCANDS      50
-#define DEFAULT_MAXPHASE0OUTCANDSFRAC  0.7
-#define DEFAULT_PHASE1GAPWEIGHT        0.25
-
-#define DEFAULT_MINPHASE1OUTCANDS      3
-#define DEFAULT_MAXPHASE1OUTCANDS      20
-#define DEFAULT_MAXPHASE1OUTCANDSFRAC  0.7
-#define DEFAULT_PHASE2GAPWEIGHT        1
-
 #define DEFAULT_HISTWEIGHT             0.5
 
 #define ORIG         0
@@ -728,7 +718,7 @@ SCIP_Real score_function(
 
 /** branching method for relaxation solutions */
 static
-SCIP_RETCODE branchExtern(
+SCIP_RETCODE selectCandidate(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
    SCIP_VAR**            cand1s,             /**< first variable candidates */
@@ -1185,6 +1175,7 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
    branchruledata->lastcand = 0;
    branchruledata->nvars = 0;
    branchruledata->maxvars = 0;
+   branchruledata->initiator = -1;
 
    this_branchruledata = branchruledata;
 
@@ -1239,38 +1230,6 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
          "minimum number of variables for phase 2 to be executed, otherwise the best candidate from phase 1 will be chosen",
          &branchruledata->mincolgencands, FALSE, DEFAULT_MINCOLGENCANDS, 0, 100000, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/minphase0outcands",
-         "minimum number of output candidates from phase 0",
-         &branchruledata->minphase0outcands, FALSE, DEFAULT_MINPHASE0OUTCANDS, 1, 100000, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/maxphase0outcands",
-         "maximum number of output candidates from phase 0",
-         &branchruledata->maxphase0outcands, FALSE, DEFAULT_MAXPHASE0OUTCANDS, 1, 100000, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/maxphase0outcandsfrac",
-         "maximum number of output candidates from phase 0 as fraction of total cands",
-         &branchruledata->maxphase0outcandsfrac, FALSE, DEFAULT_MAXPHASE0OUTCANDSFRAC, 0, 1, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/phase1gapweight",
-         "how much impact should the nodegap have on the number of precisely evaluated candidates in phase 1?",
-         &branchruledata->phase1gapweight, FALSE, DEFAULT_PHASE1GAPWEIGHT, 0, 1, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/minphase1outcands",
-         "minimum number of output candidates from phase 1",
-         &branchruledata->minphase1outcands, FALSE, DEFAULT_MINPHASE1OUTCANDS, 1, 100000, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/maxphase1outcands",
-         "maximum number of output candidates from phase 1",
-         &branchruledata->maxphase1outcands, FALSE, DEFAULT_MAXPHASE1OUTCANDS, 1, 100000, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/maxphase1outcandsfrac",
-         "maximum number of output candidates from phase 1 as fraction of phase 1 cands",
-         &branchruledata->maxphase1outcandsfrac, FALSE, DEFAULT_MAXPHASE1OUTCANDSFRAC, 0, 1, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/phase2gapweight",
-         "how much impact should the nodegap have on the number of precisely evaluated candidates in phase 2?",
-         &branchruledata->phase2gapweight, FALSE, DEFAULT_PHASE2GAPWEIGHT, 0, 1, NULL, NULL) );
-
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/histweight",
          "how many candidates should be chosen based on historical strong branching scores as opposed to current heuristic scores in phase 0 (e.g. 0.5 = 50%)?",
          &branchruledata->histweight, FALSE, DEFAULT_HISTWEIGHT, 0, 1, NULL, NULL) );
@@ -1311,13 +1270,27 @@ GCGbranchSelectCandidateStrongBranchingOrig(
    assert(branchrule != NULL);
 
    branchruledata = SCIPbranchruleGetData(branchrule);
-   origbranchruledata = SCIPbranchruleGetData(origbranchrule);
 
-   branchruledata->initiator = ORIG;
-   branchruledata->usepseudocosts = origbranchruledata->usepseudocosts;
-   branchruledata->mostfrac = origbranchruledata->mostfrac;
+   if( branchruledata->initiator != ORIG )
+   {
+      origbranchruledata = SCIPbranchruleGetData(origbranchrule);
 
-   branchExtern(scip, branchrule, NULL, NULL, NULL, 0, branchvar, NULL, NULL, upinf, downinf, result);
+      branchruledata->initiator = ORIG;
+      branchruledata->usepseudocosts = origbranchruledata->usepseudocosts;
+      branchruledata->mostfrac = origbranchruledata->mostfrac;
+
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/minphase0outcands", &branchruledata->minphase0outcands) );
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/maxphase0outcands", &branchruledata->maxphase0outcands) );
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/maxphase0outcandsfrac", &branchruledata->maxphase0outcandsfrac) );
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/phase1gapweight", &branchruledata->phase1gapweight) );
+
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/minphase1outcands", &branchruledata->minphase1outcands) );
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/maxphase1outcands", &branchruledata->maxphase1outcands) );
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/maxphase1outcandsfrac", &branchruledata->maxphase1outcandsfrac) );
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/phase2gapweight", &branchruledata->phase2gapweight) );
+   }
+
+   selectCandidate(scip, branchrule, NULL, NULL, NULL, 0, branchvar, NULL, NULL, upinf, downinf, result);
 
    return SCIP_OKAY;
 }
@@ -1325,7 +1298,7 @@ GCGbranchSelectCandidateStrongBranchingOrig(
 SCIP_RETCODE
 GCGbranchSelectCandidateStrongBranchingRyanfoster(
    SCIP* scip,                      /**< original SCIP data structure */
-   SCIP_BRANCHRULE* rfbranchrule,    /**< ryan-foster branchrule */
+   SCIP_BRANCHRULE* rfbranchrule,   /**< ryan-foster branchrule */
    SCIP_VAR **ovar1s,               /**< first elements of candidate pairs */
    SCIP_VAR **ovar2s,               /**< second elements of candidate pairs */
    int *nspricingblock,             /**< pricing block numbers corresponding to input pairs */
@@ -1348,12 +1321,25 @@ GCGbranchSelectCandidateStrongBranchingRyanfoster(
 
    branchruledata = SCIPbranchruleGetData(branchrule);
 
-   branchruledata->initiator = RYANFOSTER;
-   branchruledata->initiatorbranchrule = rfbranchrule;
-   SCIP_CALL( SCIPgetBoolParam(scip, "branching/bp_strong/ryanfoster/usepseudocosts", &branchruledata->usepseudocosts) );
-   SCIP_CALL( SCIPgetBoolParam(scip, "branching/bp_strong/ryanfoster/usemostfrac", &branchruledata->mostfrac) );
+   if(branchruledata->initiator!=RYANFOSTER)
+   {
+      branchruledata->initiator = RYANFOSTER;
+      branchruledata->initiatorbranchrule = rfbranchrule;
+      SCIP_CALL( SCIPgetBoolParam(scip, "branching/bp_strong/ryanfoster/usepseudocosts", &branchruledata->usepseudocosts) );
+      SCIP_CALL( SCIPgetBoolParam(scip, "branching/bp_strong/ryanfoster/usemostfrac", &branchruledata->mostfrac) );
 
-   branchExtern(scip, branchrule, ovar1s, ovar2s, nspricingblock, npairs, ovar1, ovar2, pricingblock, upinf, downinf, result);
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/ryanfoster/minphase0outcands", &branchruledata->minphase0outcands) );
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/ryanfoster/maxphase0outcands", &branchruledata->maxphase0outcands) );
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/ryanfoster/maxphase0outcandsfrac", &branchruledata->maxphase0outcandsfrac) );
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/ryanfoster/phase1gapweight", &branchruledata->phase1gapweight) );
+
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/ryanfoster/minphase1outcands", &branchruledata->minphase1outcands) );
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/ryanfoster/maxphase1outcands", &branchruledata->maxphase1outcands) );
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/ryanfoster/maxphase1outcandsfrac", &branchruledata->maxphase1outcandsfrac) );
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/ryanfoster/phase2gapweight", &branchruledata->phase2gapweight) );
+   }
+
+   selectCandidate(scip, branchrule, ovar1s, ovar2s, nspricingblock, npairs, ovar1, ovar2, pricingblock, upinf, downinf, result);
 
    return SCIP_OKAY;
 }
