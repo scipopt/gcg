@@ -56,7 +56,7 @@ Note that **GCG cannot be installed on Windows out of the box**. If you only hav
 >
 > <div style="width:80%">
 > To get started with developing or contributing to the core of GCG, check out the [GCG Developers Checklist](https://git.or.rwth-aachen.de/gcg/gcg/-/wikis/GCG-Wiki/GCG-Developers-Checklists) in our Git Wiki first and go through all points mentioned there.
-> Then, the most important guides are probably the ones on @ref howtoadd "adding components" and @ref testing "experimenting".
+> Importantly, please go through the guide on @ref u9. Often, you will need the guides on @ref howtoadd "adding components" and @ref testing "experimenting".
 > </div>
 
 

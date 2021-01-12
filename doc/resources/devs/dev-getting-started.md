@@ -16,8 +16,8 @@ In this section, we explain the most important characteristics of SCIP's impleme
 and the interplay between GCG and SCIP.
 
 #### Coding Style Guidelines
-Both SCIP and GCG (aim to) comply with a **common set of coding style guidelines**. T
-hose are given by the [SCIP documentation](https://www.scipopt.org/doc/html/CODE.php).
+Both SCIP and GCG (aim to) comply with a **common set of coding style guidelines**. 
+Those are given by the [SCIP documentation](https://www.scipopt.org/doc/html/CODE.php).
 
 #### SCIP Stages
 At times, **GCG needs to interact with SCIP** directly. This can only be done within the 
@@ -30,7 +30,7 @@ stages (see Figure 1). For more information, please check the SCIP documentation
 @todo add GCG/SCIP stages/interaction from GCG presentation slides
 
 #### Original and Transformed Problems 
-> During the solving process, GCG manages two SCIP instances, one holding 
+> During the solving process, GCG manages **two SCIP instances**, one holding 
 > the original problem, the other one representing the reformulated problem. 
 
 As you read in your instance, it **will be kept in SCIP and GCG as the "original" problem**. 
@@ -40,6 +40,13 @@ The original problem is **used as a safe copy** to check the feasibility of solu
 it cannot be manipulated. 
 GCG is detecting on the transformed (i.e. also presolved) problem (`opt`), but can also detect on the original 
 (`detect` without `presolve` before it).
+It is important to know in which problem you are working (usually always the master, i.e. transformed problem), 
+especially for SCIP's memory management. If you want to allocate memory in the master problem,
+you have to access it "manually". Example:
+```
+masterscip = GCGgetMasterprob(scip);
+SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->score, branchruledata->maxvars) );
+```
 
 #### Mirroring of Branching Decisions to SCIP
 > One of the core features of GCG, the generic column generation, leads to the
@@ -69,4 +76,9 @@ we have prepared multiple "How to add" guides. You can also use the example proj
 guidance. \n\n
 
  ⇨ @ref example-projects \n
- ⇨ @ref howtoadd
+ ⇨ @ref howtoadd \n
+
+\n
+Additionally, (a **must** if you have access to the GCG Git!), you should read through the use case
+
+ ⇨ @ref u9

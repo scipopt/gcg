@@ -126,7 +126,7 @@ whole solving process, since printing, if it is very often, will use
 computation time.
 
 
-## 4. Checking generated output files {#what-files}
+## 4. Checking generated output files
 After executing the test, GCG will **automatically have exported
 some files**. After navigating to the folder `check/results`,
 you will see multiple files per test. The output files for a test 
@@ -143,6 +143,7 @@ generate those files (possibly incompletely) using the command `./evalcheck.sh`
 in the `/check` folder. Note: changing the files' names is not recommended, since 
 some visualization scripts might try to get their information from the file name.
 
+### What files are generated? {#what-files}
 #### `out`-files
 The .out files contain the `stdout`-output and therefore all data that was
 printed during the execution of GCG. From them, data can be parsed more or less
