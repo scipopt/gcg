@@ -4415,8 +4415,9 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
    return SCIP_OKAY;
 }
 
-/** add a new probing node the master problem together with a master branching constraint and additional new constraints
- *  which ensures that bound changes are transferred to master and pricing problems
+/** add a new probing node the master problem together with a master branching constraint
+ *  which ensures that bound changes are transferred to master and pricing problems as well as additional
+ *  constraints
  *
  *  @note A corresponding probing node must have been added to the original problem beforehand;
  *        furthermore, this method must be called after bound changes to the original problem have been made
@@ -4643,6 +4644,26 @@ SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
    )
 {
    SCIP_CALL( performProbing(scip, -1, maxpricerounds, TRUE, nlpiterations,
+         npricerounds, lpobjvalue, lpsolved, lperror, cutoff) );
+
+   return SCIP_OKAY;
+}
+
+/** solve the master probing LP with pricing, and optionally limit the maximum number of lp iterations */
+SCIP_RETCODE GCGrelaxPerformProbingWithPricingMaxLPIterations(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   maxlpiterations,    /**< maximum number of lp iterations allowed */
+   int                   maxpricerounds,     /**< maximum number of pricing rounds allowed */
+   SCIP_Longint*         nlpiterations,      /**< pointer to store the number of performed LP iterations (or NULL) */
+   int*                  npricerounds,       /**< pointer to store the number of performed pricing rounds (or NULL) */
+   SCIP_Real*            lpobjvalue,         /**< pointer to store the lp obj value if lp was solved */
+   SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
+   SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
+                                              *   solving process should be stopped (e.g., due to a time limit) */
+   SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
+   )
+{
+   SCIP_CALL( performProbing(scip, maxlpiterations, maxpricerounds, TRUE, nlpiterations,
          npricerounds, lpobjvalue, lpsolved, lperror, cutoff) );
 
    return SCIP_OKAY;

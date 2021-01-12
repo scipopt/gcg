@@ -31,6 +31,7 @@
  * @author  Gerald Gamrath
  * @author  Christian Puchert
  * @author  Martin Bergner
+ * @author  Oliver Gaul
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -166,6 +167,13 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** add a new probing node the master problem together with a master branching constraint
+ *  which ensures that bound changes are transferred to master and pricing problems as well as additional
+ *  constraints
+ *
+ *  @note A corresponding probing node must have been added to the original problem beforehand;
+ *        furthermore, this method must be called after bound changes to the original problem have been made
+ */
 extern
 SCIP_RETCODE GCGrelaxNewProbingnodeMasterCons(
    SCIP*                 scip,                /**< SCIP data structure */
@@ -203,6 +211,20 @@ SCIP_RETCODE GCGrelaxPerformProbing(
 extern
 SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
    SCIP*                 scip,               /**< SCIP data structure */
+   int                   maxpricerounds,     /**< maximum number of pricing rounds allowed */
+   SCIP_Longint*         nlpiterations,      /**< pointer to store the number of performed LP iterations (or NULL) */
+   int*                  npricerounds,       /**< pointer to store the number of performed pricing rounds (or NULL) */
+   SCIP_Real*            lpobjvalue,         /**< pointer to store the lp obj value if lp was solved */
+   SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
+   SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
+                                              *   solving process should be stopped (e.g., due to a time limit) */
+   SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
+   );
+
+/** solve the master probing LP with pricing, and optionally limit the maximum number of lp iterations */
+SCIP_RETCODE GCGrelaxPerformProbingWithPricingMaxLPIterations(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   maxlpiterations,    /**< maximum number of lp iterations allowed */
    int                   maxpricerounds,     /**< maximum number of pricing rounds allowed */
    SCIP_Longint*         nlpiterations,      /**< pointer to store the number of performed LP iterations (or NULL) */
    int*                  npricerounds,       /**< pointer to store the number of performed pricing rounds (or NULL) */
