@@ -4,6 +4,27 @@ that are parsed by the parsers of the visualization suite.
 # General Parser {#general-args}
 
 The following arguments are contained inside a dataframe. \n
+
+### Times
+| **time** | **type** | 
+|---|---|
+|<code>OVERALL TIME</code> | duration |
+|<code>READING TIME</code> | duration |
+|<code>COPYING TIME</code> | duration |
+|<code>PRESOLVING TIME</code> | duration |
+|<code>DETECTION TIME</code> | duration |
+|<code>ORIGINAL LP TIME</code> | duration |
+|<code>RMP LP TIME</code> | duration |
+|<code>PRICING TIME</code> | duration |
+|<code>PRICING SOLVER TIME</code> | duration |
+|<code>FARKAS TIME</code> | duration |
+|<code>HEURISTICS TIME</code> | duration |
+|<code>CUTS TIME</code> | duration |
+|<code>ROOT NODE TIME</code> | duration |
+|<code>SOLUTIONS FIRST</code> | point in time | 
+|<code>SOLUTIONS BEST</code> | point in time | 
+
+### General Data
 | **data** | **type** | **possible values** | **fallback** |
 |---|---|---|---|
 |<code>MASTER TIME</code> | float | \f$[0, \infty[\f$ | NaN|

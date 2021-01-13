@@ -27,13 +27,9 @@ not yet installed on your computer. You can do that by first installing `pip`:
 
     sudo apt-get install python3-pip
 
-And then the needed package via
+And then the needed packages via
 
-    pip3 install <packagename>
-
-The packages needed for the scripts are (space-separated):
-
-    numpy matplotlib pandas sklearn
+    pip3 install numpy matplotlib pandas sklearn
 
 Furthermore, we recommend to install the package
 
