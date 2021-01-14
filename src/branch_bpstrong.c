@@ -27,7 +27,7 @@
 
 /**@file    branch_bpstrong.c
  * @ingroup BRANCHINGRULES
- * @brief   generic branch and price strong branching as described in
+ * @brief   generic branch-and-price strong branching as described in
  *          Pecin, D., Pessoa, A., Poggi, M., Uchoa, E. Improved branch-cut-and-price for capacitated vehicle routing.
  *          In: Math. Prog. Comp. 9:61-100. Springer (2017).
  * @author  Oliver Gaul
@@ -68,10 +68,12 @@
 #define DEFAULT_USEPSEUDO      TRUE
 #define DEFAULT_USEPSSTRONG    FALSE
 
-#define DEFAULT_USESTRONG      FALSE
-#define DEFAULT_STRONGLITE     FALSE
-#define DEFAULT_STRONGTRAIN    FALSE
-#define DEFAULT_IMMEDIATEINF   TRUE
+#define DEFAULT_USESTRONG        FALSE
+#define DEFAULT_STRONGLITE       FALSE
+#define DEFAULT_STRONGTRAIN      FALSE
+#define DEFAULT_IMMEDIATEINF     TRUE
+#define DEFAULT_MAXSBLPITERS     0
+#define DEFAULT_MAXSBPRICEROUNDS 0
 
 #define DEFAULT_RFUSEPSEUDOCOSTS TRUE
 #define DEFAULT_RFUSEMOSTFRAC    FALSE
@@ -110,6 +112,11 @@ struct SCIP_BranchruleData
                                                  *   where all node on the path to the parent were created for domainreduction due to infeasibility? */
    int                   *lastevalnode;         /**< the last node at which the candidates were evaluated */
 
+   int                   nphase1lps;            /**< number of phase 1 lps solved */
+   int                   nphase2lps;            /**< number of phase 2 lps solved */
+   SCIP_Longint          nsblpiterations;       /**< total number of strong branching lp iterations during phase 1 */
+   int                   nsbpricerounds;        /**< total number of strong branching pricing rounds */
+
    int                   initiator;             /**< the identifier of the branchingrule that initiated strong branching */
    SCIP_BRANCHRULE*      initiatorbranchrule;   /**< the branchingrule that initiated strong branching */
 
@@ -119,6 +126,8 @@ struct SCIP_BranchruleData
    SCIP_Bool             usestronglite;         /**< should strong branching use column generation during variable evaluation? */
    SCIP_Bool             usestrongtrain;        /**< should strong branching run as precise as possible (to generate more valuable training data)? */
    SCIP_Bool             immediateinf;          /**< should infeasibility detected during strong branching be handled immediately, or only if the variable is selected? */
+   SCIP_Longint          maxsblpiters;          /**< maximum number of strong branching lp iterations, set to 2*avg lp iterations if <= 0 */
+   int                   maxsbpricerounds;     /**< maximum number of strong branching pricing rounds, set to 2*avg lp iterations if <= 0 */
    int                   reevalage;             /**< how many times can bounds be changed due to infeasibility during strong branching until an already evaluated variable needs to be reevaluated? */
    int                   mincolgencands;        /**< minimum number of variables for phase 2 to be executed, otherwise the best candidate from phase 1 will be chosen */
    
@@ -538,13 +547,21 @@ SCIP_RETCODE executeStrongBranching(
 
          if (pricing)
          {
-            SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, -1, NULL, NULL,
+            int npricerounds;
+
+            SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, branchruledata->maxsbpricerounds, NULL, &npricerounds,
                      cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
+            branchruledata->nphase2lps++;
+            branchruledata->nsbpricerounds += npricerounds; 
          }
          else
          {
-            SCIP_CALL( GCGrelaxPerformProbing(scip, -1, NULL,
+            SCIP_Longint nlpiterations;
+
+            SCIP_CALL( GCGrelaxPerformProbing(scip, branchruledata->maxsblpiters, &nlpiterations,
                      cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
+            branchruledata->nphase1lps++;
+            branchruledata->nsblpiterations += nlpiterations;
          }
       }
 
@@ -808,6 +825,63 @@ SCIP_RETCODE selectCandidate(
    downinf = FALSE;
    *bestupinf = FALSE;
    *bestdowninf = FALSE;
+
+   /* set maximum strong branching lp iterations and pricing rounds to 2 times the average unless the value is
+    * fixed in the settings (as it is done in SCIP)
+    */
+   SCIP_CALL( SCIPgetLongintParam(scip, "branching/bp_strong/maxsblpiters", &branchruledata->maxsblpiters) );
+   if( branchruledata->maxsblpiters == 0 )
+   {
+      SCIP_Longint nlpiterations;
+      SCIP_Longint nlps;
+      SCIP_Longint maxlpiters;
+      
+      nlpiterations = branchruledata->nsblpiterations;
+      nlps = branchruledata->nphase1lps;
+      if( nlps == 0 )
+      {
+         nlpiterations = SCIPgetNNodeInitLPIterations(masterscip);
+         nlps = SCIPgetNNodeInitLPs(masterscip);
+         if( nlps == 0 )
+         {
+            nlpiterations = 1000;
+            nlps = 1;
+         }
+      }
+      assert(nlps >= 1);
+      maxlpiters = (int)(2*nlpiterations / nlps);
+      maxlpiters = (int)((SCIP_Real)maxlpiters * (1.0 + 10.0/SCIPgetNNodes(masterscip)));
+      maxlpiters = MAX(maxlpiters, 10);
+      maxlpiters = MIN(maxlpiters, 500);
+      branchruledata->maxsblpiters = maxlpiters;
+   }
+
+   SCIP_CALL( SCIPgetIntParam(scip, "branching/bp_strong/maxsbpricerounds", &branchruledata->maxsbpricerounds) );
+   if( branchruledata->maxsbpricerounds == 0 )
+   {
+      SCIP_Longint npricerounds;
+      SCIP_Longint nlps;
+      SCIP_Longint maxpricerounds;
+      
+      npricerounds = branchruledata->nsbpricerounds;
+      nlps = branchruledata->nphase2lps;
+      if( nlps == 0 )
+      {
+         npricerounds = SCIPgetNNodeInitLPIterations(masterscip);
+         nlps = SCIPgetNNodeInitLPs(masterscip);
+         if( nlps == 0 )
+         {
+            npricerounds = 100000;
+            nlps = 1;
+         }
+      }
+      assert(nlps >= 1);
+      maxpricerounds = (int)(2*npricerounds / nlps);
+      maxpricerounds = (int)((SCIP_Real)maxpricerounds * (1.0 + 10.0/SCIPgetNNodes(masterscip)));
+      maxpricerounds = MAX(maxpricerounds, 10);
+      maxpricerounds = MIN(maxpricerounds, 50000);
+      branchruledata->maxsbpricerounds = maxpricerounds;
+   }
 
    upperbound = SCIPgetUpperbound(scip);
    nodelowerbound = SCIPnodeGetLowerbound( SCIPgetFocusNode(scip) );
@@ -1177,6 +1251,11 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
    branchruledata->maxvars = 0;
    branchruledata->initiator = -1;
 
+   branchruledata->nphase1lps = 0;
+   branchruledata->nphase2lps = 0;
+   branchruledata->nsblpiterations = 0;
+   branchruledata->nsbpricerounds = 0;
+
    this_branchruledata = branchruledata;
 
    return SCIP_OKAY;
@@ -1233,6 +1312,14 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/histweight",
          "how many candidates should be chosen based on historical strong branching scores as opposed to current heuristic scores in phase 0 (e.g. 0.5 = 50%)?",
          &branchruledata->histweight, FALSE, DEFAULT_HISTWEIGHT, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddLongintParam(origscip, "branching/bp_strong/maxsblpiters",
+         "maximum number of strong branching lp iterations, set to 2*avg lp iterations if <= 0 ",
+         NULL, FALSE, DEFAULT_MAXSBLPITERS, 0, 500, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/maxsbpricerounds",
+         "maximum number of strong branching price rounds, set to 2*avg lp iterations if <= 0 ",
+         NULL, FALSE, DEFAULT_MAXSBPRICEROUNDS, 0, INT_MAX, NULL, NULL) );
 
    
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/ryanfoster/usepseudocosts",

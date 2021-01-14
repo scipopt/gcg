@@ -1,5 +1,5 @@
 branching/orig/usestrong = TRUE
 branching/orig/usepseudocosts = FALSE
 branching/orig/mostfrac = TRUE
-branching/ryanfoster/usestrong = FALSE
+branching/ryanfoster/usestrong = TRUE
 numerics/feastol = 1e-07

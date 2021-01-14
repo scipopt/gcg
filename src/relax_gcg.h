@@ -221,20 +221,6 @@ SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
    SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
    );
 
-/** solve the master probing LP with pricing, and optionally limit the maximum number of lp iterations */
-SCIP_RETCODE GCGrelaxPerformProbingWithPricingMaxLPIterations(
-   SCIP*                 scip,               /**< SCIP data structure */
-   int                   maxlpiterations,    /**< maximum number of lp iterations allowed */
-   int                   maxpricerounds,     /**< maximum number of pricing rounds allowed */
-   SCIP_Longint*         nlpiterations,      /**< pointer to store the number of performed LP iterations (or NULL) */
-   int*                  npricerounds,       /**< pointer to store the number of performed pricing rounds (or NULL) */
-   SCIP_Real*            lpobjvalue,         /**< pointer to store the lp obj value if lp was solved */
-   SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
-   SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
-                                              *   solving process should be stopped (e.g., due to a time limit) */
-   SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
-   );
-
 /** end probing mode in both the original and master problems */
 extern
 SCIP_RETCODE GCGrelaxEndProbing(
