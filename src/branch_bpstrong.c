@@ -851,8 +851,6 @@ SCIP_RETCODE selectCandidate(
       assert(nlps >= 1);
       maxlpiters = (int)(2*nlpiterations / nlps);
       maxlpiters = (int)((SCIP_Real)maxlpiters * (1.0 + 10.0/SCIPgetNNodes(masterscip)));
-      maxlpiters = MAX(maxlpiters, 10);
-      maxlpiters = MIN(maxlpiters, 500);
       branchruledata->maxsblpiters = maxlpiters;
    }
 
@@ -878,8 +876,6 @@ SCIP_RETCODE selectCandidate(
       assert(nlps >= 1);
       maxpricerounds = (int)(2*npricerounds / nlps);
       maxpricerounds = (int)((SCIP_Real)maxpricerounds * (1.0 + 10.0/SCIPgetNNodes(masterscip)));
-      maxpricerounds = MAX(maxpricerounds, 10);
-      maxpricerounds = MIN(maxpricerounds, 50000);
       branchruledata->maxsbpricerounds = maxpricerounds;
    }
 
@@ -1315,7 +1311,7 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
 
    SCIP_CALL( SCIPaddLongintParam(origscip, "branching/bp_strong/maxsblpiters",
          "maximum number of strong branching lp iterations, set to 2*avg lp iterations if <= 0 ",
-         NULL, FALSE, DEFAULT_MAXSBLPITERS, 0, 500, NULL, NULL) );
+         NULL, FALSE, DEFAULT_MAXSBLPITERS, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/maxsbpricerounds",
          "maximum number of strong branching price rounds, set to 2*avg lp iterations if <= 0 ",
