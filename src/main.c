@@ -33,7 +33,7 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define GCG_VERSION 304
+#define GCG_VERSION 305
 #define GCG_SUBVERSION 0
 
 #include <string.h>
@@ -50,7 +50,7 @@
 #include "gcg.h"
 
 #if SCIP_VERSION < 700
-#error GCG 3.0.0 can only be compiled with SCIP version 7.0.0 or higher
+#error GCG 3.0.5 can only be compiled with SCIP version 7.0.0 or higher
 #endif
 
 
