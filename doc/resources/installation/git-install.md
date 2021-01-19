@@ -11,7 +11,52 @@
 <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/nsTiXuPW1WE" style="margin:auto; display:block" frameborder="3"  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 @endhtmlonly
 
-## Git prerequisites
+## Automated Installation
+We generally recommend to use the [automated installer](installGCGfromGit.sh), since it is updated regularly. You can execute it like that:
+```
+./installGCGfromGit.sh [additional options]
+```
+The following options can be set:
+```
+  -d, --directory  folder to install GCG to (default: 'gcg')
+  -s, --system     buildsystem (make/cmake, default: 'make')
+  -b, --branch     branch to clone (default: 'master')
+  -f, --flags      flags to use for the compilation (for the whole suite)
+  -m, --mode       
+                   default: clone everything (recommended)
+                   fast:    only clone given branch
+                   fastest: only clone given branch and newest submodules
+```
+Make it executable (`sudo` might be required):
+```
+chmod +x installGCGfromGit.sh
+```
+
+## Troubleshooting
+In case of compilation errors, please first try this [bugfix script](uploads/260100a47b3b816bc146e974cf14b2a2/bugfixer.sh). Note that GCG has to have been compiled before executing it.
+If it does not help, do the following manually:
+1. Try to perform a clean make:
+```
+make clean
+make deps
+make
+```
+If that does not help and an `ld` error is returned, you should
+
+2. Remove the links and submodules, since they could be erroneous. Note that you will lose every code changes in the SCIP folder or other submodules located in `lib`.
+```
+rm -rf lib/
+git submodule update
+make deps
+make
+```
+
+3. If that also does not help, consider cloning the repository again, since with the installation script, it will most probably work again.
+
+4. If it does not: Please report that in an issue or in the meeting.
+
+## Manual Installation
+### Git prerequisites
 Please make sure that you have your ssh key saved in your Git account. Otherwise, you won't be able to
 clone or commit anything, since you have not authorized yourself.
 First, clone the git repo with
@@ -25,7 +70,7 @@ To initialize the SCIP, SoPlex, bliss and the googletest framework, goto the rep
     git submodule sync
     git submodule update
 
-## System prerequisites
+### System prerequisites
 If you are not working on one of the OR chair's computers make sure that the following libraries are installed:
 
 ```or
@@ -43,14 +88,14 @@ libncurses-dev
 libboost-program-options-dev
 ```
 
-## Compile SCIP, SOPLEX, BLISS using makefiles
+### Compile SCIP, SOPLEX, BLISS using makefiles
 **Note**: Next, ```make``` is used with some arguments that you prefer. Do not use the ```-j``` option on the very first compilation as it is not compatible with the linker. As the linker is not called again once all links are set, using this option on future compilations should be fine.
 
 Compile the depends (scip, soplex, bliss and googletest) with
 
     make [args] deps
 
-## Links to submodules
+### Links to submodules
 Before compilation, you will be asked for some links. Paste the following paths:
  * lib/scip is `../lib/scip-git`
  * lib/include/spxinc is `../../../soplex-git/src/`
@@ -66,7 +111,7 @@ If compiled without flags, this should have been it.<br>
  * lib/libzimpl.linux.x86_64.gnu.opt.a is `PATH_TO_ZIMPL_DIR/lib/libzimpl.linux.x86_64.gnu.opt.a`
  * lib/libzimpl.linux.x86_64.gnu.opt.so is not needed
 
-## Compile GCG
+### Compile GCG
 Afterward, compile GCG with
 
     make [args]
@@ -80,13 +125,13 @@ You can set arguments as described in \ref makefiles-args. <br>
  * lib/gtest is `googletest/include/`
  * lib/libgtest.a is `googletest/build/libgtest.a`
 
-## Test GCG
+### Test GCG
 You can run a short test with
 
     make [args] test
 
 
-## Common Errors
+### Common Errors
 On some distros, including the one used on RWTH cluster, the SCIP link does not work. Do this before compiling:
 
     cd lib && ln -s scip-git scip && cd ..
