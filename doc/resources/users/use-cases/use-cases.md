@@ -40,15 +40,13 @@ If you're new here, we recommend starting with the first one.
 > </div>
 
 > <div style="width:80%">
-> <img src="expert.png" style="vertical-align:middle; height:3.4%; position:absolute; right:40px; margin-top: -1em; opacity: 0.5;">
-> <h3 style="color:gray;"> Gain knowledge about the structure of your model</h3>
-> <span style="color:gray;">
+> <img src="expert.png" style="vertical-align:middle; height:3.4%; position:absolute; right:40px; margin-top: -1em;">
+> <h3> Gain knowledge about the structure of your model</h3>
 > To get to know about **how GCG sees your instance** and why, we check out the 
 > @ref explore-menu "Explore Menu". With it, we can make GCG show the structure that its
 > @ref detectors "detectors" found and also influence and tweak that a bit without 
 > too much technical knowledge. \n
 > ⇨ @subpage u4
-> </span>
 > \n\n
 > </div>
 

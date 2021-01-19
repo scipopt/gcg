@@ -90,7 +90,7 @@ With the `visualize` command, you can export a visualization of the selected
 decomposition. Prior to that, you will have to install "gnuplot" by typing
 `sudo apt-get install gnuplot` into your console.
 
-### Use a different score with `score`
+### Use a different score with `score` {#explore-score}
 By default, GCG uses the so-called max white score. This means that the decomposition with the most zero entries is used. Since this might not always be the best measure, it is possible to choose a different score:
 ```
 GCG/explore> score
