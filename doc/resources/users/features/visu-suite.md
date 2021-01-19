@@ -62,7 +62,7 @@ To tell GCG to generate the report after the test has been executed, please add 
 This will make the test script call the report generator script afterwards, already with the correct arguments.
 
 ### Output
-> **An example of the output generated can be found [here](pdf/short.default.testsetreport.pdf).**
+> **An example of the output generated can be found [here](files/short.default.testsetreport.pdf).**
 
 As output, the script will create a folder called `testsetreport_<testsetname>_<settingsname>_<timestamp>` inside `check/reports`,
 unless defined otherwise inside the script settings file. Inside the report folder, you will find a folder `logs` including 
@@ -137,7 +137,7 @@ but with a data directory that contains multiple runs:
 The data directory can also be given via the settings file. If you give none, you will be asked for it when the script is called.
 
 ### Output
-> **An example of the output generated can be found [here](pdf/comparisonreport.pdf).**
+> **An example of the output generated can be found [here](files/comparisonreport.pdf).**
 
 As output, the script will create a folder called `comparisonreport_<timestamp>` inside `check/reports`,
 unless defined otherwise inside the script settings file. Inside the report folder, you will find a folder `logs` including 
