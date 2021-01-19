@@ -1,5 +1,5 @@
 # Use Cases of GCG {#use-cases}
-> Some guides are not complete yet. They are tinted in gray color.
+> <span style="color:gray;">Some guides are not complete yet, they are colored in gray.</span>
 
 In the following, you find short **descriptions of all the use cases that
 we offer guides for**, which are ordered according to their complexity.\n
