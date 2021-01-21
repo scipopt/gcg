@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   objpricer_gcg.h
- * @ingroup PUBLICMETHODS
  * @brief  GCG variable pricer
  * @author Martin Bergner
  * @ingroup PRICERS
@@ -44,6 +43,11 @@
 #include "pub_gcgcol.h"
 #include "pub_colpool.h"
 #include "pricestore_gcg.h"
+
+/**@defgroup GCGPRICEROBJ GCG Variable Pricer Object
+ * @ingroup PRICING_PUB
+ * @{
+ */
 
 using gcg::Pricingcontroller;
 using gcg::Stabilization;
@@ -450,5 +454,5 @@ private:
    );
 
 };
-
+/** @} */
 #endif

@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    pub_bliss.h
+ * @ingroup PUBLICCOREAPI
  * @brief   helper functions for automorphism detection
  *
  * @author  Martin Bergner
@@ -45,10 +46,15 @@
 extern "C" {
 #endif
 
+
 typedef struct struct_cons AUT_CONS;
 typedef struct struct_var AUT_VAR;
 typedef struct struct_coef AUT_COEF;
 typedef struct struct_colorinformation AUT_COLOR;
+/**
+* @ingroup BLISS
+* @{
+  */
 
 /** returns bliss version */
 extern
@@ -155,6 +161,8 @@ struct struct_colorinformation
    /** get onlysign bool */
    SCIP_Bool getOnlySign();
 };
-#endif
 
+
+#endif
+/** @} */
 #endif /* PUB_BLISS_H_ */

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_gcgvar.h
- * @ingroup PUBLICMETHODS
+ * @ingroup PUBLICCOREAPI
  * @brief  public methods for GCG variables
  * @author Martin Bergner
  * @author Christian Puchert
@@ -44,6 +44,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @ingroup TYPEDEFINITIONS
+ *
+ * @{
+ */
 
 /** returns TRUE or FALSE whether variable is a pricing variable or not */
 extern
@@ -351,7 +357,7 @@ SCIP_Real GCGmasterVarGetOrigval(
 /** returns a hash map that stores the fraction of original variables the master variable is contained in */
 extern
 SCIP_HASHMAP* GCGmasterVarGetOrigvalmap(
-      SCIP_VAR*             mastervar         /**< master variable data structure */
+      SCIP_VAR*             var              /**< master variable data structure */
 );
 #endif
 
@@ -655,6 +661,8 @@ void GCGmasterVarSetIndex(
 
 #ifdef __cplusplus
 }
-#endif
 
+
+#endif
+/** @} */
 #endif

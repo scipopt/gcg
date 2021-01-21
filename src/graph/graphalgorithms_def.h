@@ -432,9 +432,9 @@ void GraphAlgorithms<T>::mstunion(std::vector<subset>& subsets, int x, int y)
 
 template<class T>
 std::vector<int> GraphAlgorithms<T>::mcl(
-   Graph<GraphGCG>& graph,          /**< the graph with weighted edges */
-   int& stoppedAfter,
-   double inflatefac,           /**< inflate factor */
+   Graph<GraphGCG>& graph,   /**< the graph with weighted edges */
+   int& stoppedAfter,        /**< number of iterations after which the clustering terminated */
+   double inflatefac,        /**< inflate factor */
    int maxiters,             /**< max number of iterations, set to 25 per default */
    int expandfac             /**< expand factor, should be always set to 2 */
 )

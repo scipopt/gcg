@@ -59,7 +59,7 @@ SCIP* GCGbendersGetOrigprob(
    SCIP*                 masterprob          /**< the master problem SCIP instance */
    );
 
-/* @} */
+/** @} */
 
 #ifdef __cplusplus
 }

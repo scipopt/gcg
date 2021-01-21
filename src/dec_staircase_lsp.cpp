@@ -111,7 +111,7 @@ SCIP_RETCODE createGraphFromPartialMatrix(
    SCIP*                 scip,               /**< SCIP data structure */
    TCLIQUE_GRAPH**       graph,              /**< Graph data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use for matrix */
-   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata */
+   gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
    DEC_DETECTORDATA*     detectordata        /**< detector data data structure */
    )
 {
@@ -186,9 +186,9 @@ SCIP_RETCODE findDiameter(
    DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
    int*                  maxdistance,        /**< diameter of the graph */
    int*                  ncomp,              /**< number of vertices the component contains */
-   int*                  vertices,           /**< */
+   int*                  vertices,           /**< vertices of the connected component (ordered by BFS) */
    int*                  distances,          /**< distances of vertices to some vertex of maximum eccentricity */
-   int                   component
+   int                   component           /**< connected component to investigate */
 )
 {
    TCLIQUE_GRAPH* graph;

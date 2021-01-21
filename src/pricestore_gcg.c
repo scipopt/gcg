@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   pricestore.c
+/**@file   pricestore_gcg.c
  * @brief  methods for storing priced cols (based on SCIP's separation storage)
  * @author Jonas Witt
  * @author Christian Puchert

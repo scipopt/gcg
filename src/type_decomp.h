@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   type_decomp.h
+ * @ingroup DECOMP
  * @ingroup TYPEDEFINITIONS
  * @brief  type definitions for decomposition information in GCG projects
  * @author Martin Bergner

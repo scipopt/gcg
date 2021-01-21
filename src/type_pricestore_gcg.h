@@ -25,7 +25,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   type_pricestore.h
+/**@file   type_pricestore_gcg.h
+ * @ingroup TYPEDEFINITIONS
  * @brief  type definitions for storing priced cols
  * @author Jonas Witt
  */

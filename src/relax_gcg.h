@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    relax_gcg.h
- * @ingroup PUBLICMETHODS
  * @brief   GCG relaxator
  * @author  Gerald Gamrath
  * @author  Christian Puchert
@@ -46,6 +45,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @ingroup RELAXATORS
+ * @{
+ */
 
 /** creates the GCG relaxator and includes it in SCIP */
 extern
@@ -249,8 +253,10 @@ SCIP_CLOCK* GCGgetRootNodeTime(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** @} */
 #ifdef __cplusplus
 }
+
 #endif
 
 #endif

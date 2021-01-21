@@ -357,7 +357,7 @@ SCIP_RETCODE partialdecVecToIdArray(
 static
 std::vector<PARTIALDECOMP*> getSelectedPartialdecs(
    SCIP* scip,  /**< SCIP data structure */
-   std::vector<PARTIALDECOMP*>& selectedpartialdecs
+   std::vector<PARTIALDECOMP*>& selectedpartialdecs  /**< vector of partialdecs (input) */
    )
 {
    /* get all partialdecs */
@@ -2771,7 +2771,6 @@ DEC_DETECTOR* DECfindDetector(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    int i;
-
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    if( conshdlr == NULL )
       return NULL;

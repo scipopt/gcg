@@ -27,8 +27,12 @@
 
 /**@file   dec_dbscan.cpp
  * @ingroup DETECTORS
- * @brief  detector DBSCAN (put your description here)
+ * @brief  detector DBSCAN
  * @author Igor Pesic
+ *
+ * @note requires package to be installed: GSL library, requires flag to be set: `GSL=true`
+ *
+ * This detector performs DBSCAN clustering.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -48,19 +52,19 @@ using gcg::GraphGCG;
 
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "dbscan"                               /**< name of detector */
-#define DEC_DESC                  "detector based on dbscan clustering"  /**< description of detector*/
-#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
-#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
-#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
-#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_DETECTORNAME          "dbscan"    /**< name of detector */
+#define DEC_DESC                  "detector based on DBSCAN clustering"  /**< description of detector */
 #define DEC_PRIORITY              901         /**< priority of the constraint handler for separation */
+#define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop, i.e. it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          INT_MAX     /**< last round the detector gets called */
+#define DEC_MINCALLROUND          0           /**< first round the detector gets called */
+#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem */
+#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /**< last round the detector gets called while detecting the original problem */
+#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem  */
 #define DEC_DECCHAR               'D'         /**< display character of detector */
-#define DEC_ENABLED               FALSE        /**< should the detection be enabled */
+#define DEC_ENABLED               FALSE       /**< should the detection be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
-#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE       /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
@@ -553,7 +557,7 @@ SCIP_RETCODE SCIPincludeDetectorDBSCAN(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/dbscan/jaccard", "Enable jaccard distance measure.", &detectordata->jaccardenable, FALSE, DEFAULT_JACCARD_ENABLE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/dbscan/cosine", "Enable cosine distance measure.", &detectordata->cosineenable, FALSE, DEFAULT_COSINE_ENABLE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/dbscan/simpson", "Enable simpson distance measure.", &detectordata->simpsonenable, FALSE, DEFAULT_SIMPSON_ENABLE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/dbscan/postprocenable", "Enable post-processing step..", &detectordata->postprocenable, FALSE, DEFAULT_POSTPROC_ENABLE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/dbscan/postprocenable", "Enable post-processing step.", &detectordata->postprocenable, FALSE, DEFAULT_POSTPROC_ENABLE, NULL, NULL ) );
 
 #endif
    return SCIP_OKAY;

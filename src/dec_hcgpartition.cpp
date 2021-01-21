@@ -228,7 +228,7 @@ SCIP_RETCODE callMetis(
    SCIP*                 scip,               /**< SCIP data struture */
    DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
-   char                  tempfile[SCIP_MAXSTRLEN],
+   char                  tempfile[SCIP_MAXSTRLEN],  /**< filename for the metis input file */
    int                   nblocks,            /**< number of blocks */
    SCIP_RESULT*          result              /**< result indicating whether the detection was successful */
    )
@@ -336,7 +336,7 @@ SCIP_RETCODE createMetisFile(
    DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
    int                   partialdecid,       /**< used for speaking filenames */
    MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
-   char tempfile[SCIP_MAXSTRLEN]
+   char tempfile[SCIP_MAXSTRLEN]             /**< filename for the metis input file */
    )
 {
    int nvertices;
@@ -442,7 +442,7 @@ SCIP_RETCODE detection(
 
    /* Graph stuff for hmetis */
    MatrixGraph<gcg::GraphTclique>* graph;    /* the graph of the matrix */
-   char tempfile[SCIP_MAXSTRLEN];            /* filename for the metis input file */
+   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );

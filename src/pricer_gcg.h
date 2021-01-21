@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pricer_gcg.h
- * @ingroup PUBLICMETHODS
  * @brief  GCG variable pricer
  * @author Gerald Gamrath
  * @author Martin Bergner
@@ -44,6 +43,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**@defgroup GCGPRICER GCG Variable Pricer
+ * @ingroup PRICING_PUB
+ * @{
+ */
 
 enum GCG_Pricetype
 {
@@ -285,8 +289,10 @@ SCIP_RETCODE GCGcomputeColMastercoefs(
    GCG_COL*              gcgcol              /**< GCG column data structure */
    );
 
+/**@} */
 #ifdef __cplusplus
 }
+
 #endif
 
 #endif

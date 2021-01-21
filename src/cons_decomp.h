@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_decomp.h
+* @ingroup DECOMP
  * @brief  constraint handler for structure detection
  * @author Martin Bergner
  * @author Michael Bastubbe
@@ -135,111 +136,67 @@ SCIP_Real DECgetRemainingTime(
    );
 
 /**
- * @brief includes one classifier
- * @param scip scip data structure
- * @param name name of the classifier
- * @param description describing main idea of this classifier
- * @param enabledOrig whether classifier is enabled by default for the original problem
- * @param enabledPresolved whether classifier is enabled by default for the original problem
- * @param DEC_DECL_FREEDETECTOR((*freeDetector)) destructor of classifier (or NULL)
- * @param DEC_DECL_INITDETECTOR((*initDetector)) initialization method of classifier (or NULL)
- * @param DEC_DECL_CLASSIFIER((*exitDetector)) the method that will classify constraints or variables (must not be NULL)
+ * @brief includes one constraint classifier
  * @returns scip return code
  */
 extern
 SCIP_RETCODE DECincludeConsClassifier(
-   SCIP*                 scip,
-   const char*           name,
-   const char*           description,
-   int                   priority,
-   SCIP_Bool             enabled,
-   DEC_DECL_FREECONSCLASSIFIER((*freeClassifier)),
-   DEC_DECL_CONSCLASSIFY((*classify))
+   SCIP*                 scip,            /**< scip data structure */
+   const char*           name,            /**< name of the classifier */
+   const char*           description,     /**< describing main idea of this classifier */
+   int                   priority,        /**< priority of the classifier */
+   SCIP_Bool             enabled,         /**< whether the classifier should be enabled by default */
+   DEC_DECL_FREECONSCLASSIFIER((*freeClassifier)),  /**< destructor of classifier (or NULL) */
+   DEC_DECL_CONSCLASSIFY((*classify))               /**< the method that will classify constraints or variables (must not be NULL) */
    );
 
 /**
  * @brief includes one detector
- * @param scip scip data structure
- * @param name name of the detector
- * @param decchar char that is used in detector chain history for this detector
- * @param description describing main idea of this detector
- * @param freqCallRound frequency the detector gets called in detection loop, i.e. it is called in round r if and only if minCallRound <= r <= maxCallRound AND (r - minCallRound) mod freqCallRound == 0
- * @param maxCallRound last detection round the detector gets called
- * @param minCallRound first round the detector gets called (offset in detection loop)
- * @param freqCallRoundOriginal frequency the detector gets called in detection loop while detecting of the original problem
- * @param maxCallRoundOriginal last round the detector gets called while detecting of the original problem
- * @param minCallRoundOriginal first round the detector gets called (offset in detection loop) while detecting of the original problem
- * @param priority  priority of the detector
- * @param enabled whether the detector should be enabled by default
- * @param enabledOriginal whether the detector should be enabled by default for detecting the original problem
- * @param enabledFinishing whether the finishing should be enabled
- * @param enabledPostprocessing whether the postprocessing should be enabled
- * @param skip whether the detector should be skipped if others found structure
- * @param usefulRecall is it useful to call this detector on a descendant of the propagated partialdec
- * @param detectordata the associated detector data (or NULL)
- * @param DEC_DECL_FREEDETECTOR((*freeDetector)) destructor of detector (or NULL)
- * @param DEC_DECL_INITDETECTOR((*initDetector)) initialization method of detector (or NULL)
- * @param DEC_DECL_EXITDETECTOR((*exitDetector)) deinitialization method of detector (or NULL)
- * @param DEC_DECL_PROPAGATEPARTIALDEC((*propagatePartialdecDetector)) method to refine a partial decomposition inside detection loop (or NULL)
- * @param DEC_DECL_FINISHPARTIALDEC((*finishPartialdecDetector)) method to complete a partial decomposition when called in detection loop (or NULL)
- * @param DEC_DECL_POSTPROCESSPARTIALDEC((*postprocessPartialdecDetector)) method to postprocess a complete decomposition, called after detection loop (or NULL)
- * @param DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)) method that is called if the detection emphasis setting aggressive is chosen
- * @param DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector))  method that is called if the detection emphasis setting default is chosen
- * @param DEC_DECL_SETPARAMFAST((*setParamFastDetector))  method that is called if the detection emphasis setting fast is chosen
  * @returns scip return code
  */
 extern
 SCIP_RETCODE DECincludeDetector(
-   SCIP*                 scip,
-   const char*           name,
-   const char            decchar,
-   const char*           description,
-   int                   freqCallRound,
-   int                   maxCallRound,
-   int                   minCallRound,
-   int                   freqCallRoundOriginal,
-   int                   maxCallRoundOriginal,
-   int                   minCallRoundOriginal,
-   int                   priority,
-   SCIP_Bool             enabled,
-   SCIP_Bool             enabledFinishing,
-   SCIP_Bool             enabledPostprocessing,
-   SCIP_Bool             skip,
-   SCIP_Bool             usefulRecall,
-   DEC_DETECTORDATA      *detectordata,
-   DEC_DECL_FREEDETECTOR((*freeDetector)),
-   DEC_DECL_INITDETECTOR((*initDetector)),
-   DEC_DECL_EXITDETECTOR((*exitDetector)),
-   DEC_DECL_PROPAGATEPARTIALDEC((*propagatePartialdecDetector)),
-   DEC_DECL_FINISHPARTIALDEC((*finishPartialdecDetector)),
-   DEC_DECL_POSTPROCESSPARTIALDEC((*postprocessPartialdecDetector)),
-   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),
-   DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),
-   DEC_DECL_SETPARAMFAST((*setParamFastDetector))
+   SCIP*                 scip,                    /**< scip data structure */
+   const char*           name,                    /**< name of the detector */
+   const char            decchar,                 /**< char that is used in detector chain history for this detector */
+   const char*           description,             /**< describing main idea of this detector */
+   int                   freqCallRound,           /**< frequency the detector gets called in detection loop, i.e. it is called in round r if and only if minCallRound <= r <= maxCallRound AND (r - minCallRound) mod freqCallRound == 0 */
+   int                   maxCallRound,            /**< last detection round the detector gets called */
+   int                   minCallRound,            /**< first round the detector gets called (offset in detection loop) */
+   int                   freqCallRoundOriginal,   /**< frequency the detector gets called in detection loop while detecting of the original problem */
+   int                   maxCallRoundOriginal,    /**< last round the detector gets called while detecting of the original problem */
+   int                   minCallRoundOriginal,    /**< first round the detector gets called (offset in detection loop) while detecting of the original problem */
+   int                   priority,                /**< priority of the detector */
+   SCIP_Bool             enabled,                 /**< whether the detector should be enabled by default */
+   SCIP_Bool             enabledFinishing,        /**< whether the finishing should be enabled */
+   SCIP_Bool             enabledPostprocessing,   /**< whether the postprocessing should be enabled */
+   SCIP_Bool             skip,                    /**< whether the detector should be skipped if others found structure */
+   SCIP_Bool             usefulRecall,            /**< is it useful to call this detector on a descendant of the propagated partialdec */
+   DEC_DETECTORDATA      *detectordata,           /**< the associated detector data (or NULL) */
+   DEC_DECL_FREEDETECTOR((*freeDetector)),        /**< destructor of detector (or NULL) */
+   DEC_DECL_INITDETECTOR((*initDetector)),        /**< initialization method of detector (or NULL) */
+   DEC_DECL_EXITDETECTOR((*exitDetector)),        /**< deinitialization method of detector (or NULL) */
+   DEC_DECL_PROPAGATEPARTIALDEC((*propagatePartialdecDetector)),      /**< method to refine a partial decomposition inside detection loop (or NULL) */
+   DEC_DECL_FINISHPARTIALDEC((*finishPartialdecDetector)),            /**< method to complete a partial decomposition when called in detection loop (or NULL) */
+   DEC_DECL_POSTPROCESSPARTIALDEC((*postprocessPartialdecDetector)),  /**< method to postprocess a complete decomposition, called after detection loop (or NULL) */
+   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),        /**< method that is called if the detection emphasis setting aggressive is chosen */
+   DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),              /**< method that is called if the detection emphasis setting default is chosen */
+   DEC_DECL_SETPARAMFAST((*setParamFastDetector))                     /**< method that is called if the detection emphasis setting fast is chosen */
    );
 
 /**
- * @brief includes one classifier
- * @param scip scip data structure
- * @param name name of the classifier
- * @param description description of the classifier
- * @param priority priority how early classifier is invoked
- * @param enabledOrig whether classifier is enabled by default for the original problem
- * @param enabledPresolved whether classifier is enabled by default for the original problem
- * @param DEC_DECL_FREEDETECTOR((*freeDetector)) destructor of classifier (or NULL)
- * @param DEC_DECL_INITDETECTOR((*initDetector)) initialization method of classifier (or NULL)
- * @param DEC_DECL_CLASSIFIER method that will classify variables (must not be NULL)
+ * @brief includes one variable classifier
  * @returns scip return code
  */
 extern
 SCIP_RETCODE DECincludeVarClassifier(
-   SCIP*                 scip,
-   const char*           name,
-   const char*           description,
-   int                   priority,
-   SCIP_Bool             enabled,
-   DEC_DECL_FREEVARCLASSIFIER((*freeClassifier)),
-   DEC_DECL_VARCLASSIFY((*classify))
+   SCIP*                 scip,          /**< scip data structure */
+   const char*           name,          /**< name of the classifier */
+   const char*           description,   /**< description of the classifier */
+   int                   priority,      /**< priority how early classifier is invoked */
+   SCIP_Bool             enabled,       /**< whether the classifier should be enabled by default */
+   DEC_DECL_FREEVARCLASSIFIER((*freeClassifier)),   /**< destructor of classifier (or NULL) */
+   DEC_DECL_VARCLASSIFY((*classify))                /**< method that will classify variables (must not be NULL) */
    );
 
 /** @brief writes out a list of all detectors */
@@ -559,7 +516,7 @@ int GCGconshdlrDecompDecreaseNCallsCreateDecomp(
 extern
 void GCGconshdlrDecompDeregisterPartialdecs(
    SCIP* scip,  /**< SCIP data structure */
-   SCIP_Bool original
+   SCIP_Bool original  /**< iff TRUE the status with respect to the original problem is returned */
    );
 
 /** @brief Frees Detprobdata of the original and transformed/presolved problem.
@@ -947,7 +904,6 @@ SCIP_RETCODE GCGconshdlrDecompSetDetection(
 
 /**
  * @brief Sets the currently used scoretype
- * @returns SCIP return code
  */
 extern
 void GCGconshdlrDecompSetScoretype(
@@ -959,6 +915,7 @@ void GCGconshdlrDecompSetScoretype(
  * @brief translates n best unpresolved partialdec to a complete presolved one
  * @param scip SCIP data structure
  * @param n number of partialdecs that should be translated
+ * @param completeGreedily whether or not to complete the decomposition greedily
  * @returns SCIP return code
  */
 extern

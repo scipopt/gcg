@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    solver.h
- * @ingroup PUBLICMETHODS
+ * @ingroup PUBLICCOREAPI
  * @brief   public methods for GCG pricing solvers
  * @author  Christian Puchert
  */
@@ -42,6 +42,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @ingroup PRICING_PUB
+ * @{
+ */
 
 /** compares two solvers w. r. t. their priorities */
 SCIP_EXPORT
@@ -142,8 +147,10 @@ SCIP_Real GCGsolverGetHeurRedcostTime(
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
+/** @} */
 #ifdef __cplusplus
 }
+
 #endif
 
 #endif

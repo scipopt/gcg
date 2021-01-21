@@ -1,0 +1,16 @@
+<div style="text-align: center; align: center">
+  <div class="pre-spoiler">
+  <input name="button" type="button" onClick="
+  if (this.parentNode.getElementsByTagName('div')[0].style.display != 'none') {
+     this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'Show Comparison Table'; }
+  else { this.parentNode.getElementsByTagName('div')[0].style.display = 'block'; this.value = 'Hide';
+}" value="Show Comparison Table">
+  <div class="spoiler" style="display: none;">
+
+    <h4>Comparison Table</h4>
+    <img src="img/visu/goodinstancesnodec.table_SMALL.png" style="width:60%">
+    <figcaption style="font-size:small; line-height:1.1">A comparison table of the same test set, run on two different settings. Red numbers mean that the run had only half the duration/node count than the worst-performing run (except runs that ran into the time/node limit, for those infinite rutimes/nodes will be assumed), red numbers mean that the run used more than double time/nodes of the best performer.</figcaption>
+
+  </div>
+  </div>
+</div>

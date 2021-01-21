@@ -47,8 +47,8 @@
 extern "C" {
 #endif
 
-/**@addtogroup PublicColMethods
- *
+/**
+ * @ingroup DATASTRUCTURES
  * @{
  */
 
@@ -166,7 +166,7 @@ SCIP_RETCODE GCGcolpoolPrice(
    SCIP_Bool*            foundvars           /**< pointer to store the result of the separation call */
    );
 
-/* @} */
+/** @} */
 
 #ifdef __cplusplus
 }

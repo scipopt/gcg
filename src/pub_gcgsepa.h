@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_gcgsepa.h
- * @ingroup PUBLICMETHODS
+ * @ingroup PUBLICCOREAPI
  * @brief  public methods for GCG separators
  * @author Christian Puchert
  * @author Jonas Witt
@@ -44,6 +44,11 @@
 extern "C" {
 #endif
 
+/**
+ * @ingroup SEPARATORS_PUB
+ * @{
+ */
+
 /** sets separator parameters values to
  *
  *  - SCIP_PARAMSETTING_DEFAULT which are the default values of all separator parameters
@@ -58,6 +63,7 @@ SCIP_RETCODE GCGsetSeparators(
 
 #ifdef __cplusplus
 }
-#endif
 
+#endif
+/** @} */
 #endif

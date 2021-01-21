@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   type_colpool.h
+ * @ingroup TYPEDEFINITIONS
  * @brief  type definitions for storing cols in a col pool
  * @author Jonas Witt
  */

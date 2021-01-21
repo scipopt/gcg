@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_gcgheur.h
- * @ingroup PUBLICMETHODS
+ * @ingroup PUBLICCOREAPI
  * @brief  public methods for GCG heuristics
  * @author Christian Puchert
  */
@@ -43,6 +43,11 @@
 extern "C" {
 #endif
 
+/**
+ * @ingroup HEURISTICS
+ * @{
+ */
+
 /** sets heuristic parameters values to
  *
  *  - SCIP_PARAMSETTING_DEFAULT which are the default values of all heuristic parameters
@@ -57,6 +62,7 @@ SCIP_RETCODE GCGsetHeuristics(
 
 #ifdef __cplusplus
 }
-#endif
 
+#endif
+/** @} */
 #endif

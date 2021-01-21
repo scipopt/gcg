@@ -43,6 +43,12 @@
 extern "C" {
 #endif
 
+/**
+ * @ingroup PRICING
+ *
+ * @{
+ */
+
 /** creates a GCG pricing solver */
 SCIP_EXPORT
 SCIP_RETCODE GCGsolverCreate(
@@ -102,12 +108,12 @@ SCIP_RETCODE GCGsolverExitsol(
 /** calls update method of GCG pricing solver */
 SCIP_EXPORT
 SCIP_RETCODE GCGsolverUpdate(
-   SCIP*                 pricingprob,
-   GCG_SOLVER*           solver,
+   SCIP*                 pricingprob,        /**< the pricing problem that should be solved */
+   GCG_SOLVER*           solver,             /**< pricing solver */
    int                   probnr,             /**< number of the pricing problem */
-   SCIP_Bool             varobjschanged,
-   SCIP_Bool             varbndschanged,
-   SCIP_Bool             consschanged
+   SCIP_Bool             varobjschanged,     /**< have the objective coefficients changed? */
+   SCIP_Bool             varbndschanged,     /**< have the lower and upper bounds changed? */
+   SCIP_Bool             consschanged        /**< have the constraints changed? */
    );
 
 /** calls heuristic or exact solving method of GCG pricing solver */
@@ -124,7 +130,7 @@ SCIP_RETCODE GCGsolverSolve(
    GCG_PRICINGSTATUS*    status,             /**< pointer to store the returned pricing status */
    SCIP_Bool*            solved              /**< pointer to store whether the solution method was called */
    );
-
+/**@} */
 #ifdef __cplusplus
 }
 #endif

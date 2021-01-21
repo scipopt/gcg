@@ -26,7 +26,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_decomp.h
- * @ingroup PUBLICMETHODS
+ * @ingroup PUBLICCOREAPI
+ * @ingroup DATASTRUCTURES
  * @brief  public methods for working with priority queues
  * @author Jonas Witt
  */
@@ -50,7 +51,7 @@ extern "C" {
  */
 
 /**@defgroup PriorityQueue Priority Queue
- *
+ * @ingroup DATASTRUCTURES
  * @{
  */
 

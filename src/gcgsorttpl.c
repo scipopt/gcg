@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   sorttpl.c
+/**@file   gcgsorttpl.c
  * @brief  template functions for sorting
  * @author Michael Winkler
  * @author Tobias Achterberg

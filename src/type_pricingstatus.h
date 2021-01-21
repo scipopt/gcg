@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   type_pricingstatus.h
+ * @ingroup TYPEDEFINITIONS
  * @brief  type definitions for pricing status
  * @author Christian Puchert
  */

@@ -26,8 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_decomp.h
- * @ingroup DECOMP
- * @ingroup PUBLICMETHODS
+ * @ingroup PUBLICCOREAPI
  * @brief  public methods for working with decomposition structures
  * @author Martin Bergner
  */
@@ -48,7 +47,14 @@
 extern "C" {
 #endif
 
-/** score data structure **/
+/**
+ * @ingroup DECOMP
+ * @{
+ */
+
+/** score data structure
+ * @ingroup DATASTRUCTURES
+**/
 struct Dec_Scores
 {
    SCIP_Real             borderscore;        /**< score of the border */
@@ -361,8 +367,8 @@ int DECdecompGetPartialdecID(
 extern
 void DECdecompSetDetectorClockTimes(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   SCIP_Real*            detectorClockTimes
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_Real*            detectorClockTimes  /**< time used by the detectors */
    );
 
 /** gets the detector clock times of the detectors of the detector chain */
@@ -374,9 +380,9 @@ SCIP_Real* DECdecompGetDetectorClockTimes(
 /** sets the detector clock times of the detectors of the detector chain */
 extern
 SCIP_RETCODE DECdecompSetDetectorChainString(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,                /**< SCIP data structure */
    DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   const char*           detectorchainstring
+   const char*           detectorchainstring  /**< string for the detector information working on that decomposition */
    );
 
 
@@ -476,8 +482,8 @@ SCIP_Real* DECdecompGetDetectorPctConssFromOpen(
 extern
 void DECdecompSetNNewBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   int*                  nNewBlocks
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   int*                  nNewBlocks          /**< number of new blocks on this decomposition */
    );
 
 /** gets the number of new blocks corresponding detectors (of the detector chain) on this decomposition */
@@ -717,7 +723,9 @@ int DECgetNDecomps(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** @} */
 #ifdef __cplusplus
 }
+
 #endif
 #endif
