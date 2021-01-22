@@ -1,5 +1,4 @@
 # GCG Gitlab CI script
-
 .init_ssh2: &init_ssh2 |
   eval $(ssh-agent -s)
   chmod 700 "$PRIVATE_KEY"
@@ -14,13 +13,21 @@ stages:
   - test
   - documentation
 
+# default, loaded with docker image for Linux
 default:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
-  before_script: 
+  before_script:
+    # initialize SSH key to access repositories 
     - *init_ssh2
+    # update submodules
     - git submodule sync --recursive
     - git submodule update --init --recursive
+    # set links to SCIP and SoPLEX
+    - ln -sfn scip-git lib/scip
+    - ln -sfn soplex-git/src lib/scip/lib/include/spxinc
+    - ln -sfn soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a lib/scip/lib/static/libsoplex.linux.x86_64.gnu.opt.a
 
+# CMake compilation job
 cmake:
   stage: build
   script:
@@ -37,6 +44,7 @@ cmake:
       - lib/
     expire_in: 2 hours
 
+# Make compilation job
 make:
   stage: build
   script:
@@ -50,15 +58,7 @@ make:
       - lib/
     expire_in: 2 hours
 
-make_test:
-  stage: test
-  inherit:
-    default: false
-  dependencies:
-    - make
-  script:
-    - make test
-
+# CMake test (test set: short)
 cmake_test:
   stage: test
   dependencies:
@@ -68,6 +68,17 @@ cmake_test:
   script:
     - make gcg_test
 
+# Makefiles test (test set: short)
+make_test:
+  stage: test
+  inherit:
+    default: false
+  dependencies:
+    - make
+  script:
+    - make test
+
+# Compile documentation and upload to website
 docu:
   stage: documentation
   dependencies:
