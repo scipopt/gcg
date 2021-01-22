@@ -17,6 +17,7 @@ cmake:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: gcg_build
   before_script:
+      - *init_ssh2
       - git submodule sync --recursive
       - git submodule update --init --recursive
       - mkdir build
@@ -30,7 +31,6 @@ documentation:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: docu_build
   before_script:
-      - *init_ssh2
       - cd build
   script:
       - make gcg_doc -j 4
