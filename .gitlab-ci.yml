@@ -22,7 +22,7 @@ default:
     # update submodules
     - git submodule sync --recursive
     - git submodule update --init --recursive
-    # set links to SCIP and SoPLEX  # SCIP link in GCG folder
+    # set links to SCIP and SoPLEX
     - ln -s ../lib/scip-git lib/scip
     # SoPlex links inside SCIP lib folder
     - mkdir -p lib/scip/lib/include/spxinc
@@ -31,7 +31,7 @@ default:
     - ln -s $PWD/lib/soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a $PWD/lib/scip/lib/static/libsoplex.linux.x86_64.gnu.opt.a
 
 # CMake compilation job
-cmake:
+cmake:build:
   stage: build
   script:
     - mkdir build
@@ -48,33 +48,32 @@ cmake:
     expire_in: 2 hours
 
 # Make compilation job
-make:
+make:build:
   stage: build
   script:
     - make deps
     - make
   artifacts:
     paths:
-      - MAKEFILE
-      - bin/
-      - check/
-      - lib/
+      - *
     expire_in: 2 hours
 
 # CMake test (test set: short)
-cmake_test:
+cmake:test:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: test
   dependencies:
     - cmake
+  needs: ["cmake:build"]
   before_script:
     - cd build
   script:
-    - make gcg_test
+    - make gcg_check
 
 # Makefiles test (test set: short)
-make_test:
+make:test:
   stage: test
+  needs: ["make:build"]
   script:
     - make test
 
@@ -83,6 +82,7 @@ docu:
   stage: documentation
   dependencies:
     - cmake
+  needs: ["cmake:build"]
   before_script:
     - cd build
   script:
