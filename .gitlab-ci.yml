@@ -57,7 +57,6 @@ make:build:
 
 # CMake test (test set: short)
 cmake:test:
-  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: test
   needs: ["cmake:build"]
   before_script: []
@@ -67,7 +66,7 @@ cmake:test:
     - cd ..
   artifacts:
     paths:
-      - check/results/*
+      - build/check/Testing/Temporary/LastTest.log
     expire_in: 3 days
     
 
@@ -85,9 +84,9 @@ make:test:
 
 # Compile documentation and upload to website
 docu:
+  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: documentation
   needs: ["cmake:build"]
-  before_script: []
   script:
     - cd build
     - make gcg_doc -j 4
