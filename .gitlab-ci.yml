@@ -60,10 +60,11 @@ cmake:test:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: test
   needs: ["cmake:build"]
-  before_script:
-    - cd build
+  before_script: []
   script:
+    - cd build
     - make gcg_check
+    - cd ..
   artifacts:
     paths:
       - check/results/*
@@ -74,6 +75,7 @@ cmake:test:
 make:test:
   stage: test
   needs: ["make:build"]
+  before_script: []
   script:
     - make test
   artifacts:
@@ -85,9 +87,9 @@ make:test:
 docu:
   stage: documentation
   needs: ["cmake:build"]
-  before_script:
-    - cd build
+  before_script: []
   script:
+    - cd build
     - make gcg_doc -j 4
     - cd ..
     # upload documentation to gcg.or.rwth-aachen.de/dev
