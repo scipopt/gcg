@@ -63,6 +63,7 @@ make:
 
 # CMake test (test set: short)
 cmake_test:
+  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: test
   dependencies:
     - cmake
@@ -74,10 +75,6 @@ cmake_test:
 # Makefiles test (test set: short)
 make_test:
   stage: test
-  inherit:
-    default: false
-  dependencies:
-    - make
   script:
     - make test
 
