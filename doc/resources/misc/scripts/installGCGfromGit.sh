@@ -106,12 +106,10 @@ function download(){
 function setLinks(){
   printf "${B}Setting links...${W}"
   # SCIP link in GCG folder
-  ln -sfn ../lib/scip-git lib/scip
+  ln -sfn scip-git lib/scip
   # SoPlex links inside SCIP lib folder
-  mkdir -p lib/scip/lib/include/spxinc
-  ln -sfn $PWD/lib/soplex-git/src/* $PWD/lib/scip/lib/include/spxinc/
-  mkdir -p lib/scip/lib/static/
-  ln -sfn $PWD/lib/soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a $PWD/lib/scip/lib/static/libsoplex.linux.x86_64.gnu.opt.a
+  ln -sfn soplex-git/src lib/scip/lib/include/spxinc
+  ln -sfn soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a lib/scip/lib/static/libsoplex.linux.x86_64.gnu.opt.a
 }
 
 function test(){
@@ -198,7 +196,7 @@ while true; do
   done
   
   # check for BOOST, set it to false if not installed
-  dpkg -l boost > /dev/null 2>&1
+  dpkg -l libboost-program-options-dev > /dev/null 2>&1
   if [ $? != "0" ]; then 
     FLAGS+=" BOOST=false";
     echo "Information: No BOOST installation found. Compiling without BOOST.";
