@@ -16,49 +16,64 @@ stages:
 
 default:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
-  script: 
+  before_script: 
     - *init_ssh2
     - git submodule sync --recursive
     - git submodule update --init --recursive
 
 cmake:
   stage: build
-  before_script:
+  script:
     - mkdir build
     - cd build
-  script:
     - cmake ..
     - make -j 4
     - cd ..
+  artifacts:
+    paths:
+      - MAKEFILE
+      - build/
+      - check/
+      - lib/
+    expire_in: 2 hours
 
 make:
   stage: build
   script:
     - make deps
     - make
+  artifacts:
+    paths:
+      - MAKEFILE
+      - bin/
+      - check/
+      - lib/
+    expire_in: 2 hours
 
 make_test:
   stage: test
+  inherit:
+    default: false
   dependencies:
-    - build
+    - make
   script:
     - make test
 
 cmake_test:
   stage: test
   dependencies:
-    - build
+    - cmake
   before_script:
     - cd build
   script:
     - make gcg_test
 
 docu:
-  stage: docu_build
+  stage: documentation
   dependencies:
-    - build
+    - cmake
   before_script:
-    - cd documentation
+    - cd build
   script:
     - make gcg_doc -j 4
     - cd ..
