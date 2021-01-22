@@ -93,5 +93,5 @@ docu:
     - make gcg_doc -j 4
     - cd ..
     # upload documentation to gcg.or.rwth-aachen.de/dev
-    #- scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
-    #- ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod -R 755 ./* ; "
+    - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
+    - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod -R 755 ./* ; "
