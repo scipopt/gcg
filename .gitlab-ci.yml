@@ -10,31 +10,58 @@
   [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
 
 stages:
-  - gcg_build
-  - docu_build
+  - build
+  - test
+  - documentation
+
+default:
+  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
+  script: 
+    - *init_ssh2
+    - git submodule sync --recursive
+    - git submodule update --init --recursive
 
 cmake:
-  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
-  stage: gcg_build
+  stage: build
   before_script:
-      - *init_ssh2
-      - git submodule sync --recursive
-      - git submodule update --init --recursive
-      - mkdir build
-      - cd build
+    - mkdir build
+    - cd build
   script:
-      - cmake ..
-      - make
-      - cd ..
+    - cmake ..
+    - make -j 4
+    - cd ..
 
-documentation:
-  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
-  stage: docu_build
-  before_script:
-      - cd build
+make:
+  stage: build
   script:
-      - make gcg_doc -j 4
-      - cd ..
-      # upload documentation to gcg.or.rwth-aachen.de/dev
-      #- scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
-      #- ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod -R 755 ./* ; "
+    - make deps
+    - make
+
+make_test:
+  stage: test
+  dependencies:
+    - build
+  script:
+    - make test
+
+cmake_test:
+  stage: test
+  dependencies:
+    - build
+  before_script:
+    - cd build
+  script:
+    - make gcg_test
+
+docu:
+  stage: docu_build
+  dependencies:
+    - build
+  before_script:
+    - cd documentation
+  script:
+    - make gcg_doc -j 4
+    - cd ..
+    # upload documentation to gcg.or.rwth-aachen.de/dev
+    #- scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
+    #- ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod -R 755 ./* ; "
