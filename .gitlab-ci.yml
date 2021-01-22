@@ -22,10 +22,13 @@ default:
     # update submodules
     - git submodule sync --recursive
     - git submodule update --init --recursive
-    # set links to SCIP and SoPLEX
-    - ln -sfn scip-git lib/scip
-    - ln -sfn soplex-git/src lib/scip/lib/include/spxinc
-    - ln -sfn soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a lib/scip/lib/static/libsoplex.linux.x86_64.gnu.opt.a
+    # set links to SCIP and SoPLEX  # SCIP link in GCG folder
+    - ln -s ../lib/scip-git lib/scip
+    # SoPlex links inside SCIP lib folder
+    - mkdir -p lib/scip/lib/include/spxinc
+    - ln -s $PWD/lib/soplex-git/src/* $PWD/lib/scip/lib/include/spxinc/
+    - mkdir -p lib/scip/lib/static/
+    - ln -s $PWD/lib/soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a $PWD/lib/scip/lib/static/libsoplex.linux.x86_64.gnu.opt.a
 
 # CMake compilation job
 cmake:
