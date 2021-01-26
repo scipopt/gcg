@@ -78,11 +78,18 @@
 #define DEFAULT_RFUSEPSEUDOCOSTS TRUE
 #define DEFAULT_RFUSEMOSTFRAC    FALSE
 
-#define DEFAULT_REEVALAGE       1
-#define DEFAULT_MINCOLGENCANDS  4
-#define DEFAULT_HISTWEIGHT      0.5
-#define DEFAULT_MAXLOOKAHEAD    8
-#define DEFAULT_LOOKAHEADSCALES 0.5
+#define DEFAULT_REEVALAGE          1
+#define DEFAULT_MINCOLGENCANDS     4
+#define DEFAULT_HISTWEIGHT         0.5
+#define DEFAULT_MAXLOOKAHEAD       8
+#define DEFAULT_LOOKAHEADSCALES    0.5
+#define DEFAULT_MINPHASE0DEPTH     9
+#define DEFAULT_MAXPHASE1DEPTH     10
+#define DEFAULT_MAXPHASE2DEPTH     8
+#define DEFAULT_DEPTHLOGWEIGHT     0
+#define DEFAULT_DEPTHLOGBASIS      2
+#define DEFAULT_DEPTHLOGPHASE0FRAC 0.75
+#define DEFAULT_DEPTHLOGPHASE2FRAC 0.75
 
 #define ORIG         0
 #define RYANFOSTER   1
@@ -131,6 +138,10 @@ struct SCIP_BranchruleData
    int                   maxsbpricerounds;      /**< maximum number of strong branching pricing rounds, set to 2*avg lp iterations if <= 0 */
    int                   reevalage;             /**< how many times can bounds be changed due to infeasibility during strong branching until an already evaluated variable needs to be reevaluated? */
    int                   mincolgencands;        /**< minimum number of variables for phase 2 to be executed, otherwise the best candidate from phase 1 will be chosen */
+
+   int                   minphase0depth;        /**< minimum tree depth from which on phase 0 is performed (intended for heuristics like pseudocost branching) */
+   int                   maxphase1depth;        /**< maximum tree depth up to which phase 1 is performed  (intended for heuristics like pseudocost branching) */
+   int                   maxphase2depth;        /**< maximum tree depth up to which phase 2 is performed  (intended for heuristics like pseudocost branching) */
    
    int                   minphase0outcands;     /**< minimum number of output candidates from phase 0 */
    int                   maxphase0outcands;     /**< maximum number of output candidates from phase 0 */
@@ -658,7 +669,7 @@ SCIP_Real score_function(
          if( var2!=NULL )
             *score = *score * SCIPgetVarPseudocostScore(scip, var2, solval2);
       }
-      else /* no parameter for fractional variable selection? */
+      else
       {
          if( !branchruledata->mostfrac )
             return 1;
@@ -763,20 +774,23 @@ SCIP_RETCODE selectCandidate(
    int npriobranchcands;
 
    SCIP_HASHMAP* solhashmap;
-   
-   int nneededcands;
-
-   SCIP_Real nodegap;
-   SCIP_Real upperbound;
-   SCIP_Real nodelowerbound;
 
    int hashindex;
 
    /* values for choosing the variable to branch on */
    SCIP_Real maxscore;
    SCIP_Real score;
+
+   /* variables for controlling the evaluation effort */
    int lookahead;
    int lastimproved;
+   int depth;
+
+   SCIP_Real nodegap;
+   SCIP_Real upperbound;
+   SCIP_Real nodelowerbound;
+
+   int nneededcands;
 
    /* infeasibility results during strong branching */
    SCIP_Bool upinf;
@@ -798,6 +812,9 @@ SCIP_RETCODE selectCandidate(
    assert(SCIPisRelaxSolValid(scip));
 
    branchruledata = SCIPbranchruleGetData(branchrule);
+
+   assert(branchruledata->maxphase1depth >= branchruledata->maxphase2depth);
+   assert(branchruledata->maxphase1depth+1 >= branchruledata->minphase0depth);
 
    *result = SCIP_DIDNOTRUN;
 
@@ -831,6 +848,8 @@ SCIP_RETCODE selectCandidate(
    downinf = FALSE;
    *bestupinf = FALSE;
    *bestdowninf = FALSE;
+
+   depth = SCIPnodeGetDepth(SCIPgetFocusNode(scip));
 
    /* set maximum strong branching lp iterations and pricing rounds to 2 times the average unless the value is
     * fixed in the settings (as it is done in SCIP)
@@ -1001,17 +1020,30 @@ SCIP_RETCODE selectCandidate(
       {
          case 0:
             ncands = nvalidcands;
+
+            /* skip phase 0 we are too high in the tree, and phases 1 and 2 if we are too low */
+            if( branchruledata->minphase0depth > depth )
+            {
+               nneededcands = ncands;
+            }
+            else if( depth > branchruledata->maxphase1depth )
+            {
+               nneededcands = 1;
+            }
+
             break;
 
          case 1:
             nneededcands = calculateNCands(scip, branchruledata, nodegap, 1, ncands);
 
             /* skip phase 2 if we are in lite mode,
-             * or if the number of available candidates is lower than the min amount for phase 2
+             * or if the number of available candidates is lower than the min amount for phase 2,
+             * or if we are too low in the tree
              */
             if( branchruledata->usestronglite 
                || nneededcands < branchruledata->mincolgencands
-               || ncands < branchruledata->mincolgencands )
+               || ncands < branchruledata->mincolgencands
+               || depth > branchruledata->maxphase2depth )
                nneededcands = 1;
 
             break;
@@ -1258,6 +1290,14 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
    SCIP* origprob;
    SCIP_BRANCHRULEDATA* branchruledata;
 
+   SCIP_Real logweight;
+   SCIP_Real logbase;
+   SCIP_Real phase0frac;
+   SCIP_Real phase2frac;
+   int nvars;
+
+   SCIP_Real phase1depth;
+
    origprob = GCGmasterGetOrigprob(scip);
    assert(branchrule != NULL);
    assert(origprob != NULL);
@@ -1277,6 +1317,21 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
    branchruledata->nphase2lps = 0;
    branchruledata->nsblpiterations = 0;
    branchruledata->nsbpricerounds = 0;
+
+   SCIP_CALL( SCIPgetRealParam(origprob, "branching/bp_strong/depthlogweight", &logweight) );
+   if( logweight > 0 )
+   {
+      SCIP_CALL( SCIPgetRealParam(origprob, "branching/bp_strong/depthlogbase", &logbase) );
+      SCIP_CALL( SCIPgetRealParam(origprob, "branching/bp_strong/depthlogphase0frac", &phase0frac) );
+      SCIP_CALL( SCIPgetRealParam(origprob, "branching/bp_strong/depthlogphase2frac", &phase2frac) );
+      nvars = SCIPgetNVars(origprob);
+
+      phase1depth = log(nvars)/log(logbase);
+
+      branchruledata->minphase0depth = (int) SCIPround(origprob, (1-logweight) * branchruledata->minphase0depth + logweight * phase0frac * phase1depth);
+      branchruledata->maxphase1depth = (int) SCIPround(origprob, (1-logweight) * branchruledata->maxphase1depth + logweight * phase1depth);
+      branchruledata->maxphase2depth = (int) SCIPround(origprob, (1-logweight) * branchruledata->maxphase2depth + logweight * phase2frac * phase1depth);
+   }
 
    this_branchruledata = branchruledata;
 
@@ -1350,6 +1405,36 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/lookaheadscales",
          "how much should the lookahead scale with the overall evaluation effort? (0 = not at all, 1 = fully)",
          &branchruledata->lookaheadscales, FALSE, DEFAULT_LOOKAHEADSCALES, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/minphase0depth",
+         "minimum tree depth from which on phase 0 is performed (intended for heuristics like pseudocost branching)",
+         &branchruledata->minphase0depth, FALSE, DEFAULT_MINPHASE0DEPTH, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/maxphase1depth",
+         "maximum tree depth up to which phase 1 is performed (intended for heuristics like pseudocost branching)",
+         &branchruledata->maxphase1depth, FALSE, DEFAULT_MAXPHASE1DEPTH, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/maxphase2depth",
+         "maximum tree depth up to which phase 2 is performed (intended for heuristics like pseudocost branching)",
+         &branchruledata->maxphase2depth, FALSE, DEFAULT_MAXPHASE2DEPTH, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/depthlogweight",
+         "how much should the logarithm of the number of variables influence the depth for hybrid branching? (0 = not at all, 1 = fully)",
+         NULL, FALSE, DEFAULT_DEPTHLOGWEIGHT, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/depthlogbase",
+         "what should be the base of the logarithm that is used to compute the depth of hybrid branching?",
+         NULL, FALSE, DEFAULT_DEPTHLOGBASIS, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/depthlogphase0frac",
+         "if using a logarithm to compute the depth of hybrid branching, what should be the fraction of the depth assigned to phase 1 that is assigned to phase 0?",
+         NULL, FALSE, DEFAULT_DEPTHLOGPHASE0FRAC, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/depthlogphase2frac",
+         "if using a logarithm to compute the depth of hybrid branching, what should be the fraction of the depth assigned to phase 1 that is assigned to phase 2?",
+         NULL, FALSE, DEFAULT_DEPTHLOGPHASE2FRAC, 0, 1, NULL, NULL) );
+
+   
 
    
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/ryanfoster/usepseudocosts",
