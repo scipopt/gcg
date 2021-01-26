@@ -784,7 +784,9 @@ SCIP_RETCODE selectCandidate(
    /* variables for controlling the evaluation effort */
    int lookahead;
    int lastimproved;
+
    int depth;
+   int phase0nneededcands;
 
    SCIP_Real nodegap;
    SCIP_Real upperbound;
@@ -1021,10 +1023,13 @@ SCIP_RETCODE selectCandidate(
          case 0:
             ncands = nvalidcands;
 
+            /* necessary in case we skip phase 0 */
+            phase0nneededcands = nneededcands;
+
             /* skip phase 0 we are too high in the tree, and phases 1 and 2 if we are too low */
             if( branchruledata->minphase0depth > depth )
             {
-               nneededcands = ncands;
+               nneededcands = ncands;  
             }
             else if( depth > branchruledata->maxphase1depth )
             {
@@ -1034,7 +1039,7 @@ SCIP_RETCODE selectCandidate(
             break;
 
          case 1:
-            nneededcands = calculateNCands(scip, branchruledata, nodegap, 1, ncands);
+            nneededcands = calculateNCands(scip, branchruledata, nodegap, 1, phase0nneededcands);
 
             /* skip phase 2 if we are in lite mode,
              * or if the number of available candidates is lower than the min amount for phase 2,
