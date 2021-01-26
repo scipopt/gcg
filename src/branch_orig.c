@@ -559,33 +559,37 @@ SCIP_RETCODE branchExtern(
 
          solval = SCIPgetRelaxSolVal(scip, branchvar);
       }
-
-      /* iter = 0: integer variables belonging to a unique block with fractional value,
-      * iter = 1: we did not find enough variables to branch on so far, so we look for integer variables that belong to no block
-      * but were directly transferred to the master problem and which have a fractional value in the current solution
-      */
-      for( int iter = 0; iter <= 1 && branchvar == NULL; iter++ )
+      else
       {
-         for( int i = 0; i < npriobranchcands; i++ )
+         /* iter = 0: integer variables belonging to a unique block with fractional value,
+         * iter = 1: we did not find enough variables to branch on so far, so we look for integer variables that belong to no block
+         * but were directly transferred to the master problem and which have a fractional value in the current solution
+         */
+         for( int iter = 0; iter <= 1 && branchvar == NULL; iter++ )
          {
-            if( !getUniqueBlockFlagForIter(scip, branchcands[i], iter) )
-               continue;
-            
-            SCIP_CALL( score_function(scip, branchrule, branchcands[i], branchcandssol[i], &score) );
-
-            if( score > maxscore )
+            for( int i = 0; i < npriobranchcands; i++ )
             {
-               maxscore = score;
-               branchvar = branchcands[i];
-               solval = branchcandssol[i];
+               if( !getUniqueBlockFlagForIter(scip, branchcands[i], iter) )
+                  continue;
+               
+               SCIP_CALL( score_function(scip, branchrule, branchcands[i], branchcandssol[i], &score) );
 
-               /* if we do not look for the most fractional variable, but for the first fractional variable,
-               * we can stop here since we found a variable to branch on */
-               if( !branchruledata->mostfrac && !branchruledata->usepseudocosts )
-                  break;
+               if( score > maxscore )
+               {
+                  maxscore = score;
+                  branchvar = branchcands[i];
+                  solval = branchcandssol[i];
+
+                  /* if we do not look for the most fractional variable, but for the first fractional variable,
+                  * we can stop here since we found a variable to branch on */
+                  if( !branchruledata->mostfrac && !branchruledata->usepseudocosts )
+                     break;
+               }
             }
          }
       }
+
+      
    }
    else
    {
@@ -1021,11 +1025,11 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    /* strong branching */
    SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/minphase0outcands",
          "minimum number of output candidates from phase 0 during strong branching",
-         NULL, FALSE, DEFAULT_MINPHASE0OUTCANDS, 1, 100000, NULL, NULL) );
+         NULL, FALSE, DEFAULT_MINPHASE0OUTCANDS, 1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/maxphase0outcands",
          "maximum number of output candidates from phase 0 during strong branching",
-         NULL, FALSE, DEFAULT_MAXPHASE0OUTCANDS, 1, 100000, NULL, NULL) );
+         NULL, FALSE, DEFAULT_MAXPHASE0OUTCANDS, 1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/orig/maxphase0outcandsfrac",
          "maximum number of output candidates from phase 0 as fraction of total cands during strong branching",
@@ -1037,11 +1041,11 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
 
    SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/minphase1outcands",
          "minimum number of output candidates from phase 1 during strong branching",
-         NULL, FALSE, DEFAULT_MINPHASE1OUTCANDS, 1, 100000, NULL, NULL) );
+         NULL, FALSE, DEFAULT_MINPHASE1OUTCANDS, 1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/maxphase1outcands",
          "maximum number of output candidates from phase 1 during strong branching",
-         NULL, FALSE, DEFAULT_MAXPHASE1OUTCANDS, 1, 100000, NULL, NULL) );
+         NULL, FALSE, DEFAULT_MAXPHASE1OUTCANDS, 1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/orig/maxphase1outcandsfrac",
          "maximum number of output candidates from phase 1 as fraction of phase 1 cands during strong branching",

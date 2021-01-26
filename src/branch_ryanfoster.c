@@ -938,11 +938,11 @@ SCIP_RETCODE SCIPincludeBranchruleRyanfoster(
    /* strong branching */
    SCIP_CALL( SCIPaddIntParam(scip, "branching/ryanfoster/minphase0outcands",
          "minimum number of output candidates from phase 0 during strong branching",
-         NULL, FALSE, DEFAULT_MINPHASE0OUTCANDS, 1, 100000, NULL, NULL) );
+         NULL, FALSE, DEFAULT_MINPHASE0OUTCANDS, 1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "branching/ryanfoster/maxphase0outcands",
          "maximum number of output candidates from phase 0 during strong branching",
-         NULL, FALSE, DEFAULT_MAXPHASE0OUTCANDS, 1, 100000, NULL, NULL) );
+         NULL, FALSE, DEFAULT_MAXPHASE0OUTCANDS, 1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(scip, "branching/ryanfoster/maxphase0outcandsfrac",
          "maximum number of output candidates from phase 0 as fraction of total cands during strong branching",
@@ -954,11 +954,11 @@ SCIP_RETCODE SCIPincludeBranchruleRyanfoster(
 
    SCIP_CALL( SCIPaddIntParam(scip, "branching/ryanfoster/minphase1outcands",
          "minimum number of output candidates from phase 1 during strong branching",
-         NULL, FALSE, DEFAULT_MINPHASE1OUTCANDS, 1, 100000, NULL, NULL) );
+         NULL, FALSE, DEFAULT_MINPHASE1OUTCANDS, 1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "branching/ryanfoster/maxphase1outcands",
          "maximum number of output candidates from phase 1 during strong branching",
-         NULL, FALSE, DEFAULT_MAXPHASE1OUTCANDS, 1, 100000, NULL, NULL) );
+         NULL, FALSE, DEFAULT_MAXPHASE1OUTCANDS, 1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(scip, "branching/ryanfoster/maxphase1outcandsfrac",
          "maximum number of output candidates from phase 1 as fraction of phase 1 cands during strong branching",
