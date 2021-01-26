@@ -72,16 +72,17 @@
 #define DEFAULT_STRONGLITE       FALSE
 #define DEFAULT_STRONGTRAIN      FALSE
 #define DEFAULT_IMMEDIATEINF     TRUE
-#define DEFAULT_MAXSBLPITERS     0
-#define DEFAULT_MAXSBPRICEROUNDS 0
+#define DEFAULT_MAXSBLPITERS     INT_MAX
+#define DEFAULT_MAXSBPRICEROUNDS INT_MAX
 
 #define DEFAULT_RFUSEPSEUDOCOSTS TRUE
 #define DEFAULT_RFUSEMOSTFRAC    FALSE
 
-#define DEFAULT_REEVALAGE              1
-#define DEFAULT_MINCOLGENCANDS         4
-
-#define DEFAULT_HISTWEIGHT             0.5
+#define DEFAULT_REEVALAGE       1
+#define DEFAULT_MINCOLGENCANDS  4
+#define DEFAULT_HISTWEIGHT      0.5
+#define DEFAULT_MAXLOOKAHEAD    8
+#define DEFAULT_LOOKAHEADSCALES 0.5
 
 #define ORIG         0
 #define RYANFOSTER   1
@@ -127,7 +128,7 @@ struct SCIP_BranchruleData
    SCIP_Bool             usestrongtrain;        /**< should strong branching run as precise as possible (to generate more valuable training data)? */
    SCIP_Bool             immediateinf;          /**< should infeasibility detected during strong branching be handled immediately, or only if the variable is selected? */
    SCIP_Longint          maxsblpiters;          /**< maximum number of strong branching lp iterations, set to 2*avg lp iterations if <= 0 */
-   int                   maxsbpricerounds;     /**< maximum number of strong branching pricing rounds, set to 2*avg lp iterations if <= 0 */
+   int                   maxsbpricerounds;      /**< maximum number of strong branching pricing rounds, set to 2*avg lp iterations if <= 0 */
    int                   reevalage;             /**< how many times can bounds be changed due to infeasibility during strong branching until an already evaluated variable needs to be reevaluated? */
    int                   mincolgencands;        /**< minimum number of variables for phase 2 to be executed, otherwise the best candidate from phase 1 will be chosen */
    
@@ -140,6 +141,9 @@ struct SCIP_BranchruleData
    int                   maxphase1outcands;     /**< maximum number of output candidates from phase 1 */
    SCIP_Real             maxphase1outcandsfrac; /**< maximum number of output candidates from phase 0 as fraction of phase 1 candidates */
    SCIP_Real             phase2gapweight;       /**< how much impact should the nodegap have on the number of precisely evaluated candidates in phase 2? */
+   int                   maxlookahead;          /**< maximum number of non-improving candidates until phase 2 is stopped */
+   SCIP_Real             lookaheadscales;       /**< how much should the lookahead scale with the overall evaluation effort? (0 = not at all, 1 = fully) */
+
    SCIP_Real             histweight;            /**< how many candidates should be chosen based on historical strong branching scores as opposed to current heuristic scores in phase 0 (e.g. 0.5 = 50%)? */
 };
 
@@ -771,6 +775,8 @@ SCIP_RETCODE selectCandidate(
    /* values for choosing the variable to branch on */
    SCIP_Real maxscore;
    SCIP_Real score;
+   int lookahead;
+   int lastimproved;
 
    /* infeasibility results during strong branching */
    SCIP_Bool upinf;
@@ -979,14 +985,14 @@ SCIP_RETCODE selectCandidate(
    * candidates for which we have historical scores, otherwise some candidates would be selected simply because they
    * have been scored before
    */
-   nneededhistcands = SCIPfloor(scip, MIN((SCIP_Real)nvalidhistcands/(SCIP_Real)(nvalidcands+nvalidhistcands), branchruledata->histweight) * nvalidcands);
+   nneededhistcands = (int) SCIPfloor(scip, MIN((SCIP_Real)nvalidhistcands/(SCIP_Real)(nvalidcands+nvalidhistcands), branchruledata->histweight) * nvalidcands);
    qsort(histindices, nvalidhistcands, sizeof(int), score_compare_function);
    qsort(histindices, nneededhistcands, sizeof(int), geq_compare_function);
 
    /* go through the three phases:
-    * - phase 0: select a first selection (50 to 10, based on |T S(v)|) of candidates based on some traditional variable selection
+    * - phase 0: select a first selection of candidates based on some traditional variable selection
     *            heuristic, some (half) of the candidates are new, and some are selected based on previous calls
-    * - phase 1: find 20 to 3 (based on |T S(v)|) best candidates by evaluating the Master LP, w/o column and cut generation
+    * - phase 1: filter the best candidates by evaluating the Master LP, w/o column and cut generation
     * - phase 2: select the best of the candidates from phase 1 by solving the Master LP with column and cut generation.
     */
    for( int phase = 0; phase<=2; phase++ )
@@ -1012,6 +1018,16 @@ SCIP_RETCODE selectCandidate(
 
          case 2:
             nneededcands = 1;
+            lastimproved = 0;
+
+            /* the lookahead can be partially based on the overall evaluation effort for phase 2 */
+            lookahead = branchruledata->maxlookahead;
+            if( lookahead && branchruledata->lookaheadscales>0 )
+            {
+               lookahead = MAX(1, (int) SCIPround(scip, 
+                                                  (SCIP_Real) ((1-branchruledata->lookaheadscales) * lookahead) - 
+                                                  (SCIP_Real) (branchruledata->lookaheadscales * (ncands / branchruledata->maxphase1outcands) * lookahead)) );
+            }
             break;
 
       }
@@ -1066,7 +1082,7 @@ SCIP_RETCODE selectCandidate(
                *bestupinf = TRUE;
                *bestdowninf = TRUE;
 
-               SCIPdebugMessage("Original branching rule detected current node to be infeasible!\n");
+               SCIPdebugMessage("Strong branching detected current node to be infeasible!\n");
                return SCIP_OKAY;
             }
 
@@ -1081,10 +1097,20 @@ SCIP_RETCODE selectCandidate(
          {
             if( score > maxscore )
             {
+               lastimproved = 0;
                indices[0] = indices[c];
                maxscore = score;
                *bestupinf = upinf;
                *bestdowninf = downinf;
+            }
+            /* if the last improving candidate is lookahead or more steps away, abort phase 2 */
+            else 
+            {
+               lastimproved++;
+               if( lookahead && lastimproved >= lookahead && phase==2 )
+               {
+                  break;
+               }
             }
          }
          else
@@ -1299,23 +1325,31 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
 
    SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/reevalage",
          "how many times can bounds be changed due to infeasibility during strong branching until an already evaluated variable needs to be reevaluated?",
-         &branchruledata->reevalage, FALSE, DEFAULT_REEVALAGE, 0, 100, NULL, NULL) );
+         &branchruledata->reevalage, FALSE, DEFAULT_REEVALAGE, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/mincolgencands",
          "minimum number of variables for phase 2 to be executed, otherwise the best candidate from phase 1 will be chosen",
-         &branchruledata->mincolgencands, FALSE, DEFAULT_MINCOLGENCANDS, 0, 100000, NULL, NULL) );
+         &branchruledata->mincolgencands, FALSE, DEFAULT_MINCOLGENCANDS, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/histweight",
          "how many candidates should be chosen based on historical strong branching scores as opposed to current heuristic scores in phase 0 (e.g. 0.5 = 50%)?",
          &branchruledata->histweight, FALSE, DEFAULT_HISTWEIGHT, 0, 1, NULL, NULL) );
 
    SCIP_CALL( SCIPaddLongintParam(origscip, "branching/bp_strong/maxsblpiters",
-         "maximum number of strong branching lp iterations, set to 2*avg lp iterations if <= 0 ",
+         "maximum number of strong branching lp iterations, set to 2*avg lp iterations if <= 0",
          NULL, FALSE, DEFAULT_MAXSBLPITERS, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/maxsbpricerounds",
-         "maximum number of strong branching price rounds, set to 2*avg lp iterations if <= 0 ",
+         "maximum number of strong branching price rounds, set to 2*avg lp iterations if <= 0",
          NULL, FALSE, DEFAULT_MAXSBPRICEROUNDS, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/maxlookahead",
+         "maximum number of non-improving candidates until phase 2 is stopped",
+         &branchruledata->maxlookahead, FALSE, DEFAULT_MAXLOOKAHEAD, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/lookaheadscales",
+         "how much should the lookahead scale with the overall evaluation effort? (0 = not at all, 1 = fully)",
+         &branchruledata->lookaheadscales, FALSE, DEFAULT_LOOKAHEADSCALES, 0, 1, NULL, NULL) );
 
    
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/ryanfoster/usepseudocosts",
@@ -1371,6 +1405,9 @@ GCGbranchSelectCandidateStrongBranchingOrig(
       SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/maxphase1outcands", &branchruledata->maxphase1outcands) );
       SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/maxphase1outcandsfrac", &branchruledata->maxphase1outcandsfrac) );
       SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/phase2gapweight", &branchruledata->phase2gapweight) );
+
+      assert(branchruledata->maxphase0outcands >= branchruledata->minphase0outcands);
+      assert(branchruledata->maxphase1outcands >= branchruledata->minphase1outcands);
    }
 
    selectCandidate(scip, branchrule, NULL, NULL, NULL, 0, branchvar, NULL, NULL, upinf, downinf, result);
@@ -1420,6 +1457,9 @@ GCGbranchSelectCandidateStrongBranchingRyanfoster(
       SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/maxphase1outcands", &branchruledata->maxphase1outcands) );
       SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/maxphase1outcandsfrac", &branchruledata->maxphase1outcandsfrac) );
       SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/phase2gapweight", &branchruledata->phase2gapweight) );
+
+      assert(branchruledata->maxphase0outcands >= branchruledata->minphase0outcands);
+      assert(branchruledata->maxphase1outcands >= branchruledata->minphase1outcands);
    }
 
    selectCandidate(scip, branchrule, ovar1s, ovar2s, nspricingblock, npairs, ovar1, ovar2, pricingblock, sameinf, differinf, result);
