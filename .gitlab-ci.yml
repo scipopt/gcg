@@ -50,6 +50,8 @@ make:build:
   script:
     - make deps
     - make
+    - mkdir -p lib/include
+    - mkdir -p lib/static
     ## Cliquer ##
     # obtain
     - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
