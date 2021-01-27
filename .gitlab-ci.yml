@@ -50,6 +50,30 @@ make:build:
   script:
     - make deps
     - make
+    ## Cliquer ##
+    # obtain
+    - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
+    - tar xvfz cliquer-1.21.tar.gz
+    - ln -sfn ../cliquer-1.21/ lib/cliquer-git
+    # link & compile
+    - ln -sfn ../cliquer-git/ lib/include/cliquer
+    - make cliquer
+    - ln -sfn ../cliquer-git/libcliquer.a lib/static/libcliquer.a
+    - make deps CLIQUER=true
+    - make CLIQUER=true
+    ## Bliss ##
+    # link & compile
+    - make bliss
+    - ln -sfn ../bliss-git lib/include/bliss
+    - ln -sfn ../bliss-git/libbliss.a lib/static/libbliss.a
+    - make deps CLIQUER=true BLISS=true
+    - make CLIQUER=true BLISS=true
+    ## hMetis ##
+    # link
+    - wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/hmetis/hmetis-2.0pre1.tar.gz
+    - tar xvfz hmetis-2.0pre1.tar.gz
+    - cp hmetis-2.0pre1/Linux-x86_64/hmetis2.0pre1 hmetis
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"./hmetis\"/g" src/*
   artifacts:
     paths:
       - ./*
