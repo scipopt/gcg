@@ -127,6 +127,7 @@ testsetreport:
   stage: report
   needs: ["make:build"]
   script:
+    - git stash
     - git checkout visu_suite
     - make visu DATADIR=results/
   artifacts:
