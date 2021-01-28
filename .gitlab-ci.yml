@@ -41,9 +41,10 @@ cmake:build:
     - make -j 4
     - cd ..
   artifacts:
+    expire_in: 1 hour
+    when: on_success
     paths:
-      - ./*
-    expire_in: 10 minutes
+      - $CI_PROJECT_DIR
 
 # Make compilation job
 make:build:
@@ -78,9 +79,10 @@ make:build:
     - ln -sfn hmetis-2.0pre1/Linux-x86_64/hmetis2.0pre1 hmetis
     - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/dec_h*partition.cpp
   artifacts:
-    paths:
-      - ./*
     expire_in: 10 minutes
+    when: on_success
+    paths:
+      - $CI_PROJECT_DIR
 
 # CMake test (test set: short)
 cmake:test:
@@ -92,8 +94,9 @@ cmake:test:
     - make gcg_check
     - cd ..
   artifacts:
+    when: on_success
     paths:
-      - build/check/Testing/Temporary/LastTest.log
+      - $CI_PROJECT_DIR
     expire_in: 3 days
     
 
@@ -105,6 +108,7 @@ make:test:
   script:
     - make test
   artifacts:
+    when: on_success
     paths:
       - check/results/*
     expire_in: 3 days
@@ -125,12 +129,27 @@ docu:
 testsetreport:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: report
-  needs: ["make:build"]
+  needs: ["make:test"]
   script:
     - git stash
     - git checkout visu_suite
     - make visu DATADIR=results/
   artifacts:
+    when: on_success
+    paths:
+      - check/reports/*
+    expire_in: 3 days
+
+comparisonreport:
+  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
+  stage: report
+  needs: ["make:test"]
+  script:
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
+    - git checkout visu_suite
+    - make visu DATADIR=results/
+  artifacts:
+    when: on_success
     paths:
       - check/reports/*
     expire_in: 3 days
