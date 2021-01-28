@@ -68,10 +68,11 @@ First, extract the bliss source code (one folder level above the GCG root direct
 
     unzip bliss-[version].zip
 
-Then, go into the GCG root directory and **link to it**:
+Then, go into the GCG root directory and **link to it** and **compile it**:
 
     cd gcg/
     ln -sfn ../../bliss-[version]/ lib/bliss-git
+    make bliss
 
 After that, **recompile** using the corresponding flag.
 
@@ -96,10 +97,11 @@ First, **extract the Cliquer source code** (one folder level above the GCG root 
 
     tar xvfz cliquer-[version].tar.gz
 
-Then, go into the GCG root directory and **link to it**:
+Then, go into the GCG root directory and **link to it** and **compile it**:
 
     cd gcg/
     ln -s ../../cliquer-[version]/ lib/cliquer-git
+    make cliquer
 
 After that, **recompile** using the corresponding flag.
 
@@ -123,11 +125,11 @@ and you will be able to use the Cliquer pricing problem solver.
 In our code, hMETIS is used for hypergraph partitioning in three detectors (see @ref detectors).
 If you want to compile GCG with hMETIS, you have to set a link to it.
 
-    tar xvfz hmetis-[version]-linux.tar.gz
+    tar xvfz hmetis[version].tar.gz
     cd gcg-[version]/
-    ln -s ../hmetis-[version]-linux/hmetis hmetis
+    ln -s ../hmetis[version]/Linux-x86_64/hmetis[version] hmetis
 
 Furthermore, depending on your system, it might be required to change the define `HMETIS_EXECUTABLE` 
 inside the three detectors (`dec_h*partition.cpp`) source code files, e.g. from "hmetis" to "./hmetis"
-and recompile.
+and recompile. Alternatively, you can also do `export PATH="$PATH:./"` before calling GCG.
 
