@@ -57,7 +57,8 @@ extern SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingOrig(
     SCIP_VAR **branchvar,            /**< pointer to store output var pointer */
     SCIP_Bool *upinf,                /**< pointer to store whether strong branching detected infeasibility in the upbranch */
     SCIP_Bool *downinf,              /**< pointer to store whether strong branching detected infeasibility in the downbranch */
-    SCIP_RESULT *result              /**< pointer to store result */
+    SCIP_RESULT *result,             /**< pointer to store result */
+    SCIP_Bool *stillusestrong        /**< pointer to store whether strong branching has reached a permanent stopping condition for orig ? */
 );
 
 extern SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingRyanfoster(

@@ -593,7 +593,7 @@ SCIP_RETCODE branchExtern(
    }
    else
    {
-      SCIP_CALL( GCGbranchSelectCandidateStrongBranchingOrig(scip, branchrule, &branchvar, &upinf, &downinf, result) );
+      SCIP_CALL( GCGbranchSelectCandidateStrongBranchingOrig(scip, branchrule, &branchvar, &upinf, &downinf, result, &branchruledata->usestrong) );
    }
 
    if( upinf && downinf )

@@ -80,16 +80,19 @@
 
 #define DEFAULT_REEVALAGE          1
 #define DEFAULT_MINCOLGENCANDS     4
-#define DEFAULT_HISTWEIGHT         0.5
+#define DEFAULT_HISTWEIGHT         0
 #define DEFAULT_MAXLOOKAHEAD       8
 #define DEFAULT_LOOKAHEADSCALES    0.5
-#define DEFAULT_MINPHASE0DEPTH     9
-#define DEFAULT_MAXPHASE1DEPTH     10
-#define DEFAULT_MAXPHASE2DEPTH     8
+#define DEFAULT_MINPHASE0DEPTH     0
+#define DEFAULT_MAXPHASE1DEPTH     6
+#define DEFAULT_MAXPHASE2DEPTH     5
 #define DEFAULT_DEPTHLOGWEIGHT     0
-#define DEFAULT_DEPTHLOGBASIS      2
-#define DEFAULT_DEPTHLOGPHASE0FRAC 0.75
+#define DEFAULT_DEPTHLOGBASIS      2.5
+#define DEFAULT_DEPTHLOGPHASE0FRAC 0
 #define DEFAULT_DEPTHLOGPHASE2FRAC 0.75
+
+#define DEFAULT_CLOSEPERCENTAGE    0.90
+#define DEFAULT_MAXCONSECHEURCLOSE 4
 
 #define ORIG         0
 #define RYANFOSTER   1
@@ -156,6 +159,12 @@ struct SCIP_BranchruleData
    SCIP_Real             lookaheadscales;       /**< how much should the lookahead scale with the overall evaluation effort? (0 = not at all, 1 = fully) */
 
    SCIP_Real             histweight;            /**< how many candidates should be chosen based on historical strong branching scores as opposed to current heuristic scores in phase 0 (e.g. 0.5 = 50%)? */
+
+   SCIP_Real             closepercentage;       /**< what percentage of the strong branching score of the candidate that was selected does the heuristic's incumbent need to be considered close? */
+   int                   consecheurclose;       /**< how many times in a row the heuristic was close to the selected candidate */
+   int                   maxconsecheurclose;    /**< how many times in a row can the heuristic be close before strong branching is stopped? */
+
+   SCIP_Bool             done;                  /**< has any of the permanent stopping criteria been reached? */
 };
 
 /* needed for compare_function (for now)*/
@@ -297,6 +306,7 @@ SCIP_RETCODE addBranchcandsToData(
    SCIP* masterscip;
    SCIP_BRANCHRULEDATA* branchruledata;
    int i;
+   int maxcands;
 
    /* get branching rule data */
    branchruledata = SCIPbranchruleGetData(branchrule);
@@ -306,7 +316,8 @@ SCIP_RETCODE addBranchcandsToData(
 
    if( branchruledata->nvars == 0 )
    { 
-      SCIP_CALL( SCIPhashmapCreate(&(branchruledata->varhashmap), SCIPblkmem(scip), branchruledata->initiator==RYANFOSTER? SCIPgetNVars(scip)*SCIPgetNVars(scip) : SCIPgetNVars(scip)) );
+      maxcands = SCIPgetNIntVars(scip) + SCIPgetNBinVars(scip);
+      SCIP_CALL( SCIPhashmapCreate(&(branchruledata->varhashmap), SCIPblkmem(scip), branchruledata->initiator==RYANFOSTER? maxcands*maxcands : maxcands) );
 
       assert(branchruledata->varhashmap != NULL);
 
@@ -794,6 +805,9 @@ SCIP_RETCODE selectCandidate(
 
    int nneededcands;
 
+   int heurincumbentindex;
+   SCIP_Real heurincumbentsbscore;
+
    /* infeasibility results during strong branching */
    SCIP_Bool upinf;
    SCIP_Bool downinf;
@@ -823,6 +837,8 @@ SCIP_RETCODE selectCandidate(
    /* get master problem */
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
+
+   heurincumbentindex = -1;
 
    /* get the branching candidates */
    SCIP_CALL( SCIPgetExternBranchCands(scip, &branchcands, &branchcandssol, NULL, NULL,
@@ -1034,6 +1050,8 @@ SCIP_RETCODE selectCandidate(
             else if( depth > branchruledata->maxphase1depth )
             {
                nneededcands = 1;
+               if( SCIPgetEffectiveRootDepth(scip) > branchruledata->maxphase1depth )
+                  branchruledata->done = TRUE;
             }
 
             break;
@@ -1130,6 +1148,10 @@ SCIP_RETCODE selectCandidate(
             break;
          }
 
+         /* store strong branching score of the candidate that was selected by the heuristic */
+         if( phase>0 && heurincumbentindex == indices[c] )
+               heurincumbentsbscore = score;
+
          if( nneededcands == 1 )
          {
             if( score > maxscore )
@@ -1149,6 +1171,7 @@ SCIP_RETCODE selectCandidate(
                   break;
                }
             }
+
          }
          else
          {
@@ -1161,42 +1184,48 @@ SCIP_RETCODE selectCandidate(
          qsort(indices, ncands, sizeof(int), score_compare_function);
          ncands = MIN(ncands, nneededcands);
 
-         if( phase == 0 && nneededhistcands )
+         if( phase == 0 )
          {
-            /* swap out the worst performing "new" candidates with the best performing historical candidates */
-            int *indicescopy;
-            int pos;
+            heurincumbentindex = indices[0];
 
-            SCIP_CALL( SCIPallocBufferArray(masterscip, &indicescopy, ncands) );
-            pos = nneededhistcands;
-
-            for( int i = 0; i<ncands; i++ )
+            if( nneededhistcands )
             {
-               indicescopy[i] = indices[i];
-            }
+               /* swap out the worst performing "new" candidates with the best performing historical candidates */
+               int *indicescopy;
+               int pos;
 
-            for( int i = 0; i<nneededhistcands; i++ )
-            {
-               indices[i] = histindices[i];
-            }
+               SCIP_CALL( SCIPallocBufferArray(masterscip, &indicescopy, ncands) );
+               pos = nneededhistcands;
 
-            /* concatenate the two arrays, while avoiding duplicates */
-            for( int i = 0; i<ncands && pos<=ncands; i++ )
-            {
-               for( int j = 0; j<=nneededhistcands; j++ )
+               for( int i = 0; i<ncands; i++ )
                {
-                  if( j == nneededhistcands )
+                  indicescopy[i] = indices[i];
+               }
+
+               for( int i = 0; i<nneededhistcands; i++ )
+               {
+                  indices[i] = histindices[i];
+               }
+
+               /* concatenate the two arrays, while avoiding duplicates */
+               for( int i = 0; i<ncands && pos<=ncands; i++ )
+               {
+                  for( int j = 0; j<=nneededhistcands; j++ )
                   {
-                     indices[pos] = indicescopy[i];
-                     pos++;
+                     if( j == nneededhistcands )
+                     {
+                        indices[pos] = indicescopy[i];
+                        pos++;
+                     }
+                     else if( indices[j] == indicescopy[i] )
+                        break;
                   }
-                  else if( indices[j] == indicescopy[i] )
-                     break;
+                  
                }
                
+               SCIPfreeBufferArray(masterscip, &indicescopy);
             }
-            
-            SCIPfreeBufferArray(masterscip, &indicescopy);
+
          }
 
       }
@@ -1232,6 +1261,7 @@ SCIP_RETCODE selectCandidate(
    {
       SCIPdebugMessage("Strong branching selected variables %s and %s%s\n", SCIPvarGetName(*outcand1), SCIPvarGetName(*outcand2), (*bestupinf || *bestdowninf)? ", branching on which is infeasible in one direction" : "");
    }
+
    if( branchruledata->initiator == RYANFOSTER && (branchruledata->usepseudocosts || branchruledata->mostfrac ) )
    {
       SCIPhashmapFree(&solhashmap);
@@ -1239,6 +1269,16 @@ SCIP_RETCODE selectCandidate(
    
    if( !*bestupinf && !*bestdowninf )
    {
+      /* if the heuristic was close multiple times in a row, stop strong branching */
+      if( branchruledata->maxconsecheurclose >= 0 && heurincumbentsbscore >= branchruledata->closepercentage * maxscore )
+      {
+         branchruledata->consecheurclose++;
+         if( branchruledata->consecheurclose >= branchruledata->maxconsecheurclose )
+            branchruledata->done = TRUE;
+      }
+      else
+         branchruledata->consecheurclose = 0;
+
       for( int i=0; i<branchruledata->maxvars; i++ )
       {
          branchruledata->sbscoreisrecent[i] = FALSE;
@@ -1323,13 +1363,16 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
    branchruledata->nsblpiterations = 0;
    branchruledata->nsbpricerounds = 0;
 
+   branchruledata->consecheurclose = 0;
+   branchruledata->done = FALSE;
+
    SCIP_CALL( SCIPgetRealParam(origprob, "branching/bp_strong/depthlogweight", &logweight) );
    if( logweight > 0 )
    {
       SCIP_CALL( SCIPgetRealParam(origprob, "branching/bp_strong/depthlogbase", &logbase) );
       SCIP_CALL( SCIPgetRealParam(origprob, "branching/bp_strong/depthlogphase0frac", &phase0frac) );
       SCIP_CALL( SCIPgetRealParam(origprob, "branching/bp_strong/depthlogphase2frac", &phase2frac) );
-      nvars = SCIPgetNVars(origprob);
+      nvars = SCIPgetNIntVars(origprob) + SCIPgetNBinVars(origprob);
 
       phase1depth = log(nvars)/log(logbase);
 
@@ -1439,6 +1482,14 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
          "if using a logarithm to compute the depth of hybrid branching, what should be the fraction of the depth assigned to phase 1 that is assigned to phase 2?",
          NULL, FALSE, DEFAULT_DEPTHLOGPHASE2FRAC, 0, 1, NULL, NULL) );
 
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/closepercentage",
+         "what percentage of the strong branching score of the candidate that was selected does the heuristic's incumbent need to be considered close (e.g. 0.5 = 50%)?",
+         &branchruledata->closepercentage, FALSE, DEFAULT_CLOSEPERCENTAGE, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/maxconsecheurclose",
+         "how many times in a row can the heuristic be close before strong branching is stopped?",
+         &branchruledata->maxconsecheurclose, FALSE, DEFAULT_MAXCONSECHEURCLOSE, -1, INT_MAX, NULL, NULL) );
+
    
 
    
@@ -1464,7 +1515,8 @@ GCGbranchSelectCandidateStrongBranchingOrig(
    SCIP_VAR **branchvar,            /**< pointer to store output var pointer */
    SCIP_Bool *upinf,                /**< pointer to store whether strong branching detected infeasibility in the upbranch */
    SCIP_Bool *downinf,              /**< pointer to store whether strong branching detected infeasibility in the downbranch */
-   SCIP_RESULT *result              /**< pointer to store result */
+   SCIP_RESULT *result,             /**< pointer to store result */
+   SCIP_Bool *stillusestrong        /**< pointer to store whether strong branching has reached a permanent stopping condition for orig ? */
 )
 {
    SCIP_BRANCHRULEDATA *origbranchruledata;
@@ -1501,6 +1553,8 @@ GCGbranchSelectCandidateStrongBranchingOrig(
    }
 
    selectCandidate(scip, branchrule, NULL, NULL, NULL, 0, branchvar, NULL, NULL, upinf, downinf, result);
+
+   *stillusestrong = !branchruledata->done;
 
    return SCIP_OKAY;
 }
