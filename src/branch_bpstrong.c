@@ -341,11 +341,10 @@ SCIP_RETCODE addBranchcandsToData(
    }
    else  /* possibly new variables need to be added */
    {
-
+      SCIP_VAR* var;
       /* if var is not in hashmap, insert it */
       for( i = 0; i < ncands; i++ )
       {
-         SCIP_VAR* var;
          int nvars;
 
          var = var1s[i];

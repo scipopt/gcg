@@ -60,8 +60,9 @@
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
 #define DEFAULT_ENFORCEBYCONS  FALSE
-#define DEFAULT_MOSTFRAC       FALSE
 #define DEFAULT_USEPSEUDO      TRUE
+#define DEFAULT_MOSTFRAC       FALSE
+#define DEFAULT_USERANDOM      FALSE
 #define DEFAULT_USEPSSTRONG    FALSE
 
 /* strong branching */
@@ -83,9 +84,10 @@
 struct SCIP_BranchruleData
 {
    SCIP_Bool             enforcebycons;         /**< should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE) */
-   SCIP_Bool             mostfrac;              /**< should branching be performed on the most fractional variable instead of the first variable? */
    SCIP_Bool             usepseudocosts;        /**< should pseudocosts be used to determine the variable on which the branching is performed? */
-   SCIP_Bool             usepsstrong;           /**< should strong branching with propagation be used to determine the variable on which the branching is performed? */
+   SCIP_Bool             mostfrac;              /**< should branching be performed on the most fractional variable? (only if usepseudocosts = FALSE) */
+   SCIP_Bool             userandom;             /**< should the variable on which the branching is performed be selected randomly? (only if usepseudocosts = mostfrac = FALSE) */
+   SCIP_Bool             usepsstrong;           /**< should strong branching with propagation be used to determine the variable on which the branching is performed? (only if usepseudocosts = mostfrac = random = FALSE)*/
    SCIP_Bool             usestrong;             /**< should strong branching be used to determine the variable on which the branching is performed? */
 };
 
@@ -547,19 +549,7 @@ SCIP_RETCODE branchExtern(
 
    if( !branchruledata->usestrong )
    {
-      if( branchruledata->usepsstrong )
-      {
-         SCIP_CALL( SCIPgetRelpsprobBranchVar(masterscip, branchcands, branchcandssol, npriobranchcands,
-               npriobranchcands, result, &branchvar) );
-         assert(branchvar != NULL || *result == SCIP_CUTOFF);
-         assert(*result == SCIP_DIDNOTRUN || *result == SCIP_CUTOFF);
-
-         if( *result == SCIP_CUTOFF )
-            return SCIP_OKAY;
-
-         solval = SCIPgetRelaxSolVal(scip, branchvar);
-      }
-      else
+      if( branchruledata->usepseudocosts || branchruledata->mostfrac || branchruledata->userandom )
       {
          /* iter = 0: integer variables belonging to a unique block with fractional value,
          * iter = 1: we did not find enough variables to branch on so far, so we look for integer variables that belong to no block
@@ -571,22 +561,38 @@ SCIP_RETCODE branchExtern(
             {
                if( !getUniqueBlockFlagForIter(scip, branchcands[i], iter) )
                   continue;
-               
-               SCIP_CALL( score_function(scip, branchrule, branchcands[i], branchcandssol[i], &score) );
 
-               if( score > maxscore )
+               if( !branchruledata->userandom )
                {
-                  maxscore = score;
+                  SCIP_CALL( score_function(scip, branchrule, branchcands[i], branchcandssol[i], &score) );
+
+                  if( score > maxscore )
+                  {
+                     maxscore = score;
+                     branchvar = branchcands[i];
+                     solval = branchcandssol[i];
+                  }
+               }
+               else
+               {
                   branchvar = branchcands[i];
                   solval = branchcandssol[i];
-
-                  /* if we do not look for the most fractional variable, but for the first fractional variable,
-                  * we can stop here since we found a variable to branch on */
-                  if( !branchruledata->mostfrac && !branchruledata->usepseudocosts )
-                     break;
+                  break;
                }
             }
          }
+      }
+      else if( branchruledata->usepsstrong )
+      {
+         SCIP_CALL( SCIPgetRelpsprobBranchVar(masterscip, branchcands, branchcandssol, npriobranchcands,
+               npriobranchcands, result, &branchvar) );
+         assert(branchvar != NULL || *result == SCIP_CUTOFF);
+         assert(*result == SCIP_DIDNOTRUN || *result == SCIP_CUTOFF);
+
+         if( *result == SCIP_CUTOFF )
+            return SCIP_OKAY;
+
+         solval = SCIPgetRelaxSolVal(scip, branchvar);
       }
 
       
@@ -1006,16 +1012,20 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
          "should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE)",
          &branchruledata->enforcebycons, FALSE, DEFAULT_ENFORCEBYCONS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/mostfrac",
-         "should branching be performed on the most fractional variable instead of the first variable?",
-         &branchruledata->mostfrac, FALSE, DEFAULT_MOSTFRAC, NULL, NULL) );
-
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/usepseudocosts",
          "should pseudocosts be used to determine the variable on which the branching is performed?",
          &branchruledata->usepseudocosts, FALSE, DEFAULT_USEPSEUDO, NULL, NULL) );
 
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/mostfrac",
+         "should branching be performed on the most fractional variable? (only if usepseudocosts = FALSE)",
+         &branchruledata->mostfrac, FALSE, DEFAULT_MOSTFRAC, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/userandom",
+         "should the variable on which the branching is performed be selected randomly? (only if usepseudocosts = mostfrac = FALSE)",
+         &branchruledata->usepseudocosts, FALSE, DEFAULT_USEPSEUDO, NULL, NULL) );
+
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/usepsstrong",
-         "should strong branching with propagation be used to determine the variable on which the branching is performed?",
+         "should strong branching with propagation be used to determine the variable on which the branching is performed? (only if usepseudocosts = mostfrac = random = FALSE)",
          &branchruledata->usepsstrong, FALSE, DEFAULT_USEPSSTRONG, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/usestrong",
