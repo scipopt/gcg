@@ -3,6 +3,7 @@
 [TOC]
 
 > **Note: The features described on this page are available as a preview only on the branch `visu_suite`.**\n
+> **Note:** For the generation of pdfs, the package `latexmk` is required.
 
 > On this page, we **present and guide through the main visualization reporting capabilities** of GCG. 
 > If you want to generate a specific visualization and no complete report, please visit the guide on @ref visu-manual.

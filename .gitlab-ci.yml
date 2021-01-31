@@ -38,7 +38,7 @@ cmake:build:
     - mkdir build
     - cd build
     - cmake ..
-    - make -j 4
+    - make STATISTICS=true -j 4
     - cd ..
   artifacts:
     expire_in: 1 hour
@@ -50,8 +50,8 @@ cmake:build:
 make:build:
   stage: build
   script:
-    - make deps
-    - make
+    - make STATISTICS=true deps
+    - make STATISTICS=true 
     - mkdir -p lib/include
     - mkdir -p lib/static
     ## Cliquer ##
@@ -61,17 +61,17 @@ make:build:
     - ln -sfn ../cliquer-1.21/ lib/cliquer-git
     # link & compile
     - ln -sfn ../cliquer-git/ lib/include/cliquer
-    - make cliquer
+    - make STATISTICS=true cliquer
     - ln -sfn ../cliquer-git/libcliquer.a lib/static/libcliquer.a
-    - make deps CLIQUER=true
-    - make CLIQUER=true
+    - make STATISTICS=true deps CLIQUER=true
+    - make STATISTICS=true CLIQUER=true
     ## Bliss ##
     # link & compile
-    - make bliss
+    - make STATISTICS=true bliss
     - ln -sfn ../bliss-git lib/include/bliss
     - ln -sfn ../bliss-git/libbliss.a lib/static/libbliss.a
-    - make deps CLIQUER=true BLISS=true
-    - make CLIQUER=true BLISS=true
+    - make STATISTICS=true deps CLIQUER=true BLISS=true
+    - make STATISTICS=true CLIQUER=true BLISS=true
     ## hMetis ##
     # link
     - wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/hmetis/hmetis-2.0pre1.tar.gz
@@ -91,12 +91,12 @@ cmake:test:
   before_script: []
   script:
     - cd build
-    - make gcg_check
+    - make STATISTICS=true gcg_check
     - cd ..
   artifacts:
     when: on_success
     paths:
-      - $CI_PROJECT_DIR
+      - build/check/Testing/Temporary/LastTest.log
     expire_in: 3 days
     
 
@@ -106,7 +106,7 @@ make:test:
   needs: ["make:build"]
   before_script: []
   script:
-    - make test
+    - make STATISTICS=true test
   artifacts:
     when: on_success
     paths:
@@ -114,10 +114,14 @@ make:test:
     expire_in: 3 days
 
 # Compile documentation and upload to website
-docu:
+# Only executed on branches `master` and `docu`
+cmake:docu:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: documentation
   needs: ["cmake:build"]
+  only:
+    - master
+    - docu
   script:
     - cd build
     - make gcg_doc -j 4
@@ -126,12 +130,12 @@ docu:
     - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
     - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod -R 755 ./* ; "
 
-testsetreport:
+report:testset:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: report
   needs: ["make:test"]
   script:
-    - git stash
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
     - git checkout visu_suite
     - make visu DATADIR=results/
   artifacts:
@@ -140,7 +144,7 @@ testsetreport:
       - check/reports/*
     expire_in: 3 days
 
-comparisonreport:
+report:compare:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: report
   needs: ["make:test"]
