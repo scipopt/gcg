@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_pricingprob.h
+ * @ingroup DATASTRUCTURES
  * @brief  data structure to store pricing problem information
  * @author Christian Puchert
  */

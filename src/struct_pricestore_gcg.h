@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_pricestore_gcg.h
+ * @ingroup DATASTRUCTURES
  * @brief  datastructures for storing priced cols
  * @author Jonas Witt
  */

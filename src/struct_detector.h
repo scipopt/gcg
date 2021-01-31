@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_detector.h
+ * @ingroup DATASTRUCTURES
  * @brief  data structures for detectors
  * @author Martin Bergner
  * @author Christian Puchert

@@ -25,6 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**@file   stat.h
+ * @ingroup DECOMP
  * @brief  Prints information about the best decomposition
  * @author Alexander Gross
  * @author Martin Bergner

@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   wrapper_partialdecomp.h
+ * @ingroup DECOMP
  * @brief  Provides wrapping to have Partialdecomps as parameters in C-conform function headers with C++
  *         implementations.
  * @author Hanna Franzen
