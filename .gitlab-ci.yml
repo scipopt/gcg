@@ -106,7 +106,7 @@ make:test:
   needs: ["make:build"]
   before_script: []
   script:
-    - make STATISTICS=true MODE=detectionstatistics test
+    - make STATISTICS=true DETECTIONSTATISTICS=true test
   artifacts:
     when: on_success
     name: "make_test"
