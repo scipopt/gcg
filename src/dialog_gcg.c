@@ -871,6 +871,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
    SCIP_RESULT result;
    int presolrounds;
+   SCIP_Bool exit = FALSE;
 
    presolrounds = -1;
 
@@ -880,120 +881,126 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
    assert(SCIPconshdlrDecompCheckConsistency(scip) );
 
- //  SCIPdialogMessage(scip, NULL, "In optimize3 \n");
    SCIPdialogMessage(scip, NULL, "\n");
-   switch( SCIPgetStage(scip) )
+
+   while( !exit )
    {
-   case SCIP_STAGE_INIT:
-      SCIPdialogMessage(scip, NULL, "No problem exists\n");
-      break;
-
-   case SCIP_STAGE_PROBLEM:
-      SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
-   case SCIP_STAGE_TRANSFORMED:
- //     SCIPdialogMessage(scip, NULL, "in transformed \n");
-
-   case SCIP_STAGE_PRESOLVING:
- //     SCIPdialogMessage(scip, NULL, "in presolving \n");
-
-      if( SCIPconshdlrDecompUnpresolvedSeeedExists(scip) )
+      switch( SCIPgetStage(scip) )
       {
-         SCIPinfoMessage(scip, NULL,"there is an unpresolved decomposition and problem is not presolved yet -> disable presolving and start optimizing (rerun with presolve command before detect command for detecting in presolved problem  )  \n");
-         SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
-         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-      }
-      SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+      case SCIP_STAGE_INIT:
+         SCIPdialogMessage(scip, NULL, "No problem exists\n");
+         exit = TRUE;
+         break;
 
-   case SCIP_STAGE_PRESOLVED:
+      case SCIP_STAGE_PROBLEM:
+         SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
+         SCIP_CALL( SCIPtransformProb(scip) );
+         assert(SCIPgetStage(scip) > SCIP_STAGE_PROBLEM);
+         break;
 
-      assert(SCIPconshdlrDecompCheckConsistency(scip) );
-     // SCIPdialogMessage(scip, NULL, "In presolved \n");
-
-      if( !SCIPconshdlrDecompExistsSelected(scip) )
-      {
+      case SCIP_STAGE_TRANSFORMED:
+      case SCIP_STAGE_PRESOLVING:
          if( SCIPconshdlrDecompUnpresolvedSeeedExists(scip) )
          {
-            SCIP_Bool success;
-            SCIPinfoMessage(scip, NULL,"there is an unpresolved decomposition -> try to translate it to presolved problem...  \n");
-            SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
+            SCIPinfoMessage(scip, NULL,"there is an unpresolved decomposition and problem is not presolved yet -> disable presolving and start optimizing (rerun with presolve command before detect command for detecting in presolved problem  )  \n");
+            SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
+            SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+         }
+         SCIP_CALL( SCIPpresolve(scip) );
+         assert(SCIPgetStage(scip) > SCIP_STAGE_PRESOLVING);
+         break;
 
-            if( !success )
+      case SCIP_STAGE_PRESOLVED:
+         assert(SCIPconshdlrDecompCheckConsistency(scip) );
+
+         if( !SCIPconshdlrDecompExistsSelected(scip) )
+         {
+            if( SCIPconshdlrDecompUnpresolvedSeeedExists(scip) )
             {
-               SCIPinfoMessage(scip, NULL,"translatation was not successful -> revoke presolving and use user given decomposition   \n");
-               /* @TODO experimental */
+               SCIP_Bool success;
+               SCIPinfoMessage(scip, NULL,"there is an unpresolved decomposition -> try to translate it to presolved problem...  \n");
+               SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
+
+               if( !success )
+               {
+                  SCIPinfoMessage(scip, NULL,"translation was not successful -> revoke presolving and use user given decomposition   \n");
+                  /* @TODO experimental */
+                  SCIPconshdlrDecompNotifyNonFinalFreeTransform(scip);
+                  SCIPfreeTransform(scip);
+                  SCIPconshdlrDecompNotifyFinishedNonFinalFreeTransform(scip);
+                  SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
+                  SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+                  SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+                  SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
+                  assert(success);
+               }
+               else
+                  SCIPinfoMessage(scip, NULL,"translation was successful \n");
+            }
+         }
+
+         if( !DEChasDetectionRun(scip) && !SCIPconshdlrDecompHasDecomp(scip) )
+         {
+            SCIP_CALL( DECdetectStructure(scip, &result) );
+            if( result == SCIP_DIDNOTFIND )
+            {
+               DEC_DECOMP* bestdecomp;
+               bestdecomp = DECgetBestDecomp(scip);
+               assert(bestdecomp == NULL && DEChasDetectionRun(scip));
+               DECdecompFree(scip, &bestdecomp);
+               SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
+            }
+         }
+         else if(! SCIPconshdlrDecompHasDecomp(scip) )
+         {
+            //assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
+            SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
+         }
+         assert( SCIPconshdlrDecompCheckConsistency(scip) );
+         assert(SCIPgetNConss(scip) == SCIPgetNActiveConss(scip) );
+         if( SCIPconshdlrDecompExistsSelected(scip) )
+            SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE ) );
+         else
+            SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE ) );
+         if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
+         {
+            int npresolvingrounds;
+
+            /* @TODO experimental */
+            SCIPgetIntParam(scip, "presolving/maxrounds", &npresolvingrounds);
+            if( npresolvingrounds > 0)
+            {
+               SCIPinfoMessage(scip, NULL,"best candidate decomposition is from unpresolved problem -> revoke presolving and use it \n");
                SCIPconshdlrDecompNotifyNonFinalFreeTransform(scip);
                SCIPfreeTransform(scip);
                SCIPconshdlrDecompNotifyFinishedNonFinalFreeTransform(scip);
-               SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
                SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
                SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
-               SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
-               assert(success);
             }
-            else
-               SCIPinfoMessage(scip, NULL,"translation was successful \n");
          }
+
+         /*lint -fallthrough*/
+      case SCIP_STAGE_SOLVING:
+         SCIP_CALL( SCIPsolve(scip) );
+         exit = TRUE;
+         break;
+
+      case SCIP_STAGE_SOLVED:
+         SCIPdialogMessage(scip, NULL, "Problem is already solved\n");
+         exit = TRUE;
+         break;
+
+      case SCIP_STAGE_TRANSFORMING:
+      case SCIP_STAGE_INITPRESOLVE:
+      case SCIP_STAGE_EXITPRESOLVE:
+      case SCIP_STAGE_INITSOLVE:
+      case SCIP_STAGE_EXITSOLVE:
+      case SCIP_STAGE_FREETRANS:
+      case SCIP_STAGE_FREE:
+      default:
+         SCIPerrorMessage("Invalid SCIP stage\n");
+         return SCIP_INVALIDCALL;
       }
-
-      if( !DEChasDetectionRun(scip) && !SCIPconshdlrDecompHasDecomp(scip) )
-      {
-         SCIP_CALL( DECdetectStructure(scip, &result) );
-         if( result == SCIP_DIDNOTFIND )
-         {
-            DEC_DECOMP* bestdecomp;
-            bestdecomp = DECgetBestDecomp(scip);
-            assert(bestdecomp == NULL && DEChasDetectionRun(scip));
-            DECdecompFree(scip, &bestdecomp);
-            SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
-         }
-      }
-      else if(! SCIPconshdlrDecompHasDecomp(scip) )
-      {
-         //assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
-         SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
-      }
-
-      /*lint -fallthrough*/
-   case SCIP_STAGE_SOLVING:
-      assert( SCIPconshdlrDecompCheckConsistency(scip) );
-      assert(SCIPgetNConss(scip) == SCIPgetNActiveConss(scip) );
-      if( SCIPconshdlrDecompExistsSelected(scip) )
-         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE ) );
-      else
-         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE ) );
-      if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
-      {
-         int npresolvingrounds;
-
-         /* @TODO experimental */
-         SCIPgetIntParam(scip, "presolving/maxrounds", &npresolvingrounds);
-         if( npresolvingrounds > 0)
-         {
-            SCIPinfoMessage(scip, NULL,"best candidate decomposition is from unpresolved problem -> revoke presolving and use it \n");
-            SCIPconshdlrDecompNotifyNonFinalFreeTransform(scip);
-            SCIPfreeTransform(scip);
-            SCIPconshdlrDecompNotifyFinishedNonFinalFreeTransform(scip);
-            SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-            SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
-         }
-      }
-      SCIP_CALL( SCIPsolve(scip) );
-      break;
-
-   case SCIP_STAGE_SOLVED:
-      SCIPdialogMessage(scip, NULL, "Problem is already solved\n");
-      break;
-
-   case SCIP_STAGE_TRANSFORMING:
-   case SCIP_STAGE_INITPRESOLVE:
-   case SCIP_STAGE_EXITPRESOLVE:
-   case SCIP_STAGE_INITSOLVE:
-   case SCIP_STAGE_EXITSOLVE:
-   case SCIP_STAGE_FREETRANS:
-   case SCIP_STAGE_FREE:
-   default:
-      SCIPerrorMessage("Invalid SCIP stage\n");
-      return SCIP_INVALIDCALL;
    }
    SCIPdialogMessage(scip, NULL, "\n");
 
