@@ -511,6 +511,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    int *nspricingblock;
    int npairs;
    SCIP_Bool duplicate;
+   SCIP_Bool stillusestrong;
 
    int pricingblock;
    SCIP_Bool sameinf;
@@ -779,11 +780,16 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
       if( npairs>0 )
       {
          GCGbranchSelectCandidateStrongBranchingRyanfoster(origscip, branchrule, ovar1s, ovar2s, nspricingblock, npairs,
-                                                            &ovar1, &ovar2, &pricingblock, &sameinf, &differinf, result);
+                                                            &ovar1, &ovar2, &pricingblock, &sameinf, &differinf, result,
+                                                            &stillusestrong);
 
          SCIPfreeBlockMemoryArray(scip, &ovar1s, npairs);
          SCIPfreeBlockMemoryArray(scip, &ovar2s, npairs);
          SCIPfreeBlockMemoryArray(scip, &nspricingblock, npairs);
+         if( !stillusestrong )
+         {
+            SCIPsetBoolParam(origscip, "branching/ryanfoster/usestrong", FALSE);
+         }
       }
    }
 

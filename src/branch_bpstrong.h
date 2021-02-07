@@ -58,7 +58,7 @@ extern SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingOrig(
     SCIP_Bool *upinf,                /**< pointer to store whether strong branching detected infeasibility in the upbranch */
     SCIP_Bool *downinf,              /**< pointer to store whether strong branching detected infeasibility in the downbranch */
     SCIP_RESULT *result,             /**< pointer to store result */
-    SCIP_Bool *stillusestrong        /**< pointer to store whether strong branching has reached a permanent stopping condition for orig ? */
+    SCIP_Bool *stillusestrong        /**< pointer to store whether strong branching has reached a permanent stopping condition for orig */
 );
 
 extern SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingRyanfoster(
@@ -73,7 +73,8 @@ extern SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingRyanfoster(
    int *pricingblock,               /**< pointer to store output pricing block number */
    SCIP_Bool *upinf,                /**< pointer to store whether strong branching detected infeasibility in the upbranch */
    SCIP_Bool *downinf,              /**< pointer to store whether strong branching detected infeasibility in the downbranch */
-   SCIP_RESULT *result              /**< pointer to store result */
+   SCIP_RESULT *result,             /**< pointer to store result */
+   SCIP_Bool *stillusestrong        /**< pointer to store whether strong branching has reached a permanent stopping condition for ryanfoster */
 );
 
 #ifdef __cplusplus

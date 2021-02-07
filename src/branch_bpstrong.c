@@ -1508,7 +1508,7 @@ GCGbranchSelectCandidateStrongBranchingOrig(
    SCIP_Bool *upinf,                /**< pointer to store whether strong branching detected infeasibility in the upbranch */
    SCIP_Bool *downinf,              /**< pointer to store whether strong branching detected infeasibility in the downbranch */
    SCIP_RESULT *result,             /**< pointer to store result */
-   SCIP_Bool *stillusestrong        /**< pointer to store whether strong branching has reached a permanent stopping condition for orig ? */
+   SCIP_Bool *stillusestrong        /**< pointer to store whether strong branching has reached a permanent stopping condition for orig */
 )
 {
    SCIP_BRANCHRULEDATA *origbranchruledata;
@@ -1564,7 +1564,8 @@ GCGbranchSelectCandidateStrongBranchingRyanfoster(
    int *pricingblock,               /**< pointer to store output pricing block number */
    SCIP_Bool *sameinf,              /**< pointer to store whether strong branching detected infeasibility in the samebranch */
    SCIP_Bool *differinf,            /**< pointer to store whether strong branching detected infeasibility in the differbranch */
-   SCIP_RESULT *result              /**< pointer to store result */
+   SCIP_RESULT *result,             /**< pointer to store result */
+   SCIP_Bool *stillusestrong         /**< pointer to store whether strong branching has reached a permanent stopping condition for ryanfoster */
 )
 {
    SCIP_BRANCHRULEDATA *branchruledata;
@@ -1599,6 +1600,8 @@ GCGbranchSelectCandidateStrongBranchingRyanfoster(
    }
 
    selectCandidate(scip, branchrule, ovar1s, ovar2s, nspricingblock, npairs, ovar1, ovar2, pricingblock, sameinf, differinf, result);
+
+   *stillusestrong = !branchruledata->done;
 
    assert(*ovar1!=NULL);
    assert(*ovar2!=NULL);
