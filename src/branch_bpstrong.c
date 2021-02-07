@@ -180,15 +180,8 @@ void *buildIdentifier(
    if( var2 == NULL )
       return (void *) var1;
 
-   int len;
-
-   len = strlen(SCIPvarGetName(var1))+2+strlen(SCIPvarGetName(var2));
-
-   char name[len];
-
-   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s$%s", SCIPvarGetName(var1), SCIPvarGetName(var2));
-
-   return (void *) atoi(name);
+   /* 32768 is 2^15, so half of the binary values for an int... */
+   return (void *) (SCIPvarGetIndex(var1) * 32768 + SCIPvarGetIndex(var2));
 }
 
 /* calculates the number of needed candidates based on the min and max number of candidates as well as the node gap */ 
@@ -300,7 +293,7 @@ SCIP_RETCODE addBranchcandsToData(
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    SCIP_VAR**            var1s,              /**< first parts of branching candidates */
    SCIP_VAR**            var2s,              /**< second parts of branching candidates */
-   int                   ncands    /**< number of priority branching candidates */
+   int                   ncands              /**< number of priority branching candidates */
    )
 {
    SCIP* masterscip;
@@ -317,7 +310,7 @@ SCIP_RETCODE addBranchcandsToData(
    if( branchruledata->nvars == 0 )
    { 
       maxcands = SCIPgetNIntVars(scip) + SCIPgetNBinVars(scip);
-      SCIP_CALL( SCIPhashmapCreate(&(branchruledata->varhashmap), SCIPblkmem(scip), branchruledata->initiator==RYANFOSTER? maxcands*maxcands : maxcands) );
+      SCIP_CALL( SCIPhashmapCreate(&(branchruledata->varhashmap), SCIPblkmem(scip), branchruledata->initiator==RYANFOSTER? ncands : maxcands) );
 
       assert(branchruledata->varhashmap != NULL);
 
@@ -364,7 +357,7 @@ SCIP_RETCODE addBranchcandsToData(
             SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->uniqueblockflags, branchruledata->maxvars,
                newsize) );
             branchruledata->maxvars = newsize;
-
+            
             SCIP_CALL( SCIPhashmapInsertInt(branchruledata->varhashmap, buildIdentifier(var1s[i], var2s!=NULL? var2s[i] : NULL), nvars) );
             branchruledata->strongbranchscore[nvars] = -1;
             branchruledata->sbscoreisrecent[nvars] = FALSE;
@@ -1493,11 +1486,11 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
 
    
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/ryanfoster/usepseudocosts",
-         "should pseudocosts be used as a heuristic for strong branching for ryan-foster?",
+         "should single-variable-pseudocosts be used as a heuristic for strong branching for ryan-foster?",
          NULL, FALSE, DEFAULT_RFUSEPSEUDOCOSTS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/ryanfoster/usemostfrac",
-         "should fractionality be used as a heuristic for strong branching for ryan-foster?",
+         "should single-variable-fractionality be used as a heuristic for strong branching for ryan-foster?",
          NULL, FALSE, DEFAULT_RFUSEMOSTFRAC, NULL, NULL) );
 
 
@@ -1606,6 +1599,9 @@ GCGbranchSelectCandidateStrongBranchingRyanfoster(
    }
 
    selectCandidate(scip, branchrule, ovar1s, ovar2s, nspricingblock, npairs, ovar1, ovar2, pricingblock, sameinf, differinf, result);
+
+   assert(*ovar1!=NULL);
+   assert(*ovar2!=NULL);
 
    return SCIP_OKAY;
 }

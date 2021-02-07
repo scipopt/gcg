@@ -510,6 +510,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    SCIP_VAR** ovar2s;
    int *nspricingblock;
    int npairs;
+   SCIP_Bool duplicate;
 
    int pricingblock;
    SCIP_Bool sameinf;
@@ -674,15 +675,29 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
                }
                else
                {
-                  SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar1s, npairs, npairs+1) );
-                  SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar2s, npairs, npairs+1) );
-                  SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &nspricingblock, npairs, npairs+1) );
-                  
-                  ovar1s[npairs] = ovar1;
-                  ovar2s[npairs] = ovar2;
-                  nspricingblock[npairs] = GCGvarGetBlock(mvar1);
+                  /* we need to check first whether we already found this pair */
+                  duplicate = FALSE;
+                  for( int z=0; z<npairs; z++ )
+                  {
+                     if( ovar1s[z] == ovar1 && ovar2s[z] == ovar2 )
+                     {
+                        duplicate = TRUE;
+                        break;
+                     }
+                  }
 
-                  npairs++;
+                  if( !duplicate )
+                  {
+                     SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar1s, npairs, npairs+1) );
+                     SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar2s, npairs, npairs+1) );
+                     SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &nspricingblock, npairs, npairs+1) );
+                     
+                     ovar1s[npairs] = ovar1;
+                     ovar2s[npairs] = ovar2;
+                     nspricingblock[npairs] = GCGvarGetBlock(mvar1);
+
+                     npairs++;
+                  }
                }
             }
 
@@ -729,15 +744,29 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
                   }
                   else
                   {
-                     SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar1s, npairs, npairs+1) );
-                     SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar2s, npairs, npairs+1) );
-                     SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &nspricingblock, npairs, npairs+1) );
-                     
-                     ovar1s[npairs] = ovar1;
-                     ovar2s[npairs] = ovar2;
-                     nspricingblock[npairs] = GCGvarGetBlock(mvar1);
+                     /* we need to check first whether we already found this pair */
+                     duplicate = FALSE;
+                     for( int z=0; z<npairs; z++ )
+                     {
+                        if( ovar1s[z] == ovar1 && ovar2s[z] == ovar2 )
+                        {
+                           duplicate = TRUE;
+                           break;
+                        }
+                     }
 
-                     npairs++;
+                     if( !duplicate )
+                     {
+                        SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar1s, npairs, npairs+1) );
+                        SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar2s, npairs, npairs+1) );
+                        SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &nspricingblock, npairs, npairs+1) );
+                        
+                        ovar1s[npairs] = ovar1;
+                        ovar2s[npairs] = ovar2;
+                        nspricingblock[npairs] = GCGvarGetBlock(mvar1);
+
+                        npairs++;
+                     }
                   }
                }
             }
