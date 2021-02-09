@@ -39,6 +39,15 @@ as usual linking variables.
 This score encourages set partitioning master constraints through combining the usual foreseeing max white score with a 
 boolean score rewarding a master containing only set partitioning and cardinality constraints.
 
+\f{align}{
+    \text{s}_\text{spfwh} =
+    \begin{cases}
+        \frac{1}{2} \text{s}_\text{forswh} + 0.5 & \text{, if master is set partitioning and }nblocks > 1 \\
+        \frac{1}{2} \text{s}_\text{forswh} & \text{, else}
+    \end{cases}
+\f}
+
+
 ### Experimental Benders Score (`bender`)
 This score should always and exlusively be used when using the @ref benders "Benders mode". Its calculation is as follows:
 
