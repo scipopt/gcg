@@ -38,7 +38,7 @@ build_job:
 #      - ln -s bliss-git bliss
 #      - cd ..
   script:
-      - cmake ..
+      - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF ..
       - make gcg_doc -j 2
       - cd ..
       # js
