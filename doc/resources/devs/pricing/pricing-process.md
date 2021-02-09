@@ -6,6 +6,7 @@ blocks (see @ref detection). Using this structure, we can apply a Dantzig-Wolfe 
 the theorem of Minkowski-Weyl to reformulate the constraints that we "can handle well". 
 This will create a stronger model already.
 
+# The GCG Pricing Process
 ## Branch-and-Price
 In every iteration of the branch-and-bound tree, instead of an LP solver, the GCG relaxator
 (see `relax_gcg.c`) is called to perform a Dantzig-Wolfe reformulation on the current problem,

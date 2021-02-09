@@ -7,6 +7,8 @@
 > However, you might need to **generate single visualizations manually**, which is what is explained
 > on this page.
 
+# Visualization Generation
+
 ## Common Prerequisites {#visu-prerequisites}
 In this section, we describe what is required to generate the visualizations using
 the included visualization scripts. They are also required to be fulfilled if you

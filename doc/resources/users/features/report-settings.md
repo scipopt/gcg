@@ -1,4 +1,6 @@
 # Settings for Reports {#report-settings}
+
+# Report Settings
 ## Giving a Report Settings File
 In every case, the settings file, e.g. `settings.vset`, should simply look like this:
 ```
