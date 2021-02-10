@@ -110,7 +110,6 @@ make:test:
     - make STATISTICS=true DETECTIONSTATISTICS=true test
   artifacts:
     when: on_success
-    name: "make_test"
     paths:
       - check/results/*
     expire_in: 3 days
@@ -139,10 +138,11 @@ report:testset:
   script:
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
     - git checkout visu_suite
+    - make STATISTICS=true CLIQUER=true BLISS=true
     - make visu DATADIR=results/
   artifacts:
     when: on_success
-    name: "testsetreport_$CI_JOB_NAME"
+    name: "testsetreport_$CI_JOB_ID"
     paths:
       - check/reports/*
     expire_in: 3 days
@@ -160,7 +160,7 @@ report:compare:
     - echo "c" | make visu DATADIR=results/
   artifacts:
     when: on_success
-    name: "comparisonreport_$CI_JOB_NAME"
+    name: "comparisonreport_$CI_JOB_ID"
     paths:
       - check/reports/*
     expire_in: 3 days
