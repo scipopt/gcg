@@ -91,6 +91,7 @@ cmake:test:
   before_script: []
   script:
     - cd build
+    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF ..
     - make STATISTICS=true gcg_check
     - cd ..
   artifacts:
