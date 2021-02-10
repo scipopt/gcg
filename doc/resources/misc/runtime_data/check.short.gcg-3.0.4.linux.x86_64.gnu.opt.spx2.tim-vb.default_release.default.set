@@ -1062,7 +1062,7 @@ timing/statistictiming = TRUE
 
 # name of the VBC tool output file, or - if no VBC tool output should be created
 # [type: string, advanced: FALSE, default: "-"]
-visual/vbcfilename = "results/vbc/strong_s_75_15_18.default_release.vbc"
+visual/vbcfilename = "results/vbc/short/strong_s_75_15_18.default_release.vbc"
 
 # name of the BAK tool output file, or - if no BAK tool output should be created
 # [type: string, advanced: FALSE, default: "-"]
