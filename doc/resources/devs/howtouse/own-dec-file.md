@@ -10,7 +10,7 @@ This page will give a short introduction to the `.dec` file format by means of a
 and an extensive list of possible declarations. Note that if GCG has already found the
 desired decomposition, you can also write it out using `write selected` (see @ref u3 for more details).
 ## Introduction
-A standard file format used by GCG as well as other solvers such as DECOMP or DIP is the `.dec` file.
+A standard file format used by GCG as well as other solvers such as DECOMP or DIP is the `.dec` file. It can be read into GCG by typing `read <decfile>`.
 Inside it, you can define different things, most importantly, you can 
 **fix variables/constraints to a block or the master problem** such that the problem can 
 later be decomposed by means of a @ref pricing-process "Dantzig-Wolfe decomposition" as efficiently as possible. 

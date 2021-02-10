@@ -138,8 +138,8 @@ report:testset:
   script:
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
     - git checkout visu_suite
-    - make STATISTICS=true CLIQUER=true BLISS=true
-    - make visu DATADIR=results/
+    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - make visu DATADIR=results/ VISUSETTINGS=../v.vset
   artifacts:
     when: on_success
     name: "testsetreport_$CI_JOB_ID"
@@ -154,10 +154,11 @@ report:compare:
   script:
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
     # copy runtime data from documentation files (from latest release) to check/results/, renaming its settings (default) to "default_release"
-    - for file in $(ls -d doc/resources/misc/runtime_data/*.* ); do cp $file check/results/$(echo $(basename $file) | sed "s/default\.default\./default_release\.default\./g") -r; done
-    - for file in $(ls -d doc/resources/misc/runtime_data/vbc/*.* ); do cp $file check/results/vbc/$(echo $(basename $file) | sed "s/default\.vbc/default_release\.vbc/g") -r; done
+    - cp doc/resources/misc/runtime_data/*.* check/results/
+    - cp doc/resources/misc/runtime_data/vbc/*.* check/results/vbc
     - git checkout visu_suite
-    - echo "c" | make visu DATADIR=results/
+    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
   artifacts:
     when: on_success
     name: "comparisonreport_$CI_JOB_ID"
