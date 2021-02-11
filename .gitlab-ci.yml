@@ -37,7 +37,7 @@ cmake:build:
   script:
     - mkdir build
     - cd build
-    - cmake ..
+    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF ..
     - make STATISTICS=true -j 4
     - cd ..
   artifacts:
