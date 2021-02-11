@@ -18,7 +18,7 @@ stages:
 default:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   before_script:
-    # initialize SSH key to access repositories 
+    # initialize SSH key to access repositories
     - *init_ssh2
     # update submodules
     - git submodule sync --recursive
@@ -51,7 +51,7 @@ make:build:
   stage: build
   script:
     - make STATISTICS=true deps
-    - make STATISTICS=true 
+    - make STATISTICS=true
     - mkdir -p lib/include
     - mkdir -p lib/static
     ## Cliquer ##
@@ -99,7 +99,7 @@ cmake:test:
     paths:
       - build/check/Testing/Temporary/LastTest.log
     expire_in: 3 days
-    
+
 
 # Makefiles test (test set: short)
 make:test:
