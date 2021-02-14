@@ -94,6 +94,8 @@
 #define DEFAULT_CLOSEPERCENTAGE    0.90
 #define DEFAULT_MAXCONSECHEURCLOSE 4
 
+#define DEFAULT_SBPSEUDOCOSTWEIGHT 0.5
+
 #define ORIG         0
 #define RYANFOSTER   1
 #define GENERIC      2
@@ -165,6 +167,8 @@ struct SCIP_BranchruleData
    int                   maxconsecheurclose;    /**< how many times in a row can the heuristic be close before strong branching is stopped? */
 
    SCIP_Bool             done;                  /**< has any of the permanent stopping criteria been reached? */
+
+   SCIP_Real             sbpseudocostweight;    /**< with how much weight should strong branching scores be considered for pseudocost scores? */
 };
 
 /* needed for compare_function (for now)*/
@@ -705,6 +709,8 @@ SCIP_Real score_function(
       SCIP_Bool downvalid;
       SCIP_Real lpobjval;
 
+      int frac;
+
       /* get master problem */
       masterscip = GCGgetMasterprob(scip);
       assert(masterscip != NULL);
@@ -739,6 +745,14 @@ SCIP_Real score_function(
             branchruledata->strongbranchscore[hashindex] = *score;
             branchruledata->sbscoreisrecent[hashindex] = TRUE;
             branchruledata->lastevalnode[hashindex] = currentnodenr;
+
+            if( branchruledata->initiator==ORIG )
+            {
+               /* update pseudocost scores (apparently already happens during probing mode...) */
+               frac = solval1 - SCIPfloor(scip, solval1);
+               SCIP_CALL( SCIPupdateVarPseudocost(scip, var1, 0.0-frac, downgain, 1.0) );
+               SCIP_CALL( SCIPupdateVarPseudocost(scip, var1, 1.0-frac, upgain, 1.0) );
+            }
          }
          //SCIPdebugMessage("Variable %s has downgain %f and upgain %f\n", SCIPvarGetName(var), downgain, upgain);
       }
@@ -1482,6 +1496,9 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
          "how many times in a row can the heuristic be close before strong branching is stopped?",
          &branchruledata->maxconsecheurclose, FALSE, DEFAULT_MAXCONSECHEURCLOSE, -1, INT_MAX, NULL, NULL) );
 
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/sbpseudocostweight",
+         "with how much weight should strong branching scores be considered for pseudocost scores?",
+         &branchruledata->sbpseudocostweight, FALSE, DEFAULT_SBPSEUDOCOSTWEIGHT, 0, 1, NULL, NULL) );
    
 
    
@@ -1511,7 +1528,6 @@ GCGbranchSelectCandidateStrongBranchingOrig(
    SCIP_Bool *stillusestrong        /**< pointer to store whether strong branching has reached a permanent stopping condition for orig */
 )
 {
-   SCIP_BRANCHRULEDATA *origbranchruledata;
    SCIP_BRANCHRULEDATA *branchruledata;
    SCIP_BRANCHRULE *branchrule;
    SCIP* masterscip;
@@ -1524,11 +1540,10 @@ GCGbranchSelectCandidateStrongBranchingOrig(
 
    if( branchruledata->initiator != ORIG )
    {
-      origbranchruledata = SCIPbranchruleGetData(origbranchrule);
-
       branchruledata->initiator = ORIG;
-      branchruledata->usepseudocosts = origbranchruledata->usepseudocosts;
-      branchruledata->mostfrac = origbranchruledata->mostfrac;
+
+      SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepseudocosts", &branchruledata->usepseudocosts) );
+      SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/mostfrac", &branchruledata->mostfrac) );
 
       SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/minphase0outcands", &branchruledata->minphase0outcands) );
       SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/maxphase0outcands", &branchruledata->maxphase0outcands) );
