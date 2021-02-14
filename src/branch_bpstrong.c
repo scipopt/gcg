@@ -94,7 +94,10 @@
 #define DEFAULT_CLOSEPERCENTAGE    0.90
 #define DEFAULT_MAXCONSECHEURCLOSE 4
 
-#define DEFAULT_SBPSEUDOCOSTWEIGHT 0.5
+#define DEFAULT_SBPSEUDOCOSTWEIGHT 1
+
+#define DEFAULT_PHASE1RELIABLE 4
+#define DEFAULT_PHASE2RELIABLE 8
 
 #define ORIG         0
 #define RYANFOSTER   1
@@ -169,6 +172,9 @@ struct SCIP_BranchruleData
    SCIP_Bool             done;                  /**< has any of the permanent stopping criteria been reached? */
 
    SCIP_Real             sbpseudocostweight;    /**< with how much weight should strong branching scores be considered for pseudocost scores? */
+
+   int                   phase1reliable;        /**< min count of pseudocost scores for a variable to be considered reliable in phase 1 */
+   int                   phase2reliable;        /**< min count of pseudocost scores for a variable to be considered reliable in phase 2 */
 };
 
 /* needed for compare_function (for now)*/
@@ -709,7 +715,7 @@ SCIP_Real score_function(
       SCIP_Bool downvalid;
       SCIP_Real lpobjval;
 
-      int frac;
+      SCIP_Real frac;
 
       /* get master problem */
       masterscip = GCGgetMasterprob(scip);
@@ -740,18 +746,28 @@ SCIP_Real score_function(
 
          *score = SCIPgetBranchScore(scip, var1, downgain, upgain);
 
-         if( usecolgen && upvalid && downvalid && !*upinf && !*downinf )
+         if( usecolgen && upvalid && downvalid )
          {
-            branchruledata->strongbranchscore[hashindex] = *score;
-            branchruledata->sbscoreisrecent[hashindex] = TRUE;
-            branchruledata->lastevalnode[hashindex] = currentnodenr;
+            frac = solval1 - SCIPfloor(scip, solval1);
+            if( !*upinf && !*downinf )
+            {
+               branchruledata->strongbranchscore[hashindex] = *score;
+               branchruledata->sbscoreisrecent[hashindex] = TRUE;
+               branchruledata->lastevalnode[hashindex] = currentnodenr;
+            }
 
             if( branchruledata->initiator==ORIG )
             {
-               /* update pseudocost scores (apparently already happens during probing mode...) */
-               frac = solval1 - SCIPfloor(scip, solval1);
-               SCIP_CALL( SCIPupdateVarPseudocost(scip, var1, 0.0-frac, downgain, 1.0) );
-               SCIP_CALL( SCIPupdateVarPseudocost(scip, var1, 1.0-frac, upgain, 1.0) );
+               /* update pseudocost scores */
+               if( !*upinf )
+               {
+                  SCIP_CALL( SCIPupdateVarPseudocost(scip, var1, 1.0-frac, upgain, 1.0) );
+               }
+
+               if( !*downinf)
+               {
+                  SCIP_CALL( SCIPupdateVarPseudocost(scip, var1, 0.0-frac, downgain, 1.0) );
+               }
             }
          }
          //SCIPdebugMessage("Variable %s has downgain %f and upgain %f\n", SCIPvarGetName(var), downgain, upgain);
@@ -804,6 +820,8 @@ SCIP_RETCODE selectCandidate(
 
    int depth;
    int phase0nneededcands;
+
+   SCIP_Real minpscount;
 
    SCIP_Real nodegap;
    SCIP_Real upperbound;
@@ -1108,8 +1126,19 @@ SCIP_RETCODE selectCandidate(
           */
          if( branchruledata->initiator == ORIG )
          {
+            minpscount = MIN(SCIPvarGetPseudocostCount(cand1s[indices[c]], 0), SCIPvarGetPseudocostCount(cand1s[indices[c]], 1));
+            /* only call strong branching if this variable is not sufficiently reliable yet */
+            if(  phase==0 ||
+                (phase==1 && minpscount < branchruledata->phase1reliable) ||
+                (phase==2 && minpscount < branchruledata->phase2reliable)  )
+            {
             SCIP_CALL( score_function(scip, branchrule, cand1s[indices[c]], NULL, branchcandssol[indices[c]], 0,
                                        0, phase == 0, FALSE, phase == 2 && !branchruledata->usestronglite, &score, &upinf, &downinf) );
+            }
+            else
+            {
+               score = branchruledata->score[indices[c]];
+            }
          }
          else
          {
@@ -1499,7 +1528,14 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/sbpseudocostweight",
          "with how much weight should strong branching scores be considered for pseudocost scores?",
          &branchruledata->sbpseudocostweight, FALSE, DEFAULT_SBPSEUDOCOSTWEIGHT, 0, 1, NULL, NULL) );
-   
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/phase1reliable",
+         "min count of pseudocost scores for a variable to be considered reliable in phase 1",
+         &branchruledata->phase1reliable, FALSE, DEFAULT_PHASE1RELIABLE, -1, INT_MAX, NULL, NULL) );   
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/phase2reliable",
+         "min count of pseudocost scores for a variable to be considered reliable in phase 2",
+         &branchruledata->phase2reliable, FALSE, DEFAULT_PHASE2RELIABLE, -1, INT_MAX, NULL, NULL) ); 
 
    
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/ryanfoster/usepseudocosts",
