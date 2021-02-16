@@ -114,22 +114,38 @@ make:test:
       - check/results/*
     expire_in: 3 days
 
-# Compile documentation and upload to website
-# Only executed on branches `master` and `docu`
-cmake:docu:
+# Compile documentation and upload to master-preview
+# Only executed on branch `master`
+docu:master:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
   stage: documentation
   needs: ["cmake:build"]
   only:
     - master
+  script:
+    - cd build
+    - make gcg_doc -j 4
+    - cd ..
+    # upload documentation to gcg.or.rwth-aachen.de/doc-master
+    - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-master
+    - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-master; chmod -R 755 ./* ; "
+    
+# Compile documentation and upload to doc-preview
+# Only executed on branch `docu`
+docu:preview:
+  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
+  stage: documentation
+  needs: ["cmake:build"]
+  only:
     - docu
   script:
     - cd build
     - make gcg_doc -j 4
     - cd ..
-    # upload documentation to gcg.or.rwth-aachen.de/dev
-    - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-dev
-    - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-dev; chmod -R 755 ./* ; "
+    # upload documentation to gcg.or.rwth-aachen.de/doc-preview
+    - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-preview
+    - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-preview; chmod -R 755 ./* ; "
+
 
 report:testset:
   image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
