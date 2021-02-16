@@ -38,6 +38,12 @@ option(CPLEX "should Cplex be used for solving pricing MIPs" OFF)
 option(HMETIS "should hmetis be called" ON)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
 option(GCG_DEV_BUILD "try to build SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
+option(STATISTICS "enable additional statistics (required for pricing visualizations)" OFF)
+
+# STATISTICS
+if(STATISTICS)
+   add_definitions(-DSCIP_STATISTIC)
+endif()
 
 # OPENMP
 if(OPENMP)

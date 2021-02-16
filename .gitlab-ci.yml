@@ -35,16 +35,33 @@ default:
 cmake:build:
   stage: build
   script:
+    # CMake build
     - mkdir build
     - cd build
-    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF ..
-    - make STATISTICS=true -j 4
+    # download and compile cliquer
+    - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
+    - tar xvfz cliquer-1.21.tar.gz
+    - mkdir lib
+    - ln -sfn ../cliquer-1.21/ lib/cliquer-git
+    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DSTATISTICS=ON -DCLIQUER_DIR=lib/cliquer-git/ ..
+    - make -j 4
     - cd ..
   artifacts:
     expire_in: 1 hour
     when: on_success
     paths:
       - $CI_PROJECT_DIR
+
+# CMake debug compilation job
+cmake:debug:build:
+  stage: build
+  script:
+    # CMake debug build
+    - mkdir build_dbg
+    - cd build_dbg
+    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCMAKE_BUILD_TYPE=Debug ..
+    - make -j 4
+    - cd ..
 
 # Make compilation job
 make:build:
@@ -79,7 +96,7 @@ make:build:
     - ln -sfn hmetis-2.0pre1/Linux-x86_64/hmetis2.0pre1 hmetis
     - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/dec_h*partition.cpp
   artifacts:
-    expire_in: 10 minutes
+    expire_in: 1 hour
     when: on_success
     paths:
       - $CI_PROJECT_DIR
@@ -152,7 +169,9 @@ report:testset:
   stage: report
   needs: ["make:test"]
   script:
+    # rename hmetis executable back
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
+    # generate test set report
     - git checkout visu_suite
     - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
@@ -168,10 +187,12 @@ report:compare:
   stage: report
   needs: ["make:test"]
   script:
+    # rename hmetis executable back
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
-    # copy runtime data from documentation files (from latest release) to check/results/, renaming its settings (default) to "default_release"
+    # copy runtime data from documentation files (from latest release) to check/results/
     - cp doc/resources/misc/runtime_data/*.* check/results/
     - cp doc/resources/misc/runtime_data/vbc/*.* check/results/vbc
+    # generate comparison report
     - git checkout visu_suite
     - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
