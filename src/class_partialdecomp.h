@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -164,7 +164,7 @@ private:
    USERGIVEN usergiven;                               /**< is this partialdec partially or completely given by user */
 
    /* score values (or -1 iff nott computed yet) */
-   
+
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
    SCIP_Real borderareascore;                         /**< 1 - fraction of border area to complete area */
    SCIP_Real classicscore;                            /**< classic score to evaluate the partial */
@@ -471,10 +471,8 @@ public:
     * @brief assigns all open constraints and open variables trivially
     *
     *  strategy: assigns all open conss and vars to blocks if they can be refined there, otherwise to the master
-    * 
-    *  @note partialdecomps should usually be completed by a detector, only use this function if you know what you are doing.
     *
-    *  @return scip return code
+    *  @note partialdecomps should usually be completed by a detector, only use this function if you know what you are doing.
     */
    void complete(
       );
@@ -1372,8 +1370,8 @@ public:
       );
 
    /**
-    * @brief sets whether this partialdec was finished by a finishing detector in the original problem 
-    * 
+    * @brief sets whether this partialdec was finished by a finishing detector in the original problem
+    *
     * (in case this partialdec was translated)
     * @param finished was this partialdecs finished by a finishing detector in orig
     */
@@ -1669,7 +1667,7 @@ public:
       );
 
    /** @brief gets the classic score
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcClassicScore
     * @returns border area score
     */
@@ -1682,7 +1680,7 @@ public:
    );
 
    /** @brief gets the border area score
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcBorderAreaScore
     * @returns border area score
     */
@@ -1695,7 +1693,7 @@ public:
    );
 
     /** @brief gets the maximum white area score
-    * 
+    *
     * "maximum white score" is fraction of the area of the decomposed matrix that is neither block or border
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcMaxWhiteScore
     * @returns maximum  white area score
@@ -1709,7 +1707,7 @@ public:
    );
 
    /** @brief gets the maximum foreseeing white area score
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcMaxForseeingWhiteScore
     * @returns maximum foreseeing white area score
     * */
@@ -1722,7 +1720,7 @@ public:
    );
 
    /** @brief gets the setpartitioning maximum foreseeing white area score
-    * 
+    *
     * @note -1 iff not calculated yet, \see GGCGconshdlrDecompCalcSetPartForseeingWhiteScore
     * @returns setpartitioning maximum foreseeing white area score
     * */
@@ -1735,7 +1733,7 @@ public:
    );
 
    /** @brief gets the maximum foreseeing white area score with respect to aggregatable blocks
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore
     * @returns maximum foreseeing white area score with respect to aggregatable blocks
     * */
@@ -1748,7 +1746,7 @@ public:
    );
 
    /** @brief gets the setpartitioning maximum foreseeing white area score with respect to aggregateable
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcSetPartForWhiteAggScore
     * @returns setpartitioning maximum foreseeing white area score with respect to aggregateable
     */
@@ -1761,7 +1759,7 @@ public:
    );
 
    /** @brief gets the benders score
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcBendersScore
     * @returns benders score
     */
@@ -1774,7 +1772,7 @@ public:
    );
 
    /** @brief gets the strong decomposition score
-    * 
+    *
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcStrongDecompositionScore
     * @returns strong decomposition score
     */
@@ -1786,8 +1784,8 @@ public:
       SCIP_Real score   /**< new score value in [0,1] */
    );
 
-   /** sorts the partialdec and calculates a its implicit assignments, hashvalue and evaluation 
-    * 
+   /** sorts the partialdec and calculates a its implicit assignments, hashvalue and evaluation
+    *
     * @returns SCIP_OKAY if the result is consistent, SCIP_ERROR if there was an inconsistency
    */
    void prepare();
@@ -1810,8 +1808,8 @@ public:
       );
 
    /**< @brief gets vector of indices of all constraints assigned to blocks
-    * 
-    * @note conssforblocks[k] contains a vector of indices of all constraints assigned to block k 
+    *
+    * @note conssforblocks[k] contains a vector of indices of all constraints assigned to block k
     * @returns vector of a vector of indices for each block */
    std::vector<std::vector<int>>& getConssForBlocks(
    );
@@ -2022,7 +2020,7 @@ private:
    bool varPartitionUsed(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
-          
+
 };
 
 

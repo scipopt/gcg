@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   decomp.c
- * @ingroup DECOMP
  * @brief  generic methods for working with different decomposition structures
  * @author Martin Bergner
  * @author Michael Bastubbe
@@ -1616,7 +1615,7 @@ SCIP_RETCODE DECdecompSetDetectorChain(
    )
 {
    int d;
-   
+
    /* resize detectorchain */
    int size = SCIPcalcMemGrowSize( scip, ndetectors);
    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray( scip, &decomp->detectorchain, size ) );
@@ -1648,7 +1647,7 @@ int DECdecompGetDetectorChainSize(
 /** sets the id of the original partialdec */
 void DECdecompSetPartialdecID(
    DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   int                   id
+   int                   id                   /**< ID of partialdec */
    )
 {
    assert(decomp != NULL);
@@ -1671,8 +1670,8 @@ int DECdecompGetPartialdecID(
 extern
 void DECdecompSetDetectorClockTimes(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   SCIP_Real*            detectorClockTimes
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_Real*            detectorClockTimes  /**< time used by the detectors */
    )
 {
    int d;
@@ -1706,7 +1705,7 @@ extern
 SCIP_RETCODE DECdecompSetDetectorChainString(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   const char*           detectorchainstring
+   const char*           detectorchainstring  /**< string for the detector information working on that decomposition */
    )
 {
    SCIP_CALL (SCIPduplicateBlockMemoryArray(scip, &(decomp->detectorchainstring), detectorchainstring, SCIP_MAXSTRLEN ) );
@@ -1727,9 +1726,9 @@ char* DECdecompGetDetectorChainString(
 
 /** sets the percentages of variables assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
 void DECdecompSetDetectorPctVarsToBorder(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   SCIP_Real*            pctVarsToBorder
+   SCIP*                 scip,              /**< SCIP data structure */
+   DEC_DECOMP*           decomp,            /**< decomposition data structure */
+   SCIP_Real*            pctVarsToBorder    /**< percentage of variables assigned to border */
    )
 {
    int d;
@@ -1764,8 +1763,8 @@ SCIP_Real* DECdecompGetDetectorPctVarsToBorder(
 /** sets the percentages of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
 void DECdecompSetDetectorPctConssToBorder(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   SCIP_Real*            pctConssToBorder
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_Real*            pctConssToBorder    /**< percentage of constraints assigned to border */
    )
 {
 
@@ -1798,9 +1797,9 @@ SCIP_Real* DECdecompGetDetectorPctConssToBorder(
 
 /** sets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 void DECdecompSetDetectorPctVarsToBlock(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   SCIP_Real*            pctVarsToBlock
+   SCIP*                 scip,             /**< SCIP data structure */
+   DEC_DECOMP*           decomp,           /**< decomposition data structure */
+   SCIP_Real*            pctVarsToBlock    /**< percentage of variables assigned to some block in the detector chain */
    )
 {
    int d;
@@ -1833,9 +1832,9 @@ SCIP_Real* DECdecompGetDetectorPctVarsToBlock(
 
 /** sets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 void DECdecompSetDetectorPctConssToBlock(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   SCIP_Real*            pctConssToBlock
+   SCIP*                 scip,              /**< SCIP data structure */
+   DEC_DECOMP*           decomp,            /**< decomposition data structure */
+   SCIP_Real*            pctConssToBlock    /**< percentage of constraints assigned to some block in the detector chain */
    )
 {
    int d;
@@ -1871,8 +1870,8 @@ SCIP_Real* DECdecompGetDetectorPctConssToBlock(
 /** sets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 void DECdecompSetDetectorPctVarsFromOpen(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   SCIP_Real*            pctVarsFromOpen
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_Real*            pctVarsFromOpen     /**< percentage of open variables assigned to some block in the detector chain */
    )
 {
    int d;
@@ -1907,8 +1906,8 @@ SCIP_Real* DECdecompGetDetectorPctVarsFromOpen(
 /** sets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 void DECdecompSetDetectorPctConssFromOpen(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   SCIP_Real*            pctConssFromOpen
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_Real*            pctConssFromOpen    /**< percentage of open variables assigned to some block in the detector chain */
    )
 {
    int d;
@@ -1944,8 +1943,8 @@ SCIP_Real* DECdecompGetDetectorPctConssFromOpen(
 /** sets the number of new blocks of the corresponding detectors (of the detector chain) on this decomposition */
 void DECdecompSetNNewBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
-   int*                  nNewBlocks
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   int*                  nNewBlocks          /**< number of newly found blocks in this decomposition */
    )
 {
    int d;
@@ -2673,8 +2672,8 @@ SCIP_RETCODE fillConstoblock(
    int                   nconss,             /**< number of constraints */
    SCIP_Bool*            consismaster,       /**< array of flags whether a constraint belongs to the master problem */
    int                   nblocks,            /**< number of blocks */
-   SCIP_HASHMAP*         constoblock,        /**< hashmap from constraints to block numbers, to be filled */
-   SCIP_HASHMAP*         newconstoblock,     /**< */
+   SCIP_HASHMAP*         constoblock,        /**< current hashmap from constraints to block numbers */
+   SCIP_HASHMAP*         newconstoblock,     /**< new hashmap from constraints to block numbers, to be filled */
    int*                  blockrepresentative /**< array of blockrepresentatives */
    )
 {

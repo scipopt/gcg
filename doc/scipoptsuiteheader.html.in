@@ -9,7 +9,7 @@
       </div>
       <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
         <ul class="nav navbar-nav">
-          <li> <a href="http://scip.zib.de">SCIP</a></li>
+          <li> <a href="https://scipopt.org">SCIP</a></li>
           <li> <a href="http://soplex.zib.de">SoPlex</a></li>
           <li> <a href="http://zimpl.zib.de">ZIMPL</a></li>
           <li> <a href="http://ug.zib.de">UG</a></li>

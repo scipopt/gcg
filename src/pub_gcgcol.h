@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_gcgcol.h
- * @ingroup PUBLICMETHODS
+ * @ingroup PUBLICCOREAPI
  * @brief  public methods for working with gcg columns
  * @author Jonas Witt
  */
@@ -50,8 +50,8 @@ extern "C" {
  * GCG Column
  */
 
-/**@defgroup GCG_Column gcg column
- *
+/**@defgroup GCG_COLUMN GCG Column
+ * @ingroup DATASTRUCTURES
  * @{
  */
 
@@ -277,7 +277,6 @@ SCIP_Real GCGcolComputeOrth(
    );
 
 /**@} */
-
 
 #ifdef __cplusplus
 }

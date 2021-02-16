@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -116,7 +116,7 @@ SCIP_RETCODE GraphGCG::addNNodes(int _n_nodes)
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE GraphGCG::addNNodes(int _n_nodes, vector<int> weights)
+SCIP_RETCODE GraphGCG::addNNodes(int _n_nodes, std::vector<int> weights)
 {
    auto res = addNNodes(_n_nodes);
    nodes = vector<int>(weights);

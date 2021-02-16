@@ -6,7 +6,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -458,7 +458,7 @@ endif
 
 .PHONY: doc
 doc:
-		cd doc; $(SHELL) builddoc.sh;
+		@cd doc; export BINDIR=$(PWD)/$(BINDIR); $(SHELL) builddoc.sh --mathjax;
 
 .PHONY: $(MAINSHORTLINK)
 $(MAINSHORTLINK):	$(MAINFILE)
