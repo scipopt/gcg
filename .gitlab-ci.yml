@@ -35,15 +35,13 @@ default:
 cmake:build:
   stage: build
   script:
-    # CMake build
     - mkdir build
     - cd build
-    # download and compile cliquer
+    # download and unpack cliquer (bliss and hmetis already exist)
     - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
     - tar xvfz cliquer-1.21.tar.gz
-    - mkdir lib
-    - ln -sfn ../cliquer-1.21/ lib/cliquer-git
-    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DSTATISTICS=ON -DCLIQUER_DIR=lib/cliquer-git/ ..
+    # main compilation
+    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ ..
     - make -j 4
     - cd ..
   artifacts:
@@ -56,10 +54,13 @@ cmake:build:
 cmake:debug:build:
   stage: build
   script:
-    # CMake debug build
     - mkdir build_dbg
     - cd build_dbg
-    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCMAKE_BUILD_TYPE=Debug ..
+    # download and unpack cliquer (bliss and hmetis already exist)
+    - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
+    - tar xvfz cliquer-1.21.tar.gz
+    # main compilation (build type: debug)
+    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ -DCMAKE_BUILD_TYPE=Debug ..
     - make -j 4
     - cd ..
 
@@ -67,7 +68,7 @@ cmake:debug:build:
 make:build:
   stage: build
   script:
-    - make STATISTICS=true deps
+    - make deps
     - make STATISTICS=true
     - mkdir -p lib/include
     - mkdir -p lib/static
@@ -80,14 +81,14 @@ make:build:
     - ln -sfn ../cliquer-git/ lib/include/cliquer
     - make STATISTICS=true cliquer
     - ln -sfn ../cliquer-git/libcliquer.a lib/static/libcliquer.a
-    - make STATISTICS=true deps CLIQUER=true
+    - make deps CLIQUER=true
     - make STATISTICS=true CLIQUER=true
     ## Bliss ##
     # link & compile
     - make STATISTICS=true bliss
     - ln -sfn ../bliss-git lib/include/bliss
     - ln -sfn ../bliss-git/libbliss.a lib/static/libbliss.a
-    - make STATISTICS=true deps CLIQUER=true BLISS=true
+    - make deps CLIQUER=true BLISS=true
     - make STATISTICS=true CLIQUER=true BLISS=true
     ## hMetis ##
     # link
@@ -108,7 +109,7 @@ cmake:test:
   before_script: []
   script:
     - cd build
-    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF ..
+    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=lib/cliquer-git/ ..
     - make STATISTICS=true gcg_check
     - cd ..
   artifacts:
