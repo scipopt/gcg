@@ -1,4 +1,6 @@
 # GCG Gitlab CI script
+# Can be skipped using `git push --push-option=ci.skip`
+
 .init_ssh2: &init_ssh2 |
   eval $(ssh-agent -s)
   chmod 700 "$PRIVATE_KEY"
@@ -176,6 +178,7 @@ report:testset:
     - git checkout visu_suite
     - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
+    - ln -s $(ls -d check/reports/testsetreport*)/short.default.testsetreport.pdf testsetreport.pdf
   artifacts:
     when: on_success
     name: "testsetreport_$CI_JOB_ID"
@@ -197,6 +200,7 @@ report:compare:
     - git checkout visu_suite
     - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
+    - ln -s $(ls -d check/reports/comparisonreport*)/comparisonreport.pdf comparisonreport.pdf
   artifacts:
     when: on_success
     name: "comparisonreport_$CI_JOB_ID"
