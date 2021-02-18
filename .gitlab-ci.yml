@@ -42,8 +42,8 @@ cmake:build:
     # download and unpack cliquer (bliss and hmetis already exist)
     - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
     - tar xvfz cliquer-1.21.tar.gz
-    # main compilation
-    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ ..
+    # main compilation (build type: debug)
+    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ -DCMAKE_BUILD_TYPE=Debug ..
     - make -j 4
     - cd ..
   artifacts:
@@ -51,20 +51,6 @@ cmake:build:
     when: on_success
     paths:
       - $CI_PROJECT_DIR
-
-# CMake debug compilation job
-cmake:debug:build:
-  stage: build
-  script:
-    - mkdir build_dbg
-    - cd build_dbg
-    # download and unpack cliquer (bliss and hmetis already exist)
-    - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
-    - tar xvfz cliquer-1.21.tar.gz
-    # main compilation (build type: debug)
-    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ -DCMAKE_BUILD_TYPE=Debug ..
-    - make -j 4
-    - cd ..
 
 # Make compilation job
 make:build:
