@@ -104,7 +104,7 @@ cmake:test:
     when: on_success
     paths:
       - build/check/Testing/Temporary/LastTest.log
-    expire_in: 3 days
+    expire_in: 1 day
 
 
 # Makefiles test (test set: short)
@@ -118,7 +118,7 @@ make:test:
     when: on_success
     paths:
       - check/results/*
-    expire_in: 3 days
+    expire_in: 1 day
 
 # Compile documentation and upload to master-preview
 # Only executed on branch `master`
@@ -170,6 +170,7 @@ report:testset:
     name: "testsetreport_$CI_JOB_ID"
     paths:
       - check/reports/*
+      - testsetreport.pdf
     expire_in: 3 days
 
 report:compare:
@@ -192,4 +193,5 @@ report:compare:
     name: "comparisonreport_$CI_JOB_ID"
     paths:
       - check/reports/*
+      - comparisonreport.pdf
     expire_in: 3 days
