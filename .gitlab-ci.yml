@@ -98,7 +98,7 @@ cmake:test:
   script:
     - cd build
     - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=lib/cliquer-git/ ..
-    - make STATISTICS=true gcg_check
+    - make gcg_check
     - cd ..
   artifacts:
     when: on_success
