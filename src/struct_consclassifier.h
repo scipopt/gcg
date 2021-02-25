@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_consclassifier.h
+ * @ingroup DATASTRUCTURES
  * @brief  data structures for constraint classifiers
  * @author William Ma
  */

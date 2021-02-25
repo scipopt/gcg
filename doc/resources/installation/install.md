@@ -1,6 +1,6 @@
 # Installation {#install}
 
-## Welcome to GCG!
+# Welcome to GCG!
 In the following, we want to show you how to install GCG on your **Linux or Mac** computer.\n
 Note that **GCG cannot be installed on Windows out of the box**. If you only have a Windows computer, please see @ref windows-install "Windows Installation Guide" for more information.  \n
 

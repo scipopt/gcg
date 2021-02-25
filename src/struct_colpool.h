@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_colpool.h
+ * @ingroup DATASTRUCTURES
  * @brief  data structures for storing cols in a col pool
  * @author Jonas Witt
  */

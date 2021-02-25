@@ -788,6 +788,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
    SCIP_RESULT result;
    int presolrounds;
+   SCIP_Bool exit = FALSE;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
    presolrounds = -1;
@@ -796,81 +797,89 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    assert(GCGconshdlrDecompCheckConsistency(scip) );
 
    SCIPdialogMessage(scip, NULL, "\n");
-   switch( SCIPgetStage(scip) )
+
+   while( !exit )
    {
-   case SCIP_STAGE_INIT:
-      SCIPdialogMessage(scip, NULL, "No problem exists\n");
-      break;
-
-   case SCIP_STAGE_PROBLEM:
-      SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
-
-      /*lint -fallthrough*/
-   case SCIP_STAGE_TRANSFORMED:
-   case SCIP_STAGE_PRESOLVING:
-      if( GCGconshdlrDecompOrigPartialdecExists(scip) )
+      switch( SCIPgetStage(scip) )
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "there is an original decomposition and problem is not presolved yet -> disable presolving and start optimizing (rerun with presolve command before detect command for detecting in presolved problem)  \n");
-         SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
-         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-      }
-      SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+      case SCIP_STAGE_INIT:
+         SCIPdialogMessage(scip, NULL, "No problem exists\n");
+         exit = TRUE;
+         break;
 
-      GCGconshdlrDecompTranslateOrigPartialdecs(scip);
+      case SCIP_STAGE_PROBLEM:
+         SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
+         SCIP_CALL( SCIPtransformProb(scip) );
+         assert(SCIPgetStage(scip) > SCIP_STAGE_PROBLEM);
 
-      /*lint -fallthrough*/
-   case SCIP_STAGE_PRESOLVED:
-      assert(GCGconshdlrDecompCheckConsistency(scip) );
-
-      if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
-      {
-         SCIP_CALL( DECdetectStructure(scip, &result) );
-         if( result == SCIP_DIDNOTFIND )
+      case SCIP_STAGE_TRANSFORMED:
+      case SCIP_STAGE_PRESOLVING:
+         if( GCGconshdlrDecompOrigPartialdecExists(scip) )
          {
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "there is an original decomposition and problem is not presolved yet -> disable presolving and start optimizing (rerun with presolve command before detect command for detecting in presolved problem)  \n");
+            SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
+            SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+         }
+         SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+
+         GCGconshdlrDecompTranslateOrigPartialdecs(scip);
+         assert(SCIPgetStage(scip) > SCIP_STAGE_PRESOLVING);
+         break;
+
+      case SCIP_STAGE_PRESOLVED:
+         assert(GCGconshdlrDecompCheckConsistency(scip) );
+
+         if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
+         {
+            SCIP_CALL( DECdetectStructure(scip, &result) );
+            if( result == SCIP_DIDNOTFIND )
+            {
+               DEC_DECOMP* bestdecomp;
+               bestdecomp = DECgetBestDecomp(scip, TRUE);
+               assert(bestdecomp == NULL && (GCGdetectionTookPlace(scip, TRUE) || GCGdetectionTookPlace(scip, FALSE)));
+               DECdecompFree(scip, &bestdecomp);
+               SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
+            }
+         }
+         else if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) > 0 )
+         {
+   #ifndef NDEBUG
             DEC_DECOMP* bestdecomp;
             bestdecomp = DECgetBestDecomp(scip, TRUE);
-            assert(bestdecomp == NULL && (GCGdetectionTookPlace(scip, TRUE) || GCGdetectionTookPlace(scip, FALSE)));
+            assert(bestdecomp != NULL);
             DECdecompFree(scip, &bestdecomp);
+   #endif
+            SCIPdialogMessage(scip, NULL, "Preexisting decomposition found. Solution process started...\n");
+         }
+         else if( GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
+         {
             SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
          }
+         assert(GCGconshdlrDecompCheckConsistency(scip));
+         assert(SCIPgetNConss(scip) == SCIPgetNActiveConss(scip));
+
+         /*lint -fallthrough*/
+      case SCIP_STAGE_SOLVING:
+         SCIP_CALL( SCIPsolve(scip) );
+         exit = TRUE;
+         break;
+
+      case SCIP_STAGE_SOLVED:
+         SCIPdialogMessage(scip, NULL, "Problem is already solved\n");
+         exit = TRUE;
+         break;
+
+      case SCIP_STAGE_TRANSFORMING:
+      case SCIP_STAGE_INITPRESOLVE:
+      case SCIP_STAGE_EXITPRESOLVE:
+      case SCIP_STAGE_INITSOLVE:
+      case SCIP_STAGE_EXITSOLVE:
+      case SCIP_STAGE_FREETRANS:
+      case SCIP_STAGE_FREE:
+      default:
+         SCIPerrorMessage("Invalid SCIP stage\n");
+         return SCIP_INVALIDCALL;
       }
-      else if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) > 0 )
-      {
-#ifndef NDEBUG
-         DEC_DECOMP* bestdecomp;
-         bestdecomp = DECgetBestDecomp(scip, TRUE);
-         assert(bestdecomp != NULL);
-         DECdecompFree(scip, &bestdecomp);
-#endif
-         SCIPdialogMessage(scip, NULL, "Preexisting decomposition found. Solution process started...\n");
-      }
-      else if( GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
-      {
-         SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
-      }
-
-      /*lint -fallthrough*/
-   case SCIP_STAGE_SOLVING:
-      assert( GCGconshdlrDecompCheckConsistency(scip) );
-      assert(SCIPgetNConss(scip) == SCIPgetNActiveConss(scip) );
-
-      SCIP_CALL( SCIPsolve(scip) );
-      break;
-
-   case SCIP_STAGE_SOLVED:
-      SCIPdialogMessage(scip, NULL, "Problem is already solved\n");
-      break;
-
-   case SCIP_STAGE_TRANSFORMING:
-   case SCIP_STAGE_INITPRESOLVE:
-   case SCIP_STAGE_EXITPRESOLVE:
-   case SCIP_STAGE_INITSOLVE:
-   case SCIP_STAGE_EXITSOLVE:
-   case SCIP_STAGE_FREETRANS:
-   case SCIP_STAGE_FREE:
-   default:
-      SCIPerrorMessage("Invalid SCIP stage\n");
-      return SCIP_INVALIDCALL;
    }
    SCIPdialogMessage(scip, NULL, "\n");
 
