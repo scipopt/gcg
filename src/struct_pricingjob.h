@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_pricingjob.h
+ * @ingroup DATASTRUCTURES
  * @brief  data structure for pricing jobs
  * @author Christian Puchert
  */

@@ -2,8 +2,8 @@
 > **This page is still in development and may be incomplete. Please excuse any inconveniences.**
 
 # The GCG Decomposition Scoring
-As explained in @ref detection, GCG is decomposing problems, reformulating each to finally solve the whole 
-problem more efficiently. The algorithmics are generating a **high number of different decompositions** 
+As explained in @ref detection, GCG is decomposing problems, reformulating each to finally solve the whole
+problem more efficiently. The algorithmics are generating a **high number of different decompositions**
 (see @ref detection-process).
 The challenge is to choose **which one of them is the most promising**, i.e. that can be reformulated and solved
 best. In many cases, this desired decomposition coincides with the model structure that users probably already
@@ -26,23 +26,32 @@ Minimizes the area that the borders take:
 ```
 
 ### Max White Score
-In the following, we present all variants of the **white area score** that, if we maximize it, will 
+In the following, we present all variants of the **white area score** that, if we maximize it, will
 **maximize the non-block and non-border area** (see @ref structure-types for more information on those).
-It can be seen as if the white space (zeroes in the coefficient matrix) is maximized, which is illustrated very 
+It can be seen as if the white space (zeroes in the coefficient matrix) is maximized, which is illustrated very
 nicely when visualizing decompositions using @ref explore-menu (for an example, see @ref structure-types).
 
 #### Foreseeing Max White Score (`forswh`/`fawh` [with aggregation info])
-This score is the unchanged variant of the max white score as described above. Stair-linking variables count 
+This score is the unchanged variant of the max white score as described above. Stair-linking variables count
 as usual linking variables.
 
 #### Set Partitioning Foreseeing Max White Score (`spfwh`/`spfawh` [with aggregation info])
-This score encourages set partitioning master constraints through combining the usual foreseeing max white score with a 
+This score encourages set partitioning master constraints through combining the usual foreseeing max white score with a
 boolean score rewarding a master containing only set partitioning and cardinality constraints.
+
+\f{align}{
+    \text{s}_\text{spfwh} =
+    \begin{cases}
+        \frac{1}{2} \text{s}_\text{forswh} + 0.5 & \text{, if master is set partitioning and }nblocks > 1 \\
+        \frac{1}{2} \text{s}_\text{forswh} & \text{, else}
+    \end{cases}
+\f}
+
 
 ### Experimental Benders Score (`bender`)
 This score should always and exlusively be used when using the @ref benders "Benders mode". Its calculation is as follows:
 
-\f{align}{ 
+\f{align}{
     \text{s}_\text{benders} =& \max(0, 1- (\text{s}_\text{blockarea} + (\text{s}_\text{borderarea} - \text{s}_\text{bendersarea})))\\
     \text{with} \\
     \text{s}_\text{blockarea} =& 1- \frac{\text{blockarea}}{\text{totalarea}}\\

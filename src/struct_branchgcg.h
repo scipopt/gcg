@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_branchgcg.h
+ * @ingroup DATASTRUCTURES
  * @brief  data structures for branching rules
  * @author Gerald Gamrath
  */

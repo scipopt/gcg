@@ -198,7 +198,7 @@ while true; do
   done
   
   # check for BOOST, set it to false if not installed
-  dpkg -l boost > /dev/null 2>&1
+  dpkg -l libboost-program-options-dev > /dev/null 2>&1
   if [ $? != "0" ]; then 
     FLAGS+=" BOOST=false";
     echo "Information: No BOOST installation found. Compiling without BOOST.";

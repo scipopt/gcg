@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    solver.h
+ * @ingroup PRICING
  * @brief   private methods for GCG pricing solvers
  * @author  Henri Lotze
  * @author  Christian Puchert

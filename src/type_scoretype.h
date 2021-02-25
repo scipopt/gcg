@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   type_scoretype.h
+ * @ingroup DECOMP
  * @brief  type definition for score type
  * @author Michael Bastubbe
  * @author Hanna Franzen

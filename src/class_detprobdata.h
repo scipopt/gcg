@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   class_detprobdata.h
+ * @ingroup DECOMP
  * @brief  class storing partialdecs and the problem matrix
  * @note   formerly called "Seeedpool"
  * @author Michael Bastubbe

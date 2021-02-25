@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_gcgpqueue.h
+ * @ingroup DATASTRUCTURES
  * @brief  data structure for priority queue
  * @author Jonas Witt
  */
