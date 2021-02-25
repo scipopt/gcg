@@ -80,7 +80,7 @@ SECTION: General Questions about GCG
       After detecting, perform a <code>write alldecompositions</code> to export all decompositions.
     </p>
     <p>
-      If you still want to write your .dec-file by hand, you can find the required syntax <a href="reader__dec_8h.html">here</a>.
+      If you still want to write your .dec-file by hand, you can find the required syntax <a href="reader__dec_8h.html">here</a>. A more human readable example and information how to use the .dec-file can be found in <a href="own-dec-file.html">How to create and use your own decomposition</a>
     </p>
 
     QUESTION: How do I generate decomposition visualizations?
@@ -94,6 +94,8 @@ SECTION: General Questions about GCG
       To find out which decomposition stems from what other, GCG can also generate a decomposition "family tree".
       This is done with "write familytree".
     </p>
+    <p>
+      To visualize the coefficient matrix of the original coefficient matrix, read the problem in and use <code>write matrix</code>.
 
     QUESTION: How do I generate runtime visualizations?
     LABEL:runvisu
