@@ -5,6 +5,7 @@
 New features:
 -------------
 
+- New website documentation
 - New detector neighborhoodmaster: calculating cons-cons adjacency (if not already done), sorting according size of neighborhood. Searching two consecutive constraints with largest size difference (according neighborhood size) in sorted constraints. All constraints having a larger neighborhood than the second one are assigned to the master.
 - On reading an incomplete decomposition, the program will not necessarily assign all open elements to the master problem but detect the rest of the structure.
 
@@ -50,11 +51,6 @@ New/changed menu commands:
 - Renamed command 'write reportdecompositions' to 'write report'
 - Renamed command 'write selecteddecompositions' to 'write selected'
 
-
-@page RN30 Release notes for GCG 3.0
-@section RN302 GCG 3.0.2
-*************************
-
 Visualization and testing:
 --------------------------
 
@@ -72,8 +68,11 @@ Code cleanup:
 - Renamed {Index,Cons,Var}Classifier to {Index,Cons,Var}Partition
 
 
-GCG Version 3.0.4
-=================
+
+
+@page RN30 Release notes for GCG 3.0
+@section RN304 GCG 3.0.4
+*************************
 
 Bug fixes
 ---------
@@ -82,37 +81,25 @@ Bug fixes
 - Fix commands 'transform' and 'presolve': Check SCIP_STAGE before calling SCIPdialogExecTransform() and SCIPdialogExecPresolve().
 
 
-GCG Version 3.0.3
-=================
+@section RN303 GCG 3.0.3
+*************************
 
 Bug fixes
 ---------
 
-- Fix several segmentation faults.
+- Fix several segmentation faults. 
 - Skip Farkas pricing only if at least one solution of the original problem was successfully added to the master variable space.
 - Interrupt the pricing loop if SCIP reports that the solving process should be stopped.
 - Disable the column pool in probing mode.
 - 'write matrix' and 'write transmatrix' set PDF as file format in the created gnuplot file.
 
 
-GCG Version 3.0.2
-=================
+@section RN302 GCG 3.0.2
+*************************
 
 Bug fixes
 ---------
 
-- Fix several segmentation faults.
-- Skip Farkas pricing only if at least one solution of the original problem was successfully added to the master variable space.
-- Interrupt the pricing loop if SCIP reports that the solving process should be stopped.
-- Disable the column pool in probing mode.
-- 'write matrix' and 'write transmatrix' set PDF as file format in the created gnuplot file.
-
-
-GCG Version 3.0.2
-=================
-
-Bug fixes
----------
 - Fix segmentation fault due to missing relaxsol event handler in BENDERS and ORIGINAL mode.
 - Fix cmake module FindBLISS to handle GMP dependency correctly.
 - Fix branching on directly transferred master variables in generic branching.
@@ -127,19 +114,17 @@ Bug fixes
 @section RN301 GCG 3.0.1
 *************************
 
-Command line interface:
+Command line interface
 -----------------------
 
 - 'write matrix' and 'write transmatrix' for writing a gnuplot file showing the (original and presolved) coefficient matrix
 
-- 'write selecteddecompositions' for writing all selected (in explore submenu) decompositions
-
-New/changed parameters:
+New/changed parameters
 -----------------------
 
 - new parameter "relaxing/gcg/mipdiscretization" indicates whether to use discretization with continuous variables (only has an effect if "relaxing/gcg/discretization" is enabled)
 
-Performance improvements:
+Performance improvements
 -------------------------
 
 - Improved performance of creating Gnuplot matrix visualizations
@@ -171,10 +156,9 @@ Bug fixes
 - Fix parallelization in pricing loop by allowing only one job per pricing problem at a time
 - Add a missing Makefile dependency
 
+
 @section RN300 GCG 3.0.0
 *************************
-GCG Version 3.0.0
-=================
 
 Features
 --------
@@ -237,12 +221,12 @@ Features
 - enable discretization when original problem is a mixed integer program; continuous variables are convexified
 - solve original LP relaxation in the root node to get a first dual bound and to run some heuristics in the original problem
 
-Performance improvements:
+Performance improvements
 -------------------------
 
 - structure detection (default) is now applicable to MIPs with much larger dimensions (150.000 x 500000)
 
-Data structures:
+Data structures
 ----------------
 
 - new internal data structure to handle partial decompositions; see class_seeed.h for more details
@@ -258,19 +242,19 @@ Data structures:
 	- objective coefficient
 	- objective sign
 
-Deleted and modified API functions:
+Deleted and modified API functions
 -----------------------------------
 
 - detector callback DETECTSTRUCTURE is only called in optional legacy mode (legacy mode is detection of version 2.1.4 and completely indepedent from new detecion loop), detectors written by the user should be useable if their parameter detection/detectors/*/legacymode is set to TRUE
 
-New API fuctions:
+New API fuctions
 -----------------
 
 - detector callback PROPAGATESEEED, called during detection loop to refine partial decompositions, given a partial decomposition d the detector returns a set of decompositions that are a refinement of d
 - detector callback FINISHSEEED, called during detection loop to finish partial decompositions, given a partial decomposition d the detector returns a set of complete decompositions that are a refinement of d
 - detector callback POSTPROCESSSEEED, called after detection loop, to postprocess found finished  decompositions, given a complete decomposition this method returns a set of complete decompositions
 
-Command line interface:
+Command line interface
 -----------------------
 
 - "explore" submenu to inspect and modify new decompositions
@@ -286,13 +270,13 @@ Command line interface:
 - "set detection addblocknr": add candidates for the number of blocks (as a white space separated list)
 
 
-Deleted and modified parameters:
+Deleted and modified parameters
 --------------------------------
 
 - modified parameter "detectors/*/priority" (detection was aborted if high priority detector was successful)
 
 
-New/changed parameters:
+New/changed parameters
 -----------------------
 
 - new parameter "constraints/decomp/createbasicdecomp" indicates whether to create a decomposition with all constraints in the master if no other specified (useful to have included comparison)

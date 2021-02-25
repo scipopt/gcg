@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_solver.h
+ * @ingroup DATASTRUCTURES
  * @brief  data structures for solvers
  * @author Gerald Gamrath
  */

@@ -1,0 +1,197 @@
+# GCG Gitlab CI script
+# Can be skipped using `git push --push-option=ci.skip`
+
+.init_ssh2: &init_ssh2 |
+  eval $(ssh-agent -s)
+  chmod 700 "$PRIVATE_KEY"
+  ls -la "$PRIVATE_KEY"
+  ssh-add "$PRIVATE_KEY" > /dev/null
+  mkdir -p ~/.ssh
+  chmod 700 ~/.ssh
+  [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+
+stages:
+  - build
+  - test
+  - documentation
+  - report
+
+# default, loaded with docker image for Linux
+default:
+  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
+  before_script:
+    # initialize SSH key to access repositories
+    - *init_ssh2
+    # update submodules
+    - git submodule sync --recursive
+    - git submodule update --init --recursive
+    # set links to SCIP and SoPLEX
+    - ln -sfn ../lib/scip-git lib/scip
+    # SoPlex links inside SCIP lib folder
+    - mkdir -p lib/scip/lib/include/spxinc
+    - ln -sfn $PWD/lib/soplex-git/src/* $PWD/lib/scip/lib/include/spxinc/
+    - mkdir -p lib/scip/lib/static/
+    - ln -sfn $PWD/lib/soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a $PWD/lib/scip/lib/static/libsoplex.linux.x86_64.gnu.opt.a
+
+# CMake compilation job
+cmake:build:
+  stage: build
+  script:
+    - mkdir build
+    - cd build
+    # download and unpack cliquer (bliss and hmetis already exist)
+    - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
+    - tar xvfz cliquer-1.21.tar.gz
+    # main compilation (build type: debug)
+    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ -DCMAKE_BUILD_TYPE=Debug ..
+    - make -j 4
+    - cd ..
+  artifacts:
+    expire_in: 1 hour
+    when: on_success
+    paths:
+      - $CI_PROJECT_DIR
+
+# Make compilation job
+make:build:
+  stage: build
+  script:
+    - make deps
+    - make STATISTICS=true
+    - mkdir -p lib/include
+    - mkdir -p lib/static
+    ## Cliquer ##
+    # obtain
+    - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
+    - tar xvfz cliquer-1.21.tar.gz
+    - ln -sfn ../cliquer-1.21/ lib/cliquer-git
+    # link & compile
+    - ln -sfn ../cliquer-git/ lib/include/cliquer
+    - make STATISTICS=true cliquer
+    - ln -sfn ../cliquer-git/libcliquer.a lib/static/libcliquer.a
+    - make deps CLIQUER=true
+    - make STATISTICS=true CLIQUER=true
+    ## Bliss ##
+    # link & compile
+    - make STATISTICS=true bliss
+    - ln -sfn ../bliss-git lib/include/bliss
+    - ln -sfn ../bliss-git/libbliss.a lib/static/libbliss.a
+    - make deps CLIQUER=true BLISS=true
+    - make STATISTICS=true CLIQUER=true BLISS=true
+    ## hMetis ##
+    # link
+    - wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/hmetis/hmetis-2.0pre1.tar.gz
+    - tar xvfz hmetis-2.0pre1.tar.gz
+    - ln -sfn hmetis-2.0pre1/Linux-x86_64/hmetis2.0pre1 hmetis
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/dec_h*partition.cpp
+  artifacts:
+    expire_in: 1 hour
+    when: on_success
+    paths:
+      - $CI_PROJECT_DIR
+
+# CMake test (test set: short)
+cmake:test:
+  stage: test
+  needs: ["cmake:build"]
+  before_script: []
+  script:
+    - cd build
+    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=lib/cliquer-git/ ..
+    - make gcg_check
+    - cd ..
+  artifacts:
+    when: on_success
+    paths:
+      - build/check/Testing/Temporary/LastTest.log
+    expire_in: 1 day
+
+
+# Makefiles test (test set: short)
+make:test:
+  stage: test
+  needs: ["make:build"]
+  before_script: []
+  script:
+    - make STATISTICS=true DETECTIONSTATISTICS=true test
+  artifacts:
+    when: on_success
+    paths:
+      - check/results/*
+    expire_in: 1 day
+
+# Compile documentation and upload to master-preview
+# Only executed on branch `master`
+docu:master:
+  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
+  stage: documentation
+  needs: ["cmake:build"]
+  only:
+    - master
+  script:
+    - cd build
+    - make gcg_doc -j 4
+    - cd ..
+    # upload documentation to gcg.or.rwth-aachen.de/doc-master
+    - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-master
+    - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-master; chmod -R 755 ./* ; "
+    
+# Compile documentation and upload to doc-preview
+# Only executed on branch `docu`
+docu:preview:
+  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
+  stage: documentation
+  needs: ["cmake:build"]
+  only:
+    - docu
+  script:
+    - cd build
+    - make gcg_doc -j 4
+    - cd ..
+    # upload documentation to gcg.or.rwth-aachen.de/doc-preview
+    - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-preview
+    - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-preview; chmod -R 755 ./* ; "
+
+
+report:testset:
+  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
+  stage: report
+  needs: ["make:test"]
+  script:
+    # rename hmetis executable back
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
+    # generate test set report
+    - git checkout visu_suite
+    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - make visu DATADIR=results/ VISUSETTINGS=../v.vset
+    - cp $(ls -d check/reports/testsetreport*)/short.default.testsetreport.pdf testsetreport.pdf
+  artifacts:
+    when: on_success
+    name: "testsetreport_$CI_JOB_ID"
+    paths:
+      - check/reports/*
+      - testsetreport.pdf
+    expire_in: 3 days
+
+report:compare:
+  image: registry.git.or.rwth-aachen.de/docker/gcg-doc:latest
+  stage: report
+  needs: ["make:test"]
+  script:
+    # rename hmetis executable back
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
+    # copy runtime data from documentation files (from latest release) to check/results/
+    - cp doc/resources/misc/runtime_data/*.* check/results/
+    - cp doc/resources/misc/runtime_data/vbc/*.* check/results/vbc
+    # generate comparison report
+    - git checkout visu_suite
+    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
+    - cp $(ls -d check/reports/comparisonreport*)/comparisonreport.pdf comparisonreport.pdf
+  artifacts:
+    when: on_success
+    name: "comparisonreport_$CI_JOB_ID"
+    paths:
+      - check/reports/*
+      - comparisonreport.pdf
+    expire_in: 3 days

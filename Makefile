@@ -54,10 +54,14 @@ GCGDIR		=	$(realpath .)
 TIME		=	3600
 DIP			=	dip
 MASTERSETTINGS	=	default
+VISUSETTINGS 	= 	none
+DATADIR 		= 	none
 
 VALGRIND	=	false
 MODE		=	readdec
-STATISTICS  =  false
+VISU 		= 	false
+DETECTIONSTATISTICS = 	false
+STATISTICS  =  	false
 PROJECT		=	none
 GTEST		=	false
 PARASCIP	= 	true
@@ -482,8 +486,13 @@ ${GCGGITHASHFILE}: githash
 .PHONY: test
 test:
 		cd check; \
-		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE) $(SETCUTOFF) \
-		$(STATISTICS) $(SHARED);
+		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE) $(SETCUTOFF)\
+		$(STATISTICS) $(SHARED) $(VISU) $(LAST_STATISTICS) $(VISUSETTINGS) $(DETECTIONSTATISTICS);
+
+.PHONY: visu
+visu:
+		cd check; \
+		$(SHELL) ./writeTestsetReport.sh $(VISUSETTINGS) $(BINID) $(VERSION) $(MODE) $(LPS) $(THREADS) $(FEASTOL) $(LAST_STATISTICS) $(DATADIR);
 
 .PHONY: eval
 eval:
@@ -743,7 +752,7 @@ help:
 		@echo
 		@echo "  General options:"
 		@echo "  - OPT={opt|dbg|prf}: Set solver mode (default: opt)."
-		@echo "  - STATISTICS=<true|false>: Enable additional statistics."
+		@echo "  - STATISTICS=<true|false>: Enable additional statistics. Required for pricing visualizations."
 		@echo "  - MODE={readdec|none}: If set to readdec (default), GCG looks for given .dec files. "
 		@echo "  - PARASCIP=<true|false>: Use SCIP's parallelization."
 		@echo "  - OPENMP=<true|false>: Use GCG's parallelization. Will set PARASCIP to true."
@@ -780,11 +789,17 @@ help:
 		@echo "  - TEST=file: Define a testset file (located in ./check/testset) to be used"
 		@echo "  - SETTINGS=file: Define a settings file (located in ./settings) to be used"
 		@echo "  - MODE={readdec|none}: If set to readdec (default), GCG looks for given .dec files."
-		@echo "  - STATISTICS=<true|false>: Enable additional statistics."
+		@echo "  - STATISTICS=<true|false>: Enable additional statistics. Required for visualizations."
 		@echo "  - OPT={opt|dbg|prf}: Set solver mode (default: opt)."
 		@echo "  - MEM=b: Set memory limit."
 		@echo "  - TIME=s: Set time limit in seconds."
 		@echo "  - NODE=n: Set opened node limit for the branch and bound tree."
+		@echo "  - DETECTIONSTATISTICS=<true|false>: Print extended detection statistics. Required for detection visualizations."
+		@echo
+		@echo "  Options for the Visualization Suite: (for targets, see last section)"
+		@echo "  - VISU=<true|false>: Flag for make test. If true, generate data, then compose a testset report."
+		@echo "  - DATADIR=folder: Directory including .out and .res files for report generation."
+		@echo "  - VISUSETTINGS=file: Define a settings file (located in the root directory) for visualization scripts to use."
 		@echo
 		@echo "  Targets common for SCIP and GCG can be found in SCIP's make help."
 		@echo "  Most important SCIP targets:"
@@ -795,6 +810,7 @@ help:
 		@echo "  GCG specific targets:"
 		@echo "  - deps: build all dependencies."
 		@echo "  - testcluster: Runs the check/test script on the OR cluster."
+		@echo "  - visu: create a PDF report from existing runtime data."
 
 
 #---- EOF --------------------------------------------------------------------

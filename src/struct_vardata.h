@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_vardata.h
+ * @ingroup DATASTRUCTURES
  * @brief  data structures for GCG variable data
  * @author Gerald Gamrath
  * @author Martin Bergner

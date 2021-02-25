@@ -2,6 +2,8 @@
 > This page guides you through **installing GCG on a Windows computer** if you are willing to (partly) use Linux.
 
 Currently, GCG cannot be installed on pure Windows. This is due to unportable commands in the GCG source code. Still, there are **ways to get GCG running on your Windows computer**.
+
+# Installing GCG on Windows
 Generally, there are three different options:
 
 1. Install a full Linux on your PC

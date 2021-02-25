@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_varclassifier.h
+ * @ingroup DATASTRUCTURES
  * @brief  data structures for variable classifiers
  * @author William Ma
  */
