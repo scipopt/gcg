@@ -96,8 +96,10 @@
 
 #define DEFAULT_SBPSEUDOCOSTWEIGHT 1
 
-#define DEFAULT_PHASE1RELIABLE 4
-#define DEFAULT_PHASE2RELIABLE 8
+#define DEFAULT_PHASE1RELIABLE INT_MAX
+#define DEFAULT_PHASE2RELIABLE INT_MAX
+
+#define DEFAULT_FORCEP0 FALSE
 
 #define ORIG         0
 #define RYANFOSTER   1
@@ -175,6 +177,8 @@ struct SCIP_BranchruleData
 
    int                   phase1reliable;        /**< min count of pseudocost scores for a variable to be considered reliable in phase 1 */
    int                   phase2reliable;        /**< min count of pseudocost scores for a variable to be considered reliable in phase 2 */
+
+   SCIP_Bool             forcephase0;           /**< should phase 0 be performed even if the number of input candidates is already lower or equal to the number of output candidates? */
 };
 
 /* needed for compare_function (for now)*/
@@ -1111,7 +1115,7 @@ SCIP_RETCODE selectCandidate(
 
       }
 
-      if( nneededcands >= ncands )
+      if( nneededcands >= ncands && (!phase == 0 || !branchruledata->forcephase0) )
       {         
          continue;
       }
@@ -1537,7 +1541,11 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
          "min count of pseudocost scores for a variable to be considered reliable in phase 2",
          &branchruledata->phase2reliable, FALSE, DEFAULT_PHASE2RELIABLE, -1, INT_MAX, NULL, NULL) ); 
 
-   
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/forcep0",
+         "should phase 0 be performed even if the number of input candidates is already lower or equal to the number of output candidates?",
+         &branchruledata->forcephase0, FALSE, DEFAULT_FORCEP0, NULL, NULL) );
+
+
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/ryanfoster/usepseudocosts",
          "should single-variable-pseudocosts be used as a heuristic for strong branching for ryan-foster?",
          NULL, FALSE, DEFAULT_RFUSEPSEUDOCOSTS, NULL, NULL) );
