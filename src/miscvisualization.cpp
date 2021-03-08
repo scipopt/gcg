@@ -74,18 +74,19 @@ void GCGgetVisualizationFilename(
    if(strlen(detectorchainstring) > 0)
    {
       /* if there is a PARTIALDECOMP that was detected in GCG */
-      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s-%s-%d-%d-%s", name, detectorchainstring, partialdec->getID(),
+      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s-%s-%d-%d%s", name, detectorchainstring, partialdec->getID(),
          partialdec->getNBlocks(), extension);
    }
    else
    {
       /* if there is a PARTIALDECOMP but it was not detected in GCG */
-      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s-%d-%d-%s", name, partialdec->getID(),
+      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s-%d-%d%s", name, partialdec->getID(),
          partialdec->getNBlocks(), extension);
    }
 
-   /* some filenames can still have dots in them (usually from prob name) which can cause confusion */
-   for(size_t i = 0; i < strlen(filename); i++)
+   /* some filenames can still have dots in them (usually from prob name) which can cause confusion.
+    * Does not replace characters in the file extension. */
+   for(size_t i = 0; i < strlen(filename) - strlen(extension); i++)
    {
       if(filename[i] == '.')
          filename[i] = '-';
