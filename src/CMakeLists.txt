@@ -285,6 +285,7 @@ set(gcgheaders
     type_gcgpqueue.h
     type_masterdiving.h
     type_origdiving.h
+    type_parameter.h
     type_pricestore_gcg.h
     type_pricingjob.h
     type_pricingprob.h
