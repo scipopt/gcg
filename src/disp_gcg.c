@@ -929,28 +929,13 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputAvgDualbound)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputDualbound)
 {  /*lint --e{715}*/
-   SCIP* masterprob;
    SCIP_Real dualbound;
 
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_DUALBOUND) == 0);
    assert(scip != NULL);
 
-   /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
-   assert(masterprob != NULL);
-
-   dualbound = SCIPgetDualbound(scip);
-
-   /* @todo find a better way to do this */
-   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING )
-   {
-      SCIP_Real masterdualbound;
-
-      masterdualbound = SCIPgetDualbound(masterprob);
-      masterdualbound = SCIPretransformObj(scip, masterdualbound);
-      dualbound = MAX(dualbound, masterdualbound);
-   }
+   dualbound = GCGgetDualbound(scip);
 
    if( SCIPisInfinity(scip, (SCIP_Real) SCIPgetObjsense(scip) * dualbound ) )
       SCIPinfoMessage(scip, file, "    cutoff    ");
@@ -1034,17 +1019,12 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
    assert(masterprob != NULL);
 
    primalbound = SCIPgetPrimalbound(scip);
-   dualbound = SCIPgetDualbound(scip);
+   dualbound = GCGgetDualbound(scip);
 
    /* @todo find a better way to do this */
    if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING )
    {
-      SCIP_Real masterdualbound;
       SCIP_Real masterprimalbound;
-
-      masterdualbound = SCIPgetDualbound(masterprob);
-      masterdualbound = SCIPretransformObj(scip, masterdualbound);
-      dualbound = MAX(dualbound, masterdualbound);
 
       masterprimalbound = SCIPgetPrimalbound(masterprob);
       masterprimalbound = SCIPretransformObj(scip, masterprimalbound);

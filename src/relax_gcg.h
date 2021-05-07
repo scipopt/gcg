@@ -254,6 +254,18 @@ SCIP_CLOCK* GCGgetRootNodeTime(
    );
 
 /** @} */
+
+/** gets GCG's global dual bound
+ *
+ *  Computes the global dual bound while considering the original
+ *  problem SCIP instance and the master problem SCIP instance.
+ *
+ *  @return the global dual bound
+ */
+SCIP_Real GCGgetDualbound(
+   SCIP*                scip              /**< SCIP data structure */
+   );
+
 #ifdef __cplusplus
 }
 

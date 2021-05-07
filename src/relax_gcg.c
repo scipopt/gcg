@@ -5137,3 +5137,31 @@ SCIP_CLOCK* GCGgetRootNodeTime(
 
    return relaxdata->rootnodetime;
 }
+
+SCIP_Real GCGgetDualbound(
+   SCIP*                scip              /**< SCIP data structure */
+   )
+{
+   SCIP* masterprob;
+   SCIP_Real dualbound;
+
+   assert(scip != NULL);
+
+   /* get master problem */
+   masterprob = GCGgetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   dualbound = SCIPgetDualbound(scip);
+
+   /* @todo find a better way to do this */
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING )
+   {
+      SCIP_Real masterdualbound;
+
+      masterdualbound = SCIPgetDualbound(masterprob);
+      masterdualbound = SCIPretransformObj(scip, masterdualbound);
+      dualbound = MAX(dualbound, masterdualbound);
+   }
+
+   return dualbound;
+}
