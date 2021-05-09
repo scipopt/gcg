@@ -61,8 +61,8 @@
 #define BRANCHRULE_PRIORITY -536870912                          /**< priority of this branching rule */
 #define BRANCHRULE_MAXDEPTH 0                                   /**< maximal depth level of the branching rule */
 #define BRANCHRULE_MAXBOUNDDIST 0.0                             /**< maximal relative distance from current node's     
-                                                                     dual bound to primal bound compared to best node's
-                                                                     dual bound for applying branching */
+                                                                   * dual bound to primal bound compared to best node's
+                                                                   * dual bound for applying branching */
 #define DEFAULT_ENFORCEBYCONS      FALSE
 #define DEFAULT_MOSTFRAC           FALSE
 #define DEFAULT_USEPSEUDO          TRUE
@@ -265,7 +265,7 @@ int calculateNCands(
 
    dif = max-min;
 
-   assert( min>=1 );
+   assert(min >= 1);
 
    return MIN( candfrac*ncands, 
                min + (int) SCIPceil(scip, MIN( dif, dif * nodegap * gapweight + dif * (1-gapweight) )) );
@@ -286,21 +286,21 @@ int assignUniqueBlockFlags(
 {
    assert(GCGvarIsOriginal(branchcand));
 
-   for (int iter = 0; iter <= 1; iter++)
+   for ( int iter = 0; iter <= 1; iter++ )
    {
       /* continue if variable belongs to a block in second iteration*/
       if (iter == 0)
       {
          /* variable belongs to no block */
-         if (GCGvarGetBlock(branchcand) == -1)
+         if ( GCGvarGetBlock(branchcand) == -1 )
             continue;
 
          /* block is not unique (non-linking variables) */
-         if (!GCGoriginalVarIsLinking(branchcand) && GCGgetNIdenticalBlocks(scip, GCGvarGetBlock(branchcand)) != 1)
+         if ( !GCGoriginalVarIsLinking(branchcand) && GCGgetNIdenticalBlocks(scip, GCGvarGetBlock(branchcand)) != 1 )
             continue;
 
          /* check that blocks of linking variable are unique */
-         if (GCGoriginalVarIsLinking(branchcand))
+         if ( GCGoriginalVarIsLinking(branchcand) )
          {
             int nvarblocks;
             int *varblocks;
@@ -308,17 +308,17 @@ int assignUniqueBlockFlags(
             int j;
 
             nvarblocks = GCGlinkingVarGetNBlocks(branchcand);
-            SCIP_CALL(SCIPallocBufferArray(scip, &varblocks, nvarblocks));
-            SCIP_CALL(GCGlinkingVarGetBlocks(branchcand, nvarblocks, varblocks));
+            SCIP_CALL( SCIPallocBufferArray(scip, &varblocks, nvarblocks) );
+            SCIP_CALL( GCGlinkingVarGetBlocks(branchcand, nvarblocks, varblocks) );
 
             unique = TRUE;
-            for (j = 0; j < nvarblocks; ++j)
-               if (GCGgetNIdenticalBlocks(scip, varblocks[j]) != 1)
+            for ( j = 0; j < nvarblocks; ++j )
+               if ( GCGgetNIdenticalBlocks(scip, varblocks[j]) != 1 )
                   unique = FALSE;
 
             SCIPfreeBufferArray(scip, &varblocks);
 
-            if (!unique)
+            if( !unique )
                continue;
          }
          /* candidate is valid in first iteration */
@@ -327,7 +327,7 @@ int assignUniqueBlockFlags(
       }
       else /* iter == 1 */
       {
-         if (GCGvarGetBlock(branchcand) != -1)
+         if ( GCGvarGetBlock(branchcand) != -1 )
             return -1;
 
          /* candidate is valid in second iteration */
@@ -616,7 +616,7 @@ SCIP_RETCODE executeStrongBranching(
       }
 
       /* propagate the new b&b-node */
-      SCIP_CALL(SCIPpropagateProbing(scip, -1, &cutoff, NULL));
+      SCIP_CALL( SCIPpropagateProbing(scip, -1, &cutoff, NULL) );
 
       /* solve the LP with or without pricing */
       if( !cutoff )
@@ -624,14 +624,14 @@ SCIP_RETCODE executeStrongBranching(
          if( branchruledata->initiator == RYANFOSTER )
          {
             SCIP_CALL( newProbingNodeRyanfosterMaster(scip, branchruledata->initiatorbranchrule, branchvar1,
-                                                      branchvar2, candinfo, cnode==1) );
+                                                      branchvar2, candinfo, cnode == 1) );
          }
          else
          {
             SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
          }
 
-         if (pricing)
+         if( pricing )
          {
             int npricerounds;
 
@@ -681,12 +681,12 @@ SCIP_Bool isKAncestor(
    SCIP_NODE* curnode;
    curnode = successornode;
 
-   for( int i = 0; i<=k && SCIPnodeGetNumber(curnode) >= ancestornodenr; i++ )
+   for( int i = 0; i <= k && SCIPnodeGetNumber(curnode) >= ancestornodenr; i++ )
    {
       if( SCIPnodeGetNumber(curnode) == ancestornodenr )
          return TRUE;
 
-      if( SCIPnodeGetNumber(curnode) == 1)
+      if( SCIPnodeGetNumber(curnode) == 1 )
          break;
 
       curnode = SCIPnodeGetParent(curnode);
@@ -733,7 +733,7 @@ SCIP_Real score_function(
       else if( branchruledata->usepseudocosts )
       {
          *score = SCIPgetVarPseudocostScore(scip, var1, solval1);
-         if( var2!=NULL )
+         if( var2 != NULL )
             *score = *score * SCIPgetVarPseudocostScore(scip, var2, solval2);
       }
       else
@@ -742,14 +742,14 @@ SCIP_Real score_function(
             return 1;
             
          *score = solval1 - SCIPfloor(scip, solval1);
-         *score = MIN(*score, 1.0 - *score);
+         *score = MIN( *score, 1.0 - *score );
 
-         if( var2!=NULL )
+         if( var2 != NULL )
          {
             SCIP_Real frac2;
 
             frac2 = solval2 - SCIPfloor(scip, solval2);
-            *score = *score * MIN(frac2, 1.0 - frac2);
+            *score = *score * MIN( frac2, 1.0 - frac2 );
          }
       }
    }
@@ -811,7 +811,7 @@ SCIP_Real score_function(
                branchruledata->lastevalnode[hashindex] = currentnodenr;
             }
 
-            if( branchruledata->initiator==ORIG )
+            if( branchruledata->initiator == ORIG )
             {
                /* update pseudocost scores */
                if( !*upinf )
@@ -912,7 +912,7 @@ SCIP_RETCODE selectCandidate(
    branchruledata = SCIPbranchruleGetData(branchrule);
 
    assert(branchruledata->maxphase1depth >= branchruledata->maxphase2depth);
-   assert(branchruledata->maxphase1depth+1 >= branchruledata->minphase0depth);
+   assert(branchruledata->maxphase1depth + 1 >= branchruledata->minphase0depth);
 
    *result = SCIP_DIDNOTRUN;
 
@@ -975,7 +975,7 @@ SCIP_RETCODE selectCandidate(
       }
       assert(nlps >= 1);
       maxlpiters = (int)(2*nlpiterations / nlps);
-      maxlpiters = (int)((SCIP_Real)maxlpiters * (1.0 + 10.0/SCIPgetNNodes(masterscip)));
+      maxlpiters = (int)((SCIP_Real)maxlpiters * (1.0 + 10.0 / SCIPgetNNodes(masterscip)));
       branchruledata->maxsblpiters = maxlpiters;
    }
 
@@ -999,16 +999,16 @@ SCIP_RETCODE selectCandidate(
          }
       }
       assert(nlps >= 1);
-      maxpricerounds = (int)(2*npricerounds / nlps);
-      maxpricerounds = (int)((SCIP_Real)maxpricerounds * (1.0 + 10.0/SCIPgetNNodes(masterscip)));
+      maxpricerounds = (int)(2 * npricerounds / nlps);
+      maxpricerounds = (int)((SCIP_Real)maxpricerounds * (1.0 + 10.0 / SCIPgetNNodes(masterscip)));
       branchruledata->maxsbpricerounds = maxpricerounds;
    }
 
    upperbound = SCIPgetUpperbound(scip);
    nodelowerbound = SCIPnodeGetLowerbound( SCIPgetFocusNode(scip) );
    nodegap = ((upperbound >= 0) == (nodelowerbound >= 0))? 
-             MIN(ABS((upperbound-nodelowerbound)/MIN(ABS(upperbound), ABS(nodelowerbound))), 1) : 1;
-   assert(0<=nodegap && nodegap<=1);
+             MIN( ABS( (upperbound-nodelowerbound) / MIN( ABS( upperbound ), ABS( nodelowerbound ) ) ), 1 ) : 1;
+   assert(0 <= nodegap && nodegap <= 1);
 
    /* number of candidates we evaluate precisely should be based on the likely relevance of this branching decision 
     * via the nodegap */
@@ -1093,7 +1093,7 @@ SCIP_RETCODE selectCandidate(
    else
    {
       nvalidhistcands = 0;
-      for( int i=0; i<ncands; i++)
+      for( int i=0; i<ncands; i++ )
       {
          indices[i] = i;
          if( branchruledata->score[i] != -1 )
@@ -1106,9 +1106,9 @@ SCIP_RETCODE selectCandidate(
    }
    
    /* the number of candidates we select based on historical strong branching scores needs to depend on the number of
-   * candidates for which we have historical scores, otherwise some candidates would be selected simply because they
-   * have been scored before
-   */
+    * candidates for which we have historical scores, otherwise some candidates would be selected simply because they
+    * have been scored before
+    */
    nneededhistcands = (int) SCIPfloor(scip, MIN( (SCIP_Real)nvalidhistcands / (SCIP_Real)(nvalidcands+nvalidhistcands),
                                                  branchruledata->histweight ) * nvalidcands);
    qsort(histindices, nvalidhistcands, sizeof(int), score_compare_function);
@@ -1120,7 +1120,7 @@ SCIP_RETCODE selectCandidate(
     * - phase 1: filter the best candidates by evaluating the Master LP, w/o column and cut generation
     * - phase 2: select the best of the candidates from phase 1 by solving the Master LP with column and cut generation
     */
-   for( int phase = 0; phase<=2; phase++ )
+   for( int phase = 0; phase <= 2; phase++ )
    {  
       switch( phase )
       {
@@ -1215,7 +1215,7 @@ SCIP_RETCODE selectCandidate(
          }
 
          /* variable pointers for orig candidates sometimes change during probing in strong branching */
-         if( branchruledata->initiator == ORIG && phase>=1)
+         if( branchruledata->initiator == ORIG && phase >= 1 )
          {
             SCIP_CALL( SCIPgetExternBranchCands(scip, &cand1s, &branchcandssol, NULL, NULL,
                NULL, NULL, NULL, NULL) );
@@ -1226,7 +1226,7 @@ SCIP_RETCODE selectCandidate(
          {
             if( upinf && downinf )
             {
-               for( int k=0; k<branchruledata->maxvars; k++ )
+               for( int k = 0; k < branchruledata->maxvars; k++ )
                {
                   branchruledata->sbscoreisrecent[k] = FALSE;
                }
@@ -1268,7 +1268,7 @@ SCIP_RETCODE selectCandidate(
             else 
             {
                lastimproved++;
-               if( lookahead && lastimproved >= lookahead && phase==2 )
+               if( lookahead && lastimproved >= lookahead && phase == 2 )
                {
                   break;
                }
@@ -1284,7 +1284,7 @@ SCIP_RETCODE selectCandidate(
       if( nneededcands > 1 )
       {
          qsort(indices, ncands, sizeof(int), score_compare_function);
-         ncands = MIN(ncands, nneededcands);
+         ncands = MIN( ncands, nneededcands );
 
          if( phase == 0 )
          {
@@ -1312,7 +1312,7 @@ SCIP_RETCODE selectCandidate(
                /* concatenate the two arrays, while avoiding duplicates */
                for( int i = 0; i<ncands && pos<=ncands; i++ )
                {
-                  for( int j = 0; j<=nneededhistcands; j++ )
+                  for( int j = 0; j <= nneededhistcands; j++ )
                   {
                      if( j == nneededhistcands )
                      {
@@ -1322,14 +1322,11 @@ SCIP_RETCODE selectCandidate(
                      else if( indices[j] == indicescopy[i] )
                         break;
                   }
-                  
                }
                
                SCIPfreeBufferArray(masterscip, &indicescopy);
             }
-
          }
-
       }
       else
       {
@@ -1368,7 +1365,7 @@ SCIP_RETCODE selectCandidate(
                        (*bestupinf || *bestdowninf)? ", branching on which is infeasible in one direction" : "");
    }
 
-   if( branchruledata->initiator == RYANFOSTER && (branchruledata->usepseudocosts || branchruledata->mostfrac ) )
+   if( branchruledata->initiator == RYANFOSTER && (branchruledata->usepseudocosts || branchruledata->mostfrac) )
    {
       SCIPhashmapFree(&solhashmap);
    }
@@ -1719,7 +1716,7 @@ GCGbranchSelectCandidateStrongBranchingRyanfoster(
 
    branchruledata = SCIPbranchruleGetData(branchrule);
 
-   if(branchruledata->initiator!=RYANFOSTER)
+   if( branchruledata->initiator != RYANFOSTER )
    {
       branchruledata->initiator = RYANFOSTER;
       branchruledata->initiatorbranchrule = rfbranchrule;
@@ -1754,8 +1751,8 @@ GCGbranchSelectCandidateStrongBranchingRyanfoster(
 
    *stillusestrong = !branchruledata->done;
 
-   assert(*ovar1!=NULL);
-   assert(*ovar2!=NULL);
+   assert(*ovar1 != NULL);
+   assert(*ovar2 != NULL);
 
    return SCIP_OKAY;
 }
