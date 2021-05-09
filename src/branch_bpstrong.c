@@ -27,7 +27,7 @@
 
 /**@file    branch_bpstrong.c
  * @ingroup BRANCHINGRULES
- * @brief   generic branch-and-price strong branching as described in
+ * @brief   generic branch-and-price strong branching heuristics based on
  *          Pecin, D., Pessoa, A., Poggi, M., Uchoa, E. Improved branch-cut-and-price for capacitated vehicle routing.
  *          In: Math. Prog. Comp. 9:61-100. Springer (2017).
  * @author  Oliver Gaul
@@ -58,25 +58,25 @@
 
 #define BRANCHRULE_NAME "bpstrong"                              /**< name of branching rule */
 #define BRANCHRULE_DESC "strong branching for branch-and-price" /**< short description of branching rule */
-#define BRANCHRULE_PRIORITY -99999                              /**< priority of this branching rule */
+#define BRANCHRULE_PRIORITY -536870912                          /**< priority of this branching rule */
 #define BRANCHRULE_MAXDEPTH 0                                   /**< maximal depth level of the branching rule */
-#define BRANCHRULE_MAXBOUNDDIST 1.0                             /**< maximal relative distance from current node's      \
-                                                                     dual bound to primal bound compared to best node's \
+#define BRANCHRULE_MAXBOUNDDIST 0.0                             /**< maximal relative distance from current node's     
+                                                                     dual bound to primal bound compared to best node's
                                                                      dual bound for applying branching */
-#define DEFAULT_ENFORCEBYCONS  FALSE
-#define DEFAULT_MOSTFRAC       FALSE
-#define DEFAULT_USEPSEUDO      TRUE
-#define DEFAULT_USEPSSTRONG    FALSE
+#define DEFAULT_ENFORCEBYCONS      FALSE
+#define DEFAULT_MOSTFRAC           FALSE
+#define DEFAULT_USEPSEUDO          TRUE
+#define DEFAULT_USEPSSTRONG        FALSE
 
-#define DEFAULT_USESTRONG        FALSE
-#define DEFAULT_STRONGLITE       FALSE
-#define DEFAULT_STRONGTRAIN      FALSE
-#define DEFAULT_IMMEDIATEINF     TRUE
-#define DEFAULT_MAXSBLPITERS     INT_MAX
-#define DEFAULT_MAXSBPRICEROUNDS INT_MAX
+#define DEFAULT_USESTRONG          FALSE
+#define DEFAULT_STRONGLITE         FALSE
+#define DEFAULT_STRONGTRAIN        FALSE
+#define DEFAULT_IMMEDIATEINF       TRUE
+#define DEFAULT_MAXSBLPITERS       INT_MAX
+#define DEFAULT_MAXSBPRICEROUNDS   INT_MAX
 
-#define DEFAULT_RFUSEPSEUDOCOSTS TRUE
-#define DEFAULT_RFUSEMOSTFRAC    FALSE
+#define DEFAULT_RFUSEPSEUDOCOSTS   TRUE
+#define DEFAULT_RFUSEMOSTFRAC      FALSE
 
 #define DEFAULT_REEVALAGE          1
 #define DEFAULT_MINCOLGENCANDS     4
@@ -96,24 +96,25 @@
 
 #define DEFAULT_SBPSEUDOCOSTWEIGHT 1
 
-#define DEFAULT_PHASE1RELIABLE INT_MAX
-#define DEFAULT_PHASE2RELIABLE INT_MAX
+#define DEFAULT_PHASE1RELIABLE     INT_MAX
+#define DEFAULT_PHASE2RELIABLE     INT_MAX
 
-#define DEFAULT_FORCEP0 FALSE
+#define DEFAULT_FORCEP0            FALSE
 
-#define ORIG         0
-#define RYANFOSTER   1
-#define GENERIC      2
+#define ORIG                       0
+#define RYANFOSTER                 1
+#define GENERIC                    2
 
 
-/** branching data for branching decisions (for ryan-foster) */
+/** branching data for branching decisions (for Ryan-Foster branching) */
 struct GCG_BranchData
 {
    SCIP_VAR*             var1;               /**< first original variable on which the branching is done */
    SCIP_VAR*             var2;               /**< second original variable on which the branching is done */
    SCIP_Bool             same;               /**< should each master var contain either both or none of the vars? */
    int                   blocknr;            /**< number of the block in which branching was performed */
-   SCIP_CONS*            pricecons;          /**< constraint enforcing the branching restriction in the pricing problem */
+   SCIP_CONS*            pricecons;          /**< constraint enforcing the branching restriction in the pricing
+                                                  problem */
 };
 
 /** branching rule data */
@@ -121,13 +122,17 @@ struct SCIP_BranchruleData
 {
    int                   lastcand;              /**< last evaluated candidate of last branching rule execution */
    int                   nvars;                 /**< the number of vars currently in the hashmap */
-   int                   maxvars;               /**< the maximal number of vars that were in the hashmap at the same time */
-   SCIP_HASHMAP*         varhashmap;            /**< hashmap mapping variables to their last result in strong branching */
+   int                   maxvars;               /**< the maximal number of vars that were in the hashmap at the same
+                                                   * time */
+   SCIP_HASHMAP*         varhashmap;            /**< hashmap mapping variables to their last result in strong
+                                                   * branching */
    SCIP_Real             *score;                /**< the candidates' last scores */
    int                   *uniqueblockflags;     /**< flags assigned by assignUniqueBlockFlags() */
-   SCIP_Real             *strongbranchscore;    /**< the candidates' last score from strong branching with column generation */
-   SCIP_Bool             *sbscoreisrecent;      /**< was the score saved in strongbranchscore computed in a parent of the current node *
-                                                 *   where all node on the path to the parent were created for domainreduction due to infeasibility? */
+   SCIP_Real             *strongbranchscore;    /**< the candidates' last scores from strong branching with column
+                                                   * generation */
+   SCIP_Bool             *sbscoreisrecent;      /**< was the score saved in strongbranchscore computed in a parent of
+                                                   * the current node where all node on the path to the parent were
+                                                   * created for domain reduction due to infeasibility? */
    int                   *lastevalnode;         /**< the last node at which the candidates were evaluated */
 
    int                   nphase1lps;            /**< number of phase 1 lps solved */
@@ -135,60 +140,89 @@ struct SCIP_BranchruleData
    SCIP_Longint          nsblpiterations;       /**< total number of strong branching lp iterations during phase 1 */
    int                   nsbpricerounds;        /**< total number of strong branching pricing rounds */
 
-   int                   initiator;             /**< the identifier of the branchingrule that initiated strong branching */
-   SCIP_BRANCHRULE*      initiatorbranchrule;   /**< the branchingrule that initiated strong branching */
+   int                   initiator;             /**< the identifier of the branching rule that initiated strong
+                                                   * branching */
+   SCIP_BRANCHRULE*      initiatorbranchrule;   /**< the branching rule that initiated strong branching */
 
-   SCIP_Bool             mostfrac;              /**< should branching be performed on the most fractional variable? */
-   SCIP_Bool             usepseudocosts;        /**< should pseudocosts be used to determine the variable on which the branching is performed? */
+   SCIP_Bool             mostfrac;              /**< should most infeasible/fractional branching be used in phase 0? */
+   SCIP_Bool             usepseudocosts;        /**< should pseudocost branching be used in phase 0? */
 
-   SCIP_Bool             usestronglite;         /**< should strong branching use column generation during variable evaluation? */
-   SCIP_Bool             usestrongtrain;        /**< should strong branching run as precise as possible (to generate more valuable training data)? */
-   SCIP_Bool             immediateinf;          /**< should infeasibility detected during strong branching be handled immediately, or only if the variable is selected? */
-   SCIP_Longint          maxsblpiters;          /**< maximum number of strong branching lp iterations, set to 2*avg lp iterations if <= 0 */
-   int                   maxsbpricerounds;      /**< maximum number of strong branching pricing rounds, set to 2*avg lp iterations if <= 0 */
-   int                   reevalage;             /**< how many times can bounds be changed due to infeasibility during strong branching until an already evaluated variable needs to be reevaluated? */
-   int                   mincolgencands;        /**< minimum number of variables for phase 2 to be executed, otherwise the best candidate from phase 1 will be chosen */
+   SCIP_Bool             usestronglite;         /**< should strong branching use column generation during variable
+                                                   * evaluation? */
+   SCIP_Bool             usestrongtrain;        /**< should strong branching run as precise as possible
+                                                   * (to generate more valuable training data, currently not
+                                                   * implemented)? */
+   SCIP_Bool             immediateinf;          /**< should infeasibility detected during strong branching be handled
+                                                   * immediately, or only if the variable is selected? */
+   SCIP_Longint          maxsblpiters;          /**< maximum number of strong branching lp iterations, set to 2*avg lp
+                                                   * iterations if <= 0 */
+   int                   maxsbpricerounds;      /**< maximum number of strong branching pricing rounds, set to 2*avg lp
+                                                   * iterations if <= 0 */
+   int                   reevalage;             /**< how many times can bounds be changed due to infeasibility during
+                                                   * strong branching until an already evaluated variable needs to be
+                                                   * reevaluated? */
+   int                   mincolgencands;        /**< minimum number of variables for phase 2 to be executed, otherwise
+                                                   * the best candidate from phase 1 will be chosen */
 
-   int                   minphase0depth;        /**< minimum tree depth from which on phase 0 is performed (intended for heuristics like pseudocost branching) */
-   int                   maxphase1depth;        /**< maximum tree depth up to which phase 1 is performed  (intended for heuristics like pseudocost branching) */
-   int                   maxphase2depth;        /**< maximum tree depth up to which phase 2 is performed  (intended for heuristics like pseudocost branching) */
+   int                   minphase0depth;        /**< minimum tree depth from which on phase 0 is performed (~ hybrid
+                                                   * branching) */
+   int                   maxphase1depth;        /**< maximum tree depth up to which phase 1 is performed (~ hybrid
+                                                   * branching) */
+   int                   maxphase2depth;        /**< maximum tree depth up to which phase 2 is performed (~ hybrid
+                                                   * branching) */
    
    int                   minphase0outcands;     /**< minimum number of output candidates from phase 0 */
    int                   maxphase0outcands;     /**< maximum number of output candidates from phase 0 */
-   SCIP_Real             maxphase0outcandsfrac; /**< maximum number of output candidates from phase 0 as fraction of total cands */
-   SCIP_Real             phase1gapweight;       /**< how much impact should the nodegap have on the number of precisely evaluated candidates in phase 1? */
+   SCIP_Real             maxphase0outcandsfrac; /**< maximum number of output candidates from phase 0 as fraction of 
+                                                   * total cands */
+   SCIP_Real             phase1gapweight;       /**< how much impact should the node gap have on the number of
+                                                   * precisely evaluated candidates in phase 1? */
    
    int                   minphase1outcands;     /**< minimum number of output candidates from phase 1 */
    int                   maxphase1outcands;     /**< maximum number of output candidates from phase 1 */
-   SCIP_Real             maxphase1outcandsfrac; /**< maximum number of output candidates from phase 0 as fraction of phase 1 candidates */
-   SCIP_Real             phase2gapweight;       /**< how much impact should the nodegap have on the number of precisely evaluated candidates in phase 2? */
-   int                   maxlookahead;          /**< maximum number of non-improving candidates until phase 2 is stopped */
-   SCIP_Real             lookaheadscales;       /**< how much should the lookahead scale with the overall evaluation effort? (0 = not at all, 1 = fully) */
+   SCIP_Real             maxphase1outcandsfrac; /**< maximum number of output candidates from phase 0 as fraction of
+                                                   * phase 1 candidates */
+   SCIP_Real             phase2gapweight;       /**< how much impact should the node gap have on the number of
+                                                   * precisely evaluated candidates in phase 2? */
+   int                   maxlookahead;          /**< maximum number of non-improving candidates until phase 2 is
+                                                   * stopped */
+   SCIP_Real             lookaheadscales;       /**< how much should the look ahead scale with the overall evaluation
+                                                   * effort? (0 = not at all, 1 = fully) */
 
-   SCIP_Real             histweight;            /**< how many candidates should be chosen based on historical strong branching scores as opposed to current heuristic scores in phase 0 (e.g. 0.5 = 50%)? */
+   SCIP_Real             histweight;            /**< how many candidates should be chosen based on historical strong
+                                                   * branching scores as opposed to current heuristic scores in phase 0
+                                                   * (e.g. 0.5 = 50%)? */
 
-   SCIP_Real             closepercentage;       /**< what percentage of the strong branching score of the candidate that was selected does the heuristic's incumbent need to be considered close? */
-   int                   consecheurclose;       /**< how many times in a row the heuristic was close to the selected candidate */
-   int                   maxconsecheurclose;    /**< how many times in a row can the heuristic be close before strong branching is stopped? */
+   SCIP_Real             closepercentage;       /**< what percentage of the strong branching score of the candidate
+                                                   * that was selected does the best candidate according to the phase 0
+                                                   * heuristic need to have to be considered close? */
+   int                   consecheurclose;       /**< how many times in a row the best candidate according to the phase
+                                                   * 0 heuristic was close to that selected by SBw/CG */
+   int                   maxconsecheurclose;    /**< how many times in a row can the heuristic be close before strong
+                                                   * branching is stopped? */
 
    SCIP_Bool             done;                  /**< has any of the permanent stopping criteria been reached? */
 
-   SCIP_Real             sbpseudocostweight;    /**< with how much weight should strong branching scores be considered for pseudocost scores? */
+   SCIP_Real             sbpseudocostweight;    /**< with how much weight should strong branching scores be considered
+                                                   * for pseudocost scores? */
 
-   int                   phase1reliable;        /**< min count of pseudocost scores for a variable to be considered reliable in phase 1 */
-   int                   phase2reliable;        /**< min count of pseudocost scores for a variable to be considered reliable in phase 2 */
+   int                   phase1reliable;        /**< min count of pseudocost scores for a variable to be considered
+                                                   * reliable in phase 1 (~ reliability branching) */
+   int                   phase2reliable;        /**< min count of pseudocost scores for a variable to be considered
+                                                   * reliable in phase 2 (~ reliability branching) */
 
-   SCIP_Bool             forcephase0;           /**< should phase 0 be performed even if the number of input candidates is already lower or equal to the number of output candidates? */
+   SCIP_Bool             forcephase0;           /**< should phase 0 be performed even if the number of input candidates
+                                                   * is already lower or equal to the number of output candidates? */
 };
 
 /* needed for compare_function (for now)*/
-SCIP_BRANCHRULEDATA* this_branchruledata;
+SCIP_BRANCHRULEDATA*     this_branchruledata;
 
-/* builds hashmap origin for two variables */
+/* builds hashmap origin for up to two variables */
 static
 void *buildIdentifier(
-   SCIP_VAR* var1,
-   SCIP_VAR* var2
+   SCIP_VAR*             var1,               /**< first variable */
+   SCIP_VAR*             var2                /**< second variable */
 )
 {
    if( var2 == NULL )
@@ -201,11 +235,11 @@ void *buildIdentifier(
 /* calculates the number of needed candidates based on the min and max number of candidates as well as the node gap */ 
 static
 int calculateNCands(
-   SCIP* scip,                            /**< scip data structure */
-   SCIP_BRANCHRULEDATA* branchruledata,   /**< strong branching branchruledata */
-   SCIP_Real nodegap,                     /**< node gap in current focus node */
-   int phase,                             /**< phase we are calculating this for */
-   int ncands                             /**< number of input candidates for the phase */
+   SCIP*                 scip,               /**< scip data structure */
+   SCIP_BRANCHRULEDATA*  branchruledata,     /**< strong branching branchruledata */
+   SCIP_Real             nodegap,            /**< node gap in current focus node */
+   int                   phase,              /**< phase we are calculating this for */
+   int                   ncands              /**< number of input candidates for the phase */
 )
 {
    int min;
@@ -233,18 +267,21 @@ int calculateNCands(
 
    assert( min>=1 );
 
-   return MIN( candfrac*ncands, min + (int) SCIPceil(scip, MIN(dif, dif * nodegap * gapweight + dif * (1-gapweight))) );
+   return MIN( candfrac*ncands, 
+               min + (int) SCIPceil(scip, MIN( dif, dif * nodegap * gapweight + dif * (1-gapweight) )) );
 }
 
-/* return  1: integer variables belonging to a unique block with fractional value
+/* assigns a flag to the given branching candidate based on the block it is in
+ *
+ * return  1: integer variables belonging to a unique block with fractional value
  * return  0: variables that belong to no block but were directly transferred to the 
  *            master problem and which have a fractional value in the current solution
  * return -1: neither
  */
 static
 int assignUniqueBlockFlags(
-   SCIP* scip,
-   SCIP_VAR* branchcand
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             branchcand          /**< branching candidate to be considered */
 )
 {
    assert(GCGvarIsOriginal(branchcand));
@@ -324,7 +361,8 @@ SCIP_RETCODE addBranchcandsToData(
    if( branchruledata->nvars == 0 )
    { 
       maxcands = SCIPgetNIntVars(scip) + SCIPgetNBinVars(scip);
-      SCIP_CALL( SCIPhashmapCreate(&(branchruledata->varhashmap), SCIPblkmem(scip), branchruledata->initiator==RYANFOSTER? ncands : maxcands) );
+      SCIP_CALL( SCIPhashmapCreate(&(branchruledata->varhashmap), SCIPblkmem(scip),
+                                   branchruledata->initiator == RYANFOSTER? ncands : maxcands) );
 
       assert(branchruledata->varhashmap != NULL);
 
@@ -346,7 +384,8 @@ SCIP_RETCODE addBranchcandsToData(
          branchruledata->uniqueblockflags[i] = -2;
       }
    }
-   else  /* possibly new variables need to be added */
+   /* possibly new variables need to be added */
+   else
    {
       SCIP_VAR* var;
       /* if var is not in hashmap, insert it */
@@ -359,56 +398,70 @@ SCIP_RETCODE addBranchcandsToData(
          nvars = branchruledata->nvars;
 
          /* if variable is not in hashmap insert it, initialize its array entries, and increase array sizes */
-         if( !SCIPhashmapExists(branchruledata->varhashmap, buildIdentifier(var1s[i], var2s!=NULL? var2s[i] : NULL)) )
+         if( !SCIPhashmapExists(branchruledata->varhashmap, buildIdentifier(var1s[i],
+             var2s != NULL? var2s[i] : NULL)) )
          {
             int newsize = SCIPcalcMemGrowSize(masterscip, nvars + 1);
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->strongbranchscore, branchruledata->maxvars,
-               newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->sbscoreisrecent, branchruledata->maxvars,
-               newsize) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->strongbranchscore,
+                       branchruledata->maxvars, newsize) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->sbscoreisrecent,
+                       branchruledata->maxvars, newsize) );
             SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->lastevalnode, branchruledata->maxvars,
-               newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->uniqueblockflags, branchruledata->maxvars,
-               newsize) );
+                       newsize) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->uniqueblockflags,
+                       branchruledata->maxvars, newsize) );
             branchruledata->maxvars = newsize;
             
-            SCIP_CALL( SCIPhashmapInsertInt(branchruledata->varhashmap, buildIdentifier(var1s[i], var2s!=NULL? var2s[i] : NULL), nvars) );
+            SCIP_CALL( SCIPhashmapInsertInt(branchruledata->varhashmap, buildIdentifier(var1s[i], var2s != NULL?
+                                            var2s[i] : NULL), nvars) );
             branchruledata->strongbranchscore[nvars] = -1;
             branchruledata->sbscoreisrecent[nvars] = FALSE;
             branchruledata->lastevalnode[nvars] = -1;
             branchruledata->uniqueblockflags[nvars] = -2;
 
-            assert(SCIPhashmapExists(branchruledata->varhashmap, buildIdentifier(var1s[i], var2s!=NULL? var2s[i] : NULL))
-               && SCIPhashmapGetImageInt(branchruledata->varhashmap, buildIdentifier(var1s[i], var2s!=NULL? var2s[i] : NULL)) == nvars); /*lint !e507*/
+            assert(SCIPhashmapExists(branchruledata->varhashmap,
+                                     buildIdentifier(var1s[i], var2s != NULL? var2s[i] : NULL))
+                   && SCIPhashmapGetImageInt(branchruledata->varhashmap, buildIdentifier(var1s[i],
+                                             var2s != NULL? var2s[i] : NULL)) == nvars);
 
             ++(branchruledata->nvars);
          }
       }
    }
-
    return SCIP_OKAY;
 }
 
-/* compare two indices corresponding to entries in branchruledata->score */
-static int score_compare_function(const void *index1, const void *index2)
+/* compare two indices corresponding to entries in branchruledata->score, returns TRUE iff the first elements score is
+ * larger
+ */
+static int score_compare_function(
+   const void            *index1,            /**< index in branchruledata->score of first element */
+   const void            *index2             /**< index in branchruledata->score of first element */
+   )
 {
    return this_branchruledata->score[*(int *)index1] > this_branchruledata->score[*(int *)index2]? -1 : 1;
 }
 
-/* compare two indices based on descending numerical order */
-static int geq_compare_function(const void *index1, const void *index2)
+/* compare two indices based on descending numerical order, returns TRUE iff the first index is smaller */
+static int geq_compare_function(
+   const void            *index1,            /**< first index */
+   const void            *index2             /**< second index */
+   )
 {
-   return *(int *)index1 < *(int *)index2 ? -1 : 1;
+   return *(int *)index1 < *(int *)index2? -1 : 1;
 }
 
+/* creates a probing node that is "equal" to the same or differ branch of a given Ryan-Foster candidate, mostly copied
+ * from the corresponding method in branch_ryanfoster.c
+ */
 static
 SCIP_RETCODE newProbingNodeRyanfosterMaster(
-   SCIP* scip,
-   SCIP_BRANCHRULE* branchrule,
-   SCIP_VAR* ovar1,
-   SCIP_VAR* ovar2,
-   int blocknr,
-   SCIP_Bool same
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
+   SCIP_VAR*             ovar1,              /**< first original variable */
+   SCIP_VAR*             ovar2,              /**< second original variable */
+   int                   blocknr,            /**< number of the pricing block */
+   SCIP_Bool             same                /**< do we want to create the same (TRUE) or differ (FALSE) branch? */
    )
 {
    SCIP* masterscip;
@@ -485,13 +538,15 @@ SCIP_RETCODE newProbingNodeRyanfosterMaster(
 
       /* create constraint for same-child */
       SCIP_CALL( SCIPcreateConsVarbound(scip, &origcons, name, origvars1[v], origvars2[v],
-            same? -1.0 : 1.0, same ? 0.0 : -SCIPinfinity(scip), same? 0.0 : 1.0, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
+            same? -1.0 : 1.0, same ? 0.0 : -SCIPinfinity(scip), same? 0.0 : 1.0, TRUE, TRUE,
+            TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
 
       origbranchconss[v] = origcons;
    }
 
    /* create and add the masterbranch constraints */
-   SCIP_CALL( GCGrelaxNewProbingnodeMasterCons(scip, branchrule, branchdata, origbranchconss, norigvars, maxorigvars) );
+   SCIP_CALL( GCGrelaxNewProbingnodeMasterCons(scip, branchrule, branchdata, origbranchconss, norigvars,
+                                               maxorigvars) );
 
    return SCIP_OKAY;
 }
@@ -499,21 +554,21 @@ SCIP_RETCODE newProbingNodeRyanfosterMaster(
 /* executes strong branching on one variable, with or without pricing */
 static
 SCIP_RETCODE executeStrongBranching(
-    SCIP                  *scip,            /* SCIP data structure */
-    SCIP_BRANCHRULE*      branchrule,       /* pointer to the branching rule */
-    SCIP_VAR              *branchvar1,      /* first variable to get strong branching values for */
-    SCIP_VAR              *branchvar2,      /* second variable to get strong branching values for */
-    SCIP_Real             solval1,          /* value of the first variable in the current solution */
-    SCIP_Real             solval2,          /* value of the second variable in the current solution */
-    int                   candinfo,         /* additional intager information about the candidate */
-    SCIP_Bool             pricing,          /* should pricing be applied? */
-    int                   maxpricingrounds, /* maximal number of pricing rounds, -1 for no limit */
-    SCIP_Real             *up,              /* stores dual bound for up/same child */
-    SCIP_Real             *down,            /* stores dual bound for down/differ child */
-    SCIP_Bool             *upvalid,         /* stores whether the up/samebranch was solved properly */
-    SCIP_Bool             *downvalid,       /* stores whether the down/differbranch was solved properly */
-    SCIP_Bool             *upinf,           /* stores whether the up/samebranch is infeasible */
-    SCIP_Bool             *downinf          /* stores whether the down/differbranch is infeasible */
+    SCIP                 *scip,              /* SCIP data structure */
+    SCIP_BRANCHRULE*     branchrule,         /* pointer to the branching rule */
+    SCIP_VAR             *branchvar1,        /* first variable to get strong branching values for */
+    SCIP_VAR             *branchvar2,        /* second variable to get strong branching values for */
+    SCIP_Real            solval1,            /* value of the first variable in the current solution */
+    SCIP_Real            solval2,            /* value of the second variable in the current solution */
+    int                  candinfo,           /* additional intager information about the candidate */
+    SCIP_Bool            pricing,            /* should pricing be applied? */
+    int                  maxpricingrounds,   /* maximal number of pricing rounds, -1 for no limit */
+    SCIP_Real            *up,                /* stores dual bound for up/same child */
+    SCIP_Real            *down,              /* stores dual bound for down/differ child */
+    SCIP_Bool            *upvalid,           /* stores whether the up/samebranch was solved properly */
+    SCIP_Bool            *downvalid,         /* stores whether the down/differbranch was solved properly */
+    SCIP_Bool            *upinf,             /* stores whether the up/samebranch is infeasible */
+    SCIP_Bool            *downinf            /* stores whether the down/differbranch is infeasible */
 )
 {
    /* get bound values */
@@ -536,8 +591,6 @@ SCIP_RETCODE executeStrongBranching(
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
    assert(scip != NULL);
-
-   //SCIPdebugMessage("Probing on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
 
    /* probe for each child node */
    for( int cnode = 0; cnode <= 1; cnode++ )
@@ -570,7 +623,8 @@ SCIP_RETCODE executeStrongBranching(
       {
          if( branchruledata->initiator == RYANFOSTER )
          {
-            SCIP_CALL( newProbingNodeRyanfosterMaster(scip, branchruledata->initiatorbranchrule, branchvar1, branchvar2, candinfo, cnode==1) );
+            SCIP_CALL( newProbingNodeRyanfosterMaster(scip, branchruledata->initiatorbranchrule, branchvar1,
+                                                      branchvar2, candinfo, cnode==1) );
          }
          else
          {
@@ -582,7 +636,7 @@ SCIP_RETCODE executeStrongBranching(
             int npricerounds;
 
             SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, branchruledata->maxsbpricerounds, NULL, &npricerounds,
-                     cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
+                                                         cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
             branchruledata->nphase2lps++;
             branchruledata->nsbpricerounds += npricerounds; 
          }
@@ -591,7 +645,7 @@ SCIP_RETCODE executeStrongBranching(
             SCIP_Longint nlpiterations;
 
             SCIP_CALL( GCGrelaxPerformProbing(scip, branchruledata->maxsblpiters, &nlpiterations,
-                     cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
+                                              cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
             branchruledata->nphase1lps++;
             branchruledata->nsblpiterations += nlpiterations;
          }
@@ -608,8 +662,6 @@ SCIP_RETCODE executeStrongBranching(
          *upinf = cutoff && pricing;
       }
 
-      //SCIPdebugMessage("probing results in cutoff/lpsolved/lpobj: %s / %s / %g\n",
-      //      cutoff?"cutoff":"no cutoff", lpsolved?"lpsolved":"lp not solved", cnode == 0? *down : *up);
       SCIP_CALL( GCGrelaxEndProbing(scip) );
    }
    return SCIP_OKAY;
@@ -620,10 +672,10 @@ SCIP_RETCODE executeStrongBranching(
  */
 static
 SCIP_Bool isKAncestor(
-    SCIP* scip, 
-    int ancestornodenr,          /**< number of the supposed ancestor */
-    SCIP_NODE *successornode,    /**< the supposed successor */
-    int k                        /**< maximal allowed distance between the nodes */
+    SCIP*                scip,               /**< SCIP data structure */
+    int                  ancestornodenr,     /**< number of the supposed ancestor */
+    SCIP_NODE            *successornode,     /**< the supposed successor */
+    int                  k                   /**< maximal allowed distance between the nodes */
 )
 {
    SCIP_NODE* curnode;
@@ -643,24 +695,22 @@ SCIP_Bool isKAncestor(
    return FALSE;
 }
 
-/* Evaluates the given variable based on a score function of choice. Higher scores are given to better
- * variables.
- */
+/* Evaluates the given variable based on a score function of choice. Higher scores are given to better variables. */
 static
 SCIP_Real score_function(
-    SCIP *scip,
-    SCIP_BRANCHRULE*      branchrule,         /* pointer to the branching rule */
-    SCIP_VAR *var1,           /* first var to be scored */
-    SCIP_VAR *var2,           /* second var to be scored */
-    SCIP_Real solval1,        /* the first var's current solution value */
-    SCIP_Real solval2,        /* the second var's current solution value */
-    int candinfo,             /* additional integer information about the candidate */
-    SCIP_Bool useheuristic,   /* should heuristics be used instead of strong branching? */
-    SCIP_Bool usehistorical,  /* should historical data from phase 2 be used as heuristic? */
-    SCIP_Bool usecolgen,      /* should column generation be used during strong branching? */
-    SCIP_Real *score,         /* stores the computed score */
-    SCIP_Bool *upinf,         /* stores whether the upbranch is infeasible */
-    SCIP_Bool *downinf        /* stores whether the downbranch is infeasible */
+    SCIP                 *scip,              /**< SCIP data structure */
+    SCIP_BRANCHRULE*     branchrule,         /**< pointer to the branching rule */
+    SCIP_VAR             *var1,              /**< first var to be scored */
+    SCIP_VAR             *var2,              /**< second var to be scored */
+    SCIP_Real            solval1,            /**< the first var's current solution value */
+    SCIP_Real            solval2,            /**< the second var's current solution value */
+    int                  candinfo,           /**< additional integer information about the candidate */
+    SCIP_Bool            useheuristic,       /**< should heuristics be used instead of strong branching? */
+    SCIP_Bool            usehistorical,      /**< should historical data from phase 2 be used as heuristic? */
+    SCIP_Bool            usecolgen,          /**< should column generation be used during strong branching? */
+    SCIP_Real            *score,             /**< stores the computed score */
+    SCIP_Bool            *upinf,             /**< stores whether the upbranch is infeasible */
+    SCIP_Bool            *downinf            /**< stores whether the downbranch is infeasible */
 )
 {
    SCIP_BRANCHRULEDATA* branchruledata;
@@ -668,7 +718,7 @@ SCIP_Real score_function(
    assert(branchruledata != NULL);
 
    /* define score functions and calculate score for all variables for sorting dependent on used heuristic */
-   // phase 0
+   /* phase 0 */
    if( useheuristic)
    {
       if( usehistorical )
@@ -704,7 +754,7 @@ SCIP_Real score_function(
       }
    }
    else
-   //phase 1 & 2
+   /* phases 1 & 2 */
    {
       SCIP* masterscip;
 
@@ -731,17 +781,18 @@ SCIP_Real score_function(
    
       if( !usecolgen 
           || !branchruledata->sbscoreisrecent[hashindex]
-          || !isKAncestor(scip, branchruledata->lastevalnode[hashindex], SCIPgetFocusNode(scip), branchruledata->reevalage) )
+          || !isKAncestor(scip, branchruledata->lastevalnode[hashindex], SCIPgetFocusNode(scip),
+                          branchruledata->reevalage) )
       {
          up = -SCIPinfinity(scip);
          down = -SCIPinfinity(scip);
 
          lpobjval = SCIPgetLPObjval(masterscip);
 
-         // usecolgen is True for phase 1 and False for phase 2
-         SCIP_CALL( executeStrongBranching(scip, branchrule, var1, var2, solval1, solval2, candinfo, usecolgen, -1, &up, &down, &upvalid, &downvalid, upinf, downinf) );
+         /* usecolgen is True for phase 1 and False for phase 2 */
+         SCIP_CALL( executeStrongBranching(scip, branchrule, var1, var2, solval1, solval2, candinfo, usecolgen, -1,
+                                           &up, &down, &upvalid, &downvalid, upinf, downinf) );
 
-         //TODO handle this better
          down = downvalid? down : upvalid? up : 0;
          up = upvalid? up : down;
 
@@ -774,7 +825,6 @@ SCIP_Real score_function(
                }
             }
          }
-         //SCIPdebugMessage("Variable %s has downgain %f and upgain %f\n", SCIPvarGetName(var), downgain, upgain);
       }
       else
       {
@@ -791,14 +841,18 @@ SCIP_RETCODE selectCandidate(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
    SCIP_VAR**            cand1s,             /**< first variable candidates */
-   SCIP_VAR**            cand2s,             /**< second variable candidates (each cand2 corresponds to exactly one cand1 and vice versa) */
+   SCIP_VAR**            cand2s,             /**< second variable candidates (each cand2 corresponds to exactly one
+                                                * cand1 and vice versa) */
    int*                  candinfos,          /**< additional information for each candidate */
    int                   ncands,             /**< number of input candidates */
    SCIP_VAR**            outcand1,           /**< pointer to store the pointer of the first selected variable */
-   SCIP_VAR**            outcand2,           /**< pointer to store the pointer of the second selected variable (if applicable) */
+   SCIP_VAR**            outcand2,           /**< pointer to store the pointer of the second selected variable (if
+                                                * applicable) */
    int*                  outcandinfo,        /**< pointer to store additional (integer) info */
-   SCIP_Bool*            bestupinf,          /**< pointer to store whether strong branching detected infeasibility in the upbranch */
-   SCIP_Bool*            bestdowninf,        /**< pointer to store whether strong branching detected infeasibility in the downbranch */
+   SCIP_Bool*            bestupinf,          /**< pointer to store whether strong branching detected infeasibility in
+                                                * the upbranch */
+   SCIP_Bool*            bestdowninf,        /**< pointer to store whether strong branching detected infeasibility in
+                                                * the downbranch */
    SCIP_RESULT*          result              /**< pointer to store the result of the branching call */
    )
 {
@@ -956,7 +1010,8 @@ SCIP_RETCODE selectCandidate(
              MIN(ABS((upperbound-nodelowerbound)/MIN(ABS(upperbound), ABS(nodelowerbound))), 1) : 1;
    assert(0<=nodegap && nodegap<=1);
 
-   /* number of candidates we evaluate precisely should be based on the likely relevance of this branching decision via the nodegap */
+   /* number of candidates we evaluate precisely should be based on the likely relevance of this branching decision 
+    * via the nodegap */
    nneededcands = calculateNCands(scip, branchruledata, nodegap, 0, ncands);
 
    /* insert branchcands into hashmap */
@@ -965,7 +1020,10 @@ SCIP_RETCODE selectCandidate(
    SCIP_CALL( SCIPallocBufferArray(masterscip, &branchruledata->score, ncands) );
    for( int init = 0; init < ncands; ++init )
    {
-      branchruledata->score[init] = branchruledata->strongbranchscore[SCIPhashmapGetImageInt(branchruledata->varhashmap, buildIdentifier(cand1s[init], cand2s==NULL? NULL : cand2s[init]))];
+      branchruledata->score[init] = branchruledata->strongbranchscore[
+                                             SCIPhashmapGetImageInt(branchruledata->varhashmap,
+                                                                    buildIdentifier(cand1s[init],
+                                                                    cand2s == NULL? NULL : cand2s[init])) ];
    }
 
    /* allocate memory */
@@ -979,8 +1037,9 @@ SCIP_RETCODE selectCandidate(
       nvalidhistcands = 0;
 
       /* iter = 0: integer variables belonging to a unique block with fractional value,
-       * iter = 1: we did not find enough variables to branch on so far, so we look for integer variables that belong to no block
-       * but were directly transferred to the master problem and which have a fractional value in the current solution
+       * iter = 1: we did not find enough variables to branch on so far, so we look for integer variables that belong
+       * to no block but were directly transferred to the master problem and which have a fractional value in the 
+       * current solution
        */
       for( int iter = 0; iter <= 1 && nvalidcands < nneededcands; iter++ )
       {
@@ -1050,7 +1109,8 @@ SCIP_RETCODE selectCandidate(
    * candidates for which we have historical scores, otherwise some candidates would be selected simply because they
    * have been scored before
    */
-   nneededhistcands = (int) SCIPfloor(scip, MIN((SCIP_Real)nvalidhistcands/(SCIP_Real)(nvalidcands+nvalidhistcands), branchruledata->histweight) * nvalidcands);
+   nneededhistcands = (int) SCIPfloor(scip, MIN( (SCIP_Real)nvalidhistcands / (SCIP_Real)(nvalidcands+nvalidhistcands),
+                                                 branchruledata->histweight ) * nvalidcands);
    qsort(histindices, nvalidhistcands, sizeof(int), score_compare_function);
    qsort(histindices, nneededhistcands, sizeof(int), geq_compare_function);
 
@@ -1058,7 +1118,7 @@ SCIP_RETCODE selectCandidate(
     * - phase 0: select a first selection of candidates based on some traditional variable selection
     *            heuristic, some (half) of the candidates are new, and some are selected based on previous calls
     * - phase 1: filter the best candidates by evaluating the Master LP, w/o column and cut generation
-    * - phase 2: select the best of the candidates from phase 1 by solving the Master LP with column and cut generation.
+    * - phase 2: select the best of the candidates from phase 1 by solving the Master LP with column and cut generation
     */
    for( int phase = 0; phase<=2; phase++ )
    {  
@@ -1107,18 +1167,16 @@ SCIP_RETCODE selectCandidate(
             lookahead = branchruledata->maxlookahead;
             if( lookahead && branchruledata->lookaheadscales>0 )
             {
-               lookahead = MAX(1, (int) SCIPround(scip, 
+               lookahead = MAX( 1, (int) SCIPround(scip, 
                                                   (SCIP_Real) ((1-branchruledata->lookaheadscales) * lookahead) - 
-                                                  (SCIP_Real) (branchruledata->lookaheadscales * (ncands / branchruledata->maxphase1outcands) * lookahead)) );
+                                                  (SCIP_Real) (branchruledata->lookaheadscales * 
+                                                   ncands / branchruledata->maxphase1outcands) * lookahead) );
             }
             break;
-
       }
 
       if( nneededcands >= ncands && (!phase == 0 || !branchruledata->forcephase0) )
-      {         
          continue;
-      }
 
       /* compute scores */
       for( int i = 0, c=branchruledata->lastcand; i < ncands; i++, c++ )
@@ -1130,14 +1188,17 @@ SCIP_RETCODE selectCandidate(
           */
          if( branchruledata->initiator == ORIG )
          {
-            minpscount = MIN(SCIPvarGetPseudocostCount(cand1s[indices[c]], 0), SCIPvarGetPseudocostCount(cand1s[indices[c]], 1));
+            minpscount = MIN( SCIPvarGetPseudocostCount(cand1s[indices[c]], 0),
+                              SCIPvarGetPseudocostCount(cand1s[indices[c]], 1) );
+
             /* only call strong branching if this variable is not sufficiently reliable yet */
-            if(  phase==0 ||
-                (phase==1 && minpscount < branchruledata->phase1reliable) ||
-                (phase==2 && minpscount < branchruledata->phase2reliable)  )
+            if(  phase == 0 ||
+                (phase == 1 && minpscount < branchruledata->phase1reliable) ||
+                (phase == 2 && minpscount < branchruledata->phase2reliable)  )
             {
-            SCIP_CALL( score_function(scip, branchrule, cand1s[indices[c]], NULL, branchcandssol[indices[c]], 0,
-                                       0, phase == 0, FALSE, phase == 2 && !branchruledata->usestronglite, &score, &upinf, &downinf) );
+            SCIP_CALL( score_function(scip, branchrule, cand1s[indices[c]], NULL, branchcandssol[indices[c]], 0, 0,
+                                      phase == 0, FALSE, phase == 2 && !branchruledata->usestronglite,
+                                      &score, &upinf, &downinf) );
             }
             else
             {
@@ -1146,16 +1207,18 @@ SCIP_RETCODE selectCandidate(
          }
          else
          {
-            SCIP_CALL( score_function(scip, branchrule, cand1s[indices[c]], cand2s[indices[c]], SCIPhashmapGetImageReal(solhashmap, cand1s[indices[c]]), SCIPhashmapGetImageReal(solhashmap, cand2s[indices[c]]),
-                                       candinfos[indices[c]], phase == 0, FALSE, phase == 2 && !branchruledata->usestronglite, &score, &upinf, &downinf) );
+            SCIP_CALL( score_function(scip, branchrule, cand1s[indices[c]], cand2s[indices[c]],
+                                      SCIPhashmapGetImageReal(solhashmap, cand1s[indices[c]]),
+                                      SCIPhashmapGetImageReal(solhashmap, cand2s[indices[c]]),
+                                      candinfos[indices[c]], phase == 0, FALSE,
+                                      phase == 2 && !branchruledata->usestronglite, &score, &upinf, &downinf) );
          }
 
-         /* variable pointers sometimes change during probing in strong branching */
+         /* variable pointers for orig candidates sometimes change during probing in strong branching */
          if( branchruledata->initiator == ORIG && phase>=1)
          {
             SCIP_CALL( SCIPgetExternBranchCands(scip, &cand1s, &branchcandssol, NULL, NULL,
                NULL, NULL, NULL, NULL) );
-         
          }
 
          /* handle infeasibility detected during strong branching */
@@ -1294,11 +1357,15 @@ SCIP_RETCODE selectCandidate(
    
    if( branchruledata->initiator == ORIG )
    {
-      SCIPdebugMessage("Strong branching selected variable %s%s\n", SCIPvarGetName(*outcand1), (*bestupinf || *bestdowninf)? ", branching on which is infeasible in one direction" : "");
+      SCIPdebugMessage("Strong branching selected variable %s%s\n",
+                       SCIPvarGetName(*outcand1),
+                       (*bestupinf || *bestdowninf)? ", branching on which is infeasible in one direction" : "");
    }
    else
    {
-      SCIPdebugMessage("Strong branching selected variables %s and %s%s\n", SCIPvarGetName(*outcand1), SCIPvarGetName(*outcand2), (*bestupinf || *bestdowninf)? ", branching on which is infeasible in one direction" : "");
+      SCIPdebugMessage("Strong branching selected variables %s and %s%s\n",
+                       SCIPvarGetName(*outcand1), SCIPvarGetName(*outcand2),
+                       (*bestupinf || *bestdowninf)? ", branching on which is infeasible in one direction" : "");
    }
 
    if( branchruledata->initiator == RYANFOSTER && (branchruledata->usepseudocosts || branchruledata->mostfrac ) )
@@ -1309,7 +1376,8 @@ SCIP_RETCODE selectCandidate(
    if( !*bestupinf && !*bestdowninf )
    {
       /* if the heuristic was close multiple times in a row, stop strong branching */
-      if( branchruledata->maxconsecheurclose >= 0 && heurincumbentsbscore >= branchruledata->closepercentage * maxscore )
+      if( branchruledata->maxconsecheurclose >= 0
+          && heurincumbentsbscore >= branchruledata->closepercentage * maxscore )
       {
          branchruledata->consecheurclose++;
          if( branchruledata->consecheurclose >= branchruledata->maxconsecheurclose )
@@ -1342,9 +1410,10 @@ SCIP_RETCODE selectCandidate(
 #define branchExecextBPStrong NULL
 #define branchExecpsBPStrong NULL
 
+/** free remaining allocated memory */
 static
 SCIP_DECL_BRANCHFREE(branchFreeBPStrong)
-{  /*lint --e{715}*/
+{
    SCIP_BRANCHRULEDATA* branchruledata;
    SCIP_HASHMAP* varhashmap;
 
@@ -1389,7 +1458,8 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
    SCIPdebugMessage("Init BPStrong branching rule\n");
 
    SCIP_CALL( GCGrelaxIncludeBranchrule( origprob, branchrule, branchActiveMasterBPStrong,
-         branchDeactiveMasterBPStrong, branchPropMasterBPStrong, branchMasterSolvedBPStrong, branchDataDeleteBPStrong) );
+         branchDeactiveMasterBPStrong, branchPropMasterBPStrong, branchMasterSolvedBPStrong,
+         branchDataDeleteBPStrong) );
 
    branchruledata = SCIPbranchruleGetData(branchrule);
    branchruledata->lastcand = 0;
@@ -1415,9 +1485,12 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
 
       phase1depth = log(nvars)/log(logbase);
 
-      branchruledata->minphase0depth = (int) SCIPround(origprob, (1-logweight) * branchruledata->minphase0depth + logweight * phase0frac * phase1depth);
-      branchruledata->maxphase1depth = (int) SCIPround(origprob, (1-logweight) * branchruledata->maxphase1depth + logweight * phase1depth);
-      branchruledata->maxphase2depth = (int) SCIPround(origprob, (1-logweight) * branchruledata->maxphase2depth + logweight * phase2frac * phase1depth);
+      branchruledata->minphase0depth = (int) SCIPround(origprob, (1-logweight) * branchruledata->minphase0depth
+                                                                 + logweight * phase0frac * phase1depth);
+      branchruledata->maxphase1depth = (int) SCIPround(origprob, (1-logweight) * branchruledata->maxphase1depth
+                                                                 + logweight * phase1depth);
+      branchruledata->maxphase2depth = (int) SCIPround(origprob, (1-logweight) * branchruledata->maxphase2depth
+                                                                 + logweight * phase2frac * phase1depth);
    }
 
    this_branchruledata = branchruledata;
@@ -1547,11 +1620,11 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
 
 
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/ryanfoster/usepseudocosts",
-         "should single-variable-pseudocosts be used as a heuristic for strong branching for ryan-foster?",
+         "should single-variable-pseudocosts be used as a heuristic for strong branching for Ryan-Foster branching?",
          NULL, FALSE, DEFAULT_RFUSEPSEUDOCOSTS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/ryanfoster/usemostfrac",
-         "should single-variable-fractionality be used as a heuristic for strong branching for ryan-foster?",
+         "should single-variable-fractionality be used as a heuristic for strong branching for Ryan-Foster branching?",
          NULL, FALSE, DEFAULT_RFUSEMOSTFRAC, NULL, NULL) );
 
 
@@ -1563,13 +1636,16 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
 
 SCIP_RETCODE
 GCGbranchSelectCandidateStrongBranchingOrig(
-   SCIP* scip,                      /**< SCIP data structure */
-   SCIP_BRANCHRULE *origbranchrule, /**< pointer storing original branching rule */
-   SCIP_VAR **branchvar,            /**< pointer to store output var pointer */
-   SCIP_Bool *upinf,                /**< pointer to store whether strong branching detected infeasibility in the upbranch */
-   SCIP_Bool *downinf,              /**< pointer to store whether strong branching detected infeasibility in the downbranch */
-   SCIP_RESULT *result,             /**< pointer to store result */
-   SCIP_Bool *stillusestrong        /**< pointer to store whether strong branching has reached a permanent stopping condition for orig */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE       *origbranchrule,    /**< pointer storing original branching rule */
+   SCIP_VAR              **branchvar,        /**< pointer to store output var pointer */
+   SCIP_Bool             *upinf,             /**< pointer to store whether strong branching detected infeasibility in
+                                                * the upbranch */
+   SCIP_Bool             *downinf,           /**< pointer to store whether strong branching detected infeasibility in
+                                                * the downbranch */
+   SCIP_RESULT           *result,            /**< pointer to store result */
+   SCIP_Bool             *stillusestrong     /**< pointer to store whether strong branching has reached a permanent
+                                                * stopping condition for orig */
 )
 {
    SCIP_BRANCHRULEDATA *branchruledata;
@@ -1591,12 +1667,14 @@ GCGbranchSelectCandidateStrongBranchingOrig(
 
       SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/minphase0outcands", &branchruledata->minphase0outcands) );
       SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/maxphase0outcands", &branchruledata->maxphase0outcands) );
-      SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/maxphase0outcandsfrac", &branchruledata->maxphase0outcandsfrac) );
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/maxphase0outcandsfrac",
+                                  &branchruledata->maxphase0outcandsfrac) );
       SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/phase1gapweight", &branchruledata->phase1gapweight) );
 
       SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/minphase1outcands", &branchruledata->minphase1outcands) );
       SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/maxphase1outcands", &branchruledata->maxphase1outcands) );
-      SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/maxphase1outcandsfrac", &branchruledata->maxphase1outcandsfrac) );
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/maxphase1outcandsfrac",
+                                  &branchruledata->maxphase1outcandsfrac) );
       SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/phase2gapweight", &branchruledata->phase2gapweight) );
 
       assert(branchruledata->maxphase0outcands >= branchruledata->minphase0outcands);
@@ -1610,21 +1688,25 @@ GCGbranchSelectCandidateStrongBranchingOrig(
    return SCIP_OKAY;
 }
 
+/** interface method for Ryan-Foster branching to strong branching heuristics */
 SCIP_RETCODE
 GCGbranchSelectCandidateStrongBranchingRyanfoster(
-   SCIP* scip,                      /**< original SCIP data structure */
-   SCIP_BRANCHRULE* rfbranchrule,   /**< ryan-foster branchrule */
-   SCIP_VAR **ovar1s,               /**< first elements of candidate pairs */
-   SCIP_VAR **ovar2s,               /**< second elements of candidate pairs */
-   int *nspricingblock,             /**< pricing block numbers corresponding to input pairs */
-   int npairs,                      /**< number of input pairs */
-   SCIP_VAR **ovar1,                /**< pointer to store output var 1 pointer */
-   SCIP_VAR **ovar2,                /**< pointer to store output var 2 pointer */
-   int *pricingblock,               /**< pointer to store output pricing block number */
-   SCIP_Bool *sameinf,              /**< pointer to store whether strong branching detected infeasibility in the samebranch */
-   SCIP_Bool *differinf,            /**< pointer to store whether strong branching detected infeasibility in the differbranch */
-   SCIP_RESULT *result,             /**< pointer to store result */
-   SCIP_Bool *stillusestrong         /**< pointer to store whether strong branching has reached a permanent stopping condition for ryanfoster */
+   SCIP*                 scip,               /**< original SCIP data structure */
+   SCIP_BRANCHRULE*      rfbranchrule,       /**< Ryan-Foster branchrule */
+   SCIP_VAR              **ovar1s,           /**< first elements of candidate pairs */
+   SCIP_VAR              **ovar2s,           /**< second elements of candidate pairs */
+   int                   *nspricingblock,    /**< pricing block numbers corresponding to input pairs */
+   int                   npairs,             /**< number of input pairs */
+   SCIP_VAR              **ovar1,            /**< pointer to store output var 1 pointer */
+   SCIP_VAR              **ovar2,            /**< pointer to store output var 2 pointer */
+   int                   *pricingblock,      /**< pointer to store output pricing block number */
+   SCIP_Bool             *sameinf,           /**< pointer to store whether strong branching detected infeasibility in
+                                                * the same branch */
+   SCIP_Bool             *differinf,         /**< pointer to store whether strong branching detected infeasibility in
+                                                * the differ branch */
+   SCIP_RESULT           *result,            /**< pointer to store result */
+   SCIP_Bool             *stillusestrong     /**< pointer to store whether strong branching has reached a permanent
+                                                * stopping condition for Ryan-Foster */
 )
 {
    SCIP_BRANCHRULEDATA *branchruledata;
@@ -1641,24 +1723,34 @@ GCGbranchSelectCandidateStrongBranchingRyanfoster(
    {
       branchruledata->initiator = RYANFOSTER;
       branchruledata->initiatorbranchrule = rfbranchrule;
-      SCIP_CALL( SCIPgetBoolParam(scip, "branching/bp_strong/ryanfoster/usepseudocosts", &branchruledata->usepseudocosts) );
+      SCIP_CALL( SCIPgetBoolParam(scip, "branching/bp_strong/ryanfoster/usepseudocosts",
+                                  &branchruledata->usepseudocosts) );
       SCIP_CALL( SCIPgetBoolParam(scip, "branching/bp_strong/ryanfoster/usemostfrac", &branchruledata->mostfrac) );
 
-      SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/minphase0outcands", &branchruledata->minphase0outcands) );
-      SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/maxphase0outcands", &branchruledata->maxphase0outcands) );
-      SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/maxphase0outcandsfrac", &branchruledata->maxphase0outcandsfrac) );
-      SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/phase1gapweight", &branchruledata->phase1gapweight) );
+      SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/minphase0outcands",
+                                 &branchruledata->minphase0outcands) );
+      SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/maxphase0outcands",
+                                 &branchruledata->maxphase0outcands) );
+      SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/maxphase0outcandsfrac",
+                                  &branchruledata->maxphase0outcandsfrac) );
+      SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/phase1gapweight",
+                                  &branchruledata->phase1gapweight) );
 
-      SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/minphase1outcands", &branchruledata->minphase1outcands) );
-      SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/maxphase1outcands", &branchruledata->maxphase1outcands) );
-      SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/maxphase1outcandsfrac", &branchruledata->maxphase1outcandsfrac) );
-      SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/phase2gapweight", &branchruledata->phase2gapweight) );
+      SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/minphase1outcands",
+                                 &branchruledata->minphase1outcands) );
+      SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/maxphase1outcands",
+                                 &branchruledata->maxphase1outcands) );
+      SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/maxphase1outcandsfrac",
+                                  &branchruledata->maxphase1outcandsfrac) );
+      SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/phase2gapweight",
+                                  &branchruledata->phase2gapweight) );
 
       assert(branchruledata->maxphase0outcands >= branchruledata->minphase0outcands);
       assert(branchruledata->maxphase1outcands >= branchruledata->minphase1outcands);
    }
 
-   selectCandidate(scip, branchrule, ovar1s, ovar2s, nspricingblock, npairs, ovar1, ovar2, pricingblock, sameinf, differinf, result);
+   selectCandidate(scip, branchrule, ovar1s, ovar2s, nspricingblock, npairs,
+                   ovar1, ovar2, pricingblock, sameinf, differinf, result);
 
    *stillusestrong = !branchruledata->done;
 

@@ -622,7 +622,8 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
             for( j = 0; j < norigvars2; j++ )
             {
                /* if we deal with a trivial variable, skip it */
-               if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar2)[j]) || GCGoriginalVarGetNCoefs(origvars2[j]) == 0 )
+               if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar2)[j]) ||
+                                        GCGoriginalVarGetNCoefs(origvars2[j]) == 0 )
                   continue;
 
                if( origvars2[j] == ovar1 )
@@ -640,7 +641,8 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
             for( o2 = 0; o2 < norigvars1; o2++ )
             {
                /* if we deal with a trivial variable, skip it */
-               if( !SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar1)[o2]) || GCGoriginalVarGetNCoefs(origvars1[o2]) == 0 )
+               if( !SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar1)[o2]) ||
+                                         GCGoriginalVarGetNCoefs(origvars1[o2]) == 0 )
                   continue;
 
                ovar2 = origvars1[o2];
@@ -710,7 +712,8 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
                for( o2 = 0; o2 < norigvars2; o2++ )
                {
                   /* if we deal with a trivial variable, skip it */
-                  if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar2)[o2]) || GCGoriginalVarGetNCoefs(origvars2[o2]) == 0 )
+                  if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar2)[o2]) ||
+                                           GCGoriginalVarGetNCoefs(origvars2[o2]) == 0 )
                      continue;
 
                   ovar2 = origvars2[o2];
@@ -722,7 +725,8 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
                   for( j = 0; j < norigvars1; j++ )
                   {
                      /* if we deal with a trivial variable, skip it */
-                     if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar1)[j]) || GCGoriginalVarGetNCoefs(origvars1[j]) == 0 )
+                     if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar1)[j]) ||
+                                              GCGoriginalVarGetNCoefs(origvars1[j]) == 0 )
                         continue;
                      if( origvars1[j] == ovar2 )
                      {
@@ -779,9 +783,9 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    {
       if( npairs>0 )
       {
-         GCGbranchSelectCandidateStrongBranchingRyanfoster(origscip, branchrule, ovar1s, ovar2s, nspricingblock, npairs,
-                                                            &ovar1, &ovar2, &pricingblock, &sameinf, &differinf, result,
-                                                            &stillusestrong);
+         GCGbranchSelectCandidateStrongBranchingRyanfoster(origscip, branchrule, ovar1s, ovar2s, nspricingblock,
+                                                           npairs, &ovar1, &ovar2, &pricingblock, &sameinf, &differinf,
+                                                           result, &stillusestrong);
 
          SCIPfreeBlockMemoryArray(scip, &ovar1s, npairs);
          SCIPfreeBlockMemoryArray(scip, &ovar2s, npairs);
@@ -800,7 +804,8 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    }
 
    /* create the two child nodes in the branch-and-bound tree */
-   SCIP_CALL( createChildNodesRyanfoster(origscip, branchrule, ovar1, ovar2, GCGvarGetBlock(mvar1), sameinf, differinf) );
+   SCIP_CALL( createChildNodesRyanfoster(origscip, branchrule, ovar1, ovar2, GCGvarGetBlock(mvar1), sameinf,
+                                         differinf) );
 
    *result = SCIP_BRANCHED;
 

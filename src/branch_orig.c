@@ -83,12 +83,19 @@
 /** branching rule data */
 struct SCIP_BranchruleData
 {
-   SCIP_Bool             enforcebycons;         /**< should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE) */
-   SCIP_Bool             usepseudocosts;        /**< should pseudocosts be used to determine the variable on which the branching is performed? */
-   SCIP_Bool             mostfrac;              /**< should branching be performed on the most fractional variable? (only if usepseudocosts = FALSE) */
-   SCIP_Bool             userandom;             /**< should the variable on which the branching is performed be selected randomly? (only if usepseudocosts = mostfrac = FALSE) */
-   SCIP_Bool             usepsstrong;           /**< should strong branching with propagation be used to determine the variable on which the branching is performed? (only if usepseudocosts = mostfrac = random = FALSE)*/
-   SCIP_Bool             usestrong;             /**< should strong branching be used to determine the variable on which the branching is performed? */
+   SCIP_Bool             enforcebycons;         /**< should bounds on variables be enforced by constraints(TRUE) or by
+                                                   * bounds(FALSE) */
+   SCIP_Bool             usepseudocosts;        /**< should pseudocosts be used to determine the variable on which the
+                                                   * branching is performed? */
+   SCIP_Bool             mostfrac;              /**< should branching be performed on the most fractional variable?
+                                                   * (only if usepseudocosts = FALSE) */
+   SCIP_Bool             userandom;             /**< should the variable on which the branching is performed be
+                                                   * selected randomly? (only if usepseudocosts = mostfrac = FALSE) */
+   SCIP_Bool             usepsstrong;           /**< should strong branching with propagation be used to determine the
+                                                   * variable on which the branching is performed?
+                                                   * (only if usepseudocosts = mostfrac = random = FALSE)*/
+   SCIP_Bool             usestrong;             /**< should strong branching be used to determine the variable on which
+                                                   * the branching is performed? */
 };
 
 /** branching data for branching decisions */
@@ -181,8 +188,10 @@ SCIP_RETCODE branchVar(
    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the original variable branching rule */
    SCIP_VAR*             branchvar,          /**< variable to branch on */
    SCIP_Real             solval,             /**< value of the variable in the current solution */
-   SCIP_Bool             upinf,              /**< have we seen during strong branching that the upbranch is infeasible? */
-   SCIP_Bool             downinf             /**< have we seen during strong branching that the downbranch is infeasible? */
+   SCIP_Bool             upinf,              /**< have we seen during strong branching that the upbranch is
+                                                * infeasible? */
+   SCIP_Bool             downinf             /**< have we seen during strong branching that the downbranch is
+                                                * infeasible? */
    )
 {
    /* data for b&b child creation */
@@ -256,7 +265,8 @@ SCIP_RETCODE branchVar(
             uplb = fixval + 1.0;
       }
       SCIPdebugMessage("integral branch on variable <%s> with value %g, priority %d (current lower bound: %g)\n",
-         SCIPvarGetName(branchvar), solval, SCIPvarGetBranchPriority(branchvar), SCIPgetLocalLowerbound(GCGgetMasterprob(scip)));
+                       SCIPvarGetName(branchvar), solval, SCIPvarGetBranchPriority(branchvar),
+                       SCIPgetLocalLowerbound(GCGgetMasterprob(scip)));
    }
    else
    {
@@ -264,12 +274,7 @@ SCIP_RETCODE branchVar(
       downub = SCIPfeasFloor(scip, solval);
       uplb = downub + 1.0;
       assert( SCIPisEQ(scip, SCIPfeasCeil(scip, solval), uplb) );
-      //SCIPdebugMessage("fractional branch on variable <%s> with value %g, root value %g, priority %d (current lower bound: %g)\n",
-         //SCIPvarGetName(branchvar), solval, SCIPvarGetRootSol(branchvar), SCIPvarGetBranchPriority(branchvar), SCIPgetLocalLowerbound(GCGgetMasterprob(scip)));
    }
-
-   //SCIPdebugMessage("Branching on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
-
 
    if( uplb != SCIP_INVALID && !upinf ) /*lint !e777*/
    {
@@ -552,9 +557,11 @@ SCIP_RETCODE branchExtern(
       if( branchruledata->usepseudocosts || branchruledata->mostfrac || branchruledata->userandom )
       {
          /* iter = 0: integer variables belonging to a unique block with fractional value,
-         * iter = 1: we did not find enough variables to branch on so far, so we look for integer variables that belong to no block
-         * but were directly transferred to the master problem and which have a fractional value in the current solution
-         */
+          * iter = 1: we did not find enough variables to branch on so far, so we look for integer variables that
+          * belong to no block
+          * but were directly transferred to the master problem and which have a fractional value in the current
+          * solution
+          */
          for( int iter = 0; iter <= 1 && branchvar == NULL; iter++ )
          {
             for( int i = 0; i < npriobranchcands; i++ )
@@ -599,7 +606,8 @@ SCIP_RETCODE branchExtern(
    }
    else
    {
-      SCIP_CALL( GCGbranchSelectCandidateStrongBranchingOrig(scip, branchrule, &branchvar, &upinf, &downinf, result, &branchruledata->usestrong) );
+      SCIP_CALL( GCGbranchSelectCandidateStrongBranchingOrig(scip, branchrule, &branchvar, &upinf, &downinf, result,
+                                                             &branchruledata->usestrong) );
    }
 
    if( upinf && downinf )
@@ -613,7 +621,8 @@ SCIP_RETCODE branchExtern(
    
    assert(!(upinf && downinf));
    
-   SCIPdebugMessage("Original branching rule selected variable %s%s\n", SCIPvarGetName(branchvar), (upinf || downinf)? ", which is infeasible in one direction" : "");
+   SCIPdebugMessage("Original branching rule selected variable %s%s\n",
+                    SCIPvarGetName(branchvar), (upinf || downinf)? ", which is infeasible in one direction" : "");
 
    SCIP_CALL( branchVar(scip, branchrule, branchvar, solval, upinf, downinf) );
    *result = SCIP_BRANCHED;
@@ -648,7 +657,8 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    assert(origscip != NULL);
 
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
-      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : branchdata->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ), branchdata->newbound);
+      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ?
+                            ">=" : branchdata->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ), branchdata->newbound);
 
    /* transform constraint to the master variable space */
    SCIP_CALL( GCGrelaxTransOrigToMasterCons(origscip, branchdata->cons, &mastercons) );
@@ -675,7 +685,8 @@ GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
    assert(branchdata->origvar != NULL);
 
    SCIPdebugMessage("branchMasterSolvedOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
-      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : branchdata->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ), branchdata->newbound);
+      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ?
+                            ">=" : branchdata->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ), branchdata->newbound);
 
    if( !SCIPisInfinity(scip, newlowerbound) && SCIPgetStage(GCGgetMasterprob(scip)) == SCIP_STAGE_SOLVING
       && SCIPisRelaxSolValid(GCGgetMasterprob(scip)) )
@@ -699,7 +710,8 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
       return SCIP_OKAY;
 
    SCIPdebugMessage("branchDataDeleteOrig: %s %s %f\n", SCIPvarGetName((*branchdata)->origvar),
-      ( (*branchdata)->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : (*branchdata)->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ),
+      ( (*branchdata)->boundtype == GCG_BOUNDTYPE_LOWER ?
+        ">=" : (*branchdata)->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ),
       (*branchdata)->newbound);
 
    /* release constraint */
@@ -869,7 +881,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
       assert(GCGvarIsOriginal(branchcands[i]));
 
       /* variable belongs to no block or the block is not unique */
-      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGgetNIdenticalBlocks(origscip, GCGvarGetBlock(branchcands[i])) != 1 )
+      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGgetNIdenticalBlocks(origscip, 
+                                                                         GCGvarGetBlock(branchcands[i])) != 1 )
          continue;
 
       branchvar = branchcands[i];
@@ -1121,7 +1134,8 @@ SCIP_RETCODE GCGbranchOrigUpdateExternBranchcands(
    /* store branching candidates */
    for( i = 0; i < norigvars; i++ )
    {
-      if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
+      if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip,
+                         SCIPgetRelaxSolVal(scip, origvars[i])) )
       {
          assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])));
 
