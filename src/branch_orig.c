@@ -1059,7 +1059,7 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
          NULL, FALSE, DEFAULT_MAXPHASE0OUTCANDSFRAC, 0, 1, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/orig/phase1gapweight",
-         "how much impact should the nodegap have on the number of precisely evaluated candidates in phase 1 during strong branching?",
+         "how much impact should the node gap have on the number of precisely evaluated candidates in phase 1 during strong branching?",
          NULL, FALSE, DEFAULT_PHASE1GAPWEIGHT, 0, 1, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/minphase1outcands",
@@ -1075,7 +1075,7 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
          NULL, FALSE, DEFAULT_MAXPHASE1OUTCANDSFRAC, 0, 1, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/orig/phase2gapweight",
-         "how much impact should the nodegap have on the number of precisely evaluated candidates in phase 2 during strong branching?",
+         "how much impact should the node gap have on the number of precisely evaluated candidates in phase 2 during strong branching?",
          NULL, FALSE, DEFAULT_PHASE2GAPWEIGHT, 0, 1, NULL, NULL) );
 
    /* notify cons_integralorig about the original variable branching rule */

@@ -87,7 +87,7 @@
 #define DEFAULT_MAXPHASE1DEPTH     4
 #define DEFAULT_MAXPHASE2DEPTH     3
 #define DEFAULT_DEPTHLOGWEIGHT     0.5
-#define DEFAULT_DEPTHLOGBASIS      3.5
+#define DEFAULT_DEPTHLOGBASE       3.5
 #define DEFAULT_DEPTHLOGPHASE0FRAC 0
 #define DEFAULT_DEPTHLOGPHASE2FRAC 0.75
 
@@ -1532,7 +1532,7 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
          &branchruledata->usestrongtrain, FALSE, DEFAULT_STRONGTRAIN, NULL, NULL) );
       
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/immediateinf",
-         "should infeasibility detected during strong branching be handled immediately, or only if the variable is selected?",
+         "should infeasibility detected during strong branching be handled immediately, or only if the candidate is selected?",
          &branchruledata->immediateinf, FALSE, DEFAULT_IMMEDIATEINF, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/reevalage",
@@ -1581,7 +1581,7 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
 
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/depthlogbase",
          "what should be the base of the logarithm that is used to compute the depth of hybrid branching?",
-         NULL, FALSE, DEFAULT_DEPTHLOGBASIS, 0, INT_MAX, NULL, NULL) );
+         NULL, FALSE, DEFAULT_DEPTHLOGBASE, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origscip, "branching/bp_strong/depthlogphase0frac",
          "if using a logarithm to compute the depth of hybrid branching, what should be the fraction of the depth assigned to phase 1 that is assigned to phase 0?",
@@ -1724,22 +1724,22 @@ GCGbranchSelectCandidateStrongBranchingRyanfoster(
                                   &branchruledata->usepseudocosts) );
       SCIP_CALL( SCIPgetBoolParam(scip, "branching/bp_strong/ryanfoster/usemostfrac", &branchruledata->mostfrac) );
 
-      SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/minphase0outcands",
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/ryanfoster/minphase0outcands",
                                  &branchruledata->minphase0outcands) );
-      SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/maxphase0outcands",
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/ryanfoster/maxphase0outcands",
                                  &branchruledata->maxphase0outcands) );
-      SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/maxphase0outcandsfrac",
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/ryanfoster/maxphase0outcandsfrac",
                                   &branchruledata->maxphase0outcandsfrac) );
-      SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/phase1gapweight",
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/ryanfoster/phase1gapweight",
                                   &branchruledata->phase1gapweight) );
 
-      SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/minphase1outcands",
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/ryanfoster/minphase1outcands",
                                  &branchruledata->minphase1outcands) );
-      SCIP_CALL( SCIPgetIntParam(masterscip, "branching/ryanfoster/maxphase1outcands",
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/ryanfoster/maxphase1outcands",
                                  &branchruledata->maxphase1outcands) );
-      SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/maxphase1outcandsfrac",
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/ryanfoster/maxphase1outcandsfrac",
                                   &branchruledata->maxphase1outcandsfrac) );
-      SCIP_CALL( SCIPgetRealParam(masterscip, "branching/ryanfoster/phase2gapweight",
+      SCIP_CALL( SCIPgetRealParam(scip, "branching/ryanfoster/phase2gapweight",
                                   &branchruledata->phase2gapweight) );
 
       assert(branchruledata->maxphase0outcands >= branchruledata->minphase0outcands);

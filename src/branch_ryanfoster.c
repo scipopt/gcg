@@ -976,36 +976,36 @@ SCIP_RETCODE SCIPincludeBranchruleRyanfoster(
          NULL, FALSE, DEFAULT_USESTRONG, NULL, NULL) );
 
    /* strong branching */
-   SCIP_CALL( SCIPaddIntParam(scip, "branching/ryanfoster/minphase0outcands",
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "branching/ryanfoster/minphase0outcands",
          "minimum number of output candidates from phase 0 during strong branching",
          NULL, FALSE, DEFAULT_MINPHASE0OUTCANDS, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "branching/ryanfoster/maxphase0outcands",
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "branching/ryanfoster/maxphase0outcands",
          "maximum number of output candidates from phase 0 during strong branching",
          NULL, FALSE, DEFAULT_MAXPHASE0OUTCANDS, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "branching/ryanfoster/maxphase0outcandsfrac",
+   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "branching/ryanfoster/maxphase0outcandsfrac",
          "maximum number of output candidates from phase 0 as fraction of total cands during strong branching",
          NULL, FALSE, DEFAULT_MAXPHASE0OUTCANDSFRAC, 0, 1, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "branching/ryanfoster/phase1gapweight",
-         "how much impact should the nodegap have on the number of precisely evaluated candidates in phase 1 during strong branching?",
+   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "branching/ryanfoster/phase1gapweight",
+         "how much impact should the node gap have on the number of precisely evaluated candidates in phase 1 during strong branching?",
          NULL, FALSE, DEFAULT_PHASE1GAPWEIGHT, 0, 1, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "branching/ryanfoster/minphase1outcands",
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "branching/ryanfoster/minphase1outcands",
          "minimum number of output candidates from phase 1 during strong branching",
          NULL, FALSE, DEFAULT_MINPHASE1OUTCANDS, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "branching/ryanfoster/maxphase1outcands",
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "branching/ryanfoster/maxphase1outcands",
          "maximum number of output candidates from phase 1 during strong branching",
          NULL, FALSE, DEFAULT_MAXPHASE1OUTCANDS, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "branching/ryanfoster/maxphase1outcandsfrac",
+   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "branching/ryanfoster/maxphase1outcandsfrac",
          "maximum number of output candidates from phase 1 as fraction of phase 1 cands during strong branching",
          NULL, FALSE, DEFAULT_MAXPHASE1OUTCANDSFRAC, 0, 1, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "branching/ryanfoster/phase2gapweight",
-         "how much impact should the nodegap have on the number of precisely evaluated candidates in phase 2 during strong branching?",
+   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "branching/ryanfoster/phase2gapweight",
+         "how much impact should the node gap have on the number of precisely evaluated candidates in phase 2 during strong branching?",
          NULL, FALSE, DEFAULT_PHASE2GAPWEIGHT, 0, 1, NULL, NULL) );
 
    return SCIP_OKAY;
