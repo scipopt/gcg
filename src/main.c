@@ -33,7 +33,6 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
 #include <string.h>
 
 #include "scip/scip.h"
@@ -42,7 +41,6 @@
 #include "gcgplugins.h"
 #include "cons_decomp.h"
 
-#include "gcggithash.h"
 #include "relax_gcg.h"
 #include "cons_decomp.h"
 #include "gcg.h"
@@ -50,61 +48,6 @@
 #if SCIP_VERSION < 700
 #error GCG 3.1.0 can only be compiled with SCIP version 7.0.0 or higher
 #endif
-
-
-/** Gets GCG major version
- * @returns GCG major version */
-static
-int GCGmajorVersion(void)
-{
-   return GCG_VERSION/100;
-}
-
-/** Gets GCG minor version
- * @returns GCG minor version */
-static
-int GCGminorVersion(void)
-{
-   return (GCG_VERSION/10) % 10; /*lint !e778*/
-}
-
-/** Gets GCG technical version
- * @returns GCG technical version */
-static
-int GCGtechVersion(void)
-{
-   return GCG_VERSION % 10; /*lint !e778*/
-}
-#if GCG_SUBVERSION > 0
-/** Gets GCG sub version number
- * @returns GCG sub version number */
-static
-int GCGsubversion(void)
-{
-   return GCG_SUBVERSION;
-}
-#endif
-
-/** prints out GCG version
- * @returns nothing */
-static
-void GCGprintVersion(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file                /**< output file (or NULL for standard output) */
-   )
-{
-   assert(scip != NULL);
-
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "GCG version %d.%d.%d",
-      GCGmajorVersion(), GCGminorVersion(), GCGtechVersion());
-#if GCG_SUBVERSION > 0
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, ".%d", GCGsubversion());
-#endif
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " [GitHash: %s]", GCGgetGitHash());
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Copyright (C) 2010-2021 Operations Research, RWTH Aachen University\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "                        Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)\n\n");
-}
 
 
 /** read in parameter file

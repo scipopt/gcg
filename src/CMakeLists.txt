@@ -77,6 +77,7 @@ set(gcgsources
     event_relaxsol.c
     event_solvingstats.c
     gcgcol.c
+    gcg_general.c
     gcggithash.c
     gcgheur.c
     gcgsepa.c
@@ -202,6 +203,7 @@ set(gcgheaders
     event_solvingstats.h
     gcg.h
     gcgcol.h
+    gcg_general.h
     gcggithash.h
     gcgplugins.h
     gcgpqueue.h

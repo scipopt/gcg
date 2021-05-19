@@ -49,6 +49,9 @@
 #include "pub_gcgvar.h"
 #include "pub_decomp.h"
 
+#include "relax_gcg.h"
+#include "gcg_general.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
