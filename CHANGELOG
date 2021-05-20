@@ -4,6 +4,8 @@ GCG Version 3.0.5
 Bug fixes
 ---------
 
+- Skip structure detection if the original problem is already solved after presolving.
+
 GCG Version 3.0.4
 =================
 
