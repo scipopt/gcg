@@ -1006,7 +1006,7 @@ SCIP_RETCODE selectCandidate(
 
    upperbound = SCIPgetUpperbound(scip);
    nodelowerbound = SCIPnodeGetLowerbound( SCIPgetFocusNode(scip) );
-   nodegap = ((upperbound >= 0) == (nodelowerbound >= 0))? 
+   nodegap = ((upperbound >= 0) == (nodelowerbound >= 0) && MIN( ABS( upperbound ), ABS( nodelowerbound ) ) != 0)? 
              MIN( ABS( (upperbound-nodelowerbound) / MIN( ABS( upperbound ), ABS( nodelowerbound ) ) ), 1 ) : 1;
    assert(0 <= nodegap && nodegap <= 1);
 
