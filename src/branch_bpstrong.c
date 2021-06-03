@@ -387,14 +387,10 @@ SCIP_RETCODE addBranchcandsToData(
    /* possibly new variables need to be added */
    else
    {
-      SCIP_VAR* var;
       /* if var is not in hashmap, insert it */
       for( i = 0; i < ncands; i++ )
       {
          int nvars;
-
-         var = var1s[i];
-         assert(var != NULL);
          nvars = branchruledata->nvars;
 
          /* if variable is not in hashmap insert it, initialize its array entries, and increase array sizes */
@@ -572,7 +568,6 @@ SCIP_RETCODE executeStrongBranching(
 )
 {
    /* get bound values */
-   SCIP* masterscip;
    SCIP_BRANCHRULEDATA* branchruledata;
 
    SCIP_Bool cutoff;
@@ -587,9 +582,6 @@ SCIP_RETCODE executeStrongBranching(
    *downinf = FALSE;
    *upinf = FALSE;
 
-    /* get master problem */
-   masterscip = GCGgetMasterprob(scip);
-   assert(masterscip != NULL);
    assert(scip != NULL);
 
    /* probe for each child node */
