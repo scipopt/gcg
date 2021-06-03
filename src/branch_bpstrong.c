@@ -903,8 +903,8 @@ SCIP_RETCODE selectCandidate(
 
    branchruledata = SCIPbranchruleGetData(branchrule);
 
-   assert(branchruledata->maxphase1depth >= branchruledata->maxphase2depth);
-   assert(branchruledata->maxphase1depth + 1 >= branchruledata->minphase0depth);
+   assert(branchruledata->maxphase1depth + 1 >= branchruledata->minphase0depth ||
+          branchruledata->maxphase2depth + 1 >= branchruledata->minphase0depth);
 
    *result = SCIP_DIDNOTRUN;
 
@@ -1114,6 +1114,10 @@ SCIP_RETCODE selectCandidate(
     */
    for( int phase = 0; phase <= 2; phase++ )
    {  
+      /* skip phase 1 if we are below its max depth */
+      if( depth > branchruledata->maxphase1depth && phase == 1 )
+         phase = 2;
+
       switch( phase )
       {
          case 0:
@@ -1129,9 +1133,22 @@ SCIP_RETCODE selectCandidate(
             }
             else if( depth > branchruledata->maxphase1depth )
             {
-               nneededcands = 1;
-               if( SCIPgetEffectiveRootDepth(scip) > branchruledata->maxphase1depth )
-                  branchruledata->done = TRUE;
+               if( depth > branchruledata->maxphase2depth )
+               {
+                  nneededcands = 1;
+
+                  /* strong branching can be fully stopped if all open nodes are below the max depth */
+                  if( SCIPgetEffectiveRootDepth(scip) > branchruledata->maxphase1depth && 
+                      SCIPgetEffectiveRootDepth(scip) > branchruledata->maxphase2depth )
+                     branchruledata->done = TRUE;
+               }
+               else
+               {
+                  /* we only want to skip phase 1, so we need to set nneededcands to the number of output candidates
+                   * for phase 1 
+                   */
+                  nneededcands = calculateNCands(scip, branchruledata, nodegap, 1, phase0nneededcands);
+               }
             }
 
             break;
