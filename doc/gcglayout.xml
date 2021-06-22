@@ -7,17 +7,18 @@
       <tab type="files" visible="no" title=""/>
       <tab type="globals" visible="no" title=""/>
     </tab>
-    <tab type="modules" visible="yes" title="Plugins"/>
+    <tab type="pages" visible="yes" title=""/>
+    <tab type="namespaces" visible="no" title="">
+      <tab type="namespaces" visible="no" title=""/>
+      <tab type="namespacemembers" visible="no" title=""/>
+    </tab>
+    <!--<tab type="user" visible="yes" title="" url=""/>  Spacer -->
+    <tab type="modules" visible=" no" title="GCG C-API" intro="The public API of GCG is separated into a Core API and a Plugin API."/>
     <tab type="classes" visible="no" title="">
       <tab type="classes" visible="no" title="Wrapper Classes"/>
       <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/>
       <tab type="hierarchy" visible="no" title=""/>
       <tab type="classmembers" visible="no" title=""/>
-    </tab>
-    <tab type="pages" visible="yes" title=""/>
-    <tab type="namespaces" visible="no" title="">
-      <tab type="namespaces" visible="no" title=""/>
-      <tab type="namespacemembers" visible="no" title=""/>
     </tab>
   </navindex>
 

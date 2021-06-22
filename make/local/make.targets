@@ -138,9 +138,9 @@ cliquerobj:
 
 .PHONY: cliquerlib
 cliquerlib:
-		@echo "-> generating library lib/cliquer/libcliquer.a"
+		@echo "-> generating library lib/cliquer-git/libcliquer.a"
 		@-rm -f lib/cliquer-git/libcliquer.a
-		@$(LIBBUILD) $(LIBBUILDFLAGS) lib/cliquer-git/libcliquer.a lib/cliquer/*.o
+		@$(LIBBUILD) $(LIBBUILDFLAGS) lib/cliquer-git/libcliquer.a lib/cliquer-git/*.o
 ifneq ($(RANLIB),)
 		@$(RANLIB) lib/cliquer-git/libcliquer.a
 endif

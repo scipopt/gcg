@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+    <!--<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>-->
     <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <!--BEGIN PROJECT_NAME--><title>$projectname: $title</title><!--END PROJECT_NAME-->
     <!--BEGIN !PROJECT_NAME--><title>$title</title><!--END !PROJECT_NAME-->
 
     <!-- search and treeview need jquery to be included first-->
-    <script type="text/javascript" src="https://code.jquery.com/jquery.js"></script>
+    <script type="text/javascript" src="js/jquery.min.js"></script>
 
     <!-- this is old but needed for the sidenav -->
     <script type="text/javascript" src="$relpath^jquery.js"></script>
@@ -22,19 +22,20 @@
 
     $search
     $mathjax
-
-    <link href="$relpath$tabs.css" rel="stylesheet" type="text/css"/>
+    </script><script type="text/javascript" src="../MathJax/MathJax.js"></script>
+    <link href="tabs.css" rel="stylesheet" type="text/css"/>
     <!--    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"> -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link href="../bootstrap/css/doxygen.css" rel="stylesheet" type="text/css"/>
-    <link href="../bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
-    <link href="../bootstrap/css/custom.css" rel="stylesheet" type="text/css"/>
-    <link href="../bootstrap/css/custom-gcg.css" rel="stylesheet" type="text/css"/>
-    <link href="../bootstrap/css/navsidebar.css" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="bootstrap/fonts/font-awesome.min.css">
+    <link href="bootstrap/css/doxygen.css" rel="stylesheet" type="text/css"/>
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+    <link href="bootstrap/css/custom.css" rel="stylesheet" type="text/css"/>
+    <link href="bootstrap/css/custom-gcg.css" rel="stylesheet" type="text/css"/>
+    <link href="bootstrap/css/navsidebar.css" rel="stylesheet" type="text/css"/>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script type="text/javascript" src="$relpath^dynsections.js"></script>
-    <script type="text/javascript" src="../bootstrap/js/bootstrap.js"></script>
-    <script type="text/javascript" src="../js/navsidebar.js"></script>
+    <script type="text/javascript" src="dynsections.js"></script>
+  <!--  <script type="text/javascript" src="bootstrap/js/custom.js"></script>-->
+    <script type="text/javascript" src="bootstrap/js/bootstrap.js"></script>
+    <script type="text/javascript" src="js/navsidebar.js"></script>
   </head>
   <body>
   <div class="w3-sidebar w3-bar-block w3-card w3-animate-left" style="display:inline-block" id="mySidebar">
@@ -58,15 +59,14 @@
 
   <div class="bs-header" id="content">
     <div class="container">
-      <a href="http://scip.zib.de">
-        <img style="float:right" src="https://scip.zib.de/images/newscippy.png" height="130" title="Scippy" alt="Scippy"/>
+      <a href="https://scipopt.org">
+        <img style="float:right" src="img/newscippy.png" height="130" title="Scippy" alt="Scippy"/>
       </a>
       <h1>GCG</h1>
-      <p>Generic Column Generation</p>
+      <p>Branch-and-Price & Column Generation for Everyone</p>
     </div>
   </div>
     <div class="container bs-docs-container">
       <div class="row">
         <div class="col-md-12">
           <div id="top"><!-- do not remove this div! -->
-

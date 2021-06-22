@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -32,6 +32,8 @@
  * @author Daniel Peters
  * @author Jonas Witt
  * @author Michael Bastubbe
+ *
+ * @note requires package to be installed: BLISS, requires flag to be set: `BLISS=true`
  *
  * This detector finds subproblems that can be aggregated thus reducing the symmetry of the problem using color preserving
  * automorphisms and bliss.
@@ -60,24 +62,24 @@
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME          "isomorph"  /**< name of detector */
-#define DEC_DESC                  "Detector for pricing problems suitable for aggregation" /**< description of detector*/
+#define DEC_DESC                  "detector for pricing problems suitable for aggregation" /**< description of detector */
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          0           /**< last round the detector gets called                              */
-#define DEC_MINCALLROUND          0           /**< first round the detector gets called                              */
-#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  0     /**< last round the detector gets called while detecting the original problem                            */
-#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem    */
+#define DEC_MAXCALLROUND          0           /**< last round the detector gets called */
+#define DEC_MINCALLROUND          0           /**< first round the detector gets called */
+#define DEC_FREQCALLROUNDORIGINAL 1           /**< frequency the detector gets called in detection loop while detecting the original problem */
+#define DEC_MAXCALLROUNDORIGINAL  0           /**< last round the detector gets called while detecting the original problem */
+#define DEC_MINCALLROUNDORIGINAL  0           /**< first round the detector gets called while detecting the original problem */
 #define DEC_PRIORITY              100         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'I'         /**< display character of detector */
 
-#define DEC_ENABLED               FALSE        /**< should the detection be enabled */
+#define DEC_ENABLED               FALSE       /**< should the detection be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
-#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE       /**< should the postprocessing be enabled */
 #define DEC_SKIP                  TRUE        /**< should the detector be skipped if others found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated partialdec */
 
-#define DEFAULT_MAXDECOMPSEXACT  6           /**< default maximum number of decompositions */
-#define DEFAULT_MAXDECOMPSEXTEND 4           /**< default maximum number of decompositions */
+#define DEFAULT_MAXDECOMPSEXACT  6            /**< default maximum number of decompositions */
+#define DEFAULT_MAXDECOMPSEXTEND 4            /**< default maximum number of decompositions */
 
 #define SET_MULTIPLEFORSIZETRANSF 12500
 
@@ -102,8 +104,8 @@ struct struct_hook
    unsigned int n;                           /**< number of permutations */
    SCIP* scip;                               /**< scip to search for automorphisms */
    int* conssperm;                           /**< permutations of conss*/
-   gcg::PARTIALDECOMP* partialdec;                        /**< partialdec to propagate */
-   gcg::DETPROBDATA* detprobdata;                /**< detprobdata */
+   gcg::PARTIALDECOMP* partialdec;           /**< partialdec to propagate */
+   gcg::DETPROBDATA* detprobdata;            /**< detection process information and data */
 
    /** constructor for the hook struct*/
    struct_hook(SCIP_Bool aut,  /**< true if there is an automorphism */
@@ -115,8 +117,8 @@ struct struct_hook
    struct_hook(SCIP_Bool aut,  /**< true if there is an automorphism */
       unsigned int          n,                  /**< number of permutations */
       SCIP*                 scip,               /**< scip to search for automorphisms */
-      gcg::PARTIALDECOMP*   partialdec,         /**< partialdec */
-      gcg::DETPROBDATA*     detprobdata         /**< detprobdata */
+      gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition */
+      gcg::DETPROBDATA*     detprobdata         /**< detection process information and data */
    );
 
    ~struct_hook();
@@ -190,8 +192,8 @@ struct_hook::struct_hook(
    SCIP_Bool             aut_,               /**< true if there is an automorphism */
    unsigned int          n_,                 /**< number of permutations */
    SCIP*                 scip_,              /**< array of scips to search for automorphisms */
-   gcg::PARTIALDECOMP*           partialdec_,             /**< partialdec to Propagate */
-   gcg::DETPROBDATA*       detprobdata_          /**< detprobdata */
+   gcg::PARTIALDECOMP*   partialdec_,        /**< partialdec to propagate */
+   gcg::DETPROBDATA*     detprobdata_        /**< detection process information and data */
    ) : conssperm(NULL)
 {
    aut = aut_;
@@ -456,7 +458,7 @@ SCIP_RETCODE setupArrays(
    AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partialdec to set up help structure for */
-   gcg::DETPROBDATA*     detprobdata         /**< detprobdata */
+   gcg::DETPROBDATA*     detprobdata         /**< detection process information and data */
    )
 { /*lint -esym(593,scoef) */
    int i;
@@ -691,7 +693,7 @@ SCIP_RETCODE createGraph(
    bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partialdec to create graph for */
-   gcg::DETPROBDATA*     detprobdata         /**< detprobdata */
+   gcg::DETPROBDATA*     detprobdata         /**< detection process information and data */
    )
 {
    int i;
@@ -827,11 +829,11 @@ SCIP_RETCODE createGraph(
  */
 SCIP_RETCODE createPartialdecFromMasterconss(
    SCIP*                 scip,                /**< SCIP data structure */
-   gcg::PARTIALDECOMP**          newPartialdec,            /**< partialdec data structure */
+   gcg::PARTIALDECOMP**  newPartialdec,       /**< partialdec data structure */
    int*                  masterconss,         /**< constraints to be put in the master */
    int                   nmasterconss,        /**< number of constraints in the master */
-   gcg::PARTIALDECOMP*           partialdec,               /**< partialdec to propagate */
-   gcg::DETPROBDATA*       detprobdata,            /**< detprobdata */
+   gcg::PARTIALDECOMP*   partialdec,          /**< partialdec to propagate */
+   gcg::DETPROBDATA*     detprobdata,         /**< detection process information and data */
    SCIP_Bool             exact                /** does this partialdec stems from exact graph construction ( or was onlysign = TRUE ) was used */
    )
 {
@@ -1203,7 +1205,7 @@ std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
 /** reorder such that the best permutation is represented by 0, the second best by 1, etc. */
 SCIP_RETCODE reorderPermutations(
    SCIP*                 scip,               /**< SCIP data structure */
-   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata */
+   gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
    int*                  permutation,        /**< the permutation */
    int                   permsize,           /**< size of the permutation */
    int                   nperms              /**< number of permutations */

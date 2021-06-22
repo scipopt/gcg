@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1947,6 +1947,9 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype, infinity, epsilon, sumepsilon,
             feastol, lpfeastolfactor, dualfeastol, enableppcuts) );
       SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) ); /*lint !e613*/
+
+      /* disabling restarts from the tree size estimation */
+      SCIP_CALL( SCIPsetCharParam(relaxdata->pricingprobs[i], "estimation/restarts/restartpolicy", 'n') );
    }
 
    SCIP_CALL( createPricingVariables(scip, relaxdata, hashorig2pricingvar) );

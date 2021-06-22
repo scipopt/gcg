@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -357,7 +357,7 @@ SCIP_RETCODE partialdecVecToIdArray(
 static
 std::vector<PARTIALDECOMP*> getSelectedPartialdecs(
    SCIP* scip,  /**< SCIP data structure */
-   std::vector<PARTIALDECOMP*>& selectedpartialdecs
+   std::vector<PARTIALDECOMP*>& selectedpartialdecs  /**< vector of partialdecs (input) */
    )
 {
    /* get all partialdecs */
@@ -2771,7 +2771,6 @@ DEC_DETECTOR* DECfindDetector(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    int i;
-
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    if( conshdlr == NULL )
       return NULL;

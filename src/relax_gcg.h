@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    relax_gcg.h
- * @ingroup PUBLICMETHODS
  * @brief   GCG relaxator
  * @author  Gerald Gamrath
  * @author  Christian Puchert
@@ -47,6 +46,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @ingroup RELAXATORS
+ * @{
+ */
 
 /** creates the GCG relaxator and includes it in SCIP */
 extern
@@ -267,8 +271,10 @@ SCIP_CLOCK* GCGgetRootNodeTime(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** @} */
 #ifdef __cplusplus
 }
+
 #endif
 
 #endif

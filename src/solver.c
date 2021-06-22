@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -255,12 +255,12 @@ SCIP_RETCODE GCGsolverExitsol(
 
 /** calls update method of GCG pricing solver */
 SCIP_RETCODE GCGsolverUpdate(
-   SCIP*                 pricingprob,
-   GCG_SOLVER*           solver,
+   SCIP*                 pricingprob,        /**< the pricing problem that should be solved */
+   GCG_SOLVER*           solver,             /**< pricing solver */
    int                   probnr,             /**< number of the pricing problem */
-   SCIP_Bool             varobjschanged,
-   SCIP_Bool             varbndschanged,
-   SCIP_Bool             consschanged
+   SCIP_Bool             varobjschanged,     /**< have the objective coefficients changed? */
+   SCIP_Bool             varbndschanged,     /**< have the lower and upper bounds changed? */
+   SCIP_Bool             consschanged        /**< have the constraints changed? */
    )
 {
    assert(pricingprob != NULL);

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   class_detprobdata.h
+ * @ingroup DECOMP
  * @brief  class storing partialdecs and the problem matrix
  * @note   formerly called "Seeedpool"
  * @author Michael Bastubbe
@@ -181,7 +182,6 @@ public:
    /**
     * @brief constructor
     * @param scip SCIP data structure
-    * @param conshdlrName name of the conshandler maintaining the detprobdata, should be "decomp"
     * @param _originalProblem true iff the detprobdata is created for the presolved problem
     */
    DETPROBDATA(
@@ -540,7 +540,7 @@ public:
       );
 
    /**
-    * @brief returns whether a constraint is a cardinality constraint, i.e. of the \sum){i} x_i == b
+    * @brief returns whether a constraint is a cardinality constraint, i.e. of the \f$\sum_{i} x_i = b\f$
     * @param consindexd index of constraint that is be checked
     * @return returns whether a constraint is a cardinality constraint
     */
@@ -566,8 +566,8 @@ public:
 
    /**
     * @brief is cons with specified index partitioning packing, or covering constraint?
-    * @param consindex indec of cons to be checked
-    * @return  whether a constraint  is partitioning packing, or covering constraint?
+    * @param consindexd index of cons to be checked
+    * @return whether a constraint is partitioning packing, or covering constraint?
     */
    bool isConsSetppc(
       int  consindexd
