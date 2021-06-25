@@ -12,11 +12,11 @@ branching/ryanfoster/usestrong = TRUE
 ## BRANCHING RULE DEPENDENT SETTINGS ##
 
 ## NUMBER OF CANDIDATES IN PHASE 0
-# minimum number of output candidates from phase 0 [1,MAX]
+# minimum number of output candidates from phase 0 [1..MAX]
 branching/orig/minphase0outcands = 10
 branching/ryanfoster/minphase0outcands = 10
 
-# maximum number of output candidates from phase 0 [1,MAX]
+# maximum number of output candidates from phase 0 [1..MAX]
 branching/orig/maxphase0outcands = 50
 branching/ryanfoster/maxphase0outcands = 50
 
@@ -31,11 +31,11 @@ branching/orig/phase1gapweight = 0.25
 branching/ryanfoster/phase1gapweight = 0.25
 
 ## NUMBER OF CANDIDATES IN PHASE 1
-# minimum number of output candidates from phase 1 [1,MAX]
+# minimum number of output candidates from phase 1 [1..MAX]
 branching/orig/minphase1outcands = 3
 branching/ryanfoster/minphase1outcands = 3
 
-# maximum number of output candidates from phase 1 [1,MAX]
+# maximum number of output candidates from phase 1 [1..MAX]
 branching/orig/maxphase1outcands = 20
 branching/ryanfoster/maxphase1outcands = 20
 
