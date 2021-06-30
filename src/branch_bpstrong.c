@@ -55,6 +55,7 @@
 
 #include "scip/cons_linear.h"
 #include "scip/scipdefplugins.h"
+#include "scip/var.h"
 
 #define BRANCHRULE_NAME "bpstrong"                              /**< name of branching rule */
 #define BRANCHRULE_DESC "strong branching for branch-and-price" /**< short description of branching rule */
