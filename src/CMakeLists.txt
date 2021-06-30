@@ -16,6 +16,7 @@ set(gcgsources
     benders_gcg.c
     bendersplugins.c
     branch_empty.c
+    branch_bpstrong.c
     branch_generic.c
     branch_orig.c
     branch_relpsprob.c
@@ -143,6 +144,7 @@ set(gcgsources
 
 set(gcgheaders
     branch_empty.h
+    branch_bpstrong.h
     branch_generic.h
     branch_orig.h
     branch_relpsprob.h
