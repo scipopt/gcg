@@ -30,8 +30,8 @@ i guess.</small>
 pseudocost branching can also be substituted by any other heuristic, with varying performance.</small>  
 
 ## Discussion of Available Selection Heuristics
-The goal of any selection heuristic is to select candidates in a way that will result in the smallest branch-and-bound 
-tree. As determining these candidates is (to our current knowledge) computationally infeasible, the heuristics instead
+The goal of any selection heuristic is to select candidates in a way that will result in the **smallest branch-and-bound 
+tree**. As determining these candidates is (to our current knowledge) computationally infeasible, the heuristics instead
 pick candidates that optimize some other criterion that is potentially thought to be a good indicator of the resulting
 tree size.
 
@@ -52,7 +52,7 @@ next candidate is maximal.
 > Pseudocost branching was designed to be used in conjunction with branching on (original/master) variables, and will
 > likely not be as effective if used with other branching rules.
 
-Pseudocost branching estimates the gain by averaging previous nodes where a given candidate was branched on: given some
+Pseudocost branching estimates the gain by **averaging previous** nodes where a given candidate was branched on: given some
 candidate that introduces bounds on a single variable \f$ x_i \f$, the projected up gain ("upwards pseudocost") is
 \f{align}{
     \Phi^+(x_i) := \frac{1}{|I^+_i|}\sum_{i \in I^+_i}\frac{z'_{u_i(y)} - z'_y}{\bar{x}_i - \lfloor\bar{x}_i\rfloor},
@@ -63,16 +63,16 @@ lower bound of node \f$ y \f$, and \f$ \bar{x}_i \f$ is the solution value of \f
 projected down gain can be calculated analogously.
 
 ### Strong Branching (with or without Column Generation)
-Strong branching estimates the gain by actually solving the respective child nodes. _Fully_ evaluating _all_ child 
+Strong branching estimates the gain by actually **solving the respective child nodes**. _Fully_ evaluating _all_ child 
 nodes is called (all) full strong branching. We additionally differentiate between strong branching _with_ and strong
 branching _without_ column generation, i.e. strong branching can be relaxed by not performing column generation to 
-evaluate the child nodes. Using strong branching generally results in smaller trees, however its significant 
+evaluate the child nodes. Using strong branching generally results in **smaller trees**, however its significant 
 computational effort means that it is usually not worth it to use just strong branching.
 
 ### Hybrid Pseudocost/Strong Branching
-Hybrid pseudocost/strong branching uses strong branching for nodes up to a given depth, and pseudocost branching for
+Hybrid pseudocost/strong branching uses strong branching for **nodes up to a given depth**, and pseudocost branching for
 all nodes after that. GCG can substitute any of the aformentioned heuristics for the latter, and both strong branching
-with and without column generation for the former. Furthermore, GCG can dynamically adjust the height parameter basde on the total number of binary and integer variables.
+with and without column generation for the former. Furthermore, GCG can dynamically adjust the height parameter based on the total number of binary and integer variables.
 
 ### Reliability Branching
 Reliability branching uses strong branching for some candidate \f$ if \f$ if its pseudocost values are not _reliable_
@@ -82,7 +82,7 @@ heuristics (except hybrid branching) for the latter, and both strong branching w
 the former.
 
 ### Hierarchical Branching
-In hierarchical branching, the selection process is divided into three phases, where  
+In hierarchical branching, the selection process is divided into **three phases**, where  
 - in phase 0, the candidates are filtered based on some heuristic that is quick to compute (e.g. pseudocost branching),
 then
 - in phase 1, the remaining candidates are filtered based their strong branching without column generation scores, and
@@ -92,7 +92,7 @@ strong branching with column generation.
 
 ## Parameters for Branching Candidate Selection Heuristics
 Some of the selection heuristics, in GCG primarily those that are based on strong branching, can further be adjusted 
-by setting values for certain parameters. These parameters include the depth until which strong branching is performed
+by **setting values for certain parameters**. These parameters include the depth until which strong branching is performed
 for hybrid branching, the reliability parameter for reliability branching, or the number of candidates that pass
 through each phase for hierarchical branching. See @ref selection-heuristics-params "here" for a full list of the available parameters, together with
 descriptions, value ranges and default values.  
@@ -106,7 +106,7 @@ set load [path/to/settings/file].set
 -s "[path/to/settings/file].set"
 ```
 You can find further information on settings files @ref getting-started "here".  
-GCG already has several preconfigured settings files for the heuristics introduced on this page, which can be found in
+GCG already has several **preconfigured settings files** for the heuristics introduced on this page, which can be found in
 the settings folder, where ``orig`` refers to original variable branching and ``rf`` to Ryan-Foster branching:
 ```
 [orig/rf]Random              : random branching
@@ -124,4 +124,12 @@ rfHierarchicalNoP0           : hierarchical strong branching without the first p
 These files might provide a good starting point for the configuration you wish to achieve. Additionally, the file
 ``strongBranchingParams.set`` again contains all parameters together with descriptions, value ranges and default
 values.  
-As you might have noticed, the above list also contains settings files that combine multiple of the aforementioned heuristics (``[orig/rf]HybridHierarchical.set``). This is possible because all of the strong branching-based heuristics are implemented inside the same method. Combining heuristics this way can be beneficial for certain instances.
+As you might have noticed, the above list also contains settings files that combine multiple of the aforementioned heuristics (``[orig/rf]HybridHierarchical.set``). This is possible because all of the strong branching-based heuristics are implemented inside the same method. Combining heuristics this way can be beneficial for some instances.
+
+<hr>
+
+## Adding own Branching Candidate Selection Heuristics
+If you want to **add your own branching candidate selection heuristics**, i.e. define exactly which candidates are selected
+please consider our "How to add" for that.
+
+@ref own-branching-rule

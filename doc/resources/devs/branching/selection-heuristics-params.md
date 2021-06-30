@@ -2,7 +2,7 @@
 
 See @ref branching-selection-heuristics "here" for explanations regarding branching candidate selection heuristics.
 ## Activating selection heuristics
-Per default, strong branching is disabled. GCG will use the first active non-strong branching heuristics in place of 
+Per default, **strong branching is disabled**. Furthermore, GCG will use the first active non-strong branching heuristics in place of 
 pseudocost branching for hybrid, reliability and hierarchical branching.
 
 ### Original Variable Branching
