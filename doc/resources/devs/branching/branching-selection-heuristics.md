@@ -23,8 +23,7 @@ overall algorithm.
 | Hierarchical Branching<sup>1</sup>                          | X                 | (X)<sup>3</sup> |                    |
 </center>
 <sup>1</sup> : <small>GCG offers a highly customizable implementation of strong branching-based heuristics (currently
-in an experimental state), which, among other things, allows to combine them. Refer to this page for more information
-i guess.</small>  
+in an experimental state), which, among other things, allows to combine them. Refer to this page for more information.</small>  
 <sup>2</sup> : <small>GCG can only aggregate the respective scores of the individual variables.</small>  
 <sup>3</sup> : <small>These heuristics where originally meant to use pseudocost branching, see <sup>2</sup>. However,
 pseudocost branching can also be substituted by any other heuristic, with varying performance.</small>  
