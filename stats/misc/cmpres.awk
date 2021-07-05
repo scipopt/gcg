@@ -943,7 +943,10 @@ END {
    # tex comparison headers
    if( texcmpfile != "" )
    {
-      printf("{\\sffamily\n") > texcmpfile;
+      printf("\\documentclass[varwidth, margin=20pt]{standalone}\n") > texcmpfile;
+      printf("\\usepackage{array,booktabs,color}\n") > texcmpfile;
+      printf("\\begin{document}\n") > texcmpfile;
+      printf("\\sffamily\n") > texcmpfile;
       printf("\\scriptsize\n") > texcmpfile;
       printf("\\setlength{\\extrarowheight}{1pt}\n") > texcmpfile;
       printf("\\setlength{\\tabcolsep}{2pt}\n") > texcmpfile;
@@ -955,7 +958,7 @@ END {
       {
          s = printorder[o];
          solverextension = solverextension "i";
-         printf("\\newcommand{\\solvername%s}{%s}\n", solverextension, solvername[s]) > texcmpfile;
+         printf("\\newcommand{\\solvername%s}{\\shortstack{%s}}\n", solverextension, solvername[s]) > texcmpfile;
       }
 
       printf("\\begin{tabular*}{\\columnwidth}{@{\\extracolsep{\\fill}}l") > texcmpfile;
@@ -1825,7 +1828,8 @@ END {
       printf("\\\\\n") > texcmpfile;
       printf("\\bottomrule\n") > texcmpfile;
       printf("\\end{tabular*}\n") > texcmpfile;
-      printf("}\n") > texcmpfile;
+      printf("\\normalsize\n") > texcmpfile;
+      printf("\\end{document}") > texcmpfile;
    }
 
    if( !short )

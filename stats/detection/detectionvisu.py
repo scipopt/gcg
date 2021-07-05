@@ -1,8 +1,8 @@
-from Tkinter import *
-from dataset import *
-from plotter import *
-from tkFileDialog import *
-from ttk import *
+from tkinter import *
+from parser_detection import *
+from plotter_detection import *
+from tkinter.filedialog import *
+from tkinter.ttk import *
 
 class App:
 
@@ -14,7 +14,7 @@ class App:
         self.frame.winfo_toplevel().title("Plotter for detection statistics")
 
         self.datasets = []
-        self.plotter = Plotter()
+        self.plotter = Plotter(True)
 
         for x in range(60):
             Grid.columnconfigure(self.frame, x, weight=1)
@@ -53,8 +53,8 @@ class App:
 
     def open_file(self):
         name = askopenfilename(initialdir="/local/bastubbe/gcg-dev/check/test")
-        print "Test 0\n"
-        self.datasets.append(Dataset(name) )
+        try: assert(self.datasets.append(Dataset(name,True)) == None)
+        except AssertionError: return
         self.listboxclassifier = Listbox(self.frame)
         self.listboxclassifier.grid(row=10, column=0)
 
@@ -75,7 +75,6 @@ class App:
 
 
     def plotdetectionquality(self):
-        print "Test 2\n"
         self.plotter.plotdetectionquality(self.datasets)
 
     def plotdetectionqualitysetpartmaster(self):
@@ -90,13 +89,11 @@ class App:
     def plotdetectiontimes(self):
         self.plotter.plotdetectiontimes(self.datasets)
 
-
     def plotnclassesforclassifier(self):
-        classifierid = self.listboxclassifier.curselection()[0]
-        print(classifierid)
-        classifier = self.plotter.getclassifiernames()[classifierid]
-        self.plotter.plotnclassesforclassifier(classifier)
-
+        try:
+            self.plotter.plotnclassesforclassifier(self.datasets,self.listboxclassifier.curselection()[0])
+        except IndexError:
+            print("You did not select a classifier.")
 
 root = Tk()
 root.style = Style()

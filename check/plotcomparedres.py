@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import collections
 import math
-from matplotlib2tikz import save as tikz_save
+from tikzplotlib import save as tikz_save
 
 # check command line arguments
 if len(sys.argv) < 2:
@@ -27,10 +27,10 @@ resdir = sys.argv[1]
 outdirset = False
 outdir = 'pickles/'
 if len(sys.argv) > 1:
-	outdir = sys.argv[1]
+	outdir = sys.argv[2]
 	outdirset = True
 	if not os.path.exists(outdir):
-	    os.makedir(outdir)
+	    os.makedirs(outdir)
 
 # Get premade res data
 datasets = {}
@@ -46,7 +46,7 @@ testset = 'short'
 comparesettings = False
 settingslist = []
 
-orderByCommand = True
+orderByCommand = False
 sortedbranches = []
 
 # helper function to add an increasing number to duplicate instance names in the ordering
@@ -113,6 +113,11 @@ orderedtimelimit = collections.OrderedDict(timelimitset.items())
 
 # resort names according to readme file, where the arguments as given in the shell script, are saved
 ordereddata = collections.OrderedDict()
+
+# initialize ordereddata randomly if no ordering was given
+if len(sortedbranches) == 0:
+	sortedbranches = [run.split(".pkl")[0].split("res_")[1] for run in ordereddata_temp.keys()]
+	
 for k in sortedbranches:
     ordereddata["res_{}.pkl".format(k)] = ordereddata_temp["res_{}.pkl".format(k)]
 
@@ -171,7 +176,7 @@ def cropkeypkl(key, keyprefix, addlinebreak=False):
 				charlist.insert(int(ninserts*maxstringlen), '\n')
 			ninserts = ninserts - 1
 		croppedkey = ''.join(charlist)
-	return croppedkey;
+	return croppedkey
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Get some statistics for each res file to be used in the plots
@@ -327,7 +332,7 @@ def labelbars(bars, highestbar):
 		if highestbar > 0:
 			position = height + (int(float(highestbar))/100)
 		ax.text(item.get_x()+item.get_width()/2., position, '%d' % int(height), ha='center', size='xx-small')
-	return;
+	return
 
 # settings function for axis limits, layout and bar tests
 def setbarplotparams(highestbar):
@@ -344,7 +349,7 @@ def setbarplotparams(highestbar):
 	ax.grid(True,axis='y')
 	plt.tight_layout()
 	plt.tick_params(axis='x', labelsize=7)
-	return;
+	return
 
 # -------------------------------------------------------------------------------------------------------------------------
 # 1) Plot how many instances were unsolved per version
@@ -413,8 +418,8 @@ plt.subplots_adjust(bottom=0.2)
 
 plt.savefig(outdir + '/failcomparison.pdf')			# name of image
 tikz_save(outdir + '/failcomparison.tikz',
-	figureheight = '\\figureheight',
-	figurewidth = '\\figurewidth')
+	axis_height = '\\figureheight',
+	axis_width= '\\figurewidth')
 
 # -------------------------------------------------------------------------------------------------------------------------
 # 2) Plot runtime per version
@@ -439,8 +444,8 @@ plt.figtext(.01,.01,'Testset: ' + testset, size='x-small')
 
 plt.savefig(outdir + '/runtimes.pdf')				# name of image
 tikz_save(outdir + '/runtimes.tikz',
-	figureheight = '\\figureheight',
-	figurewidth = '\\figurewidth')
+	axis_height = '\\figureheight',
+	axis_width= '\\figurewidth')
 
 # -------------------------------------------------------------------------------------------------------------------------
 # 3.a) Some helper functions for cumulative time differences
@@ -453,7 +458,7 @@ def sumruntimes(namelist, instimelist):
 	for insname in namelist:
 		if insname in instimelist:
 			res = res + float(instimelist[insname])
-	return res;
+	return res
 
 # calculate speedup factor given a list of (version, value) tuples and an index
 def calcspeedup(vallist, i):
@@ -462,7 +467,7 @@ def calcspeedup(vallist, i):
 		speedup = float(vallist[i-1][1]) / vallist[i][1]
 	else:
 		speedup = 0
-	return speedup;
+	return speedup
 
 # add value to former one: get a (key, value) dict, a key with index > 0 and the current difference
 def addtoformer(valuedict, key, diff):
@@ -471,7 +476,7 @@ def addtoformer(valuedict, key, diff):
 	cumsum = cumitems[len(cumitems)-1][1]
 
 	res = float(diff) * cumsum
-	return res;
+	return res
 
 # -------------------------------------------------------------------------------------------------------------------------
 # 3) Plot runtime comparison
@@ -676,8 +681,8 @@ else:
 
 	plt.savefig(outdir + '/runtimecomparison.pdf')			# name of image
 	tikz_save(outdir + '/runtimecomparison.tikz',
-		figureheight = '\\figureheight',
-		figurewidth = '\\figurewidth')
+		axis_height = '\\figureheight',
+		axis_width= '\\figurewidth')
 
 # -------------------------------------------------------------------------------------------------------------------------
 # 4) Plot time per status category (fail categories and solved)
@@ -745,8 +750,8 @@ plt.subplots_adjust(left=0.1)
 
 plt.savefig(outdir + '/timecomparisonperstatus.pdf')			# name of image
 tikz_save(outdir + '/timecomparisonperstatus.tikz',
-           figureheight = '\\figureheight',
-           figurewidth = '\\figurewidth')
+           axis_height = '\\figureheight',
+           axis_width= '\\figurewidth')
 
 # -------------------------------------------------------------------------------------------------------------------------
 # 5) Plot average runtime of solved instances per version
@@ -785,5 +790,5 @@ plt.figtext(.01,.01,'Testset: ' + testset, size='x-small')
 
 plt.savefig(outdir + '/averagesolvetime.pdf')				# name of image
 tikz_save(outdir + '/averagesolvetime.tikz',
-           figureheight = '\\figureheight',
-           figurewidth = '\\figurewidth')
+           axis_height = '\\figureheight',
+           axis_width= '\\figurewidth')
