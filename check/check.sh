@@ -64,7 +64,7 @@ fi
 
 SETDIR=../settings
 
-if test ! -e $VISU
+if test $VISU = "true"
 then
     DETECTIONSTATISTICS=true
     STATISTICS=true

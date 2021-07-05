@@ -34,6 +34,20 @@ then
     exit 1;
 fi
 
+if [[ $1 = "visu" ]]
+then
+    if [[ -z ${VISUSETTINGS} ]]; then VISUSETTINGS="none"; fi
+    if [[ -z ${BINID} ]]; then BINID=unknown; fi
+    if [[ -z ${VERSION} ]]; then VERSION=unkown; fi
+    if [[ -z ${MODE} ]]; then MODE=unkown; fi
+    if [[ -z ${LPS} ]]; then LPS=unkown; fi
+    if [[ -z ${THREADS} ]]; then THREADS=unkown; fi
+    if [[ -z ${FEASTOL} ]]; then FEASTOL=unkown; fi
+    if [[ -z ${LAST_STATISTICS} ]]; then LAST_STATISTICS="true"; fi
+
+    ./writeTestsetReport.sh $VISUSETTINGS $BINID $VERSION $MODE $LPS $THREADS $FEASTOL $LAST_STATISTICS
+fi
+
 if [[ $1 = "cluster" ]]
 then
     if [[ -z ${TSTNAME} ]]; then TSTNAME="short"; fi

@@ -30,7 +30,7 @@ if len(sys.argv) > 2:
 	outdir = sys.argv[2]
 	outdirset = True
 	if not os.path.exists(outdir):
-	    os.makedir(outdir)
+	    os.makedirs(outdir)
 
 # checkout outfile
 fh = open(resfile, 'r')
