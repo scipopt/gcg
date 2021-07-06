@@ -830,7 +830,6 @@ BEGIN {
          failtime += tottime;
          fail++;
       }
-
       else if( checksol && !bestsolfeas ) {
          status = "fail";
          failtime += tottime;
