@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_gcgsepa.h
- * @ingroup PUBLICMETHODS
+ * @ingroup PUBLICCOREAPI
  * @brief  public methods for GCG separators
  * @author Christian Puchert
  * @author Jonas Witt
@@ -44,6 +44,11 @@
 extern "C" {
 #endif
 
+/**
+ * @ingroup SEPARATORS_PUB
+ * @{
+ */
+
 /** sets separator parameters values to
  *
  *  - SCIP_PARAMSETTING_DEFAULT which are the default values of all separator parameters
@@ -58,6 +63,7 @@ SCIP_RETCODE GCGsetSeparators(
 
 #ifdef __cplusplus
 }
-#endif
 
+#endif
+/** @} */
 #endif

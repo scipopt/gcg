@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -805,18 +805,7 @@ SCIP_RETCODE addPPObjConss(
  */
 
 /** copy method for separator plugins (called when SCIP copies plugins) */
-#if 0
-static
-SCIP_DECL_SEPACOPY(sepaCopyBasis)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of basis separator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
 #define sepaCopyBasis NULL
-#endif
 
 /** destructor of separator to free user data (called when SCIP is exiting) */
 static
@@ -1593,18 +1582,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 }
 
 /** arbitrary primal solution separation method of separator */
-#if 0
-static
-SCIP_DECL_SEPAEXECSOL(sepaExecsolBasis)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of basis separator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
 #define sepaExecsolBasis NULL
-#endif
 
 /*
  * separator specific interface methods

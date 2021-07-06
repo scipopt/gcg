@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1947,6 +1947,9 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype, infinity, epsilon, sumepsilon,
             feastol, lpfeastolfactor, dualfeastol, enableppcuts) );
       SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) ); /*lint !e613*/
+
+      /* disabling restarts from the tree size estimation */
+      SCIP_CALL( SCIPsetCharParam(relaxdata->pricingprobs[i], "estimation/restarts/restartpolicy", 'n') );
    }
 
    SCIP_CALL( createPricingVariables(scip, relaxdata, hashorig2pricingvar) );
@@ -2162,7 +2165,7 @@ SCIP_RETCODE solveBlockProblem(
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Solving block %i.\n", blocknum+1);
    }
 
-   SCIP_CALL( SCIPsetIntParam(blockprob, "display/verblevel", (int)SCIP_VERBLEVEL_NORMAL) );
+   SCIP_CALL( SCIPsetIntParam(blockprob, "display/verblevel", relaxdata->origverblevel) );
 
    /* give the pricing problem 2% more time then the original scip has left */
    if( SCIPgetStage(blockprob) > SCIP_STAGE_PROBLEM )
@@ -2574,24 +2577,12 @@ SCIP_RETCODE initRelaxator(
       relaxdata->decomp = DECgetBestDecomp(scip, TRUE);
       if( relaxdata->decomp == NULL )
       {
-         DEC_DECOMP* decomp;
-         SCIP_RETCODE retcode;
+         int partialdecid;
          SCIPwarningMessage(scip, "No complete decomposition available. Creating basic decomposition.\n");
-         retcode = DECcreateBasicDecomp(scip, &decomp, FALSE);
-         if( retcode != SCIP_OKAY )
-         {
-            SCIPerrorMessage("Could not add decomp to cons_decomp!\n");
-            SCIPABORT();
-            return SCIP_ERROR;
-         }
-
-         assert(decomp != NULL );
-
-         SCIP_CALL( GCGconshdlrDecompAddDecomp(scip, decomp, TRUE) );
-         DECdecompFree(scip, &decomp);
+         partialdecid = GCGconshdlrDecompAddBasicPartialdec(scip, TRUE);
+         SCIP_CALL( GCGconshdlrDecompSelectPartialdec(scip, partialdecid, TRUE) );
 
          relaxdata->decomp = DECgetBestDecomp(scip, FALSE);
-
          assert( relaxdata->decomp != NULL );
       }
    }
@@ -2902,7 +2893,8 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
       SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "No reformulation will be performed. Solving the original model.\n");
    }
 
-   SCIP_CALL( initRelaxator(scip, relax) );
+   if( !SCIPisStopped(scip) )
+      SCIP_CALL( initRelaxator(scip, relax) );
 
    return SCIP_OKAY;
 }
@@ -4034,6 +4026,9 @@ int GCGgetBlockRepresentative(
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
 
+   if( pricingprobnr == -1 )
+      return -1;
+
    assert(scip != NULL);
 
    relax = SCIPfindRelax(scip, RELAX_NAME);
@@ -4042,6 +4037,8 @@ int GCGgetBlockRepresentative(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
+   assert(pricingprobnr >= 0);
+   assert(pricingprobnr < relaxdata->npricingprobs);
    assert(relaxdata->nblocksidentical[pricingprobnr] >= 0);
    assert((relaxdata->blockrepresentative[pricingprobnr] == pricingprobnr)
       == (relaxdata->nblocksidentical[pricingprobnr] > 0));

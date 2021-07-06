@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -50,12 +50,24 @@ MODE=${17}
 SETCUTOFF=${18}
 STATISTICS=${19}
 SHARED=${20}
+VISU=${21}
+LAST_STATISTICS=${22}
+SCRIPTSETTINGS=${23}
+DETECTIONSTATISTICS=${24}
 
 SETDIR=../settings
 
-if $SHARED = "true"
+if [[ $SHARED == "true" ]]
 then
   LD="LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:../lib/shared/"
+fi
+
+SETDIR=../settings
+
+if [[ $VISU == "true" ]]
+then
+    DETECTIONSTATISTICS=true
+    STATISTICS=true
 fi
 if test ! -e results
 then
@@ -68,6 +80,10 @@ fi
 if test ! -e locks
 then
     mkdir locks
+fi
+if [[ $DETECTIONSTATISTICS == "true" ]]
+then
+    mkdir -p results/decomps
 fi
 
 LOCKFILE=locks/$TSTNAME.$SETNAME.$MSETNAME.$VERSION.$LPS.lock
@@ -242,7 +258,13 @@ do
             echo set display freq $DISPFREQ        >> $TMPFILE
             if test $STATISTICS = "true"
             then
+              if test $VISU = "true"
+              then
+                mkdir -p results/vbc/$TSTNAME/
+                echo set visual vbcfilename results/vbc/$TSTNAME/$NAME.$SETNAME.vbc >> $TMPFILE
+              else
                 echo set visual vbcfilename results/vbc/$NAME.$SETNAME.vbc >> $TMPFILE
+              fi
             fi
             echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
             if test "$LPS" = "none"
@@ -458,6 +480,7 @@ EOF
                     fi
                 fi
                 GP_BASE=`basename $DECFILE .dec`
+
 #                echo detect                        >> $TMPFILE
 #                echo write problem $HOME\/results\/gpsBench\/$GP_BASE.gp >> $TMPFILE
 #                echo write problem $HOME\/results\/decsBench\/$GP_BASE.dec >> $TMPFILE
@@ -467,6 +490,13 @@ EOF
                 then
                     echo display additionalstatistics  >> $TMPFILE
                 fi
+
+                if [[ $DETECTIONSTATISTICS == "true" ]]
+                then
+                    echo display detectionstatistics     >> $TMPFILE
+                    echo explore export 0 quit           >> $TMPFILE
+                fi
+
 #               echo display solution              >> $TMPFILE
                 echo checksol                      >> $TMPFILE
             fi
@@ -515,4 +545,17 @@ then
     then
         rm -f $RUNFILE
     fi
+fi
+if test "$VISU" = "true"
+then
+  ./writeTestsetReport.sh $SCRIPTSETTINGS $BINID $VERSION $MODE $LPS $THREADS $FEASTOL $LAST_STATISTICS $OUTFILE $RESFILE results/vbc/$TSTNAME/ $TSTNAME $SETNAME $TIMELIMIT $MEMLIMIT
+fi
+
+if test "$DETECTIONSTATISTICS" = "true"
+then
+    for gpfile in $(ls *--gp)
+    do
+        sed -i.bak "s/--pdf/\.pdf/g" $gpfile && rm *.bak
+        mv $gpfile results/decomps/$(echo $gpfile | sed "s/--gp/\.gp/g")
+    done
 fi

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -70,34 +70,7 @@ ould have received a copy of the GNU Lesser General Public License  */
  */
 
 /** destructor of classifier to free user data (called when GCG is exiting) */
-#if 0
-static
-DEC_DECL_FREECLASSIFIER(classifierFreeNnonzeros)
-{  /*lint --e{715}*/
-
-   SCIPerrorMessage("Free function of classifier <%s> not implemented!\n", DEC_CLASSIFIERNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
 #define classifierFree NULL
-#endif
-
-/** classifier initialization method (called after problem was transformed) */
-#if 0
-static
-DEC_DECL_INITCLASSIFIER(classifierInitNnonzeros)
-{  /*lint --e{715}*/
-
-   SCIPerrorMessage("Init function of classifier <%s> not implemented!\n", DEC_CLASSIFIERNAME);
-   SCIPABORT();
-
-   return SCIP_OKAY;
-}
-#else
-#define classifierInit NULL
-#endif
 
 static
 DEC_DECL_CONSCLASSIFY(classifierClassify)
@@ -180,7 +153,7 @@ SCIP_RETCODE SCIPincludeConsClassifierNNonzeros(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {
-   SCIP_CALL( DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierInit, classifierFree, classifierClassify) );
+   SCIP_CALL( DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

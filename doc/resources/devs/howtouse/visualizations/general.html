@@ -1,0 +1,27 @@
+<div style="text-align: center; align: center">
+  <div class="pre-spoiler">
+  <input name="button" type="button" onClick="
+  if (this.parentNode.getElementsByTagName('div')[0].style.display != 'none') {
+     this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'Show General Plots'; }
+  else { this.parentNode.getElementsByTagName('div')[0].style.display = 'block'; this.value = 'Hide';
+}" value="Show General Plots">
+  <div class="spoiler" style="display: none;">
+
+    <h4>Simple Plot (Variant A)</h4>
+    <img src="img/visu/general/goodinstancesnodec.default.plot.png" style="width:80%">
+    <figcaption style="font-size:small; line-height:1.1">Simple Plot showing information about the decomposition, with a common y-axis. Illustrates the relation between the number of blocks of the chosen decomposition, the variables linking those blocks and the ("hard")/master constraints.</figcaption>
+
+    <h4>Simple Plot (Variant B)</h4>
+    <img src="img/visu/general/goodinstancesnodec.default.plot.2.png" style="width:80%">
+    <figcaption style="font-size:small; line-height:1.1">Another simple Plot showing the relation between the blocks of the decomposition used and the aggregations performed. Filtered, such that only instances are shown, where blocks were found, but no aggregations were performed.</figcaption>
+
+    <h4>Plot with two y-axes</h4>
+    <img src="img/visu/general/goodinstancesnodec.heurpricing.twin.png" style="width:80%">
+    <figcaption style="font-size:small; line-height:1.1">Twin Plot showing the relation between the time needed for heuristics and the resulting heuristics found with an own y-axis for each argument. In particular useful for arguments that are not measurable on the same scale, i.e. time vs. amount, as shown here.</figcaption>
+
+    <h4>Bubble Plot</h4>
+    <img src="img/visu/general/STRIPLIB2.default.bubble.png" style="width:80%">
+    <figcaption style="font-size:small; line-height:1.1">Bubble Plot showing the relation between the number of cuts found for the instance and the time used to find these cuts with bubbles. If one of the bubbles is big, this means that this ratio, up to a specified proximity factor (<code>--proximity</code>), occurred particularly often. In contrast to the others, this plot is generated on the whole strIPlib, a library with many instances of all categories, and thus has more data points.</figcaption>
+  </div>
+  </div>
+</div>

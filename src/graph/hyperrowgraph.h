@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -114,27 +114,27 @@ public:
       PARTIALDECOMP*      oldpartialdec,            /**< partialdec which should be amplifies */
       PARTIALDECOMP**     firstpartialdec,          /**< pointer to buffer the new partialdec amplified by dint of the graph */
       PARTIALDECOMP**     secondpartialdec,         /**< pinter to buffer the new partialdec whose border is amplified by dint of the graph */
-      DETPROBDATA*  detprobdata
+      DETPROBDATA*        detprobdata               /**< detection process information and data */
       );
 
    /** creates a new partialdec by dint of a graph created with all constraints and variables */
    virtual SCIP_RETCODE createPartialdecFromPartition(
       PARTIALDECOMP**      firstpartialdec,         /**< pointer to buffer the new partialdec created by dint of the graph */
       PARTIALDECOMP**      secondpartialdec,        /**< pointer to buffer the new partialdec whose border is amplified by dint of the graph */
-      DETPROBDATA*   detprobdata
+      DETPROBDATA*         detprobdata              /**< detection process information and data */
       );
 
    virtual SCIP_RETCODE createFromMatrix(
       SCIP_CONS**           conss,              /**< constraints for which graph should be created */
       SCIP_VAR**            vars,               /**< variables for which graph should be created */
-      int                   nconss_,             /**< number of constraints */
-      int                   nvars_               /**< number of variables */
+      int                   nconss_,            /**< number of constraints */
+      int                   nvars_              /**< number of variables */
       );
 
    /** creates a graph with open constraints and open variables of the partialdec */
    virtual SCIP_RETCODE createFromPartialMatrix(
-      DETPROBDATA*           detprobdata,
-      PARTIALDECOMP*               partialdec
+      DETPROBDATA*          detprobdata,     /**< detection process information and data */
+      PARTIALDECOMP*        partialdec       /**< partial decomposition to use for matrix */
       );
 
 };

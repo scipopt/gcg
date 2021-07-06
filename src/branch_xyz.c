@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -75,11 +75,11 @@ struct GCG_BranchData
  * Callback methods of branching rule
  */
 
-/* TODO: Implement all necessary branching rule methods. The methods with an #if 0 ... #else #define ... are optional */
+/* TODO: Implement all necessary branching rule methods. The methods with an #ifdef SCIP_DISABLED_CODE ... #else #define ... are optional */
 
 
 /** copy method for branchrule plugins (called when SCIP copies plugins) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 SCIP_DECL_BRANCHCOPY(branchCopyXyz)
 {  /*lint --e{715}*/
@@ -93,7 +93,7 @@ SCIP_DECL_BRANCHCOPY(branchCopyXyz)
 #endif
 
 /** destructor of branching rule to free user data (called when SCIP is exiting) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 SCIP_DECL_BRANCHFREE(branchFreeXyz)
 {  /*lint --e{715}*/
@@ -108,7 +108,7 @@ SCIP_DECL_BRANCHFREE(branchFreeXyz)
 
 
 /** initialization method of branching rule (called after problem was transformed) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 SCIP_DECL_BRANCHINIT(branchInitXyz)
 {  /*lint --e{715}*/
@@ -128,7 +128,7 @@ SCIP_DECL_BRANCHINIT(branchInitXyz)
 
 
 /** deinitialization method of branching rule (called before transformed problem is freed) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 SCIP_DECL_BRANCHEXIT(branchExitXyz)
 {  /*lint --e{715}*/
@@ -143,7 +143,7 @@ SCIP_DECL_BRANCHEXIT(branchExitXyz)
 
 
 /** solving process initialization method of branching rule (called when branch and bound process is about to begin) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 SCIP_DECL_BRANCHINITSOL(branchInitsolXyz)
 {  /*lint --e{715}*/
@@ -158,7 +158,7 @@ SCIP_DECL_BRANCHINITSOL(branchInitsolXyz)
 
 
 /** solving process deinitialization method of branching rule (called before branch and bound process data is freed) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 SCIP_DECL_BRANCHEXITSOL(branchExitsolXyz)
 {  /*lint --e{715}*/
@@ -173,7 +173,7 @@ SCIP_DECL_BRANCHEXITSOL(branchExitsolXyz)
 
 
 /** branching execution method for fractional LP solutions */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpXyz)
 {  /*lint --e{715}*/
@@ -188,7 +188,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpXyz)
 
 
 /** branching execution method for external candidates */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 SCIP_DECL_BRANCHEXECEXT(branchExecextXyz)
 {  /*lint --e{715}*/
@@ -203,7 +203,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextXyz)
 
 
 /** branching execution method for not completely fixed pseudo solutions */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsXyz)
 {  /*lint --e{715}*/
@@ -223,7 +223,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsXyz)
 /** activation method for branchrule, called when a node in the master problem is activated,
  *  should perform changes to the current node's problem due to the branchdata
  */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterXyz)
 {  /*lint --e{715}*/
@@ -240,7 +240,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterXyz)
 /** deactivation method for branchrule, called when a node in the master problem is deactivated,
  *  should undo changes to the current node's problem due to the branchdata
  */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterXyz)
 {  /*lint --e{715}*/
@@ -256,7 +256,7 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterXyz)
 /** propagation method for branchrule, called when a node in the master problem is propagated,
  *  should perform propagation at the current node due to the branchdata
  */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 GCG_DECL_BRANCHPROPMASTER(branchPropMasterXyz)
 {  /*lint --e{715}*/
@@ -272,7 +272,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterXyz)
 /** method for branchrule, called when the master LP is solved at one node,
  *  can store pseudocosts for the branching decisions
  */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedXyz)
 {  /*lint --e{715}*/
@@ -286,7 +286,7 @@ GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedXyz)
 #endif
 
 /** frees branching data of an origbranch constraint (called when the origbranch constraint is deleted) */
-#if 0
+#ifdef SCIP_DISABLED_CODE
 static
 GCG_DECL_BRANCHDATADELETE(branchDataDeleteXyz)
 {  /*lint --e{715}*/

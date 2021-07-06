@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -52,27 +52,16 @@ SCIP_Real getGeneratorEntry(
    SCIP_VAR*             origvar             /**< corresponding origvar */
    )
 {
-   int i;
-   SCIP_VAR** origvars;
-   SCIP_Real* origvals;
-   int norigvars;
+   SCIP_HASHMAP* varmap;
+   SCIP_Real origval;
 
    assert(mastervar != NULL);
    assert(origvar != NULL);
 
-   origvars = GCGmasterVarGetOrigvars(mastervar);
-   norigvars = GCGmasterVarGetNOrigvars(mastervar);
-   origvals = GCGmasterVarGetOrigvals(mastervar);
+   varmap = GCGmasterVarGetOrigvalmap(mastervar);
+   origval = SCIPhashmapGetImageReal(varmap, origvar);
 
-   for( i = 0; i < norigvars; ++i )
-   {
-      if( origvars[i] == origvar )
-      {
-         return origvals[i];
-      }
-   }
-
-   return 0.0;
+   return origval == SCIP_INVALID ? 0.0 : origval;
 }
 
 /** comparefunction for lexicographical sort */
@@ -107,12 +96,17 @@ GCG_DECL_SORTPTRCOMP(mastervarcomp)
 
    for( i = 0; i < norigvars; ++i )
    {
+      SCIP_Real entry1;
+      SCIP_Real entry2;
       if( SCIPvarGetType(origvars[i]) > SCIP_VARTYPE_INTEGER )
          continue;
 
-      if( SCIPisFeasGT(origprob, getGeneratorEntry(mastervar1, origvars[i]), getGeneratorEntry(mastervar2, origvars[i])) )
+      entry1 = getGeneratorEntry(mastervar1, origvars[i]);
+      entry2 = getGeneratorEntry(mastervar2, origvars[i]);
+
+      if( SCIPisFeasGT(origprob, entry1, entry2) )
          return -1;
-      if( SCIPisFeasLT(origprob, getGeneratorEntry(mastervar1, origvars[i]), getGeneratorEntry(mastervar2, origvars[i])) )
+      if( SCIPisFeasLT(origprob, entry1, entry2) )
          return 1;
    }
 

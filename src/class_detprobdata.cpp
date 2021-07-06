@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -234,8 +234,6 @@ void DETPROBDATA::getTranslatedPartialdecs(
    {
       PARTIALDECOMP* newpartialdec;
 
-      std::vector<int> probvarismatchedinfo = std::vector<int>(getNVars(), -1);
-
       SCIPverbMessage(this->scip, SCIP_VERBLEVEL_FULL, NULL, " transform partialdec %d \n", otherpartialdec->getID());
 
       newpartialdec = new PARTIALDECOMP(scip, original);
@@ -267,36 +265,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
          }
       }
 
-      /* set linking and master vars according to their representatives in the orig partialdec */
-      for( int j = 0; j < otherpartialdec->getNLinkingvars(); j ++ )
-      {
-         int thisvar = colothertothis[otherpartialdec->getLinkingvars()[j]];
-         if( thisvar != - 1 && probvarismatchedinfo[thisvar] == -1 )
-         {
-            probvarismatchedinfo[thisvar] = 1;
-            newpartialdec->fixVarToLinking(thisvar);
-         }
-         else
-            if(  thisvar != - 1 )
-            {
-               assert( probvarismatchedinfo[thisvar] == 1 ); /* if this not fulfilled this probvar was assigned as master only variable but should be linking var*/
-            }
-      }
-
-      for( int j = 0; j < otherpartialdec->getNMastervars(); j ++ )
-      {
-         int thisvar = colothertothis[otherpartialdec->getMastervars()[j]];
-         if( thisvar != - 1 && probvarismatchedinfo[thisvar] == -1 )
-         {
-            probvarismatchedinfo[thisvar] = 2;
-            newpartialdec->fixVarToMaster(thisvar);
-         }
-         else
-            if(  thisvar != - 1 )
-            {
-               assert( probvarismatchedinfo[thisvar] == 2 ); /* if this not fulfilled this probvar was assigned as linking only variable but should be master var*/
-            }
-      }
+      // we do not assign variables as the previous assignment might be invalid due to presolving
 
       newpartialdec->setDetectorchain(otherpartialdec->getDetectorchain());
       newpartialdec->setAncestorList(otherpartialdec->getAncestorList());
@@ -328,18 +297,9 @@ void DETPROBDATA::getTranslatedPartialdecs(
       newpartialdec->setFinishedByFinisher(otherpartialdec->getFinishedByFinisher());
       newpartialdec->prepare();
 
-      SCIP_Bool benders;
-      SCIPgetBoolParam(scip, "detection/benders/enabled", &benders);
-
-      newpartialdec->deleteEmptyBlocks(benders);
       newpartialdec->getScore(GCGconshdlrDecompGetScoretype(scip)) ;
 
-      if( newpartialdec->checkConsistency() )
-         translatedpartialdecs.push_back(newpartialdec);
-      else
-      {
-         delete newpartialdec;
-      }
+      translatedpartialdecs.push_back(newpartialdec);
    }
 }
 
@@ -497,7 +457,7 @@ DETPROBDATA::~DETPROBDATA()
    }
 
    // Delete all partialdecs
-   GCGconshdlrDecompDeregisterAllPartialdecs(scip);
+   GCGconshdlrDecompDeregisterPartialdecs(scip, original);
 
    for( size_t i = 0; i < conspartitioncollection.size(); ++ i )
    {
@@ -587,6 +547,7 @@ bool DETPROBDATA::addPartialdecToOpen(
    PARTIALDECOMP* partialdec
    )
 {
+   assert(partialdec->checkConsistency());
    if( partialdecIsNoDuplicateOfPartialdecs(partialdec, openpartialdecs, true) )
    {
       openpartialdecs.push_back(partialdec);
@@ -603,6 +564,7 @@ bool DETPROBDATA::addPartialdecToFinished(
    PARTIALDECOMP* partialdec
    )
 {
+   assert(partialdec->checkConsistency());
    if( partialdec->isComplete() && partialdecIsNoDuplicateOfPartialdecs(partialdec, finishedpartialdecs, false) )
    {
       finishedpartialdecs.push_back(partialdec);
@@ -619,6 +581,7 @@ void DETPROBDATA::addPartialdecToFinishedUnchecked(
    PARTIALDECOMP* partialdec
    )
 {
+   assert(partialdec->checkConsistency());
    finishedpartialdecs.push_back(partialdec);
 }
 

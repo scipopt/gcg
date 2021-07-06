@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -54,6 +54,12 @@
 #include <vector>
 #include <algorithm>
 #include <queue>
+
+#ifdef HMETIS_HEADER
+#include "hmetis.h"
+#else
+#define HMETIS_EXECUTABLE "hmetis"
+#endif
 
 #include "cons_decomp.h"
 #include "struct_decomp.h"
@@ -228,7 +234,7 @@ SCIP_RETCODE callMetis(
    SCIP*                 scip,               /**< SCIP data struture */
    DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
-   char                  tempfile[SCIP_MAXSTRLEN],
+   char                  tempfile[SCIP_MAXSTRLEN],  /**< filename for the metis input file */
    int                   nblocks,            /**< number of blocks */
    SCIP_RESULT*          result              /**< result indicating whether the detection was successful */
    )
@@ -258,7 +264,7 @@ SCIP_RETCODE callMetis(
    /* call metis via syscall as there is no library usable ... */
    if( !SCIPisInfinity(scip, DECgetRemainingTime(scip)) )
    {
-      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
+      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;" HMETIS_EXECUTABLE " %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
                tempfile,
                nblocks,
@@ -269,7 +275,7 @@ SCIP_RETCODE callMetis(
    }
    else
    {
-      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
+      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"" HMETIS_EXECUTABLE " %s %d -seed %d -ptype %s -ufactor %f %s\"",
                tempfile,
                nblocks,
                detectordata->randomseed,
@@ -336,7 +342,7 @@ SCIP_RETCODE createMetisFile(
    DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
    int                   partialdecid,       /**< used for speaking filenames */
    MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
-   char tempfile[SCIP_MAXSTRLEN]
+   char tempfile[SCIP_MAXSTRLEN]             /**< filename for the metis input file */
    )
 {
    int nvertices;
@@ -442,7 +448,7 @@ SCIP_RETCODE detection(
 
    /* Graph stuff for hmetis */
    MatrixGraph<gcg::GraphTclique>* graph;    /* the graph of the matrix */
-   char tempfile[SCIP_MAXSTRLEN];            /* filename for the metis input file */
+   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );

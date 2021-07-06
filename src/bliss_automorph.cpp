@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -36,7 +36,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-/** #define SCIP_DEBUG */
+/* #define SCIP_DEBUG */
 #include "bliss/graph.hh"
 #include "bliss_automorph.h"
 #include "scip_misc.h"
@@ -420,7 +420,7 @@ static SCIP_RETCODE allocMemoryNewDetection(
    AUT_COLOR*            colorinfo,          /**< struct to save intermediate information */
    int                   nconss,             /**< number of constraints */
    int                   nvars,              /**< number of variables */
-   int                   ncoeffs
+   int                   ncoeffs             /**< number of coefficients */
    )
 {
    SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarraycoefs, ((size_t) ncoeffs )));
@@ -1031,8 +1031,8 @@ SCIP_RETCODE createGraph(
 static
 SCIP_RETCODE createGraphNewDetection(
    SCIP*                 scip,               /**< SCIP data structure */
-   gcg::DETPROBDATA*     detprobdata,        /**< detprobdata */
-   gcg::PARTIALDECOMP*   partialdec,         /**< partialdec */
+   gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
+   gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition */
    int                   nblocks,            /**< number of blocks the symmetry should be checked for */
    std::vector<int>      blocks,             /**< vectors of block indices the symmetry be checked for */
    AUT_COLOR             colorinfo,          /**< data structure to save intermediate data  */
@@ -1383,8 +1383,8 @@ SCIP_RETCODE cmpGraphPair(
 
 /** compare two graphs w.r.t. automorphism */
 SCIP_RETCODE cmpGraphPair(
-   SCIP*                   scip,               /** SCIP data structure */
-   gcg::PARTIALDECOMP*     partialdec,         /** partialdec the graphs should be compared for */
+   SCIP*                   scip,               /**< SCIP data structure */
+   gcg::PARTIALDECOMP*     partialdec,         /**< partialdec the graphs should be compared for */
    int                     block1,             /**< index of first pricing prob */
    int                     block2,             /**< index of second pricing prob */
    SCIP_RESULT*            result,             /**< result pointer to indicate success or failure */
@@ -1450,4 +1450,3 @@ SCIP_RETCODE cmpGraphPair(
    delete ptrhook;
    return SCIP_OKAY;
 }
-

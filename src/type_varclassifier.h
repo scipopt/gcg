@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -48,16 +48,6 @@ typedef struct DEC_VarClassifier DEC_VARCLASSIFIER;
  *  - classifier      : classifier data structure
  */
 #define DEC_DECL_FREEVARCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, DEC_VARCLASSIFIER* classifier)
-
-/**
- * classifier initialization method
- * It can be used to fill the classifier data with needed information. The implementation is optional.
- *
- * input:
- *  - scip            : SCIP data structure
- *  - classifier      : classifier data structure
- */
-#define DEC_DECL_INITVARCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, DEC_VARCLASSIFIER* classifier)
 
 /**
  * Tries to classify variables with data of the according detprobdata and store the classification in the detprobdata

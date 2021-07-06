@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   objpricer_gcg.h
- * @ingroup PUBLICMETHODS
  * @brief  GCG variable pricer
  * @author Martin Bergner
  * @ingroup PRICERS
@@ -44,6 +43,11 @@
 #include "pub_gcgcol.h"
 #include "pub_colpool.h"
 #include "pricestore_gcg.h"
+
+/**@defgroup GCGPRICEROBJ GCG Variable Pricer Object
+ * @ingroup PRICING_PUB
+ * @{
+ */
 
 using gcg::Pricingcontroller;
 using gcg::Stabilization;
@@ -364,7 +368,7 @@ private:
       SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
    );
 
-#if 0
+#ifdef SCIP_DISABLED_CODE
    /** generic method to generate feasible columns from the pricing problem
     * @note This method has to be threadsafe!
     */
@@ -450,5 +454,5 @@ private:
    );
 
 };
-
+/** @} */
 #endif

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -243,6 +243,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+   SCIP_CALL( SCIPincludeDialogGcg(scip) );
    SCIP_CALL( SCIPincludeConshdlrLinear(scip) ); /* linear must be first due to constraint upgrading */
    SCIP_CALL( SCIPincludeConshdlrIndicator(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegral(scip) );
@@ -438,7 +439,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPfixParam(scip, "conflict/enable") );
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );
-   SCIP_CALL( SCIPincludeDialogGcg(scip) );
    SCIP_CALL( GCGincludeDialogsGraph(scip) );
    SCIP_CALL( SCIPincludeTableDefault(scip) );
 

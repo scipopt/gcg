@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -137,9 +137,11 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConsclass)
       gcg::ConsPartition* classifier = partialdecdetectiondata->detprobdata->getConsPartition(classifierIndex);
       std::vector<int> consclassindices_master;
 
-      if ( classifier->getNClasses() > maximumnclasses )
+      if( classifier->getNClasses() > maximumnclasses )
       {
-         std::cout << " the current consclass distribution includes " <<  classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagatePartialdec() of cons class detector" << std::endl;
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL,
+            " the current consclass distribution includes %d classes but only %d are allowed for propagatePartialdec() of cons class detector\n",
+            classifier->getNClasses(), maximumnclasses);
          continue;
       }
 

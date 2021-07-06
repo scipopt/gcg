@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -128,7 +128,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
 
       if( branchdata->same )
       {
-         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "same(%s, %s)", SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
+         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "same(%s,%s)", SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
 
          SCIP_CALL( SCIPcreateConsVarbound(pricingscip,
                &(branchdata->pricecons), name, GCGoriginalVarGetPricingVar(branchdata->var1),
@@ -137,7 +137,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
       }
       else
       {
-         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "differ(%s, %s)", SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
+         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "differ(%s,%s)", SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
 
          SCIP_CALL( SCIPcreateConsVarbound(pricingscip,
                &(branchdata->pricecons), name, GCGoriginalVarGetPricingVar(branchdata->var1),
@@ -372,10 +372,10 @@ SCIP_RETCODE createChildNodesRyanfoster(
    branchdifferdata->pricecons = NULL;
 
    /* define names for origbranch constraints */
-   (void) SCIPsnprintf(samename, SCIP_MAXSTRLEN, "same(%s, %s)", SCIPvarGetName(branchsamedata->var1),
+   (void) SCIPsnprintf(samename, SCIP_MAXSTRLEN, "same(%s,%s)", SCIPvarGetName(branchsamedata->var1),
       SCIPvarGetName(branchsamedata->var2));
 
-   (void) SCIPsnprintf(differname, SCIP_MAXSTRLEN, "differ(%s, %s)", SCIPvarGetName(branchsamedata->var1),
+   (void) SCIPsnprintf(differname, SCIP_MAXSTRLEN, "differ(%s,%s)", SCIPvarGetName(branchsamedata->var1),
       SCIPvarGetName(branchsamedata->var2));
 
    pricingvar1 = GCGoriginalVarGetPricingVar(branchdifferdata->var1);

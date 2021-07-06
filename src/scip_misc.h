@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    scip_misc.h
- * @ingroup PUBLICMETHODS
  * @brief   various SCIP helper methods
  * @author  Martin Bergner
  */
@@ -43,12 +42,17 @@
 extern "C" {
 #endif
 
+
 /** constraint types */
 typedef enum  {
    linear, knapsack, varbound, setpacking, setcovering, setpartitioning,
    logicor, sos1, sos2, unknown, nconsTypeItems, indicator
 } consType;
 
+/**@defgroup MISC Miscellaneous
+* @ingroup PUBLICCOREAPI
+* @{
+  */
 
 /** returns TRUE if variable is relevant, FALSE otherwise */
 extern
@@ -146,6 +150,7 @@ SCIP_RETCODE GCGincludeDialogsGraph(
    SCIP* scip
    );
 
+/**@} */
 #ifdef __cplusplus
 }
 #endif

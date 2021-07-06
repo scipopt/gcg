@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -3796,6 +3796,11 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
    }
 
+   if( SCIPisStopped(scip_) )
+   {
+      return SCIP_OKAY;
+   }
+
    if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && GCGsepaGetNCuts(scip) == 0 && reducedcostpricing->getCalls() > 0
       && GCGmasterIsCurrentSolValid(scip) && pricerdata->artificialused )
    {
@@ -4545,7 +4550,11 @@ void GCGpricerPrintStatistics(
    const PricingType* farkas;
    const PricingType* redcost;
    int i;
-   
+#ifdef SCIP_STATISTIC
+   double start;
+   double end;
+#endif
+
    assert(scip != NULL);
 
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));

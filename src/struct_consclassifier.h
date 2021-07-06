@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_consclassifier.h
+ * @ingroup DATASTRUCTURES
  * @brief  data structures for constraint classifiers
  * @author William Ma
  */
@@ -47,7 +48,6 @@ struct DEC_ConsClassifier {
    SCIP_Bool             enabled;        /* is enabled by default */
 
    DEC_DECL_FREECONSCLASSIFIER((*freeClassifier));                  /**< destructor of detector */
-   DEC_DECL_INITCONSCLASSIFIER((*initClassifier));                  /**< initialization method of detector */
    DEC_DECL_CONSCLASSIFY((*classify));            /**< structure detection method of detector */
 };
 

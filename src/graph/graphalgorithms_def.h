@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -432,9 +432,9 @@ void GraphAlgorithms<T>::mstunion(std::vector<subset>& subsets, int x, int y)
 
 template<class T>
 std::vector<int> GraphAlgorithms<T>::mcl(
-   Graph<GraphGCG>& graph,          /**< the graph with weighted edges */
-   int& stoppedAfter,
-   double inflatefac,           /**< inflate factor */
+   Graph<GraphGCG>& graph,   /**< the graph with weighted edges */
+   int& stoppedAfter,        /**< number of iterations after which the clustering terminated */
+   double inflatefac,        /**< inflate factor */
    int maxiters,             /**< max number of iterations, set to 25 per default */
    int expandfac             /**< expand factor, should be always set to 2 */
 )
