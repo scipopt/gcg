@@ -85,8 +85,8 @@ if test $SETNAME != "default"
 then
     if test ! -e $SETTINGS
     then
-        echo Skipping test since the settings file $SETTINGS does not exist.
-        exit
+        echo [WARNING] Settings file $SETTINGS does not exist.
+#      exit
     fi
 fi
 

@@ -57,14 +57,14 @@ DETECTIONSTATISTICS=${24}
 
 SETDIR=../settings
 
-if $SHARED = "true"
+if [[ $SHARED == "true" ]]
 then
   LD="LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:../lib/shared/"
 fi
 
 SETDIR=../settings
 
-if test $VISU = "true"
+if [[ $VISU == "true" ]]
 then
     DETECTIONSTATISTICS=true
     STATISTICS=true
@@ -81,7 +81,7 @@ if test ! -e locks
 then
     mkdir locks
 fi
-if test $DETECTIONSTATISTICS = "true"
+if [[ $DETECTIONSTATISTICS == "true" ]]
 then
     mkdir -p results/decomps
 fi
@@ -491,7 +491,7 @@ EOF
                     echo display additionalstatistics  >> $TMPFILE
                 fi
 
-                if test $DETECTIONSTATISTICS = "true"
+                if [[ $DETECTIONSTATISTICS == "true" ]]
                 then
                     echo display detectionstatistics     >> $TMPFILE
                     echo explore export 0 quit           >> $TMPFILE
