@@ -1597,6 +1597,12 @@ public:
    void showVisualisation();
 
    /**
+    * @brief generates a gp visualization of the partialdec without compilation or opening
+    * @returns true iff successful
+    */
+   void exportVisualisation();
+
+   /**
     * @brief Checks whether this partialdec is a userpartialdec that should be completed
     *
     * the completion should be done by setting unspecified constraints to master

@@ -6,6 +6,7 @@
 IP
 bin/
 check/results
+check/reports
 doc/html/index.html
 doc/html/doc-*/
 doc/html/scripts/*
@@ -32,3 +33,4 @@ build*
 CMakeFiles/
 cmake-build-*/
 .idea/
+__pycache__

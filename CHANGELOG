@@ -68,9 +68,16 @@ Code cleanup:
 - Renamed {Index,Cons,Var}Classifier to {Index,Cons,Var}Partition
 
 
-
-
 @page RN30 Release notes for GCG 3.0
+@section RN305 GCG 3.0.5
+*************************
+
+Bug fixes
+---------
+
+- Skip structure detection if the original problem is already solved after presolving.
+
+
 @section RN304 GCG 3.0.4
 *************************
 

@@ -5373,6 +5373,18 @@ void PARTIALDECOMP::showVisualisation()
 }
 
 
+void PARTIALDECOMP::exportVisualisation()
+{
+   /* get names for gp file and output file */
+   char filename[SCIP_MAXSTRLEN];
+   char outname[SCIP_MAXSTRLEN];
+   GCGgetVisualizationFilename(scip, this, ".gp", filename);
+   GCGgetVisualizationFilename(scip, this, ".pdf", outname);
+
+   /* generate gp file */
+   GCGwriteGpVisualization( scip, filename, outname, getID() );
+}
+
 SCIP_Bool PARTIALDECOMP::shouldCompletedByConsToMaster()
 {
    return usergiven == USERGIVEN::COMPLETED_CONSTOMASTER;
