@@ -277,6 +277,20 @@ SCIP_Real GCGgetPrimalbound(
    SCIP*                scip              /**< SCIP data structure */
    );
 
+/** gets GCG's global gap
+ *
+ *  Computes the global gap based on the gloal dual bound and the
+ *  global primal bound.
+ *
+ *  @return the global dual bound
+ *
+ *  @see GCGgetDualbound()
+ *  @see GCGgetPrimalbound()
+ */
+SCIP_Real GCGgetGlobalGap(
+   SCIP*                scip              /**< SCIP data structure */
+   );
+
 #ifdef __cplusplus
 }
 

@@ -5193,3 +5193,36 @@ SCIP_Real GCGgetPrimalbound(
 
    return primalbound;
 }
+
+SCIP_Real GCGgetGlobalGap(
+   SCIP*                scip              /**< SCIP data structure */
+   )
+{
+   SCIP_Real dualbound;
+   SCIP_Real primalbound;
+   SCIP_Real gap;
+
+   assert(scip != NULL);
+
+   primalbound = GCGgetPrimalbound(scip);
+   dualbound = GCGgetDualbound(scip);
+
+   /* this is the gap calculation from SCIPgetGap() */
+   if( SCIPisEQ(scip, primalbound, dualbound) )
+      gap = 0.0;
+   else if( SCIPisZero(scip, dualbound )
+      || SCIPisZero(scip, primalbound)
+      || SCIPisInfinity(scip, REALABS(primalbound))
+      || SCIPisInfinity(scip, REALABS(dualbound))
+      || primalbound * dualbound < 0.0 )
+      gap = SCIPinfinity(scip);
+   else
+   {
+      SCIP_Real absdual = REALABS(dualbound);
+      SCIP_Real absprimal = REALABS(primalbound);
+
+      gap = REALABS((primalbound - dualbound)/MIN(absdual, absprimal));
+   }
+
+   return gap;
+}

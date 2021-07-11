@@ -990,33 +990,13 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputCutoffbound)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
 {  /*lint --e{715}*/
-   SCIP_Real dualbound;
-   SCIP_Real primalbound;
    SCIP_Real gap;
 
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_GAP) == 0);
    assert(scip != NULL);
 
-   primalbound = GCGgetPrimalbound(scip);
-   dualbound = GCGgetDualbound(scip);
-
-   /* this is the gap calculation from SCIPgetGap() */
-   if( SCIPisEQ(scip, primalbound, dualbound) )
-      gap = 0.0;
-   else if( SCIPisZero(scip, dualbound )
-      || SCIPisZero(scip, primalbound)
-      || SCIPisInfinity(scip, REALABS(primalbound))
-      || SCIPisInfinity(scip, REALABS(dualbound))
-      || primalbound * dualbound < 0.0 )
-      gap = SCIPinfinity(scip);
-   else
-   {
-      SCIP_Real absdual = REALABS(dualbound);
-      SCIP_Real absprimal = REALABS(primalbound);
-
-      gap = REALABS((primalbound - dualbound)/MIN(absdual, absprimal));
-   }
+   gap = GCGgetGlobalGap(scip);
 
    if( SCIPisInfinity(scip, gap) )
       SCIPinfoMessage(scip, file, "    Inf ");
