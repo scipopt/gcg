@@ -951,28 +951,13 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputDualbound)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputPrimalbound)
 {  /*lint --e{715}*/
-   SCIP* masterprob;
    SCIP_Real primalbound;
 
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_PRIMALBOUND) == 0);
    assert(scip != NULL);
 
-   /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
-   assert(masterprob != NULL);
-
-   primalbound = SCIPgetPrimalbound(scip);
-
-   /* @todo find a better way to do this */
-   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGmasterIsBestsolValid(masterprob) )
-   {
-      SCIP_Real masterprimalbound;
-      masterprimalbound = SCIPgetPrimalbound(masterprob);
-      masterprimalbound = SCIPretransformObj(scip, masterprimalbound);
-
-      primalbound = MIN(primalbound, masterprimalbound);
-   }
+   primalbound = GCGgetPrimalbound(scip);
 
    if( SCIPisInfinity(scip, REALABS(primalbound)) )
       SCIPinfoMessage(scip, file, "      --      ");
@@ -1005,7 +990,6 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputCutoffbound)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
 {  /*lint --e{715}*/
-   SCIP* masterprob;
    SCIP_Real dualbound;
    SCIP_Real primalbound;
    SCIP_Real gap;
@@ -1014,22 +998,8 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_GAP) == 0);
    assert(scip != NULL);
 
-   /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
-   assert(masterprob != NULL);
-
-   primalbound = SCIPgetPrimalbound(scip);
+   primalbound = GCGgetPrimalbound(scip);
    dualbound = GCGgetDualbound(scip);
-
-   /* @todo find a better way to do this */
-   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING )
-   {
-      SCIP_Real masterprimalbound;
-
-      masterprimalbound = SCIPgetPrimalbound(masterprob);
-      masterprimalbound = SCIPretransformObj(scip, masterprimalbound);
-      primalbound = MIN(primalbound, masterprimalbound);
-   }
 
    /* this is the gap calculation from SCIPgetGap() */
    if( SCIPisEQ(scip, primalbound, dualbound) )

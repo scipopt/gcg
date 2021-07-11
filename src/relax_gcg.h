@@ -266,6 +266,17 @@ SCIP_Real GCGgetDualbound(
    SCIP*                scip              /**< SCIP data structure */
    );
 
+/** gets GCG's global primal bound
+ *
+ *  Computes the global primal bound while considering the original
+ *  problem SCIP instance and the master problem SCIP instance.
+ *
+ *  @return the global dual bound
+ */
+SCIP_Real GCGgetPrimalbound(
+   SCIP*                scip              /**< SCIP data structure */
+   );
+
 #ifdef __cplusplus
 }
 

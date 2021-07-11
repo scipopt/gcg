@@ -5165,3 +5165,31 @@ SCIP_Real GCGgetDualbound(
 
    return dualbound;
 }
+
+SCIP_Real GCGgetPrimalbound(
+   SCIP*                scip              /**< SCIP data structure */
+   )
+{
+   SCIP* masterprob;
+   SCIP_Real primalbound;
+
+   assert(scip != NULL);
+
+   /* get master problem */
+   masterprob = GCGgetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   primalbound = SCIPgetPrimalbound(scip);
+
+   /* @todo find a better way to do this */
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGmasterIsBestsolValid(masterprob) )
+   {
+      SCIP_Real masterprimalbound;
+      masterprimalbound = SCIPgetPrimalbound(masterprob);
+      masterprimalbound = SCIPretransformObj(scip, masterprimalbound);
+
+      primalbound = MIN(primalbound, masterprimalbound);
+   }
+
+   return primalbound;
+}
