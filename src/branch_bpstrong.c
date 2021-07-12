@@ -1198,8 +1198,8 @@ SCIP_RETCODE selectCandidate(
           */
          if( branchruledata->initiator == ORIG )
          {
-            minpscount = MIN( SCIPvarGetPseudocostCount(cand1s[indices[c]], 0),
-                              SCIPvarGetPseudocostCount(cand1s[indices[c]], 1) );
+            minpscount = MIN( SCIPgetVarPseudocostCount(scip, cand1s[indices[c]], 0),
+                              SCIPgetVarPseudocostCount(scip, cand1s[indices[c]], 1) );
 
             /* only call strong branching if this variable is not sufficiently reliable yet */
             if(  phase == 0 ||
