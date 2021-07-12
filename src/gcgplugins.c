@@ -353,7 +353,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeRelaxGcg(scip) );
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
-   SCIP_CALL( SCIPincludeReaderDec(scip) );
+   SCIP_CALL( GCGincludeReaderDec(scip) );
    SCIP_CALL( SCIPincludeReaderRef(scip) );
    SCIP_CALL( SCIPincludeBranchruleEmpty(scip) );
 
