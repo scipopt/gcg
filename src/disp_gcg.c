@@ -996,7 +996,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_GAP) == 0);
    assert(scip != NULL);
 
-   gap = GCGgetGlobalGap(scip);
+   gap = GCGgetGap(scip);
 
    if( SCIPisInfinity(scip, gap) )
       SCIPinfoMessage(scip, file, "    Inf ");
