@@ -39,6 +39,7 @@
 #define GCG_H_
 
 #include "scip/scip.h"
+#include "def.h"
 
 #include "type_branchgcg.h"
 #include "type_decomp.h"
@@ -47,6 +48,9 @@
 
 #include "pub_gcgvar.h"
 #include "pub_decomp.h"
+
+#include "relax_gcg.h"
+#include "gcg_general.h"
 
 #ifdef __cplusplus
 extern "C" {

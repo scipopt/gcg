@@ -77,6 +77,7 @@ set(gcgsources
     event_relaxsol.c
     event_solvingstats.c
     gcgcol.c
+    gcg_general.c
     gcggithash.c
     gcgheur.c
     gcgsepa.c
@@ -189,6 +190,7 @@ set(gcgheaders
     dec_stairheur.h
     dec_varclass.h
     decomp.h
+    def.h
     dialog_gcg.h
     dialog_graph.h
     dialog_master.h
@@ -201,6 +203,7 @@ set(gcgheaders
     event_solvingstats.h
     gcg.h
     gcgcol.h
+    gcg_general.h
     gcggithash.h
     gcgplugins.h
     gcgpqueue.h
