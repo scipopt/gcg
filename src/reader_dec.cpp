@@ -1337,7 +1337,7 @@ SCIP_DECL_READERWRITE(readerWriteDec)
  */
 
 /** includes the dec file reader in SCIP */
-SCIP_RETCODE SCIPincludeReaderDec(
+SCIP_RETCODE GCGincludeReaderDec(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

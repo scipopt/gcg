@@ -77,7 +77,7 @@ extern "C" {
 
 /** includes the dec file reader into SCIP */
 extern
-SCIP_RETCODE SCIPincludeReaderDec(
+SCIP_RETCODE GCGincludeReaderDec(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
