@@ -1700,7 +1700,7 @@ SCIP_Longint GCGgetIteration(
 #endif
 
 /** store gap */
-void GCGsetGap(
+void GCGsetVarGap(
    SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Real             gap                 /**< present gap when variable is created */
    )
@@ -1715,7 +1715,7 @@ void GCGsetGap(
 
 #ifndef NDEBUG
 /** return stored gap */
-SCIP_Real GCGgetGap(
+SCIP_Real GCGgetVarGap(
    SCIP_VAR*             var                 /**< variable data structure */
    )
 {
@@ -1778,7 +1778,7 @@ void GCGupdateVarStatistics(
 
    GCGsetRootRedcostCall(newvar, redcostcall);
    GCGsetIteration(newvar, SCIPgetNLPIterations(scip));
-   GCGsetGap(newvar, MIN(SCIPgetGap(origprob), SCIPgetGap(scip))); /*lint !e666*/
+   GCGsetVarGap(newvar, MIN(SCIPgetGap(origprob), SCIPgetGap(scip))); /*lint !e666*/
    GCGsetRedcost(origprob, newvar, redcost);
 
 }

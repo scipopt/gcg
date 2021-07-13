@@ -595,16 +595,16 @@ void GCGsetIteration(
    );
 
 /** store gap */
-void GCGsetGap(
+void GCGsetVarGap(
    SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Real             gap                 /**< present gap when variable is created */
    );
 
 #ifdef NDEBUG
-#define GCGgetGap(var)                       (SCIPvarGetData(var)->gap)
+#define GCGgetVarGap(var)                    (SCIPvarGetData(var)->gap)
 #else
 /** return stored gap */
-SCIP_Real GCGgetGap(
+SCIP_Real GCGgetVarGap(
    SCIP_VAR*             var                 /**< variable data structure */
    );
 #endif

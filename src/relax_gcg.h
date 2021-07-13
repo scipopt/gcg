@@ -287,7 +287,7 @@ SCIP_Real GCGgetPrimalbound(
  *  @see GCGgetDualbound()
  *  @see GCGgetPrimalbound()
  */
-SCIP_Real GCGgetGlobalGap(
+SCIP_Real GCGgetGap(
    SCIP*                scip              /**< SCIP data structure */
    );
 
