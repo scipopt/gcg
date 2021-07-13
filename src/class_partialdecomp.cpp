@@ -4916,8 +4916,6 @@ bool PARTIALDECOMP::fixConsToBlock(
 
    if( consindex >= 0 )
    {
-      if( blockid >= nblocks )
-         nblocks = blockid + 1;
       fixConsToBlock(consindex, blockid);
       return true;
    }
@@ -5291,8 +5289,6 @@ bool PARTIALDECOMP::fixConsToBlockByName(
 
    if( consindex >= 0 )
    {
-      if( blockid >= nblocks )
-         nblocks = blockid + 1;
       fixConsToBlock(consindex, blockid);
       return true;
    }
