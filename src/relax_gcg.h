@@ -254,6 +254,43 @@ SCIP_CLOCK* GCGgetRootNodeTime(
    );
 
 /** @} */
+
+/** gets GCG's global dual bound
+ *
+ *  Computes the global dual bound while considering the original
+ *  problem SCIP instance and the master problem SCIP instance.
+ *
+ *  @return the global dual bound
+ */
+SCIP_Real GCGgetDualbound(
+   SCIP*                scip              /**< SCIP data structure */
+   );
+
+/** gets GCG's global primal bound
+ *
+ *  Computes the global primal bound while considering the original
+ *  problem SCIP instance and the master problem SCIP instance.
+ *
+ *  @return the global dual bound
+ */
+SCIP_Real GCGgetPrimalbound(
+   SCIP*                scip              /**< SCIP data structure */
+   );
+
+/** gets GCG's global gap
+ *
+ *  Computes the global gap based on the gloal dual bound and the
+ *  global primal bound.
+ *
+ *  @return the global dual bound
+ *
+ *  @see GCGgetDualbound()
+ *  @see GCGgetPrimalbound()
+ */
+SCIP_Real GCGgetGap(
+   SCIP*                scip              /**< SCIP data structure */
+   );
+
 #ifdef __cplusplus
 }
 

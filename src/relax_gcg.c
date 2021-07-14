@@ -5137,3 +5137,92 @@ SCIP_CLOCK* GCGgetRootNodeTime(
 
    return relaxdata->rootnodetime;
 }
+
+SCIP_Real GCGgetDualbound(
+   SCIP*                scip              /**< SCIP data structure */
+   )
+{
+   SCIP* masterprob;
+   SCIP_Real dualbound;
+
+   assert(scip != NULL);
+
+   /* get master problem */
+   masterprob = GCGgetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   dualbound = SCIPgetDualbound(scip);
+
+   /* @todo find a better way to do this */
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING )
+   {
+      SCIP_Real masterdualbound;
+
+      masterdualbound = SCIPgetDualbound(masterprob);
+      masterdualbound = SCIPretransformObj(scip, masterdualbound);
+      dualbound = MAX(dualbound, masterdualbound);
+   }
+
+   return dualbound;
+}
+
+SCIP_Real GCGgetPrimalbound(
+   SCIP*                scip              /**< SCIP data structure */
+   )
+{
+   SCIP* masterprob;
+   SCIP_Real primalbound;
+
+   assert(scip != NULL);
+
+   /* get master problem */
+   masterprob = GCGgetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   primalbound = SCIPgetPrimalbound(scip);
+
+   /* @todo find a better way to do this */
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGmasterIsBestsolValid(masterprob) )
+   {
+      SCIP_Real masterprimalbound;
+      masterprimalbound = SCIPgetPrimalbound(masterprob);
+      masterprimalbound = SCIPretransformObj(scip, masterprimalbound);
+
+      primalbound = MIN(primalbound, masterprimalbound);
+   }
+
+   return primalbound;
+}
+
+SCIP_Real GCGgetGap(
+   SCIP*                scip              /**< SCIP data structure */
+   )
+{
+   SCIP_Real dualbound;
+   SCIP_Real primalbound;
+   SCIP_Real gap;
+
+   assert(scip != NULL);
+
+   primalbound = GCGgetPrimalbound(scip);
+   dualbound = GCGgetDualbound(scip);
+
+   /* this is the gap calculation from SCIPgetGap() */
+   if( SCIPisEQ(scip, primalbound, dualbound) )
+      gap = 0.0;
+   else if( SCIPisZero(scip, dualbound )
+      || SCIPisZero(scip, primalbound)
+      || SCIPisInfinity(scip, REALABS(primalbound))
+      || SCIPisInfinity(scip, REALABS(dualbound))
+      || primalbound * dualbound < 0.0 )
+      gap = SCIPinfinity(scip);
+   else
+   {
+      SCIP_Real absdual = REALABS(dualbound);
+      SCIP_Real absprimal = REALABS(primalbound);
+
+      gap = REALABS((primalbound - dualbound)/MIN(absdual, absprimal));
+   }
+
+   return gap;
+}

@@ -811,7 +811,7 @@ TEST_F(GcgVarTest, SetGap)
 {
    MASTERVAR(var, vardata);
    vardata.gap = 0.0;
-   GCGsetGap(&var, 1.0);
+   GCGsetVarGap(&var, 1.0);
    ASSERT_EQ(1.0, vardata.gap);
 }
 
@@ -819,7 +819,7 @@ TEST_F(GcgVarTest, GetGap)
 {
    MASTERVAR(var, vardata);
    vardata.gap = 1.0;
-   ASSERT_EQ(1.0, GCGgetGap(&var));
+   ASSERT_EQ(1.0, GCGgetVarGap(&var));
 }
 
 TEST_F(GcgVarTest, SetRedcost)
