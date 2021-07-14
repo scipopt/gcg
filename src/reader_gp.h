@@ -47,6 +47,15 @@ extern "C" {
 #endif
 
 
+/** Output format of gnuplot. Specifies the output format that gnuplot will produce. */
+enum GPOutputFormat
+{
+   GP_OUTPUT_FORMAT_PDF,
+   GP_OUTPUT_FORMAT_PNG,
+   GP_OUTPUT_FORMAT_SVG
+};
+typedef enum GPOutputFormat GP_OUTPUT_FORMAT;
+
 /** Includes the gp file reader into SCIP
  * @returns SCIP status */
 extern
@@ -54,7 +63,16 @@ SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** Writes a visualization for the given partialdec
+/* Writes a visualization for the given partialdec */
+extern SCIP_RETCODE GCGwriteGpVisualizationFormat(
+   SCIP* scip,             /**< SCIP data structure */
+   char* filename,         /**< filename (including path) to write to */
+   char* outputname,       /**< filename for compiled output file */
+   int partialdecid,       /**< id of partialdec to visualize */
+   GP_OUTPUT_FORMAT outputformat /**< the output format which gnuplot should emit */
+   );
+
+/** Writes a visualization as .pdf file for the given partialdec
  * @returns SCIP status */
 extern
 SCIP_RETCODE GCGwriteGpVisualization(
@@ -64,7 +82,7 @@ SCIP_RETCODE GCGwriteGpVisualization(
    int partialdecid             /**< id of partialdec to visualize */
    );
 
-/** Creates a block matrix and outputs its visualization as .png file
+/** Creates a block matrix and outputs its visualization as .pdf file
  * @returns SCIP return code
  * */
 extern

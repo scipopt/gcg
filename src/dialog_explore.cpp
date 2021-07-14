@@ -615,9 +615,9 @@ SCIP_RETCODE GCGdialogSelectVisualize(
    /* get and show partialdec */
    PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, idlist.at(idtovisu));
    if( open ) 
-      partialdec->showVisualisation();
+      partialdec->showVisualization();
    else
-      partialdec->exportVisualisation();
+      partialdec->exportVisualization();
 
    return SCIP_OKAY;
 }
