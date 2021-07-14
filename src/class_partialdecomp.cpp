@@ -4907,6 +4907,21 @@ void PARTIALDECOMP::fixConsToBlock(
    deleteOpencons(cons);
 }
 
+bool PARTIALDECOMP::fixConsToBlock(
+   SCIP_CONS*            cons,                /**< pointer of the constraint */
+   int                   blockid              /**< block index (counting from 0) */
+   )
+{
+   int consindex = getDetprobdata()->getIndexForCons(cons);
+
+   if( consindex >= 0 )
+   {
+      fixConsToBlock(consindex, blockid);
+      return true;
+   }
+   return false;
+}
+
 
 void PARTIALDECOMP::setConsToMaster(
    int consToMaster
@@ -4940,6 +4955,19 @@ void PARTIALDECOMP::fixConsToMaster(
 
    setConsToMaster(cons);
    deleteOpencons(cons);
+}
+
+bool PARTIALDECOMP::fixConsToMaster(
+   SCIP_CONS* cons   /**< pointer of cons to fix as master cons */
+   )
+{
+   int consindex = getDetprobdata()->getIndexForCons(cons);
+   if( consindex >= 0 )
+   {
+      fixConsToMaster(consindex);
+      return true;
+   }
+   return false;
 }
 
 
@@ -5261,8 +5289,6 @@ bool PARTIALDECOMP::fixConsToBlockByName(
 
    if( consindex >= 0 )
    {
-      if( blockid >= nblocks )
-         nblocks = blockid + 1;
       fixConsToBlock(consindex, blockid);
       return true;
    }

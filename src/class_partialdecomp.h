@@ -1302,6 +1302,17 @@ public:
       );
 
    /**
+    * @brief adds a constraint to a block
+    * @param cons pointer of cons to add
+    * @param block id of block to add
+    * @returns true iff successful
+    */
+   bool fixConsToBlock(
+      SCIP_CONS* cons,
+      int block
+      );
+
+   /**
     * @brief adds a constraint to the master constraints, does not delete this cons from list of open conss
     * @param consToMaster id of cons to add
     */
@@ -1326,6 +1337,16 @@ public:
     */
    void fixConsToMaster(
       int cons
+      );
+
+   /**
+    * @brief fixes a constraint to the master constraints
+    * @param cons pointer of cons to add
+    * @warning This method modifies the vector PARTIALDECOMP::openconss! Hence, any kind of iterator might be invalid afterwards!
+    * @returns true iff successful
+    */
+   bool fixConsToMaster(
+      SCIP_CONS* cons
       );
 
    /**
