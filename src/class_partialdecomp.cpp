@@ -5356,7 +5356,7 @@ bool PARTIALDECOMP::fixVarToLinkingByName(
 }
 
 
-void PARTIALDECOMP::showVisualisation()
+void PARTIALDECOMP::showVisualization()
 {
    int returnvalue;
 
@@ -5366,24 +5366,10 @@ void PARTIALDECOMP::showVisualisation()
    GCGgetVisualizationFilename(scip, this, ".gp", filename);
    GCGgetVisualizationFilename(scip, this, ".pdf", outname);
 
-   /* generate gp file */
-   GCGwriteGpVisualization( scip, filename, outname, getID() );
-
-   /* compile gp file */
-   char command[SCIP_MAXSTRLEN];
-   /* command: gnuplot "filename" */
-   strcpy(command, "gnuplot \"");
-   strcat(command, filename);
-   strcat(command, "\"");
-   SCIPinfoMessage(scip, NULL, "%s\n", command);
-   returnvalue = system(command);
-   if( returnvalue == -1 )
-   {
-      SCIPwarningMessage(scip, "Unable to write gnuplot file\n");
-      return;
-   }
+   this->generateVisualization(filename, outname);
 
    /* open outputfile */
+   char command[SCIP_MAXSTRLEN];
    /* command: e.g. evince "outname" && rm "filename" */
    strcpy(command, GCGVisuGetPdfReader(scip));
    strcat(command, " \"");
@@ -5391,15 +5377,54 @@ void PARTIALDECOMP::showVisualisation()
    strcat(command, "\" && rm \"");
    strcat(command, filename);
    strcat(command, "\"");
+#ifdef SCIP_DEBUG
    SCIPinfoMessage(scip, NULL, "%s\n", command);
+#endif
    returnvalue = system(command);
    if( returnvalue == -1 )
       SCIPwarningMessage(scip, "Unable to open gnuplot file\n");
    SCIPinfoMessage(scip, NULL, "Please note that the generated pdf file was not deleted automatically!  \n", command);
 }
 
+void PARTIALDECOMP::generateVisualization(
+   char* filename,
+   char* outname,
+   GP_OUTPUT_FORMAT outputformat
+   )
+{
+   this->writeVisualizationFile(filename, outname, outputformat);
 
-void PARTIALDECOMP::exportVisualisation()
+   int returnvalue;
+
+   /* compile gp file */
+   char command[SCIP_MAXSTRLEN];
+   /* command: gnuplot "filename" */
+   strcpy(command, "gnuplot \"");
+   strcat(command, filename);
+   strcat(command, "\"");
+#ifdef SCIP_DEBUG
+   SCIPinfoMessage(scip, NULL, "%s\n", command);
+#endif
+   returnvalue = system(command);
+   if( returnvalue == -1 )
+   {
+      SCIPwarningMessage(scip, "Unable to write gnuplot file\n");
+      return;
+   }
+}
+
+void PARTIALDECOMP::writeVisualizationFile(
+   char* filename,
+   char* outname,
+   GP_OUTPUT_FORMAT outputformat
+   )
+{
+   /* generate gp file */
+   GCGwriteGpVisualizationFormat( scip, filename, outname, getID(), outputformat );
+}
+
+
+void PARTIALDECOMP::exportVisualization()
 {
    /* get names for gp file and output file */
    char filename[SCIP_MAXSTRLEN];

@@ -50,6 +50,8 @@
 #include "graph/graph.h"
 #include "type_scoretype.h"
 
+#include "reader_gp.h"
+
 namespace gcg {
 
 
@@ -1615,13 +1617,38 @@ public:
     * @see visual/pdfreader and
     * @note linux only
     */
-   void showVisualisation();
+   void showVisualization();
 
+   /**
+    * @brief generates a visualization of the partialdec using gnuplot
+    * @param filename Path where to store the gp file
+    * @param outname Path at which gnuplot will output its result
+    * @param outputformat The format of the gnuplot output. Should match the file extension of outname
+    * @note linux only, requires gnuplot
+    */
+   void generateVisualization(
+      char* filename,
+      char* outname,
+      GP_OUTPUT_FORMAT outputformat = GP_OUTPUT_FORMAT_PDF
+      );
+
+   /**
+    * @brief writes a gp visualization of the partialdec to a file
+    * @param filename Path where to store the gp file
+    * @param outname Path at which gnuplot will output its result
+    * @param outputformat The format of the gnuplot output. Should match the file extension of outname
+    */
+   void writeVisualizationFile(
+      char* filename,
+      char* outname,
+      GP_OUTPUT_FORMAT outputformat = GP_OUTPUT_FORMAT_PDF
+      );
+   
    /**
     * @brief generates a gp visualization of the partialdec without compilation or opening
     * @returns true iff successful
     */
-   void exportVisualisation();
+   void exportVisualization();
 
    /**
     * @brief Checks whether this partialdec is a userpartialdec that should be completed
