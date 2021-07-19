@@ -102,14 +102,14 @@ MSETTINGS=$SETDIR/$MSETNAME.set
 
 if test "$LOCK" = "true"
 then
-    if test -e $DONEFILE
+    if test -e "$DONEFILE"
     then
         echo skipping test due to existing done file $DONEFILE
         exit
     fi
-    if test -e $LOCKFILE
+    if test -e "$LOCKFILE"
     then
-        if test -e $RUNFILE
+        if test -e "$RUNFILE"
         then
             echo continuing aborted run with run file $RUNFILE
         else
@@ -134,11 +134,11 @@ else
 fi
 
 DATEINT=`date +"%s"`
-if test -e $OUTFILE
+if test -e "$OUTFILE"
 then
     $MVORCP $OUTFILE $OUTFILE.old-$DATEINT
 fi
-if test -e $ERRFILE
+if test -e "$ERRFILE"
 then
     $MVORCP $ERRFILE $ERRFILE.old-$DATEINT
 fi
@@ -178,7 +178,7 @@ fi
 SOLUFILE=""
 for SOLU in testset/$TSTNAME.solu testset/_all.solu
 do
-    if test -e $SOLU
+    if test -e "$SOLU"
     then
         SOLUFILE=$SOLU
         break
@@ -224,7 +224,7 @@ do
     fi
     if test "$LASTPROB" = ""
     then
-        if test -f $PROB
+        if test -f "$PROB"
         then
             echo @01 $PROB ===========
             echo @01 $PROB ===========             >> $ERRFILE
@@ -413,11 +413,11 @@ do
 		echo set presolving maxrounds 0    >> $TMPFILE
 		echo presolve                      >> $TMPFILE
 		echo detect                        >> $TMPFILE
-		if test -f $DECFILE
+		if test -f "$DECFILE"
                     then
                         BLKFILE=$DECFILE
                     fi
-                    if test -f $BLKFILE
+                    if test -f "$BLKFILE"
                     then
                         EXT=${BLKFILE##*.}
                         if test "$EXT" = "gz"
@@ -451,11 +451,11 @@ do
             else
                 if test $MODE = "readdec"
                 then
-                    if test -f $DECFILE
+                    if test -f "$DECFILE"
                     then
                         BLKFILE=$DECFILE
                     fi
-                    if test -f $BLKFILE
+                    if test -f "$BLKFILE"
                     then
                         EXT=${BLKFILE##*.}
                         if test "$EXT" = "gz"
@@ -537,7 +537,7 @@ rm -f cipreadparsetest.cip
 date >>$OUTFILE
 date >>$ERRFILE
 
-if test -e $DONEFILE
+if test -e "$DONEFILE"
 then
     ./evalcheck.sh $OUTFILE
 
