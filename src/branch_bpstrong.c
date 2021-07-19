@@ -27,9 +27,7 @@
 
 /**@file    branch_bpstrong.c
  * @ingroup BRANCHINGRULES
- * @brief   generic branch-and-price strong branching heuristics based on
- *          Pecin, D., Pessoa, A., Poggi, M., Uchoa, E. Improved branch-cut-and-price for capacitated vehicle routing.
- *          In: Math. Prog. Comp. 9:61-100. Springer (2017).
+ * @brief   generic branch-and-price strong branching heuristics
  * @author  Oliver Gaul
  */
 
@@ -660,7 +658,7 @@ SCIP_RETCODE executeStrongBranching(
    return SCIP_OKAY;
 }
 
-/* Returns true iff the the second node is a k-successor of the to the first number corresponding node
+/* Returns true iff the second node is a k-successor of the to the first number corresponding node
  * (i.e. iff there are at most k edges between them)
  */
 static
