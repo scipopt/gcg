@@ -60,7 +60,7 @@ def generate_files(files,params):
                     varheader = None
                     varlines = {}
                     boundlines = {}
-                if line.startswith("loaded parameter file"):
+                if line.startswith("GCG> set load"):
                     # store current settings
                     settings=line.split()[-1]
                     settings=settings.split("/")[-1]

@@ -394,10 +394,13 @@ def generate_visu(dir, df_dict = {}, set_dict = {}):
                 i = "2"
             else:
                 i = str(int(i)+1)
+        plt.figtext(.5,.93,"Instance: {}".format(name.split('/')[-1]),ha="center",size="14")
+        plt.title("Primal/Dual Bound Development in the Root Node")
         if params['png']:
             plt.savefig(fig_filename + i + ".png", dpi=300)
         else:
             plt.savefig(fig_filename + i + ".pdf", dpi=300)
+        plt.close()
 
 
         # compare different runs of one instance
@@ -608,7 +611,7 @@ def generate_visu(dir, df_dict = {}, set_dict = {}):
                 highest_ax.legend(handles = handles, loc='lower left', bbox_to_anchor = (0,1.02,1,0.2), ncol=4, mode='expand')
 
                 # make room for the legend
-                plt.subplots_adjust(top=0.9)
+                plt.subplots_adjust(top=0.85)
 
                 # set the size of the figure (a too small size will lead to too large legends)
                 plt.gcf().set_size_inches(9.33,7)
@@ -621,7 +624,10 @@ def generate_visu(dir, df_dict = {}, set_dict = {}):
                         i = "1"
                     else:
                         i = str(int(i)+1)
+                plt.figtext(.5,.95,"Instance: {}".format(name.split('/')[-1]),ha="center",size="14")
+                highest_ax.set_title("Comparison of Primal/Dual Bound Development in the Root Node", y=1.2)
                 plt.savefig(fig_filename + i + ".pdf", dpi = 300)
+                plt.close()
 
 
 def main():

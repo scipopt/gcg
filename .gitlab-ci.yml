@@ -12,10 +12,10 @@
 
 stages:
   - "Build"
-  - "Test (Short)"
-  - "Report (Short)"
-  - "Test (Performance)"
-  - "Report (Performance)"
+  - "Test"
+  - "Test Report"
+  - "Experiment"
+  - "Experiment Report"
   - "Documentation"
 
 # default, loaded with docker image for Linux
@@ -36,12 +36,30 @@ default:
     - ln -sfn $PWD/lib/soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a $PWD/lib/scip/lib/static/libsoplex.linux.x86_64.gnu.opt.a
 
 # Make compilation job
-build:make:
+build:make_release:
   stage: "Build"
+  when: always
   script:
     # generate 'opt' binary
     - make deps STATISTICS=true
     - make STATISTICS=true
+  artifacts:
+    expire_in: 3 days
+    when: on_success
+    paths:
+      - $CI_PROJECT_DIR
+
+
+# Make compilation job
+build:make_dbg:
+  stage: "Build"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: manual
+      allow_failure: true
+  script:
     # generate 'dbg' binary
     - make deps STATISTICS=true OPT=dbg
     - make STATISTICS=true OPT=dbg
@@ -79,8 +97,9 @@ build:make:
       - $CI_PROJECT_DIR
 
 # CMake compilation job
-build:cmake:
+build:cmake_dbg:
   stage: "Build"
+  when: always
   script:
     - mkdir build
     - cd build
@@ -97,31 +116,52 @@ build:cmake:
     paths:
       - $CI_PROJECT_DIR
 
-# Makefiles test (test set: short)
-s:test:make:
-  stage: "Test (Short)"
-  needs: ["build:make"]
+# Short test for makefiles release build (test set: short)
+test:make_release:
+  stage: "Test"
+  when: always
+  needs: ["build:make_release"]
   before_script: []
   script:
-    - make STATISTICS=true DETECTIONSTATISTICS=true OPT=dbg test
+    - make STATISTICS=true DETECTIONSTATISTICS=true test
+    # check if test failed
+    - if [[ $(tail -n1 check/results/*.res) == "@01 GCG(?)SCIP(?)?(?):default" ]]; then exit 1; fi
   artifacts:
-    when: on_success
     paths:
       - check/results/*
     expire_in: 3 days
 
-# CMake test (test set: short)
-s:test:cmake:
-  stage: "Test (Short)"
-  needs: ["build:cmake"]
+# Short test for makefiles debug build (test set: short)
+test:make_dbg:
+  stage: "Test"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: manual
+      allow_failure: true
+  needs: ["build:make_dbg"]
+  before_script: []
+  script:
+    - make STATISTICS=true DETECTIONSTATISTICS=true OPT=dbg test
+    # check if test failed
+    - if [[ $(tail -n1 check/results/*.res) == "@01 GCG(?)SCIP(?)?(?):default" ]]; then exit 1; fi
+  artifacts:
+    paths:
+      - check/results/*
+    expire_in: 3 days
+
+# Short test for CMake debug build (test set: short)
+test:cmake_dbg:
+  stage: "Test"
+  when: always
+  needs: ["build:cmake_dbg"]
   before_script: []
   script:
     - cd build
-    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=lib/cliquer-git/ ..
     - make gcg_check
     - cd ..
   artifacts:
-    when: on_success
     paths:
       - build/check/Testing/Temporary/LastTest.log
     expire_in: 3 days
@@ -129,8 +169,9 @@ s:test:cmake:
 # Compile documentation and upload to master-preview
 # Only executed on branch `master`
 docu:master:
+  when: always
   stage: "Documentation"
-  needs: ["build:cmake"]
+  needs: ["build:cmake_dbg"]
   only:
     - master
   script:
@@ -143,9 +184,10 @@ docu:master:
 
 # Compile documentation and upload to doc-preview
 # Only executed on branch `docu`
-docu:preview:
+docu:dev_preview:
   stage: "Documentation"
-  needs: ["build:cmake"]
+  when: always
+  needs: ["build:cmake_dbg"]
   only:
     - docu
   script:
@@ -157,9 +199,15 @@ docu:preview:
     - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-preview; chmod -R 755 ./* ; "
 
 # Generate Testset report
-s:report:testset:
-  stage: "Report (Short)"
-  needs: ["s:test:make"]
+testset_report:test:
+  stage: "Test Report"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: manual
+      allow_failure: true
+  needs: ["test:make_release"]
   script:
     # rename hmetis executable back
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
@@ -168,7 +216,6 @@ s:report:testset:
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/testsetreport*)/short.*.testsetreport.pdf testsetreport.pdf
   artifacts:
-    when: on_success
     name: "testsetreport_$CI_JOB_ID"
     paths:
       - check/reports/*
@@ -176,9 +223,15 @@ s:report:testset:
     expire_in: 7 days
 
 # Generate Comparison report
-s:report:compare:
-  stage: "Report (Short)"
-  needs: ["s:test:make"]
+comparison_report:test:
+  stage: "Test Report"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: manual
+      allow_failure: true
+  needs: ["test:make_release"]
   script:
     # rename hmetis executable back
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
@@ -190,7 +243,6 @@ s:report:compare:
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/comparisonreport*)/comparisonreport.pdf comparisonreport.pdf
   artifacts:
-    when: on_success
     name: "comparisonreport_$CI_JOB_ID"
     paths:
       - check/reports/*
@@ -200,9 +252,10 @@ s:report:compare:
 #### Performance Evaluation (executed manually) ####
 
 # Master branch runtime data generation
-p:test:master:
-  stage: "Test (Performance)"
-  needs: ["build:make"]
+experiment:master:
+  stage: "Experiment"
+  when: always
+  needs: ["build:make_release"]
   # if the cluster is very busy, testing might take some time
   timeout: 48 hours
   # *automated* exection upon new commits,
@@ -221,15 +274,22 @@ p:test:master:
     # check continously if all cluster jobs are done. if so, exit while loop
     - ssh gcgci@clustor 'while (( $(condor_q | grep "Total for query:" | cut -d":" -f2 | cut -d ";" -f1 | sed -e "s/ //g" -e "s/jobs//g") != 0 )); do sleep 5s; done; echo "All jobs done"'
     - ssh gcgci@clustor "cd gcg_master/check; ./evalcheck_cluster.sh -r results/*.eval; rm -rf results/*.txt"
-    - ssh gcgci@clustor "cd gcg_master/check; cp -r results/* /shared/gcg_runtime_data/current_master/"
+    # prepare folder with hash of current commit and link to it from `current_master`
+    - ssh gcgci@clustor "cd /shared/gcg_runtime_data/; ln -sfn $(ls -td master_branch/*/ | head -n 1) previous_master"
+    - ssh gcgci@clustor "cd /shared/gcg_runtime_data/; mkdir -p master_branch/${CI_COMMIT_SHA:0:8}; ln -sfn master_branch/${CI_COMMIT_SHA:0:8} current_master"
+    # copy runtime data to newly created folder
+    - ssh gcgci@clustor "cp -fr gcg_master/check/results/* /shared/gcg_runtime_data/master_branch/${CI_COMMIT_SHA:0:8}; echo 'Adding new master branch run with hash ${CI_COMMIT_SHA:0:8}.'"
+    # clean up old entries (keep latest 5 runs)
+    - ssh gcgci@clustor 'cd /shared/gcg_runtime_data/master_branch/; for folder in $(ls -td */ | tail -n +6); do echo "Removing old master branch run with hash ${folder:0:8} (last modified $(stat ${folder} | grep Modify | cut -d\  -f2- | cut -d. -f1))."; rm -rf $folder; done'
     # do not delete master runtime data, to copy it over for comparisons
   # no artifacts needed - runtime data is always just fetched from the gcgci user account data artifacts
 
 # Feature branch runtime data generation
-p:test:feature:
-  stage: "Test (Performance)"
+experiment:feature:
+  stage: "Experiment"
   when: manual
-  needs: ["build:make"]
+  allow_failure: true
+  needs: ["build:make_release"]
   # if the cluster is very busy, testing might take some time
   timeout: 48 hours
   except:
@@ -253,15 +313,66 @@ p:test:feature:
     # remove the copied over data, in case branch is deleted or merged, to not keep the data under user "gcgci"
     - ssh gcgci@clustor "rm -rf $FOLDER"
   artifacts:
-    when: on_success
     paths:
       - check/results/*
     expire_in: 3 days
 
-p:report:testset:
-  stage: "Report (Performance)"
+testset_report:experiment_master:
+  stage: "Experiment Report"
+  needs: ["experiment:master"]
+  # since runtime data is large, generating reports will take longer as well
+  timeout: 8 hours
+  only:
+    - master
+  script:
+    # rename hmetis executable back
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
+    # generate test set report
+    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - make visu DATADIR=results/ VISUSETTINGS=../v.vset
+    - cp $(ls -d check/reports/testsetreport*)/experiment.*.testsetreport.pdf testsetreport.pdf
+  artifacts:
+    name: "testsetreport_$CI_JOB_ID"
+    paths:
+      - check/reports/*
+      - testsetreport.pdf
+    expire_in: 14 days
+
+# Runtime data comparison
+comparison_report:experiment_master:
+  stage: "Experiment Report"
+  needs: ["experiment:master"]
+  # since runtime data is large, generating reports will take longer as well
+  timeout: 8 hours
+  only:
+    - master
+  # get default before_script to do linking to SCIP
+  script:
+    # rename hmetis executable back
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
+    # get runtime data from latest release
+    # commented out, since the runtime data in the docu is just the short test set
+    #- cp doc/resources/misc/runtime_data/*.* check/results
+    #- cp doc/resources/misc/runtime_data/vbc/*.* check/results/vbc
+    # get runtime data from master
+    - scp gcgci@clustor:~/shared/gcg_runtime_data/previous_master/*.* check/results
+    - scp gcgci@clustor:~/shared/gcg_runtime_data/previous_master/vbc/*.* check/results/vbc
+    # generate comparison report
+    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
+    - cp $(ls -d check/reports/comparisonreport*)/comparisonreport.pdf comparisonreport.pdf
+  artifacts:
+    name: "comparisonreport_exp_$CI_JOB_ID"
+    paths:
+      - check/reports/*
+      - comparisonreport.pdf
+    expire_in: 14 days
+
+testset_report:experiment_feature:
+  stage: "Experiment Report"
   when: manual
-  needs: ["p:test:feature"]
+  allow_failure: true
+  needs: ["experiment:feature"]
   # since runtime data is large, generating reports will take longer as well
   timeout: 8 hours
   except:
@@ -274,7 +385,6 @@ p:report:testset:
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/testsetreport*)/experiment.*.testsetreport.pdf testsetreport.pdf
   artifacts:
-    when: on_success
     name: "testsetreport_$CI_JOB_ID"
     paths:
       - check/reports/*
@@ -282,10 +392,11 @@ p:report:testset:
     expire_in: 14 days
 
 # Runtime data comparison
-p:report:compare:
-  stage: "Report (Performance)"
+comparison_report:experiment_feature:
+  stage: "Experiment Report"
   when: manual
-  needs: ["p:test:feature"]
+  allow_failure: true
+  needs: ["experiment:feature"]
   # since runtime data is large, generating reports will take longer as well
   timeout: 8 hours
   except:
@@ -306,7 +417,6 @@ p:report:compare:
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/comparisonreport*)/comparisonreport.pdf comparisonreport.pdf
   artifacts:
-    when: on_success
     name: "comparisonreport_exp_$CI_JOB_ID"
     paths:
       - check/reports/*
