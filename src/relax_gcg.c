@@ -5138,6 +5138,252 @@ SCIP_CLOCK* GCGgetRootNodeTime(
    return relaxdata->rootnodetime;
 }
 
+SCIP_RETCODE GCGtransformProb(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   switch( SCIPgetStage(scip) )
+   {
+   case SCIP_STAGE_INIT:
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "no problem exists\n");
+      break;
+
+   case SCIP_STAGE_PROBLEM:
+      SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
+      SCIP_CALL( SCIPtransformProb(scip) );
+      break;
+
+   case SCIP_STAGE_TRANSFORMED:
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "problem is already transformed\n");
+      break;
+
+   case SCIP_STAGE_TRANSFORMING:
+   case SCIP_STAGE_INITPRESOLVE:
+   case SCIP_STAGE_PRESOLVING:
+   case SCIP_STAGE_PRESOLVED:
+   case SCIP_STAGE_EXITPRESOLVE:
+   case SCIP_STAGE_INITSOLVE:
+   case SCIP_STAGE_SOLVING:
+   case SCIP_STAGE_SOLVED:
+   case SCIP_STAGE_EXITSOLVE:
+   case SCIP_STAGE_FREETRANS:
+   case SCIP_STAGE_FREE:
+   default:
+      SCIPerrorMessage("invalid SCIP stage\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GCGpresolve(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   switch( SCIPgetStage(scip) )
+   {
+   case SCIP_STAGE_INIT:
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "no problem exists\n");
+      break;
+
+   case SCIP_STAGE_PROBLEM:
+      SCIP_CALL( GCGtransformProb(scip) );
+      assert(SCIPgetStage(scip) == SCIP_STAGE_TRANSFORMED);
+
+      /*lint -fallthrough*/
+
+   case SCIP_STAGE_TRANSFORMED:
+   case SCIP_STAGE_PRESOLVING:
+      SCIP_CALL( SCIPpresolve(scip) );
+      SCIP_CALL( GCGconshdlrDecompTranslateOrigPartialdecs(scip) );
+      break;
+
+   case SCIP_STAGE_PRESOLVED:
+   case SCIP_STAGE_SOLVING:
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "problem is already presolved\n");
+      break;
+
+   case SCIP_STAGE_SOLVED:
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "problem is already solved\n");
+      break;
+
+   case SCIP_STAGE_TRANSFORMING:
+   case SCIP_STAGE_INITPRESOLVE:
+   case SCIP_STAGE_EXITPRESOLVE:
+   case SCIP_STAGE_INITSOLVE:
+   case SCIP_STAGE_EXITSOLVE:
+   case SCIP_STAGE_FREETRANS:
+   case SCIP_STAGE_FREE:
+   default:
+      SCIPerrorMessage("invalid SCIP stage\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GCGdetect(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RESULT result;
+
+   switch( SCIPgetStage(scip) )
+   {
+   case SCIP_STAGE_INIT:
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "no problem exists\n");
+      break;
+
+   case SCIP_STAGE_PROBLEM:
+      SCIP_CALL( GCGtransformProb(scip) );
+      assert(SCIPgetStage(scip) == SCIP_STAGE_TRANSFORMED);
+
+      /*lint -fallthrough*/
+
+   case SCIP_STAGE_TRANSFORMED:
+      if( GCGdetectionTookPlace(scip, TRUE) )
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "The detection for the original problem took place already.\n");
+      }
+      else
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "starting detection\n");
+         SCIP_CALL( DECdetectStructure(scip, &result) );
+      }
+      break;
+   case SCIP_STAGE_PRESOLVING:
+   case SCIP_STAGE_PRESOLVED:
+      if( GCGdetectionTookPlace(scip, FALSE) )
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "The detection for the presolved problem took place already.\n");
+      }
+      else
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "starting detection\n");
+         SCIP_CALL( DECdetectStructure(scip, &result) );
+      }
+      break;
+   case SCIP_STAGE_SOLVING:
+   case SCIP_STAGE_SOLVED:
+   case SCIP_STAGE_TRANSFORMING:
+   case SCIP_STAGE_INITPRESOLVE:
+   case SCIP_STAGE_EXITPRESOLVE:
+   case SCIP_STAGE_INITSOLVE:
+   case SCIP_STAGE_EXITSOLVE:
+   case SCIP_STAGE_FREETRANS:
+   case SCIP_STAGE_FREE:
+   default:
+      SCIPerrorMessage("invalid SCIP stage\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GCGsolve(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RESULT result;
+   int presolrounds;
+   SCIP_Bool exit = FALSE;
+
+   presolrounds = -1;
+
+   assert(GCGconshdlrDecompCheckConsistency(scip) );
+
+   while( !exit )
+   {
+      switch( SCIPgetStage(scip) )
+      {
+      case SCIP_STAGE_INIT:
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "No problem exists\n");
+         exit = TRUE;
+         break;
+
+      case SCIP_STAGE_PROBLEM:
+         SCIP_CALL( GCGtransformProb(scip) );
+         assert(SCIPgetStage(scip) == SCIP_STAGE_TRANSFORMED);
+
+         /*lint -fallthrough*/
+
+      case SCIP_STAGE_TRANSFORMED:
+      case SCIP_STAGE_PRESOLVING:
+         if( GCGconshdlrDecompOrigPartialdecExists(scip) )
+         {
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "there is an original decomposition and problem is not presolved yet -> disable presolving and start optimizing (rerun with presolve command before detect command for detecting in presolved problem)  \n");
+            SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
+            SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+         }
+         SCIP_CALL( GCGpresolve(scip) );
+         assert(SCIPgetStage(scip) > SCIP_STAGE_PRESOLVING);
+
+         break;
+
+      case SCIP_STAGE_PRESOLVED:
+         assert(GCGconshdlrDecompCheckConsistency(scip) );
+
+         if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
+         {
+            SCIP_CALL( DECdetectStructure(scip, &result) );
+            if( result == SCIP_DIDNOTFIND )
+            {
+               DEC_DECOMP* bestdecomp;
+               bestdecomp = DECgetBestDecomp(scip, TRUE);
+               assert(bestdecomp == NULL && (GCGdetectionTookPlace(scip, TRUE) || GCGdetectionTookPlace(scip, FALSE)));
+               DECdecompFree(scip, &bestdecomp);
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
+            }
+         }
+         else if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) > 0 )
+         {
+   #ifndef NDEBUG
+            DEC_DECOMP* bestdecomp;
+            bestdecomp = DECgetBestDecomp(scip, TRUE);
+            assert(bestdecomp != NULL);
+            DECdecompFree(scip, &bestdecomp);
+   #endif
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Preexisting decomposition found. Solution process started...\n");
+         }
+         else if( GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
+         {
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
+         }
+         assert(GCGconshdlrDecompCheckConsistency(scip));
+         assert(SCIPgetNConss(scip) == SCIPgetNActiveConss(scip));
+
+         /*lint -fallthrough*/
+      case SCIP_STAGE_SOLVING:
+         SCIP_CALL( SCIPsolve(scip) );
+         exit = TRUE;
+         break;
+
+      case SCIP_STAGE_SOLVED:
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Problem is already solved\n");
+         exit = TRUE;
+         break;
+
+      case SCIP_STAGE_TRANSFORMING:
+      case SCIP_STAGE_INITPRESOLVE:
+      case SCIP_STAGE_EXITPRESOLVE:
+      case SCIP_STAGE_INITSOLVE:
+      case SCIP_STAGE_EXITSOLVE:
+      case SCIP_STAGE_FREETRANS:
+      case SCIP_STAGE_FREE:
+      default:
+         SCIPerrorMessage("invalid SCIP stage <%d>\n", SCIPgetStage(scip));
+         return SCIP_INVALIDCALL;
+      }
+   }
+
+   if( presolrounds != -1 )
+   {
+      SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", presolrounds) );
+   }
+
+   return SCIP_OKAY;
+}
+
 SCIP_Real GCGgetDualbound(
    SCIP*                scip              /**< SCIP data structure */
    )

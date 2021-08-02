@@ -86,47 +86,27 @@ SCIP_RETCODE fromCommandLine(
    SCIPinfoMessage(scip, NULL, "\nread problem <%s>\n", filename);
    SCIPinfoMessage(scip, NULL, "============\n\n");
    SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
-   SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
-   SCIP_CALL( SCIPtransformProb(scip) );
+
+   SCIP_CALL( GCGtransformProb(scip) );
 
    if( decname != NULL )
    {
       SCIPinfoMessage(scip, NULL, "\nread decomposition <%s>\n", decname);
       SCIPinfoMessage(scip, NULL, "==================\n\n");
       SCIP_CALL( SCIPreadProb(scip, decname, NULL) );
-      if( GCGconshdlrDecompOrigPartialdecExists(scip) )
-      {
-         SCIP_CALL(SCIPsetIntParam(scip, "presolving/maxrounds", 0));
-      }
-   }
-
-   SCIP_CALL( SCIPpresolve(scip) );
-   GCGconshdlrDecompTranslateOrigPartialdecs(scip);
-
-   if( GCGconshdlrDecompGetNPartialdecs(scip) == 0 )
-   {
-      SCIP_CALL( DECdetectStructure(scip, &result) );
    }
 
    /*******************
     * Problem Solving *
     *******************/
-
-   if( decname == NULL && result != SCIP_SUCCESS )
-   {
-      SCIPinfoMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
-      return SCIP_OKAY;
-   }
-   /* solve problem */
    SCIPinfoMessage(scip, NULL, "\nsolve problem\n");
    SCIPinfoMessage(scip, NULL, "=============\n\n");
 
-   SCIP_CALL( SCIPsolve(scip) );
+   SCIP_CALL( GCGsolve(scip) );
 
    SCIPinfoMessage(scip, NULL, "\nprimal solution:\n");
    SCIPinfoMessage(scip, NULL, "================\n\n");
    SCIP_CALL( SCIPprintBestSol(scip, NULL, FALSE) );
-
 
    /**************
     * Statistics *
