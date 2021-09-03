@@ -24,8 +24,12 @@ default:
   before_script:
     # initialize SSH key to access repositories
     - *init_ssh2
+    # configure git
+    - git config --global user.email "gcg@or.rwth-aachen.de"
+    - git config --global user.name "GCG CI"
     # update submodules
     - git submodule sync --recursive
+    - git submodule foreach 'git stash'
     - git submodule update --init --recursive
     # set links to SCIP and SoPLEX
     - ln -sfn ../lib/scip-git lib/scip
@@ -275,10 +279,10 @@ experiment:master:
     - ssh gcgci@clustor 'while (( $(condor_q | grep "Total for query:" | cut -d":" -f2 | cut -d ";" -f1 | sed -e "s/ //g" -e "s/jobs//g") != 0 )); do sleep 5s; done; echo "All jobs done"'
     - ssh gcgci@clustor "cd gcg_master/check; ./evalcheck_cluster.sh -r results/*.eval; rm -rf results/*.txt"
     # prepare folder with hash of current commit and link to it from `current_master`
-    - ssh gcgci@clustor "cd /shared/gcg_runtime_data/; ln -sfn $(ls -td master_branch/*/ | head -n 1) previous_master"
-    - ssh gcgci@clustor "cd /shared/gcg_runtime_data/; mkdir -p master_branch/${CI_COMMIT_SHA:0:8}; ln -sfn master_branch/${CI_COMMIT_SHA:0:8} current_master"
+    - ssh gcgci@clustor "cd /shared/gcg_runtime_data/; ln -sfn $(ls -td /shared/gcg_runtime_data/master_branch/*/ | head -n 1 | cut -d'/' -f4-) previous_master"
+    - ssh gcgci@clustor "cd /shared/gcg_runtime_data/; mkdir -p master_branch/${CI_COMMIT_SHORT_SHA}; ln -sfn master_branch/${CI_COMMIT_SHORT_SHA} current_master"
     # copy runtime data to newly created folder
-    - ssh gcgci@clustor "cp -fr gcg_master/check/results/* /shared/gcg_runtime_data/master_branch/${CI_COMMIT_SHA:0:8}; echo 'Adding new master branch run with hash ${CI_COMMIT_SHA:0:8}.'"
+    - ssh gcgci@clustor "cp -fr gcg_master/check/results/* /shared/gcg_runtime_data/master_branch/${CI_COMMIT_SHORT_SHA}; echo 'Adding new master branch run with hash ${CI_COMMIT_SHORT_SHA}.'"
     # clean up old entries (keep latest 5 runs)
     - ssh gcgci@clustor 'cd /shared/gcg_runtime_data/master_branch/; for folder in $(ls -td */ | tail -n +6); do echo "Removing old master branch run with hash ${folder:0:8} (last modified $(stat ${folder} | grep Modify | cut -d\  -f2- | cut -d. -f1))."; rm -rf $folder; done'
     # do not delete master runtime data, to copy it over for comparisons
@@ -321,7 +325,7 @@ testset_report:experiment_master:
   stage: "Experiment Report"
   needs: ["experiment:master"]
   # since runtime data is large, generating reports will take longer as well
-  timeout: 8 hours
+  timeout: 24 hours
   only:
     - master
   script:
@@ -343,7 +347,7 @@ comparison_report:experiment_master:
   stage: "Experiment Report"
   needs: ["experiment:master"]
   # since runtime data is large, generating reports will take longer as well
-  timeout: 8 hours
+  timeout: 24 hours
   only:
     - master
   # get default before_script to do linking to SCIP
@@ -374,7 +378,7 @@ testset_report:experiment_feature:
   allow_failure: true
   needs: ["experiment:feature"]
   # since runtime data is large, generating reports will take longer as well
-  timeout: 8 hours
+  timeout: 24 hours
   except:
     - master
   script:
@@ -398,7 +402,7 @@ comparison_report:experiment_feature:
   allow_failure: true
   needs: ["experiment:feature"]
   # since runtime data is large, generating reports will take longer as well
-  timeout: 8 hours
+  timeout: 24 hours
   except:
     - master
   # get default before_script to do linking to SCIP
