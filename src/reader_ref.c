@@ -696,7 +696,7 @@ SCIP_RETCODE writeREFFile(
    {
       SCIPinfoMessage(scip, file, "%d ", nsubscipconss[i]);
    }
-   SCIPinfoMessage(scip, file, "\n", nblocks);
+   SCIPinfoMessage(scip, file, "\n");
 
    for( i = 0; i < nblocks; ++i )
    {
@@ -713,7 +713,7 @@ SCIP_RETCODE writeREFFile(
          assert(ind <= nconss); /* shift by 1 */
          SCIPinfoMessage(scip, file, "%d ", ind-1);
       }
-      SCIPinfoMessage(scip, file, "\n", nblocks);
+      SCIPinfoMessage(scip, file, "\n");
    }
    SCIPhashmapFree(&cons2origindex);
 

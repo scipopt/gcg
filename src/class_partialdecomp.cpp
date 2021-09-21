@@ -1556,14 +1556,14 @@ bool PARTIALDECOMP::checkConsistency(
    /* check if nblocks is set appropriately */
    if( nblocks != (int) conssforblocks.size() )
    {
-      SCIPwarningMessage(scip, "In (partialdec %d) nblocks %d and size of conssforblocks %d are not identical! \n" , id, nblocks, conssforblocks.size() );
+      SCIPwarningMessage(scip, "In (partialdec %d) nblocks %d and size of conssforblocks %ld are not identical! \n" , id, nblocks, conssforblocks.size() );
       assert( false );
       return false;
    }
 
    if( nblocks != (int) varsforblocks.size() )
    {
-      SCIPwarningMessage(scip, "In (partialdec %d) nblocks %d and size of varsforblocks %d are not identical! \n" , id, nblocks, varsforblocks.size() );
+      SCIPwarningMessage(scip, "In (partialdec %d) nblocks %d and size of varsforblocks %ld are not identical! \n" , id, nblocks, varsforblocks.size() );
       assert( false );
       return false;
    }
@@ -2924,7 +2924,7 @@ void PARTIALDECOMP::displayAggregationInformation()
          for( size_t b = 0; b < reptoblocks[i].size(); ++b )
             SCIPinfoMessage(scip, NULL, "%d ", reptoblocks[i][b] );
 
-         SCIPinfoMessage(scip, NULL, "\n", i);
+         SCIPinfoMessage(scip, NULL, "\n");
       }
    }
 }
@@ -4804,7 +4804,7 @@ void PARTIALDECOMP::printPartitionInformation(
          for ( int mclass = 0; mclass < (int) classestomaster[i].size(); ++mclass )
          {
             int classid = classestomaster[i][mclass];
-            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedpartition[i]->getClassName(classid), usedpartition[i]->getClassDescription(classid));
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedpartition[i]->getClassName(classid));
          }
       }
    }

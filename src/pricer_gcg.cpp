@@ -5252,7 +5252,7 @@ SCIP_RETCODE GCGmasterPrintSimplexIters(
    }
    else
    {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Master LP        : %10lld\n", 0);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Master LP        : %10lld\n", 0LL);
    }
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Pricing LP       : %10lld\n", pricerdata->pricingiters);
 
@@ -5262,7 +5262,7 @@ SCIP_RETCODE GCGmasterPrintSimplexIters(
    }
    else
    {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Original LP      : %10lld\n", 0);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Original LP      : %10lld\n", 0LL);
    }
 
    return SCIP_OKAY;
