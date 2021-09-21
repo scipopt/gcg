@@ -143,7 +143,6 @@
 #include "scip/sepa_intobj.h"
 #include "scip/sepa_mcf.h"
 #include "scip/sepa_oddcycle.h"
-#include "scip/sepa_strongcg.h"
 #include "scip/sepa_zerohalf.h"
 
 /* added by Jonas */
@@ -343,7 +342,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaIntobj(scip) );
    SCIP_CALL( SCIPincludeSepaMcf(scip) );
    SCIP_CALL( SCIPincludeSepaOddcycle(scip) );
-   SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 
    /* added by Jonas */

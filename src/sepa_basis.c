@@ -1364,7 +1364,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
       /* separate cuts in cutpool */
       SCIPdebugMessage("separate current LP sol in cutpool\n");
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, &resultdummy) );
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, isroot, &resultdummy) );
 
       enoughcuts = (SCIPgetNCuts(origscip) >= 2 * (SCIP_Longint)maxcuts) || (resultdummy == SCIP_NEWROUND);
 
@@ -1388,7 +1388,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       {
          /* separate cuts in cutpool */
          SCIPdebugMessage("separate current LP sol in cutpool\n");
-         SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, &resultdummy) );
+         SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, isroot, &resultdummy) );
 
          enoughcuts = enoughcuts || (SCIPgetNCuts(origscip) >= 2 * (SCIP_Longint)maxcuts) || (resultdummy == SCIP_NEWROUND);
       }
@@ -1397,7 +1397,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       {
          /* separate cuts in delayed cutpool */
          SCIPdebugMessage("separate current LP sol in delayed cutpool\n");
-         SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), NULL, &resultdummy) );
+         SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), NULL, isroot, &resultdummy) );
 
          enoughcuts = enoughcuts || (SCIPgetNCuts(origscip) >= 2 * (SCIP_Longint)maxcuts) || (resultdummy == SCIP_NEWROUND);
       }
@@ -1415,8 +1415,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       }
 
       /* separate cuts in cutpool */
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), origsol, &resultdummy) );
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), origsol, &resultdummy) );
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), origsol, isroot, &resultdummy) );
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), origsol, isroot, &resultdummy) );
 
       assert(sepadata->norigcuts == sepadata->nmastercuts);
 
