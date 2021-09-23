@@ -257,6 +257,7 @@ LIBOBJ = \
 			event_relaxsol.o \
 			event_solvingstats.o \
 			gcgcol.o \
+			gcg_general.o \
 			gcggithash.o \
 			gcgheur.o \
 			gcgsepa.o \

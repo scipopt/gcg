@@ -13,6 +13,11 @@ add_custom_target(gcg_cluster
    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/check/
    DEPENDS gcg)
 
+add_custom_target(visu
+   COMMAND ${CMAKE_COMMAND} -E env "GCG_BINARY=${GCG_REL_PATH}" ${PROJECT_SOURCE_DIR}/check/cmake_wrapper.sh visu
+   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/check/
+   DEPENDS gcg)
+
 #
 # define the instance sets and settings.
 #

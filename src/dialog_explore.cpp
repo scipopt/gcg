@@ -563,7 +563,8 @@ SCIP_RETCODE GCGdialogShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "top", "displays the first decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "end", "displays the last decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "entries", "modifies the number of decompositions to display per page");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "visualizes the specified decomposition (requires gnuplot)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "export", "generates visualization of the specified decomposition in gnuplot format");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "generates visualization and opens it (requires gnuplot)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "score", "sets the score by which the quality of decompositions is evaluated");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sort", "sets the column by which the decompositions are sorted (default: by score)");
@@ -585,7 +586,8 @@ SCIP_RETCODE GCGdialogSelectVisualize(
    SCIP*                   scip,       /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
-   std::vector<int>&       idlist      /**< current list of partialdec ids */
+   std::vector<int>&       idlist,     /**< current list of partialdec ids */
+   SCIP_Bool               open        /**< compile and open gnuplot file? */
    )
 {
    char* ntovisualize;
@@ -612,7 +614,10 @@ SCIP_RETCODE GCGdialogSelectVisualize(
 
    /* get and show partialdec */
    PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, idlist.at(idtovisu));
-   partialdec->showVisualisation();
+   if( open ) 
+      partialdec->showVisualization();
+   else
+      partialdec->exportVisualization();
 
    return SCIP_OKAY;
 }
@@ -922,7 +927,12 @@ SCIP_RETCODE GCGdialogExecCommand(
 
       else if( strncmp( command, "visualize", commandlen) == 0 )
       {
-         SCIP_CALL( GCGdialogSelectVisualize(scip, dialoghdlr, dialog, idlist) );
+         SCIP_CALL( GCGdialogSelectVisualize(scip, dialoghdlr, dialog, idlist, TRUE) );
+      }
+
+      else if( strncmp( command, "export", commandlen) == 0 )
+      {
+         SCIP_CALL( GCGdialogSelectVisualize(scip, dialoghdlr, dialog, idlist, FALSE) );
       }
 
       else if( strncmp( command, "inspect", commandlen) == 0 )

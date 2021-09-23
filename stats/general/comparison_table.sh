@@ -49,10 +49,14 @@ done
 
 export LC_NUMERIC=C
 
+mkdir -p plots
+
 for i in $TESTSETS
 do
     echo
     echo ====vvvv==== $i ====vvvv====
-    awk -f cmpres.awk $AWKARGS texcmpfile="cmpres.$i.tex" `ls -1f $FILES | grep "$i\..*\.res"`
+    awk -f misc/cmpres.awk $AWKARGS texcmpfile="plots/cmpres.$i.tex" `ls -1f $FILES | grep "$i\..*\.res"`
+    sed "s/)[:]*/&\\\\\\\ /g" plots/cmpres.$i.tex > plots/$i.table.tex
     echo ====^^^^==== $i ====^^^^====
+    rm plots/cmpres.$i.tex
 done

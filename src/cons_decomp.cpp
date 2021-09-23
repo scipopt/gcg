@@ -844,6 +844,10 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
          SCIPdebugMessage("Calling freeDetector of %s\n", detector->name);
          SCIP_CALL( (*detector->freeDetector)(scip, detector) );
       }
+
+      BMSfreeMemoryArray(&detector->name);
+      BMSfreeMemoryArray(&detector->description);
+
       SCIPfreeBlockMemory(scip, &detector);
    }
 
@@ -2989,8 +2993,8 @@ SCIP_RETCODE DECincludeDetector(
 
    /* set meta data of detector */
    detector->decdata = detectordata;
-   detector->name = name;
-   detector->description = description;
+   SCIP_ALLOC( BMSduplicateMemoryArray(&detector->name, name, strlen(name)+1) );
+   SCIP_ALLOC( BMSduplicateMemoryArray(&detector->description, description, strlen(description)+1) );
    detector->decchar = decchar;
 
    /* set memory handling and detection functions */

@@ -25,73 +25,33 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_gp.h
- * @brief  GP file reader writing decompositions to gnuplot files
- * @author Martin Bergner
- * @author Hanna Franzen
- * @ingroup FILEREADERS
- *
- * This reader can write visualizations of partialdecs to a .gp file.
+/**@file   gcg_general.h
+ * @brief  gcg general public methods
+ * @author Steffan Schlein
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_READER_GP_H__
-#define GCG_READER_GP_H__
+#ifndef GCG_GENERAL_H__
+#define GCG_GENERAL_H__
 
-#include "scip/scip.h"
-#include "type_decomp.h"
+
+#include "scip/def.h"
+#include "scip/type_scip.h"
+
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
-/** Output format of gnuplot. Specifies the output format that gnuplot will produce. */
-enum GPOutputFormat
-{
-   GP_OUTPUT_FORMAT_PDF,
-   GP_OUTPUT_FORMAT_PNG,
-   GP_OUTPUT_FORMAT_SVG
-};
-typedef enum GPOutputFormat GP_OUTPUT_FORMAT;
-
-/** Includes the gp file reader into SCIP
- * @returns SCIP status */
-extern
-SCIP_RETCODE SCIPincludeReaderGp(
-   SCIP*                 scip                /**< SCIP data structure */
+/** prints out GCG version
+ * @returns nothing */
+SCIP_EXPORT
+void GCGprintVersion(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file (or NULL for standard output) */
    );
-
-/* Writes a visualization for the given partialdec */
-extern SCIP_RETCODE GCGwriteGpVisualizationFormat(
-   SCIP* scip,             /**< SCIP data structure */
-   char* filename,         /**< filename (including path) to write to */
-   char* outputname,       /**< filename for compiled output file */
-   int partialdecid,       /**< id of partialdec to visualize */
-   GP_OUTPUT_FORMAT outputformat /**< the output format which gnuplot should emit */
-   );
-
-/** Writes a visualization as .pdf file for the given partialdec
- * @returns SCIP status */
-extern
-SCIP_RETCODE GCGwriteGpVisualization(
-   SCIP* scip,             /**< SCIP data structure */
-   char* filename,         /**< filename (including path), location of the output*/
-   char* outputname,       /**< outputname is the name of the file for the compiled gnuplot output file */
-   int partialdecid             /**< id of partialdec to visualize */
-   );
-
-/** Creates a block matrix and outputs its visualization as .pdf file
- * @returns SCIP return code
- * */
-extern
-SCIP_RETCODE GCGWriteGpDecompMatrix(
-   SCIP*                 scip,               /**< scip data structure */
-   const char*           filename,           /**< filename the output should be written to (including directory) */
-   const char*           workfolder,         /**< directory in which should be worked */
-   SCIP_Bool             originalmatrix      /**< should the original (or transformed) matrix be written */
-);
 
 #ifdef __cplusplus
 }

@@ -37,15 +37,18 @@ def parse_arguments(args):
     """
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-tm', '--time', type=int, default=18,
+    parser.add_argument('-tm', '--time', type=int, default=22,
                         help='Column for solution time res-files')
     parser.add_argument('-st', '--status', type=int, default=23,
                         help='Column for status in res-file')
     parser.add_argument('-m', '--min', type=float, default=1.0,
                         help='Minimum solution times (solution times are set to maximum of solution times and this value)')
+    parser.add_argument('--max', type=float, default=None,
+                        help='Maximum solution times (should not be used, but can be to remove very long runners that make the plot hard to read)')
     parser.add_argument('-ss', '--stepsize', type=float, default=0.01,
                         help='Step size used in plot (note that creating the plot can take long when stepsize is too small)')
-
+    parser.add_argument('-set', '--settingloc', type=int, default=-3,
+                        help='give the position (counting from 0) of your settings name in the file name after it has been split by dots.')
     parser.add_argument('-l', '--log', type=bool, default=False,
                         help='Should a logarithmic scale be used?')
 
@@ -58,7 +61,7 @@ def parse_arguments(args):
     parser.add_argument('-ab', '--aborts', type=bool, default=False,
                         help='Should aborts be counted?')
 
-    parser.add_argument('-f', '--filename', type=str, default='perprof_plot.pdf',
+    parser.add_argument('-f', '--filename', type=str, default='performance_profile.pdf',
                         help='Name of out file')
 
     parser.add_argument('--outdir', type=str,
@@ -85,6 +88,7 @@ def set_params(args):
     params['time'] = args.time
     params['status'] = args.status
     params['min'] = args.min
+    params['max'] = args.max
     params['stepsize'] = args.stepsize
     params['log'] = args.log
     params['timeouts'] = args.timeouts
@@ -93,6 +97,7 @@ def set_params(args):
     params['out'] = args.filename
     params['cluster'] = args.cluster
     params['outdir'] = args.outdir
+    params['settingloc'] = args.settingloc
 
 def main():
     """Entry point when calling this script"""
@@ -116,7 +121,7 @@ def main():
             print("Interpreting your input as .res file")
             resorout = 0
         elif resfiles[i].endswith(".out") and not resorout == 0:
-            resourout = 1
+            resorout = 1
             if params['cluster'] or ("clustor" in resfiles[i].split('.')):
                 print("Converting '{}' to a resfile (cluster).".format(resfiles[i]))
                 subprocess.check_call(['./misc/out2res_cluster.sh',resfiles[i]], stdout=DEVNULL, stderr=STDOUT)
@@ -133,20 +138,32 @@ def main():
         files.sort(key=lambda x: os.path.getmtime(x))
         dftmp = pd.DataFrame()
         if len(files) > 0:
-            #print("res file    :", files[0])
+            # for this case, most probably, the position of params[time] and params[status] was incorrect
+            #if len(dftmp.dropna(axis=0, how="any").values) == 0:
+            with open(resfile) as f:
+                f.readline()
+                header = f.readline().replace(" ", "").strip().split('|')
+            params['time'] = len(header) - 1 - header[::-1].index('Time')
+            params['status'] = len(header) - 1 - header[::-1].index('')
             dftmp = pd.read_csv(
                     files[0],
                     skiprows=3, index_col = 0, delim_whitespace=True, skipfooter=10, usecols=[0,params['time'],params['status']], names=['instance',(resfile,'time'),(resfile,'status')], engine='python')
+            #print("res file    :", files[0])
+            #dftmp = pd.read_csv(
+            #        files[0],
+            #        skiprows=3, index_col = 0, delim_whitespace=True, skipfooter=10, usecols=[0,params['time'],params['status']], names=['instance',(resfile,'time'),(resfile,'status')], engine='python')
             # this is a workaround for a bug
             if len(dftmp.columns) > 2:
                 dftmp = pd.read_csv(
                     files[0],
                     skiprows=3, index_col = 0, delim_whitespace=True, skipfooter=10, usecols=[params['time']-1,params['status']-1], names=[(resfile,'time'),(resfile,'status')], engine='python')
+
+
         else:
             failed = True
             print("WARNING      : No res-file", resfile)
-        #df = pd.merge(left=dftmp,right=df,how='left',left_index=True, right_index=True)
-        df = pd.concat([dftmp,df], axis=1, join='outer')
+        df = pd.merge(left=dftmp,right=df,how='left',left_index=True, right_index=True)
+        df = pd.concat([dftmp,df], axis=0, join='outer',sort=False)
 
     if df.empty:
         print("Fatal: Could not read files or files empty.\nTerminating.")
@@ -163,6 +180,8 @@ def main():
         df = df[df[resfile,"status"].isin(statusfilter)]
 
         df[resfile,'time'] = df[resfile,'time'].apply(lambda x: max(x, params['min']))
+        if params['max'] is not None:
+            df[resfile,'time'] = df[resfile,'time'].apply(lambda x: min(x, params['max']))
 
     df["best"] = df[[(resfile, 'time') for resfile in resfiles]].min(axis=1)
 
@@ -174,30 +193,35 @@ def main():
 
     def perplot(resfile, t):
         return 1.0*len(df[df[resfile,"performance"] <= t]) / len(df)
-    xx = np.arange(1.0,rmax+params['stepsize'],params['stepsize'])
-
+    try: xx = np.arange(1.0,rmax+params['stepsize'],params['stepsize'])
+    except ValueError:
+        print("Fatal: No data to plot. Either your two runs have no optimally solved instances in common, \n" +
+              "       or your columns (time and status) were incorrect. See --help for more information.")
+        print("Terminating.")
+        exit()
     f, ax = plt.subplots()
 
     for resfile in resfiles:
         try:
-            setting = resfile.split(".")[-3]
+            setting = resfile.split(".")[params['settingloc']]#.split('-')[0]
         except:
-            #print("Warning: Your file naming scheme does not match the default GCG scheme.\n         The names of your settings could not be determined.")
-            #setting = "run"
-            for line in open(resfile):
-                if line.startswith("@01"):
-                    setting = line.split(':')[-1].rstrip('\n')
+            print("Warning: Your file naming scheme does not match the default GCG scheme.\n         The names of your settings could not be determined.")
+            setting = "default"
+
         yy = np.array([perplot(resfile,x) for x in xx])
         if params['log']:
             ax.semilogx(xx,yy,label=setting)
         else:
-            ax.plot(xx,yy,label=setting)
+            ax.plot(xx,yy,label=setting, linewidth="1.1")
 
 #        ax = df.plot(kind='line',y=(resfile,"per"), ax=ax);
     plt.ylim([0.0, 1.01])
     plt.legend(loc='lower right')
 
     pp = PdfPages(params['outdir'] + params['out'])
+    plt.title("Performance Profile")
+    plt.xlabel("Relative slowdown compared with best performing run", size='small')
+    plt.ylabel("Relative number of instances", size='small')
     plt.savefig(pp, format='pdf')
     pp.close()
 
