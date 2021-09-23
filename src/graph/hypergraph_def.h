@@ -192,7 +192,7 @@ SCIP_RETCODE Hypergraph<T>::writeToFile(
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   SCIPinfoMessage(scip_, file, "%d %d\n", nodes.size()+dummynodes, hedges.size());
+   SCIPinfoMessage(scip_, file, "%ld %ld\n", nodes.size()+dummynodes, hedges.size());
 
    for( size_t i = 0; i < hedges.size(); ++i )
    {
