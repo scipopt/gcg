@@ -1,0 +1,429 @@
+{
+    "TOTAL TIME":{
+        "clearname":"Total Time",
+        "description":"Time used for reading, presolving and solving, excluding copying.",
+        "type":"float",
+        "level":"standard",
+        "group":"Meta"
+    },
+    "READING TIME":{
+        "clearname":"Reading Time",
+        "description":"Time used for reading of the problem.",
+        "type":"float",
+        "level":"expert",
+        "group":"Meta"
+    },
+    "COPYING TIME":{
+        "clearname":"Copying Time",
+        "description":"Time used for copying (e.g. from original to master problem).",
+        "type":"float",
+        "level":"expert",
+        "group":"Meta"
+    },
+    "DETECTION TIME":{
+        "clearname":"Detection Time",
+        "description":"Time used for automatic detection of a problem structure.",
+        "type":"float",
+        "level":"expert",
+        "group":"Detection"
+    },
+    "PRESOLVING TIME":{
+        "clearname":"Presolving Time",
+        "description":"Time used for presolving of the problem.",
+        "type":"float",
+        "level":"expert",
+        "group":"Meta"
+    },
+    "STATUS":{
+        "clearname":"Solving Status",
+        "description":"Status after solving terminated. 0: unknown, 1: solved (optimal), 2: solved (infeasible), 3: time limit, 4: memory limit, 5: node limit.",
+        "type":"int",
+        "level":"standard",
+        "group":"Meta"
+    },
+    "ROOT NODE TIME":{
+        "clearname":"Time in Root Node",
+        "description":"Time spent inside the root node.",
+        "type":"float",
+        "level":"expert",
+        "group":"Branching"
+    },
+    "DUAL BOUNDS":{
+        "clearname":"Development of Dual Bounds",
+        "description":"List of development of the dual bounds over time.",
+        "type":"string",
+        "level":"expert",
+        "group":"Meta"
+    },
+    "HEUR TIME ORIG":{
+        "clearname":"Heuristics Time (Original Problem)",
+        "description":"Time used for heuristics in the original problem.",
+        "type":"float",
+        "level":"expert",
+        "group":"Heuristics"
+    },
+    "HEUR CALLS ORIG":{
+        "clearname":"Heuristics Calls (Original Problem)",
+        "description":"Number of times heuristics were called in the original problem.",
+        "type":"int",
+        "level":"expert",
+        "group":"Heuristics"
+    },
+    "HEUR FOUND ORIG":{
+        "clearname":"Heuristics Found (Original Problem)",
+        "description":"Number of times heuristics found a solution in the original problem.",
+        "type":"int",
+        "level":"expert",
+        "group":"Heuristics"
+    },
+    "HEUR TIME MASTER":{
+        "clearname":"Heuristics Time (Master Problem)",
+        "description":"Time used for heuristics in the master problem.",
+        "type":"float",
+        "level":"expert",
+        "group":"Heuristics"
+    },
+    "HEUR CALLS MASTER":{
+        "clearname":"Heuristics Calls (Master Problem)",
+        "description":"Number of times heuristics were called in the master problem.",
+        "type":"int",
+        "level":"expert",
+        "group":"Heuristics"
+    },
+    "HEUR FOUND MASTER":{
+        "clearname":"Heuristics Found (Master Problem)",
+        "description":"Number of times heuristics found a solution in the master problem.",
+        "type":"int",
+        "level":"expert",
+        "group":"Heuristics"
+    },
+    "CUTS TIME MASTER":{
+        "clearname":"Cuts Time (Master Problem)",
+        "description":"Time used for finding\/applying cutting planes in the master problem.",
+        "type":"float",
+        "level":"expert",
+        "group":"Cutting"
+    },
+    "CUTS CALLS MASTER":{
+        "clearname":"Cuts Calls (Master Problem)",
+        "description":"Number of times separators were called in the master problem.",
+        "type":"int",
+        "level":"expert",
+        "group":"Cutting"
+    },
+    "CUTS FOUND MASTER":{
+        "clearname":"Cuts Found (Master Problem)",
+        "description":"Number of times separators found a cutting plane in the master problem.",
+        "type":"int",
+        "level":"expert",
+        "group":"Cutting"
+    },
+    "CUTS APPLIED MASTER":{
+        "clearname":"Cuts Applied (Master Problem)",
+        "description":"Number of times cutting planes were applied in the master problem.",
+        "type":"int",
+        "level":"expert",
+        "group":"Cutting"
+    },
+    "CUTS TIME ORIG":{
+        "clearname":"Cuts Time (Original Problem)",
+        "description":"Time used for finding\/applying cutting planes in the original problem.",
+        "type":"float",
+        "level":"expert",
+        "group":"Cutting"
+    },
+    "CUTS CALLS ORIG":{
+        "clearname":"Cuts Calls (Original Problem)",
+        "description":"Number of times separators were called in the original problem.",
+        "type":"int",
+        "level":"expert",
+        "group":"Cutting"
+    },
+    "CUTS FOUND ORIG":{
+        "clearname":"Cuts Found (Original Problem)",
+        "description":"Number of times separators found a cutting plane in the original problem.",
+        "type":"int",
+        "level":"expert",
+        "group":"Cutting"
+    },
+    "CUTS APPLIED ORIG":{
+        "clearname":"Cuts Applied (Original Problem)",
+        "description":"Number of times cutting planes were applied in the original problem.",
+        "type":"int",
+        "level":"expert",
+        "group":"Cutting"
+    },
+    "FARKAS TIME":{
+        "clearname":"Farkas Time",
+        "description":"Time used for ensuring feasibility of the RMP.",
+        "type":"float",
+        "level":"expert",
+        "group":"Pricing"
+    },
+    "MASTER TIME":{
+        "clearname":"Master Problem Time",
+        "description":"Total time used for solving the complete master problem.",
+        "type":"float",
+        "level":"expert",
+        "group":"Detection"
+    },
+    "PRICING TIME":{
+        "clearname":"Pricing Time",
+        "description":"Time used for the complete pricing process.",
+        "type":"float",
+        "level":"expert",
+        "group":"Pricing"
+    },
+    "PRICING SOLVER TIME":{
+        "clearname":"Pricing Solver Time",
+        "description":"Time used for pricing solvers (e.g. knapsack solver).",
+        "type":"float",
+        "level":"expert",
+        "group":"Pricing"
+    },
+    "PRICING SOLVER TYPE":{
+        "clearname":"Pricing Solver Types",
+        "description":"Types of pricing solvers that ran on the problem.",
+        "type":"string",
+        "level":"expert",
+        "group":"Pricing"
+    },
+    "DEGENERACY":{
+        "clearname":"Degeneracy",
+        "description":"List of development of the degeneracy over time.",
+        "type":"float",
+        "level":"expert",
+        "group":"Meta"
+    },
+    "CONS LINEAR":{
+        "clearname":"Number of Linear Constraints",
+        "description":"Number of linear constraints that could not be classified otherwise.",
+        "type":"int",
+        "level":"expert",
+        "group":"Constraints"
+    },
+    "CONS KNAPSACK":{
+        "clearname":"Number of Knapsack Constraints",
+        "description":"Number of constraints that represent a classical knapsack constraint.",
+        "type":"int",
+        "level":"expert",
+        "group":"Constraints"
+    },
+    "CONS LOGICOR":{
+        "clearname":"Number of Logical OR Constraints",
+        "description":"Number of constraints that represent a logical 'or'-relation.",
+        "type":"int",
+        "level":"expert",
+        "group":"Constraints"
+    },
+    "CONS SETPPC":{
+        "clearname":"Number of Set Partitioning\/Packing\/Covering Constraints",
+        "description":"Number of constraints that represent set-packing, set-partitioning or set-covering constraints.",
+        "type":"int",
+        "level":"expert",
+        "group":"Constraints"
+    },
+    "CONS VARBOUND":{
+        "clearname":"Number of Variable Bound Constraints",
+        "description":"Number of constraints that represent variable bounds.",
+        "type":"int",
+        "level":"expert",
+        "group":"Constraints"
+    },
+    "LINKING VARS":{
+        "clearname":"Number of Linking Variables",
+        "description":"Number of linking variables that connect different blocks.",
+        "type":"float",
+        "level":"expert",
+        "group":"Detection"
+    },
+    "NBLOCKS":{
+        "clearname":"Number of Blocks",
+        "description":"Number of blocks (pricing problems) in the decomposition.",
+        "type":"int",
+        "level":"expert",
+        "group":"Detection"
+    },
+    "NBLOCKSAGGR":{
+        "clearname":"Number of Aggregated Blocks",
+        "description":"Number of blocks that were aggregated (at max NBLOCKS).",
+        "type":"int",
+        "level":"expert",
+        "group":"Detection"
+    },
+    "SOLUTIONS FOUND":{
+        "clearname":"Number of Solutions Found",
+        "description":"Number of solutions found.",
+        "type":"int",
+        "level":"expert",
+        "group":"Meta"
+    },
+    "FIRST SOLUTION TIME":{
+        "clearname":"First Solution Time",
+        "description":"Time until first solution was found.",
+        "type":"float",
+        "level":"expert",
+        "group":"Meta"
+    },
+    "BEST SOLUTION TIME":{
+        "clearname":"Best Solution Time",
+        "description":"Time until best solution was found.",
+        "type":"float",
+        "level":"expert",
+        "group":"Meta"
+    },
+    "PD INTEGRAL":{
+        "clearname":"Primal-Dual Integral",
+        "description":"The average integral (the geometric 'space') between the primal and the dual bound ('avg. gap').",
+        "type":"float",
+        "level":"expert",
+        "group":"Meta"
+    },
+    "MASTER NCONSS":{
+        "clearname":"Number of Master Constraints",
+        "description":"The number of constraints in the master problem.",
+        "type":"int",
+        "level":"expert",
+        "group":"Detection"
+    },
+    "MASTER NVARS":{
+        "clearname":"Number of Master Variables",
+        "description":"The number of variables in the master problem.",
+        "type":"int",
+        "level":"expert",
+        "group":"Detection"
+    },
+    "BNB TREE NODES":{
+        "clearname":"Number of BNB Tree Nodes",
+        "description":"Number of nodes created in the branch-and-bound tree.",
+        "type":"int",
+        "level":"standard",
+        "group":"Branching"
+    },
+    "BNB TREE LEFT":{
+        "clearname":"Number of BNB Tree Nodes Left",
+        "description":"Number of nodes in the branch-and-bound tree left to be explored after termination.",
+        "type":"int",
+        "level":"expert",
+        "group":"Branching"
+    },
+    "BNB TREE DEPTH":{
+        "clearname":"Depth of BNB Tree",
+        "description":"Depth of the created branch-and-bound tree.",
+        "type":"int",
+        "level":"expert",
+        "group":"Branching"
+    },
+    "BR RULE TIME ORIG":{
+        "clearname":"Branching Rule 'ORIG' Time",
+        "description":"Time used for the branching rule 'Original Variable Branching'.",
+        "type":"float",
+        "level":"expert",
+        "group":"Branching"
+    },
+    "BR RULE TIME GENERIC":{
+        "clearname":"Branching Rule 'GENERIC' Time",
+        "description":"Time used for the branching rule 'Vanderbeck Generic Branching'.",
+        "type":"float",
+        "level":"expert",
+        "group":"Branching"
+    },
+    "BR RULE TIME RELPSPROB":{
+        "clearname":"Branching Rule 'RELPSPROB' Time",
+        "description":"Time used for the branching rule 'generalized reliability pseudo cost probing branching' (or simply 'pseudo cost branching').",
+        "type":"float",
+        "level":"expert",
+        "group":"Branching"
+    },
+    "BR RULE TIME RYANFOSTER":{
+        "clearname":"Branching Rule 'RYANFOSTER' Time",
+        "description":"Time used for the branching rule 'Ryan-Foster Branching'.",
+        "type":"float",
+        "level":"expert",
+        "group":"Branching"
+    },
+    "BR RULE CALLS ORIG":{
+        "clearname":"Branching Rule 'ORIG' Calls",
+        "description":"Calls of the branching rule 'Original Variable Branching'.",
+        "type":"int",
+        "level":"expert",
+        "group":"Branching"
+    },
+    "BR RULE CALLS GENERIC":{
+        "clearname":"Branching Rule 'GENERIC' Calls",
+        "description":"Calls of the branching rule 'Vanderbeck Generic Branching'.",
+        "type":"int",
+        "level":"expert",
+        "group":"Branching"
+    },
+    "BR RULE CALLS RELPSPROB":{
+        "clearname":"Branching Rule 'RELPSPROB' Calls",
+        "description":"Calls of the branching rule 'generalized reliability pseudo cost probing branching' (or simply 'pseudo cost branching').",
+        "type":"int",
+        "level":"expert",
+        "group":"Branching"
+    },
+    "BR RULE CALLS RYANFOSTER":{
+        "clearname":"Branching Rule 'RYANFOSTER' Time",
+        "description":"Calls of the branching rule 'Ryan-Foster Branching'.",
+        "type":"int",
+        "level":"expert",
+        "group":"Branching"
+    },
+    "RMP LP CALLS":{
+        "clearname":"Restricted Master Problem Calls",
+        "description":"Number of times the restricted master problem was be solved.",
+        "type":"int",
+        "level":"expert",
+        "group":"Solving"
+    },
+    "RMP LP TIME":{
+        "clearname":"Restricted Master Problem Time",
+        "description":"Time used for solving the restricted master problem.",
+        "type":"float",
+        "level":"expert",
+        "group":"Solving"
+    },
+    "RMP LP ITERATIONS":{
+        "clearname":"Restricted Master Problem Iterations",
+        "description":"Total number of iterations all solving runs of the restricted master problem took.",
+        "type":"int",
+        "level":"expert",
+        "group":"Solving"
+    },
+    "ORIGINAL LP CALLS":{
+        "clearname":"Original Problem Calls",
+        "description":"Number of times the original problem was be solved.",
+        "type":"int",
+        "level":"expert",
+        "group":"Solving"
+    },
+    "ORIGINAL LP TIME":{
+        "clearname":"Original Problem Time",
+        "description":"Time used for solving the original problem.",
+        "type":"float",
+        "level":"expert",
+        "group":"Solving"
+    },
+    "ORIGINAL LP ITERATIONS":{
+        "clearname":"Original Problem Iterations",
+        "description":"Total number of iterations all solving runs of the original problem took.",
+        "type":"int",
+        "level":"expert",
+        "group":"Solving"
+    },
+    "LP FILE":{
+        "clearname":"Problem File",
+        "description":"Program file (e.g. .lp or .mps) with full path.",
+        "type":"string",
+        "level":"expert",
+        "group":"Meta"
+    },
+    "DEC FILE":{
+        "clearname":"Decomposition File",
+        "description":"Decomposition file (e.g. .dec or .blk) with full path.",
+        "type":"string",
+        "level":"expert",
+        "group":"Meta"
+    }
+}

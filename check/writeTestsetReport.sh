@@ -78,7 +78,12 @@ TIMESTAMP=$(date '+%d-%m-%Y_%H-%M-%S')
 SCRIPTMODE=""
 
 function echoGrey(){
-  echo "$(tput dim)$1$(tput sgr0)"
+  if [ "$DEBUG" == "false" ]; then printf "\n$(tput dim)$1$(tput sgr0)"
+  else echo $1; fi
+}
+function echoBold(){
+  if [ "$DEBUG" == "false" ]; then printf "\n$(tput bold)$1$(tput sgr0)"
+  else printf "\n$1"; fi
 }
 
 function extractScriptSettings(){
@@ -125,7 +130,7 @@ function extractScriptSettings(){
 function setScriptMode(){
   # out file given
   # inside first if cond., because if given, we could be in make test VISU=true mode
-  if [[ ! -z $OUTFILE && ($OUTFILE != "none") && (! -d $OUTFILE) ]]; then
+  if [[ ! -z $OUTFILE && ($OUTFILE != "none") && ((! -d $OUTFILE) && (! -d ../$OUTFILE)) ]]; then
     SCRIPTMODE="outfile"
   elif [[ ! -z $DATADIR ]]; then
     SCRIPTMODE="datadir"
@@ -139,15 +144,19 @@ function prepareVisualizationGeneration(){
   # function to get names of settings and testset from runtime files
   function getTstSetNames(){
     # based on runtime files, set test name and settings name if not yet set
-    TSTNAME=$(cat $OUTFILE | sed -e 's/^M//g' -e 's/\r//g' | grep "saved parameter file" -m1 | cut -d "." -f 2 | sed "s/\_/\\\_/g")
-    if [[ $TSTNAME = "" ]]; then TSTNAME=$(cat $OUTFILE | grep "saved parameter file" | cut -d '.' -f2 | head -n 1 | sed "s/\_/\\\_/g"); fi
-    SETNAME=$(cat $OUTFILE | sed 's/^M//' | grep "loaded parameter file" -m1 | sed -e "s/>//g" | rev | cut -d '/' -f 1 | rev | sed -e "s/\.set//g" | sed "s/\_/\\\_/g")
-    # if no settings file was read in (successfully! otherwise we could just use the filename, but it also prints settings if they don't exist), use default
-    if [[ -z $SETNAME ]]; then SETNAME="default"; fi
+    # get test set name
+    if [[ -z $TSTNAME ]]; then TSTNAME=$(head -n 500 $OUTFILE | sed -e 's/^M//g' -e 's/\r//g' | grep "saved parameter file" -m1 | cut -d "." -f 2); fi
+    if [[ $TSTNAME = "" ]]; then TSTNAME="short"; fi    # fallback
+    # get settings name (even if settings were not read but just given)
+    if [[ -z $SETNAME ]]; then SETNAME=$(head -n 500 $OUTFILE | grep -oPm1 '(?<=settings/).*' | sed "s/\.set//g"); fi
+    if [[ $SETNAME = "" ]]; then SETNAME="default"; fi  # fallback
   }
 
   # function to check a given data directory
   function checkDatadir(){
+    if [ -d $DATADIR ]; then DATADIR=$(realpath $DATADIR);
+    elif [ -d ../$DATADIR ]; then DATADIR=$(realpath ../$DATADIR); fi
+
     # check if path is given and valid
     if [[ $DATADIR = "none" || $SCRIPTMODE = "nodata" ]]; then
         echo " No data directory given. The log directory should contain .res, .out and .vbc files for one or multiple runs."
@@ -157,12 +166,10 @@ function prepareVisualizationGeneration(){
         echo " Data directory could not be found."
         return 1
     fi
-
-    DATADIR=$(realpath $DATADIR)
     # get number of files in data dir
     NOUTFILES=$(ls 2>/dev/null -Ubad1 -- $DATADIR/*.out | wc -l)
     NRESFILES=$(ls 2>/dev/null -Ubad1 -- $DATADIR/*.res | wc -l)
-    NVBCFILES=$(ls 2>/dev/null -Ubad1 -- $DATADIR/*.vbc | wc -l)
+    #NVBCFILES=$(ls 2>/dev/null -Ubad1 -- $DATADIR/*.vbc | wc -l)
 
     # check number of files in data dir
     if [[ $NOUTFILES = 0 ]]; then
@@ -196,19 +203,19 @@ function prepareVisualizationGeneration(){
   function checkVBCdir(){
     VBCTRY=$VBCFILES
     # if no vbc files in vbcdir, try vbcdir/vbc/
-    if test $(ls $VBCTRY/*.$SETNAME.vbc | wc -l) = 0; then
+    if test $(ls 2>/dev/null -Ubad1 -- $VBCTRY/*.$SETNAME.vbc | head -n 1 | wc -l) = 0; then
       VBCTRY=${VBCFILES}/vbc/; else VBCFILES=$VBCTRY; return 0
     fi
     # if no vbc files in vbcdir/vbc/, try vbcdir/settings/
-    if test $(ls $VBCTRY/*.$SETNAME.vbc | wc -l) = 0; then
+    if test $(ls 2>/dev/null -Ubad1 -- $VBCTRY/*.$SETNAME.vbc | head -n 1 | wc -l) = 0; then
       VBCTRY=${VBCFILES}/$TSTNAME/; else VBCFILES=$VBCTRY; return 0
     fi
     # if no vbc files in vbcdir/settings/, try vbcdir/vbc/settings/ (default for GCG's testing)
-    if test $(ls $VBCTRY/*.$SETNAME.vbc | wc -l) = 0; then
+    if test $(ls 2>/dev/null -Ubad1 -- $VBCTRY/*.$SETNAME.vbc | head -n 1 | wc -l) = 0; then
       VBCTRY=${VBCFILES}/vbc/$TSTNAME/; else VBCFILES=$VBCTRY; return 0
     fi
     # no more possibilities to test
-    if test $(ls $VBCTRY/*.$SETNAME.vbc | wc -l) = 0; then
+    if test $(ls 2>/dev/null -Ubad1 -- $VBCTRY/*.$SETNAME.vbc | head -n 1 | wc -l) = 0; then
       VBCFILES=""; return 1; else VBCFILES=$VBCTRY; return 0
     fi
   }
@@ -283,20 +290,12 @@ function prepareVisualizationGeneration(){
   fi
 
   # check existence of vbc files (only for test set report)
-  if test $DEBUG = "true"; then
-    checkVBCdir
-  else
-    checkVBCdir > /dev/null 2>&1
-  fi
+  checkVBCdir
   while [ $? -eq 1 ]; do
     echo "  Invalid vbc directory or no .vbc files in it."
     read -e -p "  Enter path to vbc files directory (or press return to skip - last dir will be used): " VBCFILES;
-    if [[ $VBCFILES != "" ]]; then 
-      if test $DEBUG = "true"; then
-        checkVBCdir
-      else
-        checkVBCdir > /dev/null 2>&1
-      fi
+    if [[ $VBCFILES != "" ]]; then
+      checkVBCdir
     else
       NOVBC=true
       break
@@ -320,6 +319,7 @@ function prepareVisualizationGeneration(){
   if [[ -z $NOVBC ]]; then VBCFILES=$(realpath $VBCFILES); fi
 
   # move runtime data files to log directory inside report folder
+  echo " Copying data to report folder..."
   cp ${OUTFILE} ${LOGDIR} -r
   cp ${RESFILE} ${LOGDIR} -r
   if [[ -z $NOVBC ]]; then cp ${VBCFILES}/*.vbc ${VBCDIR} -r; fi
@@ -330,9 +330,9 @@ function prepareVisualizationGeneration(){
 
   # Variables to generate for the front page of the report
   # get general limits from outfile
-  TIMELIMIT=$(cat $OUTFILE | grep "set limits time" -m1 | cut -d " " -f 5)
-  MEMLIMIT=$(cat $OUTFILE | grep "set limits memory" -m1 | cut -d " " -f 5)
-  NODELIMIT=$(cat $OUTFILE | grep "set limits nodes" -m1 | cut -d " " -f 5)
+  TIMELIMIT=$(head -n 500 $OUTFILE | grep "set limits time" -m1 | cut -d " " -f 5)
+  MEMLIMIT=$(head -n 500 $OUTFILE | grep "set limits memory" -m1 | cut -d " " -f 5)
+  NODELIMIT=$(head -n 500 $OUTFILE | grep "set limits nodes" -m1 | cut -d " " -f 5)
   # get overall statistics from resfile
   INSTANCES=$(sed -e '/^--/d' -e '/^Name/d' -e "/@/d" ${RESFILE} | cut -d' ' -f1 | sed '/^$/d')
   NINSTANCES=$(echo $(tail -n2 $RESFILE) | cut -d " " -f 1)
@@ -507,8 +507,8 @@ cat > ${REPORTFILE} << EndOfMessage
 \vspace{2cm}
 \begin{tabular}{{lp{10cm}}}
     \multicolumn{2}{l}{\large\textbf{Test Run Characteristics}} \\\\
-    \textbf{Test Set Name}: & \begin{minipage}{10cm}\begin{verbatim}${TSTNAME}\end{verbatim}\end{minipage} \\\\
-    \textbf{Settings}:      & \begin{minipage}{10cm}\begin{verbatim}${SETNAME}\end{verbatim}\end{minipage} \\\\
+    \textbf{Test Set Name}: & \begin{minipage}{10cm}\begin{verbatim}$(echo ${TSTNAME} | sed "s/\_/\\\_/g")\end{verbatim}\end{minipage} \\\\
+    \textbf{Settings}:      & \begin{minipage}{10cm}\begin{verbatim}$(echo ${SETNAME} | sed "s/\_/\\\_/g")\end{verbatim}\end{minipage} \\\\
     Mode:                   & \begin{minipage}{10cm}\begin{verbatim}${MODE}\end{verbatim}\end{minipage} \\\\
     GCG Version:            & \begin{minipage}{10cm}\begin{verbatim}${VERSION}\end{verbatim}\end{minipage} \\\\
     Feasibility Tolerance:  & ${FEASTOL} \\\\
@@ -657,12 +657,12 @@ function generateReport(){
 
 
 function main(){
-  printf "\n$(tput bold)Starting Testset Report Generation...$(tput sgr0)\n"
+  echoBold "Starting Testset Report Generation...\n"
   extractScriptSettings;
   prepareVisualizationGeneration;
-  printf "\n$(tput bold)Generating visualizations.$(tput sgr0)"
+  echoBold "Generating visualizations."
   generateVisualizations;
-  printf "\n$(tput bold)Generating PDF report file.\n$(tput sgr0)"
+  echoBold "Generating PDF report file.\n"
   generateReport;
 }
 

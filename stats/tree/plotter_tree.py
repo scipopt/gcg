@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import argparse
 
-sys.path.insert(0, './misc/')
-import vbc_reader as vbcr
+if not os.path.isdir("misc"):
+    sys.path.insert(0, './misc/')
+import misc.vbc_reader as vbcr
 
 params = {}
 
@@ -70,14 +71,15 @@ def set_params(args):
         print("You did not select which plot to generate. Making both.")
         params['type'] = "both"
     params['normalize'] = not args.absolute
+    params['interactive'] = False
 
 #def plotSupervisor(dict,name,settings,type="both"):
 
 
-def plot(dict,name,settings,type="both"):
-    if type == "both":
-        plot(dict,name,settings,type="bar")
-        plot(dict,name,settings,type="plot")
+def plot(dict,name,settings,params,interactive=False):
+    if params["type"] == "both":
+        plot(dict,name,settings,params,type="bar")
+        plot(dict,name,settings,params,type="plot")
         return
 
     #print(settings)
@@ -98,10 +100,10 @@ def plot(dict,name,settings,type="both"):
 
     nnodes = sum(plotdata)
 
-    if type == "plot":
+    if params["type"] == "plot":
         ax.set(xlabel="Tree depth", ylabel="Opened nodes (absolute)")
         ax.plot(plotdata, 'x', markersize=8)
-    elif type == "bar":
+    elif params["type"] == "bar":
         if params['normalize']:
             ax.set(xlabel="Tree depth", ylabel="Opened nodes (ratio)")
             for i in range(len(plotdata)):
@@ -119,10 +121,13 @@ def plot(dict,name,settings,type="both"):
     plt.title("Number of opened nodes on each tree depth level",size="18",va="bottom")
 
     # save and close
-    print("Saving plot as {}.{}.tree.{}.pdf".format(os.path.join(params['outdir'],name.split('/')[-1]),settings,type))
+    
     fig.set_size_inches(18.5, 10.5)
-    fig.savefig("{}.{}.tree.{}.pdf".format(os.path.join(params['outdir'],name.split('/')[-1]),settings,type),dpi=300)
-    plt.close(fig)
+    if params['outdir'] != None: 
+        print("Saving plot as {}.{}.tree.{}.pdf".format(os.path.join(params['outdir'],name.split('/')[-1]),settings,params["type"]))
+        fig.savefig("{}.{}.tree.{}.pdf".format(os.path.join(params['outdir'],name.split('/')[-1]),settings,params["type"]),dpi=300)
+    if params['interactive']: 
+        return fig
 
 def calc_itperdepth(vbc_df):
     print("Calculating depths")
@@ -136,7 +141,7 @@ def calc_itperdepth(vbc_df):
 
     return it_per_depth
 
-def main(args):
+def main(args, interactive=False):
     parsed_args = parse_arguments(args)
     set_params(parsed_args)
     input = params['input'][0]
@@ -150,11 +155,11 @@ def main(args):
             print("Generating single plot of instance {}".format('.'.join(input.split('.')[:-2])))
             vbc_df, treeinfo = vbcr.read(input)
             data = calc_itperdepth(vbc_df)
-            plot(data,'.'.join(input.split('.')[:-2]),input.split('.')[-2], type=params['type'])
+            plot(data,'.'.join(input.split('.')[:-2]),input.split('.')[-2], params, interactive=interactive)
         elif input.endswith("vbc.pkl"):
             vbc_df = pd.read_pickle(input)
             data = calc_itperdepth(vbc_df)
-            plot(data,'.'.join(input.split('.')[:-2]),input.split('.')[-2], type=params['type'])
+            plot(data,'.'.join(input.split('.')[:-2]),input.split('.')[-2], params, interactive=interactive)
         else:
             print("Warning: The given file is no '.vbc' or '.vbc.pkl' file.\nTerminating.")
     elif os.path.isdir(input):
@@ -165,7 +170,7 @@ def main(args):
             if file.endswith("vbc.pkl"):
                 vbc_df = pd.read_pickle(os.path.join(input, file))
                 data = calc_itperdepth(vbc_df)
-                plot(data,'.'.join(file.split('.')[:-2]),file.split('.')[-2], type=params['type'])
+                plot(data,'.'.join(file.split('.')[:-2]),file.split('.')[-2], params, interactive=interactive)
                 vb1 = True
             elif file.endswith(".vbc"):
                 try:
@@ -174,7 +179,7 @@ def main(args):
                     print("No .vbc file found. Skipping.")
                     continue
                 data = calc_itperdepth(vbc_df)
-                plot(data,'.'.join(file.split('.')[:-2]),file.split('.')[-2], type=params['type'])
+                plot(data,'.'.join(file.split('.')[:-2]),file.split('.')[-2], params, type=params['type'],interactive=interactive)
                 vb2 = True
         if not (vb1 or vb2):
             print("Warning: The given directory does not contain any '.vbc' or '.vbc.pkl' files.\nTerminating.")
