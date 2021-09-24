@@ -61,7 +61,7 @@
  */
 struct DEC_ClassifierData
 {
-   std::map<std::string, std::set<int>>     constodomain;       /**< maps constraint name to the corresponding set of domain indices */
+   std::map<std::string, std::set<int>>*    constodomain;       /**< maps constraint name to the corresponding set of domain indices */
 };
 
 /*
@@ -86,6 +86,8 @@ DEC_DECL_FREECONSCLASSIFIER(classifierFree)
    classifierdata = DECconsClassifierGetData(classifier);
    assert(classifierdata != NULL);
    assert(strcmp(DECconsClassifierGetName(classifier), DEC_CLASSIFIERNAME) == 0);
+
+   delete classifierdata->constodomain;
 
    SCIPfreeMemory(scip, &classifierdata);
 
@@ -123,9 +125,9 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
       SCIP_CONS* cons = detprobdata->getCons(consid);
       std::string consname = std::string( SCIPconsGetName( cons ) );
 
-      auto domainiter = classdata->constodomain.find(consname);
+      auto domainiter = classdata->constodomain->find(consname);
       std::set<int> domain;
-      if( domainiter != classdata->constodomain.end() )
+      if( domainiter != classdata->constodomain->end() )
       {
          domain = domainiter->second;
       }
@@ -215,7 +217,7 @@ SCIP_RETCODE DECconsClassifierGamsdomainAddEntry(
    {
       domainset.insert(symDomIdx[i]);
    }
-   classdata->constodomain.insert({consname, domainset});
+   classdata->constodomain->insert({consname, domainset});
 
    return SCIP_OKAY;
 }
@@ -229,10 +231,9 @@ SCIP_RETCODE SCIPincludeConsClassifierGamsdomain(
 
    SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
    assert(classifierdata != NULL);
-   classifierdata->constodomain = std::map<std::string, std::set<int>>();
+   classifierdata->constodomain = new std::map<std::string, std::set<int>>();
 
-   SCIP_CALL(
-      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

@@ -62,7 +62,7 @@
 /** classifier handler data */
 struct DEC_ClassifierData
 {
-   std::map<std::string, std::set<int>>       vartodomain;            /**< maps variable name to the corresponding set of domain indices */
+   std::map<std::string, std::set<int>>*      vartodomain;            /**< maps variable name to the corresponding set of domain indices */
 };
 
 /*
@@ -85,6 +85,8 @@ DEC_DECL_FREEVARCLASSIFIER(classifierFree)
    DEC_CLASSIFIERDATA* classifierdata = DECvarClassifierGetData(classifier);
    assert(classifierdata != NULL);
    assert(strcmp(DECvarClassifierGetName(classifier), DEC_CLASSIFIERNAME) == 0);
+
+   delete classifierdata->vartodomain;
 
    SCIPfreeMemory(scip, &classifierdata);
 
@@ -123,9 +125,9 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
    {
       SCIP_VAR* var = detprobdata->getVar(varid);
       std::string varname = std::string( SCIPvarGetName( var ) );
-      auto domainiter = classdata->vartodomain.find(varname);
+      auto domainiter = classdata->vartodomain->find(varname);
       std::set<int> domain;
-      if( domainiter != classdata->vartodomain.end() )
+      if( domainiter != classdata->vartodomain->end() )
       {
          domain = domainiter->second;
       }
@@ -217,8 +219,8 @@ SCIP_RETCODE DECvarClassifierGamsdomainAddEntry(
    {
       domainset.insert(symDomIdx[i]);
    }
-   classdata->vartodomain.insert({varname, domainset});
-   classdata->vartodomain.insert({varnametrans, domainset});
+   classdata->vartodomain->insert({varname, domainset});
+   classdata->vartodomain->insert({varnametrans, domainset});
 
    return SCIP_OKAY;
 }
@@ -232,10 +234,9 @@ SCIP_RETCODE SCIPincludeVarClassifierGamsdomain(
 
    SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
    assert(classifierdata != NULL);
-   classifierdata->vartodomain = std::map<std::string, std::set<int>>();
+   classifierdata->vartodomain = new std::map<std::string, std::set<int>>();
 
-   SCIP_CALL(
-      DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

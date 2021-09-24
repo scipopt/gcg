@@ -61,7 +61,7 @@
  */
 struct DEC_ClassifierData
 {
-   std::map<std::string, int>       constosymbol;             /**< maps constraint name to the corresponding symbol index */
+   std::map<std::string, int>*      constosymbol;             /**< maps constraint name to the corresponding symbol index */
 };
 
 /*
@@ -86,6 +86,8 @@ DEC_DECL_FREECONSCLASSIFIER(classifierFree)
    classifierdata = DECconsClassifierGetData(classifier);
    assert(classifierdata != NULL);
    assert(strcmp(DECconsClassifierGetName(classifier), DEC_CLASSIFIERNAME) == 0);
+
+   delete classifierdata->constosymbol;
 
    SCIPfreeMemory(scip, &classifierdata);
 
@@ -125,9 +127,9 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
       SCIP_CONS* cons = detprobdata->getCons(consid);
       std::string consname = std::string( SCIPconsGetName( cons ) );
 
-      auto symbolidxiter = classdata->constosymbol.find(consname);
+      auto symbolidxiter = classdata->constosymbol->find(consname);
       int symbolidx;
-      if( symbolidxiter != classdata->constosymbol.end() )
+      if( symbolidxiter != classdata->constosymbol->end() )
       {
          symbolidx = symbolidxiter->second;
       }
@@ -203,7 +205,7 @@ SCIP_RETCODE DECconsClassifierGamssymbolAddEntry(
    assert(classdata != NULL);
 
    std::string consname = SCIPconsGetName( cons );
-   classdata->constosymbol.insert({consname, symbolIdx});
+   classdata->constosymbol->insert({consname, symbolIdx});
 
    return SCIP_OKAY;
 }
@@ -217,10 +219,9 @@ SCIP_RETCODE SCIPincludeConsClassifierGamssymbol(
 
    SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
    assert(classifierdata != NULL);
-   classifierdata->constosymbol = std::map<std::string, int>();
+   classifierdata->constosymbol = new std::map<std::string, int>();
 
-   SCIP_CALL(
-      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

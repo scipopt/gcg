@@ -202,6 +202,7 @@ SCIP_RETCODE DECincludeConsClassifier(
    const char*           description,     /**< describing main idea of this classifier */
    int                   priority,        /**< priority of the classifier */
    SCIP_Bool             enabled,         /**< whether the classifier should be enabled by default */
+   DEC_CLASSIFIERDATA*   classifierdata,  /**< classifierdata the associated classifier data (or NULL) */
    DEC_DECL_FREECONSCLASSIFIER((*freeClassifier)),  /**< destructor of classifier (or NULL) */
    DEC_DECL_CONSCLASSIFY((*classify))               /**< the method that will classify constraints or variables (must not be NULL) */
    );
@@ -251,6 +252,7 @@ SCIP_RETCODE DECincludeVarClassifier(
    const char*           description,   /**< description of the classifier */
    int                   priority,      /**< priority how early classifier is invoked */
    SCIP_Bool             enabled,       /**< whether the classifier should be enabled by default */
+   DEC_CLASSIFIERDATA*   classifierdata,/**< classifierdata the associated classifier data (or NULL) */
    DEC_DECL_FREEVARCLASSIFIER((*freeClassifier)),   /**< destructor of classifier (or NULL) */
    DEC_DECL_VARCLASSIFY((*classify))                /**< method that will classify variables (must not be NULL) */
    );
