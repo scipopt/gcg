@@ -33,7 +33,7 @@ With the following steps, we explain how you can **add your own pricing problem 
 
 ## Properties of a Pricing Problem Solver {#SOLVER_PROPERTIES}
 
-At the top of the new file "solver_mysolver.c", you can find the solver properties.
+At the top of the new file `solver_mysolver.c`, you can find the solver properties.
 These are given as compiler defines.
 The properties you have to set have the following meaning:
 
@@ -65,8 +65,8 @@ Defining solver data is optional. You can leave this struct empty.
 
 ## Interface Methods {#SOLVER_INTERFACE}
 
-At the bottom of `solver_myclassifier.c`, you can find the interface method `GCGincludeSolverMysolver()`,
-which also appears in `solver_myclassifier.h`.
+At the bottom of `solver_mysolver.c`, you can find the interface method `GCGincludeSolverMysolver()`,
+which also appears in `solver_mysolver.h`.
 \n
 This method has to be adjusted only slightly.
 It is responsible for notifying GCG (and especially the pricer in the master SCIP instance) of the presence of the solver by

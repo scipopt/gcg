@@ -36,7 +36,7 @@ makeSubpageIndexing () {( set -e
 makeInteractiveMenuDocu () {( set -e
   cd resources/users/features/interactive-menu
   rm -f menu.html
-  
+
   python3 getMenu.py
 
   cat menu_start.html.in  > menu.html
@@ -45,7 +45,7 @@ makeInteractiveMenuDocu () {( set -e
 
   # Remove the text file that contains all menu entries (except for submenus, e.g. master/explore)
   rm menu.txt
-  cd - 
+  cd -
 )}
 
 # Check if mathjax is wanted and clone repository on a fixed working version
@@ -57,14 +57,15 @@ checkMathjax () {( set -e
      then
         printf ": updating repository\n"
         cd html/MathJax
-        git checkout 2.7.7  > /dev/null 2>&1
+        git stash > /dev/null 2>&1
+        git checkout 2.7.7 > /dev/null 2>&1
         rm -f *.md
         cd ../..
      else
         printf ": cloning repository\n"
         cd html
         git clone https://github.com/mathjax/MathJax.git --branch=2.7.7 --single-branch --depth 1  > /dev/null 2>&1
-        rm MathJax/*.md
+        cd MathJax && rm -f *.md && cd ..
         cd ..
      fi
   else
@@ -94,7 +95,7 @@ getAdditionalResources () {( set -e
   wget https://scipopt.org/bootstrap/js/custom.js --output-document html/bootstrap/js/custom.js --no-check-certificate
   wget https://scipopt.org/bootstrap/js/bootstrap.min.js --output-document html/bootstrap/js/bootstrap.min.js --no-check-certificate
   wget https://code.jquery.com/jquery.min.js --output-document html/js/jquery.min.js
-  # move additional resources to html folder 
+  # move additional resources to html folder
   cp -r resources/misc/scripts html/doc
   cp -r resources/misc/files html/doc
   mkdir -p html/doc/img/visu
@@ -115,6 +116,22 @@ generateFAQ () {( set -e
   cd resources/misc/faq
   python3 parser.py --linkext shtml  && php localfaq.php > faq.inc
   cd -
+)}
+
+generateVisuArgs ()  {( set -e
+  cd resources/devs/misc
+  python3 -c 'import pandas as pd; pd.read_json("feature_descriptions.json").transpose().rename_axis("feature").reset_index().set_index(["groups","feature"]).sort_index().to_html("visu_args_table.html", classes="doxtable")'
+  # uncomment following lines to replace dark blue and normal font with white and code font for each feature
+  #awk '/<th>/{c+=1}{if(c>12){sub("<th>","<td><code>",$0)};print}' visu_args_table.html > tmp && mv tmp visu_args_table.html
+  #awk '/<\/th>/{c+=1}{if(c>12){sub("</th>","</code></td>",$0)};print}' visu_args_table.html > tmp && mv tmp visu_args_table.html
+  cd -
+)}
+
+generateVisuNotebookHTML () {( set -e
+  cd ../stats/
+  jupyter nbconvert --output-dir='../doc/resources/misc/files/' --output='visu_notebook.html' --to html visu_notebook_v*.ipynb
+  cd -
+  cp resources/misc/files/visu_notebook.html html/doc/files
 )}
 
 # Generate parameter file (includes SCIP params)
@@ -147,34 +164,35 @@ generateDoxy () {( set -e
   SCIPOPTSUITEHEADER=`sed 's/\//\\\\\//g' scipoptsuiteheader.html.in | tr -d '\n'`
   DOCVERSIONS=`sed 's/\//\\\\\//g' docversions.html | tr -d '\n'`
   YEAR=`date +"%Y"`
-  
+
   # Replace year by current and version by installed one
   sed -e "s/<SCIPOPTSUITEHEADER\/>/${SCIPOPTSUITEHEADER}/g" -e "s/<DOCVERSIONS\/>/${DOCVERSIONS}/g" -e "s/..\/doc/doc/g" -e "s/<YEAR\/>/${YEAR}/g" -e "s/<CURRGCG\/>/${CURRENT_VERSION}/g" < index.html.in > html/index.html
   sed -e "s/<SCIPOPTSUITEHEADER\/>/${SCIPOPTSUITEHEADER}/g" -e "s/<DOCVERSIONS\/>/${DOCVERSIONS}/g" < gcgheader.html.in > gcgheader.html
 
   # Set mathjax flag to export it
   DOXYGEN_USE_MATHJAX="USE_MATHJAX=${DOXYGEN_USE_MATHJAX}"
-  
+
   # Build the gcg documentation.
   printf "${R}" # make doxygen errors red
   export ${DOXYGEN_USE_MATHJAX}; doxygen gcg.dxy
-  printf "${W}" 
+  printf "${W}"
 )}
 
 main () {
-  # The $? conditions below are a try-catch method to alert the user 
+  # The $? conditions below are a try-catch method to alert the user
   # about the origin of the issue
 
-  n=7 # number of steps to be performed
+  n=9 # number of steps to be performed
   i=1 # step counter
-  
+
   printf "${B}${U}Building GCG HTML Documentation in html/doc-${CURRENT_VERSION}${W}\n"
   mkdir -p html
 
   # Requirement: Correctly installed git
   printf "[${i}/${n}] Checking mathjax status"; let "i++"
     checkMathjax $1
-    
+    if [ $? -ne 0 ]; then printf "\n ${R}Error:${W} Please check your internet connection and that git is installed.\n"; fi
+
   # Requirement: Internet connection
   echo "[${i}/${n}] Downloading additional resources"; let "i++"
     getAdditionalResources  > /dev/null 2>&1
@@ -184,27 +202,37 @@ main () {
   #echo "[${i}/${n}] Generating subpage indexing"; let "i++"
   #  makeSubpageIndexing "resources/devs/howtoadd/" "How to add"
   #  makeSubpageIndexing "resources/devs/howtouse/" "How to use"
-  
+
   # Requirement: Correctly installed php
   echo "[${i}/${n}] Generating FAQ"; let "i++"
     generateFAQ  > /dev/null 2>&1
     if [ $? -ne 0 ]; then printf " ${R}Error:${W} Have you installed PHP and python3 correctly?\n"; fi
-    
+
   # Requirement: Correctly installed GCG
   echo "[${i}/${n}] Generating GCG parameters file"; let "i++"
     generateParamsFile  > /dev/null 2>&1
     if [ $? -ne 0 ]; then printf " ${R}Error:${W} Have you installed GCG correctly?\n"; fi
-    
+
   # Requirement: Correctly installed GCG
   echo "[${i}/${n}] Generating GCG interactive menu documentation"; let "i++"
     makeInteractiveMenuDocu  > /dev/null 2>&1
     if [ $? -ne 0 ]; then printf " ${R}Error:${W} Have you installed GCG and python3 correctly?\n"; fi
-  
+
+  # Requirement: Python3 with pandas
+  echo "[${i}/${n}] Generating GCG visualization arguments documentation"; let "i++"
+    generateVisuArgs  > /dev/null 2>&1
+    if [ $? -ne 0 ]; then printf " ${R}Error:${W} Have you installed python3 with pandas correctly?\n"; fi
+
+  # Requirement: Jupyter
+  echo "[${i}/${n}] Generating visualization notebook HTML file"; let "i++"
+    generateVisuNotebookHTML  > /dev/null 2>&1
+    if [ $? -ne 0 ]; then printf " ${R}Error:${W} Have you installed Jupyter correctly?\n"; fi
+
   # Requirement: Doxygen, graphviz
   echo "[${i}/${n}] Generating Doxygen documentation"; let "i++"
     generateDoxy #> /dev/null 2>&1 # Show doxygen warnings!
     if [ $? -ne 0 ]; then printf " ${R}Error:${W} Have you installed Doxygen and graphviz correctly?\n"; fi
-  
+
   # Requirement: none
   echo "[${i}/${n}] Finalizing"
     # remove bibliography page (used for the use case pages)

@@ -101,8 +101,10 @@ If you're new here, we recommend starting with the first one.
 > <div style="width:80%">
 > <img src="developer.png" style="vertical-align:middle; height:3.2%; position:absolute; right:40px; margin-top: -1em;">
 > <h3> Develop completely new features for GCG</h3>
-> If it is not enough to add a pricing solver here or a branching rule there, then you might need to 
-> **add completely new features**. Please contact us before and, if possible, while doing that.\n
-> ⇨ @subpage u9
+> If it is not enough to add a pricing solver here or a branching rule there, then you might need to
+> **add completely new features**. Please contact us before and, if possible, while doing that.
+> Note that this guide is also presenting some of the **general internal workflow** for which Git access might
+> sometimes be required.\n
+> ⇨ @ref new-gcg-dev
 > \n\n
 > </div>
