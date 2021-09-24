@@ -606,60 +606,57 @@ SCIP_RETCODE ObjPricerGcg::computeCurrentDegeneracy(
    double*               degeneracy          /**< pointer to store degeneracy */
    )
 {
-   int ncols;
    int nrows;
-   int i;
-   int count;
-   int countz;
-   double currentVal;
-   int* indizes = NULL;
    SCIP_COL** cols;
-   SCIP_VAR* var;
+   SCIP_ROW** rows;
+   int i;
+   int countz = 0;
+   int* indizes = NULL;
 
    assert(degeneracy != NULL);
 
-   *degeneracy = 0.0;
-   ncols = SCIPgetNLPCols(scip_);
    nrows = SCIPgetNLPRows(scip_);
-   cols = SCIPgetLPCols(scip_);
 
-   SCIP_CALL( SCIPallocBufferArray(scip_, &indizes, (size_t)ncols+nrows) );
+   if( nrows > 0 ) {
+      cols = SCIPgetLPCols(scip_);
+      rows = SCIPgetLPRows(scip_);
 
-   for( i = 0; i < ncols+nrows; i++ )
-   {
-      indizes[i] = 0;
-   }
+      SCIP_CALL(SCIPallocBufferArray(scip_, &indizes, (size_t) nrows));
 
-   /* gives indices of Columns in Basis and indices of vars in Basis */
-   SCIP_CALL( SCIPgetLPBasisInd(scip_, indizes) );
+      /* gives indices of Columns in Basis and indices of vars in Basis */
+      SCIP_CALL(SCIPgetLPBasisInd(scip_, indizes));
 
-   countz = 0;
-   count = 0;
+      for (i = 0; i < nrows; i++) {
+         SCIP_Real currentVal;
+         int colindex = indizes[i];
 
-   for( i = 0; i < nrows; i++ )
-   {
-      int colindex = indizes[i];
-      /* is column if >0 it is column in basis, <0 is for row */
-      if( colindex > 0 )
-      {
-         var = SCIPcolGetVar(cols[colindex]);
+         /* is column if >= 0 it is column in basis, < 0 is for row */
+         if (colindex >= 0) {
+            SCIP_COL *col;
+            col = cols[colindex];
+            currentVal = SCIPcolGetPrimsol(col);
 
-         currentVal = SCIPgetSolVal(scip_, NULL, var);
+            if (SCIPisEQ(scip_, currentVal, SCIPcolGetLb(col)) || SCIPisEQ(scip_, currentVal, SCIPcolGetUb(col)))
+               countz++;
+         } else {
+            SCIP_ROW *row = rows[-indizes[i] - 1];
+            SCIP_Real lhs = SCIProwGetLhs(row);
 
-         if( SCIPisZero(scip_, currentVal) )
-            countz++;
+            currentVal = SCIPgetRowActivity(scip_, row);
 
-         count++;
+            if (SCIPisEQ(scip_, currentVal, SCIProwGetRhs(row)) || SCIPisEQ(scip_, currentVal, SCIProwGetLhs(row)))
+               countz++;
+         }
       }
-   }
+      SCIPfreeBufferArray(scip_, &indizes);
 
-   /* Degeneracy in % */
-   if( count > 0 )
-      *degeneracy = ((double)countz / count);
+      /* Degeneracy in % */
+      *degeneracy = ((double) countz / nrows);
+   } else {
+      *degeneracy = 0.0;
+   }
 
    assert(*degeneracy <= 1.0 && *degeneracy >= 0);
-
-   SCIPfreeBufferArray(scip_, &indizes);
 
    return SCIP_OKAY;
 }
