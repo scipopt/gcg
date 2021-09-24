@@ -261,8 +261,17 @@ function prepareVisualizationGeneration(){
   # default: if none given, ask for data directory
   setScriptMode
   if [[ $SCRIPTMODE = "datadir" || $SCRIPTMODE = "nodata" ]]; then
+    nchecks=0
     checkDatadir
     while [ $? -eq 1 ]; do
+      # check if data directory was entered incorrectly five times, if so, terminate
+      if [ $nchecks = 5 ]; then
+        echo "  No valid directory was given five times in a row. Terminating."
+        exit 1
+      else
+        ((nchecks=nchecks+1))
+      fi
+      # else try to read it again
       read -e -p "  Enter path to log files directory: " DATADIR;
       checkDatadir
     done
