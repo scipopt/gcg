@@ -172,7 +172,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
       time = GCGgetCreationTime(vars[i]);
       iteration = GCGgetIteration(vars[i]);
       redcost = GCGgetRedcost(vars[i]);
-      gap = GCGgetGap(vars[i]);
+      gap = GCGgetVarGap(vars[i]);
       rootredcostcall = GCGgetRootRedcostCall(vars[i]);
 
       rootlpsolval = NAN;
@@ -213,7 +213,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
 
    for( i = 0; i < 10; i++ )
    {
-      SCIPinfoMessage(scip, NULL, "Time %d-%d%%: Vars: %d \n", 10 * i, 10 * (i + 1), createtimestat[i]);
+      SCIPinfoMessage(scip, NULL, "Time %d-%d%%: Vars: %lld \n", 10 * i, 10 * (i + 1), createtimestat[i]);
    }
 
    for( i = 0; i < 10; i++ )

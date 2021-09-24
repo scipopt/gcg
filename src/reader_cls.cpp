@@ -133,7 +133,7 @@ SCIP_RETCODE GCGwriteCls(
          /* c1 */
          SCIPinfoMessage(scip, file, "%s: %s\n", partition->getClassName(cl), partition->getClassDescription(cl));
          /* c2 */
-         SCIPinfoMessage(scip, file, "%d\n",  conssofclasses[cl].size());
+         SCIPinfoMessage(scip, file, "%ld\n",  conssofclasses[cl].size());
          /* c3 */
          for( size_t clm = 0; clm < conssofclasses[cl].size(); ++clm )
          {

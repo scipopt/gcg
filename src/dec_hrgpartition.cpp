@@ -577,7 +577,7 @@ SCIP_RETCODE detection(
       int status = remove( tempfile );
       if( status == -1 )
       {
-         SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
+         SCIPerrorMessage("Could not remove metis input file: %s", strerror( errno ));
          return SCIP_WRITEERROR;
       }
    }

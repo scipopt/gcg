@@ -185,7 +185,7 @@ TEST_F(GcgLibTest, FreeTransformTest) {
    SCIP_CALL_EXPECT( SCIPfreeTransform(scip) );
 
    ASSERT_EQ(SCIP_STAGE_PROBLEM, SCIPgetStage(scip));
-   ASSERT_EQ(0, GCGconshdlrDecompGetNDecdecomps(scip));
+   ASSERT_EQ(0, GCGconshdlrDecompGetNDecomps(scip));
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
@@ -207,7 +207,7 @@ TEST_F(GcgLibTest, FreeProbTest) {
 
    SCIP_CALL_EXPECT( SCIPfreeProb(scip) );
 
-   ASSERT_EQ(0, GCGconshdlrDecompGetNDecdecomps(scip));
+   ASSERT_EQ(0, GCGconshdlrDecompGetNDecomps(scip));
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
@@ -234,7 +234,7 @@ TEST_F(GcgLibTest, FreeSolveTest) {
 
    ASSERT_EQ(nconss+1, SCIPgetNConss(scip));
    ASSERT_EQ(SCIP_STAGE_TRANSFORMED, SCIPgetStage(scip));
-   ASSERT_LE(1, GCGconshdlrDecompGetNDecdecomps(scip));
+   ASSERT_LE(1, GCGconshdlrDecompGetNDecomps(scip));
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
    ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
@@ -269,11 +269,11 @@ TEST_F(GcgDecTest, ReadDecTest) {
    DEC_DECOMP* decomp;
    int i;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/miplib/noswot.mps", "mps") );
-   SCIP_CALL_EXPECT( SCIPreadDec(scip, "check/instances/miplib/noswot.dec", &result) );
-   ASSERT_EQ(SCIP_SUCCESS, result);
-   ASSERT_EQ(1, GCGconshdlrDecompGetNDecdecomps(scip));
+   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/miplib/noswot.dec", "dec") );
+   /* ASSERT_EQ(SCIP_SUCCESS, result); */
+   ASSERT_EQ(1, GCGconshdlrDecompGetNDecomps(scip));
 
-   decomp = GCGconshdlrDecompGetDecdecomps(scip)[0];
+   decomp = GCGconshdlrDecompGetDecomps(scip)[0];
    ASSERT_TRUE(decomp != NULL);
    EXPECT_EQ(5, DECdecompGetNBlocks(decomp));
    EXPECT_EQ(17, DECdecompGetNLinkingconss(decomp));
@@ -295,10 +295,10 @@ TEST_F(GcgDecTest, ReadBlkTest) {
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
    SCIP_CALL_EXPECT( SCIPreadBlk(scip, "check/instances/bpp/N1C3W1_A.blk", &result) );
    ASSERT_EQ(SCIP_SUCCESS, result);
-   ASSERT_EQ(1, GCGconshdlrDecompGetNDecdecomps(scip));
+   ASSERT_EQ(1, GCGconshdlrDecompGetNDecomps(scip));
    SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
 
-   decomp = GCGconshdlrDecompGetDecdecomps(scip)[0];
+   decomp = GCGconshdlrDecompGetDecomps(scip)[0];
    ASSERT_TRUE(decomp != NULL);
    ASSERT_EQ(24, DECdecompGetNBlocks(decomp));
    ASSERT_EQ(50, DECdecompGetNLinkingconss(decomp));
@@ -316,17 +316,17 @@ TEST_F(GcgDecTest, NoDecTest) {
    DEC_DECOMP* decomp;
 
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "lib/scip/check/instances/MIP/bell5.mps", "mps") );
-   ASSERT_EQ(0, GCGconshdlrDecompGetNDecdecomps(scip));
+   ASSERT_EQ(0, GCGconshdlrDecompGetNDecomps(scip));
    SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
    SCIP_CALL_EXPECT( SCIPsetLongintParam(scip, "limits/nodes", 1L) );
 
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
-   ASSERT_EQ(1, GCGconshdlrDecompGetNDecdecomps(scip));
+   ASSERT_EQ(1, GCGconshdlrDecompGetNDecomps(scip));
    ASSERT_NEAR(+8.96640649152000e+06, SCIPgetLowerbound(scip), SCIPfeastol(scip));
-   ASSERT_EQ(1, GCGconshdlrDecompGetNDecdecomps(scip));
+   ASSERT_EQ(1, GCGconshdlrDecompGetNDecomps(scip));
    SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
 
-   decomp = GCGconshdlrDecompGetDecdecomps(scip)[0];
+   decomp = GCGconshdlrDecompGetDecomps(scip)[0];
    ASSERT_TRUE(decomp != NULL);
    ASSERT_EQ(1, DECdecompGetNBlocks(decomp));
    ASSERT_EQ(DECdecompGetNLinkingconss(decomp), 0 );
@@ -341,10 +341,9 @@ TEST_F(GcgDecTest, WrongDecompTestBlk) {
 }
 
 TEST_F(GcgDecTest, WrongDecompTestDec) {
-   SCIP_RESULT result;
    SCIP_RETCODE retcode;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
-   retcode = SCIPreadDec(scip, "check/instances/cpmp/p2050-1.txt.dec", &result);
+   retcode = SCIPreadProb(scip, "check/instances/cpmp/p2050-1.txt.dec", "dec");
    ASSERT_EQ(SCIP_READERROR, retcode);
 }
 

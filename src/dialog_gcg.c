@@ -673,22 +673,41 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
 /** dialog execution method for the transform command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecTransform)
 {  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   SCIPdialogMessage(scip, NULL, "\n");
+   switch( SCIPgetStage(scip) )
    {
-      *nextdialog = SCIPdialogGetParent(dialog);
+   case SCIP_STAGE_INIT:
       SCIPdialogMessage(scip, NULL, "no problem exists\n");
-   }
-   else if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
-   {
-      SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
-      SCIPdialogExecTransform(scip, dialog, dialoghdlr, nextdialog);
-   }
-   else
-   {
-      *nextdialog = SCIPdialogGetParent(dialog);
+      break;
+
+   case SCIP_STAGE_PROBLEM:
+      SCIP_CALL( GCGtransformProb(scip) );
+      break;
+
+   case SCIP_STAGE_TRANSFORMED:
       SCIPdialogMessage(scip, NULL, "problem is already transformed\n");
+      break;
+
+   case SCIP_STAGE_TRANSFORMING:
+   case SCIP_STAGE_INITPRESOLVE:
+   case SCIP_STAGE_PRESOLVING:
+   case SCIP_STAGE_PRESOLVED:
+   case SCIP_STAGE_EXITPRESOLVE:
+   case SCIP_STAGE_INITSOLVE:
+   case SCIP_STAGE_SOLVING:
+   case SCIP_STAGE_SOLVED:
+   case SCIP_STAGE_EXITSOLVE:
+   case SCIP_STAGE_FREETRANS:
+   case SCIP_STAGE_FREE:
+   default:
+      SCIPerrorMessage("invalid SCIP stage\n");
+      return SCIP_INVALIDCALL;
    }
+   SCIPdialogMessage(scip, NULL, "\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
    return SCIP_OKAY;
 }
@@ -697,23 +716,44 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecTransform)
 /** dialog execution method for the presolve command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecPresolve)
 {  /*lint --e{715}*/
-   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   SCIPdialogMessage(scip, NULL, "\n");
+   switch( SCIPgetStage(scip) )
    {
-      *nextdialog = SCIPdialogGetParent(dialog);
+   case SCIP_STAGE_INIT:
       SCIPdialogMessage(scip, NULL, "no problem exists\n");
-   }
-   else if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
-   {
-      if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
-         SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
-      SCIPdialogExecPresolve(scip, dialog, dialoghdlr, nextdialog);
-      GCGconshdlrDecompTranslateOrigPartialdecs(scip);
-   }
-   else
-   {
-      *nextdialog = SCIPdialogGetParent(dialog);
+      break;
+
+   case SCIP_STAGE_PROBLEM:
+   case SCIP_STAGE_TRANSFORMED:
+   case SCIP_STAGE_PRESOLVING:
+      SCIP_CALL( GCGpresolve(scip) );
+      break;
+
+   case SCIP_STAGE_PRESOLVED:
+   case SCIP_STAGE_SOLVING:
       SCIPdialogMessage(scip, NULL, "problem is already presolved\n");
+      break;
+
+   case SCIP_STAGE_SOLVED:
+      SCIPdialogMessage(scip, NULL, "problem is already solved\n");
+      break;
+
+   case SCIP_STAGE_TRANSFORMING:
+   case SCIP_STAGE_INITPRESOLVE:
+   case SCIP_STAGE_EXITPRESOLVE:
+   case SCIP_STAGE_INITSOLVE:
+   case SCIP_STAGE_EXITSOLVE:
+   case SCIP_STAGE_FREETRANS:
+   case SCIP_STAGE_FREE:
+   default:
+      SCIPerrorMessage("invalid SCIP stage\n");
+      return SCIP_INVALIDCALL;
    }
+   SCIPdialogMessage(scip, NULL, "\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
    return SCIP_OKAY;
 }
@@ -722,44 +762,36 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecPresolve)
 /** dialog execution method for the detect command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
-   SCIP_RESULT result;
-
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
-      SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
+   SCIPdialogMessage(scip, NULL, "\n");
+   switch( SCIPgetStage(scip) )
+   {
+   case SCIP_STAGE_INIT:
+      SCIPdialogMessage(scip, NULL, "no problem exists\n");
+      break;
 
-   if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
-   {
-      if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
-      {
-         if( GCGdetectionTookPlace(scip, TRUE) )
-         {
-            SCIPdialogMessage(scip, NULL, "The detection for the original problem took place already.\n");
-         }
-         else
-         {
-            SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "starting detection\n");
-            SCIP_CALL( DECdetectStructure(scip, &result) );
-         }
-      }
-      else
-      {
-         if( GCGdetectionTookPlace(scip, FALSE) )
-         {
-            SCIPdialogMessage(scip, NULL, "The detection for the presolved problem took place already.\n");
-         }
-         else
-         {
-            SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "starting detection\n");
-            SCIP_CALL( DECdetectStructure(scip, &result) );
-         }
-      }
+   case SCIP_STAGE_PROBLEM:
+   case SCIP_STAGE_TRANSFORMED:
+   case SCIP_STAGE_PRESOLVING:
+   case SCIP_STAGE_PRESOLVED:
+      SCIP_CALL( GCGdetect(scip) );
+      break;
+
+   case SCIP_STAGE_SOLVING:
+   case SCIP_STAGE_SOLVED:
+   case SCIP_STAGE_TRANSFORMING:
+   case SCIP_STAGE_INITPRESOLVE:
+   case SCIP_STAGE_EXITPRESOLVE:
+   case SCIP_STAGE_INITSOLVE:
+   case SCIP_STAGE_EXITSOLVE:
+   case SCIP_STAGE_FREETRANS:
+   case SCIP_STAGE_FREE:
+   default:
+      SCIPerrorMessage("invalid SCIP stage\n");
+      return SCIP_INVALIDCALL;
    }
-   else
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "no problem exists\n");
-   }
+   SCIPdialogMessage(scip, NULL, "\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
@@ -785,110 +817,41 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
 /** dialog execution method for the optimize command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 {  /*lint --e{715}*/
-
-   SCIP_RESULT result;
-   int presolrounds;
-   SCIP_Bool exit = FALSE;
-
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
-   presolrounds = -1;
-
-
-   assert(GCGconshdlrDecompCheckConsistency(scip) );
 
    SCIPdialogMessage(scip, NULL, "\n");
-
-   while( !exit )
+   switch( SCIPgetStage(scip) )
    {
-      switch( SCIPgetStage(scip) )
-      {
-      case SCIP_STAGE_INIT:
-         SCIPdialogMessage(scip, NULL, "No problem exists\n");
-         exit = TRUE;
-         break;
+   case SCIP_STAGE_INIT:
+      SCIPdialogMessage(scip, NULL, "no problem exists\n");
+      break;
 
-      case SCIP_STAGE_PROBLEM:
-         SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
-         SCIP_CALL( SCIPtransformProb(scip) );
-         assert(SCIPgetStage(scip) > SCIP_STAGE_PROBLEM);
+   case SCIP_STAGE_PROBLEM:
+   case SCIP_STAGE_TRANSFORMED:
+   case SCIP_STAGE_PRESOLVING:
+   case SCIP_STAGE_PRESOLVED:
+   case SCIP_STAGE_SOLVING:
+      SCIP_CALL( GCGsolve(scip) );
+      break;
 
-      case SCIP_STAGE_TRANSFORMED:
-      case SCIP_STAGE_PRESOLVING:
-         if( GCGconshdlrDecompOrigPartialdecExists(scip) )
-         {
-            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "there is an original decomposition and problem is not presolved yet -> disable presolving and start optimizing (rerun with presolve command before detect command for detecting in presolved problem)  \n");
-            SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
-            SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-         }
-         SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+   case SCIP_STAGE_SOLVED:
+      SCIPdialogMessage(scip, NULL, "problem is already solved\n");
+      break;
 
-         GCGconshdlrDecompTranslateOrigPartialdecs(scip);
-         assert(SCIPgetStage(scip) > SCIP_STAGE_PRESOLVING);
-         break;
-
-      case SCIP_STAGE_PRESOLVED:
-         assert(GCGconshdlrDecompCheckConsistency(scip) );
-
-         if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
-         {
-            SCIP_CALL( DECdetectStructure(scip, &result) );
-            if( result == SCIP_DIDNOTFIND )
-            {
-               DEC_DECOMP* bestdecomp;
-               bestdecomp = DECgetBestDecomp(scip, TRUE);
-               assert(bestdecomp == NULL && (GCGdetectionTookPlace(scip, TRUE) || GCGdetectionTookPlace(scip, FALSE)));
-               DECdecompFree(scip, &bestdecomp);
-               SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
-            }
-         }
-         else if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) > 0 )
-         {
-   #ifndef NDEBUG
-            DEC_DECOMP* bestdecomp;
-            bestdecomp = DECgetBestDecomp(scip, TRUE);
-            assert(bestdecomp != NULL);
-            DECdecompFree(scip, &bestdecomp);
-   #endif
-            SCIPdialogMessage(scip, NULL, "Preexisting decomposition found. Solution process started...\n");
-         }
-         else if( GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
-         {
-            SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
-         }
-         assert(GCGconshdlrDecompCheckConsistency(scip));
-         assert(SCIPgetNConss(scip) == SCIPgetNActiveConss(scip));
-
-         /*lint -fallthrough*/
-      case SCIP_STAGE_SOLVING:
-         SCIP_CALL( SCIPsolve(scip) );
-         exit = TRUE;
-         break;
-
-      case SCIP_STAGE_SOLVED:
-         SCIPdialogMessage(scip, NULL, "Problem is already solved\n");
-         exit = TRUE;
-         break;
-
-      case SCIP_STAGE_TRANSFORMING:
-      case SCIP_STAGE_INITPRESOLVE:
-      case SCIP_STAGE_EXITPRESOLVE:
-      case SCIP_STAGE_INITSOLVE:
-      case SCIP_STAGE_EXITSOLVE:
-      case SCIP_STAGE_FREETRANS:
-      case SCIP_STAGE_FREE:
-      default:
-         SCIPerrorMessage("Invalid SCIP stage\n");
-         return SCIP_INVALIDCALL;
-      }
+   case SCIP_STAGE_TRANSFORMING:
+   case SCIP_STAGE_INITPRESOLVE:
+   case SCIP_STAGE_EXITPRESOLVE:
+   case SCIP_STAGE_INITSOLVE:
+   case SCIP_STAGE_EXITSOLVE:
+   case SCIP_STAGE_FREETRANS:
+   case SCIP_STAGE_FREE:
+   default:
+      SCIPerrorMessage("invalid SCIP stage\n");
+      return SCIP_INVALIDCALL;
    }
    SCIPdialogMessage(scip, NULL, "\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
-
-   if( presolrounds != -1 )
-   {
-      SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", presolrounds) );
-   }
 
    return SCIP_OKAY;
 }
@@ -1685,47 +1648,49 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    }
 
    /* change */
-      if( !SCIPdialogHasEntry(root, "change") )
-      {
-         SCIP_CALL( SCIPincludeDialog(scip, &submenu,
-               NULL,
-               SCIPdialogExecMenu, NULL, NULL,
-               "change", "change the problem", TRUE, NULL) );
-         SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
-         SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
-      }
-      if( SCIPdialogFindEntry(root, "change", &submenu) != 1 )
-      {
-         SCIPerrorMessage("change sub menu not found\n");
-         return SCIP_PLUGINNOTFOUND;
-      }
+   if( !SCIPdialogHasEntry(root, "change") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+            NULL,
+            SCIPdialogExecMenu, NULL, NULL,
+            "change", "change the problem", TRUE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+   }
+   if( SCIPdialogFindEntry(root, "change", &submenu) != 1 )
+   {
+      SCIPerrorMessage("change sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
 
-      if( SCIPdialogFindEntry(root, "set", &submenu) != 1 )
-      {
-         SCIPerrorMessage("set sub menu not found\n");
-         return SCIP_PLUGINNOTFOUND;
-      }
-      if( SCIPdialogFindEntry(submenu, "detection", &submenu) != 1 )
-      {
-         SCIPerrorMessage("set/detection sub menu not found\n");
-         return SCIP_PLUGINNOTFOUND;
-      }
-      if( SCIPdialogFindEntry(submenu, "blocknrcandidates", &blocknrmenu) != 1 )
-      {
-         SCIPerrorMessage("set/detection/blocknrcandidates sub menu not found\n");
-         return SCIP_PLUGINNOTFOUND;
-      }
+   if( SCIPdialogFindEntry(root, "set", &submenu) != 1 )
+   {
+      SCIPerrorMessage("set sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
+   if( SCIPdialogFindEntry(submenu, "detection", &submenu) != 1 )
+   {
+      SCIPerrorMessage("set/detection sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
+   if( SCIPdialogFindEntry(submenu, "blocknrcandidates", &blocknrmenu) != 1 )
+   {
+      SCIPerrorMessage("set/detection/blocknrcandidates sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
 
-      /*  add  blocknr candidate*/
-      if( !SCIPdialogHasEntry(blocknrmenu, "addblocknr") )
-      {
-         SCIP_CALL( SCIPincludeDialog(scip, &dialog,
-               NULL,
-               GCGdialogExecChangeAddBlocknr, NULL, NULL,
-               "addblocknr", "add block number candidates (as white space separated list)", FALSE, NULL) );
-         SCIP_CALL( SCIPaddDialogEntry(scip, blocknrmenu, dialog) );
-         SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
-      }
+   /*  add  blocknr candidate*/
+   if( !SCIPdialogHasEntry(blocknrmenu, "addblocknr") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+            NULL,
+            GCGdialogExecChangeAddBlocknr, NULL, NULL,
+            "addblocknr", "add block number candidates (as white space separated list)", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, blocknrmenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   SCIP_CALL( SCIPincludeDialogDefaultBasic(scip) );
 
    return SCIP_OKAY;
 }

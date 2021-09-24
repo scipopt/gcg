@@ -154,12 +154,36 @@ SCIP_RETCODE SCIPincludeDialogMaster(
    if( !SCIPdialogHasEntry(root, "quit") )
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog,
-            NULL,
-            SCIPdialogExecQuit, NULL, NULL,
-            "quit", "switch back to the original problem's dialog", FALSE, NULL) );
+         NULL,
+         SCIPdialogExecQuit, NULL, NULL,
+         "quit", "switch back to the original problem's dialog", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+    /* validatesolve */
+    if( !SCIPdialogHasEntry(root, "validatesolve") )
+    {
+        SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+           NULL,
+           GCGmasterDialogExecNotAvailable, NULL, NULL,
+           "validatesolve", "(not available in master problem)", FALSE, NULL) );
+        SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
+        SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+    }
+
+    /* concurrentopt */
+    if( !SCIPdialogHasEntry(root, "concurrentopt") )
+    {
+        SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+           NULL,
+           GCGmasterDialogExecNotAvailable, NULL, NULL,
+           "concurrentopt", "(not available in master problem)", FALSE, NULL) );
+        SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
+        SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+    }
+
+   SCIP_CALL( SCIPincludeDialogDefaultBasic(scip) );
 
    return SCIP_OKAY;
 }

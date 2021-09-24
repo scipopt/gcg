@@ -119,7 +119,8 @@ static
 SCIP_RETCODE writeGpHeader(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 filename,           /**< filename (including path) to write to */
-   const char*           outputname          /**< the filename to which gnuplot should compile the visualization */
+   const char*           outputname,         /**< the filename to which gnuplot should compile the visualization */
+   GP_OUTPUT_FORMAT      outputformat        /**< the output format which gnuplot should emit */
    )
 {
    std::ofstream ofs;
@@ -129,7 +130,20 @@ SCIP_RETCODE writeGpHeader(
    /* set output format and file */
    ofs << "set encoding utf8" << std::endl;
 
-   ofs << "set terminal pdf" << std::endl;
+   ofs << "set terminal ";
+   switch (outputformat)
+   {
+   case GP_OUTPUT_FORMAT_PDF:
+      ofs << "pdf";
+      break;
+   case GP_OUTPUT_FORMAT_PNG:
+      ofs << "pngcairo";
+      break;
+   case GP_OUTPUT_FORMAT_SVG:
+      ofs << "svg";
+      break;
+   }
+   ofs << std::endl;
 
    ofs << "set output \"" << outputname << "\"" << std::endl;
 
@@ -432,11 +446,12 @@ SCIP_RETCODE writeGpPartialdec(
 
 
 /* Writes a visualization for the given partialdec */
-SCIP_RETCODE GCGwriteGpVisualization(
+SCIP_RETCODE GCGwriteGpVisualizationFormat(
    SCIP* scip,             /**< SCIP data structure */
    char* filename,         /**< filename (including path) to write to */
    char* outputname,       /**< filename for compiled output file */
-   int partialdecid             /**< id of partialdec to visualize */
+   int partialdecid,       /**< id of partialdec to visualize */
+   GP_OUTPUT_FORMAT outputformat /**< the output format which gnuplot should emit */
    )
 {
    DETPROBDATA* detprobdata;
@@ -458,10 +473,21 @@ SCIP_RETCODE GCGwriteGpVisualization(
    }
 
    /* write file */
-   writeGpHeader(scip, filename, outputname );
+   writeGpHeader(scip, filename, outputname, outputformat );
    writeGpPartialdec(scip, filename, partialdec );
 
    return SCIP_OKAY;
+}
+
+/* Writes a visualization as .pdf file for the given partialdec */
+SCIP_RETCODE GCGwriteGpVisualization(
+   SCIP* scip,             /**< SCIP data structure */
+   char* filename,         /**< filename (including path) to write to */
+   char* outputname,       /**< filename for compiled output file */
+   int partialdecid             /**< id of partialdec to visualize */
+   )
+{
+   return GCGwriteGpVisualizationFormat(scip, filename, outputname, partialdecid, GP_OUTPUT_FORMAT_PDF);
 }
 
 

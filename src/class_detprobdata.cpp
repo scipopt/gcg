@@ -1180,7 +1180,7 @@ void DETPROBDATA::printPartitionInformation(
          /* CLASSNAME */
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s: %s\n", partition->getClassName(cl), partition->getClassDescription(cl) );
          /* NMEMBERS */
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", conssofclasses[cl].size() );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%ld\n", conssofclasses[cl].size() );
       }
    }
 
@@ -1206,7 +1206,7 @@ void DETPROBDATA::printPartitionInformation(
          /* CLASSNAME */
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s: %s\n", partition->getClassName(cl), partition->getClassDescription(cl) );
          /* NMEMBERS */
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", varsofclasses[cl].size() );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%ld\n", varsofclasses[cl].size() );
       }
    }
 }
@@ -1236,7 +1236,7 @@ std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
    calcTranslationMapping( origdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
 
    SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL,
-      " calculated translation; number of missing constraints: %d; number of other partialdecs: %d \n", missingrowinthis.size(),
+      " calculated translation; number of missing constraints: %ld; number of other partialdecs: %ld \n", missingrowinthis.size(),
       origpartialdecs.size() );
 
    getTranslatedPartialdecs( origpartialdecs, rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs );
@@ -1257,7 +1257,7 @@ std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
    calcTranslationMapping( origdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
 
    SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL,
-      " calculated translation; number of missing constraints: %d; number of other partialdecs: %d \n", missingrowinthis.size(),
+      " calculated translation; number of missing constraints: %ld; number of other partialdecs: %ld \n", missingrowinthis.size(),
       (origdata->getOpenPartialdecs().size() + origdata->getFinishedPartialdecs().size()) );
 
    getTranslatedPartialdecs( origdata->getOpenPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs );

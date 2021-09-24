@@ -1556,14 +1556,14 @@ bool PARTIALDECOMP::checkConsistency(
    /* check if nblocks is set appropriately */
    if( nblocks != (int) conssforblocks.size() )
    {
-      SCIPwarningMessage(scip, "In (partialdec %d) nblocks %d and size of conssforblocks %d are not identical! \n" , id, nblocks, conssforblocks.size() );
+      SCIPwarningMessage(scip, "In (partialdec %d) nblocks %d and size of conssforblocks %ld are not identical! \n" , id, nblocks, conssforblocks.size() );
       assert( false );
       return false;
    }
 
    if( nblocks != (int) varsforblocks.size() )
    {
-      SCIPwarningMessage(scip, "In (partialdec %d) nblocks %d and size of varsforblocks %d are not identical! \n" , id, nblocks, varsforblocks.size() );
+      SCIPwarningMessage(scip, "In (partialdec %d) nblocks %d and size of varsforblocks %ld are not identical! \n" , id, nblocks, varsforblocks.size() );
       assert( false );
       return false;
    }
@@ -2924,7 +2924,7 @@ void PARTIALDECOMP::displayAggregationInformation()
          for( size_t b = 0; b < reptoblocks[i].size(); ++b )
             SCIPinfoMessage(scip, NULL, "%d ", reptoblocks[i][b] );
 
-         SCIPinfoMessage(scip, NULL, "\n", i);
+         SCIPinfoMessage(scip, NULL, "\n");
       }
    }
 }
@@ -4804,7 +4804,7 @@ void PARTIALDECOMP::printPartitionInformation(
          for ( int mclass = 0; mclass < (int) classestomaster[i].size(); ++mclass )
          {
             int classid = classestomaster[i][mclass];
-            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedpartition[i]->getClassName(classid), usedpartition[i]->getClassDescription(classid));
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedpartition[i]->getClassName(classid));
          }
       }
    }
@@ -4907,6 +4907,21 @@ void PARTIALDECOMP::fixConsToBlock(
    deleteOpencons(cons);
 }
 
+bool PARTIALDECOMP::fixConsToBlock(
+   SCIP_CONS*            cons,                /**< pointer of the constraint */
+   int                   blockid              /**< block index (counting from 0) */
+   )
+{
+   int consindex = getDetprobdata()->getIndexForCons(cons);
+
+   if( consindex >= 0 )
+   {
+      fixConsToBlock(consindex, blockid);
+      return true;
+   }
+   return false;
+}
+
 
 void PARTIALDECOMP::setConsToMaster(
    int consToMaster
@@ -4940,6 +4955,19 @@ void PARTIALDECOMP::fixConsToMaster(
 
    setConsToMaster(cons);
    deleteOpencons(cons);
+}
+
+bool PARTIALDECOMP::fixConsToMaster(
+   SCIP_CONS* cons   /**< pointer of cons to fix as master cons */
+   )
+{
+   int consindex = getDetprobdata()->getIndexForCons(cons);
+   if( consindex >= 0 )
+   {
+      fixConsToMaster(consindex);
+      return true;
+   }
+   return false;
 }
 
 
@@ -5261,8 +5289,6 @@ bool PARTIALDECOMP::fixConsToBlockByName(
 
    if( consindex >= 0 )
    {
-      if( blockid >= nblocks )
-         nblocks = blockid + 1;
       fixConsToBlock(consindex, blockid);
       return true;
    }
@@ -5330,7 +5356,7 @@ bool PARTIALDECOMP::fixVarToLinkingByName(
 }
 
 
-void PARTIALDECOMP::showVisualisation()
+void PARTIALDECOMP::showVisualization()
 {
    int returnvalue;
 
@@ -5340,24 +5366,10 @@ void PARTIALDECOMP::showVisualisation()
    GCGgetVisualizationFilename(scip, this, ".gp", filename);
    GCGgetVisualizationFilename(scip, this, ".pdf", outname);
 
-   /* generate gp file */
-   GCGwriteGpVisualization( scip, filename, outname, getID() );
-
-   /* compile gp file */
-   char command[SCIP_MAXSTRLEN];
-   /* command: gnuplot "filename" */
-   strcpy(command, "gnuplot \"");
-   strcat(command, filename);
-   strcat(command, "\"");
-   SCIPinfoMessage(scip, NULL, "%s\n", command);
-   returnvalue = system(command);
-   if( returnvalue == -1 )
-   {
-      SCIPwarningMessage(scip, "Unable to write gnuplot file\n");
-      return;
-   }
+   this->generateVisualization(filename, outname);
 
    /* open outputfile */
+   char command[SCIP_MAXSTRLEN];
    /* command: e.g. evince "outname" && rm "filename" */
    strcpy(command, GCGVisuGetPdfReader(scip));
    strcat(command, " \"");
@@ -5365,15 +5377,54 @@ void PARTIALDECOMP::showVisualisation()
    strcat(command, "\" && rm \"");
    strcat(command, filename);
    strcat(command, "\"");
+#ifdef SCIP_DEBUG
    SCIPinfoMessage(scip, NULL, "%s\n", command);
+#endif
    returnvalue = system(command);
    if( returnvalue == -1 )
       SCIPwarningMessage(scip, "Unable to open gnuplot file\n");
-   SCIPinfoMessage(scip, NULL, "Please note that the generated pdf file was not deleted automatically!  \n", command);
+   SCIPinfoMessage(scip, NULL, "Please note that the generated pdf file was not deleted automatically!  \n");
+}
+
+void PARTIALDECOMP::generateVisualization(
+   char* filename,
+   char* outname,
+   GP_OUTPUT_FORMAT outputformat
+   )
+{
+   this->writeVisualizationFile(filename, outname, outputformat);
+
+   int returnvalue;
+
+   /* compile gp file */
+   char command[SCIP_MAXSTRLEN];
+   /* command: gnuplot "filename" */
+   strcpy(command, "gnuplot \"");
+   strcat(command, filename);
+   strcat(command, "\"");
+#ifdef SCIP_DEBUG
+   SCIPinfoMessage(scip, NULL, "%s\n", command);
+#endif
+   returnvalue = system(command);
+   if( returnvalue == -1 )
+   {
+      SCIPwarningMessage(scip, "Unable to write gnuplot file\n");
+      return;
+   }
+}
+
+void PARTIALDECOMP::writeVisualizationFile(
+   char* filename,
+   char* outname,
+   GP_OUTPUT_FORMAT outputformat
+   )
+{
+   /* generate gp file */
+   GCGwriteGpVisualizationFormat( scip, filename, outname, getID(), outputformat );
 }
 
 
-void PARTIALDECOMP::exportVisualisation()
+void PARTIALDECOMP::exportVisualization()
 {
    /* get names for gp file and output file */
    char filename[SCIP_MAXSTRLEN];

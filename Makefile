@@ -260,6 +260,7 @@ LIBOBJ = \
 			event_relaxsol.o \
 			event_solvingstats.o \
 			gcgcol.o \
+			gcg_general.o \
 			gcggithash.o \
 			gcgheur.o \
 			gcgsepa.o \
@@ -563,13 +564,13 @@ $(GCGLIBLINK):	$(GCGLIBFILE)
 		cd $(dir $@) && $(LN_s) $(notdir $(GCGLIBFILE)) $(notdir $@)
 
 
-$(MAINFILE):	$(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(TPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | $(BINDIR)
+$(MAINFILE):	$(SCIPLIBFILE) $(LPILIBFILE) $(TPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | $(BINDIR)
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
 		$(LINKCXX_l)$(GCGLIB)$(LINKLIBSUFFIX) \
 		$(LINKCXX_L)$(SCIPDIR)/lib/static $(LINKCXX_l)$(SCIPLIB)$(LINKLIBSUFFIX) \
                 $(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
-		$(LINKCXX_l)$(NLPILIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(TPILIB)$(LINKLIBSUFFIX) \
+		$(LINKCXX_l)$(TPILIB)$(LINKLIBSUFFIX) \
 		$(OFLAGS) $(LPSLDFLAGS) \
 		$(LDFLAGS) $(LINKCXX_o)$@
 

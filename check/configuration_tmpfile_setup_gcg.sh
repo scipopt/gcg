@@ -228,11 +228,11 @@ then
 		echo set presolving maxrounds 0    >> $TMPFILE
 		echo presolve                      >> $TMPFILE
 		echo detect                        >> $TMPFILE
-		if test -f $DECFILE
+		if test -f "$DECFILE"
                     then
                         BLKFILE=$DECFILE
                     fi
-                    if test -f $BLKFILE
+                    if test -f "$BLKFILE"
                     then
                         EXT=${BLKFILE##*.}
                         if test "$EXT" = "gz"
@@ -265,13 +265,13 @@ then
 		echo write all $GCGPATH/decs\/$TSTNAME.$SETNAME dec >> $TMPFILE
 		echo write all $GCGPATH/images\/$TSTNAME.$SETNAME gp >> $TMPFILE
 	else
-		if test -f $DECFILE -a $MODE = "readdec"
+		if test -f "$DECFILE" -a $MODE = "readdec"
 		then
-		    if test -f $DECFILE
+		    if test -f "$DECFILE"
 		    then
 			    BLKFILE=$DECFILE
 		    fi
-		    if test -f $BLKFILE
+		    if test -f "$BLKFILE"
 		    then
 			    presol=`grep -A1 PRESOLVE $BLKFILE`
 		        # if we find a presolving file

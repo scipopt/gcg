@@ -81,6 +81,7 @@ set(gcgsources
     event_relaxsol.c
     event_solvingstats.c
     gcgcol.c
+    gcg_general.c
     gcggithash.c
     gcgheur.c
     gcgsepa.c
@@ -166,14 +167,11 @@ set(gcgheaders
     cons_integralorig.h
     cons_masterbranch.h
     cons_origbranch.h
-    dec_colors.h
     dec_compgreedily.h
-    dec_connected.h
     dec_connected_noNewLinkingVars.h
     dec_connectedbase.h
     dec_consclass.h
     dec_constype.h
-    dec_cutpacking.h
     dec_dbscan.h
     dec_densemasterconss.h
     dec_generalmastersetcover.h
@@ -188,11 +186,11 @@ set(gcgheaders
     dec_mst.h
     dec_neighborhoodmaster.h
     dec_postprocess.h
-    dec_random.h
     dec_staircase_lsp.h
     dec_stairheur.h
     dec_varclass.h
     decomp.h
+    def.h
     dialog_gcg.h
     dialog_graph.h
     dialog_master.h
@@ -205,33 +203,10 @@ set(gcgheaders
     event_solvingstats.h
     gcg.h
     gcgcol.h
+    gcg_general.h
     gcggithash.h
     gcgplugins.h
     gcgpqueue.h
-    graph/bipartitegraph.h
-    graph/bipartitegraph_def.h
-    graph/bridge.h
-    graph/columngraph.h
-    graph/columngraph_def.h
-    graph/graph.h
-    graph/graph_def.h
-    graph/graph_interface.h
-    graph/graph_tclique.h
-    graph/graphalgorithms.h
-    graph/graphalgorithms_def.h
-    graph/hypercolgraph.h
-    graph/hypercolgraph_def.h
-    graph/hypergraph.h
-    graph/hypergraph_def.h
-    graph/hyperrowcolgraph.h
-    graph/hyperrowcolgraph_def.h
-    graph/hyperrowgraph.h
-    graph/hyperrowgraph_def.h
-    graph/matrixgraph.h
-    graph/matrixgraph_def.h
-    graph/rowgraph.h
-    graph/rowgraph_def.h
-    graph/weights.h
     gcgsort.h
     heur_gcgcoefdiving.h
     heur_gcgdins.h
@@ -310,20 +285,51 @@ set(gcgheaders
     struct_vardata.h
     type_branchgcg.h
     type_colpool.h
+    type_consclassifier.h
     type_decomp.h
     type_detector.h
     type_gcgcol.h
     type_gcgpqueue.h
     type_masterdiving.h
     type_origdiving.h
+    type_parameter.h
     type_pricestore_gcg.h
     type_pricingjob.h
     type_pricingprob.h
     type_pricingstatus.h
+    type_scoretype.h
     type_solver.h
-    wrapper_detprobdata.h
+    type_varclassifier.h
     wrapper_partialdecomp.h
 )
+
+set(gcggraphheaders
+    graph/bipartitegraph.h
+    graph/bipartitegraph_def.h
+    graph/bridge.h
+    graph/columngraph.h
+    graph/columngraph_def.h
+    graph/graph.h
+    graph/graph_def.h
+    graph/graph_gcg.h
+    graph/graph_interface.h
+    graph/graph_tclique.h
+    graph/graphalgorithms.h
+    graph/graphalgorithms_def.h
+    graph/hypercolgraph.h
+    graph/hypercolgraph_def.h
+    graph/hypergraph.h
+    graph/hypergraph_def.h
+    graph/hyperrowcolgraph.h
+    graph/hyperrowcolgraph_def.h
+    graph/hyperrowgraph.h
+    graph/hyperrowgraph_def.h
+    graph/matrixgraph.h
+    graph/matrixgraph_def.h
+    graph/rowgraph.h
+    graph/rowgraph_def.h
+    graph/weights.h
+   )
 
 if(BLISS_FOUND AND SYM STREQUAL "bliss")
    set(gcgsources ${gcgsources}
@@ -409,6 +415,9 @@ set_target_properties(gcg PROPERTIES
 
 # install the header files of gcg
 install(FILES ${gcgheaders} DESTINATION include/gcg)
+# separate installation of graph headers to preserve the folder structure
+# see e.g. here: https://stackoverflow.com/a/11097012
+install(FILES ${gcggraphheaders} DESTINATION include/gcg/graph)
 if(HMETIS_FOUND)
    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmetis.h DESTINATION include/gcg)
 endif()

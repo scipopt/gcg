@@ -1146,7 +1146,7 @@ SCIP_RETCODE writePartialdec(
    auto& detectorchain = partialdec->getDetectorchain();
    auto& detectorchaininfo = partialdec->getDetectorchainInfo();
    SCIPinfoMessage(scip, file, "%s%s ndetectors \n", commentchars, commentchars);
-   SCIPinfoMessage(scip, file, "%s%s %d \n", commentchars, commentchars, detectorchain.size());
+   SCIPinfoMessage(scip, file, "%s%s %ld \n", commentchars, commentchars, detectorchain.size());
 
    SCIPinfoMessage(scip, file, 
       "%s%s name info time nnewblocks %%ofnewborderconss %%ofnewblockconss %%ofnewlinkingvars %%ofnewblockvars\n",
@@ -1337,7 +1337,7 @@ SCIP_DECL_READERWRITE(readerWriteDec)
  */
 
 /** includes the dec file reader in SCIP */
-SCIP_RETCODE SCIPincludeReaderDec(
+SCIP_RETCODE GCGincludeReaderDec(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

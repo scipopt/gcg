@@ -844,6 +844,10 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
          SCIPdebugMessage("Calling freeDetector of %s\n", detector->name);
          SCIP_CALL( (*detector->freeDetector)(scip, detector) );
       }
+
+      BMSfreeMemoryArray(&detector->name);
+      BMSfreeMemoryArray(&detector->description);
+
       SCIPfreeBlockMemory(scip, &detector);
    }
 
@@ -3089,8 +3093,8 @@ SCIP_RETCODE DECincludeDetector(
 
    /* set meta data of detector */
    detector->decdata = detectordata;
-   detector->name = name;
-   detector->description = description;
+   SCIP_ALLOC( BMSduplicateMemoryArray(&detector->name, name, strlen(name)+1) );
+   SCIP_ALLOC( BMSduplicateMemoryArray(&detector->description, description, strlen(description)+1) );
    detector->decchar = decchar;
 
    /* set memory handling and detection functions */
@@ -4849,7 +4853,7 @@ SCIP_RETCODE GCGconshdlrDecompChooseCandidatesFromSelected(
       {
          selectedpartialdecs = conshdlrdata->detprobdatapres->getFinishedPartialdecs();
       }
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL,  NULL,  "number of considered decompositions: %d \n", selectedpartialdecs.size() );
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL,  NULL,  "number of considered decompositions: %ld \n", selectedpartialdecs.size() );
    }
 
    partialdeciter = selectedpartialdecs.begin();
@@ -5015,7 +5019,7 @@ SCIP_RETCODE GCGconshdlrDecompCreateVarmapForPartialdecId(
    {
       SCIPhashmapFree(&varmap);
       varmap = NULL;
-      SCIPwarningMessage(scip, NULL, "blockid1 should be the representative (hence has id=0 in reptoblocksarray but in fact has %d) \n", repid1);
+      SCIPwarningMessage(scip, "blockid1 should be the representative (hence has id=0 in reptoblocksarray but in fact has %d) \n", repid1);
       return SCIP_OKAY;
    }
 
