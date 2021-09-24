@@ -1646,7 +1646,6 @@ public:
    
    /**
     * @brief generates a gp visualization of the partialdec without compilation or opening
-    * @returns true iff successful
     */
    void exportVisualization();
 

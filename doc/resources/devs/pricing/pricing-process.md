@@ -42,7 +42,7 @@ The SCIP-Instance corresponding to a pricing problem is created inside `relax_gc
 
 The **pricing problem is then solved** as follows:
 - Loop through pricing subproblems in rounds
-- Combine next pricing subproblem in queue with pricing solver
+- Combine next pricing subproblem in queue with pricing solver (using a pricing solver priority)
 - Queue can be processed in parallel
 
 If the chosen pricing solver is MIP, `SCIPsolve` is called again for the pricing problem.
