@@ -90,7 +90,16 @@
                                                        * otherwise LaTeX/Tikz */
 
 /* pdf reader default */
-#define DEFAULT_PDFREADER        "evince"             /**< name of pdf reader, must be callable by system */
+/**< name of pdf reader, must be callable by system */
+#if defined(__linux__)
+#define DEFAULT_PDFREADER        "xdg-open"
+#elif defined(__APPLE__)
+#define DEFAULT_PDFREADER        "open"
+#elif defined(_WIN32)
+#define DEFAULT_PDFREADER        "start"
+#else
+#define DEFAULT_PDFREADER        "evince"
+#endif
 
 /* report parameter defaults */
 #define DEFAULT_REPORT_MAXNDECOMPS     20       /**< maximum number of decomps to be shown in report */
