@@ -3901,7 +3901,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
       }
       if( relevant )
       {
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10lld        : %10d %10d %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f %10d\n", b+1, nallvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b],
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10d        : %10d %10d %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f %10d\n", b+1, nallvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b],
                DECdecompGetNSubscipconss(decomp)[b], nonzeros[b], intnzeros[b], blockvardensities[b].min, blockvardensities[b].max, blockvardensities[b].median, blockvardensities[b].mean, identical);
       }
    }

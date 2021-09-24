@@ -1648,47 +1648,49 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    }
 
    /* change */
-      if( !SCIPdialogHasEntry(root, "change") )
-      {
-         SCIP_CALL( SCIPincludeDialog(scip, &submenu,
-               NULL,
-               SCIPdialogExecMenu, NULL, NULL,
-               "change", "change the problem", TRUE, NULL) );
-         SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
-         SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
-      }
-      if( SCIPdialogFindEntry(root, "change", &submenu) != 1 )
-      {
-         SCIPerrorMessage("change sub menu not found\n");
-         return SCIP_PLUGINNOTFOUND;
-      }
+   if( !SCIPdialogHasEntry(root, "change") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+            NULL,
+            SCIPdialogExecMenu, NULL, NULL,
+            "change", "change the problem", TRUE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+   }
+   if( SCIPdialogFindEntry(root, "change", &submenu) != 1 )
+   {
+      SCIPerrorMessage("change sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
 
-      if( SCIPdialogFindEntry(root, "set", &submenu) != 1 )
-      {
-         SCIPerrorMessage("set sub menu not found\n");
-         return SCIP_PLUGINNOTFOUND;
-      }
-      if( SCIPdialogFindEntry(submenu, "detection", &submenu) != 1 )
-      {
-         SCIPerrorMessage("set/detection sub menu not found\n");
-         return SCIP_PLUGINNOTFOUND;
-      }
-      if( SCIPdialogFindEntry(submenu, "blocknrcandidates", &blocknrmenu) != 1 )
-      {
-         SCIPerrorMessage("set/detection/blocknrcandidates sub menu not found\n");
-         return SCIP_PLUGINNOTFOUND;
-      }
+   if( SCIPdialogFindEntry(root, "set", &submenu) != 1 )
+   {
+      SCIPerrorMessage("set sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
+   if( SCIPdialogFindEntry(submenu, "detection", &submenu) != 1 )
+   {
+      SCIPerrorMessage("set/detection sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
+   if( SCIPdialogFindEntry(submenu, "blocknrcandidates", &blocknrmenu) != 1 )
+   {
+      SCIPerrorMessage("set/detection/blocknrcandidates sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
 
-      /*  add  blocknr candidate*/
-      if( !SCIPdialogHasEntry(blocknrmenu, "addblocknr") )
-      {
-         SCIP_CALL( SCIPincludeDialog(scip, &dialog,
-               NULL,
-               GCGdialogExecChangeAddBlocknr, NULL, NULL,
-               "addblocknr", "add block number candidates (as white space separated list)", FALSE, NULL) );
-         SCIP_CALL( SCIPaddDialogEntry(scip, blocknrmenu, dialog) );
-         SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
-      }
+   /*  add  blocknr candidate*/
+   if( !SCIPdialogHasEntry(blocknrmenu, "addblocknr") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+            NULL,
+            GCGdialogExecChangeAddBlocknr, NULL, NULL,
+            "addblocknr", "add block number candidates (as white space separated list)", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, blocknrmenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   SCIP_CALL( SCIPincludeDialogDefaultBasic(scip) );
 
    return SCIP_OKAY;
 }

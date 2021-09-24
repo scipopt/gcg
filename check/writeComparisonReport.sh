@@ -29,8 +29,8 @@
 # @author Tim Donkiewicz
 #
 # This script generates a PDF with visualizations that compare two test runs
-# that have been carried out using GCG's make test. It is called by the 
-# Makefile, if make is executed with target "visu" and the data directory 
+# that have been carried out using GCG's make test. It is called by the
+# Makefile, if make is executed with target "visu" and the data directory
 # contains more than one run.
 #
 # Input arguments from Makefile:
@@ -52,6 +52,11 @@ LAST_STATISTICS=$2
 DATADIR=$3
 
 TIMESTAMP=$(date '+%d-%m-%Y_%H-%M-%S')
+
+function echoBold(){
+  if [ "$DEBUG" == "false" ]; then printf "\n$(tput bold)$1$(tput sgr0)"
+  else printf "\n$1"; fi
+}
 
 function extractScriptSettings(){
   # This function will extract settings from a script settings file.
@@ -88,8 +93,8 @@ function extractScriptSettings(){
     # list changes
     awk -F\= '{gsub(/"/,"",$2);print "  " $1 " = " $2}' $SET
     # (re)define variables
-    source $SET 
-  else 
+    source $SET
+  else
     echo " Could not find file $SCRIPTSETTINGSFILE. Using default script settings."
   fi
 }
@@ -97,6 +102,9 @@ function extractScriptSettings(){
 function prepareVisualizationGeneration(){
   # get runtime files from user
   function checkDatadir(){
+    if [ -d $DATADIR ]; then DATADIR=$(realpath $DATADIR);
+    elif [ -d ../$DATADIR ]; then DATADIR=$(realpath ../$DATADIR); fi
+
     if [[ $DATADIR = "none" ]]; then
         echo " No log directory given. The log directory should contain .res and .out files for all runs."
         return 1
@@ -122,7 +130,7 @@ function prepareVisualizationGeneration(){
     checkDatadir
   done
 
-  # get testset and settings names to set report directory 
+  # get testset and settings names to set report directory
   if [ -z $REPORTDIR ]; then
     mkdir -p reports/ > /dev/null 2>&1
     REPORTDIR=$(realpath "reports/comparisonreport_${TIMESTAMP}") # folder to put report into (default: inside check/reports)
@@ -176,7 +184,7 @@ function generateVisualizations(){
         fi
         if test $GENERAL = "true"; then echo 'General Plots'
             for i in $RESFILES; do ./parseres.py $i ${PKLDIR}; done
-            python3 plotcomparedres.py ${PKLDIR} ${PLOTDIR}/general/; 
+            python3 plotcomparedres.py ${PKLDIR} ${PLOTDIR}/general/;
         fi
         # visu scripts should be executed from within the stats folder.
         cd ../stats
@@ -196,8 +204,7 @@ function generateVisualizations(){
         python3 detection/plotter_detection.py $OUTFILES --outdir $PLOTDIR/detection/ $DETECTIONARGS; fi
         # The following scripts require GCG to be compiled with STATISTICS=true
         if test $LAST_STATISTICS = "true"; then
-            if test $BOUNDS = "true"; then   echo 'Bounds Plot'
-            echo "calling python3 bounds/plotter_bounds.py $OUTFILES --outdir ${PLOTDIR}/bounds $BOUNDSARGS"
+            if test $BOUNDS = "true"; then echo 'Bounds Plot'
             python3 bounds/plotter_bounds.py $OUTFILES --outdir ${PLOTDIR}/bounds $BOUNDSARGS; fi
         fi
         cd ../check
@@ -210,7 +217,7 @@ function generateVisualizations(){
         fi
         if test $GENERAL = "true"; then echo -ne '|░░                  |  (10%)  General Plots        \r'
             for i in $RESFILES; do ./parseres.py $i ${PKLDIR} > /dev/null 2>&1; done
-            python3 plotcomparedres.py ${PKLDIR} ${PLOTDIR}/general/  > /dev/null 2>&1; 
+            python3 plotcomparedres.py ${PKLDIR} ${PLOTDIR}/general/  > /dev/null 2>&1;
         fi
         # visu scripts should be executed from within the stats folder.
         cd ../stats
@@ -244,9 +251,9 @@ cat > comparisonreport.make << EndOfMessage
 # latexmk automatically manages the .tex files
 comparisonreport.pdf: ${REPORTFILE}
 	@echo ------------
-	@echo 
+	@echo
 	@echo Compiling tex code. This may take a while.
-	@echo 
+	@echo
 	@echo ------------
 	@latexmk -f -pdf -pdflatex="pdflatex -interaction=batchmode -shell-escape" -use-make ${REPORTFILE}
 	@make -f comparisonreport.make clean
@@ -336,7 +343,7 @@ cat > ${REPORTFILE} << EndOfMessage
 
 \vspace{2cm}
 
-\end{center} 
+\end{center}
 \begin{tabular}{{lp{10cm}}}
     \multicolumn{2}{l}{\large\textbf{Test Run Characteristics Overview}} \\\\
 EndOfMessage
@@ -441,8 +448,8 @@ do
   for v in $(ls plots/$p/*.pdf | sed "/bounds\.time/d") # subtype of visu
   do
     if [[ $p = "bounds" ]]; then echo "\subsection{Instance: $(echo $v | rev | cut -d "/" -f1 | rev | cut -d "." -f1 | sed "s/\_/\\\_/g")}" >> ${REPORTFILE}; fi
-    echo "\vspace*{\fill}"    >> ${REPORTFILE} 
-    echo "\begin{figure}[H]"  >> ${REPORTFILE} 
+    echo "\vspace*{\fill}"    >> ${REPORTFILE}
+    echo "\begin{figure}[H]"  >> ${REPORTFILE}
     echo "\makebox[\textwidth][c]{\includegraphics[width=1.2\textwidth]{$v}}" >> ${REPORTFILE}
     echo "  \caption{${desc_comp[$(echo $v | rev | cut -d "/" -f1 | cut -d "." -f2 | rev)]} \\\\ Visualization Path: \texttt{$(echo $v | sed 's/\_/\\\_/g')}}" >> ${REPORTFILE}
     echo "\end{figure}"       >> ${REPORTFILE}
@@ -459,7 +466,7 @@ function printTeX_tail(){
 function generateReport(){
   cd ${REPORTDIR}
   echo -ne '|░░                  |  (10%)  Generating TeX Report Code... \r'
-  printTeX_makefile; 
+  printTeX_makefile;
   printTeX_readme;
   printTeX_preamble;
   printTeX_secondpage_table
@@ -478,14 +485,13 @@ function generateReport(){
 }
 
 function main(){
-  printf "\n$(tput bold)Starting Comparison Report Generation...$(tput sgr0)\n"
+  echoBold "Starting Comparison Report Generation...\n"
   extractScriptSettings;
   prepareVisualizationGeneration;
-  printf "\n$(tput bold)Generating visualizations.$(tput sgr0)"
+  echoBold "Generating visualizations."
   generateVisualizations;
-  printf "\n$(tput bold)Generating PDF report file.$(tput sgr0)\n"
+  echoBold "Generating PDF report file.\n"
   generateReport;
 }
 
 main;
-

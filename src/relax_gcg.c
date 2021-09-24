@@ -2814,10 +2814,12 @@ SCIP_RETCODE initializeMasterProblemSolve(
       assert(relaxdata->decomp != NULL);
    }
 
-   /* construct the LP in the original problem */
-   SCIP_CALL( SCIPconstructLP(scip, &cutoff) );
-   assert(!cutoff);
-   SCIP_CALL( SCIPflushLP(scip) );
+   if( !SCIPisLPConstructed(scip) ) {
+      /* construct the LP in the original problem */
+      SCIP_CALL(SCIPconstructLP(scip, &cutoff));
+      assert(!cutoff);
+      SCIP_CALL(SCIPflushLP(scip));
+   }
 
    return SCIP_OKAY;
 }

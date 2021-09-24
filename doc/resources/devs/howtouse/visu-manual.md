@@ -8,6 +8,8 @@
 > on this page.
 
 # Visualization Generation
+Many different things can be plotted using our visualization framework.
+You can find all possible arguments @ref visu-args "here".
 
 ## Common Prerequisites {#visu-prerequisites}
 In this section, we describe what is required to generate the visualizations using
@@ -189,8 +191,8 @@ with `FILES` being one `.out` file and `VBC` being the directory where all corre
 
 \htmlinclude visualizations/pricing.html
 \n
-## Tree Plotter {#tree-plotter}
-The Tree Plotter, just like the Pricing Plotter, needs the `vbc` files to function correctly. It will plot how many nodes were opened on each level.
+## Tree Statistics Plotter {#tree-plotter}
+The Tree Statistics Plotter, just like the Pricing Plotter, needs the `vbc` files to function correctly. It will plot how many nodes were opened on each level.
 #### Execution
 
     python3 tree/plotter_tree.py FILES
@@ -213,18 +215,63 @@ with run1, run2, ... being a `.res` file in the format as shown in @ref what-fil
 \htmlinclude visualizations/table.html
 \n
 
+
+## Tree Visualizations {#vbc-visu}
+> Note: The following guide concerns external software. We do not provide warranty nor support for it.
+> Note: The tree visualization tool (vbctool) does not display aggregated information of the tree's development as the
+> tree statistics plotter does, but shows the tree's development interactively.
+
+In this section, we give a brief guide on how to use a tool to visualize branch-and-cut algorithmics, graphically
+showing how the tree was built during branching.
+
+### Installation
+In order to generate pictures of the Branch and Bound tree that GCG used during solving, you can use the [vbctool](https://cs.uni-koeln.de/ls-juenger/software/vbctool). Since the executable might have issues with the linking of the libraries, it is suggested to **download the vbctool source code** and additionally the **Motif Framework source code**, both available on the website. Unzip the Motif Framework source code tarball into the `lib/` folder of the vbctool.
+Before starting with the [Build Instructions](https://cs.uni-koeln.de/sites/informatik/projects/vbctool/INSTALL), install the following packages:
+
+    sudo apt-get install libmotif-dev libxext-dev
+
+Then, compile the program (just like explained in the Build Instructions):
+
+    cd lib/GFE
+    make
+    cd ../GraphInterface/
+    make
+    cd ../MotifApp/
+    make
+    cd ../..
+    make
+
+Now you can start the program using
+
+    ./vbctool
+
+### Usage
+The files you now have to read (File -> Load) are included in the folder `check/results/vbc`.
+
+\image html tree.jpg "A tree." width=80%
+
+In order to generate the tree, click on Emulation -> Start. Before doing that, you can configure the emulation in Emulation -> Setup, where you can also set the time it will need to generate the tree.
+- If left on default values, the tree will generate as fast as it generated in GCG during execution, offering you a good insight into how long GCG was 'stuck' in certain nodes.
+- If changed, for example to 1 second, it will just generate the tree all at once and you can then save it.
+
+To save the generated tree, just click on File -> Print and it will save a `.ps` file.
+\n
+
 # Test Set Selection {#testset-selection}
-Using **existing runtime data**, you can filter using the instructions under "General Plotter -> Arguments -> Defining Filters for the Data". 
-For the strIPlib, we can provide a full data set (`.out` and `.pkl` format) of runtime data (which is also used in the 
-[strIPlib](https://striplib.or.rwth-aachen.de)). To then export a test set including the instances that your filter 
+Using **existing runtime data**, you can filter using the instructions under "General Plotter -> Arguments -> Defining Filters for the Data".
+For the strIPlib, we can provide a full data set (`.out` and `.pkl` format) of runtime data (which is also used in the
+[strIPlib](https://striplib.or.rwth-aachen.de)). To then export a test set including the instances that your filter
 applies to, you can set the flag `-ts` like that:
 
     python3 general/plot.py check.gcg.out -ts -t "DETECTION TIME" 10 20 "RMP LP TIME"
 
 Note that the test set file export mode is only implemented in the standard plotter, so please call `plot.py` with your filters and the
 test set export flag. After executing this command, you will get a test set file `filtered.test` in the given output directory, with
-which you can call the `make test` target @ref generate-data "as usual". 
-If `.dec` files were used, they will be included in the exported test set file. 
+which you can call the `make test` target @ref generate-data "as usual".
+If `.dec` files were used, they will be included in the exported test set file.
+
+Whenever the test set that you get is too large to use or does not satisfy your requirements, we recommend to check out
+our @ref diverse-test-sets "diverse test set generation functionality".
 
 # Custom Visualizations
 When creating custom visualizations, one has to know exactly what data is needed to make the visualization. With these arguments in mind, one can then look if they are already parsed. A list of the currently parsed data is located @ref visu-args "here". If so, one of the parsers (<code>parser_general.py</code>, <code>parser_bounds.py</code> or <code>parser_detection.py</code>) can be used, or otherwise, for the <code>plotter_pricing.py</code>, the <code>--savepickle</code> argument of the plotter shall be used each time to parse the runtime data and save it to the pickle, to then read it again for the plotter. Then, the <code>plotter_</code> script can be created which should import the parser that already gets the data needed with a simple <code>import parser_...</code>. Finally, the parser can be used just like in the other plotters.

@@ -264,7 +264,7 @@ def get_info_from_filename(filename):
     """
     info = {}
     info['status'] = filename.split('.')[-1]
-    info['settings'] = filename.split('.')[-2]
+    info['settings'] = filename.split('.')[-3]
     info['instance'] = filename[:-(len(info['settings']) + len(info['status']) + 2)]
     return info
 
@@ -1688,6 +1688,9 @@ def collect_data(info, ind_node, ind_pricing_round, ind_stab_round, ind_round, i
     :param val_farkas: is the pricing problem part of the initial farkas pricing? Will be a column in the dataframe
     :return:
     """
+    # temporary workaround for damaged output at start of outfiles during cluster runs (8/2021)
+    if get_info_from_filename(info["file"])["settings"].startswith("default_"):
+        info["settings"] = get_info_from_filename(info["file"])["settings"]
     # build a dataframe from the index and value lists
     index = pd.MultiIndex.from_arrays([ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob],
                                       names=["node", "pricing_round", "stab_round", "round", "pricing_prob"])
@@ -1745,7 +1748,7 @@ def parse_files(files):
                                 done = True
                                 continue
                             print('    ended abruptly')
-                            collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
+                            collect_data({'file': file, 'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                             print('    leaving', problemFileName)
                             done = True
                         # initialize all index-lists
@@ -1868,7 +1871,7 @@ def parse_files(files):
                     # nothing more to read for this instance
                     try: root_bounds_data.iter = root_bounds_data.iter.astype('int')
                     except AttributeError: print("Fatal: Could not read data for instance {}. Have you tested with STATISTICS=true?\nTerminating.".format(problemFileName))
-                    collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot, root_bounds = root_bounds_data)
+                    collect_data({'file': file, 'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot, root_bounds = root_bounds_data)
                     done = True
                     print('    leaving', problemFileName)
                     continue
@@ -1891,7 +1894,7 @@ def parse_files(files):
                         round_begin = True
                     except ValueError:
                         print('    ended abruptly')
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
+                        collect_data({'file': file, 'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print('    leaving', problemFileName)
                         done = True
                         continue
@@ -1932,7 +1935,7 @@ def parse_files(files):
                                 print('It seems, that the LP time is not constant during a pricing round. Delta t is', lptime_end - lptime_begin)
                     except ValueError:
                         print('    ended abruptly')
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
+                        collect_data({'file': file, 'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print('    leaving', problemFileName)
                         done = True
                         continue
@@ -1957,7 +1960,7 @@ def parse_files(files):
                         round_counter += 1
                     except ValueError:
                         print('    ended abruptly')
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
+                        collect_data({'file': file, 'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print('    leaving', problemFileName)
                         done = True
                         continue
@@ -1983,7 +1986,7 @@ def parse_files(files):
                             val_farkas.append(not farkasDone)
                     except ValueError:
                         print('    ended abruptly')
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
+                        collect_data({'file': file, 'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print('    leaving', problemFileName)
                         done = True
                         continue
@@ -2023,13 +2026,13 @@ def parse_files(files):
                             val_farkas.append(not farkasDone)
                     except ValueError:
                         print('    ended abruptly')
-                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
+                        collect_data({'file': file, 'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
                         print('    leaving', problemFileName)
                         done = True
                         continue
 
             if not done:
-                collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
+                collect_data({'file': file, 'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, incumbent_times, rootlpsol_times, incumbent_times_tot, rootlpsol_times_tot)
 
     if not params['no_vartimes']:
         make_vartimes_plot(settings_global, incumbent_times_tot, rootlpsol_times_tot)

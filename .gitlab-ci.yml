@@ -25,12 +25,12 @@ default:
     # initialize SSH key to access repositories
     - *init_ssh2
     # configure git
-    - git config --global user.email "gcg@or.rwth-aachen.de"
-    - git config --global user.name "GCG CI"
+    #- git config --global user.email "gcg@or.rwth-aachen.de"
+    #- git config --global user.name "GCG CI"
     # update submodules
-    - git submodule sync --recursive
-    - git submodule foreach 'git stash'
-    - git submodule update --init --recursive
+    #- git submodule sync --recursive
+    #- git submodule foreach 'git stash'
+    #- git submodule update --init --recursive
     # set links to SCIP and SoPLEX
     - ln -sfn ../lib/scip-git lib/scip
     # SoPlex links inside SCIP lib folder
@@ -42,6 +42,10 @@ default:
 # Make compilation job
 build:make_release:
   stage: "Build"
+  variables:
+    DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: fetch
+    GIT_SUBMODULE_STRATEGY: recursive
   when: always
   script:
     # generate 'opt' binary
@@ -49,14 +53,19 @@ build:make_release:
     - make STATISTICS=true
   artifacts:
     expire_in: 3 days
-    when: on_success
     paths:
       - $CI_PROJECT_DIR
+    exclude:
+      - $CI_PROJECT_DIR/.git/*
 
 
 # Make compilation job
 build:make_dbg:
   stage: "Build"
+  variables:
+    DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: fetch
+    GIT_SUBMODULE_STRATEGY: recursive
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
       when: always
@@ -96,13 +105,18 @@ build:make_dbg:
     - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/dec_h*partition.cpp
   artifacts:
     expire_in: 3 days
-    when: on_success
     paths:
       - $CI_PROJECT_DIR
+    exclude:
+      - $CI_PROJECT_DIR/.git/*
 
 # CMake compilation job
 build:cmake_dbg:
   stage: "Build"
+  variables:
+    DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: fetch
+    GIT_SUBMODULE_STRATEGY: recursive
   when: always
   script:
     - mkdir build
@@ -116,9 +130,10 @@ build:cmake_dbg:
     - cd ..
   artifacts:
     expire_in: 3 days
-    when: on_success
     paths:
       - $CI_PROJECT_DIR
+    exclude:
+      - $CI_PROJECT_DIR/.git/*
 
 # Short test for makefiles release build (test set: short)
 test:make_release:
@@ -271,22 +286,30 @@ experiment:master:
   script:
     # copy over the whole repository
     - ssh gcgci@clustor "rm -rf gcg_master"
-    - ssh gcgci@clustor "mkdir -p gcg_master/check/instances; ln -sfn /opt/instances/striplibn gcg_master/check/instances/striplib"
+    - ssh gcgci@clustor "mkdir -p gcg_master/check/instances && ln -sfn /opt/instances/striplibn gcg_master/check/instances/striplib"
     - scp -r * gcgci@clustor:~/gcg_master
     # execute "experiment.test" testset. use settings to mark runtime (there should not exist "default_master.set" different to "default.set"!)
-    - ssh gcgci@clustor "cd gcg_master; make STATISTICS=true DETECTIONSTATISTICS=true TEST=experiment SETTINGS=default_master TIME=10800 MEM=8000 testcluster"
+    - ssh gcgci@clustor "cd gcg_master && make STATISTICS=true DETECTIONSTATISTICS=true TEST=experiment SETTINGS=default_master TIME=10800 MEM=8000 testcluster"
     # check continously if all cluster jobs are done. if so, exit while loop
     - ssh gcgci@clustor 'while (( $(condor_q | grep "Total for query:" | cut -d":" -f2 | cut -d ";" -f1 | sed -e "s/ //g" -e "s/jobs//g") != 0 )); do sleep 5s; done; echo "All jobs done"'
-    - ssh gcgci@clustor "cd gcg_master/check; ./evalcheck_cluster.sh -r results/*.eval; rm -rf results/*.txt"
-    # prepare folder with hash of current commit and link to it from `current_master`
-    - ssh gcgci@clustor "cd /shared/gcg_runtime_data/; ln -sfn $(ls -td /shared/gcg_runtime_data/master_branch/*/ | head -n 1 | cut -d'/' -f4-) previous_master"
-    - ssh gcgci@clustor "cd /shared/gcg_runtime_data/; mkdir -p master_branch/${CI_COMMIT_SHORT_SHA}; ln -sfn master_branch/${CI_COMMIT_SHORT_SHA} current_master"
+    - ssh gcgci@clustor "cd gcg_master/check && ./evalcheck_cluster.sh -r results/*.eval; rm -rf results/*.txt"
+    # make the "current master link" a "previous master" link
+    - ssh gcgci@clustor 'cd /shared/gcg_runtime_data/ && ln -sfn $(realpath current_master | cut -d"/" -f4-) previous_master && echo "Set link to previous master (hash $(realpath previous_master | cut -d/ -f5-))."'
+    # create new folder for master runtime data
+    - ssh gcgci@clustor "cd /shared/gcg_runtime_data/ && mkdir -p master_branch/${CI_COMMIT_SHORT_SHA} && ln -sfn master_branch/${CI_COMMIT_SHORT_SHA} current_master"
     # copy runtime data to newly created folder
-    - ssh gcgci@clustor "cp -fr gcg_master/check/results/* /shared/gcg_runtime_data/master_branch/${CI_COMMIT_SHORT_SHA}; echo 'Adding new master branch run with hash ${CI_COMMIT_SHORT_SHA}.'"
+    - ssh gcgci@clustor "cp -fr gcg_master/check/results/* /shared/gcg_runtime_data/master_branch/${CI_COMMIT_SHORT_SHA} && echo 'Adding new master branch run (hash ${CI_COMMIT_SHORT_SHA}).'"
     # clean up old entries (keep latest 5 runs)
-    - ssh gcgci@clustor 'cd /shared/gcg_runtime_data/master_branch/; for folder in $(ls -td */ | tail -n +6); do echo "Removing old master branch run with hash ${folder:0:8} (last modified $(stat ${folder} | grep Modify | cut -d\  -f2- | cut -d. -f1))."; rm -rf $folder; done'
-    # do not delete master runtime data, to copy it over for comparisons
-  # no artifacts needed - runtime data is always just fetched from the gcgci user account data artifacts
+    - ssh gcgci@clustor 'cd /shared/gcg_runtime_data/master_branch/ && for folder in $(ls -td */ | tail -n +6); do echo "Removing old master branch run with hash ${folder:0:8} (last modified $(stat ${folder} | grep Modify | cut -d\  -f2- | cut -d. -f1))."; rm -rf $folder; done'
+    # copy experiment runtime data here to save as artifacts
+    - mkdir -p check/results && scp -r gcgci@clustor:~/gcg_master/check/results/* check/results
+    # delete master runtime data (for later comparisons, use "previous_master" and "current_master" in /shared/gcg_runtime_data/)
+    - ssh gcgci@clustor "rm -rf gcg_master"
+  # artifacts needed for reporting stages testset_report:experiment_master and comparison_report:experiment_master
+  artifacts:
+    paths:
+      - check/results/*
+    expire_in: 3 days
 
 # Feature branch runtime data generation
 experiment:feature:
@@ -304,15 +327,16 @@ experiment:feature:
     # copy over the whole repository
     - FOLDER="gcg_${CI_COMMIT_BRANCH}"
     - ssh gcgci@clustor "rm -rf $FOLDER"
-    - ssh gcgci@clustor "mkdir -p $FOLDER/check/instances; ln -sfn /opt/instances/striplibn $FOLDER/check/instances/striplib"
+    - ssh gcgci@clustor "mkdir -p $FOLDER/check/instances && ln -sfn /opt/instances/striplibn $FOLDER/check/instances/striplib"
     - scp -r * gcgci@clustor:~/$FOLDER
     # execute "experiment.test" testset
-    - ssh gcgci@clustor "cd $FOLDER; make STATISTICS=true DETECTIONSTATISTICS=true TEST=experiment SETTINGS=default_feature TIME=10800 MEM=8000 testcluster"
+    - ssh gcgci@clustor "cd $FOLDER && make STATISTICS=true DETECTIONSTATISTICS=true TEST=experiment SETTINGS=default_feature TIME=10800 MEM=8000 testcluster"
     # check continously if all cluster jobs are done. if so, exit while loop
     - ssh gcgci@clustor 'while (( $(condor_q | grep "Total for query:" | cut -d":" -f2 | cut -d ";" -f1 | sed -e "s/ //g" -e "s/jobs//g") != 0 )); do sleep 5s; done; echo "All jobs done"'
-    - ssh gcgci@clustor "cd $FOLDER/check; ./evalcheck_cluster.sh -r results/*.eval; rm -rf results/*.txt"
+    - ssh gcgci@clustor "cd $FOLDER/check && ./evalcheck_cluster.sh -r results/*.eval && rm -rf results/*.txt"
     # copy back runtime data
     - mkdir -p check/results
+    # copy experiment runtime data here to save as artifacts
     - scp -r gcgci@clustor:~/$FOLDER/check/results/* check/results
     # remove the copied over data, in case branch is deleted or merged, to not keep the data under user "gcgci"
     - ssh gcgci@clustor "rm -rf $FOLDER"
@@ -325,7 +349,7 @@ testset_report:experiment_master:
   stage: "Experiment Report"
   needs: ["experiment:master"]
   # since runtime data is large, generating reports will take longer as well
-  timeout: 24 hours
+  timeout: 48 hours
   only:
     - master
   script:
@@ -347,7 +371,7 @@ comparison_report:experiment_master:
   stage: "Experiment Report"
   needs: ["experiment:master"]
   # since runtime data is large, generating reports will take longer as well
-  timeout: 24 hours
+  timeout: 48 hours
   only:
     - master
   # get default before_script to do linking to SCIP
@@ -358,9 +382,9 @@ comparison_report:experiment_master:
     # commented out, since the runtime data in the docu is just the short test set
     #- cp doc/resources/misc/runtime_data/*.* check/results
     #- cp doc/resources/misc/runtime_data/vbc/*.* check/results/vbc
-    # get runtime data from master
-    - scp gcgci@clustor:~/shared/gcg_runtime_data/previous_master/*.* check/results
-    - scp gcgci@clustor:~/shared/gcg_runtime_data/previous_master/vbc/*.* check/results/vbc
+    # get runtime data from previous master (experiment test set)
+    - echo "Checking out previous master (hash $(realpath previous_master | cut -d'/' -f5-))."
+    - scp -r gcgci@clustor:/shared/gcg_runtime_data/master_branch/previous_master/ check/results
     # generate comparison report
     - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
@@ -378,7 +402,7 @@ testset_report:experiment_feature:
   allow_failure: true
   needs: ["experiment:feature"]
   # since runtime data is large, generating reports will take longer as well
-  timeout: 24 hours
+  timeout: 48 hours
   except:
     - master
   script:
