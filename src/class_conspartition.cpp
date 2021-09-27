@@ -137,8 +137,8 @@ int ConsPartition::getClassOfCons(int givenConsindex)
 /** returns vector containing the assigned class of each constraint */
 const int* ConsPartition::getConssToClasses()
 {
-   std::vector<int> conssToClasses = IndexPartition::getIndicesToClasses();
-   if( conssToClasses.size() > 0 )
+   std::vector<int>& conssToClasses = IndexPartition::getIndicesToClasses();
+   if( !conssToClasses.empty() )
       return &conssToClasses[0];
    else
       return NULL;

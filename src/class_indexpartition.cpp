@@ -223,7 +223,7 @@ int IndexPartition::getClassOfIndex(int givenIndex)
 }
 
 /** returns vector containing the assigned class of each index */
-std::vector<int> IndexPartition::getIndicesToClasses()
+std::vector<int>& IndexPartition::getIndicesToClasses()
 {
    return indicesToClasses;
 }
