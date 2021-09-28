@@ -10,8 +10,9 @@ Closes
 
 ## Author's checklist
 
-- [ ] Apply the correct labels and milestone
+- [ ] Apply the correct labels (and milestone)
 - [ ] Crosslink this MR from other subject-related docs
+- [ ] Update CHANGELOG
 
 
 ## Review checklist
