@@ -10,6 +10,7 @@ what branching rules and tree heuristics are implemented in GCG.
 
 @subpage branching-process \n
 @subpage branching-rules \n
+@subpage branching-selection-heuristics \n
 @subpage diving-heuristics \n
 \n
 
@@ -18,6 +19,7 @@ As always with GCG, this algorithmic component is highly configurable. Thus, we 
 branch on the variables of your problem.
 
 @subpage branching-params \n
+@subpage selection-heuristics-params \n
 
 <hr>
 

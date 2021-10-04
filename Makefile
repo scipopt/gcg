@@ -200,6 +200,7 @@ LIBOBJ = \
 			branch_orig.o \
 			branch_relpsprob.o \
 			branch_ryanfoster.o \
+			branch_bpstrong.o \
 			class_conspartition.o \
 			class_indexpartition.o \
 			class_pricingcontroller.o \
