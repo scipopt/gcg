@@ -25,7 +25,11 @@ import math
 from matplotlib import gridspec
 import pickle as pickler
 
-import parser_bounds
+if os.path.isdir("bounds"):
+    try: import bounds.parser_bounds
+    except: import parser_bounds
+else:
+    import parser_bounds
 
 
 DIR, FILENAME = os.path.split(__file__)
@@ -154,8 +158,9 @@ def set_params(args):
     params['load'] = args.loadpickle
     params['save'] = args.savepickle
     params['png'] = args.png
+    return params
 
-def generate_visu(dir, df_dict = {}, set_dict = {}):
+def generate_visu(dir, df_dict = {}, set_dict = {}, params = {}):
     xaxis = params['xaxis']
     files = []
     #df_dict = {}
@@ -396,7 +401,9 @@ def generate_visu(dir, df_dict = {}, set_dict = {}):
                 i = str(int(i)+1)
         plt.figtext(.5,.93,"Instance: {}".format(name.split('/')[-1]),ha="center",size="14")
         plt.title("Primal/Dual Bound Development in the Root Node")
-        if params['png']:
+        if params['interactive']:
+            yield instance, plt.gcf()
+        elif params['png']:
             plt.savefig(fig_filename + i + ".png", dpi=300)
         else:
             plt.savefig(fig_filename + i + ".pdf", dpi=300)
@@ -626,6 +633,8 @@ def generate_visu(dir, df_dict = {}, set_dict = {}):
                         i = str(int(i)+1)
                 plt.figtext(.5,.95,"Instance: {}".format(name.split('/')[-1]),ha="center",size="14")
                 highest_ax.set_title("Comparison of Primal/Dual Bound Development in the Root Node", y=1.2)
+                if params['interactive']:
+                    yield instance, plt.gcf()
                 plt.savefig(fig_filename + i + ".pdf", dpi = 300)
                 plt.close()
 
@@ -652,7 +661,7 @@ def main():
     print("Generating visualizations...")
     if not os.path.exists(params['outdir']):
         os.makedirs(params['outdir'])
-    generate_visu(params['filename'], df_dict = df_dict, set_dict = set_dict)
+    generate_visu(params['filename'], df_dict = df_dict, set_dict = set_dict, params = params)
 
 # Calling main script
 if __name__ == '__main__':

@@ -144,8 +144,8 @@ int VarPartition::getClassOfVar(int givenVarindex)
 /** returns vector containing the assigned class of each variable */
 const int* VarPartition::getVarsToClasses()
 {
-   std::vector<int> varsToClasses = IndexPartition::getIndicesToClasses();
-   if( varsToClasses.size() > 0 )
+   std::vector<int>& varsToClasses = IndexPartition::getIndicesToClasses();
+   if( !varsToClasses.empty() )
       return &varsToClasses[0];
    else
       return NULL;

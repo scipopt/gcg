@@ -36,7 +36,7 @@ def select_testset(name='filtered.test', decs=True, decs_strict=False):
             for filt in filters:
                 if "%" in str(filt[1]) and "%" in str(filt[2]):
                     # percentage of TOTAL TIME. Only supported for times!
-                    try: 
+                    try:
                         lb = float(filt[1].replace("%",""))
                         ub = float(filt[2].replace("%",""))
                         percentage = float(row[filt[0]]) / float(row["TOTAL TIME"]) * 100
@@ -119,7 +119,7 @@ def pie(attributes, title='Plot', outdir="plots", filename="unknowntestset",m=[]
         i += 1
 
     plt.figure(figsize=(15, 10))
-    plt.title(title + " of the testset " + "'" + filename + "' with " + str(len(ind)) + " instances")
+    plt.title(str(title) + " of the testset " + "'" + str(filename) + "' with " + str(len(ind)) + " instances")
     #plt.xlabel('Instance')
     #plt.ylabel(', '.join(attributes))
     plt.xticks(range(len(ind)), ind, rotation='vertical')
@@ -187,7 +187,7 @@ def plot(attributes, title='Plot', outdir="plots", filename="unknowntestset",m=[
         i += 1
 
     plt.figure(figsize=(15, 10))
-    plt.title(title + " of the testset " + "'" + filename + "' with " + str(len(ind)) + " instances")
+    plt.title(str(title) + " of the testset " + "'" + str(filename) + "' with " + str(len(ind)) + " instances")
     plt.xlabel('Instance')
     plt.ylabel(', '.join(attributes))
     plt.xticks(range(len(ind)), ind, rotation='vertical')
@@ -274,7 +274,7 @@ def twinplot(attributes1, attributes2, title='Twinplot', outdir="plots", filenam
         i += 1
 
     fig, ax1 = plt.subplots(figsize=(15, 10))
-    plt.title(title + " of the testset " + "'" + filename + "' with " + str(len(ind)) + " instances")
+    plt.title(str(title) + " of the testset " + "'" + str(filename) + "' with " + str(len(ind)) + " instances")
     ax2 = ax1.twinx()
     ax1.set_xlabel("Instance")
     ax1.set_ylabel(", ".join(attributes1))
@@ -373,7 +373,7 @@ def bubbleplot(attribute1, attribute2, title='Bubbleplot', outdir="plots", filen
 
     plt.figure(figsize=(10, 10))
     plt.figtext(.01,.01,'Proximity factors: '+str(prox))
-    plt.title(title + " of the testset " + "'" + filename + "' with " + str(len(ind)) + " instances")
+    plt.title(str(title) + " of the testset " + "'" + str(filename) + "' with " + str(len(ind)) + " instances")
     plt.xlabel(labels[0])
     plt.ylabel(labels[1])
     plt.tight_layout()
@@ -678,14 +678,14 @@ def time_distribution(times, nbuckets, title='Time Distribution', type='bar', ou
     if singleinstance:
         plt.figure(figsize=(15, 10))
         if type == "pie":
-            plt.title(filename + ' (' + str(numberofinstances[0]) + " instances)")
+            plt.title(str(filename) + ' (' + str(numberofinstances[0]) + " instances)")
         else:
-            plt.title(singleinstancename + ' (' + str(numberofinstances[0]) + " instances)")
+            plt.title(str(singleinstancename) + ' (' + str(numberofinstances[0]) + " instances)")
         if type == "comparepie" or type == "compare":
             plt.title("Comparison")
     else:
         plt.figure(figsize=(25, 10))
-        plt.title(title + " of the testset " + "'" + filename + "' with " + str(len(old_ind)) + " instances")
+        plt.title(title + " of the testset " + "'" + str(filename) + "' with " + str(len(old_ind)) + " instances")
     if not (type == "pie" or type == "comparepie"):
         plt.ylabel(times[0])
 

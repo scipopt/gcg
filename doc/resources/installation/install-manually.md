@@ -88,7 +88,7 @@ External codes:
 ```
 and you are ready to use the bliss symmetry detector.
 
-### Cliquer
+## Cliquer
 > The Cliquer libary contains routines for clique searching which we use to @ref pricing-solvers "solve pricing problems".\n
 > We recommend using version 1.21 or higher. The cliquer source code can be obtained
 > [here](https://users.aalto.fi/~pat/cliquer.html).
@@ -117,7 +117,7 @@ External Codes:
 ```
 and you will be able to use the Cliquer pricing problem solver. 
 
-### hMETIS
+## hMETIS
 > GCG will only work with hMETIS versions of 2.0 and higher. hMETIS can be obtained
 > [here](http://glaros.dtc.umn.edu/gkhome/metis/hmetis/download). It will not be linked,
 > but called through a system call.

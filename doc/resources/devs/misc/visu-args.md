@@ -2,60 +2,16 @@
 On this page, you find all arguments (e.g. the overall time or the pricing calls made)
 that are parsed by the parsers of the visualization suite.
 # General Parser {#general-args}
+The general parser is the most commonly used one and is e.g. used for the [strIPlib](https://striplib.or.rwth-aachen.de) pipeline.
 
-The following arguments are contained inside a dataframe. \n
+In the following, we first present all time arguments and their inclusion. Afterwards, a list of all runtime features contained inside a dataframe. They are also exported when executing the general parser as `feature_descriptions.json`.\n
 
-### Times
-| **time** | **type** | 
-|---|---|
-|<code>OVERALL TIME</code> | duration |
-|<code>READING TIME</code> | duration |
-|<code>COPYING TIME</code> | duration |
-|<code>PRESOLVING TIME</code> | duration |
-|<code>DETECTION TIME</code> | duration |
-|<code>ORIGINAL LP TIME</code> | duration |
-|<code>RMP LP TIME</code> | duration |
-|<code>PRICING TIME</code> | duration |
-|<code>PRICING SOLVER TIME</code> | duration |
-|<code>FARKAS TIME</code> | duration |
-|<code>HEURISTICS TIME</code> | duration |
-|<code>CUTS TIME</code> | duration |
-|<code>ROOT NODE TIME</code> | duration |
-|<code>SOLUTIONS FIRST</code> | point in time | 
-|<code>SOLUTIONS BEST</code> | point in time | 
+### Time Inclusion
+\image html VisualizationArguments.png "Illustration of all plottable times and their overlaps." width=90%
 
-### General Data
-| **data** | **type** | **possible values** | **fallback** |
-|---|---|---|---|
-|<code>MASTER TIME</code> | float | \f$[0, \infty[\f$ | NaN|
-|<code>STATUS</code> | enum | \f$\{0, \ldots, 5\}\f$ | \f$-1\f$|
-|<code>HEURISTICS CALLS</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>HEURISTICS FOUND</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>CUTS CALLS</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>CUTS FOUND</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>CUTS APPLIED</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>MIP OR KNAPSACK</code> | int | \f$[1, 3]\f$ | \f$-1\f$|
-|<code>CONS LINEAR</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>CONS KNAPSACK</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>CONS LOGICOR</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>CONS SETPPC</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>CONS VARBOUND</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>LINKING VARS</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>NBLOCKS</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>AGGREGATIONS</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>SOLUTIONS FOUND</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>PD INTEGRAL</code> | float | \f$[0, \infty[\f$ | NaN
-|<code>MASTER NCONSS</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>MASTER NVARS</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>BNB TREE NODES</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>BNB TREE DEPTH</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>BNB TREE LEFT</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>MASTER LP ITERATIONS</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>MASTER LP CALLS</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>ORIGINAL LP CALLS</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>ORIGINAL LP ITERATIONS</code> | int | \f$[0, \infty[\f$ | \f$-1\f$|
-|<code>LP FILE</code> | string | | \f$-1\f$|
-|<code>DEC FILE</code> | string | | \f$-1\f$|
+### Data
+\htmlinclude visu_args_table.html
+
 
 # Bounds Parser {#bounds-args}
 

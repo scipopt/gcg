@@ -111,7 +111,7 @@ protected:
    );
 
    /** returns vector containing the assigned class of each index */
-   std::vector<int> getIndicesToClasses(
+   std::vector<int>& getIndicesToClasses(
    );
 
    /** returns the number of indices */
