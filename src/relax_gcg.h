@@ -30,6 +30,7 @@
  * @author  Gerald Gamrath
  * @author  Christian Puchert
  * @author  Martin Bergner
+ * @author  Oliver Gaul
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -168,6 +169,23 @@ SCIP_RETCODE GCGrelaxNewProbingnodeOrig(
 extern
 SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** add a new probing node the master problem together with a master branching constraint
+ *  which ensures that bound changes are transferred to master and pricing problems as well as additional
+ *  constraints
+ *
+ *  @note A corresponding probing node must have been added to the original problem beforehand;
+ *        furthermore, this method must be called after bound changes to the original problem have been made
+ */
+extern
+SCIP_RETCODE GCGrelaxNewProbingnodeMasterCons(
+   SCIP*                 scip,                /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
+   GCG_BRANCHDATA*       branchdata,         /**< branching data */
+   SCIP_CONS**           origbranchconss,    /**< original constraints enforcing the branching decision */
+   int                   norigbranchconss,   /**< number of original constraints */
+   int                   maxorigbranchconss  /**< capacity of origbranchconss */
    );
 
 /** add probing nodes to both the original and master problem;

@@ -7,15 +7,13 @@ to your problem will be done automatically by GCG and can significantly influenc
 to solve it.
 
 ## List of Branching Rules
-We currently offer 4 different branching rules, as well as one empty branching rule to coordinate the
+We currently offer 3 different branching rules, as well as one empty branching rule to coordinate the
 branching process between SCIP and GCG.
 
 - **Vanderbeck Generic Branching** \n
 branching rule for original problem in GCG while real branching is in the master 
 - **Original Variable Branching** \n
-branching rule for original problem in GCG 
-- **Pseudo Cost Branching** \n
-generalized reliable pseudo costs branching rule 
+branching rule to branch on integral variables of the original problem which were assigned a fractional solution value
 - **Ryan Foster Branching** \n
 branching rule for original problem in GCG implementing the Ryan and Foster branching scheme 
 

@@ -1,11 +1,11 @@
-# How to add branching rules {#own-branching-rule}
+# How to add branching rules & selection heuristics{#own-branching-rule}
 
 [TOC]
 
 Branching rules are used to **intelligently choose variables** to speed up the overall branching process of a problem. They add custom constraints, i.e. introduce
-new subproblems that contain more constraints instead of e.g. only dichotomous branching.
+new subproblems that contain more constraints instead of e.g. only dichotomous branching. Branching candidate selection heuristics are used to select one of the possible candidates for a given branching rule.
 \n
-A complete list of all branching rules contained in this release can be found @ref branching-rules "here".
+A complete list of all branching rules contained in this release can be found @ref branching-rules "here". A complete list of all branching candidate selection heuristics contained in this release can be found @ref branching-selection-heuristics "here".
 
 # Adding your own Branching Rule
 Before starting to add your branching rule, we strongly encourage you to understand how branching works inside a branch-and-cut context and
@@ -35,6 +35,26 @@ With the following steps, we explain how you can **add your own branching rule p
 
 Additional documentation for the GCG-specific callback methods of branching rules, in particular for their input parameters,
 can be found in the file type_branchgcg.h.
+
+# Adding your own Selection Heuristic to an Existing Branching Rule
+Unlike branching rules, there is no specific template to add selection heuristics, as they are usually implemented together with the corresponding branching rule. Hence, how to add a new selection heuristics depends on the branching rule to which it is added. However, the selection process is usually implemented in ``branchExeclpbranchrule``, ``branchExecextbranchrule`` or ``branchExecpsbranchrule``.
+
+## Strong Branching
+Several strong branching-based heuristics are already implemented inside the file ``branch_bpstrong``. If your new selection heuristic uses strong branching as well, it might be worthwhile to extend the existing implementation instaed of starting from scratch. Naturally, the specific steps again depend on your selection heuristic, however the following might be useful:
+
+**New heuristics/additional features**
+
+* If you want to add a new "quick" heuristic to the hybrid strong branching based heuristics, it likely suffices to add a corresponding case to the ``score_function`` and a corresponding flag whenever the score function is called in main loop of the function ``selectCandidate``.
+* If you want to add a heuristic that changes which heuristic should evaluate a candidate at a given point in time, you probably need to alter something inside the main loop of the function ``selectCandidate``.
+* Features that change the way that strong branching works need to be added to ``executeStrongBranching``.
+
+**Support for a new branching rule**
+
+In order to add connect the strong branching implementation with a new branching rule, you need to add an interface method, a method that constructs probing child nodes, _potentially_ a new way to store information about the candidates, and _potentially_ additional features specific to the branching rule:
+* The interface method is the method that the branching rule calls when it wants to use one of the heuristics. It mainly needs to intialize some of the parameters and provide the set of candidates to the method `selectCandidate`. See e.g. ``GCGbranchSelectCandidateStrongBranchingRyanfoster`` or ``GCGbranchSelectCandidateStrongBranchingOrig``.
+* To perform strong branching, we need to know how the potential child nodes are created to compute their scores. In particular, ``executeStrongBranching`` needs to create a new probing node for each potential child node. See ``executeStrongBranching`` and e.g. ``newProbingNodeRyanfosterMaster``.
+* Certain information about (the variables corresponding to) candidates needs to be stored over multiple selection rounds, e.g. the reevaluation age. For this purpose, (the variables corresponding to) candidates are stored inside a hash map. How their identifier inside this hash map looks like depends again on the branching rule. We can already handle branching rules where candidates are identified by 1 or 2 candidates, up to a certain point. If this is not sufficient, you need to extend the method ``buildIdentifier``, or possibly change the way that this information is stored.
+* Certain behavior is specific to the branching rule that is used. To identify the current branching rule, the ``branchruleData`` in this implementation stores the "initiator", identified by a fixed number. For an impression of how this is done for Ryan-Foster branching, search for "RYANFOSTER" inside the document.
 
 # Introduction to Branching in GCG {#GCG_BRANCHING}
 Branching in the branch-cut-and-price context is a bit more complicated than in a branch-and-cut algorithm.
