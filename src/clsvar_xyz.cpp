@@ -50,13 +50,19 @@
 #define DEC_DESC                  "variable classifier template"      /**< short description of classification */
 #define DEC_PRIORITY              0                                   /**< priority of this classifier */
 
-#define DEC_ENABLEDORIG           TRUE                                /**< classify on original problem? */
-#define DEC_ENABLEDPRESOLVED      TRUE                                /**< classify on presolved problem? */
+#define DEC_ENABLED               TRUE
 
 
 /*
  * Data structures
  */
+
+/** @todo fill in the necessary classifier data */
+
+/** classifier handler data */
+struct DEC_ClassifierData
+{
+};
 
 
 /*
@@ -73,7 +79,7 @@
 /** destructor of classifier to free user data (called when GCG is exiting) */
 #ifdef SCIP_DISABLED_CODE
 static
-DEC_DECL_FREECLASSIFIER(classifierFreeXyz)
+DEC_DECL_FREEVARCLASSIFIER(classifierFreeXyz)
 {  /*lint --e{715}*/
 
    SCIPerrorMessage("Free function of classifier <%s> not implemented!\n", DEC_CLASSIFIERNAME);
@@ -99,7 +105,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
    }
 
    // CLASSIFICATION
-   gcg::PartitionClassifier* partition;
+   gcg::VarPartition* partition;
    // TODO initialize partition
 
    detprobdata->addVarPartition(partition);
@@ -115,7 +121,12 @@ SCIP_RETCODE SCIPincludeVarClassifierXyz(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {
-   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLEDORIG, DEC_ENABLEDPRESOLVED, classifierFree, classifierClassify) );
+   DEC_CLASSIFIERDATA* classifierdata;
+
+   /**@todo create xyz classifier data here*/
+   classifierdata = NULL;
+
+   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

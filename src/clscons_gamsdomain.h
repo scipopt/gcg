@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,38 +25,41 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   type_varclassifier.h
- * @ingroup TYPEDEFINITIONS
- * @brief  type definitions for variable classifier in GCG projects
- * @author William Ma
+/**@file   clscons_gamsdomain.h
+ * @brief  Classifies by domains from which constraints are created TODO: what is together in one class?
+ * @author Stefanie Koß
  */
 
-#ifndef GCG_TYPE_VARCLASSIFIER_H__
-#define GCG_TYPE_VARCLASSIFIER_H__
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include <scip/def.h>
-#include "scip/type_retcode.h"
-#include "scip/type_scip.h"
-#include "scip/type_result.h"
-#include "type_classifier.h"
+#ifndef CLSCONS_GAMSDOMAIN_H_
+#define CLSCONS_GAMSDOMAIN_H_
 
-typedef struct DEC_VarClassifier DEC_VARCLASSIFIER;
 
-/** destructor of classifier to free classifier data (called when GCG is exiting)
- *
- *  input:
- *  - scip            : SCIP main data structure
- *  - classifier      : classifier data structure
- */
-#define DEC_DECL_FREEVARCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, DEC_VARCLASSIFIER* classifier)
+#include "scip/scip.h"
+#include "type_consclassifier.h"
 
-/**
- * Tries to classify variables with data of the according detprobdata and store the classification in the detprobdata
- *
- * input:
- *  - scip                 : SCIP data structure
- *  - transformed          : should use data from transformed detprobdata or not
- */
-#define DEC_DECL_VARCLASSIFY(x) SCIP_RETCODE x (SCIP* scip, SCIP_Bool transformed)
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif //GCG_TYPE_VARCLASSIFIER_H__
+/** adds an entry to clsdata->constodomain */
+extern
+SCIP_RETCODE DECconsClassifierGamsdomainAddEntry(
+   DEC_CONSCLASSIFIER*   classifier,
+   SCIP_CONS*            cons,
+   int                   symDomIdx[],
+   int*                  symDim
+);
+
+/** creates the gamsdomain classifier and includes it in SCIP */
+extern
+SCIP_RETCODE SCIPincludeConsClassifierGamsdomain(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

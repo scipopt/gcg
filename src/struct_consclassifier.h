@@ -47,6 +47,8 @@ struct DEC_ConsClassifier {
 
    SCIP_Bool             enabled;        /* is enabled by default */
 
+   DEC_CLASSIFIERDATA*   clsdata;            /**< custom data structure of the classifiers */
+
    DEC_DECL_FREECONSCLASSIFIER((*freeClassifier));                  /**< destructor of detector */
    DEC_DECL_CONSCLASSIFY((*classify));            /**< structure detection method of detector */
 };
