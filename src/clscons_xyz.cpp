@@ -25,9 +25,9 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    clsvar_xyz.cpp
+/**@file    clscons_xyz.cpp
  * @ingroup CLASSIFIERS
- * @brief   xyz variable classifier (put your description here)
+ * @brief   xyz constraint classifier (put your description here)
  * @author
  */
 
@@ -35,7 +35,7 @@
 
 #include "clscons_xyz.h"
 #include "cons_decomp.h"
-#include "cons_decomp.hpp
+#include "cons_decomp.hpp"
 #include <vector>
 #include <stdio.h>
 #include <sstream>
@@ -50,14 +50,20 @@
 #define DEC_DESC                  "constraint classifier template"      /**< short description of classification */
 #define DEC_PRIORITY              0                                     /**< priority of this classifier */
 
-#define DEC_ENABLEDORIG           TRUE                                  /**< classify on original problem? */
-#define DEC_ENABLEDPRESOLVED      TRUE                                  /**< classify on presolved problem? */
+#define DEC_ENABLED               TRUE
 
 
 
 /*
  * Data structures
  */
+
+/** @todo fill in the necessary classifier data */
+
+/** classifier handler data */
+struct DEC_ClassifierData
+{
+};
 
 
 /*
@@ -114,9 +120,15 @@ DEC_DECL_CONSCLASSIFY(classifierClassify)
 /** creates the handler for XYZ classifier and includes it in SCIP */
 SCIP_RETCODE SCIPincludeConsClassifierXyz(
    SCIP*                 scip                /**< SCIP data structure */
-)
-{
-   SCIP_CALL( DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLEDORIG, DEC_ENABLEDPRESOLVED, classifierFree, classifierClassify) );
+) {
+   DEC_CLASSIFIERDATA* classifierdata;
+
+   /**@todo create xyz classifier data here*/
+   classifierdata = NULL;
+
+   SCIP_CALL(
+      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata,
+         classifierFree, classifierClassify));
 
    return SCIP_OKAY;
 }

@@ -38,6 +38,7 @@
 #include "scip/type_retcode.h"
 #include "scip/type_scip.h"
 #include "scip/type_result.h"
+#include "type_classifier.h"
 
 typedef struct DEC_VarClassifier DEC_VARCLASSIFIER;
 
