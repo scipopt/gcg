@@ -44,39 +44,63 @@
 /* include header files here, such that the user only has to include
  * gcgplugins.h
  */
+#include "scip/cons_and.h"
+#include "scip/cons_bounddisjunction.h"
 #include "scip/cons_indicator.h"
 #include "scip/cons_integral.h"
 #include "scip/cons_knapsack.h"
 #include "scip/cons_linear.h"
+#include "scip/cons_linking.h"
 #include "scip/cons_logicor.h"
+#include "scip/cons_or.h"
+#include "scip/cons_orbitope.h"
 #include "scip/cons_setppc.h"
 #include "scip/cons_varbound.h"
+#include "scip/cons_xor.h"
 
 
 #if USEHEURS
+#include "scip/heur_adaptivediving.h"
 #include "scip/heur_actconsdiving.h"
+#include "scip/heur_alns.h"
+#include "scip/heur_bound.h"
 #include "scip/heur_clique.h"
 #include "scip/heur_coefdiving.h"
+#include "scip/heur_completesol.h"
+#include "scip/heur_conflictdiving.h"
 #include "scip/heur_crossover.h"
 #include "scip/heur_dins.h"
+#include "scip/heur_distributiondiving.h"
+#include "scip/heur_dps.h"
 #include "scip/heur_dualval.h"
+#include "scip/heur_farkasdiving.h"
 #include "scip/heur_feaspump.h"
 #include "scip/heur_fixandinfer.h"
 #include "scip/heur_fracdiving.h"
+#include "scip/heur_gins.h"
 #include "scip/heur_guideddiving.h"
+#include "scip/heur_indicator.h"
 #include "scip/heur_intdiving.h"
 #include "scip/heur_intshifting.h"
 #include "scip/heur_linesearchdiving.h"
 #include "scip/heur_localbranching.h"
+#include "scip/heur_locks.h"
+#include "scip/heur_lpface.h"
+#include "scip/heur_mpec.h"
+#include "scip/heur_multistart.h"
 #include "scip/heur_mutation.h"
 #include "scip/heur_nlpdiving.h"
+#include "scip/heur_ofins.h"
 #include "scip/heur_objpscostdiving.h"
 #include "scip/heur_octane.h"
 #include "scip/heur_oneopt.h"
+#include "scip/heur_padm.h"
 #include "scip/heur_proximity.h"
 #include "scip/heur_pscostdiving.h"
 #include "scip/heur_randrounding.h"
 #include "scip/heur_rens.h"
+#include "scip/heur_reoptsols.h"
+#include "scip/heur_repair.h"
 #include "scip/heur_rins.h"
 #include "scip/heur_rootsoldiving.h"
 #include "scip/heur_rounding.h"
@@ -85,6 +109,8 @@
 #include "scip/heur_simplerounding.h"
 #include "scip/heur_subnlp.h"
 #include "scip/heur_trivial.h"
+#include "scip/heur_trivialnegation.h"
+#include "scip/heur_trustregion.h"
 #include "scip/heur_trysol.h"
 #include "scip/heur_twoopt.h"
 #include "scip/heur_undercover.h"
@@ -95,27 +121,42 @@
 #endif
 
 #include "scip/nodesel_bfs.h"
+#include "scip/nodesel_breadthfirst.h"
 #include "scip/nodesel_dfs.h"
 #include "scip/nodesel_estimate.h"
 #include "scip/nodesel_hybridestim.h"
 #include "scip/nodesel_restartdfs.h"
+#include "scip/nodesel_uct.h"
 
+#include "scip/event_solvingphase.h"
+
+#include "scip/presol_boundshift.h"
+#include "scip/presol_convertinttobin.h"
+#include "scip/presol_domcol.h"
+#include "scip/presol_dualagg.h"
+#include "scip/presol_dualcomp.h"
+#include "scip/presol_dualinfer.h"
+#include "scip/presol_dualsparsify.h"
+#include "scip/presol_gateextraction.h"
 #include "scip/presol_implics.h"
 #include "scip/presol_inttobinary.h"
+#include "scip/presol_redvub.h"
+#include "scip/presol_sparsify.h"
+#include "scip/presol_stuffing.h"
 #include "scip/presol_trivial.h"
-#include "scip/presol_boundshift.h"
-#include "scip/presol_domcol.h"
-#include "scip/presol_convertinttobin.h"
+#include "scip/presol_tworowbnd.h"
 
 #if USEPROP
 #include "scip/prop_dualfix.h"
+#include "scip/prop_genvbounds.h"
+#include "scip/prop_nlobbt.h"
+#include "scip/prop_obbt.h"
 #include "scip/prop_probing.h"
 #include "scip/prop_pseudoobj.h"
 #include "scip/prop_rootredcost.h"
 #include "scip/prop_redcost.h"
-#include "scip/prop_genvbounds.h"
+#include "scip/prop_symmetry.h"
 #include "scip/prop_vbounds.h"
-#include "scip/prop_obbt.h"
 #endif
 
 #include "scip/reader_bnd.h"
@@ -140,8 +181,11 @@
 #include "scip/sepa_clique.h"
 #include "scip/sepa_gomory.h"
 #include "scip/sepa_impliedbounds.h"
+#include "scip/sepa_interminor.h"
 #include "scip/sepa_intobj.h"
 #include "scip/sepa_mcf.h"
+#include "scip/sepa_minor.h"
+#include "scip/sepa_mixing.h"
 #include "scip/sepa_oddcycle.h"
 #include "scip/sepa_zerohalf.h"
 
@@ -150,6 +194,7 @@
 #include "scip/sepa_rapidlearning.h"
 #endif
 
+#include "scip/cutsel_hybrid.h"
 
 #include "scip/scipshell.h"
 #include "reader_blk.h"
@@ -231,7 +276,11 @@
 #include "clscons_consnamelevenshtein.h"
 #include "clscons_consnamenonumbers.h"
 #include "clscons_scipconstypes.h"
+#include "clscons_gamsdomain.h"
+#include "clscons_gamssymbol.h"
 
+#include "clsvar_gamsdomain.h"
+#include "clsvar_gamssymbol.h"
 #include "clsvar_objvalues.h"
 #include "clsvar_scipvartypes.h"
 #include "clsvar_objvaluesigns.h"
@@ -243,13 +292,20 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    )
 {
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
+
+   SCIP_CALL( SCIPincludeConshdlrAnd(scip) );
+   SCIP_CALL( SCIPincludeConshdlrBounddisjunction(scip) );
    SCIP_CALL( SCIPincludeConshdlrLinear(scip) ); /* linear must be first due to constraint upgrading */
    SCIP_CALL( SCIPincludeConshdlrIndicator(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegral(scip) );
+   SCIP_CALL( SCIPincludeConshdlrLinking(scip) );
    SCIP_CALL( SCIPincludeConshdlrKnapsack(scip) );
    SCIP_CALL( SCIPincludeConshdlrLogicor(scip) );
+   SCIP_CALL( SCIPincludeConshdlrOr(scip) );
+   SCIP_CALL( SCIPincludeConshdlrOrbitope(scip) );
    SCIP_CALL( SCIPincludeConshdlrSetppc(scip) );
    SCIP_CALL( SCIPincludeConshdlrVarbound(scip) );
+   SCIP_CALL( SCIPincludeConshdlrXor(scip) );
 
    SCIP_CALL( SCIPincludeReaderBnd(scip) );
    SCIP_CALL( SCIPincludeReaderCcg(scip) );
@@ -270,54 +326,88 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderZpl(scip) );
 
    SCIP_CALL( SCIPincludePresolBoundshift(scip) );
+   SCIP_CALL( SCIPincludePresolConvertinttobin(scip) );
+   SCIP_CALL( SCIPincludePresolDomcol(scip) );
+   SCIP_CALL( SCIPincludePresolDualagg(scip) );
+   SCIP_CALL( SCIPincludePresolDualcomp(scip) );
+   SCIP_CALL( SCIPincludePresolDualinfer(scip) );
+   SCIP_CALL( SCIPincludePresolGateextraction(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
+   SCIP_CALL( SCIPincludePresolRedvub(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
-   SCIP_CALL( SCIPincludePresolDomcol(scip) );
-   SCIP_CALL( SCIPincludePresolConvertinttobin(scip) );
+   SCIP_CALL( SCIPincludePresolTworowbnd(scip) );
+   SCIP_CALL( SCIPincludePresolSparsify(scip) );
+   SCIP_CALL( SCIPincludePresolDualsparsify(scip) );
+   SCIP_CALL( SCIPincludePresolStuffing(scip) );
+   // @todo: Papilo
 
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselBreadthfirst(scip) );
    SCIP_CALL( SCIPincludeNodeselDfs(scip) );
    SCIP_CALL( SCIPincludeNodeselEstimate(scip) );
    SCIP_CALL( SCIPincludeNodeselHybridestim(scip) );
    SCIP_CALL( SCIPincludeNodeselRestartdfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselUct(scip) );
+
+   SCIP_CALL( SCIPincludeEventHdlrSolvingphase(scip) );
 
 #if USEPROP
    SCIP_CALL( SCIPincludePropDualfix(scip) );
-   SCIP_CALL( SCIPincludePropPseudoobj(scip) );
-   SCIP_CALL( SCIPincludePropRootredcost(scip) );
    SCIP_CALL( SCIPincludePropGenvbounds(scip) );
-   SCIP_CALL( SCIPincludePropProbing(scip) );
-   SCIP_CALL( SCIPincludePropRedcost(scip) );
-   SCIP_CALL( SCIPincludePropVbounds(scip) );
    SCIP_CALL( SCIPincludePropObbt(scip) );
+   SCIP_CALL( SCIPincludePropNlobbt(scip) );
+   SCIP_CALL( SCIPincludePropProbing(scip) );
+   SCIP_CALL( SCIPincludePropPseudoobj(scip) );
+   SCIP_CALL( SCIPincludePropRedcost(scip) );
+   SCIP_CALL( SCIPincludePropRootredcost(scip) );
+   // SCIP_CALL( SCIPincludePropSymmetry(scip) );
+   SCIP_CALL( SCIPincludePropVbounds(scip) );
 #endif
 
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurAdaptivediving(scip) );
+   SCIP_CALL( SCIPincludeHeurBound(scip) );
    SCIP_CALL( SCIPincludeHeurClique(scip) );
    SCIP_CALL( SCIPincludeHeurCoefdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurCompletesol(scip) );
+   SCIP_CALL( SCIPincludeHeurConflictdiving(scip) );
    SCIP_CALL( SCIPincludeHeurCrossover(scip) );
    SCIP_CALL( SCIPincludeHeurDins(scip) );
+   SCIP_CALL( SCIPincludeHeurDistributiondiving(scip) );
+   SCIP_CALL( SCIPincludeHeurDps(scip) );
    SCIP_CALL( SCIPincludeHeurDualval(scip) );
+   SCIP_CALL( SCIPincludeHeurFarkasdiving(scip) );
    SCIP_CALL( SCIPincludeHeurFeaspump(scip) );
    SCIP_CALL( SCIPincludeHeurFixandinfer(scip) );
    SCIP_CALL( SCIPincludeHeurFracdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurGins(scip) );
    SCIP_CALL( SCIPincludeHeurGuideddiving(scip) );
+   SCIP_CALL( SCIPincludeHeurIndicator(scip) );
    SCIP_CALL( SCIPincludeHeurIntdiving(scip) );
    SCIP_CALL( SCIPincludeHeurIntshifting(scip) );
    SCIP_CALL( SCIPincludeHeurLinesearchdiving(scip) );
    SCIP_CALL( SCIPincludeHeurLocalbranching(scip) );
+   SCIP_CALL( SCIPincludeHeurLocks(scip) );
+   SCIP_CALL( SCIPincludeHeurLpface(scip) );
+   SCIP_CALL( SCIPincludeHeurAlns(scip) );
+   SCIP_CALL( SCIPincludeHeurMultistart(scip) );
+   SCIP_CALL( SCIPincludeHeurMpec(scip) );
    SCIP_CALL( SCIPincludeHeurMutation(scip) );
    SCIP_CALL( SCIPincludeHeurNlpdiving(scip) );
    SCIP_CALL( SCIPincludeHeurObjpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurOctane(scip) );
+   SCIP_CALL( SCIPincludeHeurOfins(scip) );
    SCIP_CALL( SCIPincludeHeurOneopt(scip) );
+   SCIP_CALL( SCIPincludeHeurPADM(scip) );
    SCIP_CALL( SCIPincludeHeurProximity(scip) );
    SCIP_CALL( SCIPincludeHeurPscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurRandrounding(scip) );
    SCIP_CALL( SCIPincludeHeurRens(scip) );
+   SCIP_CALL( SCIPincludeHeurReoptsols(scip) );
+   SCIP_CALL( SCIPincludeHeurRepair(scip) );
    SCIP_CALL( SCIPincludeHeurRins(scip) );
    SCIP_CALL( SCIPincludeHeurRootsoldiving(scip) );
    SCIP_CALL( SCIPincludeHeurRounding(scip) );
@@ -325,6 +415,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurShifting(scip) );
    SCIP_CALL( SCIPincludeHeurSubNlp(scip) );
    SCIP_CALL( SCIPincludeHeurTrivial(scip) );
+   SCIP_CALL( SCIPincludeHeurTrivialnegation(scip) );
+   SCIP_CALL( SCIPincludeHeurTrustregion(scip) );
    SCIP_CALL( SCIPincludeHeurTrySol(scip) );
    SCIP_CALL( SCIPincludeHeurTwoopt(scip) );
    SCIP_CALL( SCIPincludeHeurUndercover(scip) );
@@ -339,8 +431,11 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaClique(scip) );
    SCIP_CALL( SCIPincludeSepaGomory(scip) );
    SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
+   SCIP_CALL( SCIPincludeSepaInterminor(scip) );
    SCIP_CALL( SCIPincludeSepaIntobj(scip) );
    SCIP_CALL( SCIPincludeSepaMcf(scip) );
+   SCIP_CALL( SCIPincludeSepaMinor(scip) );
+   SCIP_CALL( SCIPincludeSepaMixing(scip) );
    SCIP_CALL( SCIPincludeSepaOddcycle(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 
@@ -348,6 +443,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaClosecuts(scip) );
    SCIP_CALL( SCIPincludeSepaRapidlearning(scip) );
 #endif
+
+   SCIP_CALL( SCIPincludeCutselHybrid(scip) );
 
    SCIP_CALL( SCIPincludeRelaxGcg(scip) );
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
@@ -402,7 +499,11 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeConsClassifierMiplibConstypes(scip) );
    SCIP_CALL( SCIPincludeConsClassifierConsnameLevenshtein(scip) );
    SCIP_CALL( SCIPincludeConsClassifierForConsnamesDigitFreeIdentical(scip) );
+   SCIP_CALL( SCIPincludeConsClassifierGamsdomain(scip) );
+   SCIP_CALL( SCIPincludeConsClassifierGamssymbol(scip) );
 
+   SCIP_CALL( SCIPincludeVarClassifierGamsdomain(scip) );
+   SCIP_CALL( SCIPincludeVarClassifierGamssymbol(scip) );
    SCIP_CALL( SCIPincludeVarClassifierScipVartypes(scip) );
    SCIP_CALL( SCIPincludeVarClassifierObjValues(scip) );
    SCIP_CALL( SCIPincludeVarClassifierObjValueSigns(scip) );

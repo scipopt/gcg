@@ -59,6 +59,41 @@ typedef struct Partialdecomp_Wrapper PARTIALDECOMP_WRAPPER;
 
 struct Detprobdata_Wrapper;
 
+/**
+ * @brief returns the data of the provided consclassifier
+ * @returns data of the provided consclassifier
+ */
+extern
+DEC_CLASSIFIERDATA* DECconsClassifierGetData(
+   DEC_CONSCLASSIFIER* classifier  /**< Classifier data structure */
+   );
+
+/**
+ * @brief returns the name of the provided classifier
+ * @returns name of the given classifier
+ */
+extern
+const char* DECconsClassifierGetName(
+   DEC_CONSCLASSIFIER* classifier  /**< classifier data structure */
+   );
+
+/**
+ * @brief returns the data of the provided varclassifier
+ * @returns data of the provided varclassifier
+ */
+extern
+DEC_CLASSIFIERDATA* DECvarClassifierGetData(
+   DEC_VARCLASSIFIER* classifier  /**< Classifier data structure */
+   );
+
+/**
+ * @brief returns the name of the provided classifier
+ * @returns name of the given classifier
+ */
+extern
+const char* DECvarClassifierGetName(
+   DEC_VARCLASSIFIER* classifier  /**< classifier data structure */
+   );
 
 /** @brief Gets the character of the detector
  * @returns detector character */
@@ -94,6 +129,27 @@ SCIP_RETCODE DECdetectStructure(
    );
 
 /**
+ * @brief searches for the consclassifier with the given name and returns it or NULL if classifier is not found
+ * @returns consclassifier pointer or NULL if consclassifier with given name is not found
+ */
+extern
+DEC_CONSCLASSIFIER* DECfindConsClassifier(
+   SCIP* scip,          /**< SCIP data structure  */
+   const char* name     /**< the name of the searched consclassifier */
+   );
+
+/**
+ * @brief searches for the varclassifier with the given name and returns it or NULL if classifier is not found
+ * @returns varclassifier pointer or NULL if varclassifier with given name is not found
+ */
+extern
+DEC_VARCLASSIFIER* DECfindVarClassifier(
+   SCIP* scip,          /**< SCIP data structure  */
+   const char* name     /**< the name of the searched varclassifier */
+   );
+
+
+/**
  * @brief searches for the detector with the given name and returns it or NULL if detector is not found
  * @returns detector pointer or NULL if detector with given name is not found
  */
@@ -104,7 +160,7 @@ DEC_DETECTOR* DECfindDetector(
    );
 
 /** @brief Gets the best known decomposition
- * 
+ *
  * @note caller has to free returned DEC_DECOMP
  * @returns the decomposition if available and NULL otherwise */
 extern
@@ -114,10 +170,10 @@ DEC_DECOMP* DECgetBestDecomp(
    );
 
 /** @brief Gets the currently considered best partialdec
- * 
+ *
  * If there is a partialdec marked to be returned (e.g. by /DECwriteAllDecomps), it is written.
  * Else, the currently "best" decomp is returned.
- * 
+ *
  * @returns partialdec to write if one can be found, or partialdecwrapper->partialdec = NULL otherwise */
 extern
 SCIP_RETCODE DECgetPartialdecToWrite(
@@ -146,6 +202,7 @@ SCIP_RETCODE DECincludeConsClassifier(
    const char*           description,     /**< describing main idea of this classifier */
    int                   priority,        /**< priority of the classifier */
    SCIP_Bool             enabled,         /**< whether the classifier should be enabled by default */
+   DEC_CLASSIFIERDATA*   classifierdata,  /**< classifierdata the associated classifier data (or NULL) */
    DEC_DECL_FREECONSCLASSIFIER((*freeClassifier)),  /**< destructor of classifier (or NULL) */
    DEC_DECL_CONSCLASSIFY((*classify))               /**< the method that will classify constraints or variables (must not be NULL) */
    );
@@ -195,6 +252,7 @@ SCIP_RETCODE DECincludeVarClassifier(
    const char*           description,   /**< description of the classifier */
    int                   priority,      /**< priority how early classifier is invoked */
    SCIP_Bool             enabled,       /**< whether the classifier should be enabled by default */
+   DEC_CLASSIFIERDATA*   classifierdata,/**< classifierdata the associated classifier data (or NULL) */
    DEC_DECL_FREEVARCLASSIFIER((*freeClassifier)),   /**< destructor of classifier (or NULL) */
    DEC_DECL_VARCLASSIFY((*classify))                /**< method that will classify variables (must not be NULL) */
    );
@@ -216,7 +274,7 @@ SCIP_RETCODE DECwriteAllDecomps(
    SCIP_Bool             presolved           /**< should decomps for preoslved problem be written */
    );
 
-/** @brief writes all selected decompositions 
+/** @brief writes all selected decompositions
  * @returns scip return code
 */
 extern
@@ -258,7 +316,7 @@ int GCGconshdlrDecompAddBasicPartialdec(
 
 /**
  * @brief creates a pure matrix partialdecomp (i.e. all cons/vars to one single block)
- * 
+ *
  * matrix is added to list of all partialdecs
  * @returns id of matrix partialdec
  */
@@ -311,7 +369,7 @@ SCIP_RETCODE GCGconshdlrDecompArePricingprobsIdenticalForPartialdecid(
 
 /**
  * @brief calculates the benders score of a partialdec
- * 
+ *
  * in detail:
  * bendersscore = max ( 0., 1 - ( 1 - blockareascore + (1 - borderareascore - bendersareascore ) ) ) with
  * blockareascore = blockarea / totalarea
@@ -334,7 +392,7 @@ SCIP_RETCODE GCGconshdlrDecompCalcBendersScore(
 
 /**
  * @brief calculates the border area score of a partialdec
- * 
+ *
  * 1 - fraction of border area to complete area
  * @return scip return code
  */
@@ -356,7 +414,7 @@ void GCGconshdlrDecompCalcCandidatesNBlocks(
 
 /**
  * @brief calculates the classic score of a partialdec
- * 
+ *
  * @return scip return code
  */
 extern
@@ -368,9 +426,9 @@ SCIP_RETCODE GCGconshdlrDecompCalcClassicScore(
 
 /**
  * @brief calculates the maxforeseeingwhiteagg score of a partialdec
- * 
+ *
  * maximum foreseeing white area score with respect to aggregatable blocks
- * (i.e. maximize fraction of white area score considering problem with copied linking variables 
+ * (i.e. maximize fraction of white area score considering problem with copied linking variables
  * and corresponding master constraints;
  * white area is nonblock and nonborder area, stairlinking variables count as linking)
  * @return scip return code
@@ -384,8 +442,8 @@ SCIP_RETCODE GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore(
 
 /**
  * @brief calculates the maximum foreseeing white area score of a partialdec
- * 
- * maximum foreseeing white area score 
+ *
+ * maximum foreseeing white area score
  * (i.e. maximize fraction of white area score considering problem with copied linking variables and
  * corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)
  * @return scip return code
@@ -399,7 +457,7 @@ SCIP_RETCODE GCGconshdlrDecompCalcMaxForseeingWhiteScore(
 
 /**
  * @brief calculates the maximum white area score of a partialdec
- * 
+ *
  * score corresponding to the max white measure according to aggregated blocks
  * @return scip return code
  */
@@ -412,7 +470,7 @@ SCIP_RETCODE GCGconshdlrDecompCalcMaxWhiteScore(
 
 /**
  * @brief calculates the setpartitioning maximum foreseeing white area score of a partialdec
- * 
+ *
  * setpartitioning maximum foreseeing white area score
  * (i.e. convex combination of maximum foreseeing white area score and
  * a boolean score rewarding a master containing only setppc and cardinality constraints)
@@ -427,7 +485,7 @@ SCIP_RETCODE GCGconshdlrDecompCalcSetPartForseeingWhiteScore(
 
 /**
  * @brief calculates the setpartfwhiteagg score of a partialdec
- * 
+ *
  * setpartitioning maximum foreseeing white area score with respect to aggregateable
  * (i.e. convex combination of maximum foreseeing white area score and a boolean score
  * rewarding a master containing only setppc and cardinality constraints)
@@ -451,9 +509,9 @@ SCIP_RETCODE GCGconshdlrDecompCalcStrongDecompositionScore(
    SCIP_Real* score     /**< score pointer to store the calculated score */
    );
 
-/** 
+/**
  * @brief check whether partialdecs are consistent
- * 
+ *
  * Checks whether
  *  1) the predecessors of all finished partialdecs in both detprobdatas can be found
  *  2) selected list is synchron with selected information in partialdecs
@@ -467,7 +525,7 @@ SCIP_Bool GCGconshdlrDecompCheckConsistency(
 
 /**
  * @brief run classification of vars and cons
- * 
+ *
  * @returns scip return code
  */
 extern
@@ -529,9 +587,9 @@ void GCGconshdlrDecompFreeDetprobdata(
 
 /**
  * @brief sets freeing of detection data of original problem during exit to true
- * 
- * used before calling SCIPfreeTransform(), 
- * set to true to revoke presolving 
+ *
+ * used before calling SCIPfreeTransform(),
+ * set to true to revoke presolving
  * (e.g. if unpresolved decomposition is used, and transformation is not successful)
  */
 extern
@@ -647,13 +705,13 @@ int GCGconshdlrDecompGetNextPartialdecID(
    );
 
 /** @brief gets number of active constraints during the detection of the decomp with given id
- * 
+ *
  * Gets the number of constraints that were active while detecting the decomposition originating from the partialdec with the
  * given id, this method is used to decide if the problem has changed since detection, if so the aggregation information
  * needs to be recalculated
- * 
+ *
  * @note if the partialdec is not complete the function returns -1
- * 
+ *
  * @returns number of constraints that were active while detecting the decomposition
  */
 extern
@@ -885,7 +943,7 @@ SCIP_RETCODE GCGconshdlrDecompSelectPartialdec(
    );
 
 /** @brief sets detector parameters values
- * 
+ *
  * sets detector parameters values to
  *
  *  - SCIP_PARAMSETTING_DEFAULT which are the default values of all detector parameters
