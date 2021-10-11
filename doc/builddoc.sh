@@ -15,7 +15,13 @@ R='\e[91m'
 if [[ -z ${BINDIR} ]]; then export BINDIR="$PWD/../bin"; fi
 
 # Find relevant documentation versions.
-CURRENT_VERSION=`grep '@version' resources/main.md | awk '{ printf("%s", $2); }'`
+CURRENT_VERSION_LINK=`cat ../CHANGELOG | grep "@section" -m1 | cut -d" " -f2`
+CURRENT_VERSION=`cat ../CHANGELOG | grep "@section" -m1 | cut -d" " -f4`
+
+# Update version on docu main page
+sed -i -e "/@version/d" -e "/@ref RN/d" resources/main.md
+echo "@version $CURRENT_VERSION" >> resources/main.md
+echo "@ref $CURRENT_VERSION_LINK 'Changelog of this version'">> resources/main.md
 
 # Adds new .md pages to the table of contents in the folder
 # with a file named as the folder (.md).
