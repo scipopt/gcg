@@ -6,6 +6,7 @@ New features:
 -------------
 
 - New website documentation
+- Added several strong branching based branching candidate selection heuristics: strong branching with column generation, strong branching without column generation, hybrid strong/pseudocost branching, reliability branching, hierarchical strong branching, hybrid hierarchical strong/pseudocost branching, hierarchical reliability branching (primarily for original variable branching and Ryan-Foster branching).
 - New detector neighborhoodmaster: calculating cons-cons adjacency (if not already done), sorting according size of neighborhood. Searching two consecutive constraints with largest size difference (according neighborhood size) in sorted constraints. All constraints having a larger neighborhood than the second one are assigned to the master.
 - On reading an incomplete decomposition, the program will not necessarily assign all open elements to the master problem but detect the rest of the structure.
 - Use the user's default application to open pdf files
@@ -13,6 +14,8 @@ New features:
 New/changed parameters:
 -----------------------
 
+- New parameters 'branching/orig/usestrong' and 'branching/ryanfoster/usestrong' to enable strong branching for original variable branching and Ryan-Foster branching
+- New parameters 'branching/bpstrong/...' to alter strong branching behavior
 - New parameter 'detection/enabled' for easier en-/disabling of the detection
 - New Parameter 'detection/postprocess' enables the postprocessing of decompositions
 - Removed paramaters 'detection/detectors/<name>/legacymode'

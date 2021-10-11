@@ -4420,6 +4420,63 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
    return SCIP_OKAY;
 }
 
+/** add a new probing node the master problem together with a master branching constraint
+ *  which ensures that bound changes are transferred to master and pricing problems as well as additional
+ *  constraints
+ *
+ *  @note A corresponding probing node must have been added to the original problem beforehand;
+ *        furthermore, this method must be called after bound changes to the original problem have been made
+ */
+SCIP_RETCODE GCGrelaxNewProbingnodeMasterCons(
+   SCIP*                 scip,                /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
+   GCG_BRANCHDATA*       branchdata,         /**< branching data */
+   SCIP_CONS**           origbranchconss,    /**< original constraints enforcing the branching decision */
+   int                   norigbranchconss,   /**< number of original constraints */
+   int                   maxorigbranchconss  /**< capacity of origbranchconss */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP* masterprob;
+   SCIP_CONS* probingcons;
+   SCIP_NODE* probingnode;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   if( !relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("not in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
+
+   if( SCIPgetProbingDepth(scip) != SCIPgetProbingDepth(masterprob) + 1 )
+   {
+      SCIPerrorMessage("master probing node must be created after original probing node\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   /* add a probing node in the master problem together with a master branching constraint */
+   SCIP_CALL( SCIPnewProbingNode(masterprob) );
+   probingnode = SCIPgetCurrentNode(masterprob);
+   assert(GCGconsMasterbranchGetActiveCons(masterprob) != NULL);
+   SCIP_CALL( GCGcreateConsMasterbranch(masterprob, &probingcons, "mprobingcons", probingnode,
+      GCGconsMasterbranchGetActiveCons(masterprob), branchrule, branchdata, origbranchconss, norigbranchconss, maxorigbranchconss) );
+   SCIP_CALL( SCIPaddConsNode(masterprob, probingnode, probingcons, NULL) );
+   SCIP_CALL( SCIPreleaseCons(masterprob, &probingcons) );
+
+   return SCIP_OKAY;
+}
+
 /** add probing nodes to both the original and master problem;
  *  furthermore, add origbranch and masterbranch constraints to transfer branching decisions
  *  from the original to the master problem
@@ -4596,7 +4653,6 @@ SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
 
    return SCIP_OKAY;
 }
-
 
 /** end probing mode in both the original and master problems */
 SCIP_RETCODE GCGrelaxEndProbing(

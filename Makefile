@@ -200,6 +200,7 @@ LIBOBJ = \
 			branch_orig.o \
 			branch_relpsprob.o \
 			branch_ryanfoster.o \
+			branch_bpstrong.o \
 			class_conspartition.o \
 			class_indexpartition.o \
 			class_pricingcontroller.o \
@@ -213,6 +214,10 @@ LIBOBJ = \
 			clscons_consnamenonumbers.o \
 			clscons_consnamelevenshtein.o \
 			clscons_scipconstypes.o \
+			clscons_gamsdomain.o \
+			clscons_gamssymbol.o \
+			clsvar_gamsdomain.o \
+			clsvar_gamssymbol.o \
 			clsvar_objvalues.o \
 			clsvar_scipvartypes.o \
 			clsvar_objvaluesigns.o \
@@ -560,12 +565,12 @@ $(GCGLIBLINK):	$(GCGLIBFILE)
 		cd $(dir $@) && $(LN_s) $(notdir $(GCGLIBFILE)) $(notdir $@)
 
 
-$(MAINFILE):	$(SCIPLIBFILE) $(LPILIBFILE) $(TPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | $(BINDIR)
+$(MAINFILE):	$(SCIPLIBBASEFILE) $(LPILIBFILE) $(TPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | $(BINDIR)
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
 		$(LINKCXX_l)$(GCGLIB)$(LINKLIBSUFFIX) \
-		$(LINKCXX_L)$(SCIPDIR)/lib/static $(LINKCXX_l)$(SCIPLIB)$(LINKLIBSUFFIX) \
-                $(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
+		$(LINKCXX_L)$(SCIPDIR)/lib/static $(LINKCXX_l)$(SCIPLIBBASE)$(LINKLIBSUFFIX) \
+		$(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
 		$(LINKCXX_l)$(TPILIB)$(LINKLIBSUFFIX) \
 		$(OFLAGS) $(LPSLDFLAGS) \
 		$(LDFLAGS) $(LINKCXX_o)$@

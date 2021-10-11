@@ -31,16 +31,18 @@
  * @author Marcel Schmickerath
  * @author Christian Puchert
  * @author Jonas Witt
+ * @author Oliver Gaul
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
+/*#define SCIP_DEBUG*/
 #include <assert.h>
 #include <string.h>
 
 #include "branch_orig.h"
 #include "gcg.h"
 #include "branch_relpsprob.h"
+#include "branch_bpstrong.h"
 #include "cons_integralorig.h"
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"
@@ -57,10 +59,44 @@
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
-#define DEFAULT_ENFORCEBYCONS FALSE
-#define DEFAULT_MOSTFRAC      FALSE
-#define DEFAULT_USEPSEUDO     TRUE
-#define DEFAULT_USEPSSTRONG   FALSE
+#define DEFAULT_ENFORCEBYCONS  FALSE
+#define DEFAULT_USEPSEUDO      TRUE
+#define DEFAULT_MOSTFRAC       FALSE
+#define DEFAULT_USERANDOM      FALSE
+#define DEFAULT_USEPSSTRONG    FALSE
+
+/* strong branching */
+#define DEFAULT_USESTRONG        FALSE
+
+#define DEFAULT_MINPHASE0OUTCANDS      10
+#define DEFAULT_MAXPHASE0OUTCANDS      50
+#define DEFAULT_MAXPHASE0OUTCANDSFRAC  0.7
+#define DEFAULT_PHASE1GAPWEIGHT        0.25
+
+#define DEFAULT_MINPHASE1OUTCANDS      3
+#define DEFAULT_MAXPHASE1OUTCANDS      20
+#define DEFAULT_MAXPHASE1OUTCANDSFRAC  0.7
+#define DEFAULT_PHASE2GAPWEIGHT        1
+/**/   
+
+
+/** branching rule data */
+struct SCIP_BranchruleData
+{
+   SCIP_Bool             enforcebycons;         /**< should bounds on variables be enforced by constraints(TRUE) or by
+                                                   * bounds(FALSE) */
+   SCIP_Bool             usepseudocosts;        /**< should pseudocosts be used to determine the variable on which the
+                                                   * branching is performed? */
+   SCIP_Bool             mostfrac;              /**< should branching be performed on the most fractional variable?
+                                                   * (only if usepseudocosts = FALSE) */
+   SCIP_Bool             userandom;             /**< should the variable on which the branching is performed be
+                                                   * selected randomly? (only if usepseudocosts = mostfrac = FALSE) */
+   SCIP_Bool             usepsstrong;           /**< should strong branching with propagation be used to determine the
+                                                   * variable on which the branching is performed?
+                                                   * (only if usepseudocosts = mostfrac = random = FALSE)*/
+   SCIP_Bool             usestrong;             /**< should strong branching be used to determine the variable on which
+                                                   * the branching is performed? */
+};
 
 /** branching data for branching decisions */
 struct GCG_BranchData
@@ -74,6 +110,67 @@ struct GCG_BranchData
    SCIP_CONS*            cons;               /**< constraint that enforces the branching restriction in the original
                                               *   problem, or NULL if this is done by variable bounds */
 };
+
+/* returns TRUE iff
+ * iter = 0 and branchcand is an integer variable belonging to a unique block with fractional value, or
+ * iter = 1 and branchcand is an integer variable that belongs to no block but was directly transferred to the 
+ *            master problem and which has a fractional value in the current solution
+ */
+static
+SCIP_Bool getUniqueBlockFlagForIter(
+   SCIP* scip,
+   SCIP_VAR* branchcand,
+   int iter
+)
+{
+   assert(GCGvarIsOriginal(branchcand));
+   /* continue if variable belongs to a block in second iteration*/
+   if (iter == 0)
+   {
+      /* variable belongs to no block */
+      if (GCGvarGetBlock(branchcand) == -1)
+         return FALSE;
+
+      /* block is not unique (non-linking variables) */
+      if (!GCGoriginalVarIsLinking(branchcand) && GCGgetNIdenticalBlocks(scip, GCGvarGetBlock(branchcand)) != 1)
+         return FALSE;
+
+      /* check that blocks of linking variable are unique */
+      if (GCGoriginalVarIsLinking(branchcand))
+      {
+         int nvarblocks;
+         int *varblocks;
+         SCIP_Bool unique;
+         int j;
+
+         nvarblocks = GCGlinkingVarGetNBlocks(branchcand);
+         SCIP_CALL(SCIPallocBufferArray(scip, &varblocks, nvarblocks));
+         SCIP_CALL(GCGlinkingVarGetBlocks(branchcand, nvarblocks, varblocks));
+
+         unique = TRUE;
+         for (j = 0; j < nvarblocks; ++j)
+            if (GCGgetNIdenticalBlocks(scip, varblocks[j]) != 1)
+               unique = FALSE;
+
+         SCIPfreeBufferArray(scip, &varblocks);
+
+         if (!unique)
+            return FALSE;
+      }
+      /* candidate is valid in first iteration */
+      return TRUE;
+      
+   }
+   else /* iter == 1 */
+   {
+      if (GCGvarGetBlock(branchcand) != -1)
+         return FALSE;
+
+      /* candidate is valid in second iteration */
+      return TRUE;
+   }
+   return FALSE;
+}
 
 /** branches on a integer variable x
  *  if solution value x' is fractional, two child nodes will be created
@@ -90,7 +187,11 @@ SCIP_RETCODE branchVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the original variable branching rule */
    SCIP_VAR*             branchvar,          /**< variable to branch on */
-   SCIP_Real             solval              /**< value of the variable in the current solution */
+   SCIP_Real             solval,             /**< value of the variable in the current solution */
+   SCIP_Bool             upinf,              /**< have we seen during strong branching that the upbranch is
+                                                * infeasible? */
+   SCIP_Bool             downinf             /**< have we seen during strong branching that the downbranch is
+                                                * infeasible? */
    )
 {
    /* data for b&b child creation */
@@ -99,10 +200,13 @@ SCIP_RETCODE branchVar(
    SCIP_Real fixval;
    SCIP_Real uplb;
 
-   /* parameter data */
-   SCIP_Bool enforcebycons;
+   SCIP_BRANCHRULEDATA* branchruledata;
 
+   branchruledata = SCIPbranchruleGetData(branchrule);
+   assert(branchruledata != NULL);
+   
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
+   
    assert(scip != NULL);
    assert(branchrule != NULL);
    assert(branchvar != NULL);
@@ -114,9 +218,6 @@ SCIP_RETCODE branchVar(
    downub = SCIP_INVALID;
    fixval = SCIP_INVALID;
    uplb = SCIP_INVALID;
-
-   /* get values of parameters */
-   SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/enforcebycons", &enforcebycons) );
 
    if( SCIPisFeasIntegral(scip, solval) )
    {
@@ -164,7 +265,8 @@ SCIP_RETCODE branchVar(
             uplb = fixval + 1.0;
       }
       SCIPdebugMessage("integral branch on variable <%s> with value %g, priority %d (current lower bound: %g)\n",
-         SCIPvarGetName(branchvar), solval, SCIPvarGetBranchPriority(branchvar), SCIPgetLocalLowerbound(GCGgetMasterprob(scip)));
+                       SCIPvarGetName(branchvar), solval, SCIPvarGetBranchPriority(branchvar),
+                       SCIPgetLocalLowerbound(GCGgetMasterprob(scip)));
    }
    else
    {
@@ -172,14 +274,9 @@ SCIP_RETCODE branchVar(
       downub = SCIPfeasFloor(scip, solval);
       uplb = downub + 1.0;
       assert( SCIPisEQ(scip, SCIPfeasCeil(scip, solval), uplb) );
-      SCIPdebugMessage("fractional branch on variable <%s> with value %g, root value %g, priority %d (current lower bound: %g)\n",
-         SCIPvarGetName(branchvar), solval, SCIPvarGetRootSol(branchvar), SCIPvarGetBranchPriority(branchvar), SCIPgetLocalLowerbound(GCGgetMasterprob(scip)));
    }
 
-   SCIPdebugMessage("Branching on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
-
-
-   if( uplb != SCIP_INVALID ) /*lint !e777*/
+   if( uplb != SCIP_INVALID && !upinf ) /*lint !e777*/
    {
       SCIP_CONS* cons;
       SCIP_NODE* child;
@@ -212,7 +309,7 @@ SCIP_RETCODE branchVar(
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchdata->origvar),
          ">=", branchdata->newbound);
 
-      if( enforcebycons )
+      if( branchruledata->enforcebycons )
       {
          /* enforce new bounds by linear constraints */
          SCIP_CONS* consup;
@@ -243,7 +340,7 @@ SCIP_RETCODE branchVar(
       SCIP_CALL( SCIPaddConsNode(masterscip, child, cons, NULL) );
    }
 
-   if( downub != SCIP_INVALID ) /*lint !e777*/
+   if( downub != SCIP_INVALID && !downinf ) /*lint !e777*/
    {
       SCIP_CONS* cons;
       SCIP_NODE* child;
@@ -277,7 +374,7 @@ SCIP_RETCODE branchVar(
          "<=", branchdata->newbound);
 
       /* enforce branching decision by a constraint rather than by bound changes */
-      if( enforcebycons )
+      if( branchruledata->enforcebycons )
       {
          /* enforce new bounds by linear constraints */
          SCIP_CONS* consdown;
@@ -339,7 +436,7 @@ SCIP_RETCODE branchVar(
          "==", branchdata->newbound);
 
       /* enforce branching decision by a constraint rather than by bound changes */
-      if( enforcebycons )
+      if( branchruledata->enforcebycons )
       {
          /* enforce new bounds by linear constraints */
          SCIP_CONS* consfix;
@@ -369,6 +466,37 @@ SCIP_RETCODE branchVar(
    return SCIP_OKAY;
 }
 
+/* Evaluates the given variable based on a score function of choice. Higher scores are given to better
+ * variables.
+ */
+static SCIP_Real score_function(
+    SCIP *scip,
+    SCIP_BRANCHRULE*      branchrule,         /* pointer to the original variable branching rule */
+    SCIP_VAR *var,            /* var to be scored */
+    SCIP_Real solval,         /* the var's current solution value */
+    SCIP_Real *score         /* stores the computed score */
+)
+{
+   SCIP_BRANCHRULEDATA* branchruledata;
+   branchruledata = SCIPbranchruleGetData(branchrule);
+   assert(branchruledata != NULL);
+
+   /* define score functions and calculate score for all variables for sorting dependent on used heuristic */
+   if( branchruledata->usepseudocosts )
+   {
+      *score = SCIPgetVarPseudocostScore(scip, var, solval);
+   }
+   else
+   {
+      if( !branchruledata->mostfrac )
+         return 1;
+         
+      *score = solval - SCIPfloor(scip, solval);
+      *score = MIN(*score, 1.0 - *score);
+   }
+
+   return SCIP_OKAY;
+}
 
 /** branching method for relaxation solutions */
 static
@@ -379,12 +507,7 @@ SCIP_RETCODE branchExtern(
    )
 {
    SCIP* masterscip;
-   int i;
-
-   /* parameter data */
-   SCIP_Bool mostfrac;
-   SCIP_Bool usepseudocosts;
-   SCIP_Bool usepsstrong;
+   SCIP_BRANCHRULEDATA* branchruledata;
 
    /* branching candidates */
    SCIP_VAR** branchcands;
@@ -392,12 +515,15 @@ SCIP_RETCODE branchExtern(
    int nbranchcands;
    int npriobranchcands;
 
+   SCIP_Bool upinf;
+   SCIP_Bool downinf;
+
    /* values for choosing the variable to branch on */
    SCIP_VAR* branchvar;
    SCIP_Real solval;
-   SCIP_Real maxfrac;
-   SCIP_Real frac;
-   SCIP_Real maxpsscore;
+
+   SCIP_Real maxscore;
+   SCIP_Real score;
 
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
@@ -405,16 +531,14 @@ SCIP_RETCODE branchExtern(
    assert(result != NULL);
    assert(SCIPisRelaxSolValid(scip));
 
+   branchruledata = SCIPbranchruleGetData(branchrule);
+   assert(branchruledata != NULL);
+
    *result = SCIP_DIDNOTRUN;
 
    /* get master problem */
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
-
-   /* get values of parameters */
-   SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/mostfrac", &mostfrac) );
-   SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepseudocosts", &usepseudocosts) );
-   SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepsstrong", &usepsstrong) );
 
    /* get the branching candidates */
    SCIP_CALL( SCIPgetExternBranchCands(scip, &branchcands, &branchcandssol, NULL, &nbranchcands,
@@ -423,152 +547,88 @@ SCIP_RETCODE branchExtern(
    branchvar = NULL;
    solval = 0.0;
 
-   maxfrac = 0.0;
-   maxpsscore = -1.0;
+   upinf = FALSE;
+   downinf = FALSE;
 
-   if( usepsstrong )
+   maxscore = -1.0;
+
+   if( !branchruledata->usestrong )
    {
-      SCIP_CALL( SCIPgetRelpsprobBranchVar(masterscip, branchcands, branchcandssol, npriobranchcands,
-            npriobranchcands, result, &branchvar) );
-      assert(branchvar != NULL || *result == SCIP_CUTOFF);
-      assert(*result == SCIP_DIDNOTRUN || *result == SCIP_CUTOFF);
-
-      if( *result == SCIP_CUTOFF )
-         return SCIP_OKAY;
-
-      solval = SCIPgetRelaxSolVal(scip, branchvar);
-   }
-
-   /* branch on an integer variable belonging to a unique block with fractional value */
-   if( branchvar == NULL )
-      for( i = 0; i < npriobranchcands; i++ )
+      if( branchruledata->usepseudocosts || branchruledata->mostfrac || branchruledata->userandom )
       {
-         assert(GCGvarIsOriginal(branchcands[i]));
-
-         /* variable belongs to no block */
-         if( GCGvarGetBlock(branchcands[i]) == -1 )
-            continue;
-
-         /* block is not unique (non-linking variables) */
-         if( !GCGoriginalVarIsLinking(branchcands[i]) && GCGgetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
-            continue;
-
-         /* check that blocks of linking variable are unique */
-         if( GCGoriginalVarIsLinking(branchcands[i]) )
+         /* iter = 0: integer variables belonging to a unique block with fractional value,
+          * iter = 1: we did not find enough variables to branch on so far, so we look for integer variables that
+          * belong to no block
+          * but were directly transferred to the master problem and which have a fractional value in the current
+          * solution
+          */
+         for( int iter = 0; iter <= 1 && branchvar == NULL; iter++ )
          {
-            int nvarblocks;
-            int* varblocks;
-            SCIP_Bool unique;
-            int j;
-
-            nvarblocks = GCGlinkingVarGetNBlocks(branchcands[i]);
-            SCIP_CALL( SCIPallocBufferArray(scip, &varblocks, nvarblocks) );
-            SCIP_CALL( GCGlinkingVarGetBlocks(branchcands[i], nvarblocks, varblocks) );
-
-            unique = TRUE;
-            for( j = 0; j < nvarblocks; ++j )
-               if( GCGgetNIdenticalBlocks(scip, varblocks[j]) != 1 )
-                  unique = FALSE;
-
-            SCIPfreeBufferArray(scip, &varblocks);
-
-            if( !unique )
-               continue;
-         }
-
-         /* use pseudocost variable selection rule */
-         if( usepseudocosts )
-         {
-            /* select the variable, if its pseudocost are higher than the ones of the currently saved variable */
-            if( SCIPgetVarPseudocostScore(scip, branchcands[i], branchcandssol[i]) > maxpsscore )
+            for( int i = 0; i < npriobranchcands; i++ )
             {
-               branchvar = branchcands[i];
-               solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
-               maxpsscore = SCIPgetVarPseudocostScore(scip, branchcands[i], branchcandssol[i]);
-            }
-         }
-         /* use most fractional variable selection rule */
-         else
-         {
-            /* compute the fractionality */
-            frac = branchcandssol[i] - SCIPfloor(scip, branchcandssol[i]);
-            frac = MIN(frac, 1.0 - frac);
-            assert(frac > 0);
+               if( !getUniqueBlockFlagForIter(scip, branchcands[i], iter) )
+                  continue;
 
-            /* fractionality is higher than that of the current highest fractionality */
-            if( frac >= maxfrac )
-            {
-               SCIPdebugMessage("Var %s has fractional value in current solution: %f\n", SCIPvarGetName(branchcands[i]), branchcandssol[i]);
-               solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
-               branchvar = branchcands[i];
-               /* if we do not look for the most fractional variable, but for the first fractional variable,
-                * we can stop here since we found a variable to branch on */
-               if( !mostfrac )
+               if( !branchruledata->userandom )
+               {
+                  SCIP_CALL( score_function(scip, branchrule, branchcands[i], branchcandssol[i], &score) );
+
+                  if( score > maxscore )
+                  {
+                     maxscore = score;
+                     branchvar = branchcands[i];
+                     solval = branchcandssol[i];
+                  }
+               }
+               else
+               {
+                  branchvar = branchcands[i];
+                  solval = branchcandssol[i];
                   break;
+               }
             }
          }
       }
-
-   /* we did not find a variable to branch on so far, so we look for an integer variable that belongs to no block
-    * but was directly transferred to the master problem and which has fractional value in the current solution */
-   if( branchvar == NULL )
-   {
-      for( i = 0; i < npriobranchcands; i++ )
+      else if( branchruledata->usepsstrong )
       {
-         assert(GCGvarIsOriginal(branchcands[i]));
+         SCIP_CALL( SCIPgetRelpsprobBranchVar(masterscip, branchcands, branchcandssol, npriobranchcands,
+               npriobranchcands, result, &branchvar) );
+         assert(branchvar != NULL || *result == SCIP_CUTOFF);
+         assert(*result == SCIP_DIDNOTRUN || *result == SCIP_CUTOFF);
 
-         /* continue if variable belongs to a block */
-         if( GCGvarGetBlock(branchcands[i]) != -1 )
-            continue;
+         if( *result == SCIP_CUTOFF )
+            return SCIP_OKAY;
 
-         /* use pseudocost variable selection rule */
-         if( usepseudocosts )
-         {
-            if( SCIPgetVarPseudocostScore(scip, branchcands[i], branchcandssol[i]) > maxpsscore )
-            {
-               branchvar = branchcands[i];
-               solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
-               maxpsscore = SCIPgetVarPseudocostScore(scip, branchcands[i], branchcandssol[i]);
-            }
-         }
-         /* use most fractional variable selection rule */
-         else
-         {
-            /* compute fractionality */
-            frac = branchcandssol[i] - SCIPfloor(scip, branchcandssol[i]);
-            frac = MIN(frac, 1.0 - frac);
-            assert(frac > 0);
-
-            if( frac >= maxfrac )
-            {
-               SCIPdebugMessage("Var %s has fractional value in current solution: %f\n",
-                  SCIPvarGetName(branchcands[i]), branchcandssol[i]);
-               solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
-               branchvar = branchcands[i];
-               /* if we do not look for the most fractional variable, but for the first fractional variable,
-                * we stop here since we found a variable to branch on */
-               if( !mostfrac )
-                  break;
-            }
-         }
+         solval = SCIPgetRelaxSolVal(scip, branchvar);
       }
+
+      
+   }
+   else
+   {
+      SCIP_CALL( GCGbranchSelectCandidateStrongBranchingOrig(scip, branchrule, &branchvar, &upinf, &downinf, result,
+                                                             &branchruledata->usestrong) );
    }
 
+   if( upinf && downinf )
+      return SCIP_OKAY;
+      
    if( branchvar == NULL )
    {
       SCIPdebugMessage("Original branching rule could not find a variable to branch on!\n");
       return SCIP_OKAY;
    }
+   
+   assert(!(upinf && downinf));
+   
+   SCIPdebugMessage("Original branching rule selected variable %s%s\n",
+                    SCIPvarGetName(branchvar), (upinf || downinf)? ", which is infeasible in one direction" : "");
 
-   assert(branchvar != NULL);
-
-   SCIP_CALL( branchVar(scip, branchrule, branchvar, solval) );
-
+   SCIP_CALL( branchVar(scip, branchrule, branchvar, solval, upinf, downinf) );
    *result = SCIP_BRANCHED;
 
    return SCIP_OKAY;
 }
-
 
 /*
  * Callback methods for enforcing branching constraints
@@ -597,7 +657,8 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    assert(origscip != NULL);
 
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
-      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : branchdata->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ), branchdata->newbound);
+      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ?
+                            ">=" : branchdata->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ), branchdata->newbound);
 
    /* transform constraint to the master variable space */
    SCIP_CALL( GCGrelaxTransOrigToMasterCons(origscip, branchdata->cons, &mastercons) );
@@ -624,7 +685,8 @@ GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
    assert(branchdata->origvar != NULL);
 
    SCIPdebugMessage("branchMasterSolvedOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
-      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : branchdata->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ), branchdata->newbound);
+      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ?
+                            ">=" : branchdata->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ), branchdata->newbound);
 
    if( !SCIPisInfinity(scip, newlowerbound) && SCIPgetStage(GCGgetMasterprob(scip)) == SCIP_STAGE_SOLVING
       && SCIPisRelaxSolValid(GCGgetMasterprob(scip)) )
@@ -648,7 +710,8 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
       return SCIP_OKAY;
 
    SCIPdebugMessage("branchDataDeleteOrig: %s %s %f\n", SCIPvarGetName((*branchdata)->origvar),
-      ( (*branchdata)->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : (*branchdata)->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ),
+      ( (*branchdata)->boundtype == GCG_BOUNDTYPE_LOWER ?
+        ">=" : (*branchdata)->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ),
       (*branchdata)->newbound);
 
    /* release constraint */
@@ -664,6 +727,19 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
    return SCIP_OKAY;
 }
 
+static
+SCIP_DECL_BRANCHFREE(branchFreeOrig)
+{  /*lint --e{715}*/
+   SCIP_BRANCHRULEDATA* branchruledata;
+
+   branchruledata = SCIPbranchruleGetData(branchrule);
+
+   SCIPfreeBlockMemory(scip, &branchruledata);
+   SCIPbranchruleSetData(branchrule, NULL);
+
+   return SCIP_OKAY;
+}
+
 /*
  * Callback methods
  */
@@ -674,7 +750,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 {  /*lint --e{715}*/
    SCIP* origscip;
 
-   SCIPdebugMessage("Execlp method of orig branching\n");
+   //SCIPdebugMessage("Execlp method of orig branching\n");
 
    /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
@@ -743,6 +819,8 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
    assert(branchrule != NULL);
    assert(origprob != NULL);
 
+   SCIPdebugMessage("Init orig branching rule\n");
+
    SCIP_CALL( GCGrelaxIncludeBranchrule( origprob, branchrule, branchActiveMasterOrig,
          branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig) );
 
@@ -771,6 +849,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
+
+   SCIPdebugMessage("EXECPS orig branching rule\n");
 
    /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
@@ -801,7 +881,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
       assert(GCGvarIsOriginal(branchcands[i]));
 
       /* variable belongs to no block or the block is not unique */
-      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGgetNIdenticalBlocks(origscip, GCGvarGetBlock(branchcands[i])) != 1 )
+      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGgetNIdenticalBlocks(origscip, 
+                                                                         GCGvarGetBlock(branchcands[i])) != 1 )
          continue;
 
       branchvar = branchcands[i];
@@ -895,7 +976,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 
    assert(branchvar != NULL);
 
-   SCIP_CALL( branchVar(origscip, branchrule, branchvar, solval) );
+   SCIP_CALL( branchVar(origscip, branchrule, branchvar, solval, FALSE, FALSE) );
 
    *result = SCIP_BRANCHED;
 
@@ -915,14 +996,20 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
 {
    SCIP* origscip;
    SCIP_BRANCHRULE* branchrule;
+   SCIP_BRANCHRULEDATA* branchruledata;
+
+   SCIPdebugMessage("Include orig branching rule\n");
 
    /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
+   /* alloc branching rule data */
+   SCIP_CALL( SCIPallocBlockMemory(scip, &branchruledata) );
+   
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchruleBasic(scip, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
-            BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, NULL) );
+            BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata) );
    assert(branchrule != NULL);
 
    /* set non fundamental callbacks via setter functions */
@@ -930,24 +1017,66 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP_CALL( SCIPsetBranchruleExecLp(scip, branchrule, branchExeclpOrig) );
    SCIP_CALL( SCIPsetBranchruleExecExt(scip, branchrule, branchExecextOrig) );
    SCIP_CALL( SCIPsetBranchruleExecPs(scip, branchrule, branchExecpsOrig) );
+   SCIP_CALL( SCIPsetBranchruleFree(scip, branchrule, branchFreeOrig) );
 
    /* add original variable branching rule parameters */
 
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/enforcebycons",
          "should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE)",
-         NULL, FALSE, DEFAULT_ENFORCEBYCONS, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/mostfrac",
-         "should branching be performed on the most fractional variable instead of the first variable?",
-         NULL, FALSE, DEFAULT_MOSTFRAC, NULL, NULL) );
+         &branchruledata->enforcebycons, FALSE, DEFAULT_ENFORCEBYCONS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/usepseudocosts",
          "should pseudocosts be used to determine the variable on which the branching is performed?",
-         NULL, FALSE, DEFAULT_USEPSEUDO, NULL, NULL) );
+         &branchruledata->usepseudocosts, FALSE, DEFAULT_USEPSEUDO, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/mostfrac",
+         "should branching be performed on the most fractional variable? (only if usepseudocosts = FALSE)",
+         &branchruledata->mostfrac, FALSE, DEFAULT_MOSTFRAC, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/userandom",
+         "should the variable on which the branching is performed be selected randomly? (only if usepseudocosts = mostfrac = FALSE)",
+         &branchruledata->usepseudocosts, FALSE, DEFAULT_USEPSEUDO, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/usepsstrong",
-         "should strong branching with propagation be used to determine the variable on which the branching is performed?",
-         NULL, FALSE, DEFAULT_USEPSSTRONG, NULL, NULL) );
+         "should strong branching with propagation be used to determine the variable on which the branching is performed? (only if usepseudocosts = mostfrac = random = FALSE)",
+         &branchruledata->usepsstrong, FALSE, DEFAULT_USEPSSTRONG, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/usestrong",
+         "should strong branching be used to determine the variable on which the branching is performed?",
+         &branchruledata->usestrong, FALSE, DEFAULT_USESTRONG, NULL, NULL) );
+
+   /* strong branching */
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/minphase0outcands",
+         "minimum number of output candidates from phase 0 during strong branching",
+         NULL, FALSE, DEFAULT_MINPHASE0OUTCANDS, 1, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/maxphase0outcands",
+         "maximum number of output candidates from phase 0 during strong branching",
+         NULL, FALSE, DEFAULT_MAXPHASE0OUTCANDS, 1, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/orig/maxphase0outcandsfrac",
+         "maximum number of output candidates from phase 0 as fraction of total cands during strong branching",
+         NULL, FALSE, DEFAULT_MAXPHASE0OUTCANDSFRAC, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/orig/phase1gapweight",
+         "how much impact should the node gap have on the number of precisely evaluated candidates in phase 1 during strong branching?",
+         NULL, FALSE, DEFAULT_PHASE1GAPWEIGHT, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/minphase1outcands",
+         "minimum number of output candidates from phase 1 during strong branching",
+         NULL, FALSE, DEFAULT_MINPHASE1OUTCANDS, 1, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "branching/orig/maxphase1outcands",
+         "maximum number of output candidates from phase 1 during strong branching",
+         NULL, FALSE, DEFAULT_MAXPHASE1OUTCANDS, 1, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/orig/maxphase1outcandsfrac",
+         "maximum number of output candidates from phase 1 as fraction of phase 1 cands during strong branching",
+         NULL, FALSE, DEFAULT_MAXPHASE1OUTCANDSFRAC, 0, 1, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origscip, "branching/orig/phase2gapweight",
+         "how much impact should the node gap have on the number of precisely evaluated candidates in phase 2 during strong branching?",
+         NULL, FALSE, DEFAULT_PHASE2GAPWEIGHT, 0, 1, NULL, NULL) );
 
    /* notify cons_integralorig about the original variable branching rule */
    SCIP_CALL( GCGconsIntegralorigAddBranchrule(scip, branchrule) );
@@ -1005,7 +1134,8 @@ SCIP_RETCODE GCGbranchOrigUpdateExternBranchcands(
    /* store branching candidates */
    for( i = 0; i < norigvars; i++ )
    {
-      if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
+      if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip,
+                         SCIPgetRelaxSolVal(scip, origvars[i])) )
       {
          assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])));
 
