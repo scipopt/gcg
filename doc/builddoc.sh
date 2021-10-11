@@ -160,12 +160,6 @@ removeBibliography () {( set -e
 
 # Create Doxygen documentation for pages and source code
 generateDoxy () {( set -e
-  # add version to the dropdown
-  echo "<li><a href='../doc-${CURRENT_VERSION}/index.html'>GCG ${CURRENT_VERSION}</a></li>" >> docversions.html
-
-  # remove duplicates
-  sort -u docversions.html -o docversions.html
-
   # Create index.html and gcgheader.html.
   SCIPOPTSUITEHEADER=`sed 's/\//\\\\\//g' scipoptsuiteheader.html.in | tr -d '\n'`
   DOCVERSIONS=`sed 's/\//\\\\\//g' docversions.html | tr -d '\n'`
@@ -247,6 +241,14 @@ main () {
     rm -rf html/doc-${CURRENT_VERSION} gcgheader.html
     # move freshly generated docu into the desired (versionized) folder
     mv html/doc html/doc-${CURRENT_VERSION}
+    # update drop-down menu, include all folders found in html/doc-*
+    # Generate dropdown menu
+    for docversion in $(ls -d html/doc-*); do
+      V=$(echo $docversion | cut -d"-" -f2)
+      echo "<li><a href='../doc-${V}/index.html'>GCG ${V}</a></li>" >> docversions.html;
+    done
+    # sort the dropdown menu
+    sort -u docversions.html -o docversions.html
 
   printf "${B}Done!${W}\n"
 }
