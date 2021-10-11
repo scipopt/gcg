@@ -787,8 +787,8 @@ SCIP_Real score_function(
          down = downvalid? down : upvalid? up : 0;
          up = upvalid? up : down;
 
-         downgain = down - lpobjval;
-         upgain = up - lpobjval;
+         downgain = MAX(down - lpobjval, 0.0);
+         upgain = MAX(up - lpobjval, 0.0);
 
          *score = SCIPgetBranchScore(scip, var1, downgain, upgain);
 
