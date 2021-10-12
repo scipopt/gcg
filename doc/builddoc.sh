@@ -15,7 +15,13 @@ R='\e[91m'
 if [[ -z ${BINDIR} ]]; then export BINDIR="$PWD/../bin"; fi
 
 # Find relevant documentation versions.
-CURRENT_VERSION=`grep '@version' resources/main.md | awk '{ printf("%s", $2); }'`
+CURRENT_VERSION_LINK=`cat ../CHANGELOG | grep "@section" -m1 | cut -d" " -f2`
+CURRENT_VERSION=`cat ../CHANGELOG | grep "@section" -m1 | cut -d" " -f4`
+
+# Update version on docu main page
+sed -i -e "/@version/d" -e "/@ref RN/d" resources/main.md
+echo "@version $CURRENT_VERSION" >> resources/main.md
+echo "@ref $CURRENT_VERSION_LINK 'Changelog of this version'">> resources/main.md
 
 # Adds new .md pages to the table of contents in the folder
 # with a file named as the folder (.md).
@@ -154,12 +160,6 @@ removeBibliography () {( set -e
 
 # Create Doxygen documentation for pages and source code
 generateDoxy () {( set -e
-  # add version to the dropdown
-  echo "<li><a href='../doc-${CURRENT_VERSION}/index.html'>GCG ${CURRENT_VERSION}</a></li>" >> docversions.html
-
-  # remove duplicates
-  sort -u docversions.html -o docversions.html
-
   # Create index.html and gcgheader.html.
   SCIPOPTSUITEHEADER=`sed 's/\//\\\\\//g' scipoptsuiteheader.html.in | tr -d '\n'`
   DOCVERSIONS=`sed 's/\//\\\\\//g' docversions.html | tr -d '\n'`
@@ -241,6 +241,14 @@ main () {
     rm -rf html/doc-${CURRENT_VERSION} gcgheader.html
     # move freshly generated docu into the desired (versionized) folder
     mv html/doc html/doc-${CURRENT_VERSION}
+    # update drop-down menu, include all folders found in html/doc-*
+    # Generate dropdown menu
+    for docversion in $(ls -d html/doc-*); do
+      V=$(echo $docversion | cut -d"-" -f2)
+      echo "<li><a href='../doc-${V}/index.html'>GCG ${V}</a></li>" >> docversions.html;
+    done
+    # sort the dropdown menu
+    sort -u docversions.html -o docversions.html
 
   printf "${B}Done!${W}\n"
 }

@@ -1,5 +1,5 @@
-@page RN31 Release notes for GCG 3.1
-@section RN310 GCG 3.1.0
+@page RN35 Release notes for GCG 3.5
+@section RN350 GCG 3.5.0
 *************************
 
 New features:
@@ -9,6 +9,7 @@ New features:
 - Added several strong branching based branching candidate selection heuristics: strong branching with column generation, strong branching without column generation, hybrid strong/pseudocost branching, reliability branching, hierarchical strong branching, hybrid hierarchical strong/pseudocost branching, hierarchical reliability branching (primarily for original variable branching and Ryan-Foster branching).
 - New detector neighborhoodmaster: calculating cons-cons adjacency (if not already done), sorting according size of neighborhood. Searching two consecutive constraints with largest size difference (according neighborhood size) in sorted constraints. All constraints having a larger neighborhood than the second one are assigned to the master.
 - On reading an incomplete decomposition, the program will not necessarily assign all open elements to the master problem but detect the rest of the structure.
+- Use the user's default application to open pdf files
 
 New/changed parameters:
 -----------------------
@@ -69,6 +70,19 @@ Code cleanup:
 - Renamed class Seeedpool to DETPROBDATA
 - Renamed SEEED_WRAPPER to PARTIALDECOMP_WRAPPER
 - Renamed {Index,Cons,Var}Classifier to {Index,Cons,Var}Partition
+- Refactored dialog handler
+- Moved GCG version define to 'def.h', moved 'GCGprintVersion' to 'gcg_general.h/c'
+
+New/modified API functions:
+---------------------------
+- New functions: 'GCGtransformProb', 'GCGpresolve', 'GCGdetect', 'GCGsolve'
+- Renamed 'GCGgetGap' to 'GCGgetVarGap' and 'GCGsetGap' to 'GCGsetVarGap'
+- New functions: 'GCGgetDualbound', 'GCGgetPrimalbound', 'GCGgetGap'
+
+Bug fixes
+---------
+- Fixed function 'ObjPricerGcg::computeCurrentDegeneracy'
+- Relaxator: Do not construct and flush the LP if it is already constructed
 
 
 @page RN30 Release notes for GCG 3.0
@@ -257,7 +271,7 @@ Deleted and modified API functions
 
 - detector callback DETECTSTRUCTURE is only called in optional legacy mode (legacy mode is detection of version 2.1.4 and completely indepedent from new detecion loop), detectors written by the user should be useable if their parameter detection/detectors/*/legacymode is set to TRUE
 
-New API fuctions
+New API functions
 -----------------
 
 - detector callback PROPAGATESEEED, called during detection loop to refine partial decompositions, given a partial decomposition d the detector returns a set of decompositions that are a refinement of d
