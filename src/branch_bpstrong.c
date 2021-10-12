@@ -1453,6 +1453,7 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
 {
    SCIP* origprob;
    SCIP_BRANCHRULEDATA* branchruledata;
+   SCIP_HASHMAP* varhashmap;
 
    SCIP_Real logweight;
    SCIP_Real logbase;
@@ -1473,6 +1474,23 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
          branchDataDeleteBPStrong) );
 
    branchruledata = SCIPbranchruleGetData(branchrule);
+
+   /* free data if we already solved another instance but branchFreeBPStrong was not called inbetween */
+   if( branchruledata->initialized )
+   { 
+      varhashmap = branchruledata->varhashmap;
+      
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars);
+
+      if( branchruledata->varhashmap != NULL )
+      {
+         SCIPhashmapFree(&varhashmap);
+      }
+   } 
+
    branchruledata->lastcand = 0;
    branchruledata->nvars = 0;
    branchruledata->maxvars = 0;
