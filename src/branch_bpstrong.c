@@ -212,6 +212,8 @@ struct SCIP_BranchruleData
 
    SCIP_Bool             forcephase0;           /**< should phase 0 be performed even if the number of input candidates
                                                    * is already lower or equal to the number of output candidates? */
+
+   SCIP_Bool initialized;                       /**< has the branching rule been initialized? */
 };
 
 /* needed for compare_function (for now)*/
@@ -1423,17 +1425,21 @@ SCIP_DECL_BRANCHFREE(branchFreeBPStrong)
    SCIP_HASHMAP* varhashmap;
 
    branchruledata = SCIPbranchruleGetData(branchrule);
-   varhashmap = branchruledata->varhashmap;
-   
-   SCIPfreeBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars);
-   SCIPfreeBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars);
-   SCIPfreeBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars);
-   SCIPfreeBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars);
 
-   if( branchruledata->varhashmap != NULL )
-   {
-      SCIPhashmapFree(&varhashmap);
-   }
+   if( branchruledata->initialized )
+   { 
+      varhashmap = branchruledata->varhashmap;
+      
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars);
+
+      if( branchruledata->varhashmap != NULL )
+      {
+         SCIPhashmapFree(&varhashmap);
+      }
+   } 
 
    SCIPfreeBlockMemory(scip, &branchruledata);
    SCIPbranchruleSetData(branchrule, NULL);
@@ -1500,6 +1506,8 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
 
    this_branchruledata = branchruledata;
 
+   branchruledata->initialized = TRUE;
+
    return SCIP_OKAY;
 }
 
@@ -1525,6 +1533,8 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
    SCIP_CALL( SCIPincludeBranchruleBasic(scip, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
             BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata) );
    assert(branchrule != NULL);
+
+   branchruledata->initialized = FALSE;
 
    /* set non fundamental callbacks via setter functions */
    SCIP_CALL( SCIPsetBranchruleInit(scip, branchrule, branchInitBPStrong) );
