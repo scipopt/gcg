@@ -1274,7 +1274,7 @@ SCIP_RETCODE selectCandidate(
             break;
       }
 
-      if( nneededcands >= ncands && (!phase == 0 || !branchruledata->forcephase0) )
+      if( nneededcands >= ncands && (phase != 0 || !branchruledata->forcephase0) )
          continue;
 
       /* compute scores */
