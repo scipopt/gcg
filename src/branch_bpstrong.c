@@ -428,9 +428,9 @@ SCIP_RETCODE addBranchcandsToData(
 
    if( branchruledata->nvars == 0 )
    { 
-      /* TODO: this probably is way too big for Ryan-Foster */
+      /* TODO: better inital table sizes */
       SCIP_CALL( SCIPhashtableCreate(&(branchruledata->candhashtable), SCIPblkmem(scip),
-                                   branchruledata->initiator == RYANFOSTER? maxcands*maxcands/2 : maxcands,
+                                   branchruledata->initiator == RYANFOSTER? maxcands*2 : maxcands,
                                    hashGetKeyVars, hashKeyEqVars, hashKeyValVars, (void*) scip) );
 
       assert(branchruledata->candhashtable != NULL);
