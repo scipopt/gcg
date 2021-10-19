@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -59,7 +59,7 @@
 #define BRANCHRULE_DESC "strong branching for branch-and-price" /**< short description of branching rule */
 #define BRANCHRULE_PRIORITY -536870912                          /**< priority of this branching rule */
 #define BRANCHRULE_MAXDEPTH 0                                   /**< maximal depth level of the branching rule */
-#define BRANCHRULE_MAXBOUNDDIST 0.0                             /**< maximal relative distance from current node's     
+#define BRANCHRULE_MAXBOUNDDIST 0.0                             /**< maximal relative distance from current node's
                                                                    * dual bound to primal bound compared to best node's
                                                                    * dual bound for applying branching */
 #define DEFAULT_ENFORCEBYCONS      FALSE
@@ -116,15 +116,23 @@ struct GCG_BranchData
                                                   problem */
 };
 
+/* stores candidates and their corresponding index to insert them into a hashtable */
+typedef struct VarTuple{
+   SCIP_VAR* var1;
+   SCIP_VAR* var2;
+   int index;
+} VarTuple;
+
 /** branching rule data */
 struct SCIP_BranchruleData
 {
    int                   lastcand;              /**< last evaluated candidate of last branching rule execution */
-   int                   nvars;                 /**< the number of vars currently in the hashmap */
-   int                   maxvars;               /**< the maximal number of vars that were in the hashmap at the same
+   int                   nvars;                 /**< the number of candidates currently in the hashtable */
+   int                   maxvars;               /**< the maximal number of cands that were in the hashtable at the same
                                                    * time */
-   SCIP_HASHMAP*         varhashmap;            /**< hashmap mapping variables to their last result in strong
-                                                   * branching */
+   int                   maxcands;              /**< (realistically) the maximum total amount of candidates */
+   SCIP_HASHTABLE*       candhashtable;         /**< hashtable mapping candidates to their index */
+   VarTuple              **vartuples;            /**< all VarTuples that are in candhashtable */
    SCIP_Real             *score;                /**< the candidates' last scores */
    int                   *uniqueblockflags;     /**< flags assigned by assignUniqueBlockFlags() */
    SCIP_Real             *strongbranchscore;    /**< the candidates' last scores from strong branching with column
@@ -169,14 +177,14 @@ struct SCIP_BranchruleData
                                                    * branching) */
    int                   maxphase2depth;        /**< maximum tree depth up to which phase 2 is performed (~ hybrid
                                                    * branching) */
-   
+
    int                   minphase0outcands;     /**< minimum number of output candidates from phase 0 */
    int                   maxphase0outcands;     /**< maximum number of output candidates from phase 0 */
-   SCIP_Real             maxphase0outcandsfrac; /**< maximum number of output candidates from phase 0 as fraction of 
+   SCIP_Real             maxphase0outcandsfrac; /**< maximum number of output candidates from phase 0 as fraction of
                                                    * total cands */
    SCIP_Real             phase1gapweight;       /**< how much impact should the node gap have on the number of
                                                    * precisely evaluated candidates in phase 1? */
-   
+
    int                   minphase1outcands;     /**< minimum number of output candidates from phase 1 */
    int                   maxphase1outcands;     /**< maximum number of output candidates from phase 1 */
    SCIP_Real             maxphase1outcandsfrac; /**< maximum number of output candidates from phase 0 as fraction of
@@ -212,26 +220,84 @@ struct SCIP_BranchruleData
 
    SCIP_Bool             forcephase0;           /**< should phase 0 be performed even if the number of input candidates
                                                    * is already lower or equal to the number of output candidates? */
+
+   SCIP_Bool             initialized;           /**< has the branching rule been initialized? */
 };
 
-/* needed for compare_function (for now)*/
+/* needed for compare_function (for now) */
 SCIP_BRANCHRULEDATA*     this_branchruledata;
 
-/* builds hashmap origin for up to two variables */
-static
-void *buildIdentifier(
-   SCIP_VAR*             var1,               /**< first variable */
-   SCIP_VAR*             var2                /**< second variable */
-)
-{
-   if( var2 == NULL )
-      return (void *) var1;
+/*
+ * Hash functions
+ */
 
-   /* 32768 is 2^15, so half of the binary values for an int... */
-   return (void *) (SCIPvarGetIndex(var1) * 32768 + SCIPvarGetIndex(var2));
+/** gets the hash key of a variable tuple */
+static
+SCIP_DECL_HASHGETKEY(hashGetKeyVars)
+{
+   VarTuple* vars;
+
+   vars = (VarTuple*)elem;
+   assert(vars != NULL);
+
+   /* the key of a variable tuple is the variable tuple itself */
+   return vars;
 }
 
-/* calculates the number of needed candidates based on the min and max number of candidates as well as the node gap */ 
+/** returns TRUE iff both variable tuples contain the same variables (ignoring order) */
+static
+SCIP_DECL_HASHKEYEQ(hashKeyEqVars)
+{
+   VarTuple* vars1;
+   VarTuple* vars2;
+
+   vars1 = (VarTuple*)key1;
+   vars2 = (VarTuple*)key2;
+   assert(vars1 != NULL);
+   assert(vars2 != NULL);
+
+   /* check if first variable is equal */
+   if( SCIPvarGetIndex(vars1->var1) != SCIPvarGetIndex(vars2->var1) )
+      return FALSE;
+
+   /* second variable might be NULL */
+   if( (vars1->var2 == NULL) && (vars2->var2 == NULL) )
+      return TRUE;
+
+   if( (vars1->var2 == NULL) || (vars2->var2 == NULL) )
+      return FALSE;
+
+   /* check if second variable is equal */
+   if( SCIPvarGetIndex(vars1->var2) != SCIPvarGetIndex(vars2->var2) )
+      return FALSE;
+
+   return TRUE;
+}
+
+static
+SCIP_DECL_HASHKEYVAL(hashKeyValVars)
+{
+   VarTuple* vars;
+   unsigned int hashvalue;
+   SCIP_VAR* var1;
+   SCIP_VAR* var2;
+
+   vars = (VarTuple*)key;
+   assert(vars != NULL);
+
+   var1 = vars->var1;
+   var2 = vars->var2;
+
+   /* return hashvalue of indices */
+   if( var2 == NULL )
+      hashvalue = SCIPhashSignature64( SCIPvarGetIndex(var1) );
+   else
+      hashvalue = SCIPhashTwo( MIN( SCIPvarGetIndex(var1), SCIPvarGetIndex(var2) ), MAX( SCIPvarGetIndex(var1), SCIPvarGetIndex(var2) ) );
+
+   return hashvalue;
+}
+
+/* calculates the number of needed candidates based on the min and max number of candidates as well as the node gap */
 static
 int calculateNCands(
    SCIP*                 scip,               /**< scip data structure */
@@ -266,14 +332,14 @@ int calculateNCands(
 
    assert(min >= 1);
 
-   return MIN( candfrac*ncands, 
+   return MIN( candfrac*ncands,
                min + (int) SCIPceil(scip, MIN( dif, dif * nodegap * gapweight + dif * (1-gapweight) )) );
 }
 
 /* assigns a flag to the given branching candidate based on the block it is in
  *
  * return  1: integer variables belonging to a unique block with fractional value
- * return  0: variables that belong to no block but were directly transferred to the 
+ * return  0: variables that belong to no block but were directly transferred to the
  *            master problem and which have a fractional value in the current solution
  * return -1: neither
  */
@@ -322,7 +388,6 @@ int assignUniqueBlockFlags(
          }
          /* candidate is valid in first iteration */
          return 1;
-         
       }
       else /* iter == 1 */
       {
@@ -349,7 +414,9 @@ SCIP_RETCODE addBranchcandsToData(
    SCIP* masterscip;
    SCIP_BRANCHRULEDATA* branchruledata;
    int i;
-   int maxcands;
+   VarTuple* vartuple = NULL;
+   int nvars;
+   int newsize;
 
    /* get branching rule data */
    branchruledata = SCIPbranchruleGetData(branchrule);
@@ -357,72 +424,52 @@ SCIP_RETCODE addBranchcandsToData(
 
    masterscip = GCGgetMasterprob(scip);
 
-   if( branchruledata->nvars == 0 )
-   { 
-      maxcands = SCIPgetNIntVars(scip) + SCIPgetNBinVars(scip);
-      SCIP_CALL( SCIPhashmapCreate(&(branchruledata->varhashmap), SCIPblkmem(scip),
-                                   branchruledata->initiator == RYANFOSTER? ncands : maxcands) );
-
-      assert(branchruledata->varhashmap != NULL);
-
-      /* create arrays */
-      branchruledata->maxvars = SCIPcalcMemGrowSize(masterscip, ncands);
-      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->uniqueblockflags, branchruledata->maxvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->strongbranchscore, branchruledata->maxvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->sbscoreisrecent, branchruledata->maxvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->lastevalnode, branchruledata->maxvars) );
-      branchruledata->nvars = ncands;
-
-      /* store each variable in hashmap and initialize array entries */
-      for( i = 0; i < ncands; i++ )
-      {
-         SCIP_CALL( SCIPhashmapInsertInt(branchruledata->varhashmap, buildIdentifier(var1s[i], var2s!=NULL? var2s[i] : NULL), i) );
-         branchruledata->strongbranchscore[i] = -1;
-         branchruledata->sbscoreisrecent[i] = FALSE;
-         branchruledata->lastevalnode[i] = -1;
-         branchruledata->uniqueblockflags[i] = -2;
-      }
-   }
-   /* possibly new variables need to be added */
-   else
+   /* if var is not in hashtable, insert it */
+   for( i = 0; i < ncands; i++ )
    {
-      /* if var is not in hashmap, insert it */
-      for( i = 0; i < ncands; i++ )
+      nvars = branchruledata->nvars;
+
+      /* if variable is not in hashmtable insert it, initialize its array entries, and increase array sizes */
+      SCIP_CALL( SCIPallocBlockMemory(masterscip, &vartuple) );
+      vartuple->var1 = var1s[i];
+      vartuple->var2 = var2s!=NULL? var2s[i] : NULL;
+      vartuple->index = nvars;
+
+      if( !SCIPhashtableExists(branchruledata->candhashtable, (void *) vartuple) )
       {
-         int nvars;
-         nvars = branchruledata->nvars;
+         newsize = SCIPcalcMemGrowSize(masterscip, nvars + 1);
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->strongbranchscore,
+                     branchruledata->maxvars, newsize) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->sbscoreisrecent,
+                     branchruledata->maxvars, newsize) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->lastevalnode, branchruledata->maxvars,
+                     newsize) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->uniqueblockflags,
+                     branchruledata->maxvars, newsize) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->vartuples,
+                     branchruledata->maxvars, newsize) );
+         branchruledata->maxvars = newsize;
 
-         /* if variable is not in hashmap insert it, initialize its array entries, and increase array sizes */
-         if( !SCIPhashmapExists(branchruledata->varhashmap, buildIdentifier(var1s[i],
-             var2s != NULL? var2s[i] : NULL)) )
-         {
-            int newsize = SCIPcalcMemGrowSize(masterscip, nvars + 1);
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->strongbranchscore,
-                       branchruledata->maxvars, newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->sbscoreisrecent,
-                       branchruledata->maxvars, newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->lastevalnode, branchruledata->maxvars,
-                       newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->uniqueblockflags,
-                       branchruledata->maxvars, newsize) );
-            branchruledata->maxvars = newsize;
-            
-            SCIP_CALL( SCIPhashmapInsertInt(branchruledata->varhashmap, buildIdentifier(var1s[i], var2s != NULL?
-                                            var2s[i] : NULL), nvars) );
-            branchruledata->strongbranchscore[nvars] = -1;
-            branchruledata->sbscoreisrecent[nvars] = FALSE;
-            branchruledata->lastevalnode[nvars] = -1;
-            branchruledata->uniqueblockflags[nvars] = -2;
+         branchruledata->strongbranchscore[nvars] = -1;
+         branchruledata->sbscoreisrecent[nvars] = FALSE;
+         branchruledata->lastevalnode[nvars] = -1;
+         branchruledata->uniqueblockflags[nvars] = -2;
+         branchruledata->vartuples[nvars] = vartuple;
+         SCIP_CALL( SCIPhashtableInsert(branchruledata->candhashtable,
+                                          (void*) branchruledata->vartuples[nvars]) );
 
-            assert(SCIPhashmapExists(branchruledata->varhashmap,
-                                     buildIdentifier(var1s[i], var2s != NULL? var2s[i] : NULL))
-                   && SCIPhashmapGetImageInt(branchruledata->varhashmap, buildIdentifier(var1s[i],
-                                             var2s != NULL? var2s[i] : NULL)) == nvars);
+         assert(SCIPhashtableExists(branchruledata->candhashtable, (void*) branchruledata->vartuples[nvars])
+                  && ( (VarTuple *) SCIPhashtableRetrieve(branchruledata->candhashtable,
+                                          (void*) branchruledata->vartuples[nvars]) )->index == nvars);
 
-            ++(branchruledata->nvars);
-         }
+         ++(branchruledata->nvars);
+      }
+      else
+      {
+         SCIPfreeBlockMemory(masterscip, &vartuple);
       }
    }
+
    return SCIP_OKAY;
 }
 
@@ -470,7 +517,7 @@ SCIP_RETCODE newProbingNodeRyanfosterMaster(
    int norigvars;
    int maxorigvars;
    int v;
-   
+
    SCIP_CONS** origbranchconss;
 
 
@@ -575,7 +622,7 @@ SCIP_RETCODE executeStrongBranching(
 
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
-   
+
    *downvalid = FALSE;
    *upvalid = FALSE;
    *downinf = FALSE;
@@ -629,7 +676,7 @@ SCIP_RETCODE executeStrongBranching(
             SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, branchruledata->maxsbpricerounds, NULL, &npricerounds,
                                                          cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
             branchruledata->nphase2lps++;
-            branchruledata->nsbpricerounds += npricerounds; 
+            branchruledata->nsbpricerounds += npricerounds;
          }
          else
          {
@@ -705,6 +752,8 @@ SCIP_Real score_function(
 )
 {
    SCIP_BRANCHRULEDATA* branchruledata;
+   VarTuple vartuple = {var1, var2, 0};
+
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
 
@@ -716,8 +765,8 @@ SCIP_Real score_function(
       {
          int hashindex;
 
-         assert(SCIPhashmapExists(branchruledata->varhashmap, buildIdentifier(var1, var2)));
-         hashindex = SCIPhashmapGetImageInt(branchruledata->varhashmap, buildIdentifier(var1, var2));
+         assert(SCIPhashtableExists(branchruledata->candhashtable, (void *) &vartuple));
+         hashindex = ((VarTuple *) SCIPhashtableRetrieve(branchruledata->candhashtable, (void *) &vartuple))->index;
 
          return branchruledata->strongbranchscore[hashindex];
       }
@@ -731,7 +780,7 @@ SCIP_Real score_function(
       {
          if( !branchruledata->mostfrac )
             return 1;
-            
+
          *score = solval1 - SCIPfloor(scip, solval1);
          *score = MIN( *score, 1.0 - *score );
 
@@ -751,7 +800,7 @@ SCIP_Real score_function(
 
       int hashindex;
       int currentnodenr;
-      
+
       SCIP_Real down;
       SCIP_Real up;
       SCIP_Real downgain;
@@ -766,11 +815,11 @@ SCIP_Real score_function(
       masterscip = GCGgetMasterprob(scip);
       assert(masterscip != NULL);
 
-      assert(SCIPhashmapExists(branchruledata->varhashmap, buildIdentifier(var1, var2)));
-      hashindex = SCIPhashmapGetImageInt(branchruledata->varhashmap, buildIdentifier(var1, var2));
+      assert(SCIPhashtableExists(branchruledata->candhashtable, &vartuple));
+      hashindex = ((VarTuple *) SCIPhashtableRetrieve(branchruledata->candhashtable, (void *) &vartuple))->index;
       currentnodenr = SCIPnodeGetNumber(SCIPgetFocusNode(scip));
-   
-      if( !usecolgen 
+
+      if( !usecolgen
           || !branchruledata->sbscoreisrecent[hashindex]
           || !isKAncestor(scip, branchruledata->lastevalnode[hashindex], SCIPgetFocusNode(scip),
                           branchruledata->reevalage) )
@@ -787,8 +836,8 @@ SCIP_Real score_function(
          down = downvalid? down : upvalid? up : 0;
          up = upvalid? up : down;
 
-         downgain = down - lpobjval;
-         upgain = up - lpobjval;
+         downgain = MAX(down - lpobjval, 0.0);
+         upgain = MAX(up - lpobjval, 0.0);
 
          *score = SCIPgetBranchScore(scip, var1, downgain, upgain);
 
@@ -894,6 +943,8 @@ SCIP_RETCODE selectCandidate(
    int nvalidhistcands;
    int nneededhistcands;
 
+   VarTuple vartuple = {NULL,NULL,0};
+
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
@@ -951,7 +1002,7 @@ SCIP_RETCODE selectCandidate(
       SCIP_Longint nlpiterations;
       SCIP_Longint nlps;
       SCIP_Longint maxlpiters;
-      
+
       nlpiterations = branchruledata->nsblpiterations;
       nlps = branchruledata->nphase1lps;
       if( nlps == 0 )
@@ -976,7 +1027,7 @@ SCIP_RETCODE selectCandidate(
       SCIP_Longint npricerounds;
       SCIP_Longint nlps;
       SCIP_Longint maxpricerounds;
-      
+
       npricerounds = branchruledata->nsbpricerounds;
       nlps = branchruledata->nphase2lps;
       if( nlps == 0 )
@@ -997,24 +1048,25 @@ SCIP_RETCODE selectCandidate(
 
    upperbound = SCIPgetUpperbound(scip);
    nodelowerbound = SCIPnodeGetLowerbound( SCIPgetFocusNode(scip) );
-   nodegap = ((upperbound >= 0) == (nodelowerbound >= 0) && MIN( ABS( upperbound ), ABS( nodelowerbound ) ) != 0)? 
+   nodegap = ((upperbound >= 0) == (nodelowerbound >= 0) && MIN( ABS( upperbound ), ABS( nodelowerbound ) ) != 0)?
              MIN( ABS( (upperbound-nodelowerbound) / MIN( ABS( upperbound ), ABS( nodelowerbound ) ) ), 1 ) : 1;
    assert(0 <= nodegap && nodegap <= 1);
 
-   /* number of candidates we evaluate precisely should be based on the likely relevance of this branching decision 
+   /* number of candidates we evaluate precisely should be based on the likely relevance of this branching decision
     * via the nodegap */
    nneededcands = calculateNCands(scip, branchruledata, nodegap, 0, ncands);
 
-   /* insert branchcands into hashmap */
+   /* insert branchcands into hashtable */
    SCIP_CALL( addBranchcandsToData(scip, branchrule, cand1s, cand2s, ncands) );
 
    SCIP_CALL( SCIPallocBufferArray(masterscip, &branchruledata->score, ncands) );
    for( int init = 0; init < ncands; ++init )
    {
-      branchruledata->score[init] = branchruledata->strongbranchscore[
-                                             SCIPhashmapGetImageInt(branchruledata->varhashmap,
-                                                                    buildIdentifier(cand1s[init],
-                                                                    cand2s == NULL? NULL : cand2s[init])) ];
+      vartuple.var1 = cand1s[init];
+      vartuple.var2 = cand2s == NULL? NULL : cand2s[init];
+      hashindex = ((VarTuple *) SCIPhashtableRetrieve(branchruledata->candhashtable, (void *) &vartuple))->index;
+
+      branchruledata->score[init] = branchruledata->strongbranchscore[hashindex];
    }
 
    /* allocate memory */
@@ -1029,22 +1081,25 @@ SCIP_RETCODE selectCandidate(
 
       /* iter = 0: integer variables belonging to a unique block with fractional value,
        * iter = 1: we did not find enough variables to branch on so far, so we look for integer variables that belong
-       * to no block but were directly transferred to the master problem and which have a fractional value in the 
+       * to no block but were directly transferred to the master problem and which have a fractional value in the
        * current solution
        */
       for( int iter = 0; iter <= 1 && nvalidcands < nneededcands; iter++ )
       {
          for( int i = 0; i < ncands; i++ )
          {
-            hashindex = SCIPhashmapGetImageInt(branchruledata->varhashmap, buildIdentifier(cand1s[i], NULL));     
+            vartuple.var1 = cand1s[i];
+            vartuple.var2 = NULL;
+
+            hashindex = ((VarTuple *) SCIPhashtableRetrieve(branchruledata->candhashtable, (void *) &vartuple))->index;
 
             if (iter == 0)
-            {  
+            {
                if( branchruledata->uniqueblockflags[hashindex] < -1 )
                {
                   branchruledata->uniqueblockflags[hashindex] = assignUniqueBlockFlags(scip, cand1s[i]);
                }
-               
+
                if( branchruledata->uniqueblockflags[hashindex] == 1 )
                {
                   indices[nvalidcands] = i;
@@ -1095,7 +1150,7 @@ SCIP_RETCODE selectCandidate(
       }
       nvalidcands = ncands;
    }
-   
+
    /* the number of candidates we select based on historical strong branching scores needs to depend on the number of
     * candidates for which we have historical scores, otherwise some candidates would be selected simply because they
     * have been scored before
@@ -1112,7 +1167,7 @@ SCIP_RETCODE selectCandidate(
     * - phase 2: select the best of the candidates from phase 1 by solving the Master LP with column and cut generation
     */
    for( int phase = 0; phase <= 2; phase++ )
-   {  
+   {
       /* skip phase 1 if we are below its max depth */
       if( depth > branchruledata->maxphase1depth && phase == 1 )
          phase = 2;
@@ -1128,7 +1183,7 @@ SCIP_RETCODE selectCandidate(
             /* skip phase 0 we are too high in the tree, and phases 1 and 2 if we are too low */
             if( branchruledata->minphase0depth > depth )
             {
-               nneededcands = ncands;  
+               nneededcands = ncands;
             }
             else if( depth > branchruledata->maxphase1depth )
             {
@@ -1137,14 +1192,14 @@ SCIP_RETCODE selectCandidate(
                   nneededcands = 1;
 
                   /* strong branching can be fully stopped if all open nodes are below the max depth */
-                  if( SCIPgetEffectiveRootDepth(scip) > branchruledata->maxphase1depth && 
+                  if( SCIPgetEffectiveRootDepth(scip) > branchruledata->maxphase1depth &&
                       SCIPgetEffectiveRootDepth(scip) > branchruledata->maxphase2depth )
                      branchruledata->done = TRUE;
                }
                else
                {
                   /* we only want to skip phase 1, so we need to set nneededcands to the number of output candidates
-                   * for phase 1 
+                   * for phase 1
                    */
                   nneededcands = calculateNCands(scip, branchruledata, nodegap, 1, phase0nneededcands);
                }
@@ -1159,7 +1214,7 @@ SCIP_RETCODE selectCandidate(
              * or if the number of available candidates is lower than the min amount for phase 2,
              * or if we are too low in the tree
              */
-            if( branchruledata->usestronglite 
+            if( branchruledata->usestronglite
                || nneededcands < branchruledata->mincolgencands
                || ncands < branchruledata->mincolgencands
                || depth > branchruledata->maxphase2depth )
@@ -1175,15 +1230,15 @@ SCIP_RETCODE selectCandidate(
             lookahead = branchruledata->maxlookahead;
             if( lookahead && branchruledata->lookaheadscales>0 )
             {
-               lookahead = MAX( 1, (int) SCIPround(scip, 
-                                                  (SCIP_Real) ((1-branchruledata->lookaheadscales) * lookahead) - 
-                                                  (SCIP_Real) (branchruledata->lookaheadscales * 
+               lookahead = MAX( 1, (int) SCIPround(scip,
+                                                  (SCIP_Real) ((1-branchruledata->lookaheadscales) * lookahead) -
+                                                  (SCIP_Real) (branchruledata->lookaheadscales *
                                                    ncands / branchruledata->maxphase1outcands) * lookahead) );
             }
             break;
       }
 
-      if( nneededcands >= ncands && (!phase == 0 || !branchruledata->forcephase0) )
+      if( nneededcands >= ncands && (phase != 0 || !branchruledata->forcephase0) )
          continue;
 
       /* compute scores */
@@ -1273,7 +1328,7 @@ SCIP_RETCODE selectCandidate(
                *bestdowninf = downinf;
             }
             /* if the last improving candidate is lookahead or more steps away, abort phase 2 */
-            else 
+            else
             {
                lastimproved++;
                if( lookahead && lastimproved >= lookahead && phase == 2 )
@@ -1286,7 +1341,7 @@ SCIP_RETCODE selectCandidate(
          else
          {
             branchruledata->score[indices[c]] = score;
-         } 
+         }
       }
 
       if( nneededcands > 1 )
@@ -1331,7 +1386,7 @@ SCIP_RETCODE selectCandidate(
                         break;
                   }
                }
-               
+
                SCIPfreeBufferArray(masterscip, &indicescopy);
             }
          }
@@ -1339,14 +1394,14 @@ SCIP_RETCODE selectCandidate(
       else
       {
          break;
-      }     
+      }
    }
 
    *outcand1 = cand1s[indices[0]];
    if( branchruledata->initiator == RYANFOSTER )
    {
       *outcand2 = cand2s[indices[0]];
-      *outcandinfo = candinfos[indices[0]]; 
+      *outcandinfo = candinfos[indices[0]];
    }
 
    /* free memory */
@@ -1359,7 +1414,7 @@ SCIP_RETCODE selectCandidate(
       SCIPdebugMessage("Strong branching could not find a variable to branch on!\n");
       return SCIP_OKAY;
    }
-   
+
    if( branchruledata->initiator == ORIG )
    {
       SCIPdebugMessage("Strong branching selected variable %s%s\n",
@@ -1377,7 +1432,7 @@ SCIP_RETCODE selectCandidate(
    {
       SCIPhashmapFree(&solhashmap);
    }
-   
+
    if( !*bestupinf && !*bestdowninf )
    {
       /* if the heuristic was close multiple times in a row, stop strong branching */
@@ -1420,19 +1475,31 @@ static
 SCIP_DECL_BRANCHFREE(branchFreeBPStrong)
 {
    SCIP_BRANCHRULEDATA* branchruledata;
-   SCIP_HASHMAP* varhashmap;
+   SCIP_HASHTABLE* candhashtable;
+   int i;
 
    branchruledata = SCIPbranchruleGetData(branchrule);
-   varhashmap = branchruledata->varhashmap;
-   
-   SCIPfreeBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars);
-   SCIPfreeBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars);
-   SCIPfreeBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars);
-   SCIPfreeBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars);
 
-   if( branchruledata->varhashmap != NULL )
+   if( branchruledata->initialized )
    {
-      SCIPhashmapFree(&varhashmap);
+      candhashtable = branchruledata->candhashtable;
+
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars);
+
+      for( i=0; i<branchruledata->nvars; i++ )
+      {
+          SCIPfreeBlockMemory(scip, &(branchruledata->vartuples[i]));
+      }
+
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->vartuples, branchruledata->maxvars);
+
+      if( branchruledata->candhashtable != NULL )
+      {
+         SCIPhashtableFree(&candhashtable);
+      }
    }
 
    SCIPfreeBlockMemory(scip, &branchruledata);
@@ -1447,12 +1514,15 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
 {
    SCIP* origprob;
    SCIP_BRANCHRULEDATA* branchruledata;
+   SCIP_HASHTABLE* candhashtable;
+
+   int i;
+   int maxcands;
 
    SCIP_Real logweight;
    SCIP_Real logbase;
    SCIP_Real phase0frac;
    SCIP_Real phase2frac;
-   int nvars;
 
    SCIP_Real phase1depth;
 
@@ -1467,6 +1537,29 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
          branchDataDeleteBPStrong) );
 
    branchruledata = SCIPbranchruleGetData(branchrule);
+
+   /* free data if we already solved another instance but branchFreeBPStrong was not called inbetween */
+   if( branchruledata->initialized )
+   {
+      candhashtable = branchruledata->candhashtable;
+
+      for( i=0; i<branchruledata->nvars; i++ )
+      {
+         SCIPfreeBlockMemory(scip, &branchruledata->vartuples[i]);
+      }
+
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->vartuples, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars);
+      SCIPfreeBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars);
+
+      if( branchruledata->candhashtable != NULL )
+      {
+         SCIPhashtableFree(&candhashtable);
+      }
+   }
+
    branchruledata->lastcand = 0;
    branchruledata->nvars = 0;
    branchruledata->maxvars = 0;
@@ -1486,9 +1579,9 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
       SCIP_CALL( SCIPgetRealParam(origprob, "branching/bp_strong/depthlogbase", &logbase) );
       SCIP_CALL( SCIPgetRealParam(origprob, "branching/bp_strong/depthlogphase0frac", &phase0frac) );
       SCIP_CALL( SCIPgetRealParam(origprob, "branching/bp_strong/depthlogphase2frac", &phase2frac) );
-      nvars = SCIPgetNIntVars(origprob) + SCIPgetNBinVars(origprob);
+      branchruledata->maxcands = SCIPgetNIntVars(origprob) + SCIPgetNBinVars(origprob);
 
-      phase1depth = log(nvars)/log(logbase);
+      phase1depth = log(branchruledata->maxcands)/log(logbase);
 
       branchruledata->minphase0depth = (int) SCIPround(origprob, (1-logweight) * branchruledata->minphase0depth
                                                                  + logweight * phase0frac * phase1depth);
@@ -1497,6 +1590,25 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
       branchruledata->maxphase2depth = (int) SCIPround(origprob, (1-logweight) * branchruledata->maxphase2depth
                                                                  + logweight * phase2frac * phase1depth);
    }
+
+   /* create hash table TODO: better inital table sizes */
+   maxcands = branchruledata->maxcands;
+   SCIP_CALL( SCIPhashtableCreate(&(branchruledata->candhashtable), SCIPblkmem(scip),
+                              branchruledata->initiator == RYANFOSTER? maxcands*2 : maxcands,
+                              hashGetKeyVars, hashKeyEqVars, hashKeyValVars, (void*) scip) );
+
+   assert(branchruledata->candhashtable != NULL);
+
+   /* create arrays */
+   branchruledata->nvars = 0;
+   branchruledata->maxvars = SCIPcalcMemGrowSize(scip, 0);
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->vartuples, branchruledata->maxvars) );
+
+   branchruledata->initialized = TRUE;
 
    this_branchruledata = branchruledata;
 
@@ -1520,11 +1632,13 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
 
    /* alloc branching rule data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &branchruledata) );
-   
+
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchruleBasic(scip, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
             BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata) );
    assert(branchrule != NULL);
+
+   branchruledata->initialized = FALSE;
 
    /* set non fundamental callbacks via setter functions */
    SCIP_CALL( SCIPsetBranchruleInit(scip, branchrule, branchInitBPStrong) );
@@ -1538,7 +1652,7 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/strongtraining",
          "should strong branching run as precise as possible (to generate more valuable training data)?",
          &branchruledata->usestrongtrain, FALSE, DEFAULT_STRONGTRAIN, NULL, NULL) );
-      
+
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/immediateinf",
          "should infeasibility detected during strong branching be handled immediately, or only if the candidate is selected?",
          &branchruledata->immediateinf, FALSE, DEFAULT_IMMEDIATEINF, NULL, NULL) );
@@ -1613,11 +1727,11 @@ SCIP_RETCODE SCIPincludeBranchruleBPStrong(
 
    SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/phase1reliable",
          "min count of pseudocost scores for a variable to be considered reliable in phase 1",
-         &branchruledata->phase1reliable, FALSE, DEFAULT_PHASE1RELIABLE, -1, INT_MAX, NULL, NULL) );   
+         &branchruledata->phase1reliable, FALSE, DEFAULT_PHASE1RELIABLE, -1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip, "branching/bp_strong/phase2reliable",
          "min count of pseudocost scores for a variable to be considered reliable in phase 2",
-         &branchruledata->phase2reliable, FALSE, DEFAULT_PHASE2RELIABLE, -1, INT_MAX, NULL, NULL) ); 
+         &branchruledata->phase2reliable, FALSE, DEFAULT_PHASE2RELIABLE, -1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/forcep0",
          "should phase 0 be performed even if the number of input candidates is already lower or equal to the number of output candidates?",
