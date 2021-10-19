@@ -415,8 +415,9 @@ SCIP_RETCODE addBranchcandsToData(
    SCIP* masterscip;
    SCIP_BRANCHRULEDATA* branchruledata;
    int i;
-   int maxcands;
    VarTuple* vartuple = NULL;
+   int nvars;
+   int newsize;
 
    /* get branching rule data */
    branchruledata = SCIPbranchruleGetData(branchrule);
@@ -424,94 +425,52 @@ SCIP_RETCODE addBranchcandsToData(
 
    masterscip = GCGgetMasterprob(scip);
 
-   maxcands = branchruledata->maxcands;
-
-   if( branchruledata->nvars == 0 )
-   { 
-      /* TODO: better inital table sizes */
-      SCIP_CALL( SCIPhashtableCreate(&(branchruledata->candhashtable), SCIPblkmem(scip),
-                                   branchruledata->initiator == RYANFOSTER? maxcands*2 : maxcands,
-                                   hashGetKeyVars, hashKeyEqVars, hashKeyValVars, (void*) scip) );
-
-      assert(branchruledata->candhashtable != NULL);
-
-      /* create arrays */
-      branchruledata->maxvars = SCIPcalcMemGrowSize(masterscip, ncands);
-      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->uniqueblockflags, branchruledata->maxvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->strongbranchscore, branchruledata->maxvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->sbscoreisrecent, branchruledata->maxvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->lastevalnode, branchruledata->maxvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &branchruledata->vartuples, branchruledata->maxvars) );
-      branchruledata->nvars = ncands;
-
-      /* store each variable in hashtable and initialize array entries */
-      for( i = 0; i < ncands; i++ )
-      {
-         SCIP_CALL( SCIPallocBlockMemory(masterscip, &vartuple) );
-         vartuple->var1 = var1s[i];
-         vartuple->var2 = var2s!=NULL? var2s[i] : NULL; 
-         vartuple->index = i;
-
-         branchruledata->strongbranchscore[i] = -1;
-         branchruledata->sbscoreisrecent[i] = FALSE;
-         branchruledata->lastevalnode[i] = -1;
-         branchruledata->uniqueblockflags[i] = -2;
-         branchruledata->vartuples[i] = vartuple;
-         SCIP_CALL( SCIPhashtableInsert(branchruledata->candhashtable, (void*) (branchruledata->vartuples[i])) );
-      }
-   }
-   /* possibly new variables need to be added */
-   else
+   /* if var is not in hashtable, insert it */
+   for( i = 0; i < ncands; i++ )
    {
-      /* if var is not in hashtable, insert it */
-      for( i = 0; i < ncands; i++ )
+      nvars = branchruledata->nvars;
+
+      /* if variable is not in hashmtable insert it, initialize its array entries, and increase array sizes */
+      SCIP_CALL( SCIPallocBlockMemory(masterscip, &vartuple) );
+      vartuple->var1 = var1s[i];
+      vartuple->var2 = var2s!=NULL? var2s[i] : NULL;
+      vartuple->index = nvars;
+
+      if( !SCIPhashtableExists(branchruledata->candhashtable, (void *) vartuple) )
       {
-         int nvars;
-         nvars = branchruledata->nvars;
+         newsize = SCIPcalcMemGrowSize(masterscip, nvars + 1);
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->strongbranchscore,
+                     branchruledata->maxvars, newsize) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->sbscoreisrecent,
+                     branchruledata->maxvars, newsize) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->lastevalnode, branchruledata->maxvars,
+                     newsize) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->uniqueblockflags,
+                     branchruledata->maxvars, newsize) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->vartuples,
+                     branchruledata->maxvars, newsize) );
+         branchruledata->maxvars = newsize;
 
-         /* if variable is not in hashmtable insert it, initialize its array entries, and increase array sizes */
-         SCIP_CALL( SCIPallocBlockMemory(masterscip, &vartuple) );
-         vartuple->var1 = var1s[i];
-         vartuple->var2 = var2s!=NULL? var2s[i] : NULL;
-         vartuple->index = nvars;
+         branchruledata->strongbranchscore[nvars] = -1;
+         branchruledata->sbscoreisrecent[nvars] = FALSE;
+         branchruledata->lastevalnode[nvars] = -1;
+         branchruledata->uniqueblockflags[nvars] = -2;
+         branchruledata->vartuples[nvars] = vartuple;
+         SCIP_CALL( SCIPhashtableInsert(branchruledata->candhashtable,
+                                          (void*) branchruledata->vartuples[nvars]) );
 
-         if( !SCIPhashtableExists(branchruledata->candhashtable, (void *) vartuple) )
-         {
-            int newsize = SCIPcalcMemGrowSize(masterscip, nvars + 1);
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->strongbranchscore,
-                       branchruledata->maxvars, newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->sbscoreisrecent,
-                       branchruledata->maxvars, newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->lastevalnode, branchruledata->maxvars,
-                       newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->uniqueblockflags,
-                       branchruledata->maxvars, newsize) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->vartuples,
-                       branchruledata->maxvars, newsize) );
-            branchruledata->maxvars = newsize;
+         assert(SCIPhashtableExists(branchruledata->candhashtable, (void*) branchruledata->vartuples[nvars])
+                  && ( (VarTuple *) SCIPhashtableRetrieve(branchruledata->candhashtable,
+                                          (void*) branchruledata->vartuples[nvars]) )->index == nvars);
 
-            branchruledata->strongbranchscore[nvars] = -1;
-            branchruledata->sbscoreisrecent[nvars] = FALSE;
-            branchruledata->lastevalnode[nvars] = -1;
-            branchruledata->uniqueblockflags[nvars] = -2;
-            branchruledata->vartuples[nvars] = vartuple;
-            SCIP_CALL( SCIPhashtableInsert(branchruledata->candhashtable,
-                                           (void*) branchruledata->vartuples[nvars]) );
-
-            assert(SCIPhashtableExists(branchruledata->candhashtable, (void*) branchruledata->vartuples[nvars])
-                   && ( (VarTuple *) SCIPhashtableRetrieve(branchruledata->candhashtable,
-                                            (void*) branchruledata->vartuples[nvars]) )->index == nvars);
-
-            ++(branchruledata->nvars);
-         }
-         else
-         {
-            SCIPfreeBlockMemory(masterscip, &vartuple);
-         } 
+         ++(branchruledata->nvars);
       }
-      /* error if we've exceeded the (reliable) capacity of the candhashtable */
-      assert(branchruledata->nvars <= RYANFOSTER? maxcands*maxcands/2 : maxcands);
+      else
+      {
+         SCIPfreeBlockMemory(masterscip, &vartuple);
+      } 
    }
+
    return SCIP_OKAY;
 }
 
@@ -1559,7 +1518,9 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
    SCIP* origprob;
    SCIP_BRANCHRULEDATA* branchruledata;
    SCIP_HASHTABLE* candhashtable;
+   
    int i;
+   int maxcands;
 
    SCIP_Real logweight;
    SCIP_Real logbase;
@@ -1633,9 +1594,26 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
                                                                  + logweight * phase2frac * phase1depth);
    }
 
-   this_branchruledata = branchruledata;
+   /* create hash table TODO: better inital table sizes */
+   maxcands = branchruledata->maxcands;
+   SCIP_CALL( SCIPhashtableCreate(&(branchruledata->candhashtable), SCIPblkmem(scip),
+                              branchruledata->initiator == RYANFOSTER? maxcands*2 : maxcands,
+                              hashGetKeyVars, hashKeyEqVars, hashKeyValVars, (void*) scip) );
+
+   assert(branchruledata->candhashtable != NULL);
+
+   /* create arrays */
+   branchruledata->nvars = 0;
+   branchruledata->maxvars = SCIPcalcMemGrowSize(scip, 0);
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->uniqueblockflags, branchruledata->maxvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->strongbranchscore, branchruledata->maxvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->sbscoreisrecent, branchruledata->maxvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->lastevalnode, branchruledata->maxvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->vartuples, branchruledata->maxvars) );
 
    branchruledata->initialized = TRUE;
+
+   this_branchruledata = branchruledata;
 
    return SCIP_OKAY;
 }
