@@ -187,7 +187,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             mastersetname = argv[i];
          else
          {
-            SCIPinfoMessage(scip, NULL, "missing master settings filename after parameter '-m'\n");
+            SCIPinfoMessage(scip, NULL, "missing settings filename for master program after parameter '-m'\n");
             paramerror = TRUE;
          }
       }
@@ -381,7 +381,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             "  -l <logfile>           : copy output into log file\n"
             "  -q                     : suppress screen messages\n"
             "  -s <settings>          : load parameter settings (.set) file\n"
-            "  -m <mastersettings>    : load master parameter settings (.set) file\n",
+            "  -m <mastersettings>    : load parameter settings for master program (.set) file\n",
             argv[0]);
       SCIPinfoMessage(scip, NULL, "  -f <problem>           : load and solve problem file\n"
          "  -d <decomposition>     : load decomposition file\n"
