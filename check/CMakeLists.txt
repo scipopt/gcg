@@ -156,6 +156,7 @@ macro(add_instancetests instances settings prefix)
                                 PROPERTIES
                                     PASS_REGULAR_EXPRESSION "Validation         : Success"
                                     DEPENDS gcg-build
+                                    RESOURCE_LOCK libscip
                                 )
         endforeach(setting)
     endforeach(instance)
