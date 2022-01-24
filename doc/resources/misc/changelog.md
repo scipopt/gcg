@@ -3,7 +3,7 @@
 New features, performance improvements, and interface changes between different versions of GCG are documented in the
 release notes:
 
-- @subpage RN31
+- @subpage RN35
 - @subpage RN30
 - @subpage RN21
 - @subpage RN20

@@ -4909,14 +4909,14 @@ void PARTIALDECOMP::fixConsToBlock(
 
 bool PARTIALDECOMP::fixConsToBlock(
    SCIP_CONS*            cons,                /**< pointer of the constraint */
-   int                   blockid              /**< block index (counting from 0) */
+   int                   block                /**< block index (counting from 0) */
    )
 {
    int consindex = getDetprobdata()->getIndexForCons(cons);
 
    if( consindex >= 0 )
    {
-      fixConsToBlock(consindex, blockid);
+      fixConsToBlock(consindex, block);
       return true;
    }
    return false;
