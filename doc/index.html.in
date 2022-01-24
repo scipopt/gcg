@@ -16,6 +16,7 @@
       .mywrapper {
         text-align: center;
         margin-top: 20px;
+        margin-bottom: 20px;
       }
       .mybutton {
         display: inline-block;
@@ -25,8 +26,8 @@
         color: #FFFFFF;
         text-align: center;
         font-size: 14px;
-        padding: 5px;
-        width: 230px;
+        padding: 10px;
+        width: 190px;
         transition: all 0.5s;
         cursor: pointer;
         margin: auto;
@@ -43,7 +44,8 @@
         content: '\00bb';
         position: absolute;
         opacity: 0;
-        top: 0;
+        font-size: x-large;
+        top: 2px;
         right: -20px;
         transition: 0.5s;
       }
@@ -170,6 +172,7 @@
         <li>automatically aggregates subproblems if possible</li>
         <li>offers an automated <strong>Benders&#39;</strong> decomposition algorithm</li>
         <li>has <strong>branching rules</strong> for automatic branching on any problem, e.g. branching on original, Ryan-Foster branching or generic branching</li>
+        <li>includes a generic implementation of <strong>strong branching in branch-and-price</strong></li>
         <li>applies a wide variety of <strong>cuts</strong> to the problem, e.g. combinatorially or from basis)</li>
         <li>rates columns in its (parallel) exact or heuristic <strong>pricing</strong></li>
         <li>has a large number of <strong>primal heuristics</strong> both in the original and the reformulated space</li>
@@ -183,7 +186,7 @@
       <p>
         <b>We recommend you to download the <a href="https://scipopt.org/index.php#download">SCIP Optimization Suite</a></b>, a complete source
         code bundle of SCIP, SoPlex, ZIMPL, GCG, and UG with an easy-to-use Makefile.<br/>
-        However, you can also download the <a href="https://gcg.or.rwth-aachen.de/dev/files/">GCG source code</a> alone.
+        However, you can also download the <a href="https://gcg.or.rwth-aachen.de/files/">GCG source code</a> alone.
       </p>
     </div>
 
@@ -195,8 +198,11 @@
         with use-cases and example projects.
       </p>
         <div class="mywrapper">
-          <button class="mybutton" style="vertical-align:middle; align:middle;" onclick="javascript:document.location='doc-<CURRGCG/>/index.html'"><span style="font-size:larger"><b>GCG Documentation</b></span></button>
+          <button class="mybutton" style="vertical-align:middle; align:middle;" onclick="javascript:document.location='doc-<CURRGCG/>/index.html'"><span style="font-size:larger"><b>GCG <CURRGCG/><br>Documentation</b></span></button>
         </div>
+      <p>
+        If you are looking for the documentation of GCG's Python interface (PyGCGOpt): you can find it <a href="https://scipopt.github.io/PyGCGOpt/">here</a>.
+      </p>
     </div>
 
     <div>
@@ -209,9 +215,14 @@
           <li><h4 id="papers" class="reveal">Papers that use GCG</h4></li>
           <li style="display: block;" id="papers_ans" class="answer">
             <ul>
+              <li><a href="https://dx.doi.org/10.2139/ssrn.3437981"><b>
+              An Image-based Approach to Detecting Structural Similarity Among Mixed Integer Programs</b></a></br><em>
+              Z. Steever, C. Murray, J. Yuan, M. Karwan, and M. Lübbecke.</em></br>
+              Available at SSRN 3437981 (2020).</li>
+
               <li><a href="https://doi.org/10.1007/s10479-018-3067-9"><b>
               Random sampling and machine learning to understand good decompositions</b></a></br><em>
-              Basso, S.; Ceselli, Alberto; Tettamanzi, Andrea.</em></br>
+              S. Basso, A. Ceselli, and A. Tettamanzi.</em></br>
               In: Annals of Operations Research, 284:501–526, 2020</li>
 
               <!--
@@ -363,7 +374,7 @@
               </tr>
             <tr>
               <td>Tim Donkiewicz</td>
-              <td>Documentation, visualization suite</td>
+              <td>Documentation, visualization suite, strIPlib</td>
             </tr>
             <tr>
               <td>Simon Feiden</td>
@@ -374,8 +385,16 @@
               <td>Structure detection, visualization, refactoring</td>
             </tr>
             <tr>
+              <td>Oliver Gaul</td>
+              <td>Strong branching in branch-and-price</td>
+            </tr>
+            <tr>
               <td>Alexander Groß</td>
               <td>Statistics</td>
+            </tr>
+            <tr>
+              <td>Alexander Helber</td>
+              <td>Frontend & backend strIPlib</td>
             </tr>
             <tr>
               <td>Julius Hense</td>
@@ -434,6 +453,10 @@
               <td>strIPlib instance curation</td>
             </tr>
             <tr>
+              <td>Steffan Schlein</td>
+              <td>Python interface (PyGCGOpt)</td>
+            </tr>
+            <tr>
               <td>Marcel Schmickerath</td>
               <td>Generic (Vanderbeck) branching</td>
             </tr>
@@ -458,7 +481,7 @@
       <h1 id="more">More Information</h1>
       <h2 id="contact" style="padding-top:60px">Contact</h3>
       For general information or questions about GCG, there are different options to get in touch with us.</br>
-      Trouble compiling GCG from source? Please check the <a href="/doc/html/install.html">installation guide</a> before sending an email.
+      Trouble compiling GCG from source? Please check the <a href="doc/install.html">installation guide</a> before sending an email.
 
       <h4>Mailing List</h4>
       <p>
