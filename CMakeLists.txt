@@ -166,10 +166,18 @@ if(SYM STREQUAL "bliss")
       find_package(BLISS)
    endif()
    if(((NOT BLISS_FOUND) OR GCG_DEV_BUILD) AND (EXISTS "${GCG_DEV_BUILD_BLISS_PATH}/CMakeLists.txt") AND UNIX)
-      message(STATUS "Using '${GCG_DEV_BUILD_BLISS_PATH}'")
-      set(BLISS_DIR ${CMAKE_BINARY_DIR})
-      add_subdirectory(${GCG_DEV_BUILD_BLISS_PATH})
-      find_package(BLISS CONFIG)
+      message(STATUS "Using '${GCG_DEV_BUILD_BLISS_PATH}'. Building BLISS ...")
+      file(COPY ${GCG_DEV_BUILD_BLISS_PATH} DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+      set(BLISS_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/bliss-git)
+      file(MAKE_DIRECTORY ${BLISS_DIR}/build)
+      execute_process(
+         COMMAND ${CMAKE_COMMAND} ${BLISS_DIR}
+         WORKING_DIRECTORY ${BLISS_DIR}/build
+      )
+      execute_process(
+         COMMAND ${CMAKE_COMMAND} --build ${BLISS_DIR}/build
+      )
+      find_package(BLISS)
    endif()
    if(BLISS_FOUND)
       include_directories(${BLISS_INCLUDE_DIRS})

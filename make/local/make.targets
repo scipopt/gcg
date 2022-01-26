@@ -127,7 +127,12 @@ googletest:
 
 .PHONY: bliss
 bliss:
+ifneq ("$(wildcard lib/bliss-git/Makefile-manual)","")
+		-mkdir -p lib/bliss-git/build
+		@$(MAKE) -C lib/bliss-git -f Makefile-manual
+else
 		@$(MAKE) -C lib/bliss-git
+endif
 
 .PHONY: cliquer
 cliquer: cliquerobj cliquerlib
