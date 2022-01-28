@@ -76,13 +76,20 @@ LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER)
 # overriding SCIP PARASCIP setting if compiled with OPENMP
 ifeq ($(OPENMP),true)
 override PARASCIP=true
+MAKEOVERRIDES += PARASCIP=true
 endif
 
 # overriding SCIP LPS setting if compiled with CPLEXSOLVER
 ifeq ($(CPLEXSOLVER),true)
 override LPS =  cpx
+MAKEOVERRIDES += LPS=cpx
 endif
 
+# overriding SCIP SYM setting if compiled with BLISS
+ifeq ($(BLISS),true)
+override SYM=bliss
+MAKEOVERRIDES += SYM=bliss
+endif
 
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP (need to do this twice, once to
