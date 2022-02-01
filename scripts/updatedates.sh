@@ -12,7 +12,7 @@
 NEWYEAR=`date +"%Y"`
 LASTYEAR=`expr $NEWYEAR - 1`
 
-DIRECTORIES=(check doc src src/*)
+DIRECTORIES=(check doc src src/* stats)
 EXTENSIONS=(sh awk h c hpp cpp html)
 EXTRAFILES=(Makefile INSTALL make/make.project make/make.detecthost)
 
