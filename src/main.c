@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2022 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -45,8 +45,8 @@
 #include "cons_decomp.h"
 #include "gcg.h"
 
-#if SCIP_VERSION < 700
-#error GCG 3.1.0 can only be compiled with SCIP version 7.0.0 or higher
+#if SCIP_VERSION < 800
+#error GCG 3.5.1 can only be compiled with SCIP version 8.0.0 or higher
 #endif
 
 
