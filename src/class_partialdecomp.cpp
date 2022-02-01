@@ -60,7 +60,6 @@
 
 #ifdef WITH_BLISS
 #include "bliss_automorph.h"
-#include "bliss/graph.hh"
 #endif
 
 
@@ -1126,7 +1125,7 @@ void PARTIALDECOMP::calcAggregationInformation(
 
 #ifdef WITH_BLISS
    if(
-#ifdef BLISS_PATCH_PRESENT
+#if defined(BLISS_PATCH_PRESENT) || BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
          !ignoreDetectionLimits &&
 #endif
          isAgginfoTooExpensive()

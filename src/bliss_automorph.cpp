@@ -1341,7 +1341,7 @@ SCIP_RETCODE cmpGraphPair(
    SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
    SCIP_HASHMAP*         consmap,            /**< hashmap to save permutation of constraints */
    unsigned int          searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
-   unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version) */
+   unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version or version >=0.76) */
    )
 {
    bliss::Graph graph;
@@ -1370,7 +1370,20 @@ SCIP_RETCODE cmpGraphPair(
 #ifdef BLISS_PATCH_PRESENT
    graph.set_search_limits(searchnodelimit, generatorlimit);
 #endif
+
+#if BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
+   auto report = [&](unsigned int n, const unsigned int* aut) {
+      fhook((void*)&ptrhook, n, aut);
+   };
+
+   auto term = [&]() {
+      return (bstats.get_nof_generators() >= (long unsigned int) generatorlimit);
+   };
+
+   graph.find_automorphisms(bstats, report, term);
+#else
    graph.find_automorphisms(bstats, fhook, ptrhook);
+#endif
 
    SCIPverbMessage(origscip, SCIP_VERBLEVEL_FULL , NULL, "finished calling bliss: number of reporting function calls (=number of generators): %d \n", ptrhook->ncalls);
 
@@ -1391,7 +1404,7 @@ SCIP_RETCODE cmpGraphPair(
    SCIP_HASHMAP*           varmap,             /**< hashmap to save permutation of variables */
    SCIP_HASHMAP*           consmap,            /**< hashmap to save permutation of constraints */
    unsigned int            searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
-   unsigned int            generatorlimit      /**< bliss generator limit (requires patched bliss version) */
+   unsigned int            generatorlimit      /**< bliss generator limit (requires patched bliss version or version >=0.76) */
    )
 {
    bliss::Graph graph;
@@ -1439,7 +1452,20 @@ SCIP_RETCODE cmpGraphPair(
 #ifdef BLISS_PATCH_PRESENT
    graph.set_search_limits(searchnodelimit, generatorlimit);
 #endif
+
+#if BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
+   auto report = [&](unsigned int n, const unsigned int* aut) {
+      fhook((void*)&ptrhook, n, aut);
+   };
+
+   auto term = [&]() {
+      return (bstats.get_nof_generators() >= (long unsigned int) generatorlimit);
+   };
+
+   graph.find_automorphisms(bstats, report, term);
+#else
    graph.find_automorphisms(bstats, fhook, ptrhook);
+#endif
    SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL , NULL, "finished calling bliss: number of reporting function calls (=number of generators): %d \n", ptrhook->ncalls);
 
    SCIPdebugMessage("finished find automorphisms.\n");

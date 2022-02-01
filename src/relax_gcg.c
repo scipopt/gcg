@@ -3525,7 +3525,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
          "bliss search node limit (0: unlimited), requires patched bliss version",
          &(relaxdata->searchnodelimit), TRUE, (int)DEFAULT_BLISS_SEARCH_NODE_LIMIT, 0, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/bliss/generatorlimit",
-         "bliss generator limit (0: unlimited), requires patched bliss version",
+         "bliss generator limit (0: unlimited), requires patched bliss version or version >= 0.76",
          &(relaxdata->generatorlimit), TRUE, (int)DEFAULT_BLISS_GENERATOR_LIMIT, 0, INT_MAX, NULL, NULL) );
 #else
    relaxdata->usebliss = FALSE;

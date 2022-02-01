@@ -5,6 +5,7 @@
 Bug fixes
 ---------
 
+- fix compile with new bliss version (0.77)
 
 
 @section RN350 GCG 3.5.0
