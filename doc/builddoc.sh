@@ -14,14 +14,34 @@ R='\e[91m'
 # Needed for cmake compatibility
 if [[ -z ${BINDIR} ]]; then export BINDIR="$PWD/../bin"; fi
 
-# Find relevant documentation versions.
-CURRENT_VERSION_LINK=`cat ../CHANGELOG | grep "@section" -m1 | cut -d" " -f2`
-CURRENT_VERSION=`cat ../CHANGELOG | grep "@section" -m1 | cut -d" " -f4`
+# Update the version on the main page of the documentation to the one described in the
+# first changelog header. Add this version and all existing versions in doc/html/
+# to the docversions.html, which creates the dropdown menu
+updateVersions () {( set -e
+  rm -f docversions.html
 
-# Update version on docu main page
-sed -i -e "/@version/d" -e "/@ref RN/d" resources/main.md
-echo "@version $CURRENT_VERSION" >> resources/main.md
-echo "@ref $CURRENT_VERSION_LINK 'Changelog of this version'">> resources/main.md
+  # Update version on docu main page
+  sed -i -e "/@version/d" -e "/@ref RN/d" resources/main.md
+  echo "@version $CURRENT_VERSION" >> resources/main.md
+  echo "@ref ${CURRENT_VERSION_LINK} \"Changelog of this version\"" >> resources/main.md
+
+  # update drop-down menu, include all folders found in html/doc-*
+  # Generate dropdown menu
+  for docversion in html/doc-*; do
+    V=$(echo $docversion | cut -d"-" -f2)
+    echo "<li><a href='../doc-${V}/index.html'>GCG ${V}</a></li>" >> docversions.html;
+  done
+  # sort the dropdown menu
+  sort -u docversions.html -o docversions.html
+
+  # add entry for PyGCGOpt in the dropdown
+  PyGCGOpt_V=$(curl -L -s "scipopt.github.io/PyGCGOpt/CHANGELOG.html" | grep -m1 "<div class=\"brand\">PyGCGOpt" | sed -e 's/<[^>]*>//g' | sed "s/PyGCGOpt//" | tr -d " ")
+  echo "<li><a href='https://scipopt.github.io/PyGCGOpt/'>PyGCGOpt (${PyGCGOpt_V})</a></li>" >> docversions.html;
+
+  # update changelog.md (the changelog page in the documentation) automatically
+  sed -i.bak "/@subpage/d" resources/misc/changelog.md && rm resources/misc/changelog.md.bak
+  grep "@page RN" ../CHANGELOG | cut -d" " -f7 | sed -e "s/\.//g" -e "s/^/- @subpage RN/" >> resources/misc/changelog.md
+)}
 
 # Adds new .md pages to the table of contents in the folder
 # with a file named as the folder (.md).
@@ -182,11 +202,20 @@ main () {
   # The $? conditions below are a try-catch method to alert the user
   # about the origin of the issue
 
-  n=9 # number of steps to be performed
+  n=10 # number of steps to be performed
   i=1 # step counter
 
+  # Find relevant documentation version.
+  CURRENT_VERSION_LINK=`cat ../CHANGELOG | grep "@section" -m1 | cut -d" " -f2 | tr -d '\r'`
+  CURRENT_VERSION=`cat ../CHANGELOG | grep "@section" -m1 | cut -d" " -f4 | tr -d '\r'`
+
   printf "${B}${U}Building GCG HTML Documentation in html/doc-${CURRENT_VERSION}${W}\n"
-  mkdir -p html
+  mkdir -p html/doc-$CURRENT_VERSION
+
+  # Requirement: none
+  echo "[${i}/${n}] Setting the GCG version"; let "i++"
+    updateVersions
+    if [ $? -ne 0 ]; then printf "\n ${R}Error:${W} You modified folders or the mainpage. Please reset documentation data.\n"; fi
 
   # Requirement: Correctly installed git
   printf "[${i}/${n}] Checking mathjax status"; let "i++"
@@ -241,14 +270,6 @@ main () {
     rm -rf html/doc-${CURRENT_VERSION} gcgheader.html
     # move freshly generated docu into the desired (versionized) folder
     mv html/doc html/doc-${CURRENT_VERSION}
-    # update drop-down menu, include all folders found in html/doc-*
-    # Generate dropdown menu
-    for docversion in $(ls -d html/doc-*); do
-      V=$(echo $docversion | cut -d"-" -f2)
-      echo "<li><a href='../doc-${V}/index.html'>GCG ${V}</a></li>" >> docversions.html;
-    done
-    # sort the dropdown menu
-    sort -u docversions.html -o docversions.html
 
   printf "${B}Done!${W}\n"
 }

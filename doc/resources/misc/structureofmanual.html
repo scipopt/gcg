@@ -176,9 +176,10 @@ a.subtext:hover {
   <div class="column_single">
     <div class="card" onclick="location.href='install.html';">
       <a class="heading3_bold" href="install.html">Installation</a><br>
-        <a class="text" href="install.html">Complete SCIP Optimization Suite</a>
-        <a class="text" href="dev-install.html#git-install">Git Installation</a>
-        <a class="text" href="dev-install.html#install-manually">Manual Installation</a><br>
+        <a class="text" href="easy-install.html">Complete SCIP Optimization Suite</a>
+        <a class="text" href="install-manually.html">Manual Installation</a><br>
+        <a class="text" href="git-install.html">Git Installation</a>
+          <a class="subtext" href="windows-install.html">Windows Installation</a>
           <a class="subtext" href="dev-install.html#cmake-args">CMake Arguments</a>
           <a class="subtext" href="dev-install.html#makefile-args">Makefile Arguments</a>
     </div>
@@ -189,45 +190,54 @@ a.subtext:hover {
   <div class="column">
     <div class="card" onclick="location.href='users.html';">
       <a class="heading3" href="users.html">User's Guide</a><br>
-        <a class="text" href="getting-started.html">Getting Started</a><br>
+        <p class="headtext">Motivation</p>
+          <a class="text" href="why-gcg.html">Why use GCG?</a>
+          <a class="text" href="getting-started.html">Getting Started</a><br>
         <p class="headtext">Features</p>
           <a class="text" href="interactive-menu.html">The Interactive Menu</a>
           <a class="text" href="explore-menu.html">The Explore Menu</a>
-          <a class="text" href="visu.html">The Visualization Suite</a>
+          <a class="text" href="visu-suite.html">The Visualization Suite</a>
         <p class="headtext">Use Cases</p>
           <a class="text" href="u1.html">The Magic of Genericity</a><br>
           <a class="text" href="u2.html">Branch-and-price without a single line of code</a><br>
-          <a class="text" href="u3.html">Paint my Problem</a><br>
-          <a class="text" href="u4.html">Tweaking the Detection</a><br>
-          <a class="text" href="u5.html">Optimizing all GCG Parameters</a><br>
-          <a class="text" href="u6.html">Visualizing Runtime Behaviour</a><br>
-          <a class="text" href="u7.html">Adding new plugins and components to GCG</a><br>
-          <a class="text" href="u8.html">Implementing new features</a>
+          <a class="text" href="u3.html">GCG and GAMS, a match made in heaven</a><br>
+          <a class="text" href="u4.html">Paint my Problem</a><br>
+          <a class="text" href="u5.html">Tweaking the Detection</a><br>
+          <a class="text" href="u6.html">Optimizing all GCG Parameters</a><br>
+          <a class="text" href="u7.html">Visualizing Runtime Behaviour</a><br>
+          <a class="text" href="u8.html">Adding new plugins and components to GCG</a><br>
     </div>
   </div>
   <div class="column">
     <div class="card" onclick="location.href='devs.html';">
       <a class="heading3" href="devs.html">Developer's Guide</a><br>
-        <p class="headtext">Differences between GCG and SCIP</p>
-          <a class="text" href="why-gcg.html">Why use GCG?</a><br>
-          <a class="text" href="mirroring.html">Original and Transformed Problems</a>
-          <a class="text" href="mirroring.html">Branching Mirroring</a>
+        <p class="headtext">Motivation</p>
+          <a class="text" href="dev-getting-started.html">Getting Started: Developers' Edition</a>
         <p class="headtext">The GCG Presolving</p>
           <a class="text" href="presolving-process.html">Presolving Process</a>
-          <a class="text" href="presolving-parameters.html">Presolving Parameters</a>
+          <a class="text" href="presolving-params.html">Presolving Parameters</a>
         <p class="headtext">The GCG Detection</p>
+          <a class="text" href="structure-types.html">Structure Types</a>
           <a class="text" href="classifiers.html">Classifiers</a>
           <a class="text" href="detectors.html">Detectors</a><br>
           <a class="text" href="detection-process.html">Detection Process</a>
           <a class="text" href="benders.html">Benders Detection Mode</a><br>
           <a class="text" href="detection-scores.html">Detection Scores</a>
-          <a class="text" href="detection-parameters.html">Detection Parameters</a>
+          <a class="text" href="detection-params.html">Detection Parameters</a>
+        <p class="headtext">The GCG Branching</p>
+          <a class="text" href="branching-process.html">Branching Process</a>
+          <a class="text" href="branching-rules.html">Branching Rules</a><br>
+          <a class="text" href="branching-selection-heuristics.html">Branching Candidate Selection Heuristics</a>
+          <a class="text" href="diving-heuristics.html">Diving Heuristics</a>
+          <a class="text" href="branching-params.html">Branching Parameters</a>
         <p class="headtext">The GCG Pricing</p>
           <a class="text" href="pricing-process.html">Pricing Process</a>
           <a class="text" href="pricing-solvers.html">Pricing Solvers</a><br>
-          <a class="text" href="pricing-parameters.html">Pricing Parameters</a>
+          <a class="text" href="recursive-dw.html">Recursive Reformulation</a><br>
+          <a class="text" href="pricing-params.html">Pricing Parameters</a>
         <p class="headtext">The GCG Cutting</p>
           <a class="text" href="sepa_basis.html">Basic Separator</a>
+          <a class="text" href="sepa_master.html">Master Separator</a>
           <a class="text" href="sepa_subsetrow.html">Subset Row Separator</a>
         <p class="headtext">Howtos</p>
           <a class="text" href="howtouse.html">How to use</a>

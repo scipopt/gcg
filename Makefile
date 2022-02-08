@@ -6,7 +6,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2022 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -35,7 +35,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	3.5.0
+VERSION         :=	3.6.0
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -76,13 +76,20 @@ LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER)
 # overriding SCIP PARASCIP setting if compiled with OPENMP
 ifeq ($(OPENMP),true)
 override PARASCIP=true
+MAKEOVERRIDES += PARASCIP=true
 endif
 
 # overriding SCIP LPS setting if compiled with CPLEXSOLVER
 ifeq ($(CPLEXSOLVER),true)
 override LPS =  cpx
+MAKEOVERRIDES += LPS=cpx
 endif
 
+# overriding SCIP SYM setting if compiled with BLISS
+ifeq ($(BLISS),true)
+override SYM=bliss
+MAKEOVERRIDES += SYM=bliss
+endif
 
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP (need to do this twice, once to
@@ -790,12 +797,13 @@ help:
 		@echo "  Options for make test:"
 		@echo "  - TEST=file: Define a testset file (located in ./check/testset) to be used"
 		@echo "  - SETTINGS=file: Define a settings file (located in ./settings) to be used"
+		@echo "  - MASTERSETTINGS: Define a settings file for master problem(located in ./settings) to be used"
 		@echo "  - MODE={readdec|none}: If set to readdec (default), GCG looks for given .dec files."
 		@echo "  - STATISTICS=<true|false>: Enable additional statistics. Required for visualizations."
 		@echo "  - OPT={opt|dbg|prf}: Set solver mode (default: opt)."
 		@echo "  - MEM=b: Set memory limit."
 		@echo "  - TIME=s: Set time limit in seconds."
-		@echo "  - NODE=n: Set opened node limit for the branch and bound tree."
+		@echo "  - NODES=n: Set opened node limit for the branch and bound tree."
 		@echo "  - DETECTIONSTATISTICS=<true|false>: Print extended detection statistics. Required for detection visualizations."
 		@echo
 		@echo "  Options for the Visualization Suite: (for targets, see last section)"

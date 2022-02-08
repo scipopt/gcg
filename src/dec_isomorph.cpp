@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2022 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1370,7 +1370,15 @@ SCIP_RETCODE detectIsomorph(
       ptrhook->conssperm[i] = -1;
    }
 
+#if BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
+   auto report = [&](unsigned int n, const unsigned int* aut) {
+      fhookForPartialdecs((void*)&ptrhook, n, aut);
+   };
+
+   graph.find_automorphisms(bstats, report);
+#else
    graph.find_automorphisms(bstats, fhookForPartialdecs, ptrhook);
+#endif
 
    if( !ptrhook->getBool() )
       detectordata->result = SCIP_DIDNOTFIND;

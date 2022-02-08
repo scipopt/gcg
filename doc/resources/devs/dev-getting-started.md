@@ -1,4 +1,4 @@
-# Getting Started: Developers Edition {#dev-getting-started}
+# Getting Started: Developers' Edition {#dev-getting-started}
 > With this getting started, we do not want to explain how to use GCG and its features (this was
 > done in the @ref users), but rather how GCG is implemented.
 

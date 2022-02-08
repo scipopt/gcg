@@ -91,8 +91,8 @@ build:make_dbg:
     ## Bliss ##
     # link & compile
     - make  STATISTICS=true OPT=dbg bliss
-    - ln -sfn ../bliss-git lib/include/bliss
-    - ln -sfn ../bliss-git/libbliss.a lib/static/libbliss.a
+    - ln -sfn ../bliss-git/src lib/include/bliss
+    - ln -sfn ../bliss-git/libbliss_static.a lib/static/libbliss.a
     - make deps CLIQUER=true BLISS=true
     - make  STATISTICS=true OPT=dbg CLIQUER=true BLISS=true
     ## hMetis ##
@@ -197,6 +197,9 @@ docu:master:
     # upload documentation to gcg.or.rwth-aachen.de/doc-master
     - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-master
     - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-master; chmod -R 755 ./* ; "
+  artifacts:
+    paths:
+      - doc/html
 
 # Compile documentation and upload to doc-preview
 # Only executed on branch `docu`
@@ -213,6 +216,9 @@ docu:dev_preview:
     # upload documentation to gcg.or.rwth-aachen.de/doc-preview
     - scp -r doc/html/. gitGCGdoc@orweb.or.rwth-aachen.de:/var/www/gcg-doc-preview
     - ssh gitGCGdoc@orweb.or.rwth-aachen.de "cd /var/www/gcg-doc-preview; chmod -R 755 ./* ; "
+  artifacts:
+    paths:
+      - doc/html
 
 # Generate Testset report
 testset_report:test:

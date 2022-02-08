@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2022 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -35,7 +35,7 @@
 #ifndef GCG_DEF_H_
 #define GCG_DEF_H_
 
-#define GCG_VERSION         350 /**< GCG version number (multiplied by 100 to get integer number) */
+#define GCG_VERSION         360 /**< GCG version number (multiplied by 100 to get integer number) */
 #define GCG_SUBVERSION        0 /**< GCG sub version number */
 
 #endif

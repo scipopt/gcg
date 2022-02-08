@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2021 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2022 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -45,8 +45,8 @@
 #include "cons_decomp.h"
 #include "gcg.h"
 
-#if SCIP_VERSION < 700
-#error GCG 3.1.0 can only be compiled with SCIP version 7.0.0 or higher
+#if SCIP_VERSION < 800
+#error GCG 3.6.0 can only be compiled with SCIP version 8.0.0 or higher
 #endif
 
 
@@ -187,7 +187,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             mastersetname = argv[i];
          else
          {
-            SCIPinfoMessage(scip, NULL, "missing master settings filename after parameter '-m'\n");
+            SCIPinfoMessage(scip, NULL, "missing settings filename for master program after parameter '-m'\n");
             paramerror = TRUE;
          }
       }
@@ -381,7 +381,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             "  -l <logfile>           : copy output into log file\n"
             "  -q                     : suppress screen messages\n"
             "  -s <settings>          : load parameter settings (.set) file\n"
-            "  -m <mastersettings>    : load master parameter settings (.set) file\n",
+            "  -m <mastersettings>    : load parameter settings for master program (.set) file\n",
             argv[0]);
       SCIPinfoMessage(scip, NULL, "  -f <problem>           : load and solve problem file\n"
          "  -d <decomposition>     : load decomposition file\n"

@@ -286,6 +286,7 @@ set(gcgheaders
     struct_solver.h
     struct_vardata.h
     type_branchgcg.h
+    type_classifier.h
     type_colpool.h
     type_consclassifier.h
     type_decomp.h
