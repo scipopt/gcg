@@ -178,6 +178,8 @@ if(SYM STREQUAL "bliss")
          COMMAND ${CMAKE_COMMAND} --build ${BLISS_DIR}/build
       )
       find_package(BLISS)
+      install(FILES ${BLISS_LIBRARIES}
+              DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
    endif()
    if(BLISS_FOUND)
       include_directories(${BLISS_INCLUDE_DIRS})
