@@ -445,8 +445,6 @@ int GCGconsGetNVars(
    assert(conshdlr != NULL);
    conshdlrname = SCIPconshdlrGetName(conshdlr);
 
-
-
    if( strcmp(conshdlrname, "linear") == 0 )
    {
       return SCIPgetNVarsLinear(scip, cons);
@@ -481,7 +479,7 @@ int GCGconsGetNVars(
    }
    else
    {
-      SCIPdebugMessage("WARNING: NOT IMPLEMENTED <%s>\n", conshdlrname);
+      SCIPwarningMessage(scip, "GCGconsGetNVars: NOT IMPLEMENTED <%s>\n", conshdlrname);
       return 0;
    }
 }
@@ -608,7 +606,7 @@ SCIP_RETCODE GCGconsGetVars(
    }
    else
    {
-      SCIPwarningMessage(scip, "WARNING: NOT IMPLEMENTED <%s>\n", conshdlrname);
+      SCIPwarningMessage(scip, "GCGconsGetVars: NOT IMPLEMENTED <%s>\n", conshdlrname);
    }
    return SCIP_OKAY;
 }
@@ -735,7 +733,7 @@ SCIP_RETCODE GCGconsGetVals(
    }
    else
    {
-      SCIPdebugMessage("WARNING: UNKNOWN NOT IMPLEMENTED: %s\n", conshdlrname);
+      SCIPwarningMessage(scip, "GCGconsGetVals: UNKNOWN NOT IMPLEMENTED: %s\n", conshdlrname);
    }
    return SCIP_OKAY;
 }
