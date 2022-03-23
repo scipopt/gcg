@@ -57,14 +57,14 @@ DETECTIONSTATISTICS=${24}
 
 SETDIR=../settings
 
-if [[ $SHARED == "true" ]]
+if test "${SHARED}" = "true"
 then
   LD="LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:../lib/shared/"
 fi
 
 SETDIR=../settings
 
-if [[ $VISU == "true" ]]
+if test "${VISU}" = "true"
 then
     DETECTIONSTATISTICS=true
     STATISTICS=true
@@ -73,15 +73,18 @@ if test ! -e results
 then
     mkdir results
 fi
-if test ! -e results/vbc && $STATISTICS = "true"
+if test ! -e results/vbc
 then
-    mkdir results/vbc
+    if test "${STATISTICS}" = "true"
+    then
+        mkdir results/vbc
+    fi
 fi
 if test ! -e locks
 then
     mkdir locks
 fi
-if [[ $DETECTIONSTATISTICS == "true" ]]
+if test "${DETECTIONSTATISTICS}" = "true"
 then
     mkdir -p results/decomps
 fi
