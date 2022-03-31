@@ -122,7 +122,7 @@ build:make_debug:
     GIT_STRATEGY: fetch
     GIT_SUBMODULE_STRATEGY: recursive
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^v[0-9]+-bugfix$/)'
       when: always
     - if: '$CI_PIPELINE_SOURCE == "push"'
       when: manual
@@ -200,7 +200,7 @@ build:cmake_debug:
     GIT_STRATEGY: fetch
     GIT_SUBMODULE_STRATEGY: recursive
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^v[0-9]+-bugfix$/)'
       when: always
     - if: '$CI_PIPELINE_SOURCE == "push"'
       when: manual
@@ -257,7 +257,7 @@ test:make_release:
 test:make_debug:
   stage: "Test"
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^v[0-9]+-bugfix$/)'
       when: always
     - if: '$CI_PIPELINE_SOURCE == "push"'
       when: manual
@@ -304,7 +304,7 @@ test:cmake_release:
 test:cmake_debug:
   stage: "Test"
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^v[0-9]+-bugfix$/)'
       when: always
     - if: '$CI_PIPELINE_SOURCE == "push"'
       when: manual
