@@ -862,6 +862,10 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
          SCIPdebugMessage("Calling freeClassifier of consclassifier %s\n", consclassifier->name);
          SCIP_CALL( (*consclassifier->freeClassifier)(scip, consclassifier) );
       }
+
+      BMSfreeMemoryArray(&consclassifier->name);
+      BMSfreeMemoryArray(&consclassifier->description);
+
       SCIPfreeBlockMemory(scip, &conshdlrdata->consclassifiers[i]);
    }
 
@@ -876,6 +880,10 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
          SCIPdebugMessage("Calling freeClassifier of varclassifier %s\n", varclassifier->name);
          SCIP_CALL( (*varclassifier->freeClassifier)(scip, varclassifier) );
       }
+
+      BMSfreeMemoryArray(&varclassifier->name);
+      BMSfreeMemoryArray(&varclassifier->description);
+
       SCIPfreeBlockMemory(scip, &conshdlrdata->varclassifiers[i]);
    }
 
@@ -3013,8 +3021,9 @@ SCIP_RETCODE DECincludeConsClassifier(
 
    SCIPdebugMessage("Adding classifier %i: %s\n", conshdlrdata->nconsclassifiers+1, name);
 
-   classifier->name = name;
-   classifier->description = description;
+   SCIP_ALLOC( BMSduplicateMemoryArray(&classifier->name, name, strlen(name)+1) );
+   SCIP_ALLOC( BMSduplicateMemoryArray(&classifier->description, description, strlen(description)+1) );
+   
    classifier->priority = priority;
    classifier->enabled = enabled;
    classifier->clsdata = classifierdata;
@@ -3243,8 +3252,9 @@ SCIP_RETCODE DECincludeVarClassifier(
 
    SCIPdebugMessage("Adding classifier %i: %s\n", conshdlrdata->nvarclassifiers+1, name);
 
-   classifier->name = name;
-   classifier->description = description;
+   SCIP_ALLOC( BMSduplicateMemoryArray(&classifier->name, name, strlen(name)+1) );
+   SCIP_ALLOC( BMSduplicateMemoryArray(&classifier->description, description, strlen(description)+1) );
+   
    classifier->priority = priority;
    classifier->enabled = enabled;
    classifier->clsdata = classifierdata;
