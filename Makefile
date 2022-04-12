@@ -635,10 +635,7 @@ ifneq ($(LAST_CPLEXSOLVER),$(CPLEXSOLVER))
 		@-touch $(SRCDIR)/solver_cplex.c
 endif
 ifneq ($(LAST_STATISTICS),$(STATISTICS))
-		@-touch $(SRCDIR)/pricer_gcg.h
-		@-touch $(SRCDIR)/pricer_gcg.cpp
-		@-touch $(SRCDIR)/stat.c
-		@-touch $(SRCDIR)/event_bestsol.h
+		@$(SHELL) -ec 'for file in $$(grep "SCIP_STATISTIC" ${SRCDIR} -rl | sort -u); do touch $$file; done'
 endif
 
 ifneq ($(LAST_BLISS),$(BLISS))

@@ -7,13 +7,15 @@ New features:
 
 
 @page RN35 Release notes for GCG 3.5
-@section RN304 GCG 3.5.1
+@section RN351 GCG 3.5.1
 *************************
 
 Bug fixes
 ---------
 
 - fix compile with new bliss version (0.77)
+- fix Makefiles recompile if STATISTICS flag was changed
+- fix memory allocation of name and description of constraint and variable classifiers
 
 
 @section RN350 GCG 3.5.0
