@@ -7,6 +7,7 @@ Bug fixes
 
 - fix compile with new bliss version (0.77)
 - fix Makefiles recompile if STATISTICS flag was changed
+- fix memory allocation of name and description of constraint and variable classifiers
 
 
 @section RN350 GCG 3.5.0
