@@ -55,8 +55,9 @@ typedef struct DEC_VarClassifier DEC_VARCLASSIFIER;
  *
  * input:
  *  - scip                 : SCIP data structure
+ *  - classifier           : classifier data structure
  *  - transformed          : should use data from transformed detprobdata or not
  */
-#define DEC_DECL_VARCLASSIFY(x) SCIP_RETCODE x (SCIP* scip, SCIP_Bool transformed)
+#define DEC_DECL_VARCLASSIFY(x) SCIP_RETCODE x (SCIP* scip, DEC_VARCLASSIFIER* varclassifier, SCIP_Bool transformed)
 
 #endif //GCG_TYPE_VARCLASSIFIER_H__

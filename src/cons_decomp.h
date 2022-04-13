@@ -640,6 +640,22 @@ DEC_DETECTOR** GCGconshdlrDecompGetDetectors(
    SCIP* scip  /**< SCIP data structure */
    );
 
+/** @brief gets an array of all constraint classifier
+ *
+ * @returns array of constraint classifier */
+extern
+DEC_CONSCLASSIFIER** GCGconshdlrDecompGetConsClassifiers(
+   SCIP* scip  /**< SCIP data structure */
+   );
+
+/** @brief gets an array of all variable classifier
+ *
+ * @returns array of variable classifier */
+extern
+DEC_VARCLASSIFIER** GCGconshdlrDecompGetVarClassifiers(
+   SCIP* scip
+   );
+
 /** @brief Gets a list of ids of the current partialdecs that are finished
  *
  *  @note recommendation: when in doubt plan for as many ids as partialdecs
@@ -695,6 +711,20 @@ int GCGconshdlrDecompGetNDecomps(
 extern
 int GCGconshdlrDecompGetNDetectors(
    SCIP* scip  /**< SCIP data structure */
+   );
+
+/** @brief Gets the number of all constraint classifiers
+ * @returns number of constraint classifiers */
+extern
+int GCGconshdlrDecompGetNConsClassifiers(
+   SCIP* scip  /**< SCIP data structure */
+   );
+
+/** @brief Gets the number of all variable classifiers
+ * @returns number of variable classifiers */
+extern
+int GCGconshdlrDecompGetNVarClassifiers(
+   SCIP* scip
    );
 
 /** @brief Gets the next partialdec id managed by cons_decomp

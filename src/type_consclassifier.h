@@ -56,9 +56,10 @@ typedef struct DEC_ConsClassifier DEC_CONSCLASSIFIER;
  *
  * input:
  *  - scip                 : SCIP data structure
+ *  - classifier           : classifier data structure
  *  - transformed          : should use data from transformed detprobdata or not
  */
-#define DEC_DECL_CONSCLASSIFY(x) SCIP_RETCODE x (SCIP* scip, SCIP_Bool transformed)
+#define DEC_DECL_CONSCLASSIFY(x) SCIP_RETCODE x (SCIP* scip, DEC_CONSCLASSIFIER* consclassifier, SCIP_Bool transformed)
 
 
 #endif //GCG_TYPE_CONSCLASSIFIER_H__

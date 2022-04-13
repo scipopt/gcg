@@ -4935,7 +4935,7 @@ SCIP_RETCODE GCGconshdlrDecompClassify(
 
       SCIPgetBoolParam( scip, setting, &enabled );
       if ( enabled ) {
-         classifier->classify(scip, transformed);
+         classifier->classify(scip, classifier, transformed);
       }
    }
 
@@ -4950,7 +4950,7 @@ SCIP_RETCODE GCGconshdlrDecompClassify(
 
       SCIPgetBoolParam( scip, setting, &enabled );
       if ( enabled ) {
-         classifier->classify(scip, transformed);
+         classifier->classify(scip, classifier, transformed);
       }
    }
 
@@ -5255,6 +5255,25 @@ DEC_DETECTOR** GCGconshdlrDecompGetDetectors(
    return conshdlrdata->detectors;
 }
 
+DEC_CONSCLASSIFIER** GCGconshdlrDecompGetConsClassifiers(
+   SCIP* scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->consclassifiers;
+}
+
+DEC_VARCLASSIFIER** GCGconshdlrDecompGetVarClassifiers(
+   SCIP* scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->varclassifiers;
+}
 
 DETPROBDATA* GCGconshdlrDecompGetDetprobdataOrig(
    SCIP*                 scip
@@ -5365,6 +5384,25 @@ int GCGconshdlrDecompGetNDetectors(
    return conshdlrdata->ndetectors;
 }
 
+int GCGconshdlrDecompGetNConsClassifiers(
+   SCIP* scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->nconsclassifiers;
+}
+
+int GCGconshdlrDecompGetNVarClassifiers(
+   SCIP* scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->nvarclassifiers;
+}
 
 int GCGconshdlrDecompGetNextPartialdecID(
    SCIP* scip
