@@ -5,6 +5,12 @@
 New features:
 -------------
 
+New/modified API functions:
+---------------------------
+- New functions: 'GCGconshdlrDecompGetNConsClassifiers', 'GCGconshdlrDecompGetNVarClassifiers', 'GCGconshdlrDecompGetConsClassifiers', 'GCGconshdlrDecompGetVarClassifiers'
+- Add parameter 'DEC_CONSCLASSIFIER* consclassifier' to 'DEC_DECL_CONSCLASSIFY'
+- Add paramater 'DEC_VARCLASSIFIER* varclassifier' to 'DEC_DECL_VARCLASSIFY'
+
 
 @page RN35 Release notes for GCG 3.5
 @section RN351 GCG 3.5.1
