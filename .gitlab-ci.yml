@@ -408,7 +408,7 @@ benchmark:master:
       ssh gcgci@clustor "while [[ ! \$(condor_q $CLUSTER_ID) =~ 'Total for query: 0 jobs' ]]; do sleep 5s; done; echo 'All jobs done'"
     - ssh gcgci@clustor "cd ~/$FOLDER/check && ./evalcheck_cluster.sh -r results/*.eval"
     # make the "current master link" a "previous master" link
-    - ssh gcgci@clustor 'cd /shared/gcg_runtime_data/ && ln -sfn $(realpath current_master | cut -d"/" -f4-) previous_master && echo "Set link to previous master (hash $(realpath previous_master | cut -d/ -f5-))."'
+    - ssh gcgci@clustor 'cd /shared/gcg_runtime_data/ && ln -sfn master_branch/$(basename $(readlink -f current_master)) previous_master && echo "Set link to previous master (hash $(basename $(readlink -f previous_master))."'
     # create new folder for master runtime data
     - ssh gcgci@clustor "cd /shared/gcg_runtime_data/ && mkdir -p master_branch/${CI_COMMIT_SHORT_SHA} && ln -sfn master_branch/${CI_COMMIT_SHORT_SHA} current_master"
     # copy runtime data to newly created folder
@@ -457,14 +457,6 @@ experiment:master:
     - >-
       ssh gcgci@clustor "while [[ ! \$(condor_q $CLUSTER_ID) =~ 'Total for query: 0 jobs' ]]; do sleep 5s; done; echo 'All jobs done'"
     - ssh gcgci@clustor "cd ~/$FOLDER/check && ./evalcheck_cluster.sh -r results/*.eval"
-    # make the "current master link" a "previous master" link
-    #- ssh gcgci@clustor 'cd /shared/gcg_runtime_data/ && ln -sfn $(realpath current_master | cut -d"/" -f4-) previous_master && echo "Set link to previous master (hash $(realpath previous_master | cut -d/ -f5-))."'
-    # create new folder for master runtime data
-    #- ssh gcgci@clustor "cd /shared/gcg_runtime_data/ && mkdir -p master_branch/${CI_COMMIT_SHORT_SHA} && ln -sfn master_branch/${CI_COMMIT_SHORT_SHA} current_master"
-    # copy runtime data to newly created folder
-    #- ssh gcgci@clustor "cp -fr $FOLDER/check/results/* /shared/gcg_runtime_data/master_branch/${CI_COMMIT_SHORT_SHA} && echo 'Adding new master branch run (hash ${CI_COMMIT_SHORT_SHA}).'"
-    # clean up old entries (keep latest 5 runs)
-    #- ssh gcgci@clustor 'cd /shared/gcg_runtime_data/master_branch/ && for folder in $(ls -td */ | tail -n +6); do echo "Removing old master branch run with hash ${folder:0:8} (last modified $(stat ${folder} | grep Modify | cut -d\  -f2- | cut -d. -f1))."; rm -rf $folder; done'
     # copy experiment runtime data here to save as artifacts
     - mkdir -p check/results && scp -r gcgci@clustor:~/$FOLDER/check/results/* check/results
     # delete master runtime data (for later comparisons, use "previous_master" and "current_master" in /shared/gcg_runtime_data/)
@@ -600,9 +592,9 @@ comparison_report:benchmark_master:
     # commented out, since the runtime data in the docu is just the short test set
     #- cp doc/resources/misc/runtime_data/*.* check/results
     #- cp doc/resources/misc/runtime_data/vbc/*.* check/results/vbc
-    # get runtime data from previous master (experiment test set)
-    - echo "Checking out previous master (hash $(realpath previous_master | cut -d'/' -f5-))."
-    - scp -r gcgci@clustor:/shared/gcg_runtime_data/master_branch/previous_master/ check/results
+    # get runtime data from previous master (experiment test set), since current master is already this one
+    - ssh gcgci@clustor 'echo "Getting data from previous master (hash $(basename $(readlink -f previous_master)))."'
+    - scp -r gcgci@clustor:/shared/gcg_runtime_data/previous_master/ check/results
     # generate comparison report
     - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
@@ -656,7 +648,7 @@ comparison_report:benchmark_feature:
     #- cp doc/resources/misc/runtime_data/*.* check/results
     #- cp doc/resources/misc/runtime_data/vbc/*.* check/results/vbc
     # get runtime data from master
-    - scp -r gcgci@clustor:/shared/gcg_runtime_data/master_branch/current_master/ check/results
+    - scp -r gcgci@clustor:/shared/gcg_runtime_data/current_master/ check/results
     # generate comparison report
     - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
