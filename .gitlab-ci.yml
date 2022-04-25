@@ -594,7 +594,7 @@ comparison_report:benchmark_master:
     #- cp doc/resources/misc/runtime_data/vbc/*.* check/results/vbc
     # get runtime data from previous master (experiment test set), since current master is already this one
     - ssh gcgci@clustor 'echo "Getting data from previous master (hash $(basename $(readlink -f previous_master)))."'
-    - scp -r gcgci@clustor:/shared/gcg_runtime_data/previous_master/ check/results
+    - scp -r gcgci@clustor:/shared/gcg_runtime_data/previous_master/* check/results/
     # generate comparison report
     - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
@@ -648,7 +648,7 @@ comparison_report:benchmark_feature:
     #- cp doc/resources/misc/runtime_data/*.* check/results
     #- cp doc/resources/misc/runtime_data/vbc/*.* check/results/vbc
     # get runtime data from master
-    - scp -r gcgci@clustor:/shared/gcg_runtime_data/current_master/ check/results
+    - scp -r gcgci@clustor:/shared/gcg_runtime_data/previous_master/* check/results/
     # generate comparison report
     - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
