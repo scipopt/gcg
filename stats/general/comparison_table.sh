@@ -25,9 +25,13 @@
 #* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+# Generate a comparison of two testruns, i.e. with different settings.
 #
 # @author Martin Bergner
 # @author Christian Puchert
+# Usage: 'allcmpres.sh check.run1.res check.run2.res'
+#        'allcmpres.sh check.run1.*.res'
 
 AWKARGS=""
 FILES=""
