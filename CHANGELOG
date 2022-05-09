@@ -7,6 +7,7 @@ Bug fixes
 
 - fix compile with new bliss version (0.77)
 - fix Makefiles recompile if STATISTICS flag was changed
+- fix minor bugs in the cmpres.awk script, updating it to the SCIP version
 - fix memory allocation of name and description of constraint and variable classifiers
 
 
@@ -122,7 +123,7 @@ Bug fixes
 Bug fixes
 ---------
 
-- Fix several segmentation faults. 
+- Fix several segmentation faults.
 - Skip Farkas pricing only if at least one solution of the original problem was successfully added to the master variable space.
 - Interrupt the pricing loop if SCIP reports that the solving process should be stopped.
 - Disable the column pool in probing mode.
