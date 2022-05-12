@@ -73,6 +73,7 @@
 #include "struct_consclassifier.h"
 #include "struct_varclassifier.h"
 #include "struct_decomp.h"
+#include "struct_score.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME                                 "decomp"    /**< name of constraint handler */
@@ -84,9 +85,6 @@
 #define CONSHDLR_NEEDSCONS                            FALSE       /**< should the constraint handler be skipped, if no constraints are available? */
 
 #define DEFAULT_ENABLED                               TRUE        /**< indicates whether detection is enabled */
-
-#define DEFAULT_DUALVALRANDOMMETHOD                   1           /**< default value for method to dual initialization of dual values for strong decomposition: 1) naive, 2) expected equal, 3) expected overestimation */
-#define DEFAULT_COEFFACTORORIGVSRANDOM                0.5         /**< default value for convex coefficient for orig dual val (1-this coef is factor for random dual value)  */
 
 #define DEFAULT_BLOCKNUMBERCANDSMEDIANVARSPERCONS     FALSE       /**< should for block number candidates calculation the medianvarspercons calculation be considered */
 
@@ -116,15 +114,7 @@
 
 #define DEFAULT_DETECTBENDERS                         FALSE       /**< indicates whether benders detection mode is enabled */
 
-#define DEFAULT_RANDPARTIALDEC                        23          /**< initial random partialdec */
-
-/* scores */
-#define DEFAULT_STRONGTIMELIMIT                       30.         /**< timelimit for strong decompotition score calculation per partialdec */
-
-#define DEFAULT_SCORECOEF_FASTBENEFICIAL              1.          /**< coefficient for fast & beneficial in strong decomposition score computation */
-#define DEFAULT_SCORECOEF_MEDIUMBENEFICIAL            0.75        /**< coefficient for not fast but beneficial in strong decomposition score computation */
-#define DEFAULT_SCORECOEF_FASTNOTBENEFICIAL           0.3         /**< coefficient for fast & not beneficial in strong decomposition score computation */
-#define DEFAULT_SCORECOEF_MEDIUMNOTBENEFICIAL         0.1         /**< coefficient for not & not beneficial in strong decomposition score computation */
+#define DEFAULT_SCORE                                 "spfwh"      /**< score shortname that is activated */
 
 /*
  * Data structures
@@ -166,8 +156,6 @@ struct SCIP_ConshdlrData
    int                   maxndetectionrounds;                     /**< maximum number of detection loop rounds */
    int                   maxdetectiontime;                        /**< maximum detection time [sec] */
    SCIP_Bool             postprocess;                             /**< indicates whether to postprocess full decompositions */
-   int                   strongdetectiondualvalrandommethod;      /**< method to dual initialization of dual values for strong decomposition: 1) naive, 2) expected equal, 3) expected overestimation */
-   SCIP_Real             coeffactororigvsrandom;                  /**< convex coefficient for orig dual val (1-this coef is factor for random dual value)  */
    SCIP_Bool             blocknumbercandsmedianvarspercons;       /**< should for block number candidates calculation the medianvarspercons calculation be considered */
    int                   maxnclassesfornblockcandidates;          /**< maximum number of classes a partition can have to be used for voting nblockcandidates */
    int                   maxnclassesperpartition;                /**< maximum number of classes allowed for detectors, partition with more classes are reduced to the maximum number of classes */
@@ -191,22 +179,10 @@ struct SCIP_ConshdlrData
    gcg::DETPROBDATA*     detprobdataorig;                         /**< detprobdata containing data for the original problem */
 
    /* score data */
-   int                   currscoretype;                           /**< indicates which score should be used for comparing (partial) decompositions
-                                                                        0: max white,
-                                                                        1: border area,
-                                                                        2: classic,
-                                                                        3: max foreseeing white,
-                                                                        4: ppc max forseeing white,
-                                                                        5: max foreseeing white with aggregation info,
-                                                                        6: ppc max forseeing white with aggregation info,
-                                                                        7: experimental benders score,
-                                                                        8: strong decomposition score */
+   DEC_SCORE**           scores;                                  /**< array of scores */
+   int                   nscores;                                 /**< number of scores */
+   char*                 currscore;                               /**< currently chosen score shortname */
    SCIP_Real             scoretotaltime;                          /**< total score calculation time */
-   std::vector<SCIP_Real>* dualvalsrandom;                        /**< vector of random dual values, used for strong detection scores */
-   std::vector<SCIP_Real>* dualvalsoptimaloriglp;                 /**< vector of dual values of the optimal solved original lp, used for strong detection scores */
-   SCIP_Bool             dualvalsoptimaloriglpcalculated;         /**< are the optimal dual values from original lp calulated? used for strong detection scores */
-   SCIP_Bool             dualvalsrandomset;                       /**< are the random dual values set, used for strong detection scores */
-   SCIP_Real             strongtimelimit;                         /**< timelimit for calculating strong decomposition score for one partialdec */
 
    PARTIALDECOMP*        partialdectowrite;                       /**< pointer enabling the use of SCIPs writeProb/writeTransProb function for writing partial decompositions*/
 
@@ -214,16 +190,6 @@ struct SCIP_ConshdlrData
    std::vector<int>*     userblocknrcandidates;                   /**< vector to store block number candidates that were given by user */
    SCIP_Bool             freeorig;                   /**< help bool to notify a nonfinal free transform (needed if presolving is revoked, e.g. if orig decomposition is used, and transformation is not successful) */
 };
-
-
-// TODO ref add comments! this is used in strong decomposition score calculation in @see shuffleDualvalsRandom()
-enum GCG_Random_dual_methods
-{
-   GCG_RANDOM_DUAL_NAIVE                  =  0,         /**<  */
-   GCG_RANDOM_DUAL_EXPECTED_EQUAL         =  1,         /**<  */
-   GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE  =  2         /**<  */
-};
-typedef enum GCG_Random_dual_methods GCG_RANDOM_DUAL_METHOD;
 
 
 /** parameter how to modify scores when comparing decompositions for original and presolved problem
@@ -887,6 +853,25 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
       SCIPfreeBlockMemory(scip, &conshdlrdata->varclassifiers[i]);
    }
 
+   /* free all scores */
+   for( i = 0; i < conshdlrdata->nscores; ++i )
+   {
+      DEC_SCORE* score = conshdlrdata->scores[i];
+      assert(score != NULL);
+
+      if( score->scorefree != NULL )
+      {
+         SCIPdebugMessage("Calling freeScore of score %s\n", score->name);
+         SCIP_CALL( (*score->scorefree)(scip, score) );
+      }
+
+      BMSfreeMemoryArray(&score->name);
+      BMSfreeMemoryArray(&score->shortname);
+      BMSfreeMemoryArray(&score->description);
+
+      SCIPfreeBlockMemory(scip, &conshdlrdata->scores[i]);
+   }
+
    /* remove all remaining data */
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
@@ -897,12 +882,11 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    SCIPfreeMemoryArray(scip, &conshdlrdata->consclassifierpriorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->varclassifiers);
    SCIPfreeMemoryArray(scip, &conshdlrdata->varclassifierpriorities);
+   SCIPfreeMemoryArray(scip, &conshdlrdata->scores);
 
    delete conshdlrdata->userblocknrcandidates;
    delete conshdlrdata->partialdecs;
    delete conshdlrdata->partialdecsbyid;
-   delete conshdlrdata->dualvalsoptimaloriglp;
-   delete conshdlrdata->dualvalsrandom;
 
    /* remove the data structure of the conshdlr */
    SCIPfreeMemory(scip, &conshdlrdata);
@@ -1536,8 +1520,7 @@ void sortPartialdecs(
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
-   SCORETYPE sctype = static_cast<scoretype>(conshdlrdata->currscoretype);
-   std::sort(conshdlrdata->partialdecs->begin(), conshdlrdata->partialdecs->end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(sctype) > b->getScore(sctype)); });
+   std::sort(conshdlrdata->partialdecs->begin(), conshdlrdata->partialdecs->end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(DECgetCurrentScore(scip)) > b->getScore(DECgetCurrentScore(scip))); });
 }
 
 
@@ -1915,537 +1898,38 @@ int gcd(
 }
 
 
-/** @brief sets the pricing problem parameters 
- * @returns scip return code
-*/
+ /**  */
 static
-SCIP_RETCODE setTestpricingProblemParameters(
-   SCIP*                 scip,               /**< SCIP data structure of the pricing problem */
-   int                   clocktype,          /**< clocktype to use in the pricing problem */
-   SCIP_Real             infinity,           /**< values larger than this are considered infinity in the pricing problem */
-   SCIP_Real             epsilon,            /**< absolute values smaller than this are considered zero in the pricing problem */
-   SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the pricing problem */
-   SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the pricing problem */
-   SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the pricing problem */
-   SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
-   SCIP_Bool             enableppcuts,       /**< should ppcuts be stored for sepa_basis */
-   SCIP_Real             timelimit           /**< limit of time */
-   )
+SCIP_DECL_PARAMCHGD(paramChgdScore)
 {
-   assert(scip != NULL);
+   SCIP_CONSHDLRDATA* conshdlrdata;
 
-   /* disable conflict analysis */
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useprop", FALSE) );
-   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useinflp", 'o') );
-   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useboundlp", 'o') );
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usesb", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usepseudo", FALSE) );
+   conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
 
-   /* reduce the effort spent for hash tables */
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/usevartable", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/useconstable", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/usesmalltables", TRUE) );
+   char* shortname;
 
-   /* disable expensive presolving */
-   /* @todo test whether this really helps, perhaps set presolving emphasis to fast? */
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolpairwise", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolpairwise", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolpairwise", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolusehashing", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolusehashing", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolusehashing", FALSE) );
+   shortname = SCIPparamGetString(param);
 
-   /* disable dual fixing presolver for the moment, because we want to avoid variables fixed to infinity */
-   SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/freq", -1) );
-   SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/maxprerounds", 0) );
-   SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/freq") );
-   SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );
-
-   /* disable solution storage ! */
-   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
-   SCIP_CALL( SCIPsetRealParam(scip, "limits/time", timelimit ) );
-
-   /* disable multiaggregation because of infinite values */
-   SCIP_CALL( SCIPsetBoolParam(scip, "presolving/donotmultaggr", TRUE) );
-
-   /* @todo enable presolving and propagation of xor constraints if bug is fixed */
-
-   /* disable presolving and propagation of xor constraints as work-around for a SCIP bug */
-   SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/maxprerounds", 0) );
-   SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/propfreq", -1) );
-
-   /* disable output to console */
-   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NORMAL) );
-#if SCIP_VERSION > 210
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/printreason", FALSE) );
-#endif
-   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
-   SCIP_CALL( SCIPfixParam(scip, "limits/maxorigsol") );
-
-   /* do not abort subproblem on CTRL-C */
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/catchctrlc", FALSE) );
-
-   /* set clock type */
-   SCIP_CALL( SCIPsetIntParam(scip, "timing/clocktype", clocktype) );
-
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/finitesolutionstore", TRUE) );
-
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/infinity", infinity) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/epsilon", epsilon) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/sumepsilon", sumepsilon) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/feastol", feastol) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/lpfeastol", lpfeastol) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/dualfeastol", dualfeastol) );
-
-   /* jonas' stuff */
-   if( enableppcuts )
+   for( int i = 0; i < conshdlrdata->nscores; ++i )
    {
-      int pscost;
-      int prop;
+      DEC_SCORE* score;
+      score = conshdlrdata->scores[i];
 
-      SCIP_CALL( SCIPgetIntParam(scip, "branching/pscost/priority", &pscost) );
-      SCIP_CALL( SCIPgetIntParam(scip, "propagating/maxroundsroot", &prop) );
-      SCIP_CALL( SCIPsetIntParam(scip, "branching/pscost/priority", 11000) );
-      SCIP_CALL( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
-      SCIP_CALL( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
+      assert(score != NULL);
+
+      if( strcmp(score->shortname, shortname) == 0 )
+      {
+         return SCIP_OKAY;
+      }
    }
+ 
+   SCIPdialogMessage(scip, NULL, "The score <%s> does not exist.\n", shortname);
+   SCIPdialogMessage(scip, NULL, "The default score <%s> is selected.\n", DEFAULT_SCORE);
+
+   SCIPsetStringParam(scip, "detection/scores/selected", DEFAULT_SCORE);
+ 
    return SCIP_OKAY;
-}
-
-
-/**
- * @brief method to calculate and set the optimal dual values from original lp, used for strong detection score
- * @returns scip return code
- */
-static
-SCIP_RETCODE calculateDualvalsOptimalOrigLP(
-   SCIP* scip,             /**< SCIP data structure */
-   SCIP_Bool transformed   /**< whether the problem is transormed yet */
-   )
-{
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-   SCIP* scipcopy;
-   SCIP_HASHMAP* origtocopiedconss;
-   SCIP_Bool valid;
-   int nvars;
-   SCIP_VAR** copiedvars;
-   int nconss;
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started calculating optimal dual values for original lp\n");
-
-   SCIPhashmapCreate(&origtocopiedconss, SCIPblkmem(scip), SCIPgetNConss(scip) );
-
-   SCIPcreate(&scipcopy);
-
-   SCIPcopy(scip, scipcopy, NULL, origtocopiedconss, "", FALSE, FALSE, FALSE, FALSE, &valid );
-
-   nconss = SCIPgetNConss(scip);
-   nvars = SCIPgetNVars(scipcopy);
-   copiedvars = SCIPgetVars(scipcopy);
-
-   conshdlrdata->dualvalsoptimaloriglp->clear();
-   conshdlrdata->dualvalsoptimaloriglp->resize(nconss, 0.);
-
-   for( int var = 0; var < nvars ; ++var )
-   {
-      SCIP_VAR* copyvar = copiedvars[var];
-      SCIP_Bool infeasible;
-
-      if( SCIPvarGetType(copyvar) == SCIP_VARTYPE_BINARY )
-         SCIPchgVarUbGlobal(scipcopy, copyvar, 1. );
-
-      SCIPchgVarType(scipcopy, copyvar, SCIP_VARTYPE_CONTINUOUS, &infeasible);
-   }
-
-   copiedvars = SCIPgetVars(scipcopy);
-
-   /* deactivate presolving */
-   SCIPsetIntParam(scipcopy, "presolving/maxrounds", 0);
-
-   /* deactivate separating */
-   SCIPsetIntParam(scipcopy, "separating/maxrounds", 0);
-   SCIPsetIntParam(scipcopy, "separating/maxroundsroot", 0);
-
-   /* deactivate propagating */
-   SCIPsetIntParam(scipcopy, "propagating/maxrounds", 0);
-   SCIPsetIntParam(scipcopy, "propagating/maxroundsroot", 0);
-
-   /* solve lp */
-   SCIPsetIntParam(scipcopy, "lp/solvefreq", 1);
-
-   /* only root node */
-   SCIPsetLongintParam(scipcopy, "limits/nodes", 1);
-
-   SCIPsetIntParam(scipcopy, "display/verblevel", SCIP_VERBLEVEL_FULL);
-
-   SCIPtransformProb(scipcopy);
-
-   SCIPsolve(scipcopy);
-
-   DETPROBDATA* detprobdata = (transformed) ? conshdlrdata->detprobdatapres : conshdlrdata->detprobdataorig;
-
-   for( int c = 0; c < nconss; ++c )
-   {
-      SCIP_CONS* cons;
-      SCIP_CONS* copiedcons;
-      SCIP_CONS* transcons = NULL;
-
-      cons = detprobdata->getCons(c);
-      if( !transformed )
-      {
-         SCIPgetTransformedCons(scip, cons, &transcons);
-         if( transcons )
-            cons = transcons;
-         else
-         {
-            SCIPwarningMessage(scip, "Could not find constraint for random dual variable initialization when calculating strong decomposition score; skipping cons: %s \n", SCIPconsGetName(cons));
-            continue;
-         }
-      }
-      copiedcons = (SCIP_CONS*) SCIPhashmapGetImage(origtocopiedconss, (void*) cons);
-
-      assert(copiedcons != NULL);
-      assert( !SCIPconsIsTransformed(copiedcons) );
-
-      transcons = NULL;
-      SCIPgetTransformedCons(scipcopy, copiedcons, &transcons);
-      if( transcons != NULL)
-         copiedcons = transcons;
-
-      (*conshdlrdata->dualvalsoptimaloriglp)[c] = GCGconsGetDualsol(scipcopy, copiedcons);
-      if( !SCIPisFeasEQ(scip, 0., (*conshdlrdata->dualvalsoptimaloriglp)[c]) )
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "optimal dual sol of constraint %s is %f \n", SCIPconsGetName(cons), (*conshdlrdata->dualvalsoptimaloriglp)[c]);
-   }
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "finished calculating optimal dual values for original lp, start freeing\n");
-
-   SCIPhashmapFree(&origtocopiedconss);
-   SCIPfree(&scipcopy);
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "finished freeing\n");
-
-  return SCIP_OKAY;
-}
-
-
-/**
- * @brief method that shuffles randomly and set dual variable values, used for strong detection score
- * @returns scip return code
- */
-static
-SCIP_RETCODE shuffleDualvalsRandom(
-   SCIP* scip,             /**< SCIP data structure */
-   SCIP_Bool transformed   /**< whether the problem is tranformed yet */
-   )
-{
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-   GCG_RANDOM_DUAL_METHOD usedmethod;
-   SCIP_RANDNUMGEN* randnumgen;
-
-   int method;
-   int nconss = SCIPgetNConss(scip);
-
-   SCIPgetIntParam(scip, "detection/score/strong_detection/dualvalrandommethod", &method);
-
-   /* default method == 1 */
-   usedmethod = GCG_RANDOM_DUAL_NAIVE;
-
-   if( method == 2 )
-      usedmethod = GCG_RANDOM_DUAL_EXPECTED_EQUAL;
-   else if( method == 3 )
-      usedmethod = GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE;
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "set dual val random method to %d. \n", method );
-
-   conshdlrdata->dualvalsrandom->clear();
-   conshdlrdata->dualvalsrandom->resize(nconss, 0.);
-
-   /* create random number generator */
-   // TODO ref replace default for random partialdec with parameter
-   SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, DEFAULT_RANDPARTIALDEC, TRUE) );
-
-   DETPROBDATA* detprobdata = (transformed) ? conshdlrdata->detprobdatapres : conshdlrdata->detprobdataorig;
-
-   /* shuffle dual multipliers of constraints*/
-
-   /* 1) naive approach */
-   if( usedmethod == GCG_RANDOM_DUAL_NAIVE )
-   {
-      for( int c = 0; c < nconss; ++c )
-      {
-         SCIP_Real dualval;
-         SCIP_Real factor;
-         SCIP_CONS* cons;
-
-         cons = detprobdata->getCons(c);
-         if( SCIPisInfinity( scip, -GCGconsGetLhs(scip, cons) ))
-         {
-            SCIP_Real modifier;
-            modifier = 0.;
-            if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MAXIMIZE )
-               modifier = -1.;
-
-            factor = MAX(1., ABS(GCGconsGetRhs(scip, cons)  ) );
-            dualval = SCIPrandomGetReal(randnumgen, 0.+modifier, 1.+modifier  ) * factor;
-         }
-         else if( SCIPisInfinity( scip, GCGconsGetRhs(scip, cons) ) )
-         {
-            SCIP_Real modifier;
-            modifier = 0.;
-            if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MINIMIZE )
-               modifier = -1.;
-
-            factor = MAX(1., ABS(GCGconsGetLhs(scip, cons)  ) );
-            dualval = SCIPrandomGetReal(randnumgen, 0.+modifier, 1.+modifier  ) * factor;
-         }
-         else
-         {
-            factor = MAX(1., ABS(GCGconsGetLhs(scip, cons)  ) );
-            factor = MAX( factor, ABS(GCGconsGetRhs(scip, cons)   ) );
-            dualval = SCIPrandomGetReal(randnumgen, -1., 1. ) * factor;
-         }
-
-         (*conshdlrdata->dualvalsrandom)[c] = dualval;
-      }
-
-   } /* end naive approach */
-   /* expected equal and expected overestimated approach */
-   else if( usedmethod == GCG_RANDOM_DUAL_EXPECTED_EQUAL || usedmethod == GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE)
-   {
-      SCIP_Real largec  = 0.;
-      for( int v = 0; v < SCIPgetNVars(scip); ++v )
-         largec += ABS( SCIPvarGetObj(detprobdata->getVar(v)) );
-
-      for( int c = 0; c < nconss; ++c )
-      {
-         SCIP_Real dualval;
-         SCIP_CONS* cons;
-         cons = detprobdata->getCons(c);
-         double lambda;
-
-         SCIP_Real divisor = 0.;
-
-         SCIP_Real randomval;
-         int nvarsincons = GCGconsGetNVars(scip, cons);
-         SCIP_Real* valsincons;
-
-         /* get values of variables in this constraint */
-         SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &valsincons, nvarsincons) );
-         GCGconsGetVals(scip, cons, valsincons, nvarsincons);
-
-         /* add coefficients to divisor */
-         for( int v = 0; v < nvarsincons; ++v )
-         {
-            divisor += ABS( valsincons[v] );
-         }
-         if ( usedmethod == GCG_RANDOM_DUAL_EXPECTED_EQUAL )
-            divisor *= nconss;
-
-         /* 1/lambda is the expected value of the distribution */
-         lambda = divisor / largec;
-
-         /* formula for exponential distribution requires a uniform random number in (0,1). */
-         do
-         {
-            randomval = SCIPrandomGetReal(randnumgen, 0.0, 1.0);
-         }
-         while (randomval == 0.0 || randomval == 1.0);
-         randomval = -std::log(randomval) / lambda;
-
-         if( SCIPisInfinity(scip, -GCGconsGetLhs(scip, cons)) )
-         {
-            SCIP_Real modifier;
-            modifier = 1.;
-            if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MAXIMIZE )
-               modifier = -1.;
-
-            dualval = modifier * randomval;
-         }
-         else if( SCIPisInfinity(scip, GCGconsGetRhs(scip, cons)) )
-         {
-            SCIP_Real modifier;
-            modifier = 1.;
-            if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MINIMIZE )
-               modifier = -1.;
-
-            dualval = modifier * randomval;
-
-         }
-         else
-         {
-            SCIP_Real helpval = SCIPrandomGetReal(randnumgen, -1., 1. );
-
-            if ( helpval < 0. )
-               dualval =  -1. * randomval ;
-            else dualval = randomval;
-         }
-
-         (*conshdlrdata->dualvalsrandom)[c] = dualval;
-
-         /* free storage for variables in cons */
-         SCIPfreeBufferArrayNull(scip, &valsincons);
-      }
-   }
-
-   return SCIP_OKAY;
-}
-
-
-/**
- * @brief returns the value of the optimal lp relaxation dual value of the given constrainr rid correspondoning problem of the detprobdata; if it is not calculated yet it will be calculated
- * @returns the value of the optimal lp relaxation dual value of the given constraint rid correspondoning problem of the detprobdata
- */
-static
-SCIP_Real getDualvalOptimalLP(
-   SCIP* scip,             /**< SCIP data structure */
-   int  consindex,         /**< consindex index of constraint the value is asked for */
-   SCIP_Bool transformed   /**< is the problem transformed yet */
-   )
-{
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-
-   if( !conshdlrdata->dualvalsoptimaloriglpcalculated )
-      calculateDualvalsOptimalOrigLP(scip, transformed);
-   conshdlrdata->dualvalsoptimaloriglpcalculated = TRUE;
-
-   return (*conshdlrdata->dualvalsoptimaloriglp)[consindex];
-}
-
-
-/**
- * @brief return the a random value of the dual variable of the corresponding ; if it is not calculated yet it will be calculated
- * @returns the a random value of the dual variable of the corresponding
- */
-static
-SCIP_Real getDualvalRandom(
-   SCIP* scip,             /**< SCIP data structure */
-   int  consindex,         /**< consindex  index of constraint the value is asked for */
-   SCIP_Bool transformed   /**< is the problem transformed yet */
-   )
-{
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-
-   if( !conshdlrdata->dualvalsrandomset )
-      shuffleDualvalsRandom(scip, transformed);
-   conshdlrdata->dualvalsrandomset = TRUE;
-
-   return (*conshdlrdata->dualvalsrandom)[consindex];
-}
-
-
-/** @brief creates the pricing problem constraints
- * @returns scip return code
- */
-static
-SCIP_RETCODE createTestPricingprobConss(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP*                 subscip,            /**< the relaxator data data structure */
-   PARTIALDECOMP*        partialdec,         /**< partialdec corresponding to the decomposition to test */
-   int                   block,              /**< which pricing problem */
-   SCIP_HASHMAP*         hashorig2pricingvar /**< hashmap mapping original to corresponding pricing variables */
-   )
-{
-   SCIP_CONS* newcons;
-   SCIP_HASHMAP* hashorig2pricingconstmp;
-   int c;
-   char name[SCIP_MAXSTRLEN];
-   SCIP_Bool success;
-
-   assert(scip != NULL);
-
-   DETPROBDATA* detprobdata = partialdec->getDetprobdata();
-
-   SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingconstmp, SCIPblkmem(scip), detprobdata->getNConss() ) ); /*lint !e613*/
-
-   assert(hashorig2pricingvar != NULL);
-
-   for( c = 0; c < partialdec->getNConssForBlock(block); ++c )
-   {
-      SCIP_CONS* cons;
-
-      cons = detprobdata->getCons(partialdec->getConssForBlock(block)[c]);
-
-      SCIPdebugMessage("copying %s to pricing problem %d\n", SCIPconsGetName(cons), block);
-      if( !SCIPconsIsActive(cons) )
-      {
-         SCIPdebugMessage("skipping, cons <%s> inactive\n", SCIPconsGetName(cons) );
-         continue;
-      }
-      SCIP_CALL( SCIPgetTransformedCons(scip, cons, &cons) );
-      assert(cons != NULL);
-
-      /* copy the constraint */
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", block, SCIPconsGetName(cons));
-      SCIP_CALL( SCIPgetConsCopy(scip, subscip, cons, &newcons, SCIPconsGetHdlr(cons),
-         hashorig2pricingvar, hashorig2pricingconstmp, name,
-         TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, &success) );
-
-      /* constraint was successfully copied */
-      assert(success);
-
-      SCIP_CALL( SCIPaddCons(subscip, newcons) );
-#ifndef NDEBUG
-      {
-         SCIP_VAR** curvars;
-         int ncurvars;
-
-         ncurvars = GCGconsGetNVars(subscip, newcons);
-         curvars = NULL;
-         if( ncurvars > 0 )
-         {
-            SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
-            SCIP_CALL( GCGconsGetVars(subscip, newcons, curvars, ncurvars) );
-
-            SCIPfreeBufferArrayNull(scip, &curvars);
-         }
-      }
-#endif
-SCIP_CALL( SCIPreleaseCons(subscip, &newcons) );
-   }
-
-   SCIPhashmapFree(&hashorig2pricingconstmp);
-
-   return SCIP_OKAY;
-}
-
-
-/**
- * @brief gets an intermediate score value for the blocks of a partialdec
- *
- * Used by several score calculations,
- * computed as (1 - fraction of block area to complete area)
- * 
- * @returns intermediate score value
- */
-static
-SCIP_Real calcBlockAreaScore(
-   SCIP* scip,                /**< SCIP data structure */
-   PARTIALDECOMP* partialdec  /**< compute for this partialdec */
-   )
-{
-   unsigned long matrixarea;
-   unsigned long blockarea;
-
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
-   matrixarea = (unsigned long) partialdec->getNVars() * (unsigned long) partialdec->getNConss() ;
-   blockarea = 0;
-
-   for( int i = 0; i < partialdec->getNBlocks(); ++ i )
-   {
-      blockarea += (unsigned long) partialdec->getNConssForBlock(i) * ( (unsigned long) partialdec->getNVarsForBlock(i) );
-   }
-
-   SCIP_Real blockareascore = 1. - (matrixarea == 0 ? 0 : ( (SCIP_Real) blockarea / (SCIP_Real) matrixarea ));
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-   SCIP_CALL_ABORT( SCIPfreeClock(scip, &clock) );
-
-   return blockareascore;
 }
 
 
@@ -2542,8 +2026,8 @@ SCIP_RETCODE GCGprintDecompInformation(
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", partialdec->getNMastervars());
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", partialdec->getNTotalStairlinkingvars());
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  partialdec->getMaxWhiteScore());
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  partialdec->getScore(scoretype::CLASSIC));
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  partialdec->getScore(scoretype::MAX_FORESSEEING_WHITE));
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  partialdec->getScore(DECfindScore(scip, "classic")));
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  partialdec->getScore(DECfindScore(scip, "max foreseeing white")));
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  partialdec->hasSetppccardMaster());
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (int) partialdec->getDetectorchain( ).size());
       for( int detector = 0; detector <(int) partialdec->getDetectorchain().size(); ++ detector )
@@ -2896,6 +2380,66 @@ DEC_DETECTOR* DECfindDetector(
       if( strcmp(detector->name, name) == 0 )
       {
          return detector;
+      }
+   }
+
+   return NULL;
+}
+
+
+DEC_SCORE* DECfindScore(
+   SCIP*                 scip,
+   const char*           name
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   if( conshdlr == NULL )
+      return NULL;
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   for( i = 0; i < conshdlrdata->nscores; ++i )
+   {
+      DEC_SCORE* score;
+      score = conshdlrdata->scores[i];
+      assert(score != NULL);
+      if( strcmp(score->name, name) == 0 )
+      {
+         return score;
+      }
+   }
+
+   return NULL;
+}
+
+
+DEC_SCORE* DECfindScoreByShortname(
+   SCIP*                 scip,
+   const char*           shortname
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   if( conshdlr == NULL )
+      return NULL;
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   for( i = 0; i < conshdlrdata->nscores; ++i )
+   {
+      DEC_SCORE* score;
+      score = conshdlrdata->scores[i];
+      assert(score != NULL);
+      if( strcmp(score->shortname, shortname) == 0 )
+      {
+         return score;
       }
    }
 
@@ -3277,6 +2821,98 @@ SCIP_RETCODE DECincludeVarClassifier(
    return SCIP_OKAY;
 }
 
+char* DECgetCurrentScoreShortname(
+   SCIP*                 scip
+   )
+{
+   assert(scip != NULL);
+
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->currscore;
+}
+
+DEC_SCORE* DECgetCurrentScore(
+   SCIP*                 scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
+
+   conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   char* shortname = DECgetCurrentScoreShortname(scip);
+
+   for( i = 0; i < conshdlrdata->nscores; ++i )
+   {
+      DEC_SCORE* score;
+      score = conshdlrdata->scores[i];
+      assert(score != NULL);
+      if( strcmp(score->shortname, shortname) == 0 )
+      {
+         return score;
+      }
+   }
+
+   return NULL;
+}
+
+SCIP_RETCODE DECincludeScore(
+   SCIP*                 scip,
+   const char*           name,
+   const char*           shortname,
+   const char*           description,
+   DEC_SCOREDATA*        scoredata,
+   DEC_DECL_SCOREFREE    ((*scorefree)),
+   DEC_DECL_SCORECALC    ((*scorecalc))
+   )
+{
+   DEC_SCORE* score;
+
+   assert(scip != NULL);
+   assert(name != NULL);
+   assert(shortname != NULL);
+   assert(description != NULL);
+
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+
+   for( int i = 0; i < conshdlrdata->nscores; ++i )
+   {
+      DEC_SCORE* scorei;
+      scorei = conshdlrdata->scores[i];
+
+      assert(scorei != NULL);
+
+      if( strcmp(scorei->shortname, shortname) == 0 )
+      {
+         SCIPerrorMessage( "Score with the shortname <%s> already exists.\n", shortname );
+         return SCIP_ERROR;
+      }
+   }
+
+   SCIP_CALL( SCIPallocBlockMemory(scip, &score) );
+   assert(score != NULL);
+
+   SCIPdebugMessage("Adding score %i: %s\n", conshdlrdata->nscores+1, name);
+
+   SCIP_ALLOC( BMSduplicateMemoryArray(&score->name, name, strlen(name)+1) );
+   SCIP_ALLOC( BMSduplicateMemoryArray(&score->shortname, shortname, strlen(shortname)+1) );
+   SCIP_ALLOC( BMSduplicateMemoryArray(&score->description, description, strlen(description)+1) );
+   score->scoredata = scoredata;
+
+   score->scorefree = scorefree;
+   score->scorecalc = scorecalc;
+
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->scores, (size_t)conshdlrdata->nscores+1) );
+
+   conshdlrdata->scores[conshdlrdata->nscores] = score;
+   conshdlrdata->nscores = conshdlrdata->nscores+1;
+
+   return SCIP_OKAY;
+}
 
 void DECprintListOfDetectors(
    SCIP*                 scip
@@ -3642,7 +3278,7 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
                                                     "%d mastervars, and max white score of %s %f \n", usergiveninfo, presolvedinfo,
                    partialdec->getNBlocks(), partialdec->getNMasterconss(),
                    partialdec->getNLinkingvars(), partialdec->getNMastervars(), (partialdec->isComplete() ? " " : " at best "),
-                   partialdec->getScore(SCORETYPE::MAX_WHITE) );
+                   partialdec->getScore(DECfindScore(scip, "max white")) );
 
    return SCIP_OKAY;
 }
@@ -3707,183 +3343,6 @@ SCIP_RETCODE GCGconshdlrDecompArePricingprobsIdenticalForPartialdecid(
       *identical = FALSE;
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, " block %d and block %d are represented by %d and %d hence they are identical=%d.\n", probnr1, probnr2, partialdec->getRepForBlock(probnr1), partialdec->getRepForBlock(probnr2), *identical );
-
-   return SCIP_OKAY;
-}
-
-
-SCIP_RETCODE GCGconshdlrDecompCalcBendersScore(
-   SCIP* scip,
-   int partialdecid,
-   SCIP_Real* score
-   )
-{
-   SCIP_Real benderareascore = 0;
-
-   unsigned long nrelevantconss;
-   unsigned long nrelevantvars;
-   unsigned long nrelevantconss2;
-   unsigned long nrelevantvars2;
-   unsigned long badblockvararea;
-   long benderborderarea;
-   unsigned long totalarea;
-
-   nrelevantconss = 0;
-   nrelevantvars = 0;
-   nrelevantconss2 = 0;
-   nrelevantvars2 = 0;
-   badblockvararea = 0;
-
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-
-   DETPROBDATA* detprobdata = partialdec->getDetprobdata();
-
-   /* calc bender area score  (1 - fraction of white area in master constraints to complete area) */
-   for( int  c = 0; c < partialdec->getNMasterconss(); ++c )
-   {
-      bool relevant = true;
-      int cons = partialdec->getMasterconss()[c];
-      for( int v = 0; v < detprobdata->getNVarsForCons(cons); ++v )
-      {
-         int var = detprobdata->getVarsForCons(cons)[v];
-         if ( partialdec->isVarOpenvar(var) || partialdec->isVarMastervar(var) || partialdec->isVarLinkingvar(var) )
-         {
-            relevant = false;
-            break;
-         }
-
-      }
-      if( relevant )
-         ++nrelevantconss;
-   }
-
-   for( int b = 0; b < partialdec->getNBlocks(); ++b )
-   {
-      for(int v = 0; v < partialdec->getNVarsForBlock(b); ++v )
-      {
-         bool relevant = true;
-         int var = partialdec->getVarsForBlock(b)[v];
-         for( int c = 0; c < detprobdata->getNConssForVar(var); ++c )
-         {
-            int cons = detprobdata->getConssForVar(var)[c];
-            if( partialdec->isConsMastercons(cons) || partialdec->isConsOpencons(cons)  )
-            {
-               relevant  = false;
-               for( int b2 = 0; b2 < partialdec->getNBlocks(); ++b2 )
-               {
-                  if( b2 != b )
-                     badblockvararea += partialdec->getNConssForBlock(b2);
-               }
-               break;
-            }
-         }
-         if( relevant )
-            ++nrelevantvars;
-      }
-   }
-
-   for( int  v = 0; v < partialdec->getNLinkingvars(); ++v )
-   {
-      bool relevant = true;
-      int var = partialdec->getLinkingvars()[v];
-      for( int c = 0; c < detprobdata->getNConssForVar(var); ++c )
-      {
-         int cons = detprobdata->getConssForVar(var)[c];
-         if ( partialdec->isConsOpencons(cons) || partialdec->isConsMastercons(cons) )
-         {
-            relevant = false;
-            break;
-         }
-
-      }
-      if( relevant )
-         ++nrelevantvars2;
-   }
-
-   for( int b = 0; b < partialdec->getNBlocks(); ++b )
-   {
-      for(int c = 0; c < partialdec->getNConssForBlock(b); ++c )
-      {
-         bool relevant = true;
-         int cons = partialdec->getConssForBlock(b)[c];
-         for( int v = 0; v < detprobdata->getNVarsForCons(cons); ++v )
-         {
-            int var = detprobdata->getVarsForCons(cons)[v];
-            if( partialdec->isVarLinkingvar(var) || partialdec->isVarOpenvar(var)  )
-            {
-               relevant  = false;
-               break;
-            }
-         }
-         if( relevant )
-            ++nrelevantconss2;
-      }
-   }
-
-   benderborderarea = ( nrelevantconss * nrelevantvars  ) + ( nrelevantconss2 * nrelevantvars2  ) - badblockvararea;
-   totalarea = ( (unsigned long) partialdec->getNConss() * (unsigned long) partialdec->getNVars() );
-   benderareascore =  ( SCIP_Real) benderborderarea / totalarea;
-
-   /* get block & border area score (note: these calculations have their own clock) */
-   SCIP_Real borderareascore;
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-
-   SCIP_Real blockareascore = calcBlockAreaScore(scip, partialdec);
-   borderareascore = partialdec->getBorderAreaScore();
-   if(borderareascore == -1)
-      GCGconshdlrDecompCalcBorderAreaScore(scip, partialdecid, &borderareascore);
-
-   SCIP_CALL_ABORT(SCIPresetClock( scip, clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
-   *score = blockareascore + benderareascore + borderareascore - 1.;
-
-   if( *score < 0. )
-      *score = 0.;
-
-   partialdec->setBendersScore(*score);
-
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
-
-   return SCIP_OKAY;
-}
-
-
-SCIP_RETCODE GCGconshdlrDecompCalcBorderAreaScore(
-   SCIP* scip,
-   int partialdecid,
-   SCIP_Real* score
-   )
-{
-   unsigned long matrixarea;
-   unsigned long borderarea;
-
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-
-   matrixarea = (unsigned long) partialdec->getNVars() * (unsigned long)partialdec->getNConss();
-   borderarea = 0;
-
-   borderarea += (unsigned long) ( partialdec->getNLinkingvars() + partialdec->getNTotalStairlinkingvars() ) * (unsigned long) partialdec->getNConss();
-   borderarea += (unsigned long) partialdec->getNMasterconss() * ( (unsigned long) partialdec->getNVars() - ( partialdec->getNLinkingvars() + partialdec->getNTotalStairlinkingvars() ) ) ;
-
-   *score = 1. - (matrixarea == 0 ? 0 : ( (SCIP_Real) borderarea / (SCIP_Real) matrixarea ));
-
-   partialdec->setBorderAreaScore(*score);
-
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
 
    return SCIP_OKAY;
 }
@@ -4012,767 +3471,6 @@ void GCGconshdlrDecompCalcCandidatesNBlocks(
 }
 
 
-SCIP_RETCODE GCGconshdlrDecompCalcClassicScore(
-   SCIP* scip,
-   int partialdecid,
-   SCIP_Real* score
-   )
-{
-   int i;
-   int j;
-   int k;
-
-   unsigned long matrixarea;
-   unsigned long borderarea;
-   SCIP_Real borderscore; /* score of the border */
-   SCIP_Real densityscore; /* score of block densities */
-   SCIP_Real linkingscore; /* score related to interlinking blocks */
-   SCIP_Real totalscore; /* accumulated score */
-
-   SCIP_Real varratio;
-   int* nzblocks;
-   int* nlinkvarsblocks;
-   int* nvarsblocks;
-   SCIP_Real* blockdensities;
-   int* blocksizes;
-   SCIP_Real density;
-
-   SCIP_Real alphaborderarea;
-   SCIP_Real alphalinking;
-   SCIP_Real alphadensity;
-
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
-   alphaborderarea = 0.6;
-   alphalinking = 0.2;
-   alphadensity = 0.2;
-
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-   DETPROBDATA* detprobdata = partialdec->getDetprobdata();
-
-   SCIP_CALL( SCIPallocBufferArray( scip, & nzblocks, partialdec->getNBlocks() ) );
-   SCIP_CALL( SCIPallocBufferArray( scip, & nlinkvarsblocks, partialdec->getNBlocks() ) );
-   SCIP_CALL( SCIPallocBufferArray( scip, & blockdensities, partialdec->getNBlocks() ) );
-   SCIP_CALL( SCIPallocBufferArray( scip, & blocksizes, partialdec->getNBlocks() ) );
-   SCIP_CALL( SCIPallocBufferArray( scip, & nvarsblocks, partialdec->getNBlocks() ) );
-
-   /*
-    * 3 Scores
-    *
-    * - Area percentage (min)
-    * - block density (max)
-    * - \pi_b {v_b|v_b is linking}/#vb (min)
-    */
-
-   /* calculate slave sizes, nonzeros and linkingvars */
-   for( i = 0; i < partialdec->getNBlocks(); ++ i )
-   {
-      int ncurconss;
-      int nvarsblock;
-      SCIP_Bool *ishandled;
-
-      SCIP_CALL( SCIPallocBufferArray( scip, & ishandled, partialdec->getNVars() ) );
-      nvarsblock = 0;
-      nzblocks[i] = 0;
-      nlinkvarsblocks[i] = 0;
-
-      for( j = 0; j < partialdec->getNVars(); ++ j )
-      {
-         ishandled[j] = FALSE;
-      }
-      ncurconss = partialdec->getNConssForBlock( i );
-
-      for( j = 0; j < ncurconss; ++ j )
-      {
-         int cons = partialdec->getConssForBlock( i )[j];
-         int ncurvars;
-         ncurvars = detprobdata->getNVarsForCons( cons );
-         for( k = 0; k < ncurvars; ++ k )
-         {
-            int var = detprobdata->getVarsForCons( cons )[k];
-            int block = -3;
-            if( partialdec->isVarBlockvarOfBlock( var, i ) )
-               block = i + 1;
-            else if( partialdec->isVarLinkingvar( var ) || partialdec->isVarStairlinkingvar( var ) )
-               block = partialdec->getNBlocks() + 2;
-            else if( partialdec->isVarMastervar( var ) )
-               block = partialdec->getNBlocks() + 1;
-
-            ++ ( nzblocks[i] );
-
-            if( block == partialdec->getNBlocks() + 1 && ishandled[var] == FALSE )
-            {
-               ++ ( nlinkvarsblocks[i] );
-            }
-            ishandled[var] = TRUE;
-         }
-      }
-
-      for( j = 0; j < partialdec->getNVars(); ++ j )
-      {
-         if( ishandled[j] )
-         {
-            ++ nvarsblock;
-         }
-      }
-
-      blocksizes[i] = nvarsblock * ncurconss;
-      nvarsblocks[i] = nvarsblock;
-      if( blocksizes[i] > 0 )
-      {
-         blockdensities[i] = 1.0 * nzblocks[i] / blocksizes[i];
-      }
-      else
-      {
-         blockdensities[i] = 0.0;
-      }
-
-      assert( blockdensities[i] >= 0 && blockdensities[i] <= 1.0 );
-      SCIPfreeBufferArray( scip, & ishandled );
-   }
-
-   borderarea = ((unsigned long) partialdec->getNMasterconss() * partialdec->getNVars() ) + ( ((unsigned long) partialdec->getNLinkingvars() + partialdec->getNMastervars() + partialdec->getNTotalStairlinkingvars() ) ) * ( partialdec->getNConss() - partialdec->getNMasterconss() );
-
-   matrixarea = ((unsigned long) partialdec->getNVars() ) * ((unsigned long) partialdec->getNConss() );
-
-   density = 1E20;
-   varratio = 1.0;
-   linkingscore = 1.;
-   borderscore =  1.;
-   densityscore = 1.;
-
-   for( i = 0; i < partialdec->getNBlocks(); ++ i )
-   {
-      density = MIN( density, blockdensities[i] );
-
-      if( ( partialdec->getNLinkingvars() + partialdec->getNMastervars() + partialdec->getNTotalStairlinkingvars() ) > 0 )
-      {
-         varratio *= 1.0 * nlinkvarsblocks[i] / ( partialdec->getNLinkingvars() + partialdec->getNMastervars() + partialdec->getNTotalStairlinkingvars() );
-      }
-      else
-      {
-         varratio = 0.;
-      }
-   }
-   linkingscore = ( 0.5 + 0.5 * varratio );
-
-   densityscore = ( 1. - density );
-
-   borderscore = ( 1.0 * ( borderarea ) / matrixarea );
-
-   totalscore = 1. - (alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore ) );
-
-   if(totalscore > 1)
-      totalscore = 1;
-   if(totalscore < 0)
-      totalscore = 0;
-
-   *score = totalscore;
-
-   partialdec->setClassicScore(*score);
-
-   SCIPfreeBufferArray( scip, & nzblocks );
-   SCIPfreeBufferArray(  scip, & nlinkvarsblocks) ;
-   SCIPfreeBufferArray(  scip, & blockdensities);
-   SCIPfreeBufferArray(  scip, & blocksizes);
-   SCIPfreeBufferArray(  scip, & nvarsblocks);
-
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
-
-   return SCIP_OKAY;
-}
-
-
-SCIP_RETCODE GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore(
-   SCIP* scip,
-   int partialdecid,
-   SCIP_Real* score
-   )
-{
-   unsigned long sumblockshittinglinkingvar;
-   unsigned long sumlinkingvarshittingblock;
-   unsigned long newheight;
-   unsigned long newwidth;
-   unsigned long newmasterarea;
-   unsigned long newblockareaagg;
-
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-
-   std::vector<int> nlinkingvarsforblock(partialdec->getNBlocks(), 0);
-   std::vector<int> nblocksforlinkingvar(partialdec->getNLinkingvars() + partialdec->getNTotalStairlinkingvars(), 0);
-
-   DETPROBDATA* detprobdata = partialdec->getDetprobdata();
-
-   partialdec->calcAggregationInformation(false);
-
-   for( int lv = 0; lv < partialdec->getNLinkingvars(); ++lv )
-   {
-      int linkingvarid = partialdec->getLinkingvars()[lv];
-
-      for( int b = 0; b < partialdec->getNBlocks(); ++b )
-      {
-         for ( int blc = 0; blc < partialdec->getNConssForBlock(b); ++blc )
-         {
-            int blockcons = partialdec->getConssForBlock(b)[blc];
-            if( !SCIPisZero( scip, detprobdata->getVal(blockcons, linkingvarid) ) )
-            {
-               /* linking var hits block */
-               ++nlinkingvarsforblock[b];
-               ++nblocksforlinkingvar[lv];
-               break;
-            }
-         }
-      }
-   }
-
-   for( int b = 0; b < partialdec->getNBlocks(); ++b)
-   {
-      for( int slv = 0; slv < partialdec->getNStairlinkingvars(b); ++slv )
-      {
-         ++nlinkingvarsforblock[b];
-         ++nlinkingvarsforblock[b+1];
-         ++nblocksforlinkingvar[partialdec->getNLinkingvars() + slv];
-         ++nblocksforlinkingvar[partialdec->getNLinkingvars() + slv];
-      }
-   }
-
-   sumblockshittinglinkingvar = 0;
-   sumlinkingvarshittingblock = 0;
-   for( int b = 0; b < partialdec->getNBlocks(); ++b )
-   {
-      sumlinkingvarshittingblock += nlinkingvarsforblock[b];
-   }
-   for( int lv = 0; lv < partialdec->getNLinkingvars(); ++lv )
-   {
-      sumblockshittinglinkingvar += nblocksforlinkingvar[lv];
-   }
-
-   for( int slv = 0; slv < partialdec->getNTotalStairlinkingvars(); ++slv )
-   {
-      sumblockshittinglinkingvar += nblocksforlinkingvar[partialdec->getNLinkingvars() + slv];
-   }
-
-   newheight = partialdec->getNConss() + sumblockshittinglinkingvar;
-   newwidth = partialdec->getNVars() + sumlinkingvarshittingblock;
-
-   newmasterarea = ( partialdec->getNMasterconss() + sumblockshittinglinkingvar) * ( partialdec->getNVars() + sumlinkingvarshittingblock );
-   newblockareaagg = 0;
-
-   for( int br = 0; br < partialdec->getNReps(); ++br )
-   {
-      newblockareaagg += partialdec->getNConssForBlock( partialdec->getBlocksForRep(br)[0] ) * ( partialdec->getNVarsForBlock( partialdec->getBlocksForRep(br)[0] ) + nlinkingvarsforblock[partialdec->getBlocksForRep(br)[0]] );
-   }
-
-   SCIP_Real maxforeseeingwhitescoreagg = ((SCIP_Real ) newblockareaagg + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
-   maxforeseeingwhitescoreagg =  maxforeseeingwhitescoreagg / (SCIP_Real) newheight ;
-
-   maxforeseeingwhitescoreagg = 1. - maxforeseeingwhitescoreagg;
-   *score = maxforeseeingwhitescoreagg;
-
-   partialdec->setMaxForWhiteAggScore(*score);
-
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
-
-   return SCIP_OKAY;
-}
-
-
-SCIP_RETCODE GCGconshdlrDecompCalcMaxForseeingWhiteScore(
-   SCIP* scip,
-   int partialdecid,
-   SCIP_Real* score
-   )
-{
-   unsigned long sumblockshittinglinkingvar;
-   unsigned long sumlinkingvarshittingblock;
-   unsigned long newheight;
-   unsigned long newwidth;
-   unsigned long newmasterarea;
-   unsigned long newblockarea;
-
-   SCIP_CLOCK* clock;
-
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-   DETPROBDATA* detprobdata = partialdec->getDetprobdata();
-
-   std::vector<int> blockforconss(partialdec->getNConss(), -1);
-   std::vector<int> nlinkingvarsforblock(partialdec->getNBlocks(), 0);
-   std::vector<int> nblocksforlinkingvar(partialdec->getNLinkingvars() + partialdec->getNTotalStairlinkingvars(), 0);
-
-   /* store for each cons to which block it is assigned (or -1 if border or unassigned) */
-   for( int b = 0; b < partialdec->getNBlocks(); ++b )
-   {
-      std::vector<int>& blockconss = partialdec->getConssForBlock(b);
-      for ( int blc = 0; blc < partialdec->getNConssForBlock(b); ++blc )
-      {
-         int blockcons = blockconss[blc];
-         blockforconss[blockcons] = b;
-      }
-   }
-
-   /* iterate linking vars and corresponding conss to recognize hit blocks */
-   for( int lv = 0; lv < partialdec->getNLinkingvars(); ++lv )
-   {
-      int linkingvarid = partialdec->getLinkingvars()[lv];
-      int nhittingconss = detprobdata->getNConssForVar(linkingvarid);
-      std::vector<int>& hittingconss = detprobdata->getConssForVar(linkingvarid);
-
-      std::vector<bool> hitblock(partialdec->getNBlocks(), false);
-
-      /* find out which blocks the linking var is hitting */
-      for ( int hittingcons = 0; hittingcons < nhittingconss; ++hittingcons )
-      {
-         int blockforcons = blockforconss[hittingconss[hittingcons]];
-         if( blockforcons != -1 )
-            hitblock[blockforcons] = true;
-      }
-
-      /* count for each block and each linking var how many linking vars or blocks, respectively, they hit */
-      for( int b = 0; b < partialdec->getNBlocks(); ++b )
-      {
-         if ( hitblock[b] )
-         {
-            /* linking var hits block, so count it */
-            ++nlinkingvarsforblock[b];
-            ++nblocksforlinkingvar[lv];
-         }
-      }
-   }
-
-   for( int b = 0; b < partialdec->getNBlocks(); ++b)
-   {
-      for( int slv = 0; slv < partialdec->getNStairlinkingvars(b); ++slv )
-      {
-         ++nlinkingvarsforblock[b];
-         ++nlinkingvarsforblock[b+1];
-         ++nblocksforlinkingvar[partialdec->getNLinkingvars() + slv];
-         ++nblocksforlinkingvar[partialdec->getNLinkingvars() + slv];
-      }
-   }
-
-   sumblockshittinglinkingvar = 0;
-   sumlinkingvarshittingblock = 0;
-   for( int b = 0; b < partialdec->getNBlocks(); ++b )
-   {
-      sumlinkingvarshittingblock += nlinkingvarsforblock[b];
-   }
-   for( int lv = 0; lv < partialdec->getNLinkingvars(); ++lv )
-   {
-      sumblockshittinglinkingvar += nblocksforlinkingvar[lv];
-   }
-
-   for( int slv = 0; slv < partialdec->getNTotalStairlinkingvars(); ++slv )
-   {
-      sumblockshittinglinkingvar += nblocksforlinkingvar[partialdec->getNLinkingvars() + slv];
-   }
-
-   newheight = partialdec->getNConss() + sumblockshittinglinkingvar;
-   newwidth = partialdec->getNVars() + sumlinkingvarshittingblock;
-
-   newmasterarea = ( (SCIP_Real) partialdec->getNMasterconss() + sumblockshittinglinkingvar) * ( (SCIP_Real) partialdec->getNVars() + sumlinkingvarshittingblock );
-   newblockarea = 0;
-
-   for( int b = 0; b < partialdec->getNBlocks(); ++b )
-   {
-      newblockarea += ((SCIP_Real) partialdec->getNConssForBlock(b) ) * ( (SCIP_Real) partialdec->getNVarsForBlock(b) + nlinkingvarsforblock[b] );
-   }
-
-   SCIP_Real maxforeseeingwhitescore = ((SCIP_Real ) newblockarea + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
-   maxforeseeingwhitescore =  maxforeseeingwhitescore / (SCIP_Real) newheight ;
-
-   maxforeseeingwhitescore = 1. - maxforeseeingwhitescore;
-   *score = maxforeseeingwhitescore;
-
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
-
-   return SCIP_OKAY;
-}
-
-
-SCIP_RETCODE GCGconshdlrDecompCalcMaxWhiteScore(
-   SCIP* scip,
-   int partialdecid,
-   SCIP_Real* score
-   )
-{
-   SCIP_Real borderareascore = 0;
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-
-   SCIP_Real blockareascore = calcBlockAreaScore(scip, partialdec);
-   borderareascore = partialdec->getBorderAreaScore();
-   if(borderareascore == -1)
-      GCGconshdlrDecompCalcBorderAreaScore(scip, partialdecid, &borderareascore);
-
-   SCIP_CALL_ABORT(SCIPresetClock( scip, clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-
-   SCIP_Real maxwhitescore = blockareascore + borderareascore - 1.;
-
-   if( maxwhitescore < 0. )
-     maxwhitescore = 0.;
-
-   *score = maxwhitescore;
-   partialdec->setMaxWhiteScore(*score);
-
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
-
-   return SCIP_OKAY;
-}
-
-
-SCIP_RETCODE GCGconshdlrDecompCalcSetPartForseeingWhiteScore(
-   SCIP* scip,
-   int partialdecid,
-   SCIP_Real* score
-   )
-{
-   SCIP_Real maxforeseeingwhitescore = 0;
-   SCIP_CLOCK* clock;
-
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-
-   maxforeseeingwhitescore = partialdec->getMaxForWhiteScore();
-   if(maxforeseeingwhitescore == -1)
-      GCGconshdlrDecompCalcMaxForseeingWhiteScore(scip, partialdecid, &maxforeseeingwhitescore);
-
-   SCIP_CALL_ABORT(SCIPresetClock( scip, clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-
-   if( partialdec->hasSetppccardMaster() && !partialdec->isTrivial() && partialdec->getNBlocks() > 1 )
-   {
-      *score = 0.5 * maxforeseeingwhitescore + 0.5;
-   }
-   else
-   {
-      *score = 0.5 * maxforeseeingwhitescore;
-   }
-
-   partialdec->setSetPartForWhiteScore(*score);
-
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
-
-   return SCIP_OKAY;
-}
-
-
-SCIP_RETCODE GCGconshdlrDecompCalcSetPartForWhiteAggScore(
-   SCIP* scip,
-   int partialdecid,
-   SCIP_Real* score
-   )
-{
-   SCIP_Real maxforeseeingwhitescoreagg = 0;
-
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-
-   maxforeseeingwhitescoreagg = partialdec->getMaxForWhiteAggScore();
-   if(maxforeseeingwhitescoreagg == -1)
-      GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore(scip, partialdecid, &maxforeseeingwhitescoreagg);
-
-   SCIP_CALL_ABORT(SCIPresetClock( scip, clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-
-   if( partialdec->hasSetppccardMaster() && !partialdec->isTrivial() && partialdec->getNBlocks() > 1 )
-   {
-      *score = 0.5 * maxforeseeingwhitescoreagg + 0.5;
-   }
-   else
-   {
-      *score = 0.5 * maxforeseeingwhitescoreagg;
-   }
-
-   partialdec->setSetPartForWhiteAggScore(*score);
-
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
-
-   return SCIP_OKAY;
-}
-
-
-SCIP_RETCODE GCGconshdlrDecompCalcStrongDecompositionScore(
-   SCIP* scip,
-   int partialdecid,
-   SCIP_Real* score
-   )
-{
-   /** @todo use and introduce scip parameter limit (for a pricing problem to be considered fractional solvable) of difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
-   /* SCIP_Real gaplimitsolved; */
-
-   /** @todo use and introduce scip parameter weighted limit (for a pricing problem to be considered fractional solvable) difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
-   /* SCIP_Real gaplimitbeneficial; */
-
-   SCIP_Bool hittimelimit;
-   SCIP_Bool errorpricing;
-   int npricingconss = 0;
-
-   SCIP_Real infinity;
-   SCIP_Real epsilon;
-   SCIP_Real sumepsilon;
-   SCIP_Real feastol;
-   SCIP_Real lpfeastol;
-   SCIP_Real dualfeastol;
-   SCIP_Bool enableppcuts;
-
-   SCIP_Bool benefical;
-   SCIP_Bool fast;
-
-   int clocktype;
-   SCIP_Real dualvalmethodcoef;
-
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-
-   /* score works only on presolved  */
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-   if( partialdec->isAssignedToOrigProb() )
-   {
-      *score = 0;
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, " \n Attention! Strong decomposition score is not implemented for decomps belonging to the original problem \n\n");
-      return SCIP_OKAY;
-   }
-
-   *score = 0.;
-
-   /* ***** get all relevant parameters ***** */
-   SCIPgetRealParam(scip, "detection/score/strong_detection/coeffactororigvsrandom", &dualvalmethodcoef);
-
-   /* get numerical tolerances of the original SCIP instance in order to use the same numerical tolerances in master and pricing problems */
-   SCIP_CALL( SCIPgetRealParam(scip, "numerics/infinity", &infinity) );
-   SCIP_CALL( SCIPgetRealParam(scip, "numerics/epsilon", &epsilon) );
-   SCIP_CALL( SCIPgetRealParam(scip, "numerics/sumepsilon", &sumepsilon) );
-   SCIP_CALL( SCIPgetRealParam(scip, "numerics/feastol", &feastol) );
-   SCIP_CALL( SCIPgetRealParam(scip, "numerics/lpfeastol", &lpfeastol) );
-   SCIP_CALL( SCIPgetRealParam(scip, "numerics/dualfeastol", &dualfeastol) );
-
-   /* get clocktype of the original SCIP instance in order to use the same clocktype in master and pricing problems */
-   SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype) );
-
-   enableppcuts = FALSE;
-   SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
-
-   SCIP_Real timelimitfast  =  0.1 * conshdlrdata->strongtimelimit;
-
-   /* get number of pricingconss */
-   for( int block = 0; block < partialdec->getNBlocks(); ++block )
-   {
-      npricingconss += partialdec->getNConssForBlock(block);
-   }
-
-   /* for every pricing problem calculate a corresponding score coeff and break if a pricing problem cannot be solved in the timelimit */
-   for( int block = 0; block < partialdec->getNBlocks(); ++block )
-   {
-      SCIP* subscip;
-      char name[SCIP_MAXSTRLEN];
-      SCIP_HASHMAP* hashpricingvartoindex;
-      SCIP_HASHMAP* hashorig2pricingvar;
-      SCIP_Real score_coef;
-      SCIP_Real weight_subproblem;
-      std::stringstream subname;
-
-      /* init all parameters */
-      hittimelimit = FALSE;
-      errorpricing = FALSE;
-
-      subname << "temp_pp_" << block << ".lp";
-
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started calculate strong decomposition subproblem for block %d \n", block );
-
-      std::vector<SCIP_VAR*> indextopricingvar = std::vector<SCIP_VAR*>(SCIPgetNVars(scip), NULL);
-
-      SCIP_CALL( SCIPhashmapCreate(&hashpricingvartoindex, SCIPblkmem(scip), SCIPgetNVars(scip)) ); /*lint !e613*/
-      SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingvar, SCIPblkmem(scip), SCIPgetNVars(scip)) ); /*lint !e613*/
-
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "testpricing_block_%d", block);
-
-      benefical = FALSE;
-      fast = FALSE;
-      score_coef = 0.0;
-      weight_subproblem = (SCIP_Real) partialdec->getNConssForBlock(block) / npricingconss;
-
-      /* build subscip */
-      SCIP_CALL( SCIPcreate(&subscip) );
-      SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
-      SCIP_CALL( setTestpricingProblemParameters(subscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, enableppcuts, conshdlrdata->strongtimelimit) );
-      SCIP_CALL( SCIPsetIntParam(subscip, "presolving/maxrounds", 0) );
-      SCIP_CALL( SCIPsetIntParam(subscip, "lp/solvefreq", 1) );
-      SCIP_CALL( SCIPcreateProb(subscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
-
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started calculate strong decomposition, timelimit: %f  timelimitfast: %f \n",  conshdlrdata->strongtimelimit, timelimitfast );
-
-      /* copy variables */
-      DETPROBDATA* detprobdata = partialdec->getDetprobdata();
-      for( int var = 0; var < partialdec->getNVarsForBlock(block); ++var )
-      {
-         int varid;
-         SCIP_VAR* origprobvar;
-         SCIP_VAR* pricingprobvar;
-         SCIP_Real obj;
-
-         varid = partialdec->getVarsForBlock(block)[var];
-
-         if ( partialdec->isAssignedToOrigProb() )
-            origprobvar = detprobdata->getVar(varid);
-         else
-            origprobvar = SCIPvarGetProbvar(detprobdata->getVar(varid));
-
-         /* calculate obj val from shuffled */
-         obj = SCIPvarGetObj(origprobvar);
-         for( int c = 0; c < detprobdata->getNConssForVar(varid); ++c )
-         {
-            int consid;
-            SCIP_Real dualval;
-
-            dualval = 0.;
-
-            consid = detprobdata->getConssForVar(varid)[c];
-            if ( partialdec->isConsMastercons(consid) )
-            {
-               if( SCIPisEQ( scip, dualvalmethodcoef, 0.0) )
-                  dualval = getDualvalRandom(scip, consid, partialdec->isAssignedToOrigProb());
-               else if( SCIPisEQ( scip, dualvalmethodcoef, 1.0) )
-                  dualval = getDualvalOptimalLP(scip, consid, partialdec->isAssignedToOrigProb());
-               else
-                  dualval = dualvalmethodcoef * getDualvalOptimalLP(scip, consid, partialdec->isAssignedToOrigProb()) + (1. - dualvalmethodcoef) * getDualvalRandom(scip, consid, partialdec->isAssignedToOrigProb());
-               obj -= dualval * detprobdata->getVal(consid, varid);
-            }
-         }
-
-         /* round variable objective coeffs to decrease numerical troubles */
-         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", block, SCIPvarGetName(origprobvar));
-         SCIP_CALL( SCIPcreateVar(subscip, &pricingprobvar, name, SCIPvarGetLbGlobal(origprobvar),
-                  SCIPvarGetUbGlobal(origprobvar), obj, SCIPvarGetType(origprobvar),
-                  TRUE, FALSE, NULL, NULL, NULL, NULL, NULL) );
-         SCIPhashmapSetImage(hashorig2pricingvar, origprobvar, pricingprobvar);
-         SCIPhashmapSetImage(hashpricingvartoindex, pricingprobvar, (void*) (size_t)varid);
-         indextopricingvar[varid] = pricingprobvar;
-         SCIP_CALL( SCIPaddVar(subscip, pricingprobvar) );
-      }
-
-      /* copy constraints */
-      SCIP_CALL( createTestPricingprobConss(scip, subscip, partialdec, block, hashorig2pricingvar) );
-
-      /* transform subscip */
-      SCIP_CALL(SCIPtransformProb(subscip) );
-
-      /* solve subscip */
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started solving subproblem for block %d \n", block );
-      SCIP_CALL( SCIPsolve(subscip) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "finished solving subproblem in %f seconds \n", SCIPgetSolvingTime(subscip) );
-
-      if( SCIPgetStatus(subscip) != SCIP_STATUS_OPTIMAL )
-      {
-         if( SCIPgetStatus(subscip) == SCIP_STATUS_TIMELIMIT )
-            hittimelimit = TRUE;
-         else
-            errorpricing = TRUE;
-      }
-
-      if( errorpricing || hittimelimit )
-      {
-         if( hittimelimit )
-            SCIPverbMessage(scip,  SCIP_VERBLEVEL_FULL, NULL, "Hit timelimit in pricing problem %d \n.", block);
-         else
-            SCIPverbMessage(scip,  SCIP_VERBLEVEL_FULL, NULL, "Error in pricing problem %d \n.", block);
-
-         *score = 0.;
-         SCIPhashmapFree(&hashpricingvartoindex);
-         SCIPfree(&subscip);
-
-         return SCIP_OKAY;
-      }
-
-      /* get coefficient */
-      if( !SCIPisEQ( scip,  SCIPgetFirstLPLowerboundRoot(subscip), SCIPgetDualbound(subscip) ) )
-         benefical = TRUE;
-
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "first dual bound: %f ; dual bound end: %f \n",SCIPgetFirstLPLowerboundRoot(subscip), SCIPgetDualbound(subscip)   );
-
-      if( SCIPisFeasLE( scip, SCIPgetSolvingTime(subscip), timelimitfast ) )
-         fast = TRUE;
-
-      if ( fast && benefical )
-         score_coef = DEFAULT_SCORECOEF_FASTBENEFICIAL;
-
-      if ( !fast && benefical )
-         score_coef = DEFAULT_SCORECOEF_MEDIUMBENEFICIAL;
-
-      if ( fast && !benefical )
-         score_coef = DEFAULT_SCORECOEF_FASTNOTBENEFICIAL;
-
-      if ( !fast && !benefical )
-         score_coef = DEFAULT_SCORECOEF_MEDIUMNOTBENEFICIAL;
-
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "scorecoef for subproblem %d is %f with weighting factor %f\n", block, score_coef, weight_subproblem );
-
-      *score += score_coef * weight_subproblem;
-
-      /* free stuff */
-      for( int var = 0; var < partialdec->getNVarsForBlock(block); ++var )
-      {
-         int varid = partialdec->getVarsForBlock(block)[var];
-         SCIPreleaseVar(subscip, &indextopricingvar[varid]);
-      }
-
-      SCIPhashmapFree(&hashpricingvartoindex);
-
-      SCIPfree(&subscip);
-   }// end for blocks
-
-   partialdec->setStrongDecompScore(*score);
-
-   /* add clock time */
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
-
-   return SCIP_OKAY;
-}
-
-
 SCIP_Bool GCGconshdlrDecompCheckConsistency(
    SCIP* scip  /* SCIP data structure */
    )
@@ -4890,7 +3588,7 @@ SCIP_RETCODE GCGconshdlrDecompChooseCandidatesFromSelected(
       assert(partialdec != NULL);
       if( partialdec->isComplete() )
       {
-         candidates.emplace_back(partialdec, partialdec->getScore(GCGconshdlrDecompGetScoretype(scip)));
+         candidates.emplace_back(partialdec, partialdec->getScore(DECgetCurrentScore(scip)));
       }
       else if( printwarnings )
       {
@@ -5255,6 +3953,19 @@ DEC_DETECTOR** GCGconshdlrDecompGetDetectors(
    return conshdlrdata->detectors;
 }
 
+
+DEC_SCORE** GCGconshdlrDecompGetScores(
+   SCIP* scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->scores;
+
+}
+
+
 DEC_CONSCLASSIFIER** GCGconshdlrDecompGetConsClassifiers(
    SCIP* scip
    )
@@ -5265,6 +3976,7 @@ DEC_CONSCLASSIFIER** GCGconshdlrDecompGetConsClassifiers(
    return conshdlrdata->consclassifiers;
 }
 
+
 DEC_VARCLASSIFIER** GCGconshdlrDecompGetVarClassifiers(
    SCIP* scip
    )
@@ -5274,6 +3986,7 @@ DEC_VARCLASSIFIER** GCGconshdlrDecompGetVarClassifiers(
 
    return conshdlrdata->varclassifiers;
 }
+
 
 DETPROBDATA* GCGconshdlrDecompGetDetprobdataOrig(
    SCIP*                 scip
@@ -5403,6 +4116,17 @@ int GCGconshdlrDecompGetNVarClassifiers(
 
    return conshdlrdata->nvarclassifiers;
 }
+
+int GCGconshdlrDecompGetNScores(
+   SCIP* scip
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->nscores;
+}
+
 
 int GCGconshdlrDecompGetNextPartialdecID(
    SCIP* scip
@@ -5633,7 +4357,8 @@ float GCGconshdlrDecompGetScoreByPartialdecId(
 {
    /* get partialdec and returns its score in respect to the current score type */
    PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
-   return partialdec->getScore(GCGconshdlrDecompGetScoretype(scip));
+
+   return partialdec->getScore(DECgetCurrentScore(scip));
 }
 
 
@@ -5643,17 +4368,6 @@ SCIP_Real GCGconshdlrDecompGetScoreTotalTime(
 {
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    return conshdlrdata->scoretotaltime;
-}
-
-
-SCORETYPE GCGconshdlrDecompGetScoretype(
-   SCIP* scip
-   )
-{
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-   assert(conshdlrdata != NULL);
-
-   return static_cast<scoretype>(conshdlrdata->currscoretype);
 }
 
 
@@ -5839,19 +4553,6 @@ SCIP_RETCODE GCGconshdlrDecompSetDetection(
 
    return SCIP_OKAY;
 }
-
-
-void GCGconshdlrDecompSetScoretype(
-   SCIP*  scip,
-   SCORETYPE sctype
-   )
-{
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-   assert(conshdlrdata != NULL);
-
-   conshdlrdata->currscoretype = sctype;
-}
-
 
 SCIP_RETCODE GCGconshdlrDecompTranslateNBestOrigPartialdecs(
    SCIP*                 scip,
@@ -6063,11 +4764,10 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->varclassifierpriorities = NULL;
 
    /* score data */
+   conshdlrdata->scores = NULL;
+   conshdlrdata->currscore = NULL;
+   conshdlrdata->nscores = 0;
    conshdlrdata->scoretotaltime = 0.;
-   conshdlrdata->dualvalsrandom = new std::vector<SCIP_Real>();
-   conshdlrdata->dualvalsoptimaloriglp = new std::vector<SCIP_Real>();
-   conshdlrdata->dualvalsrandomset = FALSE;
-   conshdlrdata->dualvalsoptimaloriglpcalculated = FALSE;
 
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
@@ -6149,23 +4849,10 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
                               FALSE, DEFAULT_BLOCKNUMBERCANDSMEDIANVARSPERCONS, NULL, NULL) );
 
    /* scores */
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/score/scoretype",
-                              "Score calculation for comparing (partial) decompositions (0: max white, 1: border area, 2: classic, 3: max foreseeing white, 4: ppc-max-white, 5: max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info, 7: experimental benders score, 8: strong decomposition score)",
-                              &conshdlrdata->currscoretype, FALSE,
-                              scoretype::SETPART_FWHITE, 0, 8, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(scip, "detection/score/strong_detection/timelimit",
-                               "Timelimit for strong decompositions score calculation per partialdec in seconds", &conshdlrdata->strongtimelimit, FALSE,
-                               DEFAULT_STRONGTIMELIMIT, 0., INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/score/strong_detection/dualvalrandommethod",
-                              "Method for random dual values use for strong decomposition: 1: naive, 2: expected equality exponential distributed, 3: expected overestimation exponential distributed ",
-                              &conshdlrdata->strongdetectiondualvalrandommethod, FALSE,
-                              DEFAULT_DUALVALRANDOMMETHOD, 1, 3, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(scip, "detection/score/strong_detection/coeffactororigvsrandom",
-                               "Convex coefficient for orig dual val, i.e. (1-this coef) is factor for random dual value", &conshdlrdata->coeffactororigvsrandom, FALSE,
-                               DEFAULT_COEFFACTORORIGVSRANDOM, 0., 1., NULL, NULL) );
+   SCIP_CALL( SCIPaddStringParam(scip, "detection/scores/selected",
+                                 "Sets the score calculation for comparing (partial) decompositions (use score shortname)",
+                                 &conshdlrdata->currscore,
+                                 FALSE, DEFAULT_SCORE, paramChgdScore, NULL) );
 
    return SCIP_OKAY;
 }

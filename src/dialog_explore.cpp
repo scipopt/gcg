@@ -50,7 +50,7 @@
 #include "class_partialdecomp.h"
 #include "cons_decomp.h"
 #include "cons_decomp.hpp"
-#include "scoretype.h"
+#include "score.h"
 
 /* column headers */
 #define DEFAULT_COLUMN_MIN_WIDTH  4 /**< min width of a column in the menu table */
@@ -271,10 +271,13 @@ SCIP_RETCODE GCGdialogChangeScore(
    int commandlen;
 
    SCIPdialogMessage(scip, NULL, "\nPlease specify the new score:\n");
-   SCIPdialogMessage(scip, NULL, "0: max white, \n1: border area, \n2: classic, \n3: max foreseeing white, \n4: ppc-max-white, \n");
-   SCIPdialogMessage(scip, NULL, "5: max foreseeing white with aggregation info, \n6: ppc-max-white with aggregation info, \n7: experimental benders score\n");
-   SCIPdialogMessage(scip, NULL, "8: strong decomposition score\n");
-   SCIPdialogMessage(scip, NULL, "Note: Sets the detection/score/scoretype parameter to the given score.\n");
+   for( int i = 0; i < GCGconshdlrDecompGetNScores(scip); i++)
+   {
+      DEC_SCORE* score = GCGconshdlrDecompGetScores(scip)[i];
+
+      SCIPdialogMessage(scip, NULL, "%d: %s\n", i, GCGscoreGetName(score));      
+   }
+   SCIPdialogMessage(scip, NULL, "Note: Sets the detection/scores/selected parameter to the score\'s shortname.\n");
 
    /* get input */
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &getscore, &endoffile) );
@@ -285,12 +288,13 @@ SCIP_RETCODE GCGdialogChangeScore(
       int scorenr = atoi(getscore);
 
       /* check if the value is in valid range */
-      if(scorenr >= 0 && scorenr <= 8)
+      if( scorenr >= 0 && scorenr <= GCGconshdlrDecompGetNScores(scip) - 1 )
       {
          /* set score */
-         SCIPsetIntParam(scip, "detection/score/scoretype", scorenr);
-         GCGconshdlrDecompSetScoretype(scip, static_cast<SCORETYPE>(scorenr));
-         SCIPdialogMessage(scip, NULL, "Score set to %d.\n", scorenr);
+         DEC_SCORE* score = GCGconshdlrDecompGetScores(scip)[scorenr];
+
+         SCIP_CALL( SCIPsetStringParam(scip, "detection/scores/selected", GCGscoreGetShortname(score)) );
+         SCIPdialogMessage(scip, NULL, "Score set to %s.\n", GCGscoreGetName(score));
       }
    }
 
@@ -387,7 +391,7 @@ SCIP_RETCODE GCGdialogShowMenu(
       if( header != "score" )
          newheader = header;
       else
-         newheader = GCGscoretypeGetShortName(GCGconshdlrDecompGetScoretype(scip));
+         newheader = GCGscoreGetShortname(DECgetCurrentScore(scip));
 
       /* make sure the header name is unique and add a length for header */
       assert(columnlength.find(header) == columnlength.end());
@@ -528,8 +532,8 @@ SCIP_RETCODE GCGdialogShowLegend(
       /* if the header is "score" replace with shortname of the current score */
       else
       {
-         SCIPdialogMessage(scip, NULL, "%30s     %s\n", GCGscoretypeGetShortName(GCGconshdlrDecompGetScoretype(scip)),
-            GCGscoretypeGetDescription(GCGconshdlrDecompGetScoretype(scip)));
+         DEC_SCORE* score = DECgetCurrentScore(scip);
+         SCIPdialogMessage(scip, NULL, "%30s     %s\n", GCGscoreGetShortname(score), GCGscoreGetDesc(score));
       }
 
    }
@@ -821,7 +825,7 @@ SCIP_RETCODE GCGdialogSortBy(
       if( isHeader(input, columns) )
          sortby = input;
       /* if the score abbreviation is entered, the header would not be in the column info */
-      else if( input == GCGscoretypeGetShortName(GCGconshdlrDecompGetScoretype(scip)) )
+      else if( input == GCGscoreGetShortname(DECgetCurrentScore(scip)) )
          sortby = "score";
    }
    return SCIP_OKAY;

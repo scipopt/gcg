@@ -25,41 +25,25 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   scoretype.h
- * @brief  miscellaneous methods for working with SCORETYPE
- * @author Erik Muehmer
+/**@file   score.h
+ * @ingroup INTERNALAPI
+ * @brief  internal methods for scores
+ * @author Jurgen Lentz
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __GCG_SCORETYPE_H__
-#define __GCG_SCORETYPE_H__
+#ifndef __GCG_SCORE_H__
+#define __GCG_SCORE_H__
 
-#include "type_scoretype.h"
+#include "type_score.h"
+#include "pub_score.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @brief returns the description of the given scoretype
- *
- * @returns description of the scoretype
- */
-extern
-const char* GCGscoretypeGetDescription(
-   SCORETYPE   sctype   /**< scoretype */
-   );
 
-/**
- * @brief Gets the shortname of the given scoretype
- *
- * @returns the shortname of the given Scoretype
- */
-extern
-const char* GCGscoretypeGetShortName(
-   SCORETYPE   sctype   /**< scoretype */
-   );
 
 #ifdef __cplusplus
 }

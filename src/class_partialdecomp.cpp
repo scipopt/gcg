@@ -42,6 +42,7 @@
 #include "scip/scip.h"
 #include "scip_misc.h"
 #include "struct_detector.h"
+#include "struct_score.h"
 #include "struct_decomp.h"
 #include "cons_decomp.h"
 #include "cons_decomp.hpp"
@@ -4022,7 +4023,7 @@ int PARTIALDECOMP::getNCoeffsForMaster(
 
 
 SCIP_Real PARTIALDECOMP::getScore(
-   SCORETYPE type
+   DEC_SCORE* score
 )
 {
    /* if there are indicator constraints in the master we want to reject this decomposition */
@@ -4034,58 +4035,58 @@ SCIP_Real PARTIALDECOMP::getScore(
          return 0.;
    }
 
-   if( type == scoretype::MAX_WHITE )
+   if( strcmp(GCGscoreGetName(score), "max white") == 0 )
    {
       if( maxwhitescore == -1. )
-         GCGconshdlrDecompCalcMaxWhiteScore(scip, this->id, &maxwhitescore);
+         score->scorecalc(scip, score, this->id, &maxwhitescore);
       return maxwhitescore;
    }
-   else if( type == scoretype::CLASSIC )
+   else if( strcmp(GCGscoreGetName(score), "classic") == 0 )
    {
       if ( classicscore == -1. )
-         GCGconshdlrDecompCalcClassicScore(scip, this->id, &classicscore);
+         score->scorecalc(scip, score, this->id, &classicscore);
       return classicscore;
    }
-   else if( type == scoretype::BORDER_AREA )
+   else if( strcmp(GCGscoreGetName(score), "border area") == 0 )
    {
       if( borderareascore == -1. )
-         GCGconshdlrDecompCalcBorderAreaScore(scip, this->id, &borderareascore);
+         score->scorecalc(scip, score, this->id, &borderareascore);
       return borderareascore;
    }
-   else if( type == scoretype::MAX_FORESSEEING_WHITE )
+   else if( strcmp(GCGscoreGetName(score), "max foreseeing white") == 0 )
    {
       if( maxforeseeingwhitescore == -1. )
-         GCGconshdlrDecompCalcMaxForseeingWhiteScore(scip, this->id, &maxforeseeingwhitescore);
+         score->scorecalc(scip, score, this->id, &maxforeseeingwhitescore);
       return maxforeseeingwhitescore;
    }
-   else if( type == scoretype::MAX_FORESEEING_AGG_WHITE )
+   else if( strcmp(GCGscoreGetName(score), "max foreseeing white with aggregation info") == 0 )
    {
       if( maxforeseeingwhitescoreagg == -1. )
-         GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore(scip, this->id, &maxforeseeingwhitescoreagg);
+         score->scorecalc(scip, score, this->id, &maxforeseeingwhitescoreagg);
       return maxforeseeingwhitescoreagg;
    }
-   else if( type == scoretype::SETPART_FWHITE )
+   else if( strcmp(GCGscoreGetName(score), "ppc-max-white") == 0 )
    {
       if( setpartfwhitescore == -1. )
-         GCGconshdlrDecompCalcSetPartForseeingWhiteScore(scip, this->id, &setpartfwhitescore);
+         score->scorecalc(scip, score, this->id, &setpartfwhitescore);
       return setpartfwhitescore;
    }
-   else if( type == scoretype::SETPART_AGG_FWHITE )
+   else if( strcmp(GCGscoreGetName(score), "ppc-max-white with aggregation info") == 0 )
    {
       if( setpartfwhitescoreagg == -1. )
-         GCGconshdlrDecompCalcSetPartForWhiteAggScore(scip, this->id, &setpartfwhitescoreagg);
+         score->scorecalc(scip, score, this->id, &setpartfwhitescoreagg);
       return setpartfwhitescoreagg;
    }
-   else if( type == scoretype::BENDERS )
+   else if( strcmp(GCGscoreGetName(score), "experimental benders score") == 0 )
    {
       if( bendersscore == -1. )
-         GCGconshdlrDecompCalcBendersScore(scip, this->id, &bendersscore);
+         score->scorecalc(scip, score, this->id, &bendersscore);
       return bendersscore;
    }
-   else if( type == scoretype::STRONG_DECOMP )
+   else if( strcmp(GCGscoreGetName(score), "strong decomposition score") == 0 )
    {
       if( strongdecompositionscore == -1. )
-         GCGconshdlrDecompCalcStrongDecompositionScore(scip, this->id, &strongdecompositionscore);
+         score->scorecalc(scip, score, this->id, &strongdecompositionscore);
       return strongdecompositionscore;
    }
    
@@ -5529,7 +5530,9 @@ void PARTIALDECOMP::setBorderAreaScore(
 
 SCIP_Real PARTIALDECOMP::getMaxWhiteScore()
 {
-   return getScore(SCORETYPE::MAX_WHITE);
+   DEC_SCORE* score = DECfindScore(this->scip, "max white");
+
+   return getScore(score);
 }
 
 void PARTIALDECOMP::setMaxWhiteScore(
@@ -5542,7 +5545,9 @@ void PARTIALDECOMP::setMaxWhiteScore(
 
 SCIP_Real PARTIALDECOMP::getMaxForWhiteScore()
 {
-   return getScore(scoretype::MAX_FORESSEEING_WHITE);
+   DEC_SCORE* score = DECfindScore(this->scip, "max foreseeing white");
+
+   return getScore(score);
 }
 
 void PARTIALDECOMP::setMaxForWhiteScore(

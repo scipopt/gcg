@@ -48,7 +48,7 @@
 #include "class_varpartition.h"
 #include "graph/graph_gcg.h"
 #include "graph/graph.h"
-#include "type_scoretype.h"
+#include "type_score.h"
 
 #include "reader_gp.h"
 
@@ -774,13 +774,12 @@ public:
       );
 
    /**
-    * @brief returns the score of the partialdec (depending on used scoretype)
-    * @param type the scoretype
+    * @brief returns the score of the partialdec (depending on enabled score)
+    * @param score the score
     * @return the score
-    * @see enum scoretype in cons_decomp.h
     */
    SCIP_Real getScore(
-      SCORETYPE type
+      DEC_SCORE* score
       );
 
    /**

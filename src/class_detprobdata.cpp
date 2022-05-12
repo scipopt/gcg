@@ -297,7 +297,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
       newpartialdec->setFinishedByFinisher(otherpartialdec->getFinishedByFinisher());
       newpartialdec->prepare();
 
-      newpartialdec->getScore(GCGconshdlrDecompGetScoretype(scip)) ;
+      newpartialdec->getScore(DECgetCurrentScore(scip)) ;
 
       translatedpartialdecs.push_back(newpartialdec);
    }
@@ -1215,9 +1215,10 @@ void DETPROBDATA::printPartitionInformation(
  void DETPROBDATA::sortFinishedForScore()
 {
    /* get scoretype once, no need to call it twice for every comparison */
-   SCORETYPE sctype = GCGconshdlrDecompGetScoretype(scip);
+   DEC_SCORE* score = DECgetCurrentScore(scip);
+   
    /* sort by score in descending order */
-   std::sort(finishedpartialdecs.begin(), finishedpartialdecs.end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(sctype) > b->getScore(sctype)); });
+   std::sort(finishedpartialdecs.begin(), finishedpartialdecs.end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(score) > b->getScore(score)); });
 }
 
 

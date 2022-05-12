@@ -25,61 +25,69 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   scoretype.h
- * @brief  miscellaneous methods for working with SCORETYPE
- * @author Erik Muehmer
- *
+/**@file   score.c
+ * @ingroup DECOMP
+ * @brief  interface for score
+ * @author Jurgen Lentz
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "scoretype.h"
+#include <assert.h>
 
-const char* scoretype_shortnames[] =
-{
-   "maxwhi",   /* MAX_WHITE */
-   "border",   /* BORDER_AREA */
-   "classi",   /* CLASSIC */
-   "forswh",   /* MAX_FORESSEEING_WHITE */
-   "spfwh",    /* SETPART_FWHITE */
-   "fawh",     /* MAX_FORESEEING_AGG_WHITE */
-   "spfawh",   /* SETPART_AGG_FWHITE */
-   "bender",   /* BENDERS */
-   "strode"    /* STRONG_DECOMP */
-};
+#include <scip/scip.h>
 
-const char* scoretype_descriptions[] =
-{
-   /* MAX_WHITE */
-   "maximum white area score (white area is nonblock and nonborder area)",
-   /* BORDER_AREA */
-   "minimum border score (i.e. minimizes fraction of border area score)",
-   /* CLASSIC */
-   "classical score",
-   /* MAX_FORESSEEING_WHITE */
-   "maximum foreseeing white area score (considering copied linking vars and their master conss; white area is nonblock and nonborder area)",
-   /* SETPART_FWHITE */
-   "setpartitioning maximum foreseeing white area score (convex combination of maximum foreseeing white area score and rewarding if master contains only setppc and cardinality constraints)",
-   /* MAX_FORESEEING_AGG_WHITE */
-   "maximum foreseeing white area score with aggregation infos (considering copied linking vars and their master conss; white area is nonblock and nonborder area)",
-   /* SETPART_AGG_FWHITE */
-   "setpartitioning maximum foreseeing white area score with aggregation information (convex combination of maximum foreseeing white area score and rewarding if a master contains only setppc and cardinality constraints)",
-   /* BENDERS */
-   "experimental score to evaluate benders decompositions",
-   /* STRONG_DECOMP */
-   "strong decomposition score",
-};
+#include "struct_score.h"
 
-const char* GCGscoretypeGetDescription(
-   SCORETYPE   sctype
+
+/** gets user data of score */
+DEC_SCOREDATA* GCGscoreGetData(
+   DEC_SCORE*            score               /**< score */
    )
 {
-   return scoretype_descriptions[sctype];
+   assert(score != NULL);
+
+   return score->scoredata;
 }
 
-const char* GCGscoretypeGetShortName(
-   SCORETYPE   sctype
+/** sets user data of score; user has to free old data in advance! */
+void GCGscoreSetData(
+   DEC_SCORE*            score,              /**< score */
+   DEC_SCOREDATA*        scoredata           /**< new score user data */
    )
 {
-   return scoretype_shortnames[sctype];
+   assert(score != NULL);
+
+   score->scoredata = scoredata;
+}
+
+
+/** gets name of score */
+const char* GCGscoreGetName(
+   DEC_SCORE*            score               /**< score */
+   )
+{
+   assert(score != NULL);
+
+   return score->name;
+}
+
+/** gets shortname of score */
+const char* GCGscoreGetShortname(
+   DEC_SCORE*            score               /**< score */
+   )
+{
+   assert(score != NULL);
+
+   return score->shortname;
+}
+
+/** gets description of score */
+const char* GCGscoreGetDesc(
+   DEC_SCORE*            score               /**< score */
+   )
+{
+   assert(score != NULL);
+
+   return score->description;
 }

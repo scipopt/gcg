@@ -269,6 +269,7 @@ LIBOBJ = \
 			event_solvingstats.o \
 			gcgcol.o \
 			gcg_general.o \
+			gcg_score.o \
 			gcggithash.o \
 			gcgheur.o \
 			gcgsepa.o \
@@ -326,7 +327,16 @@ LIBOBJ = \
 			reader_tex.o \
 			relax_gcg.o \
 			scip_misc.o \
-			scoretype.o \
+			score_bender.o \
+			score_border.o \
+			score_classic.o \
+			score_fawh.o \
+			score_forswh.o \
+			score_maxwhite.o \
+			score_spfawh.o \
+			score_spfwh.o \
+			score_strong.o \
+			score.o \
 			sepa_basis.o \
 			sepa_master.o \
 			solver.o \
