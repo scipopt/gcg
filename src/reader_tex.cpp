@@ -54,7 +54,6 @@
 #include "class_partialdecomp.h"
 #include "class_detprobdata.h"
 #include "params_visu.h"
-#include "scoretype.h"
 
 #define READER_NAME             "texreader"
 #define READER_DESC             "LaTeX file writer for partialdec visualization"
@@ -328,7 +327,7 @@ SCIP_RETCODE writeTexTitlepage(
    
    SCIPinfoMessage(scip, file, "Score info: & \\begin{minipage}{5cm}\n");
    SCIPinfoMessage(scip, file, "                  %s\n",
-                   GCGscoretypeGetDescription(GCGconshdlrDecompGetScoretype(scip)));
+                   GCGscoreGetDesc(DECgetCurrentScore(scip)));
    SCIPinfoMessage(scip, file, "              \\end{minipage} \\\\ \n");
    
    SCIPinfoMessage(scip, file, "\\end{tabular}\n");
@@ -646,7 +645,7 @@ SCIP_RETCODE writeTexPartialdecStatistics(
    SCIPinfoMessage(scip, file, "  Number of stairlinking variables: & %i \\\\ \n",
       partialdec->getNTotalStairlinkingvars());
    SCIPinfoMessage(scip, file, "  Score: & %f \\\\ \n",
-      partialdec->getScore(GCGconshdlrDecompGetScoretype(scip)));
+      partialdec->getScore(DECgetCurrentScore(scip)));
    SCIPinfoMessage(scip, file, "\\end{tabular}\n");
 
    SCIPinfoMessage(scip, file, "\\clearpage\n");
@@ -704,8 +703,7 @@ SCIP_RETCODE GCGwriteTexReport(
    {
       partialdecs.push_back(GCGconshdlrDecompGetPartialdecFromID(scip, partialdecids[i]));
    }
-   SCORETYPE sctype = GCGconshdlrDecompGetScoretype(scip);
-   std::sort(partialdecs.begin(), partialdecs.end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(sctype) > b->getScore(sctype)); });
+   std::sort(partialdecs.begin(), partialdecs.end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(DECgetCurrentScore(scip)) > b->getScore(DECgetCurrentScore(scip))); });
 
    /* if there are more decomps than the maximum, reset npartialdecs */
    if(*npartialdecs > GCGreportGetMaxNDecomps(scip))

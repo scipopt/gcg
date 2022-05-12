@@ -6012,9 +6012,9 @@ detection/maxnclassesperclassifierforlargeprobs = 5
 # [type: int, advanced: TRUE, range: [0,3], default: 0]
 detection/origprob/weightinggpresolvedoriginaldecomps = 0
 
-# indicates which score should be used for comparing (partial) decompositions (0:max white, 1: border area, 2:classic, 3:max foreseeing white, 4: ppc-max-white, 5:max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info, 7: experimental benders score): 
-# [type: int, advanced: FALSE, range: [0,7], default: 4]
-detection/scoretype = 4
+# indicates which score should be used for comparing (partial) decompositions: 
+# [type: string, advanced: FALSE, default: spfwh]
+detection/scores/selected = spfwh
 
 # flag to indicate whether detector <connected> is enabled
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]

@@ -5,11 +5,58 @@
 New features:
 -------------
 
+New/changed parameters:
+-----------------------
+- New parameter 'detection/scores/selected' to select the score that should be used to sort the decompositions
+- Removed parameter 'detection/score/scoretype'
+- Moved parameter 'detection/score/strong_detection/dualvalrandommethod' to 'detection/scores/strong/dualvalrandommethod'
+- Moved parameter 'detection/score/strong_detection/coeffactororigvsrandom' to 'detection/scores/strong/coeffactororigvsrandom'
+- Moved parameter 'detection/score/strong_detection/timelimit' to 'detection/scores/strong/timelimit'
+
 New/modified API functions:
 ---------------------------
 - New functions: 'GCGconshdlrDecompGetNConsClassifiers', 'GCGconshdlrDecompGetNVarClassifiers', 'GCGconshdlrDecompGetConsClassifiers', 'GCGconshdlrDecompGetVarClassifiers'
 - Add parameter 'DEC_CONSCLASSIFIER* consclassifier' to 'DEC_DECL_CONSCLASSIFY'
 - Add paramater 'DEC_VARCLASSIFIER* varclassifier' to 'DEC_DECL_VARCLASSIFY'
+- Added function 'DECsetCurrentScore'
+- Added function 'DECgetCurrentScoreShortname'
+- Added function 'DECgetCurrentScore'
+- Added function 'GCGincludeScore'
+- Added function 'GCGfindScore'
+- Added function 'GCGgetScores'
+- Added function 'GCGgetNScores'
+- Added function 'GCGscoreGetData'
+- Added function 'GCGscoreSetData'
+- Added function 'GCGscoreGetName'
+- Added function 'GCGscoreGetShortname'
+- Added function 'GCGscoreGetDesc'
+- Added function 'GCGincludeScoreBender'
+- Added function 'GCGincludeScoreBorder'
+- Added function 'GCGincludeScoreClassic'
+- Added function 'GCGincludeScoreFawh'
+- Added function 'GCGincludeScoreForswh'
+- Added function 'GCGincludeScoreMaxwhite'
+- Added function 'GCGincludeScoreSpfawh'
+- Added function 'GCGincludeScoreSpfwh'
+- Added function 'GCGincludeScoreStrongDecomp'
+
+
+Deleted API functions:
+----------------------
+- Deleted function 'GCGconshdlrDecompGetScoretype'
+- Deleted function 'GCGconshdlrDecompCalcBendersScore'
+- Deleted function 'GCGconshdlrDecompCalcBorderAreaScore'
+- Deleted function 'GCGconshdlrDecompCalcClassicScore'
+- Deleted function 'GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore'
+- Deleted function 'GCGconshdlrDecompCalcMaxForseeingWhiteScore'
+- Deleted function 'GCGconshdlrDecompCalcMaxWhiteScore'
+- Deleted function 'GCGconshdlrDecompCalcSetPartForseeingWhiteScore'
+- Deleted function 'GCGconshdlrDecompCalcSetPartForWhiteAggScore'
+- Deleted function 'GCGconshdlrDecompCalcStrongDecompositionScore'
+
+Code cleanup:
+-------------
+- Refactored scores
 
 
 @page RN35 Release notes for GCG 3.5

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_decomp.h
-* @ingroup DECOMP
+ * @ingroup DECOMP
  * @brief  constraint handler for structure detection
  * @author Martin Bergner
  * @author Michael Bastubbe
@@ -45,7 +45,7 @@
 #include "type_detector.h"
 #include "type_varclassifier.h"
 #include "type_consclassifier.h"
-#include "type_scoretype.h"
+#include "type_score.h"
 
 
 #ifdef __cplusplus
@@ -159,6 +159,24 @@ DEC_DETECTOR* DECfindDetector(
    const char* name     /**< the name of the searched detector */
    );
 
+/**
+ * @brief searches for the score with the given name and returns it or NULL if score is not found
+ * @returns score pointer or NULL if score with given name is not found
+ */
+DEC_SCORE* DECfindScore(
+   SCIP*                 scip,
+   const char*           name
+   );
+
+/**
+ * @brief searches for the score with the given shortname and returns it or NULL if score is not found
+ * @returns score pointer or NULL if score with given shortname is not found
+ */
+DEC_SCORE* DECfindScoreByShortname(
+   SCIP*                 scip,
+   const char*           shortname
+   );
+
 /** @brief Gets the best known decomposition
  *
  * @note caller has to free returned DEC_DECOMP
@@ -255,6 +273,20 @@ SCIP_RETCODE DECincludeVarClassifier(
    DEC_CLASSIFIERDATA*   classifierdata,/**< classifierdata the associated classifier data (or NULL) */
    DEC_DECL_FREEVARCLASSIFIER((*freeClassifier)),   /**< destructor of classifier (or NULL) */
    DEC_DECL_VARCLASSIFY((*classify))                /**< method that will classify variables (must not be NULL) */
+   );
+
+/**
+ * @brief includes one score
+ * @returns scip return code
+ */
+SCIP_RETCODE DECincludeScore(
+   SCIP*                 scip,               /**< scip data structure */
+   const char*           name,               /**< name of the score */
+   const char*           shortname,          /**< shortname of the score */
+   const char*           description,        /**< description of the score */
+   DEC_SCOREDATA*        scoredata,          /**< scoredata the associated score data (or NULL) */
+   DEC_DECL_SCOREFREE    ((*scorefree)),     /**< destructor of score (or NULL) */
+   DEC_DECL_SCORECALC    ((*scorecalc))      /**< method that will calculate the scorevalue (must not be NULL) */
    );
 
 /** @brief writes out a list of all detectors */
@@ -368,42 +400,6 @@ SCIP_RETCODE GCGconshdlrDecompArePricingprobsIdenticalForPartialdecid(
    );
 
 /**
- * @brief calculates the benders score of a partialdec
- *
- * in detail:
- * bendersscore = max ( 0., 1 - ( 1 - blockareascore + (1 - borderareascore - bendersareascore ) ) ) with
- * blockareascore = blockarea / totalarea
- * borderareascore = borderarea / totalarea
- * bendersareascore = bendersarea /totalarea with
- * bendersarea = A + B - PENALTY with
- * A = nmasterconshittingonlyblockvars * nblockvarshittngNOmasterconss
- * B = nlinkingvarshittingonlyblockconss * nblockconsshittingonlyblockvars
- * PENALTY = \f$\sum_{b=1}^(\text{nblocks}) \sum_{\text{blockvars }bv\text{ of block }b\text{ hitting a master constraint}} \sum_{\text{all blocks }b2 != b} \text{nblockcons}(b2)\f$
- *
- * @note experimental feature
- * @return scip return code
- */
-extern
-SCIP_RETCODE GCGconshdlrDecompCalcBendersScore(
-   SCIP* scip,          /**< SCIP data structure */
-   int partialdecid,    /**< id of partialdec the score is calculated for */
-   SCIP_Real* score     /**< score pointer to store the calculated score */
-   );
-
-/**
- * @brief calculates the border area score of a partialdec
- *
- * 1 - fraction of border area to complete area
- * @return scip return code
- */
-extern
-SCIP_RETCODE GCGconshdlrDecompCalcBorderAreaScore(
-   SCIP* scip,          /**< SCIP data structure */
-   int partialdecid,    /**< id of partialdec the score is calculated for */
-   SCIP_Real* score     /**< score pointer to store the calculated score */
-   );
-
-/**
  * @brief calculates and adds block size candidates using constraint classifications and variable classifications
  */
 extern
@@ -411,103 +407,6 @@ void GCGconshdlrDecompCalcCandidatesNBlocks(
    SCIP* scip,             /**< SCIP data structure */
    SCIP_Bool transformed   /**< whether to find the candidates for the transformed problem, otherwise the original */
 );
-
-/**
- * @brief calculates the classic score of a partialdec
- *
- * @return scip return code
- */
-extern
-SCIP_RETCODE GCGconshdlrDecompCalcClassicScore(
-   SCIP* scip,          /**< SCIP data structure */
-   int partialdecid,    /**< id of partialdec the score is calculated for */
-   SCIP_Real* score     /**< score pointer to store the calculated score */
-   );
-
-/**
- * @brief calculates the maxforeseeingwhiteagg score of a partialdec
- *
- * maximum foreseeing white area score with respect to aggregatable blocks
- * (i.e. maximize fraction of white area score considering problem with copied linking variables
- * and corresponding master constraints;
- * white area is nonblock and nonborder area, stairlinking variables count as linking)
- * @return scip return code
- */
-extern
-SCIP_RETCODE GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore(
-   SCIP* scip,          /**< SCIP data structure */
-   int partialdecid,    /**< id of partialdec the score is calculated for */
-   SCIP_Real* score     /**< score pointer to store the calculated score */
-   );
-
-/**
- * @brief calculates the maximum foreseeing white area score of a partialdec
- *
- * maximum foreseeing white area score
- * (i.e. maximize fraction of white area score considering problem with copied linking variables and
- * corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)
- * @return scip return code
- */
-extern
-SCIP_RETCODE GCGconshdlrDecompCalcMaxForseeingWhiteScore(
-   SCIP* scip,          /**< SCIP data structure */
-   int partialdecid,    /**< id of partialdec the score is calculated for */
-   SCIP_Real* score     /**< score pointer to store the calculated score */
-   );
-
-/**
- * @brief calculates the maximum white area score of a partialdec
- *
- * score corresponding to the max white measure according to aggregated blocks
- * @return scip return code
- */
-extern
-SCIP_RETCODE GCGconshdlrDecompCalcMaxWhiteScore(
-   SCIP* scip,          /**< SCIP data structure */
-   int partialdecid,    /**< id of partialdec the score is calculated for */
-   SCIP_Real* score     /**< score pointer to store the calculated score */
-   );
-
-/**
- * @brief calculates the setpartitioning maximum foreseeing white area score of a partialdec
- *
- * setpartitioning maximum foreseeing white area score
- * (i.e. convex combination of maximum foreseeing white area score and
- * a boolean score rewarding a master containing only setppc and cardinality constraints)
- * @return scip return code
- */
-extern
-SCIP_RETCODE GCGconshdlrDecompCalcSetPartForseeingWhiteScore(
-   SCIP* scip,          /**< SCIP data structure */
-   int partialdecid,    /**< id of partialdec the score is calculated for */
-   SCIP_Real* score     /**< score pointer to store the calculated score */
-   );
-
-/**
- * @brief calculates the setpartfwhiteagg score of a partialdec
- *
- * setpartitioning maximum foreseeing white area score with respect to aggregateable
- * (i.e. convex combination of maximum foreseeing white area score and a boolean score
- * rewarding a master containing only setppc and cardinality constraints)
- * @return scip return code
- */
-extern
-SCIP_RETCODE GCGconshdlrDecompCalcSetPartForWhiteAggScore(
-   SCIP* scip,          /**< SCIP data structure */
-   int partialdecid,    /**< id of partialdec the score is calculated for */
-   SCIP_Real* score     /**< score pointer to store the calculated score */
-   );
-
-/**
- * @brief calculates the strong decomposition score of a partialdec
- * @return scip return code
- */
-extern
-SCIP_RETCODE GCGconshdlrDecompCalcStrongDecompositionScore(
-   SCIP* scip,          /**< SCIP data structure */
-   int partialdecid,    /**< id of partialdec the score is calculated for */
-   SCIP_Real* score     /**< score pointer to store the calculated score */
-   );
 
 /**
  * @brief check whether partialdecs are consistent
@@ -640,6 +539,39 @@ DEC_DETECTOR** GCGconshdlrDecompGetDetectors(
    SCIP* scip  /**< SCIP data structure */
    );
 
+/** @brief Gets an array of all scores
+ *
+ * @returns array of scores */
+DEC_SCORE** GCGconshdlrDecompGetScores(
+   SCIP* scip
+   );
+
+/**
+ * @brief Sets the currently enabled score
+ */
+extern
+void DECsetCurrentScore(
+   SCIP*                 scip
+   );
+
+/**
+ * @brief Gets the shortname of the currently enabled score
+ * @returns the shortname of the currently enabled score
+ */
+extern
+char* DECgetCurrentScoreShortname(
+   SCIP*                 scip
+   );
+
+/**
+ * @brief Gets the currently enabled score
+ * @returns the currently enabled score
+ */
+extern
+DEC_SCORE* DECgetCurrentScore(
+   SCIP*                 scip
+   );
+
 /** @brief gets an array of all constraint classifier
  *
  * @returns array of constraint classifier */
@@ -711,6 +643,12 @@ int GCGconshdlrDecompGetNDecomps(
 extern
 int GCGconshdlrDecompGetNDetectors(
    SCIP* scip  /**< SCIP data structure */
+   );
+
+/** @brief Gets the number of all scores
+ * @returns number of scores */
+int GCGconshdlrDecompGetNScores(
+      SCIP* scip  /**< SCIP data structure */
    );
 
 /** @brief Gets the number of all constraint classifiers
@@ -880,15 +818,6 @@ SCIP_Real GCGconshdlrDecompGetScoreTotalTime(
    SCIP* scip     /**< SCIP data structure */
 );
 
-/**
- * @brief Gets the currently selected scoretype
- * @returns the currently selected scoretype
- */
-extern
-SCORETYPE GCGconshdlrDecompGetScoretype(
-   SCIP*          scip  /**< SCIP data structure */
-   );
-
 /** @brief Gets a list of ids of all currently selected partialdecs
  *  @returns list of partialdecs */
 extern
@@ -988,15 +917,6 @@ SCIP_RETCODE GCGconshdlrDecompSetDetection(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_PARAMSETTING     paramsetting,       /**< parameter settings */
    SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
-   );
-
-/**
- * @brief Sets the currently used scoretype
- */
-extern
-void GCGconshdlrDecompSetScoretype(
-   SCIP*  scip,      /**< SCIP data structure */
-   SCORETYPE sctype  /**< new scoretype */
    );
 
 /**

@@ -83,6 +83,7 @@ set(gcgsources
     event_solvingstats.c
     gcgcol.c
     gcg_general.c
+    gcg_score.c
     gcggithash.c
     gcgheur.c
     gcgsepa.c
@@ -138,7 +139,16 @@ set(gcgsources
     reader_tex.cpp
     relax_gcg.c
     scip_misc.c
-    scoretype.c
+    score_bender.cpp
+    score_border.cpp
+    score_classic.cpp
+    score_fawh.cpp
+    score_forswh.cpp
+    score_maxwhite.cpp
+    score_spfawh.cpp
+    score_spfwh.cpp
+    score_strong.cpp
+    score.c
     sepa_basis.c
     sepa_master.c
     solver.c
@@ -206,6 +216,7 @@ set(gcgheaders
     gcg.h
     gcgcol.h
     gcg_general.h
+    gcg_score.h
     gcggithash.h
     gcgplugins.h
     gcgpqueue.h
@@ -256,6 +267,7 @@ set(gcgheaders
     pub_gcgvar.h
     pub_pricingjob.h
     pub_pricingprob.h
+    pub_score.h
     pub_solver.h
     reader_blk.h
     reader_cls.h
@@ -265,7 +277,16 @@ set(gcgheaders
     reader_tex.h
     relax_gcg.h
     scip_misc.h
-    scoretype.h
+    score_bender.h
+    score_border.h
+    score_classic.h
+    score_fawh.h
+    score_forswh.h
+    score_maxwhite.h
+    score_spfawh.h
+    score_spfwh.h
+    score_strong.h
+    score.h
     sepa_basis.h
     sepa_master.h
     solver.h
@@ -283,6 +304,7 @@ set(gcgheaders
     struct_pricestore_gcg.h
     struct_pricingjob.h
     struct_pricingprob.h
+    struct_score.h
     struct_solver.h
     struct_vardata.h
     type_branchgcg.h
@@ -300,7 +322,7 @@ set(gcgheaders
     type_pricingjob.h
     type_pricingprob.h
     type_pricingstatus.h
-    type_scoretype.h
+    type_score.h
     type_solver.h
     type_varclassifier.h
     wrapper_partialdecomp.h

@@ -25,42 +25,29 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   type_scoretype.h
- * @ingroup DECOMP
- * @brief  type definition for score type
- * @author Michael Bastubbe
- * @author Hanna Franzen
+/**@file   score_spfwh.h
+ * @ingroup SCORES
+ * @brief  setpartitioning maximum foreseeing white area score
+ * @author Jurgen Lentz
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __GCG_TYPE_SCORETYPE_H__
-#define __GCG_TYPE_SCORETYPE_H__
+#ifndef SCORE_SPFWH_H_
+#define SCORE_SPFWH_H_
+
+
+#include "scip/scip.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** GCG score type for (partial) decomposition evaluation */
-/*!
- * \brief possible scores to evaluate founds decompositions
- * \sa GCGscoretypeGetDescription for a description of this score
- * \sa GCGscoretypeGetShortName
- * \sa class_partialdecomp:getScore()
- */
-enum scoretype {
-   /* Note: Please ensure that this enum is compatible with the arrays in scoretype.c! */
-   MAX_WHITE                  = 0,
-   BORDER_AREA                = 1,
-   CLASSIC                    = 2,
-   MAX_FORESSEEING_WHITE      = 3,
-   SETPART_FWHITE             = 4,
-   MAX_FORESEEING_AGG_WHITE   = 5,
-   SETPART_AGG_FWHITE         = 6,
-   BENDERS                    = 7,
-   STRONG_DECOMP              = 8
-};
-typedef enum scoretype SCORETYPE;
+/** creates the setpartitioning maximum foreseeing white area score and includes it in SCIP */
+SCIP_EXPORT
+SCIP_RETCODE GCGincludeScoreSpfwh(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
 
 #ifdef __cplusplus
 }

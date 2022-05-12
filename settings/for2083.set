@@ -1,4 +1,4 @@
-detection/score/scoretype = 0
+detection/scores/selected = maxwhi
 detection/origprob/enabled  = TRUE
 detection/detectors/hrcgpartition/enabled  = TRUE
 detection/detectors/hrcgpartition/maxnblockcandidates  = 10

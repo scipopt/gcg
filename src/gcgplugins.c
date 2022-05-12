@@ -283,6 +283,17 @@
 #include "clsvar_scipvartypes.h"
 #include "clsvar_objvaluesigns.h"
 
+/* scores */
+#include "score_bender.h"
+#include "score_border.h"
+#include "score_classic.h"
+#include "score_fawh.h"
+#include "score_forswh.h"
+#include "score_maxwhite.h"
+#include "score_spfawh.h"
+#include "score_spfwh.h"
+#include "score_strong.h"
+
 
 /** includes default plugins for generic column generation into SCIP */
 SCIP_RETCODE SCIPincludeGcgPlugins(
@@ -505,6 +516,18 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeVarClassifierScipVartypes(scip) );
    SCIP_CALL( SCIPincludeVarClassifierObjValues(scip) );
    SCIP_CALL( SCIPincludeVarClassifierObjValueSigns(scip) );
+
+
+   /* Scores */
+   SCIP_CALL( GCGincludeScoreBender(scip) );
+   SCIP_CALL( GCGincludeScoreBorder(scip) );
+   SCIP_CALL( GCGincludeScoreClassic(scip) );
+   SCIP_CALL( GCGincludeScoreFawh(scip) );
+   SCIP_CALL( GCGincludeScoreForswh(scip) );
+   SCIP_CALL( GCGincludeScoreMaxwhite(scip) );
+   SCIP_CALL( GCGincludeScoreSpfawh(scip) );
+   SCIP_CALL( GCGincludeScoreSpfwh(scip) );
+   SCIP_CALL( GCGincludeScoreStrongDecomp(scip) );
 
 
    /* Christian's heuristics */

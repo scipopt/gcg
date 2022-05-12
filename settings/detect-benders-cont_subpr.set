@@ -1,7 +1,7 @@
 detection/benders/enabled = TRUE
 detection/benders/onlycontsubpr = TRUE
 detection/benders/enabled = TRUE
-detection/score/scoretype = 7
+detection/scores/selected = bender
 detection/maxrounds = 2
 detection/origprob/enabled  = TRUE
 detection/origprob/classificationenabled = TRUE
