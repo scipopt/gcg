@@ -7,9 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import argparse
-
-if not os.path.isdir("misc"):
-    sys.path.insert(0, './misc/')
+sys.path.append("./")
 import misc.vbc_reader as vbcr
 
 params = {}
@@ -78,8 +76,11 @@ def set_params(args):
 
 def plot(dict,name,settings,params,interactive=False):
     if params["type"] == "both":
-        plot(dict,name,settings,params,type="bar")
-        plot(dict,name,settings,params,type="plot")
+        p = params.copy()
+        p["type"] = "bar"
+        plot(dict,name,settings,p)
+        p["type"] = "plot"
+        plot(dict,name,settings,p)
         return
 
     #print(settings)
@@ -178,8 +179,10 @@ def main(args, interactive=False):
                 except TypeError:
                     print("No .vbc file found. Skipping.")
                     continue
+                except:
+                    print("The .vbc file could not be read (e.g., due to terminated instance/file corrupted). Skipping.")
                 data = calc_itperdepth(vbc_df)
-                plot(data,'.'.join(file.split('.')[:-2]),file.split('.')[-2], params, type=params['type'],interactive=interactive)
+                plot(data,'.'.join(file.split('.')[:-2]),file.split('.')[-2], params,interactive=interactive)
                 vb2 = True
         if not (vb1 or vb2):
             print("Warning: The given directory does not contain any '.vbc' or '.vbc.pkl' files.\nTerminating.")

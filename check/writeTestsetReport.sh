@@ -78,8 +78,8 @@ TIMESTAMP=$(date '+%d-%m-%Y_%H-%M-%S')
 SCRIPTMODE=""
 
 function echoGrey(){
-  if [ "$DEBUG" == "false" ]; then printf "\n$(tput dim)$1$(tput sgr0)"
-  else echo $1; fi
+  if [ "$DEBUG" == "false" ]; then printf "\033[1;30m$1\033[0m"
+  else printf "$1"; fi
 }
 function echoBold(){
   if [ "$DEBUG" == "false" ]; then printf "\n$(tput bold)$1$(tput sgr0)"
@@ -233,19 +233,31 @@ function prepareVisualizationGeneration(){
         # initialize runtime data variables
         OUTFILE=$file
         RESFILE=${OUTFILE%.out}.res # resfile must be named like outfile
+        SETNAME=""
         getTstSetNames;
-        if [ -z $VBCFILES_def ]; then VBCFILES=$DATADIR; checkVBCdir > /dev/null 2>&1; else VBCFILES=VBCFILES_def; checkVBCdir; fi
+        if [ -z $VBCFILES_def ]; then
+          VBCFILES=$DATADIR;
+          checkVBCdir > /dev/null 2>&1;
+        else
+          VBCFILES=$VBCFILES_def;
+          checkVBCdir;
+        fi
         # print them to check
-        echo "  [$i]" $(basename $OUTFILE)
+        echo "  [$i] $(basename $OUTFILE)"
         if [[ -f $RESFILE ]]; then
-          echoGrey "      $(basename $(realpath $RESFILE))"; else
+          echoGrey "      $(basename $(realpath $RESFILE))";
+        else
           echoGrey "      (no resfile)"
         fi
         if [[ -d $VBCFILES ]]; then
-          echoGrey "      $(realpath $VBCFILES)"; else
+          echo ""
+          echoGrey "      $(realpath $VBCFILES)";
+        else
+          echo ""
           echoGrey "      (no valid vbc dir)"
         fi
         ((i=i+1))
+        echo ""
       done
       read -p "  Choose a number for testset report or type 'c' to generate comparison report. " n
       if [[ $n = 'c' ]]; then
@@ -331,7 +343,8 @@ function prepareVisualizationGeneration(){
   echo " Copying data to report folder..."
   cp ${OUTFILE} ${LOGDIR} -r
   cp ${RESFILE} ${LOGDIR} -r
-  if [[ -z $NOVBC ]]; then cp ${VBCFILES}/*.vbc ${VBCDIR} -r; fi
+  cp ${OUTFILE%.out}.tex ${LOGDIR} -r
+  if [[ -z $NOVBC ]]; then cp ${VBCFILES}/*.${SETNAME}.vbc ${VBCDIR} -r; fi
 
   # after moving, we do not need to access check/results anymore
   OUTFILE=$(ls ${LOGDIR}/*.out)
@@ -505,6 +518,8 @@ cat > ${REPORTFILE} << EndOfMessage
 \setcounter{secnumdepth}{4}
 \usepackage{graphicx}
 \usepackage{grffile}
+\usepackage{pdflscape}
+\usepackage{supertabular}
 
 \begin{document}
 
@@ -539,9 +554,6 @@ cat > ${REPORTFILE} << EndOfMessage
 \end{tabular}
 
 \end{titlepage}
-\newpage
-\thispagestyle{empty}
-\tableofcontents
 \newpage
 EndOfMessage
 }
@@ -640,13 +652,27 @@ function printTeX_tail(){
   echo "\end{document}" >> ${REPORTFILE}
 }
 
+function printTeX_table(){
+  echo "\\begin{landscape}" >> $REPORTFILE
+  # write table on second page
+  cat < ${LOGDIR}/*.tex | head -n -1 | tail -n +9 | sed -e "s/{tabular\*}{\\\columnwidth}/{longtable}/g" -e "s/{tabular\*}/{longtable}/g" >> ${REPORTFILE}
+  echo "\\end{landscape}" >> $REPORTFILE
+  # end second page
+  echo "\\newpage" >> $REPORTFILE
+  cat >> ${REPORTFILE} << EndOfMessage
+\thispagestyle{empty}
+\tableofcontents
+\newpage
+EndOfMessage
+}
 
 function generateReport(){
   cd ${REPORTDIR}
   echo -ne '|░░                  |  (10%)  Generating TeX Report Code... \r'
-  printTeX_makefile; 
+  printTeX_makefile;
   printTeX_readme;
   printTeX_preamble;
+  printTeX_table;
   echo -ne '|░░░░                |  (20%)  Generating TeX Report Code... \r'
   if [ $NINSTANCES -gt 1 ]; then
     printTeX_aggregated_information > /dev/null 2>&1

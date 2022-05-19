@@ -566,7 +566,7 @@ testset_report:benchmark_master:
     # rename hmetis executable back
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
     # generate test set report
-    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - printf "DEBUG=true\nDETECTION=false" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/testsetreport*)/experiment.*.testsetreport.pdf testsetreport.pdf
   artifacts:
@@ -598,7 +598,7 @@ comparison_report:benchmark_master:
     - ssh gcgci@clustor 'echo "Getting data from previous master (hash $(basename $(readlink -f previous_master)))."'
     - scp -r gcgci@clustor:/shared/gcg_runtime_data/previous_master/* check/results/
     # generate comparison report
-    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - printf "DEBUG=true\nDETECTION=false" > v.vset
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/comparisonreport*)/comparisonreport.pdf comparisonreport.pdf
   artifacts:
@@ -621,7 +621,7 @@ testset_report:benchmark_feature:
     # rename hmetis executable back
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
     # generate test set report
-    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - printf "DEBUG=true\nDETECTION=false" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/testsetreport*)/experiment.*.testsetreport.pdf testsetreport.pdf
   artifacts:
@@ -652,7 +652,7 @@ comparison_report:benchmark_feature:
     # get runtime data from master
     - scp -r gcgci@clustor:/shared/gcg_runtime_data/current_master/* check/results/
     # generate comparison report
-    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - printf "DEBUG=true\nDETECTION=false" > v.vset
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/comparisonreport*)/comparisonreport.pdf comparisonreport.pdf
   artifacts:
@@ -675,7 +675,7 @@ testset_report:experiment_master:
     # rename hmetis executable back
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
     # generate test set report
-    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - printf "DEBUG=true" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/testsetreport*)/experiment.*.testsetreport.pdf testsetreport.pdf
   artifacts:
@@ -698,7 +698,7 @@ testset_report:experiment_feature:
     # rename hmetis executable back
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
     # generate test set report
-    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - printf "DEBUG=true" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/testsetreport*)/experiment.*.testsetreport.pdf testsetreport.pdf
   artifacts:
