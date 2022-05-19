@@ -408,7 +408,9 @@ benchmark:master:
       ssh gcgci@clustor "while [[ ! \$(condor_q $CLUSTER_ID) =~ 'Total for query: 0 jobs' ]]; do sleep 5s; done; echo 'All jobs done'"
     - ssh gcgci@clustor "cd ~/$FOLDER/check && ./evalcheck_cluster.sh -r results/*.eval"
     # make the "current master link" a "previous master" link
-    - ssh gcgci@clustor 'cd /shared/gcg_runtime_data/ && ln -sfn master_branch/$(basename $(readlink -f current_master)) previous_master && echo "Set link to previous master (hash $(basename $(readlink -f previous_master))."'
+    - ssh gcgci@clustor 'cd /shared/gcg_runtime_data/ && ln -sfn master_branch/$(basename $(readlink -f current_master)) previous_master && echo "Set link to previous master (hash $(basename $(readlink -f previous_master)))."'
+    # rename old default_master setting to previous_master
+    - ssh gcgci@clustor 'cd /shared/gcg_runtime_data/previous_master && for i in *default_master*; do mv $i "`echo $i | sed "s/default_master/previous_master/"`"; done'
     # create new folder for master runtime data
     - ssh gcgci@clustor "cd /shared/gcg_runtime_data/ && mkdir -p master_branch/${CI_COMMIT_SHORT_SHA} && ln -sfn master_branch/${CI_COMMIT_SHORT_SHA} current_master"
     # copy runtime data to newly created folder
@@ -564,7 +566,7 @@ testset_report:benchmark_master:
     # rename hmetis executable back
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
     # generate test set report
-    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - printf "DEBUG=true\nDETECTION=false" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/testsetreport*)/experiment.*.testsetreport.pdf testsetreport.pdf
   artifacts:
@@ -596,7 +598,7 @@ comparison_report:benchmark_master:
     - ssh gcgci@clustor 'echo "Getting data from previous master (hash $(basename $(readlink -f previous_master)))."'
     - scp -r gcgci@clustor:/shared/gcg_runtime_data/previous_master/* check/results/
     # generate comparison report
-    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - printf "DEBUG=true\nDETECTION=false" > v.vset
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/comparisonreport*)/comparisonreport.pdf comparisonreport.pdf
   artifacts:
@@ -619,7 +621,7 @@ testset_report:benchmark_feature:
     # rename hmetis executable back
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
     # generate test set report
-    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - printf "DEBUG=true\nDETECTION=false" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/testsetreport*)/experiment.*.testsetreport.pdf testsetreport.pdf
   artifacts:
@@ -648,9 +650,9 @@ comparison_report:benchmark_feature:
     #- cp doc/resources/misc/runtime_data/*.* check/results
     #- cp doc/resources/misc/runtime_data/vbc/*.* check/results/vbc
     # get runtime data from master
-    - scp -r gcgci@clustor:/shared/gcg_runtime_data/previous_master/* check/results/
+    - scp -r gcgci@clustor:/shared/gcg_runtime_data/current_master/* check/results/
     # generate comparison report
-    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - printf "DEBUG=true\nDETECTION=false" > v.vset
     - echo "c" | make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/comparisonreport*)/comparisonreport.pdf comparisonreport.pdf
   artifacts:
@@ -673,7 +675,7 @@ testset_report:experiment_master:
     # rename hmetis executable back
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
     # generate test set report
-    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - printf "DEBUG=true" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/testsetreport*)/experiment.*.testsetreport.pdf testsetreport.pdf
   artifacts:
@@ -696,7 +698,7 @@ testset_report:experiment_feature:
     # rename hmetis executable back
     - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
     # generate test set report
-    - printf "LAST_STATISTICS=true\nDEBUG=true" > v.vset
+    - printf "DEBUG=true" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
     - cp $(ls -d check/reports/testsetreport*)/experiment.*.testsetreport.pdf testsetreport.pdf
   artifacts:

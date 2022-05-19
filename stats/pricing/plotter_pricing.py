@@ -23,8 +23,8 @@ from matplotlib import transforms
 from matplotlib import ticker
 from matplotlib import patches as mpatches
 
-sys.path.insert(0, './misc/')
-import vbc_reader as vbc
+sys.path.append("./")
+import misc.vbc_reader as vbc
 
 # Define the global parameter list
 params = {}

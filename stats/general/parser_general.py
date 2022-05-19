@@ -62,6 +62,7 @@ def parseOutfiles(outfiles):
         'CONS LOGICOR': [],
         'CONS SETPPC': [],
         'CONS VARBOUND': [],
+        'CONS AND': [],
         'LINKING VARS': [],
         'NBLOCKS': [],
         'NBLOCKSAGGR': [],
@@ -126,6 +127,7 @@ def parseOutfiles(outfiles):
         'CONS LOGICOR': [],
         'CONS SETPPC': [],
         'CONS VARBOUND': [],
+        'CONS AND': [],
         'LINKING VARS': [],
         'NBLOCKS': [],
         'NBLOCKSAGGR': [],
@@ -378,11 +380,14 @@ def parseOutfiles(outfiles):
                 continue
 
             if search == "CUTS MASTER":
-                if not line.startswith("Pricers"):
+                if not line.startswith("Pricers") and not line.startswith("Cutselectors"):
                     offset = 0 if line.split(':')[0].strip() != "cut pool" else -1
-                    data['CUTS TIME MASTER'][-1] += float(line.split(':')[1].split()[0])
-                    data['CUTS CALLS MASTER'][-1] += int(line.split(':')[1].split()[2+offset])
-                    data['CUTS FOUND MASTER'][-1] += int(line.split(':')[1].split()[5+offset])
+                    if line.split(':')[1].split()[0].isdigit():
+                        data['CUTS TIME MASTER'][-1] += float(line.split(':')[1].split()[0])
+                    if line.split(':')[1].split()[2+offset].isdigit():
+                        data['CUTS CALLS MASTER'][-1] += int(line.split(':')[1].split()[2+offset])
+                    if line.split(':')[1].split()[5+offset].isdigit():
+                        data['CUTS FOUND MASTER'][-1] += int(line.split(':')[1].split()[5+offset])
                     if line.split(':')[1].split()[6+offset].isdigit():
                         data['CUTS APPLIED MASTER'][-1] += int(line.split(':')[1].split()[6+offset])
                 else:
@@ -398,7 +403,7 @@ def parseOutfiles(outfiles):
                 continue
 
             if search == "CUTS ORIG":
-                if not line.startswith("Pricers"):
+                if not line.startswith("Pricers") and not line.startswith("Cutselectors"):
                     offset = 0 if line.split(':')[0].strip() != "cut pool" else -1
                     data['CUTS TIME ORIG'][-1] += float(line.split(':')[1].split()[0])
                     data['CUTS CALLS ORIG'][-1] += int(line.split(':')[1].split()[2+offset])
@@ -510,6 +515,7 @@ def parseOutfiles(outfiles):
                 data['CONS LOGICOR'].append(0)
                 data['CONS SETPPC'].append(0)
                 data['CONS VARBOUND'].append(0)
+                data['CONS AND'].append(0)
                 continue
 
             if search == "CONSS":
@@ -765,6 +771,8 @@ def parseOutfiles(outfiles):
                     data['CONS SETPPC'].append(-1)
                 if len(data['CONS VARBOUND']) < it:
                     data['CONS VARBOUND'].append(-1)
+                if len(data['CONS AND']) < it:
+                    data['CONS AND'].append(-1)
 
                 if len(data['NBLOCKS']) < it:
                     data['NBLOCKS'].append(-1)
@@ -858,7 +866,7 @@ def parseOutfiles(outfiles):
 
 
     # build pandas data frame
-    pd.set_option("max_columns", 999)
+    #pd.set_option("max_columns", 999)
     try: df = pd.DataFrame(index=idx, data=d)
     except:
         for key in d.keys():
