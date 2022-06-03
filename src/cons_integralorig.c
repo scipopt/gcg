@@ -295,8 +295,8 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    /* get corresponding origsol in order to check integrality */
    SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol) );
 
-   origvars = SCIPgetOrigVars(origprob);
-   norigvars = SCIPgetNOrigVars(origprob);
+   origvars = SCIPgetVars(origprob);
+   norigvars = SCIPgetNVars(origprob);
 
    /* check for each integral original variable whether it has a fractional value */
    for( v = 0; v < norigvars && *result == SCIP_FEASIBLE; v++ )

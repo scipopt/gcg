@@ -262,8 +262,8 @@ SCIP_RETCODE GCGcreateOrigVarsData(
 
    assert(scip != NULL);
 
-   vars = SCIPgetOrigVars(scip);
-   nvars = SCIPgetNOrigVars(scip);
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
 
    /* loop over the variables in the original problem */
    for( i = 0; i < nvars; i++ )
@@ -286,8 +286,8 @@ SCIP_RETCODE GCGfreeOrigVarsData(
 
    assert(scip != NULL);
 
-   vars = SCIPgetOrigVars(scip);
-   nvars = SCIPgetNOrigVars(scip);
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
 
    /* loop over the variables in the original problem */
    for( i = 0; i < nvars; i++ )
@@ -354,7 +354,7 @@ SCIP_RETCODE GCGorigVarCreateData(
    }
    else
    {
-      assert(SCIPvarIsTransformedOrigvar(var));
+      //assert(SCIPvarIsTransformedOrigvar(var));
       SCIPvarSetDeltransData(var, GCGvarDelOrig);
    }
 
