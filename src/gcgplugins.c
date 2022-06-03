@@ -136,6 +136,7 @@
 #include "scip/presol_dualagg.h"
 #include "scip/presol_dualcomp.h"
 #include "scip/presol_dualinfer.h"
+#include "scip/presol_dualsparsify.h"
 #include "scip/presol_implics.h"
 #include "scip/presol_inttobinary.h"
 #include "scip/presol_redvub.h"
@@ -336,7 +337,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
    SCIP_CALL( SCIPincludePresolTworowbnd(scip) );
    SCIP_CALL( SCIPincludePresolSparsify(scip) );
-   // SCIP_CALL( SCIPincludePresolDualsparsify(scip) );  @todo: GCG cannot handle this presolver currently (miplib2010/atm20-100)
+   SCIP_CALL( SCIPincludePresolDualsparsify(scip) );
    SCIP_CALL( SCIPincludePresolStuffing(scip) );
    // @todo: Papilo
 

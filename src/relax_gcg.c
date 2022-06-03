@@ -296,8 +296,8 @@ SCIP_RETCODE convertStructToGCG(
 
 
 
-   origvars = SCIPgetOrigVars(scip);
-   nvars = SCIPgetNOrigVars(scip);
+   origvars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
    linkingconss = DECdecompGetLinkingconss(decomp);
    nlinkingconss = DECdecompGetNLinkingconss(decomp);
    linkingvars = DECdecompGetLinkingvars(decomp);
