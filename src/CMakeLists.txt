@@ -334,7 +334,7 @@ set(gcggraphheaders
     graph/weights.h
    )
 
-if(BLISS_FOUND AND SYM STREQUAL "bliss")
+if(SYM STREQUAL "bliss")
    set(gcgsources ${gcgsources}
       bliss.cpp
       bliss_automorph.cpp

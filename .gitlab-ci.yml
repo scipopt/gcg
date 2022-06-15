@@ -38,9 +38,6 @@ default:
     - ln -sfn $PWD/lib/soplex-git/src/* $PWD/lib/scip/lib/include/spxinc/
     - mkdir -p lib/scip/lib/static/
     - ln -sfn $PWD/lib/soplex-git/lib/libsoplex.linux.x86_64.gnu.opt.a $PWD/lib/scip/lib/static/libsoplex.linux.x86_64.gnu.opt.a
-    #- mkdir -p lib/scip/lib/include/bliss
-    #- ln -sfn $PWD/lib/bliss-git/src/* $PWD/lib/scip/lib/include/bliss/
-    #- ln -sfn $PWD/lib/bliss-git/libbliss_static.a $PWD/lib/scip/lib/static/libbliss.linux.x86_64.gnu.a
 
 
 ###################################
@@ -83,10 +80,6 @@ build:make_release:
   #except:
   #  - schedules
   script:
-    # create links to bliss for scip
-    - mkdir -p lib/scip/lib/include/bliss
-    - ln -sfn $PWD/lib/bliss-git/src/* $PWD/lib/scip/lib/include/bliss/
-    - ln -sfn $PWD/lib/bliss-git/libbliss_static.a $PWD/lib/scip/lib/static/libbliss.linux.x86_64.gnu.a
     # prepare dependencies
     - mkdir -p lib/include
     - mkdir -p lib/static
@@ -106,8 +99,6 @@ build:make_release:
     # generate 'opt' binary
     - make deps OPT=opt CLIQUER=true BLISS=true
     - ln -sfn ../cliquer-git/libcliquer.a lib/static/libcliquer.a
-    - ln -sfn ../bliss-git/src lib/include/bliss
-    - ln -sfn ../bliss-git/libbliss_static.a lib/static/libbliss.a
     - make OPT=opt CLIQUER=true BLISS=true
   artifacts:
     expire_in: 3 days
@@ -131,10 +122,6 @@ build:make_debug:
       when: manual
       allow_failure: true
   script:
-    # create links to bliss for scip
-    - mkdir -p lib/scip/lib/include/bliss
-    - ln -sfn $PWD/lib/bliss-git/src/* $PWD/lib/scip/lib/include/bliss/
-    - ln -sfn $PWD/lib/bliss-git/libbliss_static.a $PWD/lib/scip/lib/static/libbliss.linux.x86_64.gnu.a
     # prepare dependencies
     - mkdir -p lib/include
     - mkdir -p lib/static
@@ -154,8 +141,6 @@ build:make_debug:
     # generate 'dbg' binary
     - make deps OPT=dbg CLIQUER=true BLISS=true
     - ln -sfn ../cliquer-git/libcliquer.a lib/static/libcliquer.a
-    - ln -sfn ../bliss-git/src lib/include/bliss
-    - ln -sfn ../bliss-git/libbliss_static.a lib/static/libbliss.a
     - make OPT=dbg CLIQUER=true BLISS=true
   artifacts:
     expire_in: 3 days
@@ -177,14 +162,10 @@ build:cmake_release:
     - if: '$CI_PIPELINE_SOURCE == "push"'
       when: always
   script:
-    # create links to bliss
-    - mkdir -p lib/scip/lib/include/bliss
-    - ln -sfn $PWD/lib/bliss-git/src/* $PWD/lib/scip/lib/include/bliss/
-    - ln -sfn $PWD/lib/bliss-git/libbliss_static.a $PWD/lib/scip/lib/static/libbliss.linux.x86_64.gnu.a
     - mkdir build
     - cd build
     # main compilation (build type: debug)
-    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ ..
+    - cmake -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ ..
     - make -j 4
     - cd ..
   artifacts:
@@ -209,17 +190,13 @@ build:cmake_debug:
       when: manual
       allow_failure: true
   script:
-    # create links to bliss
-    - mkdir -p lib/scip/lib/include/bliss
-    - ln -sfn $PWD/lib/bliss-git/src/* $PWD/lib/scip/lib/include/bliss/
-    - ln -sfn $PWD/lib/bliss-git/libbliss_static.a $PWD/lib/scip/lib/static/libbliss.linux.x86_64.gnu.a
     - mkdir build
     - cd build
     # download and unpack cliquer (bliss and hmetis already exist)
     - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
     - tar xvfz cliquer-1.21.tar.gz
     # main compilation (build type: debug)
-    - cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ -DCMAKE_BUILD_TYPE=Debug ..
+    - cmake -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ -DCMAKE_BUILD_TYPE=Debug ..
     - make -j 4
     - cd ..
   artifacts:
