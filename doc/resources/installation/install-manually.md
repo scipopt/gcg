@@ -61,30 +61,15 @@ the directory above the GCG root directory for the instructions, i.e.
 
 ## Bliss
 > Bliss is used for symmetry detection and required for the @ref det-isomorph. \n
-> We recommend using version 0.73 or higher. Bliss can be obtained
-> [here](http://www.tcs.hut.fi/Software/bliss/).
+> We recommend using the version shipped with SCIP. Bliss can be obtained
+> [here](https://users.aalto.fi/~tjunttil/bliss/) or [here](https://github.com/ds4dm/Bliss) (SCIP's version).
 
-First, extract the bliss source code (one folder level above the GCG root directory):
-
-    unzip bliss-[version].zip
-
-Then, go into the GCG root directory and **link to it** and **compile it**:
-
-    cd gcg/
-    ln -sfn ../../bliss-[version]/ lib/bliss-git
-    make bliss
-
-After that, **recompile** using the corresponding flag.
-
-    make deps BLISS=true
-    make BLISS=true
-    ../bliss-git/
-    ../bliss-git/libbliss.a
+Bliss is bundled with SCIP since version 8.0.1. Hence, no additional download is required anymore. Moreover, Bliss is enabled by default.
 
 If everything went correctly, start GCG and you will be greeted by the line
 ```
 External codes: 
-    bliss 0.73           A Tool for Computing Automorphism Groups of Graphs by T. Junttila and P. Kaski (http://www.tcs.hut.fi/Software/bliss/)
+    bliss 0.77           A Tool for Computing Automorphism Groups of Graphs by T. Junttila and P. Kaski (http://www.tcs.hut.fi/Software/bliss/)
 ```
 and you are ready to use the bliss symmetry detector.
 

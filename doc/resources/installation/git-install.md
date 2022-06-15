@@ -118,8 +118,6 @@ Afterward, compile GCG with
 
 You can set arguments as described in \ref makefiles-args. <br>
 **If you used flags, you might need to set these links:**
- * lib/include/bliss is `../bliss-git/`
- * lib/static/libbliss.a is `../bliss-git/libbliss.a`
  * lib/cliquerinc is `cliquer/`
  * lib/libcliquer.a is `cliquer/libcliquer.a`
  * lib/gtest is `googletest/include/`

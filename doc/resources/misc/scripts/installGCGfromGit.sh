@@ -139,7 +139,7 @@ function fcmake(){
   printf "${B}Compiling GCG${W}"
   mkdir build
   cd build
-  cmake -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF .. | tail -n +91
+  cmake -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF .. | tail -n +91
   make ${FLAGS}
   test
 }
