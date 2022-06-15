@@ -19,7 +19,6 @@ doc/resources/users/features/interactive-menu/menu.html
 stats/plots
 gcg-*.metis*
 lib/
-!lib/bliss-git
 !lib/googletest-git
 !lib/scip-git
 !lib/soplex-git

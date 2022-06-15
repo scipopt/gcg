@@ -470,6 +470,6 @@ void GCGgetBlissName(char* buffer, int len)
 #ifdef BLISS_PATCH_PRESENT
    SCIPsnprintf(buffer, len, "bliss %sp", bliss::version);
 #else
-   sprintf(buffer, "bliss %s", bliss::version);
+   SCIPsnprintf(buffer, len, "bliss %s", bliss::version);
 #endif
 }

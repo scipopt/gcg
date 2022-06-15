@@ -37,7 +37,7 @@ option(CLIQUER "should cliquer be linked" ON)
 option(CPLEX "should Cplex be used for solving pricing MIPs" OFF)
 option(HMETIS "should hmetis be called" ON)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
-option(GCG_DEV_BUILD "try to build SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
+option(GCG_DEV_BUILD "compile SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
 
 # OPENMP
 if(OPENMP)
@@ -157,50 +157,13 @@ add_custom_target(gcg_update_githash
 # use C++11 standard
 set(CMAKE_CXX_STANDARD 11)
 
-#search the selected symmetry computation program
-if(SYM STREQUAL "bliss")
-   if(NOT DEFINED GCG_DEV_BUILD_BLISS_PATH)
-      set(GCG_DEV_BUILD_BLISS_PATH ${PROJECT_SOURCE_DIR}/lib/bliss-git)
-   endif()
-   if(NOT GCG_DEV_BUILD)
-      find_package(BLISS)
-   endif()
-   if(((NOT BLISS_FOUND) OR GCG_DEV_BUILD) AND (EXISTS "${GCG_DEV_BUILD_BLISS_PATH}/CMakeLists.txt") AND UNIX)
-      message(STATUS "Using '${GCG_DEV_BUILD_BLISS_PATH}'. Building BLISS ...")
-      file(COPY ${GCG_DEV_BUILD_BLISS_PATH} DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-      set(BLISS_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/bliss-git)
-      file(MAKE_DIRECTORY ${BLISS_DIR}/build)
-      execute_process(
-         COMMAND ${CMAKE_COMMAND} ${BLISS_DIR}
-         WORKING_DIRECTORY ${BLISS_DIR}/build
-      )
-      execute_process(
-         COMMAND ${CMAKE_COMMAND} --build ${BLISS_DIR}/build
-      )
-      find_package(BLISS)
-      install(FILES ${BLISS_LIBRARIES}
-              DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
-   endif()
-   if(BLISS_FOUND)
-      include_directories(${BLISS_INCLUDE_DIRS})
-      set(SYM_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
-      set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
-   else()
-      set(SYM_LIBRARIES)
-      set(SYM_PIC_LIBRARIES)
-   endif()
-elseif(SYM STREQUAL "none")
-   set(SYM_LIBRARIES)
-   set(SYM_PIC_LIBRARIES)
-else()
-   message(FATAL_ERROR "option SYM has wrong value")
-endif()
-
 # SCIP
 if(NOT GCG_DEV_BUILD)
-   find_package(SCIP CONFIG)
+   find_package(SCIP CONFIG REQUIRED)
+   if(SCIP_FOUND)
+      # SCIP headers can be directly included
+      include_directories(${SCIP_INCLUDE_DIRS})
+   endif()
 endif()
 
 if(NOT DEFINED GCG_DEV_BUILD_SOPLEX_PATH)
@@ -215,20 +178,24 @@ if((NOT SCIP_FOUND) AND (EXISTS ${GCG_DEV_BUILD_SCIP_PATH}) AND (EXISTS ${GCG_DE
    message(STATUS "Using '${GCG_DEV_BUILD_SOPLEX_PATH}'")
    message(STATUS "Using '${GCG_DEV_BUILD_SCIP_PATH}'")
    set(SOPLEX_DIR ${CMAKE_BINARY_DIR})
-   set(SCIP_DIR ${CMAKE_BINARY_DIR})
    add_subdirectory(${GCG_DEV_BUILD_SOPLEX_PATH})
    add_subdirectory(${GCG_DEV_BUILD_SCIP_PATH})
+   set(SCIP_LIBRARIES libscip)
 elseif(GCG_DEV_BUILD)
    message(WARNING "GCG_DEV_BUILD option is set but could not find SCIP and SoPlex in the lib/ subdirectory. Please specify GCG_DEV_BUILD_SOPLEX_PATH and GCG_DEV_BUILD_SCIP_PATH")
 endif()
 
-if(NOT SCIP_FOUND)
-   find_package(SCIP REQUIRED CONFIG)
-endif()
-
-if(SCIP_FOUND)
-   # SCIP headers can be directly included
-   include_directories(${SCIP_INCLUDE_DIRS})
+#search the selected symmetry computation program
+if(SYM STREQUAL "bliss")
+   set(SYM_LIBRARIES libbliss ${GMP_LIBRARIES})
+   set(SYM_PIC_LIBRARIES libbliss ${GMP_LIBRARIES})
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
+elseif(SYM STREQUAL "none")
+   set(SYM_LIBRARIES)
+   set(SYM_PIC_LIBRARIES)
+else()
+   message(FATAL_ERROR "option SYM has wrong value")
 endif()
 
 # TODO: In SCIP, license is in COPYING file and not in LICENSE.

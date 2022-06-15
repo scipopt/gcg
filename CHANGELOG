@@ -70,6 +70,12 @@ Bug fixes
 - fix Makefiles recompile if STATISTICS flag was changed
 - fix minor bugs in the cmpres.awk script, updating it to the SCIP version
 - fix memory allocation of name and description of constraint and variable classifiers
+- fix handling of variables added after the problem was transformed
+
+Build system
+------------
+
+- Bliss is enabled by default and the version provided by SCIP is compiled (CMake and Makefile)
 
 
 @section RN350 GCG 3.5.0
