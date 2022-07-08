@@ -45,8 +45,8 @@
 #include "cons_decomp.h"
 #include "gcg.h"
 
-#if SCIP_VERSION < 800
-#error GCG 3.6.0 can only be compiled with SCIP version 8.0.0 or higher
+#if SCIP_VERSION < 801
+#error GCG can only be compiled with SCIP version 8.0.1 or higher
 #endif
 
 
