@@ -92,7 +92,7 @@ build:make_release:
     - ln -sfn ../cliquer-git/ lib/include/cliquer
     ## hMetis ##
     # link
-    - wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/hmetis/hmetis-2.0pre1.tar.gz
+    - wget https://or.rwth-aachen.de/hmetis/hmetis-2.0pre1.tar.gz
     - tar xvfz hmetis-2.0pre1.tar.gz
     - ln -sfn hmetis-2.0pre1/Linux-x86_64/hmetis2.0pre1 hmetis
     - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/dec_h*partition.cpp
@@ -134,7 +134,7 @@ build:make_debug:
     - ln -sfn ../cliquer-git/ lib/include/cliquer
     ## hMetis ##
     # link
-    - wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/hmetis/hmetis-2.0pre1.tar.gz
+    - wget https://or.rwth-aachen.de/hmetis/hmetis-2.0pre1.tar.gz
     - tar xvfz hmetis-2.0pre1.tar.gz
     - ln -sfn hmetis-2.0pre1/Linux-x86_64/hmetis2.0pre1 hmetis
     - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/dec_h*partition.cpp
