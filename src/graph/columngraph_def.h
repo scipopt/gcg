@@ -65,9 +65,9 @@ SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
 )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int* nsubscipconss = NULL;
    int i;
    SCIP_CONS **conss;
    SCIP_Bool emptyblocks = FALSE;
@@ -150,7 +150,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
    /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
-      SCIP_VAR **curvars;
+      SCIP_VAR** curvars = NULL;
 
       int ncurvars;
       SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );

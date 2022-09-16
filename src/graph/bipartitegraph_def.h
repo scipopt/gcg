@@ -100,7 +100,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
    /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
-      SCIP_VAR **curvars;
+      SCIP_VAR** curvars = NULL;
 
       int ncurvars;
       SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
@@ -121,7 +121,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
 
       for( j = 0; j < ncurvars; ++j )
       {
-         SCIP_VAR* var;
+         SCIP_VAR* var = NULL;
          int varIndex;
 
          if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)

@@ -390,8 +390,8 @@ DETPROBDATA::DETPROBDATA(
    for( int i = 0; i < (int) relevantconss.size(); ++ i )
    {
       SCIP_CONS* cons;
-      SCIP_VAR** currVars;
-      SCIP_Real* currVals;
+      SCIP_VAR** currVars = NULL;
+      SCIP_Real* currVals = NULL;
       int nCurrVars;
 
       cons = relevantconss[i];
@@ -402,8 +402,8 @@ DETPROBDATA::DETPROBDATA(
 
       assert(SCIPconsGetName( cons) != NULL);
 
-      SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & currVars, nCurrVars) );
-      SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & currVals, nCurrVars) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVars, nCurrVars) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVals, nCurrVars) );
       SCIP_CALL_ABORT( GCGconsGetVars(scip, cons, currVars, nCurrVars) );
       SCIP_CALL_ABORT( GCGconsGetVals(scip, cons, currVals, nCurrVars) );
 

@@ -64,11 +64,11 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
 )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int* nsubscipconss = NULL;
    int i;
-   SCIP_CONS **conss;
+   SCIP_CONS** conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
@@ -136,9 +136,9 @@ SCIP_RETCODE RowGraph<T>::createPartialdecFromPartition(
    )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int* nsubscipconss = NULL;
    int i;
    SCIP_Bool emptyblocks = FALSE;
 
@@ -278,7 +278,7 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
    /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
-      SCIP_VAR **curvars1;
+      SCIP_VAR** curvars1 = NULL;
 
       int ncurvars1;
       SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
@@ -297,7 +297,7 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
       /* go through all constraints */
       for( j = 0; j < i; ++j )
       {
-         SCIP_VAR **curvars2;
+         SCIP_VAR** curvars2 = NULL;
          SCIP_Bool continueloop;
          int ncurvars2;
          SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[j], &ncurvars2, &success) );
@@ -329,7 +329,7 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
 
          for( k = 0; k < ncurvars1; ++k )
          {
-            SCIP_VAR* var1;
+            SCIP_VAR* var1 = NULL;
             int varIndex1;
 
             if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)

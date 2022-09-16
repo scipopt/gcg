@@ -114,7 +114,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
    /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
-      SCIP_VAR **curvars;
+      SCIP_VAR **curvars = NULL;
 
       int ncurvars;
       SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
@@ -387,11 +387,11 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
    )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int* nsubscipconss = NULL;
    int i;
-   SCIP_CONS **conss;
+   SCIP_CONS** conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
@@ -455,11 +455,11 @@ SCIP_RETCODE HyperrowcolGraph<T>::createPartialdecFromPartition(
    )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int *nsubscipconss = NULL;
    int i;
-   SCIP_CONS **conss;
+   SCIP_CONS **conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
@@ -546,9 +546,9 @@ SCIP_RETCODE HyperrowcolGraph<T>::createPartialdecFromPartition(
    )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int* nsubscipconss = NULL;
    int i;
    SCIP_Bool emptyblocks = FALSE;
 

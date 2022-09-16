@@ -50,7 +50,7 @@ class EdgeGCG
 public:
     int src, dest;
     double weight;
-    EdgeGCG() {}
+    EdgeGCG(): src(-1), dest(-1), weight(0.0) {}
     EdgeGCG(int s, int d, double w): src(s), dest(d), weight(w) {}
 } ;
 

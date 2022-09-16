@@ -193,17 +193,17 @@ SCIP_RETCODE findDiameter(
 {
    TCLIQUE_GRAPH* graph;
    int diameter = -1;
-   int* queue;          /* queue, first entry is queue[squeue], last entry is queue[equeue] */
+   int* queue = NULL;   /* queue, first entry is queue[squeue], last entry is queue[equeue] */
    int squeue;          /* index of first entry of the queue */
    int equeue;          /* index of last entry of the queue */
    int nnodes;          /* number of vertices the graph contains */
    int ncompnodes = 0;  /* number of vertices the component contains */
-   SCIP_Bool* marked;
-   int* eccentricity;   /* upper bounds on the eccentricities */
-   int* dist;           /* distances from some start vertex to all other vertices (gets updated in each BFS) */
-   int* origdegree;     /* degrees of the vertices */
-   int* degree;         /* degrees of the vertices sorted in decreasing order */
-   int* degreepos;
+   SCIP_Bool* marked = NULL;
+   int* eccentricity = NULL;   /* upper bounds on the eccentricities */
+   int* dist = NULL;           /* distances from some start vertex to all other vertices (gets updated in each BFS) */
+   int* origdegree = NULL;     /* degrees of the vertices */
+   int* degree = NULL;         /* degrees of the vertices sorted in decreasing order */
+   int* degreepos = NULL;
    int i;
    int j;
    int k = 50;          /* number of low-degree vertices that are visited before high-degree vertices are visited */
@@ -371,7 +371,7 @@ SCIP_RETCODE findConnectedComponents(
    int nnodes;
    int ncomps = 0;
    int curcomp;
-   int* queue;
+   int* queue = NULL;
    int squeue;
    int equeue;
    TCLIQUE_GRAPH* graph;
@@ -529,10 +529,10 @@ SCIP_RETCODE detection(
 {
    int i;
    int j;
-   int* nodes;
+   int* nodes = NULL;
    int nnodes;
-   int* distances;
-   int* blocks;
+   int* distances = NULL;
+   int* blocks = NULL;
    int nblocks = 0;
 
    char decinfo[SCIP_MAXSTRLEN];
@@ -643,7 +643,7 @@ static
 DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStaircaseLsp)
 {
 
-   DEC_DETECTORDATA* detectordata;
+   DEC_DETECTORDATA* detectordata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
@@ -673,7 +673,7 @@ DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStaircaseLsp)
 static
 DEC_DECL_FINISHPARTIALDEC(detectorFinishPartialdecStaircaseLsp)
 {
-   DEC_DETECTORDATA* detectordata;
+   DEC_DETECTORDATA* detectordata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
