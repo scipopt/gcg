@@ -5,6 +5,10 @@
 Bug fixes
 ---------
 
+- fix errors in symmetry detection
+- fix segmentation faults
+- add missing headers to CMake file
+
 
 @section RN351 GCG 3.5.1
 *************************
