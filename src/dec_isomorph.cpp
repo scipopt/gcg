@@ -1372,7 +1372,7 @@ SCIP_RETCODE detectIsomorph(
 
 #if BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
    auto report = [&](unsigned int n, const unsigned int* aut) {
-      fhookForPartialdecs((void*)&ptrhook, n, aut);
+      fhookForPartialdecs((void*)ptrhook, n, aut);
    };
 
    graph.find_automorphisms(bstats, report);
