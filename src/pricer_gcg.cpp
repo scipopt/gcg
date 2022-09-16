@@ -706,17 +706,17 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    SCIP_Bool             stabilize           /**< do we use stabilization ? */
    )
 {
-   SCIP_CONS** origconss;
-   SCIP_CONS** masterconss;
+   SCIP_CONS** origconss = NULL;
+   SCIP_CONS** masterconss = NULL;
    int nmasterconss;
-   SCIP_VAR** probvars;
+   SCIP_VAR** probvars = NULL;
    int nprobvars;
 
-   SCIP_ROW** mastercuts;
+   SCIP_ROW** mastercuts = NULL;
    int nmastercuts;
-   SCIP_ROW** origcuts;
-   SCIP_COL** cols;
-   SCIP_Real* consvals;
+   SCIP_ROW** origcuts = NULL;
+   SCIP_COL** cols = NULL;
+   SCIP_Real* consvals = NULL;
    SCIP_Real dualsol;
 
    SCIP_VAR** consvars = NULL;
@@ -761,15 +761,15 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
     */
 
    int nlinkconss;
-   SCIP_CONS** linkconss;
-   int* linkconssblock;
+   SCIP_CONS** linkconss = NULL;
+   int* linkconssblock = NULL;
    nlinkconss = GCGgetNVarLinkingconss(origprob);
    linkconss = GCGgetVarLinkingconss(origprob);
    linkconssblock = GCGgetVarLinkingconssBlock(origprob);
 
    for( i = 0; i < nlinkconss; ++i)
    {
-      SCIP_VAR** linkconsvars;
+      SCIP_VAR** linkconsvars = NULL;
       SCIP_CONS* linkcons = linkconss[i];
       int block = linkconssblock[i];
 
@@ -949,10 +949,10 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraints(
    int c;
    int idx;
 
-   SCIP_CONS** masterconss;
+   SCIP_CONS** masterconss = NULL;
    int nmasterconss;
-   SCIP_Real* mastercoefs;
-   SCIP_CONS* linkcons;
+   SCIP_Real* mastercoefs = NULL;
+   SCIP_CONS* linkcons = NULL;
 
    assert(pricerdata != NULL);
 
@@ -1116,8 +1116,8 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
 {
    int i;
 
-   SCIP_VAR** solvars;
-   SCIP_Real* solvals;
+   SCIP_VAR** solvars = NULL;
+   SCIP_Real* solvals = NULL;
    int nsolvars;
 
    int c;
@@ -1131,11 +1131,11 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
    solvals = GCGcolGetVals(gcgcol);
 
    int nmasterconss;
-   SCIP_Real* mastercoefs;
-   SCIP_CONS* linkcons;
-   SCIP* pricingprob;
+   SCIP_Real* mastercoefs = NULL;
+   SCIP_CONS* linkcons = NULL;
+   SCIP* pricingprob = NULL;
 
-   int* linkvars;
+   int* linkvars = NULL;
    int nlinkvars;
 
    pricingprob = GCGcolGetPricingProb(gcgcol);
@@ -1334,12 +1334,12 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercuts(
    int prob;
    int i;
 
-   SCIP_VAR** solvars;
-   SCIP_Real* solvals;
+   SCIP_VAR** solvars = NULL;
+   SCIP_Real* solvals = NULL;
    int nsolvars;
    int noldmastercuts;
    int nnewmastercuts;
-   SCIP_Real* newmastercuts;
+   SCIP_Real* newmastercuts = NULL;
 
    assert(scip_ != NULL);
    assert(gcgcol != NULL);
@@ -1351,14 +1351,14 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercuts(
 
    noldmastercuts = GCGcolGetNMastercuts(gcgcol);
 
-   SCIP_ROW** mastercuts;
+   SCIP_ROW** mastercuts = NULL;
    int nmastercuts;
-   SCIP_ROW** origcuts;
+   SCIP_ROW** origcuts = NULL;
 
-   SCIP_COL** cols;
+   SCIP_COL** cols = NULL;
    SCIP_Real conscoef;
-   SCIP_VAR* var;
-   SCIP_Real* consvals;
+   SCIP_VAR* var = NULL;
+   SCIP_Real* consvals = NULL;
 
    int j;
    int k;
@@ -1720,14 +1720,14 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
     SCIP_Bool            stabilize           /**< stabilize? */
 )
 {
-   SCIP_VAR** mastervars;
+   SCIP_VAR** mastervars = NULL;
    int nmastervars;
 
-   SCIP_CONS** origconss;
+   SCIP_CONS** origconss = NULL;
 
-   SCIP_ROW** origcuts;
-   SCIP_COL** cols;
-   SCIP_Real* consvals;
+   SCIP_ROW** origcuts = NULL;
+   SCIP_COL** cols = NULL;
+   SCIP_Real* consvals = NULL;
 
    SCIP_VAR** consvars = NULL;
    int nconsvars;
@@ -1737,17 +1737,17 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
    SCIP_Real dualsol;
    SCIP_Real boundval;
 
-   SCIP_CONS** masterconss;
+   SCIP_CONS** masterconss = NULL;
    int nmasterconss;
 
    int nlinkconss;
-   SCIP_CONS** linkconss;
+   SCIP_CONS** linkconss = NULL;
 
-   SCIP_ROW** mastercuts;
+   SCIP_ROW** mastercuts = NULL;
    int nmastercuts;
    int i;
 
-   SCIP_Real* stabredcosts;
+   SCIP_Real* stabredcosts = NULL;
 
    assert(stabilization != NULL);
    assert(stabdualval != NULL);
@@ -2681,14 +2681,14 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    )
 {
    GCG_PRICINGJOB* pricingjob = NULL;
-   GCG_COL** bestcols;
-   SCIP_LPI* lpi;
+   GCG_COL** bestcols = NULL;
+   SCIP_LPI* lpi = NULL;
    SCIP_Real* bestobjvals = NULL;
    SCIP_Real bestredcost;
    SCIP_Real beststabobj;
    SCIP_RETCODE retcode;
    SCIP_Bool infeasible;
-   SCIP_Bool nextchunk;
+   SCIP_Bool nextchunk = TRUE;
    SCIP_Bool stabilized;
    SCIP_Bool colpoolupdated;
    SCIP_Bool enableppcuts;
@@ -3404,7 +3404,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
     int                priority,           /**< priority of the variable pricer */
     SCIP_Bool          delay,
     SCIP_PRICERDATA*   p_pricerdata
-    ) : ObjPricer(scip, name, desc, priority, delay), colpool(NULL), pricestore(NULL), reducedcostpricing(NULL), farkaspricing(NULL), pricingcontroller(NULL), stabilization(NULL)
+    ) : ObjPricer(scip, name, desc, priority, delay), colpool(NULL), pricestore(NULL), reducedcostpricing(NULL), farkaspricing(NULL), pricingcontroller(NULL), stabilization(NULL), pricingtype(NULL)
  {
 
     assert(origscip!= NULL);
@@ -4785,23 +4785,23 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP_Bool*            stored              /**< pointer to store if transferred solution is feasible (or NULL) */
    )
 {
-   ObjPricerGcg* pricer;
-   SCIP_PRICERDATA* pricerdata;
-   SCIP_SOL* mastersol;
-   SCIP_VAR* newvar;
-   SCIP* origprob;
+   ObjPricerGcg* pricer = NULL;
+   SCIP_PRICERDATA* pricerdata = NULL;
+   SCIP_SOL* mastersol = NULL;
+   SCIP_VAR* newvar = NULL;
+   SCIP* origprob = NULL;
    SCIP_Bool added;
    int prob;
    int i;
    int j;
 
-   SCIP_VAR** origvars;
-   SCIP_Real* origsolvals;
+   SCIP_VAR** origvars = NULL;
+   SCIP_Real* origsolvals = NULL;
    int norigvars;
 
-   SCIP_VAR*** pricingvars;
-   SCIP_Real** pricingvals;
-   int* npricingvars;
+   SCIP_VAR*** pricingvars = NULL;
+   SCIP_Real** pricingvals = NULL;
+   int* npricingvars = NULL;
 
    assert(scip != NULL);
 
@@ -4899,7 +4899,7 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
             {
                if( !SCIPisZero(scip, origsolvals[i]) )
                {
-                  int* blocks;
+                  int* blocks = NULL;
                   int nblocks = GCGlinkingVarGetNBlocks(origvars[i]);
                   SCIP_CALL( SCIPallocBufferArray(scip, &blocks, nblocks) ); /*lint !e530*/
                   SCIP_CALL( GCGlinkingVarGetBlocks(origvars[i], nblocks, blocks) );

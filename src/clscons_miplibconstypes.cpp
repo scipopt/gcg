@@ -101,8 +101,8 @@ DEC_DECL_CONSCLASSIFY(classifierClassify)
       SCIP_CONS* cons;
       SCIP_Real lhs;
       SCIP_Real rhs;
-      SCIP_Real* vals;
-      SCIP_VAR** vars;
+      SCIP_Real* vals = NULL;
+      SCIP_VAR** vars = NULL;
       int nvars;
       int i;
 

@@ -843,11 +843,11 @@ SCIP_RETCODE createPartialdecFromMasterconss(
    int nconss;
    int nvars;
    int nblocks;
-   int* blockrepresentative;
+   int* blockrepresentative = NULL;
    int nextblock = 1;
-   SCIP_Bool* consismaster;
+   SCIP_Bool* consismaster = NULL;
    int i, j;
-   int* vartoblock;
+   int* vartoblock = NULL;
    int ncurvars;
 
    std::vector<int> constoblock( detprobdata->getNConss(), -1);
@@ -1212,9 +1212,9 @@ SCIP_RETCODE reorderPermutations(
 )
 {
    int i;
-   int* count;
-   int* order;
-   int* invorder;
+   int* count = NULL;
+   int* order = NULL;
+   int* invorder = NULL;
 
    assert(scip != NULL);
    assert(permutation != NULL);
@@ -1372,7 +1372,7 @@ SCIP_RETCODE detectIsomorph(
 
 #if BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
    auto report = [&](unsigned int n, const unsigned int* aut) {
-      fhookForPartialdecs((void*)&ptrhook, n, aut);
+      fhookForPartialdecs((void*)ptrhook, n, aut);
    };
 
    graph.find_automorphisms(bstats, report);

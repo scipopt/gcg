@@ -64,7 +64,7 @@ Stabilization::Stabilization(
       stabcenterconv((SCIP_Real*) NULL), nstabcenterconv(0), dualdiffnorm(0.0),
       subgradientconsvals(NULL), subgradientconsvalssize(0), nsubgradientconsvals(0),
       subgradientcutvals(NULL), subgradientcutvalssize(0), nsubgradientcutvals(0),
-      subgradientlinkingconsvals(NULL),
+      subgradientlinkingconsvals(NULL), subgradientlinkingconsvalssize(0),
       subgradientnorm(0.0), hybridfactor(0.0),
       pricingtype(pricingtype_), alpha(0.8), alphabar(0.8), hybridascent(hybridascent_), beta(0.0), nodenr(-1), k(0), t(0), hasstabilitycenter(FALSE),stabcenterbound(-SCIPinfinity(scip)),
       inmispricingschedule(FALSE), subgradientproduct(0.0)
@@ -544,8 +544,8 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
    /* masterconss */
    for( int i = 0; i < nconss; ++i )
    {
-      SCIP_VAR** vars;
-      SCIP_Real* vals;
+      SCIP_VAR** vars = NULL;
+      SCIP_Real* vals = NULL;
       int nvars;
       SCIP_Real lhs; /* can also be rhs, but we need only one */
 
@@ -751,8 +751,8 @@ void Stabilization::calculateSubgradient(
    /* masterconss */
    for( int i = 0; i < nconss; ++i )
    {
-      SCIP_VAR** vars;
-      SCIP_Real* vals;
+      SCIP_VAR** vars = NULL;
+      SCIP_Real* vals = NULL;
       int nvars;
       SCIP_Real activity;
       SCIP_Real infeasibility;

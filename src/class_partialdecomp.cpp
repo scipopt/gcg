@@ -2003,6 +2003,9 @@ void PARTIALDECOMP::checkIdenticalBlocksBrute(
       cons1 = detprobdata->getCons(cons1id);
       cons2 = detprobdata->getCons(cons2id);
 
+      vals1 = NULL;
+      vals2 = NULL;
+
       if( detprobdata->getNVarsForCons(cons1id) != detprobdata->getNVarsForCons(cons2id) )
       {
          SCIPdebugMessage("--> nvars differs for cons %s and cons %s!\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));

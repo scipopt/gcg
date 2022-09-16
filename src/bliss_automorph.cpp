@@ -63,7 +63,7 @@ struct AUT_HOOK2
    gcg::DETPROBDATA* detprobdata;            /**< problem information the automorphism should be searched for */
    gcg::PARTIALDECOMP* partialdec;           /**< decomposition information */
    std::vector<int>* blocks;                 /**< array of blocks the automporphisms are searched for */
-   SCIP*            scip;
+   SCIP* scip;
    int ncalls;
 
 
@@ -71,9 +71,9 @@ struct AUT_HOOK2
    AUT_HOOK2(
       SCIP_HASHMAP* varmap,                  /**< hashmap for permutated variables */
       SCIP_HASHMAP* consmap,                 /**< hashmap for permutated constraints */
-      SCIP_Bool aut,                         /**< true if there is an automorphism */
       unsigned int n,                        /**< number of permutations */
-      SCIP** scips                           /**< array of scips to search for automorphisms */
+      SCIP** scips,                          /**< array of scips to search for automorphisms */
+      SCIP* scip                             /**< SCIP data structure */
       );
 
    /** destructor for hook struct */
@@ -125,10 +125,7 @@ void AUT_HOOK2::setNewDetectionStuff(
    this->partialdec = givenpartialdec;
    this->blocks = givenblocks;
 
-   SCIP_CALL_ABORT( SCIPallocMemoryArray(givenscip, &(this->conssperm), detprobdata->getNConss() ) ); /*lint !e666*/
-
-   scip = givendetprobdata->getScip();
-
+   SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &(this->conssperm), detprobdata->getNConss() ) ); /*lint !e666*/
 }
 
 AUT_HOOK2::~AUT_HOOK2()
@@ -172,13 +169,14 @@ SCIP** AUT_HOOK2::getScips()
 AUT_HOOK2::AUT_HOOK2(
    SCIP_HASHMAP*         varmap_,            /**< hashmap of permutated variables */
    SCIP_HASHMAP*         consmap_,           /**< hahsmap of permutated constraints */
-   SCIP_Bool             aut_,               /**< true if there is an automorphism */
    unsigned int          n_,                 /**< number of permutations */
-   SCIP**                scips_              /**< array of scips to search for automorphisms */
+   SCIP**                scips_,             /**< array of scips to search for automorphisms */
+   SCIP*                 scip_               /**< SCIP data structure */
    )
 {
    size_t i;
-   aut = aut_;
+   scip = scip_;
+   aut = FALSE;
    n = n_;
    consmap = consmap_;
    varmap = varmap_;
@@ -210,14 +208,14 @@ void fhook(
    unsigned int n;
    int nvars;
    int nconss;
-   SCIP_VAR** vars1;
-   SCIP_VAR** vars2;
-   SCIP_CONS** conss1;
-   SCIP_CONS** conss2;
+   SCIP_VAR** vars1 = NULL;
+   SCIP_VAR** vars2 = NULL;
+   SCIP_CONS** conss1 = NULL;
+   SCIP_CONS** conss2 = NULL;
    SCIP_Bool newdetection;
-   SCIP* partialdecscip;
-   gcg::DETPROBDATA* detprobdata;
-   gcg::PARTIALDECOMP* partialdec;
+   SCIP* partialdecscip = NULL;
+   gcg::DETPROBDATA* detprobdata = NULL;
+   gcg::PARTIALDECOMP* partialdec = NULL;
    AUT_HOOK2* hook = (AUT_HOOK2*) user_param;
 
    j = 0;
@@ -591,7 +589,7 @@ SCIP_RETCODE setuparrays(
    {
       SCIP_CONS* mastercons = origmasterconss[i];
       ncurvars = GCGconsGetNVars(origscip, mastercons);
-      SCIP_Real* curvals;
+      SCIP_Real* curvals = NULL;
       SCIP_CALL( SCIPallocBufferArray(origscip, &curvals, ncurvars) );
       GCGconsGetVals(origscip, mastercons, curvals, ncurvars);
 
@@ -1366,18 +1364,18 @@ SCIP_RETCODE cmpGraphPair(
    SCIP_CALL( createGraph(origscip, scips, nscips, pricingindices, colorinfo, &graph,  &pricingnodes, result) );
    SCIP_CALL( freeMemory(origscip, &colorinfo) );
 
-   ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, scips);
+   ptrhook = new AUT_HOOK2(varmap, consmap, (unsigned int) pricingnodes, scips, origscip);
 #ifdef BLISS_PATCH_PRESENT
    graph.set_search_limits(searchnodelimit, generatorlimit);
 #endif
 
 #if BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
    auto report = [&](unsigned int n, const unsigned int* aut) {
-      fhook((void*)&ptrhook, n, aut);
+      fhook((void*)ptrhook, n, aut);
    };
 
    auto term = [&]() {
-      return (bstats.get_nof_generators() >= (long unsigned int) generatorlimit);
+      return (generatorlimit > 0 && bstats.get_nof_generators() >= (long unsigned int) generatorlimit);
    };
 
    graph.find_automorphisms(bstats, report, term);
@@ -1445,7 +1443,7 @@ SCIP_RETCODE cmpGraphPair(
    SCIP_CALL( createGraphNewDetection(scip, detprobdata, partialdec, 2, blocks, colorinfo, &graph,  &pricingnodes, result) );
    SCIP_CALL( freeMemory(scip, &colorinfo) );
    SCIPdebugMessage("finished create graph.\n");
-   ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, NULL);
+   ptrhook = new AUT_HOOK2(varmap, consmap, (unsigned int) pricingnodes, NULL, detprobdata->getScip());
    SCIPdebugMessage("finished creating aut hook.\n");
    ptrhook->setNewDetectionStuff(detprobdata, partialdec, &blocks);
 
@@ -1455,11 +1453,11 @@ SCIP_RETCODE cmpGraphPair(
 
 #if BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
    auto report = [&](unsigned int n, const unsigned int* aut) {
-      fhook((void*)&ptrhook, n, aut);
+      fhook((void*)ptrhook, n, aut);
    };
 
    auto term = [&]() {
-      return (bstats.get_nof_generators() >= (long unsigned int) generatorlimit);
+      return (generatorlimit > 0 && bstats.get_nof_generators() >= (long unsigned int) generatorlimit);
    };
 
    graph.find_automorphisms(bstats, report, term);

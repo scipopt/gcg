@@ -165,7 +165,7 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
    /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
-      SCIP_VAR **curvars1;
+      SCIP_VAR** curvars1 = NULL;
 
       int ncurvars1;
       SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
@@ -186,7 +186,7 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
 
       for( k = 0; k < ncurvars1; ++k )
       {
-         SCIP_VAR* var1;
+         SCIP_VAR* var1 = NULL;
          int varIndex1;
 
          if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)

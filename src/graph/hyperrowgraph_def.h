@@ -144,11 +144,11 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
 )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int* nsubscipconss = NULL;
    int i;
-   SCIP_CONS **conss;
+   SCIP_CONS** conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
@@ -214,11 +214,11 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
    )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int* nsubscipconss = NULL;
    int i;
-   SCIP_CONS **conss;
+   SCIP_CONS** conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
@@ -302,9 +302,9 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
    )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int *nsubscipconss = NULL;
    int i;
    SCIP_Bool emptyblocks = FALSE;
 
@@ -443,7 +443,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
    /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
-      SCIP_VAR **curvars;
+      SCIP_VAR** curvars = NULL;
       std::vector<int> hyperedge;
       TCLIQUE_WEIGHT weight;
 
@@ -466,7 +466,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
 
       for( j = 0; j < ncurvars; ++j )
       {
-         SCIP_VAR* var1;
+         SCIP_VAR* var1 = NULL;
          int varIndex1;
 
          if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)

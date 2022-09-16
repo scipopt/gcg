@@ -173,6 +173,18 @@ set(gcgheaders
     class_detprobdata.h
     class_stabilization.h
     class_varpartition.h
+    clscons_consnamelevenshtein.h
+    clscons_consnamenonumbers.h
+    clscons_gamsdomain.h
+    clscons_gamssymbol.h
+    clscons_miplibconstypes.h
+    clscons_nnonzeros.h
+    clscons_scipconstypes.h
+    clsvar_gamsdomain.h
+    clsvar_gamssymbol.h
+    clsvar_objvalues.h
+    clsvar_objvaluesigns.h
+    clsvar_scipvartypes.h
     colpool.h
     cons_decomp.h
     cons_decomp.hpp

@@ -1103,19 +1103,19 @@ SCIP_RETCODE createDecompFromPartialdec(
    DEC_DECOMP** newdecomp     /**< the new decomp created from the partialdec */
    )
 {
-   SCIP_HASHMAP* vartoblock;
-   SCIP_HASHMAP* constoblock;
-   SCIP_HASHMAP* varindex;
-   SCIP_HASHMAP* consindex;
-   SCIP_VAR*** stairlinkingvars;
-   SCIP_VAR*** subscipvars;
-   SCIP_VAR** linkingvars;
-   SCIP_CONS** linkingconss;
-   SCIP_CONS*** subscipconss;
+   SCIP_HASHMAP* vartoblock = NULL;
+   SCIP_HASHMAP* constoblock = NULL;
+   SCIP_HASHMAP* varindex = NULL;
+   SCIP_HASHMAP* consindex = NULL;
+   SCIP_VAR*** stairlinkingvars = NULL;
+   SCIP_VAR*** subscipvars = NULL;
+   SCIP_VAR** linkingvars = NULL;
+   SCIP_CONS** linkingconss = NULL;
+   SCIP_CONS*** subscipconss = NULL;
 
-   int* nsubscipconss;
-   int* nsubscipvars;
-   int* nstairlinkingvars;
+   int* nsubscipconss = NULL;
+   int* nsubscipvars = NULL;
+   int* nstairlinkingvars = NULL;
    int nlinkingvars;
 
    int varcounter = 1; /* in varindex counting starts with 1 */
@@ -1191,15 +1191,15 @@ SCIP_RETCODE createDecompFromPartialdec(
 
    /* prepare constraints data structures */
    if( partialdec->getNMasterconss() != 0 )
-      SCIP_CALL_ABORT( SCIPallocBufferArray( scip, &linkingconss, partialdec->getNMasterconss() ) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &linkingconss, partialdec->getNMasterconss()) );
    else
       linkingconss = NULL;
 
-   SCIP_CALL_ABORT( SCIPallocBufferArray( scip, &nsubscipconss, partialdec->getNBlocks() - ndeletedblocks ) );
-   SCIP_CALL_ABORT( SCIPallocBufferArray( scip, &subscipconss, partialdec->getNBlocks() - ndeletedblocks ) );
+   SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &nsubscipconss, partialdec->getNBlocks() - ndeletedblocks) );
+   SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &subscipconss, partialdec->getNBlocks() - ndeletedblocks) );
 
-   SCIP_CALL_ABORT( SCIPhashmapCreate( &constoblock, SCIPblkmem( scip ), partialdec->getNConss() ) );
-   SCIP_CALL_ABORT( SCIPhashmapCreate( &consindex, SCIPblkmem( scip ), partialdec->getNConss() ) );
+   SCIP_CALL_ABORT( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), partialdec->getNConss()) );
+   SCIP_CALL_ABORT( SCIPhashmapCreate(&consindex, SCIPblkmem(scip), partialdec->getNConss()) );
 
    /* set linking constraints */
    modifier = 0;
@@ -1219,14 +1219,14 @@ SCIP_RETCODE createDecompFromPartialdec(
       else
       {
          linkingconss[c-modifier] = scipcons;
-         SCIP_CALL_ABORT( SCIPhashmapInsert( constoblock, scipcons, (void*) ( size_t )( partialdec->getNBlocks() + 1 - ndeletedblocks ) ) );
-         SCIP_CALL_ABORT( SCIPhashmapInsert( consindex, scipcons, (void*) (size_t) conscounter ) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, scipcons, (void*) (size_t)(partialdec->getNBlocks() + 1 - ndeletedblocks)) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert(consindex, scipcons, (void*) (size_t) conscounter ) );
          conscounter ++;
       }
    }
 
    if( nlinkingconss != 0 )
-      DECdecompSetLinkingconss( scip, *newdecomp, linkingconss, nlinkingconss );
+      DECdecompSetLinkingconss(scip, *newdecomp, linkingconss, nlinkingconss);
    else
       linkingconss = NULL;
 
@@ -1236,11 +1236,11 @@ SCIP_RETCODE createDecompFromPartialdec(
       if( isblockdeleted[b] )
          continue;
       modifier = 0;
-      SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & subscipconss[b-ndeletedblocksbefore[b]], partialdec->getNConssForBlock( b ) ) );
-      nsubscipconss[b-ndeletedblocksbefore[b]] = partialdec->getNConssForBlock( b );
-      for( c = 0; c < partialdec->getNConssForBlock( b ); ++c )
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &subscipconss[b-ndeletedblocksbefore[b]], partialdec->getNConssForBlock(b)) );
+      nsubscipconss[b-ndeletedblocksbefore[b]] = partialdec->getNConssForBlock(b);
+      for( c = 0; c < partialdec->getNConssForBlock(b); ++c )
       {
-         int consid = partialdec->getConssForBlock( b )[c];
+         int consid = partialdec->getConssForBlock(b)[c];
          SCIP_CONS* scipcons = relevantconss[consid];
          if( partialdec->isAssignedToOrigProb() )
             SCIPgetTransformedCons(scip, scipcons, &scipcons);
@@ -1255,8 +1255,8 @@ SCIP_RETCODE createDecompFromPartialdec(
             assert( scipcons != NULL );
             subscipconss[b-ndeletedblocksbefore[b]][c-modifier] = scipcons;
             SCIPdebugMessage("Set cons %s to block %d + 1 - %d in cons to block\n", SCIPconsGetName(scipcons), b, ndeletedblocksbefore[b] );
-            SCIP_CALL_ABORT( SCIPhashmapInsert( constoblock, scipcons, (void*) ( size_t )( b + 1 - ndeletedblocksbefore[b] ) ) );
-            SCIP_CALL_ABORT( SCIPhashmapInsert( consindex, scipcons, (void*) (size_t) conscounter ) );
+            SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, scipcons, (void*) (size_t)(b + 1 - ndeletedblocksbefore[b])) );
+            SCIP_CALL_ABORT( SCIPhashmapInsert(consindex, scipcons, (void*) (size_t) conscounter) );
             conscounter ++;
          }
       }
@@ -1270,45 +1270,45 @@ SCIP_RETCODE createDecompFromPartialdec(
          if(!SCIPhashmapExists(constoblock, SCIPgetConss(scip)[c]))
          {
             SCIP_CONS* scipcons = SCIPgetConss(scip)[c];
-            SCIP_CALL_ABORT( SCIPhashmapInsert( constoblock, scipcons, (void*) ( size_t )( partialdec->getNBlocks() + 1 - ndeletedblocks ) ) );
-            SCIP_CALL_ABORT( SCIPhashmapInsert( consindex, scipcons, (void*) (size_t) conscounter ) );
+            SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, scipcons, (void*) (size_t)(partialdec->getNBlocks() + 1 - ndeletedblocks)) );
+            SCIP_CALL_ABORT( SCIPhashmapInsert(consindex, scipcons, (void*) (size_t) conscounter) );
             conscounter ++;
          }
       }
    }
 
-   DECdecompSetSubscipconss( scip, *newdecomp, subscipconss, nsubscipconss );
-   DECdecompSetConstoblock( *newdecomp, constoblock );
-   DECdecompSetConsindex( *newdecomp, consindex );
+   DECdecompSetSubscipconss(scip, *newdecomp, subscipconss, nsubscipconss);
+   DECdecompSetConstoblock(*newdecomp, constoblock);
+   DECdecompSetConsindex(*newdecomp, consindex);
    /* finished setting constraint data structures */
 
    /* prepare constraints data structures */
-   SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & nsubscipvars, partialdec->getNBlocks() - ndeletedblocks ) );
-   SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & subscipvars, partialdec->getNBlocks() - ndeletedblocks ) );
-   SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & nstairlinkingvars, partialdec->getNBlocks() - ndeletedblocks ) );
-   SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & stairlinkingvars, partialdec->getNBlocks() -ndeletedblocks ) );
+   SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &nsubscipvars, partialdec->getNBlocks() - ndeletedblocks) );
+   SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &subscipvars, partialdec->getNBlocks() - ndeletedblocks) );
+   SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &nstairlinkingvars, partialdec->getNBlocks() - ndeletedblocks) );
+   SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stairlinkingvars, partialdec->getNBlocks() -ndeletedblocks) );
 
-   SCIP_CALL_ABORT( SCIPhashmapCreate( & vartoblock, SCIPblkmem( scip ), partialdec->getNVars() + (int) origfixedtozerovars.size() ) );
-   SCIP_CALL_ABORT( SCIPhashmapCreate( & varindex, SCIPblkmem( scip ), partialdec->getNVars() + (int) origfixedtozerovars.size()) );
+   SCIP_CALL_ABORT( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), partialdec->getNVars() + (int) origfixedtozerovars.size()) );
+   SCIP_CALL_ABORT( SCIPhashmapCreate(&varindex, SCIPblkmem(scip), partialdec->getNVars() + (int) origfixedtozerovars.size()) );
 
    /* set linkingvars */
    nlinkingvars = partialdec->getNLinkingvars() + partialdec->getNMastervars() + partialdec->getNTotalStairlinkingvars() + nmastervarsfromdeleted + (int) origfixedtozerovars.size();
 
    if( nlinkingvars != 0 )
-      SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & linkingvars, nlinkingvars ) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &linkingvars, nlinkingvars) );
    else
       linkingvars = NULL;
 
    for( v = 0; v < partialdec->getNLinkingvars(); ++ v )
    {
       int var = partialdec->getLinkingvars()[v];
-      SCIP_VAR* scipvar = SCIPvarGetProbvar( relevantvars[var] );
+      SCIP_VAR* scipvar = SCIPvarGetProbvar(relevantvars[var]);
       assert( scipvar != NULL );
 
       linkingvars[v] = scipvar;
       SCIPdebugMessage( "Set var %s to block %d + 2 - %d in var to block\n", SCIPvarGetName(scipvar), partialdec->getNBlocks(), ndeletedblocks );
-      SCIP_CALL_ABORT( SCIPhashmapInsert( vartoblock, scipvar, (void*) ( size_t )( partialdec->getNBlocks() + 2 - ndeletedblocks ) ) );
-      SCIP_CALL_ABORT( SCIPhashmapInsert( varindex, scipvar, (void*) (size_t) varcounter ) );
+      SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t)(partialdec->getNBlocks() + 2 - ndeletedblocks)) );
+      SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
       varcounter ++;
    }
 
@@ -1317,8 +1317,8 @@ SCIP_RETCODE createDecompFromPartialdec(
       int var = partialdec->getMastervars()[v];
       SCIP_VAR* scipvar = SCIPvarGetProbvar( relevantvars[var] );
       linkingvars[v + partialdec->getNLinkingvars()] = scipvar;
-      SCIP_CALL_ABORT( SCIPhashmapInsert( vartoblock, scipvar, (void*) ( size_t )( partialdec->getNBlocks() + 1 - ndeletedblocks) ) );
-      SCIP_CALL_ABORT( SCIPhashmapInsert( varindex, scipvar, (void*) (size_t) varcounter ) );
+      SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t)(partialdec->getNBlocks() + 1 - ndeletedblocks)) );
+      SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
       varcounter ++;
    }
 
@@ -1328,8 +1328,8 @@ SCIP_RETCODE createDecompFromPartialdec(
       var = SCIPvarGetProbvar(mastervarsfromdeleted[v]);
 
       linkingvars[partialdec->getNMastervars() + partialdec->getNLinkingvars() + v] = var;
-      SCIP_CALL_ABORT( SCIPhashmapInsert( vartoblock, var, (void*) ( size_t )( partialdec->getNBlocks() + 1 - ndeletedblocks) ) );
-      SCIP_CALL_ABORT( SCIPhashmapInsert( varindex, var, (void*) (size_t) varcounter ) );
+      SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, var, (void*) (size_t)(partialdec->getNBlocks() + 1 - ndeletedblocks)) );
+      SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, var, (void*) (size_t) varcounter) );
       varcounter ++;
    }
 
@@ -1339,8 +1339,8 @@ SCIP_RETCODE createDecompFromPartialdec(
       var = origfixedtozerovars[v];
 
       linkingvars[partialdec->getNMastervars() + partialdec->getNLinkingvars() + nmastervarsfromdeleted + v] = var;
-      SCIP_CALL_ABORT( SCIPhashmapInsert( vartoblock, var, (void*) ( size_t )( partialdec->getNBlocks() + 1 - ndeletedblocks) ) );
-      SCIP_CALL_ABORT( SCIPhashmapInsert( varindex, var, (void*) (size_t) varcounter ) );
+      SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, var, (void*) (size_t)(partialdec->getNBlocks() + 1 - ndeletedblocks)) );
+      SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, var, (void*) (size_t) varcounter) );
       varcounter ++;
    }
 
@@ -1351,42 +1351,42 @@ SCIP_RETCODE createDecompFromPartialdec(
          continue;
 
       if( partialdec->getNVarsForBlock( b ) > 0 )
-         SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & subscipvars[b -ndeletedblocksbefore[b]], partialdec->getNVarsForBlock( b ) ) );
+         SCIP_CALL_ABORT( SCIPallocBufferArray(scip, & subscipvars[b -ndeletedblocksbefore[b]], partialdec->getNVarsForBlock(b)) );
       else
          subscipvars[b-ndeletedblocksbefore[b]] = NULL;
 
       if( partialdec->getNStairlinkingvars( b ) > 0 )
-         SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & stairlinkingvars[b-ndeletedblocksbefore[b]], partialdec->getNStairlinkingvars( b ) ) );
+         SCIP_CALL_ABORT( SCIPallocBufferArray(scip, & stairlinkingvars[b-ndeletedblocksbefore[b]], partialdec->getNStairlinkingvars(b)) );
       else
          stairlinkingvars[b-ndeletedblocksbefore[b]] = NULL;
 
-      nsubscipvars[b-ndeletedblocksbefore[b]] = partialdec->getNVarsForBlock( b );
-      nstairlinkingvars[b-ndeletedblocksbefore[b]] = partialdec->getNStairlinkingvars( b );
+      nsubscipvars[b-ndeletedblocksbefore[b]] = partialdec->getNVarsForBlock(b);
+      nstairlinkingvars[b-ndeletedblocksbefore[b]] = partialdec->getNStairlinkingvars(b);
 
-      for( v = 0; v < partialdec->getNVarsForBlock( b ); ++ v )
+      for( v = 0; v < partialdec->getNVarsForBlock(b); ++ v )
       {
-         int var = partialdec->getVarsForBlock( b )[v];
-         SCIP_VAR* scipvar = SCIPvarGetProbvar( relevantvars[var] );
+         int var = partialdec->getVarsForBlock(b)[v];
+         SCIP_VAR* scipvar = SCIPvarGetProbvar(relevantvars[var]);
          assert( scipvar != NULL );
 
          subscipvars[b-ndeletedblocksbefore[b]][v] = scipvar;
          SCIPdebugMessage("Set var %s to block %d + 1 - %d in var to block\n", SCIPvarGetName(scipvar), b, ndeletedblocksbefore[b] );
-         assert( !SCIPhashmapExists(vartoblock, scipvar) || SCIPhashmapGetImage(vartoblock, scipvar) == (void*) ( size_t )( b + 1 - ndeletedblocksbefore[b] ) );
-         SCIP_CALL_ABORT( SCIPhashmapInsert( vartoblock, scipvar, (void*) ( size_t )( b + 1 - ndeletedblocksbefore[b] ) ) );
-         SCIP_CALL_ABORT( SCIPhashmapInsert( varindex, scipvar, (void*) (size_t) varcounter ) );
+         assert( !SCIPhashmapExists(vartoblock, scipvar) || SCIPhashmapGetImage(vartoblock, scipvar) == (void*) (size_t)(b + 1 - ndeletedblocksbefore[b]) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t)(b + 1 - ndeletedblocksbefore[b])) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
          varcounter ++;
       }
 
-      for( v = 0; v < partialdec->getNStairlinkingvars( b ); ++ v )
+      for( v = 0; v < partialdec->getNStairlinkingvars(b); ++ v )
       {
-         int var = partialdec->getStairlinkingvars( b )[v];
-         SCIP_VAR* scipvar = SCIPvarGetProbvar( relevantvars[var] );
+         int var = partialdec->getStairlinkingvars(b)[v];
+         SCIP_VAR* scipvar = SCIPvarGetProbvar(relevantvars[var]);
          assert( scipvar != NULL );
 
          stairlinkingvars[b-ndeletedblocksbefore[b]][v] = scipvar;
          linkingvars[partialdec->getNLinkingvars() + partialdec->getNMastervars() + nmastervarsfromdeleted + counterstairlinkingvars] = scipvar;
-         SCIP_CALL_ABORT( SCIPhashmapInsert( vartoblock, scipvar, (void*) ( size_t )( partialdec->getNBlocks() + 2 - ndeletedblocks) ) );
-         SCIP_CALL_ABORT( SCIPhashmapInsert( varindex, scipvar, (void*) (size_t) varcounter ) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t)(partialdec->getNBlocks() + 2 - ndeletedblocks)) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
          varcounter ++;
          counterstairlinkingvars ++;
       }
@@ -1398,53 +1398,53 @@ SCIP_RETCODE createDecompFromPartialdec(
       if(!SCIPhashmapExists(vartoblock, SCIPgetVars(scip)[v]))
       {
          SCIP_VAR* scipvar = SCIPvarGetProbvar( SCIPgetVars(scip)[v] );
-         SCIP_CALL_ABORT( SCIPhashmapInsert( vartoblock, scipvar, (void*) ( size_t )( partialdec->getNBlocks() + 1 - ndeletedblocks) ) );
-         SCIP_CALL_ABORT( SCIPhashmapInsert( varindex, scipvar, (void*) (size_t) varcounter ) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t)(partialdec->getNBlocks() + 1 - ndeletedblocks)) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
          varcounter ++;
       }
    }
    
-   DECdecompSetSubscipvars( scip, *newdecomp, subscipvars, nsubscipvars );
-   DECdecompSetStairlinkingvars( scip, *newdecomp, stairlinkingvars, nstairlinkingvars );
-   DECdecompSetLinkingvars( scip, *newdecomp, linkingvars, nlinkingvars, (int) origfixedtozerovars.size(), partialdec->getNMastervars() + nmastervarsfromdeleted );
-   DECdecompSetVarindex( *newdecomp, varindex );
-   DECdecompSetVartoblock( *newdecomp, vartoblock );
+   DECdecompSetSubscipvars(scip, *newdecomp, subscipvars, nsubscipvars);
+   DECdecompSetStairlinkingvars(scip, *newdecomp, stairlinkingvars, nstairlinkingvars);
+   DECdecompSetLinkingvars(scip, *newdecomp, linkingvars, nlinkingvars, (int) origfixedtozerovars.size(), partialdec->getNMastervars() + nmastervarsfromdeleted);
+   DECdecompSetVarindex(*newdecomp, varindex);
+   DECdecompSetVartoblock(*newdecomp, vartoblock);
 
    /* //////////////////// free stuff ////////////////////////////// */
 
    /* free vars stuff */
-   SCIPfreeBufferArrayNull( scip, & ( linkingvars ) );
+   SCIPfreeBufferArrayNull(scip, &linkingvars);
    for( int b = partialdec->getNBlocks() - 1 - ndeletedblocks; b >= 0; --b )
    {
       if( nstairlinkingvars[b] != 0 )
       {
-         SCIPfreeBufferArrayNull( scip, & ( stairlinkingvars[b] ) );
+         SCIPfreeBufferArrayNull(scip, &stairlinkingvars[b]);
       }
    }
 
-   SCIPfreeBufferArrayNull( scip, & ( stairlinkingvars ) );
-   SCIPfreeBufferArrayNull( scip, & ( nstairlinkingvars ) );
+   SCIPfreeBufferArrayNull( scip, &stairlinkingvars);
+   SCIPfreeBufferArrayNull( scip, &nstairlinkingvars);
 
    for( int b = partialdec->getNBlocks() - 1 - ndeletedblocks; b >= 0; --b )
    {
       if( nsubscipvars[b] != 0 )
       {
-         SCIPfreeBufferArrayNull( scip, & ( subscipvars[b] ) );
+         SCIPfreeBufferArrayNull(scip, &subscipvars[b]);
       }
    }
 
-   SCIPfreeBufferArrayNull( scip, & ( subscipvars ) );
-   SCIPfreeBufferArrayNull( scip, & ( nsubscipvars ) );
+   SCIPfreeBufferArrayNull( scip, &subscipvars);
+   SCIPfreeBufferArrayNull( scip, &nsubscipvars);
 
    /* free constraints */
    for( int b = partialdec->getNBlocks() - 1 - ndeletedblocks; b >= 0; --b )
    {
-      SCIPfreeBufferArrayNull( scip, & ( subscipconss[b] ) );
+      SCIPfreeBufferArrayNull( scip, &subscipconss[b]);
    }
-   SCIPfreeBufferArrayNull( scip, & ( subscipconss ) );
+   SCIPfreeBufferArrayNull( scip, &subscipconss);
 
-   SCIPfreeBufferArrayNull( scip, & nsubscipconss );
-   SCIPfreeBufferArrayNull( scip, & linkingconss );
+   SCIPfreeBufferArrayNull( scip, &nsubscipconss);
+   SCIPfreeBufferArrayNull( scip, &linkingconss);
 
    /* set detectorchain */
    DECdecompSetDetectorChain(scip, (*newdecomp), partialdec->getDetectorchain().data(), (int) partialdec->getDetectorchain().size());
