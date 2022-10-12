@@ -39,6 +39,7 @@
 #define GCG_BRANCH_BPSTRONG_H__
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_branchgcg.h"
 
 #ifdef __cplusplus
@@ -47,11 +48,12 @@ extern "C"
 #endif
 
 /** creates the xyz branching rule and includes it in SCIP */
-extern SCIP_RETCODE SCIPincludeBranchruleBPStrong(
+GCG_EXPORT
+SCIP_RETCODE SCIPincludeBranchruleBPStrong(
     SCIP *scip /**< SCIP data structure */
 );
 
-extern SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingOrig(
+SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingOrig(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE       *origbranchrule,    /**< pointer storing original branching rule */
    SCIP_VAR              **branchvar,        /**< pointer to store output var pointer */
@@ -64,7 +66,7 @@ extern SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingOrig(
                                                 * stopping condition for orig */
 );
 
-extern SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingRyanfoster(
+SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingRyanfoster(
    SCIP*                 scip,               /**< original SCIP data structure */
    SCIP_BRANCHRULE*      rfbranchrule,       /**< Ryan-Foster branchrule */
    SCIP_VAR              **ovar1s,           /**< first elements of candidate pairs */

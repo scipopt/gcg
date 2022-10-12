@@ -38,6 +38,7 @@
 #define GCG_READER_CLS_H__
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_decomp.h"
 
 #ifdef __cplusplus
@@ -45,7 +46,7 @@ extern "C" {
 #endif
 
 /** includes the cls file reader into SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeReaderCls(
    SCIP*                 scip                /**< SCIP data structure */
    );

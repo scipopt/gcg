@@ -69,6 +69,7 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_decomp.h"
 
 #ifdef __cplusplus
@@ -76,7 +77,7 @@ extern "C" {
 #endif
 
 /** includes the dec file reader into SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGincludeReaderDec(
    SCIP*                 scip                /**< SCIP data structure */
    );

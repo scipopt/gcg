@@ -82,20 +82,20 @@ DEC_DECL_SCORECALC(scoreCalcClassic)
    SCIP_Real totalscore; /* accumulated score */
 
    SCIP_Real varratio;
-   int* nzblocks;
-   int* nlinkvarsblocks;
-   int* nvarsblocks;
-   SCIP_Real* blockdensities;
-   int* blocksizes;
+   int* nzblocks = NULL;
+   int* nlinkvarsblocks = NULL;
+   int* nvarsblocks = NULL;
+   SCIP_Real* blockdensities = NULL;
+   int* blocksizes = NULL;
    SCIP_Real density;
 
    SCIP_Real alphaborderarea;
    SCIP_Real alphalinking;
    SCIP_Real alphadensity;
 
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
+   SCIP_CLOCK* clock = NULL;
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
 
    alphaborderarea = 0.6;
    alphalinking = 0.2;
@@ -104,11 +104,11 @@ DEC_DECL_SCORECALC(scoreCalcClassic)
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
    gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
 
-   SCIP_CALL( SCIPallocBufferArray( scip, & nzblocks, partialdec->getNBlocks() ) );
-   SCIP_CALL( SCIPallocBufferArray( scip, & nlinkvarsblocks, partialdec->getNBlocks() ) );
-   SCIP_CALL( SCIPallocBufferArray( scip, & blockdensities, partialdec->getNBlocks() ) );
-   SCIP_CALL( SCIPallocBufferArray( scip, & blocksizes, partialdec->getNBlocks() ) );
-   SCIP_CALL( SCIPallocBufferArray( scip, & nvarsblocks, partialdec->getNBlocks() ) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nzblocks, partialdec->getNBlocks()) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nlinkvarsblocks, partialdec->getNBlocks()) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &blockdensities, partialdec->getNBlocks()) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &blocksizes, partialdec->getNBlocks()) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nvarsblocks, partialdec->getNBlocks()) );
 
    /*
     * 3 Scores
@@ -123,9 +123,9 @@ DEC_DECL_SCORECALC(scoreCalcClassic)
    {
       int ncurconss;
       int nvarsblock;
-      SCIP_Bool *ishandled;
+      SCIP_Bool *ishandled = NULL;
 
-      SCIP_CALL( SCIPallocBufferArray( scip, & ishandled, partialdec->getNVars() ) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &ishandled, partialdec->getNVars()) );
       nvarsblock = 0;
       nzblocks[i] = 0;
       nlinkvarsblocks[i] = 0;
@@ -134,29 +134,29 @@ DEC_DECL_SCORECALC(scoreCalcClassic)
       {
          ishandled[j] = FALSE;
       }
-      ncurconss = partialdec->getNConssForBlock( i );
+      ncurconss = partialdec->getNConssForBlock(i);
 
       for( j = 0; j < ncurconss; ++ j )
       {
-         int cons = partialdec->getConssForBlock( i )[j];
+         int cons = partialdec->getConssForBlock(i)[j];
          int ncurvars;
-         ncurvars = detprobdata->getNVarsForCons( cons );
+         ncurvars = detprobdata->getNVarsForCons(cons);
          for( k = 0; k < ncurvars; ++ k )
          {
-            int var = detprobdata->getVarsForCons( cons )[k];
+            int var = detprobdata->getVarsForCons(cons)[k];
             int block = -3;
-            if( partialdec->isVarBlockvarOfBlock( var, i ) )
+            if( partialdec->isVarBlockvarOfBlock(var, i) )
                block = i + 1;
-            else if( partialdec->isVarLinkingvar( var ) || partialdec->isVarStairlinkingvar( var ) )
+            else if( partialdec->isVarLinkingvar(var) || partialdec->isVarStairlinkingvar(var) )
                block = partialdec->getNBlocks() + 2;
-            else if( partialdec->isVarMastervar( var ) )
+            else if( partialdec->isVarMastervar(var) )
                block = partialdec->getNBlocks() + 1;
 
-            ++ ( nzblocks[i] );
+            ++(nzblocks[i]);
 
             if( block == partialdec->getNBlocks() + 1 && ishandled[var] == FALSE )
             {
-               ++ ( nlinkvarsblocks[i] );
+               ++(nlinkvarsblocks[i]);
             }
             ishandled[var] = TRUE;
          }
@@ -166,7 +166,7 @@ DEC_DECL_SCORECALC(scoreCalcClassic)
       {
          if( ishandled[j] )
          {
-            ++ nvarsblock;
+            ++nvarsblock;
          }
       }
 
@@ -182,12 +182,12 @@ DEC_DECL_SCORECALC(scoreCalcClassic)
       }
 
       assert( blockdensities[i] >= 0 && blockdensities[i] <= 1.0 );
-      SCIPfreeBufferArray( scip, & ishandled );
+      SCIPfreeBufferArray( scip, &ishandled );
    }
 
-   borderarea = ((unsigned long) partialdec->getNMasterconss() * partialdec->getNVars() ) + ( ((unsigned long) partialdec->getNLinkingvars() + partialdec->getNMastervars() + partialdec->getNTotalStairlinkingvars() ) ) * ( partialdec->getNConss() - partialdec->getNMasterconss() );
+   borderarea = ((unsigned long) partialdec->getNMasterconss() * partialdec->getNVars() ) + (((unsigned long) partialdec->getNLinkingvars() + partialdec->getNMastervars() + partialdec->getNTotalStairlinkingvars())) * (partialdec->getNConss() - partialdec->getNMasterconss());
 
-   matrixarea = ((unsigned long) partialdec->getNVars() ) * ((unsigned long) partialdec->getNConss() );
+   matrixarea = ((unsigned long) partialdec->getNVars()) * ((unsigned long) partialdec->getNConss());
 
    density = 1E20;
    varratio = 1.0;
@@ -197,24 +197,24 @@ DEC_DECL_SCORECALC(scoreCalcClassic)
 
    for( i = 0; i < partialdec->getNBlocks(); ++ i )
    {
-      density = MIN( density, blockdensities[i] );
+      density = MIN(density, blockdensities[i]);
 
-      if( ( partialdec->getNLinkingvars() + partialdec->getNMastervars() + partialdec->getNTotalStairlinkingvars() ) > 0 )
+      if( (partialdec->getNLinkingvars() + partialdec->getNMastervars() + partialdec->getNTotalStairlinkingvars()) > 0 )
       {
-         varratio *= 1.0 * nlinkvarsblocks[i] / ( partialdec->getNLinkingvars() + partialdec->getNMastervars() + partialdec->getNTotalStairlinkingvars() );
+         varratio *= 1.0 * nlinkvarsblocks[i] / (partialdec->getNLinkingvars() + partialdec->getNMastervars() + partialdec->getNTotalStairlinkingvars());
       }
       else
       {
          varratio = 0.;
       }
    }
-   linkingscore = ( 0.5 + 0.5 * varratio );
+   linkingscore = 0.5 + 0.5 * varratio;
 
-   densityscore = ( 1. - density );
+   densityscore =  1. - density;
 
-   borderscore = ( 1.0 * ( borderarea ) / matrixarea );
+   borderscore = 1.0 * ( borderarea ) / matrixarea;
 
-   totalscore = 1. - (alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore ) );
+   totalscore = 1. - (alphaborderarea * borderscore + alphalinking * linkingscore + alphadensity * densityscore);
 
    if(totalscore > 1)
       totalscore = 1;
@@ -225,15 +225,15 @@ DEC_DECL_SCORECALC(scoreCalcClassic)
 
    partialdec->setClassicScore(*scorevalue);
 
-   SCIPfreeBufferArray( scip, & nzblocks );
-   SCIPfreeBufferArray(  scip, & nlinkvarsblocks) ;
-   SCIPfreeBufferArray(  scip, & blockdensities);
-   SCIPfreeBufferArray(  scip, & blocksizes);
-   SCIPfreeBufferArray(  scip, & nvarsblocks);
+   SCIPfreeBufferArray(scip, &nzblocks);
+   SCIPfreeBufferArray(scip, &nlinkvarsblocks) ;
+   SCIPfreeBufferArray(scip, &blockdensities);
+   SCIPfreeBufferArray(scip, &blocksizes);
+   SCIPfreeBufferArray(scip, &nvarsblocks);
 
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
+   SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
+   SCIP_CALL_ABORT( SCIPfreeClock(scip, &clock) );
 
    return SCIP_OKAY;
 }

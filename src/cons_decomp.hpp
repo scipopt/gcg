@@ -35,6 +35,7 @@
 #ifndef GCG_CONS_DECOMP_HPP
 #define GCG_CONS_DECOMP_HPP
 
+#include "def.h"
 #include "class_partialdecomp.h"
 
 /** @brief gets vector of all partialdecs
@@ -54,7 +55,7 @@ gcg::PARTIALDECOMP* DECgetPartialdecToWrite(
 /** @brief local method to find a partialdec for a given id or NULL if no partialdec with such id is found
  * @returns partialdec pointer of partialdec with given id or NULL if it does not exist
  * @note returns NULL if no partialdec by this id is known */
-extern
+GCG_EXPORT
 gcg::PARTIALDECOMP* GCGconshdlrDecompGetPartialdecFromID(
    SCIP* scip,          /**< SCIP data structure */
    int partialdecid     /**< partialdec id */
@@ -65,7 +66,7 @@ gcg::PARTIALDECOMP* GCGconshdlrDecompGetPartialdecFromID(
  * @note refines the partialdec to be consistent, adds meta data/statistics
  * @returns SCIP return code
 */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
    SCIP* scip,                   /**< SCIP data structure */
    gcg::PARTIALDECOMP* partialdec/**< partial dec to add */

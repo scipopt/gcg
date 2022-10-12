@@ -37,6 +37,7 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +45,7 @@ extern "C" {
 
 
 /** creates the node selector for depth first search and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeNodeselMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );

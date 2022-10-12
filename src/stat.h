@@ -37,25 +37,26 @@
 
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** prints information about the best decomposition*/
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGwriteDecompositionData(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** prints additional information about the solving process */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGwriteSolvingDetails(
    SCIP*                 scip                /**< SCIP data structure */
 );
 
 /** prints information about the creation of the Vars*/
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGwriteVarCreationDetails(
    SCIP*                 scip                /**< SCIP data structure */
 );

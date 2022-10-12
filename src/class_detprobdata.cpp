@@ -377,8 +377,8 @@ DETPROBDATA::DETPROBDATA(
    }
 
     /* from here on nvars and nconss represents the relevant numbers */
-   nvars = relevantvars.size();
-   nconss = relevantconss.size();
+   nvars = (int) relevantvars.size();
+   nconss = (int) relevantconss.size();
    SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, " nvars: %d / nconss: %d \n", nvars, nconss  );
    varsforconss.resize(nconss);
    valsforconss.resize(nconss);
@@ -783,7 +783,7 @@ int DETPROBDATA::getIndexForVar(
 
 int DETPROBDATA::getNAncestorPartialdecs()
 {
-   return ancestorpartialdecs.size();
+   return (int) ancestorpartialdecs.size();
 }
 
 
@@ -803,7 +803,7 @@ int DETPROBDATA::getNConssForCons(
    int cons
    )
 {
-   return conssadjacencies[cons].size();
+   return (int) conssadjacencies[cons].size();
 }
 
 
@@ -811,19 +811,19 @@ int DETPROBDATA::getNConssForVar(
    int var
    )
 {
-   return conssforvars[var].size();
+   return (int) conssforvars[var].size();
 }
 
 
 int DETPROBDATA::getNOpenPartialdecs()
 {
-   return openpartialdecs.size();
+   return (int) openpartialdecs.size();
 }
 
 
 int DETPROBDATA::getNFinishedPartialdecs()
 {
-   return finishedpartialdecs.size();
+   return (int) finishedpartialdecs.size();
 }
 
 
@@ -855,7 +855,7 @@ int DETPROBDATA::getNVarsForCons(
    int cons
    )
 {
-   return varsforconss[cons].size();
+   return (int) varsforconss[cons].size();
 }
 
 

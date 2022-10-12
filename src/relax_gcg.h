@@ -39,6 +39,7 @@
 #define GCG_RELAX_GCG_H__
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_branchgcg.h"
 #include "type_decomp.h"
 #include "type_parameter.h"
@@ -53,13 +54,13 @@ extern "C" {
  */
 
 /** creates the GCG relaxator and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** includes a branching rule into the relaxator data */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxIncludeBranchrule(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule for which callback methods are saved */
@@ -71,7 +72,7 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
    );
 
 /** perform activation method of the given branchrule for the given branchdata */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchActiveMaster(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
@@ -79,7 +80,7 @@ SCIP_RETCODE GCGrelaxBranchActiveMaster(
    );
 
 /** perform deactivation method of the given branchrule for the given branchdata */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
@@ -87,7 +88,7 @@ SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
    );
 
 /** perform propagation method of the given branchrule for the given branchdata */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchPropMaster(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
@@ -96,7 +97,7 @@ SCIP_RETCODE GCGrelaxBranchPropMaster(
    );
 
 /** perform method of the given branchrule that is called after the master LP is solved */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchMasterSolved(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
@@ -105,7 +106,7 @@ SCIP_RETCODE GCGrelaxBranchMasterSolved(
    );
 
 /** frees branching data created by the given branchrule */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchDataDelete(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
@@ -114,7 +115,7 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
 
 /** transformes a constraint of the original problem into the master variable space and
  *  adds it to the master problem */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< the constraint that should be transformed */
@@ -122,13 +123,13 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    );
 
 /** returns the current solution for the original problem */
-extern
+GCG_EXPORT
 SCIP_SOL* GCGrelaxGetCurrentOrigSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns whether the current solution is primal feasible in the original problem */
-extern
+GCG_EXPORT
 SCIP_Bool GCGrelaxIsOrigSolFeasible(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -139,14 +140,14 @@ SCIP_Bool GCGrelaxIsOrigSolFeasible(
  *        it currently only supports bound changes on the original variables,
  *        but no additional rows
  */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxStartProbing(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_HEUR*            probingheur         /**< heuristic that started probing mode, or NULL */
    );
 
 /** returns the  heuristic that started probing in the master problem, or NULL */
-extern
+GCG_EXPORT
 SCIP_HEUR* GCGrelaxGetProbingheur(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -155,7 +156,7 @@ SCIP_HEUR* GCGrelaxGetProbingheur(
  *
  *  @note A corresponding probing node must be added to the master problem right before solving the probing LP
  */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxNewProbingnodeOrig(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -166,7 +167,7 @@ SCIP_RETCODE GCGrelaxNewProbingnodeOrig(
  *  @note A corresponding probing node must have been added to the original problem beforehand;
  *        furthermore, this method must be called after bound changes to the original problem have been made
  */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -178,7 +179,7 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
  *  @note A corresponding probing node must have been added to the original problem beforehand;
  *        furthermore, this method must be called after bound changes to the original problem have been made
  */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxNewProbingnodeMasterCons(
    SCIP*                 scip,                /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
@@ -192,14 +193,14 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMasterCons(
  *  furthermore, add origbranch and masterbranch constraints to transfer branching decisions
  *  from the original to the master problem
  */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxBacktrackProbing(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   probingdepth        /**< probing depth of the node in the probing path that should be reactivated */
    );
 
 /** solve the master probing LP without pricing */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxPerformProbing(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   maxlpiterations,    /**< maximum number of lp iterations allowed */
@@ -212,7 +213,7 @@ SCIP_RETCODE GCGrelaxPerformProbing(
    );
 
 /** solve the master probing LP with pricing */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   maxpricerounds,     /**< maximum number of pricing rounds allowed */
@@ -226,20 +227,20 @@ SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
    );
 
 /** end probing mode in both the original and master problems */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxEndProbing(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** transforms the current solution of the master problem into the original problem's space
  *  and saves this solution as currentsol in the relaxator's data */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the decomposition mode */
-extern
+GCG_EXPORT
 DEC_DECMODE GCGgetDecompositionMode(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -247,26 +248,26 @@ DEC_DECMODE GCGgetDecompositionMode(
 /** returns the decomposition mode of the master problem. The mode is given by the existence of either the GCG pricer or
  * the GCG Benders' decomposition plugins.
  */
-extern
+GCG_EXPORT
 DEC_DECMODE GCGgetMasterDecompMode(
    SCIP*                 masterprob          /**< the master problem SCIP instance */
    );
 
 /** gets the structure information */
-extern
+GCG_EXPORT
 DEC_DECOMP* GCGgetStructDecomp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the visualization parameters */
-extern
+GCG_EXPORT
 GCG_PARAMDATA* GCGgetParamsVisu(
    SCIP*                 scip               /**< SCIP data structure */
    );
 
 
 /** return root node clock */
-extern
+GCG_EXPORT
 SCIP_CLOCK* GCGgetRootNodeTime(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -296,6 +297,7 @@ SCIP_CLOCK* GCGgetRootNodeTime(
  *
  *  See \ref SCIP_Stage "SCIP_STAGE" for a complete list of all possible solving stages.
  */
+GCG_EXPORT
 SCIP_RETCODE GCGtransformProb(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -318,6 +320,7 @@ SCIP_RETCODE GCGtransformProb(
  *
  *  See \ref SCIP_Stage "SCIP_STAGE" for a complete list of all possible solving stages.
  */
+GCG_EXPORT
 SCIP_RETCODE GCGpresolve(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -338,6 +341,7 @@ SCIP_RETCODE GCGpresolve(
  *
  *  See \ref SCIP_Stage "SCIP_STAGE" for a complete list of all possible solving stages.
  */
+GCG_EXPORT
 SCIP_RETCODE GCGdetect(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -363,6 +367,7 @@ SCIP_RETCODE GCGdetect(
  *
  *  See \ref SCIP_Stage "SCIP_STAGE" for a complete list of all possible solving stages.
  */
+GCG_EXPORT
 SCIP_RETCODE GCGsolve(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -376,6 +381,7 @@ SCIP_RETCODE GCGsolve(
  *
  *  @return the global dual bound
  */
+GCG_EXPORT
 SCIP_Real GCGgetDualbound(
    SCIP*                scip              /**< SCIP data structure */
    );
@@ -387,6 +393,7 @@ SCIP_Real GCGgetDualbound(
  *
  *  @return the global dual bound
  */
+GCG_EXPORT
 SCIP_Real GCGgetPrimalbound(
    SCIP*                scip              /**< SCIP data structure */
    );
@@ -401,6 +408,7 @@ SCIP_Real GCGgetPrimalbound(
  *  @see GCGgetDualbound()
  *  @see GCGgetPrimalbound()
  */
+GCG_EXPORT
 SCIP_Real GCGgetGap(
    SCIP*                scip              /**< SCIP data structure */
    );

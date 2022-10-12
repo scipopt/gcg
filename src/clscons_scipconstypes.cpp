@@ -112,9 +112,9 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
       /* if it is new, create a new classindex */
       if (!found) {
          foundConstypes.push_back(GCGconsGetType(scip, cons));
-         classForCons[i] = foundConstypes.size() - 1;
+         classForCons[i] = (int) foundConstypes.size() - 1;
       } else
-         classForCons[i] = constype;
+         classForCons[i] = (int) constype;
    }
 
    /* secondly, use these information to create a ConsPartition */

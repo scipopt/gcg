@@ -52,20 +52,20 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** includes the blk file reader into SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeReaderBlk(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 
 /* reads problem from file */
-extern
 SCIP_RETCODE SCIPreadBlk(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */

@@ -130,7 +130,7 @@ int GraphGCG::getNNodes()
 #ifdef WITH_GSL
    assert(nodes.size() == adj_matrix_sparse->size1);
    assert(adj_matrix_sparse->size1 == adj_matrix_sparse->size2);
-   return adj_matrix_sparse->size1;
+   return (int) adj_matrix_sparse->size1;
 #else
    assert(nodes.size() == adj_matrix.size());
    return (int)adj_matrix.size();
@@ -409,7 +409,7 @@ int GraphGCG::getNEdges()
    int n_edges = 0;
 #ifdef WITH_GSL
    if(initialized)
-      n_edges = adj_matrix_sparse->nz - adj_matrix_sparse->size1;
+      n_edges = (int)(adj_matrix_sparse->nz - adj_matrix_sparse->size1);
    else
       n_edges = 0;
 #else
@@ -520,7 +520,7 @@ vector<pair<int, double> > GraphGCG::getNeighborWeights(int node)
       if((int)adj_matrix_sparse->i[begin_] == node)
       {
          self_found = true;
-         found_pos = curr;
+         found_pos = (int) curr;
       }
       double value = adj_matrix_sparse->data[begin_];
       int row = (int)adj_matrix_sparse->i[begin_];

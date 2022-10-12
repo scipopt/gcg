@@ -39,13 +39,14 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the GCG simple rounding heuristic and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeHeurGcgsimplerounding(
    SCIP*                 scip                /**< SCIP data structure */
    );

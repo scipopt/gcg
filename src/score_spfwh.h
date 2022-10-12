@@ -37,14 +37,14 @@
 #define SCORE_SPFWH_H_
 
 
-#include "scip/scip.h"
+#include "gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the setpartitioning maximum foreseeing white area score and includes it in SCIP */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE GCGincludeScoreSpfwh(
    SCIP*                 scip                /**< SCIP data structure */
    );

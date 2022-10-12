@@ -38,6 +38,7 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,6 +56,7 @@ extern "C" {
  *  - SCIP_PARAMSETTING_AGGRESSIVE such that the heuristic are called more aggressively
  *  - SCIP_PARAMSETTING_OFF which turns off all heuristics
  */
+GCG_EXPORT
 SCIP_RETCODE GCGsetHeuristics(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_PARAMSETTING     paramsetting        /**< parameter settings */

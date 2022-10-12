@@ -34,6 +34,7 @@
 #ifndef GCG_PRICINGJOB_H__
 #define GCG_PRICINGJOB_H__
 
+#include "def.h"
 #include "struct_pricingjob.h"
 #include "type_pricingjob.h"
 
@@ -44,7 +45,7 @@ extern "C" {
 #endif
 
 /** create a pricing job */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE GCGpricingjobCreate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB**      pricingjob,         /**< pricing job to be created */
@@ -54,14 +55,14 @@ SCIP_RETCODE GCGpricingjobCreate(
 );
 
 /** free a pricing job */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGpricingjobFree(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB**      pricingjob          /**< pricing job to be freed */
 );
 
 /** setup a pricing job at the beginning of the pricing loop */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE GCGpricingjobSetup(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
@@ -74,33 +75,33 @@ SCIP_RETCODE GCGpricingjobSetup(
    );
 
 /** reset the pricing solver to be used to the one with the highest priority */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGpricingjobResetSolver(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** get the next pricing solver to be used, or NULL of there is none */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGpricingjobNextSolver(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** set the pricing job to be performed exactly */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGpricingjobSetExact(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** reset number of heuristic pricing iterations of a pricing job */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGpricingjobResetHeuristic(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** update number of heuristic pricing iterations of a pricing job */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGpricingjobIncreaseNHeurIters(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );

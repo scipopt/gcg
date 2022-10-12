@@ -130,10 +130,10 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
       if( ! found )
       {
          foundVartypes.push_back( vT );
-         classForVars[i] = foundVartypes.size() - 1;
+         classForVars[i] = (int) foundVartypes.size() - 1;
       }
       else
-         classForVars[i] = vartype;
+         classForVars[i] = (int) vartype;
    }
 
    /* secondly, use these information to create a VarPartition */

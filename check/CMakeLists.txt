@@ -3,9 +3,17 @@ include(CTest)
 add_dependencies(check
    gcg_check)
 
-add_custom_target(gcg_check
-   COMMAND ${CMAKE_CTEST_COMMAND} -R "-default" --output-on-failure --schedule-random
-   DEPENDS gcg)
+if(MSVC)
+    add_custom_target(gcg_check
+        COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIG> -R "-default" --output-on-failure --schedule-random
+        DEPENDS gcg)
+else()
+    add_custom_target(gcg_check
+        COMMAND ${CMAKE_CTEST_COMMAND} -R "-default" --output-on-failure --schedule-random
+        DEPENDS gcg)
+endif()
+
+
 
 file(RELATIVE_PATH GCG_REL_PATH ${PROJECT_SOURCE_DIR} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gcg)
 add_custom_target(gcg_cluster

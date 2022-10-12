@@ -88,9 +88,9 @@ int calcLevenshteinDistance(
    if( s.compare( t ) == 0 )
       return 0;
    if( s.length() == 0 )
-      return t.length();
+      return (int) t.length();
    if( t.length() == 0 )
-      return s.length();
+      return (int) s.length();
 
    /* vectors to store integer distances */
    std::vector<int> prev( t.length() + 1 );
@@ -99,13 +99,13 @@ int calcLevenshteinDistance(
    /* initialize prev (previous row of distances) */
    for( size_t i = 0; i < prev.size(); ++i )
    {
-      prev[i] = i;
+      prev[i] = (int) i;
    }
    for( size_t i = 0; i < s.length(); ++i )
    {
       /* calculate curr (row distances) from the previous one */
 
-      curr[0] = i + 1;
+      curr[0] = (int) i + 1;
 
       /* fill remaining of row using 'Bellman' equality */
       for( size_t j = 0; j < t.length(); ++j )

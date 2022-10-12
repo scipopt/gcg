@@ -44,6 +44,7 @@
 #include <vector>
 #include <string>
 
+#include "def.h"
 #include "class_conspartition.h"
 #include "class_varpartition.h"
 #include "graph/graph_gcg.h"
@@ -240,6 +241,7 @@ public:
     * @brief Standard constructor, creates empty partialdec with unique id
     * @note initially, all conss and vars are open
     */
+   GCG_EXPORT
    PARTIALDECOMP(
       SCIP* scip,                                  /**< scip data structure */
       bool originalProblem                             /**< true iff partialdec is for presolved problem (else for original problem) */
@@ -248,6 +250,7 @@ public:
    /**
     * @brief copy constructor
     */
+   GCG_EXPORT
    PARTIALDECOMP(
       const PARTIALDECOMP *partialdecToCopy /**< partialdec to be copied */
       );
@@ -255,12 +258,14 @@ public:
    /**
     * Standard destructor
     */
+   GCG_EXPORT
    ~PARTIALDECOMP();
 
     /**
      * @brief adds a block
      * @returns the number (id) of the new block
      * */
+   GCG_EXPORT
    int addBlock();
 
    /**
@@ -268,6 +273,7 @@ public:
     *
     * incorporates the needed time of some detector in the detector chain
     */
+   GCG_EXPORT
    void addClockTime(
       SCIP_Real clocktime /**< time to be added */
       );
@@ -277,6 +283,7 @@ public:
     *
     * incorporates the changes from ancestor partialdec into the statistical data structures
     */
+   GCG_EXPORT
    void addDecChangesFromAncestor(
       PARTIALDECOMP* ancestor    /**< partialdec whose propagation yielded to the current partialdec */
       );
@@ -287,6 +294,7 @@ public:
     * adds a detectorchain information string to the corresponding vector
     * (that carries information for each detector call)
     * */
+   GCG_EXPORT
    void addDetectorChainInfo(
       const char* decinfo              /**< information string (about the detector call) to add  */
       );
@@ -296,6 +304,7 @@ public:
     *
     * bookkeeping information: adds number of new blocks created by a detector added to detector chain
     */
+   GCG_EXPORT
    void addNNewBlocks(
       int nnewblocks                   /**< number of new added blocks by latest detector call */
       );
@@ -305,6 +314,7 @@ public:
     *
     * bookkeeping information: fraction of constraints that are not longer open for a detector added to detector chain
     */
+   GCG_EXPORT
    void addPctConssFromFree(
       SCIP_Real pct                    /**< fraction of constraints that are not longer open */
       );
@@ -314,6 +324,7 @@ public:
     *
     * bookkeeping information: adds fraction of constraints assigned to a block for a detector added to detector chain
     *  */
+   GCG_EXPORT
    void addPctConssToBlock(
       SCIP_Real pct                    /**< fraction of constraints assigned to a block */
       );
@@ -323,6 +334,7 @@ public:
     *
     * bookkeeping information: adds fraction of constraints assigned to the border for a detector added to detector chain
     */
+   GCG_EXPORT
    void addPctConssToBorder(
       SCIP_Real pct                    /**< fraction constraints assigned to the border */
       );
@@ -332,6 +344,7 @@ public:
     *
     *  bookkeeping information: adds fraction of variables that are not longer open for a detector added to detector chain
     */
+   GCG_EXPORT
    void addPctVarsFromFree(
       SCIP_Real pct                    /**< fraction of variables that are not longer open */
       );
@@ -342,6 +355,7 @@ public:
     *
     *  bookkeeping information: adds fraction of variables assigned to a block for a detector added to detector chain
     *  */
+   GCG_EXPORT
    void addPctVarsToBlock(
       SCIP_Real pct                     /**< fraction of variables assigned to a block */
       );
@@ -351,6 +365,7 @@ public:
     *
     * bookkeeping information: adds fraction of variables assigned to the border for a detector added to detector chain
     */
+   GCG_EXPORT
    void addPctVarsToBorder(
       SCIP_Real pct                    /**< fraction of variables assigned to the border */
       );
@@ -359,6 +374,7 @@ public:
     * @brief method to check if at least one constraint is assigned to some block
     * @returns true iff at least one constraint is assigned to a block
     *  */
+   GCG_EXPORT
    bool alreadyAssignedConssToBlocks();
 
    /**
@@ -369,6 +385,7 @@ public:
     * @note for conss assigned to blocks according to constoblock there is no assignment \see assignPartialdecFromConstoblock
     * @note master assignment is indicated by assigning cons to index additionalNBlocks
     * */
+   GCG_EXPORT
    SCIP_RETCODE assignBorderFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons*) to block indices */
       int givenNBlocks           /**< number of blocks the hashmap contains */
@@ -380,12 +397,14 @@ public:
     * assigns open vars to stairlinking if they can be found in exactly two consecutive blocks
     * @returns true iff at least one stairlinkingvar was assigned
     */
+   GCG_EXPORT
    bool assignCurrentStairlinking(
       );
 
    /**
     * @brief assigns open conss to master
     */
+   GCG_EXPORT
    void assignOpenConssToMaster(
       );
 
@@ -398,6 +417,7 @@ public:
     *  \see assignPartialdecFromConstoblockVector()
     *  @note master assignment is indicated by assigning cons to index additionalNBlocks
     *  */
+   GCG_EXPORT
    SCIP_RETCODE assignPartialdecFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons*) to block indices */
       int additionalNBlocks      /**< number of (additional) blocks the hashmap contains */
@@ -411,6 +431,7 @@ public:
     *  @returns scip return code
     *  \see  assignPartialdecFromConstoblock()
     *  @note master is indicated by assigning cons to index additionalNBlocks */
+   GCG_EXPORT
    SCIP_RETCODE assignPartialdecFromConstoblockVector(
       std::vector<int> constoblock, /**< vector containing an assignment of conss to a block or to master */
       int additionalNBlocks         /**< number of (additional) blocks the vector contains */
@@ -428,6 +449,7 @@ public:
     * @note this relies on the consadjacency structure of the detprobdata
     *  hence it cannot be applied in presence of linking variables
     */
+   GCG_EXPORT
    void assignSmallestComponentsButOneConssAdjacency(
       );
 
@@ -439,6 +461,7 @@ public:
     *  otherwise, the stairlinking assignment is done greedily
     *  @note precondition: partialdec does not have any stairlinking vars
     */
+   GCG_EXPORT
    void calcStairlinkingVars(
         );
 
@@ -448,6 +471,7 @@ public:
     * returns true iff all constraints are assigned and deletes the vector open conss if so
     * @return true iff all constraints are assigned
     * */
+   GCG_EXPORT
    bool checkAllConssAssigned();
 
    /**
@@ -466,6 +490,7 @@ public:
     * - check if variables hitting a cons are either in the cons's block or border or still open
     * @returns true iff the partialdec seems to be consistent
     * */
+   GCG_EXPORT
    bool checkConsistency(
       );
 
@@ -476,6 +501,7 @@ public:
     *
     *  @note partialdecomps should usually be completed by a detector, only use this function if you know what you are doing.
     */
+   GCG_EXPORT
    void complete(
       );
 
@@ -485,6 +511,7 @@ public:
     *  strategy: assigns all conss and vars to the same block if they are connected,
     *  a cons and a var are adjacent if the var appears in the cons
     */
+   GCG_EXPORT
    void completeByConnected(
       );
 
@@ -496,6 +523,7 @@ public:
     *  \note this relies on the consadjacency structure of the detprobdata
     *  hence it cannot be applied in presence of linking variables
     */
+   GCG_EXPORT
    void completeByConnectedConssAdjacency(
       );
 
@@ -506,11 +534,13 @@ public:
     *  if not to an existing block if possible (by means of prior var assignments)
     *  and finally to master, if there does not exist such a block
     */
+   GCG_EXPORT
    void completeGreedily(
       );
 
    /** @brief removes the given cons from master
     */
+   GCG_EXPORT
    void removeMastercons(
       int consid      /**< id of cons */
       );
@@ -525,6 +555,7 @@ public:
     *  - and every var to master if it does not hit any blockcons and has no open cons
     *  - leave the cons/variableopen if nothing from the above holds
     *  */
+   GCG_EXPORT
    void considerImplicits(
       );
 
@@ -533,6 +564,7 @@ public:
     *
     * @param otherpartialdec partialdec whose partition statistics are to be copied
     */
+   GCG_EXPORT
    void copyPartitionStatistics(
       const PARTIALDECOMP* otherpartialdec
       );
@@ -545,6 +577,7 @@ public:
     *
     * @param variables if true, then blocks with no constraints but at least one variable are considered to be nonempty
     */
+   GCG_EXPORT
    void deleteEmptyBlocks(
       bool variables
    );
@@ -554,6 +587,7 @@ public:
     *
     * @param opencons id of the cons that is not considered open anymore
     */
+   GCG_EXPORT
    void deleteOpencons(
       int opencons
       );
@@ -563,6 +597,7 @@ public:
     *
     * @param itr valid iterator pointing to elements of PARTIALDECOMP::openconss
     */
+   GCG_EXPORT
    std::vector<int>::const_iterator deleteOpencons(
       std::vector<int>::const_iterator itr
    );
@@ -572,6 +607,7 @@ public:
     *
     * @param openvar id of the var that is not considered open anymore
     */
+   GCG_EXPORT
    void deleteOpenvar(
       int openvar
       );
@@ -581,6 +617,7 @@ public:
     *
     * @param itr valid iterator pointing to elements of PARTIALDECOMP::openvars
     */
+   GCG_EXPORT
    std::vector<int>::const_iterator deleteOpenvar(
       std::vector<int>::const_iterator itr
    );
@@ -593,6 +630,7 @@ public:
     *                         1: block and detector info
     *                         2: cons and var assignments
     */
+   GCG_EXPORT
    void displayInfo(
       int detailLevel
       );
@@ -605,6 +643,7 @@ public:
     * @note precondition: no constraint or variable is already assigned to a block
     * @return scip return code
     */
+   GCG_EXPORT
    SCIP_RETCODE filloutBorderFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons*) to block indices
                                    *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
@@ -619,7 +658,7 @@ public:
     * @return scip return code
     *  calculates implicit variable assignment through cons assignment
     * @note precondition: no cons or var is already assigned to a block and constoblock contains information for every cons */
-
+   GCG_EXPORT
    SCIP_RETCODE filloutPartialdecFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons*) to block indices
                                    *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
@@ -631,6 +670,7 @@ public:
     *
     * Variables are reassigned as master if the variable only hits master conss
     */
+   GCG_EXPORT
    void findVarsLinkingToMaster(
       );
 
@@ -640,6 +680,7 @@ public:
     * Variables are reassigned as master if the variable hits conss in exactly two consecutive
     * blocks
     */
+   GCG_EXPORT
    void findVarsLinkingToStairlinking(
       );
 
@@ -647,6 +688,7 @@ public:
     * @brief gets partialdec id of given ancestor id
     * @return partialdec id of given ancestor id
     */
+   GCG_EXPORT
    int getAncestorID(
       int ancestorindex /**< index of ancestor in list of ancestor ids data structure */
       );
@@ -655,6 +697,7 @@ public:
     * @brief get ancestor ids as vector
     * @return vector of ids of all ancestors id
     */
+   GCG_EXPORT
    std::vector<int>& getAncestorList(
       );
 
@@ -662,11 +705,13 @@ public:
     * set ancestor list directly
     * @param newlist new list of ancestor ids
     */
+   GCG_EXPORT
    void setAncestorList(
       std::vector<int>& newlist
       );
 
    /** removes ancestor id from list */
+   GCG_EXPORT
    void removeAncestorID(
       int ancestorid    /**< id to remove */
    );
@@ -675,6 +720,7 @@ public:
     * adds ancestor id to back of list
     * @param ancestor id of ancestor that is to be added
     */
+   GCG_EXPORT
    void addAncestorID(
       int ancestor
       );
@@ -684,6 +730,7 @@ public:
     * @param repid id of the representative block
     * @return vector of block ids that are identical to block with id repid
     */
+   GCG_EXPORT
    const std::vector<int> & getBlocksForRep(
       int  repid
       );
@@ -692,6 +739,7 @@ public:
     * @brief returns the time that the detector related to the given detectorchainindex needed for detecting
     * @return the clock time for the corresponding detector in the chain
     */
+   GCG_EXPORT
    SCIP_Real getDetectorClockTime(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
@@ -700,6 +748,7 @@ public:
     * @brief returns a vector of the clock times that each detector needed that was involved in this partialdec
     * @return vector of the clock times
     */
+   GCG_EXPORT
    std::vector<SCIP_Real>& getDetectorClockTimes();
 
    /**
@@ -707,6 +756,7 @@ public:
     * @param block id of the block the constraint indices are returned
     * @return array containing constraints assigned to a block
     */
+   GCG_EXPORT
    std::vector<int>& getConssForBlock(
       int block
       );
@@ -715,24 +765,28 @@ public:
     * @brief returns detector chain as vector of detector pointers
     * @return detector chain as array of detector pointers
     */
+   GCG_EXPORT
    std::vector<DEC_DETECTOR*>& getDetectorchain();
 
    /**
     * @brief returns true iff this partialdec was finished by finishPartialdec() method of a detector
     * @return true iff this partialdec was finished by finishPartialdec() method of a detector
     */
+   GCG_EXPORT
    bool getFinishedByFinisher();
 
    /**
     * @brief returns the calculated hash value of this partialdec
     * @return the calculated hash value of this partialdec
     */
+   GCG_EXPORT
    unsigned long getHashValue();
 
    /**
     * @brief returns the unique id of the partialdec
     * @return the unique id of the partialdec
     */
+   GCG_EXPORT
    int getID();
 
    /**
@@ -740,6 +794,7 @@ public:
     * @return vector containing all linking vars indices
     * @note when accessed it is supposed to be sorted
     */
+   GCG_EXPORT
    std::vector<int>& getLinkingvars();
 
    /**
@@ -747,6 +802,7 @@ public:
     * @return array containing all master conss indices
     * @note when accessed it is supposed to be sorted
     */
+   GCG_EXPORT
    std::vector<int>& getMasterconss();
 
    /**
@@ -755,6 +811,7 @@ public:
     * master vars hit only constraints in the master, aka static variables
     * @return array containing all master vars indices
     */
+   GCG_EXPORT
    std::vector<int>& getMastervars();
 
    /**
@@ -762,6 +819,7 @@ public:
     * @param blockid of the block the number of nozerors are requested for
     * @return number of nonzero coeffs in a certain block
     */
+   GCG_EXPORT
    int getNCoeffsForBlock(
       int blockid
       );
@@ -770,6 +828,7 @@ public:
     * Gets the number of nonzero coeffs in master
     * @return the number of nonzero coeffs in master
     */
+   GCG_EXPORT
    int getNCoeffsForMaster(
       );
 
@@ -778,6 +837,7 @@ public:
     * @param score the score
     * @return the score
     */
+   GCG_EXPORT
    SCIP_Real getScore(
       DEC_SCORE* score
       );
@@ -786,6 +846,7 @@ public:
     * @brief checks if all master constraints set partitioning, set packing, set cover, or cardinality constraints
     * @return TRUE iff all master constraints set partitioning, set packing, set cover, or cardinality constraints
     */
+   GCG_EXPORT
    SCIP_Bool hasSetppccardMaster(
    );
 
@@ -793,6 +854,7 @@ public:
     * @brief checks iff all master constraints set partitioning, set packing, or set cover constraints
     * @return TRUE iff all master constraints set partitioning, set packing, or set cover
     */
+   GCG_EXPORT
    SCIP_Bool hasSetppcMaster(
    );
 
@@ -800,6 +862,7 @@ public:
     * @brief checks iff all master constraints set partitioning, or set packing constraints
     * @return TRUE iff all master constraints set partitioning, or set packing constraints
     */
+   GCG_EXPORT
    SCIP_Bool hasSetppMaster(
    );
 
@@ -808,24 +871,28 @@ public:
     * @return the USERGIVEN status of this partialdecs
     * @see enum USERGIVEN
     */
+   GCG_EXPORT
    USERGIVEN getUsergiven();
 
    /**
     * @brief Gets number of ancestor partialdecs
     * @return number of ancestor partialdecs
     */
+   GCG_EXPORT
    int getNAncestors();
 
    /**
     * @brief Gets the number of blocks
     * @return number of blocks
     */
+   GCG_EXPORT
    int getNBlocks();
 
    /**
     * @brief Gets the number of constraints
     * @return number of constraints
     */
+   GCG_EXPORT
    int getNConss();
 
    /**
@@ -833,6 +900,7 @@ public:
     * @param block id of the block the number of constraints is asked for
     * @return size of the vector containing conss assigned to a block
     */
+   GCG_EXPORT
    int getNConssForBlock(
       int block
       );
@@ -841,24 +909,28 @@ public:
     * @brief Gets the detectorchain info vector
     * @return detectorchain info vector
     */
+   GCG_EXPORT
    std::vector<std::string>& getDetectorchainInfo();
 
    /**
     * @brief Gets the number of detectors the partialdec is propagated by
     * @return number of detectors the partialdec is propagated by
     */
+   GCG_EXPORT
    int getNDetectors();
 
    /**
     * @brief Gets size of the vector containing linking vars
     * @return size of the vector containing linking vars
     */
+   GCG_EXPORT
    int getNLinkingvars();
 
    /**
     * @brief Gets size of the vector containing master conss
     * @returns size of the vector containing master conss
     */
+   GCG_EXPORT
    int getNMasterconss();
 
    /**
@@ -867,6 +939,7 @@ public:
     * master vars hit only constraints in the master
     * @return size of the vector containing master vars
     */
+   GCG_EXPORT
    int getNMastervars();
 
    /**
@@ -874,6 +947,7 @@ public:
     *
     * @return number of blocks a detector added
     */
+   GCG_EXPORT
    int getNNewBlocks(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
@@ -882,30 +956,35 @@ public:
     * @brief gets number of blocks the detectors in the detectorchain added
     * @return number of blocks the detectors in the detectorchain added
     */
+   GCG_EXPORT
    std::vector<int> getNNewBlocksVector();
 
    /**
     * @brief Gets total number of stairlinking vars
     * @return total number of stairlinking vars
     */
+   GCG_EXPORT
    int getNTotalStairlinkingvars();
 
    /**
     * @brief Gets size of vector containing constraints not assigned yet
     * @return returns size of vector containing constraints not assigned yet
     */
+   GCG_EXPORT
    int getNOpenconss();
 
    /**
     * @brief Gets size of vector containing variables not assigned yet
     * @return size of vector containing variables not assigned yet
     */
+   GCG_EXPORT
    int getNOpenvars();
 
    /**
     * @brief Gets the number of blockrepresentatives
     * @return the number of blockrepresentatives
     */
+   GCG_EXPORT
    int getNReps();
 
    /**
@@ -913,6 +992,7 @@ public:
     * @param block id of the block the size of the stairlinking vector is asked for
     * @return size of the vector containing stairlinking vars
     */
+   GCG_EXPORT
    int getNStairlinkingvars(
       int block
       );
@@ -921,6 +1001,7 @@ public:
     * @brief Gets number of vars
     * @return number of vars
     */
+   GCG_EXPORT
    int getNVars();
 
    /**
@@ -928,6 +1009,7 @@ public:
     * @param block id of the block the number of variables is asked for
     * @return size of the vector containing vars assigned to a block
     */
+   GCG_EXPORT
    int getNVarsForBlock(
       int block
       );
@@ -936,6 +1018,7 @@ public:
     * @brief Gets overall number of vars assigned to a block
     * @return number of vars that are assigned to any block
     */
+   GCG_EXPORT
    int getNVarsForBlocks(
       );
 
@@ -943,24 +1026,28 @@ public:
     * @brief Gets array containing constraints not assigned yet
     * @return array containing constraints not assigned yet
     */
+   GCG_EXPORT
    const int* getOpenconss();
 
    /**
     * @brief Gets a vector containing constraint ids not assigned yet as vector
     * @return returns a vector containing constraint ids not assigned yet as vector
     */
+   GCG_EXPORT
    std::vector<int>& getOpenconssVec();
 
    /**
     * @brief Gets array containing variables not assigned yet
     * @return returns array containing variables not assigned yet
     */
+   GCG_EXPORT
    const int* getOpenvars();
 
    /**
     * Gets array containing variables not assigned yet as vector
     * @return array containing variables not assigned yet as vector
     */
+   GCG_EXPORT
    std::vector<int>& getOpenvarsVec();
 
    /**
@@ -968,6 +1055,7 @@ public:
     *
     * @return fraction of variables assigned to the border for a detector
     */
+   GCG_EXPORT
    SCIP_Real getPctVarsToBorder(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
@@ -976,6 +1064,7 @@ public:
     * @brief Gets fraction of variables assigned to the border for detectors in detectorchain
     * @return vector of fractions of variables assigned to the border for detectors in detectorchain
     */
+   GCG_EXPORT
    std::vector<SCIP_Real>& getPctVarsToBorderVector();
 
    /**
@@ -983,6 +1072,7 @@ public:
     *
     * @return fraction of variables assigned to a block for a detector
     */
+   GCG_EXPORT
    SCIP_Real getPctVarsToBlock(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
@@ -991,6 +1081,7 @@ public:
     * @brief returns fraction of variables assigned to a block for detectors in detectorchain
     * @return vector of fractions of variables assigned to a block for detectors in detectorchain
     */
+   GCG_EXPORT
    std::vector<SCIP_Real>& getPctVarsToBlockVector();
 
    /**
@@ -998,6 +1089,7 @@ public:
     *
     * @return index of the detector in the detectorchain
     */
+   GCG_EXPORT
    SCIP_Real getPctVarsFromFree(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
@@ -1006,13 +1098,14 @@ public:
     * @brief Gets fraction of variables that are not longer open for detectors in detectorchain
     * @return vector or fractions of variables that are not longer open for detectors in detectorchain
     */
+   GCG_EXPORT
    std::vector<SCIP_Real>& getPctVarsFromFreeVector();
 
    /**
     * @brief Gets fraction of constraints assigned to the border for a detector
     * @return returns fraction of constraints assigned to the border for a detector
     */
-   /**  */
+   GCG_EXPORT
    SCIP_Real getPctConssToBorder(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
@@ -1021,12 +1114,14 @@ public:
     * @brief Gets fraction of constraints assigned to the border for detectors in detectorchain
     * @return vector of fractions of constraints assigned to the border for detectors in detectorchain
     */
+   GCG_EXPORT
    std::vector<SCIP_Real>& getPctConssToBorderVector();
 
    /**
     * @brief Gets fraction of constraints assigned to a block for a detector
     * @return fraction of constraints assigned to a block for a detector
     */
+   GCG_EXPORT
    SCIP_Real getPctConssToBlock(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
@@ -1035,12 +1130,14 @@ public:
     * @brief Gets fraction of constraints assigned to a block for detectors in detectorchain
     * @return vector of fractions of constraints assigned to a block for detectors in detectorchain
     */
+   GCG_EXPORT
    std::vector<SCIP_Real>& getPctConssToBlockVector();
 
    /**
     * @brief Gets fraction of constraints that are not longer open for a detector
     * @return fraction of constraints that are not longer open for a detector
     */
+   GCG_EXPORT
    SCIP_Real getPctConssFromFree(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
@@ -1049,6 +1146,7 @@ public:
     * @brief Gets fraction of constraints that are not longer open for detectors in detectorchain
     * @return vector of fractions of constraints that are not longer open for detectors in detectorchain
     */
+   GCG_EXPORT
    std::vector<SCIP_Real>& getPctConssFromFreeVector();
 
    /**
@@ -1056,6 +1154,7 @@ public:
     * @param blockid id of the block the representative is asked for
     * @return index of the representative block for a block, this might be blockid itself
     */
+   GCG_EXPORT
    int getRepForBlock(
       int blockid
       );
@@ -1068,7 +1167,7 @@ public:
     * @param blockrepid id of block
     * @return the represenation varmap as vector for represenative repid and the blockrepid-th block that is represented by repid
     */
-
+   GCG_EXPORT
    std::vector<int> & getRepVarmap(
       int repid,
       int blockrepid
@@ -1078,6 +1177,7 @@ public:
     * @brief Gets the corresponding detprobdata
     * @return corresponding detprobdata
     */
+   GCG_EXPORT
    DETPROBDATA* getDetprobdata();
 
    /**
@@ -1086,6 +1186,7 @@ public:
     * @param block id of the block the stairlinking variable varctor is asked for
     * @return array containing stairlinking vars,
     */
+   GCG_EXPORT
    const int* getStairlinkingvars(
       int block
       );
@@ -1095,6 +1196,7 @@ public:
     * @param block id of the block the vars are requested for
     * @return returns array containing vars of a block
     */
+   GCG_EXPORT
    std::vector<int>& getVarsForBlock(
       int block
       );
@@ -1105,6 +1207,7 @@ public:
     * @param block the corresponding block id
     * @return  returns index in variables array of a block for a variable
     */
+   GCG_EXPORT
    int getVarProbindexForBlock(
       int varid,
       int block
@@ -1115,6 +1218,7 @@ public:
     *  i.e. it has no more open constraints and variables
     * @return TRUE iff this partialdec is complete
     */
+   GCG_EXPORT
    bool isComplete();
 
    /**
@@ -1122,6 +1226,7 @@ public:
     * @param cons id of ccons to check if it is master constraint
     * @return true iff the cons is a master cons
     */
+   GCG_EXPORT
    bool isConsMastercons(
       int cons
       );
@@ -1131,6 +1236,7 @@ public:
     * @param cons id of cons to check
     * @return true iff the cons is an open cons
     */
+   GCG_EXPORT
    bool isConsOpencons(
       int cons
       );
@@ -1139,19 +1245,22 @@ public:
     * @brief Gets whether the partialdec is from the presolved problem
     * @return true iff the partialdec is from the presolved problem
     */
+   GCG_EXPORT
    bool isAssignedToOrigProb();
 
    /**
     * Gets whether the partialdec is currently selected in explore menue
     * @return true iff the partialdec is currently selected in explore menue
     */
+   GCG_EXPORT
    bool isSelected();
 
    /**
     * @brief method to check whether this partialdec is equal to a given other partialdec ( \see  isEqual(PARTIALDECOMP*))
-
+    *
     * @return scip return code
     */
+   GCG_EXPORT
    SCIP_RETCODE isEqual(
       PARTIALDECOMP* otherpartialdec,   /**< other partialdec */
       SCIP_Bool* isequal,  /**< pointer to store whether partialdecs are identical */
@@ -1163,6 +1272,7 @@ public:
     *
     * @return true iff partialdecs are equal
     */
+   GCG_EXPORT
    bool isEqual(
       PARTIALDECOMP* other /**< other partialdec to check equality with */
       );
@@ -1172,6 +1282,7 @@ public:
     * @param detector pointer to detector to check for
     * @return true iff this partialdec was propagated by detectorID
     */
+   GCG_EXPORT
    bool isPropagatedBy(
       DEC_DETECTOR* detector
       );
@@ -1183,6 +1294,7 @@ public:
     *  all variables linking or mastervars, or all constraints and variables are open
     * @return true iff this partialdec is considered to be trivial
     */
+   GCG_EXPORT
    bool isTrivial();
 
    /**
@@ -1191,6 +1303,7 @@ public:
     * @param block id of block to check
     * @return true iff the var is assigned to the block
     */
+   GCG_EXPORT
    bool isVarBlockvarOfBlock(
       int var,
       int block
@@ -1201,6 +1314,7 @@ public:
     * @param var id of var to check
     * @return true iff the var is a linking var
     */
+   GCG_EXPORT
    bool isVarLinkingvar(
       int var
       );
@@ -1210,6 +1324,7 @@ public:
     * @param var id of var to check
     * @return true iff the var is a master var
     */
+   GCG_EXPORT
    bool isVarMastervar(
       int var
       );
@@ -1219,7 +1334,7 @@ public:
     * @param var id of var to check
     * @return true iff the var is an open var
     */
-   /**  */
+   GCG_EXPORT
    bool isVarOpenvar(
       int var
       );
@@ -1229,6 +1344,7 @@ public:
     * @param var id of var to check
     * @return true iff the var is a stairlinking var
     */
+   GCG_EXPORT
    bool isVarStairlinkingvar(
       int var
       );
@@ -1239,6 +1355,7 @@ public:
     * @param block id of block to check
     * @return true iff the var is a stairlinkingvar of a specified block
     */
+   GCG_EXPORT
    bool isVarStairlinkingvarOfBlock(
       int var,
       int block
@@ -1249,6 +1366,7 @@ public:
     * @param givenscip scip data structure
     * @param file output file
     */
+   GCG_EXPORT
    void printPartitionInformation(
       SCIP*                givenscip,
       FILE*                file
@@ -1261,6 +1379,7 @@ public:
     * (without respect to open vars and conss  @see assignHittingOpenconss(), @see assignHittingOpenvars())
     * @note partialdec might be not complete
     */
+   GCG_EXPORT
    void refineToBlocks(
       );
 
@@ -1270,12 +1389,14 @@ public:
     * strategy: do obvious ( @see considerImplicits()) assignments and
     *  assign other conss and vars to master if possible (@see assignOpenPartialHittingToMaster())
     */
+   GCG_EXPORT
    void refineToMaster(
       );
 
    /**
     * @brief registers statistics for a used conspartition
     */
+   GCG_EXPORT
    void setConsPartitionStatistics(
       int detectorchainindex, /**< index of the detector in the detectorchain */
       ConsPartition* partition, /**< the used conspartition */
@@ -1287,6 +1408,7 @@ public:
     * @param consToBlock id of cons to add
     * @param block id of block to add
     */
+   GCG_EXPORT
    void setConsToBlock(
       int consToBlock,
       int block
@@ -1297,6 +1419,7 @@ public:
     * @param cons id of cons to add
     * @param block id of block to add
     */
+   GCG_EXPORT
    void fixConsToBlock(
       int cons,
       int block
@@ -1308,6 +1431,7 @@ public:
     * @param block id of block to add
     * @returns true iff successful
     */
+   GCG_EXPORT
    bool fixConsToBlock(
       SCIP_CONS* cons,
       int block
@@ -1317,6 +1441,7 @@ public:
     * @brief adds a constraint to the master constraints, does not delete this cons from list of open conss
     * @param consToMaster id of cons to add
     */
+   GCG_EXPORT
    void setConsToMaster(
       int consToMaster
       );
@@ -1327,6 +1452,7 @@ public:
     * @return iterator that points to the next element of PARTIALDECOMP::openconss
     * @warning This method modifies the vector PARTIALDECOMP::openconss! Hence, any kind of iterator might be invalid afterwards!
     */
+   GCG_EXPORT
    std::vector<int>::const_iterator fixConsToMaster(
          std::vector<int>::const_iterator itr
    );
@@ -1336,6 +1462,7 @@ public:
     * @param cons id of cons to add
     * @warning This method modifies the vector PARTIALDECOMP::openconss! Hence, any kind of iterator might be invalid afterwards!
     */
+   GCG_EXPORT
    void fixConsToMaster(
       int cons
       );
@@ -1346,6 +1473,7 @@ public:
     * @warning This method modifies the vector PARTIALDECOMP::openconss! Hence, any kind of iterator might be invalid afterwards!
     * @returns true iff successful
     */
+   GCG_EXPORT
    bool fixConsToMaster(
       SCIP_CONS* cons
       );
@@ -1354,6 +1482,7 @@ public:
     * @brief sets the detectorchain with the given vector of detector pointers
     * @param givenDetectorChain vector of detector pointers
     */
+   GCG_EXPORT
    void setDetectorchain(
       std::vector<DEC_DETECTOR*>& givenDetectorChain
       );
@@ -1362,6 +1491,7 @@ public:
     * @brief sets partialdec to be propagated by a detector
     * @param detector pointer to detector that is registered for this partialdec
     */
+   GCG_EXPORT
    void setDetectorPropagated(
       DEC_DETECTOR* detector
       );
@@ -1370,6 +1500,7 @@ public:
     * @brief sets detector that finished the partialdec
     * @param detector pointer to detector that has finished this partialdecs
     */
+   GCG_EXPORT
    void setDetectorFinished(
       DEC_DETECTOR* detector
       );
@@ -1379,6 +1510,7 @@ public:
     * @param detectorID pointer to detector that has finished this partialdecs
     * @note does not add the detector to the detectorchain and does not modify partition statistics
     */
+   GCG_EXPORT
    void setDetectorFinishedOrig(
       DEC_DETECTOR* detectorID
       );
@@ -1387,6 +1519,7 @@ public:
     * @brief sets whether this partialdec was finished by a finishing detector
     * @param finished is this partialdecs finished by a finishing detector
     */
+   GCG_EXPORT
    void setFinishedByFinisher(
       bool finished
       );
@@ -1397,6 +1530,7 @@ public:
     * (in case this partialdec was translated)
     * @param finished was this partialdecs finished by a finishing detector in orig
     */
+   GCG_EXPORT
    void setFinishedByFinisherOrig(
       bool finished
       );
@@ -1405,6 +1539,7 @@ public:
     * @brief sets number of blocks, only increasing number allowed
     * @param nblocks new number of blocks
     */
+   GCG_EXPORT
    void setNBlocks(
       int nblocks
       );
@@ -1413,6 +1548,7 @@ public:
     * @brief set the selection status of this partialdecs
     * @param selected whether the partialdec is selected
     */
+   GCG_EXPORT
    void setSelected(
       bool selected
       );
@@ -1421,6 +1557,7 @@ public:
     * @brief sets whether this partialdec stems from an orig problem partialdec
     * @param fromorig has this partialdec ancestors from the orig problem
     */
+   GCG_EXPORT
    void setStemsFromOrig(
       bool fromorig
       );
@@ -1429,6 +1566,7 @@ public:
     * @brief sets whether this partialdec is user given
     * @param usergiven is this partialdec user given
     */
+   GCG_EXPORT
    void setUsergiven(
       USERGIVEN usergiven
       );
@@ -1436,6 +1574,7 @@ public:
    /**
     * @brief registers statistics for a used varpartition
     */
+   GCG_EXPORT
    void setVarPartitionStatistics(
       int detectorchainindex, /**< index of the detector in the detectorchain */
       VarPartition* partition, /**< the used varpartition */
@@ -1448,6 +1587,7 @@ public:
     * @param varToBlock id of var to be added
     * @param block id of block to be added
     */
+   GCG_EXPORT
    void setVarToBlock(
       int varToBlock,
       int block
@@ -1458,6 +1598,7 @@ public:
     * @param var id of var to be added
     * @param block id of block to be added
     */
+   GCG_EXPORT
    void fixVarToBlock(
       int var,
       int block
@@ -1470,6 +1611,7 @@ public:
     * @return iterator that points to the next element of PARTIALDECOMP::openvars
     * @warning This method modifies the vector PARTIALDECOMP::openvars! Hence, any kind of iterator might be invalid afterwards!
     */
+   GCG_EXPORT
    std::vector<int>::const_iterator fixVarToBlock(
       std::vector<int>::const_iterator itr,
       int block
@@ -1479,6 +1621,7 @@ public:
     * @brief adds a variable to the linking variables, does not delete this var from list of open vars
     * @param varToLinking var to be set to linking
     */
+   GCG_EXPORT
    void setVarToLinking(
       int varToLinking
       );
@@ -1487,6 +1630,7 @@ public:
     * @brief adds a variable to the linking variables
     * @param var var to be set to linking
     */
+   GCG_EXPORT
    void fixVarToLinking(
       int var
       );
@@ -1497,6 +1641,7 @@ public:
     * @return iterator that points to the next element of PARTIALDECOMP::openvars
     * @warning This method modifies the vector PARTIALDECOMP::openvars! Hence, any kind of iterator might be invalid afterwards!
     */
+   GCG_EXPORT
    std::vector<int>::const_iterator fixVarToLinking(
       std::vector<int>::const_iterator itr
    );
@@ -1505,6 +1650,7 @@ public:
     *
     *  master variables hit only constraints in the master
     */
+   GCG_EXPORT
    void setVarToMaster(
       int varToMaster   /**< var to be set to master */
       );
@@ -1513,6 +1659,7 @@ public:
     *
     *  master variables hit only constraints in the master
     */
+   GCG_EXPORT
    void fixVarToMaster(
       int var     /**< var to be set to master */
       );
@@ -1523,6 +1670,7 @@ public:
     * @return iterator that points to the next element of PARTIALDECOMP::openvars
     * @warning This method modifies the vector PARTIALDECOMP::openvars! Hence, any kind of iterator might be invalid afterwards!
     */
+   GCG_EXPORT
    std::vector<int>::const_iterator fixVarToMaster(
       std::vector<int>::const_iterator itr     /**< var to be set to master */
    );
@@ -1534,6 +1682,7 @@ public:
     * @param block2 id of block two
     * @note stairlinking variables are only registered in block with smaller index
     */
+   GCG_EXPORT
    void setVarToStairlinking(
       int varToStairLinking,
       int block1,
@@ -1546,6 +1695,7 @@ public:
     * @param firstblock stairlinking variables hit exactly two consecutive blocks, this is the index of the first of these blocks
     * @note stairlinking variables are only registered in block with smaller index
     */
+   GCG_EXPORT
    void fixVarToStairlinking(
       int var,
       int firstblock
@@ -1559,6 +1709,7 @@ public:
     * @warning This method modifies the vector PARTIALDECOMP::openvars! Hence, any kind of iterator might be invalid afterwards!
     * @note stairlinking variables are only registered in block with smaller index
     */
+   GCG_EXPORT
    std::vector<int>::const_iterator fixVarToStairlinking(
       std::vector<int>::const_iterator itr,
       int firstblock
@@ -1569,6 +1720,7 @@ public:
     * @see fixConsToBlock
     * @returns true iff successful
     */
+   GCG_EXPORT
    bool fixConsToBlockByName(
       const char*           consname,            /**< name of the constraint */
       int                   blockid              /**< block index (counting from 0) */
@@ -1579,6 +1731,7 @@ public:
     * @see fixVarToBlock
     * @returns true iff successful
     */
+   GCG_EXPORT
    bool fixVarToBlockByName(
       const char*           varname,             /**< name of the variable */
       int                   blockid              /**< block index (counting from 0) */
@@ -1589,6 +1742,7 @@ public:
     * @see fixConsToMaster
     * @returns true iff successful
     */
+   GCG_EXPORT
    bool fixConsToMasterByName(
       const char*           consname   /**< name of cons to fix as master cons */
       );
@@ -1598,6 +1752,7 @@ public:
     * @see fixVarToMaster
     * @returns true iff successful
     */
+   GCG_EXPORT
    bool fixVarToMasterByName(
       const char*           varname              /**< name of the variable */
       );
@@ -1607,6 +1762,7 @@ public:
     * @see fixVarToLinking
     * @returns true iff successful
     */
+   GCG_EXPORT
    bool fixVarToLinkingByName(
       const char*           varname              /**< name of the variable */
       );
@@ -1616,6 +1772,7 @@ public:
     * @see visual/pdfreader and
     * @note linux only
     */
+   GCG_EXPORT
    void showVisualization();
 
    /**
@@ -1625,6 +1782,7 @@ public:
     * @param outputformat The format of the gnuplot output. Should match the file extension of outname
     * @note linux only, requires gnuplot
     */
+   GCG_EXPORT
    void generateVisualization(
       char* filename,
       char* outname,
@@ -1637,6 +1795,7 @@ public:
     * @param outname Path at which gnuplot will output its result
     * @param outputformat The format of the gnuplot output. Should match the file extension of outname
     */
+   GCG_EXPORT
    void writeVisualizationFile(
       char* filename,
       char* outname,
@@ -1646,6 +1805,7 @@ public:
    /**
     * @brief generates a gp visualization of the partialdec without compilation or opening
     */
+   GCG_EXPORT
    void exportVisualization();
 
    /**
@@ -1654,18 +1814,21 @@ public:
     * the completion should be done by setting unspecified constraints to master
     * @return TRUE iff this partialdec is a userpartialdec that should be completed
     */
+   GCG_EXPORT
    SCIP_Bool shouldCompletedByConsToMaster();
 
    /**
     * @brief sorts the vars and conss data structures by their indices
     * @returns true if the internal order of variables or constraints changed
     */
+   GCG_EXPORT
    bool sort();
 
    /**
     * @brief set statistical vector of fractions of constraints set to blocks per involved detector
     * @param newvector vector of fractions of constraints set to blocks per involved detector
     */
+   GCG_EXPORT
    void setPctConssToBlockVector(
       std::vector<SCIP_Real>& newvector
       );
@@ -1674,6 +1837,7 @@ public:
     * @brief set statistical vector of fractions of constraints that are not longer open per involved detector
     * @param newvector vector of fractions of constraints that are not longer open per involved detector
     */
+   GCG_EXPORT
    void setPctConssFromFreeVector(
       std::vector<SCIP_Real>& newvector
    );
@@ -1682,6 +1846,7 @@ public:
     * @brief set statistical vector of fractions of constraints assigned to the border per involved detector
     * @param newvector vector of fractions of constraints assigned to the border per involved detector
     */
+   GCG_EXPORT
    void setPctConssToBorderVector(
       std::vector<SCIP_Real>& newvector
       );
@@ -1690,6 +1855,7 @@ public:
     * @brief set statistical vector of fraction of variables assigned to the border per involved detector
     * @param newvector vector of fractions of variables assigned to the border per involved detector
     */
+   GCG_EXPORT
    void setPctVarsToBorderVector(
       std::vector<SCIP_Real>& newvector
       );
@@ -1698,6 +1864,7 @@ public:
     * @brief set statistical vector of fractions of variables assigned to a block per involved detector
     * @param newvector vector of fractions of variables assigned to a block per involved detector
     */
+   GCG_EXPORT
    void setPctVarsToBlockVector(
       std::vector<SCIP_Real>& newvector
    );
@@ -1706,6 +1873,7 @@ public:
     * @brief set statistical vector of variables that are not longer open per involved detector
     * @param newvector vector of fractions of variables that are not longer open per involved detector
     */
+   GCG_EXPORT
    void setPctVarsFromFreeVector(
       std::vector<SCIP_Real>& newvector
       );
@@ -1714,6 +1882,7 @@ public:
     * @brief set statistical vector of the times that the detectors needed for detecting per involved detector
     * @param newvector vector of the times that the detectors needed for detecting per involved detector
     */
+   GCG_EXPORT
    void setDetectorClockTimes(
       std::vector<SCIP_Real>& newvector
       );
@@ -1723,10 +1892,12 @@ public:
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcClassicScore
     * @returns border area score
     */
+   GCG_EXPORT
    SCIP_Real getClassicScore();
 
    /** @brief set the classic score
     */
+   GCG_EXPORT
    void setClassicScore(
       SCIP_Real score   /**< new score value in [0,1] */
    );
@@ -1736,10 +1907,12 @@ public:
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcBorderAreaScore
     * @returns border area score
     */
+   GCG_EXPORT
    SCIP_Real getBorderAreaScore();
 
    /** @brief set the border area score
     */
+   GCG_EXPORT
    void setBorderAreaScore(
       SCIP_Real score   /**< new score value in [0,1] */
    );
@@ -1750,10 +1923,12 @@ public:
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcMaxWhiteScore
     * @returns maximum  white area score
     * */
+   GCG_EXPORT
    SCIP_Real getMaxWhiteScore();
 
    /** @brief set the maximum white area score
     */
+   GCG_EXPORT
    void setMaxWhiteScore(
       SCIP_Real score   /**< new score value in [0,1] */
    );
@@ -1763,10 +1938,12 @@ public:
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcMaxForseeingWhiteScore
     * @returns maximum foreseeing white area score
     * */
+   GCG_EXPORT
    SCIP_Real getMaxForWhiteScore();
 
    /** @brief set the maximum foreseeing white area score
     */
+   GCG_EXPORT
    void setMaxForWhiteScore(
       SCIP_Real score   /**< new score value in [0,1] */
    );
@@ -1776,10 +1953,12 @@ public:
     * @note -1 iff not calculated yet, \see GGCGconshdlrDecompCalcSetPartForseeingWhiteScore
     * @returns setpartitioning maximum foreseeing white area score
     * */
+   GCG_EXPORT
    SCIP_Real getSetPartForWhiteScore();
 
    /** @brief set the setpartitioning maximum foreseeing white area score
     */
+   GCG_EXPORT
    void setSetPartForWhiteScore(
       SCIP_Real score   /**< new score value in [0,1] */
    );
@@ -1789,10 +1968,12 @@ public:
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore
     * @returns maximum foreseeing white area score with respect to aggregatable blocks
     * */
+   GCG_EXPORT
    SCIP_Real getMaxForWhiteAggScore();
 
    /** @brief set the maximum foreseeing white area score with respect to aggregatable blocks
     */
+   GCG_EXPORT
    void setMaxForWhiteAggScore(
       SCIP_Real score   /**< new score value in [0,1] */
    );
@@ -1802,10 +1983,12 @@ public:
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcSetPartForWhiteAggScore
     * @returns setpartitioning maximum foreseeing white area score with respect to aggregateable
     */
+   GCG_EXPORT
    SCIP_Real getSetPartForWhiteAggScore();
 
    /** @brief set the setpartitioning maximum foreseeing white area score with respect to aggregateable
     */
+   GCG_EXPORT
    void setSetPartForWhiteAggScore(
       SCIP_Real score   /**< new score value in [0,1] */
    );
@@ -1815,10 +1998,12 @@ public:
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcBendersScore
     * @returns benders score
     */
+   GCG_EXPORT
    SCIP_Real getBendersScore();
 
    /** @brief set the benders score
     */
+   GCG_EXPORT
    void setBendersScore(
       SCIP_Real score   /**< new score value in [0,1] */
    );
@@ -1828,10 +2013,12 @@ public:
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcStrongDecompositionScore
     * @returns strong decomposition score
     */
+   GCG_EXPORT
    SCIP_Real getStrongDecompScore();
 
    /** @brief set the strong decomposition score
     */
+   GCG_EXPORT
    void setStrongDecompScore(
       SCIP_Real score   /**< new score value in [0,1] */
    );
@@ -1840,12 +2027,14 @@ public:
     *
     * @returns SCIP_OKAY if the result is consistent, SCIP_ERROR if there was an inconsistency
    */
+   GCG_EXPORT
    void prepare();
 
    /**
     * @brief Checks if the aggregation information was already calculated
     * @return true iff the aggregation information was already calculated
     */
+   GCG_EXPORT
    bool aggInfoCalculated();
 
    /**
@@ -1855,6 +2044,7 @@ public:
     *
     * @param ignoreDetectionLimits Set to true if computation should ignore detection limits. This parameter is ignored if the patched bliss version is not present.
    */
+   GCG_EXPORT
    void calcAggregationInformation(
       bool ignoreDetectionLimits
       );
@@ -1863,11 +2053,14 @@ public:
     *
     * @note conssforblocks[k] contains a vector of indices of all constraints assigned to block k
     * @returns vector of a vector of indices for each block */
+   GCG_EXPORT
    std::vector<std::vector<int>>& getConssForBlocks(
    );
 
+   GCG_EXPORT
    int getTranslatedpartialdecid() const;
 
+   GCG_EXPORT
    void setTranslatedpartialdecid(
       int decid
       );
@@ -1875,6 +2068,7 @@ public:
    /**
    * @brief creates a detector chain short string for this partialdec, is built from detector chain
    */
+   GCG_EXPORT
    void buildDecChainString(
       char* buffer /**< will contain string of detector chars in chronological order afterwards*/
       );

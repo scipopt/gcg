@@ -152,13 +152,13 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
 
    for(size_t i = 0; i < foundConstypes.size(); ++i)
    {
-      constypesIndices.push_back(i);
+      constypesIndices.push_back((int) i);
    }
 
    std::vector< std::vector<int> > subsetsOfConstypes = getSubsets(constypesIndices);
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), subsetsOfConstypes.size() - 1) );
-   partialdecdetectiondata->nnewpartialdecs = subsetsOfConstypes.size() - 1;
+   partialdecdetectiondata->nnewpartialdecs = (int) subsetsOfConstypes.size() - 1;
 
    for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
    {

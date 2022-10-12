@@ -146,7 +146,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
          if( symbolidx == symbolidxForClass[classid] )
          {
             classfound = true;
-            classForCons[consid] = classid;
+            classForCons[consid] = (int) classid;
             ++nconssForClass[classid];
             break;
          }

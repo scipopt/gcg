@@ -350,7 +350,7 @@ int IndexPartition::removeEmptyClasses()
       --nClasses;
    }
 
-   return toDelete.size();
+   return (int) toDelete.size();
 }
 
 /** sets the decomposition info of the a class */

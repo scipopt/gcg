@@ -37,13 +37,14 @@
 #define GCG_DEC_CONNECTEDBASE_H__
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the handler for connectedbase detector and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeDetectorConnectedbase(
    SCIP*                 scip                /**< SCIP data structure */
    );

@@ -35,6 +35,7 @@
 #ifndef GCG_SORT_H__
 #define GCG_SORT_H__
 
+#include "def.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus
@@ -57,7 +58,7 @@ extern "C" {
  **/
 #define GCG_DECL_SORTPTRCOMP(x) int x (void* userdata, void* elem1, void* elem2)
 
-SCIP_EXPORT
+GCG_EXPORT
 void GCGsortPtr(
    void**                ptrarray,           /**< pointer array to be sorted */
    GCG_DECL_SORTPTRCOMP((*ptrcomp)),         /**< data element comparator */
@@ -66,7 +67,7 @@ void GCGsortPtr(
    );
 
 /** sort of two joint arrays of pointers/pointers, sorted by first array in non-decreasing order */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGsortPtrPtr(
    void**                ptrarray1,          /**< first pointer array to be sorted */
    void**                ptrarray2,          /**< second pointer array to be permuted in the same way */

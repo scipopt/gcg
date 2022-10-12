@@ -38,13 +38,14 @@
 #define GCG_SOLVER_CLIQUER_H__
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the cliquer solver for pricing problems and includes it in GCG */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGincludeSolverCliquer(
    SCIP*                 scip                /**< SCIP data structure */
    );

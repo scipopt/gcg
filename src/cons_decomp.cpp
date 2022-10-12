@@ -485,8 +485,8 @@ SCIP_Retcode detect(
    }
 
    // TODO while not strg-c
-   while (!partialdecqueue.empty() and (
-      conshdlrdata->maxdetectiontime == 0 or
+   while (!partialdecqueue.empty() && (
+      conshdlrdata->maxdetectiontime == 0 ||
       SCIPgetClockTime(scip, conshdlrdata->detectorclock) < conshdlrdata->maxdetectiontime
    ))
    {
@@ -594,7 +594,7 @@ SCIP_Retcode detect(
       SCIP_CALL_ABORT( SCIPstartClock( scip, postprocessingclock ) );
       auto& finishedpartialdecs = detprobdata->getFinishedPartialdecs();
       int numpostprocessed = 0;
-      int nfinished = finishedpartialdecs.size();
+      int nfinished = (int) finishedpartialdecs.size();
       for( int i = 0; i < nfinished; ++i )
       {
           auto postpartialdec = finishedpartialdecs[i];
@@ -2552,7 +2552,7 @@ SCIP_RETCODE DECincludeConsClassifier(
    DEC_DECL_CONSCLASSIFY((*classify))
    )
 {
-   DEC_CONSCLASSIFIER *classifier;
+   DEC_CONSCLASSIFIER* classifier = NULL;
 
    assert(scip != NULL);
    assert(name != NULL);
@@ -2620,7 +2620,7 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_SETPARAMFAST((*setParamFastDetector))
    )
 {
-   DEC_DETECTOR *detector;
+   DEC_DETECTOR* detector = NULL;
    char setstr[SCIP_MAXSTRLEN];
    char descstr[SCIP_MAXSTRLEN];
 
@@ -2783,7 +2783,7 @@ SCIP_RETCODE DECincludeVarClassifier(
    DEC_DECL_VARCLASSIFY((*classify))
    )
 {
-   DEC_VARCLASSIFIER *classifier;
+   DEC_VARCLASSIFIER* classifier = NULL;
 
    assert(scip != NULL);
    assert(name != NULL);
@@ -2870,7 +2870,7 @@ SCIP_RETCODE DECincludeScore(
    DEC_DECL_SCORECALC    ((*scorecalc))
    )
 {
-   DEC_SCORE* score;
+   DEC_SCORE* score = NULL;
 
    assert(scip != NULL);
    assert(name != NULL);
@@ -4582,7 +4582,7 @@ SCIP_RETCODE GCGconshdlrDecompTranslateNBestOrigPartialdecs(
    GCGconshdlrDecompChooseCandidatesFromSelected(scip, candidates, TRUE, TRUE);
    if ( !candidates.empty() )
    {
-      n = MIN(n, candidates.size());
+      n = MIN(n, (int) candidates.size());
 
       std::vector<PARTIALDECOMP *> origpartialdecs(n);
       for( int i = 0; i < n; ++i )
@@ -4719,8 +4719,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP*                 scip
    )
 {
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_CONSHDLR* conshdlr = NULL;
+   SCIP_CONSHDLRDATA* conshdlrdata = NULL;
 
    /* create decomp constraint handler data */
    SCIP_CALL( SCIPallocMemory(scip, &conshdlrdata) );

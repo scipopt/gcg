@@ -36,6 +36,7 @@
 #define GCG_PUB_GCGCOL_H__
 
 #include "type_gcgcol.h"
+#include "def.h"
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"
 #include "scip/type_var.h"
@@ -56,7 +57,7 @@ extern "C" {
  */
 
 /** create a gcg column */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGcreateGcgCol(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_COL**            gcgcol,             /**< pointer to store gcg column */
@@ -69,13 +70,13 @@ SCIP_RETCODE GCGcreateGcgCol(
 );
 
 /** free a gcg column */
-extern
+GCG_EXPORT
 void GCGfreeGcgCol(
    GCG_COL**            gcgcol              /**< pointer to store gcg column */
 );
 
 /** create a gcg column from a solution to a pricing problem */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGcreateGcgColFromSol(
    SCIP*                scip,               /**< SCIP data structure (original problem) */
    GCG_COL**            gcgcol,             /**< pointer to store gcg column */
@@ -86,64 +87,64 @@ SCIP_RETCODE GCGcreateGcgColFromSol(
 );
 
 /** get pricing problem index of gcg column */
-extern
+GCG_EXPORT
 int GCGcolGetProbNr(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
 /** get pricing problem of gcg column */
-extern
+GCG_EXPORT
 SCIP* GCGcolGetPricingProb(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
 /** get variables of gcg column */
-extern
+GCG_EXPORT
 SCIP_VAR** GCGcolGetVars(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
 /** get values of gcg column */
-extern
+GCG_EXPORT
 SCIP_Real* GCGcolGetVals(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
 /** get number of variables of gcg column */
-extern
+GCG_EXPORT
 int GCGcolGetNVars(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
 /** is gcg column a ray? */
-extern
+GCG_EXPORT
 SCIP_Bool GCGcolIsRay(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
 /** get reduced cost of gcg column */
-extern
+GCG_EXPORT
 SCIP_Real GCGcolGetRedcost(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
 /** comparison method for sorting gcg columns by non-decreasing reduced cost */
-extern
+GCG_EXPORT
 SCIP_DECL_SORTPTRCOMP(GCGcolCompRedcost);
 
 /** comparison method for sorting gcg columns by non-increasing age */
-extern
+GCG_EXPORT
 SCIP_DECL_SORTPTRCOMP(GCGcolCompAge);
 
 /** comparison method for gcg columns. Returns TRUE iff columns are equal */
-extern
+GCG_EXPORT
 SCIP_Bool GCGcolIsEq(
    GCG_COL*             gcgcol1,            /**< first gcg column structure */
    GCG_COL*             gcgcol2             /**< second gcg column structure */
 );
 
 /** update reduced cost of variable and increase age */
-extern
+GCG_EXPORT
 void GCGcolUpdateRedcost(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real            redcost,            /**< new reduced cost */
@@ -151,7 +152,7 @@ void GCGcolUpdateRedcost(
    );
 
 /** return solution value of variable in gcg column */
-extern
+GCG_EXPORT
 SCIP_Real GCGcolGetSolVal(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_COL*             gcgcol,             /**< gcg column */
@@ -159,19 +160,19 @@ SCIP_Real GCGcolGetSolVal(
    );
 
 /** get master coefficients of column */
-extern
+GCG_EXPORT
 SCIP_Real* GCGcolGetMastercoefs(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
 /** get number of master coefficients of column */
-extern
+GCG_EXPORT
 int GCGcolGetNMastercoefs(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
 /** set master coefficients of column */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGcolSetMastercoefs(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real*           mastercoefs,        /**< array of master coefficients */
@@ -179,44 +180,45 @@ SCIP_RETCODE GCGcolSetMastercoefs(
    );
 
 /** set norm of column */
-extern
+GCG_EXPORT
 void GCGcolSetNorm(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real            norm                /**< norm of column */
    );
+
 /** get norm of column */
-extern
+GCG_EXPORT
 void GCGcolComputeNorm(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
 /** set master coefficients of column as initialized */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGcolSetInitializedCoefs(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
 /** return if master coefficients of column have been initialized */
-extern
+GCG_EXPORT
 SCIP_Bool GCGcolGetInitializedCoefs(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
 /** get master coefficients of column */
-extern
+GCG_EXPORT
 int* GCGcolGetLinkvars(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
 /** get number of master coefficients of column */
-extern
+GCG_EXPORT
 int GCGcolGetNLinkvars(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
 /** set master coefficients information of column */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGcolSetLinkvars(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    int*                 linkvars,           /**< array of linking variable indices for gcgcol->var */
@@ -224,25 +226,25 @@ SCIP_RETCODE GCGcolSetLinkvars(
    );
 
 /** get master cut coefficients of column */
-extern
+GCG_EXPORT
 SCIP_Real* GCGcolGetMastercuts(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
 /** get number of master cut coefficients of column */
-extern
+GCG_EXPORT
 int GCGcolGetNMastercuts(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
 /** get norm of column */
-extern
+GCG_EXPORT
 SCIP_Real GCGcolGetNorm(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
 /** update master cut coefficients information of column */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGcolUpdateMastercuts(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real*           newmastercuts,      /**< pointer to new array of master cut coefficients */
@@ -250,26 +252,27 @@ SCIP_RETCODE GCGcolUpdateMastercuts(
    );
 
 /** gets the age of the col */
-extern
+GCG_EXPORT
 int GCGcolGetAge(
    GCG_COL*             col                 /**< col */
    );
 
 /** returns whether the col's age exceeds the age limit */
-extern
+GCG_EXPORT
 SCIP_Bool GCGcolIsAged(
    GCG_COL*              col,                /**< col to check */
    int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool, or -1 */
    );
 
 /** compute parallelism of column to dual objective */
+GCG_EXPORT
 SCIP_Real GCGcolComputeDualObjPara(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_COL*             gcgcol              /**< gcg column */
    );
 
 /** compute orthogonality of two gcg columns */
-extern
+GCG_EXPORT
 SCIP_Real GCGcolComputeOrth(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_COL*             gcgcol1,            /**< first gcg column */

@@ -36,6 +36,7 @@
 #ifndef GCG_PUB_GCGPQUEUE_H__
 #define GCG_PUB_GCGPQUEUE_H__
 
+#include "def.h"
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"
 #include "scip/type_var.h"
@@ -56,7 +57,7 @@ extern "C" {
  */
 
 /** creates priority queue */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE GCGpqueueCreate(
    SCIP*                scip,                /** SCIP data structure */
    GCG_PQUEUE**         pqueue,              /**< pointer to a priority queue */
@@ -65,44 +66,45 @@ SCIP_RETCODE GCGpqueueCreate(
    );
 
 /** frees priority queue, but not the data elements themselves */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGpqueueFree(
    GCG_PQUEUE**         pqueue              /**< pointer to a priority queue */
    );
 
 /** clears the priority queue, but doesn't free the data elements themselves */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGpqueueClear(
    GCG_PQUEUE*          pqueue              /**< priority queue */
    );
 
 /** inserts element into priority queue */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE GCGpqueueInsert(
    GCG_PQUEUE*          pqueue,             /**< priority queue */
    void*                 elem                /**< element to be inserted */
    );
 
 /** removes and returns best element from the priority queue */
-SCIP_EXPORT
+GCG_EXPORT
 void* GCGpqueueRemove(
    GCG_PQUEUE*          pqueue              /**< priority queue */
    );
 
 /** resorts priority queue after changing the key values */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE GCGpqueueResort(
    GCG_PQUEUE*           pqueue              /**< priority queue */
    );
 
 /** set the comperator of the priority queue */
+GCG_EXPORT
 SCIP_RETCODE GCGpqueueSetComperator(
    GCG_PQUEUE*           pqueue,             /**< priority queue */
    SCIP_DECL_SORTPTRCOMP((*ptrcomp))         /**< data element comparator */
    );
 
 /**< delete item at position pos and insert last item at this position and resort pqueue */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGpqueueDelete(
    GCG_PQUEUE*          pqueue,             /**< priority queue */
    int                  pos,                /**< position of item that should be deleted */
@@ -110,19 +112,19 @@ SCIP_RETCODE GCGpqueueDelete(
 );
 
 /** returns the best element of the queue without removing it */
-SCIP_EXPORT
+GCG_EXPORT
 void* GCGpqueueFirst(
    GCG_PQUEUE*          pqueue              /**< priority queue */
    );
 
 /** returns the number of elements in the queue */
-SCIP_EXPORT
+GCG_EXPORT
 int GCGpqueueNElems(
    GCG_PQUEUE*          pqueue              /**< priority queue */
    );
 
 /** returns the elements of the queue; changing the returned array may destroy the queue's ordering! */
-SCIP_EXPORT
+GCG_EXPORT
 void** GCGpqueueElems(
    GCG_PQUEUE*          pqueue              /**< priority queue */
    );

@@ -39,24 +39,25 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** dialog execution method telling that a command is not available */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGmasterDialogExecNotAvailable);
 
 /** creates a root dialog */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGcreateRootMasterDialog(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG**         root                /**< pointer to store the root dialog */
    );
 
 /** includes or updates the master dialog menus in GCG */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeDialogMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );

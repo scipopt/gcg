@@ -42,7 +42,12 @@
 #include "gcgsort.h"
 #include "stat.h"
 #include <string.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 
 /** computes the generator of mastervar for the entry in origvar
  * @return entry of the generator corresponding to origvar */

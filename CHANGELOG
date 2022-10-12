@@ -5,8 +5,11 @@
 New features:
 -------------
 
+- MSVC support
+
 New/changed parameters:
 -----------------------
+
 - New parameter 'detection/scores/selected' to select the score that should be used to sort the decompositions
 - Removed parameter 'detection/score/scoretype'
 - Moved parameter 'detection/score/strong_detection/dualvalrandommethod' to 'detection/scores/strong/dualvalrandommethod'
@@ -15,6 +18,7 @@ New/changed parameters:
 
 New/modified API functions:
 ---------------------------
+
 - New functions: 'GCGconshdlrDecompGetNConsClassifiers', 'GCGconshdlrDecompGetNVarClassifiers', 'GCGconshdlrDecompGetConsClassifiers', 'GCGconshdlrDecompGetVarClassifiers'
 - Add parameter 'DEC_CONSCLASSIFIER* consclassifier' to 'DEC_DECL_CONSCLASSIFY'
 - Add paramater 'DEC_VARCLASSIFIER* varclassifier' to 'DEC_DECL_VARCLASSIFY'
@@ -43,6 +47,7 @@ New/modified API functions:
 
 Deleted API functions:
 ----------------------
+
 - Deleted function 'GCGconshdlrDecompGetScoretype'
 - Deleted function 'GCGconshdlrDecompCalcBendersScore'
 - Deleted function 'GCGconshdlrDecompCalcBorderAreaScore'
@@ -56,6 +61,7 @@ Deleted API functions:
 
 Code cleanup:
 -------------
+
 - Refactored scores
 
 

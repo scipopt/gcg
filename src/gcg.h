@@ -62,20 +62,21 @@ extern "C" {
 
 /** checks whether the scip is the original scip instance
  * @returns whether the scip is the original scip instance */
-extern
+GCG_EXPORT
 SCIP_Bool GCGisOriginal(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** checks whether the scip is the master problem scip
  * @returns whether the scip is the master problem scip */
-extern
+GCG_EXPORT
 SCIP_Bool GCGisMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** print out GCG statistics
  * @returns SCIP return code */
+GCG_EXPORT
 SCIP_RETCODE GCGprintStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
@@ -83,6 +84,7 @@ SCIP_RETCODE GCGprintStatistics(
 
 /** print out complete detection statistics
  * @returns SCIP return code */
+GCG_EXPORT
 SCIP_RETCODE GCGprintCompleteDetectionStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
@@ -90,63 +92,64 @@ SCIP_RETCODE GCGprintCompleteDetectionStatistics(
 
 /** print name of current instance to given output
  * @returns SCIP return code */
+GCG_EXPORT
 SCIP_RETCODE GCGprintInstanceName(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
 );
 
+GCG_EXPORT
 SCIP_RETCODE GCGprintMiplibStructureInformation(
    SCIP*                 scip,              /**< SCIP data structure */
    SCIP_DIALOGHDLR*      dialoghdlr         /**< dialog handler */
    );
 
-
-
+GCG_EXPORT
 SCIP_RETCODE GCGprintBlockcandidateInformation(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
 );
 
+GCG_EXPORT
 SCIP_RETCODE GCGprintCompleteDetectionTime(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
 );
 
-
+GCG_EXPORT
 SCIP_RETCODE GCGprintPartitionInformation(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
 );
 
+GCG_EXPORT
 SCIP_RETCODE GCGprintDecompInformation(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
 );
 
-
-
 /** gets the total memory used after problem creation stage for all pricingproblems */
-extern
+GCG_EXPORT
 SCIP_Real GCGgetPricingprobsMemUsed(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** prints out the degeneracy of the problem */
-extern
+GCG_EXPORT
 void GCGprintDegeneracy(
    SCIP*                 scip,               /**< SCIP data structure */
    double                degeneracy          /**< degeneracy to print*/
    );
 
 /** returns the average degeneracy */
-extern
+GCG_EXPORT
 SCIP_Real GCGgetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** transforms given values of the given original variables into values of the given master variables
  * @returns the sum of the values of the corresponding master variables that are fixed */
-extern
+GCG_EXPORT
 SCIP_Real GCGtransformOrigvalsToMastervals(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            origvars,           /**< array with (subset of the) original variables */
@@ -159,7 +162,7 @@ SCIP_Real GCGtransformOrigvalsToMastervals(
 
 /** transforms given solution of the master problem into solution of the original problem
  *  @returns SCIP return code */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             mastersol,          /**< solution of the master problem */
@@ -168,39 +171,40 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
 
 /** Checks whether the constraint belongs to GCG or not
  *  @returns whether the constraint belongs to GCG or not */
-extern
+GCG_EXPORT
 SCIP_Bool GCGisConsGCGCons(
    SCIP_CONS*            cons                /**< constraint to check */
    );
 
 
 /** returns the original problem for the given master problem */
+GCG_EXPORT
 SCIP* GCGgetOriginalprob(
    SCIP*                 masterprob          /**< the SCIP data structure for the master problem */
    );
 
 /** returns the master problem */
-extern
+GCG_EXPORT
 SCIP* GCGgetMasterprob(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the pricing problem of the given number */
-extern
+GCG_EXPORT
 SCIP* GCGgetPricingprob(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
 /** returns the number of pricing problems */
-extern
+GCG_EXPORT
 int GCGgetNPricingprobs(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns TRUE iff the pricingproblem of the given number is relevant, that means is not identical to
  *  another and represented by it */
-extern
+GCG_EXPORT
 SCIP_Bool GCGisPricingprobRelevant(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
@@ -209,47 +213,46 @@ SCIP_Bool GCGisPricingprobRelevant(
 /**
  *  for a given block, return the block by which it is represented
  */
-extern
+GCG_EXPORT
 int GCGgetBlockRepresentative(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
 /** returns the number of relevant pricing problems */
-extern
+GCG_EXPORT
 int GCGgetNRelPricingprobs(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the number of blocks in the original formulation, that are represented by
  *  the pricingprob with the given number */
-extern
+GCG_EXPORT
 int GCGgetNIdenticalBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
 /** returns the number of constraints in the master problem */
-extern
+GCG_EXPORT
 int GCGgetNMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the contraints in the master problem */
-extern
+GCG_EXPORT
 SCIP_CONS** GCGgetMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the contraints in the original problem that correspond to the constraints in the master problem */
-extern
+GCG_EXPORT
 SCIP_CONS** GCGgetOrigMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-
 /** returns the convexity constraint for the given block */
-extern
+GCG_EXPORT
 SCIP_CONS* GCGgetConvCons(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   blocknr             /**< the number of the block for which we
@@ -257,62 +260,62 @@ SCIP_CONS* GCGgetConvCons(
    );
 
 /** returns whether the master problem is a set covering problem */
-extern
+GCG_EXPORT
 SCIP_Bool GCGisMasterSetCovering(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns whether the master problem is a set partitioning problem */
-extern
+GCG_EXPORT
 SCIP_Bool GCGisMasterSetPartitioning(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns whether the relaxator has been initialized */
-extern
+GCG_EXPORT
 SCIP_Bool GCGrelaxIsInitialized(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** return linking constraints for variables */
-extern
+GCG_EXPORT
 SCIP_CONS** GCGgetVarLinkingconss(
    SCIP*                 scip                /**< SCIP data structure */
   );
 
 /** return blocks of linking constraints for variables */
-extern
+GCG_EXPORT
 int* GCGgetVarLinkingconssBlock(
    SCIP*                 scip                /**< SCIP data structure */
   );
 
 /** return number of linking constraints for variables */
-extern
+GCG_EXPORT
 int GCGgetNVarLinkingconss(
    SCIP*                 scip                /**< SCIP data structure */
   );
 
 /** return number of linking variables */
-extern
+GCG_EXPORT
 int GCGgetNLinkingvars(
    SCIP*                 scip                /**< SCIP data structure */
   );
 
 /** return number of variables directly transferred to the master problem */
-extern
+GCG_EXPORT
 int GCGgetNTransvars(
    SCIP*                 scip                /**< SCIP data structure */
   );
 
 /** returns the auxiliary variable for the given pricing probblem */
-extern
+GCG_EXPORT
 SCIP_VAR* GCGgetAuxiliaryVariable(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
 /** returns the relaxation solution from the Benders' decomposition */
-extern
+GCG_EXPORT
 SCIP_SOL* GCGgetBendersRelaxationSol(
    SCIP*                 scip                /**< SCIP data structure */
    );

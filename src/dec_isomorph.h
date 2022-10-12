@@ -36,13 +36,14 @@
 #define DEC_ISOMORPH_H__
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the handler for isomorph subproblems and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeDetectorIsomorphism(
    SCIP*                 scip                /**< SCIP data structure */
    );

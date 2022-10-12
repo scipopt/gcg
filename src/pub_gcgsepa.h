@@ -39,6 +39,7 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,6 +57,7 @@ extern "C" {
  *  - SCIP_PARAMSETTING_AGGRESSIVE such that the separator are called more aggressively
  *  - SCIP_PARAMSETTING_OFF which turns off all separators
  */
+GCG_EXPORT
 SCIP_RETCODE GCGsetSeparators(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_PARAMSETTING     paramsetting        /**< parameter settings */

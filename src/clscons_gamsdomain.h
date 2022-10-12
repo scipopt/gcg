@@ -37,6 +37,7 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_consclassifier.h"
 
 #ifdef __cplusplus
@@ -44,7 +45,6 @@ extern "C" {
 #endif
 
 /** adds an entry to clsdata->constodomain */
-extern
 SCIP_RETCODE DECconsClassifierGamsdomainAddEntry(
    DEC_CONSCLASSIFIER*   classifier,
    SCIP_CONS*            cons,
@@ -53,7 +53,7 @@ SCIP_RETCODE DECconsClassifierGamsdomainAddEntry(
 );
 
 /** creates the gamsdomain classifier and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeConsClassifierGamsdomain(
    SCIP*                 scip                /**< SCIP data structure */
    );

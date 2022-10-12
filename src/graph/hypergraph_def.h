@@ -117,12 +117,12 @@ SCIP_RETCODE Hypergraph<T>::addNodeToHyperedge(int node, int hedge)
 
 template <class T>
 int Hypergraph<T>::getNNodes() {
-   return nodes.size();
+   return (int)nodes.size();
 }
 
 template <class T>
 int Hypergraph<T>::getNHyperedges() {
-   return hedges.size();
+   return (int)hedges.size();
 }
 
 template <class T>
@@ -201,7 +201,7 @@ SCIP_RETCODE Hypergraph<T>::writeToFile(
 
       if( writeweights )
       {
-         SCIPinfoMessage(scip_, file, "%d ", graph->getWeight(i));
+         SCIPinfoMessage(scip_, file, "%d ", graph->getWeight((int)i));
       }
       for( int j = 0; j < nneighbors; ++j )
       {

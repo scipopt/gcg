@@ -142,7 +142,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
          if( symbolidx == symbolidxForClass[classid] )
          {
             classfound = true;
-            classForVar[varid] = classid;
+            classForVar[varid] = (int) classid;
             ++nvarsForClass[classid];
             break;
          }

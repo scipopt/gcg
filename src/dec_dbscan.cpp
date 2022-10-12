@@ -368,7 +368,7 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
    }
 
-   int nMaxPartialdecs = detectordata->n_iterations * graphs.size();
+   int nMaxPartialdecs = detectordata->n_iterations * (int) graphs.size();
    const int max_blocks = std::min((int)round(0.3 * SCIPgetNConss(scip)), MAX_N_BLOCKS);
    char decinfo[SCIP_MAXSTRLEN];
 
@@ -447,7 +447,7 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
          createddecomps[j]->addClockTime(clockTimes1[i] / ncreateddecomps + clockTimes2[i] / ncreateddecomps + epstime / 2.0);
          partialdecdetectiondata->newpartialdecs[nnewpartialdecs + j] = createddecomps[j];
       }
-      nnewpartialdecs += ncreateddecomps;
+      nnewpartialdecs += (int) ncreateddecomps;
 
       delete graphs.at(i);
       graphs[i] = NULL;

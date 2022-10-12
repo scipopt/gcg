@@ -1001,8 +1001,8 @@ SCIP_RETCODE createGraph(
          assert(varcolor != -1);
          varcolor += colorinfo.getLenCons();
 
-         assert( (uint) masterconsnode < h->get_nof_vertices());
-         assert( (uint) coefnodeindex < h->get_nof_vertices());
+         assert( (unsigned int) masterconsnode < h->get_nof_vertices());
+         assert( (unsigned int) coefnodeindex < h->get_nof_vertices());
          /* master constraint and coefficient */
          h->add_edge((unsigned int) masterconsnode, (unsigned int) coefnodeindex);
          SCIPdebugMessage("ma: c <%s> (id: %d, color: %d) -> nz (id: %d) (value: <%.6f> , color: %d) -> pricingvar <%s> (id: %d, color: %d)\n",
@@ -1303,8 +1303,8 @@ SCIP_RETCODE createGraphNewDetection(
          assert(varcolor != -1);
          varcolor += colorinfo.getLenCons();
 
-         assert( (uint) masterconsnode < h->get_nof_vertices());
-         assert( (uint) coefnodeindex < h->get_nof_vertices());
+         assert( (unsigned int) masterconsnode < h->get_nof_vertices());
+         assert( (unsigned int) coefnodeindex < h->get_nof_vertices());
          /* master constraint and coefficient */
          h->add_edge((unsigned int) masterconsnode, (unsigned int) coefnodeindex);
          SCIPdebugMessage("ma: c <%s> (id: %d, color: %d) -> nz (id: %d) (value: <%.6f> , color: %d) -> pricingvar <%s> (id: %d, color: %d)\n",

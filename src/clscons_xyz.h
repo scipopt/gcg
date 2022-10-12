@@ -37,13 +37,14 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the xyz classifier and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeConsClassifierXyz(
    SCIP*                 scip                /**< SCIP data structure */
    );

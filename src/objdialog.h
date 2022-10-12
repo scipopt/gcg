@@ -40,6 +40,7 @@
 
 #include "scip/scip.h"
 #include "objscip/objcloneable.h"
+#include "def.h"
 
 namespace gcg
 {
@@ -144,7 +145,7 @@ public:
  *       ...
  *       SCIP_CALL( SCIPfree(&scip) );  // destructor of MyDialog is called here
  */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeObjDialog(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG*          parentdialog,       /**< parent dialog */

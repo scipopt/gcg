@@ -38,6 +38,7 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,8 +52,8 @@ enum Blockingtype
 };
 typedef enum Blockingtype BLOCKINGTYPE;
 
-extern
 /** creates the stairheur detector and includes it in SCIP */
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeDetectorStairheur(
       SCIP*              scip                /**< SCIP data structure */
    );

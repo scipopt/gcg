@@ -39,6 +39,7 @@
 #include "objscip/objscip.h"
 #include <vector>
 #include <string>
+#include "def.h"
 
 namespace gcg
 {
@@ -138,26 +139,31 @@ public:
 
    /** returns true if the other partition has an equivalent index structure,
     *  meaning that the partition of the set of constraints is the same ignoring the concrete classindices, classnames, etc. */
+   GCG_EXPORT
    bool isDuplicateOf(
       IndexPartition* otherPartition    /**< other partition to be checked */
    );
 
    /** returns the information text of a class */
+   GCG_EXPORT
    const char* getClassDescription(
       int classindex                   /**< index of class */
    );
 
    /** returns the name of a class */
+   GCG_EXPORT
    const char* getClassName(
       int classindex                   /**< index of class */
    );
 
    /** returns the name of the partition */
+   GCG_EXPORT
    const char* getName(
    );
 
 
    /** returns the number of classes the partition provides */
+   GCG_EXPORT
    int getNClasses(
    );
 
@@ -165,22 +171,26 @@ public:
      * the enlarged class is always the class with index 0
      * returns empty vector if the current number of classes is lower than an upper bound
      * or greater than 2*(upper bound) */
+   GCG_EXPORT
    std::vector<int> reduceClasses(
       int maxNumberOfClasses           /**< upper bound */
    );
 
    /** removes all classes which do not have any assigned index (classindices may change)
     *  returns number of removed classes */
+   GCG_EXPORT
    int removeEmptyClasses(
    );
 
    /** sets the information text of a class */
+   GCG_EXPORT
    void setClassDescription(
       int classindex,                  /**< index of class */
       const char* desc                 /**< description of class (will be copied) */
    );
 
    /** sets the name of a class */
+   GCG_EXPORT
    void setClassName(
       int classindex,                  /**< index of class */
       const char* name                 /**< name of class (will be copied) */

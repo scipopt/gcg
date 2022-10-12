@@ -2454,8 +2454,6 @@ SCIP_RETCODE transformMaster(
    SCIP_RELAXDATA* relaxdata;
    int i;
    int nvars;
-   int permutationseed;
-   int oxfordcomma;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -2537,11 +2535,7 @@ SCIP_RETCODE initRelaxator(
    SCIP_RELAX*           relax               /**< relaxator data structure */
    )
 {
-   SCIP_VAR** vars;
-   SCIP_CONS** oldconss;
    SCIP_RELAXDATA* relaxdata;
-   int i;
-   int nvars;
    int permutationseed;
    int oxfordcomma;
 
@@ -3806,8 +3800,6 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    int v;
    int i;
    int j;
-
-   SCIP_Bool success;
 
    assert(scip != NULL);
    assert(cons != NULL);

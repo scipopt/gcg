@@ -1341,7 +1341,7 @@ SCIP_RETCODE GCGincludeReaderDec(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_READERDATA* readerdata;
+   SCIP_READERDATA* readerdata = NULL;
 
    /* create dec reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );

@@ -42,13 +42,14 @@
 #define __SCIP_HEUR_GCGDINS_H__
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the DINS primal heuristic and includes it in SCIP */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeHeurGcgdins(
    SCIP*                 scip                /**< SCIP data structure */
    );

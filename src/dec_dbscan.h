@@ -37,14 +37,15 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-extern
 /** creates the DBSCAN presolver and includes it in SCIP */
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeDetectorDBSCAN(
       SCIP*              scip                /**< SCIP data structure */
    );

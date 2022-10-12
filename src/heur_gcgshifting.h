@@ -39,13 +39,14 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the GCG shifting heuristic with infeasibility recovering and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeHeurGcgshifting(
    SCIP*                 scip                /**< SCIP data structure */
    );

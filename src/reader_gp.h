@@ -40,6 +40,7 @@
 #define GCG_READER_GP_H__
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_decomp.h"
 
 #ifdef __cplusplus
@@ -58,13 +59,14 @@ typedef enum GPOutputFormat GP_OUTPUT_FORMAT;
 
 /** Includes the gp file reader into SCIP
  * @returns SCIP status */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /* Writes a visualization for the given partialdec */
-extern SCIP_RETCODE GCGwriteGpVisualizationFormat(
+GCG_EXPORT
+SCIP_RETCODE GCGwriteGpVisualizationFormat(
    SCIP* scip,             /**< SCIP data structure */
    char* filename,         /**< filename (including path) to write to */
    char* outputname,       /**< filename for compiled output file */
@@ -74,7 +76,7 @@ extern SCIP_RETCODE GCGwriteGpVisualizationFormat(
 
 /** Writes a visualization as .pdf file for the given partialdec
  * @returns SCIP status */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGwriteGpVisualization(
    SCIP* scip,             /**< SCIP data structure */
    char* filename,         /**< filename (including path), location of the output*/
@@ -85,7 +87,7 @@ SCIP_RETCODE GCGwriteGpVisualization(
 /** Creates a block matrix and outputs its visualization as .pdf file
  * @returns SCIP return code
  * */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGWriteGpDecompMatrix(
    SCIP*                 scip,               /**< scip data structure */
    const char*           filename,           /**< filename the output should be written to (including directory) */

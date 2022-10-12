@@ -57,9 +57,6 @@ set(gcgsources
     dec_generalmastersetcover.cpp
     dec_generalmastersetpack.cpp
     dec_generalmastersetpart.cpp
-    dec_hcgpartition.cpp
-    dec_hrcgpartition.cpp
-    dec_hrgpartition.cpp
     dec_mastersetcover.cpp
     dec_mastersetpack.cpp
     dec_mastersetpart.cpp
@@ -91,10 +88,6 @@ set(gcgsources
     gcgpqueue.c
     gcgsort.c
     gcgvar.c
-    graph/graph_gcg.cpp
-    graph/graph_tclique.cpp
-    graph/inst.cpp
-    graph/weights.cpp
     heur_gcgcoefdiving.c
     heur_gcgdins.c
     heur_gcgfeaspump.c
@@ -157,6 +150,13 @@ set(gcgsources
     stat.c
 )
 
+set(gcggraphsources
+    graph/graph_gcg.cpp
+    graph/graph_tclique.cpp
+    graph/inst.cpp
+    graph/weights.cpp
+)
+
 set(gcgheaders
     branch_empty.h
     branch_bpstrong.h
@@ -201,9 +201,6 @@ set(gcgheaders
     dec_generalmastersetcover.h
     dec_generalmastersetpack.h
     dec_generalmastersetpart.h
-    dec_hcgpartition.h
-    dec_hrcgpartition.h
-    dec_hrgpartition.h
     dec_mastersetcover.h
     dec_mastersetpack.h
     dec_mastersetpart.h
@@ -397,14 +394,26 @@ if(CPLEX_FOUND)
 endif()
 
 if(HMETIS_FOUND)
-   include_directories(${CMAKE_CURRENT_BINARY_DIR})
-   add_definitions(-DHMETIS_HEADER)
-   configure_file(hmetis.h.in hmetis.h)
+   if(NOT WIN32)
+      set(gcgsources ${gcgsources}
+         dec_hcgpartition.cpp
+         dec_hrcgpartition.cpp
+         dec_hrgpartition.cpp
+      )
+      set(gcgheaders ${gcgheaders}
+         dec_hcgpartition.h
+         dec_hrcgpartition.h
+         dec_hrgpartition.h
+      )
+      include_directories(${CMAKE_CURRENT_BINARY_DIR})
+      add_definitions(-DHMETIS_HEADER)
+      configure_file(hmetis.h.in hmetis.h)
+   endif()
 endif()
 
 # all source files should be compiled with a c++ compiler
 if(CXXONLY)
-    set_source_files_properties(main.c ${gcgsources} PROPERTIES LANGUAGE CXX)
+    set_source_files_properties(main.c ${gcgsources} ${gcggraphsources} PROPERTIES LANGUAGE CXX)
 
     # for the clang compiler this suppresses the warnings about treating 'c' input as 'c++' when CXXONLY is enabled
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -412,15 +421,25 @@ if(CXXONLY)
     endif()
 endif()
 
-add_library(libgcg ${gcgsources})
-setLibProperties(libgcg "gcg")
+source_group("gcg" FILES ${gcgsources} ${gcgheaders})
+source_group("graph" FILES ${gcggraphsources} ${gcggraphheaders})
+source_group("main" FILES main.c)
+
+add_library(libgcg ${gcgsources} ${gcggraphsources} ${gcgheaders} ${gcggraphheaders})
+
+if(MSVC)
+   # msvc otherwise is not smart enough and tries to link the gcg.exe binary as a library
+   setLibProperties(libgcg "libgcg")
+else()
+   setLibProperties(libgcg "gcg")
+endif()
 
 target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
 
 if(SHARED)
     set(SCIP_NEEDED 0)
     target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES} ${CLIQUER_PIC_LIBRARIES} ${CPLEX_PIC_LIBRARIES} ${GSL_PIC_LIBRARIES})
-    add_executable(gcg main.c ${gcgsources})
+    add_executable(gcg main.c ${gcgsources} ${gcggraphsources} ${gcgheaders} ${gcggraphheaders})
 else()
     set(SCIP_NEEDED ${SCIP_FOUND})
     target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES})
@@ -428,12 +447,17 @@ else()
     target_link_libraries(gcg libgcg)
 endif()
 
+add_executable(GCG::GCG ALIAS gcg)
+add_library(GCG::libgcg ALIAS libgcg)
+
+include(GenerateExportHeader)
+generate_export_header(libgcg BASE_NAME gcg EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/gcg/gcg_export.h)
+target_compile_definitions(gcg PRIVATE GCG_STATIC_DEFINE)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     find_package(Sanitizers)
     add_sanitizers(gcg)
 endif()
-
-target_compile_definitions(gcg PRIVATE EXTERN=extern)
 
 target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES})
 
@@ -455,8 +479,10 @@ install(FILES ${gcgheaders} DESTINATION include/gcg)
 # separate installation of graph headers to preserve the folder structure
 # see e.g. here: https://stackoverflow.com/a/11097012
 install(FILES ${gcggraphheaders} DESTINATION include/gcg/graph)
-if(HMETIS_FOUND)
-   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmetis.h DESTINATION include/gcg)
+if(NOT WIN32)
+   if(HMETIS_FOUND)
+      install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmetis.h DESTINATION include/gcg)
+   endif()
 endif()
 
 # install the binary and the library to appropriate locations and add them to an export group
@@ -490,3 +516,11 @@ configure_file(${PROJECT_SOURCE_DIR}/gcg-config.cmake.in
 install(EXPORT gcg-targets FILE gcg-targets.cmake DESTINATION lib/cmake/gcg)
 install(FILES "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/gcg-config.cmake" DESTINATION lib/cmake/gcg)
 
+if(MSVC)
+   if(DEFINED GCG_DEV_BUILD_SCIP_PATH)
+      add_custom_command(TARGET gcg POST_BUILD
+         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+         "${SCIP_BINARY_DIR}/bin/$<CONFIG>/libscip.dll"
+         "${GCG_BINARY_DIR}/bin/$<CONFIG>")
+    endif()
+endif()

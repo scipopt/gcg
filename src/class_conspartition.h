@@ -36,6 +36,7 @@
 #ifndef GCG_CLASS_CONSPARTITION_H__
 #define GCG_CLASS_CONSPARTITION_H__
 
+#include "def.h"
 #include "class_indexpartition.h"
 
 namespace gcg
@@ -56,6 +57,7 @@ class ConsPartition : public IndexPartition
 public:
 
    /** constructor */
+   GCG_EXPORT
    ConsPartition(
       SCIP*                scip,                /**< scip data structure */
       const char*          name,                /**< name of partition (will be copied) */
@@ -64,16 +66,19 @@ public:
    );
 
    /** copy constructor */
+   GCG_EXPORT
    ConsPartition(
       const ConsPartition* toCopy              /**< ConsPartition to be copied */
    );
 
 
    /** destructor */
+   GCG_EXPORT
    ~ConsPartition();
 
 
    /** creates a new class, returns index of the class */
+   GCG_EXPORT
    int addClass(
       const char* name,                /**< name of the class (will be copied) */
       const char* desc,                /**< description of the class (will be copied) */
@@ -81,12 +86,14 @@ public:
    );
 
    /** assigns a constraint to a class */
+   GCG_EXPORT
    void assignConsToClass(
       int consindex,                   /**< index of the constraint */
       int classindex                   /**< index of the class */
    );
 
    /** returns a vector containing all possible subsets of the chosen classindices */
+   GCG_EXPORT
    std::vector<std::vector<int>> getAllSubsets(
       bool both,                       /**< true, if BOTH classes should be considered */
       bool only_master,                /**< true, if ONLY_MASTER classes should be considered */
@@ -94,34 +101,41 @@ public:
    );
 
    /** returns the decomposition info of a class */
+   GCG_EXPORT
    CONS_DECOMPINFO getClassDecompInfo(
       int classindex                   /**< index of class */
    );
 
    /** returns the name of the class a constraint is assigned to */
+   GCG_EXPORT
    const char* getClassNameOfCons(
       int consindex                    /**< index of constraint */
    );
 
 
    /** returns the index of the class a constraint is assigned to */
+   GCG_EXPORT
    int getClassOfCons(
       int consindex                    /**< index of constraint */
    );
 
    /** returns vector containing the assigned class of each constraint */
+   GCG_EXPORT
    const int* getConssToClasses(
    );
 
    /** returns the number of constraints */
+   GCG_EXPORT
    int getNConss(
    );
 
    /** returns a vector with the numbers of constraints that are assigned to the classes */
+   GCG_EXPORT
    std::vector<int> getNConssOfClasses(
    );
 
    /** returns whether a constraint is already assigned to a class */
+   GCG_EXPORT
    bool isConsClassified(
       int consindex                    /**< index of constraint */
    );
@@ -130,11 +144,13 @@ public:
    /** returns partition with reduced number of classes
     *  if the current number of classes is greater than an upper bound
     *  and lower than 2*(upper bound) (returns NULL otherwise) */
+   GCG_EXPORT
    ConsPartition* reduceClasses(
       int maxNumberOfClasses           /**< upper bound */
    );
 
    /** sets the decomposition code of a class */
+   GCG_EXPORT
    void setClassDecompInfo(
       int classindex,                  /**< index of class */
       CONS_DECOMPINFO decompInfo            /**< decomposition code of class */

@@ -41,6 +41,7 @@
 #define GCG_READER_TEX_H__
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_decomp.h"
 #include "cons_decomp.h"
 
@@ -52,14 +53,16 @@ extern "C" {
 /** Includes the tex file reader into SCIP
  *
  * @returns SCIP status */
-extern SCIP_RETCODE SCIPincludeReaderTex(
+GCG_EXPORT
+SCIP_RETCODE SCIPincludeReaderTex(
    SCIP* scip     /**< SCIP data structure */
    );
 
 /** Writes visualization LaTeX code for the given partialdec
  *
  * @returns SCIP status */
-extern SCIP_RETCODE GCGwriteTexVisualization(
+GCG_EXPORT
+SCIP_RETCODE GCGwriteTexVisualization(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< file in which to write the LaTeX code */
    int partialdecid,            /**< id of partialdec to visualize */
@@ -71,7 +74,8 @@ extern SCIP_RETCODE GCGwriteTexVisualization(
  *
  * @note  *npartialdecs will be set to the number of actually written decompositions.
  * @returns SCIP status */
-extern SCIP_RETCODE GCGwriteTexReport(
+GCG_EXPORT
+SCIP_RETCODE GCGwriteTexReport(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< file in which to put the LaTeX code */
    int* partialdecids,     /**< ids of partialdecs to visualize */
@@ -85,7 +89,8 @@ extern SCIP_RETCODE GCGwriteTexReport(
 /** Makes a new makefile and readme for the given .tex file
  *
  * @returns SCIP status */
-extern SCIP_RETCODE GCGtexWriteMakefileAndReadme(
+GCG_EXPORT
+SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    SCIP* scip,          /**< SCIP data structure */
    FILE* file,          /**< tex file for which the makefile & readme are generated */
    SCIP_Bool usegp,     /**< true if the gp reader was used for creation of images */

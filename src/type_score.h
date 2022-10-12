@@ -34,6 +34,7 @@
 #ifndef GCG_TYPE_SCORE_H__
 #define GCG_TYPE_SCORE_H__
 
+#include "scip/def.h"
 
 typedef struct DEC_Score DEC_SCORE;
 typedef struct DEC_ScoreData DEC_SCOREDATA;       /**< score specific data */

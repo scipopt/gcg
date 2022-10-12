@@ -38,6 +38,7 @@
 #define GCG_HEUR_SETCOVER_H__
 
 
+#include "def.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus
@@ -45,7 +46,7 @@ extern "C" {
 #endif
 
 /** creates the setcover primal heuristic and includes it in SCIP */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeHeurSetcover(
    SCIP*                 scip                /**< SCIP data structure */
    );

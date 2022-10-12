@@ -36,13 +36,14 @@
 #define GCG_DEC_COMPGREEDILY_H__
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the handler for compgreedily detector and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeDetectorCompgreedily(
    SCIP*                 scip                /**< SCIP data structure */
    );

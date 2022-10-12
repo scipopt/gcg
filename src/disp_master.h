@@ -37,13 +37,14 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** includes the master display columns in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeDispMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );

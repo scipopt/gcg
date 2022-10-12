@@ -38,13 +38,14 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the empty LP branching rule and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeBranchruleEmpty(
    SCIP*                 scip                /**< SCIP data structure */
    );

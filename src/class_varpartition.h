@@ -36,6 +36,7 @@
 #ifndef GCG_CLASS_VARPARTITION_H__
 #define GCG_CLASS_VARPARTITION_H__
 
+#include "def.h"
 #include "class_indexpartition.h"
 
 namespace gcg
@@ -57,6 +58,7 @@ class VarPartition : public IndexPartition
 public:
 
    /** constructor */
+   GCG_EXPORT
    VarPartition(
       SCIP*                scip,                /**< scip data structure */
       const char*          name,                /**< name of partition (will be copied) */
@@ -65,16 +67,19 @@ public:
    );
 
    /** copy constructor */
+   GCG_EXPORT
    VarPartition(
       const VarPartition* toCopy              /**< VarPartition to be copied */
    );
 
 
    /** destructor */
+   GCG_EXPORT
    ~VarPartition();
 
 
    /** creates a new class, returns index of the class */
+   GCG_EXPORT
    int addClass(
       const char* name,                /**< name of the class (will be copied) */
       const char* desc,                /**< description of the class (will be copied) */
@@ -82,12 +87,14 @@ public:
    );
 
    /** assigns a variable to a class */
+   GCG_EXPORT
    void assignVarToClass(
       int varindex,                    /**< index of the variable */
       int classindex                   /**< index of the class */
    );
 
    /** returns a vector containing all possible subsets of the chosen classindices */
+   GCG_EXPORT
    std::vector<std::vector<int>> getAllSubsets(
       bool all,                        /**< true, if ALL classes should be considered */
       bool linking,                    /**< true, if LINKING classes should be considered */
@@ -96,34 +103,41 @@ public:
    );
 
    /** returns the decomposition info of a class */
+   GCG_EXPORT
    VAR_DECOMPINFO getClassDecompInfo(
       int classindex                   /**< index of class */
    );
 
    /** returns the name of the class a variable is assigned to */
+   GCG_EXPORT
    const char* getClassNameOfVar(
       int varindex                    /**< index of variable */
    );
 
 
    /** returns the index of the class a variable is assigned to */
+   GCG_EXPORT
    int getClassOfVar(
       int varindex                    /**< index of variable */
    );
 
    /** returns vector containing the assigned class of each variable */
+   GCG_EXPORT
    const int* getVarsToClasses(
    );
 
    /** returns the number of variables */
+   GCG_EXPORT
    int getNVars(
    );
 
    /** returns a vector with the numbers of variables that are assigned to the classes */
+   GCG_EXPORT
    std::vector<int> getNVarsOfClasses(
    );
 
    /** returns whether a variable is already assigned to a class */
+   GCG_EXPORT
    bool isVarClassified(
       int varindex                    /**< index of variable */
    );
@@ -132,11 +146,13 @@ public:
    /** returns partition with reduced number of classes
     *  if the current number of classes is greater than an upper bound
     *  and lower than 2*(upper bound) (returns NULL otherwise) */
+   GCG_EXPORT
    VarPartition* reduceClasses(
       int maxNumberOfClasses           /**< upper bound */
    );
 
    /** sets the decomposition code of a class */
+   GCG_EXPORT
    void setClassDecompInfo(
       int classindex,                  /**< index of class */
       VAR_DECOMPINFO decompInfo        /**< decomposition code of class */
