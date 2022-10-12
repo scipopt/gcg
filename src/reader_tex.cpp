@@ -683,8 +683,8 @@ SCIP_RETCODE GCGwriteTexReport(
    )
 {
    PARTIALDECOMP* partialdec;
-   char gppath[PATH_MAX];
-   char filepath[PATH_MAX];
+   char gppath[SCIP_MAXSTRLEN];
+   char filepath[SCIP_MAXSTRLEN];
    char* path;
    char gpname[SCIP_MAXSTRLEN];
    char pdfname[SCIP_MAXSTRLEN];
@@ -740,7 +740,7 @@ SCIP_RETCODE GCGwriteTexReport(
          GCGgetFilePath(file, filepath);
          SCIPsplitFilename(filepath, &path, NULL, NULL, NULL);
 
-         SCIPsnprintf(gppath, PATH_MAX, "%s/%s.gp", path, gpname);
+         SCIPsnprintf(gppath, SCIP_MAXSTRLEN, "%s/%s.gp", path, gpname);
 
          GCGwriteGpVisualization(scip, gppath, pdfname, partialdecids[i]);
 
@@ -820,10 +820,10 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    FILE* readme;
    char* filepath;
    char* filename;
-   char pfile[PATH_MAX];
-   char makefilename[PATH_MAX];
-   char readmename[PATH_MAX];
-   char name[PATH_MAX];
+   char pfile[SCIP_MAXSTRLEN];
+   char makefilename[SCIP_MAXSTRLEN];
+   char readmename[SCIP_MAXSTRLEN];
+   char name[SCIP_MAXSTRLEN];
    const char makename[SCIP_MAXSTRLEN] = "makepdf";
 
    /* --- create a Makefile --- */
@@ -831,8 +831,8 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    /* get path to write to and put it into makefilename */
    GCGgetFilePath(file, pfile);
    SCIPsplitFilename(pfile, &filepath, &filename, NULL, NULL);
-   SCIPsnprintf(name, PATH_MAX, "%s_%s.make", makename, filename);
-   SCIPsnprintf(makefilename, PATH_MAX, "%s/%s", filepath, name);
+   SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_%s.make", makename, filename);
+   SCIPsnprintf(makefilename, SCIP_MAXSTRLEN, "%s/%s", filepath, name);
 
    /* open and write makefile */
    makefile = fopen(makefilename, "w");
@@ -904,7 +904,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    /* --- create a readme file --- */
 
    /* use same file path as the makefile */
-   SCIPsnprintf(readmename, PATH_MAX, "%s/README_%s", filepath, makename);
+   SCIPsnprintf(readmename, SCIP_MAXSTRLEN, "%s/README_%s", filepath, makename);
 
    /* open and write readme */
    readme = fopen(readmename, "w");

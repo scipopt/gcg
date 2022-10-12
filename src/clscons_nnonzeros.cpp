@@ -107,7 +107,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify)
          if( consnnonzeros == differentNNonzeros[nzid] )
          {
             nzalreadyfound = true;
-            classForCons[i] = nzid;
+            classForCons[i] = (int) nzid;
             ++ nconssforclass[nzid];
             break;
          }

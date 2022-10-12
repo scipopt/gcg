@@ -259,7 +259,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
 
    partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), foundpartialdecs.size()) );
-   partialdecdetectiondata->nnewpartialdecs = foundpartialdecs.size();
+   partialdecdetectiondata->nnewpartialdecs = (int) foundpartialdecs.size();
 
    for( int s = 0; s < partialdecdetectiondata->nnewpartialdecs; ++s )
    {

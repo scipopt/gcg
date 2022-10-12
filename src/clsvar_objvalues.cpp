@@ -108,7 +108,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
       {
          if( SCIPisEQ(scip, curobjval, foundobjvals[c]) )
          {
-            curclassindex = c;
+            curclassindex = (int) c;
             break;
          }
       }
@@ -117,7 +117,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
       if( curclassindex == -1 )
       {
          foundobjvals.push_back(curobjval);
-         classforvars[v] = foundobjvals.size() - 1;
+         classforvars[v] = (int) foundobjvals.size() - 1;
       }
       else
       {

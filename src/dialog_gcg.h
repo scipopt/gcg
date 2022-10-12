@@ -48,119 +48,119 @@ extern "C" {
 
 
 /** dialog execution method for the display additionalstatistics command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics);
 
 /** dialog execution method for the display statistics command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics);
 
 /** dialog execution method print complete detection information */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecPrintDetectionInformation);
 
 /** dialog execution method for adding block number candidate */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr);
 
 /** dialog execution method for the display detectors command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDetectors);
 
 /** dialog execution method for the display solvers command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplaySolvers);
 
 /** dialog execution method for the display decomposition command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition);
 
 /** dialog execution method for the display nblockscandidates command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayNBlockcandidates);
 
 /** dialog execution method for the presolve command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecPresolve);
 
 /** dialog execution method for the master command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster);
 
 /** dialog execution method for the set loadmaster command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster);
 
 /** dialog execution method for the detect command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect);
 
 /** dialog execution method for the select command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect);
 
 /** dialog execution method for the transform command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecTransform);
 
 /** dialog execution method for the optimize command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize);
 
 /** dialog execution method for the set detectors fast command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsFast);
 
 /** dialog execution method for the set detectors off command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsOff);
 
 /** dialog execution method for the set detectors default command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsDefault);
 
 /** dialog execution method for the set detectors aggressive command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsAggressive);
 
 /** dialog execution method for the set heuristics fast command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsFast);
 
 /** dialog execution method for the set heuristics off command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsOff);
 
 /** dialog execution method for the set heuristics aggressive command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsAggressive);
 
 /** dialog execution method for the set separators default command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsDefault);
 
 /** dialog execution method for the set separators fast command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsFast);
 
 /** dialog execution method for the set separators off command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsOff);
 
 /** dialog execution method for the set separators aggressive command */
-extern
+GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsAggressive);
 
 /** creates a root dialog
  * @returns SCIP return code */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGcreateRootDialog(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG**         root                /**< pointer to store the root dialog */
    );
 
 /** includes or updates the GCG dialog menus in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeDialogGcg(
    SCIP*                 scip                /**< SCIP data structure */
    );

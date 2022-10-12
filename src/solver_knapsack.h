@@ -37,13 +37,14 @@
 #define GCG_SOLVER_KNAPSACK_H__
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the knapsack solver for pricing problems and includes it in GCG */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGincludeSolverKnapsack(
    SCIP*                 scip                /**< SCIP data structure */
    );

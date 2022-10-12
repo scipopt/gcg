@@ -38,19 +38,19 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the reliable pseudo cost braching rule and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** execution reliability pseudo cost probing branching with the given branching candidates */
-extern
 SCIP_RETCODE SCIPgetRelpsprobBranchVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            branchcands,        /**< brancing candidates */

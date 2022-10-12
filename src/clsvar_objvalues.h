@@ -37,12 +37,13 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeVarClassifierObjValues(
    SCIP*                 scip                /**< SCIP data structure */
    );

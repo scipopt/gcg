@@ -36,14 +36,14 @@
 #define SCORE_CLASSIC_H_
 
 
-#include "scip/scip.h"
+#include "gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the classic score and includes it in SCIP */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE GCGincludeScoreClassic(
    SCIP*                 scip                /**< SCIP data structure */
    );

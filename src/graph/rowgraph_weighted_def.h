@@ -577,11 +577,11 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
       const int non_cl_pts = count(labels.begin(), labels.end(), -1);
       if(non_cl_pts > 0)
       {
-         this->n_blocks = diff_blocks.size() - 1;
+         this->n_blocks = (int) diff_blocks.size() - 1;
       }
       else
       {
-         this->n_blocks = diff_blocks.size();
+         this->n_blocks = (int) diff_blocks.size();
       }
       this->non_cl = non_cl_pts;
 
@@ -784,11 +784,11 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::DETPROB
       const int non_cl_pts = count(labels.begin(), labels.end(), -1);
       if(non_cl_pts > 0)
       {
-         this->n_blocks = diff_blocks.size() - 1;
+         this->n_blocks = (int) diff_blocks.size() - 1;
       }
       else
       {
-         this->n_blocks = diff_blocks.size();
+         this->n_blocks = (int) diff_blocks.size();
       }
       this->non_cl = non_cl_pts;
 
@@ -985,11 +985,11 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
       const int non_cl_pts = count(labels.begin(), labels.end(), -1);
       if(non_cl_pts > 0)
       {
-         this->n_blocks = diff_blocks.size() - 1;
+         this->n_blocks = (int) diff_blocks.size() - 1;
       }
       else
       {
-         this->n_blocks = diff_blocks.size();
+         this->n_blocks = (int) diff_blocks.size();
       }
       this->non_cl = non_cl_pts;
 
@@ -1196,11 +1196,11 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSetForPartialGraph(gcg
       const int non_cl_pts = count(labels.begin(), labels.end(), -1);
       if(non_cl_pts > 0)
       {
-         this->n_blocks = diff_blocks.size() - 1;
+         this->n_blocks = (int) diff_blocks.size() - 1;
       }
       else
       {
-         this->n_blocks = diff_blocks.size();
+         this->n_blocks = (int) diff_blocks.size();
       }
       this->non_cl = non_cl_pts;
 

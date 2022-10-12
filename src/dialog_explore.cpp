@@ -224,7 +224,7 @@ SCIP_RETCODE GCGdialogSetNEntires(
 
    SCIPdialogMessage(scip, NULL, "Please specify the amount of entries to be shown in this menu:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
-   commandlen = strlen(ntovisualize);
+   commandlen = (int) strlen(ntovisualize);
 
    newlength = -1;
    if( commandlen != 0 )
@@ -281,7 +281,7 @@ SCIP_RETCODE GCGdialogChangeScore(
 
    /* get input */
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &getscore, &endoffile) );
-   commandlen = strlen(getscore);
+   commandlen = (int) strlen(getscore);
    if( commandlen != 0 )
    {
       /* convert to int (if value is invalid, this results in 0) */
@@ -603,7 +603,7 @@ SCIP_RETCODE GCGdialogSelectVisualize(
 
    SCIPdialogMessage(scip, NULL, "Please specify the nr of the decomposition to be visualized:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
-   commandlen = strlen(ntovisualize);
+   commandlen = (int) strlen(ntovisualize);
 
    idtovisu = -1;
    if( commandlen != 0 )
@@ -653,7 +653,7 @@ SCIP_RETCODE GCGdialogInspectPartialdec(
    /* read the id of the decomposition to be inspected */
    SCIPdialogMessage( scip, NULL, "Please specify the nr of the decomposition to be inspected:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ntoinspect, &endoffile ) );
-   commandlen = strlen( ntoinspect );
+   commandlen = (int) strlen( ntoinspect );
 
    idtoinspect = -1;
    if( commandlen != 0 )
@@ -671,7 +671,7 @@ SCIP_RETCODE GCGdialogInspectPartialdec(
    SCIPdialogMessage( scip, NULL,
       "Please specify the detail level:\n  0 - brief overview\n  1 - block and detector info (default)\n  2 - cons and var assignments\n" );
    SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ndetaillevel, &endoffile ) );
-   commandlen = strlen( ndetaillevel );
+   commandlen = (int) strlen( ndetaillevel );
 
    detaillevel = 1;
    if( commandlen != 0 )
@@ -714,7 +714,7 @@ SCIP_RETCODE GCGdialogSelect(
    /* get input */
    SCIPdialogMessage(scip, NULL, "\nPlease specify the nr of the decomposition to be selected:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
-   commandlen = strlen(ntovisualize);
+   commandlen = (int) strlen(ntovisualize);
 
    idtovisu = -1;
    if( commandlen != 0)
@@ -756,7 +756,7 @@ SCIP_RETCODE GCGdialogSortAsc(
    /* get input */
    SCIPdialogMessage(scip, NULL, "\nPlease enter \"true\"/\"1\" for ascending or \"false\"/\"0\" for descending order:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ascen, &endoffile) );
-   commandlen = strlen(ascen);
+   commandlen = (int) strlen(ascen);
 
    std::string input = ascen;
    if( commandlen != 0)
@@ -815,7 +815,7 @@ SCIP_RETCODE GCGdialogSortBy(
    /* get input */
    SCIPdialogMessage(scip, NULL, "\nPlease enter the table header of the column by which you would like to sort:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &newsort, &endoffile) );
-   commandlen = strlen(newsort);
+   commandlen = (int) strlen(newsort);
 
    /* if the input is a valid table header, change sortby */
    std::string input = newsort;
@@ -852,7 +852,7 @@ static
    /* get input */
    SCIPdialogMessage(scip, NULL, "\nShould incomplete decompositions be listed? Please enter \"true\" or \"false\":\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &input, &endoffile) );
-   commandlen = strlen(input);
+   commandlen = (int) strlen(input);
 
    if( commandlen != 0)
    {
@@ -884,7 +884,7 @@ SCIP_RETCODE GCGdialogExecCommand(
    bool&                   listopenpartialdecs /** whether open patialdecs should be listed*/
    )
 {
-   int commandlen = strlen(command);
+   int commandlen = (int) strlen(command);
 
       if( strncmp( command, "previous", commandlen) == 0 )
       {

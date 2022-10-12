@@ -35,6 +35,7 @@
 #ifndef GCG_PUB_PRICINGJOB_H__
 #define GCG_PUB_PRICINGJOB_H__
 
+#include "def.h"
 #include "type_pricingjob.h"
 #include "scip/type_scip.h"
 
@@ -54,37 +55,37 @@ extern "C" {
 
 
 /** get the pricing problem structure associated with a pricing job */
-SCIP_EXPORT
+GCG_EXPORT
 GCG_PRICINGPROB* GCGpricingjobGetPricingprob(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** get the pricing solver with which the pricing job is to be performed */
-SCIP_EXPORT
+GCG_EXPORT
 GCG_SOLVER* GCGpricingjobGetSolver(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** get the chunk of a pricing job */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_Real GCGpricingjobGetChunk(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** get the score of a pricing job */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_Real GCGpricingjobGetScore(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** return whether the pricing job is to be performed heuristically */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_Bool GCGpricingjobIsHeuristic(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** get the number of heuristic pricing iterations of the pricing job */
-SCIP_EXPORT
+GCG_EXPORT
 int GCGpricingjobGetNHeurIters(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );

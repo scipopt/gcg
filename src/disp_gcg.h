@@ -37,10 +37,10 @@
 
 
 #include "scip/scip.h"
-
+#include "def.h"
 
 /** includes the GCG display columns in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeDispGcg(
    SCIP*                 scip                /**< SCIP data structure */
    );

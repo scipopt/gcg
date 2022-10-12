@@ -43,6 +43,7 @@
 #define __SCIP_HEUR_MASTERLINESDIVING_H__
 
 
+#include "def.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus
@@ -50,7 +51,7 @@ extern "C" {
 #endif
 
 /** creates the masterlinesdiving primal heuristic and includes it in GCG */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE GCGincludeHeurMasterlinesdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );

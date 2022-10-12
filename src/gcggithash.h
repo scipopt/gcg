@@ -36,13 +36,15 @@
 #ifndef GCG_GCGGITHASH_H__
 #define GCG_GCGGITHASH_H__
 
+#include "def.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** Gets the GCG git hash
  * @returns the GCG git hash */
-extern
+GCG_EXPORT
 const char* GCGgetGitHash(
    void
    );

@@ -58,6 +58,10 @@
 #include "params_visu.h"
 #include "dialog_explore.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <direct.h>
+#endif
+
 /** display the reader information
  * @returns nothing */
 static
@@ -144,7 +148,11 @@ SCIP_RETCODE writeAllDecompositions(
    }
 
    /* make sure directory exists */
+   #if defined(_WIN32) || defined(_WIN64)
+   _mkdir(dirname);
+   #else
    mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
+   #endif
 
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &tmp, &endoffile) );
    snprintf(extension, sizeof(extension), "%s", tmp);
@@ -231,7 +239,11 @@ SCIP_RETCODE writeSelectedDecompositions(
    }
 
    /* make sure directory exists */
+   #if defined(_WIN32) || defined(_WIN64)
+   _mkdir(dirname);
+   #else
    mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
+   #endif
 
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &tmp, &endoffile) );
    snprintf(extension, sizeof(extension), "%s", tmp);
@@ -316,7 +328,11 @@ SCIP_RETCODE writeMatrix(
    /* make sure directory exists */
    if( dirname != NULL )
    {
+      #if defined(_WIN32) || defined(_WIN64)
+      _mkdir(dirname);
+      #else
       mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
+      #endif
    }
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
@@ -412,7 +428,11 @@ SCIP_RETCODE reportAllDecompositions(
    /* make sure directory exists */
    if( dirname != NULL )
    {
+      #if defined(_WIN32) || defined(_WIN64)
+      _mkdir(dirname);
+      #else
       mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
+      #endif
    }
 
    /* create a name for the new file */
@@ -511,7 +531,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr)
 /** dialog execution method for the display decomposition command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
 {  /*lint --e{715}*/
-   DEC_DECOMP* decomp;
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )

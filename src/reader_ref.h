@@ -53,6 +53,7 @@
 #include "scip/type_scip.h"
 #include "scip/type_reader.h"
 #include "scip/type_result.h"
+#include "def.h"
 #include "type_decomp.h"
 
 #ifdef __cplusplus
@@ -60,13 +61,12 @@ extern "C" {
 #endif
 
 /** includes the ref file reader into SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeReaderRef(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /* reads problem from file */
-extern
 SCIP_RETCODE SCIPreadRef(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_READER*          reader,             /**< the file reader itself */

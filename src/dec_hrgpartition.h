@@ -36,6 +36,7 @@
 #define GCG_DEC_HRGPARTITION_H__
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_decomp.h"
 
 #ifdef __cplusplus
@@ -43,7 +44,7 @@ extern "C" {
 #endif
 
 /** creates the hrgpartition presolver and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeDetectorHrgpartition(
    SCIP* scip                 /**< SCIP data structure */
    );

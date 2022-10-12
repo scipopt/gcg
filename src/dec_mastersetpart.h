@@ -36,13 +36,14 @@
 #define DEC_MASTERSETPART_H_
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the handler for mastersetpart detector and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeDetectorMastersetpart(
    SCIP*                 scip                /**< SCIP data structure */
    );

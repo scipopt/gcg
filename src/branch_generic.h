@@ -37,6 +37,7 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_branchgcg.h"
 
 #ifdef __cplusplus
@@ -69,44 +70,38 @@ struct GCG_Strip
 typedef struct GCG_Strip GCG_STRIP;
 
 /** creates the generic branching rule and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeBranchruleGeneric(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** initializes branchdata */
-extern
 SCIP_RETCODE GCGbranchGenericCreateBranchdata(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_BRANCHDATA**      branchdata          /**< branching data to initialize */
    );
 
 /** get component bound sequence */
-extern
 GCG_COMPSEQUENCE* GCGbranchGenericBranchdataGetConsS(
    GCG_BRANCHDATA*       branchdata          /**< branching data to initialize */
    );
 
 /** get size of component bound sequence */
-extern
 int GCGbranchGenericBranchdataGetConsSsize(
    GCG_BRANCHDATA*       branchdata          /**< branching data to initialize */
    );
 
 /** get id of pricing problem (or block) to which the constraint belongs */
-extern
 int GCGbranchGenericBranchdataGetConsblocknr(
    GCG_BRANCHDATA*       branchdata          /**< branching data to initialize */
    );
 
 /** get master constraint */
-extern
 SCIP_CONS* GCGbranchGenericBranchdataGetMastercons(
    GCG_BRANCHDATA*       branchdata          /**< branching data to initialize */
    );
 
 /** prepares informations for using the generic branching scheme */
-extern
 SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP*                 masterscip,         /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */

@@ -37,7 +37,7 @@
 #define __GCG_GCG_SCORE_H__
 
 
-#include "scip/def.h"
+#include "def.h"
 #include "scip/type_scip.h"
 
 #include "type_score.h"
@@ -56,7 +56,7 @@ extern "C" {
  * @brief includes one score
  * @returns scip return code
  */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE GCGincludeScore(
    SCIP*                 scip,
    const char*           name,
@@ -71,7 +71,7 @@ SCIP_RETCODE GCGincludeScore(
  * @brief searches for the score with the given name and returns it or NULL if score is not found
  * @returns score pointer or NULL if score with given name is not found
  */
-SCIP_EXPORT
+GCG_EXPORT
 DEC_SCORE* GCGfindScore(
    SCIP*                 scip,
    const char*           name
@@ -81,20 +81,20 @@ DEC_SCORE* GCGfindScore(
  * @brief searches for the score with the given shortname and returns it or NULL if score is not found
  * @returns score pointer or NULL if score with given shortname is not found
  */
-SCIP_EXPORT
+GCG_EXPORT
 DEC_SCORE* GCGfindScoreByShortname(
    SCIP*                 scip,
    const char*           shortname
    );
 
 /** returns the array of currently available scores */
-SCIP_EXPORT
+GCG_EXPORT
 DEC_SCORE** GCGgetScores(
    SCIP*                 scip
    );
 
 /** returns the number of currently available scores */
-SCIP_EXPORT
+GCG_EXPORT
 int GCGgetNScores(
    SCIP*                 scip
    );

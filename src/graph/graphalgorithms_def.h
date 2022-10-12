@@ -66,14 +66,14 @@ double GraphAlgorithms<T>::computeSoed(
 
    for( size_t i = 0; i < nedges; ++i )
    {
-      vector<int> nodes = graph.getHyperedgeNodes(i);
+      vector<int> nodes = graph.getHyperedgeNodes((int)i);
       for( auto &it : nodes)
       {
          it = partition[it];
       }
       auto end = std::unique(nodes.begin(), nodes.end());
       if( end - nodes.begin() > 1)
-         soed += ( end - nodes.begin())*graph.getHyperedgeWeight(i);
+         soed += ( end - nodes.begin())*graph.getHyperedgeWeight((int)i);
    }
    return soed;
 }
@@ -90,7 +90,7 @@ double GraphAlgorithms<T>::computeMincut(
 
    for( size_t i = 0; i < nedges; ++i )
    {
-      vector<int> nodes = graph.getHyperedgeNodes(i);
+      vector<int> nodes = graph.getHyperedgeNodes((int)i);
       for( auto &it : nodes)
       {
          it = partition[it];
@@ -98,7 +98,7 @@ double GraphAlgorithms<T>::computeMincut(
       auto end = std::unique(nodes.begin(), nodes.end());
 
       if( end - nodes.begin() > 1)
-         mincut += graph.getHyperedgeWeight(i);
+         mincut += graph.getHyperedgeWeight((int)i);
    }
 
    return mincut;
@@ -116,14 +116,14 @@ double GraphAlgorithms<T>::computekMetric(
 
    for( size_t i = 0; i < nedges; ++i )
    {
-      vector<int> nodes = graph.getHyperedgeNodes(i);
+      vector<int> nodes = graph.getHyperedgeNodes((int)i);
       for( auto &it : nodes)
       {
          it = partition[it];
       }
       auto end = std::unique(nodes.begin(), nodes.end());
 
-      kmetric += ( end - nodes.begin() -1)*graph.getHyperedgeWeight(i);
+      kmetric += ( end - nodes.begin() -1)*graph.getHyperedgeWeight((int)i);
    }
 
    return kmetric;

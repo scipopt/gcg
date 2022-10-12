@@ -37,6 +37,7 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_consclassifier.h"
 
 #ifdef __cplusplus
@@ -44,7 +45,6 @@ extern "C" {
 #endif
 
 /** adds an entry to clsdata->constosymbol */
-extern
 SCIP_RETCODE DECconsClassifierGamssymbolAddEntry(
    DEC_CONSCLASSIFIER*   classifier,
    SCIP_CONS*            cons,
@@ -52,7 +52,7 @@ SCIP_RETCODE DECconsClassifierGamssymbolAddEntry(
 );
 
 /** creates the gamssymbol classifier and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeConsClassifierGamssymbol(
    SCIP*                 scip                /**< SCIP data structure */
    );

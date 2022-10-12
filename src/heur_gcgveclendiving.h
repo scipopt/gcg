@@ -39,13 +39,14 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the gcgveclendiving heuristic and includes it in GCG */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE GCGincludeHeurGcgveclendiving(
    SCIP*                 scip                /**< SCIP data structure */
    );

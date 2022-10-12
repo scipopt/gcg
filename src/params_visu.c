@@ -95,7 +95,7 @@
 #define DEFAULT_PDFREADER        "xdg-open"
 #elif defined(__APPLE__)
 #define DEFAULT_PDFREADER        "open"
-#elif defined(_WIN32)
+#elif defined(_WIN32) || defined(_WIN64)
 #define DEFAULT_PDFREADER        "start"
 #else
 #define DEFAULT_PDFREADER        "evince"

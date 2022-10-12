@@ -37,6 +37,7 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_varclassifier.h"
 
 #ifdef __cplusplus
@@ -51,7 +52,7 @@ SCIP_RETCODE DECvarClassifierGamssymbolAddEntry(
 );
 
 /** creates the gamssymbol classifier and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeVarClassifierGamssymbol(
    SCIP*                 scip                /**< SCIP data structure */
    );

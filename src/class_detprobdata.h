@@ -41,7 +41,7 @@
 
 #include <vector>
 
-#if __cplusplus >= 201103L
+#if __cplusplus >= 201103L || defined(_MSC_VER)
 #include <unordered_map>
 using std::unordered_map;
 #else
@@ -54,6 +54,7 @@ using std::tr1::unordered_map;
 #include <utility>
 #include "gcg.h"
 
+#include "def.h"
 #include "class_partialdecomp.h"
 #include "class_conspartition.h"
 #include "class_varpartition.h"
@@ -184,6 +185,7 @@ public:
     * @param scip SCIP data structure
     * @param _originalProblem true iff the detprobdata is created for the presolved problem
     */
+   GCG_EXPORT
    DETPROBDATA(
       SCIP* scip,
       SCIP_Bool _originalProblem
@@ -192,11 +194,13 @@ public:
    /**
     * destructor
     */
+   GCG_EXPORT
    ~DETPROBDATA();
 
    /**
     * @brief adds a constraint partition if it is no duplicate of an existing constraint partition
     */
+   GCG_EXPORT
    void addConsPartition(
       ConsPartition* partition /**< conspartition to be added*/
       );
@@ -204,6 +208,7 @@ public:
    /**
     * @brief adds a candidate for block number and counts how often a candidate is added
     */
+   GCG_EXPORT
    void addCandidatesNBlocksNVotes(
       int candidate, /**< candidate for block size */
       int nvotes     /**< number of votes this candidates will get */
@@ -213,6 +218,7 @@ public:
     * @brief adds a partialdec to ancestor partialdecs
     * @param partialdec partialdec that is added to the ancestor partialdecs
     */
+   GCG_EXPORT
    void addPartialdecToAncestor(
       PARTIALDECOMP* partialdec
       );
@@ -222,6 +228,7 @@ public:
     * @param partialdec pointer of partialdec to be added
     * @returns TRUE if the partialdecs was successfully added (i.e. it is no duplicate of a known partialdec)
     */
+   GCG_EXPORT
    bool addPartialdecToOpen(
       PARTIALDECOMP* partialdec
       );
@@ -232,6 +239,7 @@ public:
     * @returns TRUE if the partialdecs was successfully added (i.e. it is no duplicate of a known partialdec)
     * @see addPartialdecToFinishedUnchecked()
     */
+   GCG_EXPORT
    bool addPartialdecToFinished(
       PARTIALDECOMP* partialdec
       );
@@ -241,6 +249,7 @@ public:
     * @param partialdec pointer of partialdec that is going to be added unchecked to the finished partialdecs (data structure to carry finished decompositions)
     * @see addPartialdecToFinished()
     */
+   GCG_EXPORT
    void addPartialdecToFinishedUnchecked(
       PARTIALDECOMP* partialdec
       );
@@ -249,6 +258,7 @@ public:
     * @brief  adds a variable partition if it is no duplicate of an existing variable partition
     * @param partition varpartition to be added
     */
+   GCG_EXPORT
    void addVarPartition(
       VarPartition* partition
       );
@@ -257,12 +267,14 @@ public:
     * @brief clears ancestor partialdec data structure,
     * @note does not free the partialdecs themselves
     */
+   GCG_EXPORT
    void clearAncestorPartialdecs();
 
    /**
     * @brief clears current partialdec data structure
     * @note does not free the partialdecs themselves
     */
+   GCG_EXPORT
    void clearCurrentPartialdecs();
 
    /**
@@ -270,16 +282,19 @@ public:
     * 
     * @note does not free the partialdecs themselves
     */
+   GCG_EXPORT
    void clearFinishedPartialdecs();
 
    /**
     * @brief create the constraint adjacency datastructure that is used (if created) for some methods to faster access the constarints that have variables in common
     */
+   GCG_EXPORT
    void createConssAdjacency();
 
    /**
     * @brief frees temporary data that is only needed during the detection process
     */
+   GCG_EXPORT
    void freeTemporaryData();
 
    /**
@@ -287,6 +302,7 @@ public:
     * 
     * @returns partialdec from ancestor partialdec data structure
     */
+   GCG_EXPORT
    PARTIALDECOMP* getAncestorPartialdec(
       int partialdecindex /**< index of partialdec in ancestor partialdec data structure */
       );
@@ -295,6 +311,7 @@ public:
     * @brief returns pointer to a constraint partition
     * @return pointer to a cosntraint partition with the given index
     */
+   GCG_EXPORT
    ConsPartition* getConsPartition(
       int partitionIndex /**< index of constraint partition */
       );
@@ -303,6 +320,7 @@ public:
     * @brief returns the SCIP constraint related to a constraint index
     * @return the SCIP constraint related to a constraint index
     */
+   GCG_EXPORT
    SCIP_CONS* getCons(
       int consIndex /**< index of the constraint to be considered */
       );
@@ -312,6 +330,7 @@ public:
     * @return return vector of constraint indices that have a common variable with the given constraint
     * @note constraint adjacency data structure has to initilized
     */
+   GCG_EXPORT
    std::vector<int>& getConssForCons(
       int consIndex /**< index of the constraint to be considered */
       );
@@ -320,6 +339,7 @@ public:
     * \brief returns the constraint indices of the coefficient matrix for a variable
     * @return vector of constraint indices that have a nonzero entry with this variable
     */
+   GCG_EXPORT
    std::vector<int>& getConssForVar(
       int varIndex /**< index of the variable to be considered */
       );
@@ -328,13 +348,14 @@ public:
     * @brief determines all partialdecs from current (open) partialdec data structure
     * @returns  all partialdecs in current (open) partialdec data structure
     */
-   /**  */
+   GCG_EXPORT
    std::vector<PARTIALDECOMP*>& getOpenPartialdecs();
 
    /**
     * @brief returns a partialdec from finished partialdec data structure
     * @return  partialdec from finished partialdec data structure
     */
+   GCG_EXPORT
    PARTIALDECOMP* getFinishedPartialdec(
       int partialdecindex /**< index of partialdec in finished partialdec data structure */
       );
@@ -343,6 +364,7 @@ public:
     * @brief gets all finished partialdecs
     * @returns all finished partialdecs
     */
+   GCG_EXPORT
    std::vector<PARTIALDECOMP*>& getFinishedPartialdecs();
 
    /**
@@ -350,6 +372,7 @@ public:
     * @param cons the SCIP constraint pointer the index is asked for
     * @return the constraint index related to a SCIP constraint
     */
+   GCG_EXPORT
    int getIndexForCons(
       SCIP_CONS* cons
       );
@@ -359,6 +382,7 @@ public:
     * @param consname name of the constraint the index is asked for
     * @return the constraint index related to a SCIP constraint
     */
+   GCG_EXPORT
    int getIndexForCons(
       const char* consname
    );
@@ -368,6 +392,7 @@ public:
     * @param var variable pointer the index is asked for
     * @return the variable index related to a SCIP variable
     */
+   GCG_EXPORT
    int getIndexForVar(
       SCIP_VAR* var
       );
@@ -377,6 +402,7 @@ public:
     * @param varname name of the variable the index is asked for
     * @return the variable index related to a SCIP variable
     */
+   GCG_EXPORT
    int getIndexForVar(
       const char* varname
    );
@@ -385,24 +411,28 @@ public:
     * @brief returns size of ancestor partialdec data structure
     * @return size of ancestor partialdec data structure
     */
+   GCG_EXPORT
    int getNAncestorPartialdecs();
 
    /**
     * @brief returns number of different constraint partitions
     * @return number of different constraint partitions
     */
+   GCG_EXPORT
    int getNConsPartitions();
 
    /**
     * @brief returns the number of variables considered in the detprobdata
     * @return number of variables considered in the detprobdata
     */
+   GCG_EXPORT
    int getNConss();
 
    /**
     * @brief returns the number of constraints for a given constraint
     * @return the number of constraints for a given constraint
     */
+   GCG_EXPORT
    int getNConssForCons(
       int consIndex /**< index of the constraint to be considered */
       );
@@ -411,6 +441,7 @@ public:
     * @brief returns the number of constraints for a given variable where the var has a nonzero entry in
     * @return the number of constraints for a given variable
     */
+   GCG_EXPORT
    int getNConssForVar(
       int varIndex /**< index of the variable to be considered */
       );
@@ -419,42 +450,49 @@ public:
     * @brief returns size of current (open) partialdec data structure
     * @return size of current (open) partialdec data structure
     */
+   GCG_EXPORT
    int getNOpenPartialdecs();
 
    /**
     * returns size of finished partialdec data structure
     * @return  size of finished partialdec data structure
     */
+   GCG_EXPORT
    int getNFinishedPartialdecs();
 
    /**
     * returns the number of stored partialdecs
     * @return  number of stored partialdecs
     */
+   GCG_EXPORT
    int getNPartialdecs();
 
    /**
     * @brief returns the number of nonzero entries in the coefficient matrix
     * @return the number of nonzero entries in the coefficient matrix
     */
+   GCG_EXPORT
    int getNNonzeros();
 
    /**
     * @brief returns number of different variable partitions
     * @return  number of different variable partitions
     */
+   GCG_EXPORT
    int getNVarPartitions();
 
    /**
     * @brief return the number of variables considered in the detprobdata
     * @return the number of variables considered in the detprobdata
     */
+   GCG_EXPORT
    int getNVars();
 
    /**
     * @brief returns the number of variables for a given constraint
     * @return the number of variables for a given constraint
     */
+   GCG_EXPORT
    int getNVarsForCons(
       int consIndex /**< index of the constraint to be considered */
       );
@@ -463,30 +501,35 @@ public:
     * @brief returns pointers to all orig vars that are fixed to zero
     * @returns vector of vars
     */
+   GCG_EXPORT
    std::vector<SCIP_VAR*> getOrigVarsFixedZero();
 
    /**
     * @brief returns pointers to all constraints that are not marked as deleted or obsolete
     * @returns vector of conss
     */
+   GCG_EXPORT
    std::vector<SCIP_CONS*> getRelevantConss();
 
    /**
     * @brief returns pointers to all problem vars that are not fixed to 0
     * @returns vector of vars
     */
+   GCG_EXPORT
    std::vector<SCIP_VAR*> getRelevantVars();
 
    /**
     * @brief returns the corresponding scip data structure
     * @return the corresponding scip data structure
     */
+   GCG_EXPORT
    SCIP* getScip();
 
    /**
     * @brief gets the candidates for number of blocks added by the user followed by the found ones sorted in descending order by how often a candidate was proposed
     * @param candidates will contain the candidates for number of blocks sorted in descending order by how often a candidate was added
     */
+   GCG_EXPORT
    void getSortedCandidatesNBlocks(
       std::vector<int>& candidates
       );
@@ -495,6 +538,7 @@ public:
     * @brief returns a coefficient from the coefficient matrix
     * @return a coefficient from the coefficient matrix
     */
+   GCG_EXPORT
    SCIP_Real getVal(
       int row, /**< index of the constraint to be considered */
       int col  /**< index of the variable to be considered */
@@ -505,6 +549,7 @@ public:
     * @return vector of coefficients of in matrix for constraints
     * @note same order as in @see getVarsForCons()
     */
+   GCG_EXPORT
    std::vector<SCIP_Real>& getValsForCons(
       int consIndex /**< index of the constraint to be considered */
       );
@@ -513,6 +558,7 @@ public:
     * @brief returns pointer to a variable partition with given index
     * @return pointer to a variable partition with given index
     */
+   GCG_EXPORT
    VarPartition* getVarPartition(
       int partitionIndex /**< index of variable partition */
       );
@@ -521,12 +567,14 @@ public:
     * @brief returns vector to stored variable partitions
     * @return returns vector to stored variable partitions
     */
+   GCG_EXPORT
    std::vector<VarPartition*> getVarPartitions();
 
    /**
     * @brief returns SCIP variable related to a variable index
     * @return SCIP variable pointer related to a variable index
     */
+   GCG_EXPORT
    SCIP_VAR* getVar(
       int varIndex /**< index of the variable to be considered */
       );
@@ -535,6 +583,7 @@ public:
     * @brief returns the variable indices of the coefficient matrix for a constraint
     * @return the variable indices of the coefficient matrix for a constraint
     */
+   GCG_EXPORT
    std::vector<int>& getVarsForCons(
       int consIndex /**< index of the constraint to be considered */
       );
@@ -544,6 +593,7 @@ public:
     * @param consindexd index of constraint that is be checked
     * @return returns whether a constraint is a cardinality constraint
     */
+   GCG_EXPORT
    bool isConsCardinalityCons(
          int  consindexd
          );
@@ -553,6 +603,7 @@ public:
     * 
     * @returns true iff the constraint-constraint adjacency data structure is initilized
     */
+   GCG_EXPORT
    SCIP_Bool isConssAdjInitialized();
 
    /**
@@ -560,6 +611,7 @@ public:
     * @param consindexd index of the given cons
     * @return is cons with specified indec partitioning, or packing covering constraint
     */
+   GCG_EXPORT
    bool isConsSetpp(
       int  consindexd
       );
@@ -569,6 +621,7 @@ public:
     * @param consindexd index of cons to be checked
     * @return whether a constraint is partitioning packing, or covering constraint?
     */
+   GCG_EXPORT
    bool isConsSetppc(
       int  consindexd
       );
@@ -577,6 +630,7 @@ public:
     * 
     * @returns whether val is ranged row
     */
+   GCG_EXPORT
    SCIP_Bool isFiniteNonnegativeIntegral(
       SCIP*                 scip,               /**< SCIP data structure */
       SCIP_Real             x                   /**< value */
@@ -587,6 +641,7 @@ public:
     * @param partialdec partialdec to be checked
     * @returns TRUE iff partialdec is a duplicate of an existing finished partialdec
     */
+   GCG_EXPORT
    SCIP_Bool isPartialdecDuplicateofFinished(
       PARTIALDECOMP* partialdec
       );
@@ -595,11 +650,13 @@ public:
      * @brief returns true if the matrix structure corresponds to the presolved problem
      * @return TRUE if the matrix structure corresponds to the presolved problem
      */
+   GCG_EXPORT
    SCIP_Bool isAssignedToOrigProb();
 
    /** @brief is constraint ranged row, i.e., -inf < lhs < rhs < inf? 
     * @returns whether constraint is ranged row
    */
+   GCG_EXPORT
    SCIP_Bool isRangedRow(
       SCIP*                 scip,   /**< SCIP data structure */
       SCIP_Real             lhs,    /**< left hand side */
@@ -613,6 +670,7 @@ public:
     * @param sort sort the vars and conss data structures in the partialdecs by their indices
     * @return TRUE iff partialdec is no duplicate of any given partialdecs
     */
+   GCG_EXPORT
    SCIP_Bool partialdecIsNoDuplicateOfPartialdecs(
       PARTIALDECOMP* comppartialdec,
       std::vector<PARTIALDECOMP*> const & partialdecs,
@@ -624,6 +682,7 @@ public:
     * @param scip SCIP data structure
     * @param file  output file or NULL for standard output
     */
+   GCG_EXPORT
    void printBlockcandidateInformation(
     SCIP*                 scip,               /**< SCIP data structure */
     FILE*                 file                /**< output file or NULL for standard output */
@@ -633,6 +692,7 @@ public:
     * @brief output method for json file writer to write partition candidate information
     * @param file output file or NULL for standard output
     */
+   GCG_EXPORT
    void printPartitionInformation(
     FILE*                 file                /**< output file or NULL for standard output */
    );
@@ -640,12 +700,14 @@ public:
    /**
     * @brief sorts partialdecs in finished partialdecs data structure according to the current scoretype
     */
+   GCG_EXPORT
    void sortFinishedForScore();
 
    /**
     * @brief translates partialdecs if the index structure of the problem has changed, e.g. due to presolving
     * @return translated partialdecs
     */
+   GCG_EXPORT
    std::vector<PARTIALDECOMP*> translatePartialdecs(
       DETPROBDATA* otherdata,                       /**< old detprobdata */
       std::vector<PARTIALDECOMP*> otherpartialdecs  /**< partialdecs to be translated */
@@ -655,6 +717,7 @@ public:
     * @brief translates partialdecs if the index structure of the problem has changed, e.g. due to presolving
     * @return translated partialdecs
     */
+   GCG_EXPORT
    std::vector<PARTIALDECOMP*> translatePartialdecs(
       DETPROBDATA* otherdata                        /**< old detprobdata */
    );

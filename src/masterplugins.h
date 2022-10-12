@@ -36,12 +36,13 @@
 #define GCG_MASTERPLUGINS_H__
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    );

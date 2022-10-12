@@ -38,37 +38,38 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the master separator and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeSepaMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the array of original cuts saved in the separator data */
-extern
+GCG_EXPORT
 SCIP_ROW** GCGsepaGetOrigcuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the number of cuts saved in the separator data */
-extern
+GCG_EXPORT
 int GCGsepaGetNCuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the array of master cuts saved in the separator data */
-extern
+GCG_EXPORT
 SCIP_ROW** GCGsepaGetMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** adds given original and master cut to master separator data */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGsepaAddMastercuts(
    SCIP*                scip,               /**< SCIP data structure */
    SCIP_ROW*            origcut,            /**< pointer to orginal cut */

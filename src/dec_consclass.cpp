@@ -241,7 +241,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConsclass)
 
    partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), foundpartialdecs.size()) );
-   partialdecdetectiondata->nnewpartialdecs  = foundpartialdecs.size();
+   partialdecdetectiondata->nnewpartialdecs  = (int) foundpartialdecs.size();
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "dec_consclass found %d new partialdecs \n", partialdecdetectiondata->nnewpartialdecs  );
 

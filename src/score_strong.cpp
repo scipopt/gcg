@@ -191,7 +191,7 @@ SCIP_RETCODE shuffleDualvalsRandom(
 
          SCIP_Real randomval;
          int nvarsincons = GCGconsGetNVars(scip, cons);
-         SCIP_Real* valsincons;
+         SCIP_Real* valsincons = NULL;
 
          /* get values of variables in this constraint */
          SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &valsincons, nvarsincons) );

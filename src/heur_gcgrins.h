@@ -38,13 +38,14 @@
 #define GCG_HEUR_GCGRINS_H__
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates RINS primal heuristic and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeHeurGcgrins(
    SCIP*                 scip                /**< SCIP data structure */
    );

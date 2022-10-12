@@ -594,8 +594,8 @@ bool PARTIALDECOMP::assignHittingOpenconss(
          block = blocks[0];
          for( size_t i = 1; i < blocks.size(); ++ i )
          {
-            if( getNConssForBlock( i ) < getNConssForBlock( block ) )
-               block = i;
+            if( getNConssForBlock((int) i ) < getNConssForBlock( block ) )
+               block = (int) i;
          }
          setConsToBlock( cons, block );
          del.push_back(cons);
@@ -4105,7 +4105,7 @@ USERGIVEN PARTIALDECOMP::getUsergiven()
 
 int PARTIALDECOMP::getNAncestors()
 {
-   return listofancestorids.size();
+   return (int) listofancestorids.size();
 }
 
 
@@ -5375,9 +5375,15 @@ void PARTIALDECOMP::showVisualization()
    char command[SCIP_MAXSTRLEN];
    /* command: e.g. evince "outname" && rm "filename" */
    strcpy(command, GCGVisuGetPdfReader(scip));
+   if( strcmp(GCGVisuGetPdfReader(scip), "start") == 0 )
+      strcat(command, " \"\"");
    strcat(command, " \"");
    strcat(command, outname);
+   #if defined(_WIN32) || defined(_WIN64)
+   strcat(command, "\" && del /f \"");
+   #else
    strcat(command, "\" && rm \"");
+   #endif
    strcat(command, filename);
    strcat(command, "\"");
 #ifdef SCIP_DEBUG

@@ -217,7 +217,7 @@ SCIP_RETCODE SCIPincludeReaderCls(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_READERDATA* readerdata;
+   SCIP_READERDATA* readerdata = NULL;
 
    /* create cls reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );

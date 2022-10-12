@@ -765,11 +765,11 @@ SCIP_RETCODE fillDecompStruct(
    SCIP_READERDATA*      readerdata          /**< reader data*/
    )
 {
-   SCIP_HASHMAP* constoblock;
-   SCIP_CONS** allcons;
-   SCIP_VAR** allvars;
+   SCIP_HASHMAP* constoblock = NULL;
+   SCIP_CONS** allcons = NULL;
+   SCIP_VAR** allvars = NULL;
 
-   SCIP_VAR** consvars;
+   SCIP_VAR** consvars = NULL;
    SCIP_RETCODE retcode;
    int i;
    int j;
@@ -1143,7 +1143,7 @@ SCIP_RETCODE SCIPincludeReaderBlk(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_READERDATA* readerdata;
+   SCIP_READERDATA* readerdata = NULL;
 
    /* create blk reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );

@@ -145,7 +145,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
          if( domain == domainForClass[classid] )
          {
             classfound = true;
-            classForCons[consid] = classid;
+            classForCons[consid] = (int) classid;
             ++nconssForClass[classid];
             break;
          }

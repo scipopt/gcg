@@ -579,9 +579,6 @@ SCIP_RETCODE detection(
 }
 
 
-#endif
-
-
 static
 DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHcgpartition)
 {
@@ -785,7 +782,6 @@ SCIP_RETCODE SCIPincludeDetectorHcgpartition(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-#if !defined(_WIN32) && !defined(_WIN64)
    DEC_DETECTORDATA *detectordata = NULL;
    assert(scip != NULL);
 
@@ -817,6 +813,7 @@ SCIP_RETCODE SCIPincludeDetectorHcgpartition(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hcgpartition/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hcgpartition/realname", "Should the problem be used for metis files or a temporary name", &detectordata->realname, FALSE, DEFAULT_REALNAME, NULL, NULL) );
 
-#endif
    return SCIP_OKAY;
 }
+
+#endif

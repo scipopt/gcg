@@ -38,13 +38,14 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the Extreme Point RINS primal heuristic and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeHeurXprins(
    SCIP*                 scip                /**< SCIP data structure */
    );

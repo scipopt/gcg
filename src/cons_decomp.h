@@ -42,6 +42,7 @@
 #define GCG_CONS_DECOMP_H__
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_detector.h"
 #include "type_varclassifier.h"
 #include "type_consclassifier.h"
@@ -106,7 +107,7 @@ char DECdetectorGetChar(
  * @brief returns the data of the provided detector
  * @returns data of the provided detector
  */
-extern
+GCG_EXPORT
 DEC_DETECTORDATA* DECdetectorGetData(
    DEC_DETECTOR* detector  /**< Detector data structure */
    );
@@ -115,7 +116,7 @@ DEC_DETECTORDATA* DECdetectorGetData(
  * @brief returns the name of the provided detector
  * @returns name of the given detector
  */
-extern
+GCG_EXPORT
 const char* DECdetectorGetName(
    DEC_DETECTOR* detector  /**< detector data structure */
    );
@@ -229,7 +230,7 @@ SCIP_RETCODE DECincludeConsClassifier(
  * @brief includes one detector
  * @returns scip return code
  */
-extern
+GCG_EXPORT
 SCIP_RETCODE DECincludeDetector(
    SCIP*                 scip,                    /**< scip data structure */
    const char*           name,                    /**< name of the detector */
@@ -297,7 +298,7 @@ void DECprintListOfDetectors(
 
 /** @brief write out all known decompositions
  * @returns SCIP return code */
-extern
+GCG_EXPORT
 SCIP_RETCODE DECwriteAllDecomps(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 directory,          /**< directory for decompositions */
@@ -534,7 +535,7 @@ DEC_DECOMP** GCGconshdlrDecompGetDecomps(
 /** @brief Gets an array of all detectors
  *
  * @returns array of detectors */
-extern
+GCG_EXPORT
 DEC_DETECTOR** GCGconshdlrDecompGetDetectors(
    SCIP* scip  /**< SCIP data structure */
    );
@@ -593,7 +594,7 @@ DEC_VARCLASSIFIER** GCGconshdlrDecompGetVarClassifiers(
  *  @note recommendation: when in doubt plan for as many ids as partialdecs
  *  @see GCGconshdlrDecompGetNPartialdecs
  *  @returns scip return code */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompGetFinishedPartialdecsList(
    SCIP*          scip,       /**< SCIP data structure */
    int**          idlist,     /**< id list to output to */
@@ -640,7 +641,7 @@ int GCGconshdlrDecompGetNDecomps(
 
 /** @brief Gets the number of all detectors
  * @returns number of detectors */
-extern
+GCG_EXPORT
 int GCGconshdlrDecompGetNDetectors(
    SCIP* scip  /**< SCIP data structure */
    );
@@ -763,7 +764,7 @@ unsigned int GCGconshdlrDecompGetNOpenPartialdecsTransformed(
 
 /** @brief Gets the number of all partialdecs
  * @returns number of Partialdecs */
-extern
+GCG_EXPORT
 unsigned int GCGconshdlrDecompGetNPartialdecs(
    SCIP*       scip  /**< SCIP data structure */
    );
@@ -794,7 +795,7 @@ int GCGconshdlrDecompGetNStairlinkingVarsByPartialdecId(
 /** @brief Gets wrapped PARTIALDECOMP with given id
  *
  * @returns SCIP return code */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompGetPartialdecFromID(
    SCIP*          scip,             /**< SCIP data structure */
    int            partialdecid,     /**< id of PARTIALDECOMP */

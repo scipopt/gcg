@@ -36,12 +36,13 @@
 #define GCG_BENDERSPLUGINS_H__
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGincludeBendersPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    );

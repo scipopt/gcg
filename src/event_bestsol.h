@@ -37,13 +37,14 @@
 #define GCG_EVENT_BESTSOL_H__
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates event handler for best event */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeEventHdlrBestsol(
    SCIP*                 scip                /**< SCIP data structure */
    );

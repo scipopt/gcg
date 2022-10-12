@@ -81,7 +81,7 @@ static
 SCIP_DECL_READERWRITE(readerWriteGp)
 {
    PARTIALDECOMP* partialdec;
-   char filename[PATH_MAX];
+   char filename[SCIP_MAXSTRLEN];
    char outputname[SCIP_MAXSTRLEN];
 
    assert(scip != NULL);
@@ -288,7 +288,7 @@ SCIP_RETCODE writeGpNonzeros(
 
   /* dot should be visible, so enforce minimum radius of 0.01 */
    if( radius < 0.01 )
-      radius = 0.01;
+      radius = (float)0.01;
 
    /* start writing dots */
    ofs << "set style line 99 lc rgb \"" << SCIPvisuGetColorNonzero(scip) << "\"  " << std::endl;
@@ -431,7 +431,7 @@ SCIP_RETCODE writeGpPartialdec(
    {
       /* scale the dots according to matrix dimensions here */
       writeGpNonzeros(scip, filename, partialdec, SCIPvisuGetNonzeroRadius(scip, partialdec->getNVars(), partialdec->getNConss(),
-         SCALING_FACTOR_NONZEROS) );
+         (float)SCALING_FACTOR_NONZEROS) );
    }
    else
    {

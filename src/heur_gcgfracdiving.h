@@ -39,13 +39,14 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the gcgfracdiving heuristic and includes it in GCG */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE GCGincludeHeurGcgfracdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );

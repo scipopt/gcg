@@ -40,6 +40,7 @@
 #ifndef PUB_BLISS_H_
 #define PUB_BLISS_H_
 
+#include "def.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus
@@ -57,7 +58,7 @@ typedef struct struct_colorinformation AUT_COLOR;
   */
 
 /** returns bliss version */
-extern
+GCG_EXPORT
 void GCGgetBlissName(char* buffer, int len);
 
 #ifdef __cplusplus

@@ -36,6 +36,7 @@
 #define GCG_GENERAL_H__
 
 
+#include "def.h"
 #include "scip/def.h"
 #include "scip/type_scip.h"
 
@@ -47,7 +48,7 @@ extern "C" {
 
 /** prints out GCG version
  * @returns nothing */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGprintVersion(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file (or NULL for standard output) */

@@ -51,7 +51,7 @@ extern "C" {
  * @brief method to handle user input for "explore" command
  * @returns SCIP return code
  */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGdialogExecExplore(
    SCIP*                   scip,               /**< SCIP data structure */
    SCIP_DIALOGHDLR*        dialoghdlr,         /**< dialog handler for user input management */

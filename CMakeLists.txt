@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.3)
 
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_DEBUG} ${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} ${CMAKE_CXX_FLAGS_RELEASE}")
@@ -156,6 +156,11 @@ add_custom_target(gcg_update_githash
                                            -P ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake)
 # use C++11 standard
 set(CMAKE_CXX_STANDARD 11)
+
+# set function visibility default to hidden
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 # SCIP
 if(NOT GCG_DEV_BUILD)

@@ -38,13 +38,14 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the greedy column selection primal heuristic and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeHeurGreedycolsel(
    SCIP*                 scip                /**< SCIP data structure */
    );

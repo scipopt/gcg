@@ -38,6 +38,7 @@
 #define GCG_PRICER_GCG__
 
 #include "scip/scip.h"
+#include "def.h"
 #include "type_solver.h"
 
 #ifdef __cplusplus
@@ -61,32 +62,32 @@ typedef enum GCG_Pricetype GCG_PRICETYPE;
 
 
 /** creates the GCG variable pricer and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludePricerGcg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 origprob            /**< SCIP data structure of the original problem */
    );
 
 /** returns the pointer to the scip instance representing the original problem */
-extern
+GCG_EXPORT
 SCIP* GCGmasterGetOrigprob(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the array of variables that were priced in during the solving process */
-extern
+GCG_EXPORT
 SCIP_VAR** GCGmasterGetPricedvars(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the number of variables that were priced in during the solving process */
-extern
+GCG_EXPORT
 int GCGmasterGetNPricedvars(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** adds the given constraint and the given position to the hashmap of the pricer */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGmasterAddMasterconsToHashmap(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< the constraint that should be added */
@@ -94,7 +95,7 @@ SCIP_RETCODE GCGmasterAddMasterconsToHashmap(
    );
 
 /** sets the optimal LP solution in the pricerdata */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGmasterSetRootLPSol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL**            sol                 /**< pointer to optimal solution to root LP */
@@ -102,14 +103,14 @@ SCIP_RETCODE GCGmasterSetRootLPSol(
 
 #ifdef SCIP_STATISTIC
 /** gets the optimal LP solution in the pricerdata */
-extern
+GCG_EXPORT
 SCIP_SOL* GCGmasterGetRootLPSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 #endif
 
 /** includes a solver into the pricer data */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGpricerIncludeSolver(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           name,               /**< name of solver */
@@ -130,71 +131,71 @@ SCIP_RETCODE GCGpricerIncludeSolver(
 
 
 /** returns the available pricing solvers */
-extern
+GCG_EXPORT
 GCG_SOLVER** GCGpricerGetSolvers(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the number of available pricing solvers */
-extern
+GCG_EXPORT
 int GCGpricerGetNSolvers(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** writes out a list of all pricing problem solvers */
-extern
+GCG_EXPORT
 void GCGpricerPrintListOfSolvers(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** prints pricing solver statistics */
-extern
+GCG_EXPORT
 void GCGpricerPrintPricingStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file */
    );
 
-extern
+GCG_EXPORT
 void GCGpricerPrintStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file */
    );
 
 /** method to get existence of rays */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGpricerExistRays(
    SCIP*                 scip,               /**< master SCIP data structure */
    SCIP_Bool*            exist               /**< pointer to store if there exists any ray */
    );
 
 /** get the number of extreme points that a pricing problem has generated so far */
-extern
+GCG_EXPORT
 int GCGpricerGetNPointsProb(
    SCIP*                 scip,               /**< master SCIP data structure */
    int                   probnr              /**< index of pricing problem */
    );
 
 /** get the number of extreme rays that a pricing problem has generated so far */
-extern
+GCG_EXPORT
 int GCGpricerGetNRaysProb(
    SCIP*                 scip,               /**< master SCIP data structure */
    int                   probnr              /**< index of pricing problem */
    );
 
 /** get the number of columns to be added to the master LP in the current pricing round */
-extern
+GCG_EXPORT
 int GCGpricerGetMaxColsRound(
    SCIP*                 scip                /**< master SCIP data structure */
    );
 
 /** get the number of columns per pricing problem to be added to the master LP in the current pricing round */
-extern
+GCG_EXPORT
 int GCGpricerGetMaxColsProb(
    SCIP*                 scip                /**< master SCIP data structure */
    );
 
 /** add a new column to the pricing storage */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGpricerAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_COL*              col                 /**< priced col */
@@ -202,7 +203,7 @@ SCIP_RETCODE GCGpricerAddCol(
 
 /** transfers a primal solution of the original problem into the master variable space,
  *  i.e. creates one master variable for each block and adds the solution to the master problem  */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             origsol,            /**< the solution that should be transferred */
@@ -210,29 +211,29 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    );
 
 /** create initial master variables */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGmasterCreateInitialMastervars(
    SCIP*                 scip                /**< master SCIP data structure */
    );
 
 /** get root node degeneracy */
-extern
+GCG_EXPORT
 SCIP_Real GCGmasterGetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** return if artifical variables are used in current solution */
-extern
+GCG_EXPORT
 SCIP_Bool GCGmasterIsCurrentSolValid(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-extern
+GCG_EXPORT
 SCIP_Bool GCGmasterIsBestsolValid(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-extern
+GCG_EXPORT
 SCIP_Bool GCGmasterIsSolValid(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             mastersol           /**< solution of the master problem, or NULL for current LP solution */
@@ -240,27 +241,27 @@ SCIP_Bool GCGmasterIsSolValid(
 
 
 /** get number of iterations in pricing problems */
-extern
+GCG_EXPORT
 SCIP_Longint GCGmasterGetPricingSimplexIters(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** print simplex iteration statistics */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGmasterPrintSimplexIters(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file */
    );
 
 /** set pricing objectives */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGsetPricingObjs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_Real*            dualsolconv         /**< array of dual solutions corresponding to convexity constraints */
    );
 
 /** creates a new master variable corresponding to the given gcg column */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGcreateNewMasterVarFromGcgCol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_Bool             infarkas,           /**< in Farkas pricing? */
@@ -269,11 +270,10 @@ SCIP_RETCODE GCGcreateNewMasterVarFromGcgCol(
    SCIP_Bool*            added,              /**< pointer to store whether the variable was successfully added */
    SCIP_VAR**            addedvar,           /**< pointer to store the created variable */
    SCIP_Real             score               /**< score of column (or -1.0 if not specified) */
-
    );
 
 /** computes the reduced cost of a column */
-extern
+GCG_EXPORT
 SCIP_Real GCGcomputeRedCostGcgCol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_Bool             infarkas,           /**< in Farkas pricing? */
@@ -283,7 +283,7 @@ SCIP_Real GCGcomputeRedCostGcgCol(
 
 
 /** compute master and cut coefficients of column */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGcomputeColMastercoefs(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_COL*              gcgcol              /**< GCG column data structure */

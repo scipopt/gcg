@@ -38,19 +38,20 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates event handler for relaxsol event */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeEventHdlrRelaxsol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** return whether event has been triggered */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_Bool GCGeventhdlrRelaxsolIsTriggered(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 masterprob          /**< the SCIP data structure for the master problem */

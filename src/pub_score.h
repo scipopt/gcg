@@ -37,7 +37,7 @@
 #define __GCG_PUB_SCORE_H__
 
 
-#include "scip/def.h"
+#include "def.h"
 #include "type_score.h"
 
 #ifdef __cplusplus
@@ -50,32 +50,32 @@ extern "C" {
  */
 
 /** gets user data of score */
-SCIP_EXPORT
+GCG_EXPORT
 DEC_SCOREDATA* GCGscoreGetData(
    DEC_SCORE*            score               /**< score */
    );
 
 /** sets user data of score; user has to free old data in advance! */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGscoreSetData(
    DEC_SCORE*            score,              /**< score */
    DEC_SCOREDATA*        scoredata           /**< new score user data */
    );
 
 /** gets name of score */
-SCIP_EXPORT
+GCG_EXPORT
 const char* GCGscoreGetName(
    DEC_SCORE*            score               /**< score */
    );
 
 /** gets shortname of score */
-SCIP_EXPORT
+GCG_EXPORT
 const char* GCGscoreGetShortname(
    DEC_SCORE*            score               /**< score */
    );
 
 /** gets description of score */
-SCIP_EXPORT
+GCG_EXPORT
 const char* GCGscoreGetDesc(
    DEC_SCORE*            score               /**< score */
    );

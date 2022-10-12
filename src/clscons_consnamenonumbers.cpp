@@ -146,7 +146,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
          if( nameClasses[j] == consnamesToCompare[i] )
          {
             belongstoexistingclass = true;
-            classForCons[i] = j;
+            classForCons[i] = (int) j;
             nConssConstype[j] ++;
             break;
          }
@@ -156,7 +156,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
       {
          nameClasses.push_back(consnamesToCompare[i]);
          nConssConstype.push_back(1);
-         classForCons[i] = nameClasses.size() - 1;
+         classForCons[i] = (int) nameClasses.size() - 1;
       }
    }
 

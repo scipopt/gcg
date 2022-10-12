@@ -35,6 +35,7 @@
 #ifndef GCG_PUB_PRICINGPROB_H__
 #define GCG_PUB_PRICINGPROB_H__
 
+#include "def.h"
 #include "type_pricingprob.h"
 #include "scip/type_scip.h"
 
@@ -53,19 +54,19 @@ extern "C" {
 
 
 /** get the SCIP instance corresponding to the pricing problem */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP* GCGpricingprobGetPricingscip(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** get the index of the corresponding pricing problem */
-SCIP_EXPORT
+GCG_EXPORT
 int GCGpricingprobGetProbnr(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** get generic branching data corresponding to the pricing problem */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGpricingprobGetGenericBranchData(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    SCIP_CONS***          branchconss,        /**< pointer to store branching constraints array, or NULL */
@@ -74,55 +75,55 @@ void GCGpricingprobGetGenericBranchData(
    );
 
 /** get the number of generic branching constraints corresponding to the pricing problem */
-SCIP_EXPORT
+GCG_EXPORT
 int GCGpricingprobGetNGenericBranchconss(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** get index of current generic branching constraint considered the pricing problem */
-SCIP_EXPORT
+GCG_EXPORT
 int GCGpricingprobGetBranchconsIdx(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** check if the current generic branching constraint has already been added */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_Bool GCGpricingprobBranchconsIsAdded(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** mark the current generic branching constraint to be added */
-SCIP_EXPORT
+GCG_EXPORT
 void GCGpricingprobMarkBranchconsAdded(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** get the status of a pricing problem */
-SCIP_EXPORT
+GCG_EXPORT
 GCG_PRICINGSTATUS GCGpricingprobGetStatus(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** get the lower bound of a pricing problem */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_Real GCGpricingprobGetLowerbound(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** get the number of improving columns found for this pricing problem */
-SCIP_EXPORT
+GCG_EXPORT
 int GCGpricingprobGetNImpCols(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** get the number of times the pricing problem was solved during the loop */
-SCIP_EXPORT
+GCG_EXPORT
 int GCGpricingprobGetNSolves(
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** get the total number of improving colums found in the last pricing rounds */
-SCIP_EXPORT
+GCG_EXPORT
 int GCGpricingprobGetNColsLastRounds(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */

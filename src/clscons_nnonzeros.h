@@ -37,13 +37,14 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the classifier for NNonzeros and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeConsClassifierNNonzeros(
    SCIP*                 scip                /**< SCIP data structure */
    );
