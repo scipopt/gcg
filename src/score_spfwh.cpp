@@ -60,130 +60,6 @@ struct DEC_ScoreData
 
 /* put your local methods here, and declare them static */
 
-/**
- * @brief calculates the maximum foreseeing white area score of a partialdec
- *
- * maximum foreseeing white area score
- * (i.e. maximize fraction of white area score considering problem with copied linking variables and
- * corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)
- * @return scip return code
- */
-SCIP_RETCODE GCGconshdlrDecompCalcMaxForseeingWhiteScore(
-   SCIP* scip,
-   int partialdecid,
-   SCIP_Real* score
-   )
-{
-   unsigned long sumblockshittinglinkingvar;
-   unsigned long sumlinkingvarshittingblock;
-   unsigned long newheight;
-   unsigned long newwidth;
-   unsigned long newmasterarea;
-   unsigned long newblockarea;
-
-   SCIP_CLOCK* clock;
-
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-   gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
-
-   std::vector<int> blockforconss(partialdec->getNConss(), -1);
-   std::vector<int> nlinkingvarsforblock(partialdec->getNBlocks(), 0);
-   std::vector<int> nblocksforlinkingvar(partialdec->getNLinkingvars() + partialdec->getNTotalStairlinkingvars(), 0);
-
-   /* store for each cons to which block it is assigned (or -1 if border or unassigned) */
-   for( int b = 0; b < partialdec->getNBlocks(); ++b )
-   {
-      std::vector<int>& blockconss = partialdec->getConssForBlock(b);
-      for ( int blc = 0; blc < partialdec->getNConssForBlock(b); ++blc )
-      {
-         int blockcons = blockconss[blc];
-         blockforconss[blockcons] = b;
-      }
-   }
-
-   /* iterate linking vars and corresponding conss to recognize hit blocks */
-   for( int lv = 0; lv < partialdec->getNLinkingvars(); ++lv )
-   {
-      int linkingvarid = partialdec->getLinkingvars()[lv];
-      int nhittingconss = detprobdata->getNConssForVar(linkingvarid);
-      std::vector<int>& hittingconss = detprobdata->getConssForVar(linkingvarid);
-
-      std::vector<bool> hitblock(partialdec->getNBlocks(), false);
-
-      /* find out which blocks the linking var is hitting */
-      for ( int hittingcons = 0; hittingcons < nhittingconss; ++hittingcons )
-      {
-         int blockforcons = blockforconss[hittingconss[hittingcons]];
-         if( blockforcons != -1 )
-            hitblock[blockforcons] = true;
-      }
-
-      /* count for each block and each linking var how many linking vars or blocks, respectively, they hit */
-      for( int b = 0; b < partialdec->getNBlocks(); ++b )
-      {
-         if ( hitblock[b] )
-         {
-            /* linking var hits block, so count it */
-            ++nlinkingvarsforblock[b];
-            ++nblocksforlinkingvar[lv];
-         }
-      }
-   }
-
-   for( int b = 0; b < partialdec->getNBlocks(); ++b)
-   {
-      for( int slv = 0; slv < partialdec->getNStairlinkingvars(b); ++slv )
-      {
-         ++nlinkingvarsforblock[b];
-         ++nlinkingvarsforblock[b+1];
-         ++nblocksforlinkingvar[partialdec->getNLinkingvars() + slv];
-         ++nblocksforlinkingvar[partialdec->getNLinkingvars() + slv];
-      }
-   }
-
-   sumblockshittinglinkingvar = 0;
-   sumlinkingvarshittingblock = 0;
-   for( int b = 0; b < partialdec->getNBlocks(); ++b )
-   {
-      sumlinkingvarshittingblock += nlinkingvarsforblock[b];
-   }
-   for( int lv = 0; lv < partialdec->getNLinkingvars(); ++lv )
-   {
-      sumblockshittinglinkingvar += nblocksforlinkingvar[lv];
-   }
-
-   for( int slv = 0; slv < partialdec->getNTotalStairlinkingvars(); ++slv )
-   {
-      sumblockshittinglinkingvar += nblocksforlinkingvar[partialdec->getNLinkingvars() + slv];
-   }
-
-   newheight = partialdec->getNConss() + sumblockshittinglinkingvar;
-   newwidth = partialdec->getNVars() + sumlinkingvarshittingblock;
-
-   newmasterarea = ( (SCIP_Real) partialdec->getNMasterconss() + sumblockshittinglinkingvar) * ( (SCIP_Real) partialdec->getNVars() + sumlinkingvarshittingblock );
-   newblockarea = 0;
-
-   for( int b = 0; b < partialdec->getNBlocks(); ++b )
-   {
-      newblockarea += ((SCIP_Real) partialdec->getNConssForBlock(b) ) * ( (SCIP_Real) partialdec->getNVarsForBlock(b) + nlinkingvarsforblock[b] );
-   }
-
-   SCIP_Real maxforeseeingwhitescore = ((SCIP_Real ) newblockarea + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
-   maxforeseeingwhitescore =  maxforeseeingwhitescore / (SCIP_Real) newheight ;
-
-   maxforeseeingwhitescore = 1. - maxforeseeingwhitescore;
-   *score = maxforeseeingwhitescore;
-
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
-
-   return SCIP_OKAY;
-}
-
 
 
 
@@ -198,22 +74,10 @@ static
 DEC_DECL_SCORECALC(scoreCalcSpfwh)
 {
    SCIP_Real maxforeseeingwhitescore = 0;
-   SCIP_CLOCK* clock;
-
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
 
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
 
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-
-   maxforeseeingwhitescore = partialdec->getMaxForWhiteScore();
-   if(maxforeseeingwhitescore == -1)
-      GCGconshdlrDecompCalcMaxForseeingWhiteScore(scip, partialdecid, &maxforeseeingwhitescore);
-
-   SCIP_CALL_ABORT(SCIPresetClock( scip, clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+   maxforeseeingwhitescore = partialdec->getScore(DECfindScore(scip, "max foreseeing white"));
 
    if( partialdec->hasSetppccardMaster() && !partialdec->isTrivial() && partialdec->getNBlocks() > 1 )
    {
@@ -224,14 +88,7 @@ DEC_DECL_SCORECALC(scoreCalcSpfwh)
       *scorevalue = 0.5 * maxforeseeingwhitescore;
    }
 
-   partialdec->setSetPartForWhiteScore(*scorevalue);
-
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
-
    return SCIP_OKAY;
-
 }
 
 

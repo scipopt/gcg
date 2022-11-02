@@ -182,7 +182,7 @@ struct SCIP_ConshdlrData
    DEC_SCORE**           scores;                                  /**< array of scores */
    int                   nscores;                                 /**< number of scores */
    char*                 currscore;                               /**< currently chosen score shortname */
-   SCIP_Real             scoretotaltime;                          /**< total score calculation time */
+   SCIP_CLOCK*           scoreclock;                              /**< clock tracking the total score calculation time */
 
    PARTIALDECOMP*        partialdectowrite;                       /**< pointer enabling the use of SCIPs writeProb/writeTransProb function for writing partial decompositions*/
 
@@ -871,6 +871,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 
       SCIPfreeBlockMemory(scip, &conshdlrdata->scores[i]);
    }
+   SCIPfreeClock(scip, &conshdlrdata->scoreclock);
 
    /* remove all remaining data */
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
@@ -2374,7 +2375,7 @@ DEC_DETECTOR* DECfindDetector(
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      DEC_DETECTOR *detector;
+      DEC_DETECTOR* detector;
       detector = conshdlrdata->detectors[i];
       assert(detector != NULL);
       if( strcmp(detector->name, name) == 0 )
@@ -3284,14 +3285,21 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
 }
 
 
-SCIP_RETCODE GCGconshdlrDecompAddScoreTime(
-   SCIP* scip,
-   SCIP_Real time
+SCIP_CLOCK* GCGconshdlrDecompGetScoreClock(
+   SCIP* scip
    )
 {
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-   conshdlrdata->scoretotaltime += time;
-   return SCIP_OKAY;
+   return conshdlrdata->scoreclock;
+}
+
+
+SCIP_Real GCGconshdlrDecompGetScoreTotalTime(
+   SCIP* scip
+)
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   return SCIPgetClockTime(scip, conshdlrdata->scoreclock);
 }
 
 
@@ -4350,7 +4358,7 @@ SCIP_RETCODE GCGconshdlrDecompGetPartialdecFromID(
 }
 
 
-float GCGconshdlrDecompGetScoreByPartialdecId(
+SCIP_Real GCGconshdlrDecompGetScoreByPartialdecId(
    SCIP* scip,
    int id
    )
@@ -4359,15 +4367,6 @@ float GCGconshdlrDecompGetScoreByPartialdecId(
    PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
 
    return partialdec->getScore(DECgetCurrentScore(scip));
-}
-
-
-SCIP_Real GCGconshdlrDecompGetScoreTotalTime(
-   SCIP* scip
-   )
-{
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-   return conshdlrdata->scoretotaltime;
 }
 
 
@@ -4488,6 +4487,21 @@ SCIP_RETCODE GCGconshdlrDecompPrintDetectorStatistics(
                             conshdlrdata->detectors[i]->name, conshdlrdata->detectors[i]->dectime,
                             conshdlrdata->detectors[i]->ndecomps, conshdlrdata->detectors[i]->ncompletedecomps );
    }
+   return SCIP_OKAY;
+}
+
+
+SCIP_RETCODE GCGconshdlrDecompPrintScoreStatistics(
+   SCIP*                 scip,
+   FILE*                 file
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
+   assert(conshdlrdata != NULL);
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Score statistics:\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Total Time       :   %8.2f\n",
+                         GCGconshdlrDecompGetScoreTotalTime(scip));
    return SCIP_OKAY;
 }
 
@@ -4767,7 +4781,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->scores = NULL;
    conshdlrdata->currscore = NULL;
    conshdlrdata->nscores = 0;
-   conshdlrdata->scoretotaltime = 0.;
+   conshdlrdata->scoreclock = NULL;
+   SCIPcreateClock(scip, &conshdlrdata->scoreclock);
 
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,

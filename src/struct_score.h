@@ -33,8 +33,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_SCORE_H__
-#define GCG_STRUCT_SCORE_H__
+#ifndef __GCG_STRUCT_SCORE_H__
+#define __GCG_STRUCT_SCORE_H__
 
 #include "scip/def.h"
 #include "type_score.h"
@@ -43,21 +43,19 @@
 extern "C" {
 #endif
 
-/** score data structure */
+/** score */
 struct DEC_Score
 {
    const char*           name;               /**< name of the score */
    const char*           shortname;          /**< shortname of the score */
    const char*           description;        /**< description of the score */
-
-   DEC_SCOREDATA*        scoredata;          /**< custom data structure of the score */
-
    DEC_DECL_SCOREFREE    ((*scorefree));     /**< destructor of score */
    DEC_DECL_SCORECALC    ((*scorecalc));     /**< calculate method of score */
+   DEC_SCOREDATA*        scoredata;          /**< custom data structure of the score */
 };
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //GCG_STRUCT_SCORE_H__
+#endif

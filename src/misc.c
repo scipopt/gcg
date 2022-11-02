@@ -725,15 +725,21 @@ SCIP_RETCODE GCGprintStatistics(
    if( GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL )
    {
       SCIP_CALL( GCGconshdlrDecompPrintDetectorStatistics(scip, file) );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
    }
    if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING && GCGgetNPricingprobs(scip) > 0 )
    {
-      DEC_DECOMP* decomp;
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
-
-      decomp = GCGgetStructDecomp(scip);
+      DEC_DECOMP* decomp = GCGgetStructDecomp(scip);
       if( decomp != NULL )
+      {
          SCIP_CALL( GCGprintDecompStatistics(scip, file, decomp) );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
+      }
+   }
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING && GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL )
+   {
+      SCIP_CALL( GCGconshdlrDecompPrintScoreStatistics(scip, file) );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
    }
    return SCIP_OKAY;
 }

@@ -61,83 +61,6 @@ struct DEC_ScoreData
 
 /* put your local methods here, and declare them static */
 
-/**
- * @brief gets an intermediate score value for the blocks of a partialdec
- *
- * Used by several score calculations,
- * computed as (1 - fraction of block area to complete area)
- * 
- * @returns intermediate score value
- */
-static
-SCIP_Real calcBlockAreaScore(
-   SCIP* scip,                /**< SCIP data structure */
-   gcg::PARTIALDECOMP* partialdec  /**< compute for this partialdec */
-   )
-{
-   unsigned long matrixarea;
-   unsigned long blockarea;
-
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
-   matrixarea = (unsigned long) partialdec->getNVars() * (unsigned long) partialdec->getNConss() ;
-   blockarea = 0;
-
-   for( int i = 0; i < partialdec->getNBlocks(); ++ i )
-   {
-      blockarea += (unsigned long) partialdec->getNConssForBlock(i) * ( (unsigned long) partialdec->getNVarsForBlock(i) );
-   }
-
-   SCIP_Real blockareascore = 1. - (matrixarea == 0 ? 0 : ( (SCIP_Real) blockarea / (SCIP_Real) matrixarea ));
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-   SCIP_CALL_ABORT( SCIPfreeClock(scip, &clock) );
-
-   return blockareascore;
-}
-
-/**
- * @brief calculates the border area score of a partialdec
- *
- * 1 - fraction of border area to complete area
- * @return scip return code
- */
-static
-SCIP_RETCODE GCGconshdlrDecompCalcBorderAreaScore(
-   SCIP* scip,
-   int partialdecid,
-   SCIP_Real* score
-   )
-{
-   unsigned long matrixarea;
-   unsigned long borderarea;
-
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-
-   matrixarea = (unsigned long) partialdec->getNVars() * (unsigned long)partialdec->getNConss();
-   borderarea = 0;
-
-   borderarea += (unsigned long) ( partialdec->getNLinkingvars() + partialdec->getNTotalStairlinkingvars() ) * (unsigned long) partialdec->getNConss();
-   borderarea += (unsigned long) partialdec->getNMasterconss() * ( (unsigned long) partialdec->getNVars() - ( partialdec->getNLinkingvars() + partialdec->getNTotalStairlinkingvars() ) ) ;
-
-   *score = 1. - (matrixarea == 0 ? 0 : ( (SCIP_Real) borderarea / (SCIP_Real) matrixarea ));
-
-   partialdec->setBorderAreaScore(*score);
-
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
-
-   return SCIP_OKAY;
-}
-
 
 
 
@@ -166,10 +89,6 @@ DEC_DECL_SCORECALC(scoreCalcBender)
    nrelevantconss2 = 0;
    nrelevantvars2 = 0;
    badblockvararea = 0;
-
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
 
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
 
@@ -263,27 +182,14 @@ DEC_DECL_SCORECALC(scoreCalcBender)
 
    /* get block & border area score (note: these calculations have their own clock) */
    SCIP_Real borderareascore;
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
 
-   SCIP_Real blockareascore = calcBlockAreaScore(scip, partialdec);
-   borderareascore = partialdec->getBorderAreaScore();
-   if(borderareascore == -1)
-      GCGconshdlrDecompCalcBorderAreaScore(scip, partialdecid, &borderareascore);
-
-   SCIP_CALL_ABORT(SCIPresetClock( scip, clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
+   SCIP_Real blockareascore = partialdec->calcBlockAreaScore(scip);
+   borderareascore = partialdec->getScore(DECfindScore(scip, "border area"));
 
    *scorevalue = blockareascore + benderareascore + borderareascore - 1.;
 
    if( *scorevalue < 0. )
       *scorevalue = 0.;
-
-   partialdec->setBendersScore(*scorevalue);
-
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
 
    return SCIP_OKAY;
 }

@@ -69,7 +69,7 @@ enum RETTYPE
 {
    UNKNOWN,    /**< dummy default to catch errors */
    INTEGER,    /**< integer */
-   FLOAT,      /**< float */
+   REAL,       /**< SCIP_Real */
    BOOLEAN,    /**< Boolean */
    STRING      /**< char* */
 };
@@ -1074,11 +1074,11 @@ SCIP_RETCODE GCGdialogExecExplore(
       }
       else if( strcmp(columnname, "score") == 0 )
       {
-         column = new Column<float>(
+         column = new Column<SCIP_Real>(
             columnname,
             " ",
             &GCGconshdlrDecompGetScoreByPartialdecId,
-            FLOAT);
+            REAL);
       }
       else if( strcmp(columnname, "history") == 0 )
       {

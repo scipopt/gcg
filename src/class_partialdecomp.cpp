@@ -101,10 +101,7 @@ PARTIALDECOMP::PARTIALDECOMP(
    detectorchain( 0 ), detectorclocktimes( 0 ), pctvarstoborder( 0 ),
    pctvarstoblock( 0 ), pctvarsfromfree( 0 ), pctconsstoborder( 0 ), pctconsstoblock( 0 ), pctconssfromfree( 0 ),
    nnewblocks( 0 ), usedpartition(0 ), classestomaster(0 ), classestolinking(0 ), listofancestorids(0 ),
-   usergiven( USERGIVEN::NOT ), maxwhitescore( -1. ), borderareascore( -1. ), classicscore( -1. ),
-   maxforeseeingwhitescore(-1.),
-   setpartfwhitescore(-1.), maxforeseeingwhitescoreagg(-1.), setpartfwhitescoreagg(-1.), bendersscore(-1.), strongdecompositionscore(-1.),
-   stemsfromorig( false ), original( originalProblem ), translatedpartialdecid( -1 )
+   usergiven( USERGIVEN::NOT ), stemsfromorig( false ), original( originalProblem ), translatedpartialdecid( -1 )
 {
    // unique id
    id = GCGconshdlrDecompGetNextPartialdecID(scip);
@@ -127,6 +124,15 @@ PARTIALDECOMP::PARTIALDECOMP(
       isconsopen.push_back(true);
       isconsmaster.push_back(false);
       openconss.push_back(i);
+   }
+
+   SCIPhashmapCreate(&maptoscores, SCIPblkmem(scip), GCGconshdlrDecompGetNScores(scip));
+
+   for( int i = 0; i < GCGconshdlrDecompGetNScores(scip); i++ )
+   {
+      assert(!SCIPhashmapExists(maptoscores, (void*)GCGconshdlrDecompGetScores(scip)[i]));
+
+      SCIP_CALL_EXC( SCIPhashmapSetImageReal(maptoscores, (void*)GCGconshdlrDecompGetScores(scip)[i], SCIP_INVALID) );
    }
 
    GCGconshdlrDecompRegisterPartialdec(scip, this);
@@ -167,10 +173,6 @@ PARTIALDECOMP::PARTIALDECOMP(
    detectorchaininfo = partialdectocopy->detectorchaininfo;
    hashvalue = partialdectocopy->hashvalue;
    usergiven = partialdectocopy->usergiven;
-   classicscore = partialdectocopy->classicscore;
-   borderareascore = partialdectocopy->borderareascore;
-   maxwhitescore = partialdectocopy->maxwhitescore;
-   bendersscore = -1.;
    detectorclocktimes = partialdectocopy->detectorclocktimes;
    pctvarstoborder = partialdectocopy->pctvarstoborder;
    pctvarstoblock = partialdectocopy->pctvarstoblock;
@@ -205,11 +207,14 @@ PARTIALDECOMP::PARTIALDECOMP(
    calculatedncoeffsforblock = FALSE;
    translatedpartialdecid = partialdectocopy->getTranslatedpartialdecid();
 
-   maxforeseeingwhitescore = -1.;
-   maxforeseeingwhitescoreagg = -1.;
-   setpartfwhitescore = -1.;
-   setpartfwhitescoreagg = -1.;
-   strongdecompositionscore = -1;
+   SCIPhashmapCreate(&maptoscores, SCIPblkmem(scip), GCGconshdlrDecompGetNScores(scip));
+
+   for( int i = 0; i < GCGconshdlrDecompGetNScores(scip); i++ )
+   {
+      assert(!SCIPhashmapExists(maptoscores, (void*)GCGconshdlrDecompGetScores(scip)[i]));
+
+      SCIP_CALL_EXC( SCIPhashmapSetImageReal(maptoscores, (void*)GCGconshdlrDecompGetScores(scip)[i], SCIP_INVALID) );
+   }
 
    isagginfoalreadytoexpensive = partialdectocopy->isagginfoalreadytoexpensive;
 
@@ -220,6 +225,7 @@ PARTIALDECOMP::PARTIALDECOMP(
 PARTIALDECOMP::~PARTIALDECOMP()
 {
    GCGconshdlrDecompDeregisterPartialdec(scip, this);
+   SCIPhashmapFree(&maptoscores);
 }
 
 
@@ -2946,26 +2952,14 @@ void PARTIALDECOMP::displayInfo(
    std::cout << "-- General information --" << std::endl;
    std::cout << " ID: " << id << std::endl;
    std::cout << " Hashvalue: " << hashvalue << std::endl;
-   std::cout << " Score: " << classicscore << std::endl;
-   if( getNOpenconss() + getNOpenconss() > 0 )
-      std::cout << " Maxwhitescore >= " << maxwhitescore << std::endl;
-   else
-      std::cout << " Max white score: " << maxwhitescore << std::endl;
    if( getNOpenconss() + getNOpenconss() == 0 )
-         std::cout << " Max-foreseeing-white-score: " << maxforeseeingwhitescore << std::endl;
-   if( getNOpenconss() + getNOpenconss() == 0 )
-         std::cout << " Max-foreseeing-white-aggregated-score: " << maxforeseeingwhitescoreagg << std::endl;
-   if( getNOpenconss() + getNOpenconss() == 0 )
-         std::cout << " PPC-max-foreseeing-white-score: " <<  setpartfwhitescore << std::endl;
-
-   if( getNOpenconss() + getNOpenconss() == 0 )
-          std::cout << " PPC-max-foreseeing-white-aggregated-score: " <<  setpartfwhitescoreagg << std::endl;
-
-   if( getNOpenconss() + getNOpenconss() == 0 )
-          std::cout << " Bendersscore: " << bendersscore << std::endl;
-
-   if( getNOpenconss() + getNOpenconss() == 0 )
-          std::cout << " borderareascore: " << borderareascore << std::endl;
+   {
+      for( int i = 0; i < GCGconshdlrDecompGetNScores(scip); ++i )
+      {
+         DEC_SCORE* score = GCGconshdlrDecompGetScores(scip)[i];
+         std::cout << " " << GCGscoreGetName(score) << ": " << getScore(score) << std::endl;
+      }
+   }
 
    std::cout << " HassetppMaster: " << hasSetppMaster() << std::endl;
    std::cout << " HassetppcMaster: " << hasSetppcMaster() << std::endl;
@@ -4025,76 +4019,72 @@ int PARTIALDECOMP::getNCoeffsForMaster(
 }
 
 
+void PARTIALDECOMP::setScore(
+   DEC_SCORE* score,
+   SCIP_Real scorevalue
+   )
+{
+   assert(score != NULL);
+   assert(scorevalue == SCIP_INVALID || (scorevalue >= 0.0 && scorevalue <= 1.0));
+   assert(SCIPhashmapExists(maptoscores, (void*)score));
+
+   SCIPhashmapSetImageReal(maptoscores, (void*)score, scorevalue);
+}
+
+
 SCIP_Real PARTIALDECOMP::getScore(
    DEC_SCORE* score
-)
+   )
 {
-   /* if there are indicator constraints in the master we want to reject this decomposition */
-   for( int mc = 0; mc < getNMasterconss(); ++mc )
+   assert(SCIPhashmapExists(maptoscores, (void*)score));
+
+   SCIP_Real scorevalue = SCIPhashmapGetImageReal(maptoscores, (void*)score);
+
+   if( scorevalue == SCIP_INVALID )
    {
-      SCIP_CONS* cons;
-      cons = getDetprobdata()->getCons(getMasterconss()[mc]);
-      if( GCGconsGetType(scip, cons) == consType::indicator )
-         return 0.;
+      /* if there are indicator constraints in the master we want to reject this decomposition */
+      DETPROBDATA* detprobdata = this->getDetprobdata();
+
+      for( int mc = 0; mc < getNMasterconss(); ++mc )
+      {
+         SCIP_CONS* cons;
+         cons = detprobdata->getCons(getMasterconss()[mc]);
+         if( GCGconsGetType(scip, cons) == consType::indicator )
+         {
+            setScore(score, 0.);
+            return 0.;
+         }
+      }
+      SCIP_CLOCK* clock = GCGconshdlrDecompGetScoreClock(scip);
+      SCIPstartClock(scip, clock);
+      score->scorecalc(scip, score, this->id, &scorevalue);
+      SCIPstopClock(scip, clock);
+      setScore(score, scorevalue);
    }
 
-   if( strcmp(GCGscoreGetName(score), "max white") == 0 )
-   {
-      if( maxwhitescore == -1. )
-         score->scorecalc(scip, score, this->id, &maxwhitescore);
-      return maxwhitescore;
-   }
-   else if( strcmp(GCGscoreGetName(score), "classic") == 0 )
-   {
-      if ( classicscore == -1. )
-         score->scorecalc(scip, score, this->id, &classicscore);
-      return classicscore;
-   }
-   else if( strcmp(GCGscoreGetName(score), "border area") == 0 )
-   {
-      if( borderareascore == -1. )
-         score->scorecalc(scip, score, this->id, &borderareascore);
-      return borderareascore;
-   }
-   else if( strcmp(GCGscoreGetName(score), "max foreseeing white") == 0 )
-   {
-      if( maxforeseeingwhitescore == -1. )
-         score->scorecalc(scip, score, this->id, &maxforeseeingwhitescore);
-      return maxforeseeingwhitescore;
-   }
-   else if( strcmp(GCGscoreGetName(score), "max foreseeing white with aggregation info") == 0 )
-   {
-      if( maxforeseeingwhitescoreagg == -1. )
-         score->scorecalc(scip, score, this->id, &maxforeseeingwhitescoreagg);
-      return maxforeseeingwhitescoreagg;
-   }
-   else if( strcmp(GCGscoreGetName(score), "ppc-max-white") == 0 )
-   {
-      if( setpartfwhitescore == -1. )
-         score->scorecalc(scip, score, this->id, &setpartfwhitescore);
-      return setpartfwhitescore;
-   }
-   else if( strcmp(GCGscoreGetName(score), "ppc-max-white with aggregation info") == 0 )
-   {
-      if( setpartfwhitescoreagg == -1. )
-         score->scorecalc(scip, score, this->id, &setpartfwhitescoreagg);
-      return setpartfwhitescoreagg;
-   }
-   else if( strcmp(GCGscoreGetName(score), "experimental benders score") == 0 )
-   {
-      if( bendersscore == -1. )
-         score->scorecalc(scip, score, this->id, &bendersscore);
-      return bendersscore;
-   }
-   else if( strcmp(GCGscoreGetName(score), "strong decomposition score") == 0 )
-   {
-      if( strongdecompositionscore == -1. )
-         score->scorecalc(scip, score, this->id, &strongdecompositionscore);
-      return strongdecompositionscore;
-   }
-   
-   return 0;
+   return scorevalue;
 }
+
+
+SCIP_Real PARTIALDECOMP::calcBlockAreaScore(
+   SCIP* scip
+   )
+{
+   unsigned long matrixarea;
+   unsigned long blockarea;
+
+   matrixarea = (unsigned long) this->getNVars() * (unsigned long) this->getNConss() ;
+   blockarea = 0;
+
+   for( int i = 0; i < getNBlocks(); ++ i )
+   {
+     blockarea += (unsigned long) this->getNConssForBlock(i) * ( (unsigned long) this->getNVarsForBlock(i) );
+   }
+   SCIP_Real blockareascore = 1. - (matrixarea == 0 ? 0 : ( (SCIP_Real) blockarea / (SCIP_Real) matrixarea ));
+
+   return blockareascore;
+}
+
 
 
 USERGIVEN PARTIALDECOMP::getUsergiven()
@@ -5511,123 +5501,11 @@ void PARTIALDECOMP::buildDecChainString(
 }
 
 
-SCIP_Real PARTIALDECOMP::getClassicScore()
-{
-   return classicscore;
-}
-
-void PARTIALDECOMP::setClassicScore(
-   SCIP_Real score
-   )
-{
-   classicscore = score;
-}
-
-
-SCIP_Real PARTIALDECOMP::getBorderAreaScore()
-{
-   return borderareascore;
-}
-
-void PARTIALDECOMP::setBorderAreaScore(
-   SCIP_Real score
-   )
-{
-   borderareascore = score;
-}
-
-
 SCIP_Real PARTIALDECOMP::getMaxWhiteScore()
 {
    DEC_SCORE* score = DECfindScore(this->scip, "max white");
-
+   assert(score != NULL);
    return getScore(score);
-}
-
-void PARTIALDECOMP::setMaxWhiteScore(
-   SCIP_Real score
-   )
-{
-   maxwhitescore = score;
-}
-
-
-SCIP_Real PARTIALDECOMP::getMaxForWhiteScore()
-{
-   DEC_SCORE* score = DECfindScore(this->scip, "max foreseeing white");
-
-   return getScore(score);
-}
-
-void PARTIALDECOMP::setMaxForWhiteScore(
-   SCIP_Real score
-   )
-{
-   maxforeseeingwhitescore = score;
-}
-
-
-SCIP_Real PARTIALDECOMP::getSetPartForWhiteScore()
-{
-   return setpartfwhitescore;
-}
-
-void PARTIALDECOMP::setSetPartForWhiteScore(
-   SCIP_Real score
-   )
-{
-   setpartfwhitescore = score;
-}
-
-
-SCIP_Real PARTIALDECOMP::getMaxForWhiteAggScore()
-{
-   return maxforeseeingwhitescoreagg;
-}
-
-void PARTIALDECOMP::setMaxForWhiteAggScore(
-   SCIP_Real score
-   )
-{
-   maxforeseeingwhitescoreagg = score;
-}
-
-
-SCIP_Real PARTIALDECOMP::getSetPartForWhiteAggScore()
-{
-   return setpartfwhitescoreagg;
-}
-
-void PARTIALDECOMP::setSetPartForWhiteAggScore(
-   SCIP_Real score
-   )
-{
-   setpartfwhitescoreagg = score;
-}
-
-SCIP_Real PARTIALDECOMP::getBendersScore()
-{
-   return bendersscore;
-}
-
-void PARTIALDECOMP::setBendersScore(
-   SCIP_Real score
-   )
-{
-   bendersscore = score;
-}
-
-
-SCIP_Real PARTIALDECOMP::getStrongDecompScore()
-{
-   return strongdecompositionscore;
-}
-
-void PARTIALDECOMP::setStrongDecompScore(
-   SCIP_Real score
-   )
-{
-   strongdecompositionscore = score;
 }
 
 

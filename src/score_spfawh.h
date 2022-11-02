@@ -33,8 +33,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef SCORE_SPFAWH_H_
-#define SCORE_SPFAWH_H_
+#ifndef __GCG_SCORE_SPFAWH_H__
+#define __GCG_SCORE_SPFAWH_H__
 
 
 #include "gcg.h"

@@ -79,10 +79,6 @@ DEC_DECL_SCORECALC(scoreCalcFawh)
    unsigned long newmasterarea;
    unsigned long newblockareaagg;
 
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
 
    std::vector<int> nlinkingvarsforblock(partialdec->getNBlocks(), 0);
@@ -155,12 +151,6 @@ DEC_DECL_SCORECALC(scoreCalcFawh)
 
    maxforeseeingwhitescoreagg = 1. - maxforeseeingwhitescoreagg;
    *scorevalue = maxforeseeingwhitescoreagg;
-
-   partialdec->setMaxForWhiteAggScore(*scorevalue);
-
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
 
    return SCIP_OKAY;
 }

@@ -93,10 +93,6 @@ DEC_DECL_SCORECALC(scoreCalcClassic)
    SCIP_Real alphalinking;
    SCIP_Real alphadensity;
 
-   SCIP_CLOCK* clock = NULL;
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-
    alphaborderarea = 0.6;
    alphalinking = 0.2;
    alphadensity = 0.2;
@@ -223,17 +219,11 @@ DEC_DECL_SCORECALC(scoreCalcClassic)
 
    *scorevalue = totalscore;
 
-   partialdec->setClassicScore(*scorevalue);
-
-   SCIPfreeBufferArray(scip, &nzblocks);
-   SCIPfreeBufferArray(scip, &nlinkvarsblocks) ;
-   SCIPfreeBufferArray(scip, &blockdensities);
-   SCIPfreeBufferArray(scip, &blocksizes);
-   SCIPfreeBufferArray(scip, &nvarsblocks);
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-   SCIP_CALL_ABORT( SCIPfreeClock(scip, &clock) );
+   SCIPfreeBufferArray( scip, & nzblocks );
+   SCIPfreeBufferArray(  scip, & nlinkvarsblocks) ;
+   SCIPfreeBufferArray(  scip, & blockdensities);
+   SCIPfreeBufferArray(  scip, & blocksizes);
+   SCIPfreeBufferArray(  scip, & nvarsblocks);
 
    return SCIP_OKAY;
 }

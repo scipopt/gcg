@@ -166,17 +166,8 @@ private:
 
    USERGIVEN usergiven;                               /**< is this partialdec partially or completely given by user */
 
-   /* score values (or -1 iff nott computed yet) */
-
-   SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
-   SCIP_Real borderareascore;                         /**< 1 - fraction of border area to complete area */
-   SCIP_Real classicscore;                            /**< classic score to evaluate the partial */
-   SCIP_Real maxforeseeingwhitescore;                 /**< maximum foreseeing white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
-   SCIP_Real setpartfwhitescore;                      /**< setpartitioning maximum foreseeing white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )*/
-   SCIP_Real maxforeseeingwhitescoreagg;              /**< maximum foreseeing white area score with respect to aggregatable blocks (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
-   SCIP_Real setpartfwhitescoreagg;                   /**< setpartitioning maximum foreseeing white area score with respect to aggregateable (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )*/
-   SCIP_Real bendersscore;                            /**< score to evaluate the partialdecs */
-   SCIP_Real strongdecompositionscore;                /**< strong decomposition score  */
+   /* datastructure to store the score values of a score ( SCIP_INVALID iff score not computed yet) */
+   SCIP_HASHMAP* maptoscores;                         /**< maps score to its corresponding value*/
 
    /* datastructure to store information if this partialdec stems from a partialdec concerning the orig problem */
    bool stemsfromorig;                    /**< partialdec has at least one ancestor that is a partialdec from orig problem */
@@ -843,12 +834,45 @@ public:
       );
 
    /**
+    * @brief returns the scorevalue of otherscore called by score
+    * @param score the score
+    * @param otherscore the otherscore 
+    * @return the scorevalue
+    */
+   SCIP_Real calcOtherScore(
+      DEC_SCORE* score,
+      DEC_SCORE* otherscore
+   );
+
+   /**
+   * @brief gets an intermediate score value for the blocks of a partialdec
+   *
+   * Used by several score calculations,
+   * computed as (1 - fraction of block area to complete area)
+   * 
+   * @returns intermediate score value
+   */
+   SCIP_Real calcBlockAreaScore(
+      SCIP* scip                /**< SCIP data structure */
+      );
+
+   /**
+    * @brief sets the scorevalue of score
+    * @param score the score
+    */
+   void setScore(
+      DEC_SCORE* score,
+      SCIP_Real scorevalue
+      );
+
+   /**
     * @brief checks if all master constraints set partitioning, set packing, set cover, or cardinality constraints
     * @return TRUE iff all master constraints set partitioning, set packing, set cover, or cardinality constraints
     */
    GCG_EXPORT
    SCIP_Bool hasSetppccardMaster(
    );
+
 
    /**
     * @brief checks iff all master constraints set partitioning, set packing, or set cover constraints
@@ -1887,36 +1911,6 @@ public:
       std::vector<SCIP_Real>& newvector
       );
 
-   /** @brief gets the classic score
-    *
-    * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcClassicScore
-    * @returns border area score
-    */
-   GCG_EXPORT
-   SCIP_Real getClassicScore();
-
-   /** @brief set the classic score
-    */
-   GCG_EXPORT
-   void setClassicScore(
-      SCIP_Real score   /**< new score value in [0,1] */
-   );
-
-   /** @brief gets the border area score
-    *
-    * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcBorderAreaScore
-    * @returns border area score
-    */
-   GCG_EXPORT
-   SCIP_Real getBorderAreaScore();
-
-   /** @brief set the border area score
-    */
-   GCG_EXPORT
-   void setBorderAreaScore(
-      SCIP_Real score   /**< new score value in [0,1] */
-   );
-
     /** @brief gets the maximum white area score
     *
     * "maximum white score" is fraction of the area of the decomposed matrix that is neither block or border
@@ -1925,103 +1919,6 @@ public:
     * */
    GCG_EXPORT
    SCIP_Real getMaxWhiteScore();
-
-   /** @brief set the maximum white area score
-    */
-   GCG_EXPORT
-   void setMaxWhiteScore(
-      SCIP_Real score   /**< new score value in [0,1] */
-   );
-
-   /** @brief gets the maximum foreseeing white area score
-    *
-    * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcMaxForseeingWhiteScore
-    * @returns maximum foreseeing white area score
-    * */
-   GCG_EXPORT
-   SCIP_Real getMaxForWhiteScore();
-
-   /** @brief set the maximum foreseeing white area score
-    */
-   GCG_EXPORT
-   void setMaxForWhiteScore(
-      SCIP_Real score   /**< new score value in [0,1] */
-   );
-
-   /** @brief gets the setpartitioning maximum foreseeing white area score
-    *
-    * @note -1 iff not calculated yet, \see GGCGconshdlrDecompCalcSetPartForseeingWhiteScore
-    * @returns setpartitioning maximum foreseeing white area score
-    * */
-   GCG_EXPORT
-   SCIP_Real getSetPartForWhiteScore();
-
-   /** @brief set the setpartitioning maximum foreseeing white area score
-    */
-   GCG_EXPORT
-   void setSetPartForWhiteScore(
-      SCIP_Real score   /**< new score value in [0,1] */
-   );
-
-   /** @brief gets the maximum foreseeing white area score with respect to aggregatable blocks
-    *
-    * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore
-    * @returns maximum foreseeing white area score with respect to aggregatable blocks
-    * */
-   GCG_EXPORT
-   SCIP_Real getMaxForWhiteAggScore();
-
-   /** @brief set the maximum foreseeing white area score with respect to aggregatable blocks
-    */
-   GCG_EXPORT
-   void setMaxForWhiteAggScore(
-      SCIP_Real score   /**< new score value in [0,1] */
-   );
-
-   /** @brief gets the setpartitioning maximum foreseeing white area score with respect to aggregateable
-    *
-    * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcSetPartForWhiteAggScore
-    * @returns setpartitioning maximum foreseeing white area score with respect to aggregateable
-    */
-   GCG_EXPORT
-   SCIP_Real getSetPartForWhiteAggScore();
-
-   /** @brief set the setpartitioning maximum foreseeing white area score with respect to aggregateable
-    */
-   GCG_EXPORT
-   void setSetPartForWhiteAggScore(
-      SCIP_Real score   /**< new score value in [0,1] */
-   );
-
-   /** @brief gets the benders score
-    *
-    * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcBendersScore
-    * @returns benders score
-    */
-   GCG_EXPORT
-   SCIP_Real getBendersScore();
-
-   /** @brief set the benders score
-    */
-   GCG_EXPORT
-   void setBendersScore(
-      SCIP_Real score   /**< new score value in [0,1] */
-   );
-
-   /** @brief gets the strong decomposition score
-    *
-    * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcStrongDecompositionScore
-    * @returns strong decomposition score
-    */
-   GCG_EXPORT
-   SCIP_Real getStrongDecompScore();
-
-   /** @brief set the strong decomposition score
-    */
-   GCG_EXPORT
-   void setStrongDecompScore(
-      SCIP_Real score   /**< new score value in [0,1] */
-   );
 
    /** sorts the partialdec and calculates a its implicit assignments, hashvalue and evaluation
     *

@@ -59,114 +59,6 @@ struct DEC_ScoreData
 
 /* put your local methods here, and declare them static */
 
-/**
- * @brief calculates the maxforeseeingwhiteagg score of a partialdec
- *
- * maximum foreseeing white area score with respect to aggregatable blocks
- * (i.e. maximize fraction of white area score considering problem with copied linking variables
- * and corresponding master constraints;
- * white area is nonblock and nonborder area, stairlinking variables count as linking)
- * @return scip return code
- */
-SCIP_RETCODE GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore(
-   SCIP* scip,
-   int partialdecid,
-   SCIP_Real* score
-   )
-{
-   unsigned long sumblockshittinglinkingvar;
-   unsigned long sumlinkingvarshittingblock;
-   unsigned long newheight;
-   unsigned long newwidth;
-   unsigned long newmasterarea;
-   unsigned long newblockareaagg;
-
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-
-   std::vector<int> nlinkingvarsforblock(partialdec->getNBlocks(), 0);
-   std::vector<int> nblocksforlinkingvar(partialdec->getNLinkingvars() + partialdec->getNTotalStairlinkingvars(), 0);
-
-   gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
-
-   partialdec->calcAggregationInformation(false);
-
-   for( int lv = 0; lv < partialdec->getNLinkingvars(); ++lv )
-   {
-      int linkingvarid = partialdec->getLinkingvars()[lv];
-
-      for( int b = 0; b < partialdec->getNBlocks(); ++b )
-      {
-         for ( int blc = 0; blc < partialdec->getNConssForBlock(b); ++blc )
-         {
-            int blockcons = partialdec->getConssForBlock(b)[blc];
-            if( !SCIPisZero( scip, detprobdata->getVal(blockcons, linkingvarid) ) )
-            {
-               /* linking var hits block */
-               ++nlinkingvarsforblock[b];
-               ++nblocksforlinkingvar[lv];
-               break;
-            }
-         }
-      }
-   }
-
-   for( int b = 0; b < partialdec->getNBlocks(); ++b)
-   {
-      for( int slv = 0; slv < partialdec->getNStairlinkingvars(b); ++slv )
-      {
-         ++nlinkingvarsforblock[b];
-         ++nlinkingvarsforblock[b+1];
-         ++nblocksforlinkingvar[partialdec->getNLinkingvars() + slv];
-         ++nblocksforlinkingvar[partialdec->getNLinkingvars() + slv];
-      }
-   }
-
-   sumblockshittinglinkingvar = 0;
-   sumlinkingvarshittingblock = 0;
-   for( int b = 0; b < partialdec->getNBlocks(); ++b )
-   {
-      sumlinkingvarshittingblock += nlinkingvarsforblock[b];
-   }
-   for( int lv = 0; lv < partialdec->getNLinkingvars(); ++lv )
-   {
-      sumblockshittinglinkingvar += nblocksforlinkingvar[lv];
-   }
-
-   for( int slv = 0; slv < partialdec->getNTotalStairlinkingvars(); ++slv )
-   {
-      sumblockshittinglinkingvar += nblocksforlinkingvar[partialdec->getNLinkingvars() + slv];
-   }
-
-   newheight = partialdec->getNConss() + sumblockshittinglinkingvar;
-   newwidth = partialdec->getNVars() + sumlinkingvarshittingblock;
-
-   newmasterarea = ( partialdec->getNMasterconss() + sumblockshittinglinkingvar) * ( partialdec->getNVars() + sumlinkingvarshittingblock );
-   newblockareaagg = 0;
-
-   for( int br = 0; br < partialdec->getNReps(); ++br )
-   {
-      newblockareaagg += partialdec->getNConssForBlock( partialdec->getBlocksForRep(br)[0] ) * ( partialdec->getNVarsForBlock( partialdec->getBlocksForRep(br)[0] ) + nlinkingvarsforblock[partialdec->getBlocksForRep(br)[0]] );
-   }
-
-   SCIP_Real maxforeseeingwhitescoreagg = ((SCIP_Real ) newblockareaagg + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
-   maxforeseeingwhitescoreagg =  maxforeseeingwhitescoreagg / (SCIP_Real) newheight ;
-
-   maxforeseeingwhitescoreagg = 1. - maxforeseeingwhitescoreagg;
-   *score = maxforeseeingwhitescoreagg;
-
-   partialdec->setMaxForWhiteAggScore(*score);
-
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
-
-   return SCIP_OKAY;
-}
-
 
 
 
@@ -182,21 +74,9 @@ DEC_DECL_SCORECALC(scoreCalcSpfawh)
 {
    SCIP_Real maxforeseeingwhitescoreagg = 0;
 
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
 
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-
-   maxforeseeingwhitescoreagg = partialdec->getMaxForWhiteAggScore();
-   if(maxforeseeingwhitescoreagg == -1)
-      GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore(scip, partialdecid, &maxforeseeingwhitescoreagg);
-
-   SCIP_CALL_ABORT(SCIPresetClock( scip, clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+   maxforeseeingwhitescoreagg = partialdec->getScore(DECfindScore(scip, "max foreseeing white with aggregation info"));
 
    if( partialdec->hasSetppccardMaster() && !partialdec->isTrivial() && partialdec->getNBlocks() > 1 )
    {
@@ -206,12 +86,6 @@ DEC_DECL_SCORECALC(scoreCalcSpfawh)
    {
       *scorevalue = 0.5 * maxforeseeingwhitescoreagg;
    }
-
-   partialdec->setSetPartForWhiteAggScore(*scorevalue);
-
-   SCIP_CALL_ABORT(SCIPstopClock(scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime(scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
 
    return SCIP_OKAY;
 }

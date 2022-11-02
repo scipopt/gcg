@@ -370,16 +370,6 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexistingDecomp(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
-/**
- * @brief adds given time to total score calculation time
- * @return scip return code
- */
-extern
-SCIP_RETCODE GCGconshdlrDecompAddScoreTime(
-   SCIP* scip,       /**< SCIP data structure */
-   SCIP_Real time    /**< time to add */
-   );
-
 /** @brief adds a candidate for block size given by the user */
 extern
 void GCGconshdlrDecompAddUserCandidatesNBlocks(
@@ -806,18 +796,26 @@ SCIP_RETCODE GCGconshdlrDecompGetPartialdecFromID(
  * @returns score in respect to current score type
  */
 extern
-float GCGconshdlrDecompGetScoreByPartialdecId(
+SCIP_Real GCGconshdlrDecompGetScoreByPartialdecId(
    SCIP* scip,    /**< SCIP data structure */
    int id         /**< id of partialdec */
+   );
+
+/** @brief gets the clock tracking the score computation time
+ * @returns pointer to a clock object
+ */
+GCG_EXPORT
+SCIP_CLOCK* GCGconshdlrDecompGetScoreClock(
+   SCIP* scip     /**< SCIP data structure */
    );
 
 /** @brief gets total score computation time
  * @returns total score computation time
  */
-extern
+GCG_EXPORT
 SCIP_Real GCGconshdlrDecompGetScoreTotalTime(
    SCIP* scip     /**< SCIP data structure */
-);
+   );
 
 /** @brief Gets a list of ids of all currently selected partialdecs
  *  @returns list of partialdecs */
@@ -832,7 +830,7 @@ SCIP_RETCODE GCGconshdlrDecompGetSelectedPartialdecs(
  * @brief counts up the counter for created decompositions and returns it
  * @returns number of created decompositions that was recently increased
  */
- extern
+extern
 int GCGconshdlrDecompIncreaseNCallsCreateDecomp(
   SCIP*                 scip                /**< SCIP data structure **/
    );
@@ -890,6 +888,14 @@ SCIP_RETCODE GCGconshdlrDecompPrintDetectorStatistics(
    FILE*                 file                /**< output file or NULL for standard output */
    );
 
+/** @brief display statistics about scores
+ * @returns SCIP return code */
+GCG_EXPORT
+SCIP_RETCODE GCGconshdlrDecompPrintScoreStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+   );
+
 /**
  * @brief selects/unselects a partialdecomp
  *
@@ -939,7 +945,7 @@ SCIP_RETCODE GCGconshdlrDecompTranslateNBestOrigPartialdecs(
  * @param scip SCIP data structure
  * @returns SCIP return code
  */
- extern
+extern
 SCIP_RETCODE GCGconshdlrDecompTranslateOrigPartialdecs(
    SCIP*                 scip
    );
