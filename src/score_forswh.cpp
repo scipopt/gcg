@@ -79,11 +79,6 @@ DEC_DECL_SCORECALC(scoreCalcForswh)
    unsigned long newmasterarea;
    unsigned long newblockarea;
 
-   SCIP_CLOCK* clock;
-
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
    gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
 
@@ -174,10 +169,6 @@ DEC_DECL_SCORECALC(scoreCalcForswh)
 
    maxforeseeingwhitescore = 1. - maxforeseeingwhitescore;
    *scorevalue = maxforeseeingwhitescore;
-
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
 
    return SCIP_OKAY;
 }

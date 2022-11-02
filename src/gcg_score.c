@@ -37,17 +37,17 @@
 #include "cons_decomp.h"
 
 /**
- * @brief includes one score
+ * @brief creates a score and includes it in GCG
  * @returns scip return code
  */
 SCIP_RETCODE GCGincludeScore(
-   SCIP*                 scip,
-   const char*           name,               /**< name of the score*/
-   const char*           shortname,          /**< shortname of the score */
-   const char*           description,        /**< description of the score */
-   DEC_SCOREDATA*        scoredata,
-   DEC_DECL_SCOREFREE    ((*scorefree)),
-   DEC_DECL_SCORECALC    ((*scorecalc))
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           name,               /**< name of score */
+   const char*           shortname,          /**< shortname of score */
+   const char*           description,        /**< description of score */
+   DEC_SCOREDATA*        scoredata,          /**< score data */
+   DEC_DECL_SCOREFREE    ((*scorefree)),     /**< destructor of score */
+   DEC_DECL_SCORECALC    ((*scorecalc))      /**< score calculation method of score */
    )
 {
     /* check whether score is already present */
@@ -67,8 +67,8 @@ SCIP_RETCODE GCGincludeScore(
  * @returns score pointer or NULL if score with given name is not found
  */
 DEC_SCORE* GCGfindScore(
-   SCIP*                 scip,
-   const char*           name
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           name                /**< name of score */
    )
 {
     assert(scip != NULL);
@@ -82,8 +82,8 @@ DEC_SCORE* GCGfindScore(
  * @returns score pointer or NULL if score with given shortname is not found
  */
 DEC_SCORE* GCGfindScoreByShortname(
-   SCIP*                 scip,
-   const char*           shortname
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           shortname           /**< shortname of score */
    )
 {
     assert(scip != NULL);
@@ -94,7 +94,7 @@ DEC_SCORE* GCGfindScoreByShortname(
 
 /** returns the array of currently available scores */
 DEC_SCORE** GCGgetScores(
-   SCIP*                 scip
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
     assert(scip != NULL);
@@ -104,7 +104,7 @@ DEC_SCORE** GCGgetScores(
 
 /** returns the number of currently available scores */
 int GCGgetNScores(
-   SCIP*                 scip
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
     assert(scip != NULL);

@@ -53,18 +53,18 @@ extern "C" {
  */
 
 /**
- * @brief includes one score
+ * @brief creates a score and includes it in GCG
  * @returns scip return code
  */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeScore(
-   SCIP*                 scip,
-   const char*           name,
-   const char*           shortname,          /**< shortname of the score*/
-   const char*           description,
-   DEC_SCOREDATA*        scoredata,
-   DEC_DECL_SCOREFREE    ((*scorefree)),
-   DEC_DECL_SCORECALC    ((*scorecalc))
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           name,               /**< name of score */
+   const char*           shortname,          /**< shortname of score */
+   const char*           description,        /**< description of score */
+   DEC_SCOREDATA*        scoredata,          /**< score data */
+   DEC_DECL_SCOREFREE    ((*scorefree)),     /**< destructor of score */
+   DEC_DECL_SCORECALC    ((*scorecalc))      /**< score calculation method of score */
    );
 
 /**
@@ -73,8 +73,8 @@ SCIP_RETCODE GCGincludeScore(
  */
 GCG_EXPORT
 DEC_SCORE* GCGfindScore(
-   SCIP*                 scip,
-   const char*           name
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           name                /**< name of score */
    );
 
 /**
@@ -83,20 +83,20 @@ DEC_SCORE* GCGfindScore(
  */
 GCG_EXPORT
 DEC_SCORE* GCGfindScoreByShortname(
-   SCIP*                 scip,
-   const char*           shortname
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           shortname           /**< shortname of score */
    );
 
 /** returns the array of currently available scores */
 GCG_EXPORT
 DEC_SCORE** GCGgetScores(
-   SCIP*                 scip
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the number of currently available scores */
 GCG_EXPORT
 int GCGgetNScores(
-   SCIP*                 scip
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** @} */

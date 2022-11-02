@@ -641,10 +641,6 @@ DEC_DECL_SCORECALC(scoreCalcStrong)
    int clocktype;
    SCIP_Real dualvalmethodcoef;
 
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
    /* score works only on presolved  */
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
    if( partialdec->isAssignedToOrigProb() )
@@ -840,13 +836,6 @@ DEC_DECL_SCORECALC(scoreCalcStrong)
 
       SCIPfree(&subscip);
    }// end for blocks
-
-   partialdec->setStrongDecompScore(*scorevalue);
-
-   /* add clock time */
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
 
    return SCIP_OKAY;
 }

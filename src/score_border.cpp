@@ -75,10 +75,6 @@ DEC_DECL_SCORECALC(scoreCalcBorder)
    unsigned long matrixarea;
    unsigned long borderarea;
 
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock( scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock( scip, clock) );
-
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
 
    matrixarea = (unsigned long) partialdec->getNVars() * (unsigned long)partialdec->getNConss();
@@ -88,12 +84,6 @@ DEC_DECL_SCORECALC(scoreCalcBorder)
    borderarea += (unsigned long) partialdec->getNMasterconss() * ( (unsigned long) partialdec->getNVars() - ( partialdec->getNLinkingvars() + partialdec->getNTotalStairlinkingvars() ) ) ;
 
    *scorevalue = 1. - (matrixarea == 0 ? 0 : ( (SCIP_Real) borderarea / (SCIP_Real) matrixarea ));
-
-   partialdec->setBorderAreaScore(*scorevalue);
-
-   SCIP_CALL_ABORT(SCIPstopClock( scip, clock) );
-   GCGconshdlrDecompAddScoreTime(scip, SCIPgetClockTime( scip, clock));
-   SCIP_CALL_ABORT(SCIPfreeClock( scip, &clock) );
 
    return SCIP_OKAY;
 }

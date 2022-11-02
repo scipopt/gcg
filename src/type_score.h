@@ -31,16 +31,20 @@
  * @author Jurgen Lentz
  */
 
-#ifndef GCG_TYPE_SCORE_H__
-#define GCG_TYPE_SCORE_H__
+#ifndef __GCG_TYPE_SCORE_H__
+#define __GCG_TYPE_SCORE_H__
 
 #include "scip/def.h"
 
-typedef struct DEC_Score DEC_SCORE;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct DEC_Score DEC_SCORE;               /**< score data structure */
 typedef struct DEC_ScoreData DEC_SCOREDATA;       /**< score specific data */
 
 
-/** destructor of classifier to free score data (called when GCG is exiting)
+/** destructor of score to free score data (called when GCG is exiting)
  *
  *  input:
  *  - scip            : SCIP main data structure
@@ -49,7 +53,7 @@ typedef struct DEC_ScoreData DEC_SCOREDATA;       /**< score specific data */
 #define DEC_DECL_SCOREFREE(x) SCIP_RETCODE x (SCIP* scip, DEC_SCORE* score)
 
 /**
- * Tries to sco with data of the according detprobdata and store the classification in the detprobdata
+ * calculates the score value of partialdecid and stores it in scorevalue
  *
  * input:
  *  - scip                 : SCIP data structure
@@ -59,5 +63,8 @@ typedef struct DEC_ScoreData DEC_SCOREDATA;       /**< score specific data */
  */
 #define DEC_DECL_SCORECALC(x) SCIP_RETCODE x (SCIP* scip, DEC_SCORE* score, int partialdecid, SCIP_Real* scorevalue)
 
+#ifdef __cplusplus
+}
+#endif
 
-#endif //GCG_TYPE_CONSCLASSIFIER_H__
+#endif
