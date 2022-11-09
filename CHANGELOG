@@ -43,7 +43,14 @@ New/modified API functions:
 - Added function 'GCGincludeScoreSpfawh'
 - Added function 'GCGincludeScoreSpfwh'
 - Added function 'GCGincludeScoreStrongDecomp'
-
+- Added function 'GCGconsClassifierSetData'
+- Added function 'GCGconsClassifierGetPriority'
+- Added function 'GCGconsClassifierIsEnabled'
+- Added function 'GCGconsClassifierGetDesc'
+- Added function 'GCGvarClassifierSetData'
+- Added function 'GCGvarClassifierGetPriority'
+- Added function 'GCGvarClassifierIsEnabled'
+- Added function 'GCGvarClassifierGetDesc'
 
 Deleted API functions:
 ----------------------
@@ -58,6 +65,21 @@ Deleted API functions:
 - Deleted function 'GCGconshdlrDecompCalcSetPartForseeingWhiteScore'
 - Deleted function 'GCGconshdlrDecompCalcSetPartForWhiteAggScore'
 - Deleted function 'GCGconshdlrDecompCalcStrongDecompositionScore'
+
+Renamed API functions:
+---------------------------
+
+- Renamed function 'DECconsClassifierGetData' to 'GCGconsClassifierGetData'
+- Renamed function 'DECconsClassifierGetName' to 'GCGconsClassifierGetName'
+- Renamed function 'DECvarClassifierGetData' to 'GCGvarClassifierGetData'
+- Renamed function 'DECvarClassifierGetName' to 'GCGvarClassifierGetName'
+
+Command line interface
+-----------------------
+
+- Added 'display' command for constraint classifiers
+- Added 'display' command for variable classifiers
+- Added 'display' command for scores
 
 Code cleanup:
 -------------

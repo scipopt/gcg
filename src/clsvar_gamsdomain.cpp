@@ -82,9 +82,9 @@ DEC_DECL_FREEVARCLASSIFIER(classifierFree)
 {
    assert(scip != NULL);
 
-   DEC_CLASSIFIERDATA* classifierdata = DECvarClassifierGetData(classifier);
+   DEC_CLASSIFIERDATA* classifierdata = GCGvarClassifierGetData(classifier);
    assert(classifierdata != NULL);
-   assert(strcmp(DECvarClassifierGetName(classifier), DEC_CLASSIFIERNAME) == 0);
+   assert(strcmp(GCGvarClassifierGetName(classifier), DEC_CLASSIFIERNAME) == 0);
 
    delete classifierdata->vartodomain;
 
@@ -115,7 +115,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
    DEC_VARCLASSIFIER* classifier = DECfindVarClassifier(scip, DEC_CLASSIFIERNAME);
    assert(classifier != NULL);
 
-   DEC_CLASSIFIERDATA* classdata = DECvarClassifierGetData(classifier);
+   DEC_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
    assert(classdata != NULL);
 
    /* firstly, assign all variables to classindices */
@@ -207,7 +207,7 @@ SCIP_RETCODE DECvarClassifierGamsdomainAddEntry(
 )
 {
    assert(classifier != NULL);
-   DEC_CLASSIFIERDATA* classdata = DECvarClassifierGetData(classifier);
+   DEC_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
    assert(classdata != NULL);
 
    std::string varname = SCIPvarGetName( var );

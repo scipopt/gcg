@@ -67,6 +67,18 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr);
 GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDetectors);
 
+/** dialog execution method for the display constraint classifiers command */
+GCG_EXPORT
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayConsClassifiers);
+
+/** dialog execution method for the display variable classifiers command */
+GCG_EXPORT
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayVarClassifiers);
+
+/** dialog execution method for the display scores command */
+GCG_EXPORT
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayScores);
+
 /** dialog execution method for the display solvers command */
 GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplaySolvers);

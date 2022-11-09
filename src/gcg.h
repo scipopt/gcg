@@ -47,6 +47,8 @@
 #include "type_solver.h"
 
 /* include public interfaces, s.t. the user only needs to include gcg.h */
+#include "pub_clscons.h"
+#include "pub_clsvar.h"
 #include "pub_decomp.h"
 #include "pub_gcgvar.h"
 #include "pub_score.h"
