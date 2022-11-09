@@ -601,13 +601,114 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
    return SCIP_OKAY;
 }
 
-
 /** dialog execution method for the display detectors command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDetectors)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
+   /* display list of detectors */
+   SCIPdialogMessage(scip, NULL, "\n");
    DECprintListOfDetectors(scip);
+   SCIPdialogMessage(scip, NULL, "\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the display constraint classifiers command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayConsClassifiers)
+{
+   DEC_CONSCLASSIFIER** consclss;
+   int nconsclss;
+   int i;
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   consclss = GCGconshdlrDecompGetConsClassifiers(scip);
+   nconsclss = GCGconshdlrDecompGetNConsClassifiers(scip);
+
+   /* display list of consclassifiers */
+   SCIPdialogMessage(scip, NULL, "\n");
+   SCIPdialogMessage(scip, NULL, " consclassifier       priority  enabled  description\n");
+   SCIPdialogMessage(scip, NULL, " --------------       --------  -------  -----------\n");
+
+   for( i = 0; i < nconsclss; ++i )
+   {
+      SCIPdialogMessage(scip, NULL,  " %-20s ", GCGconsClassifierGetName(consclss[i]));
+      if( strlen(GCGconsClassifierGetName(consclss[i])) > 20 )
+         SCIPdialogMessage(scip, NULL, "\n %20s ", "-->");
+      SCIPdialogMessage(scip, NULL,  "%8d  ", GCGconsClassifierGetPriority(consclss[i]));
+      SCIPdialogMessage(scip, NULL,  "%7s  ", GCGconsClassifierIsEnabled(consclss[i]) ? "TRUE" : "FALSE");
+      SCIPdialogMessage(scip, NULL,  "%s", GCGconsClassifierGetDesc(consclss[i]));
+      SCIPdialogMessage(scip, NULL, "\n");
+   }
+   SCIPdialogMessage(scip, NULL, "\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the display variable classifiers command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayVarClassifiers)
+{
+   DEC_VARCLASSIFIER** varclss;
+   int nvarclss;
+   int i;
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   varclss = GCGconshdlrDecompGetVarClassifiers(scip);
+   nvarclss = GCGconshdlrDecompGetNVarClassifiers(scip);
+
+   /* display list of varclassifiers */
+   SCIPdialogMessage(scip, NULL, "\n");
+   SCIPdialogMessage(scip, NULL, " varclassifier        priority  enabled  description\n");
+   SCIPdialogMessage(scip, NULL, " --------------       --------  -------  -----------\n");
+
+   for( i = 0; i < nvarclss; ++i )
+   {
+      SCIPdialogMessage(scip, NULL,  " %-20s ", GCGvarClassifierGetName(varclss[i]));
+      if( strlen(GCGvarClassifierGetName(varclss[i])) > 20 )
+         SCIPdialogMessage(scip, NULL, "\n %20s ", "-->");
+      SCIPdialogMessage(scip, NULL,  "%8d  ", GCGvarClassifierGetPriority(varclss[i]));
+      SCIPdialogMessage(scip, NULL,  "%7s  ", GCGvarClassifierIsEnabled(varclss[i]) ? "TRUE" : "FALSE");
+      SCIPdialogMessage(scip, NULL,  "%s", GCGvarClassifierGetDesc(varclss[i]));
+      SCIPdialogMessage(scip, NULL, "\n");
+   }
+   SCIPdialogMessage(scip, NULL, "\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the display scores command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayScores)
+{
+   DEC_SCORE** scores;
+   int nscores;
+   int i;
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   scores = GCGgetScores(scip);
+   nscores = GCGgetNScores(scip);
+
+   /* display list of scores */
+   SCIPdialogMessage(scip, NULL, "\n");
+   SCIPdialogMessage(scip, NULL, " score                shortname  description\n");
+   SCIPdialogMessage(scip, NULL, " ----------           ---------  -----------\n");
+   for( i = 0; i < nscores; ++i )
+   {
+      SCIPdialogMessage(scip, NULL, " %-20s ", GCGscoreGetName(scores[i]));
+      if( strlen(GCGscoreGetName(scores[i])) > 20 )
+         SCIPdialogMessage(scip, NULL, "\n %20s ", "-->");
+      SCIPdialogMessage(scip, NULL, "%9s  ", GCGscoreGetShortname(scores[i]));
+      SCIPdialogMessage(scip, NULL, "%s", GCGscoreGetDesc(scores[i]));
+      SCIPdialogMessage(scip, NULL, "\n");
+   }
    SCIPdialogMessage(scip, NULL, "\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
@@ -1276,6 +1377,42 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayAdditionalStatistics, NULL, NULL,
             "additionalstatistics", "display additional solving statistics", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* display scores */
+   if( !SCIPdialogHasEntry(submenu, "scores") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayScores, NULL, NULL,
+            "scores", "display scores", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* display detectors */
+   if( !SCIPdialogHasEntry(submenu, "detectors") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayDetectors, NULL, NULL,
+            "detectors", "display detectors", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* display consclassifiers */
+   if( !SCIPdialogHasEntry(submenu, "consclassifiers") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayConsClassifiers, NULL, NULL,
+            "consclassifiers", "display constraint classifiers", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* display varclassifiers */
+   if( !SCIPdialogHasEntry(submenu, "varclassifiers") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayVarClassifiers, NULL, NULL,
+            "varclassifiers", "display variable classifiers", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }

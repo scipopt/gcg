@@ -83,9 +83,9 @@ DEC_DECL_FREECONSCLASSIFIER(classifierFree)
 
    assert(scip != NULL);
 
-   classifierdata = DECconsClassifierGetData(classifier);
+   classifierdata = GCGconsClassifierGetData(classifier);
    assert(classifierdata != NULL);
-   assert(strcmp(DECconsClassifierGetName(classifier), DEC_CLASSIFIERNAME) == 0);
+   assert(strcmp(GCGconsClassifierGetName(classifier), DEC_CLASSIFIERNAME) == 0);
 
    delete classifierdata->constosymbol;
 
@@ -115,7 +115,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
    DEC_CONSCLASSIFIER* classifier = DECfindConsClassifier(scip, DEC_CLASSIFIERNAME);
    assert(classifier != NULL);
 
-   DEC_CLASSIFIERDATA* classdata = DECconsClassifierGetData(classifier);
+   DEC_CLASSIFIERDATA* classdata = GCGconsClassifierGetData(classifier);
    assert(classdata != NULL);
 
    /* firstly, assign all constraints to classindices */
@@ -201,7 +201,7 @@ SCIP_RETCODE DECconsClassifierGamssymbolAddEntry(
 )
 {
    assert(classifier != NULL);
-   DEC_CLASSIFIERDATA* classdata = DECconsClassifierGetData(classifier);
+   DEC_CLASSIFIERDATA* classdata = GCGconsClassifierGetData(classifier);
    assert(classdata != NULL);
 
    std::string consname = SCIPconsGetName( cons );

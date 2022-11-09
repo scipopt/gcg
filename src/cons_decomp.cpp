@@ -2052,42 +2052,6 @@ int DECgetNDecomps(
 }
 
 
-DEC_CLASSIFIERDATA* DECconsClassifierGetData(
-   DEC_CONSCLASSIFIER*   classifier
-   )
-{
-   assert(classifier != NULL);
-   return classifier->clsdata;
-}
-
-
-const char* DECconsClassifierGetName(
-   DEC_CONSCLASSIFIER*   classifier
-   )
-{
-   assert(classifier != NULL);
-   return classifier->name;
-}
-
-
-DEC_CLASSIFIERDATA* DECvarClassifierGetData(
-   DEC_VARCLASSIFIER*    classifier
-   )
-{
-   assert(classifier != NULL);
-   return classifier->clsdata;
-}
-
-
-const char* DECvarClassifierGetName(
-   DEC_VARCLASSIFIER*   classifier
-   )
-{
-   assert(classifier != NULL);
-   return classifier->name;
-}
-
-
 char DECdetectorGetChar(
    DEC_DETECTOR*         detector
    )
@@ -2932,11 +2896,14 @@ void DECprintListOfDetectors(
 
    for( i = 0; i < ndetectors; ++i )
    {
-      SCIPdialogMessage(scip, NULL,  " %-20s", conshdlrdata->detectors[i]->name);
-      SCIPdialogMessage(scip, NULL,  "    %c", conshdlrdata->detectors[i]->decchar);
-      SCIPdialogMessage(scip, NULL,  " %8d", conshdlrdata->detectors[i]->priority);
-      SCIPdialogMessage(scip, NULL,  " %7s", conshdlrdata->detectors[i]->enabled ? "TRUE" : "FALSE");
-      SCIPdialogMessage(scip, NULL,  "  %s\n", conshdlrdata->detectors[i]->description);
+      SCIPdialogMessage(scip, NULL,  " %-20s    ", conshdlrdata->detectors[i]->name);
+      if( strlen(conshdlrdata->detectors[i]->name) > 20 )
+         SCIPdialogMessage(scip, NULL, "\n %20s    ", "-->");
+      SCIPdialogMessage(scip, NULL,  "%c ", conshdlrdata->detectors[i]->decchar);
+      SCIPdialogMessage(scip, NULL,  "%8d ", conshdlrdata->detectors[i]->priority);
+      SCIPdialogMessage(scip, NULL,  "%7s  ", conshdlrdata->detectors[i]->enabled ? "TRUE" : "FALSE");
+      SCIPdialogMessage(scip, NULL,  "%s", conshdlrdata->detectors[i]->description);
+      SCIPdialogMessage(scip, NULL, "\n");
    }
 }
 

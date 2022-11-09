@@ -37,11 +37,13 @@ set(gcgsources
     clscons_scipconstypes.cpp
     clscons_gamsdomain.cpp
     clscons_gamssymbol.cpp
+    clscons.c
     clsvar_gamsdomain.cpp
     clsvar_gamssymbol.cpp
     clsvar_objvalues.cpp
     clsvar_scipvartypes.cpp
     clsvar_objvaluesigns.cpp
+    clsvar.c
     colpool.c
     cons_decomp.cpp
     cons_integralorig.c
@@ -173,6 +175,8 @@ set(gcgheaders
     class_detprobdata.h
     class_stabilization.h
     class_varpartition.h
+    clscons.h
+    clsvar.h
     clscons_consnamelevenshtein.h
     clscons_consnamenonumbers.h
     clscons_gamsdomain.h
@@ -267,6 +271,8 @@ set(gcgheaders
     pricingjob.h
     pricingprob.h
     pub_bliss.h
+    pub_clscons.h
+    pub_clsvar.h
     pub_colpool.h
     pub_decomp.h
     pub_gcgcol.h
