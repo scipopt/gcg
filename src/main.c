@@ -78,7 +78,6 @@ SCIP_RETCODE fromCommandLine(
    const char*           decname             /**< decomposition file name (or NULL) */
    )
 {
-   SCIP_RESULT result = SCIP_DIDNOTRUN;
    /********************
     * Problem Creation *
     ********************/

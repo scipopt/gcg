@@ -615,179 +615,6 @@ SCIP_Bool realArraysAreEqual(
    return TRUE;
 }
 
-
-/** checks whether two pricingproblems represent identical blocks */
-static
-SCIP_RETCODE checkIdentical(
-	SCIP*               scip,               /**< SCIP data structure */
-	SCIP_RELAXDATA*     relaxdata,          /**< the relaxator's data */
-	int                 probnr1,            /**< number of the first pricingproblem */
-	int                 probnr2,            /**< number of the second pricingproblem */
-	SCIP_HASHMAP*       varmap,             /**< hashmap mapping the variables of the second pricing problem
-	                                         *   to those of the first pricing problem */
-	SCIP_Bool*          identical,          /**< return value: are blocks identical */
-	SCIP*               scip1,              /**< first SCIP data structure to check */
-	SCIP*               scip2               /**< second SCIP data structure to check */
-	)
-{
-   SCIP_VAR** vars1;
-   SCIP_VAR** vars2;
-   int nvars1;
-   int nvars2;
-
-   SCIP_CONS** conss1;
-   SCIP_CONS** conss2;
-   int nconss;
-
-   int i;
-   int j;
-
-   SCIPdebugMessage("check block %d and block %d for identity...\n", probnr1, probnr2);
-
-   if( SCIPgetNVars(scip1) != SCIPgetNVars(scip2) )
-   {
-      SCIPdebugMessage("--> number of variables differs!\n");
-      return SCIP_OKAY;
-   }
-   if( SCIPgetNConss(scip1) != SCIPgetNConss(scip2) )
-   {
-      SCIPdebugMessage("--> number of constraints differs!\n");
-      return SCIP_OKAY;
-   }
-   /* get variables */
-   SCIP_CALL( SCIPgetVarsData(scip1, &vars1, &nvars1, NULL, NULL, NULL, NULL) );
-   SCIP_CALL( SCIPgetVarsData(scip2, &vars2, &nvars2, NULL, NULL, NULL, NULL) );
-
-   for( i = 0; i < nvars1; i++ )
-   {
-      SCIP_Real* coefs1;
-      int ncoefs1;
-      SCIP_Real* coefs2;
-      int ncoefs2;
-      SCIP_VAR** origvars1;
-      SCIP_VAR** origvars2;
-
-      if( !SCIPisEQ(relaxdata->masterprob, SCIPvarGetObj(vars1[i]), SCIPvarGetObj(vars2[i])) )
-      {
-         SCIPdebugMessage("--> obj differs for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
-         return SCIP_OKAY;
-      }
-      if( !SCIPisEQ(relaxdata->masterprob, SCIPvarGetLbOriginal(vars1[i]), SCIPvarGetLbOriginal(vars2[i])) )
-      {
-         SCIPdebugMessage("--> lb differs for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
-         return SCIP_OKAY;
-      }
-      if( !SCIPisEQ(relaxdata->masterprob, SCIPvarGetUbOriginal(vars1[i]), SCIPvarGetUbOriginal(vars2[i])) )
-      {
-         SCIPdebugMessage("--> ub differs for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
-         return SCIP_OKAY;
-      }
-      if( SCIPvarGetType(vars1[i]) != SCIPvarGetType(vars2[i]) )
-      {
-         SCIPdebugMessage("--> type differs for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
-         return SCIP_OKAY;
-      }
-
-      assert(GCGvarIsPricing(vars1[i]));
-      assert(GCGvarIsPricing(vars2[i]));
-
-      origvars1 = GCGpricingVarGetOrigvars(vars1[i]);
-      origvars2 = GCGpricingVarGetOrigvars(vars2[i]);
-
-      if( !SCIPisEQ(relaxdata->masterprob, SCIPvarGetObj(origvars1[0]),SCIPvarGetObj(origvars2[0])) )
-      {
-         SCIPdebugMessage("--> orig obj differs for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
-         return SCIP_OKAY;
-      }
-
-      assert(GCGvarIsOriginal(origvars1[0]));
-      assert(GCGvarIsOriginal(origvars2[0]));
-
-      ncoefs1 = GCGoriginalVarGetNCoefs(origvars1[0]);
-      ncoefs2 = GCGoriginalVarGetNCoefs(origvars2[0]);
-
-      /* nunber of coefficients differs */
-      if( ncoefs1 != ncoefs2 )
-      {
-         SCIPdebugMessage("--> number of coefficients differs for var %s and var %s!\n",
-               SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
-         return SCIP_OKAY;
-      }
-
-      /* get master constraints and corresponding coefficients of both variables */
-      conss1 = GCGoriginalVarGetMasterconss(origvars1[0]);
-      conss2 = GCGoriginalVarGetMasterconss(origvars2[0]);
-      coefs1 = GCGoriginalVarGetCoefs(origvars1[0]);
-      coefs2 = GCGoriginalVarGetCoefs(origvars2[0]);
-
-      /* check that the master constraints and the coefficients are the same */
-      for( j = 0; j < ncoefs1; ++j )
-      {
-         if( conss1[j] != conss2[j] )
-         {
-            SCIPdebugMessage("--> constraints differ for var %s and var %s!\n",
-               SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
-            return SCIP_OKAY;
-         }
-
-         if( !SCIPisEQ(scip, coefs1[j], coefs2[j]) )
-         {
-            SCIPdebugMessage("--> coefficients differ for var %s and var %s!\n",
-               SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
-            return SCIP_OKAY;
-         }
-      }
-
-      SCIP_CALL( SCIPhashmapInsert(varmap, (void*) vars1[i], (void*) vars2[i]) );
-   }
-
-   /* check whether the conss are the same */
-   conss1 = SCIPgetConss(scip1);
-   conss2 = SCIPgetConss(scip2);
-   nconss = SCIPgetNConss(scip1);
-   assert(nconss == SCIPgetNConss(scip2));
-   for( i = 0; i < nconss; i++ )
-   {
-      if( SCIPgetNVarsLinear(scip1, conss1[i]) != SCIPgetNVarsLinear(scip2, conss2[i]) )
-      {
-         SCIPdebugMessage("--> nvars differs for cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
-         return SCIP_OKAY;
-      }
-      if( !SCIPisEQ(relaxdata->masterprob, SCIPgetLhsLinear(scip1, conss1[i]), SCIPgetLhsLinear(scip2, conss2[i])) )
-      {
-         SCIPdebugMessage("--> lhs differs for cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
-         return SCIP_OKAY;
-      }
-      if( !SCIPisEQ(relaxdata->masterprob, SCIPgetRhsLinear(scip1, conss1[i]), SCIPgetRhsLinear(scip2, conss2[i])) )
-      {
-         SCIPdebugMessage("--> rhs differs for cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
-         return SCIP_OKAY;
-      }
-      if( !realArraysAreEqual(scip, SCIPgetValsLinear(scip1, conss1[i]), SCIPgetNVarsLinear(scip1, conss1[i]),
-            SCIPgetValsLinear(scip2, conss2[i]), SCIPgetNVarsLinear(scip2, conss2[i])) )
-      {
-         SCIPdebugMessage("--> coefs differ for cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
-         return SCIP_OKAY;
-      }
-      vars1 = SCIPgetVarsLinear(scip1, conss1[i]);
-      vars2 = SCIPgetVarsLinear(scip2, conss2[i]);
-      for( j = 0; j < SCIPgetNVarsLinear(scip1, conss1[i]); j++ )
-      {
-         if( (SCIP_VAR*) SCIPhashmapGetImage(varmap, (void*) vars1[j]) != vars2[j] )
-         {
-            SCIPdebugMessage("--> vars differ for cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
-            return SCIP_OKAY;
-         }
-      }
-
-   }
-
-   SCIPdebugMessage("--> blocks are identical!\n");
-
-   *identical = TRUE;
-   return SCIP_OKAY;
-}
-
 /* checks whether two pricingproblems represent identical blocks */
 static
 SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
@@ -824,69 +651,13 @@ SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
    partialdecid = DECdecompGetPartialdecID(relaxdata->decomp);
 
    /* 2) are pricingproblems identical for this partialdec? */
-   SCIP_CALL(GCGconshdlrDecompArePricingprobsIdenticalForPartialdecid(scip, partialdecid, probnr2, probnr1, identical) );
+   SCIP_CALL( GCGconshdlrDecompArePricingprobsIdenticalForPartialdecid(scip, partialdecid, probnr2, probnr1, identical) );
 
    /* 3) create varmap if pricing probs are identical */
    if( *identical )
    {
-      SCIP_CALL(GCGconshdlrDecompCreateVarmapForPartialdecId(scip, hashorig2pricingvar, partialdecid, probnr2, probnr1, scip2, scip1, varmap) );
+      SCIP_CALL( GCGconshdlrDecompCreateVarmapForPartialdecId(scip, hashorig2pricingvar, partialdecid, probnr2, probnr1, scip2, scip1, varmap) );
    }
-
-   return SCIP_OKAY;
-}
-
-static
-SCIP_RETCODE pricingprobsAreIdentical(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
-   int                   probnr1,            /**< number of the first pricingproblem */
-   int                   probnr2,            /**< number of the second pricingproblem */
-   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
-                                              *   to those of the first pricing problem */
-   SCIP_Bool*            identical           /**< return value: are blocks identical */
-   )
-{
-   SCIP* scip1;
-   SCIP* scip2;
-
-#ifdef WITH_BLISS
-   SCIP_RESULT result;
-   SCIP_HASHMAP* consmap;
-#endif
-
-   assert(relaxdata != NULL);
-   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
-   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
-   assert(varmap != NULL);
-   assert(identical != NULL);
-
-   scip1 = relaxdata->pricingprobs[probnr1];
-   scip2 = relaxdata->pricingprobs[probnr2];
-   assert(scip1 != NULL);
-   assert(scip2 != NULL);
-
-   *identical = FALSE;
-
-   checkIdentical(scip, relaxdata, probnr1, probnr2, varmap, identical, scip1, scip2);
-
-#ifdef WITH_BLISS
-   if( !*identical && relaxdata->usebliss )
-   {
-      unsigned int searchnodelimit;
-      unsigned int generatorlimit;
-
-      searchnodelimit = relaxdata->searchnodelimit >= 0 ? relaxdata->searchnodelimit: 0u;
-      generatorlimit = relaxdata->generatorlimit >= 0 ? relaxdata->generatorlimit : 0u;
-
-      SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1) + 1) );
-      SCIP_CALL( cmpGraphPair(scip, scip2, scip1, probnr2, probnr1, &result, varmap, consmap,
-         searchnodelimit, generatorlimit) );
-
-      *identical = (result == SCIP_SUCCESS);
-
-      SCIPhashmapFree(&consmap);
-   }
-#endif
 
    return SCIP_OKAY;
 }
@@ -2454,8 +2225,6 @@ SCIP_RETCODE transformMaster(
    SCIP_RELAXDATA* relaxdata;
    int i;
    int nvars;
-   int permutationseed;
-   int oxfordcomma;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -2537,11 +2306,7 @@ SCIP_RETCODE initRelaxator(
    SCIP_RELAX*           relax               /**< relaxator data structure */
    )
 {
-   SCIP_VAR** vars;
-   SCIP_CONS** oldconss;
    SCIP_RELAXDATA* relaxdata;
-   int i;
-   int nvars;
    int permutationseed;
    int oxfordcomma;
 
@@ -3806,8 +3571,6 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    int v;
    int i;
    int j;
-
-   SCIP_Bool success;
 
    assert(scip != NULL);
    assert(cons != NULL);
