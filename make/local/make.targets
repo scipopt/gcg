@@ -133,8 +133,6 @@ ifneq ("$(wildcard lib/scip-git/src/bliss/Makefile-manual)","")
 else
 		@$(MAKE) -C lib/scip-git/src/bliss
 endif
-		-ln -sfn ../../src/bliss/include/bliss lib/scip-git/lib/include/
-		-ln -sfn ../../src/bliss/libbliss_static.a lib/scip-git/lib/static/libbliss.linux.x86_64.gnu.a
 		-ln -sfn ../scip-git/src/bliss/include/bliss lib/include/
 		-ln -sfn ../scip-git/src/bliss/libbliss_static.a lib/static/libbliss.a
 
@@ -169,7 +167,7 @@ DEPS += googletest
 endif
 
 .PHONY: deps
-deps:		$(DEPS) soplex scip
+deps:		$(DIRECTORIES) $(DEPS) soplex scip
 
 .PHONY: tests
 tests::		$(TESTOBJDIR) $(TESTFILE) $(TESTSHORTLINK) $(GCGLIBFILE)

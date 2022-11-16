@@ -56,6 +56,7 @@ DIP			=	dip
 MASTERSETTINGS	=	default
 VISUSETTINGS 	= 	none
 DATADIR 		= 	none
+OBJDIR		= obj
 
 VALGRIND	=	false
 MODE		=	readdec
