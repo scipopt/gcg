@@ -511,7 +511,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr)
 /** dialog execution method for the display decomposition command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
 {  /*lint --e{715}*/
-   DEC_DECOMP* decomp;
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )

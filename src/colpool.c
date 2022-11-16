@@ -338,7 +338,7 @@ SCIP_RETCODE GCGcolpoolDelCol(
    col = (GCG_COL*)SCIPhashtableRetrieve(colpool->hashtable, (void*)col);
    if( col == NULL )
    {
-      SCIPerrorMessage("col %p is not existing in colpool %p\n", col, colpool);
+      SCIPerrorMessage("col %p is not existing in colpool %p\n", (void*)col, (void*)colpool);
       return SCIP_INVALIDDATA;
    }
 

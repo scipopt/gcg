@@ -835,62 +835,6 @@ SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
    return SCIP_OKAY;
 }
 
-static
-SCIP_RETCODE pricingprobsAreIdentical(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
-   int                   probnr1,            /**< number of the first pricingproblem */
-   int                   probnr2,            /**< number of the second pricingproblem */
-   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
-                                              *   to those of the first pricing problem */
-   SCIP_Bool*            identical           /**< return value: are blocks identical */
-   )
-{
-   SCIP* scip1;
-   SCIP* scip2;
-
-#ifdef WITH_BLISS
-   SCIP_RESULT result;
-   SCIP_HASHMAP* consmap;
-#endif
-
-   assert(relaxdata != NULL);
-   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
-   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
-   assert(varmap != NULL);
-   assert(identical != NULL);
-
-   scip1 = relaxdata->pricingprobs[probnr1];
-   scip2 = relaxdata->pricingprobs[probnr2];
-   assert(scip1 != NULL);
-   assert(scip2 != NULL);
-
-   *identical = FALSE;
-
-   checkIdentical(scip, relaxdata, probnr1, probnr2, varmap, identical, scip1, scip2);
-
-#ifdef WITH_BLISS
-   if( !*identical && relaxdata->usebliss )
-   {
-      unsigned int searchnodelimit;
-      unsigned int generatorlimit;
-
-      searchnodelimit = relaxdata->searchnodelimit >= 0 ? relaxdata->searchnodelimit: 0u;
-      generatorlimit = relaxdata->generatorlimit >= 0 ? relaxdata->generatorlimit : 0u;
-
-      SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1) + 1) );
-      SCIP_CALL( cmpGraphPair(scip, scip2, scip1, probnr2, probnr1, &result, varmap, consmap,
-         searchnodelimit, generatorlimit) );
-
-      *identical = (result == SCIP_SUCCESS);
-
-      SCIPhashmapFree(&consmap);
-   }
-#endif
-
-   return SCIP_OKAY;
-}
-
 /** checks whether there are identical pricing blocks */
 static
 SCIP_RETCODE checkIdenticalBlocks(
@@ -2454,8 +2398,6 @@ SCIP_RETCODE transformMaster(
    SCIP_RELAXDATA* relaxdata;
    int i;
    int nvars;
-   int permutationseed;
-   int oxfordcomma;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -2537,11 +2479,7 @@ SCIP_RETCODE initRelaxator(
    SCIP_RELAX*           relax               /**< relaxator data structure */
    )
 {
-   SCIP_VAR** vars;
-   SCIP_CONS** oldconss;
    SCIP_RELAXDATA* relaxdata;
-   int i;
-   int nvars;
    int permutationseed;
    int oxfordcomma;
 
@@ -3806,8 +3744,6 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    int v;
    int i;
    int j;
-
-   SCIP_Bool success;
 
    assert(scip != NULL);
    assert(cons != NULL);
