@@ -1541,7 +1541,7 @@ SCIP_Real GCGconshdlrDecompAdaptScore(
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
 
-   SCIP_CALL(SCIPgetIntParam(scip, "detection/origprob/weightinggpresolvedoriginaldecomps", &method) );
+   SCIP_CALL(SCIPgetIntParam(scip, "detection/origprob/advanced/weightinggpresolvedoriginaldecomps", &method) );
 
    if( method == FRACTION_OF_NNONZEROS )
    {
@@ -2217,6 +2217,12 @@ SCIP_RETCODE DECdetectStructure(
 
          bool success = conshdlrdata->detprobdatapres->addPartialdecToOpen(rootpartialdec);
          assert(success);
+         if( !success )
+         {
+            SCIPerrorMessage("Could not add root decomposition.");
+            *result = SCIP_DIDNOTRUN;
+            return SCIP_ERROR;
+         }
       }
 
       SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
@@ -2420,9 +2426,6 @@ DEC_DECOMP* DECgetBestDecomp(
    DEC_DECOMP* decomp;
    PARTIALDECOMP* partialdec;
    std::vector<std::pair<PARTIALDECOMP*, SCIP_Real> > candidates;
-
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-   assert(conshdlrdata != NULL);
 
    if ( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
       return NULL;
@@ -4563,7 +4566,7 @@ SCIP_RETCODE GCGconshdlrDecompTranslateNBestOrigPartialdecs(
    GCGconshdlrDecompChooseCandidatesFromSelected(scip, candidates, TRUE, TRUE);
    if ( !candidates.empty() )
    {
-      n = MIN(n, (int) candidates.size());
+      n = MIN(n, (int)candidates.size());
 
       std::vector<PARTIALDECOMP *> origpartialdecs(n);
       for( int i = 0; i < n; ++i )

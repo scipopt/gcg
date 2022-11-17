@@ -640,7 +640,6 @@ SCIP_RETCODE ObjPricerGcg::computeCurrentDegeneracy(
                countz++;
          } else {
             SCIP_ROW *row = rows[-indizes[i] - 1];
-            SCIP_Real lhs = SCIProwGetLhs(row);
 
             currentVal = SCIPgetRowActivity(scip_, row);
 
@@ -3404,7 +3403,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
     int                priority,           /**< priority of the variable pricer */
     SCIP_Bool          delay,
     SCIP_PRICERDATA*   p_pricerdata
-    ) : ObjPricer(scip, name, desc, priority, delay), colpool(NULL), pricestore(NULL), reducedcostpricing(NULL), farkaspricing(NULL), pricingcontroller(NULL), stabilization(NULL), pricingtype(NULL)
+    ) : ObjPricer(scip, name, desc, priority, delay), colpool(NULL), pricestore(NULL), reducedcostpricing(NULL), farkaspricing(NULL), pricingtype(NULL), pricingcontroller(NULL), stabilization(NULL)
  {
 
     assert(origscip!= NULL);

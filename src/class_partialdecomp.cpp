@@ -1863,9 +1863,9 @@ bool PARTIALDECOMP::checkConsistency(
       return false;
    }
 
-   if( getNDetectors() != pctvarstoblock.size() || getNDetectors() != pctvarstoborder.size()
-      || getNDetectors() != pctvarsfromfree.size() || getNDetectors() != pctconsstoblock.size()
-      || getNDetectors() != pctconsstoborder.size() || getNDetectors() != pctconssfromfree.size() )
+   if( getNDetectors() != (int) pctvarstoblock.size() || getNDetectors() != (int) pctvarstoborder.size()
+      || getNDetectors() != (int) pctvarsfromfree.size() || getNDetectors() != (int) pctconsstoblock.size()
+      || getNDetectors() != (int) pctconsstoborder.size() || getNDetectors() != (int) pctconssfromfree.size() )
    {
       assert(false);
       return false;
