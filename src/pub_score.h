@@ -36,8 +36,8 @@
 #ifndef __GCG_PUB_SCORE_H__
 #define __GCG_PUB_SCORE_H__
 
-
 #include "def.h"
+#include "scip/scip.h"
 #include "type_score.h"
 
 #ifdef __cplusplus
@@ -48,6 +48,53 @@ extern "C" {
  *
  * @{
  */
+
+/**
+ * @brief creates a score and includes it in GCG
+ * @returns scip return code
+ */
+GCG_EXPORT
+SCIP_RETCODE GCGincludeScore(
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           name,               /**< name of score */
+   const char*           shortname,          /**< shortname of score */
+   const char*           description,        /**< description of score */
+   DEC_SCOREDATA*        scoredata,          /**< score data */
+   DEC_DECL_SCOREFREE    ((*scorefree)),     /**< destructor of score */
+   DEC_DECL_SCORECALC    ((*scorecalc))      /**< score calculation method of score */
+   );
+
+/**
+ * @brief searches for the score with the given name and returns it or NULL if score is not found
+ * @returns score pointer or NULL if score with given name is not found
+ */
+GCG_EXPORT
+DEC_SCORE* GCGfindScore(
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           name                /**< name of score */
+   );
+
+/**
+ * @brief searches for the score with the given shortname and returns it or NULL if score is not found
+ * @returns score pointer or NULL if score with given shortname is not found
+ */
+GCG_EXPORT
+DEC_SCORE* GCGfindScoreByShortname(
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           shortname           /**< shortname of score */
+   );
+
+/** returns the array of currently available scores */
+GCG_EXPORT
+DEC_SCORE** GCGgetScores(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the number of currently available scores */
+GCG_EXPORT
+int GCGgetNScores(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
 
 /** gets user data of score */
 GCG_EXPORT

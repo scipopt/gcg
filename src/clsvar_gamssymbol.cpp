@@ -110,7 +110,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
    std::vector<int> classForVar( nvar, - 1 );   // [i] holds class index for variable i -> indexing over detection internal variable array!
    int counterClasses = 0;
 
-   DEC_VARCLASSIFIER* classifier = DECfindVarClassifier(scip, DEC_CLASSIFIERNAME);
+   DEC_VARCLASSIFIER* classifier = GCGfindVarClassifier(scip, DEC_CLASSIFIERNAME);
    assert(classifier != NULL);
 
    DEC_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
@@ -191,7 +191,7 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
 
 // SHOW
 /** adds an entry to clsdata->vartosymbol */
-SCIP_RETCODE DECvarClassifierGamssymbolAddEntry(
+SCIP_RETCODE GCGvarClassifierGamssymbolAddEntry(
    DEC_VARCLASSIFIER*   classifier,
    SCIP_VAR*            var,
    int                  symbolIdx
@@ -222,7 +222,7 @@ SCIP_RETCODE SCIPincludeVarClassifierGamssymbol(
    assert(classifierdata != NULL);
    classifierdata->vartosymbol = new std::map<std::string, int>();
 
-   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 /** adds an entry to clsdata->vartodomain */
-SCIP_RETCODE DECvarClassifierGamsdomainAddEntry(
+SCIP_RETCODE GCGvarClassifierGamsdomainAddEntry(
    DEC_VARCLASSIFIER*   classifier,
    SCIP_VAR*            var,
    int                  symDomIdx[],

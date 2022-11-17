@@ -76,7 +76,7 @@ which also appears in `dec_mydetector.h`.
 \n
 This method has to be adjusted only slightly.
 It is responsible for notifying GCG (and especially cons_decomp.cpp) of the presence of the detector by calling the method
-`DECincludeDetector()`.
+`GCGincludeDetector()`.
 `SCIPincludeDetectorMydetector()` is called by the user to include the detector,
 i.e., to use the detector in the application.
 
@@ -103,7 +103,7 @@ Additional documentation to the callback methods, in particular to their input p
 can be found in type_detector.h.
 
 ### PROPAGATEPARTIALDEC
-The `DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMydetector)` callback should assign variables/constraints to block or master. You can either create the decomposition by calling `DECcreateDecompFromMasterconss()` or `DECfilloutDecompFromConstoblock()` or use the getter and setter functions in pub_decomp.h to fill the decomposition structure.
+The `DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMydetector)` callback should assign variables/constraints to block or master.
 
 ### FINISHPARTIALDEC
 The `DEC_DECL_FINISHPARTIALDEC(finishPartialdecMydetector)` callback should, given a partial decomposition, finish it.
@@ -127,12 +127,12 @@ DEC_DECL_EXITDETECTOR(detectorExitMydetector)
 {
    DEC_DETECTORDATA* detectordata;
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
    SCIPfreeMemory(scip, &detectordata);
 
-   DECdetectorSetData(detector, NULL);
+   GCGdetectorSetData(detector, NULL);
 
    return SCIP_OKAY;
 }

@@ -76,7 +76,7 @@ DEC_DECL_SCORECALC(scoreCalcSpfawh)
 
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
 
-   maxforeseeingwhitescoreagg = partialdec->getScore(DECfindScore(scip, "max foreseeing white with aggregation info"));
+   maxforeseeingwhitescoreagg = partialdec->getScore(GCGconshdlrDecompFindScore(scip, "max foreseeing white with aggregation info"));
 
    if( partialdec->hasSetppccardMaster() && !partialdec->isTrivial() && partialdec->getNBlocks() > 1 )
    {

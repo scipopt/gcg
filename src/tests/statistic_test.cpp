@@ -114,9 +114,9 @@ class GcgDecStatisticTest : public ::testing::Test {
       SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, transconss[0], (void*) (size_t)1) );
       SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, transconss[1], (void*) (size_t)2) );
       SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, transconss[2], (void*) (size_t)3) );
-      SCIP_CALL_ABORT( DECdecompCreate(scip, &decomp) );
+      SCIP_CALL_ABORT( GCGdecompFreeCreate(scip, &decomp) );
 
-      SCIP_CALL_ABORT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+      SCIP_CALL_ABORT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
    }
 
    virtual void TearDown() {
@@ -130,7 +130,7 @@ class GcgDecStatisticTest : public ::testing::Test {
       {
          SCIP_CALL_ABORT( SCIPreleaseCons(scip, &(conss[i])));
       }
-      SCIP_CALL_ABORT( DECdecompFree(scip, &decomp) );
+      SCIP_CALL_ABORT( GCGdecompFreeFree(scip, &decomp) );
 
 
       SCIP_CALL_ABORT( SCIPfree(&scip) );
@@ -140,17 +140,17 @@ class GcgDecStatisticTest : public ::testing::Test {
 SCIP* GcgDecStatisticTest::scip = NULL;
 
 TEST_F(GcgDecStatisticTest, BlockTest) {
-   ASSERT_EQ(2, DECdecompGetNBlocks(decomp));
+   ASSERT_EQ(2, GCGdecompFreeGetNBlocks(decomp));
 }
 
 TEST_F(GcgDecStatisticTest, SubscipSizeTest) {
-   ASSERT_EQ(2, DECdecompGetNBlocks(decomp));
-   ASSERT_EQ(2, DECdecompGetNSubscipvars(decomp)[0]);
-   ASSERT_EQ(2, DECdecompGetNSubscipvars(decomp)[1]);
-   ASSERT_EQ(1, DECdecompGetNLinkingvars(decomp));
-   ASSERT_EQ(1, DECdecompGetNSubscipconss(decomp)[0]);
-   ASSERT_EQ(1, DECdecompGetNSubscipconss(decomp)[0]);
-   ASSERT_EQ(1, DECdecompGetNLinkingconss(decomp));
+   ASSERT_EQ(2, GCGdecompFreeGetNBlocks(decomp));
+   ASSERT_EQ(2, GCGdecompGetNSubscipvars(decomp)[0]);
+   ASSERT_EQ(2, GCGdecompGetNSubscipvars(decomp)[1]);
+   ASSERT_EQ(1, GCGdecompFreeGetNLinkingvars(decomp));
+   ASSERT_EQ(1, GCGdecompFreeGetNSubscipconss(decomp)[0]);
+   ASSERT_EQ(1, GCGdecompFreeGetNSubscipconss(decomp)[0]);
+   ASSERT_EQ(1, GCGdecompGetNLinkingconss(decomp));
 }
 
 TEST_F(GcgDecStatisticTest, DensityTest) {
@@ -162,7 +162,7 @@ TEST_F(GcgDecStatisticTest, DensityTest) {
    int conssubprobdens[3];
    int consmasterdens[3];
 
-   SCIP_CALL_EXPECT(DECgetDensityData(scip, decomp, densvars, 5, densconss, 3, varsubprobdens, varmasterdens, conssubprobdens, consmasterdens) );
+   SCIP_CALL_EXPECT(GCGgetDensityData(scip, decomp, densvars, 5, densconss, 3, varsubprobdens, varmasterdens, conssubprobdens, consmasterdens) );
    for( i = 0; i < 5; i++)
    {
       if( strcmp(SCIPvarGetName(densvars[i]), "t_x1") == 0)
@@ -226,7 +226,7 @@ TEST_F(GcgDecStatisticTest, VarsDataTest) {
    int nimplvars[2];
    int ncontvars[2];
 
-   DECgetSubproblemVarsData(scip, decomp, nvars, nbinvars, nintvars, nimplvars, ncontvars, 2);
+   GCGgetSubproblemVarsData(scip, decomp, nvars, nbinvars, nintvars, nimplvars, ncontvars, 2);
    ASSERT_EQ(2, nvars[0]);
    ASSERT_EQ(2, nvars[1]);
    ASSERT_EQ(1, nintvars[0]);
@@ -238,7 +238,7 @@ TEST_F(GcgDecStatisticTest, VarsDataTest) {
    ASSERT_EQ(0, ncontvars[0]);
    ASSERT_EQ(0, ncontvars[1]);
 
-   DECgetLinkingVarsData(scip, decomp, nvars, nbinvars, nintvars, nimplvars, ncontvars);
+   GCGgetLinkingVarsData(scip, decomp, nvars, nbinvars, nintvars, nimplvars, ncontvars);
    ASSERT_EQ(1, nvars[0]);
    ASSERT_EQ(0, nintvars[0]);
    ASSERT_EQ(0, nbinvars[0]);
@@ -260,7 +260,7 @@ TEST_F(GcgDecStatisticTest, VarlockTest) {
       sublockup[i] = new int[5];
    }
 
-   SCIP_CALL_EXPECT( DECgetVarLockData(scip, decomp, lockvars, 5, 2, sublockdown, sublockup, masterlockdown, masterlockup) );
+   SCIP_CALL_EXPECT( GCGgetVarLockData(scip, decomp, lockvars, 5, 2, sublockdown, sublockup, masterlockdown, masterlockup) );
    for( i = 0; i < 5; i++)
    {
       if( strcmp(SCIPvarGetName(lockvars[i]), "t_x1") == 0)

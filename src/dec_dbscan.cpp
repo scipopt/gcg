@@ -157,9 +157,9 @@ DEC_DECL_FREEDETECTOR(freeDBSCAN)
 
    assert(scip != NULL);
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
    SCIPfreeMemory(scip, &detectordata);
 
@@ -183,9 +183,9 @@ DEC_DECL_INITDETECTOR(initDBSCAN)
    assert(scip != NULL);
 
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
    detectordata->n_similarities = -1;
    detectordata->found = FALSE;
@@ -251,7 +251,7 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
 
    int nnewpartialdecs;
    gcg::PARTIALDECOMP* partialdec;
-   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+   DEC_DETECTORDATA* detectordata = GCGdetectorGetData(detector);
    std::vector<SCIP_Real> clockTimes1;        /* vector containing times in seconds  */
    std::vector<SCIP_Real> clockTimes2;        /* vector containing times in seconds  */
    std::vector< RowGraphWeighted<GraphGCG>*> graphs;
@@ -482,7 +482,7 @@ static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveDBSCAN)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -499,7 +499,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultDBSCAN)
 {
    char setstr[SCIP_MAXSTRLEN];
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -515,7 +515,7 @@ DEC_DECL_SETPARAMFAST(setParamFastDBSCAN)
 {
    char setstr[SCIP_MAXSTRLEN];
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -547,7 +547,7 @@ SCIP_RETCODE SCIPincludeDetectorDBSCAN(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
       detectordata, freeDBSCAN, initDBSCAN, exitDBSCAN, propagatePartialdecDBSCAN, finishPartialdecDBSCAN, detectorPostprocessPartialdecDBSCAN, setParamAggressiveDBSCAN, setParamDefaultDBSCAN, setParamFastDBSCAN) );
 
    /* add arrowheur presolver parameters */

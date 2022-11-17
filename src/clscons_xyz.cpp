@@ -127,7 +127,7 @@ SCIP_RETCODE SCIPincludeConsClassifierXyz(
    classifierdata = NULL;
 
    SCIP_CALL(
-      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata,
+      GCGincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata,
          classifierFree, classifierClassify));
 
    return SCIP_OKAY;

@@ -1626,7 +1626,7 @@ DEC_DECL_FREEDETECTOR(detectorFreeStairheur)
 
    assert(scip != NULL);
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
    if (detectordata->constoblock != NULL)
@@ -1635,7 +1635,7 @@ DEC_DECL_FREEDETECTOR(detectorFreeStairheur)
       detectordata->constoblock = NULL;
    }
 
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
    SCIPfreeMemory(scip, &detectordata);
    return SCIP_OKAY;
@@ -1649,7 +1649,7 @@ DEC_DECL_INITDETECTOR(detectorInitStairheur)
 
    assert(scip != NULL);
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
    detectordata->constoblock = NULL;
@@ -1677,7 +1677,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStairheur)
    int nPartialdecs;
    vector<vector<int> > rowindices;
    vector<vector<int> > columnindices;
-   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+   DEC_DETECTORDATA* detectordata = GCGdetectorGetData(detector);
    gcg::PARTIALDECOMP* partialdec;
    SCIP_Real temptime;
 
@@ -1802,7 +1802,7 @@ static
 DEC_DECL_SETPARAMFAST(setParamAggressiveStairheur)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
@@ -1818,7 +1818,7 @@ static
 DEC_DECL_SETPARAMFAST(setParamDefaultStairheur)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -1834,7 +1834,7 @@ static
 DEC_DECL_SETPARAMFAST(setParamFastStairheur)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -1861,7 +1861,7 @@ SCIP_RETCODE SCIPincludeDetectorStairheur(
 
    detectordata->constoblock  = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
       detectordata, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur, detectorPropagatePartialdecStairheur, detectorFinishPartialdecStairheur, detectorPostprocessPartialdecStairheur, setParamAggressiveStairheur, setParamDefaultStairheur, setParamFastStairheur) );
 
 

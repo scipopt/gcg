@@ -45,6 +45,7 @@
 #include "type_decomp.h"
 #include "type_detector.h"
 #include "type_solver.h"
+#include "type_score.h"
 
 /* include public interfaces, s.t. the user only needs to include gcg.h */
 #include "pub_clscons.h"
@@ -54,9 +55,7 @@
 #include "pub_score.h"
 
 #include "relax_gcg.h"
-
 #include "gcg_general.h"
-#include "gcg_score.h"
 
 #ifdef __cplusplus
 extern "C" {

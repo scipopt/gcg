@@ -66,19 +66,19 @@ SCIP_RETCODE GCGwriteDecompositionData(
 
    assert(scip != NULL);
 
-   decomposition = DECgetBestDecomp(scip, TRUE);
-   type = DECdecompGetType(decomposition);
-   typeName = DECgetStrType(type);
+   decomposition = GCGgetBestDecomp(scip, TRUE);
+   type = GCGdecompFreeGetType(decomposition);
+   typeName = GCGdecompGetStrType(type);
 
-   detector = DECdecompGetDetector(decomposition);
+   detector = GCGdecompFreeGetDetector(decomposition);
 
-   nblocks = DECdecompGetNBlocks(decomposition);
+   nblocks = GCGdecompFreeGetNBlocks(decomposition);
 
-   nvarsinblocks = DECdecompGetNSubscipvars(decomposition);
-   nconssinblocks = DECdecompGetNSubscipconss(decomposition);
+   nvarsinblocks = GCGdecompGetNSubscipvars(decomposition);
+   nconssinblocks = GCGdecompFreeGetNSubscipconss(decomposition);
 
-   nlinkingvars = DECdecompGetNLinkingvars(decomposition);
-   nlinkingconss = DECdecompGetNLinkingconss(decomposition);
+   nlinkingvars = GCGdecompFreeGetNLinkingvars(decomposition);
+   nlinkingconss = GCGdecompGetNLinkingconss(decomposition);
 
    /* print information about decomposition type and number of blocks, vars, linking vars and cons */
    SCIPinfoMessage(scip, NULL, "Decomposition:\n");
@@ -97,7 +97,7 @@ SCIP_RETCODE GCGwriteDecompositionData(
       SCIPinfoMessage(scip, NULL, "%d:\t\t%d\t\t%d\n", i, nvarsinblocks[i], nconssinblocks[i]);
    }
 
-   DECdecompFree(scip, &decomposition);
+   GCGdecompFreeFree(scip, &decomposition);
 
    return SCIP_OKAY;
 }

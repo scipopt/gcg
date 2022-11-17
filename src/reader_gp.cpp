@@ -88,7 +88,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    assert(file != NULL);
 
    /* get partialdec to write */
-   partialdec = DECgetPartialdecToWrite(scip, transformed);
+   partialdec = GCGgetPartialdecToWrite(scip, transformed);
 
    if(partialdec == NULL)
    {

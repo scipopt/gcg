@@ -112,7 +112,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
    std::vector<int> classForCons( ncons, - 1 );     // [i] holds class index for constraint i -> indexing over detection internal constraint array!
    int counterClasses = 0;
 
-   DEC_CONSCLASSIFIER* classifier = DECfindConsClassifier(scip, DEC_CLASSIFIERNAME);
+   DEC_CONSCLASSIFIER* classifier = GCGfindConsClassifier(scip, DEC_CLASSIFIERNAME);
    assert(classifier != NULL);
 
    DEC_CLASSIFIERDATA* classdata = GCGconsClassifierGetData(classifier);
@@ -200,7 +200,7 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
  */
 
 /** adds an entry to clsdata->constodomain */
-SCIP_RETCODE DECconsClassifierGamsdomainAddEntry(
+SCIP_RETCODE GCGconsClassifierGamsdomainAddEntry(
    DEC_CONSCLASSIFIER*   classifier,
    SCIP_CONS*            cons,
    int                   symDomIdx[],
@@ -233,7 +233,7 @@ SCIP_RETCODE SCIPincludeConsClassifierGamsdomain(
    assert(classifierdata != NULL);
    classifierdata->constodomain = new std::map<std::string, std::set<int>>();
 
-   SCIP_CALL( DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

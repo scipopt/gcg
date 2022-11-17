@@ -183,7 +183,7 @@ static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveDensemasterconss)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
@@ -199,7 +199,7 @@ static
 DEC_DECL_SETPARAMDEFAULT(setParamDefaultDensemasterconss)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -214,7 +214,7 @@ static
 DEC_DECL_SETPARAMFAST(setParamFastDensemasterconss)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -241,7 +241,7 @@ SCIP_RETCODE SCIPincludeDetectorDensemasterconss(SCIP* scip /**< SCIP data struc
    detectordata = NULL;
 
    SCIP_CALL(
-      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
+      GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
          freeDensemasterconss, initDensemasterconss, exitDensemasterconss, propagatePartialdecDensemasterconss, finishPartialdecDensemasterconss, detectorPostprocessPartialdecDensemasterconss, setParamAggressiveDensemasterconss, setParamDefaultDensemasterconss, setParamFastDensemasterconss));
 

@@ -37,19 +37,20 @@
 
 #include "scip/scip.h"
 #include "type_branchgcg.h"
+#include "gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the handler for origbranch constraints and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** creates and captures a origbranch constraint */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGcreateConsOrigbranch(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
@@ -62,13 +63,13 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    );
 
 /** returns the branch orig constraint of the current node, only needs the pointer to scip */
-extern
+GCG_EXPORT
 SCIP_CONS* GCGconsOrigbranchGetActiveCons(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the stack and the number of elements on it */
-extern
+GCG_EXPORT
 void GCGconsOrigbranchGetStack(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          stack,              /**< return value: pointer to the stack */
@@ -76,26 +77,26 @@ void GCGconsOrigbranchGetStack(
    );
 
 /** set the branching data for a given origbranch constraint */
-extern
+GCG_EXPORT
 void GCGconsOrigbranchSetBranchdata(
    SCIP_CONS*            cons,               /**< origbranch constraint for which the branching data is requested */
    GCG_BRANCHDATA*       branchdata          /**< branching data */
    );
 
 /** returns the branching data for a given origbranch constraint */
-extern
+GCG_EXPORT
 GCG_BRANCHDATA* GCGconsOrigbranchGetBranchdata(
    SCIP_CONS*            cons                /**< origbranch constraint for which the branching data is requested */
    );
 
 /** returns the branching rule for a given origbranch constraint */
-extern
+GCG_EXPORT
 SCIP_BRANCHRULE* GCGconsOrigbranchGetBranchrule(
    SCIP_CONS*            cons                /**< origbranch constraint for which the branchrule is requested */
    );
 
 /** returns the node in the B&B tree at which the given origbranch constraint is sticking */
-extern
+GCG_EXPORT
 SCIP_NODE* GCGconsOrigbranchGetNode(
    SCIP_CONS*            cons                /**< origbranch constraint for which the corresponding node is requested */
    );
@@ -103,7 +104,7 @@ SCIP_NODE* GCGconsOrigbranchGetNode(
 /** returns the origbranch constraint of the B&B father of the node at which the
   * given origbranch constraint is sticking
   */
-extern
+GCG_EXPORT
 SCIP_CONS* GCGconsOrigbranchGetParentcons(
    SCIP_CONS*            cons                /**< origbranch constraint for which the origbranch constraint of
                                               *   the father node is requested */
@@ -112,7 +113,7 @@ SCIP_CONS* GCGconsOrigbranchGetParentcons(
 /** returns the number of origbranch constraints of the children of the node at which the
   * given origbranch constraint is sticking
   */
-extern
+GCG_EXPORT
 int GCGconsOrigbranchGetNChildconss(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
@@ -120,7 +121,7 @@ int GCGconsOrigbranchGetNChildconss(
 /** returns an origbranch constraint of a child of the node at which the
   * given origbranch constraint is sticking
   */
-extern
+GCG_EXPORT
 SCIP_CONS* GCGconsOrigbranchGetChildcons(
    SCIP_CONS*            cons,               /**< constraint */
    int                   childnr             /**< number of child */
@@ -130,7 +131,7 @@ SCIP_CONS* GCGconsOrigbranchGetChildcons(
 /** sets the masterbranch constraint of the node in the master program corresponding to the node
   * at which the given origbranchbranch constraint is sticking
   */
-extern
+GCG_EXPORT
 void GCGconsOrigbranchSetMastercons(
    SCIP_CONS*            cons,               /**< origbranch constraint for which the masterbranch constraint should be set */
    SCIP_CONS*            mastercons          /**< masterbranch constraint corresponding to the given origbranch constraint */
@@ -139,20 +140,20 @@ void GCGconsOrigbranchSetMastercons(
 /** returns the masterbranch constraint of the node in the master program corresponding to the node
   * at which the given origbranchbranch constraint is sticking
   */
-extern
+GCG_EXPORT
 SCIP_CONS* GCGconsOrigbranchGetMastercons(
    SCIP_CONS*            cons                /**< origbranch constraint for which the corresponding masterbranch
                                               *   constraint is requested */
    );
 
 /** adds initial constraint to root node */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGconsOrigbranchAddRootCons(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** checks the consistency of the origbranch constraints in the problem */
-extern
+GCG_EXPORT
 void GCGconsOrigbranchCheckConsistency(
    SCIP*                 scip                /**< SCIP data structure */
    );

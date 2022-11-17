@@ -287,27 +287,27 @@ SCIP_RETCODE convertStructToGCG(
    assert(relaxdata != NULL);
    assert(scip != NULL);
 
-   assert(DECdecompGetLinkingconss(decomp) != NULL || DECdecompGetNLinkingconss(decomp) == 0);
-   assert(DECdecompGetNSubscipvars(decomp) != NULL || DECdecompGetSubscipvars(decomp) == NULL);
+   assert(GCGdecompGetLinkingconss(decomp) != NULL || GCGdecompGetNLinkingconss(decomp) == 0);
+   assert(GCGdecompGetNSubscipvars(decomp) != NULL || GCGdecompGetSubscipvars(decomp) == NULL);
 
 
-   SCIP_CALL( DECdecompAddRemainingConss(scip, decomp) );
-   SCIP_CALL( DECdecompCheckConsistency(scip, decomp) );
+   SCIP_CALL( GCGdecompFreeAddRemainingConss(scip, decomp) );
+   SCIP_CALL( GCGdecompFreeCheckConsistency(scip, decomp) );
 
 
 
    origvars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
-   linkingconss = DECdecompGetLinkingconss(decomp);
-   nlinkingconss = DECdecompGetNLinkingconss(decomp);
-   linkingvars = DECdecompGetLinkingvars(decomp);
-   nlinkingvars = DECdecompGetNLinkingvars(decomp);
-   subscipvars = DECdecompGetSubscipvars(decomp);
-   nsubscipvars = DECdecompGetNSubscipvars(decomp);
+   linkingconss = GCGdecompGetLinkingconss(decomp);
+   nlinkingconss = GCGdecompGetNLinkingconss(decomp);
+   linkingvars = GCGdecompFreeGetLinkingvars(decomp);
+   nlinkingvars = GCGdecompFreeGetNLinkingvars(decomp);
+   subscipvars = GCGdecompGetSubscipvars(decomp);
+   nsubscipvars = GCGdecompGetNSubscipvars(decomp);
 
-   subscipconss = DECdecompGetSubscipconss(decomp);
-   nsubscipconss = DECdecompGetNSubscipconss(decomp);
-   nblocks = DECdecompGetNBlocks(decomp);
+   subscipconss = GCGdecompFreeGetSubscipconss(decomp);
+   nsubscipconss = GCGdecompFreeGetNSubscipconss(decomp);
+   nblocks = GCGdecompFreeGetNBlocks(decomp);
 
    SCIP_CALL( SCIPhashmapCreate(&transvar2origvar, SCIPblkmem(scip), nvars) );
    relaxdata->npricingprobs = nblocks;
@@ -496,8 +496,8 @@ SCIP_RETCODE checkSetppcStructure(
 
    assert(relaxdata->decomp != NULL);
 
-   masterconss = DECdecompGetLinkingconss(relaxdata->decomp);
-   nmasterconss = DECdecompGetNLinkingconss(relaxdata->decomp);
+   masterconss = GCGdecompGetLinkingconss(relaxdata->decomp);
+   nmasterconss = GCGdecompGetNLinkingconss(relaxdata->decomp);
    assert(nmasterconss >= 0);
    assert(masterconss != NULL || nmasterconss == 0);
 
@@ -648,7 +648,7 @@ SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
 
    /* 1) find partialdec number */
 
-   partialdecid = DECdecompGetPartialdecID(relaxdata->decomp);
+   partialdecid = GCGdecompFreeGetPartialdecID(relaxdata->decomp);
 
    /* 2) are pricingproblems identical for this partialdec? */
    SCIP_CALL( GCGconshdlrDecompArePricingprobsIdenticalForPartialdecid(scip, partialdecid, probnr2, probnr1, identical) );
@@ -721,8 +721,8 @@ SCIP_RETCODE checkIdenticalBlocks(
                SCIPblkmem(scip),
                5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /* +1 to deal with empty subproblems */
 
-         assert( SCIPgetNConss(scip) == GCGconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetPartialdecID(relaxdata->decomp)) );
-         SCIPdebugMessage( "nconss: %d; ndetectionconss: %d -> using partialdec information for identity test \n", SCIPgetNConss(scip), GCGconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetPartialdecID(relaxdata->decomp) ) );
+         assert( SCIPgetNConss(scip) == GCGconshdlrDecompGetNFormerDetectionConssForID(scip, GCGdecompFreeGetPartialdecID(relaxdata->decomp)) );
+         SCIPdebugMessage( "nconss: %d; ndetectionconss: %d -> using partialdec information for identity test \n", SCIPgetNConss(scip), GCGconshdlrDecompGetNFormerDetectionConssForID(scip, GCGdecompFreeGetPartialdecID(relaxdata->decomp) ) );
          SCIP_CALL( pricingprobsAreIdenticalFromDetectionInfo( scip, relaxdata, hashorig2pricingvar, i, j, varmap, &identical ) );
 
 /*
@@ -1076,8 +1076,8 @@ SCIP_RETCODE createPricingVariables(
       if( blocknr == -1 )
       {
          int tempblock;
-         tempblock = (int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decomp), probvar)-1; /*lint !e507*/
-         if( tempblock >= DECdecompGetNBlocks(relaxdata->decomp) )
+         tempblock = (int) (size_t) SCIPhashmapGetImage(GCGdecompFreeGetVartoblock(relaxdata->decomp), probvar)-1; /*lint !e507*/
+         if( tempblock >= GCGdecompFreeGetNBlocks(relaxdata->decomp) )
          {
             blocknr = -1;
          }
@@ -1260,6 +1260,9 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotaggr", TRUE) );
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
 
+   /* do not catch ctrl-c @todo: add this feature*/
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "misc/catchctrlc", FALSE) );
+
    /* the following settings are for decomposition, so if the original problem is solved directly, then these settings
     * are not required
     */
@@ -1396,8 +1399,8 @@ SCIP_RETCODE createMasterprobConss(
    int c;
    char name[SCIP_MAXSTRLEN];
 
-   masterconss = DECdecompGetLinkingconss(relaxdata->decomp);
-   nmasterconss = DECdecompGetNLinkingconss(relaxdata->decomp);
+   masterconss = GCGdecompGetLinkingconss(relaxdata->decomp);
+   nmasterconss = GCGdecompGetNLinkingconss(relaxdata->decomp);
 
  //  assert(SCIPhashmapGetNElements(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
    for( c = 0; c < nmasterconss; ++c )
@@ -1540,9 +1543,9 @@ SCIP_RETCODE createPricingprobConss(
    assert(scip != NULL);
    assert(relaxdata != NULL);
 
-   subscipconss = DECdecompGetSubscipconss(relaxdata->decomp);
-   nsubscipconss = DECdecompGetNSubscipconss(relaxdata->decomp);
-   nblocks = DECdecompGetNBlocks(relaxdata->decomp);
+   subscipconss = GCGdecompFreeGetSubscipconss(relaxdata->decomp);
+   nsubscipconss = GCGdecompFreeGetNSubscipconss(relaxdata->decomp);
+   nblocks = GCGdecompFreeGetNBlocks(relaxdata->decomp);
 
    SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingconstmp, SCIPblkmem(scip), SCIPgetNConss(scip)) ); /*lint !e613*/
 
@@ -2204,7 +2207,7 @@ SCIP_RETCODE GCGsetStructDecomp(
    assert(relaxdata != NULL);
 
    if( relaxdata->decomp != NULL )
-      SCIP_CALL( DECdecompFree(scip, &relaxdata->decomp ) );
+      SCIP_CALL( GCGdecompFreeFree(scip, &relaxdata->decomp ) );
 
    relaxdata->decomp = decomp;
 
@@ -2324,7 +2327,7 @@ SCIP_RETCODE initRelaxator(
 
       assert(relaxdata->decomp == NULL);
 
-      retcode = DECcreateBasicDecomp(scip, &decomp, TRUE);
+      retcode = GCGcreateBasicDecomp(scip, &decomp, TRUE);
       assert(retcode == SCIP_OKAY);
       if( retcode != SCIP_OKAY )
       {
@@ -2339,7 +2342,7 @@ SCIP_RETCODE initRelaxator(
 
    if( relaxdata->decomp == NULL )
    {
-      relaxdata->decomp = DECgetBestDecomp(scip, TRUE);
+      relaxdata->decomp = GCGgetBestDecomp(scip, TRUE);
       if( relaxdata->decomp == NULL )
       {
          int partialdecid;
@@ -2347,30 +2350,30 @@ SCIP_RETCODE initRelaxator(
          partialdecid = GCGconshdlrDecompAddBasicPartialdec(scip, TRUE);
          SCIP_CALL( GCGconshdlrDecompSelectPartialdec(scip, partialdecid, TRUE) );
 
-         relaxdata->decomp = DECgetBestDecomp(scip, FALSE);
+         relaxdata->decomp = GCGgetBestDecomp(scip, FALSE);
          assert( relaxdata->decomp != NULL );
       }
    }
 
    oxfordcomma = 0;
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Chosen structure has %d blocks", DECdecompGetNBlocks(relaxdata->decomp));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Chosen structure has %d blocks", GCGdecompFreeGetNBlocks(relaxdata->decomp));
    /* every master-only variable internally also counts as linking, but should not be reported as linking variable */
-   if ( DECdecompGetNLinkingvars(relaxdata->decomp) - DECdecompGetNMastervars(relaxdata->decomp) > 0)
+   if ( GCGdecompFreeGetNLinkingvars(relaxdata->decomp) - GCGdecompFreeGetNMastervars(relaxdata->decomp) > 0)
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, ", %d linking variables", DECdecompGetNLinkingvars(relaxdata->decomp) - DECdecompGetNMastervars(relaxdata->decomp));
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, ", %d linking variables", GCGdecompFreeGetNLinkingvars(relaxdata->decomp) - GCGdecompFreeGetNMastervars(relaxdata->decomp));
       ++oxfordcomma;
    }
-   if ( DECdecompGetNMastervars(relaxdata->decomp) > 0 )
+   if ( GCGdecompFreeGetNMastervars(relaxdata->decomp) > 0 )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, ", %d master-only (static) variables", DECdecompGetNMastervars(relaxdata->decomp));
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, ", %d master-only (static) variables", GCGdecompFreeGetNMastervars(relaxdata->decomp));
       ++oxfordcomma;
    }
    if ( oxfordcomma > 0 )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, ",");
    }
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " and %d linking constraints.\n", DECdecompGetNLinkingconss(relaxdata->decomp));
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "This decomposition has a maxwhite score of %f.\n", DECdecompGetMaxwhiteScore(relaxdata->decomp));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " and %d linking constraints.\n", GCGdecompGetNLinkingconss(relaxdata->decomp));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "This decomposition has a maxwhite score of %f.\n", GCGdecompFreeGetMaxwhiteScore(relaxdata->decomp));
 
    /* permute the decomposition if the permutation seed is set */
    SCIP_CALL( SCIPgetIntParam(scip, "randomization/permutationseed", &permutationseed) );
@@ -2380,7 +2383,7 @@ SCIP_RETCODE initRelaxator(
       SCIP_RANDNUMGEN* randnumgen;
 
       SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, (unsigned int) permutationseed, TRUE) );
-      SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decomp, randnumgen) );
+      SCIP_CALL( GCGpermuteDecomp(scip, relaxdata->decomp, randnumgen) );
       SCIPfreeRandom(scip, &randnumgen);
    }
 
@@ -2498,7 +2501,7 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
    /* free used decomposition */
    if( relaxdata->decomp != NULL )
    {
-      SCIP_CALL( DECdecompFree(scip, &relaxdata->decomp) );
+      SCIP_CALL( GCGdecompFreeFree(scip, &relaxdata->decomp) );
    }
 
    SCIPfreeMemory(scip, &relaxdata);
@@ -2520,7 +2523,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
 
    if( relaxdata->decomp != NULL )
    {
-      SCIP_CALL( DECdecompFree(scip, &relaxdata->decomp) );
+      SCIP_CALL( GCGdecompFreeFree(scip, &relaxdata->decomp) );
       relaxdata->decomp = NULL;
    }
 
@@ -2573,7 +2576,7 @@ SCIP_RETCODE initializeMasterProblemSolve(
       }
       SCIP_CALL( transformMaster(scip, relax) );
       /* transform the decomposition */
-      // SCIP_CALL( DECdecompTransform(scip, relaxdata->decomp) );
+      // SCIP_CALL( GCGdecompFreeTransform(scip, relaxdata->decomp) );
       SCIP_CALL( GCGconsOrigbranchAddRootCons(scip) );
       relaxdata->relaxisinitialized = TRUE;
       assert(relaxdata->decomp != NULL);
@@ -2738,7 +2741,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
 
    if( relaxdata->decomp != NULL )
    {
-      SCIP_CALL( DECdecompFree(scip, &relaxdata->decomp) );
+      SCIP_CALL( GCGdecompFreeFree(scip, &relaxdata->decomp) );
       relaxdata->decomp = NULL;
    }
 
@@ -2810,7 +2813,7 @@ SCIP_RETCODE solveMasterProblem(
       /* if we have a blockdetection, see whether the node is block diagonal. Additionally, the solveDiagonalBlocks can
        * be called when the original problem is solved directly.
        */
-      if( DECdecompGetType(relaxdata->decomp) == DEC_DECTYPE_DIAGONAL || GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
+      if( GCGdecompFreeGetType(relaxdata->decomp) == DEC_DECTYPE_DIAGONAL || GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
       {
          SCIP_CALL( solveDiagonalBlocks(scip, relaxdata, result, lowerbound) );
          if( *result == SCIP_SUCCESS || *result == SCIP_CUTOFF )
@@ -5069,7 +5072,7 @@ SCIP_RETCODE GCGdetect(
       else
       {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "starting detection\n");
-         SCIP_CALL( DECdetectStructure(scip, &result) );
+         SCIP_CALL( GCGdetectStructure(scip, &result) );
       }
       break;
    case SCIP_STAGE_PRESOLVING:
@@ -5081,7 +5084,7 @@ SCIP_RETCODE GCGdetect(
       else
       {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "starting detection\n");
-         SCIP_CALL( DECdetectStructure(scip, &result) );
+         SCIP_CALL( GCGdetectStructure(scip, &result) );
       }
       break;
    case SCIP_STAGE_SOLVING:
@@ -5146,13 +5149,13 @@ SCIP_RETCODE GCGsolve(
 
          if( !GCGdetectionTookPlace(scip, TRUE) && !GCGdetectionTookPlace(scip, FALSE) && GCGconshdlrDecompGetNFinishedPartialdecsTransformed(scip) == 0 )
          {
-            SCIP_CALL( DECdetectStructure(scip, &result) );
+            SCIP_CALL( GCGdetectStructure(scip, &result) );
             if( result == SCIP_DIDNOTFIND )
             {
                DEC_DECOMP* bestdecomp;
-               bestdecomp = DECgetBestDecomp(scip, TRUE);
+               bestdecomp = GCGgetBestDecomp(scip, TRUE);
                assert(bestdecomp == NULL && (GCGdetectionTookPlace(scip, TRUE) || GCGdetectionTookPlace(scip, FALSE)));
-               DECdecompFree(scip, &bestdecomp);
+               GCGdecompFreeFree(scip, &bestdecomp);
                SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
             }
          }
@@ -5160,9 +5163,9 @@ SCIP_RETCODE GCGsolve(
          {
    #ifndef NDEBUG
             DEC_DECOMP* bestdecomp;
-            bestdecomp = DECgetBestDecomp(scip, TRUE);
+            bestdecomp = GCGgetBestDecomp(scip, TRUE);
             assert(bestdecomp != NULL);
-            DECdecompFree(scip, &bestdecomp);
+            GCGdecompFreeFree(scip, &bestdecomp);
    #endif
             SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Preexisting decomposition found. Solution process started...\n");
          }

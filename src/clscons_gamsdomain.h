@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 /** adds an entry to clsdata->constodomain */
-SCIP_RETCODE DECconsClassifierGamsdomainAddEntry(
+SCIP_RETCODE GCGconsClassifierGamsdomainAddEntry(
    DEC_CONSCLASSIFIER*   classifier,
    SCIP_CONS*            cons,
    int                   symDomIdx[],

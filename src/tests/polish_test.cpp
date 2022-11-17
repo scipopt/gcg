@@ -51,11 +51,11 @@ class GcgPolishDecompTest : public ::testing::Test {
    virtual void TearDown() {
       if( decomp != NULL)
       {
-         SCIP_CALL_ABORT( DECdecompFree(scip, &decomp) );
+         SCIP_CALL_ABORT( GCGdecompFreeFree(scip, &decomp) );
       }
       if( newdecomp != NULL)
       {
-         SCIP_CALL_ABORT( DECdecompFree(scip, &newdecomp) );
+         SCIP_CALL_ABORT( GCGdecompFreeFree(scip, &newdecomp) );
       }
       SCIP_CALL_ABORT( SCIPfree(&scip) );
    }
@@ -102,11 +102,11 @@ TEST_F(GcgPolishDecompTest, DetermineInPricing) {
    SCIP_CALL_EXPECT( createCons("[linear] <c4>: <x2>[I] == 1") );
 
    SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
-   SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, NULL, 0) );
+   SCIP_CALL_EXPECT( GCGcreateDecompFromMasterconss(scip, &decomp, NULL, 0) );
 
-   SCIP_CALL_EXPECT( DECdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c3"), &block));
+   SCIP_CALL_EXPECT( GCGdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c3"), &block));
    ASSERT_EQ(0, block);
-   SCIP_CALL_EXPECT( DECdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c4"), &block));
+   SCIP_CALL_EXPECT( GCGdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c4"), &block));
    ASSERT_EQ(1, block);
 }
 
@@ -124,11 +124,11 @@ TEST_F(GcgPolishDecompTest, DetermineInMaster) {
 
    SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
    SCIP_CONS* masterconss[2] = {SCIPfindCons(scip, "c3"), SCIPfindCons(scip, "c4")};
-   SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, masterconss, 2) );
+   SCIP_CALL_EXPECT( GCGcreateDecompFromMasterconss(scip, &decomp, masterconss, 2) );
 
-   SCIP_CALL_EXPECT( DECdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c3"), &block));
+   SCIP_CALL_EXPECT( GCGdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c3"), &block));
    ASSERT_EQ(2, block);
-   SCIP_CALL_EXPECT( DECdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c4"), &block));
+   SCIP_CALL_EXPECT( GCGdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c4"), &block));
    ASSERT_EQ(2, block);
 }
 
@@ -150,10 +150,10 @@ TEST_F(GcgPolishDecompTest, DetermineLinkingvarOnly) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1"), (void*) 1) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
-   SCIP_CALL_EXPECT( DECdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c3"), &block));
+   SCIP_CALL_EXPECT( GCGdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c3"), &block));
    ASSERT_EQ(2, block);
 }
 
@@ -175,10 +175,10 @@ TEST_F(GcgPolishDecompTest, DetermineNewPricingProblem) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1"), (void*) 1) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
-   SCIP_CALL_EXPECT( DECdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c3"), &block));
+   SCIP_CALL_EXPECT( GCGdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c3"), &block));
    ASSERT_EQ(-1, block);
 }
 
@@ -199,12 +199,12 @@ TEST_F(GcgPolishDecompTest, TransferMasterconssToPricing) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
 
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
-   SCIP_CALL_EXPECT( DECtryAssignMasterconssToExistingPricing(scip, decomp, &transferred) );
+   SCIP_CALL_EXPECT( GCGdecompTryAssignMasterconssToExistingPricing(scip, decomp, &transferred) );
    ASSERT_EQ(1, transferred);
-   ASSERT_EQ(2, DECdecompGetNBlocks(decomp));
+   ASSERT_EQ(2, GCGdecompFreeGetNBlocks(decomp));
 }
 
 TEST_F(GcgPolishDecompTest, DontTransferMasterconssToPricing) {
@@ -224,12 +224,12 @@ TEST_F(GcgPolishDecompTest, DontTransferMasterconssToPricing) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1"), (void*) 1) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
-   SCIP_CALL_EXPECT( DECtryAssignMasterconssToExistingPricing(scip, decomp, &transferred) );
+   SCIP_CALL_EXPECT( GCGdecompTryAssignMasterconssToExistingPricing(scip, decomp, &transferred) );
    ASSERT_EQ(0, transferred);
-   ASSERT_EQ(2, DECdecompGetNBlocks(decomp));
+   ASSERT_EQ(2, GCGdecompFreeGetNBlocks(decomp));
 }
 
 TEST_F(GcgPolishDecompTest, DontTransferLinkingVarsOnly) {
@@ -249,12 +249,12 @@ TEST_F(GcgPolishDecompTest, DontTransferLinkingVarsOnly) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1"), (void*) 1) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
-   SCIP_CALL_EXPECT( DECtryAssignMasterconssToExistingPricing(scip, decomp, &transferred) );
+   SCIP_CALL_EXPECT( GCGdecompTryAssignMasterconssToExistingPricing(scip, decomp, &transferred) );
    ASSERT_EQ(0, transferred);
-   ASSERT_EQ(2, DECdecompGetNBlocks(decomp));
+   ASSERT_EQ(2, GCGdecompFreeGetNBlocks(decomp));
 }
 
 TEST_F(GcgPolishDecompTest, TransferLinkingVarToPricing) {
@@ -275,12 +275,12 @@ TEST_F(GcgPolishDecompTest, TransferLinkingVarToPricing) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
 
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
-   SCIP_CALL_EXPECT( DECtryAssignMasterconssToExistingPricing(scip, decomp, &transferred) );
+   SCIP_CALL_EXPECT( GCGdecompTryAssignMasterconssToExistingPricing(scip, decomp, &transferred) );
    ASSERT_EQ(1, transferred);
-   ASSERT_EQ(2, DECdecompGetNBlocks(decomp));
+   ASSERT_EQ(2, GCGdecompFreeGetNBlocks(decomp));
 }
 
 TEST_F(GcgPolishDecompTest, TransferNewVarToPricing) {
@@ -302,12 +302,12 @@ TEST_F(GcgPolishDecompTest, TransferNewVarToPricing) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
 
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
-   SCIP_CALL_EXPECT( DECtryAssignMasterconssToExistingPricing(scip, decomp, &transferred) );
+   SCIP_CALL_EXPECT( GCGdecompTryAssignMasterconssToExistingPricing(scip, decomp, &transferred) );
    ASSERT_EQ(1, transferred);
-   ASSERT_EQ(2, DECdecompGetNBlocks(decomp));
+   ASSERT_EQ(2, GCGdecompFreeGetNBlocks(decomp));
 }
 
 TEST_F(GcgPolishDecompTest, TransferNewVarToPricingWithLinking) {
@@ -331,14 +331,14 @@ TEST_F(GcgPolishDecompTest, TransferNewVarToPricingWithLinking) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c4"), (void*) 3) );
 
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
-   SCIP_CALL_EXPECT( DECtryAssignMasterconssToExistingPricing(scip, decomp, &transferred) );
+   SCIP_CALL_EXPECT( GCGdecompTryAssignMasterconssToExistingPricing(scip, decomp, &transferred) );
    ASSERT_EQ(1, transferred);
-   ASSERT_EQ(2, DECdecompGetNBlocks(decomp));
-   ASSERT_EQ(1, DECdecompGetNLinkingvars(decomp));
-   ASSERT_EQ(SCIPfindVar(scip, "t_x3"), DECdecompGetLinkingvars(decomp)[0]);
+   ASSERT_EQ(2, GCGdecompFreeGetNBlocks(decomp));
+   ASSERT_EQ(1, GCGdecompFreeGetNLinkingvars(decomp));
+   ASSERT_EQ(SCIPfindVar(scip, "t_x3"), GCGdecompFreeGetLinkingvars(decomp)[0]);
 }
 
 TEST_F(GcgPolishDecompTest, CreateNewPricingProblem) {
@@ -360,12 +360,12 @@ TEST_F(GcgPolishDecompTest, CreateNewPricingProblem) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
 
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
-   SCIP_CALL_EXPECT( DECtryAssignMasterconssToNewPricing(scip, decomp, &newdecomp, &transferred) );
+   SCIP_CALL_EXPECT( GCGdecompTryAssignMasterconssToNewPricing(scip, decomp, &newdecomp, &transferred) );
    ASSERT_EQ(1, transferred);
-   ASSERT_EQ(3, DECdecompGetNBlocks(newdecomp));
+   ASSERT_EQ(3, GCGdecompFreeGetNBlocks(newdecomp));
 }
 
 TEST_F(GcgPolishDecompTest, CreateNewPricingProblemWithLinking) {
@@ -387,12 +387,12 @@ TEST_F(GcgPolishDecompTest, CreateNewPricingProblemWithLinking) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
 
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
-   SCIP_CALL_EXPECT( DECtryAssignMasterconssToNewPricing(scip, decomp, &newdecomp, &transferred) );
+   SCIP_CALL_EXPECT( GCGdecompTryAssignMasterconssToNewPricing(scip, decomp, &newdecomp, &transferred) );
    ASSERT_EQ(1, transferred);
-   ASSERT_EQ(3, DECdecompGetNBlocks(newdecomp));
+   ASSERT_EQ(3, GCGdecompFreeGetNBlocks(newdecomp));
 }
 
 TEST_F(GcgPolishDecompTest, PolishDecompTransferAll) {
@@ -420,12 +420,12 @@ TEST_F(GcgPolishDecompTest, PolishDecompTransferAll) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c4"), (void*) 3) );
 
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
-   SCIP_CALL_EXPECT( DECcreatePolishedDecomp(scip, decomp, &newdecomp) );
-   ASSERT_EQ(4, DECdecompGetNBlocks(newdecomp));
-   ASSERT_EQ(0, DECdecompGetNLinkingconss(newdecomp));
+   SCIP_CALL_EXPECT( GCGcreatePolishedDecomp(scip, decomp, &newdecomp) );
+   ASSERT_EQ(4, GCGdecompFreeGetNBlocks(newdecomp));
+   ASSERT_EQ(0, GCGdecompGetNLinkingconss(newdecomp));
 }
 
 TEST_F(GcgPolishDecompTest, PolishDecompOnlyNew) {
@@ -451,12 +451,12 @@ TEST_F(GcgPolishDecompTest, PolishDecompOnlyNew) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c4"), (void*) 1) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c5"), (void*) 1) );
 
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 0, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 0, FALSE) );
 
-   SCIP_CALL_EXPECT( DECcreatePolishedDecomp(scip, decomp, &newdecomp) );
-   ASSERT_EQ(5, DECdecompGetNBlocks(newdecomp));
-   ASSERT_EQ(0, DECdecompGetNLinkingconss(newdecomp));
+   SCIP_CALL_EXPECT( GCGcreatePolishedDecomp(scip, decomp, &newdecomp) );
+   ASSERT_EQ(5, GCGdecompFreeGetNBlocks(newdecomp));
+   ASSERT_EQ(0, GCGdecompGetNLinkingconss(newdecomp));
 }
 
 TEST_F(GcgPolishDecompTest, PolishDecompNothingNew) {
@@ -478,10 +478,10 @@ TEST_F(GcgPolishDecompTest, PolishDecompNothingNew) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 2) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c4"), (void*) 3) );
 
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
-   SCIP_CALL_EXPECT( DECcreatePolishedDecomp(scip, decomp, &newdecomp) );
+   SCIP_CALL_EXPECT( GCGcreatePolishedDecomp(scip, decomp, &newdecomp) );
    ASSERT_EQ((DEC_DECOMP*) NULL, newdecomp);
 }
 
@@ -499,9 +499,9 @@ TEST_F(GcgPolishDecompTest, DontPolishOneBlock) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1"), (void*) 1) );
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
 
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 1, FALSE) );
+   SCIP_CALL_EXPECT( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 1, FALSE) );
 
-   SCIP_CALL_EXPECT( DECcreatePolishedDecomp(scip, decomp, &newdecomp) );
+   SCIP_CALL_EXPECT( GCGcreatePolishedDecomp(scip, decomp, &newdecomp) );
    ASSERT_EQ((DEC_DECOMP*) NULL, newdecomp);
 }

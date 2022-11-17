@@ -38,6 +38,7 @@
 
 #include "scip/scip.h"
 #include "type_branchgcg.h"
+#include "gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,13 +46,13 @@ extern "C" {
 
 
 /** creates the handler for masterbranch constraints and includes it in SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** creates and captures a masterbranch constraint */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGcreateConsMasterbranch(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
@@ -66,13 +67,13 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    );
 
 /** returns the name of the constraint */
-extern
+GCG_EXPORT
 char* GCGconsMasterbranchGetName(
    SCIP_CONS*            cons                /**< masterbranch constraint for which the data is requested */
    );
 
 /** returns the node in the B&B tree at which the given masterbranch constraint is sticking */
-extern
+GCG_EXPORT
 SCIP_NODE* GCGconsMasterbranchGetNode(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
@@ -80,7 +81,7 @@ SCIP_NODE* GCGconsMasterbranchGetNode(
 /** returns the masterbranch constraint of the B&B father of the node at which the
   * given masterbranch constraint is sticking
   */
-extern
+GCG_EXPORT
 SCIP_CONS* GCGconsMasterbranchGetParentcons(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
@@ -88,7 +89,7 @@ SCIP_CONS* GCGconsMasterbranchGetParentcons(
 /** returns the number of masterbranch constraints of the children of the node at which the
   * given masterbranch constraint is sticking
   */
-extern
+GCG_EXPORT
 int GCGconsMasterbranchGetNChildconss(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
@@ -96,7 +97,7 @@ int GCGconsMasterbranchGetNChildconss(
 /** returns a masterbranch constraint of a child of the node at which the
   * given masterbranch constraint is sticking
   */
-extern
+GCG_EXPORT
 SCIP_CONS* GCGconsMasterbranchGetChildcons(
    SCIP_CONS*            cons,                /**< constraint pointer */
    int                   childnr              /**< index of the child node */
@@ -105,7 +106,7 @@ SCIP_CONS* GCGconsMasterbranchGetChildcons(
 /** returns the origbranch constraint of the node in the original program corresponding to the node
   * which the given masterbranch constraint is sticking
   */
-extern
+GCG_EXPORT
 SCIP_CONS* GCGconsMasterbranchGetOrigcons(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
@@ -113,26 +114,26 @@ SCIP_CONS* GCGconsMasterbranchGetOrigcons(
 /** sets the origbranch constraint of the node in the master program corresponding to the node
   * at which the given masterbranchbranch constraint is sticking
   */
-extern
+GCG_EXPORT
 void GCGconsMasterbranchSetOrigcons(
    SCIP_CONS*            cons,               /**< constraint pointer */
    SCIP_CONS*            origcons            /**< original branching constraint */
    );
 
 /** returns the branching data for a given masterbranch constraint */
-extern
+GCG_EXPORT
 GCG_BRANCHDATA* GCGconsMasterbranchGetBranchdata(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
 
 /** returns the branching rule of the constraint */
-extern
+GCG_EXPORT
 SCIP_BRANCHRULE* GCGconsMasterbranchGetBranchrule(
    SCIP_CONS*            cons                /**< masterbranch constraint for which the data is requested */
    );
 
 /** adds a bound change on an original variable that was directly copied to the master problem */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGconsMasterbranchAddCopiedVarBndchg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< masterbranch constraint to which the bound change is added */
@@ -142,13 +143,13 @@ SCIP_RETCODE GCGconsMasterbranchAddCopiedVarBndchg(
    );
 
 /** returns the constraints in the original problem that enforce the branching decision */
-extern
+GCG_EXPORT
 SCIP_CONS** GCGconsMasterbranchGetOrigbranchConss(
    SCIP_CONS*            cons                /**< masterbranch constraint for which the data is requested */
    );
 
 /** returns the number of constraints in the original problem that enforce the branching decision */
-extern
+GCG_EXPORT
 int GCGconsMasterbranchGetNOrigbranchConss(
    SCIP_CONS*            cons                /**< masterbranch constraint for which the data is requested */
    );
@@ -156,7 +157,7 @@ int GCGconsMasterbranchGetNOrigbranchConss(
 /** releases the constraints in the original problem that enforce the branching decision
  *  and frees the array holding the constraints
  */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGconsMasterbranchReleaseOrigbranchConss(
    SCIP*                 masterscip,         /**< master problem SCIP instance */
    SCIP*                 origscip,           /**< original SCIP instance */
@@ -164,13 +165,13 @@ SCIP_RETCODE GCGconsMasterbranchReleaseOrigbranchConss(
    );
 
 /** returns the masterbranch constraint of the current node */
-extern
+GCG_EXPORT
 SCIP_CONS* GCGconsMasterbranchGetActiveCons(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the stack and the number of elements on it */
-extern
+GCG_EXPORT
 void GCGconsMasterbranchGetStack(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          stack,              /**< return value: pointer to the stack */
@@ -178,25 +179,25 @@ void GCGconsMasterbranchGetStack(
    );
 
 /** returns the number of elements on the stack */
-extern
+GCG_EXPORT
 int GCGconsMasterbranchGetNStackelements(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** adds initial constraint to root node */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGconsMasterbranchAddRootCons(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** check whether the node was generated by generic branching */
-extern
+GCG_EXPORT
 SCIP_Bool GCGcurrentNodeIsGeneric(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** checks the consistency of the masterbranch constraints in the problem */
-extern
+GCG_EXPORT
 void GCGconsMasterbranchCheckConsistency(
    SCIP*                 scip                /**< SCIP data structure */
    );

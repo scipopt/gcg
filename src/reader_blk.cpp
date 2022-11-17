@@ -789,11 +789,11 @@ SCIP_RETCODE fillDecompStruct(
    nconss = SCIPgetNConss(scip);
    nblocks = blkinput->nblocks;
 
-   DECdecompSetPresolved(decomp, blkinput->presolved);
-   DECdecompSetNBlocks(decomp, nblocks);
-   DECdecompSetDetector(decomp, NULL);
+   GCGdecompFreeSetPresolved(decomp, blkinput->presolved);
+   GCGdecompFreeSetNBlocks(decomp, nblocks);
+   GCGdecompFreeSetDetector(decomp, NULL);
 
-   SCIP_CALL( DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD) );
+   SCIP_CALL( GCGdecompFreeSetType(decomp, DEC_DECTYPE_ARROWHEAD) );
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
@@ -904,7 +904,7 @@ SCIP_RETCODE fillDecompStruct(
 
    SCIPinfoMessage(scip, NULL, "just read blk file:\n");
 
-   retcode = DECfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE);
+   retcode = GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE);
    SCIPfreeMemoryArray(scip, &consvars);
 
    return retcode;
@@ -1049,14 +1049,14 @@ SCIP_RETCODE readBLKFile(
       }
    }
 
-   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
+   SCIP_CALL( GCGdecompFreeCreate(scip, &decdecomp) );
 
    /* fill decomp */
    retcode = fillDecompStruct(scip, blkinput, decdecomp, newpartialdec, readerdata);
 
    GCGconshdlrDecompAddPreexisitingPartialDec(scip, newpartialdec);
 
-   SCIP_CALL( DECdecompFree(scip, &decdecomp) );
+   SCIP_CALL( GCGdecompFreeFree(scip, &decdecomp) );
 
    for( i = 0; i < nvars; ++i )
    {

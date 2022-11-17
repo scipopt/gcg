@@ -97,9 +97,9 @@ DEC_DECL_FREEDETECTOR(freeConnectedbase)
    assert(scip != NULL);
    assert(detector != NULL);
 
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
    SCIPfreeMemory(scip, &detectordata);
@@ -173,7 +173,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConnectedbase)
 {
    char setstr[SCIP_MAXSTRLEN];
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
@@ -190,7 +190,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultConnectedbase)
 {
    char setstr[SCIP_MAXSTRLEN];
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -208,7 +208,7 @@ DEC_DECL_SETPARAMFAST(setParamFastConnectedbase)
 {
    char setstr[SCIP_MAXSTRLEN];
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -239,7 +239,7 @@ SCIP_RETCODE SCIPincludeDetectorConnectedbase(
 
    detectordata->useconssadj = TRUE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeConnectedbase, initConnectedbase, exitConnectedbase, propagatePartialdecConnectedbase, finishPartialdecConnectedbase, detectorPostprocessPartialdecConnectedbase, setParamAggressiveConnectedbase, setParamDefaultConnectedbase, setParamFastConnectedbase) );
+   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeConnectedbase, initConnectedbase, exitConnectedbase, propagatePartialdecConnectedbase, finishPartialdecConnectedbase, detectorPostprocessPartialdecConnectedbase, setParamAggressiveConnectedbase, setParamDefaultConnectedbase, setParamFastConnectedbase) );
 
    /* add consname detector parameters */
       /**@todo add connectedbase detector parameters */

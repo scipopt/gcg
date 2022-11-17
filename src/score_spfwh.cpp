@@ -77,7 +77,7 @@ DEC_DECL_SCORECALC(scoreCalcSpfwh)
 
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
 
-   maxforeseeingwhitescore = partialdec->getScore(DECfindScore(scip, "max foreseeing white"));
+   maxforeseeingwhitescore = partialdec->getScore(GCGconshdlrDecompFindScore(scip, "max foreseeing white"));
 
    if( partialdec->hasSetppccardMaster() && !partialdec->isTrivial() && partialdec->getNBlocks() > 1 )
    {

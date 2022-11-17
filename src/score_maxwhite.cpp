@@ -72,13 +72,12 @@ struct DEC_ScoreData
 static
 DEC_DECL_SCORECALC(scoreCalcMaxwhite)
 {
-   SCIP_Real borderareascore = 0;
-   SCIP_Real borderareascoreversuch = 0;
+   SCIP_Real borderareascore;
 
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
 
    SCIP_Real blockareascore = partialdec->calcBlockAreaScore(scip);
-   borderareascore = partialdec->getScore(DECfindScore(scip, "border area"));
+   borderareascore = partialdec->getScore(GCGconshdlrDecompFindScore(scip, "border area"));
 
    SCIP_Real maxwhitescore = blockareascore + borderareascore - 1.;
 

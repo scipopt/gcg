@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 /** adds an entry to clsdata->constosymbol */
-SCIP_RETCODE DECconsClassifierGamssymbolAddEntry(
+SCIP_RETCODE GCGconsClassifierGamssymbolAddEntry(
    DEC_CONSCLASSIFIER*   classifier,
    SCIP_CONS*            cons,
    int                   symbolIdx

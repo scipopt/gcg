@@ -272,7 +272,6 @@ LIBOBJ = \
 			event_solvingstats.o \
 			gcgcol.o \
 			gcg_general.o \
-			gcg_score.o \
 			gcggithash.o \
 			gcgheur.o \
 			gcgsepa.o \

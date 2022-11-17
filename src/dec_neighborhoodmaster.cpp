@@ -106,9 +106,9 @@ DEC_DECL_FREEDETECTOR(freeNeighborhoodmaster)
    assert(scip != NULL);
    assert(detector != NULL);
 
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
    SCIPfreeMemory(scip, &detectordata);
@@ -131,7 +131,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecNeighborhoodmaster)
    SCIP_CLOCK* temporaryClock;
    gcg::DETPROBDATA* detprobdata;
    gcg::PARTIALDECOMP* partialdec;
-   DEC_DetectorData* detectorData = DECdetectorGetData(detector);
+   DEC_DetectorData* detectorData = GCGdetectorGetData(detector);
    std::stringstream decdesc;
    int maxdiff = -1;
    int maxdiffindex = -1;
@@ -204,7 +204,7 @@ static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveNeighborhoodmaster)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
@@ -220,7 +220,7 @@ static
 DEC_DECL_SETPARAMDEFAULT(setParamDefaultNeighborhoodmaster)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -235,7 +235,7 @@ static
 DEC_DECL_SETPARAMFAST(setParamFastNeighborhoodmaster)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -264,7 +264,7 @@ SCIP_RETCODE SCIPincludeDetectorNeighborhoodmaster(SCIP* scip /**< SCIP data str
    assert(detectordata != NULL);
 
    SCIP_CALL(
-      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
+      GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
          DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
          detectordata, freeNeighborhoodmaster, initNeighborhoodmaster,

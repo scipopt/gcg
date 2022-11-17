@@ -2996,8 +2996,8 @@ void PARTIALDECOMP::displayInfo(
       {
          /* potentially add finisher label */
          detectorrepres = (
-            getNDetectors() != 1 || !isfinishedbyfinisher ? DECdetectorGetName(detectorchain[0]) :
-               "(finish) " + std::string(DECdetectorGetName(detectorchain[0])));
+            getNDetectors() != 1 || !isfinishedbyfinisher ? GCGdetectorGetName(detectorchain[0]) :
+               "(finish) " + std::string(GCGdetectorGetName(detectorchain[0])));
       }
 
       if( detailLevel > 0 )
@@ -3015,8 +3015,8 @@ void PARTIALDECOMP::displayInfo(
       {
          /* potentially add finisher label */
          detectorrepres = (
-            getNDetectors() != d + 1 || !isfinishedbyfinisher ? DECdetectorGetName(detectorchain[d]) :
-               "(finish) " + std::string(DECdetectorGetName(detectorchain[d])));
+            getNDetectors() != d + 1 || !isfinishedbyfinisher ? GCGdetectorGetName(detectorchain[d]) :
+               "(finish) " + std::string(GCGdetectorGetName(detectorchain[d])));
 
 
          if( detailLevel > 0 )
@@ -5495,7 +5495,7 @@ void PARTIALDECOMP::buildDecChainString(
       if( d == 0 && this->getDetectorchain()[d] == NULL )
          continue;
       char str[2] = "\0"; /* gives {\0, \0} */
-      str[0] = DECdetectorGetChar( this->getDetectorchain()[d] );
+      str[0] = GCGdetectorGetChar( this->getDetectorchain()[d] );
       (void) strncat( buffer, str, 1 );
    }
 }
@@ -5503,7 +5503,7 @@ void PARTIALDECOMP::buildDecChainString(
 
 SCIP_Real PARTIALDECOMP::getMaxWhiteScore()
 {
-   DEC_SCORE* score = DECfindScore(this->scip, "max white");
+   DEC_SCORE* score = GCGconshdlrDecompFindScore(this->scip, "max white");
    assert(score != NULL);
    return getScore(score);
 }

@@ -82,7 +82,6 @@ set(gcgsources
     event_solvingstats.c
     gcgcol.c
     gcg_general.c
-    gcg_score.c
     gcggithash.c
     gcgheur.c
     gcgsepa.c
@@ -229,7 +228,6 @@ set(gcgheaders
     gcg.h
     gcgcol.h
     gcg_general.h
-    gcg_score.h
     gcggithash.h
     gcgplugins.h
     gcgpqueue.h

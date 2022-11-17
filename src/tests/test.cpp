@@ -88,7 +88,7 @@ class GcgResultTest : public ::testing::Test {
 
      SCIP_CALL_ABORT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
      SCIP_CALL_ABORT( SCIPpresolve(scip) );
-     SCIP_CALL_ABORT( DECdetectStructure(scip, &result) );
+     SCIP_CALL_ABORT( GCGdetectStructure(scip, &result) );
      SCIP_CALL_ABORT( SCIPsolve(scip) );
 
   }
@@ -131,7 +131,7 @@ TEST_F(GcgTest, emptyProblem) {
 }
 TEST_F(GcgTest, detectEmptyProblem) {
    SCIP_RESULT result;
-   ASSERT_EQ(SCIP_OKAY, DECdetectStructure(scip, &result));
+   ASSERT_EQ(SCIP_OKAY, GCGdetectStructure(scip, &result));
    ASSERT_EQ(SCIP_DIDNOTRUN, result);
 }
 
@@ -178,7 +178,7 @@ TEST_F(GcgLibTest, FreeTransformTest) {
     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
-   SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
+   SCIP_CALL_EXPECT( GCGdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
    ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
 
@@ -187,7 +187,7 @@ TEST_F(GcgLibTest, FreeTransformTest) {
    ASSERT_EQ(SCIP_STAGE_PROBLEM, SCIPgetStage(scip));
    ASSERT_EQ(0, GCGconshdlrDecompGetNDecomps(scip));
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
-   SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
+   SCIP_CALL_EXPECT( GCGdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
    ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
 
@@ -201,7 +201,7 @@ TEST_F(GcgLibTest, FreeProbTest) {
     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
-   SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
+   SCIP_CALL_EXPECT( GCGdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
    ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
 
@@ -210,7 +210,7 @@ TEST_F(GcgLibTest, FreeProbTest) {
    ASSERT_EQ(0, GCGconshdlrDecompGetNDecomps(scip));
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
-   SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
+   SCIP_CALL_EXPECT( GCGdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
    ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
 
@@ -226,7 +226,7 @@ TEST_F(GcgLibTest, FreeSolveTest) {
     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hrcgpartition/enabled", FALSE) );
     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detection/detectors/hcgpartition/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
-   SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
+   SCIP_CALL_EXPECT( GCGdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
    ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
 
@@ -275,15 +275,15 @@ TEST_F(GcgDecTest, ReadDecTest) {
 
    decomp = GCGconshdlrDecompGetDecomps(scip)[0];
    ASSERT_TRUE(decomp != NULL);
-   EXPECT_EQ(5, DECdecompGetNBlocks(decomp));
-   EXPECT_EQ(17, DECdecompGetNLinkingconss(decomp));
-   EXPECT_EQ(3, DECdecompGetNLinkingvars(decomp));
-   ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) != NULL);
+   EXPECT_EQ(5, GCGdecompFreeGetNBlocks(decomp));
+   EXPECT_EQ(17, GCGdecompGetNLinkingconss(decomp));
+   EXPECT_EQ(3, GCGdecompFreeGetNLinkingvars(decomp));
+   ASSERT_TRUE(GCGdecompFreeGetNSubscipconss(decomp) != NULL);
 
    for( i = 0; i < 5; ++i )
    {
-      EXPECT_EQ(33, DECdecompGetNSubscipconss(decomp)[i]);
-      EXPECT_EQ(25, DECdecompGetNSubscipvars(decomp)[i]);
+      EXPECT_EQ(33, GCGdecompFreeGetNSubscipconss(decomp)[i]);
+      EXPECT_EQ(25, GCGdecompGetNSubscipvars(decomp)[i]);
    }
 }
 
@@ -300,15 +300,15 @@ TEST_F(GcgDecTest, ReadBlkTest) {
 
    decomp = GCGconshdlrDecompGetDecomps(scip)[0];
    ASSERT_TRUE(decomp != NULL);
-   ASSERT_EQ(24, DECdecompGetNBlocks(decomp));
-   ASSERT_EQ(50, DECdecompGetNLinkingconss(decomp));
-   ASSERT_EQ(0, DECdecompGetNLinkingvars(decomp));
-   ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) != NULL);
+   ASSERT_EQ(24, GCGdecompFreeGetNBlocks(decomp));
+   ASSERT_EQ(50, GCGdecompGetNLinkingconss(decomp));
+   ASSERT_EQ(0, GCGdecompFreeGetNLinkingvars(decomp));
+   ASSERT_TRUE(GCGdecompFreeGetNSubscipconss(decomp) != NULL);
 
    for( i = 0; i < 24; ++i )
    {
-      ASSERT_EQ(1, DECdecompGetNSubscipconss(decomp)[i]);
-      ASSERT_EQ(51, DECdecompGetNSubscipvars(decomp)[i]);
+      ASSERT_EQ(1, GCGdecompFreeGetNSubscipconss(decomp)[i]);
+      ASSERT_EQ(51, GCGdecompGetNSubscipvars(decomp)[i]);
    }
 }
 
@@ -328,8 +328,8 @@ TEST_F(GcgDecTest, NoDecTest) {
 
    decomp = GCGconshdlrDecompGetDecomps(scip)[0];
    ASSERT_TRUE(decomp != NULL);
-   ASSERT_EQ(1, DECdecompGetNBlocks(decomp));
-   ASSERT_EQ(DECdecompGetNLinkingconss(decomp), 0 );
+   ASSERT_EQ(1, GCGdecompFreeGetNBlocks(decomp));
+   ASSERT_EQ(GCGdecompGetNLinkingconss(decomp), 0 );
 }
 
 TEST_F(GcgDecTest, WrongDecompTestBlk) {
@@ -367,21 +367,21 @@ TEST_F(GcgDecTest, MasterSpecificationTest) {
       conss[i] = cons;
    }
 
-   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp, conss, 50) );
+   SCIP_CALL_EXPECT(GCGcreateDecompFromMasterconss(scip, &decomp, conss, 50) );
 
    ASSERT_TRUE(decomp != NULL);
-   ASSERT_EQ(24, DECdecompGetNBlocks(decomp));
-   ASSERT_EQ(50, DECdecompGetNLinkingconss(decomp));
-   ASSERT_EQ(0, DECdecompGetNLinkingvars(decomp));
-   ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) != NULL);
+   ASSERT_EQ(24, GCGdecompFreeGetNBlocks(decomp));
+   ASSERT_EQ(50, GCGdecompGetNLinkingconss(decomp));
+   ASSERT_EQ(0, GCGdecompFreeGetNLinkingvars(decomp));
+   ASSERT_TRUE(GCGdecompFreeGetNSubscipconss(decomp) != NULL);
 
    for( i = 0; i < 24; ++i )
    {
-      ASSERT_EQ(1, DECdecompGetNSubscipconss(decomp)[i]);
-      ASSERT_EQ(51, DECdecompGetNSubscipvars(decomp)[i]);
+      ASSERT_EQ(1, GCGdecompFreeGetNSubscipconss(decomp)[i]);
+      ASSERT_EQ(51, GCGdecompGetNSubscipvars(decomp)[i]);
    }
 
-   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGdecompFreeFree(scip, &decomp) );
    SCIPfreeMemoryArray(scip, &conss);
 }
 
@@ -409,7 +409,7 @@ TEST_F(GcgDecTest, EqualDecTest) {
       conss[i] = cons;
    }
 
-   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp1, conss, 50) );
+   SCIP_CALL_EXPECT(GCGcreateDecompFromMasterconss(scip, &decomp1, conss, 50) );
 
    for( i = 0; i < 24; ++i )
    {
@@ -420,23 +420,23 @@ TEST_F(GcgDecTest, EqualDecTest) {
       conss[i] = cons;
    }
 
-   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp2, conss, 24) );
-   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp3, &conss[1], 1) );
-   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp4, &conss[0], 1) );
+   SCIP_CALL_EXPECT(GCGcreateDecompFromMasterconss(scip, &decomp2, conss, 24) );
+   SCIP_CALL_EXPECT(GCGcreateDecompFromMasterconss(scip, &decomp3, &conss[1], 1) );
+   SCIP_CALL_EXPECT(GCGcreateDecompFromMasterconss(scip, &decomp4, &conss[0], 1) );
 
-   ASSERT_TRUE(DECdecompositionsAreEqual(scip, decomp1, decomp1));
-   ASSERT_TRUE(DECdecompositionsAreEqual(scip, decomp2, decomp2));
-   ASSERT_FALSE(DECdecompositionsAreEqual(scip, decomp2, decomp1));
-   ASSERT_FALSE(DECdecompositionsAreEqual(scip, decomp1, decomp2));
-   ASSERT_FALSE(DECdecompositionsAreEqual(scip, decomp3, decomp4));
-   ASSERT_FALSE(DECdecompositionsAreEqual(scip, decomp1, decomp3));
+   ASSERT_TRUE(GCGdecompFreeositionsAreEqual(scip, decomp1, decomp1));
+   ASSERT_TRUE(GCGdecompFreeositionsAreEqual(scip, decomp2, decomp2));
+   ASSERT_FALSE(GCGdecompFreeositionsAreEqual(scip, decomp2, decomp1));
+   ASSERT_FALSE(GCGdecompFreeositionsAreEqual(scip, decomp1, decomp2));
+   ASSERT_FALSE(GCGdecompFreeositionsAreEqual(scip, decomp3, decomp4));
+   ASSERT_FALSE(GCGdecompFreeositionsAreEqual(scip, decomp1, decomp3));
 
    SCIPfreeMemoryArray(scip, &conss);
 
-   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp1) );
-   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp2) );
-   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp3) );
-   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp4) );
+   SCIP_CALL_EXPECT( GCGdecompFreeFree(scip, &decomp1) );
+   SCIP_CALL_EXPECT( GCGdecompFreeFree(scip, &decomp2) );
+   SCIP_CALL_EXPECT( GCGdecompFreeFree(scip, &decomp3) );
+   SCIP_CALL_EXPECT( GCGdecompFreeFree(scip, &decomp4) );
 }
 
 TEST_F(GcgDecTest, FilterDecTest) {
@@ -463,7 +463,7 @@ TEST_F(GcgDecTest, FilterDecTest) {
       conss[i] = cons;
    }
 
-   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp1, conss, 50) );
+   SCIP_CALL_EXPECT(GCGcreateDecompFromMasterconss(scip, &decomp1, conss, 50) );
 
    for( i = 0; i < 24; ++i )
    {
@@ -474,32 +474,32 @@ TEST_F(GcgDecTest, FilterDecTest) {
       conss[i] = cons;
    }
 
-   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp2, conss, 24) );
-   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp3, &conss[1], 1) );
-   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp4, &conss[0], 1) );
+   SCIP_CALL_EXPECT(GCGcreateDecompFromMasterconss(scip, &decomp2, conss, 24) );
+   SCIP_CALL_EXPECT(GCGcreateDecompFromMasterconss(scip, &decomp3, &conss[1], 1) );
+   SCIP_CALL_EXPECT(GCGcreateDecompFromMasterconss(scip, &decomp4, &conss[0], 1) );
 
    DEC_DECOMP* decomps[5] = {decomp1, decomp2, decomp1, decomp3, decomp4};
 
-   ASSERT_EQ(1, DECfilterSimilarDecompositions(scip, decomps, 1) );
+   ASSERT_EQ(1, GCGfilterSimilarDecompositions(scip, decomps, 1) );
    ASSERT_EQ(decomp1, decomps[0]);
-   ASSERT_EQ(2, DECfilterSimilarDecompositions(scip, decomps, 2) );
+   ASSERT_EQ(2, GCGfilterSimilarDecompositions(scip, decomps, 2) );
    ASSERT_EQ(decomp2, decomps[1]);
-   ASSERT_EQ(2, DECfilterSimilarDecompositions(scip, decomps, 3) );
+   ASSERT_EQ(2, GCGfilterSimilarDecompositions(scip, decomps, 3) );
    ASSERT_EQ(decomp1, decomps[2]);
-   ASSERT_EQ(3, DECfilterSimilarDecompositions(scip, decomps, 4) );
+   ASSERT_EQ(3, GCGfilterSimilarDecompositions(scip, decomps, 4) );
    ASSERT_EQ(decomp3, decomps[2]);
    ASSERT_EQ(decomp1, decomps[3]);
-   ASSERT_EQ(4, DECfilterSimilarDecompositions(scip, decomps, 5) );
+   ASSERT_EQ(4, GCGfilterSimilarDecompositions(scip, decomps, 5) );
    ASSERT_EQ(decomp3, decomps[2]);
    ASSERT_EQ(decomp4, decomps[3]);
    ASSERT_EQ(decomp1, decomps[4]);
 
    SCIPfreeMemoryArray(scip, &conss);
 
-   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp1) );
-   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp2) );
-   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp3) );
-   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp4) );
+   SCIP_CALL_EXPECT( GCGdecompFreeFree(scip, &decomp1) );
+   SCIP_CALL_EXPECT( GCGdecompFreeFree(scip, &decomp2) );
+   SCIP_CALL_EXPECT( GCGdecompFreeFree(scip, &decomp3) );
+   SCIP_CALL_EXPECT( GCGdecompFreeFree(scip, &decomp4) );
 }
 
 class GcgMultProbsTest : public ::testing::Test {
@@ -532,7 +532,7 @@ TEST_F(GcgMultProbsTest, FreeTransformTest) {
 
    SCIP_CALL_EXPECT( SCIPreadProb(scipone, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
    SCIP_CALL_EXPECT( SCIPpresolve(scipone) );
-   SCIP_CALL_EXPECT( DECdetectStructure(scipone, &result) );
+   SCIP_CALL_EXPECT( GCGdetectStructure(scipone, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scipone) );
 }
 

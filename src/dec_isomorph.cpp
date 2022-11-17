@@ -809,9 +809,9 @@ DEC_DECL_FREEDETECTOR(detectorFreeIsomorph)
    assert(scip != NULL);
    assert(detector != NULL);
 
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
    SCIPfreeMemory(scip, &detectordata);
@@ -828,9 +828,9 @@ DEC_DECL_INITDETECTOR(detectorInitIsomorph)
    assert(scip != NULL);
    assert(detector != NULL);
 
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
    detectordata->result = SCIP_SUCCESS;
@@ -1205,7 +1205,7 @@ SCIP_RETCODE detectIsomorph(
 DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecIsomorph)
 {
    *result = SCIP_DIDNOTFIND;
-   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+   DEC_DETECTORDATA* detectordata = GCGdetectorGetData(detector);
    gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec ;
 
    partialdecdetectiondata->nnewpartialdecs = 0;
@@ -1240,7 +1240,7 @@ static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
    int newval;
    SCIP_Real modifier;
 
@@ -1309,7 +1309,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultIsomorph)
    int newval;
    SCIP_Real modifier;
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -1363,7 +1363,7 @@ DEC_DECL_SETPARAMFAST(setParamFastIsomorph)
    char setstr[SCIP_MAXSTRLEN];
    int newval;
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -1423,7 +1423,7 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 
 
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
       detectordata, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagatePartialdecIsomorph, detectorFinishPartialdecIsomorph, detectorPostprocessPartialdecIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
 
    /* add isomorph constraint handler parameters */

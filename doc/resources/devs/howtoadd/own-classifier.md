@@ -64,7 +64,7 @@ which also appears in `clscons_myclassifier.h`/`clsvar_myclassifier.h`.
 \n
 This method has to be adjusted only slightly.
 It is responsible for notifying GCG (and especially cons_decomp.c) of the presence of the classifier by calling the method
-`DECincludeConsClassifier()`/`DECincludeVarClassifier()`.
+`GCGincludeConsClassifier()`/`GCGincludeVarClassifier()`.
 `SCIPincludeConsClassifierXyz()`/`SCIPincludeVarClassifierXyz()` is called by the user to include the classifier,
 i.e., to use the classifier in the application (see 3.1.1. at the top of the page).
 

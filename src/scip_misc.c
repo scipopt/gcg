@@ -299,7 +299,6 @@ SCIP_Real GCGconsGetLhs(
 }
 
 /** returns the dual farkas sol of an arbitrary SCIP constraint */
-extern
 SCIP_Real GCGconsGetDualfarkas(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
@@ -364,7 +363,6 @@ SCIP_Real GCGconsGetDualfarkas(
 }
 
 /** returns the dual sol of an arbitrary SCIP constraint */
-extern
 SCIP_Real GCGconsGetDualsol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */

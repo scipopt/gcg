@@ -38,6 +38,7 @@
 #include "type_decomp.h"
 #include "type_detector.h"
 #include "scip/scip.h"
+#include "gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,8 +48,8 @@ extern "C" {
  * 
  * @note make sure you know what you are doing, only use at initialization
 */
-extern
-SCIP_RETCODE DECdecompSetDetectorChain(
+GCG_EXPORT
+SCIP_RETCODE GCGdecompFreeSetDetectorChain(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
    DEC_DETECTOR**        detectors,          /**< new detector chain */
@@ -56,8 +57,8 @@ SCIP_RETCODE DECdecompSetDetectorChain(
    );
 
 /** sets the id of the original partialdec */
-extern
-void DECdecompSetPartialdecID(
+GCG_EXPORT
+void GCGdecompFreeSetPartialdecID(
    DEC_DECOMP*           decomp,              /**< decomposition data structure */
    int                   id                   /**< ID of partialdec */
    );
