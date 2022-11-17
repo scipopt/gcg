@@ -46,11 +46,11 @@ extern "C" {
 
 /** adds an entry to clsdata->constodomain */
 SCIP_RETCODE GCGconsClassifierGamsdomainAddEntry(
-   DEC_CONSCLASSIFIER*   classifier,
+   GCG_CONSCLASSIFIER*   classifier,
    SCIP_CONS*            cons,
    int                   symDomIdx[],
    int*                  symDim
-);
+   );
 
 /** creates the gamsdomain classifier and includes it in SCIP */
 GCG_EXPORT

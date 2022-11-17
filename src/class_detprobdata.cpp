@@ -1215,7 +1215,7 @@ void DETPROBDATA::printPartitionInformation(
  void DETPROBDATA::sortFinishedForScore()
 {
    /* get scoretype once, no need to call it twice for every comparison */
-   DEC_SCORE* score = GCGgetCurrentScore(scip);
+   GCG_SCORE* score = GCGgetCurrentScore(scip);
    
    /* sort by score in descending order */
    std::sort(finishedpartialdecs.begin(), finishedpartialdecs.end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(score) > b->getScore(score)); });

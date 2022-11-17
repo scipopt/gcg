@@ -59,9 +59,9 @@ SCIP_RETCODE GCGincludeScore(
    const char*           name,               /**< name of score */
    const char*           shortname,          /**< shortname of score */
    const char*           description,        /**< description of score */
-   DEC_SCOREDATA*        scoredata,          /**< score data */
-   DEC_DECL_SCOREFREE    ((*scorefree)),     /**< destructor of score */
-   DEC_DECL_SCORECALC    ((*scorecalc))      /**< score calculation method of score */
+   GCG_SCOREDATA*        scoredata,          /**< score data */
+   GCG_DECL_SCOREFREE    ((*scorefree)),     /**< destructor of score */
+   GCG_DECL_SCORECALC    ((*scorecalc))      /**< score calculation method of score */
    );
 
 /**
@@ -69,7 +69,7 @@ SCIP_RETCODE GCGincludeScore(
  * @returns score pointer or NULL if score with given name is not found
  */
 GCG_EXPORT
-DEC_SCORE* GCGfindScore(
+GCG_SCORE* GCGfindScore(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           name                /**< name of score */
    );
@@ -79,14 +79,14 @@ DEC_SCORE* GCGfindScore(
  * @returns score pointer or NULL if score with given shortname is not found
  */
 GCG_EXPORT
-DEC_SCORE* GCGfindScoreByShortname(
+GCG_SCORE* GCGfindScoreByShortname(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           shortname           /**< shortname of score */
    );
 
 /** returns the array of currently available scores */
 GCG_EXPORT
-DEC_SCORE** GCGgetScores(
+GCG_SCORE** GCGgetScores(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
@@ -98,33 +98,33 @@ int GCGgetNScores(
 
 /** gets user data of score */
 GCG_EXPORT
-DEC_SCOREDATA* GCGscoreGetData(
-   DEC_SCORE*            score               /**< score */
+GCG_SCOREDATA* GCGscoreGetData(
+   GCG_SCORE*            score               /**< score */
    );
 
 /** sets user data of score; user has to free old data in advance! */
 GCG_EXPORT
 void GCGscoreSetData(
-   DEC_SCORE*            score,              /**< score */
-   DEC_SCOREDATA*        scoredata           /**< new score user data */
+   GCG_SCORE*            score,              /**< score */
+   GCG_SCOREDATA*        scoredata           /**< new score user data */
    );
 
 /** gets name of score */
 GCG_EXPORT
 const char* GCGscoreGetName(
-   DEC_SCORE*            score               /**< score */
+   GCG_SCORE*            score               /**< score */
    );
 
 /** gets shortname of score */
 GCG_EXPORT
 const char* GCGscoreGetShortname(
-   DEC_SCORE*            score               /**< score */
+   GCG_SCORE*            score               /**< score */
    );
 
 /** gets description of score */
 GCG_EXPORT
 const char* GCGscoreGetDesc(
-   DEC_SCORE*            score               /**< score */
+   GCG_SCORE*            score               /**< score */
    );
 
 /** @} */

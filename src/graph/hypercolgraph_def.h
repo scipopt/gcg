@@ -72,7 +72,7 @@ template <class T>
 SCIP_RETCODE HypercolGraph<T>::writeToFile(
    int                fd,                    /**< filename where the graph should be written to */
    SCIP_Bool          edgeweights            /**< whether to write edgeweights */
- )
+   )
 {
    function f(this->nvars);
    FILE* file;
@@ -224,8 +224,8 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
 
 template <class T>
 SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
-      DETPROBDATA*        detprobdata,
-      PARTIALDECOMP*            partialdec
+   DETPROBDATA*        detprobdata,
+   PARTIALDECOMP*            partialdec
    )
 {
    int i;
@@ -314,7 +314,7 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
 
 template <class T>
 SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
-   DEC_DECOMP**          decomp           /**< decomposition structure to generate */
+   GCG_DECOMP**          decomp           /**< decomposition structure to generate */
    )
 {
    SCIP_HASHMAP* constoblock;

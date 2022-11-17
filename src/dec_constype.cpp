@@ -68,7 +68,7 @@
 /** @todo fill in the necessary detector data */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
 };
 
@@ -111,7 +111,7 @@ std::vector< std::vector<int> > getSubsets(std::vector<int> set)
 /** detection initialization function of detector (called before solving is about to begin) */
 #define initConstype NULL
 
-static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
+static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
@@ -209,7 +209,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
 #define finishPartialdecConstype NULL
 #define detectorPostprocessPartialdecConstype NULL
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConstype)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConstype)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
@@ -225,7 +225,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConstype)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultConstype)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultConstype)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
@@ -240,7 +240,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultConstype)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastConstype)
+GCG_DECL_SETPARAMFAST(setParamFastConstype)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -266,15 +266,15 @@ DEC_DECL_SETPARAMFAST(setParamFastConstype)
 SCIP_RETCODE SCIPincludeDetectorConstype(SCIP* scip /**< SCIP data structure */
 )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    /**@todo create constype detector data here*/
    detectordata = NULL;
 
    SCIP_CALL(
       GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
-         freeConstype, initConstype, exitConstype, propagatePartialdecConstype, finishPartialdecConstype, detectorPostprocessPartialdecConstype, setParamAggressiveConstype, setParamDefaultConstype, setParamFastConstype));
+                         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
+                         freeConstype, initConstype, exitConstype, propagatePartialdecConstype, finishPartialdecConstype, detectorPostprocessPartialdecConstype, setParamAggressiveConstype, setParamDefaultConstype, setParamFastConstype));
 
    /**@todo add constype detector parameters */
 

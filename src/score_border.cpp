@@ -48,7 +48,7 @@
 /*
  * Data structures
  */
-struct DEC_ScoreData
+struct GCG_ScoreData
 {
 };
 
@@ -70,7 +70,7 @@ struct DEC_ScoreData
 #define scoreFreeBorder NULL
 
 static
-DEC_DECL_SCORECALC(scoreCalcBorder)
+GCG_DECL_SCORECALC(scoreCalcBorder)
 {
    unsigned long matrixarea;
    unsigned long borderarea;
@@ -98,9 +98,9 @@ DEC_DECL_SCORECALC(scoreCalcBorder)
 /** creates the border score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreBorder(
    SCIP*                 scip                /**< SCIP data structure */
-)
+   )
 {
-   DEC_SCOREDATA* scoredata = NULL;
+   GCG_SCOREDATA* scoredata = NULL;
 
    SCIP_CALL( 
       GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata, 

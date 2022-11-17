@@ -61,8 +61,8 @@ ColumnGraph<T>::~ColumnGraph()
 
 template <class T>
 SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
-   DEC_DECOMP**         decomp
-)
+   GCG_DECOMP**         decomp
+   )
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;

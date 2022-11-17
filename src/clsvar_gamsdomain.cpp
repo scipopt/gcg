@@ -48,11 +48,11 @@
 #include "scip_misc.h"
 
 /* classifier properties */
-#define DEC_CLASSIFIERNAME        "gamsdomain"              /**< name of classifier */
-#define DEC_DESC                  "domain in gams file"     /**< short description of classification */
-#define DEC_PRIORITY              0                         /**< priority of this classifier */
+#define CLSVAR_NAME                  "gamsdomain"              /**< name of classifier */
+#define CLSVAR_DESC                  "domain in gams file"     /**< short description of classification */
+#define CLSVAR_PRIORITY              0                         /**< priority of this classifier */
 
-#define DEC_ENABLED               TRUE
+#define CLSVAR_ENABLED               TRUE
 
 
 /*
@@ -60,7 +60,7 @@
  */
 
 /** classifier handler data */
-struct DEC_ClassifierData
+struct GCG_ClassifierData
 {
    std::map<std::string, std::set<int>>*      vartodomain;            /**< maps variable name to the corresponding set of domain indices */
 };
@@ -78,13 +78,13 @@ struct DEC_ClassifierData
 
 /** destructor of classifier to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEVARCLASSIFIER(classifierFree)
+GCG_DECL_FREEVARCLASSIFIER(classifierFree)
 {
    assert(scip != NULL);
 
-   DEC_CLASSIFIERDATA* classifierdata = GCGvarClassifierGetData(classifier);
+   GCG_CLASSIFIERDATA* classifierdata = GCGvarClassifierGetData(classifier);
    assert(classifierdata != NULL);
-   assert(strcmp(GCGvarClassifierGetName(classifier), DEC_CLASSIFIERNAME) == 0);
+   assert(strcmp(GCGvarClassifierGetName(classifier), CLSVAR_NAME) == 0);
 
    delete classifierdata->vartodomain;
 
@@ -94,7 +94,7 @@ DEC_DECL_FREEVARCLASSIFIER(classifierFree)
 }
 
 static
-DEC_DECL_VARCLASSIFY(classifierClassify)
+GCG_DECL_VARCLASSIFY(classifierClassify)
 {
    gcg::DETPROBDATA* detprobdata;
    if( transformed )
@@ -112,10 +112,10 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
    std::vector<int> classForVar( nvar, - 1 );          // [i] holds class index for variable i -> indexing over detection internal variable array!
    int counterClasses = 0;
 
-   DEC_VARCLASSIFIER* classifier = GCGfindVarClassifier(scip, DEC_CLASSIFIERNAME);
+   GCG_VARCLASSIFIER* classifier = GCGfindVarClassifier(scip, CLSVAR_NAME);
    assert(classifier != NULL);
 
-   DEC_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
+   GCG_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
    assert(classdata != NULL);
 
    /* firstly, assign all variables to classindices */
@@ -200,14 +200,14 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
 
 /** adds an entry to clsdata->vartodomain */
 SCIP_RETCODE GCGvarClassifierGamsdomainAddEntry(
-   DEC_VARCLASSIFIER*   classifier,
+   GCG_VARCLASSIFIER*   classifier,
    SCIP_VAR*            var,
    int                  symDomIdx[],
    int*                 symDim
-)
+   )
 {
    assert(classifier != NULL);
-   DEC_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
+   GCG_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
    assert(classdata != NULL);
 
    std::string varname = SCIPvarGetName( var );
@@ -228,15 +228,15 @@ SCIP_RETCODE GCGvarClassifierGamsdomainAddEntry(
 /** creates the handler for gamsdomain classifier and includes it in SCIP */
 SCIP_RETCODE SCIPincludeVarClassifierGamsdomain(
    SCIP*                 scip                /**< SCIP data structure */
-)
+   )
 {
-   DEC_CLASSIFIERDATA* classifierdata = NULL;
+   GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
    assert(classifierdata != NULL);
    classifierdata->vartodomain = new std::map<std::string, std::set<int>>();
 
-   SCIP_CALL( GCGincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeVarClassifier(scip, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

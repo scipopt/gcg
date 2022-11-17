@@ -40,17 +40,17 @@
 
 
 /** detector data structure */
-struct DEC_VarClassifier {
+struct GCG_VarClassifier {
    const char*           name;               /**< name of the detector */
    const char*           description;        /**< description of the detector */
    int                   priority;           /**< classifier priority */
 
    SCIP_Bool             enabled;            /* is enabled by default */
 
-   DEC_CLASSIFIERDATA*   clsdata;            /**< custom data structure of the classifiers */
+   GCG_CLASSIFIERDATA*   clsdata;            /**< custom data structure of the classifiers */
 
-   DEC_DECL_FREEVARCLASSIFIER((*freeClassifier));                  /**< destructor of detector */
-   DEC_DECL_VARCLASSIFY((*classify));            /**< structure detection method of detector */
+   GCG_DECL_FREEVARCLASSIFIER((*freeClassifier));                  /**< destructor of detector */
+   GCG_DECL_VARCLASSIFY((*classify));            /**< structure detection method of detector */
 };
 
 

@@ -46,11 +46,11 @@ ould have received a copy of the GNU Lesser General Public License  */
 #include "scip_misc.h"
 
 /* classifier properties */
-#define DEC_CLASSIFIERNAME        "scipconstype"       /**< name of classifier */
-#define DEC_DESC                  "scip constypes"     /**< short description of classification*/
-#define DEC_PRIORITY              0
+#define CLSCONS_NAME                  "scipconstype"       /**< name of classifier */
+#define CLSCONS_DESC                  "scip constypes"     /**< short description of classification*/
+#define CLSCONS_PRIORITY              0
 
-#define DEC_ENABLED               TRUE
+#define CLSCONS_ENABLED               TRUE
 
 
 /*
@@ -58,7 +58,7 @@ ould have received a copy of the GNU Lesser General Public License  */
  */
 
 /** classifier handler data */
-struct DEC_ClassifierData
+struct GCG_ClassifierData
 {
 };
 
@@ -78,7 +78,7 @@ struct DEC_ClassifierData
 #define classifierFree NULL
 
 static
-DEC_DECL_CONSCLASSIFY(classifierClassify) {
+GCG_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA *detprobdata;
    if( transformed )
    {
@@ -187,12 +187,13 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
 /** creates the handler for XYZ classifier and includes it in SCIP */
 SCIP_RETCODE SCIPincludeConsClassifierScipConstypes(
    SCIP *scip                /**< SCIP data structure */
-) {
-   DEC_CLASSIFIERDATA* classifierdata = NULL;
+   )
+{
+   GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL(
-      GCGincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata,
-         classifierFree, classifierClassify));
+      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
+                               classifierFree, classifierClassify));
 
    return SCIP_OKAY;
 }

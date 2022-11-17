@@ -70,7 +70,7 @@
 /** @todo fill in the necessary detector data */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
    SCIP_Bool useconssadj;
 };
@@ -90,9 +90,9 @@ struct DEC_DetectorData
 /** destructor of detector to free user data (called when GCG is exiting) */
 /** destructor of detector to free detector data (called when SCIP is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freePostprocess)
+GCG_DECL_FREEDETECTOR(freePostprocess)
 {  /*lint --e{715}*/
-   DEC_DETECTORDATA *detectordata;
+   GCG_DETECTORDATA *detectordata;
 
    assert(scip != NULL);
    assert(detector != NULL);
@@ -120,7 +120,7 @@ DEC_DECL_FREEDETECTOR(freePostprocess)
 #define finishPartialdecPostprocess NULL
 
 static
-DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
+GCG_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
 {
    *result = SCIP_DIDNOTFIND;
 
@@ -240,7 +240,7 @@ DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
 
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressivePostprocess)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressivePostprocess)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -262,7 +262,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressivePostprocess)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultPostprocess)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultPostprocess)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -283,7 +283,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultPostprocess)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastPostprocess)
+GCG_DECL_SETPARAMFAST(setParamFastPostprocess)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -314,7 +314,7 @@ SCIP_RETCODE SCIPincludeDetectorPostprocess(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    /**@todo create postprocess detector data here*/
    detectordata = NULL;
@@ -324,8 +324,8 @@ SCIP_RETCODE SCIPincludeDetectorPostprocess(
    detectordata->useconssadj = TRUE;
 
    SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freePostprocess,
-      initPostprocess, exitPostprocess, propagatePartialdecPostprocess, finishPartialdecPostprocess,
-      postprocessPartialdecPostprocess, setParamAggressivePostprocess, setParamDefaultPostprocess, setParamFastPostprocess) );
+                                 initPostprocess, exitPostprocess, propagatePartialdecPostprocess, finishPartialdecPostprocess,
+                                 postprocessPartialdecPostprocess, setParamAggressivePostprocess, setParamDefaultPostprocess, setParamFastPostprocess) );
 
    /* add consname detector parameters */
       /**@todo add postprocess detector parameters */

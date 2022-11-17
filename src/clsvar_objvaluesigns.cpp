@@ -45,11 +45,11 @@
 #include "scip_misc.h"
 
 /* classifier properties */
-#define DEC_CLASSIFIERNAME        "objectivevaluesigns"       /**< name of classifier */
-#define DEC_DESC                  "objective function value signs"     /**< short description of classification*/
-#define DEC_PRIORITY              0
+#define CLSVAR_NAME        "objectivevaluesigns"       /**< name of classifier */
+#define CLSVAR_DESC                  "objective function value signs"     /**< short description of classification*/
+#define CLSVAR_PRIORITY              0
 
-#define DEC_ENABLED               TRUE
+#define CLSVAR_ENABLED               TRUE
 
 
 /*
@@ -57,7 +57,7 @@
  */
 
 /** classifier handler data */
-struct DEC_ClassifierData
+struct GCG_ClassifierData
 {
 };
 
@@ -77,7 +77,7 @@ struct DEC_ClassifierData
 #define classifierFree NULL
 
 static
-DEC_DECL_VARCLASSIFY(classifierClassify)
+GCG_DECL_VARCLASSIFY(classifierClassify)
 {
    gcg::DETPROBDATA* detprobdata;
    if( transformed )
@@ -140,11 +140,11 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
 
 SCIP_RETCODE SCIPincludeVarClassifierObjValueSigns(
    SCIP*                 scip                /**< SCIP data structure */
-)
+   )
 {
-   DEC_CLASSIFIERDATA* classifierdata = NULL;
+   GCG_CLASSIFIERDATA* classifierdata = NULL;
 
-   SCIP_CALL( GCGincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeVarClassifier(scip, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

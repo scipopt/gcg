@@ -266,7 +266,7 @@ SCIP* GcgDecTest::scip = NULL;
 
 TEST_F(GcgDecTest, ReadDecTest) {
    SCIP_RESULT result;
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    int i;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/miplib/noswot.mps", "mps") );
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/miplib/noswot.dec", "dec") );
@@ -289,7 +289,7 @@ TEST_F(GcgDecTest, ReadDecTest) {
 
 TEST_F(GcgDecTest, ReadBlkTest) {
    SCIP_RESULT result;
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    int i;
 
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
@@ -313,7 +313,7 @@ TEST_F(GcgDecTest, ReadBlkTest) {
 }
 
 TEST_F(GcgDecTest, NoDecTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
 
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "lib/scip/check/instances/MIP/bell5.mps", "mps") );
    ASSERT_EQ(0, GCGconshdlrDecompGetNDecomps(scip));
@@ -349,7 +349,7 @@ TEST_F(GcgDecTest, WrongDecompTestDec) {
 
 TEST_F(GcgDecTest, MasterSpecificationTest) {
    SCIP_CONS** conss = NULL;
-   DEC_DECOMP* decomp = NULL;
+   GCG_DECOMP* decomp = NULL;
    int i = 0;
    char name[SCIP_MAXSTRLEN];
 
@@ -387,10 +387,10 @@ TEST_F(GcgDecTest, MasterSpecificationTest) {
 
 TEST_F(GcgDecTest, EqualDecTest) {
    SCIP_CONS** conss = NULL;
-   DEC_DECOMP* decomp1 = NULL;
-   DEC_DECOMP* decomp2 = NULL;
-   DEC_DECOMP* decomp3 = NULL;
-   DEC_DECOMP* decomp4 = NULL;
+   GCG_DECOMP* decomp1 = NULL;
+   GCG_DECOMP* decomp2 = NULL;
+   GCG_DECOMP* decomp3 = NULL;
+   GCG_DECOMP* decomp4 = NULL;
 
    int i = 0;
    char name[SCIP_MAXSTRLEN];
@@ -441,10 +441,10 @@ TEST_F(GcgDecTest, EqualDecTest) {
 
 TEST_F(GcgDecTest, FilterDecTest) {
    SCIP_CONS** conss = NULL;
-   DEC_DECOMP* decomp1 = NULL;
-   DEC_DECOMP* decomp2 = NULL;
-   DEC_DECOMP* decomp3 = NULL;
-   DEC_DECOMP* decomp4 = NULL;
+   GCG_DECOMP* decomp1 = NULL;
+   GCG_DECOMP* decomp2 = NULL;
+   GCG_DECOMP* decomp3 = NULL;
+   GCG_DECOMP* decomp4 = NULL;
 
    int i = 0;
    char name[SCIP_MAXSTRLEN];
@@ -478,7 +478,7 @@ TEST_F(GcgDecTest, FilterDecTest) {
    SCIP_CALL_EXPECT(GCGcreateDecompFromMasterconss(scip, &decomp3, &conss[1], 1) );
    SCIP_CALL_EXPECT(GCGcreateDecompFromMasterconss(scip, &decomp4, &conss[0], 1) );
 
-   DEC_DECOMP* decomps[5] = {decomp1, decomp2, decomp1, decomp3, decomp4};
+   GCG_DECOMP* decomps[5] = {decomp1, decomp2, decomp1, decomp3, decomp4};
 
    ASSERT_EQ(1, GCGfilterSimilarDecompositions(scip, decomps, 1) );
    ASSERT_EQ(decomp1, decomps[0]);

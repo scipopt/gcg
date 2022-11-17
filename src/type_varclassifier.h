@@ -40,7 +40,7 @@
 #include "scip/type_result.h"
 #include "type_classifier.h"
 
-typedef struct DEC_VarClassifier DEC_VARCLASSIFIER;
+typedef struct GCG_VarClassifier GCG_VARCLASSIFIER;
 
 /** destructor of classifier to free classifier data (called when GCG is exiting)
  *
@@ -48,7 +48,7 @@ typedef struct DEC_VarClassifier DEC_VARCLASSIFIER;
  *  - scip            : SCIP main data structure
  *  - classifier      : classifier data structure
  */
-#define DEC_DECL_FREEVARCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, DEC_VARCLASSIFIER* classifier)
+#define GCG_DECL_FREEVARCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, GCG_VARCLASSIFIER* classifier)
 
 /**
  * Tries to classify variables with data of the according detprobdata and store the classification in the detprobdata
@@ -58,6 +58,6 @@ typedef struct DEC_VarClassifier DEC_VARCLASSIFIER;
  *  - classifier           : classifier data structure
  *  - transformed          : should use data from transformed detprobdata or not
  */
-#define DEC_DECL_VARCLASSIFY(x) SCIP_RETCODE x (SCIP* scip, DEC_VARCLASSIFIER* varclassifier, SCIP_Bool transformed)
+#define GCG_DECL_VARCLASSIFY(x) SCIP_RETCODE x (SCIP* scip, GCG_VARCLASSIFIER* varclassifier, SCIP_Bool transformed)
 
 #endif //GCG_TYPE_VARCLASSIFIER_H__

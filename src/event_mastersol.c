@@ -143,9 +143,9 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
     */
    if( SCIPgetStage(scip) > SCIP_STAGE_TRANSFORMED && SCIPgetStage(masterprob) > SCIP_STAGE_TRANSFORMED &&
       SCIPgetStage(masterprob) < SCIP_STAGE_SOLVED &&
-      !GCGeventhdlrRelaxsolIsTriggered(scip, masterprob) &&
-      (SCIPsolGetHeur(sol) != NULL || discretization) &&  /* @todo: This check is possibly not needed anymore */
-      GCGgetDecompositionMode(scip) != DEC_DECMODE_BENDERS && GCGgetDecompositionMode(scip) != DEC_DECMODE_ORIGINAL )
+       !GCGeventhdlrRelaxsolIsTriggered(scip, masterprob) &&
+       (SCIPsolGetHeur(sol) != NULL || discretization) &&  /* @todo: This check is possibly not needed anymore */
+      GCGgetDecompositionMode(scip) != GCG_DECMODE_BENDERS && GCGgetDecompositionMode(scip) != GCG_DECMODE_ORIGINAL )
    {
       SCIPdebugMessage("Original feasible solution found by <%s> -- transferring to master problem\n",
          SCIPsolGetHeur(sol) == NULL ? "relaxation" : SCIPheurGetName(SCIPsolGetHeur(sol)));

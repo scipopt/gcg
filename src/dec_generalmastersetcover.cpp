@@ -75,7 +75,7 @@
 /** @todo fill in the necessary detector data */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
 };
 
@@ -98,7 +98,7 @@ struct DEC_DetectorData
 /** detection initialization function of detector (called before solving is about to begin) */
 #define initGeneralmastersetcover NULL
 
-static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetcover)
+static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetcover)
 {
    *result = SCIP_DIDNOTFIND;
 
@@ -198,7 +198,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetcover)
 #define detectorPostprocessPartialdecGeneralmastersetcover NULL
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveGeneralmastersetcover)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveGeneralmastersetcover)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
@@ -227,7 +227,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveGeneralmastersetcover)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultGeneralmastersetcover)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultGeneralmastersetcover)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -243,7 +243,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultGeneralmastersetcover)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastGeneralmastersetcover)
+GCG_DECL_SETPARAMFAST(setParamFastGeneralmastersetcover)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -268,16 +268,16 @@ DEC_DECL_SETPARAMFAST(setParamFastGeneralmastersetcover)
 SCIP_RETCODE SCIPincludeDetectorGeneralmastersetcover(SCIP* scip /**< SCIP data structure */
 )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    /**@todo create generalmastersetcover detector data here*/
    detectordata = NULL;
 
    SCIP_CALL(
       GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND,
-         DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
-         DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
-         detectordata, freeGeneralmastersetcover, initGeneralmastersetcover, exitGeneralmastersetcover, propagatePartialdecGeneralmastersetcover, finishPartialdecGeneralmastersetcover, detectorPostprocessPartialdecGeneralmastersetcover, setParamAggressiveGeneralmastersetcover, setParamDefaultGeneralmastersetcover, setParamFastGeneralmastersetcover));
+                         DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
+                         DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+                         detectordata, freeGeneralmastersetcover, initGeneralmastersetcover, exitGeneralmastersetcover, propagatePartialdecGeneralmastersetcover, finishPartialdecGeneralmastersetcover, detectorPostprocessPartialdecGeneralmastersetcover, setParamAggressiveGeneralmastersetcover, setParamDefaultGeneralmastersetcover, setParamFastGeneralmastersetcover));
 
    /**@todo add generalmastersetcover detector parameters */
 

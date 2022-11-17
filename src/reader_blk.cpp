@@ -760,7 +760,7 @@ static
 SCIP_RETCODE fillDecompStruct(
    SCIP*                 scip,               /**< SCIP data structure */
    BLKINPUT*             blkinput,           /**< blk reading data */
-   DEC_DECOMP*           decomp,             /**< DEC_DECOMP structure to fill */
+   GCG_DECOMP*           decomp,             /**< GCG_DECOMP structure to fill */
    gcg::PARTIALDECOMP*           partialdec,              /**< partialdec to fill for internal handling */
    SCIP_READERDATA*      readerdata          /**< reader data*/
    )
@@ -793,7 +793,7 @@ SCIP_RETCODE fillDecompStruct(
    GCGdecompFreeSetNBlocks(decomp, nblocks);
    GCGdecompFreeSetDetector(decomp, NULL);
 
-   SCIP_CALL( GCGdecompFreeSetType(decomp, DEC_DECTYPE_ARROWHEAD) );
+   SCIP_CALL( GCGdecompFreeSetType(decomp, GCG_DECTYPE_ARROWHEAD) );
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
@@ -920,7 +920,7 @@ SCIP_RETCODE readBLKFile(
    )
 {
    SCIP_RETCODE retcode = SCIP_ERROR;
-   DEC_DECOMP *decdecomp;
+   GCG_DECOMP *decdecomp;
    int i;
    int nconss;
    int nblocksread;

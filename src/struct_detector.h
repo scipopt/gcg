@@ -43,9 +43,9 @@
 
 
 /** detector data structure */
-struct DEC_Detector {
+struct GCG_Detector {
    const char*           name;               /**< name of the detector */
-   DEC_DETECTORDATA*     decdata;            /**< custom data structure of the detectors */
+   GCG_DETECTORDATA*     decdata;            /**< custom data structure of the detectors */
    char                  decchar;            /**< display character of detector */
    const char*           description;        /**< description of the detector */
    int                   freqCallRound;      /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
@@ -65,16 +65,16 @@ struct DEC_Detector {
    int                   ncompletedecomps;   /**< number of complete decompositions the detector has worked on (including decompositions that were finished by other detectors) */
    SCIP_Real             dectime;            /**< time the detector took to find decompositions */
 
-   DEC_DECL_FREEDETECTOR((*freeDetector));                  /**< destructor of detector */
-   DEC_DECL_INITDETECTOR((*initDetector));                  /**< initialization method of detector */
-   DEC_DECL_EXITDETECTOR((*exitDetector));                  /**< deinitialization method of detector */
-   DEC_DECL_EXITDETECTOR((*exitDetection));                 /**< deinitialization method of detector */
-   DEC_DECL_PROPAGATEPARTIALDEC((*propagatePartialdec));    /**< propagation method of detector (or NULL) */
-   DEC_DECL_FINISHPARTIALDEC((*finishPartialdec));          /**< finish method of detector (or NULL) */
-   DEC_DECL_POSTPROCESSPARTIALDEC((*postprocessPartialdec)); /**< postprocess method of detector (or NULL) */
-   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressive));      /**< set method for aggressive parameters of detector (or NULL) */
-   DEC_DECL_SETPARAMDEFAULT((*setParamDefault));            /**< set method for default parameters of detector (or NULL) */
-   DEC_DECL_SETPARAMFAST((*setParamFast));                  /**< set method for fast parameters of detector (or NULL) */
+   GCG_DECL_FREEDETECTOR((*freeDetector));                  /**< destructor of detector */
+   GCG_DECL_INITDETECTOR((*initDetector));                  /**< initialization method of detector */
+   GCG_DECL_EXITDETECTOR((*exitDetector));                  /**< deinitialization method of detector */
+   GCG_DECL_EXITDETECTOR((*exitDetection));                 /**< deinitialization method of detector */
+   GCG_DECL_PROPAGATEPARTIALDEC((*propagatePartialdec));    /**< propagation method of detector (or NULL) */
+   GCG_DECL_FINISHPARTIALDEC((*finishPartialdec));          /**< finish method of detector (or NULL) */
+   GCG_DECL_POSTPROCESSPARTIALDEC((*postprocessPartialdec)); /**< postprocess method of detector (or NULL) */
+   GCG_DECL_SETPARAMAGGRESSIVE((*setParamAggressive));      /**< set method for aggressive parameters of detector (or NULL) */
+   GCG_DECL_SETPARAMDEFAULT((*setParamDefault));            /**< set method for default parameters of detector (or NULL) */
+   GCG_DECL_SETPARAMFAST((*setParamFast));                  /**< set method for fast parameters of detector (or NULL) */
 
 
 };

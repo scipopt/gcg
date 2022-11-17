@@ -49,13 +49,13 @@ protected:
 
 public:
    RowGraph(
-         SCIP*                 scip,              /**< SCIP data structure */
-         Weights               w                  /**< weights for the given graph */
+      SCIP*                 scip,              /**< SCIP data structure */
+      Weights               w                  /**< weights for the given graph */
       );
    virtual ~RowGraph();
 
    virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      GCG_DECOMP**       decomp              /**< decomposition structure to generate */
       );
 
    /** amplifies a partialdec by dint of a graph created with open constraints and open variables of the partialdec */

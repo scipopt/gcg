@@ -64,7 +64,7 @@ struct Detprobdata_Wrapper;
  * @returns detector character */
 GCG_EXPORT
 char GCGdetectorGetChar(
-   DEC_DETECTOR*         detector            /**< pointer to detector */
+   GCG_DETECTOR*         detector            /**< pointer to detector */
    );
 
 /**
@@ -72,8 +72,8 @@ char GCGdetectorGetChar(
  * @returns data of the provided detector
  */
 GCG_EXPORT
-DEC_DETECTORDATA* GCGdetectorGetData(
-   DEC_DETECTOR* detector  /**< Detector data structure */
+GCG_DETECTORDATA* GCGdetectorGetData(
+   GCG_DETECTOR* detector  /**< Detector data structure */
    );
 
 /**
@@ -82,7 +82,7 @@ DEC_DETECTORDATA* GCGdetectorGetData(
  */
 GCG_EXPORT
 const char* GCGdetectorGetName(
-   DEC_DETECTOR* detector  /**< detector data structure */
+   GCG_DETECTOR* detector  /**< detector data structure */
    );
 
 /** @brief interface method to detect the structure including presolving
@@ -98,7 +98,7 @@ SCIP_RETCODE GCGdetectStructure(
  * @returns consclassifier pointer or NULL if consclassifier with given name is not found
  */
 GCG_EXPORT
-DEC_CONSCLASSIFIER* GCGfindConsClassifier(
+GCG_CONSCLASSIFIER* GCGfindConsClassifier(
    SCIP* scip,          /**< SCIP data structure  */
    const char* name     /**< the name of the searched consclassifier */
    );
@@ -108,7 +108,7 @@ DEC_CONSCLASSIFIER* GCGfindConsClassifier(
  * @returns varclassifier pointer or NULL if varclassifier with given name is not found
  */
 GCG_EXPORT
-DEC_VARCLASSIFIER* GCGfindVarClassifier(
+GCG_VARCLASSIFIER* GCGfindVarClassifier(
    SCIP* scip,          /**< SCIP data structure  */
    const char* name     /**< the name of the searched varclassifier */
    );
@@ -119,7 +119,7 @@ DEC_VARCLASSIFIER* GCGfindVarClassifier(
  * @returns detector pointer or NULL if detector with given name is not found
  */
 GCG_EXPORT
-DEC_DETECTOR* GCGfindDetector(
+GCG_DETECTOR* GCGfindDetector(
    SCIP* scip,          /**< SCIP data structure  */
    const char* name     /**< the name of the searched detector */
    );
@@ -128,7 +128,7 @@ DEC_DETECTOR* GCGfindDetector(
  * @brief searches for the score with the given name and returns it or NULL if score is not found
  * @returns score pointer or NULL if score with given name is not found
  */
-DEC_SCORE* GCGconshdlrDecompFindScore(
+GCG_SCORE* GCGconshdlrDecompFindScore(
    SCIP*                 scip,
    const char*           name
    );
@@ -137,17 +137,17 @@ DEC_SCORE* GCGconshdlrDecompFindScore(
  * @brief searches for the score with the given shortname and returns it or NULL if score is not found
  * @returns score pointer or NULL if score with given shortname is not found
  */
-DEC_SCORE* GCGconshdlrDecompFindScoreByShortname(
+GCG_SCORE* GCGconshdlrDecompFindScoreByShortname(
    SCIP*                 scip,
    const char*           shortname
    );
 
 /** @brief Gets the best known decomposition
  *
- * @note caller has to free returned DEC_DECOMP
+ * @note caller has to free returned GCG_DECOMP
  * @returns the decomposition if available and NULL otherwise */
 GCG_EXPORT
-DEC_DECOMP* GCGgetBestDecomp(
+GCG_DECOMP* GCGgetBestDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_Bool             printwarnings       /**< should warnings pre printed */
    );
@@ -185,9 +185,9 @@ SCIP_RETCODE GCGincludeConsClassifier(
    const char*           description,     /**< describing main idea of this classifier */
    int                   priority,        /**< priority of the classifier */
    SCIP_Bool             enabled,         /**< whether the classifier should be enabled by default */
-   DEC_CLASSIFIERDATA*   classifierdata,  /**< classifierdata the associated classifier data (or NULL) */
-   DEC_DECL_FREECONSCLASSIFIER((*freeClassifier)),  /**< destructor of classifier (or NULL) */
-   DEC_DECL_CONSCLASSIFY((*classify))               /**< the method that will classify constraints or variables (must not be NULL) */
+   GCG_CLASSIFIERDATA*   classifierdata,  /**< classifierdata the associated classifier data (or NULL) */
+   GCG_DECL_FREECONSCLASSIFIER((*freeClassifier)),  /**< destructor of classifier (or NULL) */
+   GCG_DECL_CONSCLASSIFY((*classify))               /**< the method that will classify constraints or variables (must not be NULL) */
    );
 
 /**
@@ -212,16 +212,16 @@ SCIP_RETCODE GCGincludeDetector(
    SCIP_Bool             enabledPostprocessing,   /**< whether the postprocessing should be enabled */
    SCIP_Bool             skip,                    /**< whether the detector should be skipped if others found structure */
    SCIP_Bool             usefulRecall,            /**< is it useful to call this detector on a descendant of the propagated partialdec */
-   DEC_DETECTORDATA      *detectordata,           /**< the associated detector data (or NULL) */
-   DEC_DECL_FREEDETECTOR((*freeDetector)),        /**< destructor of detector (or NULL) */
-   DEC_DECL_INITDETECTOR((*initDetector)),        /**< initialization method of detector (or NULL) */
-   DEC_DECL_EXITDETECTOR((*exitDetector)),        /**< deinitialization method of detector (or NULL) */
-   DEC_DECL_PROPAGATEPARTIALDEC((*propagatePartialdecDetector)),      /**< method to refine a partial decomposition inside detection loop (or NULL) */
-   DEC_DECL_FINISHPARTIALDEC((*finishPartialdecDetector)),            /**< method to complete a partial decomposition when called in detection loop (or NULL) */
-   DEC_DECL_POSTPROCESSPARTIALDEC((*postprocessPartialdecDetector)),  /**< method to postprocess a complete decomposition, called after detection loop (or NULL) */
-   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),        /**< method that is called if the detection emphasis setting aggressive is chosen */
-   DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),              /**< method that is called if the detection emphasis setting default is chosen */
-   DEC_DECL_SETPARAMFAST((*setParamFastDetector))                     /**< method that is called if the detection emphasis setting fast is chosen */
+   GCG_DETECTORDATA      *detectordata,           /**< the associated detector data (or NULL) */
+   GCG_DECL_FREEDETECTOR((*freeDetector)),        /**< destructor of detector (or NULL) */
+   GCG_DECL_INITDETECTOR((*initDetector)),        /**< initialization method of detector (or NULL) */
+   GCG_DECL_EXITDETECTOR((*exitDetector)),        /**< deinitialization method of detector (or NULL) */
+   GCG_DECL_PROPAGATEPARTIALDEC((*propagatePartialdecDetector)),      /**< method to refine a partial decomposition inside detection loop (or NULL) */
+   GCG_DECL_FINISHPARTIALDEC((*finishPartialdecDetector)),            /**< method to complete a partial decomposition when called in detection loop (or NULL) */
+   GCG_DECL_POSTPROCESSPARTIALDEC((*postprocessPartialdecDetector)),  /**< method to postprocess a complete decomposition, called after detection loop (or NULL) */
+   GCG_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),        /**< method that is called if the detection emphasis setting aggressive is chosen */
+   GCG_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),              /**< method that is called if the detection emphasis setting default is chosen */
+   GCG_DECL_SETPARAMFAST((*setParamFastDetector))                     /**< method that is called if the detection emphasis setting fast is chosen */
    );
 
 /**
@@ -235,9 +235,9 @@ SCIP_RETCODE GCGincludeVarClassifier(
    const char*           description,   /**< description of the classifier */
    int                   priority,      /**< priority how early classifier is invoked */
    SCIP_Bool             enabled,       /**< whether the classifier should be enabled by default */
-   DEC_CLASSIFIERDATA*   classifierdata,/**< classifierdata the associated classifier data (or NULL) */
-   DEC_DECL_FREEVARCLASSIFIER((*freeClassifier)),   /**< destructor of classifier (or NULL) */
-   DEC_DECL_VARCLASSIFY((*classify))                /**< method that will classify variables (must not be NULL) */
+   GCG_CLASSIFIERDATA*   classifierdata,/**< classifierdata the associated classifier data (or NULL) */
+   GCG_DECL_FREEVARCLASSIFIER((*freeClassifier)),   /**< destructor of classifier (or NULL) */
+   GCG_DECL_VARCLASSIFY((*classify))                /**< method that will classify variables (must not be NULL) */
    );
 
 /**
@@ -249,9 +249,9 @@ SCIP_RETCODE GCGconshdlrDecompIncludeScore(
    const char*           name,               /**< name of the score */
    const char*           shortname,          /**< shortname of the score */
    const char*           description,        /**< description of the score */
-   DEC_SCOREDATA*        scoredata,          /**< scoredata the associated score data (or NULL) */
-   DEC_DECL_SCOREFREE    ((*scorefree)),     /**< destructor of score (or NULL) */
-   DEC_DECL_SCORECALC    ((*scorecalc))      /**< method that will calculate the scorevalue (must not be NULL) */
+   GCG_SCOREDATA*        scoredata,          /**< scoredata the associated score data (or NULL) */
+   GCG_DECL_SCOREFREE    ((*scorefree)),     /**< destructor of score (or NULL) */
+   GCG_DECL_SCORECALC    ((*scorecalc))      /**< method that will calculate the scorevalue (must not be NULL) */
    );
 
 /** @brief writes out a list of all detectors */
@@ -296,7 +296,7 @@ void GCGconshdlrDecompAddCandidatesNBlocks(
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompAddDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< DEC_DECOMP data structure */
+   GCG_DECOMP*           decomp,             /**< GCG_DECOMP data structure */
    SCIP_Bool             select              /**< select the decomposition as candidate */
    );
 
@@ -331,7 +331,7 @@ int GCGconshdlrDecompAddMatrixPartialdec(
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompAddPreexistingDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** @brief adds a candidate for block size given by the user */
@@ -418,7 +418,7 @@ SCIP_RETCODE GCGconshdlrDecompCreateVarmapForPartialdecId(
  */
 GCG_EXPORT
 int GCGconshdlrDecompDecreaseNCallsCreateDecomp(
-  SCIP*                 scip                /**< SCIP data structure **/
+   SCIP*                 scip                /**< SCIP data structure **/
    );
 
 /** @brief deregisters partialdecs in the conshdlr
@@ -482,7 +482,7 @@ SCIP_Real GCGconshdlrDecompGetCompleteDetectionTime(
  *  @returns decomposition array
  *   */
 GCG_EXPORT
-DEC_DECOMP** GCGconshdlrDecompGetDecomps(
+GCG_DECOMP** GCGconshdlrDecompGetDecomps(
    SCIP* scip  /**< SCIP data structure */
    );
 
@@ -490,14 +490,14 @@ DEC_DECOMP** GCGconshdlrDecompGetDecomps(
  *
  * @returns array of detectors */
 GCG_EXPORT
-DEC_DETECTOR** GCGconshdlrDecompGetDetectors(
+GCG_DETECTOR** GCGconshdlrDecompGetDetectors(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** @brief Gets an array of all scores
  *
  * @returns array of scores */
-DEC_SCORE** GCGconshdlrDecompGetScores(
+GCG_SCORE** GCGconshdlrDecompGetScores(
    SCIP* scip
    );
 
@@ -515,7 +515,7 @@ char* GCGgetCurrentScoreShortname(
  * @returns the currently enabled score
  */
 GCG_EXPORT
-DEC_SCORE* GCGgetCurrentScore(
+GCG_SCORE* GCGgetCurrentScore(
    SCIP*                 scip
    );
 
@@ -523,7 +523,7 @@ DEC_SCORE* GCGgetCurrentScore(
  *
  * @returns array of constraint classifier */
 GCG_EXPORT
-DEC_CONSCLASSIFIER** GCGconshdlrDecompGetConsClassifiers(
+GCG_CONSCLASSIFIER** GCGconshdlrDecompGetConsClassifiers(
    SCIP* scip  /**< SCIP data structure */
    );
 
@@ -531,7 +531,7 @@ DEC_CONSCLASSIFIER** GCGconshdlrDecompGetConsClassifiers(
  *
  * @returns array of variable classifier */
 GCG_EXPORT
-DEC_VARCLASSIFIER** GCGconshdlrDecompGetVarClassifiers(
+GCG_VARCLASSIFIER** GCGconshdlrDecompGetVarClassifiers(
    SCIP* scip
    );
 
@@ -595,7 +595,7 @@ int GCGconshdlrDecompGetNDetectors(
 /** @brief Gets the number of all scores
  * @returns number of scores */
 int GCGconshdlrDecompGetNScores(
-      SCIP* scip  /**< SCIP data structure */
+   SCIP* scip  /**< SCIP data structure */
    );
 
 /** @brief Gets the number of all constraint classifiers

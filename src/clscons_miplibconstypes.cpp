@@ -45,11 +45,11 @@
 #include "scip_misc.h"
 
 /* classifier properties */
-#define DEC_CLASSIFIERNAME        "miplibconstype"       /**< name of classifier */
-#define DEC_DESC                  "miplib constypes"     /**< short description of classification*/
-#define DEC_PRIORITY              0
+#define CLSCONS_NAME                  "miplibconstype"       /**< name of classifier */
+#define CLSCONS_DESC                  "miplib constypes"     /**< short description of classification*/
+#define CLSCONS_PRIORITY              0
 
-#define DEC_ENABLED               TRUE
+#define CLSCONS_ENABLED               TRUE
 
 
 /*
@@ -57,7 +57,7 @@
  */
 
 /** classifier handler data */
-struct DEC_ClassifierData
+struct GCG_ClassifierData
 {
 };
 
@@ -77,7 +77,7 @@ struct DEC_ClassifierData
 #define classifierFree NULL
 
 static
-DEC_DECL_CONSCLASSIFY(classifierClassify)
+GCG_DECL_CONSCLASSIFY(classifierClassify)
 {
    gcg::DETPROBDATA* detprobdata;
    if( transformed )
@@ -517,12 +517,13 @@ DEC_DECL_CONSCLASSIFY(classifierClassify)
 
 SCIP_RETCODE SCIPincludeConsClassifierMiplibConstypes(
    SCIP*                 scip                /**< SCIP data structure */
-) {
-   DEC_CLASSIFIERDATA* classifierdata = NULL;
+   )
+{
+   GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL(
-      GCGincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata,
-         classifierFree, classifierClassify));
+      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
+                               classifierFree, classifierClassify));
 
    return SCIP_OKAY;
 }

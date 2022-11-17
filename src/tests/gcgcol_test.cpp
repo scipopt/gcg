@@ -51,7 +51,7 @@ class GcgColTest : public ::testing::Test {
       SCIP_CALL_ABORT( SCIPfree(&scip) );
    }
 protected:
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
 
 public:
    static SCIP* scip;

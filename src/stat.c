@@ -51,9 +51,9 @@ SCIP_RETCODE GCGwriteDecompositionData(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   DEC_DECOMP* decomposition;
+   GCG_DECOMP* decomposition;
 
-   DEC_DETECTOR* detector;
+   GCG_DETECTOR* detector;
    DEC_DECTYPE type;
    const char* typeName;
 

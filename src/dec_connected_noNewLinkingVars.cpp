@@ -70,7 +70,7 @@
 /** @todo fill in the necessary detector data */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
 };
 
@@ -135,7 +135,7 @@ SCIP_RETCODE detection(
 
 
 static
-DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConnected_noNewLinkingVars)
+GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConnected_noNewLinkingVars)
 {
    *result = SCIP_DIDNOTFIND;
    detection(scip, partialdecdetectiondata);
@@ -145,7 +145,7 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConnected_noNewLinkingVars)
 }
 
 static
-DEC_DECL_FINISHPARTIALDEC(finishPartialdecConnected_noNewLinkingVars)
+GCG_DECL_FINISHPARTIALDEC(finishPartialdecConnected_noNewLinkingVars)
 {
    *result = SCIP_DIDNOTFIND;
    detection(scip, partialdecdetectiondata);
@@ -171,7 +171,7 @@ SCIP_RETCODE SCIPincludeDetectorConnected_noNewLinkingVars(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    /**@todo create connected_noNewLinkingVars detector data here*/
    detectordata = NULL;

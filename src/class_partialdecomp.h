@@ -135,7 +135,7 @@ private:
    std::vector<std::vector<std::vector<int> > > pidtopidvarmaptofirst; /**< [nrepblocks][blockstorep[k].size()][nvarsforprob] collection of varmaps of probindices from k-th subproblem to the zeroth block that is represented */
 
    /* statistic information */
-   std::vector<DEC_DETECTOR*> detectorchain;          /**< vector containing detectors that worked on that partialdec */
+   std::vector<GCG_DETECTOR*> detectorchain;          /**< vector containing detectors that worked on that partialdec */
    std::vector<std::string> detectorchaininfo;        /**< vector containing information about the detector call */
    std::vector<SCIP_Real> detectorclocktimes;         /**< vector containing detector times in seconds  */
    std::vector<SCIP_Real> pctvarstoborder;            /**< vector containing the fraction of variables assigned to the
@@ -174,7 +174,7 @@ private:
    bool original;                        /**< indicates whether partialdec is from original problem */
    bool isfinishedbyfinisherorig;         /**< was the ancestor partialdec for the unpresolved problem finished by the
                                             *< finishpartialdec() method of a detector */
-   DEC_DETECTOR* finishedorigby;          /**< index of finishing detector of orig ancestor partialdec */
+   GCG_DETECTOR* finishedorigby;          /**< index of finishing detector of orig ancestor partialdec */
 
    int translatedpartialdecid;
 
@@ -757,7 +757,7 @@ public:
     * @return detector chain as array of detector pointers
     */
    GCG_EXPORT
-   std::vector<DEC_DETECTOR*>& getDetectorchain();
+   std::vector<GCG_DETECTOR*>& getDetectorchain();
 
    /**
     * @brief returns true iff this partialdec was finished by finishPartialdec() method of a detector
@@ -830,19 +830,8 @@ public:
     */
    GCG_EXPORT
    SCIP_Real getScore(
-      DEC_SCORE* score
+      GCG_SCORE* score
       );
-
-   /**
-    * @brief returns the scorevalue of otherscore called by score
-    * @param score the score
-    * @param otherscore the otherscore 
-    * @return the scorevalue
-    */
-   SCIP_Real calcOtherScore(
-      DEC_SCORE* score,
-      DEC_SCORE* otherscore
-   );
 
    /**
    * @brief gets an intermediate score value for the blocks of a partialdec
@@ -861,7 +850,7 @@ public:
     * @param score the score
     */
    void setScore(
-      DEC_SCORE* score,
+      GCG_SCORE* score,
       SCIP_Real scorevalue
       );
 
@@ -1308,7 +1297,7 @@ public:
     */
    GCG_EXPORT
    bool isPropagatedBy(
-      DEC_DETECTOR* detector
+      GCG_DETECTOR* detector
       );
 
    /**
@@ -1478,8 +1467,8 @@ public:
     */
    GCG_EXPORT
    std::vector<int>::const_iterator fixConsToMaster(
-         std::vector<int>::const_iterator itr
-   );
+      std::vector<int>::const_iterator itr
+      );
 
    /**
     * @brief fixes a constraint to the master constraints
@@ -1508,7 +1497,7 @@ public:
     */
    GCG_EXPORT
    void setDetectorchain(
-      std::vector<DEC_DETECTOR*>& givenDetectorChain
+      std::vector<GCG_DETECTOR*>& givenDetectorChain
       );
 
    /**
@@ -1517,7 +1506,7 @@ public:
     */
    GCG_EXPORT
    void setDetectorPropagated(
-      DEC_DETECTOR* detector
+      GCG_DETECTOR* detector
       );
 
    /**
@@ -1526,7 +1515,7 @@ public:
     */
    GCG_EXPORT
    void setDetectorFinished(
-      DEC_DETECTOR* detector
+      GCG_DETECTOR* detector
       );
 
    /**
@@ -1536,7 +1525,7 @@ public:
     */
    GCG_EXPORT
    void setDetectorFinishedOrig(
-      DEC_DETECTOR* detectorID
+      GCG_DETECTOR* detectorID
       );
 
    /**
@@ -1639,7 +1628,7 @@ public:
    std::vector<int>::const_iterator fixVarToBlock(
       std::vector<int>::const_iterator itr,
       int block
-   );
+      );
 
    /**
     * @brief adds a variable to the linking variables, does not delete this var from list of open vars
@@ -1668,7 +1657,7 @@ public:
    GCG_EXPORT
    std::vector<int>::const_iterator fixVarToLinking(
       std::vector<int>::const_iterator itr
-   );
+      );
 
    /** @brief adds a variable to the master variables, does not delete this var from list of open vars
     *
@@ -1697,7 +1686,7 @@ public:
    GCG_EXPORT
    std::vector<int>::const_iterator fixVarToMaster(
       std::vector<int>::const_iterator itr     /**< var to be set to master */
-   );
+      );
 
    /**
     * @brief adds a variable to the stairlinking variables, does not delete this var from list of open vars
@@ -1737,7 +1726,7 @@ public:
    std::vector<int>::const_iterator fixVarToStairlinking(
       std::vector<int>::const_iterator itr,
       int firstblock
-   );
+      );
 
    /**
     * @brief assigns a constraint by name to a block
@@ -1864,7 +1853,7 @@ public:
    GCG_EXPORT
    void setPctConssFromFreeVector(
       std::vector<SCIP_Real>& newvector
-   );
+      );
 
    /**
     * @brief set statistical vector of fractions of constraints assigned to the border per involved detector
@@ -1891,7 +1880,7 @@ public:
    GCG_EXPORT
    void setPctVarsToBlockVector(
       std::vector<SCIP_Real>& newvector
-   );
+      );
 
    /**
     * @brief set statistical vector of variables that are not longer open per involved detector
@@ -2046,7 +2035,7 @@ private:
     * have in the master constraint
     */
    void calcNCoeffsForBlockForMastercons(
-        );
+      );
 
    /**
     *  @brief optimizes block order to max stairlinking vars
@@ -2055,17 +2044,17 @@ private:
     *  may be reassigned to stairlinking
     * @note precondition: all potentially stairlinking vars have a staircase structure */
    void changeBlockOrderStaircase(
-        GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
-                         potentially stairlinkingvars connecting two blocks */
-        );
+      GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
+                       potentially stairlinkingvars connecting two blocks */
+      );
 
    /**
     * @brief changes the order of the blocks according to the given mapping
     *
     * \note precondition: given mapping needs to be an adequately sized permutation */
    void changeBlockOrder(
-        std::vector<int> oldToNewBlockIndex /**< the mapping from old to new block indices */
-        );
+      std::vector<int> oldToNewBlockIndex /**< the mapping from old to new block indices */
+      );
 
    /**
     * @brief returns true if the given detector used a conspartition

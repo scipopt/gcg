@@ -562,7 +562,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayNBlockcandidates)
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
 {  /*lint --e{715}*/
 
-   DEC_DECOMP* bestdecomp;
+   GCG_DECOMP* bestdecomp;
 
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
@@ -577,7 +577,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "\nAdditional statistics:\n");
       bestdecomp = GCGgetBestDecomp(scip, FALSE);
-      if( GCGdecompFreeGetType(bestdecomp) == DEC_DECTYPE_DIAGONAL )
+      if( GCGdecompFreeGetType(bestdecomp) == GCG_DECTYPE_DIAGONAL )
       {
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), NULL, "\n");
          SCIP_CALL( GCGwriteDecompositionData(scip) );
@@ -619,7 +619,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDetectors)
 /** dialog execution method for the display constraint classifiers command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayConsClassifiers)
 {
-   DEC_CONSCLASSIFIER** consclss;
+   GCG_CONSCLASSIFIER** consclss;
    int nconsclss;
    int i;
 
@@ -653,7 +653,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayConsClassifiers)
 /** dialog execution method for the display variable classifiers command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayVarClassifiers)
 {
-   DEC_VARCLASSIFIER** varclss;
+   GCG_VARCLASSIFIER** varclss;
    int nvarclss;
    int i;
 
@@ -687,7 +687,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayVarClassifiers)
 /** dialog execution method for the display scores command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayScores)
 {
-   DEC_SCORE** scores;
+   GCG_SCORE** scores;
    int nscores;
    int i;
 

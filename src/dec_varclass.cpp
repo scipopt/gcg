@@ -79,7 +79,7 @@
 /** @todo fill in the necessary detector data */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
 };
 
@@ -104,7 +104,7 @@ struct DEC_DetectorData
 
 #define finishPartialdecVarclass NULL
 
-static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
+static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
@@ -278,7 +278,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
 #define detectorPostprocessPartialdecVarclass NULL
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveVarclass)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveVarclass)
 {
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
@@ -314,7 +314,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveVarclass)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultVarclass)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultVarclass)
 {
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
@@ -350,7 +350,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultVarclass)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastVarclass)
+GCG_DECL_SETPARAMFAST(setParamFastVarclass)
 {
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
@@ -396,7 +396,7 @@ DEC_DECL_SETPARAMFAST(setParamFastVarclass)
 SCIP_RETCODE SCIPincludeDetectorVarclass(SCIP* scip /**< SCIP data structure */
 )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
    char setstr[SCIP_MAXSTRLEN];
 
    /**@todo create varclass detector data here*/
@@ -404,8 +404,8 @@ SCIP_RETCODE SCIPincludeDetectorVarclass(SCIP* scip /**< SCIP data structure */
 
    SCIP_CALL(
       GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,detectordata,
-         freeVarclass, initVarclass, exitVarclass, propagatePartialdecVarclass, finishPartialdecVarclass, detectorPostprocessPartialdecVarclass, setParamAggressiveVarclass, setParamDefaultVarclass, setParamFastVarclass));
+                         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
+                         freeVarclass, initVarclass, exitVarclass, propagatePartialdecVarclass, finishPartialdecVarclass, detectorPostprocessPartialdecVarclass, setParamAggressiveVarclass, setParamDefaultVarclass, setParamFastVarclass));
 
    /**@todo add varclass detector parameters */
 

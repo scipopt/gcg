@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 
-typedef struct DEC_ClassifierData DEC_CLASSIFIERDATA;   /**< CLASSIFIER data */
+typedef struct GCG_ClassifierData GCG_CLASSIFIERDATA;   /**< CLASSIFIER data */
 
 
 #ifdef __cplusplus

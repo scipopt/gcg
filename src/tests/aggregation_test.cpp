@@ -87,7 +87,7 @@ class GcgAggregationTest : public ::testing::Test {
 SCIP* GcgAggregationTest::scip = NULL;
 
 TEST_F(GcgAggregationTest, AggregateTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    SCIP_CONS* mastercons;
 
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
@@ -138,7 +138,7 @@ TEST_F(GcgAggregationTest, WrongObjTest) {
 
 
 TEST_F(GcgAggregationTest, WrongTypeTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    SCIP_CONS* mastercons;
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
@@ -163,7 +163,7 @@ TEST_F(GcgAggregationTest, WrongTypeTest) {
 }
 
 TEST_F(GcgAggregationTest, WrongBoundTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    SCIP_CONS* mastercons;
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
@@ -188,7 +188,7 @@ TEST_F(GcgAggregationTest, WrongBoundTest) {
 }
 
 TEST_F(GcgAggregationTest, WrongCoeffSubproblemTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    SCIP_CONS* mastercons;
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
@@ -213,7 +213,7 @@ TEST_F(GcgAggregationTest, WrongCoeffSubproblemTest) {
 }
 
 TEST_F(GcgAggregationTest, WrongCoeffMasterTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    SCIP_CONS* mastercons[2];
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,4]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
@@ -240,7 +240,7 @@ TEST_F(GcgAggregationTest, WrongCoeffMasterTest) {
 }
 
 TEST_F(GcgAggregationTest, NonSetppcMasterTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    SCIP_CONS* mastercons[2];
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,4]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
@@ -267,7 +267,7 @@ TEST_F(GcgAggregationTest, NonSetppcMasterTest) {
 }
 
 TEST_F(GcgAggregationTest, NonSetppcMasterWrongCoeffTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    SCIP_CONS* mastercons[2];
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,4]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
@@ -294,7 +294,7 @@ TEST_F(GcgAggregationTest, NonSetppcMasterWrongCoeffTest) {
 }
 
 TEST_F(GcgAggregationTest, PresolvedMasterTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    SCIP_CONS* mastercons[3];
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,2]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,2]") );
@@ -323,7 +323,7 @@ TEST_F(GcgAggregationTest, PresolvedMasterTest) {
 }
 
 TEST_F(GcgAggregationTest, NonTriangleTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    SCIP_CONS* mastercons[3];
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,2]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,2]") );
@@ -357,7 +357,7 @@ TEST_F(GcgAggregationTest, NonTriangleTest) {
 }
 
 TEST_F(GcgAggregationTest, NonExtendedTriangleTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    SCIP_CONS* mastercons[3];
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,2]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,2]") );
@@ -394,7 +394,7 @@ TEST_F(GcgAggregationTest, NonExtendedTriangleTest) {
 }
 
 TEST_F(GcgAggregationTest, ExtendedMasterTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    SCIP_CONS* mastercons[3];
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,2]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,2]") );
@@ -431,7 +431,7 @@ TEST_F(GcgAggregationTest, ExtendedMasterTest) {
 }
 
 TEST_F(GcgAggregationTest, NonExtendedMasterTest) {
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    SCIP_CONS* mastercons[3];
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,2]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,2]") );

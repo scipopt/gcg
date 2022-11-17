@@ -46,11 +46,11 @@
 #include "scip_misc.h"
 
 /* classifier properties */
-#define DEC_CLASSIFIERNAME        "xyz constraint classifier"           /**< name of classifier */
-#define DEC_DESC                  "constraint classifier template"      /**< short description of classification */
-#define DEC_PRIORITY              0                                     /**< priority of this classifier */
+#define CLSCONS_NAME                  "xyz constraint classifier"           /**< name of classifier */
+#define CLSCONS_DESC                  "constraint classifier template"      /**< short description of classification */
+#define CLSCONS_PRIORITY              0                                     /**< priority of this classifier */
 
-#define DEC_ENABLED               TRUE
+#define CLSCONS_ENABLED               TRUE
 
 
 
@@ -61,7 +61,7 @@
 /** @todo fill in the necessary classifier data */
 
 /** classifier handler data */
-struct DEC_ClassifierData
+struct CLSCONS_ClassifierData
 {
 };
 
@@ -80,10 +80,10 @@ struct DEC_ClassifierData
 /** destructor of classifier to free user data (called when GCG is exiting) */
 #ifdef SCIP_DISABLED_CODE
 static
-DEC_DECL_FREECLASSIFIER(classifierFreeXyz)
+GCG_DECL_FREECLASSIFIER(classifierFreeXyz)
 {  /*lint --e{715}*/
 
-   SCIPerrorMessage("Free function of classifier <%s> not implemented!\n", DEC_CLASSIFIERNAME);
+   SCIPerrorMessage("Free function of classifier <%s> not implemented!\n", CLSCONS_NAME);
    SCIPABORT();
 
    return SCIP_OKAY;
@@ -93,7 +93,7 @@ DEC_DECL_FREECLASSIFIER(classifierFreeXyz)
 #endif
 
 static
-DEC_DECL_CONSCLASSIFY(classifierClassify)
+GCG_DECL_CONSCLASSIFY(classifierClassify)
 {
    gcg::DETPROBDATA* detprobdata;
    if( transformed )
@@ -120,14 +120,15 @@ DEC_DECL_CONSCLASSIFY(classifierClassify)
 /** creates the handler for XYZ classifier and includes it in SCIP */
 SCIP_RETCODE SCIPincludeConsClassifierXyz(
    SCIP*                 scip                /**< SCIP data structure */
-) {
-   DEC_CLASSIFIERDATA* classifierdata;
+   )
+{
+   GCG_CLASSIFIERDATA* classifierdata;
 
    /**@todo create xyz classifier data here*/
    classifierdata = NULL;
 
    SCIP_CALL(
-      GCGincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata,
+      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
          classifierFree, classifierClassify));
 
    return SCIP_OKAY;

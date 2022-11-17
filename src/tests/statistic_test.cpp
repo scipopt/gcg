@@ -44,7 +44,7 @@ class GcgDecStatisticTest : public ::testing::Test {
   SCIP_CONS* transconss[3];
   SCIP_Real curvals[3];
   SCIP_VAR* curvars[3];
-  DEC_DECOMP* decomp;
+  GCG_DECOMP* decomp;
 
    virtual void SetUp() {
       int i;

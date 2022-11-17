@@ -40,8 +40,8 @@
 extern "C" {
 #endif
 
-typedef struct DEC_Score DEC_SCORE;               /**< score data structure */
-typedef struct DEC_ScoreData DEC_SCOREDATA;       /**< score specific data */
+typedef struct GCG_Score GCG_SCORE;               /**< score data structure */
+typedef struct GCG_ScoreData GCG_SCOREDATA;       /**< score specific data */
 
 
 /** destructor of score to free score data (called when GCG is exiting)
@@ -50,7 +50,7 @@ typedef struct DEC_ScoreData DEC_SCOREDATA;       /**< score specific data */
  *  - scip            : SCIP main data structure
  *  - score           : score data structure
  */
-#define DEC_DECL_SCOREFREE(x) SCIP_RETCODE x (SCIP* scip, DEC_SCORE* score)
+#define GCG_DECL_SCOREFREE(x) SCIP_RETCODE x (SCIP* scip, GCG_SCORE* score)
 
 /**
  * calculates the score value of partialdecid and stores it in scorevalue
@@ -61,7 +61,7 @@ typedef struct DEC_ScoreData DEC_SCOREDATA;       /**< score specific data */
  *  - partialdecid         : id of partialdec to calculate its score
  *  - scorevalue           : value of the score
  */
-#define DEC_DECL_SCORECALC(x) SCIP_RETCODE x (SCIP* scip, DEC_SCORE* score, int partialdecid, SCIP_Real* scorevalue)
+#define GCG_DECL_SCORECALC(x) SCIP_RETCODE x (SCIP* scip, GCG_SCORE* score, int partialdecid, SCIP_Real* scorevalue)
 
 #ifdef __cplusplus
 }

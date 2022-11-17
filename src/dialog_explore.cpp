@@ -273,7 +273,7 @@ SCIP_RETCODE GCGdialogChangeScore(
    SCIPdialogMessage(scip, NULL, "\nPlease specify the new score:\n");
    for( int i = 0; i < GCGconshdlrDecompGetNScores(scip); i++)
    {
-      DEC_SCORE* score = GCGconshdlrDecompGetScores(scip)[i];
+      GCG_SCORE* score = GCGconshdlrDecompGetScores(scip)[i];
 
       SCIPdialogMessage(scip, NULL, "%d: %s\n", i, GCGscoreGetName(score));      
    }
@@ -291,7 +291,7 @@ SCIP_RETCODE GCGdialogChangeScore(
       if( scorenr >= 0 && scorenr <= GCGconshdlrDecompGetNScores(scip) - 1 )
       {
          /* set score */
-         DEC_SCORE* score = GCGconshdlrDecompGetScores(scip)[scorenr];
+         GCG_SCORE* score = GCGconshdlrDecompGetScores(scip)[scorenr];
 
          SCIP_CALL( SCIPsetStringParam(scip, "detection/scores/selected", GCGscoreGetShortname(score)) );
          SCIPdialogMessage(scip, NULL, "Score set to %s.\n", GCGscoreGetName(score));
@@ -486,7 +486,7 @@ SCIP_RETCODE GCGdialogShowLegend(
    )
 {
    assert(scip != NULL);
-   DEC_DETECTOR** detectors;
+   GCG_DETECTOR** detectors;
 
    /* print header for detector list */
    SCIPdialogMessage(scip, NULL, "List of included detectors for decompositions histories: \n");
@@ -499,7 +499,7 @@ SCIP_RETCODE GCGdialogShowLegend(
 
    for( int det = 0; det < GCGconshdlrDecompGetNDetectors(scip); ++det )
    {
-      DEC_DETECTOR* detector;
+      GCG_DETECTOR* detector;
       detector = detectors[det];
 
       SCIPdialogMessage(scip, NULL, "%30s    %4c\n", GCGdetectorGetName(detector), GCGdetectorGetChar(detector));
@@ -532,7 +532,7 @@ SCIP_RETCODE GCGdialogShowLegend(
       /* if the header is "score" replace with shortname of the current score */
       else
       {
-         DEC_SCORE* score = GCGgetCurrentScore(scip);
+         GCG_SCORE* score = GCGgetCurrentScore(scip);
          SCIPdialogMessage(scip, NULL, "%30s     %s\n", GCGscoreGetShortname(score), GCGscoreGetDesc(score));
       }
 

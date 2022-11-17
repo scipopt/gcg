@@ -227,7 +227,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    SCIP_VAR*             var,                /**< var that is added to a block */
    int                   newblock,           /**< the new block the variable will be in */
    int                   nblocks,            /**< total number of pricing problems */
-   DEC_DECMODE           mode                /**< the decomposition mode */
+   GCG_DECMODE           mode                /**< the decomposition mode */
    );
 
 #ifdef NDEBUG
@@ -350,7 +350,7 @@ GCG_EXPORT
 SCIP_Real GCGmasterVarGetOrigval(
    SCIP_VAR*             mastervar,         /**< master variable data structure */
    SCIP_VAR*             origvar            /**< original variable data structure */
-);
+   );
 
 #ifdef NDEBUG
 #define GCGmasterVarGetOrigvalmap(var)       (SCIPvarGetData(var)->data.mastervardata.origvar2val)
@@ -358,8 +358,8 @@ SCIP_Real GCGmasterVarGetOrigval(
 /** returns a hash map that stores the fraction of original variables the master variable is contained in */
 GCG_EXPORT
 SCIP_HASHMAP* GCGmasterVarGetOrigvalmap(
-      SCIP_VAR*             var              /**< master variable data structure */
-);
+   SCIP_VAR*             var              /**< master variable data structure */
+   );
 #endif
 
 #ifdef NDEBUG

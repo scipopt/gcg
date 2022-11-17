@@ -560,7 +560,7 @@ SCIP_RETCODE readREFFile(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_READER*          reader,             /**< reader data structure */
    REFINPUT*             refinput,           /**< REF reading data */
-   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   GCG_DECOMP*           decomp,             /**< decomposition structure */
    const char*           filename            /**< name of the input file */
    )
 {
@@ -640,7 +640,7 @@ SCIP_RETCODE writeREFFile(
    )
 {
    SCIP_HASHMAP *cons2origindex;
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
 
    SCIP_CONS** conss;
    int nconss;
@@ -784,7 +784,7 @@ SCIP_RETCODE SCIPreadRef(
 {
    SCIP_RETCODE retcode;
    REFINPUT refinput;
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    int i;
 #ifdef SCIP_DEBUG
    SCIP_VAR** vars;

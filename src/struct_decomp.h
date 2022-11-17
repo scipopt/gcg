@@ -48,7 +48,7 @@ extern "C" {
 #endif
 
 /** decomposition structure information */
-struct DecDecomp
+struct GCG_Decomp
 {
    SCIP_Bool             presolved;          /**< does the decomposition refer to the presolved problem? */
    int                   nblocks;            /**< number of blocks in this decomposition */
@@ -79,8 +79,8 @@ struct DecDecomp
    SCIP_HASHMAP*         varindex;           /**< hashmap mapping variables to indices for a visual ordering */
    SCIP_HASHMAP*         consindex;          /**< hashmap mapping constraints to indices for visual ordering */
    DEC_DECTYPE           type;               /**< type of the decomposition */
-   DEC_DETECTOR**        detectorchain;      /**< array of detectors that worked on this decomposition */
-   DEC_DETECTOR*         detector;           /**< detector that found this decomposition */
+   GCG_DETECTOR**        detectorchain;      /**< array of detectors that worked on this decomposition */
+   GCG_DETECTOR*         detector;           /**< detector that found this decomposition */
    int                   sizedetectorchain;  /**< number of detectors that worked on this decomposition */
    int                   partialdecid;       /**< id of the partialdec this decomposition originates from */
    SCIP_Real*            detectorclocktimes; /**< times of the detectors that worked on this decomposition */

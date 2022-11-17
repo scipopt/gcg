@@ -83,7 +83,7 @@ using gcg::GraphGCG;
  */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
    SCIP_RESULT result;                                 /**< result pointer to indicate success or failure */
    SCIP_Bool found;
@@ -150,9 +150,9 @@ static std::vector<double> getEpsList(int length, double mid, bool isintersectio
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freeMST)
+GCG_DECL_FREEDETECTOR(freeMST)
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    assert(scip != NULL);
 
@@ -167,7 +167,7 @@ DEC_DECL_FREEDETECTOR(freeMST)
 
 /** destructor of detector to free detector data (called before the solving process begins) */
 static
-DEC_DECL_EXITDETECTOR(exitMST)
+GCG_DECL_EXITDETECTOR(exitMST)
 {
    return SCIP_OKAY;
 }
@@ -175,10 +175,10 @@ DEC_DECL_EXITDETECTOR(exitMST)
 
 /** detection initialization function of detector (called before solving is about to begin) */
 static
-DEC_DECL_INITDETECTOR(initMST)
+GCG_DECL_INITDETECTOR(initMST)
 {  /*lint --e{715}*/
 
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
    assert(scip != NULL);
 
 
@@ -247,12 +247,12 @@ bool graphCompletible(
 //#define propagatePartialdecMST NULL
 
 static
-DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMST)
+GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMST)
 { /*lint --e{715}*/
 
    int nnewpartialdecs;
    gcg::PARTIALDECOMP* partialdec;
-   DEC_DETECTORDATA* detectordata = GCGdetectorGetData(detector);
+   GCG_DETECTORDATA* detectordata = GCGdetectorGetData(detector);
    std::vector<SCIP_Real> clockTimes1;        /* vector containing times in seconds  */
    std::vector<SCIP_Real> clockTimes2;        /* vector containing times in seconds  */
    std::vector< RowGraphWeighted<GraphGCG>*> graphs;
@@ -490,7 +490,7 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMST)
 #define detectorPostprocessPartialdecMST NULL
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveMST)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveMST)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
@@ -506,7 +506,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveMST)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultMST)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultMST)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
@@ -521,7 +521,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultMST)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastMST)
+GCG_DECL_SETPARAMFAST(setParamFastMST)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
@@ -546,7 +546,7 @@ SCIP_RETCODE SCIPincludeDetectorMST(
    )
 {
 #if !defined(_WIN32) && !defined(_WIN64)
-   DEC_DETECTORDATA *detectordata = NULL;
+   GCG_DETECTORDATA *detectordata = NULL;
    assert(scip != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
@@ -555,7 +555,7 @@ SCIP_RETCODE SCIPincludeDetectorMST(
    detectordata->found = FALSE;
 
    SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, freeMST, initMST, exitMST, propagatePartialdecMST, finishPartialdecMST, detectorPostprocessPartialdecMST, setParamAggressiveMST, setParamDefaultMST, setParamFastMST) );
+                                 detectordata, freeMST, initMST, exitMST, propagatePartialdecMST, finishPartialdecMST, detectorPostprocessPartialdecMST, setParamAggressiveMST, setParamDefaultMST, setParamFastMST) );
 
    /* add arrowheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/mst/niterations", "Number of iterations to run mst with different eps.", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 11, 1001, NULL, NULL) );

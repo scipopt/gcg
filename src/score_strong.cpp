@@ -64,7 +64,7 @@
 /*
  * Data structures
  */
-struct DEC_ScoreData
+struct GCG_ScoreData
 {
    std::vector<SCIP_Real>* dualvalsrandom;                        /**< vector of random dual values, used for strong detection scores */
    std::vector<SCIP_Real>* dualvalsoptimaloriglp;                 /**< vector of dual values of the optimal solved original lp, used for strong detection scores */
@@ -97,11 +97,11 @@ typedef enum GCG_Random_dual_methods GCG_RANDOM_DUAL_METHOD;
 static
 SCIP_RETCODE shuffleDualvalsRandom(
    SCIP* scip,             /**< SCIP data structure */
-   DEC_SCORE* score,
+   GCG_SCORE* score,
    SCIP_Bool transformed   /**< whether the problem is tranformed yet */
    )
 {
-   DEC_SCOREDATA* scoredata = GCGscoreGetData(score);
+   GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
 
    GCG_RANDOM_DUAL_METHOD usedmethod;
    SCIP_RANDNUMGEN* randnumgen;
@@ -261,12 +261,12 @@ SCIP_RETCODE shuffleDualvalsRandom(
 static
 SCIP_Real getDualvalRandom(
    SCIP* scip,             /**< SCIP data structure */
-   DEC_SCORE* score,
+   GCG_SCORE* score,
    int  consindex,         /**< consindex  index of constraint the value is asked for */
    SCIP_Bool transformed   /**< is the problem transformed yet */
    )
 {
-   DEC_SCOREDATA* scoredata = GCGscoreGetData(score);
+   GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
 
    if( !scoredata->dualvalsrandomset )
       shuffleDualvalsRandom(scip, score, transformed);
@@ -282,11 +282,11 @@ SCIP_Real getDualvalRandom(
 static
 SCIP_RETCODE calculateDualvalsOptimalOrigLP(
    SCIP* scip,             /**< SCIP data structure */
-   DEC_SCORE* score,
+   GCG_SCORE* score,
    SCIP_Bool transformed   /**< whether the problem is transormed yet */
    )
 {
-   DEC_SCOREDATA* scoredata = GCGscoreGetData(score);
+   GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
 
    SCIP* scipcopy;
    SCIP_HASHMAP* origtocopiedconss;
@@ -398,12 +398,12 @@ SCIP_RETCODE calculateDualvalsOptimalOrigLP(
 static
 SCIP_Real getDualvalOptimalLP(
    SCIP* scip,             /**< SCIP data structure */
-   DEC_SCORE* score,
+   GCG_SCORE* score,
    int  consindex,         /**< consindex index of constraint the value is asked for */
    SCIP_Bool transformed   /**< is the problem transformed yet */
    )
 {
-   DEC_SCOREDATA* scoredata = GCGscoreGetData(score);
+   GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
 
    if( !scoredata->dualvalsoptimaloriglpcalculated )
       calculateDualvalsOptimalOrigLP(scip, score, transformed);
@@ -594,9 +594,9 @@ SCIP_CALL( SCIPreleaseCons(subscip, &newcons) );
 
 /** destructor of score to free user data (called when GCG is exiting) */
 static
-DEC_DECL_SCOREFREE(scoreFreeStrong)
+GCG_DECL_SCOREFREE(scoreFreeStrong)
 {
-   DEC_SCOREDATA* scoredata;
+   GCG_SCOREDATA* scoredata;
 
    assert(scip != NULL);
 
@@ -613,7 +613,7 @@ DEC_DECL_SCOREFREE(scoreFreeStrong)
 }
 
 static
-DEC_DECL_SCORECALC(scoreCalcStrong)
+GCG_DECL_SCORECALC(scoreCalcStrong)
 {
    /** @todo use and introduce scip parameter limit (for a pricing problem to be considered fractional solvable) of difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
    /* SCIP_Real gaplimitsolved; */
@@ -621,7 +621,7 @@ DEC_DECL_SCORECALC(scoreCalcStrong)
    /** @todo use and introduce scip parameter weighted limit (for a pricing problem to be considered fractional solvable) difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
    /* SCIP_Real gaplimitbeneficial; */
 
-   DEC_SCOREDATA* scoredata = GCGscoreGetData(score);
+   GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
 
    SCIP_Bool hittimelimit;
    SCIP_Bool errorpricing;
@@ -850,9 +850,9 @@ DEC_DECL_SCORECALC(scoreCalcStrong)
 /** creates the strong decomposition score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreStrongDecomp(
    SCIP*                 scip                /**< SCIP data structure */
-)
+   )
 {
-   DEC_SCOREDATA* scoredata = NULL;
+   GCG_SCOREDATA* scoredata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &scoredata) );
 

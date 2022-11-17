@@ -88,7 +88,7 @@
  */
 
 /** detector data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
    SCIP_RESULT          result;            /**< result pointer to indicate success or failure */
    int                  maxdecompsexact;   /**< maximum number of decompositions for exact emthod */
@@ -802,9 +802,9 @@ SCIP_RETCODE createPartialdecFromMasterconss(
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEDETECTOR(detectorFreeIsomorph)
+GCG_DECL_FREEDETECTOR(detectorFreeIsomorph)
 { /*lint --e{715}*/
-   DEC_DETECTORDATA *detectordata;
+   GCG_DETECTORDATA *detectordata;
 
    assert(scip != NULL);
    assert(detector != NULL);
@@ -821,9 +821,9 @@ DEC_DECL_FREEDETECTOR(detectorFreeIsomorph)
 
 /** detector initialization method (called after problem was transformed) */
 static
-DEC_DECL_INITDETECTOR(detectorInitIsomorph)
+GCG_DECL_INITDETECTOR(detectorInitIsomorph)
 { /*lint --e{715}*/
-   DEC_DETECTORDATA *detectordata;
+   GCG_DETECTORDATA *detectordata;
 
    assert(scip != NULL);
    assert(detector != NULL);
@@ -1041,7 +1041,7 @@ static
 SCIP_RETCODE detectIsomorph(
    SCIP*                 scip,               /**< SCIP data structure */
    PARTIALDEC_DETECTION_DATA* detectiondata, /**< detection data */
-   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    SCIP_RESULT*          result,             /**< pointer to store result */
    SCIP_Bool             onlysign,           /**< use only sign of coefficients instead of coefficients? */
    int                   maxdecomps          /**< maximum number of new decompositions */
@@ -1202,10 +1202,10 @@ SCIP_RETCODE detectIsomorph(
 }
 
 
-DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecIsomorph)
+GCG_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecIsomorph)
 {
    *result = SCIP_DIDNOTFIND;
-   DEC_DETECTORDATA* detectordata = GCGdetectorGetData(detector);
+   GCG_DETECTORDATA* detectordata = GCGdetectorGetData(detector);
    gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec ;
 
    partialdecdetectiondata->nnewpartialdecs = 0;
@@ -1237,7 +1237,7 @@ DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecIsomorph)
 #define detectorPostprocessPartialdecIsomorph NULL
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
@@ -1303,7 +1303,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultIsomorph)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultIsomorph)
 {
    char setstr[SCIP_MAXSTRLEN];
    int newval;
@@ -1358,7 +1358,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultIsomorph)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastIsomorph)
+GCG_DECL_SETPARAMFAST(setParamFastIsomorph)
 {
    char setstr[SCIP_MAXSTRLEN];
    int newval;
@@ -1414,7 +1414,7 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    detectordata = NULL;
 
@@ -1423,8 +1423,8 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 
 
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagatePartialdecIsomorph, detectorFinishPartialdecIsomorph, detectorPostprocessPartialdecIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
+   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+                                 detectordata, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagatePartialdecIsomorph, detectorFinishPartialdecIsomorph, detectorPostprocessPartialdecIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
 
    /* add isomorph constraint handler parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/isomorph/maxdecompsexact",

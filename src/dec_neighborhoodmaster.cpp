@@ -76,7 +76,7 @@ This detector calculates cons-cons adjacency (if not already done), and sorts co
  */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
    SCIP_Real maxratio;
 };
@@ -98,10 +98,10 @@ struct sort_pred {
  */
 
 /** destructor of detector to free user data (called when GCG is exiting) */
-DEC_DECL_FREEDETECTOR(freeNeighborhoodmaster)
+GCG_DECL_FREEDETECTOR(freeNeighborhoodmaster)
 { /*lint --e{715}*/
 
-   DEC_DETECTORDATA *detectordata;
+   GCG_DETECTORDATA *detectordata;
 
    assert(scip != NULL);
    assert(detector != NULL);
@@ -124,14 +124,14 @@ DEC_DECL_FREEDETECTOR(freeNeighborhoodmaster)
 
 #define finishPartialdecNeighborhoodmaster NULL
 
-static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecNeighborhoodmaster)
+static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecNeighborhoodmaster)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
    SCIP_CLOCK* temporaryClock;
    gcg::DETPROBDATA* detprobdata;
    gcg::PARTIALDECOMP* partialdec;
-   DEC_DetectorData* detectorData = GCGdetectorGetData(detector);
+   GCG_DetectorData* detectorData = GCGdetectorGetData(detector);
    std::stringstream decdesc;
    int maxdiff = -1;
    int maxdiffindex = -1;
@@ -201,7 +201,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecNeighborhoodmaster)
 #define detectorPostprocessPartialdecNeighborhoodmaster NULL
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveNeighborhoodmaster)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveNeighborhoodmaster)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
@@ -217,7 +217,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveNeighborhoodmaster)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultNeighborhoodmaster)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultNeighborhoodmaster)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
@@ -232,7 +232,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultNeighborhoodmaster)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastNeighborhoodmaster)
+GCG_DECL_SETPARAMFAST(setParamFastNeighborhoodmaster)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
@@ -256,7 +256,7 @@ DEC_DECL_SETPARAMFAST(setParamFastNeighborhoodmaster)
 SCIP_RETCODE SCIPincludeDetectorNeighborhoodmaster(SCIP* scip /**< SCIP data structure */
 )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    detectordata = NULL;
 
@@ -265,12 +265,12 @@ SCIP_RETCODE SCIPincludeDetectorNeighborhoodmaster(SCIP* scip /**< SCIP data str
 
    SCIP_CALL(
       GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
-         DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
-         detectordata, freeNeighborhoodmaster, initNeighborhoodmaster,
-         exitNeighborhoodmaster, propagatePartialdecNeighborhoodmaster, finishPartialdecNeighborhoodmaster,
-         detectorPostprocessPartialdecNeighborhoodmaster, setParamAggressiveNeighborhoodmaster,
-         setParamDefaultNeighborhoodmaster, setParamFastNeighborhoodmaster));
+                         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
+                         DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+                         detectordata, freeNeighborhoodmaster, initNeighborhoodmaster,
+                         exitNeighborhoodmaster, propagatePartialdecNeighborhoodmaster, finishPartialdecNeighborhoodmaster,
+                         detectorPostprocessPartialdecNeighborhoodmaster, setParamAggressiveNeighborhoodmaster,
+                         setParamDefaultNeighborhoodmaster, setParamFastNeighborhoodmaster));
 
    SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/neighborhoodmaster/maxratio",
          "the maximal ratio of open constraints that are assigned to the master problem",

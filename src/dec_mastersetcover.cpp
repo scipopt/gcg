@@ -70,7 +70,7 @@
 /** @todo fill in the necessary detector data */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
 };
 
@@ -94,7 +94,7 @@ struct DEC_DetectorData
 #define initMastersetcover NULL
 
 
-static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetcover)
+static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetcover)
 {
    *result = SCIP_DIDNOTFIND;
 
@@ -153,16 +153,16 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetcover)
 SCIP_RETCODE SCIPincludeDetectorMastersetcover(SCIP* scip /**< SCIP data structure */
 )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    /**@todo create mastersetcover detector data here*/
    detectordata = NULL;
 
    SCIP_CALL(
       GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
-         DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP,
-         DEC_USEFULRECALL, detectordata, freeMastersetcover,
-         initMastersetcover, exitMastersetcover, propagatePartialdecMastersetcover, finishPartialdecMastersetcover, detectorPostprocessPartialdecMastersetcover, setParamAggressiveMastersetcover, setParamDefaultMastersetcover, setParamFastMastersetcover));
+                         DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP,
+                         DEC_USEFULRECALL, detectordata, freeMastersetcover,
+                         initMastersetcover, exitMastersetcover, propagatePartialdecMastersetcover, finishPartialdecMastersetcover, detectorPostprocessPartialdecMastersetcover, setParamAggressiveMastersetcover, setParamDefaultMastersetcover, setParamFastMastersetcover));
 
    /**@todo add mastersetcover detector parameters */
 

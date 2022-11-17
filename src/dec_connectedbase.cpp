@@ -70,7 +70,7 @@
 /** @todo fill in the necessary detector data */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
    SCIP_Bool useconssadj;
 };
@@ -90,9 +90,9 @@ struct DEC_DetectorData
 /** destructor of detector to free user data (called when GCG is exiting) */
 /** destructor of detector to free detector data (called when SCIP is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freeConnectedbase)
+GCG_DECL_FREEDETECTOR(freeConnectedbase)
 {  /*lint --e{715}*/
-   DEC_DETECTORDATA *detectordata;
+   GCG_DETECTORDATA *detectordata;
 
    assert(scip != NULL);
    assert(detector != NULL);
@@ -118,7 +118,7 @@ DEC_DECL_FREEDETECTOR(freeConnectedbase)
 
 
 static
-DEC_DECL_FINISHPARTIALDEC(finishPartialdecConnectedbase)
+GCG_DECL_FINISHPARTIALDEC(finishPartialdecConnectedbase)
 {
    *result = SCIP_DIDNOTFIND;
 
@@ -169,7 +169,7 @@ DEC_DECL_FINISHPARTIALDEC(finishPartialdecConnectedbase)
 
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConnectedbase)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConnectedbase)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -186,7 +186,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConnectedbase)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultConnectedbase)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultConnectedbase)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -204,7 +204,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultConnectedbase)
 
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastConnectedbase)
+GCG_DECL_SETPARAMFAST(setParamFastConnectedbase)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -230,7 +230,7 @@ SCIP_RETCODE SCIPincludeDetectorConnectedbase(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    /**@todo create connectedbase detector data here*/
    detectordata = NULL;

@@ -42,8 +42,8 @@
 
 
 /** gets user data of variable classifier */
-DEC_CLASSIFIERDATA* GCGvarClassifierGetData(
-   DEC_VARCLASSIFIER* varClassifier  /**< variable classifier data structure */
+GCG_CLASSIFIERDATA* GCGvarClassifierGetData(
+   GCG_VARCLASSIFIER* varClassifier  /**< variable classifier data structure */
    )
 {
    assert(varClassifier != NULL);
@@ -53,8 +53,8 @@ DEC_CLASSIFIERDATA* GCGvarClassifierGetData(
 
 /** sets user data of variable classifier; user has to free old data in advance! */
 void GCGvarClassifierSetData(
-   DEC_VARCLASSIFIER* varClassifier,              /**< variable classifier data structure */
-   DEC_CLASSIFIERDATA* clsdata                    /**< new variable classifier user data */
+   GCG_VARCLASSIFIER* varClassifier,              /**< variable classifier data structure */
+   GCG_CLASSIFIERDATA* clsdata                    /**< new variable classifier user data */
    )
 {
    assert(varClassifier != NULL);
@@ -64,7 +64,7 @@ void GCGvarClassifierSetData(
 
 /** gets name of variable classifier */
 const char* GCGvarClassifierGetName(
-   DEC_VARCLASSIFIER* varClassifier  /**< variable classifier data structure */
+   GCG_VARCLASSIFIER* varClassifier  /**< variable classifier data structure */
    )
 {
    assert(varClassifier != NULL);
@@ -74,7 +74,7 @@ const char* GCGvarClassifierGetName(
 
 /** gets priority of variable classifier */
 int GCGvarClassifierGetPriority(
-   DEC_VARCLASSIFIER* varClassifier  /**< variable classifier data structure */
+   GCG_VARCLASSIFIER* varClassifier  /**< variable classifier data structure */
    )
 {
    assert(varClassifier != NULL);
@@ -84,7 +84,7 @@ int GCGvarClassifierGetPriority(
 
 /** returns True iff variable classifier is enabled */
 SCIP_Bool GCGvarClassifierIsEnabled(
-   DEC_VARCLASSIFIER* varClassifier  /**< variable classifier data structure */
+   GCG_VARCLASSIFIER* varClassifier  /**< variable classifier data structure */
    )
 {
    assert(varClassifier != NULL);
@@ -94,7 +94,7 @@ SCIP_Bool GCGvarClassifierIsEnabled(
 
 /** gets description of constraint classifier */
 const char* GCGvarClassifierGetDesc(
-   DEC_VARCLASSIFIER* varClassifier  /**< variable classifier data structure */
+   GCG_VARCLASSIFIER* varClassifier  /**< variable classifier data structure */
    )
 {
    assert(varClassifier != NULL);

@@ -46,11 +46,11 @@ ould have received a copy of the GNU Lesser General Public License  */
 #include "scip_misc.h"
 
 /* classifier properties */
-#define DEC_CLASSIFIERNAME        "consnamenonumbers"       /**< name of classifier */
-#define DEC_DESC                  "constraint names (remove digits; check for identity)"     /**< short description of classification*/
-#define DEC_PRIORITY              0
+#define CLSCONS_NAME                  "consnamenonumbers"       /**< name of classifier */
+#define CLSCONS_DESC                  "constraint names (remove digits; check for identity)"     /**< short description of classification*/
+#define CLSCONS_PRIORITY              0
 
-#define DEC_ENABLED               FALSE
+#define CLSCONS_ENABLED               FALSE
 
 
 /*
@@ -58,7 +58,7 @@ ould have received a copy of the GNU Lesser General Public License  */
  */
 
 /** classifier handler data */
-struct DEC_ClassifierData
+struct GCG_ClassifierData
 {
 };
 
@@ -108,7 +108,7 @@ void removeDigits(
 
 
 static
-DEC_DECL_CONSCLASSIFY(classifierClassify) {
+GCG_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA* detprobdata;
    if( transformed )
    {
@@ -191,11 +191,11 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
 SCIP_RETCODE SCIPincludeConsClassifierForConsnamesDigitFreeIdentical(
    SCIP *scip                /**< SCIP data structure */
 ) {
-   DEC_CLASSIFIERDATA* classifierdata = NULL;
+   GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL(
-      GCGincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata,
-         classifierFree, classifierClassify));
+      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
+                               classifierFree, classifierClassify));
 
    return SCIP_OKAY;
 }

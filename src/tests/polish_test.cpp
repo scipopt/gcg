@@ -60,8 +60,8 @@ class GcgPolishDecompTest : public ::testing::Test {
       SCIP_CALL_ABORT( SCIPfree(&scip) );
    }
 protected:
-   DEC_DECOMP* decomp;
-   DEC_DECOMP* newdecomp;
+   GCG_DECOMP* decomp;
+   GCG_DECOMP* newdecomp;
 
    SCIP_RETCODE createVar(const char * str) {
       SCIP_VAR* var;
@@ -482,7 +482,7 @@ TEST_F(GcgPolishDecompTest, PolishDecompNothingNew) {
    SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
 
    SCIP_CALL_EXPECT( GCGcreatePolishedDecomp(scip, decomp, &newdecomp) );
-   ASSERT_EQ((DEC_DECOMP*) NULL, newdecomp);
+   ASSERT_EQ((GCG_DECOMP*) NULL, newdecomp);
 }
 
 TEST_F(GcgPolishDecompTest, DontPolishOneBlock) {
@@ -503,5 +503,5 @@ TEST_F(GcgPolishDecompTest, DontPolishOneBlock) {
    SCIP_CALL_EXPECT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 1, FALSE) );
 
    SCIP_CALL_EXPECT( GCGcreatePolishedDecomp(scip, decomp, &newdecomp) );
-   ASSERT_EQ((DEC_DECOMP*) NULL, newdecomp);
+   ASSERT_EQ((GCG_DECOMP*) NULL, newdecomp);
 }

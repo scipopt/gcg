@@ -46,11 +46,11 @@
 #include "scip_misc.h"
 
 /* classifier properties */
-#define DEC_CLASSIFIERNAME        "xyz variable classifier"           /**< name of classifier */
-#define DEC_DESC                  "variable classifier template"      /**< short description of classification */
-#define DEC_PRIORITY              0                                   /**< priority of this classifier */
+#define CLSVAR_NAME                  "xyz variable classifier"           /**< name of classifier */
+#define CLSVAR_DESC                  "variable classifier template"      /**< short description of classification */
+#define CLSVAR_PRIORITY              0                                   /**< priority of this classifier */
 
-#define DEC_ENABLED               TRUE
+#define CLSVAR_ENABLED               TRUE
 
 
 /*
@@ -60,7 +60,7 @@
 /** @todo fill in the necessary classifier data */
 
 /** classifier handler data */
-struct DEC_ClassifierData
+struct CLSVAR_ClassifierData
 {
 };
 
@@ -79,10 +79,10 @@ struct DEC_ClassifierData
 /** destructor of classifier to free user data (called when GCG is exiting) */
 #ifdef SCIP_DISABLED_CODE
 static
-DEC_DECL_FREEVARCLASSIFIER(classifierFreeXyz)
+GCG_DECL_FREEVARCLASSIFIER(classifierFreeXyz)
 {  /*lint --e{715}*/
 
-   SCIPerrorMessage("Free function of classifier <%s> not implemented!\n", DEC_CLASSIFIERNAME);
+   SCIPerrorMessage("Free function of classifier <%s> not implemented!\n", CLSVAR_NAME);
    SCIPABORT();
 
    return SCIP_OKAY;
@@ -92,7 +92,7 @@ DEC_DECL_FREEVARCLASSIFIER(classifierFreeXyz)
 #endif
 
 static
-DEC_DECL_VARCLASSIFY(classifierClassify)
+GCG_DECL_VARCLASSIFY(classifierClassify)
 {
    gcg::DETPROBDATA* detprobdata;
    if( transformed )
@@ -119,14 +119,14 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
 /** creates the handler for xyz classifier and includes it in SCIP */
 SCIP_RETCODE SCIPincludeVarClassifierXyz(
    SCIP*                 scip                /**< SCIP data structure */
-)
+   )
 {
-   DEC_CLASSIFIERDATA* classifierdata;
+   GCG_CLASSIFIERDATA* classifierdata;
 
    /**@todo create xyz classifier data here*/
    classifierdata = NULL;
 
-   SCIP_CALL( GCGincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeVarClassifier(scip, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

@@ -70,6 +70,11 @@ Renamed API functions:
 
 - Replaced prefix 'DEC' with 'GCG'
 
+Renamed structures and defines:
+---------------------------
+
+- Replaced prefix 'DEC' with 'GCG'
+
 Command line interface
 -----------------------
 

@@ -49,7 +49,7 @@
 /*
  * Data structures
  */
-struct DEC_ScoreData
+struct GCG_ScoreData
 {
 };
 
@@ -70,7 +70,7 @@ struct DEC_ScoreData
 #define scoreFreeForswh NULL
 
 static
-DEC_DECL_SCORECALC(scoreCalcForswh)
+GCG_DECL_SCORECALC(scoreCalcForswh)
 {
    unsigned long sumblockshittinglinkingvar;
    unsigned long sumlinkingvarshittingblock;
@@ -183,9 +183,9 @@ DEC_DECL_SCORECALC(scoreCalcForswh)
 /** creates the max foreseeing white score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreForswh(
    SCIP*                 scip                /**< SCIP data structure */
-)
+   )
 {
-   DEC_SCOREDATA* scoredata = NULL;
+   GCG_SCOREDATA* scoredata = NULL;
 
    SCIP_CALL(
       GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,

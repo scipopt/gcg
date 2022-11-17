@@ -173,7 +173,7 @@ SCIP_RETCODE DialogReadGraphs<T, G>::scip_exec(SCIP* scip, SCIP_DIALOG* dialog, 
       MatrixGraph<T>* graph = new G<T>(scip, Weights());
       char* extension;
       extension = filename;
-      DEC_DECOMP* decomp;
+      GCG_DECOMP* decomp;
       SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, extension, TRUE) );
       SCIP_CALL( graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
       SCIP_CALL( graph->readPartition(extension) );

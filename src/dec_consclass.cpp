@@ -79,7 +79,7 @@
 /** @todo fill in the necessary detector data */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
 };
 
@@ -106,7 +106,7 @@ struct DEC_DetectorData
 
 #define finishPartialdecConsclass NULL
 
-static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConsclass)
+static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConsclass)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
@@ -262,7 +262,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConsclass)
 #define detectorPostprocessPartialdecConsclass NULL
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsclass)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsclass)
 {
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
@@ -302,7 +302,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsclass)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultConsclass)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultConsclass)
 {
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
@@ -341,7 +341,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultConsclass)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastConsclass)
+GCG_DECL_SETPARAMFAST(setParamFastConsclass)
 {
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
@@ -390,7 +390,7 @@ DEC_DECL_SETPARAMFAST(setParamFastConsclass)
 SCIP_RETCODE SCIPincludeDetectorConsclass(SCIP* scip /**< SCIP data structure */
 )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
    char setstr[SCIP_MAXSTRLEN];
 
    /**@todo create consclass detector data here*/
@@ -398,8 +398,8 @@ SCIP_RETCODE SCIPincludeDetectorConsclass(SCIP* scip /**< SCIP data structure */
 
    SCIP_CALL(
       GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
-         freeConsclass, initConsclass, exitConsclass, propagatePartialdecConsclass, finishPartialdecConsclass, detectorPostprocessPartialdecConsclass, setParamAggressiveConsclass, setParamDefaultConsclass, setParamFastConsclass));
+                         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
+                         freeConsclass, initConsclass, exitConsclass, propagatePartialdecConsclass, finishPartialdecConsclass, detectorPostprocessPartialdecConsclass, setParamAggressiveConsclass, setParamDefaultConsclass, setParamFastConsclass));
 
    /**@todo add consclass detector parameters */
 

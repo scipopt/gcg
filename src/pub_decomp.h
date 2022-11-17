@@ -75,72 +75,72 @@ const char *GCGdecompGetStrType(
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeCreate(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP**          decomp              /**< pointer to the decomposition data structure */
+   GCG_DECOMP**          decomp              /**< pointer to the decomposition data structure */
    );
 
 /** frees the decomposition */
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeFree(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP**          decomp              /**< pointer to the decomposition data structure */
+   GCG_DECOMP**          decomp              /**< pointer to the decomposition data structure */
    );
 
 /** sets the type of the decomposition */
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeSetType(
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    DEC_DECTYPE           type                /**< type of the decomposition */
    );
 
 /** gets the type of the decomposition */
 GCG_EXPORT
 DEC_DECTYPE GCGdecompFreeGetType(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 GCG_EXPORT
 SCIP_Real GCGdecompFreeGetMaxwhiteScore(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 GCG_EXPORT
 void GCGdecompSetMaxWhiteScore(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_Real             maxwhitescore       /**< score related to max white measure (i.e. fraction of white (nonblock and nonborder) matrix area ) */
    );
 
 /** sets the presolved flag for decomposition */
 GCG_EXPORT
 void GCGdecompFreeSetPresolved(
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_Bool             presolved           /**< presolved flag for decomposition */
    );
 
 /** gets the presolved flag for decomposition */
 GCG_EXPORT
 SCIP_Bool GCGdecompFreeGetPresolved(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** sets the number of blocks for decomposition */
 GCG_EXPORT
 void GCGdecompFreeSetNBlocks(
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    int                   nblocks             /**< number of blocks for decomposition */
    );
 
 /** gets the number of blocks for decomposition */
 GCG_EXPORT
 int GCGdecompFreeGetNBlocks(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** copies the input subscipvars array to the given decomposition */
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeSetSubscipvars(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR***           subscipvars,        /**< subscipvars array  */
    int*                  nsubscipvars        /**< number of subscipvars per block */
    );
@@ -148,20 +148,20 @@ SCIP_RETCODE GCGdecompFreeSetSubscipvars(
 /** returns the subscipvars array of the given decomposition */
 GCG_EXPORT
 SCIP_VAR*** GCGdecompGetSubscipvars(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** returns the nsubscipvars array of the given decomposition */
 GCG_EXPORT
 int* GCGdecompGetNSubscipvars(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** copies the input subscipconss array to the given decomposition */
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeSetSubscipconss(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_CONS***          subscipconss,       /**< subscipconss array  */
    int*                  nsubscipconss       /**< number of subscipconss per block */
    );
@@ -169,20 +169,20 @@ SCIP_RETCODE GCGdecompFreeSetSubscipconss(
 /** returns the subscipconss array of the given decomposition */
 GCG_EXPORT
 SCIP_CONS*** GCGdecompFreeGetSubscipconss(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** returns the nsubscipconss array of the given decomposition */
 GCG_EXPORT
 int* GCGdecompFreeGetNSubscipconss(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** copies the input linkingconss array to the given decomposition */
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeSetLinkingconss(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_CONS**           linkingconss,       /**< linkingconss array  */
    int                   nlinkingconss       /**< number of linkingconss per block */
    );
@@ -190,20 +190,20 @@ SCIP_RETCODE GCGdecompFreeSetLinkingconss(
 /** returns the linkingconss array of the given decomposition */
 GCG_EXPORT
 SCIP_CONS** GCGdecompGetLinkingconss(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** returns the nlinkingconss array of the given decomposition */
 GCG_EXPORT
 int GCGdecompGetNLinkingconss(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** copies the input linkingvars array to the given decomposition */
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeSetLinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            linkingvars,        /**< linkingvars array  */
    int                   nlinkingvars,       /**< number of linkingvars per block */
    int                   nfixedlinkingvars,  /**< number of linking variables that are fixed */
@@ -213,26 +213,26 @@ SCIP_RETCODE GCGdecompFreeSetLinkingvars(
 /** returns the linkingvars array of the given decomposition */
 GCG_EXPORT
 SCIP_VAR** GCGdecompFreeGetLinkingvars(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** returns the number of master variables of the given decomposition */
 GCG_EXPORT
 int GCGdecompFreeGetNMastervars(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 
 /** returns the nlinkingvars array of the given decomposition */
 GCG_EXPORT
 int GCGdecompFreeGetNLinkingvars(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** returns the nlinkingvars array of the given decomposition */
 GCG_EXPORT
 int GCGdecompFreeGetNFixedLinkingvars(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 
@@ -240,7 +240,7 @@ int GCGdecompFreeGetNFixedLinkingvars(
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeSetStairlinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR***           stairlinkingvars,   /**< stairlinkingvars array  */
    int*                  nstairlinkingvars   /**< number of linkingvars per block */
    );
@@ -248,79 +248,79 @@ SCIP_RETCODE GCGdecompFreeSetStairlinkingvars(
 /** returns the stairlinkingvars array of the given decomposition */
 GCG_EXPORT
 SCIP_VAR*** GCGdecompFreeGetStairlinkingvars(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** returns the nstairlinkingvars array of the given decomposition */
 GCG_EXPORT
 int* GCGdecompFreeGetNStairlinkingvars(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** returns the total number of stairlinkingvars array of the given decomposition */
 GCG_EXPORT
 int GCGdecompFreeGetNTotalStairlinkingvars(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 
 /** sets the vartoblock hashmap of the given decomposition */
 GCG_EXPORT
 void GCGdecompFreeSetVartoblock(
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         vartoblock          /**< Vartoblock hashmap */
    );
 
 /** returns the vartoblock hashmap of the given decomposition */
 GCG_EXPORT
 SCIP_HASHMAP* GCGdecompFreeGetVartoblock(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** sets the constoblock hashmap of the given decomposition */
 GCG_EXPORT
 void GCGdecompFreeSetConstoblock(
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         constoblock         /**< Constoblock hashmap */
    );
 
 /** returns the constoblock hashmap of the given decomposition */
 GCG_EXPORT
 SCIP_HASHMAP* GCGdecompFreeGetConstoblock(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** sets the varindex hashmap of the given decomposition */
 GCG_EXPORT
 void GCGdecompFreeSetVarindex(
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         varindex            /**< Varindex hashmap */
    );
 
 /** returns the varindex hashmap of the given decomposition */
 GCG_EXPORT
 SCIP_HASHMAP* GCGdecompFreeGetVarindex(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** sets the consindex hashmap of the given decomposition */
 GCG_EXPORT
 void GCGdecompFreeSetConsindex(
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         consindex           /**< Consindex hashmap */
    );
 
 /** returns the consindex hashmap of the given decomposition */
 GCG_EXPORT
 SCIP_HASHMAP* GCGdecompFreeGetConsindex(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** completely initializes decomposition structure from the values of the hashmaps */
 GCG_EXPORT
 SCIP_RETCODE GCGfilloutDecompFromHashmaps(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         vartoblock,         /**< variable to block hashmap */
    SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
    int                   nblocks,            /**< number of blocks */
@@ -331,7 +331,7 @@ SCIP_RETCODE GCGfilloutDecompFromHashmaps(
 GCG_EXPORT
 SCIP_RETCODE GCGfilloutDecompFromConstoblock(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap, start with 1 for first block and nblocks+1 for linking constraints */
    int                   nblocks,            /**< number of blocks */
    SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
@@ -340,53 +340,53 @@ SCIP_RETCODE GCGfilloutDecompFromConstoblock(
 /** sets the detector for the given decomposition */
 GCG_EXPORT
 void GCGdecompFreeSetDetector(
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
-   DEC_DETECTOR*         detector            /**< detector data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DETECTOR*         detector            /**< detector data structure */
    );
 
 /** gets the detector for the given decomposition */
 GCG_EXPORT
-DEC_DETECTOR* GCGdecompFreeGetDetector(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+GCG_DETECTOR* GCGdecompFreeGetDetector(
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** gets the detectors for the given decomposition */
 GCG_EXPORT
-DEC_DETECTOR** GCGdecompFreeGetDetectorChain(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+GCG_DETECTOR** GCGdecompFreeGetDetectorChain(
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** gets the number of detectors for the given decomposition */
 GCG_EXPORT
 int GCGdecompFreeGetDetectorChainSize(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** gets the id of the original partialdec */
 GCG_EXPORT
 int GCGdecompFreeGetPartialdecID(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** sets the detector clock times of the detectors of the detector chain */
 GCG_EXPORT
 void GCGdecompFreeSetDetectorClockTimes(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_Real*            detectorClockTimes  /**< time used by the detectors */
    );
 
 /** gets the detector clock times of the detectors of the detector chain */
 GCG_EXPORT
 SCIP_Real* GCGdecompFreeGetDetectorClockTimes(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** sets the detector clock times of the detectors of the detector chain */
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeSetDetectorChainString(
    SCIP*                 scip,                /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   GCG_DECOMP*           decomp,              /**< decomposition data structure */
    const char*           detectorchainstring  /**< string for the detector information working on that decomposition */
    );
 
@@ -394,7 +394,7 @@ SCIP_RETCODE GCGdecompFreeSetDetectorChainString(
 GCG_EXPORT
 char* GCGdecompFreeGetDetectorChainString(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 
@@ -402,56 +402,56 @@ char* GCGdecompFreeGetDetectorChainString(
 GCG_EXPORT
 void GCGdecompFreeSetDetectorPctVarsToBorder(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   GCG_DECOMP*           decomp,              /**< decomposition data structure */
    SCIP_Real*            pctVarsToBorder
    );
 
 /** gets the percentages of variables assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
 GCG_EXPORT
 SCIP_Real* GCGdecompFreeGetDetectorPctVarsToBorder(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** sets the percentages of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
 GCG_EXPORT
 void GCGdecompFreeSetDetectorPctConssToBorder(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   GCG_DECOMP*           decomp,              /**< decomposition data structure */
    SCIP_Real*            pctConssToBorder
    );
 
 /** gets the percentages of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
 GCG_EXPORT
 SCIP_Real* GCGdecompFreeGetDetectorPctConssToBorder(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** sets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 GCG_EXPORT
 void GCGdecompFreeSetDetectorPctVarsToBlock(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   GCG_DECOMP*           decomp,              /**< decomposition data structure */
    SCIP_Real*            pctVarsToBlock
    );
 
 /** gets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 GCG_EXPORT
 SCIP_Real* GCGdecompFreeGetDetectorPctVarsToBlock(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** sets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 GCG_EXPORT
 void GCGdecompFreeSetDetectorPctConssToBlock(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   GCG_DECOMP*           decomp,              /**< decomposition data structure */
    SCIP_Real*            pctConssToBlock
    );
 
 /** gets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 GCG_EXPORT
 SCIP_Real* GCGdecompFreeGetDetectorPctConssToBlock(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 
@@ -459,49 +459,49 @@ SCIP_Real* GCGdecompFreeGetDetectorPctConssToBlock(
 GCG_EXPORT
 void GCGdecompFreeSetDetectorPctVarsFromOpen(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   GCG_DECOMP*           decomp,              /**< decomposition data structure */
    SCIP_Real*            pctVarsFromOpen
    );
 
 /** gets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 GCG_EXPORT
 SCIP_Real* GCGdecompFreeGetDetectorPctVarsFromOpen(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** sets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 GCG_EXPORT
 void GCGdecompFreeSetDetectorPctConssFromOpen(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   GCG_DECOMP*           decomp,              /**< decomposition data structure */
    SCIP_Real*            pctConssToBorder
    );
 
 /** gets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 GCG_EXPORT
 SCIP_Real* GCGdecompFreeGetDetectorPctConssFromOpen(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** sets the number of new blocks of the corresponding detectors (of the detector chain) on this decomposition */
 GCG_EXPORT
 void GCGdecompFreeSetNNewBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    int*                  nNewBlocks          /**< number of new blocks on this decomposition */
    );
 
 /** gets the number of new blocks corresponding detectors (of the detector chain) on this decomposition */
 GCG_EXPORT
 int* GCGdecompFreeGetNNewBlocks(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** transforms all constraints and variables, updating the arrays */
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeTransform(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /**
@@ -510,7 +510,7 @@ SCIP_RETCODE GCGdecompFreeTransform(
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeRemoveDeletedConss(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /**
@@ -519,21 +519,21 @@ SCIP_RETCODE GCGdecompFreeRemoveDeletedConss(
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeAddRemainingConss(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** checks the validity of the decomposition data structure */
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeCheckConsistency(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** creates a decomposition with all constraints in the master */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateBasicDecomp(
    SCIP*                 scip,                /**< SCIP data structure */
-   DEC_DECOMP**          decomp,              /**< decomposition data structure */
+   GCG_DECOMP**          decomp,              /**< decomposition data structure */
    SCIP_Bool             solveorigprob        /**< is the original problem being solved? */
    );
 
@@ -544,7 +544,7 @@ SCIP_RETCODE GCGcreateBasicDecomp(
 GCG_EXPORT
 SCIP_RETCODE GCGcreateDecompFromMasterconss(
    SCIP*                 scip,                /**< SCIP data structure */
-   DEC_DECOMP**          decomp,              /**< decomposition data structure */
+   GCG_DECOMP**          decomp,              /**< decomposition data structure */
    SCIP_CONS**           conss,               /**< constraints to be put in the master */
    int                   nconss               /**< number of constraints in the master */
    );
@@ -553,7 +553,7 @@ SCIP_RETCODE GCGcreateDecompFromMasterconss(
 GCG_EXPORT
 void GCGgetSubproblemVarsData(
    SCIP*                 scip,                /**< SCIP data structure */
-   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   GCG_DECOMP*           decomp,              /**< decomposition data structure */
    int*                  nvars,               /**< pointer to array of size nproblems to store number of subproblem vars or NULL */
    int*                  nbinvars,            /**< pointer to array of size nproblems to store number of binary subproblem vars or NULL */
    int*                  nintvars,            /**< pointer to array of size nproblems to store number of integer subproblem vars or NULL */
@@ -566,7 +566,7 @@ void GCGgetSubproblemVarsData(
 GCG_EXPORT
 void GCGgetLinkingVarsData(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    int*                  nvars,              /**< pointer to store number of linking vars or NULL */
    int*                  nbinvars,           /**< pointer to store number of binary linking vars or NULL */
    int*                  nintvars,           /**< pointer to store number of integer linking vars or NULL */
@@ -587,7 +587,7 @@ void GCGgetLinkingVarsData(
 GCG_EXPORT
 SCIP_RETCODE GCGgetDensityData(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            vars,               /**< pointer to array store variables belonging to density */
    int                   nvars,              /**< number of variables */
    SCIP_CONS**           conss,              /**< pointer to array to store constraints belonging to the density */
@@ -608,7 +608,7 @@ SCIP_RETCODE GCGgetDensityData(
 GCG_EXPORT
 SCIP_RETCODE GCGgetVarLockData(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            vars,               /**< pointer to array store variables belonging to density */
    int                   nvars,              /**< number of variables */
    int                   nsubproblems,       /**< number of sub problems */
@@ -623,9 +623,9 @@ SCIP_RETCODE GCGgetVarLockData(
  */
 GCG_EXPORT
 SCIP_Real GCGdecompGetMaxWhiteScore(
-      SCIP*                 scip,               /**< SCIP data structure */
-      DEC_DECOMP*           decomp              /**< decomposition data structure */
-      );
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
+   );
 
 
 /** computes the score of the given decomposition based on the border, the average density score and the ratio of
@@ -634,14 +634,14 @@ SCIP_Real GCGdecompGetMaxWhiteScore(
 GCG_EXPORT
 SCIP_RETCODE GCGdecompEvaluateDecomposition(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    DEC_SCORES*           score               /**< returns the score of the decomposition */
    );
 
 /** returns the number of constraints saved in the decomposition */
 GCG_EXPORT
 int GCGdecompFreeGetNConss(
-   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** display statistics about the decomposition */
@@ -649,15 +649,15 @@ GCG_EXPORT
 SCIP_RETCODE GCGprintDecompStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< output file or NULL for standard output */
-   DEC_DECOMP*           decomp              /**< decomp that should be evaluated */
+   GCG_DECOMP*           decomp              /**< decomp that should be evaluated */
    );
 
 /** returns whether both structures lead to the same decomposition */
 GCG_EXPORT
 SCIP_Bool GCGdecompFreeositionsAreEqual(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp1,            /**< first decomp data structure */
-   DEC_DECOMP*           decomp2             /**< second decomp data structure */
+   GCG_DECOMP*           decomp1,            /**< first decomp data structure */
+   GCG_DECOMP*           decomp2             /**< second decomp data structure */
 );
 
 
@@ -667,7 +667,7 @@ SCIP_Bool GCGdecompFreeositionsAreEqual(
 GCG_EXPORT
 int GCGfilterSimilarDecompositions(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP**          decs,               /**< array of decompositions */
+   GCG_DECOMP**          decs,               /**< array of decompositions */
    int                   ndecs               /**< number of decompositions */
 );
 
@@ -675,7 +675,7 @@ int GCGfilterSimilarDecompositions(
 GCG_EXPORT
 SCIP_RETCODE GCGdetermineConsBlock(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_CONS*            cons,               /**< constraint to check */
    int                   *block              /**< block of the constraint (or nblocks for master) */
 );
@@ -684,7 +684,7 @@ SCIP_RETCODE GCGdetermineConsBlock(
 GCG_EXPORT
 SCIP_RETCODE GCGdecompFreeMoveLinkingConsToPricing(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    int                   consindex,          /**< index of constraint to move */
    int                   block               /**< block of the pricing problem where to move */
    );
@@ -693,7 +693,7 @@ SCIP_RETCODE GCGdecompFreeMoveLinkingConsToPricing(
 GCG_EXPORT
 SCIP_RETCODE GCGdecompTryAssignMasterconssToExistingPricing(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    int*                  transferred         /**< number of master constraints reassigned */
    );
 
@@ -701,8 +701,8 @@ SCIP_RETCODE GCGdecompTryAssignMasterconssToExistingPricing(
 GCG_EXPORT
 SCIP_RETCODE GCGdecompTryAssignMasterconssToNewPricing(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
-   DEC_DECOMP**          newdecomp,          /**< new decomposition, if successful */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP**          newdecomp,          /**< new decomposition, if successful */
    int*                  transferred         /**< number of master constraints reassigned */
    );
 
@@ -710,15 +710,15 @@ SCIP_RETCODE GCGdecompTryAssignMasterconssToNewPricing(
 GCG_EXPORT
 SCIP_RETCODE GCGcreatePolishedDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
-   DEC_DECOMP**          newdecomp           /**< new decomposition, if successful */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP**          newdecomp           /**< new decomposition, if successful */
    );
 
 /** permutes the decomposition according to the permutation seed */
 GCG_EXPORT
 SCIP_RETCODE GCGpermuteDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_RANDNUMGEN*      randnumgen          /**< random number generator */
    );
 

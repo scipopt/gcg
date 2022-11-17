@@ -134,7 +134,7 @@ using gcg::Weights;
  */
 
 /** private detector data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
 
    /* weight parameters */
@@ -185,9 +185,9 @@ struct DEC_DetectorData
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freeHrgpartition)
+GCG_DECL_FREEDETECTOR(freeHrgpartition)
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    assert(scip != NULL);
 
@@ -204,10 +204,10 @@ DEC_DECL_FREEDETECTOR(freeHrgpartition)
 
 /** detector initialization method */
 static
-DEC_DECL_INITDETECTOR(initHrgpartition)
+GCG_DECL_INITDETECTOR(initHrgpartition)
 {
    int nconss;
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
    assert(scip != NULL);
 
 
@@ -225,7 +225,7 @@ DEC_DECL_INITDETECTOR(initHrgpartition)
 
 /** presolving deinitialization method of presolver (called after presolving has been finished) */
 static
-DEC_DECL_EXITDETECTOR(exitHrgpartition)
+GCG_DECL_EXITDETECTOR(exitHrgpartition)
 {
 
    assert(scip != NULL);
@@ -240,7 +240,7 @@ DEC_DECL_EXITDETECTOR(exitHrgpartition)
 static
 SCIP_RETCODE callMetis(
    SCIP*                 scip,               /**< SCIP data struture */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< presolver data data structure */
    MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
    char                  tempfile[SCIP_MAXSTRLEN],  /**< filename for the metis input file */
    int                   nblocks,            /**< number of blocks */
@@ -345,7 +345,7 @@ SCIP_RETCODE callMetis(
 static
 SCIP_RETCODE createMetisFile(
    SCIP*                 scip,               /**< SCIP data struture */
-   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    int                   partialdecID,       /**< ID of partial decomposition to be used */
    MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
    char tempfile[SCIP_MAXSTRLEN]             /**< filename for the metis input file */
@@ -432,7 +432,7 @@ bool connected(
 static
 SCIP_RETCODE detection(
    SCIP*                   scip,                         /**< SCIP data structure */
-   DEC_DETECTORDATA*       detectordata,                 /**< detectordata of the detector */
+   GCG_DETECTORDATA*       detectordata,                 /**< detectordata of the detector */
    Partialdec_Detection_Data*   partialdecdetectiondata, /**< partialdecdetectiondata (including the detprobdata) where to store the new Partialdecs */
    gcg::PARTIALDECOMP*     partialdec,                   /**< partialdec to propagate */
    bool                    allowopenpartialdecs,         /**< whether new partialdecs should be stored in which this detector only assignes conss to master */
@@ -588,7 +588,7 @@ SCIP_RETCODE detection(
 
 
 static
-DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrgpartition)
+GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrgpartition)
 {
    SCIP_CLOCK* temporaryClock;
    gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
@@ -644,7 +644,7 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrgpartition)
 
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrgpartition)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrgpartition)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
@@ -698,7 +698,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrgpartition)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultHrgpartition)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultHrgpartition)
 {
    char setstr[SCIP_MAXSTRLEN];
    int newval;
@@ -740,7 +740,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultHrgpartition)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastHrgpartition)
+GCG_DECL_SETPARAMFAST(setParamFastHrgpartition)
 {
    char setstr[SCIP_MAXSTRLEN];
    int newval;
@@ -790,7 +790,7 @@ SCIP_RETCODE SCIPincludeDetectorHrgpartition(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   DEC_DETECTORDATA *detectordata = NULL;
+   GCG_DETECTORDATA *detectordata = NULL;
    assert(scip != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
@@ -798,7 +798,7 @@ SCIP_RETCODE SCIPincludeDetectorHrgpartition(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeHrgpartition, initHrgpartition, exitHrgpartition, propagatePartialdecHrgpartition, finishPartialdecHrgpartition, detectorPostprocessPartialdecHrgpartition, setParamAggressiveHrgpartition, setParamDefaultHrgpartition, setParamFastHrgpartition) );
+   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeHrgpartition, initHrgpartition, exitHrgpartition, propagatePartialdecHrgpartition, finishPartialdecHrgpartition, detectorPostprocessPartialdecHrgpartition, setParamAggressiveHrgpartition, setParamDefaultHrgpartition, setParamFastHrgpartition) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrgpartition/limitnconssnvarsdefault", "Limit for sum of nvars and nconss for enabling this detector in default", &detectordata->limitnconssnvarsdefault, TRUE, DEFAULT_LIMITNCONSSNVARSDEFAULT, 0, INT_MAX, NULL, NULL) );
 

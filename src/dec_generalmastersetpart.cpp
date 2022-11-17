@@ -75,7 +75,7 @@
 /** @todo fill in the necessary detector data */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
 };
 
@@ -99,7 +99,7 @@ struct DEC_DetectorData
 #define initGeneralmastersetpart NULL
 
 
-static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetpart)
+static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetpart)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
@@ -198,7 +198,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetpart)
 #define detectorPostprocessPartialdecGeneralmastersetpart NULL
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveGeneralmastersetpart)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveGeneralmastersetpart)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
@@ -227,7 +227,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveGeneralmastersetpart)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultGeneralmastersetpart)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultGeneralmastersetpart)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -243,7 +243,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultGeneralmastersetpart)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastGeneralmastersetpart)
+GCG_DECL_SETPARAMFAST(setParamFastGeneralmastersetpart)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -268,7 +268,7 @@ DEC_DECL_SETPARAMFAST(setParamFastGeneralmastersetpart)
 SCIP_RETCODE SCIPincludeDetectorGeneralmastersetpart(SCIP* scip /**< SCIP data structure */
 )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    /**@todo create generalmastersetpart detector data here*/
    detectordata = NULL;

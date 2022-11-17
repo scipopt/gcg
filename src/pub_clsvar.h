@@ -51,39 +51,39 @@ extern "C" {
 
 /** gets user data of variable classifier */
 GCG_EXPORT
-DEC_CLASSIFIERDATA* GCGvarClassifierGetData(
-   DEC_VARCLASSIFIER* varClassifier                 /**< variable classifier data structure */
+GCG_CLASSIFIERDATA* GCGvarClassifierGetData(
+   GCG_VARCLASSIFIER* varClassifier                 /**< variable classifier data structure */
    );
 
 /** sets user data of variable classifier; user has to free old data in advance! */
 GCG_EXPORT
 void GCGvarClassifierSetData(
-   DEC_VARCLASSIFIER* varClassifier,                /**< variable classifier data structure */
-   DEC_CLASSIFIERDATA* clsdata                      /**< new variable classifier user data */
+   GCG_VARCLASSIFIER* varClassifier,                /**< variable classifier data structure */
+   GCG_CLASSIFIERDATA* clsdata                      /**< new variable classifier user data */
    );
 
 /** gets name of variable classifier */
 GCG_EXPORT
 const char* GCGvarClassifierGetName(
-   DEC_VARCLASSIFIER* varClassifier                 /**< variable classifier data structure */
+   GCG_VARCLASSIFIER* varClassifier                 /**< variable classifier data structure */
    );
 
 /** gets priority of variable classifier */
 GCG_EXPORT
 int GCGvarClassifierGetPriority(
-   DEC_VARCLASSIFIER* varClassifier                 /**< variable classifier data structure */
+   GCG_VARCLASSIFIER* varClassifier                 /**< variable classifier data structure */
    );
 
 /** returns True iff variable classifier is enabled */
 GCG_EXPORT
 SCIP_Bool GCGvarClassifierIsEnabled(
-   DEC_VARCLASSIFIER* varClassifier                 /**< variable classifier data structure */
+   GCG_VARCLASSIFIER* varClassifier                 /**< variable classifier data structure */
    );
 
 /** gets description of variable classifier */
 GCG_EXPORT
 const char* GCGvarClassifierGetDesc(
-   DEC_VARCLASSIFIER* varClassifier                 /**< variable classifier data structure */
+   GCG_VARCLASSIFIER* varClassifier                 /**< variable classifier data structure */
    );
 
 /** @} */

@@ -60,7 +60,7 @@ RowGraph<T>::~RowGraph()
 
 template <class T>
 SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
-   DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+   GCG_DECOMP**       decomp              /**< decomposition structure to generate */
 )
 {
    int nblocks;
