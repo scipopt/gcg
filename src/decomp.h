@@ -49,7 +49,7 @@ extern "C" {
  * @note make sure you know what you are doing, only use at initialization
 */
 GCG_EXPORT
-SCIP_RETCODE GCGdecompFreeSetDetectorChain(
+SCIP_RETCODE GCGdecompSetDetectorChain(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    GCG_DETECTOR**        detectors,          /**< new detector chain */
@@ -58,7 +58,7 @@ SCIP_RETCODE GCGdecompFreeSetDetectorChain(
 
 /** sets the id of the original partialdec */
 GCG_EXPORT
-void GCGdecompFreeSetPartialdecID(
+void GCGdecompSetPartialdecID(
    GCG_DECOMP*           decomp,              /**< decomposition data structure */
    int                   id                   /**< ID of partialdec */
    );

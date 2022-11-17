@@ -114,7 +114,7 @@ class GcgDecStatisticTest : public ::testing::Test {
       SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, transconss[0], (void*) (size_t)1) );
       SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, transconss[1], (void*) (size_t)2) );
       SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, transconss[2], (void*) (size_t)3) );
-      SCIP_CALL_ABORT( GCGdecompFreeCreate(scip, &decomp) );
+      SCIP_CALL_ABORT( GCGdecompCreate(scip, &decomp) );
 
       SCIP_CALL_ABORT( GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
    }
@@ -130,7 +130,7 @@ class GcgDecStatisticTest : public ::testing::Test {
       {
          SCIP_CALL_ABORT( SCIPreleaseCons(scip, &(conss[i])));
       }
-      SCIP_CALL_ABORT( GCGdecompFreeFree(scip, &decomp) );
+      SCIP_CALL_ABORT( GCGdecompFree(scip, &decomp) );
 
 
       SCIP_CALL_ABORT( SCIPfree(&scip) );
@@ -140,16 +140,16 @@ class GcgDecStatisticTest : public ::testing::Test {
 SCIP* GcgDecStatisticTest::scip = NULL;
 
 TEST_F(GcgDecStatisticTest, BlockTest) {
-   ASSERT_EQ(2, GCGdecompFreeGetNBlocks(decomp));
+   ASSERT_EQ(2, GCGdecompGetNBlocks(decomp));
 }
 
 TEST_F(GcgDecStatisticTest, SubscipSizeTest) {
-   ASSERT_EQ(2, GCGdecompFreeGetNBlocks(decomp));
+   ASSERT_EQ(2, GCGdecompGetNBlocks(decomp));
    ASSERT_EQ(2, GCGdecompGetNSubscipvars(decomp)[0]);
    ASSERT_EQ(2, GCGdecompGetNSubscipvars(decomp)[1]);
-   ASSERT_EQ(1, GCGdecompFreeGetNLinkingvars(decomp));
-   ASSERT_EQ(1, GCGdecompFreeGetNSubscipconss(decomp)[0]);
-   ASSERT_EQ(1, GCGdecompFreeGetNSubscipconss(decomp)[0]);
+   ASSERT_EQ(1, GCGdecompGetNLinkingvars(decomp));
+   ASSERT_EQ(1, GCGdecompGetNSubscipconss(decomp)[0]);
+   ASSERT_EQ(1, GCGdecompGetNSubscipconss(decomp)[0]);
    ASSERT_EQ(1, GCGdecompGetNLinkingconss(decomp));
 }
 

@@ -600,7 +600,7 @@ SCIP_RETCODE readREFFile(
 
       case REF_NBLOCKS:
          SCIP_CALL( readNBlocks(scip, refinput) );
-         GCGdecompFreeSetNBlocks(decomp, refinput->nblocks);
+         GCGdecompSetNBlocks(decomp, refinput->nblocks);
          break;
 
       case REF_BLOCKSIZES:
@@ -624,8 +624,8 @@ SCIP_RETCODE readREFFile(
    /* copy information to decomp */
    SCIP_CALL_QUIET( GCGfilloutDecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock, refinput->nblocks, FALSE) );
 
-   GCGdecompFreeSetPresolved(decomp, FALSE);
-   GCGdecompFreeSetDetector(decomp, NULL);
+   GCGdecompSetPresolved(decomp, FALSE);
+   GCGdecompSetDetector(decomp, NULL);
 
    return SCIP_OKAY;
 }
@@ -665,7 +665,7 @@ SCIP_RETCODE writeREFFile(
       SCIPwarningMessage(scip, "No reformulation exists, cannot write reformulation file!\n");
       return SCIP_OKAY;
    }
-   nblocks = GCGdecompFreeGetNBlocks(decomp);
+   nblocks = GCGdecompGetNBlocks(decomp);
    conss = SCIPgetOrigConss(scip);
    nconss = SCIPgetNOrigConss(scip);
 
@@ -685,8 +685,8 @@ SCIP_RETCODE writeREFFile(
       SCIP_CALL( SCIPhashmapInsert(cons2origindex, cons, (void*)(size_t)(ind)) ); /* shift by 1 to enable error checking */
    }
 
-   subscipconss = GCGdecompFreeGetSubscipconss(decomp);
-   nsubscipconss = GCGdecompFreeGetNSubscipconss(decomp);
+   subscipconss = GCGdecompGetSubscipconss(decomp);
+   nsubscipconss = GCGdecompGetNSubscipconss(decomp);
    SCIPinfoMessage(scip, file, "%d ", nblocks);
 
    assert(nsubscipconss != NULL);
@@ -717,7 +717,7 @@ SCIP_RETCODE writeREFFile(
    }
    SCIPhashmapFree(&cons2origindex);
 
-   GCGdecompFreeFree(scip, &decomp);
+   GCGdecompFree(scip, &decomp);
 
    return SCIP_OKAY;
 }
@@ -819,7 +819,7 @@ SCIP_RETCODE SCIPreadRef(
    SCIP_CALL( SCIPhashmapCreate(&refinput.constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    /* read the file */
-   SCIP_CALL( GCGdecompFreeCreate(scip, &decomp) );
+   SCIP_CALL( GCGdecompCreate(scip, &decomp) );
 
    retcode = readREFFile(scip, reader, &refinput, decomp, filename);
 
@@ -841,7 +841,7 @@ SCIP_RETCODE SCIPreadRef(
 #endif
    }
 
-   SCIP_CALL( GCGdecompFreeFree(scip, &decomp) );
+   SCIP_CALL( GCGdecompFree(scip, &decomp) );
 
    /* free dynamically allocated memory */
    SCIPfreeMemoryArray(scip, &refinput.token);

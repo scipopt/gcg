@@ -181,7 +181,7 @@ SCIP_RETCODE DialogReadGraphs<T, G>::scip_exec(SCIP* scip, SCIP_DIALOG* dialog, 
       delete graph;
 
       SCIP_CALL( GCGconshdlrDecompAddPreexistingDecomp(scip, decomp) );
-      GCGdecompFreeFree(scip, &decomp);
+      GCGdecompFree(scip, &decomp);
       SCIPdialogMessage(scip, NULL, "decomposition read from <%s>\n", extension);
    }
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);

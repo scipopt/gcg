@@ -577,7 +577,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "\nAdditional statistics:\n");
       bestdecomp = GCGgetBestDecomp(scip, FALSE);
-      if( GCGdecompFreeGetType(bestdecomp) == GCG_DECTYPE_DIAGONAL )
+      if( GCGdecompGetType(bestdecomp) == GCG_DECTYPE_DIAGONAL )
       {
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), NULL, "\n");
          SCIP_CALL( GCGwriteDecompositionData(scip) );
@@ -590,7 +590,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
          SCIP_CALL( GCGwriteDecompositionData(scip) );
          SCIP_CALL( GCGwriteVarCreationDetails(GCGgetMasterprob(scip)) );
       }
-      GCGdecompFreeFree(scip, &bestdecomp);
+      GCGdecompFree(scip, &bestdecomp);
    }
    else
    {

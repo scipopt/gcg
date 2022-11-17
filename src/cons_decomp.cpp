@@ -750,7 +750,7 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
    {
       for( int dec = 0; dec < conshdlrdata->ndecomps; ++dec )
       {
-         GCGdecompFreeFree(scip, &conshdlrdata->decomps[conshdlrdata->ndecomps - dec - 1]);
+         GCGdecompFree(scip, &conshdlrdata->decomps[conshdlrdata->ndecomps - dec - 1]);
       }
 
       /* remove decomp array structure */
@@ -991,18 +991,18 @@ SCIP_RETCODE createPartialdecFromDecomp(
    )
 {
    assert( decomp != NULL );
-   assert( GCGdecompFreeCheckConsistency( scip, decomp ) );
+   assert( GCGdecompCheckConsistency( scip, decomp ) );
 
    /* get detprobdata for var & cons indices */
    DETPROBDATA* detprobdata = decomp->presolved ? GCGconshdlrDecompGetDetprobdataPresolved(scip) : GCGconshdlrDecompGetDetprobdataOrig(scip);
 
    /* create new partialdec and initialize its data */
    PARTIALDECOMP* partialdec = new PARTIALDECOMP(scip, !decomp->presolved);
-   partialdec->setNBlocks( GCGdecompFreeGetNBlocks(decomp));
+   partialdec->setNBlocks( GCGdecompGetNBlocks(decomp));
 
    SCIP_CONS** linkingconss = GCGdecompGetLinkingconss(decomp);
    int nlinkingconss = GCGdecompGetNLinkingconss(decomp);
-   SCIP_HASHMAP* constoblock = GCGdecompFreeGetConstoblock(decomp);
+   SCIP_HASHMAP* constoblock = GCGdecompGetConstoblock(decomp);
    int nblock;
 
    /* set linking conss */
@@ -1021,11 +1021,11 @@ SCIP_RETCODE createPartialdecFromDecomp(
       }
    }
 
-   SCIP_VAR*** stairlinkingvars = GCGdecompFreeGetStairlinkingvars(decomp);
+   SCIP_VAR*** stairlinkingvars = GCGdecompGetStairlinkingvars(decomp);
 
    if( stairlinkingvars != NULL )
    {
-      int* nstairlinkingvars = GCGdecompFreeGetNStairlinkingvars(decomp);
+      int* nstairlinkingvars = GCGdecompGetNStairlinkingvars(decomp);
       int varindex;
 
       /* set stairlinkingvars */
@@ -1043,7 +1043,7 @@ SCIP_RETCODE createPartialdecFromDecomp(
    }
 
    /* set other vars */
-   SCIP_HASHMAP* vartoblock = GCGdecompFreeGetVartoblock(decomp);
+   SCIP_HASHMAP* vartoblock = GCGdecompGetVartoblock(decomp);
    if( vartoblock != NULL )
    {
       for( int v = 0; v < detprobdata->getNVars(); ++v )
@@ -1071,17 +1071,17 @@ SCIP_RETCODE createPartialdecFromDecomp(
    assert( partialdec->isComplete() );
 
    /*set all detector-related information*/
-   for( int i = 0; i < GCGdecompFreeGetDetectorChainSize(decomp); ++i )
+   for( int i = 0; i < GCGdecompGetDetectorChainSize(decomp); ++i )
    {
-      partialdec->setDetectorPropagated(GCGdecompFreeGetDetectorChain(decomp)[i]);
-      partialdec->addClockTime(GCGdecompFreeGetDetectorClockTimes(decomp)[i]);
-      partialdec->addPctConssFromFree(1 - *(GCGdecompFreeGetDetectorPctConssFromOpen(decomp)));
-      partialdec->addPctConssToBlock(*(GCGdecompFreeGetDetectorPctConssToBlock(decomp)));
-      partialdec->addPctConssToBorder(*(GCGdecompFreeGetDetectorPctConssToBorder(decomp)));
-      partialdec->addPctVarsFromFree(1 - *(GCGdecompFreeGetDetectorPctVarsFromOpen(decomp)));
-      partialdec->addPctVarsToBlock(*(GCGdecompFreeGetDetectorPctVarsToBlock(decomp)));
-      partialdec->addPctVarsToBorder(*(GCGdecompFreeGetDetectorPctVarsToBorder(decomp)));
-      partialdec->addNNewBlocks(*(GCGdecompFreeGetNNewBlocks(decomp)));
+      partialdec->setDetectorPropagated(GCGdecompGetDetectorChain(decomp)[i]);
+      partialdec->addClockTime(GCGdecompGetDetectorClockTimes(decomp)[i]);
+      partialdec->addPctConssFromFree(1 - *(GCGdecompGetDetectorPctConssFromOpen(decomp)));
+      partialdec->addPctConssToBlock(*(GCGdecompGetDetectorPctConssToBlock(decomp)));
+      partialdec->addPctConssToBorder(*(GCGdecompGetDetectorPctConssToBorder(decomp)));
+      partialdec->addPctVarsFromFree(1 - *(GCGdecompGetDetectorPctVarsFromOpen(decomp)));
+      partialdec->addPctVarsToBlock(*(GCGdecompGetDetectorPctVarsToBlock(decomp)));
+      partialdec->addPctVarsToBorder(*(GCGdecompGetDetectorPctVarsToBorder(decomp)));
+      partialdec->addNNewBlocks(*(GCGdecompGetNNewBlocks(decomp)));
    }
 
    /* calc maxwhitescore and hashvalue */
@@ -1143,9 +1143,9 @@ SCIP_RETCODE createDecompFromPartialdec(
    std::vector<SCIP_VAR*> origfixedtozerovars = detprobdata->getOrigVarsFixedZero();
 
    /* create decomp data structure */
-   SCIP_CALL_ABORT( GCGdecompFreeCreate( scip, newdecomp ) );
+   SCIP_CALL_ABORT( GCGdecompCreate( scip, newdecomp ) );
 
-   GCGdecompFreeSetPresolved(*newdecomp, !partialdec->isAssignedToOrigProb());
+   GCGdecompSetPresolved(*newdecomp, !partialdec->isAssignedToOrigProb());
 
    /* find out if for some blocks all conss have been deleted */
    for( int b = 0; b < partialdec->getNBlocks(); ++b )
@@ -1183,7 +1183,7 @@ SCIP_RETCODE createDecompFromPartialdec(
    }
 
    /* set nblocks */
-   GCGdecompFreeSetNBlocks( *newdecomp, partialdec->getNBlocks() - ndeletedblocks );
+   GCGdecompSetNBlocks( *newdecomp, partialdec->getNBlocks() - ndeletedblocks );
 
    if( partialdec->getNBlocks() - ndeletedblocks == 0 )
    {
@@ -1227,7 +1227,7 @@ SCIP_RETCODE createDecompFromPartialdec(
    }
 
    if( nlinkingconss != 0 )
-      GCGdecompFreeSetLinkingconss(scip, *newdecomp, linkingconss, nlinkingconss);
+      GCGdecompSetLinkingconss(scip, *newdecomp, linkingconss, nlinkingconss);
    else
       linkingconss = NULL;
 
@@ -1278,9 +1278,9 @@ SCIP_RETCODE createDecompFromPartialdec(
       }
    }
 
-   GCGdecompFreeSetSubscipconss(scip, *newdecomp, subscipconss, nsubscipconss);
-   GCGdecompFreeSetConstoblock(*newdecomp, constoblock);
-   GCGdecompFreeSetConsindex(*newdecomp, consindex);
+   GCGdecompSetSubscipconss(scip, *newdecomp, subscipconss, nsubscipconss);
+   GCGdecompSetConstoblock(*newdecomp, constoblock);
+   GCGdecompSetConsindex(*newdecomp, consindex);
    /* finished setting constraint data structures */
 
    /* prepare constraints data structures */
@@ -1405,11 +1405,11 @@ SCIP_RETCODE createDecompFromPartialdec(
       }
    }
    
-   GCGdecompFreeSetSubscipvars(scip, *newdecomp, subscipvars, nsubscipvars);
-   GCGdecompFreeSetStairlinkingvars(scip, *newdecomp, stairlinkingvars, nstairlinkingvars);
-   GCGdecompFreeSetLinkingvars(scip, *newdecomp, linkingvars, nlinkingvars, (int) origfixedtozerovars.size(), partialdec->getNMastervars() + nmastervarsfromdeleted);
-   GCGdecompFreeSetVarindex(*newdecomp, varindex);
-   GCGdecompFreeSetVartoblock(*newdecomp, vartoblock);
+   GCGdecompSetSubscipvars(scip, *newdecomp, subscipvars, nsubscipvars);
+   GCGdecompSetStairlinkingvars(scip, *newdecomp, stairlinkingvars, nstairlinkingvars);
+   GCGdecompSetLinkingvars(scip, *newdecomp, linkingvars, nlinkingvars, (int) origfixedtozerovars.size(), partialdec->getNMastervars() + nmastervarsfromdeleted);
+   GCGdecompSetVarindex(*newdecomp, varindex);
+   GCGdecompSetVartoblock(*newdecomp, vartoblock);
 
    /* //////////////////// free stuff ////////////////////////////// */
 
@@ -1448,49 +1448,49 @@ SCIP_RETCODE createDecompFromPartialdec(
    SCIPfreeBufferArrayNull( scip, &linkingconss);
 
    /* set detectorchain */
-   GCGdecompFreeSetDetectorChain(scip, (*newdecomp), partialdec->getDetectorchain().data(), (int) partialdec->getDetectorchain().size());
+   GCGdecompSetDetectorChain(scip, (*newdecomp), partialdec->getDetectorchain().data(), (int) partialdec->getDetectorchain().size());
 
    /* set last detector in chain as detector that "found" this decomposition */
    if(partialdec->getNDetectors() > 0)
-      GCGdecompFreeSetDetector(*newdecomp, partialdec->getDetectorchain().back());
+      GCGdecompSetDetector(*newdecomp, partialdec->getDetectorchain().back());
 
    /* set statistical detector chain data */
-   GCGdecompFreeSetPartialdecID(*newdecomp, partialdec->getID());
+   GCGdecompSetPartialdecID(*newdecomp, partialdec->getID());
    if( partialdec->getNDetectors() > 0 )
    {
-      GCGdecompFreeSetDetectorClockTimes(scip, *newdecomp, partialdec->getDetectorClockTimes().data());
-      GCGdecompFreeSetDetectorPctVarsToBorder(scip, *newdecomp, partialdec->getPctVarsToBorderVector().data());
-      GCGdecompFreeSetDetectorPctVarsToBlock(scip, *newdecomp, partialdec->getPctVarsToBlockVector().data());
-      GCGdecompFreeSetDetectorPctVarsFromOpen(scip, *newdecomp, partialdec->getPctVarsFromFreeVector().data());
-      GCGdecompFreeSetDetectorPctConssToBorder(scip, *newdecomp, partialdec->getPctConssToBorderVector().data());
-      GCGdecompFreeSetDetectorPctConssToBlock(scip, *newdecomp, partialdec->getPctConssToBlockVector().data());
-      GCGdecompFreeSetDetectorPctConssFromOpen(scip, *newdecomp, partialdec->getPctConssFromFreeVector().data());
-      GCGdecompFreeSetNNewBlocks(scip, *newdecomp, partialdec->getNNewBlocksVector().data());
+      GCGdecompSetDetectorClockTimes(scip, *newdecomp, partialdec->getDetectorClockTimes().data());
+      GCGdecompSetDetectorPctVarsToBorder(scip, *newdecomp, partialdec->getPctVarsToBorderVector().data());
+      GCGdecompSetDetectorPctVarsToBlock(scip, *newdecomp, partialdec->getPctVarsToBlockVector().data());
+      GCGdecompSetDetectorPctVarsFromOpen(scip, *newdecomp, partialdec->getPctVarsFromFreeVector().data());
+      GCGdecompSetDetectorPctConssToBorder(scip, *newdecomp, partialdec->getPctConssToBorderVector().data());
+      GCGdecompSetDetectorPctConssToBlock(scip, *newdecomp, partialdec->getPctConssToBlockVector().data());
+      GCGdecompSetDetectorPctConssFromOpen(scip, *newdecomp, partialdec->getPctConssFromFreeVector().data());
+      GCGdecompSetNNewBlocks(scip, *newdecomp, partialdec->getNNewBlocksVector().data());
    }
 
    /* set dectype */
-   int newnlinkingvars = GCGdecompFreeGetNLinkingvars((*newdecomp));
+   int newnlinkingvars = GCGdecompGetNLinkingvars((*newdecomp));
    int newnlinkingconss = GCGdecompGetNLinkingconss((*newdecomp));
 
    if( newnlinkingvars == partialdec->getNTotalStairlinkingvars() && newnlinkingconss == 0 && newnlinkingvars > 0 )
    {
-      GCGdecompFreeSetType((*newdecomp), GCG_DECTYPE_STAIRCASE);
+      GCGdecompSetType((*newdecomp), GCG_DECTYPE_STAIRCASE);
    }
    else if( newnlinkingvars > 0 || partialdec->getNTotalStairlinkingvars() > 0 )
    {
-      GCGdecompFreeSetType((*newdecomp), GCG_DECTYPE_ARROWHEAD);
+      GCGdecompSetType((*newdecomp), GCG_DECTYPE_ARROWHEAD);
    }
    else if( newnlinkingconss > 0 )
    {
-      GCGdecompFreeSetType((*newdecomp), GCG_DECTYPE_BORDERED);
+      GCGdecompSetType((*newdecomp), GCG_DECTYPE_BORDERED);
    }
    else if( newnlinkingconss == 0 && partialdec->getNTotalStairlinkingvars() == 0 )
    {
-      GCGdecompFreeSetType((*newdecomp), GCG_DECTYPE_DIAGONAL);
+      GCGdecompSetType((*newdecomp), GCG_DECTYPE_DIAGONAL);
    }
    else
    {
-      GCGdecompFreeSetType((*newdecomp), GCG_DECTYPE_UNKNOWN);
+      GCGdecompSetType((*newdecomp), GCG_DECTYPE_UNKNOWN);
    }
 
    /* set max white score */
@@ -1501,12 +1501,12 @@ SCIP_RETCODE createDecompFromPartialdec(
    /* set detector string */
    char buffer[SCIP_MAXSTRLEN];
    partialdec->buildDecChainString(buffer);
-   GCGdecompFreeSetDetectorChainString(scip, *newdecomp, buffer);
+   GCGdecompSetDetectorChainString(scip, *newdecomp, buffer);
 
    if( !partialdec->isAssignedToOrigProb() )
-      SCIP_CALL(GCGdecompFreeAddRemainingConss(scip, *newdecomp) );
+      SCIP_CALL(GCGdecompAddRemainingConss(scip, *newdecomp) );
 
-   assert(GCGdecompFreeCheckConsistency(scip, *newdecomp) );
+   assert(GCGdecompCheckConsistency(scip, *newdecomp) );
 
    return SCIP_OKAY;
 }
@@ -3881,7 +3881,7 @@ GCG_DECOMP** GCGconshdlrDecompGetDecomps(
 
    for( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
-      GCGdecompFreeFree(scip, &conshdlrdata->decomps[conshdlrdata->ndecomps - i - 1]);
+      GCGdecompFree(scip, &conshdlrdata->decomps[conshdlrdata->ndecomps - i - 1]);
    }
 
    SCIPfreeBlockMemoryArray(scip, &conshdlrdata->decomps, conshdlrdata->ndecomps);

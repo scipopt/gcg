@@ -435,7 +435,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( GCGdecompFreeCreate(this->scip_, decomp) );
+      SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
       SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
