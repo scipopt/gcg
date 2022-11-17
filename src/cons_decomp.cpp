@@ -2846,6 +2846,7 @@ SCIP_RETCODE GCGconshdlrDecompIncludeScore(
    DEC_DECL_SCORECALC    ((*scorecalc))
    )
 {
+   SCIP_CONSHDLRDATA* conshdlrdata;
    DEC_SCORE* score = NULL;
 
    assert(scip != NULL);
@@ -2853,27 +2854,7 @@ SCIP_RETCODE GCGconshdlrDecompIncludeScore(
    assert(shortname != NULL);
    assert(description != NULL);
 
-   if( GCGfindScore(scip, name) != NULL )
-   {
-      SCIPerrorMessage("score <%s> already included.\n", name);
-      return SCIP_INVALIDDATA;
-   }
-
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-
-   for( int i = 0; i < conshdlrdata->nscores; ++i )
-   {
-      DEC_SCORE* scorei;
-      scorei = conshdlrdata->scores[i];
-
-      assert(scorei != NULL);
-
-      if( strcmp(scorei->shortname, shortname) == 0 )
-      {
-         SCIPerrorMessage( "Score with the shortname <%s> already exists.\n", shortname );
-         return SCIP_ERROR;
-      }
-   }
+   conshdlrdata = getConshdlrdata(scip);
 
    SCIP_CALL( SCIPallocBlockMemory(scip, &score) );
    assert(score != NULL);

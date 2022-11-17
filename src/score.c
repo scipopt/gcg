@@ -57,9 +57,9 @@ SCIP_RETCODE GCGincludeScore(
    )
 {
    /* check whether score is already present */
-   if( GCGfindScore(scip, name) != NULL )
+   if( GCGfindScore(scip, name) != NULL || GCGfindScoreByShortname(scip, shortname) != NULL )
    {
-      SCIPerrorMessage("score <%s> already included.\n", name);
+      SCIPerrorMessage("Score <%s> is already included.\n", name);
       return SCIP_INVALIDDATA;
    }
 
