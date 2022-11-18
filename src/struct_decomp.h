@@ -78,7 +78,7 @@ struct GCG_Decomp
                                                     constraint cons. This map is somehow inverse of the subscipconss array.*/
    SCIP_HASHMAP*         varindex;           /**< hashmap mapping variables to indices for a visual ordering */
    SCIP_HASHMAP*         consindex;          /**< hashmap mapping constraints to indices for visual ordering */
-   DEC_DECTYPE           type;               /**< type of the decomposition */
+   GCG_DECTYPE           type;               /**< type of the decomposition */
    GCG_DETECTOR**        detectorchain;      /**< array of detectors that worked on this decomposition */
    GCG_DETECTOR*         detector;           /**< detector that found this decomposition */
    int                   sizedetectorchain;  /**< number of detectors that worked on this decomposition */

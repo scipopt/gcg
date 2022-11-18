@@ -460,7 +460,7 @@ SCIP_RETCODE assignConsvarsToBlock(
 
 
 const char *GCGdecompGetStrType(
-   DEC_DECTYPE type
+   GCG_DECTYPE type
    )
 {
    const char * names[] = { "unknown", "arrowhead", "staircase", "diagonal", "bordered" };
@@ -646,7 +646,7 @@ SCIP_RETCODE GCGdecompFree(
 /** sets the type of the decomposition */
 SCIP_RETCODE GCGdecompSetType(
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
-   DEC_DECTYPE           type               /**< type of the decomposition */
+   GCG_DECTYPE           type               /**< type of the decomposition */
    )
 {
    SCIP_Bool valid;
@@ -688,7 +688,7 @@ SCIP_RETCODE GCGdecompSetType(
 }
 
 /** gets the type of the decomposition */
-DEC_DECTYPE GCGdecompGetType(
+GCG_DECTYPE GCGdecompGetType(
    GCG_DECOMP*           decomp              /**< decomposition data structure */
    )
 {

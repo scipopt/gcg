@@ -254,7 +254,7 @@ int GCGreportGetMaxNDecomps(
 /** gets what type of decomps to show in reports (where 0 corresponds to 'show all')
  * @returns type of decomps */
 GCG_EXPORT
-DEC_DECTYPE GCGreportGetDecompTypeToShow(
+GCG_DECTYPE GCGreportGetDecompTypeToShow(
    SCIP* scip  /**< SCIP data structure */
    );
 

@@ -53,7 +53,7 @@ enum Dectype
    GCG_DECTYPE_BORDERED  = 4                 /**< bordered block diagonal structure (linking constraints only) */
 };
 
-typedef enum Dectype DEC_DECTYPE; /**< decomposition type */
+typedef enum Dectype GCG_DECTYPE; /**< decomposition type */
 
 /** the decomposition mode */
 enum Decmode

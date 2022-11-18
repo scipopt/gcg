@@ -54,7 +54,7 @@ SCIP_RETCODE GCGwriteDecompositionData(
    GCG_DECOMP* decomposition;
 
    GCG_DETECTOR* detector;
-   DEC_DECTYPE type;
+   GCG_DECTYPE type;
    const char* typeName;
 
    int i;

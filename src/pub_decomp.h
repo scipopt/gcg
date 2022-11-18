@@ -66,9 +66,9 @@ struct Dec_Scores
 };
 typedef struct Dec_Scores DEC_SCORES;
 
-/** converts the DEC_DECTYPE enum to a string */
+/** converts the GCG_DECTYPE enum to a string */
 const char *GCGdecompGetStrType(
-   DEC_DECTYPE           type                /**< decomposition type */
+   GCG_DECTYPE           type                /**< decomposition type */
    );
 
 /** initializes the decomposition to absolutely nothing */
@@ -89,12 +89,12 @@ SCIP_RETCODE GCGdecompFree(
 GCG_EXPORT
 SCIP_RETCODE GCGdecompSetType(
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
-   DEC_DECTYPE           type                /**< type of the decomposition */
+   GCG_DECTYPE           type                /**< type of the decomposition */
    );
 
 /** gets the type of the decomposition */
 GCG_EXPORT
-DEC_DECTYPE GCGdecompGetType(
+GCG_DECTYPE GCGdecompGetType(
    GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 

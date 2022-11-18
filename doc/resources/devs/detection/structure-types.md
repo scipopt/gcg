@@ -3,7 +3,7 @@
 
 # Types of Structures GCG can detect
 Using different detectors, GCG can find structures in your model. The following structure types are being detected in 
-the current release (c.f. DEC_DECTYPE):
+the current release (c.f. GCG_DECTYPE):
 
 - `GCG_DECTYPE_DIAGONAL`: "pure" block diagonal structure (no linking variables and constraints)
 - `GCG_DECTYPE_BORDERED`: bordered block diagonal structure (linking constraints only)
