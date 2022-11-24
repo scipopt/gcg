@@ -83,7 +83,7 @@ using gcg::HypercolGraph;
 using gcg::MatrixGraph;
 using gcg::Weights;
 
-#define DEC_DETECTORNAME         "hcgpartition"    /**< name of the detector */
+#define DEC_NAME                 "hcgpartition"    /**< name of the detector */
 #define DEC_DESC                 "enforces arrowhead structures using graph partitioning" /**< description of detector */
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          0             /**< last round the detector gets called                              */
@@ -185,7 +185,7 @@ GCG_DECL_FREEDETECTOR(freeHcgpartition)
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    SCIPfreeMemory(scip, &detectordata);
 
@@ -203,7 +203,7 @@ GCG_DECL_INITDETECTOR(initHcgpartition)
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    detectordata->found = FALSE;
 
@@ -222,7 +222,7 @@ GCG_DECL_EXITDETECTOR(exitHcgpartition)
    assert(scip != NULL);
 
 
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
 
    return SCIP_OKAY;
@@ -468,7 +468,7 @@ SCIP_RETCODE detection(
    assert(scip != NULL);
    assert(detectordata != NULL);
 
-   SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
+   SCIPdebugMessage("Detecting structure from %s\n", DEC_NAME);
    nMaxPartialdecs = detectordata->maxblocks-detectordata->minblocks+1;
 
    /* allocate space for output data */
@@ -789,7 +789,7 @@ SCIP_RETCODE SCIPincludeDetectorHcgpartition(
    assert(detectordata != NULL);
 
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeHcgpartition, initHcgpartition, exitHcgpartition, propagatePartialdecHcgpartition, finishPartialdecHcgpartition, detectorPostprocessPartialdecHcgpartition, setParamAggressiveHcgpartition, setParamDefaultHcgpartition, setParamFastHcgpartition) );
+   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeHcgpartition, initHcgpartition, exitHcgpartition, propagatePartialdecHcgpartition, finishPartialdecHcgpartition, detectorPostprocessPartialdecHcgpartition, setParamAggressiveHcgpartition, setParamDefaultHcgpartition, setParamFastHcgpartition) );
 
 
    /* add hcgpartition detector parameters */

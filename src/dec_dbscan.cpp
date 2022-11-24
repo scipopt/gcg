@@ -52,7 +52,7 @@ using gcg::GraphGCG;
 
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "dbscan"    /**< name of detector */
+#define DEC_NAME                  "dbscan"    /**< name of detector */
 #define DEC_DESC                  "detector based on DBSCAN clustering"  /**< description of detector */
 #define DEC_PRIORITY              901         /**< priority of the constraint handler for separation */
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop, i.e. it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
@@ -159,7 +159,7 @@ GCG_DECL_FREEDETECTOR(freeDBSCAN)
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    SCIPfreeMemory(scip, &detectordata);
 
@@ -185,7 +185,7 @@ GCG_DECL_INITDETECTOR(initDBSCAN)
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    detectordata->n_similarities = -1;
    detectordata->found = FALSE;
@@ -547,7 +547,7 @@ SCIP_RETCODE SCIPincludeDetectorDBSCAN(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
                                  detectordata, freeDBSCAN, initDBSCAN, exitDBSCAN, propagatePartialdecDBSCAN, finishPartialdecDBSCAN, detectorPostprocessPartialdecDBSCAN, setParamAggressiveDBSCAN, setParamDefaultDBSCAN, setParamFastDBSCAN) );
 
    /* add arrowheur presolver parameters */

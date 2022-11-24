@@ -46,7 +46,7 @@
 #include <iostream>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "mastersetcover"       /**< name of detector */
+#define DEC_NAME                  "mastersetcover"       /**< name of detector */
 #define DEC_DESC                  "detector mastersetcover" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          INT_MAX     /**< last round the detector gets called                              */
@@ -129,7 +129,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetcover)
    partialdecdetectiondata->newpartialdecs[0] = partialdec;
    partialdecdetectiondata->nnewpartialdecs = 1;
    partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
-   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(DEC_DETECTORNAME);
+   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(DEC_NAME);
    // we used the provided partialdec -> prevent deletion
    partialdecdetectiondata->workonpartialdec = NULL;
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
@@ -159,7 +159,7 @@ SCIP_RETCODE SCIPincludeDetectorMastersetcover(SCIP* scip /**< SCIP data structu
    detectordata = NULL;
 
    SCIP_CALL(
-      GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
+      GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
                          DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP,
                          DEC_USEFULRECALL, detectordata, freeMastersetcover,
                          initMastersetcover, exitMastersetcover, propagatePartialdecMastersetcover, finishPartialdecMastersetcover, detectorPostprocessPartialdecMastersetcover, setParamAggressiveMastersetcover, setParamDefaultMastersetcover, setParamFastMastersetcover));

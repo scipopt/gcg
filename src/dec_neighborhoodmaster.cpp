@@ -53,7 +53,7 @@ This detector calculates cons-cons adjacency (if not already done), and sorts co
 */
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "neighborhoodmaster"       /**< name of detector */
+#define DEC_NAME                  "neighborhoodmaster"       /**< name of detector */
 #define DEC_DESC                  "detector neighborhoodmaster" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          0           /** last round the detector gets called                              */
@@ -106,7 +106,7 @@ GCG_DECL_FREEDETECTOR(freeNeighborhoodmaster)
    assert(scip != NULL);
    assert(detector != NULL);
 
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
@@ -264,7 +264,7 @@ SCIP_RETCODE SCIPincludeDetectorNeighborhoodmaster(SCIP* scip /**< SCIP data str
    assert(detectordata != NULL);
 
    SCIP_CALL(
-      GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
+      GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
                          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
                          DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
                          detectordata, freeNeighborhoodmaster, initNeighborhoodmaster,

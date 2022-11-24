@@ -80,7 +80,7 @@ using gcg::HyperrowGraph;
 using gcg::MatrixGraph;
 using gcg::Weights;
 
-#define DEC_DETECTORNAME          "hrgpartition"    /**< name of the detector */
+#define DEC_NAME                  "hrgpartition"    /**< name of the detector */
 #define DEC_DESC                  "enforces arrowhead structures using graph partitioning" /**< description of detector */
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          0           /**< last round the detector gets called                              */
@@ -193,7 +193,7 @@ GCG_DECL_FREEDETECTOR(freeHrgpartition)
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    SCIPfreeMemory(scip, &detectordata);
 
@@ -213,7 +213,7 @@ GCG_DECL_INITDETECTOR(initHrgpartition)
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
@@ -230,7 +230,7 @@ GCG_DECL_EXITDETECTOR(exitHrgpartition)
 
    assert(scip != NULL);
 
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
 
    return SCIP_OKAY;
@@ -476,7 +476,7 @@ SCIP_RETCODE detection(
    assert(scip != NULL);
    assert(detectordata != NULL);
 
-   SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
+   SCIPdebugMessage("Detecting structure from %s\n", DEC_NAME);
    nMaxPartialdecs = detectordata->maxblocks-detectordata->minblocks+1;
 
    /* allocate space for output data */
@@ -606,7 +606,7 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrgpartition)
       return SCIP_OKAY;
    }
 
-   SCIPdebugMessage("Started propagate partialdec of detector %s and partial decomp %d \n", DEC_DETECTORNAME, partialdec->getID() );
+   SCIPdebugMessage("Started propagate partialdec of detector %s and partial decomp %d \n", DEC_NAME, partialdec->getID() );
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
@@ -798,7 +798,7 @@ SCIP_RETCODE SCIPincludeDetectorHrgpartition(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeHrgpartition, initHrgpartition, exitHrgpartition, propagatePartialdecHrgpartition, finishPartialdecHrgpartition, detectorPostprocessPartialdecHrgpartition, setParamAggressiveHrgpartition, setParamDefaultHrgpartition, setParamFastHrgpartition) );
+   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeHrgpartition, initHrgpartition, exitHrgpartition, propagatePartialdecHrgpartition, finishPartialdecHrgpartition, detectorPostprocessPartialdecHrgpartition, setParamAggressiveHrgpartition, setParamDefaultHrgpartition, setParamFastHrgpartition) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrgpartition/limitnconssnvarsdefault", "Limit for sum of nvars and nconss for enabling this detector in default", &detectordata->limitnconssnvarsdefault, TRUE, DEFAULT_LIMITNCONSSNVARSDEFAULT, 0, INT_MAX, NULL, NULL) );
 

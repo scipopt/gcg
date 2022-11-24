@@ -47,7 +47,7 @@
 #include <queue>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "postprocess"       /**< name of detector */
+#define DEC_NAME                  "postprocess"       /**< name of detector */
 #define DEC_DESC                  "detector postprocess" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          INT_MAX     /**< last round the detector gets called                              */
@@ -97,7 +97,7 @@ GCG_DECL_FREEDETECTOR(freePostprocess)
    assert(scip != NULL);
    assert(detector != NULL);
 
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
@@ -323,7 +323,7 @@ SCIP_RETCODE SCIPincludeDetectorPostprocess(
 
    detectordata->useconssadj = TRUE;
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freePostprocess,
+   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freePostprocess,
                                  initPostprocess, exitPostprocess, propagatePartialdecPostprocess, finishPartialdecPostprocess,
                                  postprocessPartialdecPostprocess, setParamAggressivePostprocess, setParamDefaultPostprocess, setParamFastPostprocess) );
 

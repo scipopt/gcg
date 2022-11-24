@@ -39,7 +39,7 @@
 #include "cons_decomp.h"
 
 /* detector properties */
-#define DEC_DETECTORNAME          "xyz"       /**< name of detector */
+#define DEC_NAME                  "xyz"       /**< name of detector */
 #define DEC_DESC                  "detector xyz" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          INT_MAX     /**< last round the detector gets called                              */
@@ -95,7 +95,7 @@ struct DEC_DetectorData
 static DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecXyz)
 {  /*lint --e{715}*/
 
-   SCIPerrorMessage("Propagate PARTIALDECOMP function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
+   SCIPerrorMessage("Propagate PARTIALDECOMP function of detector <%s> not implemented!\n", DEC_NAME);
    SCIPABORT();
 
    return SCIP_OKAY;
@@ -122,12 +122,12 @@ SCIP_RETCODE SCIPincludeDetectorXyz(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    /**@todo create xyz detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectorFreeXyz, detectorInitXyz, detectorExitXyz, detectorPropagatePartialdecXyz, detectorFinishPartialdecXyz, detectorPostprocessPartialdecXyz, setParamAggressiveXyz, setParamDefaultXyz, setParamFastXyz) );
+   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectorFreeXyz, detectorInitXyz, detectorExitXyz, detectorPropagatePartialdecXyz, detectorFinishPartialdecXyz, detectorPostprocessPartialdecXyz, setParamAggressiveXyz, setParamDefaultXyz, setParamFastXyz) );
 
    /**@todo add xyz detector parameters */
 

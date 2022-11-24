@@ -47,7 +47,7 @@
 #include <queue>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "connected_nonewlinkingvars"       /**< name of detector */
+#define DEC_NAME                  "connected_nonewlinkingvars"       /**< name of detector */
 #define DEC_DESC                  "detector connected_noNewLinkingVars" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
@@ -124,7 +124,7 @@ SCIP_RETCODE detection(
    partialdecdetectiondata->nnewpartialdecs = 1;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
    partialdecdetectiondata->newpartialdecs[0] = partialdec;
-   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(DEC_DETECTORNAME);
+   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(DEC_NAME);
    partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
    // we used the provided partialdec -> prevent deletion
    partialdecdetectiondata->workonpartialdec = NULL;
@@ -176,7 +176,7 @@ SCIP_RETCODE SCIPincludeDetectorConnected_noNewLinkingVars(
    /**@todo create connected_noNewLinkingVars detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeConnected_noNewLinkingVars, initConnected_noNewLinkingVars, exitConnected_noNewLinkingVars, propagatePartialdecConnected_noNewLinkingVars, finishPartialdecConnected_noNewLinkingVars, detectorPostprocessPartialdecConnected_noNewLinkingVars, setParamAggressiveConnected_noNewLinkingVars, setParamDefaultConnected_noNewLinkingVars, setParamFastConnected_noNewLinkingVars) );
+   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeConnected_noNewLinkingVars, initConnected_noNewLinkingVars, exitConnected_noNewLinkingVars, propagatePartialdecConnected_noNewLinkingVars, finishPartialdecConnected_noNewLinkingVars, detectorPostprocessPartialdecConnected_noNewLinkingVars, setParamAggressiveConnected_noNewLinkingVars, setParamDefaultConnected_noNewLinkingVars, setParamFastConnected_noNewLinkingVars) );
 
    /**@todo add connected_noNewLinkingVars detector parameters */
 

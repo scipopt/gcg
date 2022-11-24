@@ -61,7 +61,7 @@
 #include "pub_bliss.h"
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "isomorph"  /**< name of detector */
+#define DEC_NAME                  "isomorph"  /**< name of detector */
 #define DEC_DESC                  "detector for pricing problems suitable for aggregation" /**< description of detector */
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          0           /**< last round the detector gets called */
@@ -809,7 +809,7 @@ GCG_DECL_FREEDETECTOR(detectorFreeIsomorph)
    assert(scip != NULL);
    assert(detector != NULL);
 
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
@@ -828,7 +828,7 @@ GCG_DECL_INITDETECTOR(detectorInitIsomorph)
    assert(scip != NULL);
    assert(detector != NULL);
 
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
@@ -1423,7 +1423,7 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 
 
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
                                  detectordata, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagatePartialdecIsomorph, detectorFinishPartialdecIsomorph, detectorPostprocessPartialdecIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
 
    /* add isomorph constraint handler parameters */

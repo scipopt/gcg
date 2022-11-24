@@ -54,7 +54,7 @@
 
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "staircase_lsp"    /**< name of detector */
+#define DEC_NAME                  "staircase_lsp"    /**< name of detector */
 #define DEC_DESC                  "Staircase detection via shortest paths" /**< description of detector */
 #define DEC_PRIORITY              200            /**< priority of the detector */
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
@@ -453,7 +453,7 @@ GCG_DECL_FREEDETECTOR(detectorFreeStaircaseLsp)
    assert(scip != NULL);
    assert(detector != NULL);
 
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
@@ -476,7 +476,7 @@ GCG_DECL_INITDETECTOR(detectorInitStaircaseLsp)
    assert(scip != NULL);
    assert(detector != NULL);
 
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
@@ -500,7 +500,7 @@ GCG_DECL_EXITDETECTOR(detectorExitStaircaseLsp)
    assert(scip != NULL);
    assert(detector != NULL);
 
-   assert(strcmp(GCGdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
@@ -779,7 +779,7 @@ SCIP_RETCODE SCIPincludeDetectorStaircaseLsp(
    detectordata->oldToNew = NULL;
 
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
+   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
                                  DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP,
                                  DEC_USEFULRECALL, detectordata, detectorFreeStaircaseLsp,
                                  detectorInitStaircaseLsp, detectorExitStaircaseLsp, detectorPropagatePartialdecStaircaseLsp, detectorFinishPartialdecStaircaseLsp, detectorPostprocessPartialdecStaircaseLsp, setParamAggressiveStaircaseLsp, setParamDefaultStaircaseLsp, setParamFastStaircaseLsp) );

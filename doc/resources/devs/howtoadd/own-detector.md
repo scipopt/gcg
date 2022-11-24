@@ -35,7 +35,7 @@ At the top of the new file `dec_mydetector.cpp`, you can find the detector prope
 These are given as compiler defines.
 The properties you have to set have the following meaning:
 
-\par DEC_DETECTORNAME: the name of the detector.
+\par DEC_NAME: the name of the detector.
 This name is used in the interactive shell to address the detector.
 Additionally, if you are searching for a detector with `SCIPfindDetector()`, this name is looked up.
 Names have to be unique: no two detectors may have the same name.
