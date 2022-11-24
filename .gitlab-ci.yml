@@ -156,11 +156,14 @@ build:cmake_release:
     GIT_STRATEGY: fetch
     GIT_SUBMODULE_STRATEGY: recursive
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^v[0-9]+-bugfix$/)'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: manual
+      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
       when: manual
       allow_failure: true
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-      when: always
   script:
     - mkdir build
     - cd build
@@ -181,14 +184,11 @@ build:cmake_debug:
     GIT_STRATEGY: fetch
     GIT_SUBMODULE_STRATEGY: recursive
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^v[0-9]+-bugfix$/)'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-      when: manual
-      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
       when: manual
       allow_failure: true
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always
   script:
     - mkdir build
     - cd build
@@ -260,11 +260,14 @@ test:cmake_release:
   stage: "Test"
   needs: ["build:cmake_release"]
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^v[0-9]+-bugfix$/)'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: manual
+      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
       when: manual
       allow_failure: true
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-      when: always
   before_script: []
   script:
     - cd build
@@ -281,14 +284,11 @@ test:cmake_release:
 test:cmake_debug:
   stage: "Test"
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^v[0-9]+-bugfix$/)'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-      when: manual
-      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
       when: manual
       allow_failure: true
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always
   needs: ["build:cmake_debug"]
   before_script: []
   script:
