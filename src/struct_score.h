@@ -44,14 +44,14 @@ extern "C" {
 #endif
 
 /** score */
-struct DEC_Score
+struct GCG_Score
 {
    const char*           name;               /**< name of the score */
    const char*           shortname;          /**< shortname of the score */
    const char*           description;        /**< description of the score */
-   DEC_DECL_SCOREFREE    ((*scorefree));     /**< destructor of score */
-   DEC_DECL_SCORECALC    ((*scorecalc));     /**< calculate method of score */
-   DEC_SCOREDATA*        scoredata;          /**< custom data structure of the score */
+   GCG_DECL_SCOREFREE    ((*scorefree));     /**< destructor of score */
+   GCG_DECL_SCORECALC    ((*scorecalc));     /**< calculate method of score */
+   GCG_SCOREDATA*        scoredata;          /**< custom data structure of the score */
 };
 
 #ifdef __cplusplus

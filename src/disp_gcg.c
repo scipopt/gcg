@@ -473,7 +473,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNNodes)
    masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
-   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(scip) != DEC_DECMODE_DANTZIGWOLFE )
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(scip) != GCG_DECMODE_DANTZIGWOLFE )
       SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNNodes(masterprob), DISP_WIDT_NNODES);
    else
       SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNNodes(scip), DISP_WIDT_NNODES);
@@ -495,7 +495,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNNodesLeft)
    masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
-   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(scip) != DEC_DECMODE_DANTZIGWOLFE )
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(scip) != GCG_DECMODE_DANTZIGWOLFE )
       SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNNodesLeft(masterprob), DISP_WIDT_NODESLEFT);
    else
       SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNNodesLeft(scip), DISP_WIDT_NODESLEFT);
@@ -537,7 +537,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNLPAvgIters)
    masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
-   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(scip) != DEC_DECMODE_DANTZIGWOLFE )
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(scip) != GCG_DECMODE_DANTZIGWOLFE )
       nnodes = SCIPgetNNodes(GCGgetMasterprob(scip));
    else
       nnodes = SCIPgetNNodes(scip);

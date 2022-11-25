@@ -82,7 +82,7 @@ public:
 
    /** create decomposition based on the read in partition */
    virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      GCG_DECOMP**       decomp              /**< decomposition structure to generate */
    )
    { /*lint -e715*/
       return SCIP_ERROR;

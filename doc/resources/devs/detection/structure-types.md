@@ -3,13 +3,13 @@
 
 # Types of Structures GCG can detect
 Using different detectors, GCG can find structures in your model. The following structure types are being detected in 
-the current release (c.f. DEC_DECTYPE):
+the current release (c.f. GCG_DECTYPE):
 
-- `DEC_DECTYPE_DIAGONAL`: "pure" block diagonal structure (no linking variables and constraints)
-- `DEC_DECTYPE_BORDERED`: bordered block diagonal structure (linking constraints only)
-- `DEC_DECTYPE_ARROWHEAD`: arrowhead structure (linking variables and constraints)
-- `DEC_DECTYPE_STAIRCASE`: staircase structure (linking variables between consecutive blocks)
-- `DEC_DECTYPE_UNKNOWN`: unknown structure (used for initialization)
+- `GCG_DECTYPE_DIAGONAL`: "pure" block diagonal structure (no linking variables and constraints)
+- `GCG_DECTYPE_BORDERED`: bordered block diagonal structure (linking constraints only)
+- `GCG_DECTYPE_ARROWHEAD`: arrowhead structure (linking variables and constraints)
+- `GCG_DECTYPE_STAIRCASE`: staircase structure (linking variables between consecutive blocks)
+- `GCG_DECTYPE_UNKNOWN`: unknown structure (used for initialization)
 
 ## Pure Block-Diagonal {#block-diagonal}
 

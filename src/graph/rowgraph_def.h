@@ -60,7 +60,7 @@ RowGraph<T>::~RowGraph()
 
 template <class T>
 SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
-   DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+   GCG_DECOMP**       decomp              /**< decomposition structure to generate */
 )
 {
    int nblocks;
@@ -115,8 +115,8 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+      SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
+      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);

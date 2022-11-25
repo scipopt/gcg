@@ -49,17 +49,17 @@
 #include "scip_misc.h"
 
 /* classifier properties */
-#define DEC_CLASSIFIERNAME        "gamssymbol"                 /**< name of classifier */
-#define DEC_DESC                  "symbol in GAMS file"        /**< short description of classification*/
-#define DEC_PRIORITY              0
+#define CLSCONS_NAME                  "gamssymbol"                 /**< name of classifier */
+#define CLSCONS_DESC                  "symbol in GAMS file"        /**< short description of classification*/
+#define CLSCONS_PRIORITY              0
 
-#define DEC_ENABLED               TRUE
+#define CLSCONS_ENABLED               TRUE
 
 
 /*
  * Data structures
  */
-struct DEC_ClassifierData
+struct GCG_ClassifierData
 {
    std::map<std::string, int>*      constosymbol;             /**< maps constraint name to the corresponding symbol index */
 };
@@ -77,15 +77,15 @@ struct DEC_ClassifierData
 
 /** destructor of classifier to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREECONSCLASSIFIER(classifierFree)
+GCG_DECL_FREECONSCLASSIFIER(classifierFree)
 {
-   DEC_CLASSIFIERDATA* classifierdata;
+   GCG_CLASSIFIERDATA* classifierdata;
 
    assert(scip != NULL);
 
    classifierdata = GCGconsClassifierGetData(classifier);
    assert(classifierdata != NULL);
-   assert(strcmp(GCGconsClassifierGetName(classifier), DEC_CLASSIFIERNAME) == 0);
+   assert(strcmp(GCGconsClassifierGetName(classifier), CLSCONS_NAME) == 0);
 
    delete classifierdata->constosymbol;
 
@@ -95,7 +95,7 @@ DEC_DECL_FREECONSCLASSIFIER(classifierFree)
 }
 
 static
-DEC_DECL_CONSCLASSIFY(classifierClassify) {
+GCG_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA* detprobdata;
    if( transformed )
    {
@@ -112,10 +112,10 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
    std::vector<int> classForCons( ncons, - 1 ); // [i] holds class index for constraint i -> indexing over detection internal constraint array!
    int counterClasses = 0;
 
-   DEC_CONSCLASSIFIER* classifier = DECfindConsClassifier(scip, DEC_CLASSIFIERNAME);
+   GCG_CONSCLASSIFIER* classifier = GCGfindConsClassifier(scip, CLSCONS_NAME);
    assert(classifier != NULL);
 
-   DEC_CLASSIFIERDATA* classdata = GCGconsClassifierGetData(classifier);
+   GCG_CLASSIFIERDATA* classdata = GCGconsClassifierGetData(classifier);
    assert(classdata != NULL);
 
    /* firstly, assign all constraints to classindices */
@@ -194,14 +194,14 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
  */
 
 /** adds an entry to clsdata->constosymbol */
-SCIP_RETCODE DECconsClassifierGamssymbolAddEntry(
-   DEC_CONSCLASSIFIER*   classifier,
+SCIP_RETCODE GCGconsClassifierGamssymbolAddEntry(
+   GCG_CONSCLASSIFIER*   classifier,
    SCIP_CONS*            cons,
    int                   symbolIdx
-)
+   )
 {
    assert(classifier != NULL);
-   DEC_CLASSIFIERDATA* classdata = GCGconsClassifierGetData(classifier);
+   GCG_CLASSIFIERDATA* classdata = GCGconsClassifierGetData(classifier);
    assert(classdata != NULL);
 
    std::string consname = SCIPconsGetName( cons );
@@ -213,15 +213,15 @@ SCIP_RETCODE DECconsClassifierGamssymbolAddEntry(
 /** creates the handler for gamssymbol classifier and includes it in SCIP */
 SCIP_RETCODE SCIPincludeConsClassifierGamssymbol(
    SCIP*                 scip                /**< SCIP data structure */
-)
+   )
 {
-   DEC_CLASSIFIERDATA* classifierdata = NULL;
+   GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
    assert(classifierdata != NULL);
    classifierdata->constosymbol = new std::map<std::string, int>();
 
-   SCIP_CALL( DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

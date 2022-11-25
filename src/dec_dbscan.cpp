@@ -52,7 +52,7 @@ using gcg::GraphGCG;
 
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "dbscan"    /**< name of detector */
+#define DEC_NAME                  "dbscan"    /**< name of detector */
 #define DEC_DESC                  "detector based on DBSCAN clustering"  /**< description of detector */
 #define DEC_PRIORITY              901         /**< priority of the constraint handler for separation */
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop, i.e. it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
@@ -84,7 +84,7 @@ using gcg::GraphGCG;
  */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
    SCIP_RESULT result;                                 /**< result pointer to indicate success or failure */
    SCIP_Bool found;
@@ -151,15 +151,15 @@ static std::vector<double> getEpsList(int length, double mid, bool isintersectio
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freeDBSCAN)
+GCG_DECL_FREEDETECTOR(freeDBSCAN)
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    assert(scip != NULL);
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    SCIPfreeMemory(scip, &detectordata);
 
@@ -168,7 +168,7 @@ DEC_DECL_FREEDETECTOR(freeDBSCAN)
 
 /** destructor of detector to free detector data (called before the solving process begins) */
 static
-DEC_DECL_EXITDETECTOR(exitDBSCAN)
+GCG_DECL_EXITDETECTOR(exitDBSCAN)
 {
    return SCIP_OKAY;
 }
@@ -176,16 +176,16 @@ DEC_DECL_EXITDETECTOR(exitDBSCAN)
 
 /** detection initialization function of detector (called before solving is about to begin) */
 static
-DEC_DECL_INITDETECTOR(initDBSCAN)
+GCG_DECL_INITDETECTOR(initDBSCAN)
 {  /*lint --e{715}*/
 
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
    assert(scip != NULL);
 
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    detectordata->n_similarities = -1;
    detectordata->found = FALSE;
@@ -246,12 +246,12 @@ bool graphCompletible(
 
 
 static
-DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
+GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
 { /*lint --e{715}*/
 
    int nnewpartialdecs;
    gcg::PARTIALDECOMP* partialdec;
-   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+   GCG_DETECTORDATA* detectordata = GCGdetectorGetData(detector);
    std::vector<SCIP_Real> clockTimes1;        /* vector containing times in seconds  */
    std::vector<SCIP_Real> clockTimes2;        /* vector containing times in seconds  */
    std::vector< RowGraphWeighted<GraphGCG>*> graphs;
@@ -479,10 +479,10 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
 #define detectorPostprocessPartialdecDBSCAN NULL
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveDBSCAN)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveDBSCAN)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -495,11 +495,11 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveDBSCAN)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultDBSCAN)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultDBSCAN)
 {
    char setstr[SCIP_MAXSTRLEN];
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -511,11 +511,11 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultDBSCAN)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastDBSCAN)
+GCG_DECL_SETPARAMFAST(setParamFastDBSCAN)
 {
    char setstr[SCIP_MAXSTRLEN];
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -539,7 +539,7 @@ SCIP_RETCODE SCIPincludeDetectorDBSCAN(
    )
 {
 #if !defined(_WIN32) && !defined(_WIN64)
-   DEC_DETECTORDATA *detectordata = NULL;
+   GCG_DETECTORDATA *detectordata = NULL;
    assert(scip != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
@@ -547,8 +547,8 @@ SCIP_RETCODE SCIPincludeDetectorDBSCAN(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, freeDBSCAN, initDBSCAN, exitDBSCAN, propagatePartialdecDBSCAN, finishPartialdecDBSCAN, detectorPostprocessPartialdecDBSCAN, setParamAggressiveDBSCAN, setParamDefaultDBSCAN, setParamFastDBSCAN) );
+   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+                                 detectordata, freeDBSCAN, initDBSCAN, exitDBSCAN, propagatePartialdecDBSCAN, finishPartialdecDBSCAN, detectorPostprocessPartialdecDBSCAN, setParamAggressiveDBSCAN, setParamDefaultDBSCAN, setParamFastDBSCAN) );
 
    /* add arrowheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/dbscan/niterations", "Number of iterations to run dbscan with different eps.", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 11, 1001, NULL, NULL) );

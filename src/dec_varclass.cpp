@@ -50,7 +50,7 @@
 #include <algorithm>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "varclass"       /**< name of detector */
+#define DEC_NAME                  "varclass"       /**< name of detector */
 #define DEC_DESC                  "detector varclass" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          0           /**< last round the detector gets called                              */
@@ -79,7 +79,7 @@
 /** @todo fill in the necessary detector data */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
 };
 
@@ -104,7 +104,7 @@ struct DEC_DetectorData
 
 #define finishPartialdecVarclass NULL
 
-static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
+static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
@@ -278,13 +278,13 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
 #define detectorPostprocessPartialdecVarclass NULL
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveVarclass)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveVarclass)
 {
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
 
    int newval;
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
@@ -314,13 +314,13 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveVarclass)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultVarclass)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultVarclass)
 {
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
 
    int newval;
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -350,13 +350,13 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultVarclass)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastVarclass)
+GCG_DECL_SETPARAMFAST(setParamFastVarclass)
 {
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
    int newval;
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -396,20 +396,20 @@ DEC_DECL_SETPARAMFAST(setParamFastVarclass)
 SCIP_RETCODE SCIPincludeDetectorVarclass(SCIP* scip /**< SCIP data structure */
 )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
    char setstr[SCIP_MAXSTRLEN];
 
    /**@todo create varclass detector data here*/
    detectordata = NULL;
 
    SCIP_CALL(
-      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,detectordata,
-         freeVarclass, initVarclass, exitVarclass, propagatePartialdecVarclass, finishPartialdecVarclass, detectorPostprocessPartialdecVarclass, setParamAggressiveVarclass, setParamDefaultVarclass, setParamFastVarclass));
+      GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
+                         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
+                         freeVarclass, initVarclass, exitVarclass, propagatePartialdecVarclass, finishPartialdecVarclass, detectorPostprocessPartialdecVarclass, setParamAggressiveVarclass, setParamDefaultVarclass, setParamFastVarclass));
 
    /**@todo add varclass detector parameters */
 
-   const char* name = DEC_DETECTORNAME;
+   const char* name = DEC_NAME;
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnclasses", name);
    SCIP_CALL( SCIPaddIntParam(scip, setstr, "maximum number of classes ",  NULL, FALSE, DEFAULT_MAXIMUMNCLASSES, 1, INT_MAX, NULL, NULL ) );
 

@@ -41,13 +41,13 @@
 /** @brief gets vector of all partialdecs
  * @returns finished partialdecs
  */
-extern
+GCG_EXPORT
 std::vector<gcg::PARTIALDECOMP*>* GCGconshdlrDecompGetPartialdecs(
    SCIP*          scip  /**< SCIP data structure */
 );
 
-extern
-gcg::PARTIALDECOMP* DECgetPartialdecToWrite(
+GCG_EXPORT
+gcg::PARTIALDECOMP* GCGgetPartialdecToWrite(
    SCIP*                         scip,
    SCIP_Bool                     transformed
 );
@@ -77,7 +77,7 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
  * Use this function at deletion of the partialdec.
  * The partialdec is not destroyed in this function, the conshdlr will not know that it exists.
  */
-extern
+GCG_EXPORT
 void GCGconshdlrDecompDeregisterPartialdec(
    SCIP* scip,                       /**< SCIP data structure */
    gcg::PARTIALDECOMP* partialdec    /**< the partialdec */
@@ -88,7 +88,7 @@ void GCGconshdlrDecompDeregisterPartialdec(
  * Use this function at initialization of the partialdec.
  * If the partialdec already exists in the conshdlr it is ignored.
  */
-extern
+GCG_EXPORT
 void GCGconshdlrDecompRegisterPartialdec(
    SCIP* scip,                       /**< SCIP data structure */
    gcg::PARTIALDECOMP* partialdec    /**< the partialdec to register */
@@ -99,7 +99,7 @@ void GCGconshdlrDecompRegisterPartialdec(
  *
  * @returns pointer to detprobdata in wrapper data structure
  */
-extern
+GCG_EXPORT
 gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataOrig(
    SCIP*                 scip                 /**< SCIP data structure */
 );
@@ -109,7 +109,7 @@ gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataOrig(
  *
  * @returns pointer to detprobdata in wrapper data structure
  */
-extern
+GCG_EXPORT
 gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataPresolved(
    SCIP*                 scip                 /**< SCIP data structure */
 );
@@ -125,7 +125,7 @@ gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataPresolved(
  * @param printwarnings should warnings be printed?
  * @returns SCIP return code
  */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompChooseCandidatesFromSelected(
    SCIP* scip,
    std::vector<std::pair<gcg::PARTIALDECOMP*, SCIP_Real> >& candidates,
@@ -136,7 +136,7 @@ SCIP_RETCODE GCGconshdlrDecompChooseCandidatesFromSelected(
 /** @brief gets detector history of partialdec with given id
  * @returns detector history of partialdec as string
  */
-extern
+GCG_EXPORT
 std::string GCGconshdlrDecompGetDetectorHistoryByPartialdecId(
    SCIP* scip,    /**< SCIP data structure */
    int id         /**< id of partialdec */

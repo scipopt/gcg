@@ -37,6 +37,7 @@
 
 #include "scip/scip.h"
 #include "scip/cons_setppc.h"
+#include "gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,55 +56,55 @@ typedef enum  {
   */
 
 /** returns TRUE if variable is relevant, FALSE otherwise */
-extern
+GCG_EXPORT
 SCIP_Bool GCGisVarRelevant(
    SCIP_VAR*             var                 /**< variable to test */
    );
 
 /** returns the type of an arbitrary SCIP constraint */
-extern
+GCG_EXPORT
 consType GCGconsGetType(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get type for */
    );
 
 /** returns the rhs of an arbitrary SCIP constraint */
-extern
+GCG_EXPORT
 SCIP_Real GCGconsGetRhs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
 /** returns the lhs of an arbitrary SCIP constraint */
-extern
+GCG_EXPORT
 SCIP_Real GCGconsGetLhs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
 /** returns the dual farkas sol of an arbitrary SCIP constraint */
-extern
+GCG_EXPORT
 SCIP_Real GCGconsGetDualfarkas(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
 /** returns the dual sol of an arbitrary SCIP constraint */
-extern
+GCG_EXPORT
 SCIP_Real GCGconsGetDualsol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
 /** returns the number of variables in an arbitrary SCIP constraint */
-extern
+GCG_EXPORT
 int GCGconsGetNVars(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get number of variables */
    );
 
 /** returns the variable array of an arbitrary SCIP constraint */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGconsGetVars(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to get variables from */
@@ -112,7 +113,7 @@ SCIP_RETCODE GCGconsGetVars(
    );
 
 /** returns the value array of an arbitrary SCIP constraint */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGconsGetVals(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to get values from */
@@ -140,12 +141,12 @@ SCIP_Bool GCGgetConsIsCardinalityCons(
 
 
 /** returns TRUE or FALSE, depending whether we are in the root node or not */
-extern
+GCG_EXPORT
 SCIP_Bool GCGisRootNode(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGincludeDialogsGraph(
    SCIP* scip
    );

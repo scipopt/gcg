@@ -278,7 +278,7 @@ template <class T>
 SCIP_RETCODE HyperrowcolGraph<T>::writeToFile(
    int                fd,                    /**< filename where the graph should be written to */
    SCIP_Bool          edgeweights            /**< whether to write edgeweights */
- )
+   )
 {
    FILE* file;
    file = fdopen(fd, "wx");
@@ -319,7 +319,7 @@ public:
 template <class T>
 std::vector<int> HyperrowcolGraph<T>::getNeighbors(
    int i
-)
+   )
 {
    assert(i >= 0);
    assert(i < this->nnonzeroes);
@@ -342,7 +342,7 @@ std::vector<int> HyperrowcolGraph<T>::getNeighbors(
 template <class T>
 std::vector<int> HyperrowcolGraph<T>::getHyperedgeNodes(
    int i
-)
+   )
 {
    function f(this->nconss+this->nvars);
    assert(i >= 0);
@@ -356,7 +356,7 @@ std::vector<int> HyperrowcolGraph<T>::getHyperedgeNodes(
 template <class T>
 std::vector<int> HyperrowcolGraph<T>::getConsNonzeroNodes(
    int i
-)
+   )
 {
    function f(this->nconss+this->nvars);
    assert(i >= 0);
@@ -370,7 +370,7 @@ std::vector<int> HyperrowcolGraph<T>::getConsNonzeroNodes(
 template <class T>
 std::vector<int> HyperrowcolGraph<T>::getVarNonzeroNodes(
    int i
-)
+   )
 {
    function f(this->nconss+this->nvars);
    assert(i >= 0);
@@ -383,7 +383,7 @@ std::vector<int> HyperrowcolGraph<T>::getVarNonzeroNodes(
 
 template <class T>
 SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
-   DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+   GCG_DECOMP**       decomp              /**< decomposition structure to generate */
    )
 {
    int nblocks;
@@ -435,8 +435,8 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+      SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
+      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);

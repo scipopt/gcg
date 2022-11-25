@@ -47,11 +47,11 @@ ould have received a copy of the GNU Lesser General Public License  */
 #include "scip_misc.h"
 
 /* classifier properties */
-#define DEC_CLASSIFIERNAME        "consnamelevenshtein"       /**< name of classifier */
-#define DEC_DESC                  "constraint names (according to levenshtein distance graph)"     /**< short description of classification*/
-#define DEC_PRIORITY              0
+#define CLSCONS_NAME              "consnamelevenshtein"       /**< name of classifier */
+#define CLSCONS_DESC              "constraint names (according to levenshtein distance graph)"     /**< short description of classification*/
+#define CLSCONS_PRIORITY          0
 
-#define DEC_ENABLED               FALSE
+#define CLSCONS_ENABLED           FALSE
 
 
 /*
@@ -59,7 +59,7 @@ ould have received a copy of the GNU Lesser General Public License  */
  */
 
 /** classifier handler data */
-struct DEC_ClassifierData
+struct GCG_ClassifierData
 {
 };
 
@@ -82,7 +82,7 @@ struct DEC_ClassifierData
 int calcLevenshteinDistance(
    std::string s,
    std::string t
-)
+   )
 {
    /* easy cases */
    if( s.compare( t ) == 0 )
@@ -125,7 +125,7 @@ int calcLevenshteinDistance(
 
 
 static
-DEC_DECL_CONSCLASSIFY(classifierClassify) {
+GCG_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA* detprobdata;
    if( transformed )
    {
@@ -244,14 +244,14 @@ DEC_DECL_CONSCLASSIFY(classifierClassify) {
  */
 
 SCIP_RETCODE SCIPincludeConsClassifierConsnameLevenshtein(
-
    SCIP *scip                /**< SCIP data structure */
-) {
-   DEC_CLASSIFIERDATA* classifierdata = NULL;
+   )
+{
+   GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL(
-      DECincludeConsClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata,
-         classifierFree, classifierClassify));
+      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
+                               classifierFree, classifierClassify));
 
    return SCIP_OKAY;
 }

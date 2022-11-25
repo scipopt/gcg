@@ -41,31 +41,31 @@
 extern "C" {
 #endif
 
-typedef struct DecDecomp DEC_DECOMP; /**< decomposition structure */
+typedef struct GCG_Decomp GCG_DECOMP; /**< decomposition structure */
 
 /** type of the decomposition */
 enum Dectype
 {
-   DEC_DECTYPE_UNKNOWN   = 0,                /**< unknown structure (used for initialization) */
-   DEC_DECTYPE_ARROWHEAD = 1,                /**< arrowhead structure (linking variables and constraints) */
-   DEC_DECTYPE_STAIRCASE = 2,                /**< staircase structure (linking variables between consecutive blocks) */
-   DEC_DECTYPE_DIAGONAL  = 3,                /**< block diagonal structure (no linking variables and constraints) */
-   DEC_DECTYPE_BORDERED  = 4                 /**< bordered block diagonal structure (linking constraints only) */
+   GCG_DECTYPE_UNKNOWN   = 0,                /**< unknown structure (used for initialization) */
+   GCG_DECTYPE_ARROWHEAD = 1,                /**< arrowhead structure (linking variables and constraints) */
+   GCG_DECTYPE_STAIRCASE = 2,                /**< staircase structure (linking variables between consecutive blocks) */
+   GCG_DECTYPE_DIAGONAL  = 3,                /**< block diagonal structure (no linking variables and constraints) */
+   GCG_DECTYPE_BORDERED  = 4                 /**< bordered block diagonal structure (linking constraints only) */
 };
 
-typedef enum Dectype DEC_DECTYPE; /**< decomposition type */
+typedef enum Dectype GCG_DECTYPE; /**< decomposition type */
 
 /** the decomposition mode */
 enum Decmode
 {
-   DEC_DECMODE_DANTZIGWOLFE = 0,             /**< Datizig-Wolfe reformulation */
-   DEC_DECMODE_BENDERS      = 1,             /**< Benders' decomposition */
-   DEC_DECMODE_ORIGINAL     = 2,             /**< the original problem will be solved without decomposition */
-   DEC_DECMODE_AUTO         = 3,             /**< the best of either Dantzig-Wolfe or Benders' will be applied */
-   DEC_DECMODE_UNKNOWN      = 4              /**< the mode can not be determined from the given information */
+   GCG_DECMODE_DANTZIGWOLFE = 0,             /**< Datizig-Wolfe reformulation */
+   GCG_DECMODE_BENDERS      = 1,             /**< Benders' decomposition */
+   GCG_DECMODE_ORIGINAL     = 2,             /**< the original problem will be solved without decomposition */
+   GCG_DECMODE_AUTO         = 3,             /**< the best of either Dantzig-Wolfe or Benders' will be applied */
+   GCG_DECMODE_UNKNOWN      = 4              /**< the mode can not be determined from the given information */
 };
 
-typedef enum Decmode DEC_DECMODE; /**< decomposition mode */
+typedef enum Decmode GCG_DECMODE; /**< decomposition mode */
 
 #ifdef __cplusplus
 }

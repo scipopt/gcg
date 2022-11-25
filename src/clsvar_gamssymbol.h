@@ -45,11 +45,11 @@ extern "C" {
 #endif
 
 /** adds an entry to clsdata->vartosymbol */
-SCIP_RETCODE DECvarClassifierGamssymbolAddEntry(
-   DEC_VARCLASSIFIER*   classifier,
+SCIP_RETCODE GCGvarClassifierGamssymbolAddEntry(
+   GCG_VARCLASSIFIER*   classifier,
    SCIP_VAR*            var,
    int                  symbolIdx
-);
+   );
 
 /** creates the gamssymbol classifier and includes it in SCIP */
 GCG_EXPORT

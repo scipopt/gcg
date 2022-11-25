@@ -53,7 +53,7 @@ This detector calculates cons-cons adjacency (if not already done), and sorts co
 */
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "neighborhoodmaster"       /**< name of detector */
+#define DEC_NAME                  "neighborhoodmaster"       /**< name of detector */
 #define DEC_DESC                  "detector neighborhoodmaster" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          0           /** last round the detector gets called                              */
@@ -76,7 +76,7 @@ This detector calculates cons-cons adjacency (if not already done), and sorts co
  */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
    SCIP_Real maxratio;
 };
@@ -98,17 +98,17 @@ struct sort_pred {
  */
 
 /** destructor of detector to free user data (called when GCG is exiting) */
-DEC_DECL_FREEDETECTOR(freeNeighborhoodmaster)
+GCG_DECL_FREEDETECTOR(freeNeighborhoodmaster)
 { /*lint --e{715}*/
 
-   DEC_DETECTORDATA *detectordata;
+   GCG_DETECTORDATA *detectordata;
 
    assert(scip != NULL);
    assert(detector != NULL);
 
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
    SCIPfreeMemory(scip, &detectordata);
@@ -124,14 +124,14 @@ DEC_DECL_FREEDETECTOR(freeNeighborhoodmaster)
 
 #define finishPartialdecNeighborhoodmaster NULL
 
-static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecNeighborhoodmaster)
+static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecNeighborhoodmaster)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
    SCIP_CLOCK* temporaryClock;
    gcg::DETPROBDATA* detprobdata;
    gcg::PARTIALDECOMP* partialdec;
-   DEC_DetectorData* detectorData = DECdetectorGetData(detector);
+   GCG_DetectorData* detectorData = GCGdetectorGetData(detector);
    std::stringstream decdesc;
    int maxdiff = -1;
    int maxdiffindex = -1;
@@ -201,10 +201,10 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecNeighborhoodmaster)
 #define detectorPostprocessPartialdecNeighborhoodmaster NULL
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveNeighborhoodmaster)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveNeighborhoodmaster)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
@@ -217,10 +217,10 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveNeighborhoodmaster)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultNeighborhoodmaster)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultNeighborhoodmaster)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -232,10 +232,10 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultNeighborhoodmaster)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastNeighborhoodmaster)
+GCG_DECL_SETPARAMFAST(setParamFastNeighborhoodmaster)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -256,7 +256,7 @@ DEC_DECL_SETPARAMFAST(setParamFastNeighborhoodmaster)
 SCIP_RETCODE SCIPincludeDetectorNeighborhoodmaster(SCIP* scip /**< SCIP data structure */
 )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    detectordata = NULL;
 
@@ -264,13 +264,13 @@ SCIP_RETCODE SCIPincludeDetectorNeighborhoodmaster(SCIP* scip /**< SCIP data str
    assert(detectordata != NULL);
 
    SCIP_CALL(
-      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
-         DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
-         detectordata, freeNeighborhoodmaster, initNeighborhoodmaster,
-         exitNeighborhoodmaster, propagatePartialdecNeighborhoodmaster, finishPartialdecNeighborhoodmaster,
-         detectorPostprocessPartialdecNeighborhoodmaster, setParamAggressiveNeighborhoodmaster,
-         setParamDefaultNeighborhoodmaster, setParamFastNeighborhoodmaster));
+      GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
+                         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
+                         DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+                         detectordata, freeNeighborhoodmaster, initNeighborhoodmaster,
+                         exitNeighborhoodmaster, propagatePartialdecNeighborhoodmaster, finishPartialdecNeighborhoodmaster,
+                         detectorPostprocessPartialdecNeighborhoodmaster, setParamAggressiveNeighborhoodmaster,
+                         setParamDefaultNeighborhoodmaster, setParamFastNeighborhoodmaster));
 
    SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/neighborhoodmaster/maxratio",
          "the maximal ratio of open constraints that are assigned to the master problem",

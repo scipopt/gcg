@@ -273,7 +273,7 @@ SCIP_RETCODE GCGdialogChangeScore(
    SCIPdialogMessage(scip, NULL, "\nPlease specify the new score:\n");
    for( int i = 0; i < GCGconshdlrDecompGetNScores(scip); i++)
    {
-      DEC_SCORE* score = GCGconshdlrDecompGetScores(scip)[i];
+      GCG_SCORE* score = GCGconshdlrDecompGetScores(scip)[i];
 
       SCIPdialogMessage(scip, NULL, "%d: %s\n", i, GCGscoreGetName(score));      
    }
@@ -291,7 +291,7 @@ SCIP_RETCODE GCGdialogChangeScore(
       if( scorenr >= 0 && scorenr <= GCGconshdlrDecompGetNScores(scip) - 1 )
       {
          /* set score */
-         DEC_SCORE* score = GCGconshdlrDecompGetScores(scip)[scorenr];
+         GCG_SCORE* score = GCGconshdlrDecompGetScores(scip)[scorenr];
 
          SCIP_CALL( SCIPsetStringParam(scip, "detection/scores/selected", GCGscoreGetShortname(score)) );
          SCIPdialogMessage(scip, NULL, "Score set to %s.\n", GCGscoreGetName(score));
@@ -391,7 +391,7 @@ SCIP_RETCODE GCGdialogShowMenu(
       if( header != "score" )
          newheader = header;
       else
-         newheader = GCGscoreGetShortname(DECgetCurrentScore(scip));
+         newheader = GCGscoreGetShortname(GCGgetCurrentScore(scip));
 
       /* make sure the header name is unique and add a length for header */
       assert(columnlength.find(header) == columnlength.end());
@@ -486,7 +486,7 @@ SCIP_RETCODE GCGdialogShowLegend(
    )
 {
    assert(scip != NULL);
-   DEC_DETECTOR** detectors;
+   GCG_DETECTOR** detectors;
 
    /* print header for detector list */
    SCIPdialogMessage(scip, NULL, "List of included detectors for decompositions histories: \n");
@@ -499,10 +499,10 @@ SCIP_RETCODE GCGdialogShowLegend(
 
    for( int det = 0; det < GCGconshdlrDecompGetNDetectors(scip); ++det )
    {
-      DEC_DETECTOR* detector;
+      GCG_DETECTOR* detector;
       detector = detectors[det];
 
-      SCIPdialogMessage(scip, NULL, "%30s    %4c\n", DECdetectorGetName(detector), DECdetectorGetChar(detector));
+      SCIPdialogMessage(scip, NULL, "%30s    %4c\n", GCGdetectorGetName(detector), GCGdetectorGetChar(detector));
    }
    /* print usergiven as part of detector chars */
    SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "given by user" , "U");
@@ -532,7 +532,7 @@ SCIP_RETCODE GCGdialogShowLegend(
       /* if the header is "score" replace with shortname of the current score */
       else
       {
-         DEC_SCORE* score = DECgetCurrentScore(scip);
+         GCG_SCORE* score = GCGgetCurrentScore(scip);
          SCIPdialogMessage(scip, NULL, "%30s     %s\n", GCGscoreGetShortname(score), GCGscoreGetDesc(score));
       }
 
@@ -825,7 +825,7 @@ SCIP_RETCODE GCGdialogSortBy(
       if( isHeader(input, columns) )
          sortby = input;
       /* if the score abbreviation is entered, the header would not be in the column info */
-      else if( input == GCGscoreGetShortname(DECgetCurrentScore(scip)) )
+      else if( input == GCGscoreGetShortname(GCGgetCurrentScore(scip)) )
          sortby = "score";
    }
    return SCIP_OKAY;

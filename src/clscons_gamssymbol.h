@@ -45,11 +45,11 @@ extern "C" {
 #endif
 
 /** adds an entry to clsdata->constosymbol */
-SCIP_RETCODE DECconsClassifierGamssymbolAddEntry(
-   DEC_CONSCLASSIFIER*   classifier,
+SCIP_RETCODE GCGconsClassifierGamssymbolAddEntry(
+   GCG_CONSCLASSIFIER*   classifier,
    SCIP_CONS*            cons,
    int                   symbolIdx
-);
+   );
 
 /** creates the gamssymbol classifier and includes it in SCIP */
 GCG_EXPORT

@@ -58,7 +58,7 @@ extern "C" {
 #endif
 
 /** creates price storage */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGpricestoreCreate(
    SCIP*                 scip,                /**< SCIP data structure */
    GCG_PRICESTORE**      pricestore,          /**< pointer to store price storage */
@@ -71,32 +71,32 @@ SCIP_RETCODE GCGpricestoreCreate(
    );
 
 /** frees price storage */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGpricestoreFree(
    SCIP*                 scip,                /**< SCIP data structure */
    GCG_PRICESTORE**      pricestore           /**< pointer to store price storage */
    );
 
 /** informs price storage, that Farkas pricing starts now */
-extern
+GCG_EXPORT
 void GCGpricestoreStartFarkas(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
 /** informs price storage, that Farkas pricing is now finished */
-extern
+GCG_EXPORT
 void GCGpricestoreEndFarkas(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
 /** informs price storage, that the following cols should be used in any case */
-extern
+GCG_EXPORT
 void GCGpricestoreStartForceCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
 /** informs price storage, that the following cols should no longer be used in any case */
-extern
+GCG_EXPORT
 void GCGpricestoreEndForceCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
@@ -104,7 +104,7 @@ void GCGpricestoreEndForceCols(
 /** adds col to price storage;
  *  if the col should be forced to enter the LP, an infinite score has to be used
  */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGpricestoreAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
@@ -113,7 +113,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
    );
 
 /** adds cols to priced vars and clears price storage */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGpricestoreApplyCols(
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    GCG_COLPOOL*          colpool,            /**< GCG column pool */
@@ -122,55 +122,55 @@ SCIP_RETCODE GCGpricestoreApplyCols(
    );
 
 /** clears the price storage without adding the cols to priced vars */
-extern
+GCG_EXPORT
 void GCGpricestoreClearCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
 /** removes cols that are inefficacious w.r.t. the current LP solution from price storage without adding the cols to the LP */
-extern
+GCG_EXPORT
 void GCGpricestoreRemoveInefficaciousCols(
    GCG_PRICESTORE*       pricestore          /**< price storage */
    );
 
 /** get cols in the price storage */
-extern
+GCG_EXPORT
 GCG_COL** GCGpricestoreGetCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
 /** get number of cols in the price storage */
-extern
+GCG_EXPORT
 int GCGpricestoreGetNCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
 /** get number of efficacious cols in the price storage */
-extern
+GCG_EXPORT
 int GCGpricestoreGetNEfficaciousCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
 /** get total number of cols found so far */
-extern
+GCG_EXPORT
 int GCGpricestoreGetNColsFound(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
 /** get number of cols found so far in current price round */
-extern
+GCG_EXPORT
 int GCGpricestoreGetNColsFoundRound(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
 /** get total number of cols applied to the LPs */
-extern
+GCG_EXPORT
 int GCGpricestoreGetNColsApplied(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
 /** gets time in seconds used for pricing cols from the pricestore */
-extern
+GCG_EXPORT
 SCIP_Real GCGpricestoreGetTime(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );

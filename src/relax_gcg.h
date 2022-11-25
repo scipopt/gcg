@@ -241,7 +241,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
 /** returns the decomposition mode */
 GCG_EXPORT
-DEC_DECMODE GCGgetDecompositionMode(
+GCG_DECMODE GCGgetDecompositionMode(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
@@ -249,13 +249,13 @@ DEC_DECMODE GCGgetDecompositionMode(
  * the GCG Benders' decomposition plugins.
  */
 GCG_EXPORT
-DEC_DECMODE GCGgetMasterDecompMode(
+GCG_DECMODE GCGgetMasterDecompMode(
    SCIP*                 masterprob          /**< the master problem SCIP instance */
    );
 
 /** gets the structure information */
 GCG_EXPORT
-DEC_DECOMP* GCGgetStructDecomp(
+GCG_DECOMP* GCGgetStructDecomp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

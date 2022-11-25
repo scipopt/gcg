@@ -22,9 +22,8 @@ New/modified API functions:
 - New functions: 'GCGconshdlrDecompGetNConsClassifiers', 'GCGconshdlrDecompGetNVarClassifiers', 'GCGconshdlrDecompGetConsClassifiers', 'GCGconshdlrDecompGetVarClassifiers'
 - Add parameter 'DEC_CONSCLASSIFIER* consclassifier' to 'DEC_DECL_CONSCLASSIFY'
 - Add paramater 'DEC_VARCLASSIFIER* varclassifier' to 'DEC_DECL_VARCLASSIFY'
-- Added function 'DECsetCurrentScore'
-- Added function 'DECgetCurrentScoreShortname'
-- Added function 'DECgetCurrentScore'
+- Added function 'GCGgetCurrentScoreShortname'
+- Added function 'GCGgetCurrentScore'
 - Added function 'GCGincludeScore'
 - Added function 'GCGfindScore'
 - Added function 'GCGgetScores'
@@ -69,10 +68,12 @@ Deleted API functions:
 Renamed API functions:
 ---------------------------
 
-- Renamed function 'DECconsClassifierGetData' to 'GCGconsClassifierGetData'
-- Renamed function 'DECconsClassifierGetName' to 'GCGconsClassifierGetName'
-- Renamed function 'DECvarClassifierGetData' to 'GCGvarClassifierGetData'
-- Renamed function 'DECvarClassifierGetName' to 'GCGvarClassifierGetName'
+- Replaced prefix 'DEC' with 'GCG'
+
+Renamed structures and defines:
+---------------------------
+
+- Replaced prefix 'DEC' with 'GCG'
 
 Command line interface
 -----------------------

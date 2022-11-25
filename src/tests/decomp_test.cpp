@@ -47,13 +47,13 @@ class GcgDecompTest : public ::testing::Test {
    virtual void TearDown() {
       if( decomp != NULL)
       {
-         SCIP_CALL_ABORT( DECdecompFree(scip, &decomp) );
+         SCIP_CALL_ABORT( GCGdecompFree(scip, &decomp) );
       }
 
       SCIP_CALL_ABORT( SCIPfree(&scip) );
    }
 protected:
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
 
 public:
    static SCIP* scip;
@@ -62,7 +62,7 @@ public:
 SCIP* GcgDecompTest::scip = NULL;
 
 TEST_F(GcgDecompTest, CreateAndFreeTest) {
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGdecompCreate(scip, &decomp) );
 
    ASSERT_EQ((uint) FALSE, decomp->presolved);
    ASSERT_EQ(0 , decomp->nblocks);
@@ -80,124 +80,124 @@ TEST_F(GcgDecompTest, CreateAndFreeTest) {
    ASSERT_EQ(NULL , decomp->constoblock);
    ASSERT_EQ(NULL , decomp->varindex);
    ASSERT_EQ(NULL, decomp->consindex);
-   ASSERT_EQ(DEC_DECTYPE_UNKNOWN , decomp->type);
+   ASSERT_EQ(GCG_DECTYPE_UNKNOWN , decomp->type);
    ASSERT_EQ(NULL, decomp->detector);
 
-   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGdecompFree(scip, &decomp) );
    ASSERT_EQ(NULL, decomp);
 }
 
 TEST_F(GcgDecompTest, GetDetectorTest) {
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   ASSERT_EQ(NULL, DECdecompGetDetector(decomp));
+   SCIP_CALL_EXPECT( GCGdecompCreate(scip, &decomp) );
+   ASSERT_EQ(NULL, GCGdecompGetDetector(decomp));
    decomp->detector = (DEC_DETECTOR*) 0xDEADBEEF;
-   ASSERT_EQ((DEC_DETECTOR*) 0xDEADBEEF, DECdecompGetDetector(decomp));
+   ASSERT_EQ((DEC_DETECTOR*) 0xDEADBEEF, GCGdecompGetDetector(decomp));
 }
 
 TEST_F(GcgDecompTest, SetDetectorTest) {
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGdecompCreate(scip, &decomp) );
    ASSERT_EQ(NULL, decomp->detector);
-   DECdecompSetDetector(decomp, (DEC_DETECTOR*) 0xDEADBEEF);
+   GCGdecompSetDetector(decomp, (DEC_DETECTOR*) 0xDEADBEEF);
    ASSERT_EQ(decomp->detector, (DEC_DETECTOR*) 0xDEADBEEF);
 }
 
 TEST_F(GcgDecompTest, GetConsindexTest) {
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   ASSERT_EQ(NULL, DECdecompGetConsindex(decomp));
+   SCIP_CALL_EXPECT( GCGdecompCreate(scip, &decomp) );
+   ASSERT_EQ(NULL, GCGdecompGetConsindex(decomp));
    decomp->consindex = (SCIP_HASHMAP*) 0xDEADBEEF;
-   ASSERT_EQ((SCIP_HASHMAP*) 0xDEADBEEF, DECdecompGetConsindex(decomp));
+   ASSERT_EQ((SCIP_HASHMAP*) 0xDEADBEEF, GCGdecompGetConsindex(decomp));
    decomp->consindex = NULL;
 }
 
 TEST_F(GcgDecompTest, SetConsindexTest) {
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGdecompCreate(scip, &decomp) );
    ASSERT_EQ(NULL, decomp->consindex);
-   DECdecompSetConsindex(decomp, (SCIP_HASHMAP*) 0xDEADBEEF);
+   GCGdecompSetConsindex(decomp, (SCIP_HASHMAP*) 0xDEADBEEF);
    ASSERT_EQ(decomp->consindex, (SCIP_HASHMAP*) 0xDEADBEEF);
    decomp->consindex = NULL;
 }
 
 TEST_F(GcgDecompTest, GetVarindexTest) {
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   ASSERT_EQ(NULL, DECdecompGetVarindex(decomp));
+   SCIP_CALL_EXPECT( GCGdecompCreate(scip, &decomp) );
+   ASSERT_EQ(NULL, GCGdecompGetVarindex(decomp));
    decomp->varindex = (SCIP_HASHMAP*) 0xDEADBEEF;
-   ASSERT_EQ((SCIP_HASHMAP*) 0xDEADBEEF, DECdecompGetVarindex(decomp));
+   ASSERT_EQ((SCIP_HASHMAP*) 0xDEADBEEF, GCGdecompGetVarindex(decomp));
    decomp->varindex = NULL;
 }
 
 TEST_F(GcgDecompTest, SetVarindexTest) {
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGdecompCreate(scip, &decomp) );
    ASSERT_EQ(NULL, decomp->varindex);
-   DECdecompSetVarindex(decomp, (SCIP_HASHMAP*) 0xDEADBEEF);
+   GCGdecompSetVarindex(decomp, (SCIP_HASHMAP*) 0xDEADBEEF);
    ASSERT_EQ(decomp->varindex, (SCIP_HASHMAP*) 0xDEADBEEF);
    decomp->varindex = NULL;
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
+   SCIP_CALL_EXPECT(GCGdecompFree(scip, &decomp));
 }
 
 TEST_F(GcgDecompTest, SetTypeDiagonalTest) {
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   ASSERT_EQ(DEC_DECTYPE_UNKNOWN, decomp->type);
-   ASSERT_EQ(SCIP_OKAY, DECdecompSetType(decomp, DEC_DECTYPE_DIAGONAL));
+   SCIP_CALL_EXPECT( GCGdecompCreate(scip, &decomp) );
+   ASSERT_EQ(GCG_DECTYPE_UNKNOWN, decomp->type);
+   ASSERT_EQ(SCIP_OKAY, GCGdecompSetType(decomp, GCG_DECTYPE_DIAGONAL));
    decomp->nlinkingconss = 1;
-   ASSERT_EQ(SCIP_INVALIDDATA, DECdecompSetType(decomp, DEC_DECTYPE_DIAGONAL));
+   ASSERT_EQ(SCIP_INVALIDDATA, GCGdecompSetType(decomp, GCG_DECTYPE_DIAGONAL));
    decomp->nlinkingconss = 0;
    decomp->linkingconss = (SCIP_CONS**) 0xDEADBEEF;
-   ASSERT_EQ(SCIP_INVALIDDATA, DECdecompSetType(decomp, DEC_DECTYPE_DIAGONAL));
+   ASSERT_EQ(SCIP_INVALIDDATA, GCGdecompSetType(decomp, GCG_DECTYPE_DIAGONAL));
    decomp->linkingconss = NULL;
    decomp->nlinkingvars = 1;
-   ASSERT_EQ(SCIP_INVALIDDATA, DECdecompSetType(decomp, DEC_DECTYPE_DIAGONAL));
+   ASSERT_EQ(SCIP_INVALIDDATA, GCGdecompSetType(decomp, GCG_DECTYPE_DIAGONAL));
    decomp->nlinkingvars = 0;
    decomp->linkingvars = (SCIP_VAR**) 0xDEADBEEF;
-   ASSERT_EQ(SCIP_INVALIDDATA, DECdecompSetType(decomp, DEC_DECTYPE_DIAGONAL));
+   ASSERT_EQ(SCIP_INVALIDDATA, GCGdecompSetType(decomp, GCG_DECTYPE_DIAGONAL));
    decomp->linkingvars = NULL;
 }
 
 TEST_F(GcgDecompTest, SetTypeUnknownTest) {
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   ASSERT_EQ(DEC_DECTYPE_UNKNOWN, decomp->type);
-   ASSERT_EQ(SCIP_INVALIDDATA, DECdecompSetType(decomp, DEC_DECTYPE_UNKNOWN));
+   SCIP_CALL_EXPECT( GCGdecompCreate(scip, &decomp) );
+   ASSERT_EQ(GCG_DECTYPE_UNKNOWN, decomp->type);
+   ASSERT_EQ(SCIP_INVALIDDATA, GCGdecompSetType(decomp, GCG_DECTYPE_UNKNOWN));
 }
 
 TEST_F(GcgDecompTest, SetTypeArrowheadTest) {
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   ASSERT_EQ(DEC_DECTYPE_UNKNOWN, decomp->type);
-   ASSERT_EQ(SCIP_OKAY, DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD));
+   SCIP_CALL_EXPECT( GCGdecompCreate(scip, &decomp) );
+   ASSERT_EQ(GCG_DECTYPE_UNKNOWN, decomp->type);
+   ASSERT_EQ(SCIP_OKAY, GCGdecompSetType(decomp, GCG_DECTYPE_ARROWHEAD));
    decomp->nlinkingconss = 1;
-   ASSERT_EQ(SCIP_OKAY, DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD));
+   ASSERT_EQ(SCIP_OKAY, GCGdecompSetType(decomp, GCG_DECTYPE_ARROWHEAD));
    decomp->nlinkingconss = 0;
    decomp->linkingconss = (SCIP_CONS**) 0xDEADBEEF;
-   ASSERT_EQ(SCIP_OKAY, DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD));
+   ASSERT_EQ(SCIP_OKAY, GCGdecompSetType(decomp, GCG_DECTYPE_ARROWHEAD));
    decomp->linkingconss = NULL;
    decomp->nlinkingvars = 1;
-   ASSERT_EQ(SCIP_OKAY, DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD));
+   ASSERT_EQ(SCIP_OKAY, GCGdecompSetType(decomp, GCG_DECTYPE_ARROWHEAD));
    decomp->nlinkingvars = 0;
    decomp->linkingvars = (SCIP_VAR**) 0xDEADBEEF;
-   ASSERT_EQ(SCIP_OKAY, DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD));
+   ASSERT_EQ(SCIP_OKAY, GCGdecompSetType(decomp, GCG_DECTYPE_ARROWHEAD));
    decomp->linkingvars = NULL;
 }
 
 TEST_F(GcgDecompTest, SetTypeBorderedTest) {
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   ASSERT_EQ(DEC_DECTYPE_UNKNOWN, decomp->type);
-   ASSERT_EQ(SCIP_OKAY, DECdecompSetType(decomp, DEC_DECTYPE_BORDERED));
+   SCIP_CALL_EXPECT( GCGdecompCreate(scip, &decomp) );
+   ASSERT_EQ(GCG_DECTYPE_UNKNOWN, decomp->type);
+   ASSERT_EQ(SCIP_OKAY, GCGdecompSetType(decomp, GCG_DECTYPE_BORDERED));
    decomp->nlinkingconss = 1;
-   ASSERT_EQ(SCIP_OKAY, DECdecompSetType(decomp, DEC_DECTYPE_BORDERED));
+   ASSERT_EQ(SCIP_OKAY, GCGdecompSetType(decomp, GCG_DECTYPE_BORDERED));
    decomp->nlinkingconss = 0;
    decomp->linkingconss = (SCIP_CONS**) 0xDEADBEEF;
-   ASSERT_EQ(SCIP_OKAY, DECdecompSetType(decomp, DEC_DECTYPE_BORDERED));
+   ASSERT_EQ(SCIP_OKAY, GCGdecompSetType(decomp, GCG_DECTYPE_BORDERED));
    decomp->linkingconss = NULL;
    decomp->nlinkingvars = 1;
-   ASSERT_EQ(SCIP_INVALIDDATA, DECdecompSetType(decomp, DEC_DECTYPE_BORDERED));
+   ASSERT_EQ(SCIP_INVALIDDATA, GCGdecompSetType(decomp, GCG_DECTYPE_BORDERED));
    decomp->nlinkingvars = 0;
    decomp->linkingvars = (SCIP_VAR**) 0xDEADBEEF;
-   ASSERT_EQ(SCIP_INVALIDDATA, DECdecompSetType(decomp, DEC_DECTYPE_BORDERED));
+   ASSERT_EQ(SCIP_INVALIDDATA, GCGdecompSetType(decomp, GCG_DECTYPE_BORDERED));
    decomp->linkingvars = NULL;
 }
 
 TEST_F(GcgDecompTest, GetPresolvedTest) {
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( GCGdecompCreate(scip, &decomp) );
    ASSERT_EQ((uint)FALSE, decomp->presolved);
-   ASSERT_EQ((uint)FALSE, DECdecompGetPresolved(decomp));
+   ASSERT_EQ((uint)FALSE, GCGdecompGetPresolved(decomp));
    decomp->presolved = TRUE;
-   ASSERT_EQ((uint)TRUE, DECdecompGetPresolved(decomp));
+   ASSERT_EQ((uint)TRUE, GCGdecompGetPresolved(decomp));
 }

@@ -56,7 +56,7 @@
 #include "class_detprobdata.h"
 #include "scip/clock.h"
 
-#define DEC_DETECTORNAME          "stairheur"    /**< name of the detector */
+#define DEC_NAME                  "stairheur"    /**< name of the detector */
 #define DEC_DESC                  "detects staircase matrices via matrix reordering" /**< detector description */
 #define DEC_PRIORITY              1200           /**< priority of the detector */
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
@@ -109,7 +109,7 @@ struct IndexMap
 typedef struct IndexMap INDEXMAP;
 
 /** detector data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
    SCIP_HASHMAP*         constoblock;        /**< hashmap mapping constraints to blocks */
    int                   blocks;             /**< number of blocks */
@@ -484,7 +484,7 @@ static
 SCIP_RETCODE initData(
    SCIP*                 scip,               /**< SCIP data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use for initialization */
-   DEC_DETECTORDATA*     detectordata        /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata        /**< detector data structure */
    )
 {
    int i;
@@ -524,7 +524,7 @@ SCIP_RETCODE initData(
 static
 SCIP_RETCODE freeData(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata        /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata        /**< detector data structure */
    )
 {
    assert(scip != NULL);
@@ -579,7 +579,7 @@ SCIP_RETCODE createRowindexList(
    SCIP*                 scip,               /**< SCIP data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use for matrix */
    gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
-   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data data structure */
    SCIP_HASHMAP*         indexcons,          /**< hashmap index -> constraint */
    SCIP_HASHMAP*         varindex,           /**< hashmap variable -> index*/
    vector<vector<int> >  &rowindices         /**< vector to store the row indices vector*/
@@ -788,7 +788,7 @@ SCIP_RETCODE rankOrderClusteringIteration(
    SCIP*                 scip,               /**< SCIP data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use for permutation */
    gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
-   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data data structure */
    INDEXMAP*             inputmap,           /**< indexmap for input */
    INDEXMAP*             outputmap           /**< indexmap for output */
    )
@@ -868,7 +868,7 @@ SCIP_RETCODE rankOrderClustering(
    SCIP*                 scip,               /**< SCIP data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use for clustering */
    gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
-   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    int                   max_iterations,     /**< number of maximal iterations */
    int*                  iterations          /**< number of performed iterations */
    )
@@ -957,7 +957,7 @@ static
 SCIP_RETCODE rowsWithConstriction(
    SCIP*                 scip,               /**< SCIP data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use */
-   DEC_DETECTORDATA*     detectordata        /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata        /**< detector data structure */
    )
 {
    /* if blocking is performed after row i+1; local minima */
@@ -980,7 +980,7 @@ static
 SCIP_RETCODE assignConsToBlock(
    SCIP*                 scip,               /**< SCIP data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use */
-   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    int                   block,              /**< id of block */
    int                   first_cons,         /**< index of first constraint to assign */
    int                   last_cons           /**< index of last constraint to assign */
@@ -1004,7 +1004,7 @@ SCIP_RETCODE assignConsToBlock(
 /** returns the largest column index of a nonzero entry between rows [from_row, to_row] */
 static
 int getMaxColIndex(
-   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    int                   from_row,           /**< index of starting row to check */
    int                   to_row              /**< index of last row to check */
    )
@@ -1016,7 +1016,7 @@ int getMaxColIndex(
 /** returns the column index of the first nonzero entry in 'row'. Rows start counting at 1, not 0. */
 static
 int getMinColIndex(
-   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    int                   row                 /**< index of row */
    )
 {
@@ -1029,7 +1029,7 @@ int getMinColIndex(
  */
 static
 SCIP_Bool isValidBlocking(
-   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    int                   prev_block_first_row, /**< first row of the previous block */
    int                   prev_block_last_row, /**< last row of the previous block */
    int                   block_at_row        /**< the row for which you want to determine if the blocking is valid */
@@ -1083,7 +1083,7 @@ vector<int>::iterator findBlockingCandidate(
  */
 static
 vector<int>::iterator nextRowToBlockAt(
-   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    vector<int>::iterator it_constrictions,   /**< Iterator pointing to a vector of constraints (detectordata->rowsWithConstrictions) */
    vector<int>*          it_vector,          /**< vector of constrictions */
    int                   min_block_size,     /**< minimum number of rows to be in a block */
@@ -1128,7 +1128,7 @@ vector<int>::iterator nextRowToBlockAt(
 /** calculate the number of decompositions in order to allocate decomps array */
 static
 int calculateNdecompositions(
-   DEC_DETECTORDATA*     detectordata        /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata        /**< detector data structure */
    )
 {
    int nblockingtypes;
@@ -1165,7 +1165,7 @@ int calculateNdecompositions(
 /** check the consistency of the parameters */
 static
 void checkParameterConsistency(
-   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    SCIP_RESULT*          result              /**< pointer to store result */
    )
 {
@@ -1197,7 +1197,7 @@ static
 SCIP_RETCODE blockingDynamic(
    SCIP*                 scip,               /**< SCIP data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to use */
-   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data data structure */
    int                   tau,                /**< desired number of blocks */
    int                   nvars               /**< number of variables in the problem*/
    )
@@ -1273,7 +1273,7 @@ static
 SCIP_RETCODE blockingStatic(
    SCIP*                 scip,               /**< SCIP data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partial decomposition to create block in */
-   DEC_DETECTORDATA*     detectordata        /**< detector data data structure */
+   GCG_DETECTORDATA*     detectordata        /**< detector data data structure */
    )
 {
    int nblocks;
@@ -1330,7 +1330,7 @@ SCIP_RETCODE blockingStatic(
 static
 SCIP_RETCODE blockingAsSoonAsPossible(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data data structure */
    int                   desired_blocks,     /**< desired number of blocks */
    int                   nvars               /**< number of variables in the problem*/
 )
@@ -1346,7 +1346,7 @@ SCIP_RETCODE blockingAsSoonAsPossible(
 static
 SCIP_RETCODE resetDetectordata(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata        /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata        /**< detector data structure */
    )
 {
    if(detectordata->constoblock != NULL)
@@ -1363,7 +1363,7 @@ SCIP_RETCODE resetDetectordata(
 static
 SCIP_RETCODE blocking(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partialdec to propagate */
    PARTIALDEC_DETECTION_DATA* detectiondata, /**< detection data */
    SCIP_Real             time,               /**< previous time */
@@ -1620,13 +1620,13 @@ SCIP_RETCODE blocking(
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEDETECTOR(detectorFreeStairheur)
+GCG_DECL_FREEDETECTOR(detectorFreeStairheur)
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    assert(scip != NULL);
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
    if (detectordata->constoblock != NULL)
@@ -1635,7 +1635,7 @@ DEC_DECL_FREEDETECTOR(detectorFreeStairheur)
       detectordata->constoblock = NULL;
    }
 
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    SCIPfreeMemory(scip, &detectordata);
    return SCIP_OKAY;
@@ -1643,13 +1643,13 @@ DEC_DECL_FREEDETECTOR(detectorFreeStairheur)
 
 /** detector initialization method (called after problem was transformed) */
 static
-DEC_DECL_INITDETECTOR(detectorInitStairheur)
+GCG_DECL_INITDETECTOR(detectorInitStairheur)
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    assert(scip != NULL);
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
    detectordata->constoblock = NULL;
@@ -1670,14 +1670,14 @@ DEC_DECL_INITDETECTOR(detectorInitStairheur)
 }
 
 
-static DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStairheur)
+static GCG_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStairheur)
 {
    int i;
    int nconss; /* number of constraints in the problem */
    int nPartialdecs;
    vector<vector<int> > rowindices;
    vector<vector<int> > columnindices;
-   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+   GCG_DETECTORDATA* detectordata = GCGdetectorGetData(detector);
    gcg::PARTIALDECOMP* partialdec;
    SCIP_Real temptime;
 
@@ -1799,10 +1799,10 @@ static DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStairheur)
 
 
 static
-DEC_DECL_SETPARAMFAST(setParamAggressiveStairheur)
+GCG_DECL_SETPARAMFAST(setParamAggressiveStairheur)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
@@ -1815,10 +1815,10 @@ DEC_DECL_SETPARAMFAST(setParamAggressiveStairheur)
 
 
 static
-DEC_DECL_SETPARAMFAST(setParamDefaultStairheur)
+GCG_DECL_SETPARAMFAST(setParamDefaultStairheur)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -1831,10 +1831,10 @@ DEC_DECL_SETPARAMFAST(setParamDefaultStairheur)
 
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastStairheur)
+GCG_DECL_SETPARAMFAST(setParamFastStairheur)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -1853,7 +1853,7 @@ SCIP_RETCODE SCIPincludeDetectorStairheur(
    SCIP*                 scip              /**< SCIP data structure */
    )
 {
-   DEC_DETECTORDATA *detectordata = NULL;
+   GCG_DETECTORDATA *detectordata = NULL;
    assert(scip != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
@@ -1861,8 +1861,8 @@ SCIP_RETCODE SCIPincludeDetectorStairheur(
 
    detectordata->constoblock  = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur, detectorPropagatePartialdecStairheur, detectorFinishPartialdecStairheur, detectorPostprocessPartialdecStairheur, setParamAggressiveStairheur, setParamDefaultStairheur, setParamFastStairheur) );
+   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+                                 detectordata, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur, detectorPropagatePartialdecStairheur, detectorFinishPartialdecStairheur, detectorPostprocessPartialdecStairheur, setParamAggressiveStairheur, setParamDefaultStairheur, setParamFastStairheur) );
 
 
    /* add stairheur detector parameters */

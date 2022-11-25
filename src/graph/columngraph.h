@@ -50,11 +50,11 @@ public:
    ColumnGraph(
       SCIP*                 scip,              /**< SCIP data structure */
       Weights               w                  /**< weights for the given graph */
-   );
+      );
    virtual ~ColumnGraph();
 
    virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**      decomp                  /**< decomposition structure to generate */
+      GCG_DECOMP**      decomp                  /**< decomposition structure to generate */
       );
 
    virtual SCIP_RETCODE createFromMatrix(

@@ -73,7 +73,7 @@ template <class T>
 SCIP_RETCODE HyperrowGraph<T>::writeToFile(
    int                fd,                    /**< filename where the graph should be written to */
    SCIP_Bool          edgeweights            /**< whether to write edgeweights */
- )
+   )
 {
    FILE* file;
    file = fdopen(fd, "w");
@@ -118,7 +118,7 @@ int HyperrowGraph<T>::getNNodes()
 template <class T>
 int HyperrowGraph<T>::getNNeighbors(
    int i
-)
+   )
 {
    assert(i >= 0);
    assert(i < getNNodes());
@@ -129,7 +129,7 @@ int HyperrowGraph<T>::getNNeighbors(
 template <class T>
 std::vector<int> HyperrowGraph<T>::getHyperedgeNodes(
    int i
-)
+   )
 {
    assert(i >= 0);
    assert(i < getNEdges());
@@ -140,8 +140,8 @@ std::vector<int> HyperrowGraph<T>::getHyperedgeNodes(
 
 template <class T>
 SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
-   DEC_DECOMP**       decomp              /**< decomposition structure to generate */
-)
+   GCG_DECOMP**       decomp              /**< decomposition structure to generate */
+   )
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;
@@ -194,8 +194,8 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+      SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
+      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);
@@ -502,9 +502,10 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
 
 template <class T>
 SCIP_RETCODE HyperrowGraph<T>::createFromPartialMatrix(
-                   DETPROBDATA*                                                   detprobdata,
-                   PARTIALDECOMP*                                                       partialdec
-     ){
+   DETPROBDATA* detprobdata,
+   PARTIALDECOMP* partialdec
+   )
+{
      int i;
      int j;
      unordered_map<int, int> oldToNewVarIndex;

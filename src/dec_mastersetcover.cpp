@@ -46,7 +46,7 @@
 #include <iostream>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "mastersetcover"       /**< name of detector */
+#define DEC_NAME                  "mastersetcover"       /**< name of detector */
 #define DEC_DESC                  "detector mastersetcover" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          INT_MAX     /**< last round the detector gets called                              */
@@ -70,7 +70,7 @@
 /** @todo fill in the necessary detector data */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
 };
 
@@ -94,7 +94,7 @@ struct DEC_DetectorData
 #define initMastersetcover NULL
 
 
-static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetcover)
+static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetcover)
 {
    *result = SCIP_DIDNOTFIND;
 
@@ -129,7 +129,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetcover)
    partialdecdetectiondata->newpartialdecs[0] = partialdec;
    partialdecdetectiondata->nnewpartialdecs = 1;
    partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
-   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(DEC_DETECTORNAME);
+   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(DEC_NAME);
    // we used the provided partialdec -> prevent deletion
    partialdecdetectiondata->workonpartialdec = NULL;
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
@@ -153,16 +153,16 @@ static DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetcover)
 SCIP_RETCODE SCIPincludeDetectorMastersetcover(SCIP* scip /**< SCIP data structure */
 )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    /**@todo create mastersetcover detector data here*/
    detectordata = NULL;
 
    SCIP_CALL(
-      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
-         DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP,
-         DEC_USEFULRECALL, detectordata, freeMastersetcover,
-         initMastersetcover, exitMastersetcover, propagatePartialdecMastersetcover, finishPartialdecMastersetcover, detectorPostprocessPartialdecMastersetcover, setParamAggressiveMastersetcover, setParamDefaultMastersetcover, setParamFastMastersetcover));
+      GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
+                         DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP,
+                         DEC_USEFULRECALL, detectordata, freeMastersetcover,
+                         initMastersetcover, exitMastersetcover, propagatePartialdecMastersetcover, finishPartialdecMastersetcover, detectorPostprocessPartialdecMastersetcover, setParamAggressiveMastersetcover, setParamDefaultMastersetcover, setParamFastMastersetcover));
 
    /**@todo add mastersetcover detector parameters */
 

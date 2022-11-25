@@ -80,7 +80,7 @@ using gcg::HyperrowGraph;
 using gcg::MatrixGraph;
 using gcg::Weights;
 
-#define DEC_DETECTORNAME          "hrgpartition"    /**< name of the detector */
+#define DEC_NAME                  "hrgpartition"    /**< name of the detector */
 #define DEC_DESC                  "enforces arrowhead structures using graph partitioning" /**< description of detector */
 #define DEC_FREQCALLROUND         1           /**< frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          0           /**< last round the detector gets called                              */
@@ -134,7 +134,7 @@ using gcg::Weights;
  */
 
 /** private detector data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
 
    /* weight parameters */
@@ -185,15 +185,15 @@ struct DEC_DetectorData
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freeHrgpartition)
+GCG_DECL_FREEDETECTOR(freeHrgpartition)
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    assert(scip != NULL);
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    SCIPfreeMemory(scip, &detectordata);
 
@@ -204,16 +204,16 @@ DEC_DECL_FREEDETECTOR(freeHrgpartition)
 
 /** detector initialization method */
 static
-DEC_DECL_INITDETECTOR(initHrgpartition)
+GCG_DECL_INITDETECTOR(initHrgpartition)
 {
    int nconss;
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
    assert(scip != NULL);
 
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
@@ -225,12 +225,12 @@ DEC_DECL_INITDETECTOR(initHrgpartition)
 
 /** presolving deinitialization method of presolver (called after presolving has been finished) */
 static
-DEC_DECL_EXITDETECTOR(exitHrgpartition)
+GCG_DECL_EXITDETECTOR(exitHrgpartition)
 {
 
    assert(scip != NULL);
 
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+   assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
 
    return SCIP_OKAY;
@@ -240,7 +240,7 @@ DEC_DECL_EXITDETECTOR(exitHrgpartition)
 static
 SCIP_RETCODE callMetis(
    SCIP*                 scip,               /**< SCIP data struture */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< presolver data data structure */
    MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
    char                  tempfile[SCIP_MAXSTRLEN],  /**< filename for the metis input file */
    int                   nblocks,            /**< number of blocks */
@@ -260,7 +260,7 @@ SCIP_RETCODE callMetis(
 
    *result = SCIP_DIDNOTRUN;
 
-   remainingtime = DECgetRemainingTime(scip);
+   remainingtime = GCGgetRemainingTime(scip);
    SCIP_CALL( SCIPcreateWallClock(scip, &metisclock) );
 
    if( remainingtime <= 0 )
@@ -269,7 +269,7 @@ SCIP_RETCODE callMetis(
    }
 
    /* call metis via syscall as there is no library usable ... */
-   if( !SCIPisInfinity(scip, DECgetRemainingTime(scip)) )
+   if( !SCIPisInfinity(scip, GCGgetRemainingTime(scip)) )
    {
       (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;" HMETIS_EXECUTABLE " %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
@@ -345,7 +345,7 @@ SCIP_RETCODE callMetis(
 static
 SCIP_RETCODE createMetisFile(
    SCIP*                 scip,               /**< SCIP data struture */
-   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    int                   partialdecID,       /**< ID of partial decomposition to be used */
    MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
    char tempfile[SCIP_MAXSTRLEN]             /**< filename for the metis input file */
@@ -432,7 +432,7 @@ bool connected(
 static
 SCIP_RETCODE detection(
    SCIP*                   scip,                         /**< SCIP data structure */
-   DEC_DETECTORDATA*       detectordata,                 /**< detectordata of the detector */
+   GCG_DETECTORDATA*       detectordata,                 /**< detectordata of the detector */
    Partialdec_Detection_Data*   partialdecdetectiondata, /**< partialdecdetectiondata (including the detprobdata) where to store the new Partialdecs */
    gcg::PARTIALDECOMP*     partialdec,                   /**< partialdec to propagate */
    bool                    allowopenpartialdecs,         /**< whether new partialdecs should be stored in which this detector only assignes conss to master */
@@ -476,7 +476,7 @@ SCIP_RETCODE detection(
    assert(scip != NULL);
    assert(detectordata != NULL);
 
-   SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
+   SCIPdebugMessage("Detecting structure from %s\n", DEC_NAME);
    nMaxPartialdecs = detectordata->maxblocks-detectordata->minblocks+1;
 
    /* allocate space for output data */
@@ -588,7 +588,7 @@ SCIP_RETCODE detection(
 
 
 static
-DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrgpartition)
+GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrgpartition)
 {
    SCIP_CLOCK* temporaryClock;
    gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
@@ -606,7 +606,7 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrgpartition)
       return SCIP_OKAY;
    }
 
-   SCIPdebugMessage("Started propagate partialdec of detector %s and partial decomp %d \n", DEC_DETECTORNAME, partialdec->getID() );
+   SCIPdebugMessage("Started propagate partialdec of detector %s and partial decomp %d \n", DEC_NAME, partialdec->getID() );
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
@@ -629,7 +629,7 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrgpartition)
       partialdec->assignSmallestComponentsButOneConssAdjacency();
    }
 
-   detection(scip, DECdetectorGetData(detector), partialdecdetectiondata, partialdec, true, result);
+   detection(scip, GCGdetectorGetData(detector), partialdecdetectiondata, partialdec, true, result);
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
    partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
@@ -644,10 +644,10 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrgpartition)
 
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrgpartition)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrgpartition)
 {
    char setstr[SCIP_MAXSTRLEN];
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
    int newval;
    SCIP_Real modifier;
 
@@ -698,13 +698,13 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrgpartition)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultHrgpartition)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultHrgpartition)
 {
    char setstr[SCIP_MAXSTRLEN];
    int newval;
    SCIP_Real modifier;
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -740,13 +740,13 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultHrgpartition)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastHrgpartition)
+GCG_DECL_SETPARAMFAST(setParamFastHrgpartition)
 {
    char setstr[SCIP_MAXSTRLEN];
    int newval;
    SCIP_Real modifier;
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    if ( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM && SCIPgetNConss(scip) + SCIPgetNVars(scip) < 6000 )
@@ -790,7 +790,7 @@ SCIP_RETCODE SCIPincludeDetectorHrgpartition(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   DEC_DETECTORDATA *detectordata = NULL;
+   GCG_DETECTORDATA *detectordata = NULL;
    assert(scip != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
@@ -798,7 +798,7 @@ SCIP_RETCODE SCIPincludeDetectorHrgpartition(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeHrgpartition, initHrgpartition, exitHrgpartition, propagatePartialdecHrgpartition, finishPartialdecHrgpartition, detectorPostprocessPartialdecHrgpartition, setParamAggressiveHrgpartition, setParamDefaultHrgpartition, setParamFastHrgpartition) );
+   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeHrgpartition, initHrgpartition, exitHrgpartition, propagatePartialdecHrgpartition, finishPartialdecHrgpartition, detectorPostprocessPartialdecHrgpartition, setParamAggressiveHrgpartition, setParamDefaultHrgpartition, setParamFastHrgpartition) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrgpartition/limitnconssnvarsdefault", "Limit for sum of nvars and nconss for enabling this detector in default", &detectordata->limitnconssnvarsdefault, TRUE, DEFAULT_LIMITNCONSSNVARSDEFAULT, 0, INT_MAX, NULL, NULL) );
 

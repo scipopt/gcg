@@ -42,8 +42,8 @@
 
 
 /** gets user data of constraint classifier */
-DEC_CLASSIFIERDATA* GCGconsClassifierGetData(
-   DEC_CONSCLASSIFIER* consClassifier  /**< constraint classifier data structure */
+GCG_CLASSIFIERDATA* GCGconsClassifierGetData(
+   GCG_CONSCLASSIFIER* consClassifier  /**< constraint classifier data structure */
    )
 {
    assert(consClassifier != NULL);
@@ -53,8 +53,8 @@ DEC_CLASSIFIERDATA* GCGconsClassifierGetData(
 
 /** sets user data of constraint classifier; user has to free old data in advance! */
 void GCGconsClassifierSetData(
-   DEC_CONSCLASSIFIER* consClassifier,              /**< constraint classifier data structure */
-   DEC_CLASSIFIERDATA* clsdata                      /**< new constraint classifier user data */
+   GCG_CONSCLASSIFIER* consClassifier,              /**< constraint classifier data structure */
+   GCG_CLASSIFIERDATA* clsdata                      /**< new constraint classifier user data */
    )
 {
    assert(consClassifier != NULL);
@@ -64,7 +64,7 @@ void GCGconsClassifierSetData(
 
 /** gets name of constraint classifier */
 const char* GCGconsClassifierGetName(
-   DEC_CONSCLASSIFIER* consClassifier  /**< constraint classifier data structure */
+   GCG_CONSCLASSIFIER* consClassifier  /**< constraint classifier data structure */
    )
 {
    assert(consClassifier != NULL);
@@ -74,7 +74,7 @@ const char* GCGconsClassifierGetName(
 
 /** gets priority of constraint classifier */
 int GCGconsClassifierGetPriority(
-   DEC_CONSCLASSIFIER* consClassifier  /**< constraint classifier data structure */
+   GCG_CONSCLASSIFIER* consClassifier  /**< constraint classifier data structure */
    )
 {
    assert(consClassifier != NULL);
@@ -84,7 +84,7 @@ int GCGconsClassifierGetPriority(
 
 /** returns True iff constraint classifier is enabled */
 SCIP_Bool GCGconsClassifierIsEnabled(
-   DEC_CONSCLASSIFIER* consClassifier  /**< constraint classifier data structure */
+   GCG_CONSCLASSIFIER* consClassifier  /**< constraint classifier data structure */
    )
 {
    assert(consClassifier != NULL);
@@ -94,7 +94,7 @@ SCIP_Bool GCGconsClassifierIsEnabled(
 
 /** gets description of constraint classifier */
 const char* GCGconsClassifierGetDesc(
-   DEC_CONSCLASSIFIER* consClassifier  /**< constraint classifier data structure */
+   GCG_CONSCLASSIFIER* consClassifier  /**< constraint classifier data structure */
    )
 {
    assert(consClassifier != NULL);

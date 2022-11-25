@@ -68,7 +68,7 @@ public:
    MatrixGraph(
       SCIP*                 scip,              /**< SCIP data structure */
       Weights               w                  /**< weights for the given graph */
-   );
+      );
 
    /** Destructor */
    virtual ~MatrixGraph();
@@ -87,8 +87,8 @@ public:
 
 
    virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
-   )
+      GCG_DECOMP**       decomp              /**< decomposition structure to generate */
+      )
    {
       return SCIP_ERROR;
    }
@@ -112,7 +112,7 @@ public:
     */
    virtual SCIP_RETCODE readPartition(
       const char*        filename            /**< filename where the partition is stored */
-   )
+      )
    {
       SCIP_CALL( graphiface->readPartition(filename) );
       return SCIP_OKAY;

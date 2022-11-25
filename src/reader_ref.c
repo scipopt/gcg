@@ -560,7 +560,7 @@ SCIP_RETCODE readREFFile(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_READER*          reader,             /**< reader data structure */
    REFINPUT*             refinput,           /**< REF reading data */
-   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   GCG_DECOMP*           decomp,             /**< decomposition structure */
    const char*           filename            /**< name of the input file */
    )
 {
@@ -600,7 +600,7 @@ SCIP_RETCODE readREFFile(
 
       case REF_NBLOCKS:
          SCIP_CALL( readNBlocks(scip, refinput) );
-         DECdecompSetNBlocks(decomp, refinput->nblocks);
+         GCGdecompSetNBlocks(decomp, refinput->nblocks);
          break;
 
       case REF_BLOCKSIZES:
@@ -622,10 +622,10 @@ SCIP_RETCODE readREFFile(
    SCIPfclose(refinput->file);
 
    /* copy information to decomp */
-   SCIP_CALL_QUIET( DECfilloutDecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock, refinput->nblocks, FALSE) );
+   SCIP_CALL_QUIET( GCGfilloutDecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock, refinput->nblocks, FALSE) );
 
-   DECdecompSetPresolved(decomp, FALSE);
-   DECdecompSetDetector(decomp, NULL);
+   GCGdecompSetPresolved(decomp, FALSE);
+   GCGdecompSetDetector(decomp, NULL);
 
    return SCIP_OKAY;
 }
@@ -640,7 +640,7 @@ SCIP_RETCODE writeREFFile(
    )
 {
    SCIP_HASHMAP *cons2origindex;
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
 
    SCIP_CONS** conss;
    int nconss;
@@ -653,7 +653,7 @@ SCIP_RETCODE writeREFFile(
    assert(reader != NULL);
    assert(file != NULL);
 
-   decomp = DECgetBestDecomp(scip, TRUE);
+   decomp = GCGgetBestDecomp(scip, TRUE);
 
    if( decomp == NULL )
    {
@@ -665,7 +665,7 @@ SCIP_RETCODE writeREFFile(
       SCIPwarningMessage(scip, "No reformulation exists, cannot write reformulation file!\n");
       return SCIP_OKAY;
    }
-   nblocks = DECdecompGetNBlocks(decomp);
+   nblocks = GCGdecompGetNBlocks(decomp);
    conss = SCIPgetOrigConss(scip);
    nconss = SCIPgetNOrigConss(scip);
 
@@ -685,8 +685,8 @@ SCIP_RETCODE writeREFFile(
       SCIP_CALL( SCIPhashmapInsert(cons2origindex, cons, (void*)(size_t)(ind)) ); /* shift by 1 to enable error checking */
    }
 
-   subscipconss = DECdecompGetSubscipconss(decomp);
-   nsubscipconss = DECdecompGetNSubscipconss(decomp);
+   subscipconss = GCGdecompGetSubscipconss(decomp);
+   nsubscipconss = GCGdecompGetNSubscipconss(decomp);
    SCIPinfoMessage(scip, file, "%d ", nblocks);
 
    assert(nsubscipconss != NULL);
@@ -717,7 +717,7 @@ SCIP_RETCODE writeREFFile(
    }
    SCIPhashmapFree(&cons2origindex);
 
-   DECdecompFree(scip, &decomp);
+   GCGdecompFree(scip, &decomp);
 
    return SCIP_OKAY;
 }
@@ -784,7 +784,7 @@ SCIP_RETCODE SCIPreadRef(
 {
    SCIP_RETCODE retcode;
    REFINPUT refinput;
-   DEC_DECOMP* decomp;
+   GCG_DECOMP* decomp;
    int i;
 #ifdef SCIP_DEBUG
    SCIP_VAR** vars;
@@ -819,7 +819,7 @@ SCIP_RETCODE SCIPreadRef(
    SCIP_CALL( SCIPhashmapCreate(&refinput.constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    /* read the file */
-   SCIP_CALL( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL( GCGdecompCreate(scip, &decomp) );
 
    retcode = readREFFile(scip, reader, &refinput, decomp, filename);
 
@@ -841,7 +841,7 @@ SCIP_RETCODE SCIPreadRef(
 #endif
    }
 
-   SCIP_CALL( DECdecompFree(scip, &decomp) );
+   SCIP_CALL( GCGdecompFree(scip, &decomp) );
 
    /* free dynamically allocated memory */
    SCIPfreeMemoryArray(scip, &refinput.token);

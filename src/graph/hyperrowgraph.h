@@ -53,7 +53,7 @@ public:
    HyperrowGraph(
       SCIP*                 scip,              /**< SCIP data structure */
       Weights               w                  /**< weights for the given graph */
-   );
+      );
 
    virtual ~HyperrowGraph();
 
@@ -63,7 +63,7 @@ public:
    SCIP_RETCODE writeToFile(
       int                fd,                 /**< filename where the graph should be written to */
       SCIP_Bool          edgeweights         /**< whether to write edgeweights */
-    );
+      );
 
    /** return the number of nodes */
    virtual int getNNodes();
@@ -77,14 +77,14 @@ public:
       );
 
    virtual std::vector<int> getNeighbors(
-         int i
+      int i
       )
       {
       return this->graph.getNeighbors(i);
       }
 
    virtual std::vector<int> getHyperedgeNodes(
-         int i
+      int i
       );
 
    /**
@@ -93,7 +93,7 @@ public:
     */
    virtual SCIP_RETCODE readPartition(
       const char*        filename            /**< filename where the partition is stored */
-   )
+      )
    {
       SCIP_CALL( this->graph.readPartition(filename) );
       return SCIP_OKAY;
@@ -106,7 +106,7 @@ public:
    }
 
    virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      GCG_DECOMP**       decomp              /**< decomposition structure to generate */
       );
 
    /** amplifies a partialdec by dint of a graph created with open constraints and open variables of the partialdec */

@@ -42,6 +42,7 @@
 
 /* score properties */
 #define SCORE_NAME             "xyz score"                           /**< name of score */
+#define SCORE_SHORTNAME        "xyz"                                 /**< shortname of score */
 #define SCORE_DESC             "score template"                      /**< short description of classification */
 
 
@@ -93,10 +94,10 @@ DEC_DECL_SCOREFREE(scoreFreeXyz)
 
 /** calculate score method of score */
 static
-DEC_DECL_SCORECALC(scoreCalcXyz)
+GCG_DECL_SCORECALC(scoreCalcXyz)
 {  /*lint --e{715}*/
 
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
 
    SCIPerrorMessage("method of xyz score not implemented yet\n");
    SCIPABORT(); /*lint --e{527}*/
@@ -116,14 +117,12 @@ SCIP_RETCODE GCGincludeScoreXyz(
    SCIP*                 scip                /**< SCIP data structure */
    ) 
 {
-   DEC_SCOREDATA* scoredata;
+   GCG_SCOREDATA* scoredata;
 
    /**@todo create xyz score data here*/
    scoredata = NULL;
 
-   SCIP_CALL( 
-      GCGincludeScore(scip, SCORE_NAME, SCORE_DESC, scoredata,
-         scoreFreeXyz, scoreCalcXyz) );
+   SCIP_CALL( GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata, scoreFreeXyz, scoreCalcXyz) );
 
    return SCIP_OKAY;
 }

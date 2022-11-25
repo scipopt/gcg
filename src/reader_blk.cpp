@@ -760,7 +760,7 @@ static
 SCIP_RETCODE fillDecompStruct(
    SCIP*                 scip,               /**< SCIP data structure */
    BLKINPUT*             blkinput,           /**< blk reading data */
-   DEC_DECOMP*           decomp,             /**< DEC_DECOMP structure to fill */
+   GCG_DECOMP*           decomp,             /**< GCG_DECOMP structure to fill */
    gcg::PARTIALDECOMP*           partialdec,              /**< partialdec to fill for internal handling */
    SCIP_READERDATA*      readerdata          /**< reader data*/
    )
@@ -789,11 +789,11 @@ SCIP_RETCODE fillDecompStruct(
    nconss = SCIPgetNConss(scip);
    nblocks = blkinput->nblocks;
 
-   DECdecompSetPresolved(decomp, blkinput->presolved);
-   DECdecompSetNBlocks(decomp, nblocks);
-   DECdecompSetDetector(decomp, NULL);
+   GCGdecompSetPresolved(decomp, blkinput->presolved);
+   GCGdecompSetNBlocks(decomp, nblocks);
+   GCGdecompSetDetector(decomp, NULL);
 
-   SCIP_CALL( DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD) );
+   SCIP_CALL( GCGdecompSetType(decomp, GCG_DECTYPE_ARROWHEAD) );
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
@@ -904,7 +904,7 @@ SCIP_RETCODE fillDecompStruct(
 
    SCIPinfoMessage(scip, NULL, "just read blk file:\n");
 
-   retcode = DECfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE);
+   retcode = GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE);
    SCIPfreeMemoryArray(scip, &consvars);
 
    return retcode;
@@ -920,7 +920,7 @@ SCIP_RETCODE readBLKFile(
    )
 {
    SCIP_RETCODE retcode = SCIP_ERROR;
-   DEC_DECOMP *decdecomp;
+   GCG_DECOMP *decdecomp;
    int i;
    int nconss;
    int nblocksread;
@@ -1049,14 +1049,14 @@ SCIP_RETCODE readBLKFile(
       }
    }
 
-   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
+   SCIP_CALL( GCGdecompCreate(scip, &decdecomp) );
 
    /* fill decomp */
    retcode = fillDecompStruct(scip, blkinput, decdecomp, newpartialdec, readerdata);
 
    GCGconshdlrDecompAddPreexisitingPartialDec(scip, newpartialdec);
 
-   SCIP_CALL( DECdecompFree(scip, &decdecomp) );
+   SCIP_CALL( GCGdecompFree(scip, &decdecomp) );
 
    for( i = 0; i < nvars; ++i )
    {

@@ -35,7 +35,7 @@ At the top of the new file `dec_mydetector.cpp`, you can find the detector prope
 These are given as compiler defines.
 The properties you have to set have the following meaning:
 
-\par DEC_DETECTORNAME: the name of the detector.
+\par DEC_NAME: the name of the detector.
 This name is used in the interactive shell to address the detector.
 Additionally, if you are searching for a detector with `SCIPfindDetector()`, this name is looked up.
 Names have to be unique: no two detectors may have the same name.
@@ -63,7 +63,7 @@ This flag is useful if the detector acts as a last resort to generate a decompos
 priority found a decomposition.
 
 ## Detector Data {#DEC_DATA}
-Below the header "Data structures" you can find the struct "struct DEC_DetectorData".
+Below the header "Data structures" you can find the struct "struct GCG_DetectorData".
 In this data structure, you can store the data of your detector. For example, you should store the adjustable parameters
 of the detector in this data structure.
 \n
@@ -76,7 +76,7 @@ which also appears in `dec_mydetector.h`.
 \n
 This method has to be adjusted only slightly.
 It is responsible for notifying GCG (and especially cons_decomp.cpp) of the presence of the detector by calling the method
-`DECincludeDetector()`.
+`GCGincludeDetector()`.
 `SCIPincludeDetectorMydetector()` is called by the user to include the detector,
 i.e., to use the detector in the application.
 
@@ -103,36 +103,36 @@ Additional documentation to the callback methods, in particular to their input p
 can be found in type_detector.h.
 
 ### PROPAGATEPARTIALDEC
-The `DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMydetector)` callback should assign variables/constraints to block or master. You can either create the decomposition by calling `DECcreateDecompFromMasterconss()` or `DECfilloutDecompFromConstoblock()` or use the getter and setter functions in pub_decomp.h to fill the decomposition structure.
+The `GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMydetector)` callback should assign variables/constraints to block or master.
 
 ### FINISHPARTIALDEC
-The `DEC_DECL_FINISHPARTIALDEC(finishPartialdecMydetector)` callback should, given a partial decomposition, finish it.
+The `GCG_DECL_FINISHPARTIALDEC(finishPartialdecMydetector)` callback should, given a partial decomposition, finish it.
 
 ### POSTPROCESSPARTIALDEC
-The `DEC_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecMydetector)` callback should postprocess a given finished partial decomposition to find a different yet promising one.
+The `GCG_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecMydetector)` callback should postprocess a given finished partial decomposition to find a different yet promising one.
 
 ## Additional Callback Methods of a Detector {#DEC_ADDITIONALCALLBACKS}
 ### INITDETECTOR {#DEC_INIT}
-The `DEC_DECL_INITDETECTOR(detectorInitMydetector)` callback is executed after the problem was transformed.
+The `GCG_DECL_INITDETECTOR(detectorInitMydetector)` callback is executed after the problem was transformed.
 The detector may, e.g., use this call to initialize his detector data.
 The difference between the original and the transformed problem is explained in the
 @ref dev-getting-started.
 
 ### EXITDETECTOR {#DEC_EXIT}
-The `DEC_DECL_EXITDETECTOR(detectorExitMydetector)` callback has to be implemented if you are using detection data (see @ref DEC_DATA and @ref DEC_INTERFACE) in order to free the detection data.
+The `GCG_DECL_EXITDETECTOR(detectorExitMydetector)` callback has to be implemented if you are using detection data (see @ref DEC_DATA and @ref DEC_INTERFACE) in order to free the detection data.
 This can be done by the following procedure:
 ```C
 static
-DEC_DECL_EXITDETECTOR(detectorExitMydetector)
+GCG_DECL_EXITDETECTOR(detectorExitMydetector)
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
-   detectordata = DECdetectorGetData(detector);
+   detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
    SCIPfreeMemory(scip, &detectordata);
 
-   DECdetectorSetData(detector, NULL);
+   GCGdetectorSetData(detector, NULL);
 
    return SCIP_OKAY;
 }
@@ -143,13 +143,13 @@ The detectorExit callback is executed before the solution process is started.
 In this method, the detector should free all resources that have been allocated for the detection process in @ref DEC_INIT.
 
 ### FREEDETECTOR {#DEC_FREE}
-The destructor of the detector to free user data (called when GCG is exiting) has to be defined in `DEC_DECL_FREEDETECTOR(detectorFreeMydetector)`.
+The destructor of the detector to free user data (called when GCG is exiting) has to be defined in `GCG_DECL_FREEDETECTOR(detectorFreeMydetector)`.
 
 ### SETPARAMAGGRESSIVE {#DEC_PARAM_AGG}
-The parameters for the setting "aggressive" can be modified using the method `DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveMydetector)`.
+The parameters for the setting "aggressive" can be modified using the method `GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveMydetector)`.
 
 ### SETPARAMDEFAULT {#DEC_PARAM_DEF}
-The parameters for the setting "default" can be modified using the method `DEC_DECL_SETPARAMDEFAULT(setParamDefaultMydetector)`.
+The parameters for the setting "default" can be modified using the method `GCG_DECL_SETPARAMDEFAULT(setParamDefaultMydetector)`.
 
 ### SETPARAMFAST {#DEC_PARAM_FAST}
-The parameters for the setting "fast" can be modified using the method `DEC_DECL_SETPARAMFAST(setParamFastMydetector)`.
+The parameters for the setting "fast" can be modified using the method `GCG_DECL_SETPARAMFAST(setParamFastMydetector)`.

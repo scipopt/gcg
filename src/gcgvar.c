@@ -728,7 +728,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    SCIP_VAR*             var,                /**< var that is added to a block */
    int                   newblock,           /**< the new block the variable will be in */
    int                   nblocks,            /**< total number of pricing problems */
-   DEC_DECMODE           mode                /**< the decomposition mode */
+   GCG_DECMODE           mode                /**< the decomposition mode */
    )
 {
    SCIP_VARDATA* vardata;
@@ -742,7 +742,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
 
    assert(nblocks >= 0);
    assert((newblock >= 0 && newblock < nblocks)
-      || (GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS && newblock == -2));
+      || (GCGgetDecompositionMode(scip) == GCG_DECMODE_BENDERS && newblock == -2));
    blocknr = GCGvarGetBlock(var);
    assert(newblock >= 0 || (newblock == -2 && blocknr > -1));
    /* the variable was only in one block so far, so set up the linking variable data */
@@ -752,7 +752,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->pricingvars, nblocks) );
       BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->pricingvars, nblocks);
 
-      if( mode != DEC_DECMODE_BENDERS )
+      if( mode != GCG_DECMODE_BENDERS )
       {
          SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->linkconss, nblocks) );
          BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->linkconss, nblocks);
@@ -774,7 +774,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
     */
    if( newblock >= 0 && vardata->data.origvardata.linkingvardata->pricingvars[newblock] == NULL )
    {
-      assert(mode == DEC_DECMODE_BENDERS || vardata->data.origvardata.linkingvardata->linkconss[newblock] == NULL);
+      assert(mode == GCG_DECMODE_BENDERS || vardata->data.origvardata.linkingvardata->linkconss[newblock] == NULL);
       vardata->data.origvardata.linkingvardata->pricingvars[newblock] = var;
       vardata->data.origvardata.linkingvardata->nblocks++;
    }
@@ -1481,7 +1481,7 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
 
    blocknr = GCGvarGetBlock(var);
    assert( blocknr == -1 || blocknr == -2
-      || GCGgetMasterDecompMode(scip) == DEC_DECMODE_BENDERS || GCGgetMasterDecompMode(scip) == DEC_DECMODE_ORIGINAL);
+           || GCGgetMasterDecompMode(scip) == GCG_DECMODE_BENDERS || GCGgetMasterDecompMode(scip) == GCG_DECMODE_ORIGINAL);
 
    if( blocknr == -1 )
    {

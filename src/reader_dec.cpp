@@ -1155,7 +1155,7 @@ SCIP_RETCODE writePartialdec(
    for( unsigned int i = 0; i < detectorchain.size(); ++i )
    {
       SCIPinfoMessage(scip, file, "%s%s %s %s %f %d %f %f %f %f \n", commentchars, commentchars,
-      DECdetectorGetName(detectorchain[i]), detectorchaininfo[i].c_str(), partialdec->getDetectorClockTimes().at(i),
+      GCGdetectorGetName(detectorchain[i]), detectorchaininfo[i].c_str(), partialdec->getDetectorClockTimes().at(i),
          partialdec->getNNewBlocks(i), partialdec->getPctConssToBorder(i), partialdec->getPctConssToBlock(i),
          partialdec->getPctVarsToBorder(i), partialdec->getPctVarsToBlock(i)) ;
    }
@@ -1320,7 +1320,7 @@ SCIP_DECL_READERWRITE(readerWriteDec)
    assert(scip != NULL);
    assert(reader != NULL);
 
-   gcg::PARTIALDECOMP* partialdec = DECgetPartialdecToWrite(scip, transformed);
+   gcg::PARTIALDECOMP* partialdec = GCGgetPartialdecToWrite(scip, transformed);
 
    if(partialdec == NULL) {
       SCIPwarningMessage(scip, "There is no writable partialdec!\n");

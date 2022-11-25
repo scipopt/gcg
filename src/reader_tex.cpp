@@ -83,7 +83,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
 
 
    /* get partialdec to write */
-   pd = DECgetPartialdecToWrite(scip, transformed);
+   pd = GCGgetPartialdecToWrite(scip, transformed);
 
    if( pd == NULL )
    {
@@ -327,7 +327,7 @@ SCIP_RETCODE writeTexTitlepage(
    
    SCIPinfoMessage(scip, file, "Score info: & \\begin{minipage}{5cm}\n");
    SCIPinfoMessage(scip, file, "                  %s\n",
-                   GCGscoreGetDesc(DECgetCurrentScore(scip)));
+                   GCGscoreGetDesc(GCGgetCurrentScore(scip)));
    SCIPinfoMessage(scip, file, "              \\end{minipage} \\\\ \n");
    
    SCIPinfoMessage(scip, file, "\\end{tabular}\n");
@@ -625,7 +625,7 @@ SCIP_RETCODE writeTexPartialdecStatistics(
    {
       if( fulldetectorstring.tellp() > 0 )
          fulldetectorstring << ", ";
-      fulldetectorstring << DECdetectorGetName(detector);
+      fulldetectorstring << GCGdetectorGetName(detector);
    }
 
    SCIPinfoMessage(scip, file, "\n");
@@ -645,7 +645,7 @@ SCIP_RETCODE writeTexPartialdecStatistics(
    SCIPinfoMessage(scip, file, "  Number of stairlinking variables: & %i \\\\ \n",
       partialdec->getNTotalStairlinkingvars());
    SCIPinfoMessage(scip, file, "  Score: & %f \\\\ \n",
-      partialdec->getScore(DECgetCurrentScore(scip)));
+      partialdec->getScore(GCGgetCurrentScore(scip)));
    SCIPinfoMessage(scip, file, "\\end{tabular}\n");
 
    SCIPinfoMessage(scip, file, "\\clearpage\n");
@@ -703,7 +703,7 @@ SCIP_RETCODE GCGwriteTexReport(
    {
       partialdecs.push_back(GCGconshdlrDecompGetPartialdecFromID(scip, partialdecids[i]));
    }
-   std::sort(partialdecs.begin(), partialdecs.end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(DECgetCurrentScore(scip)) > b->getScore(DECgetCurrentScore(scip))); });
+   std::sort(partialdecs.begin(), partialdecs.end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(GCGgetCurrentScore(scip)) > b->getScore(GCGgetCurrentScore(scip))); });
 
    /* if there are more decomps than the maximum, reset npartialdecs */
    if(*npartialdecs > GCGreportGetMaxNDecomps(scip))

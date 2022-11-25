@@ -48,7 +48,7 @@
 /*
  * Data structures
  */
-struct DEC_ScoreData
+struct GCG_ScoreData
 {
 };
 
@@ -72,7 +72,7 @@ struct DEC_ScoreData
 #define scoreFreeBender NULL
 
 static
-DEC_DECL_SCORECALC(scoreCalcBender)
+GCG_DECL_SCORECALC(scoreCalcBender)
 {
    SCIP_Real benderareascore = 0;
 
@@ -184,7 +184,7 @@ DEC_DECL_SCORECALC(scoreCalcBender)
    SCIP_Real borderareascore;
 
    SCIP_Real blockareascore = partialdec->calcBlockAreaScore(scip);
-   borderareascore = partialdec->getScore(DECfindScore(scip, "border area"));
+   borderareascore = partialdec->getScore(GCGconshdlrDecompFindScore(scip, "border area"));
 
    *scorevalue = blockareascore + benderareascore + borderareascore - 1.;
 
@@ -201,9 +201,9 @@ DEC_DECL_SCORECALC(scoreCalcBender)
 /** creates the bender score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreBender(
    SCIP*                 scip                /**< SCIP data structure */
-)
+   )
 {
-   DEC_SCOREDATA* scoredata = NULL;
+   GCG_SCOREDATA* scoredata = NULL;
 
    SCIP_CALL(
       GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,

@@ -2956,7 +2956,7 @@ void PARTIALDECOMP::displayInfo(
    {
       for( int i = 0; i < GCGconshdlrDecompGetNScores(scip); ++i )
       {
-         DEC_SCORE* score = GCGconshdlrDecompGetScores(scip)[i];
+         GCG_SCORE* score = GCGconshdlrDecompGetScores(scip)[i];
          std::cout << " " << GCGscoreGetName(score) << ": " << getScore(score) << std::endl;
       }
    }
@@ -2996,8 +2996,8 @@ void PARTIALDECOMP::displayInfo(
       {
          /* potentially add finisher label */
          detectorrepres = (
-            getNDetectors() != 1 || !isfinishedbyfinisher ? DECdetectorGetName(detectorchain[0]) :
-               "(finish) " + std::string(DECdetectorGetName(detectorchain[0])));
+            getNDetectors() != 1 || !isfinishedbyfinisher ? GCGdetectorGetName(detectorchain[0]) :
+               "(finish) " + std::string(GCGdetectorGetName(detectorchain[0])));
       }
 
       if( detailLevel > 0 )
@@ -3015,8 +3015,8 @@ void PARTIALDECOMP::displayInfo(
       {
          /* potentially add finisher label */
          detectorrepres = (
-            getNDetectors() != d + 1 || !isfinishedbyfinisher ? DECdetectorGetName(detectorchain[d]) :
-               "(finish) " + std::string(DECdetectorGetName(detectorchain[d])));
+            getNDetectors() != d + 1 || !isfinishedbyfinisher ? GCGdetectorGetName(detectorchain[d]) :
+               "(finish) " + std::string(GCGdetectorGetName(detectorchain[d])));
 
 
          if( detailLevel > 0 )
@@ -3696,7 +3696,7 @@ std::vector<int>& PARTIALDECOMP::getConssForBlock(
 }
 
 
-std::vector<DEC_DETECTOR*>& PARTIALDECOMP::getDetectorchain()
+std::vector<GCG_DETECTOR*>& PARTIALDECOMP::getDetectorchain()
 {
    return detectorchain;
 }
@@ -4020,7 +4020,7 @@ int PARTIALDECOMP::getNCoeffsForMaster(
 
 
 void PARTIALDECOMP::setScore(
-   DEC_SCORE* score,
+   GCG_SCORE* score,
    SCIP_Real scorevalue
    )
 {
@@ -4033,7 +4033,7 @@ void PARTIALDECOMP::setScore(
 
 
 SCIP_Real PARTIALDECOMP::getScore(
-   DEC_SCORE* score
+   GCG_SCORE* score
    )
 {
    assert(SCIPhashmapExists(maptoscores, (void*)score));
@@ -4145,7 +4145,7 @@ int PARTIALDECOMP::getNLinkingvars()
 
 
 int PARTIALDECOMP::getNNewBlocks(
-      int detectorchainindex
+   int detectorchainindex
    )
 {
    assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorchain.size() );
@@ -4640,10 +4640,10 @@ bool PARTIALDECOMP::isEqual(
 
 
 bool PARTIALDECOMP::isPropagatedBy(
-   DEC_DETECTOR* detector
+   GCG_DETECTOR* detector
    )
 {
-   std::vector<DEC_DETECTOR*>::const_iterator iter = std::find(detectorchain.begin(), detectorchain.end(), detector);
+   std::vector<GCG_DETECTOR*>::const_iterator iter = std::find(detectorchain.begin(), detectorchain.end(), detector);
 
    return iter != detectorchain.end();
 }
@@ -4965,7 +4965,7 @@ bool PARTIALDECOMP::fixConsToMaster(
 
 
 void PARTIALDECOMP::setDetectorchain(
-   std::vector<DEC_DETECTOR*>& givenDetectorChain
+   std::vector<GCG_DETECTOR*>& givenDetectorChain
    )
 {
    detectorchain = givenDetectorChain;
@@ -4973,7 +4973,7 @@ void PARTIALDECOMP::setDetectorchain(
 
 
 void PARTIALDECOMP::setDetectorPropagated(
-   DEC_DETECTOR* detectorID
+   GCG_DETECTOR* detectorID
    )
 {
    detectorchain.push_back(detectorID);
@@ -4982,7 +4982,7 @@ void PARTIALDECOMP::setDetectorPropagated(
 
 
 void PARTIALDECOMP::setDetectorFinished(
-   DEC_DETECTOR* detectorID
+   GCG_DETECTOR* detectorID
    )
 {
    isfinishedbyfinisher = true;
@@ -4992,7 +4992,7 @@ void PARTIALDECOMP::setDetectorFinished(
 
 
 void PARTIALDECOMP::setDetectorFinishedOrig(
-   DEC_DETECTOR* detectorID
+   GCG_DETECTOR* detectorID
    )
 {
    isfinishedbyfinisherorig = true;
@@ -5168,7 +5168,7 @@ void PARTIALDECOMP::fixVarToLinking(
 
 std::vector<int>::const_iterator PARTIALDECOMP::fixVarToLinking(
    std::vector<int>::const_iterator itr
-)
+   )
 {
    assert( itr != openvars.cend() );
    assert( isvaropen[*itr] );
@@ -5214,7 +5214,7 @@ void PARTIALDECOMP::fixVarToMaster(
 
 std::vector<int>::const_iterator PARTIALDECOMP::fixVarToMaster(
    std::vector<int>::const_iterator itr
-)
+   )
 {
    assert( itr != openvars.cend() );
    assert( isvaropen[*itr] );
@@ -5262,7 +5262,7 @@ void PARTIALDECOMP::fixVarToStairlinking(
 std::vector<int>::const_iterator PARTIALDECOMP::fixVarToStairlinking(
    std::vector<int>::const_iterator itr,
    int firstblock
-)
+   )
 {
    assert( isvaropen[*itr]);
    assert( itr != openvars.cend() );
@@ -5495,7 +5495,7 @@ void PARTIALDECOMP::buildDecChainString(
       if( d == 0 && this->getDetectorchain()[d] == NULL )
          continue;
       char str[2] = "\0"; /* gives {\0, \0} */
-      str[0] = DECdetectorGetChar( this->getDetectorchain()[d] );
+      str[0] = GCGdetectorGetChar( this->getDetectorchain()[d] );
       (void) strncat( buffer, str, 1 );
    }
 }
@@ -5503,7 +5503,7 @@ void PARTIALDECOMP::buildDecChainString(
 
 SCIP_Real PARTIALDECOMP::getMaxWhiteScore()
 {
-   DEC_SCORE* score = DECfindScore(this->scip, "max white");
+   GCG_SCORE* score = GCGconshdlrDecompFindScore(this->scip, "max white");
    assert(score != NULL);
    return getScore(score);
 }

@@ -46,11 +46,11 @@
 #include "scip_misc.h"
 
 /* classifier properties */
-#define DEC_CLASSIFIERNAME        "gamssymbol"              /**< name of classifier */
-#define DEC_DESC                  "symbol in gams file"     /**< short description of classification */
-#define DEC_PRIORITY              0                         /**< priority of this classifier */
+#define CLSVAR_NAME        "gamssymbol"              /**< name of classifier */
+#define CLSVAR_DESC                  "symbol in gams file"     /**< short description of classification */
+#define CLSVAR_PRIORITY              0                         /**< priority of this classifier */
 
-#define DEC_ENABLED               TRUE
+#define CLSVAR_ENABLED               TRUE
 
 
 /*
@@ -58,7 +58,7 @@
  */
 
 /** classifier handler data */
-struct DEC_ClassifierData
+struct GCG_ClassifierData
 {
    std::map<std::string, int>*      vartosymbol;            /**< maps variable name to the corresponding symbol index */
 };
@@ -76,13 +76,13 @@ struct DEC_ClassifierData
 
 /** destructor of classifier to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEVARCLASSIFIER(classifierFree)
+GCG_DECL_FREEVARCLASSIFIER(classifierFree)
 {
    assert(scip != NULL);
 
-   DEC_CLASSIFIERDATA* classifierdata = GCGvarClassifierGetData(classifier);
+   GCG_CLASSIFIERDATA* classifierdata = GCGvarClassifierGetData(classifier);
    assert(classifierdata != NULL);
-   assert(strcmp(GCGvarClassifierGetName(classifier), DEC_CLASSIFIERNAME) == 0);
+   assert(strcmp(GCGvarClassifierGetName(classifier), CLSVAR_NAME) == 0);
 
    delete classifierdata->vartosymbol;
 
@@ -92,7 +92,7 @@ DEC_DECL_FREEVARCLASSIFIER(classifierFree)
 }
 
 static
-DEC_DECL_VARCLASSIFY(classifierClassify)
+GCG_DECL_VARCLASSIFY(classifierClassify)
 {
    gcg::DETPROBDATA* detprobdata;
    if( transformed )
@@ -110,10 +110,10 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
    std::vector<int> classForVar( nvar, - 1 );   // [i] holds class index for variable i -> indexing over detection internal variable array!
    int counterClasses = 0;
 
-   DEC_VARCLASSIFIER* classifier = DECfindVarClassifier(scip, DEC_CLASSIFIERNAME);
+   GCG_VARCLASSIFIER* classifier = GCGfindVarClassifier(scip, CLSVAR_NAME);
    assert(classifier != NULL);
 
-   DEC_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
+   GCG_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
    assert(classdata != NULL);
 
    /* firstly, assign all variables to classindices */
@@ -191,14 +191,14 @@ DEC_DECL_VARCLASSIFY(classifierClassify)
 
 // SHOW
 /** adds an entry to clsdata->vartosymbol */
-SCIP_RETCODE DECvarClassifierGamssymbolAddEntry(
-   DEC_VARCLASSIFIER*   classifier,
+SCIP_RETCODE GCGvarClassifierGamssymbolAddEntry(
+   GCG_VARCLASSIFIER*   classifier,
    SCIP_VAR*            var,
    int                  symbolIdx
-)
+   )
 {
    assert(classifier != NULL);
-   DEC_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
+   GCG_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
    assert(classdata != NULL);
 
    std::string varname = SCIPvarGetName( var );
@@ -214,15 +214,15 @@ SCIP_RETCODE DECvarClassifierGamssymbolAddEntry(
 /** creates the handler for gamssymbol classifier and includes it in SCIP */
 SCIP_RETCODE SCIPincludeVarClassifierGamssymbol(
    SCIP*                 scip                /**< SCIP data structure */
-)
+   )
 {
-   DEC_CLASSIFIERDATA* classifierdata = NULL;
+   GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
    assert(classifierdata != NULL);
    classifierdata->vartosymbol = new std::map<std::string, int>();
 
-   SCIP_CALL( DECincludeVarClassifier(scip, DEC_CLASSIFIERNAME, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeVarClassifier(scip, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

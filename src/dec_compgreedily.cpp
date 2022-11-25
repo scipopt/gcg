@@ -41,7 +41,7 @@
 #include <iostream>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "compgreedily"       /**< name of detector */
+#define DEC_NAME                  "compgreedily"       /**< name of detector */
 #define DEC_DESC                  "detector compgreedily" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
@@ -70,7 +70,7 @@
 /** @todo fill in the necessary detector data */
 
 /** detector handler data */
-struct DEC_DetectorData
+struct GCG_DetectorData
 {
 };
 
@@ -96,7 +96,7 @@ struct DEC_DetectorData
 #define initCompgreedily NULL
 
 static
-DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecCompgreedily)
+GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecCompgreedily)
 {
    *result = SCIP_DIDNOTFIND;
 
@@ -130,7 +130,7 @@ DEC_DECL_PROPAGATEPARTIALDEC(propagatePartialdecCompgreedily)
 }
 
 static
-DEC_DECL_FINISHPARTIALDEC(finishPartialdecCompgreedily)
+GCG_DECL_FINISHPARTIALDEC(finishPartialdecCompgreedily)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
@@ -167,11 +167,11 @@ DEC_DECL_FINISHPARTIALDEC(finishPartialdecCompgreedily)
 
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveCompgreedily)
+GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveCompgreedily)
 {
    char setstr[SCIP_MAXSTRLEN];
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -184,11 +184,11 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveCompgreedily)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultCompgreedily)
+GCG_DECL_SETPARAMDEFAULT(setParamDefaultCompgreedily)
 {
    char setstr[SCIP_MAXSTRLEN];
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -200,11 +200,11 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultCompgreedily)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastCompgreedily)
+GCG_DECL_SETPARAMFAST(setParamFastCompgreedily)
 {
    char setstr[SCIP_MAXSTRLEN];
 
-   const char* name = DECdetectorGetName(detector);
+   const char* name = GCGdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -226,12 +226,12 @@ SCIP_RETCODE SCIPincludeDetectorCompgreedily(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   DEC_DETECTORDATA* detectordata;
+   GCG_DETECTORDATA* detectordata;
 
    /**@todo create compgreedily detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeCompgreedily,initCompgreedily, exitCompgreedily, propagatePartialdecCompgreedily, finishPartialdecCompgreedily, detectorPostprocessPartialdecCompgreedily, setParamAggressiveCompgreedily, setParamDefaultCompgreedily, setParamFastCompgreedily) );
+   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeCompgreedily, initCompgreedily, exitCompgreedily, propagatePartialdecCompgreedily, finishPartialdecCompgreedily, detectorPostprocessPartialdecCompgreedily, setParamAggressiveCompgreedily, setParamDefaultCompgreedily, setParamFastCompgreedily) );
 
    /**@todo add compgreedily detector parameters */
 

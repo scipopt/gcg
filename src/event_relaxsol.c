@@ -194,7 +194,7 @@ SCIP_Bool GCGeventhdlrRelaxsolIsTriggered(
    /* the relaxation solution event handler is not included if BENDERS or ORIGINAL mode is used. As such, it will
     * never be triggered. In this case, it will always return FALSE.
     */
-   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS || GCGgetDecompositionMode(scip) == DEC_DECMODE_ORIGINAL )
+   if( GCGgetDecompositionMode(scip) == GCG_DECMODE_BENDERS || GCGgetDecompositionMode(scip) == GCG_DECMODE_ORIGINAL )
       return FALSE;
 
    eventhdlr = SCIPfindEventhdlr(masterprob, EVENTHDLR_NAME);

@@ -37,23 +37,17 @@ At the top of the new file `clscons_myclassifier.cpp`/`clsvar_myclassifier.cpp`,
 These are given as compiler defines.
 The properties you have to set have the following meaning:
 
-@par DEC_CLASSIFIERNAME: the name of classifier
+@par CLS(CONS/VAR)_NAME: the name of classifier
 This name is used in the interactive shell to address the classifier. Names have to be unique: no two classifiers may have the same name.
 
-@par DEC_DESC: short description of classification
+@par CLS(CONS/VAR)_DESC: short description of classification
 This string is printed as description of the classifier in the interactive shell.
 
-@par DEC_PRIORITY: priority of classifier
+@par CLS(CONS/VAR)_PRIORITY: priority of classifier
 At the start of the detection process, the classifiers are called in a predefined order, which is given by the priorities of those. The classifiers are called in the order of decreasing priority.
 
-\par DEC_ENABLED: Flag to indicate whether the classifier should be enabled by default.
+@par CLS(CONS/VAR)_ENABLED: Flag to indicate whether the classifier should be enabled by default.
 Disabled classifiers are not started.
-
-@par DEC_ENABLEDORIG: classify on original problem
-Set this flag to true if the classifier should classify on the original (non-presolved) problem.
-
-@par DEC_ENABLEDPRESOLVED: classify on presolved problem
-Set this flag to true if the classifier should classify on the presolved problem.
 
 ## Classifier Data {#CLS_DATA}
 Defining classifier data is optional.
@@ -64,7 +58,7 @@ which also appears in `clscons_myclassifier.h`/`clsvar_myclassifier.h`.
 \n
 This method has to be adjusted only slightly.
 It is responsible for notifying GCG (and especially cons_decomp.c) of the presence of the classifier by calling the method
-`DECincludeConsClassifier()`/`DECincludeVarClassifier()`.
+`GCGincludeConsClassifier()`/`GCGincludeVarClassifier()`.
 `SCIPincludeConsClassifierXyz()`/`SCIPincludeVarClassifierXyz()` is called by the user to include the classifier,
 i.e., to use the classifier in the application (see 3.1.1. at the top of the page).
 
@@ -90,11 +84,11 @@ Additional documentation for the callback methods of classifiers can be found in
 files type_consclassifier.h and type_varclassifier.h.
 
 ### CONSCLASSIFY {#CLS_CONSCLASSIFY}
-The `DEC_DECL_CONSCLASSIFY(classifierClassify)` callback assigns constraints to classes using the `assignConsToClass()` method of the `gcg::ConsClassifier`.
+The `GCG_DECL_CONSCLASSIFY(classifierClassify)` callback assigns constraints to classes using the `assignConsToClass()` method of the `gcg::ConsClassifier`.
 
 ### VARCLASSIFY {#CLS_VARCLASSIFY}
-The `DEC_DECL_VARCLASSIFY(classifierClassify)` callback  assigns variables to classes using the `assignVarToClass()` method of the `gcg::VarClassifier`.
+The `GCG_DECL_VARCLASSIFY(classifierClassify)` callback  assigns variables to classes using the `assignVarToClass()` method of the `gcg::VarClassifier`.
 
 ## Additional Callback Methods of a Classifier {#CLS_ADDITIONALCALLBACKS}
 ### FREECLASSIFIER {#CLS_FREE}
-The `DEC_DECL_FREECLASSIFIER(classifierFreeXyz)` callback is called upon exiting GCG to free user data.
+The `GCG_DECL_FREECLASSIFIER(classifierFreeXyz)` callback is called upon exiting GCG to free user data.

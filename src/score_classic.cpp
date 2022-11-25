@@ -48,7 +48,7 @@
 /*
  * Data structures
  */
-struct DEC_ScoreData
+struct GCG_ScoreData
 {
 };
 
@@ -68,7 +68,7 @@ struct DEC_ScoreData
 #define scoreFreeClassic NULL
 
 static
-DEC_DECL_SCORECALC(scoreCalcClassic)
+GCG_DECL_SCORECALC(scoreCalcClassic)
 {
    int i;
    int j;
@@ -238,9 +238,9 @@ DEC_DECL_SCORECALC(scoreCalcClassic)
 /** creates the classic score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreClassic(
    SCIP*                 scip                /**< SCIP data structure */
-)
+   )
 {
-   DEC_SCOREDATA* scoredata = NULL;
+   GCG_SCOREDATA* scoredata = NULL;
 
    SCIP_CALL(
       GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,

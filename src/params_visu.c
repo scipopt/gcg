@@ -104,7 +104,7 @@
 /* report parameter defaults */
 #define DEFAULT_REPORT_MAXNDECOMPS     20       /**< maximum number of decomps to be shown in report */
 #define DEFAULT_REPORT_SHOWTYPE        0        /**< what type of decomps to show
-                                                 * (DEC_DECTYPE, but 0 corresponds to 'show all') */
+                                                 * (GCG_DECTYPE, but 0 corresponds to 'show all') */
 #define DEFAULT_REPORT_SHOWTITLEPAGE   TRUE     /**< if true a titlepage is included */
 #define DEFAULT_REPORT_SHOWTOC         TRUE     /**< if true a table of contents is included */
 #define DEFAULT_REPORT_SHOWSTATISTICS  TRUE     /**< if true statistics are included for each decomp */

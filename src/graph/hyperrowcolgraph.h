@@ -72,11 +72,11 @@ public:
    virtual SCIP_RETCODE writeToFile(
       int                fd,                  /**< file descriptor where the graph should be written to */
       SCIP_Bool          writeweights         /**< whether to write weights */
-    );
+      );
 
 
    virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      GCG_DECOMP**       decomp              /**< decomposition structure to generate */
       );
 
    /** creates a new partialdec by dint of a graph created with all constraints and variables */
@@ -100,23 +100,23 @@ public:
     */
    virtual SCIP_RETCODE readPartition(
       const char*        filename            /**< filename where the partition is stored */
-   );
+      );
 
    virtual std::vector<int> getNeighbors(
-         int i
+      int i
       );
 
    virtual std::vector<int> getHyperedgeNodes(
-         int i
+      int i
       );
 
    std::vector<int> getConsNonzeroNodes(
-         int i
-   );
+      int i
+      );
 
    std::vector<int> getVarNonzeroNodes(
-         int i
-   );
+      int i
+      );
 
 };
 

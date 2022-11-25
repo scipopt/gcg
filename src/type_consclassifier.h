@@ -40,7 +40,7 @@
 #include "scip/type_result.h"
 #include "type_classifier.h"
 
-typedef struct DEC_ConsClassifier DEC_CONSCLASSIFIER;
+typedef struct GCG_ConsClassifier GCG_CONSCLASSIFIER;
 
 
 /** destructor of classifier to free classifier data (called when GCG is exiting)
@@ -49,7 +49,7 @@ typedef struct DEC_ConsClassifier DEC_CONSCLASSIFIER;
  *  - scip            : SCIP main data structure
  *  - classifier      : classifier data structure
  */
-#define DEC_DECL_FREECONSCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, DEC_CONSCLASSIFIER* classifier)
+#define GCG_DECL_FREECONSCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, GCG_CONSCLASSIFIER* classifier)
 
 /**
  * Tries to classify constraints with data of the according detprobdata and store the classification in the detprobdata
@@ -59,7 +59,7 @@ typedef struct DEC_ConsClassifier DEC_CONSCLASSIFIER;
  *  - classifier           : classifier data structure
  *  - transformed          : should use data from transformed detprobdata or not
  */
-#define DEC_DECL_CONSCLASSIFY(x) SCIP_RETCODE x (SCIP* scip, DEC_CONSCLASSIFIER* consclassifier, SCIP_Bool transformed)
+#define GCG_DECL_CONSCLASSIFY(x) SCIP_RETCODE x (SCIP* scip, GCG_CONSCLASSIFIER* consclassifier, SCIP_Bool transformed)
 
 
 #endif //GCG_TYPE_CONSCLASSIFIER_H__
