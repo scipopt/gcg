@@ -1,5 +1,5 @@
-@page RN35 Release notes for GCG 3.6
-@section RN304 GCG 3.6.0
+@page RN36 Release notes for GCG 3.6
+@section RN360 GCG 3.6.0
 *************************
 
 New features:
@@ -89,14 +89,23 @@ Code cleanup:
 
 
 @page RN35 Release notes for GCG 3.5
-@section RN351 GCG 3.5.3
+@section RN354 GCG 3.5.4
 *************************
 
 Bug fixes
 ---------
 
 
-@section RN351 GCG 3.5.2
+@section RN353 GCG 3.5.3
+*************************
+
+Bug fixes
+---------
+
+- fix Makefile build: create necessary directories before the dependencies are built
+
+
+@section RN352 GCG 3.5.2
 *************************
 
 Bug fixes
