@@ -1,5 +1,12 @@
 @page RN35 Release notes for GCG 3.5
-@section RN351 GCG 3.5.3
+@section RN354 GCG 3.5.4
+*************************
+
+Bug fixes
+---------
+
+
+@section RN353 GCG 3.5.3
 *************************
 
 Bug fixes
@@ -8,7 +15,7 @@ Bug fixes
 - fix Makefile build: create necessary directories before the dependencies are built
 
 
-@section RN351 GCG 3.5.2
+@section RN352 GCG 3.5.2
 *************************
 
 Bug fixes

@@ -35,7 +35,7 @@
 #ifndef GCG_DEF_H_
 #define GCG_DEF_H_
 
-#define GCG_VERSION         353 /**< GCG version number (multiplied by 100 to get integer number) */
+#define GCG_VERSION         354 /**< GCG version number (multiplied by 100 to get integer number) */
 #define GCG_SUBVERSION        0 /**< GCG sub version number */
 
 #endif
