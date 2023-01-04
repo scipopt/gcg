@@ -1,6 +1,6 @@
-detection/consclassifier/consnamelevenshtein/enabled = FALSE
-detection/consclassifier/consnamenonumbers/enabled = FALSE
-detection/varclassifier/objectivevalues/enabled = FALSE
-detection/varclassifier/objectivevaluesigns/enabled = FALSE
-detection/varclassifier/scipvartype/enabled = FALSE
+detection/classification/consclassifier/consnamelevenshtein/enabled = FALSE
+detection/classification/consclassifier/consnamenonumbers/enabled = FALSE
+detection/classification/varclassifier/objectivevalues/enabled = FALSE
+detection/classification/varclassifier/objectivevaluesigns/enabled = FALSE
+detection/classification/varclassifier/scipvartype/enabled = FALSE
 detection/detectors/postprocess/postprocessingenabled =  FALSE
