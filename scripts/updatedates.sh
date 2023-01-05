@@ -12,8 +12,8 @@
 NEWYEAR=`date +"%Y"`
 LASTYEAR=`expr $NEWYEAR - 1`
 
-DIRECTORIES=(check doc src src/* stats)
-EXTENSIONS=(sh awk h c hpp cpp html)
+DIRECTORIES=(check doc src src/* stats stats/*)
+EXTENSIONS=(sh awk h c hpp cpp html py dag)
 EXTRAFILES=(Makefile INSTALL make/make.project make/make.detecthost)
 
 echo ""
