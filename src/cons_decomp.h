@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_decomp.h
- * @ingroup DECOMP
+ * @ingroup CONSHDLRS-GCG
  * @brief  constraint handler for structure detection
  * @author Martin Bergner
  * @author Michael Bastubbe

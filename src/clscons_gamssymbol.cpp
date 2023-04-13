@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    clscons_gamssymbol.cpp
- * @ingroup CLASSIFIERS
+ * 
  * @brief   gamssymbol constraint classifier (classifies by corresponding GAMS symbol)
  * @author  Stefanie Koß
  */

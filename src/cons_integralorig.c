@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_integralorig.c
- * @ingroup CONSHDLRS
+ * 
  * @brief  constraint handler for enforcing integrality of the transferred master solution in the original problem
  * @author Gerald Gamrath
  *         Marcel Schmickerath

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    clsvar_gamsdomain.cpp
- * @ingroup CLASSIFIERS
+ * 
  * @brief   Classifies by domains from which variables are created TODO: what is together in one class?
  * @author  Stefanie Koß
  */

@@ -27,7 +27,7 @@ ould have received a copy of the GNU Lesser General Public License  */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clscons_consnamenonumbers.cpp
- * @ingroup CLASSIFIERS
+ * 
  * @brief classifies constraints according to names (without digits)
  */
 

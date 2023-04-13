@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    branch_xyz.c
- * @ingroup BRANCHINGRULES
+ * 
  * @brief   xyz branching rule (put your description here)
  * @author  Gerald Gamrath
  */

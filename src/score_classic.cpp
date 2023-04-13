@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    score_classic.cpp
- * @ingroup SCORES
  * @brief   classic score
  * @author  Jurgen Lentz
  */

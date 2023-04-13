@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_generalmastersetpart.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector for set partitioning constraints
  * @author Martin Bergner
  *

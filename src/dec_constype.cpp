@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_constype.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector constype (put your description here)
  * @author Michael Bastubbe
  */

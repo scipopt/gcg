@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    score_spfwh.cpp
- * @ingroup SCORES
  * @brief   setpartitioning maximum foreseeing white area score
  * @author  Jurgen Lentz
  */

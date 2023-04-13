@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_connectedbase.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector connectedbase (completes the partialdec by bfs)
  * @author Martin Bergner
  */

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_xyz.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector xyz (put your description here)
  * @author Martin Bergner
  * @author Christian Puchert

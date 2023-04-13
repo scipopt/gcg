@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_staircase_lsp.h
+ * @ingroup DETECTORS
  * @brief  staircase compontent detector
  * @author Martin Bergner
  * @author Michael Bastubbe

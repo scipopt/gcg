@@ -76,7 +76,7 @@ SCIP_Bool SCIPvisuGetDraftmode(
 
 /** sets draftmode
  * draftmode lets visualizations omit nonzeros
- * @returns nothing */
+ */
 GCG_EXPORT
 void SCIPvisuSetDraftmode(
    SCIP* scip,       /**< SCIP data structure */
@@ -91,7 +91,8 @@ VISU_COLORSCHEME SCIPvisuGetColorscheme(
    );
 
 /** sets colorscheme for visualizations
- * @returns nothing */
+ * 
+ */
 GCG_EXPORT
 void SCIPvisuSetColorscheme(
    SCIP* scip,                   /**< SCIP data structure */
@@ -99,7 +100,8 @@ void SCIPvisuSetColorscheme(
    );
 
 /** sets color for mastercons block in current color scheme
- *  @returns nothing*/
+ *
+ */
 GCG_EXPORT
 void SCIPvisuSetColorManMasterconss(
    SCIP* scip,          /**< SCIP data structure */
@@ -107,7 +109,8 @@ void SCIPvisuSetColorManMasterconss(
    );
 
 /** sets manual color for mastervar block in current color scheme
- * @returns nothing */
+ * 
+ */
 GCG_EXPORT
 void SCIPvisuSetColorManMastervars(
    SCIP* scip,          /**< SCIP data structure */
@@ -115,7 +118,8 @@ void SCIPvisuSetColorManMastervars(
    );
 
 /** sets manual color for linking blocks in current color scheme
- * @returns nothing */
+ * 
+ */
 GCG_EXPORT
 void SCIPvisuSetColorManLinking(
    SCIP* scip,          /**< SCIP data structure */
@@ -123,7 +127,8 @@ void SCIPvisuSetColorManLinking(
    );
 
 /** sets manual color for stairlinking blocks in current color scheme
- * @returns nothing */
+ * 
+ */
 GCG_EXPORT
 void SCIPvisuSetColorManStairlinking(
    SCIP* scip,          /**< SCIP data structure */
@@ -131,7 +136,8 @@ void SCIPvisuSetColorManStairlinking(
    );
 
 /** sets manual color for normal decomp blocks in current color scheme
- * @returns nothing */
+ * 
+ */
 GCG_EXPORT
 void SCIPvisuSetColorManBlock(
    SCIP* scip,          /**< SCIP data structure */
@@ -139,7 +145,8 @@ void SCIPvisuSetColorManBlock(
    );
 
 /** sets manual color for open blocks in current color scheme
- * @returns nothing */
+ * 
+ */
 GCG_EXPORT
 void SCIPvisuSetColorManOpen(
    SCIP* scip,          /**< SCIP data structure */
@@ -147,7 +154,8 @@ void SCIPvisuSetColorManOpen(
    );
 
 /** sets manual color for non-zero points in current color scheme
- * @returns nothing */
+ * 
+ */
 GCG_EXPORT
 void SCIPvisuSetColorManNonzero(
    SCIP* scip,          /**< SCIP data structure */
@@ -155,7 +163,8 @@ void SCIPvisuSetColorManNonzero(
    );
 
 /** sets manual color for lines in current color scheme
- * @returns nothing */
+ * 
+ */
 GCG_EXPORT
 void SCIPvisuSetColorManLine(
    SCIP* scip,          /**< SCIP data structure */
@@ -280,7 +289,8 @@ SCIP_Bool GCGreportGetShowStatistics(
    );
 
 /** frees all visualization parameters
- * @returns nothing */
+ * 
+ */
 GCG_EXPORT
 void GCGVisuFreeParams(
    SCIP* scip,                /**< SCIP data structure */

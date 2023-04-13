@@ -46,8 +46,7 @@ using namespace gcg;
 
 /** Gives a consistent filename for a (single) partialdec visualization that includes the probname and partialdecID.
  *
- * @returns standardized filename
- * */
+ */
 void GCGgetVisualizationFilename(
    SCIP* scip,             /**< scip data structure */
    PARTIALDECOMP* partialdec,         /**< partialdec that is to be visualized */
@@ -58,7 +57,7 @@ void GCGgetVisualizationFilename(
 
 /** Gives the path of the provided file.
  *
- * */
+ */
 void GCGgetFilePath(
    FILE* file,       /**< file */
    char* path        /**< buffer containing the path afterward, must be of length PATH_MAX! */

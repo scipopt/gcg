@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    score_border.cpp
- * @ingroup  SCORES
  * @brief   border area score
  * @author  Jurgen Lentz
  */

@@ -27,7 +27,7 @@
 
 /**@file   reader_ref.h
  * @brief  REF file reader for structure information
- * @ingroup FILEREADERS
+ * @ingroup FILEREADERS-GCG
  * @author Gerald Gamrath
  * @author Christian Puchert
  * @author Martin Bergner

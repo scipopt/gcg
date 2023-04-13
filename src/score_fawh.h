@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   score_fawh.h
+ * @ingroup SCORES
  * @brief  maximum foreseeing white area score with aggregation infos score
  * @author Jurgen Lentz
  */

@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   branch_relpsprob.h
+ * @ingroup BRANCHINGRULES-GCG
  * @brief  reliable pseudo costs branching rule
  * @author Tobias Achterberg
  * @author Gerald Gamrath

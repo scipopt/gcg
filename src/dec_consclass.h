@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_consclass.h
+ * @ingroup DETECTORS
  * @brief  consclass detector
  * @author Michael Bastubbe
  */

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_dbscan.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector DBSCAN
  * @author Igor Pesic
  *

@@ -848,6 +848,7 @@ public:
    /**
     * @brief sets the scorevalue of score
     * @param score the score
+    * @param scorevalue value of the score
     */
    void setScore(
       GCG_SCORE* score,
@@ -1905,14 +1906,13 @@ public:
     * "maximum white score" is fraction of the area of the decomposed matrix that is neither block or border
     * @note -1 iff not calculated yet, \see GCGconshdlrDecompCalcMaxWhiteScore
     * @returns maximum  white area score
-    * */
+    */
    GCG_EXPORT
    SCIP_Real getMaxWhiteScore();
 
    /** sorts the partialdec and calculates a its implicit assignments, hashvalue and evaluation
     *
-    * @returns SCIP_OKAY if the result is consistent, SCIP_ERROR if there was an inconsistency
-   */
+    */
    GCG_EXPORT
    void prepare();
 
@@ -1929,16 +1929,17 @@ public:
     * checks if aggregation of sub problems is possible and stores the corresponding aggregation information
     *
     * @param ignoreDetectionLimits Set to true if computation should ignore detection limits. This parameter is ignored if the patched bliss version is not present.
-   */
+    */
    GCG_EXPORT
    void calcAggregationInformation(
       bool ignoreDetectionLimits
       );
 
-   /**< @brief gets vector of indices of all constraints assigned to blocks
+   /** @brief gets vector of indices of all constraints assigned to blocks
     *
     * @note conssforblocks[k] contains a vector of indices of all constraints assigned to block k
-    * @returns vector of a vector of indices for each block */
+    * @returns vector of a vector of indices for each block 
+    */
    GCG_EXPORT
    std::vector<std::vector<int>>& getConssForBlocks(
    );

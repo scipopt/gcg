@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    relax_gcg.h
+ * @ingroup RELAXATORS-GCG
  * @brief   GCG relaxator
  * @author  Gerald Gamrath
  * @author  Christian Puchert
@@ -49,7 +50,7 @@ extern "C" {
 #endif
 
 /**
- * @ingroup RELAXATORS
+ * @ingroup RELAXATORS-GCG
  * @{
  */
 

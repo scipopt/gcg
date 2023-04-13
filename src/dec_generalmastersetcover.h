@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_generalmastersetcover.h
+ * @ingroup DETECTORS
  * @brief  generalmastersetcover detector
  * @author Martin Bergner
  */

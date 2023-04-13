@@ -29,7 +29,7 @@
  * @brief  GP file reader writing decompositions to gnuplot files
  * @author Martin Bergner
  * @author Hanna Franzen
- * @ingroup FILEREADERS
+ * @ingroup FILEREADERS-GCG
  *
  * This reader can write visualizations of partialdecs to a .gp file.
  */

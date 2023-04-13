@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clscons_miplibconstypes.h
+ * @ingroup CLASSIFIERS
  * @brief  classifies constraints according to their miplib constypes
  * @author William Ma
  */

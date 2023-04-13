@@ -63,7 +63,7 @@
 #endif
 
 /** display the reader information
- * @returns nothing */
+ */
 static
 void displayReaders(
    SCIP*                 scip,               /**< SCIP data structure */

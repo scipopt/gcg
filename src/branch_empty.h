@@ -28,7 +28,7 @@
 /**@file   branch_empty.h
  * @brief  branching rule for original problem in GCG while real branching is in the master
  * @author Marcel Schmickerath
- * @ingroup BRANCHINGRULES
+ * @ingroup BRANCHINGRULES-GCG
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

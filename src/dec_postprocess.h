@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_postprocess.h
+ * @ingroup DETECTORS
  * @brief  postprocess detector
  * @author Michael Bastubbe
  */

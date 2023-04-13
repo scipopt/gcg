@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_mastersetcover.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector mastersetcover (sets setcovering and logicor constraint to master)
  * @author Martin Bergner
  */

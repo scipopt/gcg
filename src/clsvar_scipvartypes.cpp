@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clsvar_scipvartypes.cpp
- * @ingroup CLASSIFIERS
+ * 
  * @brief classifies variables according to their scip vartypes
  */
 

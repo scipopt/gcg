@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clsvar_objvalues.cpp
- * @ingroup CLASSIFIERS
+ * 
  * @brief classifies variables according to their objective function values
  */
 

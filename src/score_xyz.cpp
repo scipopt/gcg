@@ -42,8 +42,8 @@
 
 /* score properties */
 #define SCORE_NAME             "xyz score"                           /**< name of score */
-#define SCORE_SHORTNAME        "xyz"                                 /**< shortname of score */
-#define SCORE_DESC             "score template"                      /**< short description of classification */
+#define SCORE_SHORTNAME        "xyz"                                 /**< shortname of score*/
+#define SCORE_DESC             "score template"                      /**< short description of score */
 
 
 /*

@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_connected_noNewLinkingVars.h
+ * @ingroup DETECTORS
  * @brief  connected_noNewLinkingVars detector
  * @author Martin Bergner
  */

@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_mst.h
+ * @ingroup DETECTORS
  * @brief  detector for diagonal (bordered) structures via Minimum Spanning Tree clustering algorithm
  * @author Igor Pesic
  */

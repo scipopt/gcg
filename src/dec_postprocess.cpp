@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_postprocess.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  checks if there are master constraints that can be assigned to one block (without any other changes)
  * @author Michael Bastubbe
  */

@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_densemasterconss.h
+ * @ingroup DETECTORS
  * @brief  densemasterconss detector
  * @author Michael Bastubbe
  */

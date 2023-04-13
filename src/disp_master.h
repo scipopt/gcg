@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   disp_master.h
+ * @ingroup DISPLAYS
  * @brief  master display columns
  * @author Gerald Gamrath
  */

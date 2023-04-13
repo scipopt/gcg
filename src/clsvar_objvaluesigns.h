@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clsvar_objvaluesigns.h
+ * @ingroup CLASSIFIERS
  * @brief  classifies variables according to their objective function value signs
  * @author William Ma
  */

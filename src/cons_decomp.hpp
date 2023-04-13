@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_decomp.hpp
+ * @ingroup CONSHDLRS-GCG
  * @brief  C++ interface of cons_decomp
  * @author Erik Muehmer
  */

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    relax_gcg.c
- * @ingroup RELAXATORS
+ * 
  * @brief   GCG relaxator
  * @author  Gerald Gamrath
  * @author  Martin Bergner

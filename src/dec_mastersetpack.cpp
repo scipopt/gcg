@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_mastersetpack.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector mastersetpack (sets setpacking constraints to master)
  * @author Martin Bergner
  */

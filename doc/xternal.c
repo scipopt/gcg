@@ -29,7 +29,7 @@
  * @brief  documentation page for GCG's C-API (no other pages)
  */
 
-/**@defgroup PUBLICAPI Public API of GCG
+/**@defgroup PUBLICAPI-GCG Public API of GCG
  * @brief methods and headers of the public C-API of \GCG
  *
  * The public API of \GCG is separated into a Core API and a Plugin API.
@@ -41,7 +41,7 @@
  */
 
 /**@defgroup PUBLICCOREAPI Core API
-* @ingroup PUBLICAPI
+* @ingroup PUBLICAPI-GCG
 * @brief methods and headers of the plugin-independent C-API provided by \GCG.
 *
 * In order facilitate the navigation through the core API of \GCG, it is structured into different modules.
@@ -61,6 +61,16 @@
 /**@defgroup BLISS Bliss
   * @ingroup PUBLICCOREAPI
   * @brief Methods concerning BLISS
+  */
+
+/**@defgroup PublicConsClassifierMethods Constraint classifiers
+  * @ingroup PUBLICCOREAPI
+  * @brief Public methods for constraint classifiers.
+  */
+
+/**@defgroup PublicVarClassifierMethods Variable classifiers
+  * @ingroup PUBLICCOREAPI
+  * @brief Public methods for variable classifiers.
   */
 
 /**@defgroup DECOMP Decomposition
@@ -88,6 +98,11 @@
   * @ingroup PRICING_PUB
   */
 
+/**@defgroup PublicScoreMethods Scores
+  * @ingroup PUBLICCOREAPI
+  * @brief Public methods for scores.
+  */
+
 /**@defgroup SEPARATORS_PUB Separators
   * @ingroup PUBLICCOREAPI
   * @brief Public methods for separators.
@@ -101,29 +116,29 @@
 
 
 
-/**@defgroup PUBLICPLUGINAPI Plugin API of GCG
-  * @ingroup PUBLICAPI
+/**@defgroup PUBLICPLUGINAPI-GCG Plugin API of GCG
+  * @ingroup PUBLICAPI-GCG
   * @brief core API extensions provided by the default plugins of \GCG.
   *
   * All of the modules listed below provide functions that are allowed to be used by user-written extensions of \GCG.
   */
 
-  /**@defgroup BENDERS Benders' Decomposition
-   * @ingroup PUBLICPLUGINAPI
+  /**@defgroup BENDERS-GCG Benders' Decomposition
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a description of all methods and files provided by the Benders' decomposition.
    *
    */
 
-  /**@defgroup BRANCHINGRULES Branching Rules
-   * @ingroup PUBLICPLUGINAPI
+  /**@defgroup BRANCHINGRULES-GCG Branching Rules
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a list of all branching rule which are currently available.
    *
    * A detailed description what a branching rule does and how to add a branching rule to \GCG can be found
    * \ref own-branching-rule "here".
    */
 
-  /**@defgroup CONSHDLRS  Constraint Handler
-   * @ingroup PUBLICPLUGINAPI
+  /**@defgroup CONSHDLRS-GCG  Constraint Handler
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a list of all constraint handlers which are currently available.
    *
    * A detailed description what a constraint handler does and how to add a constraint handler to \GCG can be found
@@ -131,7 +146,7 @@
    */
 
   /**@defgroup DETECTORS Detectors
-   * @ingroup PUBLICPLUGINAPI
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a list of all detectors which are currently available.
    *
    * A detailed description what a detector does and how to add a detector to \GCG can be found
@@ -139,7 +154,7 @@
    */
 
   /**@defgroup CLASSIFIERS Classifiers
-   * @ingroup PUBLICPLUGINAPI
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a list of all classifiers which are currently available.
    *
    * A detailed description what a classifier does can be found \ref classifiers "here"
@@ -148,7 +163,7 @@
    */
 
   /**@defgroup DIALOGS Dialogs
-   * @ingroup PUBLICPLUGINAPI
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a list of all dialogs which are currently available.
    *
    * A detailed description what a dialog does and how to add a dialog to \GCG can be found
@@ -156,7 +171,7 @@
    */
 
   /**@defgroup DISPLAYS Displays
-   * @ingroup PUBLICPLUGINAPI
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a list of all displays (output columns)  which are currently available.
    *
    * A detailed description what a display does and how to add a display to \GCG can be found
@@ -164,8 +179,8 @@
    *
    */
 
-  /**@defgroup FILEREADERS File Readers
-   * @ingroup PUBLICPLUGINAPI
+  /**@defgroup FILEREADERS-GCG File Readers
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a list of all file readers which are currently available.
    *
    * A detailed description what a file reader does and how to add a file reader to \GCG can be found
@@ -173,7 +188,7 @@
    */
 
   /**@defgroup NODESELECTORS Node Selectors
-   * @ingroup PUBLICPLUGINAPI
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a list of all node selectors which are currently available.
    *
    * A detailed description what a node selector does and how to add a node selector to \GCG can be found
@@ -181,7 +196,7 @@
    */
 
    /**@defgroup PRICING Pricing
-    * @ingroup PUBLICPLUGINAPI
+    * @ingroup PUBLICPLUGINAPI-GCG
     * @brief This page contains a list of all pricers, pricing solvers and the pricing jobs and problem structures.
     *
     */
@@ -203,7 +218,7 @@
    */
 
    /**@defgroup PRIMALHEURISTICS Primal Heuristics
-   * @ingroup PUBLICPLUGINAPI
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a list of all primal heuristics which are currently available.
    *
    * A detailed description what a primal heuristic does and how to add a primal heuristic to \GCG can be found
@@ -218,13 +233,18 @@
    * \ref diving-heuristics "here".
    */
 
-  /**@defgroup RELAXATORS Relaxators
-   * @ingroup PUBLICPLUGINAPI
+  /**@defgroup RELAXATORS-GCG Relaxators
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a list of all relaxators which are currently available.
    */
 
+  /**@defgroup SCORES Scores
+   * @ingroup PUBLICPLUGINAPI-GCG
+   * @brief This page contains a list of all scores which are currently available.
+   */
+
   /**@defgroup SEPARATORS Separators
-   * @ingroup PUBLICPLUGINAPI
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a list of all separators  which are currently available.
    *
    * A detailed description what a separator does and how to add a separator to \GCG can be found

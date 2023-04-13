@@ -29,7 +29,7 @@
  * @brief  BLK file reader for structure information
  * @author Gerald Gamrath
  * @author Martin Bergner
- * @ingroup FILEREADERS
+ * @ingroup FILEREADERS-GCG
  *
  * This reader reads in a blk-file that defines the structur to be used for the decomposition.
  * The structure is defined variable-wise, i.e., the number of blocks and the variables belonging to each block are

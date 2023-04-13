@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_connected_noNewLinkingVars.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector connected_noNewLinkingVars (assigns all dependent open conss and vars and completes the partialdec by bfs)
  * @author Martin Bergner
  */

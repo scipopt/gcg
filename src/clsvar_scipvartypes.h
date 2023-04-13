@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clsvar_scipvartypes.h
+ * @ingroup CLASSIFIERS
  * @brief  classifies variables according to their scip vartypes
  * @author William Ma
  */

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_mst.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  minimum spanning tree clustering detector
  * @author Igor Pesic
  *

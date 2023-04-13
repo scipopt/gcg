@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    score_forswh.cpp
- * @ingroup SCORES
  * @brief   max foreseeing white score
  * @author  Jurgen Lentz
  */

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_isomorph.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector for pricing problems that can be aggregated (uses bliss)
  * @author Martin Bergner
  * @author Daniel Peters
