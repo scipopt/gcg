@@ -14,7 +14,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   benders_gcg.h
- * @ingroup BENDERS
+ * @ingroup BENDERS-GCG
  * @brief  GCG Benders' decomposition
  * @author Stephen J. Maher
  */
@@ -43,7 +43,7 @@ SCIP_RETCODE SCIPincludeBendersGcg(
    SCIP*                 origprob            /**< the SCIP instance of the original problem */
    );
 
-/**@addtogroup BENDERS
+/**@addtogroup BENDERS-GCG
  *
  * @{
  */

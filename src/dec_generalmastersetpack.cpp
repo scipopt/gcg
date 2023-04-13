@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_generalmastersetpack.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector for set packing constraints
  * @author Martin Bergner
  *

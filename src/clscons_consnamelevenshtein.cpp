@@ -27,7 +27,7 @@ ould have received a copy of the GNU Lesser General Public License  */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clscons_consnamelevenshtein.cpp
- * @ingroup CLASSIFIERS
+ * 
  * @brief classifies constraints according to levenshtein distance graph of their names
  */
 

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   branch_relpsprob.c
- * @ingroup BRANCHINGRULES
+ * 
  * @brief  generalized reliable pseudo costs branching rule
  * @author Tobias Achterberg
  * @author Timo Berthold

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    branch_bpstrong.c
- * @ingroup BRANCHINGRULES
+ * 
  * @brief   generic branch-and-price strong branching heuristics
  * @author  Oliver Gaul
  */

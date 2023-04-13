@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_compgreedily.h
+ * @ingroup DETECTORS
  * @brief  compgreedily detector
  * @author Martin Bergner
  */

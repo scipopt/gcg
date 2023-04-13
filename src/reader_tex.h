@@ -28,7 +28,7 @@
 /**@file   reader_tex.h
  * @brief  tex file reader for writing decomposition details to LaTeX files
  * @author Hanna Franzen
- * @ingroup FILEREADERS
+ * @ingroup FILEREADERS-GCG
 
  * This reader can write visualizations, family trees and reports of partialdecs to a .tex LaTeX file.
  * The gp reader might be required for visualizations.

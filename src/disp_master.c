@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   disp_master.c
- * @ingroup DISPLAYS
+ * 
  * @brief  master display columns
  * @author Gerald Gamrath
  * @author Christian Puchert

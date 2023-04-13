@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clscons_consnamelevenshtein.h
+ * @ingroup CLASSIFIERS
  * @brief  classifies constraints according to levenshtein distance graph of their names
  * @author William Ma
  */

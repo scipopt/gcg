@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_neighborhoodmaster.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector neighborhoodmaster (This detector calculates cons-cons adjacency (if not already done), sorts constraints according size of neighborhood. Searching two consecutive constraints with largest size difference (according neighborhood size) in sorted constraints. All constraints having a larger neighborhood than the second one are assigned to the master)
  * @author Michael Bastubbe
  */

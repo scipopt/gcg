@@ -16,6 +16,7 @@ doc/resources/misc/faq/faqdata.php
 doc/resources/misc/faq/faq.inc
 doc/resources/misc/visu_args_table.html
 doc/resources/users/features/interactive-menu/menu.html
+doc/scip.tag
 stats/plots
 gcg-*.metis*
 lib/

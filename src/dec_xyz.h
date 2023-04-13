@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_xyz.h
+ * @ingroup DETECTORS
  * @brief  xyz detector
  * @author Martin Bergner
  */

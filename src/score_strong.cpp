@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    score_strong.cpp
- * @ingroup  SCORES
  * @brief   strong score
  * @author  Jurgen Lentz
  */
@@ -97,7 +96,7 @@ typedef enum GCG_Random_dual_methods GCG_RANDOM_DUAL_METHOD;
 static
 SCIP_RETCODE shuffleDualvalsRandom(
    SCIP* scip,             /**< SCIP data structure */
-   GCG_SCORE* score,
+   GCG_SCORE* score,       /**< score */
    SCIP_Bool transformed   /**< whether the problem is tranformed yet */
    )
 {
@@ -261,7 +260,7 @@ SCIP_RETCODE shuffleDualvalsRandom(
 static
 SCIP_Real getDualvalRandom(
    SCIP* scip,             /**< SCIP data structure */
-   GCG_SCORE* score,
+   GCG_SCORE* score,       /**< score */
    int  consindex,         /**< consindex  index of constraint the value is asked for */
    SCIP_Bool transformed   /**< is the problem transformed yet */
    )
@@ -282,7 +281,7 @@ SCIP_Real getDualvalRandom(
 static
 SCIP_RETCODE calculateDualvalsOptimalOrigLP(
    SCIP* scip,             /**< SCIP data structure */
-   GCG_SCORE* score,
+   GCG_SCORE* score,       /**< score */
    SCIP_Bool transformed   /**< whether the problem is transormed yet */
    )
 {
@@ -398,7 +397,7 @@ SCIP_RETCODE calculateDualvalsOptimalOrigLP(
 static
 SCIP_Real getDualvalOptimalLP(
    SCIP* scip,             /**< SCIP data structure */
-   GCG_SCORE* score,
+   GCG_SCORE* score,       /**< score */
    int  consindex,         /**< consindex index of constraint the value is asked for */
    SCIP_Bool transformed   /**< is the problem transformed yet */
    )

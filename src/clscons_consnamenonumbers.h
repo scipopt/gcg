@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clscons_consnamenonumbers.h
+ * @ingroup CLASSIFIERS
  * @brief  classifies constraints according to names (without digits)
  * @author William Ma
  */

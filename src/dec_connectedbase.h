@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_connectedbase.h
+ * @ingroup DETECTORS
  * @brief  connectedbase detector
  * @author Martin Bergner
  * @author Michael Bastubbe

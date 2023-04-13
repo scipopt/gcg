@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_integralorig.h
+ * @ingroup CONSHDLRS-GCG
  * @brief  constraint handler for the integrality constraint
  * @author Gerald Gamrath
  */
@@ -49,8 +50,8 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-GCG_EXPORT
 /** insert branchrule in constraint handler data */
+GCG_EXPORT
 SCIP_RETCODE GCGconsIntegralorigAddBranchrule(
    SCIP*                 scip,
    SCIP_BRANCHRULE*      branchrule

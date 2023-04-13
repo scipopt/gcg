@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clscons_nnonzeros.h
+ * @ingroup CLASSIFIERS
  * @brief  classifies constraints according to their nonzero entries
  * @author William Ma
  */

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_generalmastersetcover.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector for set covering constraints
  * @author Michael Bastubbe
  *

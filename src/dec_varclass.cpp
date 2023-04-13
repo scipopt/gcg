@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_varclass.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector varclass
  * @author Julius Hense
  */

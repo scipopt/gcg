@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    clsvar_gamssymbol.cpp
- * @ingroup CLASSIFIERS
+ * 
  * @brief   variables which have the same symbol are put into same class
  * @author  Stefanie Koß
  */

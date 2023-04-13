@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_hrcgpartition.h
+ * @ingroup DETECTORS
  * @brief  arrowhead and bordered detector via graph partitioning (uses hmetis)
  * @author Martin Bergner
  */

@@ -409,6 +409,10 @@
               <td>GAMS/GCG interface</td>
             </tr>
             <tr>
+              <td>Jurgen Lentz</td>
+              <td>Python interface (PyGCGOpt), Score</td>
+            </tr>
+            <tr>
               <td>Henri Lotze</td>
               <td>CLIQUER stable set pricer</td>
             </tr>

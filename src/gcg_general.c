@@ -74,7 +74,7 @@ int GCGsubversion(void)
 #endif
 
 /** prints out GCG version
- * @returns nothing */
+ */
 void GCGprintVersion(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file (or NULL for standard output) */

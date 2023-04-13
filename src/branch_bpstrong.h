@@ -29,7 +29,7 @@
  * @brief   generic branch and price strong branching as described in
  *          Pecin, D., Pessoa, A., Poggi, M., Uchoa, E. Improved branch-cut-and-price for capacitated vehicle routing.
  *          In: Math. Prog. Comp. 9:61-100. Springer (2017).
- * @ingroup BRANCHINGRULES
+ * @ingroup BRANCHINGRULES-GCG
  * @author  Oliver Gaul
  */
 

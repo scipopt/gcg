@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clscons_miplibconstypes.cpp
- * @ingroup CLASSIFIERS
+ * 
  * @brief classifies constraints according to their miplib constypes
  */
 

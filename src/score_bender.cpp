@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    score_bender.cpp
- * @ingroup SCORES
  * @brief   benders score
  * @author  Jurgen Lentz
  */

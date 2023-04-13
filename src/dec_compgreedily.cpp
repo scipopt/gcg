@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_compgreedily.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector compgreedily (assigns the open cons and open vars of the partialdec greedily)
  * @author Michael Bastubbe
  */

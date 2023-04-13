@@ -18,7 +18,7 @@ branching rule to branch on integral variables of the original problem which wer
 branching rule for original problem in GCG implementing the Ryan and Foster branching scheme 
 
 Descriptions of those and their code documentation can be
-found @ref BRANCHINGRULES "here".
+found @ref BRANCHINGRULES-GCG "here".
 
 <hr>
 

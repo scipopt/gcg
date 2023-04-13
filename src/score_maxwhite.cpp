@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    score_maxwhite.cpp
- * @ingroup  SCORES
  * @brief   max white score
  * @author  Jurgen Lentz
  */

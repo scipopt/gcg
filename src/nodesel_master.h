@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   nodesel_master.h
+ * @ingroup NODESELECTORS
  * @brief  Node selector for coordination of master and original formulation
  * @author Gerald Gamrath
  */

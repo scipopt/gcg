@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clscons_scipconstypes.h
+ * @ingroup CLASSIFIERS
  * @brief  classifies constraints according to their scip constypes
  * @author William Ma
  */

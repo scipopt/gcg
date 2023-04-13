@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_neighborhoodmaster.h
+ * @ingroup DETECTORS
  * @brief  neighborhoodmaster detector
  * @author Michael Bastubbe
  */

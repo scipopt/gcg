@@ -30,7 +30,7 @@
  * @author Martin Bergner
  * @author Lukas Kirchhart
  * @author Micahel Bastubbe
- * @ingroup FILEREADERS
+ * @ingroup FILEREADERS-GCG
 
  * This reader reads and write files in .dec format. A data format to pass a (possibly partial) decomposition to GCG, prerequisite is a given MIP, whose constraints and variables are referred to by name
  * – everything behind a backslash (“\”) is a comment and is ignored

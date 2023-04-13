@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    clsvar_xyz.h
+ * @ingroup CLASSIFIERS
  * @brief   xyz variable classifier (put your description here)
  * @author  William Ma
  */

@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_dbscan.h
+ * @ingroup DETECTORS
  * @brief  detector for diagonal (bordered) structures via DBSCAN clustering algorithm
  * @author Igor Pesic
  */

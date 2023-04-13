@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_densemasterconss.cpp
- * @ingroup DETECTORS
+ * 
  * @brief  detector densemasterconss (put your description here)
  * @author Michael Bastubbe
  */

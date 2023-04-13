@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_constype.h
+ * @ingroup DETECTORS
  * @brief  constype detector
  * @author Michael Bastubbe
  */

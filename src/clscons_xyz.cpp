@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    clscons_xyz.cpp
- * @ingroup CLASSIFIERS
+ * 
  * @brief   xyz constraint classifier (put your description here)
  * @author
  */

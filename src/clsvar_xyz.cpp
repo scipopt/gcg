@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    clsvar_xyz.cpp
- * @ingroup CLASSIFIERS
+ * 
  * @brief   xyz variable classifier (put your description here)
  * @author
  */

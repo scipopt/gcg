@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clscons_gamssymbol.h
+ * @ingroup CLASSIFIERS
  * @brief  Constraints which have the same symbol are put into same class
  * @author Stefanie Koß
  */

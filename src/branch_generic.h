@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   branch_generic.h
+ * @ingroup BRANCHINGRULES-GCG
  * @brief  branching rule based on vanderbeck's generic branching scheme
  * @author Marcel Schmickerath
  */

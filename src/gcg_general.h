@@ -47,7 +47,7 @@ extern "C" {
 #endif
 
 /** prints out GCG version
- * @returns nothing */
+ */
 GCG_EXPORT
 void GCGprintVersion(
    SCIP*                 scip,               /**< SCIP data structure */

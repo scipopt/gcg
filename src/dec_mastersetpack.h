@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_mastersetpack.h
+ * @ingroup DETECTORS
  * @brief  mastersetpack detector
  * @author Martin Bergner
  */
