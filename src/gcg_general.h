@@ -46,6 +46,51 @@
 extern "C" {
 #endif
 
+/** returns complete GCG version number in the format "major . minor tech"
+ *
+ *  @return complete GCG version
+ */
+GCG_EXPORT
+SCIP_Real GCGversion(
+   void
+   );
+
+/** returns GCG major version
+ *
+ *  @return major GCG version
+ */
+GCG_EXPORT
+int GCGmajorVersion(
+   void
+   );
+
+/** returns GCG minor version
+ *
+ *  @return minor GCG version
+ */
+GCG_EXPORT
+int GCGminorVersion(
+   void
+   );
+
+/** returns GCG technical version
+ *
+ *  @return technical GCG version
+ */
+GCG_EXPORT
+int GCGtechVersion(
+   void
+   );
+
+/** returns GCG sub version number
+ *
+ *  @return subversion GCG version
+ */
+GCG_EXPORT
+int GCGsubversion(
+   void
+   );
+
 /** prints out GCG version
  */
 GCG_EXPORT

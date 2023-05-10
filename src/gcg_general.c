@@ -40,38 +40,60 @@
 #include "scip/scip_message.h"
 
 
-/** Gets GCG major version
- * @returns GCG major version */
-static
-int GCGmajorVersion(void)
+/** returns complete GCG version number in the format "major . minor tech"
+ *
+ *  @return complete GCG version
+ */
+SCIP_Real GCGversion(
+   void
+   )
+{
+   return (SCIP_Real)(GCG_VERSION)/100.0;
+}
+
+/** returns GCG major version
+ *
+ *  @return major GCG version
+ */
+int GCGmajorVersion(
+   void
+   )
 {
    return GCG_VERSION/100;
 }
 
-/** Gets GCG minor version
- * @returns GCG minor version */
-static
-int GCGminorVersion(void)
+/** returns GCG minor version
+ *
+ *  @return minor GCG version
+ */
+int GCGminorVersion(
+   void
+   )
 {
-   return (GCG_VERSION/10) % 10; /*lint !e778*/
+   return (GCG_VERSION/10) % 10;
 }
 
-/** Gets GCG technical version
- * @returns GCG technical version */
-static
-int GCGtechVersion(void)
+/** returns GCG technical version
+ *
+ *  @return technical GCG version
+ */
+int GCGtechVersion(
+   void
+   )
 {
-   return GCG_VERSION % 10; /*lint !e778*/
+   return GCG_VERSION % 10;
 }
-#if GCG_SUBVERSION > 0
-/** Gets GCG sub version number
- * @returns GCG sub version number */
-static
-int GCGsubversion(void)
+
+/** returns GCG sub version number
+ *
+ *  @return subversion GCG version
+ */
+int GCGsubversion(
+   void
+   )
 {
    return GCG_SUBVERSION;
 }
-#endif
 
 /** prints out GCG version
  */
