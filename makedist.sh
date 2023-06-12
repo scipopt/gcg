@@ -27,7 +27,7 @@ find ./ -name lib -prune -o -name "*.sh" -exec chmod 750 {} \;
 find ./ -name lib -prune -o -name "*.py" -exec chmod 750 {} \;
 find ./ -name lib -prune -o -name "*.prl" -exec chmod 750 {} \;
 find ./ -name lib -prune -o -name "hmetis" -exec chmod 750 {} \;
-chmod 750 bin/*
+chmod 750 bin/* scrips/* cmake/Modules/asan-wrapper
 
 rm -f release/$NAME.tgz
 tar --no-recursion --ignore-failed-read -cvzhf release/$NAME.tgz \
@@ -57,7 +57,17 @@ $NAME/check/instances/gap/*.dec \
 $NAME/check/instances/cs/*.dec \
 $NAME/check/instances/miplib/*.dec \
 $NAME/check/instances/mkp/*.lp \
-$NAME/doc/inc/*.inc
+$NAME/doc/inc/*.inc \
+$NAME/stats/*.py $NAME/stats/*.ipynb \
+$NAME/stats/bounds/*.py \
+$NAME/stats/detection/*.py \
+$NAME/stats/example_logs/*.out $NAME/stats/example_logs/*.pkl \
+$NAME/stats/example_logs/vbc/*.vbc \
+$NAME/stats/general/*.py $NAME/stats/general/*.sh \
+$NAME/stats/misc/*.awk $NAME/stats/misc/*.json $NAME/stats/misc/*.sh $NAME/stats/misc/*.py \
+$NAME/stats/pricing/*.py \
+$NAME/stats/templates/*.html \
+$NAME/stats/tree/*.py
 rm -f $NAME
 echo ""
 echo "Building documentation and webpage"
@@ -65,22 +75,13 @@ make doc
 
 echo ""
 echo "check version numbers in main.c, doc/xternal.c, Makefile and makedist.sh ($VERSION):"
-grep "VERSION" src/main.c
-grep "@version" doc/xternal.c
+grep "GCG_VERSION" src/def.h
+grep "@version" doc/resources/main.md
 grep "^VERSION" Makefile
 grep "GCG_VERSION_" CMakeLists.txt
 tail src/githash.c
 
 
 echo "Collecting webpage"
-mkdir temp-webpage
-pushd temp-webpage
-rm -f web-$NAME
-ln -s ../doc/html doc
-ln -sf ../doc/index.html index.html
-tar jchf ../release/web-$NAME.tbz2 doc index.html
-rm -f doc
-rm -f index.html
-popd
-rm -r temp-webpage
+tar jchf release/web-$NAME.tbz2 doc/html
 echo "finished"
