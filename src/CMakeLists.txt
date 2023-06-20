@@ -521,7 +521,7 @@ install(EXPORT gcg-targets FILE gcg-targets.cmake DESTINATION lib/cmake/gcg)
 install(FILES "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/gcg-config.cmake" DESTINATION lib/cmake/gcg)
 
 if(MSVC)
-   if(DEFINED GCG_DEV_BUILD_SCIP_PATH)
+   if(GCG_DEV_BUILD)
       add_custom_command(TARGET gcg POST_BUILD
          COMMAND ${CMAKE_COMMAND} -E copy_if_different
          "${SCIP_BINARY_DIR}/bin/$<CONFIG>/libscip.dll"
