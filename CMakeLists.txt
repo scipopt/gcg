@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.3)
 
+# option() honors normal variables.
+if(POLICY CMP0077)
+   cmake_policy(SET CMP0077 NEW)
+endif()
+
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_DEBUG} ${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} ${CMAKE_CXX_FLAGS_RELEASE}")
 
@@ -11,9 +16,9 @@ set(GCG_VERSION_PATCH 0)
 set(GCG_VERSION_SUB 0)
 set(GCG_VERSION_API 2)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 
 # path to e.g. FindGMP module
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
@@ -24,7 +29,7 @@ message(STATUS "Build shared libraries: " ${SHARED})
 
 # make 'Release' the default build type
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
+   set(CMAKE_BUILD_TYPE Release)
 endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
@@ -222,30 +227,34 @@ add_subdirectory(src)
 # we set the GCG_DIR variable explicitly for the following examples/applications and unittests that depend on GCG.
 #
 set(GCG_DIR ${CMAKE_BINARY_DIR})
+
 #
 # add GCG tests
 #
-if(NOT TARGET check)
-   add_custom_target(check)
+include(CTest)
+if(BUILD_TESTING)
+   if(NOT TARGET check)
+      add_custom_target(check)
+   endif()
+   add_subdirectory(check)
+
+   #
+   # add GCG documentation
+   #
+   if(NOT TARGET doc)
+      add_custom_target(doc)
+   endif()
+   add_subdirectory(doc)
+
+   #
+   # add unit tests as a single target. Including tests will add the unit tests as single executables
+   #
+   add_custom_target(gcg_unittests)
+   #add_subdirectory(tests EXCLUDE_FROM_ALL)
+   add_custom_target(gcg_all_executables DEPENDS gcg gcg_unittests)
+
+   enable_testing()
 endif()
-add_subdirectory(check)
-
-#
-# add GCG documentation
-#
-if(NOT TARGET doc)
-   add_custom_target(doc)
-endif()
-add_subdirectory(doc)
-
-#
-# add unit tests as a single target. Including tests will add the unit tests as single executables
-#
-add_custom_target(gcg_unittests)
-#add_subdirectory(tests EXCLUDE_FROM_ALL)
-add_custom_target(gcg_all_executables DEPENDS gcg gcg_unittests)
-
-enable_testing()
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
    include(FeatureSummary)
