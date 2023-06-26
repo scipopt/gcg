@@ -405,9 +405,12 @@ def parseOutfiles(outfiles):
             if search == "CUTS ORIG":
                 if not line.startswith("Pricers") and not line.startswith("Cutselectors"):
                     offset = 0 if line.split(':')[0].strip() != "cut pool" else -1
-                    data['CUTS TIME ORIG'][-1] += float(line.split(':')[1].split()[0])
-                    data['CUTS CALLS ORIG'][-1] += int(line.split(':')[1].split()[2+offset])
-                    data['CUTS FOUND ORIG'][-1] += int(line.split(':')[1].split()[5+offset])
+                    if line.split(':')[1].split()[0].isdigit():
+                        data['CUTS TIME ORIG'][-1] += float(line.split(':')[1].split()[0])
+                    if line.split(':')[1].split()[2+offset].isdigit():
+                        data['CUTS CALLS ORIG'][-1] += int(line.split(':')[1].split()[2+offset])
+                    if line.split(':')[1].split()[5+offset].isdigit():
+                        data['CUTS FOUND ORIG'][-1] += int(line.split(':')[1].split()[5+offset])
                     if line.split(':')[1].split()[6+offset].isdigit():
                         data['CUTS APPLIED ORIG'][-1] += int(line.split(':')[1].split()[6+offset])
                 else:

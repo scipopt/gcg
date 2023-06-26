@@ -138,21 +138,13 @@ SCIP_RETCODE writeAllDecompositions(
    SCIPdebugMessage("dirname: %s\n", tmp);
 
    snprintf(dirname, sizeof(dirname), "%s", tmp);
-
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, tmp, TRUE) );
 
    /* if no directory is specified, initialize it with a standard solution */
    if( dirname[0] == '\0' )
    {
-      strcpy(dirname, "alldecompositions/");
+      strcpy(dirname, ".");
    }
-
-   /* make sure directory exists */
-   #if defined(_WIN32) || defined(_WIN64)
-   _mkdir(dirname);
-   #else
-   mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
-   #endif
 
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &tmp, &endoffile) );
    snprintf(extension, sizeof(extension), "%s", tmp);
@@ -229,21 +221,13 @@ SCIP_RETCODE writeSelectedDecompositions(
    SCIPdebugMessage("dirname: %s\n", tmp);
 
    snprintf(dirname, sizeof(dirname), "%s", tmp);
-
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, tmp, TRUE) );
 
    /* if no directory is specified, initialize it with a standard solution */
    if( dirname[0] == '\0' )
    {
-      strcpy(dirname, "selecteddecompositions/");
+      strcpy(dirname, ".");
    }
-
-   /* make sure directory exists */
-   #if defined(_WIN32) || defined(_WIN64)
-   _mkdir(dirname);
-   #else
-   mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
-   #endif
 
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &tmp, &endoffile) );
    snprintf(extension, sizeof(extension), "%s", tmp);
@@ -317,25 +301,14 @@ SCIP_RETCODE writeMatrix(
       return SCIP_OKAY;
    }
 
-   strncpy(dirname, tmpstring, SCIP_MAXSTRLEN);
+   snprintf(dirname, sizeof(dirname), "%s", tmpstring);
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
 
    /* if no directory is specified, initialize it with a standard solution */
    if( dirname[0] == '\0' )
    {
-      strcpy(dirname, "./");
+      strcpy(dirname, ".");
    }
-
-   /* make sure directory exists */
-   if( dirname != NULL )
-   {
-      #if defined(_WIN32) || defined(_WIN64)
-      _mkdir(dirname);
-      #else
-      mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
-      #endif
-   }
-
-   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
 
    (void) SCIPsnprintf(probnamepath, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
       SCIPsplitFilename(probnamepath, NULL, &probname, NULL, NULL);
@@ -390,7 +363,8 @@ SCIP_RETCODE reportAllDecompositions(
    FILE* file;
    SCIP_Bool endoffile;
    char* pname;
-   char* dirname;
+   char dirname[SCIP_MAXSTRLEN];
+   char* tmpstring;
    const char* nameinfix = "report_";
    const char* extension = "tex";
    char ppath[SCIP_MAXSTRLEN];
@@ -411,28 +385,20 @@ SCIP_RETCODE reportAllDecompositions(
    }
 
    /* get a directory to write to */
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter a directory: ", &dirname, &endoffile) );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter a directory: ", &tmpstring, &endoffile) );
    if( endoffile )
    {
       *nextdialog = NULL;
       return SCIP_OKAY;
    }
+
+   snprintf(dirname, sizeof(dirname), "%s", tmpstring);
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
 
    /* if no directory is specified, initialize it with a standard solution */
    if( dirname[0] == '\0' )
    {
-      strcpy(dirname, "report/");
-   }
-
-   /* make sure directory exists */
-   if( dirname != NULL )
-   {
-      #if defined(_WIN32) || defined(_WIN64)
-      _mkdir(dirname);
-      #else
-      mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
-      #endif
+      strcpy(dirname, ".");
    }
 
    /* create a name for the new file */
@@ -448,20 +414,21 @@ SCIP_RETCODE reportAllDecompositions(
       SCIPdialogMessage(scip, NULL, "error creating report file\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
    }
+   else
+   {
+      /* get finished partial decomps */
+      SCIPallocBlockMemoryArray(scip, &decids, ndecs);
+      GCGconshdlrDecompGetFinishedPartialdecsList(scip, &decids, &ndecs);
+      GCGwriteTexReport(scip, file, decids, &ndecswritten, GCGreportGetShowTitlepage(scip), GCGreportGetShowToc(scip),
+         GCGreportGetShowStatistics(scip), GCGgetUseGp(scip));
+      fclose(file);
 
-   /* get finished partial decomps */
-   SCIPallocBlockMemoryArray(scip, &decids, ndecs);
-   GCGconshdlrDecompGetFinishedPartialdecsList(scip, &decids, &ndecs);
-   GCGwriteTexReport(scip, file, decids, &ndecswritten, GCGreportGetShowTitlepage(scip), GCGreportGetShowToc(scip),
-      GCGreportGetShowStatistics(scip), GCGgetUseGp(scip));
-   fclose(file);
+      SCIPfreeBlockMemoryArray(scip, &decids, ndecs);
 
-   SCIPfreeBlockMemoryArray(scip, &decids, ndecs);
-
-   /* print result message if writing was successful */
-   SCIPdialogMessage(scip, NULL,
-      "Report on %d decompositions is written to file '%s'.\nFor compilation read the README in the same folder.\n", ndecswritten, outname);
-
+      /* print result message if writing was successful */
+      SCIPdialogMessage(scip, NULL,
+         "Report on %d decompositions is written to file '%s'.\nFor compilation read the README in the same folder.\n", ndecswritten, outname);
+   }
    return SCIP_OKAY;
 }
 

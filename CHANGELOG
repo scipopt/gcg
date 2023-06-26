@@ -95,6 +95,9 @@ Code cleanup:
 Bug fixes
 ---------
 
+- fix handling of file paths in multiple dialog functions
+- Visualization Suite: fix error in parser
+
 
 @section RN353 GCG 3.5.3
 *************************
