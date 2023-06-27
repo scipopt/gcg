@@ -27,7 +27,7 @@ lint.out
 obj/
 release
 src/TAGS
-src/githash.c
+src/gcg/githash.c
 build*
 CMakeFiles/
 cmake-build-*/

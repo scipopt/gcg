@@ -39,8 +39,8 @@
 
 #include "matrixgraph.h"
 #include "hypergraph.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 
 namespace gcg
 {

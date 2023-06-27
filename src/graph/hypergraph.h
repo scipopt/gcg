@@ -40,7 +40,7 @@
 #include "objscip/objscip.h"
 #include "tclique/tclique.h"
 #include "weights.h"
-#include "pub_decomp.h"
+#include "gcg/pub_decomp.h"
 #include "graph.h"
 #include "graph_interface.h"
 

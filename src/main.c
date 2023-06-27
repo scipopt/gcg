@@ -38,12 +38,12 @@
 #include "scip/scip.h"
 #include "scip/scipdefplugins.h"
 #include "scip/scipshell.h"
-#include "gcgplugins.h"
-#include "cons_decomp.h"
+#include "gcg/gcgplugins.h"
+#include "gcg/cons_decomp.h"
 
-#include "relax_gcg.h"
-#include "cons_decomp.h"
-#include "gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/gcg.h"
 
 #if SCIP_VERSION < 801
 #error GCG can only be compiled with SCIP version 8.0.1 or higher
