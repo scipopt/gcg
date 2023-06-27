@@ -95,7 +95,7 @@ build:make_release:
     - wget https://or.rwth-aachen.de/hmetis/hmetis-2.0pre1.tar.gz
     - tar xvfz hmetis-2.0pre1.tar.gz
     - ln -sfn hmetis-2.0pre1/Linux-x86_64/hmetis2.0pre1 hmetis
-    - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/dec_h*partition.cpp
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/gcg/dec_h*partition.cpp
     # generate 'opt' binary
     - make deps OPT=opt CLIQUER=true BLISS=true
     - ln -sfn ../cliquer-git/libcliquer.a lib/static/libcliquer.a
@@ -137,7 +137,7 @@ build:make_debug:
     - wget https://or.rwth-aachen.de/hmetis/hmetis-2.0pre1.tar.gz
     - tar xvfz hmetis-2.0pre1.tar.gz
     - ln -sfn hmetis-2.0pre1/Linux-x86_64/hmetis2.0pre1 hmetis
-    - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/dec_h*partition.cpp
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/gcg/dec_h*partition.cpp
     # generate 'dbg' binary
     - make deps OPT=dbg CLIQUER=true BLISS=true
     - ln -sfn ../cliquer-git/libcliquer.a lib/static/libcliquer.a
@@ -541,7 +541,7 @@ testset_report:benchmark_master:
     - schedules
   script:
     # rename hmetis executable back
-    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/gcg/dec_h*partition.cpp
     # generate test set report
     - printf "DEBUG=true\nDETECTION=false" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
@@ -566,7 +566,7 @@ comparison_report:benchmark_master:
   # get default before_script to do linking to SCIP
   script:
     # rename hmetis executable back
-    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/gcg/dec_h*partition.cpp
     # get runtime data from latest release
     # commented out, since the runtime data in the docu is just the short test set
     #- cp doc/resources/misc/runtime_data/*.* check/results
@@ -596,7 +596,7 @@ testset_report:benchmark_feature:
     - master
   script:
     # rename hmetis executable back
-    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/gcg/dec_h*partition.cpp
     # generate test set report
     - printf "DEBUG=true\nDETECTION=false" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
@@ -621,7 +621,7 @@ comparison_report:benchmark_feature:
   # get default before_script to do linking to SCIP
   script:
     # rename hmetis executable back
-    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/gcg/dec_h*partition.cpp
     # get runtime data from latest release
     # commented out, since the runtime data in the docu is just the short test set
     #- cp doc/resources/misc/runtime_data/*.* check/results
@@ -650,7 +650,7 @@ testset_report:experiment_master:
     - schedules
   script:
     # rename hmetis executable back
-    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/gcg/dec_h*partition.cpp
     # generate test set report
     - printf "DEBUG=true" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset
@@ -673,7 +673,7 @@ testset_report:experiment_feature:
     - master
   script:
     # rename hmetis executable back
-    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/dec_h*partition.cpp
+    - sed -i.bak "s/HMETIS_EXECUTABLE \"\.\/hmetis\"/HMETIS_EXECUTABLE \"hmetis\"/g" src/gcg/dec_h*partition.cpp
     # generate test set report
     - printf "DEBUG=true" > v.vset
     - make visu DATADIR=results/ VISUSETTINGS=../v.vset

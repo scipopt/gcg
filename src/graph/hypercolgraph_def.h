@@ -39,8 +39,8 @@
 #define GCG_HYPERCOLGRAPH_DEF_H_
 
 #include "hypercolgraph.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include <set>
 #include <algorithm>
 #include <vector>

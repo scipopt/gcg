@@ -44,7 +44,8 @@ $NAME/check/testset/short.test $NAME/check/testset/short.solu $NAME/check/cmpres
 $NAME/settings/earlybranching.set \
 $NAME/settings/heurpricing.set \
 $NAME/src/depend.* \
-$NAME/src/*.c $NAME/src/*.cpp $NAME/src/*.h $NAME/src/*.hpp \
+$NAME/src/*.c $NAME/src/*.h \
+$NAME/src/gcg/*.c $NAME/src/gcg/*.cpp $NAME/src/gcg/*.h $NAME/src/gcg/*.hpp \
 $NAME/src/graph/*.cpp $NAME/src/graph/*.h \
 $NAME/check/instances/cpmp/*.lp \
 $NAME/check/instances/bpp/*.lp \
@@ -79,7 +80,7 @@ grep "GCG_VERSION" src/def.h
 grep "@version" doc/resources/main.md
 grep "^VERSION" Makefile
 grep "GCG_VERSION_" CMakeLists.txt
-tail src/githash.c
+tail src/gcg/githash.c
 
 
 echo "Collecting webpage"

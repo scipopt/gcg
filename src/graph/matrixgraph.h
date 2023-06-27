@@ -39,11 +39,11 @@
 #include "objscip/objscip.h"
 #include "tclique/tclique.h"
 #include "weights.h"
-#include "pub_decomp.h"
+#include "gcg/pub_decomp.h"
 #include "bridge.h"
 #include "graph_interface.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include <exception>
 #include <vector>
 #include <string>

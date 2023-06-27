@@ -40,9 +40,9 @@ option(GSL "should gcg be compiled with GSL" ON)
 option(GMP "should gmp be linked" ON)
 option(CLIQUER "should cliquer be linked" ON)
 option(CPLEX "should Cplex be used for solving pricing MIPs" OFF)
-option(HMETIS "should hmetis be called" ON)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
 option(GCG_DEV_BUILD "compile SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
+option(HMETIS "should hmetis be called" OFF)
 
 # OPENMP
 if(OPENMP)
@@ -157,7 +157,7 @@ endif()
 message(STATUS \"Git hash: \" \${GITHASH})
 ")
 add_custom_target(gcg_update_githash
-                  COMMAND ${CMAKE_COMMAND} -DDST=${PROJECT_SOURCE_DIR}/src/githash.c
+                  COMMAND ${CMAKE_COMMAND} -DDST=${PROJECT_SOURCE_DIR}/src/gcg/githash.c
                                            -P ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake)
 # use C++11 standard
 set(CMAKE_CXX_STANDARD 11)

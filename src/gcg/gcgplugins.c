@@ -227,7 +227,7 @@
 #include "dec_mastersetpart.h"
 #include "dec_mastersetcover.h"
 #include "dec_neighborhoodmaster.h"
-#if !defined(_WIN32) && !defined(_WIN64)
+#if WITH_HMETIS
 #include "dec_hrcgpartition.h"
 #include "dec_hrgpartition.h"
 #include "dec_hcgpartition.h"
@@ -490,7 +490,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorMastersetcover(scip) );
    SCIP_CALL( SCIPincludeDetectorMastersetpack(scip) );
    SCIP_CALL( SCIPincludeDetectorMastersetpart(scip) );
-#if !defined(_WIN32) && !defined(_WIN64)
+#if WITH_HMETIS
    SCIP_CALL( SCIPincludeDetectorHcgpartition(scip) );
    SCIP_CALL( SCIPincludeDetectorHrgpartition(scip) );
    SCIP_CALL( SCIPincludeDetectorHrcgpartition(scip) );

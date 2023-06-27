@@ -40,9 +40,9 @@
 #define GCG_HYPERROWGRAPH_DEF_H_
 
 #include "hyperrowgraph.h"
-#include "scip_misc.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/scip_misc.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include <set>
 #include <algorithm>
 #include <iostream>
