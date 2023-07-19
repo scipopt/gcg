@@ -1035,7 +1035,7 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
 
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/userandom",
          "should the variable on which the branching is performed be selected randomly? (only if usepseudocosts = mostfrac = FALSE)",
-         &branchruledata->usepseudocosts, FALSE, DEFAULT_USEPSEUDO, NULL, NULL) );
+         &branchruledata->userandom, FALSE, DEFAULT_USERANDOM, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/usepsstrong",
          "should strong branching with propagation be used to determine the variable on which the branching is performed? (only if usepseudocosts = mostfrac = random = FALSE)",

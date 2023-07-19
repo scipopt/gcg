@@ -97,6 +97,8 @@ Bug fixes
 
 - fix handling of file paths in multiple dialog functions
 - Visualization Suite: fix error in parser
+- fix multiple segmentation faults
+- fix parameter 'branching/orig/userandom'
 
 
 @section RN353 GCG 3.5.3
