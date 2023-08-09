@@ -206,6 +206,59 @@ build:cmake_debug:
     exclude:
       - $CI_PROJECT_DIR/.git/*
 
+# Windows compilation jobs
+build:windows_release:
+  stage: "Build"
+  variables:
+    GIT_STRATEGY: fetch
+    GIT_SUBMODULE_STRATEGY: recursive
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: manual
+      allow_failure: true
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always
+  tags:
+    - windows
+  before_script:
+    - echo "on windows"
+  script:
+    - cmake -S . -B build -DGCG_DEV_BUILD=ON -DREADLINE=OFF -DGMP=OFF -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF
+    - cmake --build build --target gcg --config Release
+    - cmake --build build --target gcg_check --config Release
+  artifacts:
+    expire_in: 3 days
+    paths:
+      - $CI_PROJECT_DIR
+    exclude:
+      - $CI_PROJECT_DIR/.git/*
+
+build:windows_debug:
+  stage: "Build"
+  variables:
+    GIT_STRATEGY: fetch
+    GIT_SUBMODULE_STRATEGY: recursive
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: manual
+      allow_failure: true
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always
+  tags:
+    - windows
+  before_script:
+    - echo "on windows"
+  script:
+    - cmake -S . -B build -DGCG_DEV_BUILD=ON -DREADLINE=OFF -DGMP=OFF -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF
+    - cmake --build build --target gcg --config Debug
+    - cmake --build build --target gcg_check --config Debug
+  artifacts:
+    expire_in: 3 days
+    paths:
+      - $CI_PROJECT_DIR
+    exclude:
+      - $CI_PROJECT_DIR/.git/*
+
 
 ###################################
 ############## Tests ##############
