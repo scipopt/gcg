@@ -405,6 +405,12 @@ SCIP_Real GCGgetGap(
    SCIP*                scip              /**< SCIP data structure */
    );
 
+/** initialize master problem for solving
+ */
+SCIP_RETCODE GCGinitializeMasterProblemSolve(
+   SCIP*                 scip               /**< the SCIP data structure */
+   );
+
 #ifdef __cplusplus
 }
 

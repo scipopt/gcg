@@ -2081,6 +2081,11 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
       return SCIP_OKAY;
    }
 
+   if( !SCIPisTransformed(masterscip) )
+   {
+      GCGinitializeMasterProblemSolve(scip);
+   }
+
    assert(GCGvarIsOriginal(var));
    blocknr = GCGvarGetBlock(var);
 

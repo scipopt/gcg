@@ -5,6 +5,8 @@
 Bug fixes
 ---------
 
+- fix handling of varbound updates if relaxator has not been called yet
+
 
 @section RN354 GCG 3.5.4
 *************************
