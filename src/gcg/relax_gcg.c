@@ -2417,6 +2417,8 @@ SCIP_RETCODE initRelaxator(
       SCIP_CALL( SCIPsetObjlimit(relaxdata->masterprob, (int) SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) );
    }
 
+   relaxdata->relaxisinitialized = TRUE;
+
    return SCIP_OKAY;
 }
 
@@ -2565,8 +2567,7 @@ SCIP_RETCODE initializeMasterProblemSolve(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   /* the relaxator is initialised if it has not been previously initialised */
-   if( !relaxdata->relaxisinitialized )
+   if( !SCIPisTransformed(relaxdata->masterprob) )
    {
       /* set integral objective status in the extended problem, if possible */
       if( SCIPisObjIntegral(scip) && relaxdata->discretization && SCIPgetNContVars(scip) == 0
@@ -2578,7 +2579,6 @@ SCIP_RETCODE initializeMasterProblemSolve(
       /* transform the decomposition */
       // SCIP_CALL( GCGdecompTransform(scip, relaxdata->decomp) );
       SCIP_CALL( GCGconsOrigbranchAddRootCons(scip) );
-      relaxdata->relaxisinitialized = TRUE;
       assert(relaxdata->decomp != NULL);
    }
 
@@ -3149,9 +3149,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   /* checking whether the relaxator needs to be initialised. If so, then the master problem and pricing problems will
-    * be created.
-    */
    SCIP_CALL( initializeMasterProblemSolve(scip, relax) );
 
    /* selecting the solving algorithm based upon the decomposition mode selected by the user, or whether the original
@@ -5295,4 +5292,19 @@ SCIP_Real GCGgetGap(
    }
 
    return gap;
+}
+
+SCIP_RETCODE GCGinitializeMasterProblemSolve(
+   SCIP*                 scip
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+   assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
+   return initializeMasterProblemSolve(scip, relax);
 }

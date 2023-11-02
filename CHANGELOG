@@ -89,6 +89,15 @@ Code cleanup:
 
 
 @page RN35 Release notes for GCG 3.5
+@section RN355 GCG 3.5.5
+*************************
+
+Bug fixes
+---------
+
+- fix handling of varbound updates if relaxator has not been called yet
+
+
 @section RN354 GCG 3.5.4
 *************************
 
