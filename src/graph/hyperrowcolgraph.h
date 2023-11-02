@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -37,8 +37,8 @@
 
 #include "matrixgraph.h"
 #include "hypergraph.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 
 namespace gcg {
 template <class T>
@@ -62,8 +62,8 @@ public:
 
    /** creates a graph with open constraints and open variables of the partialdec */
    virtual SCIP_RETCODE createFromPartialMatrix(
-      DETPROBDATA*           detprobdata,
-      PARTIALDECOMP*               partialdec
+      DETPROBDATA*          detprobdata,        /**< detection process information and data */
+      PARTIALDECOMP*        partialdec          /**< partial decomposition to use for matrix */
       );
 
    /** writes the graph to the given file.
@@ -71,19 +71,19 @@ public:
     */
    virtual SCIP_RETCODE writeToFile(
       int                fd,                  /**< file descriptor where the graph should be written to */
-      SCIP_Bool          writeweights        /**< whether to write weights */
-    );
+      SCIP_Bool          writeweights         /**< whether to write weights */
+      );
 
 
    virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      GCG_DECOMP**       decomp              /**< decomposition structure to generate */
       );
 
    /** creates a new partialdec by dint of a graph created with all constraints and variables */
    virtual SCIP_RETCODE createPartialdecFromPartition(
       PARTIALDECOMP**      firstpartialdec,         /**< pointer to buffer the new partialdec created by dint of the graph */
       PARTIALDECOMP**      secondpartialdec,        /**< pointer to buffer the new partialdec whose border is amplified by dint of the graph */
-      DETPROBDATA*   detprobdata
+      DETPROBDATA*         detprobdata              /**< detection process information and data */
       );
 
    /** amplifies a partialdec by dint of a graph created with open constraints and open variables of the partialdec */
@@ -91,7 +91,7 @@ public:
       PARTIALDECOMP*      oldpartialdec,            /**< partialdec which should be amplifies */
       PARTIALDECOMP**     firstpartialdec,          /**< pointer to buffer the new partialdec amplified by dint of the graph */
       PARTIALDECOMP**     secondpartialdec,         /**< pinter to buffer the new partialdec whose border is amplified by dint of the graph */
-      DETPROBDATA*  detprobdata
+      DETPROBDATA*        detprobdata               /**< detection process information and data */
       );
 
    /**
@@ -100,23 +100,23 @@ public:
     */
    virtual SCIP_RETCODE readPartition(
       const char*        filename            /**< filename where the partition is stored */
-   );
+      );
 
    virtual std::vector<int> getNeighbors(
-         int i
+      int i
       );
 
    virtual std::vector<int> getHyperedgeNodes(
-         int i
+      int i
       );
 
    std::vector<int> getConsNonzeroNodes(
-         int i
-   );
+      int i
+      );
 
    std::vector<int> getVarNonzeroNodes(
-         int i
-   );
+      int i
+      );
 
 };
 

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -105,18 +105,18 @@ public:
 
    /** creates a graph with open constraints and open variables of the partialdec */
    virtual SCIP_RETCODE createFromPartialMatrix(
-      DETPROBDATA*           detprobdata,
-      PARTIALDECOMP*               partialdec,
+      DETPROBDATA*          detprobdata,        /**< detection process information and data */
+      PARTIALDECOMP*        partialdec,         /**< partial decomposition to use for matrix */
       DISTANCE_MEASURE      dist,               /**< Here we define the distance measure between two rows */
-      WEIGHT_TYPE           w_type             /**< Depending on the algorithm we can build distance or similarity graph */
+      WEIGHT_TYPE           w_type              /**< Depending on the algorithm we can build distance or similarity graph */
       );
 
    static double calculateSimilarity(
       int a,               /**< number of common variables in two rows */
       int b,               /**< number of variables that appear only in the 2nd row */
       int c,               /**< number of variables that appear only in the 1st row */
-      DISTANCE_MEASURE dist,
-      WEIGHT_TYPE w_type,
+      DISTANCE_MEASURE dist,   /**< Here we define the distance measure between two rows */
+      WEIGHT_TYPE w_type,      /**< Depending on the algorithm we can build distance or similarity graph */
       bool itself          /**< true if we calculate similarity between the row itself */
       );
 

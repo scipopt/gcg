@@ -1,15 +1,170 @@
-GCG Version 3.1.0
-=================
+@page RN36 Release notes for GCG 3.6
+@section RN360 GCG 3.6.0
+*************************
 
 New features:
 -------------
 
-- New detector neighborhoodmaster: calculating cons-cons adjacency (if not already done), sorting according size of neighborhood. Searching two consecutive constraints with largest size difference (according neighborhood size) in sorted constraints. All constraints having a larger neighborhood than the second one are assigned to the master.
-- On reading an incomplete decomposition, the program will not necessarily assign all open elements to the master problem but detect the rest of the structure.
+- MSVC support
 
 New/changed parameters:
 -----------------------
 
+- New parameter 'detection/scores/selected' to select the score that should be used to sort the decompositions
+- Removed parameter 'detection/score/scoretype'
+- Moved parameter 'detection/score/strong_detection/dualvalrandommethod' to 'detection/scores/strong/dualvalrandommethod'
+- Moved parameter 'detection/score/strong_detection/coeffactororigvsrandom' to 'detection/scores/strong/coeffactororigvsrandom'
+- Moved parameter 'detection/score/strong_detection/timelimit' to 'detection/scores/strong/timelimit'
+
+New/modified API functions:
+---------------------------
+
+- New functions: 'GCGconshdlrDecompGetNConsClassifiers', 'GCGconshdlrDecompGetNVarClassifiers', 'GCGconshdlrDecompGetConsClassifiers', 'GCGconshdlrDecompGetVarClassifiers'
+- Add parameter 'DEC_CONSCLASSIFIER* consclassifier' to 'DEC_DECL_CONSCLASSIFY'
+- Add paramater 'DEC_VARCLASSIFIER* varclassifier' to 'DEC_DECL_VARCLASSIFY'
+- Added function 'GCGgetCurrentScoreShortname'
+- Added function 'GCGgetCurrentScore'
+- Added function 'GCGincludeScore'
+- Added function 'GCGfindScore'
+- Added function 'GCGgetScores'
+- Added function 'GCGgetNScores'
+- Added function 'GCGscoreGetData'
+- Added function 'GCGscoreSetData'
+- Added function 'GCGscoreGetName'
+- Added function 'GCGscoreGetShortname'
+- Added function 'GCGscoreGetDesc'
+- Added function 'GCGincludeScoreBender'
+- Added function 'GCGincludeScoreBorder'
+- Added function 'GCGincludeScoreClassic'
+- Added function 'GCGincludeScoreFawh'
+- Added function 'GCGincludeScoreForswh'
+- Added function 'GCGincludeScoreMaxwhite'
+- Added function 'GCGincludeScoreSpfawh'
+- Added function 'GCGincludeScoreSpfwh'
+- Added function 'GCGincludeScoreStrongDecomp'
+- Added function 'GCGconsClassifierSetData'
+- Added function 'GCGconsClassifierGetPriority'
+- Added function 'GCGconsClassifierIsEnabled'
+- Added function 'GCGconsClassifierGetDesc'
+- Added function 'GCGvarClassifierSetData'
+- Added function 'GCGvarClassifierGetPriority'
+- Added function 'GCGvarClassifierIsEnabled'
+- Added function 'GCGvarClassifierGetDesc'
+
+Deleted API functions:
+----------------------
+
+- Deleted function 'GCGconshdlrDecompGetScoretype'
+- Deleted function 'GCGconshdlrDecompCalcBendersScore'
+- Deleted function 'GCGconshdlrDecompCalcBorderAreaScore'
+- Deleted function 'GCGconshdlrDecompCalcClassicScore'
+- Deleted function 'GCGconshdlrDecompCalcMaxForeseeingWhiteAggScore'
+- Deleted function 'GCGconshdlrDecompCalcMaxForseeingWhiteScore'
+- Deleted function 'GCGconshdlrDecompCalcMaxWhiteScore'
+- Deleted function 'GCGconshdlrDecompCalcSetPartForseeingWhiteScore'
+- Deleted function 'GCGconshdlrDecompCalcSetPartForWhiteAggScore'
+- Deleted function 'GCGconshdlrDecompCalcStrongDecompositionScore'
+
+Renamed API functions:
+---------------------------
+
+- Replaced prefix 'DEC' with 'GCG'
+
+Renamed structures and defines:
+---------------------------
+
+- Replaced prefix 'DEC' with 'GCG'
+
+Command line interface
+-----------------------
+
+- Added 'display' command for constraint classifiers
+- Added 'display' command for variable classifiers
+- Added 'display' command for scores
+
+Code cleanup:
+-------------
+
+- Refactored scores
+
+
+@page RN35 Release notes for GCG 3.5
+@section RN355 GCG 3.5.5
+*************************
+
+Bug fixes
+---------
+
+- fix handling of varbound updates if relaxator has not been called yet
+
+
+@section RN354 GCG 3.5.4
+*************************
+
+Bug fixes
+---------
+
+- fix handling of file paths in multiple dialog functions
+- Visualization Suite: fix error in parser
+- fix multiple segmentation faults
+- fix parameter 'branching/orig/userandom'
+
+
+@section RN353 GCG 3.5.3
+*************************
+
+Bug fixes
+---------
+
+- fix Makefile build: create necessary directories before the dependencies are built
+
+
+@section RN352 GCG 3.5.2
+*************************
+
+Bug fixes
+---------
+
+- fix errors in symmetry detection
+- fix segmentation faults
+- add missing headers to CMake file
+
+
+@section RN351 GCG 3.5.1
+*************************
+
+Bug fixes
+---------
+
+- fix compile with new bliss version (0.77)
+- fix Makefiles recompile if STATISTICS flag was changed
+- fix minor bugs in the cmpres.awk script, updating it to the SCIP version
+- fix memory allocation of name and description of constraint and variable classifiers
+- fix handling of variables added after the problem was transformed
+
+Build system
+------------
+
+- Bliss is enabled by default and the version provided by SCIP is compiled (CMake and Makefile)
+
+
+@section RN350 GCG 3.5.0
+*************************
+
+New features:
+-------------
+
+- New website documentation
+- Added several strong branching based branching candidate selection heuristics: strong branching with column generation, strong branching without column generation, hybrid strong/pseudocost branching, reliability branching, hierarchical strong branching, hybrid hierarchical strong/pseudocost branching, hierarchical reliability branching (primarily for original variable branching and Ryan-Foster branching).
+- New detector neighborhoodmaster: calculating cons-cons adjacency (if not already done), sorting according size of neighborhood. Searching two consecutive constraints with largest size difference (according neighborhood size) in sorted constraints. All constraints having a larger neighborhood than the second one are assigned to the master.
+- On reading an incomplete decomposition, the program will not necessarily assign all open elements to the master problem but detect the rest of the structure.
+- Use the user's default application to open pdf files
+
+New/changed parameters:
+-----------------------
+
+- New parameters 'branching/orig/usestrong' and 'branching/ryanfoster/usestrong' to enable strong branching for original variable branching and Ryan-Foster branching
+- New parameters 'branching/bpstrong/...' to alter strong branching behavior
 - New parameter 'detection/enabled' for easier en-/disabling of the detection
 - New Parameter 'detection/postprocess' enables the postprocessing of decompositions
 - Removed paramaters 'detection/detectors/<name>/legacymode'
@@ -64,10 +219,43 @@ Code cleanup:
 - Renamed class Seeedpool to DETPROBDATA
 - Renamed SEEED_WRAPPER to PARTIALDECOMP_WRAPPER
 - Renamed {Index,Cons,Var}Classifier to {Index,Cons,Var}Partition
+- Refactored dialog handler
+- Moved GCG version define to 'def.h', moved 'GCGprintVersion' to 'gcg_general.h/c'
+
+New/modified API functions:
+---------------------------
+- New functions: 'GCGtransformProb', 'GCGpresolve', 'GCGdetect', 'GCGsolve'
+- Renamed 'GCGgetGap' to 'GCGgetVarGap' and 'GCGsetGap' to 'GCGsetVarGap'
+- New functions: 'GCGgetDualbound', 'GCGgetPrimalbound', 'GCGgetGap'
+
+Bug fixes
+---------
+- Fixed function 'ObjPricerGcg::computeCurrentDegeneracy'
+- Relaxator: Do not construct and flush the LP if it is already constructed
 
 
-GCG Version 3.0.3
-=================
+@page RN30 Release notes for GCG 3.0
+@section RN305 GCG 3.0.5
+*************************
+
+Bug fixes
+---------
+
+- Skip structure detection if the original problem is already solved after presolving.
+
+
+@section RN304 GCG 3.0.4
+*************************
+
+Bug fixes
+---------
+
+- Fix segmentation fault.
+- Fix commands 'transform' and 'presolve': Check SCIP_STAGE before calling SCIPdialogExecTransform() and SCIPdialogExecPresolve().
+
+
+@section RN303 GCG 3.0.3
+*************************
 
 Bug fixes
 ---------
@@ -79,8 +267,8 @@ Bug fixes
 - 'write matrix' and 'write transmatrix' set PDF as file format in the created gnuplot file.
 
 
-GCG Version 3.0.2
-=================
+@section RN302 GCG 3.0.2
+*************************
 
 Bug fixes
 ---------
@@ -95,22 +283,21 @@ Bug fixes
 - Transfer solutions to the master problem only if it is not solved already.
 
 
-GCG Version 3.0.1
-=================
 
-Command line interface:
+@section RN301 GCG 3.0.1
+*************************
+
+Command line interface
 -----------------------
 
 - 'write matrix' and 'write transmatrix' for writing a gnuplot file showing the (original and presolved) coefficient matrix
 
-- 'write selecteddecompositions' for writing all selected (in explore submenu) decompositions
-
-New/changed parameters:
+New/changed parameters
 -----------------------
 
 - new parameter "relaxing/gcg/mipdiscretization" indicates whether to use discretization with continuous variables (only has an effect if "relaxing/gcg/discretization" is enabled)
 
-Performance improvements:
+Performance improvements
 -------------------------
 
 - Improved performance of creating Gnuplot matrix visualizations
@@ -142,8 +329,9 @@ Bug fixes
 - Fix parallelization in pricing loop by allowing only one job per pricing problem at a time
 - Add a missing Makefile dependency
 
-GCG Version 3.0.0
-=================
+
+@section RN300 GCG 3.0.0
+*************************
 
 Features
 --------
@@ -206,12 +394,12 @@ Features
 - enable discretization when original problem is a mixed integer program; continuous variables are convexified
 - solve original LP relaxation in the root node to get a first dual bound and to run some heuristics in the original problem
 
-Performance improvements:
+Performance improvements
 -------------------------
 
 - structure detection (default) is now applicable to MIPs with much larger dimensions (150.000 x 500000)
 
-Data structures:
+Data structures
 ----------------
 
 - new internal data structure to handle partial decompositions; see class_seeed.h for more details
@@ -227,19 +415,19 @@ Data structures:
 	- objective coefficient
 	- objective sign
 
-Deleted and modified API functions:
+Deleted and modified API functions
 -----------------------------------
 
 - detector callback DETECTSTRUCTURE is only called in optional legacy mode (legacy mode is detection of version 2.1.4 and completely indepedent from new detecion loop), detectors written by the user should be useable if their parameter detection/detectors/*/legacymode is set to TRUE
 
-New API fuctions:
+New API functions
 -----------------
 
 - detector callback PROPAGATESEEED, called during detection loop to refine partial decompositions, given a partial decomposition d the detector returns a set of decompositions that are a refinement of d
 - detector callback FINISHSEEED, called during detection loop to finish partial decompositions, given a partial decomposition d the detector returns a set of complete decompositions that are a refinement of d
 - detector callback POSTPROCESSSEEED, called after detection loop, to postprocess found finished  decompositions, given a complete decomposition this method returns a set of complete decompositions
 
-Command line interface:
+Command line interface
 -----------------------
 
 - "explore" submenu to inspect and modify new decompositions
@@ -255,13 +443,13 @@ Command line interface:
 - "set detection addblocknr": add candidates for the number of blocks (as a white space separated list)
 
 
-Deleted and modified parameters:
+Deleted and modified parameters
 --------------------------------
 
 - modified parameter "detectors/*/priority" (detection was aborted if high priority detector was successful)
 
 
-New/changed parameters:
+New/changed parameters
 -----------------------
 
 - new parameter "constraints/decomp/createbasicdecomp" indicates whether to create a decomposition with all constraints in the master if no other specified (useful to have included comparison)
@@ -358,14 +546,14 @@ Bug fixes
 - fix memory management in set covering heuristic
 - fix a bug in GCG feasibility pump concerning wrong SCIP instances.
 
-
-GCG Version 2.1.4
-=================
+@page RN21 Release notes for GCG 2.1
+@section RN214 GCG 2.1.4
+*************************
 
 - use SCIPaddRow() instead of deprecated SCIPaddCut()
 
-GCG Version 2.1.3
-=================
+@section RN213 GCG 2.1.3
+*************************
 
 - changed interface to SCIP 5.0.0
 
@@ -378,8 +566,8 @@ bug fixes
 - diving heuristics and branching rules compute fractionalities by themselves
 
 
-GCG Version 2.1.2
-=================
+@section RN212 GCG 2.1.2
+*************************
 
 - changed interface to SCIP 4.0.0
 
@@ -412,8 +600,8 @@ bug fixes
 - avoid numerical troubles by rounding integral pricing solutions if possible
 
 
-GCG Version 2.1.1
-=================
+@section RN211 GCG 2.1.1
+*************************
 
 code cleanup
 - simplified logic when assigning variables to blocks
@@ -426,8 +614,8 @@ bug fixes
 - reorganized detector callbacks and thus fixed memory leaks when reading a new instance
 - fixed memory allocation in basis separator
 
-GCG Version 2.1.0
-=================
+@section RN210 GCG 2.1.0
+*************************
 
 features
 - column pool
@@ -443,9 +631,9 @@ code cleanup
 bug fixes
 - GCG columns are freed correctly in the pricer
 
-
-GCG Version 2.0.1
-=================
+@page RN20 Release notes for GCG 2.0
+@section RN201 GCG 2.0.1
+*************************
 
 features
 - decomposition and pricing problems are permuted when the permutation
@@ -474,8 +662,8 @@ bug fixes
 - fix translation of original solution to master problem when pricing problems are aggregated
 - better handling of infinite objective values in pricing
 
-GCG Version 2.0
-===============
+@section RN200 GCG 2.0
+*************************
 features
 - GCG can now automatically create a decomposition to solve the LP with
   empty pricing problems. See the cons/decomp/createbasicdecomp parameter
@@ -514,9 +702,9 @@ bug fixes
 - override PARASCIP=true if OPENMP=true
 - correct decomp documentation and simplify decomposition interfaces
 
-
-GCG Version 1.1
-===============
+@page RN11 Release notes for GCG 1.1
+@section RN110 GCG 1.1
+*************************
 features
 - add staircase structure information
 - add staircase structure detection
@@ -538,9 +726,9 @@ code cleanup
 - Add consistency check function for decompositions
 - removed a bit of redundant and leftover code
 
-
-GCG Version 1.0
-===============
+@page RN10 Release notes for GCG 1.0
+@section RN100 GCG 1.0
+*************************
 features
 - include variable deletion code
 - add a block diagonal detector (cons_connected)
@@ -606,8 +794,9 @@ Makefile and scripts
 - fix clean rule to a safer version
 
 
-GCG Version 0.9
-===============
+@page RN09 Release notes for GCG 0.9
+@section RN090 GCG 0.9
+*************************
 features
 - included new heuristics
 - included new reader for the ref file format
@@ -631,8 +820,9 @@ interface
 - added much more extensive documentation
 
 
-GCG Version 0.81
-================
+@page RN08 Release notes for GCG 0.8
+@section RN081 GCG 0.8.1
+*************************
 features
 - polished source code
 
@@ -640,21 +830,21 @@ bug fixes
 - some
 
 
-GCG Version 0.8
-===============
+@section RN080 GCG 0.8
+*************************
 bugfixes
 - fixed some bugs for solving MIPs when branching on variables that were
   directly transferred to the master problem
 
-
-GCG Version 0.7
-===============
+@page RN07 Release notes for GCG 0.7
+@section RN070 GCG 0.7
+*************************
 bugfixes
 - some bugfixes
 
-
-GCG Version 0.6
-===============
+@page RN06 Release notes for GCG 0.6
+@section RN060 GCG 0.6
+*************************
 feastures
 - implemented dialog handler for GCG
 - added concept of pricing solvers
@@ -663,9 +853,9 @@ feastures
 bugfixes
 - quite a few
 
-
-GCG Version 0.5
-===============
+@page RN05 Release notes for GCG 0.5
+@section RN050 GCG 0.5
+*************************
 bugfixes
 - fixed problems with transfering bounds from the original program to the
   master program: when propagating a node, the bounds of all variables in
@@ -674,9 +864,9 @@ bugfixes
   fulfill the current bounds
 - fixed bug when disabling discretization approach
 
-
-GCG Version 0.4
-===============
+@page RN04 Release notes for GCG 0.4
+@section RN040 GCG 0.4
+*************************
 design
 - working SCIP represents the original problem
 - read in problem is standard format (e.g., .lp-file, .mps-file) and
@@ -710,4 +900,3 @@ features
     structure
 - added GCGs own display plugin showing the number of LP iterations, of
   constraints, variables and cuts in the master
-

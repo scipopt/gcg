@@ -1,0 +1,370 @@
+#TYPE: COMPLETE TREE
+#TIME: SET
+#BOUNDS: SET
+#INFORMATION: STANDARD
+#NODE_NUMBER: NONE
+00:00:00.00 N 0 1 3
+00:00:00.00 I 1 \inode:\t1 (0x557b2677c738)\idepth:\t0\nvar:\t-\nbound:\t-100000000000000000000.000000
+00:00:00.00 P 1 11
+00:00:00.00 U 20.000000
+00:00:00.00 U 13.000000
+00:00:00.00 U 12.000000
+00:00:00.07 N 1 2 3
+00:00:00.07 I 2 \inode:\t2 (0x557b26d47938)\idepth:\t1\nvar:\t-\nbound:\t10.984000
+00:00:00.07 N 1 3 3
+00:00:00.07 I 3 \inode:\t3 (0x557b26d5ad28)\idepth:\t1\nvar:\t-\nbound:\t10.984000
+00:00:00.07 I 1 \inode:\t1 (0x557b2677c738)\idepth:\t0\nvar:\t-\nbound:\t10.984000\nnr:\t1
+00:00:00.07 P 1 2
+00:00:00.07 N 2 4 3
+00:00:00.07 I 4 \inode:\t4 (0x557b26d8d0e8)\idepth:\t2\nvar:\t-\nbound:\t10.984000
+00:00:00.07 N 2 5 3
+00:00:00.07 I 5 \inode:\t5 (0x557b26d8c568)\idepth:\t2\nvar:\t-\nbound:\t10.984000
+00:00:00.07 N 2 6 3
+00:00:00.07 I 6 \inode:\t6 (0x557b26d8bb68)\idepth:\t2\nvar:\t-\nbound:\t10.984000
+00:00:00.07 I 2 \inode:\t2 (0x557b26d47938)\idepth:\t1\nvar:\t-\nbound:\t10.984000\nnr:\t2
+00:00:00.07 P 2 2
+00:00:00.07 N 4 7 3
+00:00:00.07 I 7 \inode:\t7 (0x557b26d8c6e8)\idepth:\t3\nvar:\t-\nbound:\t10.984000
+00:00:00.07 N 4 8 3
+00:00:00.07 I 8 \inode:\t8 (0x557b26d46ef8)\idepth:\t3\nvar:\t-\nbound:\t10.984000
+00:00:00.07 I 4 \inode:\t4 (0x557b26d8d0e8)\idepth:\t2\nvar:\t-\nbound:\t10.984000\nnr:\t3
+00:00:00.07 P 4 2
+00:00:00.07 N 7 9 3
+00:00:00.07 I 9 \inode:\t9 (0x557b26d5b5a8)\idepth:\t4\nvar:\t-\nbound:\t10.984000
+00:00:00.07 N 7 10 3
+00:00:00.07 I 10 \inode:\t10 (0x557b26d89da8)\idepth:\t4\nvar:\t-\nbound:\t10.984000
+00:00:00.07 N 7 11 3
+00:00:00.07 I 11 \inode:\t11 (0x557b26d5aba8)\idepth:\t4\nvar:\t-\nbound:\t10.984000
+00:00:00.07 I 7 \inode:\t7 (0x557b26d8c6e8)\idepth:\t3\nvar:\t-\nbound:\t10.984000\nnr:\t4
+00:00:00.07 P 7 2
+00:00:00.07 I 9 \inode:\t9 (0x557b26d5b5a8)\idepth:\t4\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t5
+00:00:00.07 P 9 2
+00:00:00.07 I 9 \inode:\t9 (0x557b26d5b5a8)\idepth:\t4\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t5
+00:00:00.07 P 9 4
+00:00:00.08 N 11 12 3
+00:00:00.08 I 12 \inode:\t12 (0x557b26d8cf68)\idepth:\t5\nvar:\t-\nbound:\t10.984000
+00:00:00.08 N 11 13 3
+00:00:00.08 I 13 \inode:\t13 (0x557b26d5b568)\idepth:\t5\nvar:\t-\nbound:\t10.984000
+00:00:00.08 N 11 14 3
+00:00:00.08 I 14 \inode:\t14 (0x557b26d8a768)\idepth:\t5\nvar:\t-\nbound:\t10.984000
+00:00:00.08 N 11 15 3
+00:00:00.08 I 15 \inode:\t15 (0x557b26d5bf68)\idepth:\t5\nvar:\t-\nbound:\t10.984000
+00:00:00.08 I 11 \inode:\t11 (0x557b26d5aba8)\idepth:\t4\nvar:\t-\nbound:\t10.984000\nnr:\t6
+00:00:00.08 P 11 2
+00:00:00.08 I 12 \inode:\t12 (0x557b26d8cf68)\idepth:\t5\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t7
+00:00:00.08 P 12 2
+00:00:00.08 I 12 \inode:\t12 (0x557b26d8cf68)\idepth:\t5\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t7
+00:00:00.08 P 12 4
+00:00:00.08 N 15 16 3
+00:00:00.08 I 16 \inode:\t16 (0x557b26d89f28)\idepth:\t6\nvar:\t-\nbound:\t10.984000
+00:00:00.08 N 15 17 3
+00:00:00.08 I 17 \inode:\t17 (0x557b26d5b5a8)\idepth:\t6\nvar:\t-\nbound:\t10.984000
+00:00:00.08 I 15 \inode:\t15 (0x557b26d5bf68)\idepth:\t5\nvar:\t-\nbound:\t10.984000\nnr:\t8
+00:00:00.08 P 15 2
+00:00:00.08 N 16 18 3
+00:00:00.08 I 18 \inode:\t18 (0x557b26d91668)\idepth:\t7\nvar:\t-\nbound:\t10.984000
+00:00:00.08 N 16 19 3
+00:00:00.08 I 19 \inode:\t19 (0x557b26d916e8)\idepth:\t7\nvar:\t-\nbound:\t10.984000
+00:00:00.08 I 16 \inode:\t16 (0x557b26d89f28)\idepth:\t6\nvar:\t-\nbound:\t10.984000\nnr:\t9
+00:00:00.08 P 16 2
+00:00:00.08 N 18 20 3
+00:00:00.08 I 20 \inode:\t20 (0x557b26d917e8)\idepth:\t8\nvar:\t-\nbound:\t10.984000
+00:00:00.08 N 18 21 3
+00:00:00.08 I 21 \inode:\t21 (0x557b26d91868)\idepth:\t8\nvar:\t-\nbound:\t10.984000
+00:00:00.08 I 18 \inode:\t18 (0x557b26d91668)\idepth:\t7\nvar:\t-\nbound:\t10.984000\nnr:\t10
+00:00:00.08 P 18 2
+00:00:00.08 N 20 22 3
+00:00:00.08 I 22 \inode:\t22 (0x557b26d91968)\idepth:\t9\nvar:\t-\nbound:\t10.984000
+00:00:00.08 N 20 23 3
+00:00:00.08 I 23 \inode:\t23 (0x557b26d919e8)\idepth:\t9\nvar:\t-\nbound:\t10.984000
+00:00:00.08 I 20 \inode:\t20 (0x557b26d917e8)\idepth:\t8\nvar:\t-\nbound:\t10.984000\nnr:\t11
+00:00:00.08 P 20 2
+00:00:00.10 I 22 \inode:\t22 (0x557b26d91968)\idepth:\t9\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t12
+00:00:00.10 P 22 2
+00:00:00.10 I 22 \inode:\t22 (0x557b26d91968)\idepth:\t9\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t12
+00:00:00.10 P 22 4
+00:00:00.10 N 23 24 3
+00:00:00.10 I 24 \inode:\t24 (0x557b26d919a8)\idepth:\t10\nvar:\t-\nbound:\t10.984000
+00:00:00.10 N 23 25 3
+00:00:00.10 I 25 \inode:\t25 (0x557b26d91aa8)\idepth:\t10\nvar:\t-\nbound:\t10.984000
+00:00:00.10 I 23 \inode:\t23 (0x557b26d919e8)\idepth:\t9\nvar:\t-\nbound:\t10.984000\nnr:\t13
+00:00:00.10 P 23 2
+00:00:00.10 N 24 26 3
+00:00:00.10 I 26 \inode:\t26 (0x557b26d91be8)\idepth:\t11\nvar:\t-\nbound:\t10.984000
+00:00:00.10 N 24 27 3
+00:00:00.10 I 27 \inode:\t27 (0x557b26d91c68)\idepth:\t11\nvar:\t-\nbound:\t10.984000
+00:00:00.10 N 24 28 3
+00:00:00.10 I 28 \inode:\t28 (0x557b26d91ce8)\idepth:\t11\nvar:\t-\nbound:\t10.984000
+00:00:00.10 I 24 \inode:\t24 (0x557b26d919a8)\idepth:\t10\nvar:\t-\nbound:\t10.984000\nnr:\t14
+00:00:00.10 P 24 2
+00:00:00.10 I 26 \inode:\t26 (0x557b26d91be8)\idepth:\t11\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t15
+00:00:00.10 P 26 2
+00:00:00.10 I 26 \inode:\t26 (0x557b26d91be8)\idepth:\t11\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t15
+00:00:00.10 P 26 4
+00:00:00.10 N 28 29 3
+00:00:00.10 I 29 \inode:\t29 (0x557b26d91d68)\idepth:\t12\nvar:\t-\nbound:\t10.984000
+00:00:00.10 N 28 30 3
+00:00:00.10 I 30 \inode:\t30 (0x557b26d91de8)\idepth:\t12\nvar:\t-\nbound:\t10.984000
+00:00:00.10 N 28 31 3
+00:00:00.10 I 31 \inode:\t31 (0x557b26d91e68)\idepth:\t12\nvar:\t-\nbound:\t10.984000
+00:00:00.10 I 28 \inode:\t28 (0x557b26d91ce8)\idepth:\t11\nvar:\t-\nbound:\t10.984000\nnr:\t16
+00:00:00.10 P 28 2
+00:00:00.11 I 29 \inode:\t29 (0x557b26d91d68)\idepth:\t12\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t17
+00:00:00.11 P 29 2
+00:00:00.11 I 29 \inode:\t29 (0x557b26d91d68)\idepth:\t12\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t17
+00:00:00.11 P 29 4
+00:00:00.11 N 31 32 3
+00:00:00.11 I 32 \inode:\t32 (0x557b26d91f28)\idepth:\t13\nvar:\t-\nbound:\t10.984000
+00:00:00.11 N 31 33 3
+00:00:00.11 I 33 \inode:\t33 (0x557b26d91fa8)\idepth:\t13\nvar:\t-\nbound:\t10.984000
+00:00:00.11 N 31 34 3
+00:00:00.11 I 34 \inode:\t34 (0x557b26d92028)\idepth:\t13\nvar:\t-\nbound:\t10.984000
+00:00:00.11 N 31 35 3
+00:00:00.11 I 35 \inode:\t35 (0x557b26d920a8)\idepth:\t13\nvar:\t-\nbound:\t10.984000
+00:00:00.11 I 31 \inode:\t31 (0x557b26d91e68)\idepth:\t12\nvar:\t-\nbound:\t10.984000\nnr:\t18
+00:00:00.11 P 31 2
+00:00:00.12 I 32 \inode:\t32 (0x557b26d91f28)\idepth:\t13\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t19
+00:00:00.12 P 32 2
+00:00:00.12 I 32 \inode:\t32 (0x557b26d91f28)\idepth:\t13\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t19
+00:00:00.12 P 32 4
+00:00:00.18 N 35 36 3
+00:00:00.18 I 36 \inode:\t36 (0x557b26d92128)\idepth:\t14\nvar:\t-\nbound:\t10.984000
+00:00:00.18 N 35 37 3
+00:00:00.18 I 37 \inode:\t37 (0x557b26d921a8)\idepth:\t14\nvar:\t-\nbound:\t10.984000
+00:00:00.18 N 35 38 3
+00:00:00.18 I 38 \inode:\t38 (0x557b26d92228)\idepth:\t14\nvar:\t-\nbound:\t10.984000
+00:00:00.18 I 35 \inode:\t35 (0x557b26d920a8)\idepth:\t13\nvar:\t-\nbound:\t10.984000\nnr:\t20
+00:00:00.18 P 35 2
+00:00:00.19 I 36 \inode:\t36 (0x557b26d92128)\idepth:\t14\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t21
+00:00:00.19 P 36 2
+00:00:00.19 I 36 \inode:\t36 (0x557b26d92128)\idepth:\t14\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t21
+00:00:00.19 P 36 4
+00:00:00.20 I 38 \inode:\t38 (0x557b26d92228)\idepth:\t14\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t22
+00:00:00.20 P 38 2
+00:00:00.20 I 38 \inode:\t38 (0x557b26d92228)\idepth:\t14\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t22
+00:00:00.20 P 38 4
+00:00:00.20 N 37 39 3
+00:00:00.20 I 39 \inode:\t39 (0x557b26d91b28)\idepth:\t15\nvar:\t-\nbound:\t10.984000
+00:00:00.20 N 37 40 3
+00:00:00.20 I 40 \inode:\t40 (0x557b26d92168)\idepth:\t15\nvar:\t-\nbound:\t10.984000
+00:00:00.20 N 37 41 3
+00:00:00.20 I 41 \inode:\t41 (0x557b26d922e8)\idepth:\t15\nvar:\t-\nbound:\t10.984000
+00:00:00.20 I 37 \inode:\t37 (0x557b26d921a8)\idepth:\t14\nvar:\t-\nbound:\t10.984000\nnr:\t23
+00:00:00.20 P 37 2
+00:00:00.21 I 39 \inode:\t39 (0x557b26d91b28)\idepth:\t15\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t24
+00:00:00.21 P 39 2
+00:00:00.21 I 39 \inode:\t39 (0x557b26d91b28)\idepth:\t15\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t24
+00:00:00.21 P 39 4
+00:00:00.27 N 41 42 3
+00:00:00.27 I 42 \inode:\t42 (0x557b26d92368)\idepth:\t16\nvar:\t-\nbound:\t10.984000
+00:00:00.27 N 41 43 3
+00:00:00.27 I 43 \inode:\t43 (0x557b26d923e8)\idepth:\t16\nvar:\t-\nbound:\t10.984000
+00:00:00.27 N 41 44 3
+00:00:00.27 I 44 \inode:\t44 (0x557b26d92468)\idepth:\t16\nvar:\t-\nbound:\t10.984000
+00:00:00.27 I 41 \inode:\t41 (0x557b26d922e8)\idepth:\t15\nvar:\t-\nbound:\t10.984000\nnr:\t25
+00:00:00.27 P 41 2
+00:00:00.28 I 42 \inode:\t42 (0x557b26d92368)\idepth:\t16\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t26
+00:00:00.28 P 42 2
+00:00:00.28 I 42 \inode:\t42 (0x557b26d92368)\idepth:\t16\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t26
+00:00:00.28 P 42 4
+00:00:00.28 N 44 45 3
+00:00:00.28 I 45 \inode:\t45 (0x557b26d92528)\idepth:\t17\nvar:\t-\nbound:\t10.984000
+00:00:00.28 N 44 46 3
+00:00:00.28 I 46 \inode:\t46 (0x557b26d925a8)\idepth:\t17\nvar:\t-\nbound:\t10.984000
+00:00:00.28 N 44 47 3
+00:00:00.28 I 47 \inode:\t47 (0x557b26d92628)\idepth:\t17\nvar:\t-\nbound:\t10.984000
+00:00:00.28 N 44 48 3
+00:00:00.28 I 48 \inode:\t48 (0x557b26d926a8)\idepth:\t17\nvar:\t-\nbound:\t10.984000
+00:00:00.28 I 44 \inode:\t44 (0x557b26d92468)\idepth:\t16\nvar:\t-\nbound:\t10.984000\nnr:\t27
+00:00:00.28 P 44 2
+00:00:00.28 I 45 \inode:\t45 (0x557b26d92528)\idepth:\t17\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t28
+00:00:00.28 P 45 2
+00:00:00.28 I 45 \inode:\t45 (0x557b26d92528)\idepth:\t17\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t28
+00:00:00.28 P 45 4
+00:00:00.28 N 48 49 3
+00:00:00.28 I 49 \inode:\t49 (0x557b26d92728)\idepth:\t18\nvar:\t-\nbound:\t10.984000
+00:00:00.28 N 48 50 3
+00:00:00.28 I 50 \inode:\t50 (0x557b26d927a8)\idepth:\t18\nvar:\t-\nbound:\t10.984000
+00:00:00.28 N 48 51 3
+00:00:00.28 I 51 \inode:\t51 (0x557b26d92828)\idepth:\t18\nvar:\t-\nbound:\t10.984000
+00:00:00.28 I 48 \inode:\t48 (0x557b26d926a8)\idepth:\t17\nvar:\t-\nbound:\t10.984000\nnr:\t29
+00:00:00.28 P 48 2
+00:00:00.28 I 49 \inode:\t49 (0x557b26d92728)\idepth:\t18\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t30
+00:00:00.28 P 49 2
+00:00:00.28 I 49 \inode:\t49 (0x557b26d92728)\idepth:\t18\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t30
+00:00:00.28 P 49 4
+00:00:00.28 N 51 52 3
+00:00:00.28 I 52 \inode:\t52 (0x557b26d928a8)\idepth:\t19\nvar:\t-\nbound:\t10.984000
+00:00:00.28 N 51 53 3
+00:00:00.28 I 53 \inode:\t53 (0x557b26d92928)\idepth:\t19\nvar:\t-\nbound:\t10.984000
+00:00:00.28 N 51 54 3
+00:00:00.28 I 54 \inode:\t54 (0x557b26d929a8)\idepth:\t19\nvar:\t-\nbound:\t10.984000
+00:00:00.28 I 51 \inode:\t51 (0x557b26d92828)\idepth:\t18\nvar:\t-\nbound:\t10.984000\nnr:\t31
+00:00:00.28 P 51 2
+00:00:00.30 I 52 \inode:\t52 (0x557b26d928a8)\idepth:\t19\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t32
+00:00:00.30 P 52 2
+00:00:00.30 I 52 \inode:\t52 (0x557b26d928a8)\idepth:\t19\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t32
+00:00:00.30 P 52 4
+00:00:00.30 N 54 55 3
+00:00:00.30 I 55 \inode:\t55 (0x557b26d928e8)\idepth:\t20\nvar:\t-\nbound:\t10.984000
+00:00:00.30 N 54 56 3
+00:00:00.30 I 56 \inode:\t56 (0x557b26d92a68)\idepth:\t20\nvar:\t-\nbound:\t10.984000
+00:00:00.30 I 54 \inode:\t54 (0x557b26d929a8)\idepth:\t19\nvar:\t-\nbound:\t10.984000\nnr:\t33
+00:00:00.30 P 54 2
+00:00:00.32 I 55 \inode:\t55 (0x557b26d928e8)\idepth:\t20\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t34
+00:00:00.32 P 55 2
+00:00:00.32 I 55 \inode:\t55 (0x557b26d928e8)\idepth:\t20\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t34
+00:00:00.32 P 55 4
+00:00:00.32 N 56 57 3
+00:00:00.32 I 57 \inode:\t57 (0x557b26d92ae8)\idepth:\t21\nvar:\t-\nbound:\t10.984000
+00:00:00.32 N 56 58 3
+00:00:00.32 I 58 \inode:\t58 (0x557b26d92b68)\idepth:\t21\nvar:\t-\nbound:\t10.984000
+00:00:00.32 N 56 59 3
+00:00:00.32 I 59 \inode:\t59 (0x557b26d92be8)\idepth:\t21\nvar:\t-\nbound:\t10.984000
+00:00:00.32 I 56 \inode:\t56 (0x557b26d92a68)\idepth:\t20\nvar:\t-\nbound:\t10.984000\nnr:\t35
+00:00:00.32 P 56 2
+00:00:00.33 I 57 \inode:\t57 (0x557b26d92ae8)\idepth:\t21\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t36
+00:00:00.33 P 57 2
+00:00:00.33 I 57 \inode:\t57 (0x557b26d92ae8)\idepth:\t21\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t36
+00:00:00.33 P 57 4
+00:00:00.34 I 59 \inode:\t59 (0x557b26d92be8)\idepth:\t21\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t37
+00:00:00.34 P 59 2
+00:00:00.34 I 59 \inode:\t59 (0x557b26d92be8)\idepth:\t21\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t37
+00:00:00.34 P 59 4
+00:00:00.35 N 58 60 3
+00:00:00.35 I 60 \inode:\t60 (0x557b26d92c28)\idepth:\t22\nvar:\t-\nbound:\t10.984000
+00:00:00.35 N 58 61 3
+00:00:00.35 I 61 \inode:\t61 (0x557b26d92ae8)\idepth:\t22\nvar:\t-\nbound:\t10.984000
+00:00:00.35 I 58 \inode:\t58 (0x557b26d92b68)\idepth:\t21\nvar:\t-\nbound:\t10.984000\nnr:\t38
+00:00:00.35 P 58 2
+00:00:00.35 N 60 62 3
+00:00:00.35 I 62 \inode:\t62 (0x557b26d92d68)\idepth:\t23\nvar:\t-\nbound:\t10.984000
+00:00:00.35 N 60 63 3
+00:00:00.35 I 63 \inode:\t63 (0x557b26d92de8)\idepth:\t23\nvar:\t-\nbound:\t10.984000
+00:00:00.35 N 60 64 3
+00:00:00.35 I 64 \inode:\t64 (0x557b26d92e68)\idepth:\t23\nvar:\t-\nbound:\t10.984000
+00:00:00.35 N 60 65 3
+00:00:00.35 I 65 \inode:\t65 (0x557b26d92ee8)\idepth:\t23\nvar:\t-\nbound:\t10.984000
+00:00:00.35 I 60 \inode:\t60 (0x557b26d92c28)\idepth:\t22\nvar:\t-\nbound:\t10.984000\nnr:\t39
+00:00:00.35 P 60 2
+00:00:00.36 I 62 \inode:\t62 (0x557b26d92d68)\idepth:\t23\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t40
+00:00:00.36 P 62 2
+00:00:00.36 I 62 \inode:\t62 (0x557b26d92d68)\idepth:\t23\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t40
+00:00:00.36 P 62 4
+00:00:00.78 N 65 66 3
+00:00:00.78 I 66 \inode:\t66 (0x557b26d92f68)\idepth:\t24\nvar:\t-\nbound:\t10.984000
+00:00:00.78 N 65 67 3
+00:00:00.78 I 67 \inode:\t67 (0x557b26d92fe8)\idepth:\t24\nvar:\t-\nbound:\t10.984000
+00:00:00.78 N 65 68 3
+00:00:00.78 I 68 \inode:\t68 (0x557b26d93068)\idepth:\t24\nvar:\t-\nbound:\t10.984000
+00:00:00.78 I 65 \inode:\t65 (0x557b26d92ee8)\idepth:\t23\nvar:\t-\nbound:\t10.984000\nnr:\t41
+00:00:00.78 P 65 2
+00:00:00.78 I 66 \inode:\t66 (0x557b26d92f68)\idepth:\t24\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t42
+00:00:00.78 P 66 2
+00:00:00.78 I 66 \inode:\t66 (0x557b26d92f68)\idepth:\t24\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t42
+00:00:00.78 P 66 4
+00:00:00.85 N 68 69 3
+00:00:00.85 I 69 \inode:\t69 (0x557b26d930e8)\idepth:\t25\nvar:\t-\nbound:\t10.984000
+00:00:00.85 N 68 70 3
+00:00:00.85 I 70 \inode:\t70 (0x557b26d93168)\idepth:\t25\nvar:\t-\nbound:\t10.984000
+00:00:00.85 N 68 71 3
+00:00:00.85 I 71 \inode:\t71 (0x557b26d931e8)\idepth:\t25\nvar:\t-\nbound:\t10.984000
+00:00:00.85 I 68 \inode:\t68 (0x557b26d93068)\idepth:\t24\nvar:\t-\nbound:\t10.984000\nnr:\t43
+00:00:00.85 P 68 2
+00:00:00.87 I 69 \inode:\t69 (0x557b26d930e8)\idepth:\t25\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t44
+00:00:00.87 P 69 2
+00:00:00.87 I 69 \inode:\t69 (0x557b26d930e8)\idepth:\t25\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t44
+00:00:00.87 P 69 4
+00:00:00.87 N 71 72 3
+00:00:00.87 I 72 \inode:\t72 (0x557b26d93268)\idepth:\t26\nvar:\t-\nbound:\t10.984000
+00:00:00.87 N 71 73 3
+00:00:00.87 I 73 \inode:\t73 (0x557b26d932e8)\idepth:\t26\nvar:\t-\nbound:\t10.984000
+00:00:00.87 N 71 74 3
+00:00:00.87 I 74 \inode:\t74 (0x557b26d93368)\idepth:\t26\nvar:\t-\nbound:\t10.984000
+00:00:00.87 I 71 \inode:\t71 (0x557b26d931e8)\idepth:\t25\nvar:\t-\nbound:\t10.984000\nnr:\t45
+00:00:00.87 P 71 2
+00:00:00.88 I 72 \inode:\t72 (0x557b26d93268)\idepth:\t26\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t46
+00:00:00.88 P 72 2
+00:00:00.88 I 72 \inode:\t72 (0x557b26d93268)\idepth:\t26\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t46
+00:00:00.88 P 72 4
+00:00:00.88 N 74 75 3
+00:00:00.88 I 75 \inode:\t75 (0x557b26d932a8)\idepth:\t27\nvar:\t-\nbound:\t10.984000
+00:00:00.88 N 74 76 3
+00:00:00.88 I 76 \inode:\t76 (0x557b26d93428)\idepth:\t27\nvar:\t-\nbound:\t10.984000
+00:00:00.88 I 74 \inode:\t74 (0x557b26d93368)\idepth:\t26\nvar:\t-\nbound:\t10.984000\nnr:\t47
+00:00:00.88 P 74 2
+00:00:00.88 N 75 77 3
+00:00:00.88 I 77 \inode:\t77 (0x557b26d93568)\idepth:\t28\nvar:\t-\nbound:\t10.984000
+00:00:00.88 N 75 78 3
+00:00:00.88 I 78 \inode:\t78 (0x557b26d935e8)\idepth:\t28\nvar:\t-\nbound:\t10.984000
+00:00:00.88 N 75 79 3
+00:00:00.88 I 79 \inode:\t79 (0x557b26d93668)\idepth:\t28\nvar:\t-\nbound:\t10.984000
+00:00:00.88 I 75 \inode:\t75 (0x557b26d932a8)\idepth:\t27\nvar:\t-\nbound:\t10.984000\nnr:\t48
+00:00:00.88 P 75 2
+00:00:00.91 I 77 \inode:\t77 (0x557b26d93568)\idepth:\t28\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t49
+00:00:00.91 P 77 2
+00:00:00.91 I 77 \inode:\t77 (0x557b26d93568)\idepth:\t28\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t49
+00:00:00.91 P 77 4
+00:00:02.96 I 76 \inode:\t76 (0x557b26d93428)\idepth:\t27\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 76 4
+00:00:02.96 I 73 \inode:\t73 (0x557b26d932e8)\idepth:\t26\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 73 4
+00:00:02.96 I 70 \inode:\t70 (0x557b26d93168)\idepth:\t25\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 70 4
+00:00:02.96 I 67 \inode:\t67 (0x557b26d92fe8)\idepth:\t24\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 67 4
+00:00:02.96 I 64 \inode:\t64 (0x557b26d92e68)\idepth:\t23\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 64 4
+00:00:02.96 I 63 \inode:\t63 (0x557b26d92de8)\idepth:\t23\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 63 4
+00:00:02.96 I 61 \inode:\t61 (0x557b26d92ae8)\idepth:\t22\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 61 4
+00:00:02.96 I 53 \inode:\t53 (0x557b26d92928)\idepth:\t19\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 53 4
+00:00:02.96 I 50 \inode:\t50 (0x557b26d927a8)\idepth:\t18\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 50 4
+00:00:02.96 I 47 \inode:\t47 (0x557b26d92628)\idepth:\t17\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 47 4
+00:00:02.96 I 46 \inode:\t46 (0x557b26d925a8)\idepth:\t17\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 46 4
+00:00:02.96 I 43 \inode:\t43 (0x557b26d923e8)\idepth:\t16\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 43 4
+00:00:02.96 I 40 \inode:\t40 (0x557b26d92168)\idepth:\t15\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 40 4
+00:00:02.96 I 34 \inode:\t34 (0x557b26d92028)\idepth:\t13\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 34 4
+00:00:02.96 I 33 \inode:\t33 (0x557b26d91fa8)\idepth:\t13\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 33 4
+00:00:02.96 I 30 \inode:\t30 (0x557b26d91de8)\idepth:\t12\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 30 4
+00:00:02.96 I 27 \inode:\t27 (0x557b26d91c68)\idepth:\t11\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 27 4
+00:00:02.96 I 25 \inode:\t25 (0x557b26d91aa8)\idepth:\t10\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 25 4
+00:00:02.96 I 21 \inode:\t21 (0x557b26d91868)\idepth:\t8\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 21 4
+00:00:02.96 I 19 \inode:\t19 (0x557b26d916e8)\idepth:\t7\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 19 4
+00:00:02.96 I 17 \inode:\t17 (0x557b26d5b5a8)\idepth:\t6\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 17 4
+00:00:02.96 I 14 \inode:\t14 (0x557b26d8a768)\idepth:\t5\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 14 4
+00:00:02.96 I 13 \inode:\t13 (0x557b26d5b568)\idepth:\t5\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 13 4
+00:00:02.96 I 10 \inode:\t10 (0x557b26d89da8)\idepth:\t4\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 10 4
+00:00:02.96 I 8 \inode:\t8 (0x557b26d46ef8)\idepth:\t3\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 8 4
+00:00:02.96 I 6 \inode:\t6 (0x557b26d8bb68)\idepth:\t2\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 6 4
+00:00:02.96 I 5 \inode:\t5 (0x557b26d8c568)\idepth:\t2\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 5 4
+00:00:02.96 I 3 \inode:\t3 (0x557b26d5ad28)\idepth:\t1\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 3 4
+00:00:02.96 I 78 \inode:\t78 (0x557b26d935e8)\idepth:\t28\nvar:\t-\nbound:\t10.984000\nnr:\t50
+00:00:02.96 P 78 4
+00:00:02.96 U 11.000000
+00:00:02.96 I 79 \inode:\t79 (0x557b26d93668)\idepth:\t28\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t50
+00:00:02.96 P 79 2
+00:00:02.96 I 79 \inode:\t79 (0x557b26d93668)\idepth:\t28\nvar:\t-\nbound:\t100000000000000000000.000000\nnr:\t50
+00:00:02.96 P 79 4

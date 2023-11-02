@@ -1,0 +1,16 @@
+<div style="text-align: center; align: center">
+  <div class="pre-spoiler">
+  <input name="button" type="button" onClick="
+  if (this.parentNode.getElementsByTagName('div')[0].style.display != 'none') {
+     this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'Show Performance Profile'; }
+  else { this.parentNode.getElementsByTagName('div')[0].style.display = 'block'; this.value = 'Hide';
+}" value="Show Performance Profile">
+  <div class="spoiler" style="display: none;">
+
+    <h4>Performance Profile</h4>
+    <img src="img/visu/goodinstancesnodec.performance_profile.png" style="width:60%;margin-top:-0.5em">
+    <figcaption style="font-size:small; line-height:1.1">The best performing run is a line with steepness m=0 and y-intercept f(0)=1. For all other runs, the integral over the shown x-interval is lower or equal to the one of the best performing run. The plot can be interpreted as follows: For each point (x,y), x represents the performance in multiples of the duration the best performing run needed and y represents the likelihood for the setting to perform as fast as the best performing run times the multiples. If the underlying function of one setting has first-order stochastic dominance over another, it can be considered to be faster for this test set. In this example, one can read that on about 70% of the instances, the setting ``earlybranching'' has performed (at most) 35 times worse than the best performing setting.</figcaption>
+
+  </div>
+  </div>
+</div>

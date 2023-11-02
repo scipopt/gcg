@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -37,9 +37,9 @@
 #define GCG_HYPERROWCOLGRAPH_DEF_H_
 
 #include "hyperrowcolgraph.h"
-#include "scip_misc.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/scip_misc.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include <algorithm>
 #include <set>
 
@@ -114,7 +114,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
    /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
-      SCIP_VAR **curvars;
+      SCIP_VAR **curvars = NULL;
 
       int ncurvars;
       SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
@@ -278,7 +278,7 @@ template <class T>
 SCIP_RETCODE HyperrowcolGraph<T>::writeToFile(
    int                fd,                    /**< filename where the graph should be written to */
    SCIP_Bool          edgeweights            /**< whether to write edgeweights */
- )
+   )
 {
    FILE* file;
    file = fdopen(fd, "wx");
@@ -319,7 +319,7 @@ public:
 template <class T>
 std::vector<int> HyperrowcolGraph<T>::getNeighbors(
    int i
-)
+   )
 {
    assert(i >= 0);
    assert(i < this->nnonzeroes);
@@ -342,7 +342,7 @@ std::vector<int> HyperrowcolGraph<T>::getNeighbors(
 template <class T>
 std::vector<int> HyperrowcolGraph<T>::getHyperedgeNodes(
    int i
-)
+   )
 {
    function f(this->nconss+this->nvars);
    assert(i >= 0);
@@ -356,7 +356,7 @@ std::vector<int> HyperrowcolGraph<T>::getHyperedgeNodes(
 template <class T>
 std::vector<int> HyperrowcolGraph<T>::getConsNonzeroNodes(
    int i
-)
+   )
 {
    function f(this->nconss+this->nvars);
    assert(i >= 0);
@@ -370,7 +370,7 @@ std::vector<int> HyperrowcolGraph<T>::getConsNonzeroNodes(
 template <class T>
 std::vector<int> HyperrowcolGraph<T>::getVarNonzeroNodes(
    int i
-)
+   )
 {
    function f(this->nconss+this->nvars);
    assert(i >= 0);
@@ -383,15 +383,15 @@ std::vector<int> HyperrowcolGraph<T>::getVarNonzeroNodes(
 
 template <class T>
 SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
-   DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+   GCG_DECOMP**       decomp              /**< decomposition structure to generate */
    )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int* nsubscipconss = NULL;
    int i;
-   SCIP_CONS **conss;
+   SCIP_CONS** conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
@@ -435,8 +435,8 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+      SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
+      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);
@@ -455,11 +455,11 @@ SCIP_RETCODE HyperrowcolGraph<T>::createPartialdecFromPartition(
    )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int *nsubscipconss = NULL;
    int i;
-   SCIP_CONS **conss;
+   SCIP_CONS **conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
@@ -546,9 +546,9 @@ SCIP_RETCODE HyperrowcolGraph<T>::createPartialdecFromPartition(
    )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int* nsubscipconss = NULL;
    int i;
    SCIP_Bool emptyblocks = FALSE;
 

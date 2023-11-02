@@ -25,8 +25,8 @@ detection/maxrounds = 1
 detection/origprob/enabled = FALSE
 detection/origprob/classificationenabled = FALSE
 
-detection/consclassifier/consnamelevenshtein/enabled = FALSE
-detection/consclassifier/consnamenonumbers/enabled = FALSE
+detection/classification/consclassifier/consnamelevenshtein/enabled = FALSE
+detection/classification/consclassifier/consnamenonumbers/enabled = FALSE
 
 
 timing/clocktype = 2

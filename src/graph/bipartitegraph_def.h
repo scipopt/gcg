@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -36,7 +36,7 @@
 #define GCG_BIPARTITEGRAPH_DEF_H_
 
 #include "bipartitegraph.h"
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 
 namespace gcg {
 
@@ -100,7 +100,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
    /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
-      SCIP_VAR **curvars;
+      SCIP_VAR** curvars = NULL;
 
       int ncurvars;
       SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
@@ -121,7 +121,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
 
       for( j = 0; j < ncurvars; ++j )
       {
-         SCIP_VAR* var;
+         SCIP_VAR* var = NULL;
          int varIndex;
 
          if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)

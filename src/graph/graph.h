@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -40,7 +40,7 @@
 #include "objscip/objscip.h"
 #include "tclique/tclique.h"
 #include "weights.h"
-#include "pub_decomp.h"
+#include "gcg/pub_decomp.h"
 #include "bridge.h"
 #include "graph_interface.h"
 #include <exception>

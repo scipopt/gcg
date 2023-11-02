@@ -1,0 +1,457 @@
+<table border="1" class="dataframe doxtable">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th>clearname</th>
+      <th>description</th>
+      <th>type</th>
+      <th>level</th>
+    </tr>
+    <tr>
+      <th>groups</th>
+      <th>feature</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="12" valign="top">Branching</th>
+      <th>BNB TREE DEPTH</th>
+      <td>Depth of BNB Tree</td>
+      <td>Depth of the created branch-and-bound tree.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>BNB TREE LEFT</th>
+      <td>Number of BNB Tree Nodes Left</td>
+      <td>Number of nodes in the branch-and-bound tree left to be explored after termination.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>BNB TREE NODES</th>
+      <td>Number of BNB Tree Nodes</td>
+      <td>Number of nodes created in the branch-and-bound tree.</td>
+      <td>int</td>
+      <td>standard</td>
+    </tr>
+    <tr>
+      <th>BR RULE CALLS GENERIC</th>
+      <td>Branching Rule 'GENERIC' Calls</td>
+      <td>Calls of the branching rule 'Vanderbeck Generic Branching'.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>BR RULE CALLS ORIG</th>
+      <td>Branching Rule 'ORIG' Calls</td>
+      <td>Calls of the branching rule 'Original Variable Branching'.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>BR RULE CALLS RELPSPROB</th>
+      <td>Branching Rule 'RELPSPROB' Calls</td>
+      <td>Calls of the branching rule 'generalized reliability pseudo cost probing branching' (or simply 'pseudo cost branching').</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>BR RULE CALLS RYANFOSTER</th>
+      <td>Branching Rule 'RYANFOSTER' Time</td>
+      <td>Calls of the branching rule 'Ryan-Foster Branching'.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>BR RULE TIME GENERIC</th>
+      <td>Branching Rule 'GENERIC' Time</td>
+      <td>Time used for the branching rule 'Vanderbeck Generic Branching'.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>BR RULE TIME ORIG</th>
+      <td>Branching Rule 'ORIG' Time</td>
+      <td>Time used for the branching rule 'Original Variable Branching'.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>BR RULE TIME RELPSPROB</th>
+      <td>Branching Rule 'RELPSPROB' Time</td>
+      <td>Time used for the branching rule 'generalized reliability pseudo cost probing branching' (or simply 'pseudo cost branching').</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>BR RULE TIME RYANFOSTER</th>
+      <td>Branching Rule 'RYANFOSTER' Time</td>
+      <td>Time used for the branching rule 'Ryan-Foster Branching'.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>ROOT NODE TIME</th>
+      <td>Time in Root Node</td>
+      <td>Time spent inside the root node.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th rowspan="5" valign="top">Constraints</th>
+      <th>CONS KNAPSACK</th>
+      <td>Number of Knapsack Constraints</td>
+      <td>Number of constraints that represent a classical knapsack constraint.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>CONS LINEAR</th>
+      <td>Number of Linear Constraints</td>
+      <td>Number of linear constraints that could not be classified otherwise.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>CONS LOGICOR</th>
+      <td>Number of Logical OR Constraints</td>
+      <td>Number of constraints that represent a logical 'or'-relation.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>CONS SETPPC</th>
+      <td>Number of Set Partitioning/Packing/Covering Constraints</td>
+      <td>Number of constraints that represent set-packing, set-partitioning or set-covering constraints.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>CONS VARBOUND</th>
+      <td>Number of Variable Bound Constraints</td>
+      <td>Number of constraints that represent variable bounds.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th rowspan="8" valign="top">Cutting</th>
+      <th>CUTS APPLIED MASTER</th>
+      <td>Cuts Applied (Master Problem)</td>
+      <td>Number of times cutting planes were applied in the master problem.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>CUTS APPLIED ORIG</th>
+      <td>Cuts Applied (Original Problem)</td>
+      <td>Number of times cutting planes were applied in the original problem.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>CUTS CALLS MASTER</th>
+      <td>Cuts Calls (Master Problem)</td>
+      <td>Number of times separators were called in the master problem.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>CUTS CALLS ORIG</th>
+      <td>Cuts Calls (Original Problem)</td>
+      <td>Number of times separators were called in the original problem.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>CUTS FOUND MASTER</th>
+      <td>Cuts Found (Master Problem)</td>
+      <td>Number of times separators found a cutting plane in the master problem.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>CUTS FOUND ORIG</th>
+      <td>Cuts Found (Original Problem)</td>
+      <td>Number of times separators found a cutting plane in the original problem.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>CUTS TIME MASTER</th>
+      <td>Cuts Time (Master Problem)</td>
+      <td>Time used for finding/applying cutting planes in the master problem.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>CUTS TIME ORIG</th>
+      <td>Cuts Time (Original Problem)</td>
+      <td>Time used for finding/applying cutting planes in the original problem.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th rowspan="7" valign="top">Detection</th>
+      <th>DETECTION TIME</th>
+      <td>Detection Time</td>
+      <td>Time used for automatic detection of a problem structure.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>LINKING VARS</th>
+      <td>Number of Linking Variables</td>
+      <td>Number of linking variables that connect different blocks.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>MASTER NCONSS</th>
+      <td>Number of Master Constraints</td>
+      <td>The number of constraints in the master problem.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>MASTER NVARS</th>
+      <td>Number of Master Variables</td>
+      <td>The number of variables in the master problem.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>MASTER TIME</th>
+      <td>Master Problem Time</td>
+      <td>Total time used for solving the complete master problem.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>NBLOCKS</th>
+      <td>Number of Blocks</td>
+      <td>Number of blocks (pricing problems) in the decomposition.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>NBLOCKSAGGR</th>
+      <td>Number of Aggregated Blocks</td>
+      <td>Number of blocks that were aggregated (at max NBLOCKS).</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th rowspan="6" valign="top">Heuristics</th>
+      <th>HEUR CALLS MASTER</th>
+      <td>Heuristics Calls (Master Problem)</td>
+      <td>Number of times heuristics were called in the master problem.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>HEUR CALLS ORIG</th>
+      <td>Heuristics Calls (Original Problem)</td>
+      <td>Number of times heuristics were called in the original problem.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>HEUR FOUND MASTER</th>
+      <td>Heuristics Found (Master Problem)</td>
+      <td>Number of times heuristics found a solution in the master problem.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>HEUR FOUND ORIG</th>
+      <td>Heuristics Found (Original Problem)</td>
+      <td>Number of times heuristics found a solution in the original problem.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>HEUR TIME MASTER</th>
+      <td>Heuristics Time (Master Problem)</td>
+      <td>Time used for heuristics in the master problem.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>HEUR TIME ORIG</th>
+      <td>Heuristics Time (Original Problem)</td>
+      <td>Time used for heuristics in the original problem.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th rowspan="13" valign="top">Meta</th>
+      <th>BEST SOLUTION TIME</th>
+      <td>Best Solution Time</td>
+      <td>Time until best solution was found.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>COPYING TIME</th>
+      <td>Copying Time</td>
+      <td>Time used for copying (e.g. from original to master problem).</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>DEC FILE</th>
+      <td>Decomposition File</td>
+      <td>Decomposition file (e.g. .dec or .blk) with full path.</td>
+      <td>string</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>DEGENERACY</th>
+      <td>Degeneracy</td>
+      <td>List of development of the degeneracy over time.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>DUAL BOUNDS</th>
+      <td>Development of Dual Bounds</td>
+      <td>List of development of the dual bounds over time.</td>
+      <td>string</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>FIRST SOLUTION TIME</th>
+      <td>First Solution Time</td>
+      <td>Time until first solution was found.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>LP FILE</th>
+      <td>Problem File</td>
+      <td>Program file (e.g. .lp or .mps) with full path.</td>
+      <td>string</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>PD INTEGRAL</th>
+      <td>Primal-Dual Integral</td>
+      <td>The average integral (the geometric 'space') between the primal and the dual bound ('avg. gap').</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>PRESOLVING TIME</th>
+      <td>Presolving Time</td>
+      <td>Time used for presolving of the problem.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>READING TIME</th>
+      <td>Reading Time</td>
+      <td>Time used for reading of the problem.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>SOLUTIONS FOUND</th>
+      <td>Number of Solutions Found</td>
+      <td>Number of solutions found.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>STATUS</th>
+      <td>Solving Status</td>
+      <td>Status after solving terminated. 0: unknown, 1: solved (optimal), 2: solved (infeasible), 3: time limit, 4: memory limit, 5: node limit.</td>
+      <td>int</td>
+      <td>standard</td>
+    </tr>
+    <tr>
+      <th>TOTAL TIME</th>
+      <td>Total Time</td>
+      <td>Time used for reading, presolving and solving, excluding copying.</td>
+      <td>float</td>
+      <td>standard</td>
+    </tr>
+    <tr>
+      <th rowspan="4" valign="top">Pricing</th>
+      <th>FARKAS TIME</th>
+      <td>Farkas Time</td>
+      <td>Time used for ensuring feasibility of the RMP.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>PRICING SOLVER TIME</th>
+      <td>Pricing Solver Time</td>
+      <td>Time used for pricing solvers (e.g. knapsack solver).</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>PRICING SOLVER TYPE</th>
+      <td>Pricing Solver Types</td>
+      <td>Types of pricing solvers that ran on the problem.</td>
+      <td>string</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>PRICING TIME</th>
+      <td>Pricing Time</td>
+      <td>Time used for the complete pricing process.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th rowspan="6" valign="top">Solving</th>
+      <th>ORIGINAL LP CALLS</th>
+      <td>Original Problem Calls</td>
+      <td>Number of times the original problem was be solved.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>ORIGINAL LP ITERATIONS</th>
+      <td>Original Problem Iterations</td>
+      <td>Total number of iterations all solving runs of the original problem took.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>ORIGINAL LP TIME</th>
+      <td>Original Problem Time</td>
+      <td>Time used for solving the original problem.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>RMP LP CALLS</th>
+      <td>Restricted Master Problem Calls</td>
+      <td>Number of times the restricted master problem was be solved.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>RMP LP ITERATIONS</th>
+      <td>Restricted Master Problem Iterations</td>
+      <td>Total number of iterations all solving runs of the restricted master problem took.</td>
+      <td>int</td>
+      <td>expert</td>
+    </tr>
+    <tr>
+      <th>RMP LP TIME</th>
+      <td>Restricted Master Problem Time</td>
+      <td>Time used for solving the restricted master problem.</td>
+      <td>float</td>
+      <td>expert</td>
+    </tr>
+  </tbody>
+</table>

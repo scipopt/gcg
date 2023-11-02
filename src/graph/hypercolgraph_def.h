@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -39,8 +39,8 @@
 #define GCG_HYPERCOLGRAPH_DEF_H_
 
 #include "hypercolgraph.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include <set>
 #include <algorithm>
 #include <vector>
@@ -72,7 +72,7 @@ template <class T>
 SCIP_RETCODE HypercolGraph<T>::writeToFile(
    int                fd,                    /**< filename where the graph should be written to */
    SCIP_Bool          edgeweights            /**< whether to write edgeweights */
- )
+   )
 {
    function f(this->nvars);
    FILE* file;
@@ -165,7 +165,7 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
    /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
-      SCIP_VAR **curvars1;
+      SCIP_VAR** curvars1 = NULL;
 
       int ncurvars1;
       SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
@@ -186,7 +186,7 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
 
       for( k = 0; k < ncurvars1; ++k )
       {
-         SCIP_VAR* var1;
+         SCIP_VAR* var1 = NULL;
          int varIndex1;
 
          if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
@@ -224,8 +224,8 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
 
 template <class T>
 SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
-      DETPROBDATA*        detprobdata,
-      PARTIALDECOMP*            partialdec
+   DETPROBDATA*        detprobdata,
+   PARTIALDECOMP*            partialdec
    )
 {
    int i;
@@ -314,7 +314,7 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
 
 template <class T>
 SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
-   DEC_DECOMP**          decomp           /**< decomposition structure to generate */
+   GCG_DECOMP**          decomp           /**< decomposition structure to generate */
    )
 {
    SCIP_HASHMAP* constoblock;
@@ -337,8 +337,8 @@ SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
       SCIP_CALL( SCIPhashmapInsert(constoblock, conss[c], (void*) (size_t) consblock) );
    }
 
-   SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
-   SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+   SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
+   SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
 
    return SCIP_OKAY;
 }

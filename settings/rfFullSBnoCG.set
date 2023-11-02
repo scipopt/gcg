@@ -1,0 +1,55 @@
+## ORIGINAL VARIABLE BRANCHING ##
+branching/orig/usepseudocosts = TRUE
+branching/orig/usestrong = FALSE
+
+## RYAN-FOSTER BRANCHING ##
+branching/ryanfoster/usestrong = TRUE
+
+
+## BRANCHING RULE DEPENDENT SETTINGS ##
+
+branching/ryanfoster/minphase0outcands = 2147483000
+branching/ryanfoster/maxphase0outcands = 2147483000
+branching/ryanfoster/maxphase0outcandsfrac = 1
+branching/ryanfoster/phase1gapweight = 0
+branching/ryanfoster/minphase1outcands = 1
+branching/ryanfoster/maxphase1outcands = 1
+branching/ryanfoster/maxphase1outcandsfrac = 1
+branching/ryanfoster/phase2gapweight = 0
+
+
+## HYBRID BRANCHING ##
+
+branching/bp_strong/minphase0depth = 2147483000
+branching/bp_strong/maxphase1depth = 2147483000
+branching/bp_strong/maxphase2depth = 0
+branching/bp_strong/depthlogweight = 0
+branching/bp_strong/depthlogbase = 3.5
+branching/bp_strong/depthlogphase0frac = 0
+branching/bp_strong/depthlogphase2frac = 0
+
+
+## RELIABILITY BRANCHING ##
+
+branching/bp_strong/phase1reliable = 2147483000
+branching/bp_strong/phase2reliable = 2147483000
+
+
+## ADDITIONAL HIERARCHICAL STRONG BRANCHING PARAMETERS ##
+
+branching/bp_strong/mincolgencands = 0
+branching/bp_strong/histweight = 0
+
+
+## ADDITIONAL STRONG BRANCHING PARAMETERS ##
+
+branching/bp_strong/immediateinf = FALSE
+branching/bp_strong/reevalage = 0
+branching/bp_strong/maxsblpiters = 2147483000
+branching/bp_strong/maxsbpricerounds = 2147483000
+branching/bp_strong/maxlookahead = 2147483000
+branching/bp_strong/lookaheadscales = 0
+branching/bp_strong/closepercentage = 1
+branching/bp_strong/maxconsecheurclose = 2147483000
+branching/bp_strong/sbpseudocostweight = 0
+branching/bp_strong/forcep0 = FALSE

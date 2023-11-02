@@ -1,12 +1,9 @@
 [submodule "lib/scip-git"]
 	path = lib/scip-git
-	url = git@git.or.rwth-aachen.de:gcg/scip.git
+	url = ../../gcg/scip.git
 [submodule "lib/soplex-git"]
 	path = lib/soplex-git
-	url = git@git.or.rwth-aachen.de:gcg/soplex.git
-[submodule "lib/bliss-git"]
-	path = lib/bliss-git
-	url = git@git.or.rwth-aachen.de:gcg/bliss.git
+	url = ../../gcg/soplex.git
 [submodule "lib/googletest-git"]
 	path = lib/googletest-git
-	url = git@git.or.rwth-aachen.de:gcg/googletest.git
+	url = ../../gcg/googletest.git

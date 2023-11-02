@@ -6,7 +6,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -35,7 +35,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	3.1.0
+VERSION         :=	3.6.0
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -54,14 +54,19 @@ GCGDIR		=	$(realpath .)
 TIME		=	3600
 DIP			=	dip
 MASTERSETTINGS	=	default
+VISUSETTINGS 	= 	none
+DATADIR 		= 	none
+OBJDIR		= obj
 
 VALGRIND	=	false
 MODE		=	readdec
-STATISTICS  =  false
+VISU 		= 	false
+DETECTIONSTATISTICS = 	false
+STATISTICS  =  	false
 PROJECT		=	none
 GTEST		=	false
 PARASCIP	= 	true
-BLISS      	=   false
+BLISS      	=   true
 CLIQUER     =   false
 HMETIS      =   false
 OPENMP      =   false
@@ -73,13 +78,20 @@ LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER)
 # overriding SCIP PARASCIP setting if compiled with OPENMP
 ifeq ($(OPENMP),true)
 override PARASCIP=true
+MAKEOVERRIDES += PARASCIP=true
 endif
 
 # overriding SCIP LPS setting if compiled with CPLEXSOLVER
 ifeq ($(CPLEXSOLVER),true)
 override LPS =  cpx
+MAKEOVERRIDES += LPS=cpx
 endif
 
+# overriding SCIP SYM setting if compiled with BLISS
+ifeq ($(BLISS),true)
+override SYM=bliss
+MAKEOVERRIDES += SYM=bliss
+endif
 
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP (need to do this twice, once to
@@ -210,146 +222,163 @@ endif
 MAINNAME	=	gcg
 
 LIBOBJ = \
-			branch_empty.o \
-			branch_generic.o \
-			benders_gcg.o \
-			branch_orig.o \
-			branch_relpsprob.o \
-			branch_ryanfoster.o \
-			class_conspartition.o \
-			class_indexpartition.o \
-			class_pricingcontroller.o \
-			class_pricingtype.o \
-			class_partialdecomp.o \
-			class_detprobdata.o \
-			class_stabilization.o \
-			class_varpartition.o \
-			clscons_miplibconstypes.o \
-			clscons_nnonzeros.o \
-			clscons_consnamenonumbers.o \
-			clscons_consnamelevenshtein.o \
-			clscons_scipconstypes.o \
-			clsvar_objvalues.o \
-			clsvar_scipvartypes.o \
-			clsvar_objvaluesigns.o \
-			colpool.o \
-			cons_decomp.o \
-			cons_integralorig.o \
-			cons_masterbranch.o \
-			cons_origbranch.o \
-			dec_compgreedily.o \
-			dec_connected_noNewLinkingVars.o \
-			dec_connectedbase.o \
-			dec_consclass.o \
-			dec_constype.o \
-			dec_dbscan.o \
-			dec_densemasterconss.o \
-			dec_generalmastersetcover.o \
-			dec_generalmastersetpack.o \
-			dec_generalmastersetpart.o \
-			dec_hcgpartition.o \
-			dec_hrcgpartition.o \
-			dec_hrgpartition.o \
-			dec_mastersetcover.o \
-			dec_mastersetpack.o \
-			dec_mastersetpart.o \
-			dec_mst.o \
-			dec_neighborhoodmaster.o \
-			dec_postprocess.o \
-			dec_staircase_lsp.o \
-			dec_stairheur.o \
-			dec_varclass.o \
-			decomp.o \
-			dialog_explore.o \
-			dialog_gcg.o \
-			dialog_graph.o \
-			dialog_master.o \
-			disp_gcg.o \
-			disp_master.o \
-			event_bestsol.o \
-			event_display.o \
-			event_mastersol.o \
-			event_relaxsol.o \
-			event_solvingstats.o \
-			gcgcol.o \
-			gcggithash.o \
-			gcgheur.o \
-			gcgsepa.o \
-			gcgplugins.o \
-			gcgpqueue.o \
-			gcgsort.o \
-			gcgvar.o \
+			gcg/branch_empty.o \
+			gcg/branch_generic.o \
+			gcg/benders_gcg.o \
+			gcg/branch_orig.o \
+			gcg/branch_relpsprob.o \
+			gcg/branch_ryanfoster.o \
+			gcg/branch_bpstrong.o \
+			gcg/class_conspartition.o \
+			gcg/class_indexpartition.o \
+			gcg/class_pricingcontroller.o \
+			gcg/class_pricingtype.o \
+			gcg/class_partialdecomp.o \
+			gcg/class_detprobdata.o \
+			gcg/class_stabilization.o \
+			gcg/class_varpartition.o \
+			gcg/clscons_miplibconstypes.o \
+			gcg/clscons_nnonzeros.o \
+			gcg/clscons_consnamenonumbers.o \
+			gcg/clscons_consnamelevenshtein.o \
+			gcg/clscons_scipconstypes.o \
+			gcg/clscons_gamsdomain.o \
+			gcg/clscons_gamssymbol.o \
+			gcg/clscons.o \
+			gcg/clsvar_gamsdomain.o \
+			gcg/clsvar_gamssymbol.o \
+			gcg/clsvar_objvalues.o \
+			gcg/clsvar_scipvartypes.o \
+			gcg/clsvar_objvaluesigns.o \
+			gcg/clsvar.o \
+			gcg/colpool.o \
+			gcg/cons_decomp.o \
+			gcg/cons_integralorig.o \
+			gcg/cons_masterbranch.o \
+			gcg/cons_origbranch.o \
+			gcg/dec_compgreedily.o \
+			gcg/dec_connected_noNewLinkingVars.o \
+			gcg/dec_connectedbase.o \
+			gcg/dec_consclass.o \
+			gcg/dec_constype.o \
+			gcg/dec_dbscan.o \
+			gcg/dec_densemasterconss.o \
+			gcg/dec_generalmastersetcover.o \
+			gcg/dec_generalmastersetpack.o \
+			gcg/dec_generalmastersetpart.o \
+			gcg/dec_hcgpartition.o \
+			gcg/dec_hrcgpartition.o \
+			gcg/dec_hrgpartition.o \
+			gcg/dec_mastersetcover.o \
+			gcg/dec_mastersetpack.o \
+			gcg/dec_mastersetpart.o \
+			gcg/dec_mst.o \
+			gcg/dec_neighborhoodmaster.o \
+			gcg/dec_postprocess.o \
+			gcg/dec_staircase_lsp.o \
+			gcg/dec_stairheur.o \
+			gcg/dec_varclass.o \
+			gcg/decomp.o \
+			gcg/dialog_explore.o \
+			gcg/dialog_gcg.o \
+			gcg/dialog_graph.o \
+			gcg/dialog_master.o \
+			gcg/disp_gcg.o \
+			gcg/disp_master.o \
+			gcg/event_bestsol.o \
+			gcg/event_display.o \
+			gcg/event_mastersol.o \
+			gcg/event_relaxsol.o \
+			gcg/event_solvingstats.o \
+			gcg/gcgcol.o \
+			gcg/gcg_general.o \
+			gcg/gcggithash.o \
+			gcg/gcgheur.o \
+			gcg/gcgsepa.o \
+			gcg/gcgplugins.o \
+			gcg/gcgpqueue.o \
+			gcg/gcgsort.o \
+			gcg/gcgvar.o \
 			graph/graph_gcg.o \
 			graph/graph_tclique.o \
 			graph/inst.o \
 			graph/weights.o \
-			heur_gcgcoefdiving.o \
-			heur_gcgdins.o \
-			heur_gcgfeaspump.o \
-			heur_gcgfracdiving.o \
-			heur_gcgguideddiving.o \
-			heur_gcglinesdiving.o \
-			heur_gcgpscostdiving.o \
-			heur_gcgrens.o \
-			heur_gcgrins.o \
-			heur_gcgrounding.o \
-			heur_gcgshifting.o \
-			heur_gcgsimplerounding.o \
-			heur_gcgveclendiving.o \
-			heur_gcgzirounding.o \
-			heur_greedycolsel.o \
-			heur_mastercoefdiving.o \
-			heur_masterdiving.o \
-			heur_masterfracdiving.o \
-			heur_masterlinesdiving.o \
-			heur_mastervecldiving.o \
-			heur_origdiving.o \
-			heur_relaxcolsel.o \
-			heur_restmaster.o \
-			heur_setcover.o \
-			heur_xpcrossover.o \
-			heur_xprins.o \
-			masterplugins.o \
-			bendersplugins.o \
-			misc.o \
-			miscvisualization.o \
-			nodesel_master.o \
-			objdialog.o \
-			params_visu.o \
-			presol_roundbound.o \
-			pricer_gcg.o \
-			pricestore_gcg.o \
-			pricingjob.o \
-			pricingprob.o \
-			reader_blk.o \
-			reader_cls.o \
-			reader_dec.o \
-			reader_gp.o \
-			reader_ref.o \
-			reader_tex.o \
-			relax_gcg.o \
-			scip_misc.o \
-			scoretype.o \
-			sepa_basis.o \
-			sepa_master.o \
-			solver.o \
-			solver_gcg.o
-			solver_knapsack.o \
-			solver_mip.o \
-			stat.o \
+			gcg/heur_gcgcoefdiving.o \
+			gcg/heur_gcgdins.o \
+			gcg/heur_gcgfeaspump.o \
+			gcg/heur_gcgfracdiving.o \
+			gcg/heur_gcgguideddiving.o \
+			gcg/heur_gcglinesdiving.o \
+			gcg/heur_gcgpscostdiving.o \
+			gcg/heur_gcgrens.o \
+			gcg/heur_gcgrins.o \
+			gcg/heur_gcgrounding.o \
+			gcg/heur_gcgshifting.o \
+			gcg/heur_gcgsimplerounding.o \
+			gcg/heur_gcgveclendiving.o \
+			gcg/heur_gcgzirounding.o \
+			gcg/heur_greedycolsel.o \
+			gcg/heur_mastercoefdiving.o \
+			gcg/heur_masterdiving.o \
+			gcg/heur_masterfracdiving.o \
+			gcg/heur_masterlinesdiving.o \
+			gcg/heur_mastervecldiving.o \
+			gcg/heur_origdiving.o \
+			gcg/heur_relaxcolsel.o \
+			gcg/heur_restmaster.o \
+			gcg/heur_setcover.o \
+			gcg/heur_xpcrossover.o \
+			gcg/heur_xprins.o \
+			gcg/masterplugins.o \
+			gcg/bendersplugins.o \
+			gcg/misc.o \
+			gcg/miscvisualization.o \
+			gcg/nodesel_master.o \
+			gcg/objdialog.o \
+			gcg/params_visu.o \
+			gcg/presol_roundbound.o \
+			gcg/pricer_gcg.o \
+			gcg/pricestore_gcg.o \
+			gcg/pricingjob.o \
+			gcg/pricingprob.o \
+			gcg/reader_blk.o \
+			gcg/reader_cls.o \
+			gcg/reader_dec.o \
+			gcg/reader_gp.o \
+			gcg/reader_ref.o \
+			gcg/reader_tex.o \
+			gcg/relax_gcg.o \
+			gcg/scip_misc.o \
+			gcg/score_bender.o \
+			gcg/score_border.o \
+			gcg/score_classic.o \
+			gcg/score_fawh.o \
+			gcg/score_forswh.o \
+			gcg/score_maxwhite.o \
+			gcg/score_spfawh.o \
+			gcg/score_spfwh.o \
+			gcg/score_strong.o \
+			gcg/score.o \
+			gcg/sepa_basis.o \
+			gcg/sepa_master.o \
+			gcg/solver.o \
+			gcg/solver_gcg.o \
+			gcg/solver_knapsack.o \
+			gcg/solver_mip.o \
+			gcg/stat.o \
 
 ifeq ($(BLISS),true)
-LIBOBJ		+=	bliss_automorph.o \
-			dec_isomorph.o \
-			bliss.o
+LIBOBJ		+=	gcg/bliss_automorph.o \
+			gcg/dec_isomorph.o \
+			gcg/bliss.o
 endif
 
 ifeq ($(CLIQUER),true)
-LIBOBJ		+=	solver_cliquer.o
+LIBOBJ		+=	gcg/solver_cliquer.o
 endif
 
 ifeq ($(CPLEXSOLVER),true)
-LIBOBJ		+=	solver_cplex.o
+LIBOBJ		+=	gcg/solver_cplex.o
 endif
 
 MAINOBJ		=	main.o
@@ -364,7 +393,7 @@ MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 
 # GCG Library
 LIBOBJDIR	=	$(OBJDIR)/lib
-OBJSUBDIRS	= 	graph
+OBJSUBDIRS	= 	gcg graph
 LIBOBJSUBDIRS   =       $(addprefix $(LIBOBJDIR)/,$(OBJSUBDIRS))
 
 GCGLIBSHORTNAME =	gcg
@@ -475,7 +504,7 @@ endif
 
 .PHONY: doc
 doc:
-		cd doc; $(SHELL) builddoc.sh;
+		@cd doc; export BINDIR=$(PWD)/$(BINDIR); $(SHELL) builddoc.sh --mathjax;
 
 .PHONY: $(MAINSHORTLINK)
 $(MAINSHORTLINK):	$(MAINFILE)
@@ -499,8 +528,13 @@ ${GCGGITHASHFILE}: githash
 .PHONY: test
 test:
 		cd check; \
-		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE) $(SETCUTOFF) \
-		$(STATISTICS) $(SHARED);
+		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE) $(SETCUTOFF)\
+		$(STATISTICS) $(SHARED) $(VISU) $(LAST_STATISTICS) $(VISUSETTINGS) $(DETECTIONSTATISTICS);
+
+.PHONY: visu
+visu:
+		cd check; \
+		$(SHELL) ./writeTestsetReport.sh $(VISUSETTINGS) $(BINID) $(VERSION) $(MODE) $(LPS) $(THREADS) $(FEASTOL) $(LAST_STATISTICS) $(DATADIR);
 
 .PHONY: eval
 eval:
@@ -571,13 +605,13 @@ $(GCGLIBLINK):	$(GCGLIBFILE)
 		cd $(dir $@) && $(LN_s) $(notdir $(GCGLIBFILE)) $(notdir $@)
 
 
-$(MAINFILE):	$(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(TPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | $(BINDIR)
+$(MAINFILE):	$(SCIPLIBBASEFILE) $(LPILIBFILE) $(TPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | $(BINDIR)
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
 		$(LINKCXX_l)$(GCGLIB)$(LINKLIBSUFFIX) \
-		$(LINKCXX_L)$(SCIPDIR)/lib/static $(LINKCXX_l)$(SCIPLIB)$(LINKLIBSUFFIX) \
-                $(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
-		$(LINKCXX_l)$(NLPILIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(TPILIB)$(LINKLIBSUFFIX) \
+		$(LINKCXX_L)$(SCIPDIR)/lib/static $(LINKCXX_l)$(SCIPLIBBASE)$(LINKLIBSUFFIX) \
+		$(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
+		$(LINKCXX_l)$(TPILIB)$(LINKLIBSUFFIX) \
 		$(OFLAGS) $(LPSLDFLAGS) \
 		$(LDFLAGS) $(LINKCXX_o)$@
 
@@ -634,10 +668,7 @@ ifneq ($(LAST_CPLEXSOLVER),$(CPLEXSOLVER))
 		@-touch $(SRCDIR)/solver_cplex.c
 endif
 ifneq ($(LAST_STATISTICS),$(STATISTICS))
-		@-touch $(SRCDIR)/pricer_gcg.h
-		@-touch $(SRCDIR)/pricer_gcg.cpp
-		@-touch $(SRCDIR)/stat.c
-		@-touch $(SRCDIR)/event_bestsol.h
+		@$(SHELL) -ec 'for file in $$(grep "SCIP_STATISTIC" ${SRCDIR} -rl | sort -u); do touch $$file; done'
 endif
 
 ifneq ($(LAST_BLISS),$(BLISS))
@@ -760,7 +791,7 @@ help:
 		@echo
 		@echo "  General options:"
 		@echo "  - OPT={opt|dbg|prf}: Set solver mode (default: opt)."
-		@echo "  - STATISTICS=<true|false>: Enable additional statistics."
+		@echo "  - STATISTICS=<true|false>: Enable additional statistics. Required for pricing visualizations."
 		@echo "  - MODE={readdec|none}: If set to readdec (default), GCG looks for given .dec files. "
 		@echo "  - PARASCIP=<true|false>: Use SCIP's parallelization."
 		@echo "  - OPENMP=<true|false>: Use GCG's parallelization. Will set PARASCIP to true."
@@ -796,12 +827,19 @@ help:
 		@echo "  Options for make test:"
 		@echo "  - TEST=file: Define a testset file (located in ./check/testset) to be used"
 		@echo "  - SETTINGS=file: Define a settings file (located in ./settings) to be used"
+		@echo "  - MASTERSETTINGS: Define a settings file for master problem(located in ./settings) to be used"
 		@echo "  - MODE={readdec|none}: If set to readdec (default), GCG looks for given .dec files."
-		@echo "  - STATISTICS=<true|false>: Enable additional statistics."
+		@echo "  - STATISTICS=<true|false>: Enable additional statistics. Required for visualizations."
 		@echo "  - OPT={opt|dbg|prf}: Set solver mode (default: opt)."
 		@echo "  - MEM=b: Set memory limit."
 		@echo "  - TIME=s: Set time limit in seconds."
-		@echo "  - NODE=n: Set opened node limit for the branch and bound tree."
+		@echo "  - NODES=n: Set opened node limit for the branch and bound tree."
+		@echo "  - DETECTIONSTATISTICS=<true|false>: Print extended detection statistics. Required for detection visualizations."
+		@echo
+		@echo "  Options for the Visualization Suite: (for targets, see last section)"
+		@echo "  - VISU=<true|false>: Flag for make test. If true, generate data, then compose a testset report."
+		@echo "  - DATADIR=folder: Directory including .out and .res files for report generation."
+		@echo "  - VISUSETTINGS=file: Define a settings file (located in the root directory) for visualization scripts to use."
 		@echo
 		@echo "  Targets common for SCIP and GCG can be found in SCIP's make help."
 		@echo "  Most important SCIP targets:"
@@ -812,6 +850,7 @@ help:
 		@echo "  GCG specific targets:"
 		@echo "  - deps: build all dependencies."
 		@echo "  - testcluster: Runs the check/test script on the OR cluster."
+		@echo "  - visu: create a PDF report from existing runtime data."
 
 
 #---- EOF --------------------------------------------------------------------

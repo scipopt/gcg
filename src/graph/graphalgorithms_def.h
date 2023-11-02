@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -66,14 +66,14 @@ double GraphAlgorithms<T>::computeSoed(
 
    for( size_t i = 0; i < nedges; ++i )
    {
-      vector<int> nodes = graph.getHyperedgeNodes(i);
+      vector<int> nodes = graph.getHyperedgeNodes((int)i);
       for( auto &it : nodes)
       {
          it = partition[it];
       }
       auto end = std::unique(nodes.begin(), nodes.end());
       if( end - nodes.begin() > 1)
-         soed += ( end - nodes.begin())*graph.getHyperedgeWeight(i);
+         soed += ( end - nodes.begin())*graph.getHyperedgeWeight((int)i);
    }
    return soed;
 }
@@ -90,7 +90,7 @@ double GraphAlgorithms<T>::computeMincut(
 
    for( size_t i = 0; i < nedges; ++i )
    {
-      vector<int> nodes = graph.getHyperedgeNodes(i);
+      vector<int> nodes = graph.getHyperedgeNodes((int)i);
       for( auto &it : nodes)
       {
          it = partition[it];
@@ -98,7 +98,7 @@ double GraphAlgorithms<T>::computeMincut(
       auto end = std::unique(nodes.begin(), nodes.end());
 
       if( end - nodes.begin() > 1)
-         mincut += graph.getHyperedgeWeight(i);
+         mincut += graph.getHyperedgeWeight((int)i);
    }
 
    return mincut;
@@ -116,14 +116,14 @@ double GraphAlgorithms<T>::computekMetric(
 
    for( size_t i = 0; i < nedges; ++i )
    {
-      vector<int> nodes = graph.getHyperedgeNodes(i);
+      vector<int> nodes = graph.getHyperedgeNodes((int)i);
       for( auto &it : nodes)
       {
          it = partition[it];
       }
       auto end = std::unique(nodes.begin(), nodes.end());
 
-      kmetric += ( end - nodes.begin() -1)*graph.getHyperedgeWeight(i);
+      kmetric += ( end - nodes.begin() -1)*graph.getHyperedgeWeight((int)i);
    }
 
    return kmetric;
@@ -432,9 +432,9 @@ void GraphAlgorithms<T>::mstunion(std::vector<subset>& subsets, int x, int y)
 
 template<class T>
 std::vector<int> GraphAlgorithms<T>::mcl(
-   Graph<GraphGCG>& graph,          /**< the graph with weighted edges */
-   int& stoppedAfter,
-   double inflatefac,           /**< inflate factor */
+   Graph<GraphGCG>& graph,   /**< the graph with weighted edges */
+   int& stoppedAfter,        /**< number of iterations after which the clustering terminated */
+   double inflatefac,        /**< inflate factor */
    int maxiters,             /**< max number of iterations, set to 25 per default */
    int expandfac             /**< expand factor, should be always set to 2 */
 )

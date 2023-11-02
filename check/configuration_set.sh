@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -53,26 +53,26 @@ STATISTICS=${10} # should statistics be printed?
 GCGPATH=`pwd`
 
 # check if binary exists
-if test ! -e $GCGPATH/../$BINNAME
+if test ! -e "$GCGPATH/../$BINNAME"
 then
     echo Skipping test since the binary $BINNAME does not exist.
     exit
 fi
 
 # create results directory if it doesn't already exist
-if test ! -e $GCGPATH/results
+if test ! -e "$GCGPATH/results"
 then
     mkdir $GCGPATH/results
 fi
 
 # create vbc directory if it doesn't already exist
-if test ! -e $GCGPATH/results/vbc && "$STATISTICS" = "true"
+if test ! -e "$GCGPATH/results/vbc" && "$STATISTICS" = "true"
 then
     mkdir $GCGPATH/results/vbc
 fi
 
 # create settings directory if non-existent
-if test ! -d $GCGPATH/../settings/
+if test ! -d "$GCGPATH/../settings/"
 then
     echo Create directory settings
     mkdir $GCGPATH/../settings
@@ -83,10 +83,10 @@ SETTINGS=$GCGPATH/../settings/$SETNAME.set
 # check if the settings file exists
 if test $SETNAME != "default"
 then
-    if test ! -e $SETTINGS
+    if test ! -e "$SETTINGS"
     then
-        echo Skipping test since the settings file $SETTINGS does not exist.
-        exit
+        echo [WARNING] Settings file $SETTINGS does not exist.
+#      exit
     fi
 fi
 
@@ -95,7 +95,7 @@ MSETTINGS=$GCGPATH/../settings/$MSETNAME.set
 # check if the master settings file exists
 if test $MSETNAME != "default"
 then
-    if test ! -e $MSETTINGS
+    if test ! -e "$MSETTINGS"
     then
         echo Skipping test since the settings file $MSETTINGS does not exist.
         exit

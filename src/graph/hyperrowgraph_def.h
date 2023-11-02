@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -40,9 +40,9 @@
 #define GCG_HYPERROWGRAPH_DEF_H_
 
 #include "hyperrowgraph.h"
-#include "scip_misc.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/scip_misc.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include <set>
 #include <algorithm>
 #include <iostream>
@@ -73,7 +73,7 @@ template <class T>
 SCIP_RETCODE HyperrowGraph<T>::writeToFile(
    int                fd,                    /**< filename where the graph should be written to */
    SCIP_Bool          edgeweights            /**< whether to write edgeweights */
- )
+   )
 {
    FILE* file;
    file = fdopen(fd, "w");
@@ -118,7 +118,7 @@ int HyperrowGraph<T>::getNNodes()
 template <class T>
 int HyperrowGraph<T>::getNNeighbors(
    int i
-)
+   )
 {
    assert(i >= 0);
    assert(i < getNNodes());
@@ -129,7 +129,7 @@ int HyperrowGraph<T>::getNNeighbors(
 template <class T>
 std::vector<int> HyperrowGraph<T>::getHyperedgeNodes(
    int i
-)
+   )
 {
    assert(i >= 0);
    assert(i < getNEdges());
@@ -140,15 +140,15 @@ std::vector<int> HyperrowGraph<T>::getHyperedgeNodes(
 
 template <class T>
 SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
-   DEC_DECOMP**       decomp              /**< decomposition structure to generate */
-)
+   GCG_DECOMP**       decomp              /**< decomposition structure to generate */
+   )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int* nsubscipconss = NULL;
    int i;
-   SCIP_CONS **conss;
+   SCIP_CONS** conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
@@ -194,8 +194,8 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+      SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
+      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);
@@ -214,11 +214,11 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
    )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int* nsubscipconss = NULL;
    int i;
-   SCIP_CONS **conss;
+   SCIP_CONS** conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
@@ -302,9 +302,9 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
    )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int *nsubscipconss = NULL;
    int i;
    SCIP_Bool emptyblocks = FALSE;
 
@@ -443,7 +443,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
    /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
-      SCIP_VAR **curvars;
+      SCIP_VAR** curvars = NULL;
       std::vector<int> hyperedge;
       TCLIQUE_WEIGHT weight;
 
@@ -466,7 +466,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
 
       for( j = 0; j < ncurvars; ++j )
       {
-         SCIP_VAR* var1;
+         SCIP_VAR* var1 = NULL;
          int varIndex1;
 
          if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
@@ -502,9 +502,10 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
 
 template <class T>
 SCIP_RETCODE HyperrowGraph<T>::createFromPartialMatrix(
-                   DETPROBDATA*                                                   detprobdata,
-                   PARTIALDECOMP*                                                       partialdec
-     ){
+   DETPROBDATA* detprobdata,
+   PARTIALDECOMP* partialdec
+   )
+{
      int i;
      int j;
      unordered_map<int, int> oldToNewVarIndex;

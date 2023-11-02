@@ -1,4 +1,9 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.3)
+
+# option() honors normal variables.
+if(POLICY CMP0077)
+   cmake_policy(SET CMP0077 NEW)
+endif()
 
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_DEBUG} ${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} ${CMAKE_CXX_FLAGS_RELEASE}")
@@ -6,14 +11,14 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} ${CMAKE_CXX_FLAGS_R
 project(GCG)
 
 set(GCG_VERSION_MAJOR 3)
-set(GCG_VERSION_MINOR 1)
+set(GCG_VERSION_MINOR 6)
 set(GCG_VERSION_PATCH 0)
 set(GCG_VERSION_SUB 0)
 set(GCG_VERSION_API 2)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 
 # path to e.g. FindGMP module
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
@@ -24,7 +29,7 @@ message(STATUS "Build shared libraries: " ${SHARED})
 
 # make 'Release' the default build type
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
+   set(CMAKE_BUILD_TYPE Release)
 endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
@@ -35,9 +40,9 @@ option(GSL "should gcg be compiled with GSL" ON)
 option(GMP "should gmp be linked" ON)
 option(CLIQUER "should cliquer be linked" ON)
 option(CPLEX "should Cplex be used for solving pricing MIPs" OFF)
-option(HMETIS "should hmetis be called" ON)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
-option(GCG_DEV_BUILD "try to build SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
+option(GCG_DEV_BUILD "compile SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
+option(HMETIS "should hmetis be called" OFF)
 option(YAML "should LibYAML be linked" ON)
 
 # OPENMP
@@ -165,45 +170,23 @@ endif()
 message(STATUS \"Git hash: \" \${GITHASH})
 ")
 add_custom_target(gcg_update_githash
-                  COMMAND ${CMAKE_COMMAND} -DDST=${PROJECT_SOURCE_DIR}/src/githash.c
+                  COMMAND ${CMAKE_COMMAND} -DDST=${PROJECT_SOURCE_DIR}/src/gcg/githash.c
                                            -P ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake)
 # use C++11 standard
 set(CMAKE_CXX_STANDARD 11)
 
-#search the selected symmetry computation program
-if(SYM STREQUAL "bliss")
-   if(NOT DEFINED GCG_DEV_BUILD_BLISS_PATH)
-      set(GCG_DEV_BUILD_BLISS_PATH ${PROJECT_SOURCE_DIR}/lib/bliss-git)
-   endif()
-   if(NOT GCG_DEV_BUILD)
-      find_package(BLISS)
-   endif()
-   if(((NOT BLISS_FOUND) OR GCG_DEV_BUILD) AND (EXISTS ${GCG_DEV_BUILD_BLISS_PATH}) AND UNIX)
-      message(STATUS "Using '${GCG_DEV_BUILD_BLISS_PATH}'")
-      set(BLISS_DIR ${CMAKE_BINARY_DIR})
-      add_subdirectory(${GCG_DEV_BUILD_BLISS_PATH})
-      find_package(BLISS CONFIG)
-   endif()
-   if(BLISS_FOUND)
-      include_directories(${BLISS_INCLUDE_DIRS})
-      set(SYM_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
-      set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
-   else()
-      set(SYM_LIBRARIES)
-      set(SYM_PIC_LIBRARIES)
-   endif()
-elseif(SYM STREQUAL "none")
-   set(SYM_LIBRARIES)
-   set(SYM_PIC_LIBRARIES)
-else()
-   message(FATAL_ERROR "option SYM has wrong value")
-endif()
+# set function visibility default to hidden
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 # SCIP
 if(NOT GCG_DEV_BUILD)
-   find_package(SCIP CONFIG)
+   find_package(SCIP CONFIG REQUIRED)
+   if(SCIP_FOUND)
+      # SCIP headers can be directly included
+      include_directories(${SCIP_INCLUDE_DIRS})
+   endif()
 endif()
 
 if(NOT DEFINED GCG_DEV_BUILD_SOPLEX_PATH)
@@ -218,20 +201,24 @@ if((NOT SCIP_FOUND) AND (EXISTS ${GCG_DEV_BUILD_SCIP_PATH}) AND (EXISTS ${GCG_DE
    message(STATUS "Using '${GCG_DEV_BUILD_SOPLEX_PATH}'")
    message(STATUS "Using '${GCG_DEV_BUILD_SCIP_PATH}'")
    set(SOPLEX_DIR ${CMAKE_BINARY_DIR})
-   set(SCIP_DIR ${CMAKE_BINARY_DIR})
    add_subdirectory(${GCG_DEV_BUILD_SOPLEX_PATH})
    add_subdirectory(${GCG_DEV_BUILD_SCIP_PATH})
+   set(SCIP_LIBRARIES libscip)
 elseif(GCG_DEV_BUILD)
    message(WARNING "GCG_DEV_BUILD option is set but could not find SCIP and SoPlex in the lib/ subdirectory. Please specify GCG_DEV_BUILD_SOPLEX_PATH and GCG_DEV_BUILD_SCIP_PATH")
 endif()
 
-if(NOT SCIP_FOUND)
-   find_package(SCIP REQUIRED CONFIG)
-endif()
-
-if(SCIP_FOUND)
-   # SCIP headers can be directly included
-   include_directories(${SCIP_INCLUDE_DIRS})
+#search the selected symmetry computation program
+if(SYM STREQUAL "bliss")
+   set(SYM_LIBRARIES libbliss ${GMP_LIBRARIES})
+   set(SYM_PIC_LIBRARIES libbliss ${GMP_LIBRARIES})
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
+elseif(SYM STREQUAL "none")
+   set(SYM_LIBRARIES)
+   set(SYM_PIC_LIBRARIES)
+else()
+   message(FATAL_ERROR "option SYM has wrong value")
 endif()
 
 # TODO: In SCIP, license is in COPYING file and not in LICENSE.
@@ -253,21 +240,34 @@ add_subdirectory(src)
 # we set the GCG_DIR variable explicitly for the following examples/applications and unittests that depend on GCG.
 #
 set(GCG_DIR ${CMAKE_BINARY_DIR})
+
 #
 # add GCG tests
 #
-if(NOT TARGET check)
-   add_custom_target(check)
-endif()
-add_subdirectory(check)
-#
-# add unit tests as a single target. Including tests will add the unit tests as single executables
-#
-add_custom_target(gcg_unittests)
-#add_subdirectory(tests EXCLUDE_FROM_ALL)
-add_custom_target(gcg_all_executables DEPENDS gcg gcg_unittests)
+include(CTest)
+if(BUILD_TESTING)
+   if(NOT TARGET check)
+      add_custom_target(check)
+   endif()
+   add_subdirectory(check)
 
-enable_testing()
+   #
+   # add GCG documentation
+   #
+   if(NOT TARGET doc)
+      add_custom_target(doc)
+   endif()
+   add_subdirectory(doc)
+
+   #
+   # add unit tests as a single target. Including tests will add the unit tests as single executables
+   #
+   add_custom_target(gcg_unittests)
+   #add_subdirectory(tests EXCLUDE_FROM_ALL)
+   add_custom_target(gcg_all_executables DEPENDS gcg gcg_unittests)
+
+   enable_testing()
+endif()
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
    include(FeatureSummary)

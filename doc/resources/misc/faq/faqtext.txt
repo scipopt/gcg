@@ -1,0 +1,264 @@
+SECTION: General Questions about GCG
+    QUESTION: What is GCG?
+    LABEL:whatisgcg
+    ANSWER:
+    <p>
+      GCG is a <b>branch-price-and-cut solver</b> that also enables easy inclusion of own methods.
+      With its different techniques such as Dantzig-Wolfe and Benders decomposition,
+      GCG is able to solve some <b>instances much quicker</b> than other solvers, so
+      it is always worth to let GCG solve your instance.
+    </p>
+
+    QUESTION: When should I use GCG?
+    LABEL:whenusegcg
+    ANSWER:
+    <p>
+      You should use GCG if you want to...
+      <ul>
+        <li>solve a problem that might have a <b>structure in it</b> (whether known or unknown) much faster (see <a href="why-gcg.html">Why use GCG?</a>)</li>
+        <li>find out about how your problem is structured (see <a href="explore-menu.html">Explore Menu</a>)</li>
+        <li>implement your own rules, heuristics and methods <b>without having to implement branch-and-price (see <a href="example-projects.html">Example Projects</a>)</b></li>
+      </ul>
+    </p>
+
+    QUESTION: How is GCG licensed?
+    LABEL:licensefaq
+    ANSWER:
+    <p>
+      Just like for SCIP, as long as you use it for academic, non-commercial purposes, you do not need to buy any license.
+      This will not change. For the other cases, check the explanation of the
+      <a href="https://scipopt.org/#license">ZIB academic license</a> and always feel free to ask us.
+    </p>
+
+    QUESTION: How do I get started?
+    LABEL:howtogetstarted
+    ANSWER:
+    <p>
+      The <a href="installation.html">installation page</a> will not only explain how you can get <b>GCG up and running</b> but also hint to next steps.
+      For most, it is sensible to start with the <a href="getting-started.html">Getting Started Guide</a>.
+    </p>
+
+SECTION: Reading your problem and configuring GCG
+    QUESTION: How do I create a file out of my pen-and-paper program?
+    LABEL:createprogramfile
+    ANSWER:
+    <p>
+      You will first have to create a program file that can be read by GCG.
+      We offer readers for multiple input file formats, along which are the most frequently
+      used ones (.lp, .mps). Additionally, a ZIMPL interface is already present and a GAMS
+      interface is in development. With all these possible file formats, you can choose
+      which one to go with. For new users, we recommend using <a href="https://zimpl.zib.de/download/zimpl.pdf">ZIMPL</a>
+      to convert your paper-and-pen-program to a computer file.
+      After you obtained the required file, get started with our <a href="getting-started.html">guide</a> and read it.
+    </p>
+
+    QUESTION: How do I create my own settings file?
+    LABEL:createsettingsfile
+    ANSWER:
+    <p>
+      A settings file should be located in the settings folder inside the root directory.
+      The most common way to generate a settings file is through the <code>set diffsave</code>
+      command inside GCG that exports a <code>.set</code>-file with all parameters that
+      you changed.\n
+      Otherwise, you can also <b>define a settings file by yourself</b>. In each line, a parameter
+      can be set. This parameter is of the same form that it is in GCG,
+      for example "detection/detectors/connected/enabled". Often, these parameters are bools,
+      so turning on the connected detector could be done by "detection/detectors/connected/enabled = TRUE".
+      All possible parameters of GCG's current version can be found <a href="PARAMETERS.html">here</a>.
+      Note that the #-symbol will start comments.
+    </p>
+
+    QUESTION: How can I create solution files from an out file?
+    LABEL:createsolufile
+    ANSWER:
+    <p>
+      If you already have an out file and are confident that the results in it are correct, you can make
+      a <code>.solu</code> file out of it by setting the flag <code>writesolufile</code> to 1 in the file
+      <code>check/check.awk</code> and calling the script <code>check/evalcheck.sh</code> on your
+      <code>.out</code>-file. This will generate a solution file called <code>new_solufile.solu</code>
+      inside the <code>check/</code> directory.
+    </p>
+    <p>
+      For manual generation of the <code>.solu</code> file, you can check out the syntax definition
+      <a href="scipopt.org/doc/html/TEST.php">here</a>.
+    </p>
+
+SECTION: Presolving
+    QUESTION: Why is presolving important for the decomposition?
+    LABEL: presolving-importance
+    ANSWER:
+    <p>
+      As GCG uses several presolving methods from SCIP, the transformed problem (see also SCIP FAQ) may change
+      significantly from the original problem. Variables or constraints may be deleted or added which renders
+      the current decomposition invalid or unsuitable in some cases. GCG does some basic sanity checks, however,
+      it doesn't handle all problems and may crash if the decomposition is read at the wrong time (e.g. a
+      decomposition found after presolving is read before the problem is presolved).
+    </p>
+    <p>
+      Use only non presolved decompositions and disable presolving if you are in doubt!
+    </p>
+
+SECTION: Structure Detection
+    QUESTION: What decomposition files can be read?
+    LABEL:decformats
+    ANSWER:
+    <p>
+      Currently, GCG reads three different decomposition structure information file types:
+      <ul>
+        <li><code>.dec</code> <a href="reader__dec_8h.html"></a></li>
+        <li><code>.blk</code> <a href="reader__blk_8h.html"></a></li>
+        <li><code>.ref</code> <a href="reader__ref_8h.html"></a></li>
+      </ul>
+    </p>
+
+    QUESTION: What are the detected structures?
+    LABEL: structures
+    ANSWER:
+    <p>
+      GCG contains <b>several detectors</b> to find a block diagonal structures in the constraint matrix,
+      pure ones as well as such with a border. Additionally, some detectors are able to detect
+      staircase structures where no linking constraints are present and linking variables only
+      occur between two consecutive blocks.
+      With applications such as bin packing, capacitated p-median and generalized assignment problems in mind,
+      we furthermore included a detector that only assigns set partitioning and set covering constraints to the master problem.
+    </p>
+
+    QUESTION:  How does aggregation work in GCG?
+    LABEL: aggregation
+    ANSWER:
+    <p>
+      Detecting whether (some) pricing problems can be aggregated is done using Bliss, an external tool for computing automorphism groups of graphs.
+      After a decomposition has been selected, we check for each pair of pricing problems if they are identical (and their variables have the same
+      coefficients in the same master constraints) by creating an auxiliary graph and trying to find a suitable automorphism using Bliss. Identical
+      pricing problems are then aggregated. See the installation information for an instruction on how to include bliss.
+      If Bliss is not included, aggregation in GCG is done very simple. If the same variables appear in the same order with the same coefficients
+      in the same constraints for all pricing problems (and with the same coefficients in the master constraints), GCG will detect that and aggregate
+      the pricing problems.
+    </p>
+
+
+    QUESTION: Why are some detectors switch off by default?
+    LABEL: detectors
+    ANSWER:
+    <p>
+      While several detectors are only experimental, others <b>need external software</b>.
+      These detectors rely on additional packages (and only work under Unix based systems).
+      To use the Hypergraph Partitioning Detectors, you must either install hMETIS from the package
+      sources (if available there) or download it and put the executable in a directory contained in the PATH environment variable.
+      Additionally, the Isomorphism detector needs Bliss.
+      For information on how to install the external software, please consult the <a href="install-manually.html">Manual Installation Guide</a>.
+    </p>
+
+    QUESTION: How do I create or export my own decomposition file?
+    LABEL:createdecfile
+    ANSWER:
+    <p>
+      Generally, we recommend to try to make GCG detect your desired decomposition by using the settings
+      instead of creating it by hand.
+      For example, you could look up which detector decomposes your instance in the way you want it to be
+      and then only activate this detector. To find out which detector you need, look up
+      which structure each detector finds <a href="detectors.html">here</a>. Then, create your
+      <a href"#createsettingsfile">own settings file</a>, where only this detector is enabled as described <a href="detection-params.html">here</a>.
+      After detecting, perform a <code>write alldecompositions</code> to export all decompositions.
+    </p>
+    <p>
+      If you still want to write your .dec-file by hand, you can <b>find the required syntax <a href="reader__dec_8h.html">here</a></b>.
+      A more human readable example and information how to use the .dec-file can be found
+      in <a href="own-dec-file.html">How to create and use your own decomposition</a>.
+    </p>
+
+    QUESTION: How do I generate decomposition visualizations?
+    LABEL:decvisu
+    ANSWER:
+    <p>
+      Just like the picture on the GCG landing page, you can export images of <b>how GCG decomposed</b>
+      your program. This can be done in the <a href="explore-menu.html">Explore Menu</a>.
+    </p>
+    <p>
+      To find out which decomposition stems from what other, GCG can also generate a decomposition "family tree".
+      This is done with "write familytree".
+    </p>
+    <p>
+      To visualize the coefficient matrix of the original coefficient matrix, read the problem in and use <code>write matrix</code>.
+    </p>
+
+SECTION: Branch-and-Price
+    QUESTION: Why are not all pricers used by default?
+    LABEL:pricers
+    ANSWER:
+    <p>
+      Just like with the detectors, <b>some pricing solvers require additional software</b>. Currently, only
+      the <a href="install-manually.html#install-cliquer">Cliquer pricing solver</a> requires external
+      code. Apart from that, all pricing solvers are activated by default, though with different priorities
+      (see <a href="pricing-solvers.html">here</a> for more information).
+    </p>
+
+SECTION: Visualization Suite
+    QUESTION: What is the Visualization Suite?
+    LABEL:visusuite
+    ANSWER:
+    <p>
+      The GCG Visualization Suite offers <b>different bash and Python scripts that allow to unveil runtime behavior</b>.
+      The process of solving instances can be visualized on granular level, in aggregated form or compared to other
+      solving runs. The scripts can sometimes be harder to generate and interpret, since they partly assume
+      expert knowledge, but are thus very powerful if used correctly. An in-depth guide to all scripts can be found
+      <a href="visu-manual.html">here</a>.
+      As an easy entry to the manual visualization generation, we recommend using the Jupyter-based Visualization Notebook (see below).
+    </p>
+    <p>
+      For most users, however, the most important features are the reporting functionalities as described <a href="visu-suite.html">here</a>.
+      One can create testset reports with aggregated and instance-wise visualizations and comparison reports with comparing visualizations.
+    </p>
+
+    QUESTION: What is the Visualization Notebook?
+    LABEL:visunotebook
+    ANSWER:
+    <p>
+      The Visualization Notebook <b>imports parts of the visualization suite and allows for easy access to them</b>.
+      It gives a structure that one can follow when conducting experiments. Note that it does not offer functionality
+      to use GCG through its Python interface.
+    </p>
+
+    QUESTION: How do I generate runtime visualizations?
+    LABEL:runvisu
+    ANSWER:
+    <p>
+      Apart from the decomposition visualizations (as described in "How do I generate decomposition visualizations?"),
+      GCG also comes with some python scripts that allow to make graphics showing the pricing process, time distribution,
+      bounds development and more. A guide on how to use those scripts can be found <a href="generatevisu.html">here</a>
+    </p>
+
+SECTION: Interfaces
+    QUESTION: How do I use the GAMS interface?
+    LABEL:gams
+    ANSWER:
+    <p>
+      For the GAMS interface to run with GCG, you have to make sure that the dependencies were compiled with SHARED=true and READLINE=false.
+      Apart from that, a detailed guide is given <a href="u3.html">here</a>.
+    </p>
+
+    QUESTION: How do I use the Python interface?
+    LABEL:python
+    ANSWER:
+    <p>
+      To use the Python interface, please consult the corresponding guide.
+    </p>
+
+SECTION: Possible errors and caveats
+    QUESTION: Why is CTRL-C unsafe to use?
+    LABEL:ctrl-c
+    ANSWER:
+    <p>
+      In its current version, SCIP will finish the current node when pressing CTRL-C. This is a problem if the master problem is not completely finished solving.
+      The current node will be marked as finished and two branching children are created. Depending on when you press CTRL-C,
+      this may and will lead to different solving processes. If an optimal solution is found, they will be the same in all runs, however,
+      it might take a substantially different amount of time to do so.
+    </p>
+
+
+    QUESTION: After reading the decomposition file, GCG tells me that the behavior is undefined.
+    LABEL:e1
+    ANSWER:
+    <p>
+      If GCG can not detect whether your decomposition is for the presolved or the original problem, it cannot guard you against errors.
+    </p>

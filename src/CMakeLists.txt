@@ -13,198 +13,325 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED on)
 
 set(gcgsources
-    benders_gcg.c
-    bendersplugins.c
-    branch_empty.c
-    branch_generic.c
-    branch_orig.c
-    branch_relpsprob.c
-    branch_ryanfoster.c
-    class_conspartition.cpp
-    class_indexpartition.cpp
-    miscvisualization.cpp
-    class_pricingcontroller.cpp
-    class_pricingtype.cpp
-    class_partialdecomp.cpp
-    class_detprobdata.cpp
-    class_stabilization.cpp
-    class_varpartition.cpp
-    clscons_miplibconstypes.cpp
-    clscons_nnonzeros.cpp
-    clscons_consnamenonumbers.cpp
-    clscons_consnamelevenshtein.cpp
-    clscons_scipconstypes.cpp
-    clsvar_objvalues.cpp
-    clsvar_scipvartypes.cpp
-    clsvar_objvaluesigns.cpp
-    colpool.c
-    cons_decomp.cpp
-    cons_integralorig.c
-    cons_masterbranch.c
-    cons_origbranch.c
-    dec_compgreedily.cpp
-    dec_connected_noNewLinkingVars.cpp
-    dec_connectedbase.cpp
-    dec_consclass.cpp
-    dec_constype.cpp
-    dec_dbscan.cpp
-    dec_densemasterconss.cpp
-    dec_generalmastersetcover.cpp
-    dec_generalmastersetpack.cpp
-    dec_generalmastersetpart.cpp
-    dec_hcgpartition.cpp
-    dec_hrcgpartition.cpp
-    dec_hrgpartition.cpp
-    dec_mastersetcover.cpp
-    dec_mastersetpack.cpp
-    dec_mastersetpart.cpp
-    dec_mst.cpp
-    dec_neighborhoodmaster.cpp
-    dec_postprocess.cpp
-    dec_staircase_lsp.cpp
-    dec_stairheur.cpp
-    dec_varclass.cpp
-    decomp.c
-    dialog_explore.cpp
-    dialog_gcg.c
-    dialog_graph.cpp
-    dialog_master.c
-    disp_gcg.c
-    disp_master.c
-    event_bestsol.c
-    event_display.c
-    event_mastersol.c
-    event_relaxsol.c
-    event_solvingstats.c
-    gcgcol.c
-    gcggithash.c
-    gcgheur.c
-    gcgsepa.c
-    gcgplugins.c
-    gcgpqueue.c
-    gcgsort.c
-    gcgvar.c
+    gcg/benders_gcg.c
+    gcg/bendersplugins.c
+    gcg/branch_bpstrong.c
+    gcg/branch_empty.c
+    gcg/branch_generic.c
+    gcg/branch_orig.c
+    gcg/branch_relpsprob.c
+    gcg/branch_ryanfoster.c
+    gcg/class_conspartition.cpp
+    gcg/class_detprobdata.cpp
+    gcg/class_indexpartition.cpp
+    gcg/class_partialdecomp.cpp
+    gcg/class_pricingcontroller.cpp
+    gcg/class_pricingtype.cpp
+    gcg/class_stabilization.cpp
+    gcg/class_varpartition.cpp
+    gcg/clscons_consnamelevenshtein.cpp
+    gcg/clscons_consnamenonumbers.cpp
+    gcg/clscons_gamsdomain.cpp
+    gcg/clscons_gamssymbol.cpp
+    gcg/clscons_miplibconstypes.cpp
+    gcg/clscons_nnonzeros.cpp
+    gcg/clscons_scipconstypes.cpp
+    gcg/clscons.c
+    gcg/clsvar_gamsdomain.cpp
+    gcg/clsvar_gamssymbol.cpp
+    gcg/clsvar_objvalues.cpp
+    gcg/clsvar_objvaluesigns.cpp
+    gcg/clsvar_scipvartypes.cpp
+    gcg/clsvar.c
+    gcg/colpool.c
+    gcg/cons_decomp.cpp
+    gcg/cons_integralorig.c
+    gcg/cons_masterbranch.c
+    gcg/cons_origbranch.c
+    gcg/dec_compgreedily.cpp
+    gcg/dec_connected_noNewLinkingVars.cpp
+    gcg/dec_connectedbase.cpp
+    gcg/dec_consclass.cpp
+    gcg/dec_constype.cpp
+    gcg/dec_dbscan.cpp
+    gcg/dec_densemasterconss.cpp
+    gcg/dec_generalmastersetcover.cpp
+    gcg/dec_generalmastersetpack.cpp
+    gcg/dec_generalmastersetpart.cpp
+    gcg/dec_mastersetcover.cpp
+    gcg/dec_mastersetpack.cpp
+    gcg/dec_mastersetpart.cpp
+    gcg/dec_mst.cpp
+    gcg/dec_neighborhoodmaster.cpp
+    gcg/dec_postprocess.cpp
+    gcg/dec_staircase_lsp.cpp
+    gcg/dec_stairheur.cpp
+    gcg/dec_varclass.cpp
+    gcg/decomp.c
+    gcg/dialog_explore.cpp
+    gcg/dialog_gcg.c
+    gcg/dialog_graph.cpp
+    gcg/dialog_master.c
+    gcg/disp_gcg.c
+    gcg/disp_master.c
+    gcg/event_bestsol.c
+    gcg/event_display.c
+    gcg/event_mastersol.c
+    gcg/event_relaxsol.c
+    gcg/event_solvingstats.c
+    gcg/gcg_general.c
+    gcg/gcgcol.c
+    gcg/gcggithash.c
+    gcg/gcgheur.c
+    gcg/gcgplugins.c
+    gcg/gcgpqueue.c
+    gcg/gcgsepa.c
+    gcg/gcgsort.c
+    gcg/gcgvar.c
+    gcg/heur_gcgcoefdiving.c
+    gcg/heur_gcgdins.c
+    gcg/heur_gcgfeaspump.c
+    gcg/heur_gcgfracdiving.c
+    gcg/heur_gcgguideddiving.c
+    gcg/heur_gcglinesdiving.c
+    gcg/heur_gcgpscostdiving.c
+    gcg/heur_gcgrens.c
+    gcg/heur_gcgrins.c
+    gcg/heur_gcgrounding.c
+    gcg/heur_gcgshifting.c
+    gcg/heur_gcgsimplerounding.c
+    gcg/heur_gcgveclendiving.c
+    gcg/heur_gcgzirounding.c
+    gcg/heur_greedycolsel.c
+    gcg/heur_mastercoefdiving.c
+    gcg/heur_masterdiving.c
+    gcg/heur_masterfracdiving.c
+    gcg/heur_masterlinesdiving.c
+    gcg/heur_mastervecldiving.c
+    gcg/heur_origdiving.c
+    gcg/heur_relaxcolsel.c
+    gcg/heur_restmaster.c
+    gcg/heur_setcover.c
+    gcg/heur_xpcrossover.c
+    gcg/heur_xprins.c
+    gcg/masterplugins.c
+    gcg/misc.c
+    gcg/miscvisualization.cpp
+    gcg/nodesel_master.c
+    gcg/objdialog.cpp
+    gcg/params_visu.c
+    gcg/presol_roundbound.c
+    gcg/pricer_gcg.cpp
+    gcg/pricestore_gcg.c
+    gcg/pricingjob.c
+    gcg/pricingprob.c
+    gcg/reader_blk.cpp
+    gcg/reader_cls.cpp
+    gcg/reader_dec.cpp
+    gcg/reader_gp.cpp
+    gcg/reader_ref.c
+    gcg/reader_tex.cpp
+    gcg/relax_gcg.c
+    gcg/scip_misc.c
+    gcg/score_bender.cpp
+    gcg/score_border.cpp
+    gcg/score_classic.cpp
+    gcg/score_fawh.cpp
+    gcg/score_forswh.cpp
+    gcg/score_maxwhite.cpp
+    gcg/score_spfawh.cpp
+    gcg/score_spfwh.cpp
+    gcg/score_strong.cpp
+    gcg/score.c
+    gcg/sepa_basis.c
+    gcg/sepa_master.c
+    gcg/solver_gcg.cpp
+    gcg/solver_knapsack.c
+    gcg/solver_mip.c
+    gcg/solver.c
+    gcg/stat.c
+)
+
+set(gcggraphsources
     graph/graph_gcg.cpp
     graph/graph_tclique.cpp
     graph/inst.cpp
     graph/weights.cpp
-    heur_gcgcoefdiving.c
-    heur_gcgdins.c
-    heur_gcgfeaspump.c
-    heur_gcgfracdiving.c
-    heur_gcgguideddiving.c
-    heur_gcglinesdiving.c
-    heur_gcgpscostdiving.c
-    heur_gcgrens.c
-    heur_gcgrins.c
-    heur_gcgrounding.c
-    heur_gcgshifting.c
-    heur_gcgsimplerounding.c
-    heur_gcgveclendiving.c
-    heur_gcgzirounding.c
-    heur_greedycolsel.c
-    heur_mastercoefdiving.c
-    heur_masterdiving.c
-    heur_masterfracdiving.c
-    heur_masterlinesdiving.c
-    heur_mastervecldiving.c
-    heur_origdiving.c
-    heur_relaxcolsel.c
-    heur_restmaster.c
-    heur_setcover.c
-    heur_xpcrossover.c
-    heur_xprins.c
-    masterplugins.c
-    misc.c
-    nodesel_master.c
-    objdialog.cpp
-    params_visu.c
-    presol_roundbound.c
-    pricer_gcg.cpp
-    pricestore_gcg.c
-    pricingjob.c
-    pricingprob.c
-    reader_blk.cpp
-    reader_cls.cpp
-    reader_dec.cpp
-    reader_gp.cpp
-    reader_ref.c
-    reader_tex.cpp
-    relax_gcg.c
-    scip_misc.c
-    scoretype.c
-    sepa_basis.c
-    sepa_master.c
-    solver.c
-    solver_knapsack.c
-    solver_mip.c
-    solver_gcg.cpp
-    stat.c
 )
 
 set(gcgheaders
-    branch_empty.h
-    branch_generic.h
-    branch_orig.h
-    branch_relpsprob.h
-    branch_ryanfoster.h
-    class_conspartition.h
-    class_indexpartition.h
-    miscvisualization.h
-    class_pricingcontroller.h
-    class_pricingtype.h
-    class_partialdecomp.h
-    class_detprobdata.h
-    class_stabilization.h
-    class_varpartition.h
-    colpool.h
-    cons_decomp.h
-    cons_decomp.hpp
-    cons_integralorig.h
-    cons_masterbranch.h
-    cons_origbranch.h
-    dec_colors.h
-    dec_compgreedily.h
-    dec_connected.h
-    dec_connected_noNewLinkingVars.h
-    dec_connectedbase.h
-    dec_consclass.h
-    dec_constype.h
-    dec_cutpacking.h
-    dec_dbscan.h
-    dec_densemasterconss.h
-    dec_generalmastersetcover.h
-    dec_generalmastersetpack.h
-    dec_generalmastersetpart.h
-    dec_hcgpartition.h
-    dec_hrcgpartition.h
-    dec_hrgpartition.h
-    dec_mastersetcover.h
-    dec_mastersetpack.h
-    dec_mastersetpart.h
-    dec_mst.h
-    dec_neighborhoodmaster.h
-    dec_postprocess.h
-    dec_random.h
-    dec_staircase_lsp.h
-    dec_stairheur.h
-    dec_varclass.h
-    decomp.h
-    dialog_gcg.h
-    dialog_graph.h
-    dialog_master.h
-    disp_gcg.h
-    disp_master.h
-    event_bestsol.h
-    event_display.h
-    event_mastersol.h
-    event_relaxsol.h
-    event_solvingstats.h
-    gcg.h
-    gcgcol.h
-    gcggithash.h
-    gcgplugins.h
-    gcgpqueue.h
+    gcg/branch_empty.h
+    gcg/branch_bpstrong.h
+    gcg/branch_generic.h
+    gcg/branch_orig.h
+    gcg/branch_relpsprob.h
+    gcg/branch_ryanfoster.h
+    gcg/class_conspartition.h
+    gcg/class_indexpartition.h
+    gcg/miscvisualization.h
+    gcg/class_pricingcontroller.h
+    gcg/class_pricingtype.h
+    gcg/class_partialdecomp.h
+    gcg/class_detprobdata.h
+    gcg/class_stabilization.h
+    gcg/class_varpartition.h
+    gcg/clscons.h
+    gcg/clsvar.h
+    gcg/colpool.h
+    gcg/cons_decomp.h
+    gcg/cons_decomp.hpp
+    gcg/cons_integralorig.h
+    gcg/cons_masterbranch.h
+    gcg/cons_origbranch.h
+    gcg/dec_compgreedily.h
+    gcg/dec_connected_noNewLinkingVars.h
+    gcg/dec_connectedbase.h
+    gcg/dec_consclass.h
+    gcg/dec_constype.h
+    gcg/dec_dbscan.h
+    gcg/dec_densemasterconss.h
+    gcg/dec_generalmastersetcover.h
+    gcg/dec_generalmastersetpack.h
+    gcg/dec_generalmastersetpart.h
+    gcg/dec_mastersetcover.h
+    gcg/dec_mastersetpack.h
+    gcg/dec_mastersetpart.h
+    gcg/dec_mst.h
+    gcg/dec_neighborhoodmaster.h
+    gcg/dec_postprocess.h
+    gcg/dec_staircase_lsp.h
+    gcg/dec_stairheur.h
+    gcg/dec_varclass.h
+    gcg/decomp.h
+    gcg/def.h
+    gcg/dialog_gcg.h
+    gcg/dialog_graph.h
+    gcg/dialog_master.h
+    gcg/disp_gcg.h
+    gcg/disp_master.h
+    gcg/event_bestsol.h
+    gcg/event_display.h
+    gcg/event_mastersol.h
+    gcg/event_relaxsol.h
+    gcg/event_solvingstats.h
+    gcg/gcg.h
+    gcg/gcgcol.h
+    gcg/gcg_general.h
+    gcg/gcggithash.h
+    gcg/gcgplugins.h
+    gcg/gcgpqueue.h
+    gcg/gcgsort.h
+    gcg/heur_gcgcoefdiving.h
+    gcg/heur_gcgdins.h
+    gcg/heur_gcgfeaspump.h
+    gcg/heur_gcgfracdiving.h
+    gcg/heur_gcgguideddiving.h
+    gcg/heur_gcglinesdiving.h
+    gcg/heur_gcgpscostdiving.h
+    gcg/heur_gcgrens.h
+    gcg/heur_gcgrins.h
+    gcg/heur_gcgrounding.h
+    gcg/heur_gcgshifting.h
+    gcg/heur_gcgsimplerounding.h
+    gcg/heur_gcgveclendiving.h
+    gcg/heur_gcgzirounding.h
+    gcg/heur_greedycolsel.h
+    gcg/heur_mastercoefdiving.h
+    gcg/heur_masterdiving.h
+    gcg/heur_masterfracdiving.h
+    gcg/heur_masterlinesdiving.h
+    gcg/heur_mastervecldiving.h
+    gcg/heur_origdiving.h
+    gcg/heur_relaxcolsel.h
+    gcg/heur_restmaster.h
+    gcg/heur_setcover.h
+    gcg/heur_xpcrossover.h
+    gcg/heur_xprins.h
+    gcg/masterplugins.h
+    gcg/nodesel_master.h
+    gcg/objdialog.h
+    gcg/objpricer_gcg.h
+    gcg/params_visu.h
+    gcg/presol_roundbound.h
+    gcg/pricer_gcg.h
+    gcg/pricestore_gcg.h
+    gcg/pricingjob.h
+    gcg/pricingprob.h
+    gcg/pub_bliss.h
+    gcg/pub_clscons.h
+    gcg/pub_clsvar.h
+    gcg/pub_colpool.h
+    gcg/pub_decomp.h
+    gcg/pub_gcgcol.h
+    gcg/pub_gcgheur.h
+    gcg/pub_gcgsepa.h
+    gcg/pub_gcgpqueue.h
+    gcg/pub_gcgvar.h
+    gcg/pub_pricingjob.h
+    gcg/pub_pricingprob.h
+    gcg/pub_score.h
+    gcg/pub_solver.h
+    gcg/reader_blk.h
+    gcg/reader_cls.h
+    gcg/reader_dec.h
+    gcg/reader_gp.h
+    gcg/reader_ref.h
+    gcg/reader_tex.h
+    gcg/relax_gcg.h
+    gcg/scip_misc.h
+    gcg/score_bender.h
+    gcg/score_border.h
+    gcg/score_classic.h
+    gcg/score_fawh.h
+    gcg/score_forswh.h
+    gcg/score_maxwhite.h
+    gcg/score_spfawh.h
+    gcg/score_spfwh.h
+    gcg/score_strong.h
+    gcg/score.h
+    gcg/sepa_basis.h
+    gcg/sepa_master.h
+    gcg/solver.h
+    gcg/solver_cliquer.h
+    gcg/solver_gcg.cpp
+    gcg/solver_knapsack.h
+    gcg/solver_mip.h
+    gcg/solver_xyz.h
+    gcg/stat.h
+    gcg/struct_branchgcg.h
+    gcg/struct_colpool.h
+    gcg/struct_decomp.h
+    gcg/struct_detector.h
+    gcg/struct_gcgcol.h
+    gcg/struct_gcgpqueue.h
+    gcg/struct_pricestore_gcg.h
+    gcg/struct_pricingjob.h
+    gcg/struct_pricingprob.h
+    gcg/struct_score.h
+    gcg/struct_solver.h
+    gcg/struct_vardata.h
+    gcg/type_branchgcg.h
+    gcg/type_classifier.h
+    gcg/type_colpool.h
+    gcg/type_consclassifier.h
+    gcg/type_decomp.h
+    gcg/type_detector.h
+    gcg/type_gcgcol.h
+    gcg/type_gcgpqueue.h
+    gcg/type_masterdiving.h
+    gcg/type_origdiving.h
+    gcg/type_parameter.h
+    gcg/type_pricestore_gcg.h
+    gcg/type_pricingjob.h
+    gcg/type_pricingprob.h
+    gcg/type_pricingstatus.h
+    gcg/type_score.h
+    gcg/type_solver.h
+    gcg/type_varclassifier.h
+    gcg/wrapper_partialdecomp.h
+)
+
+set(gcggraphheaders
     graph/bipartitegraph.h
     graph/bipartitegraph_def.h
     graph/bridge.h
@@ -212,6 +339,7 @@ set(gcgheaders
     graph/columngraph_def.h
     graph/graph.h
     graph/graph_def.h
+    graph/graph_gcg.h
     graph/graph_interface.h
     graph/graph_tclique.h
     graph/graphalgorithms.h
@@ -229,141 +357,61 @@ set(gcgheaders
     graph/rowgraph.h
     graph/rowgraph_def.h
     graph/weights.h
-    gcgsort.h
-    heur_gcgcoefdiving.h
-    heur_gcgdins.h
-    heur_gcgfeaspump.h
-    heur_gcgfracdiving.h
-    heur_gcgguideddiving.h
-    heur_gcglinesdiving.h
-    heur_gcgpscostdiving.h
-    heur_gcgrens.h
-    heur_gcgrins.h
-    heur_gcgrounding.h
-    heur_gcgshifting.h
-    heur_gcgsimplerounding.h
-    heur_gcgveclendiving.h
-    heur_gcgzirounding.h
-    heur_greedycolsel.h
-    heur_mastercoefdiving.h
-    heur_masterdiving.h
-    heur_masterfracdiving.h
-    heur_masterlinesdiving.h
-    heur_mastervecldiving.h
-    heur_origdiving.h
-    heur_relaxcolsel.h
-    heur_restmaster.h
-    heur_setcover.h
-    heur_xpcrossover.h
-    heur_xprins.h
-    masterplugins.h
-    nodesel_master.h
-    objdialog.h
-    objpricer_gcg.h
-    params_visu.h
-    presol_roundbound.h
-    pricer_gcg.h
-    pricestore_gcg.h
-    pricingjob.h
-    pricingprob.h
-    pub_bliss.h
-    pub_colpool.h
-    pub_decomp.h
-    pub_gcgcol.h
-    pub_gcgheur.h
-    pub_gcgsepa.h
-    pub_gcgpqueue.h
-    pub_gcgvar.h
-    pub_pricingjob.h
-    pub_pricingprob.h
-    pub_solver.h
-    reader_blk.h
-    reader_cls.h
-    reader_dec.h
-    reader_gp.h
-    reader_ref.h
-    reader_tex.h
-    relax_gcg.h
-    scip_misc.h
-    scoretype.h
-    sepa_basis.h
-    sepa_master.h
-    solver.h
-    solver_cliquer.h
-    solver_knapsack.h
-    solver_mip.h
-    solver_xyz.h
-    stat.h
-    struct_branchgcg.h
-    struct_colpool.h
-    solver_gcg.h
-    struct_decomp.h
-    struct_detector.h
-    struct_gcgcol.h
-    struct_gcgpqueue.h
-    struct_pricestore_gcg.h
-    struct_pricingjob.h
-    struct_pricingprob.h
-    struct_solver.h
-    struct_vardata.h
-    type_branchgcg.h
-    type_colpool.h
-    type_decomp.h
-    type_detector.h
-    type_gcgcol.h
-    type_gcgpqueue.h
-    type_masterdiving.h
-    type_origdiving.h
-    type_pricestore_gcg.h
-    type_pricingjob.h
-    type_pricingprob.h
-    type_pricingstatus.h
-    type_solver.h
-    wrapper_detprobdata.h
-    wrapper_partialdecomp.h
 )
 
-if(BLISS_FOUND AND SYM STREQUAL "bliss")
+if(SYM STREQUAL "bliss")
    set(gcgsources ${gcgsources}
-      bliss.cpp
-      bliss_automorph.cpp
-      dec_isomorph.cpp
+      gcg/bliss_automorph.cpp
+      gcg/bliss.cpp
+      gcg/dec_isomorph.cpp
    )
    set(gcgheaders ${gcgheaders} 
-      bliss_automorph.h
-      bliss_automorph.hpp
-      dec_isomorph.h
+      gcg/bliss_automorph.h
+      gcg/bliss_automorph.hpp
+      gcg/dec_isomorph.h
    )
 endif()
 
 if(CLIQUER_FOUND)
    set(gcgsources ${gcgsources}
-      solver_cliquer.c
+      gcg/solver_cliquer.c
    )
 endif()
 
 if(CPLEX_FOUND)
    set(gcgsources ${gcgsources}
-      solver_cplex.c
+      gcg/solver_cplex.c
    )
    set(gcgheaders ${gcgheaders}
-      solver_cplex.h
+      gcg/solver_cplex.h
    )
 endif()
 
 if(HMETIS_FOUND)
-   include_directories(${CMAKE_CURRENT_BINARY_DIR})
-   add_definitions(-DHMETIS_HEADER)
-   configure_file(hmetis.h.in hmetis.h)
+   if(NOT WIN32)
+      set(gcgsources ${gcgsources}
+         gcg/dec_hcgpartition.cpp
+         gcg/dec_hrcgpartition.cpp
+         gcg/dec_hrgpartition.cpp
+      )
+      set(gcgheaders ${gcgheaders}
+         gcg/dec_hcgpartition.h
+         gcg/dec_hrcgpartition.h
+         gcg/dec_hrgpartition.h
+      )
+      include_directories(${CMAKE_CURRENT_BINARY_DIR})
+      add_definitions(-DHMETIS_HEADER)
+      configure_file(hmetis.h.in hmetis.h)
+   endif()
 endif()
 
 if(YAML_FOUND)
     set(gcgsources ${gcgsources}
-        reader_ndec.cpp
+        gcg/reader_ndec.cpp
     )
     set(gcgheaders ${gcgheaders}
-        reader_ndec.h
-        reader_ndec.hpp
+        gcg/reader_ndec.h
+        gcg/reader_ndec.hpp
     )
 else()
     SET(YAML_LIBRARIES)
@@ -371,7 +419,7 @@ endif()
 
 # all source files should be compiled with a c++ compiler
 if(CXXONLY)
-    set_source_files_properties(main.c ${gcgsources} PROPERTIES LANGUAGE CXX)
+    set_source_files_properties(main.c ${gcgsources} ${gcggraphsources} PROPERTIES LANGUAGE CXX)
 
     # for the clang compiler this suppresses the warnings about treating 'c' input as 'c++' when CXXONLY is enabled
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -379,15 +427,25 @@ if(CXXONLY)
     endif()
 endif()
 
-add_library(libgcg ${gcgsources})
-setLibProperties(libgcg "gcg")
+source_group("gcg" FILES ${gcgsources} ${gcgheaders})
+source_group("graph" FILES ${gcggraphsources} ${gcggraphheaders})
+source_group("main" FILES main.c)
+
+add_library(libgcg ${gcgsources} ${gcggraphsources} ${gcgheaders} ${gcggraphheaders})
+
+if(MSVC)
+   # msvc otherwise is not smart enough and tries to link the gcg.exe binary as a library
+   setLibProperties(libgcg "libgcg")
+else()
+   setLibProperties(libgcg "gcg")
+endif()
 
 target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
 
 if(SHARED)
     set(SCIP_NEEDED 0)
     target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES} ${CLIQUER_PIC_LIBRARIES} ${CPLEX_PIC_LIBRARIES} ${GSL_PIC_LIBRARIES} ${YAML_PIC_LIBRARIES})
-    add_executable(gcg main.c ${gcgsources})
+    add_executable(gcg main.c ${gcgsources} ${gcggraphsources} ${gcgheaders} ${gcggraphheaders})
 else()
     set(SCIP_NEEDED ${SCIP_FOUND})
     target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES} ${YAML_LIBRARIES})
@@ -395,12 +453,17 @@ else()
     target_link_libraries(gcg libgcg)
 endif()
 
+add_executable(GCG::GCG ALIAS gcg)
+add_library(GCG::libgcg ALIAS libgcg)
+
+include(GenerateExportHeader)
+generate_export_header(libgcg BASE_NAME gcg EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/gcg/gcg_export.h)
+target_compile_definitions(gcg PRIVATE GCG_STATIC_DEFINE)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     find_package(Sanitizers)
     add_sanitizers(gcg)
 endif()
-
-target_compile_definitions(gcg PRIVATE EXTERN=extern)
 
 target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES} ${YAML_LIBRARIES})
 
@@ -419,8 +482,13 @@ set_target_properties(gcg PROPERTIES
 
 # install the header files of gcg
 install(FILES ${gcgheaders} DESTINATION include/gcg)
-if(HMETIS_FOUND)
-   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmetis.h DESTINATION include/gcg)
+# separate installation of graph headers to preserve the folder structure
+# see e.g. here: https://stackoverflow.com/a/11097012
+install(FILES ${gcggraphheaders} DESTINATION include/graph)
+if(NOT WIN32)
+   if(HMETIS_FOUND)
+      install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmetis.h DESTINATION include/gcg)
+   endif()
 endif()
 
 # install the binary and the library to appropriate locations and add them to an export group
@@ -454,3 +522,11 @@ configure_file(${PROJECT_SOURCE_DIR}/gcg-config.cmake.in
 install(EXPORT gcg-targets FILE gcg-targets.cmake DESTINATION lib/cmake/gcg)
 install(FILES "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/gcg-config.cmake" DESTINATION lib/cmake/gcg)
 
+if(MSVC)
+   if(GCG_DEV_BUILD)
+      add_custom_command(TARGET gcg POST_BUILD
+         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+         "${SCIP_BINARY_DIR}/bin/$<CONFIG>/libscip.dll"
+         "${GCG_BINARY_DIR}/bin/$<CONFIG>")
+    endif()
+endif()

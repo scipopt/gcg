@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -33,80 +33,21 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define GCG_VERSION 310
-#define GCG_SUBVERSION 0
-
 #include <string.h>
 
 #include "scip/scip.h"
 #include "scip/scipdefplugins.h"
 #include "scip/scipshell.h"
-#include "gcgplugins.h"
-#include "cons_decomp.h"
+#include "gcg/gcgplugins.h"
+#include "gcg/cons_decomp.h"
 
-#include "gcggithash.h"
-#include "relax_gcg.h"
-#include "cons_decomp.h"
-#include "gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/gcg.h"
 
-#if SCIP_VERSION < 600
-#error GCG 3.0.0 can only be compiled with SCIP version 6.0.0 or higher
+#if SCIP_VERSION < 801
+#error GCG can only be compiled with SCIP version 8.0.1 or higher
 #endif
-
-
-/** Gets GCG major version
- * @returns GCG major version */
-static
-int GCGmajorVersion(void)
-{
-   return GCG_VERSION/100;
-}
-
-/** Gets GCG minor version
- * @returns GCG minor version */
-static
-int GCGminorVersion(void)
-{
-   return (GCG_VERSION/10) % 10; /*lint !e778*/
-}
-
-/** Gets GCG technical version
- * @returns GCG technical version */
-static
-int GCGtechVersion(void)
-{
-   return GCG_VERSION % 10; /*lint !e778*/
-}
-#if GCG_SUBVERSION > 0
-/** Gets GCG sub version number
- * @returns GCG sub version number */
-static
-int GCGsubversion(void)
-{
-   return GCG_SUBVERSION;
-}
-#endif
-
-/** prints out GCG version
- * @returns nothing */
-static
-void GCGprintVersion(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file                /**< output file (or NULL for standard output) */
-   )
-{
-   assert(scip != NULL);
-
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "GCG version %d.%d.%d",
-      GCGmajorVersion(), GCGminorVersion(), GCGtechVersion());
-#if GCG_SUBVERSION > 0
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, ".%d", GCGsubversion());
-#endif
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " [GitHash: %s]", GCGgetGitHash());
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Copyright (C) 2010-2020 Operations Research, RWTH Aachen University\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "                        Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)\n\n");
-}
 
 
 /** read in parameter file
@@ -137,7 +78,6 @@ SCIP_RETCODE fromCommandLine(
    const char*           decname             /**< decomposition file name (or NULL) */
    )
 {
-   SCIP_RESULT result = SCIP_DIDNOTRUN;
    /********************
     * Problem Creation *
     ********************/
@@ -145,47 +85,27 @@ SCIP_RETCODE fromCommandLine(
    SCIPinfoMessage(scip, NULL, "\nread problem <%s>\n", filename);
    SCIPinfoMessage(scip, NULL, "============\n\n");
    SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
-   SCIP_CALL( SCIPconshdlrDecompRepairConsNames(scip) );
-   SCIP_CALL( SCIPtransformProb(scip) );
+
+   SCIP_CALL( GCGtransformProb(scip) );
 
    if( decname != NULL )
    {
       SCIPinfoMessage(scip, NULL, "\nread decomposition <%s>\n", decname);
       SCIPinfoMessage(scip, NULL, "==================\n\n");
       SCIP_CALL( SCIPreadProb(scip, decname, NULL) );
-      if( GCGconshdlrDecompOrigPartialdecExists(scip) )
-      {
-         SCIP_CALL(SCIPsetIntParam(scip, "presolving/maxrounds", 0));
-      }
-   }
-
-   SCIP_CALL( SCIPpresolve(scip) );
-   GCGconshdlrDecompTranslateOrigPartialdecs(scip);
-
-   if( GCGconshdlrDecompGetNPartialdecs(scip) == 0 )
-   {
-      SCIP_CALL( DECdetectStructure(scip, &result) );
    }
 
    /*******************
     * Problem Solving *
     *******************/
-
-   if( decname == NULL && result != SCIP_SUCCESS )
-   {
-      SCIPinfoMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
-      return SCIP_OKAY;
-   }
-   /* solve problem */
    SCIPinfoMessage(scip, NULL, "\nsolve problem\n");
    SCIPinfoMessage(scip, NULL, "=============\n\n");
 
-   SCIP_CALL( SCIPsolve(scip) );
+   SCIP_CALL( GCGsolve(scip) );
 
    SCIPinfoMessage(scip, NULL, "\nprimal solution:\n");
    SCIPinfoMessage(scip, NULL, "================\n\n");
    SCIP_CALL( SCIPprintBestSol(scip, NULL, FALSE) );
-
 
    /**************
     * Statistics *
@@ -266,7 +186,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             mastersetname = argv[i];
          else
          {
-            SCIPinfoMessage(scip, NULL, "missing master settings filename after parameter '-m'\n");
+            SCIPinfoMessage(scip, NULL, "missing settings filename for master program after parameter '-m'\n");
             paramerror = TRUE;
          }
       }
@@ -460,7 +380,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             "  -l <logfile>           : copy output into log file\n"
             "  -q                     : suppress screen messages\n"
             "  -s <settings>          : load parameter settings (.set) file\n"
-            "  -m <mastersettings>    : load master parameter settings (.set) file\n",
+            "  -m <mastersettings>    : load parameter settings for master program (.set) file\n",
             argv[0]);
       SCIPinfoMessage(scip, NULL, "  -f <problem>           : load and solve problem file\n"
          "  -d <decomposition>     : load decomposition file\n"

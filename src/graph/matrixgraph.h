@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -39,11 +39,11 @@
 #include "objscip/objscip.h"
 #include "tclique/tclique.h"
 #include "weights.h"
-#include "pub_decomp.h"
+#include "gcg/pub_decomp.h"
 #include "bridge.h"
 #include "graph_interface.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include <exception>
 #include <vector>
 #include <string>
@@ -68,7 +68,7 @@ public:
    MatrixGraph(
       SCIP*                 scip,              /**< SCIP data structure */
       Weights               w                  /**< weights for the given graph */
-   );
+      );
 
    /** Destructor */
    virtual ~MatrixGraph();
@@ -87,8 +87,8 @@ public:
 
 
    virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
-   )
+      GCG_DECOMP**       decomp              /**< decomposition structure to generate */
+      )
    {
       return SCIP_ERROR;
    }
@@ -100,7 +100,7 @@ public:
       PARTIALDECOMP*      oldpartialdec,            /**< partialdec which should be amplifies */
       PARTIALDECOMP**     firstpartialdec,          /**< pointer to buffer the new partialdec amplified by dint of the graph */
       PARTIALDECOMP**     secondpartialdec,         /**< pinter to buffer the new partialdec whose border is amplified by dint of the graph */
-      DETPROBDATA*  detprobdata
+      DETPROBDATA*        detprobdata               /**< detection process information and data */
       )
    {
       return SCIP_ERROR;
@@ -112,7 +112,7 @@ public:
     */
    virtual SCIP_RETCODE readPartition(
       const char*        filename            /**< filename where the partition is stored */
-   )
+      )
    {
       SCIP_CALL( graphiface->readPartition(filename) );
       return SCIP_OKAY;

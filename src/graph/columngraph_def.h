@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -61,13 +61,13 @@ ColumnGraph<T>::~ColumnGraph()
 
 template <class T>
 SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
-   DEC_DECOMP**         decomp
-)
+   GCG_DECOMP**         decomp
+   )
 {
    int nblocks;
-   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock = NULL;
 
-   int *nsubscipconss;
+   int* nsubscipconss = NULL;
    int i;
    SCIP_CONS **conss;
    SCIP_Bool emptyblocks = FALSE;
@@ -100,8 +100,8 @@ SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+      SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
+      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);
@@ -150,7 +150,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
    /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
-      SCIP_VAR **curvars;
+      SCIP_VAR** curvars = NULL;
 
       int ncurvars;
       SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+      
+
+<html>
+  <head>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/main.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <script>
+	  // Set variables from the json data
+      tdata = JSON.parse({{tempdata|tojson|safe}});
+      tempdata = tdata.data;
+      temptitle = tdata.title;
+    </script>
+
+    <script type="text/javascript">
+      // Load the Visualization API and the corechart package
+      google.charts.load('current', {'packages':['corechart']});
+
+      // Set a callback for when the API is loaded
+      google.charts.setOnLoadCallback(drawChart);
+
+      // This is the callback function which actually draws the chart
+      function drawChart() {
+        // Create a data table from the data passed into the template
+        var data = new google.visualization.arrayToDataTable(tempdata,false);
+        var height = data.getNumberOfRows() * 31 + 25;
+        var options = {'title':temptitle,
+                       //'width':1920,
+                       'height':height,
+                       'isStacked': true, // absolute stacking
+                       // isStacked: 'percent', // relative stacking
+                        vAxis : { title: "Instance; Decomposition", textStyle : {fontSize: 10 } },
+                        hAxis : { title: "Runtime", textStyle : {fontSize: 12 } },
+                        legend:  { textStyle: { fontName: 'Roboto', fontSize: 12} },
+                        tooltip: { textStyle: { fontName: 'Roboto', fontSize: 10 } },
+    };
+
+        // Instantiate and draw the chart
+        var chart = new google.visualization.BarChart(document.getElementById('chart_div'));
+		chart.draw(data, options);
+      }
+    </script>
+  </head>
+
+  <body>
+ <nav class="navbar navbar-expand-sm bg-secondary navbar-dark">
+
+  <a class="navbar-brand" href="https://gcg.or.rwth-aachen.de/">
+      <h1 style="font-weight:bolder">GCG <span style="font-weight:lighter">Interactive Explorer</span></h1></a>
+ <!--
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+-->
+  <div class="collapse navbar-collapse" id="collapsibleNavbar">
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" href="https://gcg.or.rwth-aachen.de/dev/doc-3.1.0/visu-manual.html"  target="_blank">Visualization Framework</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+  <div class = "p-3 mr-1 m-1 bg-light rounded border border-dark">
+    <h2><b>Runtime Distribution per Tuple</b></h2>
+    <div>Illustration of "where the time went" during the GCG solving process.</div>
+
+  </div>
+
+
+
+  <div class = "p-3 mr-1 m-4 bg-light bg-white rounded shadow">
+		<div id="chart_div"></div>
+	</div>
+  <br>
+  
+<div style="margin-top:30px" class="container">
+  <div class="row">
+	<div class="col-sm shadow p-8 mr-4 mb-4  bg-white rounded" >
+    <p>
+      <center>
+      © 2010-2023 by Operations Research, RWTH Aachen University, <a href="https://www.or.rwth-aachen.de/en/site-credits.html">Imprint</a>, <a href="https://www.or.rwth-aachen.de/en/privacy-policy.html">Privacy Policy</a>
+    </center>
+    </p>
+	</div>
+
+  </div>
+
+  <div class="row">
+
+
+	<div class="col-sm shadow p-8 mr-4 mb-4 bg-white rounded">
+
+
+	</div>
+
+	<div class="col-sm shadow p-8 mr-4 mb-4  bg-white rounded">
+
+	</div>
+	<div class="col-sm shadow p-8 mr-4 mb-4  bg-white rounded">
+
+	</div>
+
+
+  </div>
+</div>
+
+</div>
+
+
+<div  style="margin-bottom:0;">
+        <footer>
+        </footer>
+</div>
+  </body>
+</html>

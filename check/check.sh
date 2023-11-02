@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -50,24 +50,43 @@ MODE=${17}
 SETCUTOFF=${18}
 STATISTICS=${19}
 SHARED=${20}
+VISU=${21}
+LAST_STATISTICS=${22}
+SCRIPTSETTINGS=${23}
+DETECTIONSTATISTICS=${24}
 
 SETDIR=../settings
 
-if $SHARED = "true"
+if test "${SHARED}" = "true"
 then
   LD="LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:../lib/shared/"
+fi
+
+SETDIR=../settings
+
+if test "${VISU}" = "true"
+then
+    DETECTIONSTATISTICS=true
+    STATISTICS=true
 fi
 if test ! -e results
 then
     mkdir results
 fi
-if test ! -e results/vbc && $STATISTICS = "true"
+if test ! -e results/vbc
 then
-    mkdir results/vbc
+    if test "${STATISTICS}" = "true"
+    then
+        mkdir results/vbc
+    fi
 fi
 if test ! -e locks
 then
     mkdir locks
+fi
+if test "${DETECTIONSTATISTICS}" = "true"
+then
+    mkdir -p results/decomps
 fi
 
 LOCKFILE=locks/$TSTNAME.$SETNAME.$MSETNAME.$VERSION.$LPS.lock
@@ -86,14 +105,14 @@ MSETTINGS=$SETDIR/$MSETNAME.set
 
 if test "$LOCK" = "true"
 then
-    if test -e $DONEFILE
+    if test -e "$DONEFILE"
     then
         echo skipping test due to existing done file $DONEFILE
         exit
     fi
-    if test -e $LOCKFILE
+    if test -e "$LOCKFILE"
     then
-        if test -e $RUNFILE
+        if test -e "$RUNFILE"
         then
             echo continuing aborted run with run file $RUNFILE
         else
@@ -118,11 +137,11 @@ else
 fi
 
 DATEINT=`date +"%s"`
-if test -e $OUTFILE
+if test -e "$OUTFILE"
 then
     $MVORCP $OUTFILE $OUTFILE.old-$DATEINT
 fi
-if test -e $ERRFILE
+if test -e "$ERRFILE"
 then
     $MVORCP $ERRFILE $ERRFILE.old-$DATEINT
 fi
@@ -162,7 +181,7 @@ fi
 SOLUFILE=""
 for SOLU in testset/$TSTNAME.solu testset/_all.solu
 do
-    if test -e $SOLU
+    if test -e "$SOLU"
     then
         SOLUFILE=$SOLU
         break
@@ -208,7 +227,7 @@ do
     fi
     if test "$LASTPROB" = ""
     then
-        if test -f $PROB
+        if test -f "$PROB"
         then
             echo @01 $PROB ===========
             echo @01 $PROB ===========             >> $ERRFILE
@@ -242,7 +261,13 @@ do
             echo set display freq $DISPFREQ        >> $TMPFILE
             if test $STATISTICS = "true"
             then
+              if test $VISU = "true"
+              then
+                mkdir -p results/vbc/$TSTNAME/
+                echo set visual vbcfilename results/vbc/$TSTNAME/$NAME.$SETNAME.vbc >> $TMPFILE
+              else
                 echo set visual vbcfilename results/vbc/$NAME.$SETNAME.vbc >> $TMPFILE
+              fi
             fi
             echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
             if test "$LPS" = "none"
@@ -391,11 +416,11 @@ do
 		echo set presolving maxrounds 0    >> $TMPFILE
 		echo presolve                      >> $TMPFILE
 		echo detect                        >> $TMPFILE
-		if test -f $DECFILE
+		if test -f "$DECFILE"
                     then
                         BLKFILE=$DECFILE
                     fi
-                    if test -f $BLKFILE
+                    if test -f "$BLKFILE"
                     then
                         EXT=${BLKFILE##*.}
                         if test "$EXT" = "gz"
@@ -429,11 +454,11 @@ do
             else
                 if test $MODE = "readdec"
                 then
-                    if test -f $DECFILE
+                    if test -f "$DECFILE"
                     then
                         BLKFILE=$DECFILE
                     fi
-                    if test -f $BLKFILE
+                    if test -f "$BLKFILE"
                     then
                         EXT=${BLKFILE##*.}
                         if test "$EXT" = "gz"
@@ -458,6 +483,7 @@ EOF
                     fi
                 fi
                 GP_BASE=`basename $DECFILE .dec`
+
 #                echo detect                        >> $TMPFILE
 #                echo write problem $HOME\/results\/gpsBench\/$GP_BASE.gp >> $TMPFILE
 #                echo write problem $HOME\/results\/decsBench\/$GP_BASE.dec >> $TMPFILE
@@ -467,6 +493,13 @@ EOF
                 then
                     echo display additionalstatistics  >> $TMPFILE
                 fi
+
+                if [[ $DETECTIONSTATISTICS == "true" ]]
+                then
+                    echo display detectionstatistics     >> $TMPFILE
+                    echo explore export 0 quit           >> $TMPFILE
+                fi
+
 #               echo display solution              >> $TMPFILE
                 echo checksol                      >> $TMPFILE
             fi
@@ -507,7 +540,7 @@ rm -f cipreadparsetest.cip
 date >>$OUTFILE
 date >>$ERRFILE
 
-if test -e $DONEFILE
+if test -e "$DONEFILE"
 then
     ./evalcheck.sh $OUTFILE
 
@@ -515,4 +548,17 @@ then
     then
         rm -f $RUNFILE
     fi
+fi
+if test "$VISU" = "true"
+then
+  ./writeTestsetReport.sh $SCRIPTSETTINGS $BINID $VERSION $MODE $LPS $THREADS $FEASTOL $LAST_STATISTICS $OUTFILE $RESFILE results/vbc/$TSTNAME/ $TSTNAME $SETNAME $TIMELIMIT $MEMLIMIT
+fi
+
+if test "$DETECTIONSTATISTICS" = "true"
+then
+    for gpfile in $(ls *--gp)
+    do
+        sed -i.bak "s/--pdf/\.pdf/g" $gpfile && rm *.bak
+        mv $gpfile results/decomps/$(echo $gpfile | sed "s/--gp/\.gp/g")
+    done
 fi

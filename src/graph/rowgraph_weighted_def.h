@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2020 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -100,7 +100,7 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
    /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
-      SCIP_VAR **curvars1;
+      SCIP_VAR** curvars1 = NULL;
 
       int ncurvars1;
       SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
@@ -119,7 +119,7 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
       /* go through all constraints again */
       for( j = 0; j < i; ++j )
       {
-         SCIP_VAR **curvars2;
+         SCIP_VAR** curvars2 = NULL;
          int ncurvars2;
          SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[j], &ncurvars2, &success) );
          assert(success);
@@ -144,7 +144,7 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
          int c = 0;   // number of variables that appear ONLY in the first row
          for( k = 0; k < ncurvars1; ++k )
          {
-            SCIP_VAR* var1;
+            SCIP_VAR* var1 = NULL;
             int varIndex1;
 
             if( !GCGisVarRelevant(curvars1[k]) )
@@ -162,7 +162,7 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
 
             for( l = 0; l < ncurvars2; ++l )
             {
-               SCIP_VAR* var2;
+               SCIP_VAR* var2 = NULL;
                int varIndex2;
 
                if( !GCGisVarRelevant(curvars2[l]) )
@@ -451,7 +451,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
       // For each var save the labels of all the constraints where this var appears.
       for(auto i = 0; i < this->nconss; i++)
       {
-         SCIP_VAR **curvars;
+         SCIP_VAR** curvars = NULL;
          int ncurvars;
          SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
          assert(success);
@@ -507,7 +507,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
       // Iterate all the conss and remove them (i.e. set label to -1) if necessary
       for(auto i = 0; i < this->nconss; i++)
       {
-         SCIP_VAR **curvars1;
+         SCIP_VAR** curvars1 = NULL;
          int ncurvars1;
          SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
          assert(success);
@@ -577,11 +577,11 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
       const int non_cl_pts = count(labels.begin(), labels.end(), -1);
       if(non_cl_pts > 0)
       {
-         this->n_blocks = diff_blocks.size() - 1;
+         this->n_blocks = (int) diff_blocks.size() - 1;
       }
       else
       {
-         this->n_blocks = diff_blocks.size();
+         this->n_blocks = (int) diff_blocks.size();
       }
       this->non_cl = non_cl_pts;
 
@@ -784,11 +784,11 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::DETPROB
       const int non_cl_pts = count(labels.begin(), labels.end(), -1);
       if(non_cl_pts > 0)
       {
-         this->n_blocks = diff_blocks.size() - 1;
+         this->n_blocks = (int) diff_blocks.size() - 1;
       }
       else
       {
-         this->n_blocks = diff_blocks.size();
+         this->n_blocks = (int) diff_blocks.size();
       }
       this->non_cl = non_cl_pts;
 
@@ -850,7 +850,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
       /* go through all constraints */
       for(int i = 0; i < this->nconss; ++i )
       {
-         SCIP_VAR **curvars1;
+         SCIP_VAR** curvars1 = NULL;
 
          int ncurvars1;
          SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
@@ -870,7 +870,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
          for(int j = 0; j < i; ++j )
          {
             if(labels[i] == labels[j]) continue;
-            SCIP_VAR **curvars2;
+            SCIP_VAR** curvars2 = NULL;
             SCIP_Bool continueloop;
             int ncurvars2;
             SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[j], &ncurvars2, &success) );
@@ -893,7 +893,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
 
             for(int k = 0; k < ncurvars1; ++k )
             {
-               SCIP_VAR* var1;
+               SCIP_VAR* var1 = NULL;
                int varIndex1;
 
                if( !GCGisVarRelevant(curvars1[k]) )
@@ -911,7 +911,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
 
                for(int l = 0; l < ncurvars2; ++l )
                {
-                  SCIP_VAR* var2;
+                  SCIP_VAR* var2 = NULL;
                   int varIndex2;
 
                   if( !GCGisVarRelevant(curvars2[l]) )
@@ -985,11 +985,11 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
       const int non_cl_pts = count(labels.begin(), labels.end(), -1);
       if(non_cl_pts > 0)
       {
-         this->n_blocks = diff_blocks.size() - 1;
+         this->n_blocks = (int) diff_blocks.size() - 1;
       }
       else
       {
-         this->n_blocks = diff_blocks.size();
+         this->n_blocks = (int) diff_blocks.size();
       }
       this->non_cl = non_cl_pts;
 
@@ -1196,11 +1196,11 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSetForPartialGraph(gcg
       const int non_cl_pts = count(labels.begin(), labels.end(), -1);
       if(non_cl_pts > 0)
       {
-         this->n_blocks = diff_blocks.size() - 1;
+         this->n_blocks = (int) diff_blocks.size() - 1;
       }
       else
       {
-         this->n_blocks = diff_blocks.size();
+         this->n_blocks = (int) diff_blocks.size();
       }
       this->non_cl = non_cl_pts;
 
