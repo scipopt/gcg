@@ -2556,7 +2556,6 @@ SCIP_RETCODE initializeMasterProblemSolve(
 )
 {
    SCIP_RELAXDATA* relaxdata;
-   SCIP_Bool cutoff;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -2579,7 +2578,8 @@ SCIP_RETCODE initializeMasterProblemSolve(
       assert(relaxdata->decomp != NULL);
    }
 
-   if( !SCIPisLPConstructed(scip) ) {
+   if( !SCIPisLPConstructed(scip) && !SCIPinProbing(scip) ) {
+      SCIP_Bool cutoff;
       /* construct the LP in the original problem */
       SCIP_CALL(SCIPconstructLP(scip, &cutoff));
       assert(!cutoff);
