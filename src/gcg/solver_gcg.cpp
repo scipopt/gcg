@@ -33,6 +33,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 // #define SCIP_DEBUG
+// #define DEBUG_PRICING_ALL_OUTPUT
 
 #include "scip/scip.h"
 #include "gcg.h"
@@ -196,7 +197,7 @@ SCIP_RETCODE adjustSettings(SCIP* pricingprob, SCIP* subgcg)
 
    // @todo: hack
    //SCIP_CALL( SCIPsetBoolParam(subgcg, "pricing/masterpricer/stabilization", FALSE) );
-   SCIP_CALL( SCIPsetIntParam(subgcg, "lp/solvefreq", -1) );
+   //SCIP_CALL( SCIPsetIntParam(subgcg, "lp/solvefreq", -1) );
    //SCIP_CALL( SCIPsetBoolParam(subgcg, "sepa/basis/enable", FALSE) );
 
    return SCIP_OKAY;
