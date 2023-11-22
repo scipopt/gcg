@@ -163,10 +163,11 @@ GCG_DECL_SCORECALC(scoreCalcForswh)
       newblockarea += ((SCIP_Real) partialdec->getNConssForBlock(b) ) * ( (SCIP_Real) partialdec->getNVarsForBlock(b) + nlinkingvarsforblock[b] );
    }
 
-   SCIP_Real maxforeseeingwhitescore = ((SCIP_Real ) newblockarea + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
-   maxforeseeingwhitescore =  maxforeseeingwhitescore / (SCIP_Real) newheight ;
+   SCIP_Real maxforeseeingwhitescore = newwidth == 0 ? 1. : ((SCIP_Real ) newblockarea + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
+   maxforeseeingwhitescore =  newheight == 0 ? 1. : maxforeseeingwhitescore / (SCIP_Real) newheight;
 
    maxforeseeingwhitescore = 1. - maxforeseeingwhitescore;
+   assert(maxforeseeingwhitescore == SCIP_INVALID || (maxforeseeingwhitescore >= 0. && maxforeseeingwhitescore <= 1.));
    *scorevalue = maxforeseeingwhitescore;
 
    return SCIP_OKAY;
