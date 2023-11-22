@@ -260,7 +260,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    cutpool = SCIPgetGlobalCutpool(origscip);
    SCIPdebugMessage("SCIPseparateSol() found %d cuts!\n", SCIPcutpoolGetNCuts(cutpool));
-   SCIPgetDelayedGlobalCutpool()
 
    /* if cut off is detected set result pointer and return SCIP_OKAY */
    if( cutoff )
