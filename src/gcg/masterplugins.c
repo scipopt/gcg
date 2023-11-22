@@ -41,6 +41,7 @@
 #include "scip/cons_and.h"
 #include "scip/cons_bounddisjunction.h"
 #include "scip/cons_conjunction.h"
+#include "scip/cutsel_hybrid.h"
 #include "scip/cons_integral.h"
 #include "scip/cons_indicator.h"
 #include "scip/cons_knapsack.h"
@@ -323,6 +324,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
    SCIP_CALL( SCIPincludeSepaMaster(scip) );
+   SCIP_CALL( SCIPincludeCutselHybrid(scip) );
    SCIP_CALL( SCIPincludeDispMaster(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
    SCIP_CALL( SCIPincludeTableDefault(scip) );
