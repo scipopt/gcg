@@ -223,7 +223,7 @@ build:windows_release:
   before_script:
     - echo "on windows"
   script:
-    - cmake -S . -B build -DGCG_DEV_BUILD=ON -DREADLINE=OFF -DGMP=OFF -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF
+    - cmake -S . -B build -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
     - cmake --build build --target gcg --config Release
     - cmake --build build --target gcg_check --config Release
   artifacts:
@@ -249,7 +249,7 @@ build:windows_debug:
   before_script:
     - echo "on windows"
   script:
-    - cmake -S . -B build -DGCG_DEV_BUILD=ON -DREADLINE=OFF -DGMP=OFF -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF
+    - cmake -S . -B build -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
     - cmake --build build --target gcg --config Debug
     - cmake --build build --target gcg_check --config Debug
   artifacts:
