@@ -432,7 +432,7 @@ target_link_libraries(libgcg
     ${SYM_LIBRARIES}
     ${CLIQUER_LIBRARIES}
     ${CPLEX_LIBRARIES}
-    ${GSL_LIBRARIES}
+    $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
     ${JSON-C_LIBRARIES})
 
 if(SHARED)
@@ -463,7 +463,7 @@ target_link_libraries(gcg
     ${SYM_LIBRARIES}
     ${CLIQUER_LIBRARIES}
     ${CPLEX_LIBRARIES}
-    ${GSL_LIBRARIES}
+    $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
     ${JSON-C_LIBRARIES})
 
 add_dependencies(libgcg gcg_update_githash)
