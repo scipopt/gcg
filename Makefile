@@ -88,8 +88,8 @@ endif
 
 # overriding SCIP SYM setting if compiled with BLISS
 ifeq ($(BLISS),true)
-override SYM=bliss
-MAKEOVERRIDES += SYM=bliss
+override SYM=sbliss
+MAKEOVERRIDES += SYM=sbliss
 endif
 
 #-----------------------------------------------------------------------------
@@ -783,7 +783,7 @@ help:
 		@echo "  - GAMS=<true|false>: To enable or disable (default) reading functionality in GAMS reader (needs GAMS)."
 		@echo "  - GTEST=<true|false>: Enables Google Test."
 		@echo "  - BLISS=<true|false>: Enables BLISS (graph isomorphism, used a.o., by 'isomorph' detector)."
-		@echo "  - SYM=<none|bliss>: To choose type of symmetry handling."
+		@echo "  - SYM=<none|bliss|sbliss>: To choose type of symmetry handling."
 		@echo "  - ZIMPL=<true|false>: Enables ZIMPL, required to convert .zpl files to .lp/.mps files"
 		@echo
 		@echo "  More detailed options:"

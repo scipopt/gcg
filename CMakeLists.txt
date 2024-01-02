@@ -110,8 +110,8 @@ if(HMETIS_FOUND)
    add_definitions(-DWITH_HMETIS)
 endif()
 
-set(SYM bliss CACHE STRING "options for symmetry computation")  #create the variable
-set_property(CACHE SYM PROPERTY STRINGS bliss none )  #define list of values GUI will offer for the variable
+set(SYM sbliss CACHE STRING "options for symmetry computation")  #create the variable
+set_property(CACHE SYM PROPERTY STRINGS sbliss bliss none )  #define list of values GUI will offer for the variable
 
 #set the correct rpath for OS X
 set(CMAKE_MACOSX_RPATH ON)
@@ -196,7 +196,7 @@ elseif(GCG_DEV_BUILD)
 endif()
 
 #search the selected symmetry computation program
-if(SYM STREQUAL "bliss")
+if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
    set(SYM_LIBRARIES libbliss ${GMP_LIBRARIES})
    set(SYM_PIC_LIBRARIES libbliss ${GMP_LIBRARIES})
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
