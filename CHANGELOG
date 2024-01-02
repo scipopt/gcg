@@ -86,6 +86,8 @@ Code cleanup:
 -------------
 
 - Refactored scores
+- Moved source files to src/gcg
+- Moved src/test to test
 
 
 @page RN35 Release notes for GCG 3.5
