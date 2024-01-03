@@ -28,6 +28,7 @@
 /**@file   sepa_master.c
  * @brief  master separator
  * @author Gerald Gamrath
+ * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -180,10 +181,11 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIP*   origscip;
    SCIP_Bool delayed;
    SCIP_Bool cutoff;
-   SCIP_ROW** cuts;
+   SCIP_CUT** cuts;
    SCIP_ROW* mastercut;
    SCIP_VAR** rowvars;
    SCIP_SEPADATA* sepadata;
+   SCIP_CUTPOOL* cutpool;
 
    SCIP_VAR** mastervars;
    SCIP_Real* mastervals;
@@ -192,7 +194,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    char name[SCIP_MAXSTRLEN];
 
    int ncuts;
-   int norigcuts;
    int i;
    int j;
    SCIP_Bool feasible;
@@ -249,8 +250,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
          isroot, TRUE, FALSE, &delayed, &cutoff) );
 
-   SCIPdebugMessage("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(origscip));
-
    if( delayed && !cutoff )
    {
       SCIPdebugMessage("call delayed separators\n");
@@ -259,11 +258,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
             isroot, TRUE, TRUE, &delayed, &cutoff) );
    }
 
+   cutpool = SCIPgetGlobalCutpool(origscip);
+   SCIPdebugMessage("SCIPseparateSol() found %d cuts!\n", SCIPcutpoolGetNCuts(cutpool));
+
    /* if cut off is detected set result pointer and return SCIP_OKAY */
    if( cutoff )
    {
       *result = SCIP_CUTOFF;
-      SCIP_CALL( SCIPendProbing(origscip) );
 
       /* disable separating again */
       SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_OFF, TRUE) );
@@ -271,27 +272,17 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       return SCIP_OKAY;
    }
 
-   cuts = SCIPgetCuts(origscip);
-   ncuts = SCIPgetNCuts(origscip);
+   cuts = SCIPcutpoolGetCuts(cutpool);
+   ncuts = SCIPcutpoolGetNCuts(cutpool);
 
    /* save cuts in the origcuts array in the separator data */
-   norigcuts = sepadata->ncuts;
    SCIP_CALL( ensureSizeCuts(scip, sepadata, sepadata->ncuts + ncuts) );
-
-   for( i = 0; i < ncuts; i++ )
-   {
-      sepadata->origcuts[norigcuts] = cuts[i];
-      SCIP_CALL( SCIPcaptureRow(origscip, sepadata->origcuts[norigcuts]) );
-      norigcuts++;
-   }
-
-   SCIP_CALL( SCIPclearCuts(origscip) );
 
    mastervars = SCIPgetVars(scip);
    nmastervars = SCIPgetNVars(scip);
    SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
 
-   for( i = 0; i < ncuts; i++ )
+   for( i = sepadata->ncuts; i < ncuts; i++ )
    {
       SCIP_ROW* origcut;
       SCIP_COL** cols;
@@ -299,7 +290,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       SCIP_Real* vals;
       SCIP_Real shift;
 
-      origcut = sepadata->origcuts[norigcuts-ncuts+i]; /*lint !e679*/
+      origcut = SCIPcutGetRow(cuts[i]); /*lint !e679*/
 
       /* get columns and vals of the cut */
       ncols = SCIProwGetNNonz(origcut);
@@ -332,18 +323,18 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       /* add the cut to the master problem */
       SCIP_CALL( SCIPaddRow(scip, mastercut, FALSE, &feasible) );
       sepadata->mastercuts[sepadata->ncuts] = mastercut;
+      sepadata->origcuts[sepadata->ncuts] = origcut;
+      SCIP_CALL( SCIPcaptureRow(origscip, origcut) );
       sepadata->ncuts++;
 
 #ifdef SCIP_DEBUG
-      SCIPdebugMessage("Cut %d:\n", i);
+      SCIPdebugMessage("Cut %d (efficacious %d):\n", i, SCIPisCutEfficacious(scip, NULL, mastercut));
       SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
       SCIPdebugMessage("\n\n");
 #endif
 
       SCIPfreeBufferArray(scip, &rowvars);
    }
-
-   assert(norigcuts == sepadata->ncuts);
 
    if( ncuts > 0 )
       *result = SCIP_SEPARATED;
@@ -390,7 +381,7 @@ SCIP_RETCODE SCIPincludeSepaMaster(
          &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/paramsetting", "parameter returns which parameter setting is used for "
-      "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 1, 0, 2, NULL, NULL) );
+      "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 0, 0, 2, NULL, NULL) );
 
    return SCIP_OKAY;
 }
