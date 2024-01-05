@@ -169,11 +169,13 @@ SCIP_RETCODE applyOriginalBranching(
 
    if( boundtype == GCG_BOUNDTYPE_LOWER || boundtype == GCG_BOUNDTYPE_FIXED )
    {
+      assert(SCIPisFeasGE(scip, newbound, SCIPvarGetLbLocal(boundvar)));
       SCIP_CALL( SCIPchgVarLbNode(scip, childnode, boundvar, newbound) );
    }
 
    if( boundtype == GCG_BOUNDTYPE_UPPER || boundtype == GCG_BOUNDTYPE_FIXED )
    {
+      assert(SCIPisFeasLE(scip, newbound, SCIPvarGetUbLocal(boundvar)));
       SCIP_CALL( SCIPchgVarUbNode(scip, childnode, boundvar, newbound) );
    }
 
