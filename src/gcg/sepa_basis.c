@@ -1449,6 +1449,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          colvarused = FALSE;
          origcut = cuts[i];
 
+         if( GCGsepaOrigcutExists(scip, origcut) )
+            continue;
+
          /* if cut is violated by LP solution, increase nviolatedcuts */
          if( SCIPisCutEfficacious(origscip, NULL, origcut) )
          {
@@ -1618,7 +1621,7 @@ SCIP_RETCODE SCIPincludeSepaBasis(
 
    /* add basis separator parameters */
    SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enable", "is basis separator enabled?",
-         &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
+         &(sepadata->enable), FALSE, FALSE, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enableobj", "is objective constraint of separator enabled?",
          &(sepadata->enableobj), FALSE, FALSE, NULL, NULL) );
