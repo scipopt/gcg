@@ -339,6 +339,7 @@ SCIP_RETCODE getColumnsFromPricingprob(
       {
          SCIPwarningMessage(pricingprob, "solution of pricing problem %d not feasible:\n", probnr);
          SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
+         continue;
       }
 
       /* check whether the solution is equal to one of the previous solutions */
