@@ -6,6 +6,7 @@ New features:
 -------------
 
 - MSVC support
+- Solver plugin for HiGHS. Allows user to select HiGHS as a pricing problem solver.
 
 New/changed parameters:
 -----------------------
