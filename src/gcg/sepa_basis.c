@@ -1621,7 +1621,7 @@ SCIP_RETCODE SCIPincludeSepaBasis(
 
    /* add basis separator parameters */
    SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enable", "is basis separator enabled?",
-         &(sepadata->enable), FALSE, FALSE, NULL, NULL) );
+         &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enableobj", "is objective constraint of separator enabled?",
          &(sepadata->enableobj), FALSE, FALSE, NULL, NULL) );
