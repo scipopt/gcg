@@ -169,12 +169,36 @@ SCIP_RETCODE applyOriginalBranching(
 
    if( boundtype == GCG_BOUNDTYPE_LOWER || boundtype == GCG_BOUNDTYPE_FIXED )
    {
-      SCIP_CALL( SCIPchgVarLbNode(scip, childnode, boundvar, newbound) );
+      if( SCIPisLE(scip, newbound, SCIPvarGetUbLocal(boundvar)) )
+      {
+         if( SCIPisGT(scip, newbound, SCIPvarGetLbLocal(boundvar)) )
+            SCIP_CALL( SCIPchgVarLbNode(scip, childnode, boundvar, newbound) );
+      }
+      else
+      {
+         // cut off child nodes
+         SCIP_NODE* masterchildnode = GCGconsMasterbranchGetNode(masterbranchchildcons);
+         SCIP* masterprob = GCGgetMasterprob(scip);
+         SCIPupdateNodeLowerbound(masterprob, masterchildnode, SCIPinfinity(masterprob));
+         SCIPupdateNodeLowerbound(scip, childnode, SCIPinfinity(scip));
+      }
    }
 
    if( boundtype == GCG_BOUNDTYPE_UPPER || boundtype == GCG_BOUNDTYPE_FIXED )
    {
-      SCIP_CALL( SCIPchgVarUbNode(scip, childnode, boundvar, newbound) );
+      if( SCIPisGE(scip, newbound, SCIPvarGetLbLocal(boundvar)) )
+      {
+         if( SCIPisLT(scip, newbound, SCIPvarGetUbLocal(boundvar)) )
+            SCIP_CALL( SCIPchgVarUbNode(scip, childnode, boundvar, newbound) );
+      }
+      else
+      {
+         // cut off child nodes
+         SCIP_NODE* masterchildnode = GCGconsMasterbranchGetNode(masterbranchchildcons);
+         SCIP* masterprob = GCGgetMasterprob(scip);
+         SCIPupdateNodeLowerbound(masterprob, masterchildnode, SCIPinfinity(masterprob));
+         SCIPupdateNodeLowerbound(scip, childnode, SCIPinfinity(scip));
+      }
    }
 
    if( GCGvarGetBlock(boundvar) == -1 )
