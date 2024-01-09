@@ -2665,7 +2665,7 @@ SCIP_RETCODE ObjPricerGcg::computeDualDiff(
       *dualdiff += SQR(dualconv1[i] - dualconv2[i]);
 
    }
-   *dualdiff = SQRT(ABS(*dualdiff));
+   *dualdiff = sqrt(ABS(*dualdiff));
 
    return SCIP_OKAY;
 }
