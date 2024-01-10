@@ -2095,6 +2095,8 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    mastervals = GCGoriginalVarGetMastervals(var);
 #endif
 
+   assert(SCIPgetStage(masterscip) >= SCIP_STAGE_TRANSFORMED);
+
    /* A global bound change might turn the current relaxation solution invalid */
    if( SCIPisRelaxSolValid(scip)
       && (((eventtype & SCIP_EVENTTYPE_GLBCHANGED) != 0 && SCIPisFeasLT(scip, SCIPgetRelaxSolVal(scip, var), newbound))
@@ -2123,7 +2125,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
       }
    }
    /* deal with variables appearing in the master only */
-   if( blocknr == -1 && SCIPgetStage(masterscip) >= SCIP_STAGE_SOLVING )
+   if( blocknr == -1 )
    {
       assert(nmastervars == 1);
       assert(mastervals[0] == 1);
@@ -2163,14 +2165,11 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 
       if( (eventtype & SCIP_EVENTTYPE_GLBCHANGED) != 0 )
       {
-         if( SCIPgetStage(masterscip) >= SCIP_STAGE_SOLVING )
-         {
 #ifdef SCIP_DEBUG
             handled = TRUE;
 #endif
-            /* add the bound change in the master */
-            SCIP_CALL( addPendingBndChg(masterscip, mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
-         }
+         /* add the bound change in the master */
+         SCIP_CALL( addPendingBndChg(masterscip, mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
 
          /* add the bound change to the pricing problems */
          for( i = 0; i < npricingprobs; ++i )
@@ -2185,14 +2184,11 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
       }
       if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
       {
-         if( SCIPgetStage(masterscip) >= SCIP_STAGE_SOLVING )
-         {
 #ifdef SCIP_DEBUG
             handled = TRUE;
 #endif
-            /* add the bound change in the master */
-            SCIP_CALL( addPendingBndChg(masterscip, mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
-         }
+         /* add the bound change in the master */
+         SCIP_CALL( addPendingBndChg(masterscip, mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
 
          /* add the bound change to the pricing problems */
          for( i = 0; i < npricingprobs; ++i )
