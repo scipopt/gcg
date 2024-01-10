@@ -755,7 +755,7 @@ SCIP_Real GCGcolComputeDualObjPara(
 
    assert(!SCIPisInfinity(scip, ABS(para)));
 
-   dualobjnorm = SQRT(dualobjnorm);
+   dualobjnorm = sqrt(dualobjnorm);
    assert(!SCIPisInfinity(scip, dualobjnorm));
    assert(SCIPisPositive(scip, dualobjnorm));
    assert(SCIPisPositive(scip, gcgcol->norm));
@@ -884,8 +884,8 @@ SCIP_Real GCGcolComputeOrth(
    norm1 *= 1.0;
    norm2 *= 1.0;
 
-   norm1 = SQRT(norm1);
-   norm2 = SQRT(norm2);
+   norm1 = sqrt(norm1);
+   norm2 = sqrt(norm2);
 
    assert(SCIPisPositive(scip, norm1) && SCIPisPositive(scip, norm2));
 

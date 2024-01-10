@@ -70,6 +70,7 @@ struct SCIP_SepaData
    int                   maxcuts;            /**< maximal number of allowed cuts */
    SCIP_Bool             enable;             /**< parameter returns if master separator is enabled */
    int                   separationsetting;  /**< parameter returns which parameter setting is used for separation */
+   SCIP_HASHMAP*         origcutidxmap;      /**< origcuts mappend to index */
 };
 
 
@@ -124,6 +125,7 @@ SCIP_DECL_SEPAFREE(sepaFreeMaster)
 
    SCIPfreeBlockMemoryArray(scip, &(sepadata->origcuts), sepadata->maxcuts);
    SCIPfreeBlockMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts);
+   SCIPhashmapFree(&sepadata->origcutidxmap);
 
    SCIPfreeBlockMemory(scip, &sepadata);
 
@@ -150,6 +152,7 @@ SCIP_DECL_SEPAEXIT(sepaExitMaster)
    }
 
    sepadata->ncuts = 0;
+   SCIPhashmapRemoveAll(sepadata->origcutidxmap);
 
    return SCIP_OKAY;
 }
@@ -292,6 +295,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
       origcut = SCIPcutGetRow(cuts[i]); /*lint !e679*/
 
+      if( SCIPhashmapExists(sepadata->origcutidxmap, origcut) )
+         continue;
+
       /* get columns and vals of the cut */
       ncols = SCIProwGetNNonz(origcut);
       cols = SCIProwGetCols(origcut);
@@ -324,6 +330,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       SCIP_CALL( SCIPaddRow(scip, mastercut, FALSE, &feasible) );
       sepadata->mastercuts[sepadata->ncuts] = mastercut;
       sepadata->origcuts[sepadata->ncuts] = origcut;
+      SCIP_CALL( SCIPhashmapInsertInt(sepadata->origcutidxmap, origcut, sepadata->ncuts) );
       SCIP_CALL( SCIPcaptureRow(origscip, origcut) );
       sepadata->ncuts++;
 
@@ -368,6 +375,7 @@ SCIP_RETCODE SCIPincludeSepaMaster(
    sepadata->maxcuts = SCIPcalcMemGrowSize(scip, STARTMAXCUTS);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(sepadata->origcuts), sepadata->maxcuts) ); /*lint !e506*/
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts) ); /*lint !e506*/
+   SCIP_CALL( SCIPhashmapCreate(&sepadata->origcutidxmap, SCIPblkmem(scip), sepadata->maxcuts) );
    sepadata->ncuts = 0;
 
    /* include separator */
@@ -466,10 +474,31 @@ SCIP_RETCODE GCGsepaAddMastercuts(
 
    sepadata->origcuts[sepadata->ncuts] = origcut;
    sepadata->mastercuts[sepadata->ncuts] = mastercut;
+   SCIP_CALL( SCIPhashmapInsertInt(sepadata->origcutidxmap, origcut, sepadata->ncuts) );
    SCIP_CALL( SCIPcaptureRow(scip, sepadata->origcuts[sepadata->ncuts]) );
    SCIP_CALL( SCIPcaptureRow(scip, sepadata->mastercuts[sepadata->ncuts]) );
 
    ++(sepadata->ncuts);
 
    return SCIP_OKAY;
+}
+
+/** checks whether a given original cut is already known */
+SCIP_Bool GCGsepaOrigcutExists(
+      SCIP*                scip,               /**< SCIP data structure */
+      SCIP_ROW*            origcut             /**< pointer to orginal cut */
+)
+{
+   SCIP_SEPA* sepa;
+   SCIP_SEPADATA* sepadata;
+
+   assert(scip != NULL);
+
+   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   assert(sepa != NULL);
+
+   sepadata = SCIPsepaGetData(sepa);
+   assert(sepadata != NULL);
+
+   return SCIPhashmapExists(sepadata->origcutidxmap, origcut);
 }

@@ -935,7 +935,7 @@ void Stabilization::calculateSubgradient(
 
    assert(!SCIPisNegative(scip_, subgradientnorm));
 
-   subgradientnorm = SQRT(subgradientnorm);
+   subgradientnorm = sqrt(subgradientnorm);
 
    SCIPdebugMessage("Update subgradient and subgradientnorm with value %g.\n", subgradientnorm);
 }
@@ -989,7 +989,7 @@ void Stabilization::calculateDualdiffnorm()
          dualdiffnorm += dualdiff;
    }
 
-   dualdiffnorm = SQRT(dualdiffnorm);
+   dualdiffnorm = sqrt(dualdiffnorm);
    SCIPdebugMessage("Update dualdiffnorm with value %g.\n", dualdiffnorm);
 }
 
@@ -1109,7 +1109,7 @@ void Stabilization::calculateHybridFactor()
          divisornorm += divisor;
    }
 
-   divisornorm = SQRT(divisornorm);
+   divisornorm = sqrt(divisornorm);
 
    hybridfactor = ((1 - alpha) * dualdiffnorm) / divisornorm;
 

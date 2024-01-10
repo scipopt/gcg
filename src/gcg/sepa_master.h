@@ -76,6 +76,12 @@ SCIP_RETCODE GCGsepaAddMastercuts(
    SCIP_ROW*            mastercut           /**< pointer to master cut */
 );
 
+/** checks whether a given original cut is already known */
+SCIP_Bool GCGsepaOrigcutExists(
+      SCIP*                scip,            /**< SCIP data structure */
+      SCIP_ROW*            origcut          /**< pointer to orginal cut */
+);
+
 #ifdef __cplusplus
 }
 #endif
