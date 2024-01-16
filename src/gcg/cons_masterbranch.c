@@ -2299,6 +2299,8 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    else
       assert(parentcons == NULL);
 
+   assert(SCIPgetStage(scip) <= SCIP_STAGE_SOLVING);
+
    /* find the masterbranch constraint handler */
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
@@ -2645,7 +2647,7 @@ SCIP_CONS* GCGconsMasterbranchGetActiveCons(
    assert(conshdlrdata != NULL);
    assert(conshdlrdata->stack != NULL);
 
-   if( conshdlrdata->nstack == 0 )
+   if( conshdlrdata->nstack == 0 || SCIPgetStage(scip) > SCIP_STAGE_SOLVING )
       return NULL;
 
    assert(conshdlrdata->stack[conshdlrdata->nstack-1] != NULL);
