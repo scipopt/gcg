@@ -2074,7 +2074,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 
    SCIPdebugMessage("eventexec: eventtype = 0x%x, var = %s, oldbound = %f, newbound = %f\n", (unsigned int) eventtype, SCIPvarGetName(var), oldbound, newbound);
 
-   if( !GCGrelaxIsInitialized(scip) )
+   if( GCGgetDecompositionMode(scip) != GCG_DECMODE_DANTZIGWOLFE || !GCGrelaxIsInitialized(scip) )
    {
 //      assert(SCIPvarGetData(var) == NULL);
       SCIPdebugMessage("Ignoring since in presolving / propagating.\n");
