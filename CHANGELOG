@@ -13,6 +13,7 @@ Bug fixes
 - fix separation of cutting planes in the master problem
 - handle new variable bounds properly when synchronizing the B&B trees
 - store pending bound changes as soon as the master problem is transformed
+- fix handling of static master vars with negative lower bounds
 
 New/changed parameters:
 -----------------------
