@@ -155,7 +155,6 @@ SCIP_RETCODE buildProblem(
    SCIP_RETCODE retval;
    int nconss = 0;
    int nvars = 0;
-   int status;
    int varidx;
    int nconsvars;
    int nnonzeros;
@@ -631,12 +630,11 @@ SCIP_RETCODE solveHighs(
    SCIP_RETCODE retval;
    SCIP_Bool predisabled = FALSE;
    double* highssolvals;
-   double objective;
    double upperbound;
    double* primsol = NULL;
-   int nsolshighs;
    int numcols;
    int modelstatus;
+   int runretval;
 
    SCIP_SOL* sol;
    SCIP_Bool feasible;
@@ -653,7 +651,7 @@ SCIP_RETCODE solveHighs(
    SCIP_CALL( SCIPallocBufferArray(scip, &highssolvals, numcols) );
  SOLVEAGAIN:
    /* the optimization call */
-   int runretval = Highs_run(solverdata->highsptr[probnr]);
+   runretval = Highs_run(solverdata->highsptr[probnr]);
    CHECK_SOLVER_RUN(runretval);
 
    /* get model status from Highs */
@@ -668,8 +666,8 @@ SCIP_RETCODE solveHighs(
        */
       case 7: /* HighsModelStatus::kOptimal */
       {
-         assert(runretval == 0);
          double mipgap;
+         assert(runretval == 0);
 
          /* getting the MIP gap for the solution */
          CHECK_ZERO( Highs_getDoubleInfoValue(solverdata->highsptr[probnr], "mip_gap", &mipgap) );
@@ -703,10 +701,10 @@ SCIP_RETCODE solveHighs(
       case 9:  /* HighsModelStatus::kUnboundedOrInfeasible */
       case 10: /* HighsModelStatus::kUnbounded */
       {
-         assert(runretval == 0);
-
          int highsretval;
          SCIP_Bool hasprimalray;
+
+         assert(runretval == 0);
 
          SCIP_CALL( SCIPallocBufferArray(scip, &primsol, numcols) );
 
@@ -771,8 +769,9 @@ SCIP_RETCODE solveHighs(
        */
       case 14: /* HighsModelStatus::kIterationLimit */
       {
-         assert(runretval == 1);
          int64_t nodecount;
+
+         assert(runretval == 1);
 
          /* getting the node and solution count */
          CHECK_ZERO( Highs_getInt64InfoValue(solverdata->highsptr[probnr], "mip_node_count", &nodecount) );
@@ -817,8 +816,9 @@ SCIP_RETCODE solveHighs(
       */
       case 13: /* HighsModelStatus::kTimeLimit */
       {
-         assert(runretval == 1);
          int solstatus;
+
+         assert(runretval == 1);
 
          /* checking whether a solution exists. If not, then we don't know the current solution status */
          CHECK_ZERO( Highs_getIntInfoValue(solverdata->highsptr[probnr], "primal_solution_status", &solstatus) );
@@ -833,8 +833,9 @@ SCIP_RETCODE solveHighs(
 
       case 15: /* HighsModelStatus::kUnknown */
       {
-         assert(runretval == 1);
          int solstatus;
+
+         assert(runretval == 1);
 
          /* checking whether a solution exists. If not, then we don't know the current solution status */
          CHECK_ZERO( Highs_getIntInfoValue(solverdata->highsptr[probnr], "primal_solution_status", &solstatus) );
@@ -874,7 +875,6 @@ SCIP_RETCODE solveHighs(
    assert(SCIPisFeasEQ(scip, *lowerbound, upperbound) || *status != GCG_PRICINGSTATUS_OPTIMAL);
 
    /* extracting the best solution and checked if it has a negative reduced cost */
-   objective = Highs_getObjectiveValue(solverdata->highsptr[probnr]);
    CHECK_ZERO( Highs_getSolution(solverdata->highsptr[probnr], highssolvals, NULL, NULL, NULL) );
 
    /* creating a solution from the column generated from solving Highs */
@@ -1043,7 +1043,6 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolHighs)
       }
    }
 
- TERMINATE:
    SCIPfreeBlockMemoryArray(scip, &solverdata->ismip, solverdata->npricingprobs);
 
    SCIPfreeBlockMemoryArray(scip, &solverdata->cursollimit, solverdata->npricingprobs);
