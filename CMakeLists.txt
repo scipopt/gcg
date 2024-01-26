@@ -111,6 +111,7 @@ if(HIGHS_FOUND)
    find_package(Threads)
    add_definitions(-DWITH_HIGHS)
    include_directories(${HIGHS_INCLUDE_DIRS})
+   set(HIGHS_LIBRARIES highs::highs) # I would expect that this should be set by highs-config.cmake
    set(HIGHS_PIC_LIBRARIES ${HIGHS_LIBRARIES})
 else()
    set(HIGHS_LIBRARIES)

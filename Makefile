@@ -71,8 +71,9 @@ CLIQUER     =   false
 HMETIS      =   false
 OPENMP      =   false
 GSL         =   false
+HIGHS       =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
-LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER)
+LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER).$(HIGHS)
 
 # overriding SCIP PARASCIP setting if compiled with OPENMP
 ifeq ($(OPENMP),true)
@@ -185,6 +186,28 @@ endif
 
 ifeq ($(CPLEXSOLVER),true)
 FLAGS		+=	-DWITH_CPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
+endif
+
+#-----------------------------------------------------------------------------
+# HiGHS
+#-----------------------------------------------------------------------------
+
+ifeq ($(HIGHS),true)
+FLAGS		+=	-DWITH_HIGHS
+LDFLAGS	+=	$(LINKCXX_L)$(GCGDIR)/$(LIBDIR)/shared $(LINKCXX_l)highs.$(OSTYPE).$(ARCH).$(COMP)$(LINKLIBSUFFIX)
+ifneq ($(LINKRPATH),)
+LDFLAGS	+=	$(LINKRPATH)$(dir $(realpath $(GCGDIR)/$(LIBDIR)/shared/libhighs.$(OSTYPE).$(ARCH).$(COMP).$(SHAREDLIBEXT)))
+endif
+ifeq ($(COMP),gnu)
+FLAGS		+=	-isystem$(LIBDIR)/include/highsinc
+else
+FLAGS		+=	-I$(LIBDIR)/include/highsinc
+endif
+SOFTLINKS	+=	$(LIBDIR)/include/highsinc
+SOFTLINKS	+=	$(LIBDIR)/shared/libhighs.$(OSTYPE).$(ARCH).$(COMP).$(SHAREDLIBEXT)
+LINKMSG		+=	"HiGHS library (disable by compiling with \"make HIGHS=false\"):\n"
+LINKMSG		+=	" -> highs is the path to the highs include files, e.g., \"highs\"\n"
+LINKMSG		+=	" -> \"libhighs.so\" is the path to the HiGHS library, e.g., \"highs/lib/libhighs.so\"\n"
 endif
 
 #-----------------------------------------------------------------------------
@@ -358,6 +381,10 @@ endif
 
 ifeq ($(CPLEXSOLVER),true)
 LIBOBJ		+=	gcg/solver_cplex.o
+endif
+
+ifeq ($(HIGHS),true)
+LIBOBJ		+=	gcg/solver_highs.o
 endif
 
 MAINOBJ		=	main.o
@@ -659,6 +686,10 @@ ifneq ($(LAST_CLIQUER),$(CLIQUER))
 		@-touch $(SRCDIR)/solver_cliquer.c
 		@-touch $(SRCDIR)/masterplugins.c
 endif
+ifneq ($(LAST_HIGHS),$(HIGHS))
+		@-touch $(SRCDIR)/solver_highs.c
+		@-touch $(SRCDIR)/masterplugins.c
+endif
 ifneq ($(USRFLAGS),$(LAST_USRFLAGS))
 		@-touch $(ALLSRC)
 endif
@@ -693,6 +724,7 @@ endif
 		@echo "LAST_LPS=$(LPS)" >> $(LASTSETTINGS)
 		@echo "LAST_BLISS=$(BLISS)" >> $(LASTSETTINGS)
 		@echo "LAST_CLIQUER=$(CLIQUER)" >> $(LASTSETTINGS)
+		@echo "LAST_HIGHS=$(HIGHS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRFLAGS=$(USRFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USROFLAGS=$(USROFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRCFLAGS=$(USRCFLAGS)" >> $(LASTSETTINGS)
@@ -785,6 +817,7 @@ help:
 		@echo "  - BLISS=<true|false>: Enables BLISS (graph isomorphism, used a.o., by 'isomorph' detector)."
 		@echo "  - SYM=<none|bliss>: To choose type of symmetry handling."
 		@echo "  - ZIMPL=<true|false>: Enables ZIMPL, required to convert .zpl files to .lp/.mps files"
+		@echo "  - HIGHS=<true|false>: Enables HiGHS."
 		@echo
 		@echo "  More detailed options:"
 		@echo "  - VALGRIND=<true|false>: Enable memory leak checking (and more) using valgrind."
