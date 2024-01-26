@@ -82,6 +82,7 @@ build:make_release:
   script:
     # prepare dependencies
     - mkdir -p lib/include
+    - mkdir -p lib/shared
     - mkdir -p lib/static
     ## Cliquer ##
     # obtain
@@ -96,10 +97,17 @@ build:make_release:
     - tar xvfz hmetis-2.0pre1.tar.gz
     - ln -sfn hmetis-2.0pre1/Linux-x86_64/hmetis2.0pre1 hmetis
     - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/gcg/dec_h*partition.cpp
+    ## HiGHS
+    - git clone https://github.com/ERGO-Code/HiGHS.git lib/highs
+    - cmake -S./lib/highs -B./lib/highs/build -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=./lib/highs/build
+    - cmake --build ./lib/highs/build -j4
+    - cmake --install ./lib/highs/build
+    - ln -sfn ../highs/build/include/highs lib/include/highsinc
+    - ln -sfn ../highs/build/lib/libhighs.so lib/shared/libhighs.linux.x86_64.gnu.so
     # generate 'opt' binary
-    - make deps OPT=opt CLIQUER=true BLISS=true
+    - make deps OPT=opt CLIQUER=true BLISS=true HIGHS=true
     - ln -sfn ../cliquer-git/libcliquer.a lib/static/libcliquer.a
-    - make OPT=opt CLIQUER=true BLISS=true
+    - make OPT=opt CLIQUER=true BLISS=true HIGHS=true
   artifacts:
     expire_in: 3 days
     paths:
