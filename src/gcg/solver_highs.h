@@ -27,7 +27,7 @@
 
 /**@file   solver_highs.h
  * @brief  highs solver for pricing problems
- * @author Gerald Gamrath
+ * @author Stephen J. Maher
  * @ingroup PRICINGSOLVERS
  */
 
