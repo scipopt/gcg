@@ -60,6 +60,15 @@
       }                                                                 \
    }
 
+#define CHECK_SOLVER_RUN(x) { int _restat_;                             \
+      if( (_restat_ = (x)) != 0 && (_restat_ = (x) != 1) )              \
+      {                                                                 \
+         SCIPerrorMessage("Error in pricing solver: HIGHS returned %d\n", _restat_); \
+         retval = SCIP_INVALIDRESULT;                                   \
+         goto TERMINATE;                                                \
+      }                                                                 \
+   }
+
 #define SOLVER_NAME          "highs"
 #define SOLVER_DESC          "highs solver for pricing problems"
 #define SOLVER_PRIORITY       100
@@ -647,7 +656,8 @@ SCIP_RETCODE solveHighs(
    SCIP_CALL( SCIPallocBufferArray(scip, &highssolvals, numcols) );
  SOLVEAGAIN:
    /* the optimization call */
-   CHECK_ZERO( Highs_run(solverdata->highsptr[probnr]) );
+   int runretval = Highs_run(solverdata->highsptr[probnr]);
+   CHECK_SOLVER_RUN(runretval);
 
    /* get model status from Highs */
    modelstatus = Highs_getModelStatus(solverdata->highsptr[probnr]);
@@ -661,6 +671,7 @@ SCIP_RETCODE solveHighs(
        */
       case 7: /* HighsModelStatus::kOptimal */
       {
+         assert(runretval == 0);
          double mipgap;
 
          /* getting the MIP gap for the solution */
@@ -687,6 +698,7 @@ SCIP_RETCODE solveHighs(
 
       /* pricing problem was proven to be infeasible */
       case 8: /* HighsModelStatus::kInfeasible */
+         assert(runretval == 0);
          *status = GCG_PRICINGSTATUS_INFEASIBLE;
          break;
 
@@ -694,6 +706,8 @@ SCIP_RETCODE solveHighs(
       case 9:  /* HighsModelStatus::kUnboundedOrInfeasible */
       case 10: /* HighsModelStatus::kUnbounded */
       {
+         assert(runretval == 0);
+
          int highsretval;
          SCIP_Bool hasprimalray;
 
@@ -760,6 +774,7 @@ SCIP_RETCODE solveHighs(
        */
       case 14: /* HighsModelStatus::kIterationLimit */
       {
+         assert(runretval == 1);
          int64_t nodecount;
 
          /* getting the node and solution count */
@@ -805,6 +820,7 @@ SCIP_RETCODE solveHighs(
       */
       case 13: /* HighsModelStatus::kTimeLimit */
       {
+         assert(runretval == 1);
          int solstatus;
 
          /* checking whether a solution exists. If not, then we don't know the current solution status */
@@ -818,8 +834,9 @@ SCIP_RETCODE solveHighs(
          break;
       }
 
-      case 15: /* HighsModelStatus::kAborted */
+      case 15: /* HighsModelStatus::kUnknown */
       {
+         assert(runretval == 1);
          int solstatus;
 
          /* checking whether a solution exists. If not, then we don't know the current solution status */
