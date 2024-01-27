@@ -166,15 +166,40 @@ SCIP_RETCODE applyOriginalBranching(
 
    assert(boundvar != NULL);
    assert(boundtype == GCG_BOUNDTYPE_LOWER || boundtype == GCG_BOUNDTYPE_UPPER || boundtype == GCG_BOUNDTYPE_FIXED);
+   assert(SCIPgetStage(GCGgetMasterprob(scip)) <= SCIP_STAGE_SOLVING);
 
    if( boundtype == GCG_BOUNDTYPE_LOWER || boundtype == GCG_BOUNDTYPE_FIXED )
    {
-      SCIP_CALL( SCIPchgVarLbNode(scip, childnode, boundvar, newbound) );
+      if( SCIPisLE(scip, newbound, SCIPvarGetUbLocal(boundvar)) )
+      {
+         if( SCIPisGT(scip, newbound, SCIPvarGetLbLocal(boundvar)) )
+            SCIP_CALL( SCIPchgVarLbNode(scip, childnode, boundvar, newbound) );
+      }
+      else
+      {
+         // cut off child nodes
+         SCIP_NODE* masterchildnode = GCGconsMasterbranchGetNode(masterbranchchildcons);
+         SCIP* masterprob = GCGgetMasterprob(scip);
+         SCIPupdateNodeLowerbound(masterprob, masterchildnode, SCIPinfinity(masterprob));
+         SCIPupdateNodeLowerbound(scip, childnode, SCIPinfinity(scip));
+      }
    }
 
    if( boundtype == GCG_BOUNDTYPE_UPPER || boundtype == GCG_BOUNDTYPE_FIXED )
    {
-      SCIP_CALL( SCIPchgVarUbNode(scip, childnode, boundvar, newbound) );
+      if( SCIPisGE(scip, newbound, SCIPvarGetLbLocal(boundvar)) )
+      {
+         if( SCIPisLT(scip, newbound, SCIPvarGetUbLocal(boundvar)) )
+            SCIP_CALL( SCIPchgVarUbNode(scip, childnode, boundvar, newbound) );
+      }
+      else
+      {
+         // cut off child nodes
+         SCIP_NODE* masterchildnode = GCGconsMasterbranchGetNode(masterbranchchildcons);
+         SCIP* masterprob = GCGgetMasterprob(scip);
+         SCIPupdateNodeLowerbound(masterprob, masterchildnode, SCIPinfinity(masterprob));
+         SCIPupdateNodeLowerbound(scip, childnode, SCIPinfinity(scip));
+      }
    }
 
    if( GCGvarGetBlock(boundvar) == -1 )
@@ -209,6 +234,12 @@ SCIP_RETCODE createBranchNodesInOrigprob(
    /* get master problem */
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
+
+   if( SCIPgetStage(masterscip) > SCIP_STAGE_SOLVING)
+   {
+      *result = SCIP_CUTOFF;
+      return SCIP_OKAY;
+   }
 
    /* get masterbranch constraint at the current node */
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);

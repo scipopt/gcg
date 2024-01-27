@@ -41,6 +41,7 @@
 #include "scip/cons_and.h"
 #include "scip/cons_bounddisjunction.h"
 #include "scip/cons_conjunction.h"
+#include "scip/cutsel_hybrid.h"
 #include "scip/cons_integral.h"
 #include "scip/cons_indicator.h"
 #include "scip/cons_knapsack.h"
@@ -52,9 +53,8 @@
 #include "scip/cons_xor.h"
 
 #if USEHEURS
-#include "scip/heur_adaptivediving.h"
 #include "scip/heur_actconsdiving.h"
-#include "scip/heur_alns.h"
+#include "scip/heur_adaptivediving.h"
 #include "scip/heur_bound.h"
 #include "scip/heur_clique.h"
 #include "scip/heur_coefdiving.h"
@@ -72,23 +72,25 @@
 #include "scip/heur_gins.h"
 #include "scip/heur_guideddiving.h"
 #include "scip/heur_indicator.h"
+#include "scip/heur_indicatordiving.h"
 #include "scip/heur_intdiving.h"
 #include "scip/heur_intshifting.h"
 #include "scip/heur_linesearchdiving.h"
 #include "scip/heur_localbranching.h"
 #include "scip/heur_locks.h"
 #include "scip/heur_lpface.h"
-#include "scip/heur_mpec.h"
+#include "scip/heur_alns.h"
 #include "scip/heur_multistart.h"
 #include "scip/heur_mutation.h"
+#include "scip/heur_mpec.h"
 #include "scip/heur_nlpdiving.h"
-#include "scip/heur_ofins.h"
 #include "scip/heur_objpscostdiving.h"
 #include "scip/heur_octane.h"
+#include "scip/heur_ofins.h"
 #include "scip/heur_oneopt.h"
 #include "scip/heur_padm.h"
-#include "scip/heur_proximity.h"
 #include "scip/heur_pscostdiving.h"
+#include "scip/heur_proximity.h"
 #include "scip/heur_randrounding.h"
 #include "scip/heur_rens.h"
 #include "scip/heur_reoptsols.h"
@@ -96,6 +98,7 @@
 #include "scip/heur_rins.h"
 #include "scip/heur_rootsoldiving.h"
 #include "scip/heur_rounding.h"
+#include "scip/heur_scheduler.h"
 #include "scip/heur_shiftandpropagate.h"
 #include "scip/heur_shifting.h"
 #include "scip/heur_simplerounding.h"
@@ -108,8 +111,8 @@
 #include "scip/heur_undercover.h"
 #include "scip/heur_vbounds.h"
 #include "scip/heur_veclendiving.h"
-#include "scip/heur_zirounding.h"
 #include "scip/heur_zeroobj.h"
+#include "scip/heur_zirounding.h"
 #endif
 
 #include "scip/presol_implics.h"
@@ -256,7 +259,9 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurFracdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGins(scip) );
    SCIP_CALL( SCIPincludeHeurGuideddiving(scip) );
+   SCIP_CALL( SCIPincludeHeurZeroobj(scip) );
    SCIP_CALL( SCIPincludeHeurIndicator(scip) );
+   SCIP_CALL( SCIPincludeHeurIndicatordiving(scip) );
    SCIP_CALL( SCIPincludeHeurIntdiving(scip) );
    SCIP_CALL( SCIPincludeHeurIntshifting(scip) );
    SCIP_CALL( SCIPincludeHeurLinesearchdiving(scip) );
@@ -264,10 +269,10 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurLocks(scip) );
    SCIP_CALL( SCIPincludeHeurLpface(scip) );
    SCIP_CALL( SCIPincludeHeurAlns(scip) );
+   SCIP_CALL( SCIPincludeHeurNlpdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurMutation(scip) );
    SCIP_CALL( SCIPincludeHeurMultistart(scip) );
    SCIP_CALL( SCIPincludeHeurMpec(scip) );
-   SCIP_CALL( SCIPincludeHeurMutation(scip) );
-   SCIP_CALL( SCIPincludeHeurNlpdiving(scip) );
    SCIP_CALL( SCIPincludeHeurObjpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurOctane(scip) );
    SCIP_CALL( SCIPincludeHeurOfins(scip) );
@@ -282,6 +287,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurRins(scip) );
    SCIP_CALL( SCIPincludeHeurRootsoldiving(scip) );
    SCIP_CALL( SCIPincludeHeurRounding(scip) );
+   SCIP_CALL( SCIPincludeHeurScheduler(scip) );
    SCIP_CALL( SCIPincludeHeurShiftandpropagate(scip) );
    SCIP_CALL( SCIPincludeHeurShifting(scip) );
    SCIP_CALL( SCIPincludeHeurSubNlp(scip) );
@@ -294,7 +300,6 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurVbounds(scip) );
    SCIP_CALL( SCIPincludeHeurVeclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurZirounding(scip) );
-   SCIP_CALL( SCIPincludeHeurZeroobj(scip) );
 
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
 
@@ -323,6 +328,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
    SCIP_CALL( SCIPincludeSepaMaster(scip) );
+   SCIP_CALL( SCIPincludeCutselHybrid(scip) );
    SCIP_CALL( SCIPincludeDispMaster(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
    SCIP_CALL( SCIPincludeTableDefault(scip) );

@@ -1449,6 +1449,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          colvarused = FALSE;
          origcut = cuts[i];
 
+         if( GCGsepaOrigcutExists(scip, origcut) )
+            continue;
+
          /* if cut is violated by LP solution, increase nviolatedcuts */
          if( SCIPisCutEfficacious(origscip, NULL, origcut) )
          {
