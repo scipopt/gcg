@@ -197,6 +197,7 @@ FLAGS		+=	-DWITH_HIGHS
 LDFLAGS	+=	$(LINKCXX_L)$(GCGDIR)/$(LIBDIR)/shared $(LINKCXX_l)highs.$(OSTYPE).$(ARCH).$(COMP)$(LINKLIBSUFFIX)
 ifneq ($(LINKRPATH),)
 LDFLAGS	+=	$(LINKRPATH)$(dir $(realpath $(GCGDIR)/$(LIBDIR)/shared/libhighs.$(OSTYPE).$(ARCH).$(COMP).$(SHAREDLIBEXT)))
+LDFLAGS	+=	$(LINKRPATH)"\$$ORIGIN"/../$(LIBDIR)/shared/
 endif
 ifeq ($(COMP),gnu)
 FLAGS		+=	-isystem$(LIBDIR)/include/highsinc
