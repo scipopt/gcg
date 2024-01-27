@@ -104,6 +104,7 @@ build:make_release:
     - cmake --install ./lib/highs/build
     - ln -sfn ../highs/build/include/highs lib/include/highsinc
     - ln -sfn ../highs/build/lib/libhighs.so lib/shared/libhighs.linux.x86_64.gnu.so
+    - cp lib/highs/build/lib/libhighs.* lib/shared/
     # generate 'opt' binary
     - make deps OPT=opt CLIQUER=true BLISS=true HIGHS=true
     - ln -sfn ../cliquer-git/libcliquer.a lib/static/libcliquer.a
