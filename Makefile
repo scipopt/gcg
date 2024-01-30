@@ -72,6 +72,7 @@ HMETIS      =   false
 OPENMP      =   false
 GSL         =   false
 YAML        =   false
+JSON        =   true
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER)
 
@@ -205,6 +206,15 @@ SOFTLINKS	+=	$(LIBDIR)/static/libyaml.$(STATICLIBEXT)
 LINKMSG		+=	"LibYAML library (disable by compiling with \"make YAML=false\"):\n"
 LINKMSG		+=	" -> yaml is the path to the yaml include files\n"
 LINKMSG		+=	" -> \"libyaml.$(STATICLIBEXT)\" is the path to the yaml library\n"
+endif
+
+#-----------------------------------------------------------------------------
+# json-c
+#-----------------------------------------------------------------------------
+
+ifeq ($(JSON),true)
+LDFLAGS		+= 	-ljson-c
+FLAGS		+=	-DWITH_JSON
 endif
 
 #-----------------------------------------------------------------------------
@@ -801,6 +811,7 @@ help:
 		@echo "  - CLIQUER=<true|false>: Enables CLIQUER (as a heuristic for stable set pricing problems)."
 		@echo "  - HMETIS=<true|false>: Enables hMETIS (hypergraph partitioning, used in structure detection)."
 		@echo "  - GSL=<true|false>: Enables the GNU Scientific Library (needed by a detector)"
+		@echo "  - JSON=<true|false>: Enables JSON functionality (requires json-c library)"
 		@echo "  - GAMS=<true|false>: To enable or disable (default) reading functionality in GAMS reader (needs GAMS)."
 		@echo "  - GTEST=<true|false>: Enables Google Test."
 		@echo "  - BLISS=<true|false>: Enables BLISS (graph isomorphism, used a.o., by 'isomorph' detector)."
