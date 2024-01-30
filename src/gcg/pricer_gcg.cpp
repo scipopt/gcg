@@ -2034,9 +2034,8 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
       else
          continue;
 
-      if( SCIPisPositive(scip_, boundval) )
+      if( !SCIPisZero(scip_, boundval) )
          dualobjval += boundval * stabredcost;
-
    }
 
    SCIPfreeBufferArray(scip_, &stabredcosts);
@@ -2665,7 +2664,7 @@ SCIP_RETCODE ObjPricerGcg::computeDualDiff(
       *dualdiff += SQR(dualconv1[i] - dualconv2[i]);
 
    }
-   *dualdiff = SQRT(ABS(*dualdiff));
+   *dualdiff = sqrt(ABS(*dualdiff));
 
    return SCIP_OKAY;
 }
@@ -3003,13 +3002,17 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
          SCIP_CALL( getStabilizedDualObjectiveValue(pricetype, &stabdualval, stabilized) );
 
-         lowerboundcandidate = stabdualval + beststabobj;
-
          SCIPdebugMessage("lpobjval = %.8g, bestredcost = %.8g, stabdualval = %.8g, beststabobj = %.8g\n",
             SCIPgetLPObjval(scip_), bestredcost, stabdualval, beststabobj);
-         SCIPdebugMessage("lowerboundcandidate = %.8g\n", lowerboundcandidate);
 
-         assert(!optimal || !*bestredcostvalid || stabilized || SCIPisDualfeasEQ(scip_, SCIPgetLPObjval(scip_) + bestredcost, lowerboundcandidate));
+         assert(!optimal || !*bestredcostvalid || stabilized || SCIPisDualfeasEQ(scip_, SCIPgetLPObjval(scip_) + bestredcost, stabdualval + beststabobj));
+
+         if( stabilized || !optimal || !*bestredcostvalid )
+            lowerboundcandidate = stabdualval + beststabobj;
+         else
+            lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost;
+
+         SCIPdebugMessage("lowerboundcandidate = %.8g\n", lowerboundcandidate);
 
          if( enablestab )
          {

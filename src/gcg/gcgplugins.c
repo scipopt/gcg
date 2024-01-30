@@ -60,9 +60,8 @@
 
 
 #if USEHEURS
-#include "scip/heur_adaptivediving.h"
 #include "scip/heur_actconsdiving.h"
-#include "scip/heur_alns.h"
+#include "scip/heur_adaptivediving.h"
 #include "scip/heur_bound.h"
 #include "scip/heur_clique.h"
 #include "scip/heur_coefdiving.h"
@@ -80,23 +79,25 @@
 #include "scip/heur_gins.h"
 #include "scip/heur_guideddiving.h"
 #include "scip/heur_indicator.h"
+#include "scip/heur_indicatordiving.h"
 #include "scip/heur_intdiving.h"
 #include "scip/heur_intshifting.h"
 #include "scip/heur_linesearchdiving.h"
 #include "scip/heur_localbranching.h"
 #include "scip/heur_locks.h"
 #include "scip/heur_lpface.h"
-#include "scip/heur_mpec.h"
+#include "scip/heur_alns.h"
 #include "scip/heur_multistart.h"
 #include "scip/heur_mutation.h"
+#include "scip/heur_mpec.h"
 #include "scip/heur_nlpdiving.h"
-#include "scip/heur_ofins.h"
 #include "scip/heur_objpscostdiving.h"
 #include "scip/heur_octane.h"
+#include "scip/heur_ofins.h"
 #include "scip/heur_oneopt.h"
 #include "scip/heur_padm.h"
-#include "scip/heur_proximity.h"
 #include "scip/heur_pscostdiving.h"
+#include "scip/heur_proximity.h"
 #include "scip/heur_randrounding.h"
 #include "scip/heur_rens.h"
 #include "scip/heur_reoptsols.h"
@@ -104,6 +105,7 @@
 #include "scip/heur_rins.h"
 #include "scip/heur_rootsoldiving.h"
 #include "scip/heur_rounding.h"
+#include "scip/heur_scheduler.h"
 #include "scip/heur_shiftandpropagate.h"
 #include "scip/heur_shifting.h"
 #include "scip/heur_simplerounding.h"
@@ -116,8 +118,8 @@
 #include "scip/heur_undercover.h"
 #include "scip/heur_vbounds.h"
 #include "scip/heur_veclendiving.h"
-#include "scip/heur_zirounding.h"
 #include "scip/heur_zeroobj.h"
+#include "scip/heur_zirounding.h"
 #endif
 
 #include "scip/nodesel_bfs.h"
@@ -177,20 +179,24 @@
 #include "scip/reader_zpl.h"
 
 #if USESEPA
+#include "scip/sepa_eccuts.h"
+#include "scip/sepa_cgmip.h"
 #include "scip/sepa_clique.h"
+#include "scip/sepa_closecuts.h"
+#include "scip/sepa_aggregation.h"
+#include "scip/sepa_convexproj.h"
+#include "scip/sepa_disjunctive.h"
 #include "scip/sepa_gomory.h"
 #include "scip/sepa_impliedbounds.h"
 #include "scip/sepa_interminor.h"
 #include "scip/sepa_intobj.h"
+#include "scip/sepa_lagromory.h"
 #include "scip/sepa_mcf.h"
 #include "scip/sepa_minor.h"
 #include "scip/sepa_mixing.h"
 #include "scip/sepa_oddcycle.h"
-#include "scip/sepa_zerohalf.h"
-
-/* added by Jonas */
-#include "scip/sepa_closecuts.h"
 #include "scip/sepa_rapidlearning.h"
+#include "scip/sepa_zerohalf.h"
 #endif
 
 #include "scip/cutsel_hybrid.h"
@@ -397,7 +403,9 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurFracdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGins(scip) );
    SCIP_CALL( SCIPincludeHeurGuideddiving(scip) );
+   SCIP_CALL( SCIPincludeHeurZeroobj(scip) );
    SCIP_CALL( SCIPincludeHeurIndicator(scip) );
+   SCIP_CALL( SCIPincludeHeurIndicatordiving(scip) );
    SCIP_CALL( SCIPincludeHeurIntdiving(scip) );
    SCIP_CALL( SCIPincludeHeurIntshifting(scip) );
    SCIP_CALL( SCIPincludeHeurLinesearchdiving(scip) );
@@ -405,10 +413,10 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurLocks(scip) );
    SCIP_CALL( SCIPincludeHeurLpface(scip) );
    SCIP_CALL( SCIPincludeHeurAlns(scip) );
+   SCIP_CALL( SCIPincludeHeurNlpdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurMutation(scip) );
    SCIP_CALL( SCIPincludeHeurMultistart(scip) );
    SCIP_CALL( SCIPincludeHeurMpec(scip) );
-   SCIP_CALL( SCIPincludeHeurMutation(scip) );
-   SCIP_CALL( SCIPincludeHeurNlpdiving(scip) );
    SCIP_CALL( SCIPincludeHeurObjpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurOctane(scip) );
    SCIP_CALL( SCIPincludeHeurOfins(scip) );
@@ -423,6 +431,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurRins(scip) );
    SCIP_CALL( SCIPincludeHeurRootsoldiving(scip) );
    SCIP_CALL( SCIPincludeHeurRounding(scip) );
+   SCIP_CALL( SCIPincludeHeurScheduler(scip) );
    SCIP_CALL( SCIPincludeHeurShiftandpropagate(scip) );
    SCIP_CALL( SCIPincludeHeurShifting(scip) );
    SCIP_CALL( SCIPincludeHeurSubNlp(scip) );
@@ -435,25 +444,28 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurVbounds(scip) );
    SCIP_CALL( SCIPincludeHeurVeclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurZirounding(scip) );
-   SCIP_CALL( SCIPincludeHeurZeroobj(scip) );
 #endif
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
 
 #if USESEPA
+   SCIP_CALL( SCIPincludeSepaCGMIP(scip) );
    SCIP_CALL( SCIPincludeSepaClique(scip) );
+   SCIP_CALL( SCIPincludeSepaClosecuts(scip) );
+   SCIP_CALL( SCIPincludeSepaAggregation(scip) );
+   SCIP_CALL( SCIPincludeSepaConvexproj(scip) );
+   SCIP_CALL( SCIPincludeSepaDisjunctive(scip) );
+   SCIP_CALL( SCIPincludeSepaEccuts(scip) );
    SCIP_CALL( SCIPincludeSepaGomory(scip) );
    SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
    SCIP_CALL( SCIPincludeSepaInterminor(scip) );
    SCIP_CALL( SCIPincludeSepaIntobj(scip) );
+   SCIP_CALL( SCIPincludeSepaLagromory(scip) );
    SCIP_CALL( SCIPincludeSepaMcf(scip) );
    SCIP_CALL( SCIPincludeSepaMinor(scip) );
    SCIP_CALL( SCIPincludeSepaMixing(scip) );
    SCIP_CALL( SCIPincludeSepaOddcycle(scip) );
-   SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
-
-   /* added by Jonas */
-   SCIP_CALL( SCIPincludeSepaClosecuts(scip) );
    SCIP_CALL( SCIPincludeSepaRapidlearning(scip) );
+   SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
 
    SCIP_CALL( SCIPincludeCutselHybrid(scip) );

@@ -36,6 +36,7 @@
 #include "scip/type_scip.h"
 #include "scip/type_result.h"
 #include "scip/type_misc.h"
+#include "scip/type_retcode.h"
 
 #ifndef BLISS_AUTOMORPH_H_
 #define BLISS_AUTOMORPH_H_

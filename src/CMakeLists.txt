@@ -357,7 +357,7 @@ set(gcggraphheaders
     graph/weights.h
    )
 
-if(SYM STREQUAL "bliss")
+if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
    set(gcgsources ${gcgsources}
       gcg/bliss_automorph.cpp
       gcg/bliss.cpp

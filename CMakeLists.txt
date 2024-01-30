@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.9)
 
 # option() honors normal variables.
 if(POLICY CMP0077)
@@ -10,15 +10,21 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} ${CMAKE_CXX_FLAGS_R
 
 project(GCG)
 
-set(GCG_VERSION_MAJOR 3)
-set(GCG_VERSION_MINOR 6)
+set(GCG_VERSION_MAJOR 4)
+set(GCG_VERSION_MINOR 0)
 set(GCG_VERSION_PATCH 0)
 set(GCG_VERSION_SUB 0)
-set(GCG_VERSION_API 2)
+set(GCG_VERSION_API 18)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+
+if(SCIPOptSuite_BINARY_DIR)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${SCIPOptSuite_BINARY_DIR}/bin)
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${SCIPOptSuite_BINARY_DIR}/lib)
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${SCIPOptSuite_BINARY_DIR}/lib)
+endif()
 
 # path to e.g. FindGMP module
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
@@ -124,8 +130,8 @@ else()
    set(JSON-C_PIC_LIBRARIES)
 endif()
 
-set(SYM bliss CACHE STRING "options for symmetry computation")  #create the variable
-set_property(CACHE SYM PROPERTY STRINGS bliss none )  #define list of values GUI will offer for the variable
+set(SYM sbliss CACHE STRING "options for symmetry computation")  #create the variable
+set_property(CACHE SYM PROPERTY STRINGS sbliss bliss none )  #define list of values GUI will offer for the variable
 
 #set the correct rpath for OS X
 set(CMAKE_MACOSX_RPATH ON)
@@ -210,7 +216,7 @@ elseif(GCG_DEV_BUILD)
 endif()
 
 #search the selected symmetry computation program
-if(SYM STREQUAL "bliss")
+if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
    set(SYM_LIBRARIES libbliss ${GMP_LIBRARIES})
    set(SYM_PIC_LIBRARIES libbliss ${GMP_LIBRARIES})
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")

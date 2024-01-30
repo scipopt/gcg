@@ -889,7 +889,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump) /*lint --e{715}*/
    /* scale distance function and original objective to the same norm */
    objnorm = SCIPgetObjNorm(scip);
    objnorm = MAX(objnorm, 1.0);
-   scalingfactor = SQRT((SCIP_Real)(nbinvars + nintvars)) / objnorm;
+   scalingfactor = sqrt((SCIP_Real)(nbinvars + nintvars)) / objnorm;
 
    /* data initialization */
    alpha = 1.0;
