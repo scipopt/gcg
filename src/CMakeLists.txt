@@ -16,6 +16,7 @@ set(gcgsources
     gcg/benders_gcg.c
     gcg/bendersplugins.c
     gcg/branch_bpstrong.c
+    gcg/branch_compbnd.c
     gcg/branch_empty.c
     gcg/branch_generic.c
     gcg/branch_orig.c
@@ -161,6 +162,7 @@ set(gcggraphsources
 set(gcgheaders
     gcg/branch_empty.h
     gcg/branch_bpstrong.h
+    gcg/branch_compbnd.h
     gcg/branch_generic.h
     gcg/branch_orig.h
     gcg/branch_relpsprob.h
@@ -363,7 +365,7 @@ if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
       gcg/bliss.cpp
       gcg/dec_isomorph.cpp
    )
-   set(gcgheaders ${gcgheaders} 
+   set(gcgheaders ${gcgheaders}
       gcg/bliss_automorph.h
       gcg/bliss_automorph.hpp
       gcg/dec_isomorph.h
