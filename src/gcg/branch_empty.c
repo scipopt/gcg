@@ -166,6 +166,7 @@ SCIP_RETCODE applyOriginalBranching(
 
    assert(boundvar != NULL);
    assert(boundtype == GCG_BOUNDTYPE_LOWER || boundtype == GCG_BOUNDTYPE_UPPER || boundtype == GCG_BOUNDTYPE_FIXED);
+   assert(SCIPgetStage(GCGgetMasterprob(scip)) <= SCIP_STAGE_SOLVING);
 
    if( boundtype == GCG_BOUNDTYPE_LOWER || boundtype == GCG_BOUNDTYPE_FIXED )
    {
@@ -233,6 +234,12 @@ SCIP_RETCODE createBranchNodesInOrigprob(
    /* get master problem */
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
+
+   if( SCIPgetStage(masterscip) > SCIP_STAGE_SOLVING)
+   {
+      *result = SCIP_CUTOFF;
+      return SCIP_OKAY;
+   }
 
    /* get masterbranch constraint at the current node */
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);

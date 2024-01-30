@@ -2581,14 +2581,6 @@ SCIP_RETCODE initializeMasterProblemSolve(
       assert(relaxdata->decomp != NULL);
    }
 
-   if( !SCIPisLPConstructed(scip) && !SCIPinProbing(scip) ) {
-      SCIP_Bool cutoff;
-      /* construct the LP in the original problem */
-      SCIP_CALL(SCIPconstructLP(scip, &cutoff));
-      assert(!cutoff);
-      SCIP_CALL(SCIPflushLP(scip));
-   }
-
    return SCIP_OKAY;
 }
 
@@ -3150,6 +3142,14 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    assert(relaxdata != NULL);
 
    SCIP_CALL( initializeMasterProblemSolve(scip, relax) );
+
+   if( !SCIPisLPConstructed(scip) && !SCIPinProbing(scip) ) {
+      SCIP_Bool cutoff;
+      /* construct the LP in the original problem */
+      SCIP_CALL(SCIPconstructLP(scip, &cutoff));
+      assert(!cutoff);
+      SCIP_CALL(SCIPflushLP(scip));
+   }
 
    /* selecting the solving algorithm based upon the decomposition mode selected by the user, or whether the original
     * problem should be solved directly

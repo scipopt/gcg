@@ -1,3 +1,11 @@
+@page RN40 Release notes for GCG 4.0
+@section RN400 GCG 4.0.0
+*************************
+
+New features:
+-------------
+
+
 @page RN36 Release notes for GCG 3.6
 @section RN360 GCG 3.6.0
 *************************
@@ -13,6 +21,7 @@ Bug fixes
 - fix separation of cutting planes in the master problem
 - handle new variable bounds properly when synchronizing the B&B trees
 - store pending bound changes as soon as the master problem is transformed
+- fix handling of static master vars with negative lower bounds
 
 New/changed parameters:
 -----------------------
@@ -23,12 +32,22 @@ New/changed parameters:
 - Moved parameter 'detection/score/strong_detection/coeffactororigvsrandom' to 'detection/scores/strong/coeffactororigvsrandom'
 - Moved parameter 'detection/score/strong_detection/timelimit' to 'detection/scores/strong/timelimit'
 
+Renamed API functions:
+---------------------------
+
+- Replaced prefix 'DEC' with 'GCG'
+
+Renamed structures and defines:
+---------------------------
+
+- Replaced prefix 'DEC' with 'GCG'
+
 New/modified API functions:
 ---------------------------
 
 - New functions: 'GCGconshdlrDecompGetNConsClassifiers', 'GCGconshdlrDecompGetNVarClassifiers', 'GCGconshdlrDecompGetConsClassifiers', 'GCGconshdlrDecompGetVarClassifiers'
-- Add parameter 'DEC_CONSCLASSIFIER* consclassifier' to 'DEC_DECL_CONSCLASSIFY'
-- Add paramater 'DEC_VARCLASSIFIER* varclassifier' to 'DEC_DECL_VARCLASSIFY'
+- Add parameter 'GCG_CONSCLASSIFIER* consclassifier' to 'GCG_DECL_CONSCLASSIFY'
+- Add paramater 'GCG_VARCLASSIFIER* varclassifier' to 'GCG_DECL_VARCLASSIFY'
 - Added function 'GCGgetCurrentScoreShortname'
 - Added function 'GCGgetCurrentScore'
 - Added function 'GCGincludeScore'
@@ -71,16 +90,6 @@ Deleted API functions:
 - Deleted function 'GCGconshdlrDecompCalcSetPartForseeingWhiteScore'
 - Deleted function 'GCGconshdlrDecompCalcSetPartForWhiteAggScore'
 - Deleted function 'GCGconshdlrDecompCalcStrongDecompositionScore'
-
-Renamed API functions:
----------------------------
-
-- Replaced prefix 'DEC' with 'GCG'
-
-Renamed structures and defines:
----------------------------
-
-- Replaced prefix 'DEC' with 'GCG'
 
 Command line interface
 -----------------------

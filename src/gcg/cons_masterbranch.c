@@ -2074,7 +2074,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 
    SCIPdebugMessage("eventexec: eventtype = 0x%x, var = %s, oldbound = %f, newbound = %f\n", (unsigned int) eventtype, SCIPvarGetName(var), oldbound, newbound);
 
-   if( !GCGrelaxIsInitialized(scip) )
+   if( GCGgetDecompositionMode(scip) != GCG_DECMODE_DANTZIGWOLFE || !GCGrelaxIsInitialized(scip) )
    {
 //      assert(SCIPvarGetData(var) == NULL);
       SCIPdebugMessage("Ignoring since in presolving / propagating.\n");
@@ -2298,6 +2298,8 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
       assert((parentcons == NULL) == (SCIPnodeGetDepth(node) == 0));
    else
       assert(parentcons == NULL);
+
+   assert(SCIPgetStage(scip) <= SCIP_STAGE_SOLVING);
 
    /* find the masterbranch constraint handler */
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -2645,7 +2647,7 @@ SCIP_CONS* GCGconsMasterbranchGetActiveCons(
    assert(conshdlrdata != NULL);
    assert(conshdlrdata->stack != NULL);
 
-   if( conshdlrdata->nstack == 0 )
+   if( conshdlrdata->nstack == 0 || SCIPgetStage(scip) > SCIP_STAGE_SOLVING )
       return NULL;
 
    assert(conshdlrdata->stack[conshdlrdata->nstack-1] != NULL);
