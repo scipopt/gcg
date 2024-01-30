@@ -119,15 +119,15 @@ endif()
 
 # JSON
 if(JSON)
-   find_package(JSON-C)
+   find_package(JANSSON)
 endif()
-if(JSON-C_FOUND)
-   include_directories(${JSON-C_INCLUDE_DIRS})
+if(JANSSON_FOUND)
+   include_directories(${JANSSON_INCLUDE_DIRS})
    add_definitions(-DWITH_JSON)
-   set(JSON-C_PIC_LIBRARIES ${JSON-C_LIBRARIES})
+   set(JANSSON_PIC_LIBRARIES ${JANSSON_LIBRARIES})
 else()
-   set(JSON-C_LIBRARIES)
-   set(JSON-C_PIC_LIBRARIES)
+   set(JANSSON_LIBRARIES)
+   set(JANSSON_PIC_LIBRARIES)
 endif()
 
 set(SYM sbliss CACHE STRING "options for symmetry computation")  #create the variable

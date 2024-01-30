@@ -189,11 +189,11 @@ FLAGS		+=	-DWITH_CPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
 endif
 
 #-----------------------------------------------------------------------------
-# json-c
+# Jansson
 #-----------------------------------------------------------------------------
 
 ifeq ($(JSON),true)
-LDFLAGS		+= 	-ljson-c
+LDFLAGS		+=	-ljansson
 FLAGS		+=	-DWITH_JSON
 endif
 
