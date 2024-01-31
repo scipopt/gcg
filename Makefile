@@ -790,7 +790,7 @@ help:
 		@echo "  - CLIQUER=<true|false>: Enables CLIQUER (as a heuristic for stable set pricing problems)."
 		@echo "  - HMETIS=<true|false>: Enables hMETIS (hypergraph partitioning, used in structure detection)."
 		@echo "  - GSL=<true|false>: Enables the GNU Scientific Library (needed by a detector)"
-		@echo "  - JSON=<true|false>: Enables JSON functionality (requires json-c library)"
+		@echo "  - JSON=<true|false>: Enables JSON functionality (requires Jansson library)"
 		@echo "  - GAMS=<true|false>: To enable or disable (default) reading functionality in GAMS reader (needs GAMS)."
 		@echo "  - GTEST=<true|false>: Enables Google Test."
 		@echo "  - BLISS=<true|false>: Enables BLISS (graph isomorphism, used a.o., by 'isomorph' detector)."
