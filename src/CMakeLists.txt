@@ -448,7 +448,7 @@ target_link_libraries(libgcg
     ${CPLEX_LIBRARIES}
     $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
     ${YAML_LIBRARIES}
-    ${JSON-C_LIBRARIES})
+    ${JANSSON_LIBRARIES})
 
 if(SHARED)
     set(SCIP_NEEDED 0)
@@ -480,7 +480,7 @@ target_link_libraries(gcg
     ${CPLEX_LIBRARIES}
     $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
     ${YAML_LIBRARIES}
-    ${JSON-C_LIBRARIES})
+    ${JANSSON_LIBRARIES})
 
 add_dependencies(libgcg gcg_update_githash)
 add_dependencies(gcg gcg_update_githash)
