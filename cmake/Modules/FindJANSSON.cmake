@@ -1,12 +1,13 @@
 # ${JANSSON_INCLUDE_DIRS} contains the paths to jansson.h if Jansson is found.
 # ${JANSSON_LIBRARIES} contains libjansson if jansson is found.
+# creates target jansson::jansson
 
 # Check whether environment variable JANSSON_DIR was set.
 if(NOT JANSSON_DIR)
-  set(ENV_JANSSON_DIR $ENV{JANSSON_DIR})
-  if(ENV_JANSSON_DIR)
-    set(JANSSON_DIR $ENV{JANSSON_DIR} CACHE PATH "Path to Jansson directory")
-  endif()
+    set(ENV_JANSSON_DIR $ENV{JANSSON_DIR})
+    if(ENV_JANSSON_DIR)
+        set(JANSSON_DIR $ENV{JANSSON_DIR} CACHE PATH "Path to Jansson directory")
+    endif()
 endif()
 
 find_path(JANSSON_INCLUDE_DIRS
@@ -25,6 +26,10 @@ else()
         NAMES jansson
         HINTS ${JANSSON_DIR}
         PATH_SUFFIXES lib)
+    find_library(JANSSON_LIBRARY_DEBUG
+        NAMES jansson_d
+        HINTS ${JANSSON_DIR}
+        PATH_SUFFIXES debug/lib lib)
 endif()
 
 set(JANSSON_LIBRARIES ${JANSSON_LIBRARY})
@@ -32,15 +37,41 @@ set(JANSSON_LIBRARIES ${JANSSON_LIBRARY})
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(JANSSON DEFAULT_MSG JANSSON_INCLUDE_DIRS JANSSON_LIBRARIES)
 
-if(JANSSON_FOUND)
-    if(NOT TARGET jansson::jansson)
+if(WIN32)
+    find_file(JANSSON_LIBRARY_DLL
+        NAMES jansson.dll
+        HINTS ${JANSSON_DIR}
+        PATH_SUFFIXES bin lib)
+    find_file(JANSSON_LIBRARY_DLL_DEBUG
+        NAMES jansson_d.dll janssond.dll
+        HINTS ${JANSSON_DIR}
+        PATH_SUFFIXES debug/bin debug debug/lib)
+endif()
+
+if(JANSSON_FOUND AND NOT TARGET jansson::jansson)
+    if(EXISTS "${JANSSON_LIBRARY_DLL}")
+        add_library(jansson::jansson SHARED IMPORTED)
+        set_target_properties(jansson::jansson PROPERTIES
+            IMPORTED_LOCATION_RELEASE "${JANSSON_LIBRARY_DLL}"
+            IMPORTED_IMPLIB "${JANSSON_LIBRARY}"
+            INTERFACE_INCLUDE_DIRECTORIES "${JANSSON_INCLUDE_DIRS}"
+            IMPORTED_CONFIGURATIONS Release
+            IMPORTED_LINK_INTERFACE_LANGUAGES "C")
+        if(EXISTS "${JANSSON_LIBRARY_DLL_DEBUG}")
+            set_property(TARGET jansson::jansson APPEND PROPERTY IMPORTED_CONFIGURATIONS Debug )
+            set_target_properties(jansson::jansson PROPERTIES
+                IMPORTED_LOCATION_DEBUG "${JANSSON_LIBRARY_DLL_DEBUG}"
+                IMPORTED_IMPLIB_DEBUG "${JANSSON_LIBRARY_DEBUG}" )
+        endif()
+    else()
         if(STATIC_JANSSON)
             add_library(jansson::jansson STATIC IMPORTED)
         else()
             add_library(jansson::jansson SHARED IMPORTED)
         endif()
         set_target_properties(jansson::jansson PROPERTIES
-                IMPORTED_LOCATION "${JANSSON_LIBRARY}"
-                INTERFACE_INCLUDE_DIRECTORIES "${JANSSON_INCLUDE_DIR}")
+            IMPORTED_LOCATION "${JANSSON_LIBRARY}"
+            INTERFACE_INCLUDE_DIRECTORIES "${JANSSON_INCLUDE_DIR}"
+            IMPORTED_IMPLIB "${JANSSON_LIBRARY}")
     endif()
 endif()
