@@ -445,7 +445,7 @@ target_link_libraries(libgcg
     ${CLIQUER_LIBRARIES}
     ${CPLEX_LIBRARIES}
     $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
-    ${JANSSON_LIBRARIES})
+    $<$<BOOL:${JANSSON_FOUND}>:jansson::jansson>)
 
 if(SHARED)
     set(SCIP_NEEDED 0)
@@ -476,7 +476,7 @@ target_link_libraries(gcg
     ${CLIQUER_LIBRARIES}
     ${CPLEX_LIBRARIES}
     $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
-    ${JANSSON_LIBRARIES})
+    $<$<BOOL:${JANSSON_FOUND}>:jansson::jansson>)
 
 add_dependencies(libgcg gcg_update_githash)
 add_dependencies(gcg gcg_update_githash)
