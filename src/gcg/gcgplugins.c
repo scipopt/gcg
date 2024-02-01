@@ -208,7 +208,7 @@
 #include "relax_gcg.h"
 #include "branch_empty.h"
 
-#if WITH_YAML
+#if WITH_JSON
 #include "reader_ndec.h"
 #endif
 
@@ -479,7 +479,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
    SCIP_CALL( GCGincludeReaderDec(scip) );
    SCIP_CALL( SCIPincludeReaderRef(scip) );
-#if WITH_YAML
+#if WITH_JSON
    SCIP_CALL( SCIPincludeReaderNDec(scip) );
 #endif
    SCIP_CALL( SCIPincludeBranchruleEmpty(scip) );

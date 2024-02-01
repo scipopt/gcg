@@ -49,7 +49,6 @@ option(CPLEX "should Cplex be used for solving pricing MIPs" OFF)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
 option(GCG_DEV_BUILD "compile SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
 option(HMETIS "should hmetis be called" OFF)
-option(YAML "should LibYAML be linked" ON)
 option(JSON "should JSON library be linked" ON)
 
 # OPENMP
@@ -116,18 +115,6 @@ if(HMETIS)
 endif()
 if(HMETIS_FOUND)
    add_definitions(-DWITH_HMETIS)
-endif()
-
-if(YAML)
-   find_package(YAML)
-endif()
-if(YAML_FOUND)
-   include_directories(${YAML_INCLUDE_DIRS})
-   add_definitions(-DWITH_YAML)
-   set(YAML_PIC_LIBRARIES ${YAML_LIBRARIES})
-else()
-   set(YAML_LIBRARIES)
-   set(YAML_PIC_LIBRARIES)
 endif()
 
 # JSON

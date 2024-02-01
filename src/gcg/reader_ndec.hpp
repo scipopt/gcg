@@ -36,7 +36,7 @@
 #ifndef GCG_READER_NDEC_HPP__
 #define GCG_READER_NDEC_HPP__
 
-#include "yaml.h"
+#include "jansson.h"
 #include <vector>
 #include <unordered_map>
 #include <string>
@@ -51,6 +51,10 @@ struct NDecFileHandler;
 struct BlockData
 {
    BlockData() : decomposition(NULL), symmetricalblock(-1) {}
+   BlockData(const BlockData&) = delete;
+   BlockData(BlockData&&) noexcept;
+   ~BlockData();
+   BlockData& operator=(const BlockData&) = delete;
 
    std::vector<std::string> constraints;
    DecompositionData* decomposition;
@@ -70,14 +74,14 @@ struct DecompositionData
 struct NestedDecompositionData
 {
    NestedDecompositionData() : version(0), presolved(false), rootdecomposition(NULL) {}
+   NestedDecompositionData(const NestedDecompositionData&) = delete;
    ~NestedDecompositionData();
+   NestedDecompositionData& operator=(const NestedDecompositionData&) = delete;
 
    int version;
    std::string name;
    bool presolved;
    std::string comment;
-   std::vector<DecompositionData*> decompositions;
-   std::unordered_map<std::string, DecompositionData*> anchors;
    DecompositionData* rootdecomposition;
    std::unordered_map<std::string, std::string> symmetrydata;
 };
@@ -90,17 +94,9 @@ public:
 
    virtual ~AbstractElementParser() = default;
 
-   virtual bool handleMappingStart(const char* name, const char* anchor) = 0;
+   virtual void handleKeyValuePair(const char* name, json_t* value) = 0;
 
-   virtual void handleMappingEnd() = 0;
-
-   virtual bool handleSequenceStart(const char* name, const char* anchor) = 0;
-
-   virtual void handleSequenceEnd() = 0;
-
-   virtual void handleKeyValuePair(const char* name, const char* value, const char* anchor) = 0;
-
-   virtual void handleKeyAliasPair(const char* name, const char* anchor) = 0;
+   virtual void handleValue(json_t* value) = 0;
 
    bool error() const
    {
@@ -122,43 +118,17 @@ public:
 
    void initialize();
 
-   bool parseElement(AbstractElementParser& elementparser);
+   bool parseElement(AbstractElementParser& elementparser, json_t* element);
 
-   bool readNDec(AbstractElementParser& rootparser);
+   bool readNDec(NestedDecompositionData& data);
 
 private:
-   static int yamlReadHandler(void* data, unsigned char* buffer, size_t size, size_t *size_read);
+   static size_t jsonLoadCallback(void* buffer, size_t buflen, void* data);
 
    SCIP_FILE* file_;
-   yaml_parser_t parser_;
+   json_t* json_;
+   json_error_t error_;
    SCIP* scip_;
-};
-
-class DummyElementParser : public AbstractElementParser
-{
-public:
-   DummyElementParser(SCIP* scip, NDecFileHandler& filehandler)
-      : AbstractElementParser(scip, filehandler) {}
-
-   ~DummyElementParser() override = default;
-
-   bool handleMappingStart(const char* name, const char* anchor) override
-   {
-      return false;
-   }
-
-   void handleMappingEnd() override {}
-
-   bool handleSequenceStart(const char* name, const char* anchor) override
-   {
-      return false;
-   }
-
-   void handleSequenceEnd() override {}
-
-   void handleKeyValuePair(const char* name, const char* value, const char* anchor) override {}
-
-   void handleKeyAliasPair(const char* name, const char* anchor) override {}
 };
 
 class AbstractNestedDecompositionElementParser : public AbstractElementParser
@@ -170,11 +140,7 @@ public:
    ~AbstractNestedDecompositionElementParser() override = default;
 
 protected:
-   void parseDecomposition(const char* anchor);
-
-   DecompositionData* getDecompositionData(const char* anchor);
-
-   void skipElement();
+   DecompositionData* parseDecomposition(json_t* value);
 
    NestedDecompositionData& data_;
 };
@@ -188,17 +154,9 @@ public:
 
    ~BlockElementParser() override = default;
 
-   bool handleMappingStart(const char* name, const char* anchor) override;
+   void handleKeyValuePair(const char* name, json_t* value) override;
 
-   void handleMappingEnd() override {}
-
-   bool handleSequenceStart(const char* name, const char* anchor) override;
-
-   void handleSequenceEnd() override;
-
-   void handleKeyValuePair(const char* name, const char* value, const char* anchor) override;
-
-   void handleKeyAliasPair(const char* name, const char* anchor) override;
+   void handleValue(json_t* value) override;
 
 private:
    BlockData& blockdata_;
@@ -214,17 +172,9 @@ public:
 
    ~DecompositionElementParser() override = default;
 
-   bool handleMappingStart(const char* name, const char* anchor) override;
+   void handleKeyValuePair(const char* name, json_t* value) override;
 
-   void handleMappingEnd() override {}
-
-   bool handleSequenceStart(const char* name, const char* anchor) override;
-
-   void handleSequenceEnd() override;
-
-   void handleKeyValuePair(const char* name, const char* value, const char* anchor) override;
-
-   void handleKeyAliasPair(const char* name, const char* anchor) override;
+   void handleValue(json_t* value) override;
 
 private:
    DecompositionData& decdata_;
@@ -236,25 +186,15 @@ class RootElementParser : public AbstractNestedDecompositionElementParser
 {
 public:
    RootElementParser(SCIP* scip, NDecFileHandler& filehandler, NestedDecompositionData& data)
-      : AbstractNestedDecompositionElementParser(scip, filehandler, data), parsingdecomps(false),
-      parsingsymmetry(false) {}
+      : AbstractNestedDecompositionElementParser(scip, filehandler, data), parsingsymmetry(false) {}
 
    ~RootElementParser() override = default;
 
-   bool handleMappingStart(const char* name, const char* anchor) override;
+   void handleKeyValuePair(const char* name, json_t* value) override;
 
-   void handleMappingEnd() override;
-
-   bool handleSequenceStart(const char* name, const char* anchor) override;
-
-   void handleSequenceEnd() override;
-
-   void handleKeyValuePair(const char* name, const char* value, const char* anchor) override;
-
-   void handleKeyAliasPair(const char* name, const char* anchor) override;
+   void handleValue(json_t* value) override;
 
 private:
-   bool parsingdecomps;
    bool parsingsymmetry;
 };
 

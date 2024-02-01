@@ -405,7 +405,7 @@ if(HMETIS_FOUND)
    endif()
 endif()
 
-if(YAML_FOUND)
+if(JANSSON_FOUND)
     set(gcgsources ${gcgsources}
         gcg/reader_ndec.cpp
     )
@@ -413,8 +413,6 @@ if(YAML_FOUND)
         gcg/reader_ndec.h
         gcg/reader_ndec.hpp
     )
-else()
-    SET(YAML_LIBRARIES)
 endif()
 
 # all source files should be compiled with a c++ compiler
@@ -447,7 +445,6 @@ target_link_libraries(libgcg
     ${CLIQUER_LIBRARIES}
     ${CPLEX_LIBRARIES}
     $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
-    ${YAML_LIBRARIES}
     ${JANSSON_LIBRARIES})
 
 if(SHARED)
@@ -479,7 +476,6 @@ target_link_libraries(gcg
     ${CLIQUER_LIBRARIES}
     ${CPLEX_LIBRARIES}
     $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
-    ${YAML_LIBRARIES}
     ${JANSSON_LIBRARIES})
 
 add_dependencies(libgcg gcg_update_githash)
