@@ -597,7 +597,7 @@ SCIP_RETCODE SCIPincludeReaderNDec(
    SCIP*                 scip
    )
 {
-   SCIP_READERDATA* readerdata;
+   SCIP_READERDATA* readerdata = NULL;
 
    /* create dec reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
