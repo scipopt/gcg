@@ -37,14 +37,14 @@
 #define GCG_READER_NDEC_H__
 
 #include "scip/scip.h"
-#include "type_decomp.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** includes the ndec file reader into SCIP */
-extern
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeReaderNDec(
    SCIP*                 scip                /**< SCIP data structure */
    );
