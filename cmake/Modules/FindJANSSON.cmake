@@ -27,7 +27,20 @@ else()
         PATH_SUFFIXES lib)
 endif()
 
-SET(JANSSON_LIBRARIES ${JANSSON_LIBRARY})
+set(JANSSON_LIBRARIES ${JANSSON_LIBRARY})
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(JANSSON DEFAULT_MSG JANSSON_INCLUDE_DIRS JANSSON_LIBRARIES)
+
+if(JANSSON_FOUND)
+    if(NOT TARGET jansson::jansson)
+        if(STATIC_JANSSON)
+            add_library(jansson::jansson STATIC IMPORTED)
+        else()
+            add_library(jansson::jansson SHARED IMPORTED)
+        endif()
+        set_target_properties(jansson::jansson PROPERTIES
+                IMPORTED_LOCATION "${JANSSON_LIBRARY}"
+                INTERFACE_INCLUDE_DIRECTORIES "${JANSSON_INCLUDE_DIR}")
+    endif()
+endif()
