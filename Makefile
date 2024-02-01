@@ -371,6 +371,10 @@ ifeq ($(CPLEXSOLVER),true)
 LIBOBJ		+=	gcg/solver_cplex.o
 endif
 
+ifeq ($(JSON),true)
+LIBOBJ		+=	gcg/reader_ndec.o
+endif
+
 MAINOBJ		=	main.o
 
 MAINSRC		=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.cpp)))
