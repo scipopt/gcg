@@ -53,9 +53,14 @@
 
 using namespace gcg;
 
-static bool checkVersion(int version)
+static constexpr bool checkVersion(int version)
 {
-   return version == NDEC_VERSION;
+   return version <= NDEC_VERSION;
+}
+
+static constexpr bool checkJson(int returnvalue)
+{
+   return returnvalue == 0;
 }
 
 /** data for dec reader */
@@ -64,6 +69,7 @@ struct SCIP_ReaderData
 };
 
 /* reads ndec file */
+static
 SCIP_RETCODE readNDec(
    SCIP*                 scip,
    const char*           filename,
@@ -72,12 +78,12 @@ SCIP_RETCODE readNDec(
 {
    NestedDecompositionData data;
    NDecFileHandler filehandler(scip, filename);
-   filehandler.initialize();
+   SCIP_CALL( filehandler.initialize() );
    if( filehandler.readNDec(data) )
    {
       if( data.rootdecomposition )
       {
-         int nblocks = data.rootdecomposition->blocks.size();
+         int nblocks = (int)data.rootdecomposition->blocks.size();
 
          if( data.presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
          {
@@ -125,6 +131,7 @@ SCIP_RETCODE readNDec(
 }
 
 /* write a ndec file for a given decomposition */
+static
 SCIP_RETCODE writePartialdec(
    SCIP*                 scip,
    FILE*                 file,
@@ -132,7 +139,18 @@ SCIP_RETCODE writePartialdec(
    SCIP_RESULT*          result
    )
 {
-   return SCIP_NOTIMPLEMENTED;
+   NDecFileHandler filehandler(scip, file);
+   SCIP_CALL( filehandler.initialize() );
+   if( filehandler.writeNDec(partialdec) )
+   {
+      *result = SCIP_SUCCESS;
+   }
+   else
+   {
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_WRITEERROR;
+   }
+   return SCIP_OKAY;
 }
 
 BlockData::BlockData(BlockData&& block) noexcept
@@ -184,22 +202,37 @@ BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
 NDecFileHandler::NDecFileHandler(
    SCIP* scip,
    const char* filename
-   ) : scip_(scip), json_(NULL), error_()
+   ) : scip_(scip), json_(NULL), error_(), wfile_(NULL)
 {
-   file_ = SCIPfopen(filename, "r");
+   rfile_ = SCIPfopen(filename, "r");
+}
+
+NDecFileHandler::NDecFileHandler(
+   SCIP* scip,
+   FILE* file
+   ) : scip_(scip), json_(NULL), error_(), wfile_(file), rfile_(NULL)
+{
 }
 
 NDecFileHandler::~NDecFileHandler()
 {
    if( json_ )
       json_decref(json_);
-   if( file_ )
-      SCIPfclose(file_);
+   if( rfile_ )
+      SCIPfclose(rfile_);
 }
 
-void NDecFileHandler::initialize()
+SCIP_RETCODE NDecFileHandler::initialize()
 {
-   json_ = json_load_callback(&jsonLoadCallback, this, 0, &error_);
+   if( rfile_ )
+   {
+      json_ = json_load_callback(&jsonLoadCallback, this, 0, &error_);
+   }
+   else
+   {
+      json_ = json_object();
+   }
+   return SCIP_OKAY;
 }
 
 bool NDecFileHandler::parseElement(
@@ -242,7 +275,12 @@ bool NDecFileHandler::readNDec(
 {
    bool error = false;
 
-   if( !json_ )
+   if( !rfile_ )
+   {
+      SCIPwarningMessage(scip_, "JSON parser is not initialized.");
+      error = true;
+   }
+   else if( !json_ )
    {
       SCIPwarningMessage(scip_, "Could not parse JSON, line %d: %s\n", error_.line, error_.text);
       error = true;
@@ -261,6 +299,159 @@ bool NDecFileHandler::readNDec(
    return !error;
 }
 
+bool NDecFileHandler::writeNDec(
+   gcg::PARTIALDECOMP* decomp
+   )
+{
+   bool success = true;
+   success &= setObjectValue("version", json_integer(NDEC_VERSION));
+   success &= setObjectValue("problem_name", json_string(SCIPgetProbName(scip_)));
+   success &= setObjectValue("decomp_id", json_integer(decomp->getID()));
+   success &= setObjectValue("presolved", json_boolean(!decomp->isAssignedToOrigProb()));
+   success &= setObjectValue("num_blocks", json_integer(decomp->getNBlocks()));
+
+   json_t* jsondecomp = json_object();
+   success &= serializeDecomposition(jsondecomp, decomp);
+   success &= setObjectValue("decomposition", jsondecomp);
+
+   if( success )
+   {
+      success = checkJson(json_dump_callback(json_, &jsonDumpCallback, this, JSON_INDENT(2)));
+   }
+   return success;
+}
+
+bool NDecFileHandler::serializeBlock(
+   json_t* json,
+   gcg::PARTIALDECOMP* decomp,
+   int block
+   )
+{
+   bool success = true;
+   auto* detprobdata = decomp->getDetprobdata();
+   json_t* jsonconstraints = json_array();
+
+   for( int i: decomp->getConssForBlock(block) )
+   {
+      auto* cons = detprobdata->getCons(i);
+      success &= appendArrayValue(json_string(SCIPconsGetName(cons)), jsonconstraints);
+   }
+   success &= setObjectValue("constraints", jsonconstraints, json);
+
+   if( decomp->aggInfoCalculated() && decomp->getRepForBlock(block) != block )
+      success &= setObjectValue("symmetrical_block", json_integer(decomp->getRepForBlock(block)), json);
+
+   return success;
+}
+
+bool NDecFileHandler::serializeDecomposition(
+   json_t* json,
+   gcg::PARTIALDECOMP* decomp
+   )
+{
+   bool success = true;
+   auto* detprobdata = decomp->getDetprobdata();
+
+   json_t* jsonmasterconstraints = json_array();
+   for( int i: decomp->getMasterconss() )
+   {
+      auto* cons = detprobdata->getCons(i);
+      success &= appendArrayValue(json_string(SCIPconsGetName(cons)), jsonmasterconstraints);
+   }
+   success &= setObjectValue("master_constraints", jsonmasterconstraints, json);
+
+   if( !decomp->aggInfoCalculated() )
+   {
+      decomp->calcAggregationInformation(false);
+   }
+
+   json_t* jsonblocks = json_array();
+   for( int b = 0; b < decomp->getNBlocks(); ++b )
+   {
+      json_t* jsonblock = json_object();
+      success &= serializeBlock(jsonblock, decomp, b);
+      success &= appendArrayValue(jsonblock, jsonblocks);
+   }
+   success &= setObjectValue("blocks", jsonblocks, json);
+
+   if( decomp->aggInfoCalculated() )
+   {
+      json_t* jsonsymmetry = json_object();
+      for( int r = 0; r < decomp->getNReps(); ++r )
+      {
+         int repblock = decomp->getBlocksForRep(r)[0];
+         for( int i = 0; i < (int)decomp->getBlocksForRep(r).size(); ++i )
+         {
+            int b = decomp->getBlocksForRep(r)[i];
+            if( b == repblock )
+               continue;
+            for( int vi = 0; vi < (int)decomp->getRepVarmap(r, i).size(); ++vi )
+            {
+               int rvi = decomp->getRepVarmap(r, i)[vi];
+               auto* var = detprobdata->getVar(decomp->getVarsForBlock(b)[vi]);
+               auto* repvar = detprobdata->getVar(decomp->getVarsForBlock(repblock)[rvi]);
+               success &= setObjectValue(SCIPvarGetName(var), json_string(SCIPvarGetName(repvar)), jsonsymmetry);
+            }
+         }
+      }
+      success &= setObjectValue("symmetry", jsonsymmetry);
+   }
+
+   return success;
+}
+
+bool NDecFileHandler::setObjectValue(
+   const char* key,
+   json_t* value,
+   json_t* object,
+   bool decref
+   )
+{
+   bool success;
+
+   if( !object )
+      object = json_;
+
+   if( decref )
+   {
+      success = checkJson(json_object_set_new(object, key, value));
+   }
+   else
+   {
+      success = checkJson(json_object_set(object, key, value));
+   }
+
+   if( !success )
+   {
+      SCIPwarningMessage(scip_, "Could not set value with key '%s'\n", key);
+   }
+   return success;
+}
+
+bool NDecFileHandler::appendArrayValue(
+   json_t* value,
+   json_t* array,
+   bool decref
+   )
+{
+   bool success;
+
+   if( decref )
+   {
+      success = checkJson(json_array_append_new(array, value));
+   }
+   else
+   {
+      success = checkJson(json_array_append(array, value));
+   }
+
+   if( !success )
+   {
+      SCIPwarningMessage(scip_, "Could not append value.\n");
+   }
+   return success;
+}
+
 size_t NDecFileHandler::jsonLoadCallback(
    void* buffer,
    size_t buflen,
@@ -268,8 +459,22 @@ size_t NDecFileHandler::jsonLoadCallback(
    )
 {
    auto* filehandler = (NDecFileHandler*) data;
-   size_t size_read = SCIPfread(buffer, 1, buflen, filehandler->file_);
-   return (size_read == 0 && !SCIPfeof(filehandler->file_)) ? (size_t)-1 : size_read;
+   size_t size_read = SCIPfread(buffer, 1, buflen, filehandler->rfile_);
+   return (size_read == 0 && !SCIPfeof(filehandler->rfile_)) ? (size_t)-1 : size_read;
+}
+
+int NDecFileHandler::jsonDumpCallback(
+   const char* buffer,
+   size_t buflen,
+   void* data
+   )
+{
+   auto* filehandler = (NDecFileHandler*) data;
+   assert(buflen <= INT_MAX);
+   SCIPinfoMessage(filehandler->scip_, filehandler->wfile_, "%.*s", (int)buflen, buffer);
+   // size_t size_written = SCIPfwrite(buffer, 1, buflen, filehandler->wfile_);
+   // return (size_written == 0) ? 1 : 0;
+   return 0;
 }
 
 DecompositionData* AbstractNestedDecompositionElementParser::parseDecomposition(json_t* value)
@@ -371,7 +576,7 @@ void RootElementParser::handleKeyValuePair(
             error_ = true;
          }
       }
-      else if( strcmp(name, "rootdecomposition") == 0 )
+      else if( strcmp(name, "decomposition") == 0 )
       {
          if( json_is_object(value) )
          {
@@ -379,7 +584,7 @@ void RootElementParser::handleKeyValuePair(
          }
          else
          {
-            SCIPwarningMessage(scip_, "Root decomposition must be an object.\n");
+            SCIPwarningMessage(scip_, "Decomposition must be an object.\n");
             error_ = true;
          }
       }
@@ -401,7 +606,7 @@ void DecompositionElementParser::handleKeyValuePair(
    json_t* value
    )
 {
-   if( strcmp(name, "masterconstraints") == 0 )
+   if( strcmp(name, "master_constraints") == 0 )
    {
       if( json_is_array(value) )
       {

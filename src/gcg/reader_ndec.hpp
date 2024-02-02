@@ -113,19 +113,28 @@ struct NDecFileHandler
 {
 public:
    NDecFileHandler(SCIP* scip, const char* filename);
-
+   NDecFileHandler(SCIP* scip, FILE* wfile);
    ~NDecFileHandler();
 
-   void initialize();
+   SCIP_RETCODE initialize();
 
    bool parseElement(AbstractElementParser& elementparser, json_t* element);
 
    bool readNDec(NestedDecompositionData& data);
 
-private:
-   static size_t jsonLoadCallback(void* buffer, size_t buflen, void* data);
+   bool writeNDec(gcg::PARTIALDECOMP* decomp);
 
-   SCIP_FILE* file_;
+private:
+   bool serializeBlock(json_t* json, gcg::PARTIALDECOMP* decomp, int block);
+   bool serializeDecomposition(json_t* json, gcg::PARTIALDECOMP* decomp);
+   bool setObjectValue(const char* key, json_t* value, json_t* object = NULL, bool decref = true);
+   bool appendArrayValue(json_t* value, json_t* array, bool decref = true);
+
+   static size_t jsonLoadCallback(void* buffer, size_t buflen, void* data);
+   static int jsonDumpCallback(const char* buffer, size_t buflen, void* data);
+
+   SCIP_FILE* rfile_;
+   FILE* wfile_;
    json_t* json_;
    json_error_t error_;
    SCIP* scip_;

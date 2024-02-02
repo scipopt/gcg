@@ -4505,7 +4505,8 @@ int PARTIALDECOMP::getRepForBlock(
    int blockid
    )
 {
-     return blockstorep[blockid];
+   assert(aggInfoCalculated());
+   return blockstorep[blockid];
 }
 
 std::vector<int>& PARTIALDECOMP::getRepVarmap(
