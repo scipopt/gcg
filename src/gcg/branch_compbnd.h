@@ -48,37 +48,6 @@
 extern "C" {
 #endif
 
-typedef enum {
-   GCG_BRANCH_DOWN = 0,
-   GCG_BRANCH_UP = 1
-} GCG_BRANCH_TYPE;
-
-typedef enum {
-   GCG_COMPSENSE_GE = 0,
-   GCG_COMPSENSE_LE = 1
-} GCG_COMPSENSE;
-
-/** component bound structure */
-struct ComponentBoundSequence
-{
-   SCIP_VAR*             component;          /**< variable to which this bound belongs */
-   GCG_COMPSENSE         sense;              /**< sense of the bound */
-   SCIP_Real             bound;              /**< bound value */
-};
-typedef struct ComponentBoundSequence GCG_COMPSEQUENCE;
-
-
-/** strip structure */
-struct GCG_Strip
-{
-   SCIP*                 scip;               /**< SCIP data structure */
-   SCIP_VAR*             mastervar;          /**< master variable */
-   GCG_COMPSEQUENCE**    C;                  /**< current set of comp bound sequences */
-   int                   Csize;              /**< number of component bound sequences */
-   int*                  sequencesizes;      /**< array of sizes of component bound sequences */
-};
-typedef struct GCG_Strip GCG_STRIP;
-
 /** creates the component bound branching rule and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE SCIPincludeBranchruleCompBnd(
