@@ -122,11 +122,13 @@ public:
 
    bool readNDec(NestedDecompositionData& data);
 
-   bool writeNDec(gcg::PARTIALDECOMP* decomp);
+   bool writeNDec(PARTIALDECOMP* decomp);
 
 private:
-   bool serializeBlock(json_t* json, gcg::PARTIALDECOMP* decomp, int block);
-   bool serializeDecomposition(json_t* json, gcg::PARTIALDECOMP* decomp);
+   bool serializeBlock(json_t* json, PARTIALDECOMP* decomp, int block);
+   bool serializeBlockStructure(json_t* json, PARTIALDECOMP* decomp, BLOCK_STRUCTURE* blockstructure);
+   bool serializeBlockStructureBlock(json_t* json, PARTIALDECOMP* decomp, BLOCK_STRUCTURE* blockstructure, int block);
+   bool serializeDecomposition(json_t* json, PARTIALDECOMP* decomp);
    bool setObjectValue(const char* key, json_t* value, json_t* object = NULL, bool decref = true);
    bool appendArrayValue(json_t* value, json_t* array, bool decref = true);
 
@@ -177,7 +179,7 @@ class DecompositionElementParser : public AbstractNestedDecompositionElementPars
 public:
    DecompositionElementParser(SCIP* scip, NDecFileHandler& filehandler, NestedDecompositionData& data,
       DecompositionData& decdata) : AbstractNestedDecompositionElementParser(scip, filehandler, data),
-      decdata_(decdata), parsingmasterconstraints(false), parsingblocks(false) {}
+      decdata_(decdata), parsingmasterconstraints(false), parsingblocks(false), parsingsymmetry(false) {}
 
    ~DecompositionElementParser() override = default;
 
@@ -189,22 +191,20 @@ private:
    DecompositionData& decdata_;
    bool parsingmasterconstraints;
    bool parsingblocks;
+   bool parsingsymmetry;
 };
 
 class RootElementParser : public AbstractNestedDecompositionElementParser
 {
 public:
    RootElementParser(SCIP* scip, NDecFileHandler& filehandler, NestedDecompositionData& data)
-      : AbstractNestedDecompositionElementParser(scip, filehandler, data), parsingsymmetry(false) {}
+      : AbstractNestedDecompositionElementParser(scip, filehandler, data) {}
 
    ~RootElementParser() override = default;
 
    void handleKeyValuePair(const char* name, json_t* value) override;
 
    void handleValue(json_t* value) override;
-
-private:
-   bool parsingsymmetry;
 };
 
 }

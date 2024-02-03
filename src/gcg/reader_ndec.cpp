@@ -195,6 +195,8 @@ BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
       }
       if( blockdata.decomposition )
          blockstructure->blockstructures.push_back(blockdata.decomposition->createBlockStructure(detprobdata));
+      else
+         blockstructure->blockstructures.emplace_back();
    }
    return blockstructure;
 }
@@ -341,6 +343,74 @@ bool NDecFileHandler::serializeBlock(
    if( decomp->aggInfoCalculated() && decomp->getRepForBlock(block) != block )
       success &= setObjectValue("symmetrical_block", json_integer(decomp->getRepForBlock(block)), json);
 
+   if( decomp->isNested() )
+   {
+      json_t* jsonblockstructure = json_object();
+      serializeBlockStructure(jsonblockstructure, decomp, decomp->getBlockStructure(block));
+      success &= setObjectValue("decomposition", jsonblockstructure, json);
+   }
+
+   return success;
+}
+
+bool NDecFileHandler::serializeBlockStructure(
+   json_t* json,
+   gcg::PARTIALDECOMP* decomp,
+   gcg::BLOCK_STRUCTURE* blockstructure
+   )
+{
+   bool success = true;
+   auto* detprobdata = decomp->getDetprobdata();
+
+   json_t* jsonmasterconstraints = json_array();
+   for( int i: blockstructure->masterconss )
+   {
+      auto* cons = detprobdata->getCons(i);
+      success &= appendArrayValue(json_string(SCIPconsGetName(cons)), jsonmasterconstraints);
+   }
+   success &= setObjectValue("master_constraints", jsonmasterconstraints, json);
+
+   json_t* jsonblocks = json_array();
+   for( int b = 0; b < (int)blockstructure->blockconss.size(); ++b )
+   {
+      json_t* jsonblock = json_object();
+      success &= serializeBlockStructureBlock(jsonblock, decomp, blockstructure, b);
+      success &= appendArrayValue(jsonblock, jsonblocks);
+   }
+   success &= setObjectValue("blocks", jsonblocks, json);
+
+   // @todo: add "symmetry_mapping"
+
+   return success;
+}
+
+bool NDecFileHandler::serializeBlockStructureBlock(
+   json_t* json,
+   PARTIALDECOMP* decomp,
+   BLOCK_STRUCTURE* blockstructure,
+   int block
+   )
+{
+   bool success = true;
+   auto* detprobdata = decomp->getDetprobdata();
+   json_t* jsonconstraints = json_array();
+
+   for( int i: blockstructure->blockconss[block] )
+   {
+      auto* cons = detprobdata->getCons(i);
+      success &= appendArrayValue(json_string(SCIPconsGetName(cons)), jsonconstraints);
+   }
+   success &= setObjectValue("constraints", jsonconstraints, json);
+
+   // @todo: add "symmetrical_block"
+
+   if( blockstructure->blockstructures[block] )
+   {
+      json_t* jsonblockstructure = json_object();
+      serializeBlockStructure(jsonblockstructure, decomp, blockstructure->blockstructures[block]);
+      success &= setObjectValue("decomposition", jsonblockstructure, json);
+   }
+
    return success;
 }
 
@@ -394,7 +464,7 @@ bool NDecFileHandler::serializeDecomposition(
             }
          }
       }
-      success &= setObjectValue("symmetry", jsonsymmetry);
+      success &= setObjectValue("symmetry_mapping", jsonsymmetry, json);
    }
 
    return success;
@@ -491,107 +561,77 @@ void RootElementParser::handleKeyValuePair(
    json_t* value
    )
 {
-   if( parsingsymmetry )
+   if( strcmp(name, "version") == 0 )
    {
-      if( json_is_string(value) )
+      if( json_is_integer(value) )
       {
-         data_.symmetrydata.emplace(std::string(name), std::string(json_string_value(value)));
+         data_.version = (int) json_integer_value(value);
+         if( !checkVersion(data_.version))
+         {
+            SCIPwarningMessage(scip_, "Invalid version.\n");
+            error_ = true;
+         }
       }
       else
       {
-         SCIPwarningMessage(scip_, "Symmetry information must consist of strings.");
+         SCIPwarningMessage(scip_, "Version must be an integer.");
+         error_ = true;
+      }
+   }
+   else if( strcmp(name, "name") == 0 )
+   {
+      if( json_is_string(value) )
+      {
+         data_.name = std::string(json_string_value(value));
+      }
+      else
+      {
+         SCIPwarningMessage(scip_, "Decomposition name must be a string.");
+         error_ = true;
+      }
+   }
+   else if( strcmp(name, "comment") == 0 )
+   {
+      if( json_is_string(value) )
+      {
+         data_.comment = std::string(json_string_value(value));
+      }
+   }
+   else if( strcmp(name, "presolved") == 0 )
+   {
+      if( json_is_string(value) )
+      {
+         data_.presolved = strcmp(json_string_value(value), "true") == 0 ||
+                           strcmp(json_string_value(value), "t") == 0 ||
+                           strcmp(json_string_value(value), "yes") == 0 ||
+                           strcmp(json_string_value(value), "y") == 0 ||
+                           strcmp(json_string_value(value), "1") == 0;
+      }
+      else if ( json_is_boolean(value) )
+      {
+         data_.presolved = json_boolean_value(value);
+      }
+      else
+      {
+         SCIPwarningMessage(scip_, "Could not parse value of 'presolved'.");
+         error_ = true;
+      }
+   }
+   else if( strcmp(name, "decomposition") == 0 )
+   {
+      if( json_is_object(value) )
+      {
+         data_.rootdecomposition = parseDecomposition(value);
+      }
+      else
+      {
+         SCIPwarningMessage(scip_, "Decomposition must be an object.\n");
          error_ = true;
       }
    }
    else
    {
-      if( strcmp(name, "version") == 0 )
-      {
-         if( json_is_integer(value) )
-         {
-            data_.version = (int) json_integer_value(value);
-            if( !checkVersion(data_.version))
-            {
-               SCIPwarningMessage(scip_, "Invalid version.\n");
-               error_ = true;
-            }
-         }
-         else
-         {
-            SCIPwarningMessage(scip_, "Version must be an integer.");
-            error_ = true;
-         }
-      }
-      else if( strcmp(name, "name") == 0 )
-      {
-         if( json_is_string(value) )
-         {
-            data_.name = std::string(json_string_value(value));
-         }
-         else
-         {
-            SCIPwarningMessage(scip_, "Decomposition name must be a string.");
-            error_ = true;
-         }
-      }
-      else if( strcmp(name, "comment") == 0 )
-      {
-         if( json_is_string(value) )
-         {
-            data_.comment = std::string(json_string_value(value));
-         }
-      }
-      else if( strcmp(name, "presolved") == 0 )
-      {
-         if( json_is_string(value) )
-         {
-            data_.presolved = strcmp(json_string_value(value), "true") == 0 ||
-                              strcmp(json_string_value(value), "t") == 0 ||
-                              strcmp(json_string_value(value), "yes") == 0 ||
-                              strcmp(json_string_value(value), "y") == 0 ||
-                              strcmp(json_string_value(value), "1") == 0;
-         }
-         else if ( json_is_boolean(value) )
-         {
-            data_.presolved = json_boolean_value(value);
-         }
-         else
-         {
-            SCIPwarningMessage(scip_, "Could not parse value of 'presolved'.");
-            error_ = true;
-         }
-      }
-      else if( strcmp(name, "symmetry") == 0 )
-      {
-         if( json_is_object(value) )
-         {
-            parsingsymmetry = true;
-            if( !filehandler_.parseElement(*this, value))
-               error_ = true;
-            parsingsymmetry = false;
-         }
-         else
-         {
-            SCIPwarningMessage(scip_, "Symmetry information must be a mapping of strings.\n");
-            error_ = true;
-         }
-      }
-      else if( strcmp(name, "decomposition") == 0 )
-      {
-         if( json_is_object(value) )
-         {
-            data_.rootdecomposition = parseDecomposition(value);
-         }
-         else
-         {
-            SCIPwarningMessage(scip_, "Decomposition must be an object.\n");
-            error_ = true;
-         }
-      }
-      else
-      {
-         SCIPdebugMessage("Skipping unknown element '%s'.\n", name);
-      }
+      SCIPdebugMessage("Skipping unknown element '%s'.\n", name);
    }
 }
 
@@ -606,39 +646,69 @@ void DecompositionElementParser::handleKeyValuePair(
    json_t* value
    )
 {
-   if( strcmp(name, "master_constraints") == 0 )
+   if( parsingsymmetry )
    {
-      if( json_is_array(value) )
+      if( json_is_string(value) )
       {
-         parsingmasterconstraints = true;
-         if( !filehandler_.parseElement(*this, value))
-            error_ = true;
-         parsingmasterconstraints = false;
+         data_.symmetrydata.emplace(std::string(name), std::string(json_string_value(value)));
       }
       else
       {
-         SCIPwarningMessage(scip_, "Constraints must be given as an array of strings.\n");
-         error_ = true;
-      }
-   }
-   else if( strcmp(name, "blocks") == 0 )
-   {
-      if( json_is_array(value) )
-      {
-         parsingblocks = true;
-         if( !filehandler_.parseElement(*this, value))
-            error_ = true;
-         parsingblocks = false;
-      }
-      else
-      {
-         SCIPwarningMessage(scip_, "Blocks must be given as an array of objects.\n");
+         SCIPwarningMessage(scip_, "Symmetry information must consist of strings.");
          error_ = true;
       }
    }
    else
    {
-      SCIPdebugMessage("Skipping unknown element '%s'\n", name);
+      if( strcmp(name, "master_constraints") == 0 )
+      {
+         if( json_is_array(value))
+         {
+            parsingmasterconstraints = true;
+            if( !filehandler_.parseElement(*this, value))
+               error_ = true;
+            parsingmasterconstraints = false;
+         }
+         else
+         {
+            SCIPwarningMessage(scip_, "Constraints must be given as an array of strings.\n");
+            error_ = true;
+         }
+      }
+      else if( strcmp(name, "blocks") == 0 )
+      {
+         if( json_is_array(value))
+         {
+            parsingblocks = true;
+            if( !filehandler_.parseElement(*this, value))
+               error_ = true;
+            parsingblocks = false;
+         }
+         else
+         {
+            SCIPwarningMessage(scip_, "Blocks must be given as an array of objects.\n");
+            error_ = true;
+         }
+      }
+      else if( strcmp(name, "symmetry_mapping") == 0 )
+      {
+         if( json_is_object(value) )
+         {
+            parsingsymmetry = true;
+            if( !filehandler_.parseElement(*this, value))
+               error_ = true;
+            parsingsymmetry = false;
+         }
+         else
+         {
+            SCIPwarningMessage(scip_, "Symmetry information must be a mapping of strings.\n");
+            error_ = true;
+         }
+      }
+      else
+      {
+         SCIPdebugMessage("Skipping unknown element '%s'\n", name);
+      }
    }
 }
 
