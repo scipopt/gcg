@@ -25,10 +25,10 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    branch_compbnd.c
+/**@file   branch_compbnd.c
  *
- * @brief   branching rule based on vanderbeck's component bound branching
- * @author  Til Mohr
+ * @brief  component bound branching rule
+ * @author Til Mohr
  * @author Marcel Schmickerath
  * @author Martin Bergner
  * @author Jonas Witt
@@ -59,7 +59,7 @@
 
 #define BRANCHRULE_NAME            "compbnd"                      /**< name of branching rule */
 #define BRANCHRULE_DESC            "component bound branching"    /**< short description of branching rule */
-#define BRANCHRULE_PRIORITY        100                              /**< priority of this branching rule */
+#define BRANCHRULE_PRIORITY        -101                              /**< priority of this branching rule */
 #define BRANCHRULE_MAXDEPTH        -1                             /**< maximal depth level of the branching rule */
 #define BRANCHRULE_MAXBOUNDDIST    1.0                            /**< maximal relative distance from current node's
                                                                    dual bound to primal bound compared to best node's
@@ -71,25 +71,6 @@
 /*
  * Data structures
  */
-
-typedef enum {
-   GCG_BRANCH_DOWN = 0,
-   GCG_BRANCH_UP = 1
-} GCG_BRANCH_TYPE;
-
-typedef enum {
-   GCG_COMPSENSE_GE = 0,
-   GCG_COMPSENSE_LE = 1
-} GCG_COMPSENSE;
-
-/** component bound structure */
-struct ComponentBound
-{
-   SCIP_VAR*             component;          /**< variable to which this bound belongs */
-   GCG_COMPSENSE         sense;              /**< sense of the bound */
-   SCIP_Real             bound;              /**< bound value */
-};
-typedef struct ComponentBound GCG_COMPBND;
 
 /** branching data */
 struct GCG_BranchData
@@ -181,8 +162,8 @@ SCIP_Bool isMasterVarInB(
    for( i = 0; i < Bsize; ++i )
    {
       SCIP_Real generatorentry = getGeneratorEntry(mastervar, B[i].component);
-      if ( (B[i].sense == GCG_COMPSENSE_GE && SCIPisLT(scip, generatorentry, B[i].bound)) ||
-           (B[i].sense == GCG_COMPSENSE_LE && SCIPisGT(scip, generatorentry, B[i].bound)) )
+      if ( (B[i].sense == GCG_COMPBND_SENSE_GE && SCIPisLT(scip, generatorentry, B[i].bound)) ||
+           (B[i].sense == GCG_COMPBND_SENSE_LE && SCIPisGT(scip, generatorentry, B[i].bound)) )
       {
          return FALSE;
       }
@@ -226,7 +207,7 @@ SCIP_RETCODE createBranchingCons(
    return SCIP_OKAY;
 }
 
- /** for given component bound sequence S, create |S|+1 Vanderbeck branching nodes */
+ /** for given component bound sequence B create the 2 child nodes */
 static
 SCIP_RETCODE createChildNodesCompBnd(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -294,12 +275,12 @@ SCIP_RETCODE createChildNodesCompBnd(
    /* define names for origbranch constraints */
    (void) SCIPsnprintf(downChildname, SCIP_MAXSTRLEN, "node(%d) (last comp=%s %s %g) >= %g", blocknr,
       SCIPvarGetName(downBranchData->B[downBranchData->Bsize-1].component),
-      downBranchData->B[downBranchData->Bsize-1].sense == GCG_COMPSENSE_GE? ">=": "<=",
+      downBranchData->B[downBranchData->Bsize-1].sense == GCG_COMPBND_SENSE_GE? ">=": "<=",
       downBranchData->B[downBranchData->Bsize-1].bound,
       downBranchData->constant);
    (void) SCIPsnprintf(upChildname, SCIP_MAXSTRLEN, "node(%d) (last comp=%s %s %g) >= %g", blocknr,
       SCIPvarGetName(upBranchData->B[upBranchData->Bsize-1].component),
-      upBranchData->B[upBranchData->Bsize-1].sense == GCG_COMPSENSE_GE? ">=": "<=",
+      upBranchData->B[upBranchData->Bsize-1].sense == GCG_COMPBND_SENSE_GE? ">=": "<=",
       upBranchData->B[upBranchData->Bsize-1].bound,
       upBranchData->constant);
 
@@ -538,14 +519,14 @@ SCIP_RETCODE _separation(
       SCIP_CALL( SCIPduplicateBlockMemoryArray(masterscip, &B2, *B, new_Bsize) );
    }
    // add the new component bounds to B1 and B2
-   B1[*Bsize] = (GCG_COMPBND){origvar, GCG_COMPSENSE_LE, value};
-   B2[*Bsize] = (GCG_COMPBND){origvar, GCG_COMPSENSE_GE, value+1};
+   B1[*Bsize] = (GCG_COMPBND){origvar, GCG_COMPBND_SENSE_LE, value};
+   B2[*Bsize] = (GCG_COMPBND){origvar, GCG_COMPBND_SENSE_GE, value+1};
 
    SCIPdebugMessage("B1 and B2 after adding the new component bounds\n");
    for (i = 0; i < new_Bsize; ++i)
    {
-      SCIPdebugMessage("B1[%d]: %s %s %f\n", i, SCIPvarGetName(B1[i].component), B1[i].sense == GCG_COMPSENSE_LE ? "<=" : ">=", B1[i].bound);
-      SCIPdebugMessage("B2[%d]: %s %s %f\n", i, SCIPvarGetName(B2[i].component), B2[i].sense == GCG_COMPSENSE_LE ? "<=" : ">=", B2[i].bound);
+      SCIPdebugMessage("B1[%d]: %s %s %f\n", i, SCIPvarGetName(B1[i].component), B1[i].sense == GCG_COMPBND_SENSE_LE ? "<=" : ">=", B1[i].bound);
+      SCIPdebugMessage("B2[%d]: %s %s %f\n", i, SCIPvarGetName(B2[i].component), B2[i].sense == GCG_COMPBND_SENSE_LE ? "<=" : ">=", B2[i].bound);
    }
 
    // assign the master variables to X1 and X2, depending on whether they satisfy the new component bound sequences
@@ -712,7 +693,7 @@ SCIP_RETCODE separation(
    SCIPdebugMessage("Bsize: %d\n", *Bsize);
    for (int i = 0; i < *Bsize; ++i)
    {
-      SCIPdebugMessage("B[%d]: %s %s %f\n", i, SCIPvarGetName((*B)[i].component), (*B)[i].sense == GCG_COMPSENSE_LE ? "<=" : ">=", (*B)[i].bound);
+      SCIPdebugMessage("B[%d]: %s %s %f\n", i, SCIPvarGetName((*B)[i].component), (*B)[i].sense == GCG_COMPBND_SENSE_LE ? "<=" : ">=", (*B)[i].bound);
    }
 
    return SCIP_OKAY;
@@ -1263,7 +1244,7 @@ SCIP_DECL_BRANCHINIT(branchInitCompBnd)
    assert(branchrule != NULL);
    assert(origscip != NULL);
 
-   SCIPdebugMessage("Init method of Vanderbecks generic branching\n");
+   SCIPdebugMessage("Init method of component bound branching\n");
 
    SCIP_CALL( GCGrelaxIncludeBranchrule(origscip, branchrule, branchActiveMasterCompBnd,
          branchDeactiveMasterCompBnd, branchPropMasterCompBnd, branchMasterSolvedCompBnd, branchDataDeleteCompBnd) );

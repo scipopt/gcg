@@ -25,65 +25,30 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    branch_compbnd.h
+/**@file    branch_staticvar.h
  * @ingroup BRANCHINGRULES-GCG
- * @brief   branching rule based on vanderbeck's component bound branching
+ * @brief   static master variable branching rule
  * @author  Til Mohr
- * @author Marcel Schmickerath
- * @author Martin Bergner
- * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_BRANCH_COMPBND_H__
-#define GCG_BRANCH_COMPBND_H__
+#ifndef GCG_BRANCH_XYZ_H__
+#define GCG_BRANCH_XYZ_H__
 
 
 #include "scip/scip.h"
 #include "def.h"
-#include "type_branchgcg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef enum {
-   GCG_BRANCH_DOWN = 0,
-   GCG_BRANCH_UP = 1
-} GCG_BRANCH_TYPE;
-
-typedef enum {
-   GCG_COMPBND_SENSE_GE = 0,
-   GCG_COMPBND_SENSE_LE = 1
-} GCG_COMPBND_SENSE;
-
-/** component bound structure */
-struct ComponentBound
-{
-   SCIP_VAR*             component;          /**< variable to which this bound belongs */
-   GCG_COMPBND_SENSE     sense;              /**< sense of the bound */
-   SCIP_Real             bound;              /**< bound value */
-};
-typedef struct ComponentBound GCG_COMPBND;
-
-/** creates the component bound branching rule and includes it in SCIP */
+/** creates the staticvar branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleCompBnd(
+SCIP_RETCODE SCIPincludeBranchruleStaticVar(
    SCIP*                 scip                /**< SCIP data structure */
    );
-
-/** prepares informations for using the component bound branching scheme */
-SCIP_RETCODE GCGbranchCompBndInitbranch(
-   SCIP*                 masterscip,              /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,              /**< branching rule */
-   SCIP_RESULT*          result                   /**< pointer to store the result of the branching call */
-   );
-
-/** returns true when the branch rule is the generic branchrule */
-SCIP_Bool GCGisBranchruleCompBnd(
-   SCIP_BRANCHRULE*      branchrule          /**< branchrule to check */
-);
 
 #ifdef __cplusplus
 }
