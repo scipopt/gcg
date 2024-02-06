@@ -49,7 +49,7 @@
 
 #define BRANCHRULE_NAME        "staticvar"                       /**< name of branching rule */
 #define BRANCHRULE_DESC        "static mastervariable branching" /**< short description of branching rule */
-#define BRANCHRULE_PRIORITY        -102                             /**< priority of this branching rule */
+#define BRANCHRULE_PRIORITY        5                             /**< priority of this branching rule */
 #define BRANCHRULE_MAXDEPTH        -1                            /**< maximal depth level of the branching rule */
 #define BRANCHRULE_MAXBOUNDDIST    1.0                           /**< maximal relative distance from current node's
                                                                       dual bound to primal bound compared to best node's
@@ -112,9 +112,11 @@ SCIP_RETCODE createChildNodes(
    downbranchdata->bound = SCIPfloor(masterscip, bound);
    SCIP_CALL( SCIPcreateChild(masterscip, &downchild, 0.0, SCIPgetLocalTransEstimate(masterscip)));
    (void) SCIPsnprintf(downname, SCIP_MAXSTRLEN, "down(%s,%.2f)", SCIPvarGetName(downbranchdata->mastervar), downbranchdata->bound);
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &downcons, downname, downchild,
+      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, downbranchdata, NULL, 0, 0) );
+   SCIP_CALL( SCIPaddConsNode(masterscip, downchild, downcons, NULL) );
    SCIP_CALL( SCIPcreateConsLinear(scip, &downcons, downname, 0, NULL, NULL, -SCIPinfinity(scip), downbranchdata->bound, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
    SCIP_CALL( SCIPaddCoefLinear(scip, downcons, downbranchdata->mastervar, 1.0) );
-   SCIP_CALL( SCIPaddConsNode(masterscip, downchild, downcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(masterscip, &downcons) );
 
    /* create up branch */
@@ -124,9 +126,11 @@ SCIP_RETCODE createChildNodes(
    upbranchdata->bound = SCIPceil(masterscip, bound);
    SCIP_CALL( SCIPcreateChild(masterscip, &upchild, 0.0, SCIPgetLocalTransEstimate(masterscip)));
    (void) SCIPsnprintf(upname, SCIP_MAXSTRLEN, "up(%s,%.2f)", SCIPvarGetName(upbranchdata->mastervar), upbranchdata->bound);
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &upcons, upname, upchild,
+      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, upbranchdata, NULL, 0, 0) );
+   SCIP_CALL( SCIPaddConsNode(masterscip, upchild, upcons, NULL) );
    SCIP_CALL( SCIPcreateConsLinear(scip, &upcons, upname, 0, NULL, NULL, upbranchdata->bound, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
    SCIP_CALL( SCIPaddCoefLinear(scip, upcons, upbranchdata->mastervar, 1.0) );
-   SCIP_CALL( SCIPaddConsNode(masterscip, upchild, upcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(masterscip, &upcons) );
 
    return SCIP_OKAY;
