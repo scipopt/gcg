@@ -179,6 +179,26 @@ SCIP_RETCODE GCGcolSetMastercoefs(
    int                  nmastercoefs        /**< number of master coefficients */
    );
 
+/** get cutting coefficients of column */
+GCG_EXPORT
+SCIP_Real* GCGcolGetCuttingcoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** get number of cutting coefficients of column */
+GCG_EXPORT
+int GCGcolGetNCuttingcoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** set cutting coefficients of column */
+GCG_EXPORT
+SCIP_RETCODE GCGcolSetCuttingcoefs(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real*           cuttingcoefs,       /**< array of cutting coefficients */
+   int                  ncuttingcoefs       /**< number of cutting coefficients */
+   );
+
 /** set norm of column */
 GCG_EXPORT
 void GCGcolSetNorm(
@@ -249,6 +269,14 @@ SCIP_RETCODE GCGcolUpdateMastercuts(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real*           newmastercuts,      /**< pointer to new array of master cut coefficients */
    int                  nnewmastercuts      /**< new number of master cut coefficients */
+   );
+
+/** update cutting coefficients information of column */
+GCG_EXPORT
+SCIP_RETCODE GCGcolUpdateCuttingcoefs(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real*           newcuttingcoefs,    /**< pointer to new array of cutting coefficients */
+   int                  nnewcuttingcoefs    /**< new number of cutting coefficients */
    );
 
 /** gets the age of the col */

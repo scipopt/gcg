@@ -139,6 +139,13 @@ SCIP_Real FarkasPricing::rowGetDual(
    return SCIProwGetDualfarkas(row);
 }
 
+SCIP_Real FarkasPricing::cutGetDual(
+   SCIP_ROW*             cut
+   ) const
+{
+   return SCIProwGetDualfarkas(cut);
+}
+
 SCIP_Real FarkasPricing::varGetObj(
    SCIP_VAR*             var
    ) const
@@ -199,6 +206,13 @@ SCIP_Real ReducedCostPricing::rowGetDual(
    return SCIProwGetDualsol(row);
 }
 
+SCIP_Real ReducedCostPricing::cutGetDual(
+   SCIP_ROW*             cut
+   ) const
+{
+   return SCIProwGetDualsol(cut);
+}
+
 ReducedCostPricing::ReducedCostPricing(
    SCIP*                 p_scip
    ) : PricingType(p_scip)
@@ -212,6 +226,13 @@ SCIP_Real ReducedCostPricing::varGetObj(
 {
    SCIP_VAR* origvar;
    assert(var != NULL);
+
+   if( GCGvarIsCutting(var) )
+   {
+      // when considering how this method is used returning 0.0 is the best option
+      // TODO-TIL: why
+      return 0.0;
+   }
 
    origvar = GCGpricingVarGetOrigvars(var)[0];
 

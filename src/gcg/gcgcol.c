@@ -47,6 +47,7 @@
 #include "sepa_master.h"
 
 #include <assert.h>
+#include <scip/type_retcode.h>
 
 /** create a gcg column */
 SCIP_RETCODE GCGcreateGcgCol(
@@ -83,6 +84,9 @@ SCIP_RETCODE GCGcreateGcgCol(
    (*gcgcol)->maxmastercuts = 0;
    (*gcgcol)->nlinkvars = 0;
    (*gcgcol)->initcoefs = FALSE;
+   (*gcgcol)->cuttingcoefs = NULL;
+   (*gcgcol)->ncuttingcoefs = 0;
+   (*gcgcol)->maxcuttingcoefs = 0;
 
 
    nnonz = 0;
@@ -147,6 +151,7 @@ void GCGfreeGcgCol(
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercoefs, (*gcgcol)->maxmastercoefs);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->linkvars, (*gcgcol)->maxlinkvars);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercuts, (*gcgcol)->maxmastercuts);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->cuttingcoefs, (*gcgcol)->maxcuttingcoefs);
    SCIPfreeBlockMemory((*gcgcol)->pricingprob, gcgcol);
 }
 
@@ -458,6 +463,8 @@ void GCGcolComputeNorm(
    int nmastercuts;
    int* linkvars;
    int nlinkvars;
+   SCIP_Real* cuttingcoefs;
+   int ncuttingcoefs;
 
    assert(scip != NULL);
    assert(gcgcol != NULL);
@@ -470,6 +477,8 @@ void GCGcolComputeNorm(
    nmastercuts = GCGcolGetNMastercuts(gcgcol);
    nlinkvars = GCGcolGetNLinkvars(gcgcol);
    linkvars = GCGcolGetLinkvars(gcgcol);
+   ncuttingcoefs = GCGcolGetNCuttingcoefs(gcgcol);
+   cuttingcoefs = GCGcolGetCuttingcoefs(gcgcol);
 
    norm = 0.0;
    /* compute scalar of master values of gcg columns */
@@ -490,6 +499,12 @@ void GCGcolComputeNorm(
    {
       if( !SCIPisZero(scip, solvals[linkvars[i]]) )
          norm += solvals[linkvars[i]];
+   }
+
+   for( i = 0; i < ncuttingcoefs; ++i )
+   {
+      if( !SCIPisZero(scip, cuttingcoefs[i]))
+         norm += SQR(cuttingcoefs[i]);
    }
 
    /* consider convexity constraint */
@@ -572,6 +587,22 @@ int GCGcolGetNMastercuts(
    return gcgcol->nmastercuts;
 }
 
+/** get cutting coefficients of column */
+SCIP_Real* GCGcolGetCuttingcoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   )
+{
+   return gcgcol->cuttingcoefs;
+}
+
+/** get number of cutting coefficients of column */
+int GCGcolGetNCuttingcoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   )
+{
+   return gcgcol->ncuttingcoefs;
+}
+
 /** get norm of column */
 SCIP_Real GCGcolGetNorm(
    GCG_COL*             gcgcol              /**< gcg column structure */
@@ -606,6 +637,36 @@ SCIP_RETCODE GCGcolUpdateMastercuts(
       ++(gcgcol->nmastercuts);
    }
 
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GCGcolUpdateCuttingcoefs(
+   GCG_COL*             gcgcol,                /**< gcg column structure */
+   SCIP_Real*           newsubsetrowcutcoefs,  /**< pointer to new array of subsetrowcut coefficients */
+   int                  newnsubsetrowcutcoefs  /**< new number of subsetrowcut coefficients */
+   )
+{
+   int i;
+   int expected_newsize;
+   int newsize;
+
+   expected_newsize = gcgcol->ncuttingcoefs + newnsubsetrowcutcoefs;
+   newsize = SCIPcalcMemGrowSize(gcgcol->pricingprob, expected_newsize);
+   if( expected_newsize > gcgcol->maxcuttingcoefs )
+   {
+      SCIP_CALL( SCIPreallocBlockMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->cuttingcoefs),
+            gcgcol->maxcuttingcoefs, newsize) );
+   }
+
+   gcgcol->maxcuttingcoefs = newsize;
+
+   for( i = 0; i < newnsubsetrowcutcoefs; ++i )
+   {
+      gcgcol->cuttingcoefs[gcgcol->ncuttingcoefs] = newsubsetrowcutcoefs[i];
+      ++(gcgcol->ncuttingcoefs);
+   }
+
+   assert(gcgcol->ncuttingcoefs == expected_newsize);
    return SCIP_OKAY;
 }
 
@@ -666,6 +727,8 @@ SCIP_Real GCGcolComputeDualObjPara(
    int nmastercoefs;
    SCIP_Real* mastercuts;
    int nmastercuts;
+   SCIP_Real* cuttingcoefs;
+   int ncuttingcoefs;
 
    SCIP_Real dualobjnorm;
 
@@ -680,6 +743,8 @@ SCIP_Real GCGcolComputeDualObjPara(
    mastercuts = GCGcolGetMastercuts(gcgcol);
    masterconss = GCGgetMasterConss(GCGmasterGetOrigprob(scip));
    cuts = GCGsepaGetMastercuts(scip);
+   ncuttingcoefs = GCGcolGetNCuttingcoefs(gcgcol);
+   cuttingcoefs = GCGcolGetCuttingcoefs(gcgcol);
 
    para = 0.0;
 
@@ -737,6 +802,31 @@ SCIP_Real GCGcolComputeDualObjPara(
       }
    }
 
+   /* compute scalar of cutting variables of gcg columns */
+   for( i=0; i<ncuttingcoefs; ++i )
+   {
+      SCIP_Real lhs;
+      SCIP_Real rhs;
+
+      lhs = SCIProwGetLhs(GCGsepaCuttingGetCut(scip, i)->mastercut);
+      rhs = SCIProwGetRhs(GCGsepaCuttingGetCut(scip, i)->mastercut);
+
+      if( !SCIPisInfinity(scip, -lhs) )
+      {
+         dualobjnorm += SQR(lhs);
+
+         if(SCIPisPositive(scip, cuttingcoefs[i]))
+            para += cuttingcoefs[i] * lhs;
+      }
+      else if( !SCIPisInfinity(scip, rhs) )
+      {
+         dualobjnorm += SQR(rhs);
+
+         if(SCIPisNegative(scip, cuttingcoefs[i]))
+            para += cuttingcoefs[i] * rhs;
+      }
+   }
+
    for( i = 0; i < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)); ++i )
       dualobjnorm += SQR(GCGgetNIdenticalBlocks(GCGmasterGetOrigprob(scip), i));
 
@@ -777,6 +867,8 @@ SCIP_Real GCGcolComputeOrth(
    int nmastercuts1;
    int* linkvars1;
    int nlinkvars1;
+   SCIP_Real* cuttingcoefs1;
+   int ncuttingcoefs1;
 
    int prob2;
 
@@ -786,6 +878,7 @@ SCIP_Real GCGcolComputeOrth(
    SCIP_Real* mastercuts2;
    int* linkvars2;
    int nlinkvars2;
+   SCIP_Real* cuttingcoefs2;
 
    assert(scip != NULL);
    assert(gcgcol1 != NULL);
@@ -800,6 +893,8 @@ SCIP_Real GCGcolComputeOrth(
    mastercuts1 = GCGcolGetMastercuts(gcgcol1);
    nlinkvars1 = GCGcolGetNLinkvars(gcgcol1);
    linkvars1 = GCGcolGetLinkvars(gcgcol1);
+   ncuttingcoefs1 = GCGcolGetNCuttingcoefs(gcgcol1);
+   cuttingcoefs1 = GCGcolGetCuttingcoefs(gcgcol1);
 
    prob2 = GCGcolGetProbNr(gcgcol2);
    solvars2 = GCGcolGetVars(gcgcol2);
@@ -808,6 +903,7 @@ SCIP_Real GCGcolComputeOrth(
    mastercuts2 = GCGcolGetMastercuts(gcgcol2);
    nlinkvars2 = GCGcolGetNLinkvars(gcgcol2);
    linkvars2 = GCGcolGetLinkvars(gcgcol2);
+   cuttingcoefs2 = GCGcolGetCuttingcoefs(gcgcol2);
 
    /* compute scalar of master values of gcg columns */
    for( i = 0; i < nmastercoefs1; ++i )
@@ -830,6 +926,17 @@ SCIP_Real GCGcolComputeOrth(
          norm1 += SQR(mastercuts1[i]);
       if( SCIPisPositive(scip, mastercuts2[i]) )
          norm2 += SQR(mastercuts2[i]);
+   }
+
+   for( i = 0; i < ncuttingcoefs1; ++i )
+   {
+      if( SCIPisPositive(scip, cuttingcoefs1[i] * cuttingcoefs2[i]) )
+         para += cuttingcoefs1[i] * cuttingcoefs2[i];
+
+      if( SCIPisPositive(scip, cuttingcoefs1[i]) )
+         norm1 += SQR(cuttingcoefs1[i]);
+      if( SCIPisPositive(scip, cuttingcoefs2[i]) )
+         norm2 += SQR(cuttingcoefs2[i]);
    }
 
    for( i = 0; i < nlinkvars1; ++i )

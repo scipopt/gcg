@@ -37,6 +37,10 @@
 #ifndef GCG_STRUCT_VARDATA_H__
 #define GCG_STRUCT_VARDATA_H__
 
+#include <scip/type_cons.h>
+#include <scip/type_lp.h>
+#include <scip/type_misc.h>
+#include <scip/type_var.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,9 +48,10 @@ extern "C" {
 /** type of the variable */
 enum GCG_Vartype
 {
-   GCG_VARTYPE_ORIGINAL = 0,                 /**< variable belongs to original problem */
+   GCG_VARTYPE_ORIGINAL = 0,                /**< variable belongs to original problem */
    GCG_VARTYPE_PRICING = 1,                 /**< variable belongs to a pricing problem */
-   GCG_VARTYPE_MASTER = 2                  /**< variable belongs to the master problem */
+   GCG_VARTYPE_MASTER = 2,                  /**< variable belongs to the master problem */
+   GCG_VARTYPE_CUTTING = 3                  /**< variable induced by a master cut being added to the pricing problem */
 };
 typedef enum GCG_Vartype GCG_VARTYPE;
 
@@ -97,8 +102,22 @@ struct GCG_MasterVarData
    SCIP_Bool             isartificial;       /**< is variable artificial? */
    SCIP_HASHMAP*         origvar2val;        /**< hash map that stores the fraction of original variables the master variable is contained in */
    int                   index;              /**< index of the master variable if stored in GCG's pricedvars array, -1 otherwise */
+   SCIP_Real*            cuttingvals;        /**< values of the variable of a master cut */
+   int                   ncuttingvars;       /**< number of master cuts the variable is contained in */
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
+
+/** data for master cutting variables */
+struct GCG_CuttingVarData
+{
+   SCIP_ROW*            mastercons;          /**< masterconstraint inducing this variable in pricing */
+   SCIP_CONS**          pricingconss;        /**< pricing constraints that contain this variable */
+   SCIP_Real            fixedObjCoef;        /**< fixed objective coefficient of the variable */
+   SCIP_Bool            hasFixedObjCoef;     /**< does the variable have a fixed objective coefficient? */
+   int                  pos;                 /**< position of the variable in the pricing constraint */
+};
+typedef struct GCG_CuttingVarData GCG_CUTTINGVARDATA;
+
 
 /** variable data structure */
 struct SCIP_VarData
@@ -108,6 +127,7 @@ struct SCIP_VarData
       GCG_ORIGVARDATA    origvardata;        /**< data for original variables */
       GCG_PRICINGVARDATA pricingvardata;     /**< data for pricing variables */
       GCG_MASTERVARDATA  mastervardata;      /**< data for variable of the master problem */
+      GCG_CUTTINGVARDATA cuttingvardata;     /**< data for variable induced by a master cut */
    } data;
    GCG_VARTYPE           vartype;            /**< type of variable */
    int                   blocknr;            /**< number of the block and pricing problem, the variable belongs to,

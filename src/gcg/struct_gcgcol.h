@@ -71,6 +71,9 @@ struct GCG_Col
    int                  nlinkvars;          /**< number of variables in var-array which are linking variables */
    int                  maxlinkvars;        /**< capacity of linkvars */
    SCIP_Bool            initcoefs;          /**< returns if mastercoefs and linkvars have been computed */
+   SCIP_Real*           cuttingcoefs;       /**< array of cutting coefficients */
+   int                  ncuttingcoefs;      /**< number of cutting coefficients */
+   int                  maxcuttingcoefs;    /**< capacity of cuttingcoefs */
 };
 
 #ifdef __cplusplus

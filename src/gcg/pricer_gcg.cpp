@@ -744,11 +744,27 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       for( j = 0; j < nprobvars; j++ )
       {
          assert(GCGvarGetBlock(probvars[j]) == i);
-         assert( GCGoriginalVarIsLinking(GCGpricingVarGetOrigvars(probvars[j])[0]) || (GCGvarGetBlock(GCGpricingVarGetOrigvars(probvars[j])[0]) == i));
 
-         SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], pricetype->varGetObj(probvars[j])));
+         if( GCGvarIsCutting(probvars[j]) )
+         {
+            if( GCGcuttingVarHasFixedObjCoef(probvars[j]))
+            {
+               SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], GCGcuttingVarGetFixedObjCoef(probvars[j])) );
+            }
+            else
+            {
+               // We set the objective of the cutting variables to 0 initially, and later update it with the dual value of the corresponding master constraint
+               SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 0.0) );
+            }
+         }
+         else
+         {
+            assert( GCGoriginalVarIsLinking(GCGpricingVarGetOrigvars(probvars[j])[0]) || (GCGvarGetBlock(GCGpricingVarGetOrigvars(probvars[j])[0]) == i));
 
-         pricerdata->realdualvalues[i][j] = pricetype->varGetObj(probvars[j]);
+            SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], pricetype->varGetObj(probvars[j])));
+
+            pricerdata->realdualvalues[i][j] = pricetype->varGetObj(probvars[j]);
+         }
 #ifdef PRINTDUALSOLS
          SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n", SCIPvarGetName(probvars[j]), pricetype->varGetObj(probvars[j]), pricerdata->realdualvalues[i][j]);
 #endif
@@ -910,6 +926,14 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          SCIPfreeBufferArray(scip_, &consvars);
       }
    }
+
+   /* update objective coefficient of induced cutting pricing vars */
+   // TODO-TIL: continue here
+   for( i=0; i<GCGsepaCuttingGetNCuts(SCIP *scip); i++)
+   {
+
+   }
+
 
    /* get dual solutions / farkas values of the convexity constraints */
    for( i = 0; i < pricerdata->npricingprobs; i++ )
