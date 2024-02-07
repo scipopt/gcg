@@ -106,6 +106,38 @@ SCIP_RETCODE generatePricingVarsAndCons(
    SCIP* origscip;
    SCIP* pricingscip;
    SCIP_Real dual_value;
+   SCIP_VARDATA* newvardata;
+   SCIP_VAR** originalvars;
+   int noriginalvars;
+
+   originalvars = NULL;
+   noriginalvars = 0;
+
+   for( int i=0; i<branchdata->Bsize; ++i )
+   {
+      SCIP_Bool already_added = FALSE;
+      for( int j=0; j<noriginalvars; ++j )
+      {
+         if( SCIPvarGetName(branchdata->B[i].component) == SCIPvarGetName(originalvars[j]) )
+         {
+            already_added = TRUE;
+            break;
+         }
+      }
+      if( already_added )
+         continue;
+      if( noriginalvars == 0 )
+      {
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &originalvars, 1) );
+      }
+      else
+      {
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &originalvars, noriginalvars, noriginalvars+1) );
+      }
+      originalvars[noriginalvars] = branchdata->B[i].component;
+      noriginalvars += 1;
+   }
+   assert(noriginalvars > 0);
 
    dual_value = SCIPgetDualsolLinear(scip, branchdata->mastercons);
    assert((branchdata->branchtype == GCG_BRANCH_DOWN && !SCIPisPositive(scip, dual_value))
@@ -122,6 +154,7 @@ SCIP_RETCODE generatePricingVarsAndCons(
    assert(branchdata->compbndvars == NULL);
 
    char name[SCIP_MAXSTRLEN];
+
 
    if( branchdata->branchtype == GCG_BRANCH_DOWN )
    {
@@ -145,6 +178,22 @@ SCIP_RETCODE generatePricingVarsAndCons(
    /*GCGaddDataAuxiliaryVar(scip, branchdata->pricingvar, branchdata->blocknr);
    SCIP_VARDATA* vardata = SCIPvarGetData(branchdata->pricingvar);
    vardata->vartype = GCG_VARTYPE_PRICING;*/
+   /* create vardata */
+   SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
+   newvardata->vartype = GCG_VARTYPE_PRICING;
+   newvardata->blocknr = branchdata->blocknr;
+   newvardata->data.mastervardata.isray = FALSE;
+   newvardata->data.mastervardata.norigvars = noriginalvars;
+   newvardata->data.mastervardata.maxorigvars = noriginalvars;
+   newvardata->data.mastervardata.isartificial = TRUE;
+   newvardata->data.mastervardata.origvars = originalvars;
+   newvardata->data.mastervardata.origvals = NULL;
+   newvardata->data.mastervardata.origvar2val = NULL;
+   newvardata->data.mastervardata.index = -1;
+   /* setting the variable data */
+   SCIPvarSetData(branchdata->pricingvar, newvardata);
+   /* setting the deltrans callback */
+   //SCIPvarSetDeltransData(branchdata->pricingvar, gcgvardeltrans);
 
    // create the y_j variables
    SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &branchdata->compbndvars, branchdata->Bsize) );
@@ -154,6 +203,22 @@ SCIP_RETCODE generatePricingVarsAndCons(
       SCIP_CALL( SCIPcreateVar(pricingscip, &branchdata->compbndvars[i], pricingvarname, 0.0, 1.0,  0.0,
                            SCIP_VARTYPE_BINARY, TRUE, FALSE,
                            NULL, NULL, NULL, NULL, NULL) );
+      /* create vardata */
+      SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
+      newvardata->vartype = GCG_VARTYPE_PRICING;
+      newvardata->blocknr = branchdata->blocknr;
+      newvardata->data.mastervardata.isray = FALSE;
+      newvardata->data.mastervardata.norigvars = 1;
+      newvardata->data.mastervardata.maxorigvars = 1;
+      newvardata->data.mastervardata.isartificial = TRUE;
+      newvardata->data.mastervardata.origvars = &branchdata->B[i].component;
+      newvardata->data.mastervardata.origvals = NULL;
+      newvardata->data.mastervardata.origvar2val = NULL;
+      newvardata->data.mastervardata.index = -1;
+      /* setting the variable data */
+      SCIPvarSetData(branchdata->compbndvars[i], newvardata);
+      /* setting the deltrans callback */
+      //SCIPvarSetDeltransData(branchdata->compbndvars[i], gcgvardeltrans);
    }
 
    // create the pricing constraints
