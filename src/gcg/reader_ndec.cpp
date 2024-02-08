@@ -340,8 +340,10 @@ bool NDecFileHandler::serializeBlock(
    }
    success &= setObjectValue("constraints", jsonconstraints, json);
 
-   if( decomp->aggInfoCalculated() && decomp->getEqClassForBlock(block) != block )
-      success &= setObjectValue("symmetrical_block", json_integer(decomp->getEqClassForBlock(block)), json);
+   if( decomp->aggInfoCalculated() )
+   {
+      success &= setObjectValue("symmetrical_block", json_integer(decomp->getReprBlockForEqClass(decomp->getEqClassForBlock(block))), json);
+   }
 
    if( decomp->isNested() )
    {
@@ -432,7 +434,7 @@ bool NDecFileHandler::serializeDecomposition(
 
    if( !decomp->aggInfoCalculated() )
    {
-      decomp->calcAggregationInformation(false);
+      decomp->calcAggregationInformation(true);
    }
 
    json_t* jsonblocks = json_array();
