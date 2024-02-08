@@ -651,7 +651,7 @@ void DecompositionElementParser::handleKeyValuePair(
    {
       if( json_is_string(value) )
       {
-         data_.symmetrydata.emplace(std::string(name), std::string(json_string_value(value)));
+         decdata_.symmetrydata.emplace(std::string(name), std::string(json_string_value(value)));
       }
       else
       {

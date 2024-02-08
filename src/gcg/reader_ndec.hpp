@@ -36,7 +36,7 @@
 #ifndef GCG_READER_NDEC_HPP__
 #define GCG_READER_NDEC_HPP__
 
-#include "jansson.h"
+#include <jansson.h>
 #include <vector>
 #include <unordered_map>
 #include <string>
@@ -69,6 +69,7 @@ struct DecompositionData
 
    std::vector<std::string> masterconstraints;
    std::vector<BlockData> blocks;
+   std::unordered_map<std::string, std::string> symmetrydata;
 };
 
 struct NestedDecompositionData
@@ -83,7 +84,6 @@ struct NestedDecompositionData
    bool presolved;
    std::string comment;
    DecompositionData* rootdecomposition;
-   std::unordered_map<std::string, std::string> symmetrydata;
 };
 
 class AbstractElementParser
