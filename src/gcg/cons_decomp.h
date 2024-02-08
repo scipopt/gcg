@@ -31,6 +31,7 @@
  * @author Martin Bergner
  * @author Michael Bastubbe
  * @author Hanna Franzen
+ * @author Erik Muehmer
  *
  * This constraint handler manages the structure detection process. It will run all registered structure detectors in an
  * iterative refinement scheme. Afterwards some post-processing detectors might be called.
@@ -53,12 +54,10 @@
 extern "C" {
 #endif
 
-
-/** forward declarations */
-struct Partialdecomp_Wrapper;
-typedef struct Partialdecomp_Wrapper PARTIALDECOMP_WRAPPER;
-
-struct Detprobdata_Wrapper;
+/*
+ * incomplete type used in C code
+ */
+typedef struct PARTIALDECOMP_C PARTIALDECOMP_C;
 
 /** @brief Gets the character of the detector
  * @returns detector character */
@@ -150,19 +149,6 @@ GCG_EXPORT
 GCG_DECOMP* GCGgetBestDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_Bool             printwarnings       /**< should warnings pre printed */
-   );
-
-/** @brief Gets the currently considered best partialdec
- *
- * If there is a partialdec marked to be returned (e.g. by /GCGwriteAllDecomps), it is written.
- * Else, the currently "best" decomp is returned.
- *
- * @returns partialdec to write if one can be found, or partialdecwrapper->partialdec = NULL otherwise */
-GCG_EXPORT
-SCIP_RETCODE GCGgetPartialdecToWrite(
-   SCIP*                   scip,                /**< SCIP data structure */
-   SCIP_Bool               transformed,         /**< is the problem transformed yet */
-   PARTIALDECOMP_WRAPPER*  partialdecwrapper    /**< partialdec wrapper to output */
    );
 
 /**
@@ -303,12 +289,13 @@ SCIP_RETCODE GCGconshdlrDecompAddDecomp(
 /**
  * @brief creates and adds a basic partialdecomp (all cons/vars are assigned to master)
  *
- * @returns id of partialdec
+ * @returns SCIP_RETCODE
  */
 GCG_EXPORT
-int GCGconshdlrDecompAddBasicPartialdec(
-   SCIP* scip,          /**< SCIP data structure */
-   SCIP_Bool presolved  /**< create basic partialdecomp for presolved if true, otherwise for original */
+SCIP_RETCODE GCGconshdlrDecompAddBasicPartialdec(
+   SCIP* scip,                      /**< SCIP data structure */
+   SCIP_Bool presolved,             /**< create basic partialdecomp for presolved if true, otherwise for original */
+   PARTIALDECOMP_C** partialdecomp  /**< pointer to the C pointer of the created partialdecomp */
    );
 
 /**
@@ -346,12 +333,12 @@ void GCGconshdlrDecompAddUserCandidatesNBlocks(
  * @returns scip return code
  */
 GCG_EXPORT
-SCIP_RETCODE GCGconshdlrDecompArePricingprobsIdenticalForPartialdecid(
-   SCIP*                scip,             /**< scip scip data structure */
-   int                  partialdecid,     /**< partialdecid id of the partial decompostion for which the pricing problems are checked for identity */
-   int                  probnr1,          /**< index of first block to check */
-   int                  probnr2,          /**< index of second block to check */
-   SCIP_Bool*           identical         /**< bool pointer to score the result of the check*/
+SCIP_RETCODE GCGconshdlrDecompArePricingprobsIdenticalForPartialdec(
+   SCIP*                   scip,                /**< scip data structure */
+   PARTIALDECOMP_C*        partialdecomp,       /**< partial decompostion for which the pricing problems are checked for identity */
+   int                     probnr1,             /**< index of first block to check */
+   int                     probnr2,             /**< index of second block to check */
+   SCIP_Bool*              identical            /**< bool pointer to score the result of the check*/
    );
 
 /**
@@ -392,7 +379,7 @@ SCIP_RETCODE GCGconshdlrDecompClassify(
  * @brief for two identical pricing problems a corresponding varmap is created
  * @param scip scip data structure
  * @param hashorig2pricingvar mapping from orig to pricingvar
- * @param partialdecid id of the partial decompostion for which the pricing problems are checked for identity
+ * @param partialdecomp partial decompostion for which the pricing problems are checked for identity
  * @param probnr1 index of first block
  * @param probnr2 index of second block
  * @param scip1 subscip of first block
@@ -401,15 +388,15 @@ SCIP_RETCODE GCGconshdlrDecompClassify(
  * @returns scip return code
  */
 GCG_EXPORT
-SCIP_RETCODE GCGconshdlrDecompCreateVarmapForPartialdecId(
-   SCIP*                scip,
-   SCIP_HASHMAP**       hashorig2pricingvar,
-   int                  partialdecid,
-   int                  probnr1,
-   int                  probnr2,
-   SCIP*                scip1,
-   SCIP*                scip2,
-   SCIP_HASHMAP*        varmap
+SCIP_RETCODE GCGconshdlrDecompCreateVarmapForPartialdec(
+   SCIP*                   scip,
+   SCIP_HASHMAP**          hashorig2pricingvar,
+   PARTIALDECOMP_C*        partialdecomp,
+   int                     probnr1,
+   int                     probnr2,
+   SCIP*                   scip1,
+   SCIP*                   scip2,
+   SCIP_HASHMAP*           varmap
    );
 
 /**
@@ -568,13 +555,12 @@ GCG_EXPORT
    SCIP*                 scip                /**< SCIP data structure */
     );
 
-/** @brief gets block number of partialdec with given id
+/** @brief gets block number of partialdec
  * @returns block number of partialdec
  */
 GCG_EXPORT
-int GCGconshdlrDecompGetNBlocksByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
-   int id         /**< id of partialdec */
+int GCGconshdlrDecompPartialdecGetNBlocks(
+   PARTIALDECOMP_C*        partialdecomp       /**< partialdec */
    );
 
 /** @brief gets the number of decompositions (= amount of finished partialdecs)
@@ -635,50 +621,125 @@ int GCGconshdlrDecompGetNFormerDetectionConssForID(
    int id         /**< id of the partialdec the information is asked for */
    );
 
-/** @brief gets number of linking variables of partialdec with given id
+/** @brief returns whether aggregation information has been calculated for a partialdec
+  * @returns bool that indicates whether aggregation information has been calculated
+ */
+GCG_EXPORT
+SCIP_Bool GCGconshdlrDecompPartialdecAggregationInformationCalculated(
+   PARTIALDECOMP_C*        partialdecomp        /**< partialdec */
+   );
+
+/** @brief calculates aggregation information for a partialdec
+ */
+GCG_EXPORT
+void GCGconshdlrDecompPartialdecCalcAggregationInformation(
+   PARTIALDECOMP_C*        partialdecomp,           /**< partialdec */
+   SCIP_Bool               ignoreDetectionLimits    /**< Set to true if computation should ignore detection limits. This parameter is ignored if the patched bliss version is not present. */
+   );
+
+/** @brief gets number of equivalence classes of partialdec
+ * @returns number of equivalence classes of partialdec
+ */
+GCG_EXPORT
+int GCGconshdlrDecompPartialdecGetNEquivalenceClasses(
+   PARTIALDECOMP_C*        partialdecomp        /**< partialdec */
+   );
+
+/** @brief gets the representative block of a equivalence class of partialdec
+ * @returns representative block
+ */
+GCG_EXPORT
+int GCGconshdlrDecompPartialdecGetReprBlockForEqClass(
+   PARTIALDECOMP_C*        partialdecomp,       /**< partialdec */
+   int                     eqclass              /**< id of the equivalence class */
+   );
+
+/** @brief gets the blocks of a equivalence class of partialdec
+ * @returns representative block
+ */
+GCG_EXPORT
+const int* GCGconshdlrDecompPartialdecGetBlocksForEqClass(
+   PARTIALDECOMP_C*        partialdecomp,       /**< partialdec */
+   int                     eqclass              /**< id of the equivalence class */
+   );
+
+/** @brief gets the number of blocks of a equivalence class of partialdec
+ * @returns representative block
+ */
+GCG_EXPORT
+int GCGconshdlrDecompPartialdecGetNBlocksForEqClass(
+   PARTIALDECOMP_C*        partialdecomp,       /**< partialdec */
+   int                     eqclass              /**< id of the equivalence class */
+   );
+
+/** @brief Returns a vector that maps probvar indices of a block contained in an equivalence class to the probvar indices of the representative block of the class
+ * @returns representative block
+ */
+GCG_EXPORT
+const int* GCGconshdlrDecompPartialdecGetRepVarMap(
+   PARTIALDECOMP_C*        partialdecomp,       /**< partialdec */
+   int                     eqclass,             /**< id of the equivalence class */
+   int                     eqclassblock         /** index of block (with respect to eqclass) */
+   );
+
+/** @brief gets number of linking variables of partialdec
  * @returns number of linking variables of partialdec
  */
 GCG_EXPORT
-int GCGconshdlrDecompGetNLinkingVarsByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
-   int id         /**< id of partialdec */
+int GCGconshdlrDecompPartialdecGetNLinkingVars(
+   PARTIALDECOMP_C*        partialdecomp        /**< partialdec */
    );
 
-/** @brief gets number of master constraints of partialdec with given id
+/** @brief gets number of master constraints of partialdec
  * @returns number of master constraints of partialdec
  */
 GCG_EXPORT
-int GCGconshdlrDecompGetNMasterConssByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
-   int id         /**< id of partialdec */
+int GCGconshdlrDecompPartialdecGetNMasterConss(
+   PARTIALDECOMP_C*        partialdecomp        /**< partialdec */
    );
 
-/** @brief gets number of master variables of partialdec with given id
+/** @brief gets number of master variables of partialdec
  * @returns number of master variables of partialdec
  */
 GCG_EXPORT
-int GCGconshdlrDecompGetNMasterVarsByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
-   int id         /**< id of partialdec */
+int GCGconshdlrDecompPartialdecGetNMasterVars(
+   PARTIALDECOMP_C*        partialdecomp        /**< partialdec */
    );
 
-/** @brief gets number of open constraints of partialdec with given id
+/** @brief gets number of open constraints of partialdec
  * @returns total number of open constraints of partialdec
  */
 GCG_EXPORT
-int GCGconshdlrDecompGetNOpenConssByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
-   int id         /**< id of partialdec */
+int GCGconshdlrDecompPartialdecGetNOpenConss(
+   PARTIALDECOMP_C*        partialdecomp        /**< partialdec */
    );
 
-/** @brief gets number of open variables of partialdec with given id
+/** @brief gets number of open variables of partialdec
  * @returns total number of open variables of partialdec
  */
 GCG_EXPORT
-int GCGconshdlrDecompGetNOpenVarsByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
-   int id         /**< id of partialdec */
+int GCGconshdlrDecompPartialdecGetNOpenVars(
+   PARTIALDECOMP_C*        partialdec    /**< partialdec */
    );
+
+/** @brief returns the original variable for a block and index
+ * @returns corresponding original variable
+ */
+GCG_EXPORT
+SCIP_VAR* GCGconshdlrDecompPartialdecGetOrigVarForBlock(
+   PARTIALDECOMP_C*        partialdecomp,       /**< partialdec */
+   int                     block,               /**< id of the block */
+   int                     blockvarindex        /**< index of var in block */
+   );
+
+/** @brief gets the number of variables of a block
+ * @returns representative block
+ */
+GCG_EXPORT
+int GCGconshdlrDecompPartialdecGetNVarsForBlock(
+   PARTIALDECOMP_C*        partialdecomp,       /**< partialdec */
+   int                     block                /**< id of the block */
+);
 
 /** @brief Gets the number of finished partialdecs available for the original problem
  * @returns number of partialdecs */
@@ -729,13 +790,12 @@ unsigned int GCGconshdlrDecompGetNPartialdecsTransformed(
    SCIP*       scip  /**< SCIP data structure */
    );
 
-/** @brief gets number of stairlinking variables of partialdec with given id
+/** @brief gets number of stairlinking variables of partialdec
  * @returns total number of stairlinking variables of partialdec
  */
 GCG_EXPORT
-int GCGconshdlrDecompGetNStairlinkingVarsByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
-   int id         /**< id of partialdec */
+int GCGconshdlrDecompPartialdecGetNStairlinkingVars(
+   PARTIALDECOMP_C*        partialdecomp        /**< partialdec */
    );
 
 /** @brief Gets wrapped PARTIALDECOMP with given id
@@ -743,18 +803,17 @@ int GCGconshdlrDecompGetNStairlinkingVarsByPartialdecId(
  * @returns SCIP return code */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompGetPartialdecFromID(
-   SCIP*          scip,             /**< SCIP data structure */
-   int            partialdecid,     /**< id of PARTIALDECOMP */
-   PARTIALDECOMP_WRAPPER* pwr       /**< wrapper for output PARTIALDECOMP */
+   SCIP*                scip,             /**< SCIP data structure */
+   int                  partialdecid,     /**< id of PARTIALDECOMP */
+   PARTIALDECOMP_C**    partialdecomp     /**< pointer to C wrapper pointer for PARTIALDECOMP */
    );
 
-/** @brief gets score of partialdec with given id
+/** @brief gets score of partialdec
  * @returns score in respect to current score type
  */
 GCG_EXPORT
-SCIP_Real GCGconshdlrDecompGetScoreByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
-   int id         /**< id of partialdec */
+SCIP_Real GCGconshdlrDecompGetPartialdecScore(
+   PARTIALDECOMP_C*        partialdecomp        /**< partialdec */
    );
 
 /** @brief gets the clock tracking the score computation time
@@ -791,22 +850,20 @@ int GCGconshdlrDecompIncreaseNCallsCreateDecomp(
   SCIP*                 scip                /**< SCIP data structure **/
    );
 
-/** @brief gets whether partialdec with given id is presolved
+/** @brief gets whether partialdec is presolved
  * @returns true iff partialdec is presolved
  */
 GCG_EXPORT
-SCIP_Bool GCGconshdlrDecompIsPresolvedByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
-   int id         /**< id of partialdec */
+SCIP_Bool GCGconshdlrDecompPartialdecIsPresolved(
+   PARTIALDECOMP_C*        partialdecomp        /**< partialdec */
    );
 
-/** @brief gets whether partialdec with given id is selected
+/** @brief gets whether partialdec is selected
  * @returns true iff partialdec is selected
  */
 GCG_EXPORT
-SCIP_Bool GCGconshdlrDecompIsSelectedByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
-   int id         /**< id of partialdec */
+SCIP_Bool GCGconshdlrDecompPartialdecIsSelected(
+   PARTIALDECOMP_C*        partialdececomp      /**< partialdec */
    );
 
 /**
@@ -859,9 +916,8 @@ SCIP_RETCODE GCGconshdlrDecompPrintScoreStatistics(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompSelectPartialdec(
-   SCIP* scip,          /**< SCIP data structure */
-   int partialdecid,    /**< id of partialdecomp */
-   SCIP_Bool select     /**< select/unselect */
+   PARTIALDECOMP_C*        partialdecomp,       /**< partialdecomp */
+   SCIP_Bool               select               /**< select/unselect */
    );
 
 /** @brief sets detector parameters values

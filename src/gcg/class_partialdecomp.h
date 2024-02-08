@@ -31,6 +31,7 @@
  * @author Michael Bastubbe
  * @author Hannah Hechenrieder
  * @author Hanna Franzen
+ * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -141,10 +142,10 @@ private:
    bool isfinishedbyfinisher;                                   /**< was this partialdec finished by the finishpartialdec() method of a detector */
 
    /* aggregation information */
-   int                  nrepblocks;                                    /**< number of block representatives */
-   std::vector<std::vector<int>> reptoblocks;                          /**< translation of the block representatives to (old) blocks */
-   std::vector<int>     blockstorep;                                   /**< translation of the (old) blocks to the block representatives */
-   std::vector<std::vector<std::vector<int> > > pidtopidvarmaptofirst; /**< [nrepblocks][blockstorep[k].size()][nvarsforprob] collection of varmaps of probindices from k-th subproblem to the zeroth block that is represented */
+   int                  nequivalenceclasses;                                    /**< number of equivalence classes */
+   std::vector<std::vector<int>> eqclasstoblocks;                          /**< translation of the equivalence classes to blocks (first block at index 0 is the representative block of the class) */
+   std::vector<int>     blockstoeqclasses;                                   /**< translation of the blocks to the equivalence classes */
+   std::vector<std::vector<std::vector<int> > > eqclassesvarmappings; /**< stores for each equivalence class (first index) and for each block of the class (second index) a mapping that maps the indices of the probvars (third index) of the block to the indices of the probvars (actual value) of the representative block */
 
    /* statistic information */
    std::vector<GCG_DETECTOR*> detectorchain;          /**< vector containing detectors that worked on that partialdec */
@@ -730,13 +731,23 @@ public:
       );
 
    /**
-    * @brief get a vector of block ids that are identical to block with id repid
-    * @param repid id of the representative block
-    * @return vector of block ids that are identical to block with id repid
+    * @brief get a vector of block ids that are contained in the equivalence class eqclass
+    * @param eqclass id of the equivalence class
+    * @return vector of block ids
     */
    GCG_EXPORT
-   const std::vector<int> & getBlocksForRep(
-      int  repid
+   const std::vector<int>& getBlocksForEqClass(
+      int  eqclass
+      );
+
+   /**
+    * @brief get the representative block of the given equivalence class
+    * @param eqclass id of the equivalence class
+    * @return id of the representative block
+    */
+   GCG_EXPORT
+   int getReprBlockForEqClass(
+      int  eqclass
       );
 
    /**
@@ -837,7 +848,7 @@ public:
       );
 
    /**
-    * @brief returns the score of the partialdec (depending on enabled score)
+    * @brief returns the score of the partialdec
     * @param score the score
     * @return the score
     */
@@ -845,6 +856,14 @@ public:
    SCIP_Real getScore(
       GCG_SCORE* score
       );
+
+   /**
+    * @brief returns the score of the partialdec (depending on enabled score)
+    * @return the score
+    */
+   GCG_EXPORT
+   SCIP_Real getScore(
+   );
 
    /**
    * @brief gets an intermediate score value for the blocks of a partialdec
@@ -1024,7 +1043,7 @@ public:
     * @return the number of blockrepresentatives
     */
    GCG_EXPORT
-   int getNReps();
+   int getNEquivalenceClasses();
 
    /**
     * @brief Gets size of the vector containing stairlinking vars
@@ -1062,32 +1081,18 @@ public:
       );
 
    /**
-    * @brief Gets array containing constraints not assigned yet
-    * @return array containing constraints not assigned yet
+    * @brief Gets vector containing constraints not assigned yet
+    * @return vector containing constraints not assigned yet
     */
    GCG_EXPORT
-   const int* getOpenconss();
+   std::vector<int>& getOpenconss();
 
    /**
-    * @brief Gets a vector containing constraint ids not assigned yet as vector
-    * @return returns a vector containing constraint ids not assigned yet as vector
+    * @brief Gets vector containing variables not assigned yet
+    * @return returns vector containing variables not assigned yet
     */
    GCG_EXPORT
-   std::vector<int>& getOpenconssVec();
-
-   /**
-    * @brief Gets array containing variables not assigned yet
-    * @return returns array containing variables not assigned yet
-    */
-   GCG_EXPORT
-   const int* getOpenvars();
-
-   /**
-    * Gets array containing variables not assigned yet as vector
-    * @return array containing variables not assigned yet as vector
-    */
-   GCG_EXPORT
-   std::vector<int>& getOpenvarsVec();
+   std::vector<int>& getOpenvars();
 
    /**
     * @brief Gets fraction of variables assigned to the border for a detector
@@ -1194,22 +1199,21 @@ public:
     * @return index of the representative block for a block, this might be blockid itself
     */
    GCG_EXPORT
-   int getRepForBlock(
+   int getEqClassForBlock(
       int blockid
       );
 
    /**
-    * @brief Gets the represenation varmap
+    * @brief Returns a vector that maps probvar indices of a block contained in an equivalence class to the probvar indices of the representative block of the class
     *
-    * Var map is vector for represenative repid and the blockrepid-th block that is represented by repid
-    * @param repid id of representative
-    * @param blockrepid id of block
-    * @return the represenation varmap as vector for represenative repid and the blockrepid-th block that is represented by repid
+    * @param eqclass id of the equivalence class
+    * @param eqclassblock index of block (with respect to eqclass)
+    * @return probvar indices mapping
     */
    GCG_EXPORT
    std::vector<int> & getRepVarmap(
-      int repid,
-      int blockrepid
+      int eqclass,
+      int eqclassblock
       );
 
    /**
@@ -1220,13 +1224,13 @@ public:
    DETPROBDATA* getDetprobdata();
 
    /**
-    * @brief Gets array containing stairlinking vars,
+    * @brief Gets vector containing stairlinking vars,
     * @note if a stairlinking variable links block i and i+1 it is only stored in vector of block i
     * @param block id of the block the stairlinking variable varctor is asked for
-    * @return array containing stairlinking vars,
+    * @return vector containing stairlinking vars,
     */
    GCG_EXPORT
-   const int* getStairlinkingvars(
+   std::vector<int>& getStairlinkingvars(
       int block
       );
 
@@ -1281,11 +1285,18 @@ public:
       );
 
    /**
+    * @brief Gets whether the partialdec is from the original problem
+    * @return true iff the partialdec is from the original problem
+    */
+   GCG_EXPORT
+   bool isAssignedToOrigProb();
+
+   /**
     * @brief Gets whether the partialdec is from the presolved problem
     * @return true iff the partialdec is from the presolved problem
     */
    GCG_EXPORT
-   bool isAssignedToOrigProb();
+   bool isAssignedToPresolvedProb();
 
    /**
     * Gets whether the partialdec is currently selected in explore menue
@@ -1997,6 +2008,13 @@ public:
    GCG_EXPORT
    void buildDecChainString(
       char* buffer /**< will contain string of detector chars in chronological order afterwards*/
+      );
+
+   /**
+   * @brief creates a detector chain short string for this partialdec, is built from detector chain
+   */
+   GCG_EXPORT
+   std::string buildDecChainString(
       );
 
 private:

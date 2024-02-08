@@ -340,8 +340,8 @@ bool NDecFileHandler::serializeBlock(
    }
    success &= setObjectValue("constraints", jsonconstraints, json);
 
-   if( decomp->aggInfoCalculated() && decomp->getRepForBlock(block) != block )
-      success &= setObjectValue("symmetrical_block", json_integer(decomp->getRepForBlock(block)), json);
+   if( decomp->aggInfoCalculated() && decomp->getEqClassForBlock(block) != block )
+      success &= setObjectValue("symmetrical_block", json_integer(decomp->getEqClassForBlock(block)), json);
 
    if( decomp->isNested() )
    {
@@ -447,17 +447,18 @@ bool NDecFileHandler::serializeDecomposition(
    if( decomp->aggInfoCalculated() )
    {
       json_t* jsonsymmetry = json_object();
-      for( int r = 0; r < decomp->getNReps(); ++r )
+      for( int ec = 0; ec < decomp->getNEquivalenceClasses(); ++ec )
       {
-         int repblock = decomp->getBlocksForRep(r)[0];
-         for( int i = 0; i < (int)decomp->getBlocksForRep(r).size(); ++i )
+         int repblock = decomp->getReprBlockForEqClass(ec);
+         auto& eqclassblocks = decomp->getBlocksForEqClass(ec);
+         for( int i = 0; i < (int) eqclassblocks.size(); ++i )
          {
-            int b = decomp->getBlocksForRep(r)[i];
+            int b = eqclassblocks[i];
             if( b == repblock )
                continue;
-            for( int vi = 0; vi < (int)decomp->getRepVarmap(r, i).size(); ++vi )
+            for( int vi = 0; vi < (int)decomp->getRepVarmap(ec, i).size(); ++vi )
             {
-               int rvi = decomp->getRepVarmap(r, i)[vi];
+               int rvi = decomp->getRepVarmap(ec, i)[vi];
                auto* var = detprobdata->getVar(decomp->getVarsForBlock(b)[vi]);
                auto* repvar = detprobdata->getVar(decomp->getVarsForBlock(repblock)[rvi]);
                success &= setObjectValue(SCIPvarGetName(var), json_string(SCIPvarGetName(repvar)), jsonsymmetry);

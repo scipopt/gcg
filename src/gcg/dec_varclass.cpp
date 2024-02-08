@@ -173,7 +173,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
          partialdec = new gcg::PARTIALDECOMP(partialdecOrig);
 
          /* fix open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
-         auto& openvars = partialdec->getOpenvarsVec();
+         auto& openvars = partialdec->getOpenvars();
          for( auto itr = openvars.cbegin(); itr != openvars.cend(); )
          {
             bool foundVar = false;

@@ -140,9 +140,10 @@ GCG_DECL_SCORECALC(scoreCalcFawh)
    newmasterarea = ( partialdec->getNMasterconss() + sumblockshittinglinkingvar) * ( partialdec->getNVars() + sumlinkingvarshittingblock );
    newblockareaagg = 0;
 
-   for( int br = 0; br < partialdec->getNReps(); ++br )
+   for( int br = 0; br < partialdec->getNEquivalenceClasses(); ++br )
    {
-      newblockareaagg += partialdec->getNConssForBlock( partialdec->getBlocksForRep(br)[0] ) * ( partialdec->getNVarsForBlock( partialdec->getBlocksForRep(br)[0] ) + nlinkingvarsforblock[partialdec->getBlocksForRep(br)[0]] );
+      newblockareaagg += partialdec->getNConssForBlock(partialdec->getBlocksForEqClass(br)[0])
+            * ( partialdec->getNVarsForBlock(partialdec->getBlocksForEqClass(br)[0]) + nlinkingvarsforblock[partialdec->getBlocksForEqClass(br)[0]] );
    }
 
    SCIP_Real maxforeseeingwhitescoreagg = newwidth == 0 ? 1. : ((SCIP_Real ) newblockareaagg + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;

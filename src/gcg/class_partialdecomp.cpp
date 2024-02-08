@@ -29,6 +29,7 @@
  * @brief  class storing incomplete decompositions
  * @author Michael Bastubbe
  * @author Hanna Franzen
+ * @author Erik Muehmer
  *
  */
 
@@ -183,7 +184,7 @@ PARTIALDECOMP::PARTIALDECOMP(
    varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
    conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
    masterconsssorted(true), hashvalue( 0 ), hvoutdated(true), isselected( false ), isagginfoalreadytoexpensive(false), isfinishedbyfinisher( false ),
-   nrepblocks(0), reptoblocks(std::vector<std::vector<int>>(0)), blockstorep(std::vector<int>(0) ), pidtopidvarmaptofirst(std::vector<std::vector<std::vector<int> > >(0)),
+   nequivalenceclasses(0), eqclasstoblocks(std::vector<std::vector<int>>(0)), blockstoeqclasses(std::vector<int>(0) ), eqclassesvarmappings(std::vector<std::vector<std::vector<int> > >(0)),
    detectorchain( 0 ), detectorclocktimes( 0 ), pctvarstoborder( 0 ),
    pctvarstoblock( 0 ), pctvarsfromfree( 0 ), pctconsstoborder( 0 ), pctconsstoblock( 0 ), pctconssfromfree( 0 ),
    nnewblocks( 0 ), usedpartition(0 ), classestomaster(0 ), classestolinking(0 ), listofancestorids(0 ),
@@ -285,10 +286,10 @@ PARTIALDECOMP::PARTIALDECOMP(
    mastervarssorted = partialdectocopy->mastervarssorted;
    hvoutdated = partialdectocopy->hvoutdated;
 
-   nrepblocks  = partialdectocopy->nrepblocks;
-   reptoblocks = partialdectocopy->reptoblocks;
-   blockstorep = partialdectocopy->blockstorep;
-   pidtopidvarmaptofirst = partialdectocopy->pidtopidvarmaptofirst;
+   nequivalenceclasses  = partialdectocopy->nequivalenceclasses;
+   eqclasstoblocks = partialdectocopy->eqclasstoblocks;
+   blockstoeqclasses = partialdectocopy->blockstoeqclasses;
+   eqclassesvarmappings = partialdectocopy->eqclassesvarmappings;
    ncoeffsforblock = partialdectocopy->ncoeffsforblock;
    calculatedncoeffsforblock = FALSE;
    translatedpartialdecid = partialdectocopy->getTranslatedpartialdecid();
@@ -1063,7 +1064,7 @@ void PARTIALDECOMP::assignSmallestComponentsButOneConssAdjacency()
       setNBlocks(0);
 
    /* do breadth first search to find connected conss */
-   auto constoconsider = getOpenconssVec();
+   auto constoconsider = getOpenconss();
    while( !constoconsider.empty() )
    {
       std::vector<int> newconss;
@@ -1206,9 +1207,6 @@ void PARTIALDECOMP::calcAggregationInformation(
    int searchnodelimit;
    int generatorlimit;
 #endif
-   SCIP_Bool aggisnotactive;
-   SCIP_Bool discretization;
-   SCIP_Bool aggregation;
 
    int nreps = 1;
 
@@ -1233,24 +1231,16 @@ void PARTIALDECOMP::calcAggregationInformation(
    SCIPgetIntParam(scip, "relaxing/gcg/bliss/generatorlimit", &generatorlimit);
 #endif
 
-   SCIPgetBoolParam(scip, "relaxing/gcg/aggregation", &aggregation);
-   SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &discretization);
-
-   if( discretization && aggregation )
-      aggisnotactive = FALSE;
-   else
-      aggisnotactive = TRUE;
-
    std::vector<std::vector<int>> identblocksforblock( getNBlocks(), std::vector<int>(0) );
 
-   blockstorep = std::vector<int>(getNBlocks(), -1);
+   blockstoeqclasses = std::vector<int>(getNBlocks(), -1);
 
    for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
    {
       std::vector<int> currrep = std::vector<int>(0);
       std::vector< std::vector<int> > currrepvarmapforthisrep =std::vector<std::vector<int>>(0);
       std::vector<int> identityvec = std::vector<int>(0);
-
+      bool containslinkingvar = FALSE;
 
       if( !identblocksforblock[b1].empty() )
          continue;
@@ -1261,70 +1251,82 @@ void PARTIALDECOMP::calcAggregationInformation(
       currrep.push_back(b1);
       currrepvarmapforthisrep.push_back(identityvec);
 
+      /*
+       * quick check whether some of the variables are linking in which case we cannot aggregate
+       * this is suboptimal but we use bliss anyway
+       */
 
-      for( int b2 = b1+1; b2 < getNBlocks(); ++b2 )
+      for( int v: varsforblocks[b1] )
       {
-         SCIP_Bool identical;
-         SCIP_Bool notidentical;
-         std::vector<int> varmap;
-         SCIP_HASHMAP* varmap2;
-
-         notidentical = FALSE;
-         identical = FALSE;
-
-         if( !identblocksforblock[b2].empty() )
-            continue;
-
-         if( aggisnotactive )
-            continue;
-
-
-         SCIP_CALL_ABORT( SCIPhashmapCreate(  &varmap2,
-               SCIPblkmem(scip),
-               5 * getNVarsForBlock(b1)+1) ); /* +1 to deal with empty subproblems */
-
-         SCIPdebugMessage("Check identity for block %d and block %d!\n", b1, b2);
-
-         checkIdenticalBlocksTrivial( b1, b2, &notidentical);
-
-         if( !notidentical )
+         if( isVarLinkingvar(v) )
          {
-            checkIdenticalBlocksBrute( b1, b2, varmap, varmap2, &identical);
-
-#ifdef WITH_BLISS
-            if( usebliss && !tooexpensive && !identical )
-               checkIdenticalBlocksBliss(b1, b2, varmap, varmap2, &identical,
-                     searchnodelimit >= 0 ? searchnodelimit : 0u, generatorlimit >= 0 ? generatorlimit : 0u);
-#endif
+            SCIPdebugMessage("Var <%s> is linking and can not be aggregated.\n", SCIPvarGetName(getDetprobdata()->getVar(v)));
+            containslinkingvar = TRUE;
+            break;
          }
-         else
-            identical = FALSE;
-
-         if( identical )
-         {
-            SCIPdebugMessage("Block %d is identical to block %d!\n", b1, b2);
-            identblocksforblock[b1].push_back(b2);
-            identblocksforblock[b2].push_back(b1);
-            currrep.push_back(b2);
-            /* handle varmap */
-            currrepvarmapforthisrep.push_back(varmap);
-
-         }
-         else
-         {
-            SCIPdebugMessage("Block %d is not identical to block %d!\n", b1, b2);
-         }
-         SCIPhashmapFree(&varmap2);
       }
 
-      reptoblocks.push_back( currrep );
-      pidtopidvarmaptofirst.push_back(currrepvarmapforthisrep);
-      for( size_t i = 0; i < currrep.size(); ++i )
-         blockstorep[currrep[i]] = nreps-1;
-      ++nreps;
+      if( !containslinkingvar )
+      {
+         for( int b2 = b1 + 1; b2 < getNBlocks(); ++b2 )
+         {
+            SCIP_Bool identical;
+            SCIP_Bool notidentical;
+            std::vector<int> varmap;
+            SCIP_HASHMAP* varmap2;
 
+            notidentical = FALSE;
+            identical = FALSE;
+
+            if( !identblocksforblock[b2].empty())
+               continue;
+
+            SCIP_CALL_ABORT(SCIPhashmapCreate(&varmap2,
+               SCIPblkmem(scip),
+               5 * getNVarsForBlock(b1) + 1)); /* +1 to deal with empty subproblems */
+
+            SCIPdebugMessage("Check identity for block %d and block %d!\n", b1, b2);
+
+            checkIdenticalBlocksTrivial(b1, b2, &notidentical);
+
+            if( !notidentical )
+            {
+               checkIdenticalBlocksBrute(b1, b2, varmap, varmap2, &identical);
+
+#ifdef WITH_BLISS
+               if( usebliss && !tooexpensive && !identical )
+                  checkIdenticalBlocksBliss(b1, b2, varmap, varmap2, &identical,
+                     searchnodelimit >= 0 ? searchnodelimit : 0u, generatorlimit >= 0 ? generatorlimit : 0u);
+#endif
+            }
+            else
+               identical = FALSE;
+
+            if( identical )
+            {
+               SCIPdebugMessage("Block %d is identical to block %d!\n", b1, b2);
+               identblocksforblock[b1].push_back(b2);
+               identblocksforblock[b2].push_back(b1);
+               currrep.push_back(b2);
+               /* handle varmap */
+               currrepvarmapforthisrep.push_back(varmap);
+
+            }
+            else
+            {
+               SCIPdebugMessage("Block %d is not identical to block %d!\n", b1, b2);
+            }
+            SCIPhashmapFree(&varmap2);
+         }
+      }
+
+      eqclasstoblocks.push_back( currrep );
+      eqclassesvarmappings.push_back(currrepvarmapforthisrep);
+      for( size_t i = 0; i < currrep.size(); ++i )
+         blockstoeqclasses[currrep[i]] = nreps - 1;
+      ++nreps;
    }
-   nrepblocks = nreps-1;
+   nequivalenceclasses = nreps - 1;
 }
 
 
@@ -2027,8 +2029,6 @@ void PARTIALDECOMP::checkIdenticalBlocksBrute(
    SCIP_Bool*           identical
    )
 {
-
-
    *identical = FALSE;
    SCIPdebugMessage("check block %d and block %d for identity...\n", b1, b2);
    varmap = std::vector<int>(getNVars(), -1);
@@ -3013,13 +3013,13 @@ void PARTIALDECOMP::displayAggregationInformation()
    }
    else
    {
-      SCIPinfoMessage(scip, NULL, " number of representative blocks: %d \n", nrepblocks);
-      for( int i = 0; i < nrepblocks; ++i )
+      SCIPinfoMessage(scip, NULL, " number of equivalence classes: %d \n", nequivalenceclasses);
+      for( int i = 0; i < nequivalenceclasses; ++i )
       {
-         SCIPinfoMessage(scip, NULL, "representative block %d : ", i);
+         SCIPinfoMessage(scip, NULL, "equivalence class %d : ", i);
 
-         for( size_t b = 0; b < reptoblocks[i].size(); ++b )
-            SCIPinfoMessage(scip, NULL, "%d ", reptoblocks[i][b] );
+         for( size_t b = 0; b < eqclasstoblocks[i].size(); ++b )
+            SCIPinfoMessage(scip, NULL, "block %d ", eqclasstoblocks[i][b] );
 
          SCIPinfoMessage(scip, NULL, "\n");
       }
@@ -3684,9 +3684,18 @@ std::vector<int>& PARTIALDECOMP::getAncestorList()
    return listofancestorids;
 }
 
-const std::vector<int> & PARTIALDECOMP::getBlocksForRep(int repid)
+const std::vector<int>& PARTIALDECOMP::getBlocksForEqClass(int eqclass)
 {
-   return reptoblocks[repid];
+   assert(aggInfoCalculated());
+   assert(eqclasstoblocks.size() > eqclass);
+   return eqclasstoblocks[eqclass];
+}
+
+int PARTIALDECOMP::getReprBlockForEqClass(int eqclass)
+{
+   assert(aggInfoCalculated());
+   assert(eqclasstoblocks.size() > eqclass && !eqclasstoblocks[eqclass].empty());
+   return eqclasstoblocks[eqclass][0];
 }
 
 
@@ -4169,6 +4178,13 @@ SCIP_Real PARTIALDECOMP::getScore(
 }
 
 
+SCIP_Real PARTIALDECOMP::getScore(
+   )
+{
+   return getScore(GCGgetCurrentScore(scip));
+}
+
+
 SCIP_Real PARTIALDECOMP::calcBlockAreaScore(
    SCIP* scip
    )
@@ -4297,9 +4313,9 @@ int PARTIALDECOMP::getNOpenvars()
 }
 
 
-int PARTIALDECOMP::getNReps(){
-
-   return nrepblocks;
+int PARTIALDECOMP::getNEquivalenceClasses()
+{
+   return nequivalenceclasses;
 }
 
 
@@ -4340,25 +4356,13 @@ int PARTIALDECOMP::getNVarsForBlocks()
 }
 
 
-const int* PARTIALDECOMP::getOpenconss()
-{
-   return openconss.data();
-}
-
-
-std::vector<int>& PARTIALDECOMP::getOpenconssVec()
+std::vector<int>& PARTIALDECOMP::getOpenconss()
 {
    return openconss;
 }
 
 
-const int* PARTIALDECOMP::getOpenvars()
-{
-   return openvars.data();
-}
-
-
-std::vector<int>& PARTIALDECOMP::getOpenvarsVec()
+std::vector<int>& PARTIALDECOMP::getOpenvars()
 {
    return openvars;
 }
@@ -4501,20 +4505,21 @@ std::vector<SCIP_Real>& PARTIALDECOMP::getPctConssFromFreeVector()
 }
 
 
-int PARTIALDECOMP::getRepForBlock(
+int PARTIALDECOMP::getEqClassForBlock(
    int blockid
    )
 {
    assert(aggInfoCalculated());
-   return blockstorep[blockid];
+   return blockstoeqclasses[blockid];
 }
 
 std::vector<int>& PARTIALDECOMP::getRepVarmap(
-   int repid,
-   int blockrepid
+   int eqclass,
+   int eqclassblock
    )
 {
-   return pidtopidvarmaptofirst[repid][blockrepid];
+   assert(eqclassesvarmappings[eqclass][eqclassblock].size() == getVarsForBlock(getBlocksForEqClass(eqclass).at(eqclassblock)).size());
+   return eqclassesvarmappings[eqclass][eqclassblock];
 }
 
 
@@ -4540,12 +4545,12 @@ void PARTIALDECOMP::setPctConssFromFreeVector(
 }
 
 
-const int* PARTIALDECOMP::getStairlinkingvars(
+std::vector<int>& PARTIALDECOMP::getStairlinkingvars(
    int block
    )
 {
    assert( block >= 0 && block < nblocks );
-   return stairlinkingvars[block].data();
+   return stairlinkingvars[block];
 }
 
 
@@ -4630,6 +4635,12 @@ bool PARTIALDECOMP::isConsOpencons(
 bool PARTIALDECOMP::isAssignedToOrigProb()
 {
    return original;
+}
+
+
+bool PARTIALDECOMP::isAssignedToPresolvedProb()
+{
+   return !original;
 }
 
 
@@ -5628,6 +5639,15 @@ void PARTIALDECOMP::buildDecChainString(
 }
 
 
+std::string PARTIALDECOMP::buildDecChainString(
+   )
+{
+   char buffer[SCIP_MAXSTRLEN];
+   buildDecChainString(buffer);
+   return std::string(buffer);
+}
+
+
 SCIP_Real PARTIALDECOMP::getMaxWhiteScore()
 {
    GCG_SCORE* score = GCGconshdlrDecompFindScore(this->scip, "max white");
@@ -5651,7 +5671,7 @@ std::vector<std::vector<int>>& PARTIALDECOMP::getConssForBlocks()
 
 bool PARTIALDECOMP::aggInfoCalculated()
 {
-   return getNBlocks() == 0 || getNReps() > 0;
+   return getNBlocks() == 0 || getNEquivalenceClasses() > 0;
 }
 
 int PARTIALDECOMP::getTranslatedpartialdecid() const

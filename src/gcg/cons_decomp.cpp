@@ -33,6 +33,7 @@
  * @author Michael Bastubbe
  * @author Hanna Franzen
  * @author William Ma
+ * @author Erik Muehmer
  *
  * This constraint handler will run all registered structure detectors in a loop. They will find partial decompositions in a loop iteration until the decompositions are full
  * or the maximum number of detection rounds is reached.
@@ -65,11 +66,11 @@
 #include "class_partialdecomp.h"
 #include "class_detprobdata.h"
 #include "miscvisualization.h"
-#include "wrapper_partialdecomp.h"
 #include "scip_misc.h"
 #include "relax_gcg.h"
 #include "decomp.h"
 #include "cons_decomp.hpp"
+#include "cons_decomp.h"
 #include "struct_consclassifier.h"
 #include "struct_varclassifier.h"
 #include "struct_decomp.h"
@@ -2492,18 +2493,6 @@ PARTIALDECOMP* GCGgetPartialdecToWrite(
 }
 
 
-SCIP_RETCODE GCGgetPartialdecToWrite(
-   SCIP*                         scip,
-   SCIP_Bool                     transformed,
-   PARTIALDECOMP_WRAPPER*        partialdecwrapper
-   )
-{
-   partialdecwrapper->partialdec = GCGgetPartialdecToWrite(scip, transformed);
-
-   return SCIP_OKAY;
-}
-
-
 SCIP_Real GCGgetRemainingTime(
    SCIP*                 scip 
    )
@@ -3030,17 +3019,19 @@ SCIP_RETCODE GCGwriteSelectedDecomps(
 }
 
 
-int GCGconshdlrDecompAddBasicPartialdec(
+SCIP_RETCODE GCGconshdlrDecompAddBasicPartialdec(
    SCIP* scip,
-   SCIP_Bool presolved
+   SCIP_Bool presolved,
+   PARTIALDECOMP_C** partialdecomp
    )
 {
    PARTIALDECOMP* partialdec = new PARTIALDECOMP(scip, !presolved);
    partialdec->setNBlocks(0);
    partialdec->assignOpenConssToMaster();
    partialdec->prepare();
-   addPartialdec(scip, partialdec);
-   return partialdec->getID();
+   *partialdecomp = reinterpret_cast<PARTIALDECOMP_C*>(partialdec);
+   SCIP_CALL( addPartialdec(scip, partialdec) );
+   return SCIP_OKAY;
 }
 
 
@@ -3175,7 +3166,7 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
 
    if( partialdec->shouldCompletedByConsToMaster() )
    {
-      auto& openconss = partialdec->getOpenconssVec();
+      auto& openconss = partialdec->getOpenconss();
       for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
       {
          itr = partialdec->fixConsToMaster(itr);
@@ -3289,17 +3280,16 @@ void GCGconshdlrDecompAddUserCandidatesNBlocks(
 }
 
 
-SCIP_RETCODE GCGconshdlrDecompArePricingprobsIdenticalForPartialdecid(
-   SCIP*                scip,
-   int                  partialdecid,
-   int                  probnr1,
-   int                  probnr2,
-   SCIP_Bool*           identical
+SCIP_RETCODE GCGconshdlrDecompArePricingprobsIdenticalForPartialdec(
+   SCIP*                   scip,
+   PARTIALDECOMP_C*        partialdecomp,
+   int                     probnr1,
+   int                     probnr2,
+   SCIP_Bool*              identical
    )
 {
-   gcg::PARTIALDECOMP* partialdec;
+   gcg::PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
 
-   partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
    assert(partialdec != NULL);
    assert(partialdec->isComplete());
 
@@ -3310,12 +3300,14 @@ SCIP_RETCODE GCGconshdlrDecompArePricingprobsIdenticalForPartialdecid(
       partialdec->calcAggregationInformation(true);
    }
 
-   if( partialdec->getRepForBlock(probnr1) == partialdec->getRepForBlock(probnr2) )
+   if( partialdec->getEqClassForBlock(probnr1) == partialdec->getEqClassForBlock(probnr2) )
       *identical = TRUE;
    else
       *identical = FALSE;
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, " block %d and block %d are represented by %d and %d hence they are identical=%d.\n", probnr1, probnr2, partialdec->getRepForBlock(probnr1), partialdec->getRepForBlock(probnr2), *identical );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, " block %d and block %d are represented by %d and %d hence they are identical=%d.\n", probnr1, probnr2,
+      partialdec->getEqClassForBlock(probnr1),
+      partialdec->getEqClassForBlock(probnr2), *identical );
 
    return SCIP_OKAY;
 }
@@ -3638,15 +3630,15 @@ SCIP_RETCODE GCGconshdlrDecompClassify(
 }
 
 
-SCIP_RETCODE GCGconshdlrDecompCreateVarmapForPartialdecId(
-   SCIP*                scip,
-   SCIP_HASHMAP**       hashorig2pricingvar,
-   int                  partialdecid,
-   int                  probnr1,
-   int                  probnr2,
-   SCIP*                scip1,
-   SCIP*                scip2,
-   SCIP_HASHMAP*        varmap
+SCIP_RETCODE GCGconshdlrDecompCreateVarmapForPartialdec(
+   SCIP*                   scip,
+   SCIP_HASHMAP**          hashorig2pricingvar,
+   PARTIALDECOMP_C*        partialdecomp,
+   int                     probnr1,
+   int                     probnr2,
+   SCIP*                   scip1,
+   SCIP*                   scip2,
+   SCIP_HASHMAP*           varmap
    )
 {
    gcg::PARTIALDECOMP* partialdec;
@@ -3663,7 +3655,7 @@ SCIP_RETCODE GCGconshdlrDecompCreateVarmapForPartialdecId(
    repid1 = -1;
    repid2 = -1;
 
-   partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
    assert(partialdec != NULL);
    assert(partialdec->isComplete());
    currdetprobdata = partialdec->getDetprobdata();
@@ -3679,16 +3671,16 @@ SCIP_RETCODE GCGconshdlrDecompCreateVarmapForPartialdecId(
       blockid2 = probnr2;
    }
 
-   representative = partialdec->getRepForBlock(blockid1);
-   assert( representative == partialdec->getRepForBlock(blockid2) );
-   nblocksforrep = (int) partialdec->getBlocksForRep(representative).size();
+   representative = partialdec->getEqClassForBlock(blockid1);
+   assert( representative == partialdec->getEqClassForBlock(blockid2) );
+   nblocksforrep = (int) partialdec->getBlocksForEqClass(representative).size();
 
    /* find index in representatives */
    for( int i = 0; i < nblocksforrep; ++i )
    {
-      if( partialdec->getBlocksForRep(representative)[i] == blockid1 )
+      if( partialdec->getBlocksForEqClass(representative)[i] == blockid1 )
          repid1 = i;
-      if( partialdec->getBlocksForRep(representative)[i] == blockid2 )
+      if( partialdec->getBlocksForEqClass(representative)[i] == blockid2 )
       {
          repid2 = i;
          break;
@@ -3902,14 +3894,13 @@ GCG_DECOMP** GCGconshdlrDecompGetDecomps(
 }
 
 
-std::string GCGconshdlrDecompGetDetectorHistoryByPartialdecId(
-   SCIP* scip,
-   int id
+std::string GCGconshdlrDecompPartialdecGetDetectorHistory(
+   PARTIALDECOMP_C*        partialdecomp
    )
 {
    char buffer[SCIP_MAXSTRLEN];
    /* get partialdec and returns its detector history */
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
    assert(partialdec != NULL);
    partialdec->buildDecChainString(buffer);
    return std::string(buffer);
@@ -4028,13 +4019,13 @@ int GCGconshdlrDecompGetNBlockNumberCandidates(
 }
 
 
-int GCGconshdlrDecompGetNBlocksByPartialdecId(
-   SCIP* scip,
-   int id
+int GCGconshdlrDecompPartialdecGetNBlocks(
+   PARTIALDECOMP_C*        partialdecomp
    )
 {
    /* get partialdec and returns the number of its blocks */
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
    return partialdec->getNBlocks();
 }
 
@@ -4136,58 +4127,157 @@ int GCGconshdlrDecompGetNFormerDetectionConssForID(
 }
 
 
-int GCGconshdlrDecompGetNLinkingVarsByPartialdecId(
-   SCIP* scip,
-   int id
+SCIP_Bool GCGconshdlrDecompPartialdecAggregationInformationCalculated(
+   PARTIALDECOMP_C*        partialdecomp
+   )
+{
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
+   return partialdec->aggInfoCalculated();
+}
+
+
+void GCGconshdlrDecompPartialdecCalcAggregationInformation(
+   PARTIALDECOMP_C*        partialdecomp,
+   SCIP_Bool               ignoreDetectionLimits
+   )
+{
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
+   partialdec->calcAggregationInformation(ignoreDetectionLimits);
+}
+
+
+int GCGconshdlrDecompPartialdecGetNEquivalenceClasses(
+   PARTIALDECOMP_C*        partialdecomp
+   )
+{
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
+   return partialdec->getNEquivalenceClasses();
+}
+
+
+int GCGconshdlrDecompPartialdecGetReprBlockForEqClass(
+   PARTIALDECOMP_C*        partialdecomp,
+   int                     eqclass
+   )
+{
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
+   return partialdec->getReprBlockForEqClass(eqclass);
+}
+
+
+const int* GCGconshdlrDecompPartialdecGetBlocksForEqClass(
+   PARTIALDECOMP_C*        partialdecomp,
+   int                     eqclass
+   )
+{
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
+   return partialdec->getBlocksForEqClass(eqclass).data();
+}
+
+
+int GCGconshdlrDecompPartialdecGetNBlocksForEqClass(
+   PARTIALDECOMP_C*        partialdecomp,
+   int                     eqclass
+   )
+{
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
+   return (int)partialdec->getBlocksForEqClass(eqclass).size();
+}
+
+
+const int* GCGconshdlrDecompPartialdecGetRepVarMap(
+   PARTIALDECOMP_C*        partialdecomp,
+   int                     eqclass,
+   int                     eqclassblock
+   )
+{
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
+   return partialdec->getRepVarmap(eqclass, eqclassblock).data();
+}
+
+
+int GCGconshdlrDecompPartialdecGetNLinkingVars(
+   PARTIALDECOMP_C*        partialdecomp
    )
 {
    /* get partialdec and returns the number of its linking vars */
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
    return partialdec->getNLinkingvars();
 }
 
 
-int GCGconshdlrDecompGetNMasterConssByPartialdecId(
-   SCIP* scip,
-   int id
+int GCGconshdlrDecompPartialdecGetNMasterConss(
+   PARTIALDECOMP_C*        partialdecomp
    )
 {
    /* get partialdec and returns the number of its master conss */
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
    return partialdec->getNMasterconss();
 }
 
 
-int GCGconshdlrDecompGetNMasterVarsByPartialdecId(
-   SCIP* scip,
-   int id
+int GCGconshdlrDecompPartialdecGetNMasterVars(
+   PARTIALDECOMP_C*        partialdecomp
    )
 {
    /* get partialdec and returns the number of its master vars */
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
    return partialdec->getNMastervars();
 }
 
 
-int GCGconshdlrDecompGetNOpenConssByPartialdecId(
-   SCIP* scip,
-   int id
+int GCGconshdlrDecompPartialdecGetNOpenConss(
+   PARTIALDECOMP_C*        partialdecomp
    )
 {
    /* get partialdec and returns the number of its open conss */
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
    return partialdec->getNOpenconss();
 }
 
 
-int GCGconshdlrDecompGetNOpenVarsByPartialdecId(
-   SCIP* scip,
-   int id
+int GCGconshdlrDecompPartialdecGetNOpenVars(
+   PARTIALDECOMP_C*        partialdecomp
    )
 {
    /* get partialdec and returns the number of its open vars */
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
    return partialdec->getNOpenvars();
+}
+
+
+SCIP_VAR* GCGconshdlrDecompPartialdecGetOrigVarForBlock(
+   PARTIALDECOMP_C*        partialdecomp,
+   int                     block,
+   int                     blockvarindex
+   )
+{
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
+   return partialdec->getDetprobdata()->getVar(partialdec->getVarsForBlock(block)[blockvarindex]);
+}
+
+
+int GCGconshdlrDecompPartialdecGetNVarsForBlock(
+   PARTIALDECOMP_C*        partialdecomp,
+   int                     block
+   )
+{
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
+   return partialdec->getNVarsForBlock(block);
 }
 
 
@@ -4286,13 +4376,13 @@ unsigned int GCGconshdlrDecompGetNPartialdecsTransformed(
 }
 
 
-int GCGconshdlrDecompGetNStairlinkingVarsByPartialdecId(
-   SCIP* scip,
-   int id
+int GCGconshdlrDecompPartialdecGetNStairlinkingVars(
+   PARTIALDECOMP_C*        partialdecomp
    )
 {
    /* get partialdec and returns the number of its stairlinking vars */
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
    return partialdec->getNTotalStairlinkingvars();
 }
 
@@ -4311,27 +4401,26 @@ std::vector<PARTIALDECOMP*>* GCGconshdlrDecompGetPartialdecs(
 SCIP_RETCODE GCGconshdlrDecompGetPartialdecFromID(
    SCIP*          scip,
    int            partialdecid,
-   PARTIALDECOMP_WRAPPER* pwr
+   PARTIALDECOMP_C** partialdecomp
    )
 {
    PARTIALDECOMP* s;
 
    s = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
-   pwr->partialdec = s;
+   *partialdecomp = reinterpret_cast<PARTIALDECOMP_C*>(s);;
 
    return SCIP_OKAY;
 }
 
 
-SCIP_Real GCGconshdlrDecompGetScoreByPartialdecId(
-   SCIP* scip,
-   int id
+SCIP_Real GCGconshdlrDecompPartialdecGetScore(
+   PARTIALDECOMP_C*        partialdecomp
    )
 {
    /* get partialdec and returns its score in respect to the current score type */
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
-
-   return partialdec->getScore(GCGgetCurrentScore(scip));
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
+   return partialdec->getScore();
 }
 
 
@@ -4370,24 +4459,24 @@ int GCGconshdlrDecompIncreaseNCallsCreateDecomp(
 }
 
 
-SCIP_Bool GCGconshdlrDecompIsPresolvedByPartialdecId(
-   SCIP* scip,
-   int id
+SCIP_Bool GCGconshdlrDecompIsPresolved(
+   PARTIALDECOMP_C*        partialdecomp
    )
 {
    /* get partialdec and returns whether it is presolved */
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
    return !partialdec->isAssignedToOrigProb();
 }
 
 
-SCIP_Bool GCGconshdlrDecompIsSelectedByPartialdecId(
-   SCIP* scip,
-   int id
+SCIP_Bool GCGconshdlrDecompIsSelected(
+   PARTIALDECOMP_C*        partialdecomp
    )
 {
    /* get partialdec and returns whether it is currently selected */
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, id);
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
+   assert(partialdec != NULL);
    return partialdec->isSelected();
 }
 
@@ -4488,12 +4577,11 @@ void GCGconshdlrDecompRegisterPartialdec(
 
 
 SCIP_RETCODE GCGconshdlrDecompSelectPartialdec(
-   SCIP* scip,          /**< SCIP data structure */
-   int partialdecid,    /**< id of partialdecomp */
-   SCIP_Bool select     /**< select/unselect */
+   PARTIALDECOMP_C*        partialdecomp,
+   SCIP_Bool               select
    )
 {
-   PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   PARTIALDECOMP* partialdec = reinterpret_cast<gcg::PARTIALDECOMP*>(partialdecomp);
    if( partialdec )
       partialdec->setSelected(select);
    else

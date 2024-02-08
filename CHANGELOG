@@ -5,6 +5,42 @@
 New features:
 -------------
 
+New/modified/removed structures, defines, and classes:
+---------------------------
+
+- removed struct 'PARTIALDECOMP_WRAPPER'
+- added struct 'PARTIALDECOMP_C' used by the C interface
+
+New/modified/removed API functions:
+---------------------------
+
+- removed 'GCGgetPartialdecToWrite'
+- 'GCGconshdlrDecompAddBasicPartialdec' returns now SCIP_RETCODE and sets a pointer to the created decomposition
+- public C functions working with (partial) decompositions use now 'PARTIALDECOMP_C' pointers instead of the id of the decomposition
+- added function 'GCGconshdlrDecompPartialdecAggregationInformationCalculated'
+- added function 'GCGconshdlrDecompPartialdecCalcAggregationInformation'
+- added function 'GCGconshdlrDecompPartialdecGetNEquivalenceClasses'
+- added function 'GCGconshdlrDecompPartialdecGetReprBlockForEqClass'
+- added function 'GCGconshdlrDecompPartialdecGetBlocksForEqClass'
+- added function 'GCGconshdlrDecompPartialdecGetNBlocksForEqClass'
+- added function 'GCGconshdlrDecompPartialdecGetRepVarMap'
+- added function 'GCGconshdlrDecompPartialdecGetOrigVarForBlock'
+- added function 'GCGconshdlrDecompPartialdecGetNVarsForBlock'
+- added function 'PARTIALDECOMP::getReprBlockForEqClass'
+- added function 'PARTIALDECOMP::getScore' without arguments
+- added function 'PARTIALDECOMP::isAssignedToPresolvedProb'
+- added function 'PARTIALDECOMP::buildDecChainString' returning a std::string object
+- renamed functions 'PARTIALDECOMP::get*Vec' to 'PARTIALDECOMP::get*' and removed old ones with the same name that returned a reference to the 'data()' object of the vector
+- renamed function 'PARTIALDECOMP::getBlocksForRep' to 'PARTIALDECOMP::getBlocksForEqClass'
+- renamed function 'PARTIALDECOMP::getNReps' to 'PARTIALDECOMP::getNEquivalenceClasses'
+- renamed function 'PARTIALDECOMP::getRepForBlock' to 'PARTIALDECOMP::getEqClassForBlock'
+
+Code cleanup:
+-------------
+
+- the explore dialog accesses (partial) decompositions now directly using pointers instead of their ids
+- symmetry information stored for a decomposition is now used by the relaxator without creating intermediate varmaps
+
 
 @page RN36 Release notes for GCG 3.6
 @section RN360 GCG 3.6.0

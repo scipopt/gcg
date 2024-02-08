@@ -151,7 +151,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecNeighborhoodmaster)
    /** fix open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
    std::vector<std::pair<int,int>> neighborhoodsize;
    neighborhoodsize.reserve(partialdec->getNOpenconss());
-   for( int opencons : partialdec->getOpenconssVec() )
+   for( int opencons : partialdec->getOpenconss() )
    {
       neighborhoodsize.emplace_back(std::pair<int,int>(detprobdata->getNConssForCons(opencons), opencons));
    }

@@ -32,6 +32,7 @@
  * @author  Martin Bergner
  * @author  Alexander Gross
  * @author  Michael Bastubbe
+ * @author Erik Muehmer
  *
  * \bug
  * - The memory limit is not strictly enforced
@@ -615,67 +616,15 @@ SCIP_Bool realArraysAreEqual(
    return TRUE;
 }
 
-/* checks whether two pricingproblems represent identical blocks */
-static
-SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
-   SCIP_HASHMAP**        hashorig2pricingvar,/**< mapping from orig to pricingvar  */
-   int                   probnr1,            /**< number of the first pricingproblem */
-   int                   probnr2,            /**< number of the second pricingproblem */
-   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
-                                              *   to those of the first pricing problem */
-   SCIP_Bool*            identical           /**< return value: are blocks identical */
-   )
-{
-   SCIP* scip1;
-   SCIP* scip2;
-   int partialdecid;
-
-
-   assert(relaxdata != NULL);
-   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
-   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
-   assert(varmap != NULL);
-   assert(identical != NULL);
-
-   scip1 = relaxdata->pricingprobs[probnr1];
-   scip2 = relaxdata->pricingprobs[probnr2];
-   assert(scip1 != NULL);
-   assert(scip2 != NULL);
-
-   *identical = FALSE;
-
-   /* 1) find partialdec number */
-
-   partialdecid = GCGdecompGetPartialdecID(relaxdata->decomp);
-
-   /* 2) are pricingproblems identical for this partialdec? */
-   SCIP_CALL( GCGconshdlrDecompArePricingprobsIdenticalForPartialdecid(scip, partialdecid, probnr2, probnr1, identical) );
-
-   /* 3) create varmap if pricing probs are identical */
-   if( *identical )
-   {
-      SCIP_CALL( GCGconshdlrDecompCreateVarmapForPartialdecId(scip, hashorig2pricingvar, partialdecid, probnr2, probnr1, scip2, scip1, varmap) );
-   }
-
-   return SCIP_OKAY;
-}
-
 /** checks whether there are identical pricing blocks */
 static
 SCIP_RETCODE checkIdenticalBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata,          /**< the relaxator data data structure*/
-   SCIP_HASHMAP**         hashorig2pricingvar /**< mapping from orig to pricingvar for each block */
+   SCIP_HASHMAP**        hashorig2pricingvar /**< mapping from orig to pricingvar for each block */
    )
 {
-   SCIP_HASHMAP* varmap;
-   SCIP_VAR** vars;
-   SCIP_VAR* origvar;
-   SCIP_VAR* pricingvar;
-   int nvars;
-   SCIP_Bool identical;
+   PARTIALDECOMP_C* partialdec;
 
    int i;
    int j;
@@ -702,97 +651,56 @@ SCIP_RETCODE checkIdenticalBlocks(
       return SCIP_OKAY;
    }
 
-
-   if(  relaxdata->nlinkingvars != 0 )
-      {
-         SCIPdebugMessage("aggregation is off in presence of linking vars\n");
-         return SCIP_OKAY;
-      }
-
-
-   for( i = 0; i < relaxdata->npricingprobs; i++ )
+   // @todo: do wee need this check?
+   if( relaxdata->nlinkingvars != 0 )
    {
-      for( j = 0; j < i && relaxdata->blockrepresentative[i] == i; j++ )
+      SCIPdebugMessage("aggregation is off in presence of linking vars\n");
+      return SCIP_OKAY;
+   }
+
+   assert( SCIPgetNConss(scip) == GCGconshdlrDecompGetNFormerDetectionConssForID(scip, GCGdecompGetPartialdecID(relaxdata->decomp)) );
+   SCIPdebugMessage( "nconss: %d; ndetectionconss: %d -> using partialdec information for identity test \n", SCIPgetNConss(scip), GCGconshdlrDecompGetNFormerDetectionConssForID(scip, GCGdecompGetPartialdecID(relaxdata->decomp) ) );
+
+   GCGconshdlrDecompGetPartialdecFromID(scip, GCGdecompGetPartialdecID(relaxdata->decomp), &partialdec);
+
+   if( !GCGconshdlrDecompPartialdecAggregationInformationCalculated(partialdec) )
+      GCGconshdlrDecompPartialdecCalcAggregationInformation(partialdec, TRUE);
+
+   nrelevant = GCGconshdlrDecompPartialdecGetNEquivalenceClasses(partialdec);
+   assert(nrelevant > 0 || GCGconshdlrDecompPartialdecGetNBlocks(partialdec) == 0);
+   for( j = 0; j < nrelevant; ++j )
+   {
+      int rb = GCGconshdlrDecompPartialdecGetReprBlockForEqClass(partialdec, j);
+      const int* eqclassblocks = GCGconshdlrDecompPartialdecGetBlocksForEqClass(partialdec, j);
+      int neqclassblocks = GCGconshdlrDecompPartialdecGetNBlocksForEqClass(partialdec, j);
+
+      SCIPdebugMessage("Block %d is relevant!\n", rb);
+      relaxdata->nblocksidentical[rb] = neqclassblocks;
+
+      assert(eqclassblocks[0] == rb);
+      for( i = 1; i < neqclassblocks; ++i )
       {
-         if( relaxdata->blockrepresentative[j] != j )
-            continue;
+         int b = eqclassblocks[i];
+         const int* repvarmap = GCGconshdlrDecompPartialdecGetRepVarMap(partialdec, j, i);
 
-         SCIP_CALL( SCIPhashmapCreate(&varmap,
-               SCIPblkmem(scip),
-               5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /* +1 to deal with empty subproblems */
+         // block b will be represented by block rb
+         relaxdata->blockrepresentative[b] = rb;
+         relaxdata->nblocksidentical[b] = 0;
 
-         assert( SCIPgetNConss(scip) == GCGconshdlrDecompGetNFormerDetectionConssForID(scip, GCGdecompGetPartialdecID(relaxdata->decomp)) );
-         SCIPdebugMessage( "nconss: %d; ndetectionconss: %d -> using partialdec information for identity test \n", SCIPgetNConss(scip), GCGconshdlrDecompGetNFormerDetectionConssForID(scip, GCGdecompGetPartialdecID(relaxdata->decomp) ) );
-         SCIP_CALL( pricingprobsAreIdenticalFromDetectionInfo( scip, relaxdata, hashorig2pricingvar, i, j, varmap, &identical ) );
-
-/*
- *  new method of cons_decomp that uses partialdec information
- * 1) check varmap
- * 2) build varmap for partialdecs in partialdec datatstructures
- * 3) translate varmap when transforming partialdec to decomp (store varmap in decomp or partialdec?)
- * 4) write method in cons_decomp using partialdec agg info and varmap*/
-
-         if( identical )
+         for( k = 0; k < GCGconshdlrDecompPartialdecGetNVarsForBlock(partialdec, b); ++k )
          {
-            SCIPdebugMessage("Block %d is identical to block %d!\n", i, j);
+            int rvi = repvarmap[k];
+            SCIP_VAR* origvar = GCGconshdlrDecompPartialdecGetOrigVarForBlock(partialdec, b, k);
+            SCIP_VAR* repvar = GCGconshdlrDecompPartialdecGetOrigVarForBlock(partialdec, rb, rvi);
+            SCIP_VAR* pricingvar = GCGoriginalVarGetPricingVar(repvar);
 
-            /* save variables in pricing problem variable */
-            vars = SCIPgetVars(relaxdata->pricingprobs[i]);
-            nvars = SCIPgetNVars(relaxdata->pricingprobs[i]);
-
-            /*
-             * quick check whether some of the variables are linking in which case we cannot aggregate
-             * this is suboptimal but we use bliss anyway
-             */
-
-            for( k = 0; k < nvars; k++ )
-            {
-               assert(GCGvarIsPricing(vars[k]));
-               origvar = GCGpricingVarGetOrigvars(vars[k])[0];
-               if( GCGoriginalVarIsLinking(origvar) )
-               {
-                  SCIPdebugMessage("Var <%s> is linking and can not be aggregated.\n", SCIPvarGetName(origvar));
-                  identical = FALSE;
-                  break;
-               }
-            }
-
-            if( !identical )
-            {
-               break;
-            }
-
-
-            /* block i will be represented by block j */
-            relaxdata->blockrepresentative[i] = j;
-            relaxdata->nblocksidentical[i] = 0;
-            relaxdata->nblocksidentical[j]++;
-
-            for( k = 0; k < nvars; k++ )
-            {
-               int blocknr;
-               assert(GCGvarIsPricing(vars[k]));
-               origvar = GCGpricingVarGetOrigvars(vars[k])[0];
-
-               pricingvar = (SCIP_VAR*) SCIPhashmapGetImage(varmap, (void*) vars[k]);
-               assert(pricingvar != NULL);
-               blocknr = GCGvarGetBlock(pricingvar);
-
-               assert(GCGvarIsPricing(pricingvar));
-               assert(GCGvarIsOriginal(origvar));
-               assert(GCGoriginalVarGetPricingVar(origvar) != NULL);
-               GCGoriginalVarSetPricingVar(origvar, pricingvar);
-               SCIP_CALL( GCGpricingVarAddOrigVar(relaxdata->pricingprobs[blocknr], pricingvar, origvar) );
-            }
-
+            assert(GCGvarIsPricing(pricingvar));
+            assert(GCGvarIsOriginal(origvar));
+            assert(GCGoriginalVarGetPricingVar(origvar) != NULL);
+            GCGoriginalVarSetPricingVar(origvar, pricingvar);
+            assert(GCGvarGetBlock(pricingvar) == rb);
+            SCIP_CALL( GCGpricingVarAddOrigVar(relaxdata->pricingprobs[rb], pricingvar, origvar) );
          }
-         SCIPhashmapFree(&varmap);
-
-      }
-      if( relaxdata->blockrepresentative[i] == i )
-      {
-         SCIPdebugMessage("Block %d is relevant!\n", i);
-         nrelevant++;
       }
    }
 
@@ -2345,10 +2253,10 @@ SCIP_RETCODE initRelaxator(
       relaxdata->decomp = GCGgetBestDecomp(scip, TRUE);
       if( relaxdata->decomp == NULL )
       {
-         int partialdecid;
+         PARTIALDECOMP_C* partialdec;
          SCIPwarningMessage(scip, "No complete decomposition available. Creating basic decomposition.\n");
-         partialdecid = GCGconshdlrDecompAddBasicPartialdec(scip, TRUE);
-         SCIP_CALL( GCGconshdlrDecompSelectPartialdec(scip, partialdecid, TRUE) );
+         SCIP_CALL( GCGconshdlrDecompAddBasicPartialdec(scip, TRUE, &partialdec) );
+         SCIP_CALL( GCGconshdlrDecompSelectPartialdec(partialdec, TRUE) );
 
          relaxdata->decomp = GCGgetBestDecomp(scip, FALSE);
          assert( relaxdata->decomp != NULL );

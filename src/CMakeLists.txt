@@ -328,7 +328,6 @@ set(gcgheaders
     gcg/type_score.h
     gcg/type_solver.h
     gcg/type_varclassifier.h
-    gcg/wrapper_partialdecomp.h
 )
 
 set(gcggraphheaders
