@@ -47,6 +47,7 @@
 #include <map>
 #include <sstream>
 #include <iomanip>
+#include <functional>
 
 #include "class_partialdecomp.h"
 #include "cons_decomp.h"
@@ -101,12 +102,12 @@ template <class T>
 class Column: public AbstractColumn
 {
 public:
-   Column(const char* columnHeader, const char* columnDesc, T (PARTIALDECOMP::*columnCallback)(), RETTYPE columnType) :
+   Column(const char* columnHeader, const char* columnDesc, std::function<T(PARTIALDECOMP&)>&& columnCallback, RETTYPE columnType) :
          AbstractColumn(columnHeader, columnDesc, columnType), callback(columnCallback) {}
 
    ~Column() override = default;
 
-   T getValue(PARTIALDECOMP* partialdec) { return (partialdec->*callback)(); }
+   T getValue(PARTIALDECOMP* partialdec) { return callback(*partialdec); }
 
    std::string getValueAsString(PARTIALDECOMP* partialdec) override
    {
@@ -135,7 +136,7 @@ public:
    }
 
 private:
-   T (PARTIALDECOMP::*callback)();
+   std::function<T(PARTIALDECOMP&)> callback;
 };
 
 bool updatePartialdecList(
@@ -1060,7 +1061,7 @@ SCIP_RETCODE GCGdialogExecExplore(
          column = new Column<SCIP_Real>(
             columnname,
             " ",
-            &PARTIALDECOMP::getScore,
+            static_cast<SCIP_Real(PARTIALDECOMP::*)()>(&PARTIALDECOMP::getScore),
             REAL);
       }
       else if( strcmp(columnname, "history") == 0 )
@@ -1068,7 +1069,7 @@ SCIP_RETCODE GCGdialogExecExplore(
          column = new Column<std::string>(
             columnname,
             "list of detectors (their chars) which  worked on this decomposition",
-            &PARTIALDECOMP::buildDecChainString,
+            static_cast<std::string(PARTIALDECOMP::*)()>(&PARTIALDECOMP::buildDecChainString),
             STRING);
       }
       else if( strcmp(columnname, "pre") == 0 )
