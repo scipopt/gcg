@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    solver.h
+/**@file    mastercutdata.c
  * @ingroup TODO-????
  * @brief   methods for interacting with GCG_MASTERCUTDATA
  * @author  Til Mohr
