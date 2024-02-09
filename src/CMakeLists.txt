@@ -114,6 +114,7 @@ set(gcgsources
     gcg/heur_setcover.c
     gcg/heur_xpcrossover.c
     gcg/heur_xprins.c
+    gcg/mastercutdata.c
     gcg/masterplugins.c
     gcg/misc.c
     gcg/miscvisualization.cpp
@@ -246,6 +247,7 @@ set(gcgheaders
     gcg/heur_setcover.h
     gcg/heur_xpcrossover.h
     gcg/heur_xprins.h
+    gcg/mastercutdata.h
     gcg/masterplugins.h
     gcg/nodesel_master.h
     gcg/objdialog.h
@@ -302,6 +304,7 @@ set(gcgheaders
     gcg/struct_detector.h
     gcg/struct_gcgcol.h
     gcg/struct_gcgpqueue.h
+    gcg/struct_mastercutdata.h
     gcg/struct_pricestore_gcg.h
     gcg/struct_pricingjob.h
     gcg/struct_pricingprob.h
@@ -316,6 +319,7 @@ set(gcgheaders
     gcg/type_detector.h
     gcg/type_gcgcol.h
     gcg/type_gcgpqueue.h
+    gcg/type_mastercutdata.h
     gcg/type_masterdiving.h
     gcg/type_origdiving.h
     gcg/type_parameter.h
@@ -363,7 +367,7 @@ if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
       gcg/bliss.cpp
       gcg/dec_isomorph.cpp
    )
-   set(gcgheaders ${gcgheaders} 
+   set(gcgheaders ${gcgheaders}
       gcg/bliss_automorph.h
       gcg/bliss_automorph.hpp
       gcg/dec_isomorph.h

@@ -309,6 +309,7 @@ LIBOBJ = \
 			gcg/heur_setcover.o \
 			gcg/heur_xpcrossover.o \
 			gcg/heur_xprins.o \
+			gcg/mastercutdata.o \
 			gcg/masterplugins.o \
 			gcg/bendersplugins.o \
 			gcg/misc.o \
