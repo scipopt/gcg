@@ -41,9 +41,6 @@
 #include "relax_gcg.h"
 #include "scip_misc.h"
 #include "scip/cons_linear.h"
-#include <scip/def.h>
-#include <scip/pub_var.h>
-#include <scip/scip.h>
 
 #define STARTMAXMASTERVARS 8
 #define STARTMAXORIGVARS 1
@@ -125,12 +122,6 @@ SCIP_DECL_VARDELTRANS(gcgvardeltrans)
    SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.maxorigvars);
    SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.maxorigvars);
    SCIPhashmapFree(&((*vardata)->data.mastervardata.origvar2val));
-   // TODO-TIL: this is changed from the original version
-   if( (*vardata)->data.mastervardata.ncuttingvars > 0 )
-   {
-      assert((*vardata)->data.mastervardata.cuttingvals != NULL);
-      SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.mastervardata.cuttingvals), (*vardata)->data.mastervardata.ncuttingvars);
-   }
 
    SCIPfreeBlockMemory(scip, vardata);
 
@@ -183,22 +174,6 @@ SCIP_Bool GCGvarIsOriginal(
    assert(vardata != NULL);
 
    return vardata->vartype == GCG_VARTYPE_ORIGINAL;
-}
-#endif
-
-#ifndef NDEBUG
-/** returns TRUE or FALSE whether variable is a cutting variable or not */
-SCIP_Bool GCGvarIsCutting(
-   SCIP_VAR*             var                 /**< SCIP variable structure */
-   )
-{
-   SCIP_VARDATA* vardata;
-   assert(var != NULL);
-
-   vardata = SCIPvarGetData(var);
-   assert(vardata != NULL);
-
-   return vardata->vartype == GCG_VARTYPE_CUTTING;
 }
 #endif
 
@@ -1351,12 +1326,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    SCIP_Real lb;
    int i;
    int j;
-   int js;
    SCIP_Bool trivialsol;
-   SCIP_Bool cutting_trivialsol;
-   int ncuttingvars;
-   SCIP_VAR** pricingvars;
-   int npricingvars;
 
    assert(scip != NULL);
    assert(pricingscip != NULL);
@@ -1392,7 +1362,6 @@ SCIP_RETCODE GCGcreateMasterVar(
    /* count number of non-zeros */
    newvardata->data.mastervardata.norigvars = 0;
    newvardata->data.mastervardata.maxorigvars = 0;
-   newvardata->data.mastervardata.ncuttingvars = 0;
 
    for( i = 0; i < nsolvars; i++ )
    {
@@ -1402,33 +1371,18 @@ SCIP_RETCODE GCGcreateMasterVar(
       assert(!SCIPisInfinity(scip, solvals[i]));
       if( !SCIPisZero(scip, solvals[i]) )
       {
-         if(GCGvarIsCutting(solvars[i]))
-         {
-            newvardata->data.mastervardata.ncuttingvars++;
-         }
-         else
-         {
-            newvardata->data.mastervardata.norigvars++;
-         }
+         newvardata->data.mastervardata.norigvars++;
       }
    }
-
-   ncuttingvars = GCGsepaCuttingGetNGuts(scip);
 
    /*
     * if we have not added any original variable to the mastervariable, all coefficients were 0.
     * In that case, we will add all variables in the pricing problem
     */
-   if( newvardata->data.mastervardata.norigvars == 0 && newvardata->data.mastervardata.ncuttingvars == 0 && !auxiliaryvar )
+   if( newvardata->data.mastervardata.norigvars == 0 && !auxiliaryvar )
    {
-      newvardata->data.mastervardata.norigvars = SCIPgetNOrigVars(pricingscip) - ncuttingvars;
+      newvardata->data.mastervardata.norigvars = SCIPgetNOrigVars(pricingscip);
       trivialsol = TRUE;
-   }
-
-   // TODO-TIL: Continue here
-   if( newvardata->data.mastervardata.norigvars == 0 && newvardata->data.mastervardata.ncuttingvars > 0 )
-   {
-      cutting_trivialsol = TRUE;
    }
 
    if( newvardata->data.mastervardata.norigvars > 0 )
@@ -1437,31 +1391,16 @@ SCIP_RETCODE GCGcreateMasterVar(
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.maxorigvars) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), newvardata->data.mastervardata.maxorigvars) );
       SCIP_CALL( SCIPhashmapCreate(&(newvardata->data.mastervardata.origvar2val), SCIPblkmem(scip), newvardata->data.mastervardata.norigvars) );
-      if( newvardata->data.mastervardata.ncuttingvars > 0)
-      {
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.cuttingvals), newvardata->data.mastervardata.ncuttingvars) );
-      }
    }
    else
    {
       newvardata->data.mastervardata.origvars = NULL;
       newvardata->data.mastervardata.origvals = NULL;
       newvardata->data.mastervardata.origvar2val = NULL;
-
-      if( cutting_trivialsol )
-      {
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.cuttingvals), newvardata->data.mastervardata.ncuttingvars) );
-      }
-      else
-      {
-         newvardata->data.mastervardata.cuttingvals = NULL;
-      }
    }
 
    /* number of original variables already saved in mastervardata */
    j = 0;
-   /* number of cutting variables already saved in mastervardata */
-   js = 0;
 
    /* update variable datas */
    for( i = 0; i < nsolvars && !trivialsol; i++ )
@@ -1476,40 +1415,27 @@ SCIP_RETCODE GCGcreateMasterVar(
       if( !SCIPisZero(scip, solval) )
       {
          SCIP_VAR* origvar;
+         assert(GCGvarIsPricing(solvars[i]));
 
-         if( GCGvarIsCutting(solvars[i]) )
-         {
-            /* round solval if possible to avoid numerical troubles */
-            if( SCIPvarIsIntegral(solvars[i]) && SCIPisIntegral(scip, solval) )
-               solval = SCIPround(scip, solval);
+         origvar = GCGpricingVarGetOrigvars(solvars[i])[0];
+         assert(origvar != NULL);
 
-            newvardata->data.mastervardata.cuttingvals[js] = solval;
-            js++;
-         }
-         else
-         {
-            assert(GCGvarIsPricing(solvars[i]));
+         assert(newvardata->data.mastervardata.origvars != NULL);
+         assert(newvardata->data.mastervardata.origvals != NULL);
+         assert(GCGvarIsOriginal(origvar));
+         assert(!solisray || vartype == SCIP_VARTYPE_CONTINUOUS || SCIPisIntegral(scip, solval) || SCIPvarGetType(solvars[i]) == SCIP_VARTYPE_CONTINUOUS);
 
-            origvar = GCGpricingVarGetOrigvars(solvars[i])[0];
-            assert(origvar != NULL);
+         /* round solval if possible to avoid numerical troubles */
+         if( SCIPvarIsIntegral(solvars[i]) && SCIPisIntegral(scip, solval) )
+            solval = SCIPround(scip, solval);
 
-            assert(newvardata->data.mastervardata.origvars != NULL);
-            assert(newvardata->data.mastervardata.origvals != NULL);
-            assert(GCGvarIsOriginal(origvar));
-            assert(!solisray || vartype == SCIP_VARTYPE_CONTINUOUS || SCIPisIntegral(scip, solval) || SCIPvarGetType(solvars[i]) == SCIP_VARTYPE_CONTINUOUS);
-
-            /* round solval if possible to avoid numerical troubles */
-            if( SCIPvarIsIntegral(solvars[i]) && SCIPisIntegral(scip, solval) )
-               solval = SCIPround(scip, solval);
-
-            /* save in the master problem variable's data the quota of the corresponding original variable */
-            newvardata->data.mastervardata.origvars[j] = origvar;
-            newvardata->data.mastervardata.origvals[j] = solval;
-            SCIPhashmapInsertReal(newvardata->data.mastervardata.origvar2val, origvar, solval);
-            /* save the quota in the original variable's data */
-            SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, solval) );
-            j++;
-         }
+         /* save in the master problem variable's data the quota of the corresponding original variable */
+         newvardata->data.mastervardata.origvars[j] = origvar;
+         newvardata->data.mastervardata.origvals[j] = solval;
+         SCIPhashmapInsertReal(newvardata->data.mastervardata.origvar2val, origvar, solval);
+         /* save the quota in the original variable's data */
+         SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, solval) );
+         j++;
       }
    }
    if( trivialsol )
@@ -1522,11 +1448,6 @@ SCIP_RETCODE GCGcreateMasterVar(
       for( j = 0; j < npricingvars; ++j )
       {
          SCIP_VAR* origvar;
-
-         if( GCGvarIsCutting(pricingvars[j]) )
-            continue;
-
-
          assert(GCGvarIsPricing(pricingvars[j]));
 
          origvar = GCGpricingVarGetOrigvars(pricingvars[j])[0];
@@ -1542,12 +1463,9 @@ SCIP_RETCODE GCGcreateMasterVar(
          /* save the quota in the original variable's data */
          SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, 0.0) );
       }
-      j -= ncuttingvars;
    }
    assert(j == newvardata->data.mastervardata.norigvars);
-   assert(js == newvardata->data.mastervardata.ncuttingvars);
-
-   return SCIP_OKAY;
+return SCIP_OKAY;
 }
 
 /** creates initial master variables and the vardata */

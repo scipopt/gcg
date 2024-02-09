@@ -79,16 +79,6 @@ SCIP_Bool GCGvarIsMaster(
 #endif
 
 #ifdef NDEBUG
-#define GCGvarIsCutting(var)                 (SCIPvarGetData(var)->vartype == GCG_VARTYPE_CUTTING)
-#else
-/** returns TRUE or FALSE whether variable is a cutting variable or not */
-GCG_EXPORT
-SCIP_Bool GCGvarIsCutting(
-   SCIP_VAR*             var                 /**< SCIP variable structure */
-   );
-#endif
-
-#ifdef NDEBUG
 #define GCGoriginalVarIsLinking(var)         (SCIPvarGetData(var)->blocknr == -2)
 #else
 /** returns TRUE or FALSE whether variable is a linking variable or not */
@@ -675,18 +665,6 @@ GCG_EXPORT
 void GCGmasterVarSetIndex(
    SCIP_VAR*             var,                /**< SCIP variable structure */
    int                   index               /**< index */
-   );
-
-/** returns whether the cutting variable has a fixed coefficient */
-GCG_EXPORT
-SCIP_Bool GCGcuttingVarHasFixedObjCoef(
-   SCIP_VAR*             var                 /**< SCIP variable structure */
-   );
-
-/** returns the fixed coefficient of the cutting variable */
-GCG_EXPORT
-SCIP_Real GCGcuttingVarGetFixedObjCoef(
-   SCIP_VAR*             var                 /**< SCIP variable structure */
    );
 
 #ifdef __cplusplus

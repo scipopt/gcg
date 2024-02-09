@@ -43,7 +43,6 @@
 #include "pub_gcgcol.h"
 #include "pub_colpool.h"
 #include "pricestore_gcg.h"
-#include "type_gcgcol.h"
 
 /**@defgroup GCGPRICEROBJ GCG Variable Pricer Object
  * @ingroup PRICING_PUB
@@ -268,11 +267,6 @@ public:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
-   /** compute cutting variable cut coefficients of columns */
-   SCIP_RETCODE computeColCuttingCuts(
-      GCG_COL*              gcgcol              /**< GCG column data structure */
-      );
-
 private:
    ReducedCostPricing*    reducedcostpricing;
    FarkasPricing*         farkaspricing;
@@ -348,12 +342,6 @@ private:
 
    /** add variable with computed coefficients to the master cuts */
    SCIP_RETCODE addVariableToMastercutsFromGCGCol(
-      SCIP_VAR*             newvar,             /**< The new variable to add */
-      GCG_COL*              gcgcol              /**< GCG column data structure */
-      );
-
-   /** add variable with computed coefficients to the cutting cuts */
-   SCIP_RETCODE addVariableToCuttingcuts(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );

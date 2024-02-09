@@ -81,11 +81,6 @@ public:
       SCIP_ROW*             row                 /**< row to get dual value for */
       ) const = 0;
 
-   /** get dual value of a cutting row */
-   virtual SCIP_Real cutGetDual(
-      SCIP_ROW*             cut                 /**< cut to get dual value for */
-      ) const = 0;
-
    /** get objective value of variable */
    virtual SCIP_Real varGetObj(
       SCIP_VAR*             var                 /**< variable to get objective value for */
@@ -182,10 +177,6 @@ public:
      SCIP_ROW*             row
      ) const;
 
-   virtual SCIP_Real cutGetDual(
-      SCIP_ROW*             cut
-      ) const;
-
    virtual SCIP_Real varGetObj(
      SCIP_VAR*             var
      ) const ;
@@ -216,16 +207,12 @@ public:
    virtual SCIP_RETCODE addParameters();
 
    virtual SCIP_Real consGetDual(
-      SCIP*                 scip,
+      SCIP*                 scip, 
       SCIP_CONS*            cons
       ) const;
 
    virtual SCIP_Real rowGetDual(
       SCIP_ROW*             row
-      ) const;
-
-   virtual SCIP_Real cutGetDual(
-      SCIP_ROW*             cut
       ) const;
 
    virtual SCIP_Real varGetObj(
