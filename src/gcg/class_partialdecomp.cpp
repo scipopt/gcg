@@ -1237,9 +1237,9 @@ void PARTIALDECOMP::calcAggregationInformation(
 
    for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
    {
-      std::vector<int> currrep = std::vector<int>(0);
-      std::vector< std::vector<int> > currrepvarmapforthisrep =std::vector<std::vector<int>>(0);
-      std::vector<int> identityvec = std::vector<int>(0);
+      std::vector<int> currrep(0);
+      std::vector< std::vector<int> > currrepvarmapforthisrep(0);
+      std::vector<int> identityvec(0);
       bool containslinkingvar = FALSE;
 
       if( !identblocksforblock[b1].empty() )
@@ -1272,7 +1272,7 @@ void PARTIALDECOMP::calcAggregationInformation(
          {
             SCIP_Bool identical;
             SCIP_Bool notidentical;
-            std::vector<int> varmap;
+            std::vector<int> varmap(getNVarsForBlock(b1), -1);
             SCIP_HASHMAP* varmap2;
 
             notidentical = FALSE;
@@ -1980,7 +1980,7 @@ void PARTIALDECOMP::checkIdenticalBlocksBliss(
    SCIP_HASHMAP* consmap;
    SCIP_Result result;
 
-   varmap = std::vector<int>(getNVarsForBlock(b1), -1);
+   assert((int)varmap.size() == getNVarsForBlock(b1));
 
    SCIP_CALL_ABORT( SCIPhashmapCreate(&consmap,
       SCIPblkmem(scip ),
@@ -2031,7 +2031,7 @@ void PARTIALDECOMP::checkIdenticalBlocksBrute(
 {
    *identical = FALSE;
    SCIPdebugMessage("check block %d and block %d for identity...\n", b1, b2);
-   varmap = std::vector<int>(getNVars(), -1);
+   std::vector<int> tmpvarmap(getNVars(), -1);
    DETPROBDATA* detprobdata = this->getDetprobdata();
 
    /* check variables */
@@ -2077,7 +2077,7 @@ void PARTIALDECOMP::checkIdenticalBlocksBrute(
       }
 
       /* variables seem to be identical so far */
-      varmap[getVarsForBlock(b2)[i]] = getVarsForBlock(b1)[i];
+      tmpvarmap[getVarsForBlock(b2)[i]] = getVarsForBlock(b1)[i];
    }
 
    for( int i = 0; i < getNConssForBlock(b1); ++i )
@@ -2135,7 +2135,7 @@ void PARTIALDECOMP::checkIdenticalBlocksBrute(
 
       for( int v = 0; v < detprobdata->getNVarsForCons(cons1id) ; ++v )
       {
-         if( varmap[detprobdata->getVarsForCons(cons2id)[v]] != detprobdata->getVarsForCons(cons1id)[v])
+         if( tmpvarmap[detprobdata->getVarsForCons(cons2id)[v]] != detprobdata->getVarsForCons(cons1id)[v])
          {
             SCIPfreeBufferArray(scip, &vals1);
              SCIPfreeBufferArray(scip, &vals2);
@@ -2148,12 +2148,11 @@ void PARTIALDECOMP::checkIdenticalBlocksBrute(
       SCIPfreeBufferArray(scip, &vals2);
    }
 
-   varmap = std::vector<int>(getNVarsForBlock(b1), -1);
+   assert((int)varmap.size() == getNVarsForBlock(b1));
    for( int i = 0; i < getNVarsForBlock(b1); ++i )
       varmap[i] = i;
 
    *identical = TRUE;
-   return;
 }
 
 void PARTIALDECOMP::calcNCoeffsForBlockForMastercons()

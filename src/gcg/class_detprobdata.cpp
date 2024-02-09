@@ -784,6 +784,7 @@ int DETPROBDATA::getIndexForVar(
    SCIP_VAR* var
    )
 {
+   assert(var != NULL);
    return vartoindex[var];
 }
 
