@@ -114,8 +114,24 @@ SCIP_RETCODE readNDec(
                partialdec->setBlockStructure(block, nestedstructure);
             }
          }
-         // todo: set symmetry information
          GCGconshdlrDecompAddPreexisitingPartialDec(scip, partialdec);
+
+         std::function<int(int)> blockmapping = [&data] (int b)
+         {
+            assert(b < (int)data.rootdecomposition->blocks.size());
+            return data.rootdecomposition->blocks[b].symmetricalblock;
+         };
+         std::function<int(int)> varmapping = [&data, detprobdata] (int v)
+         {
+            SCIP_VAR* var = detprobdata->getVar(v);
+            assert(var != NULL);
+            assert(data.rootdecomposition->symmetrydata.find(SCIPvarGetName(var)) != data.rootdecomposition->symmetrydata.end());
+            return detprobdata->getIndexForVar(data.rootdecomposition->symmetrydata[SCIPvarGetName(var)].c_str());
+         };
+         if( !partialdec->setSymmetryInformation(blockmapping, varmapping) )
+         {
+            SCIPwarningMessage(scip, "Could not set symmetry information.\n");
+         }
       }
       else
          SCIPwarningMessage(scip, "No root decomposition is specified.\n");
@@ -198,6 +214,7 @@ BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
       else
          blockstructure->blockstructures.emplace_back();
    }
+   // @todo: set nested symmetry information
    return blockstructure;
 }
 

@@ -5685,4 +5685,65 @@ void PARTIALDECOMP::setTranslatedpartialdecid(
    PARTIALDECOMP::translatedpartialdecid = decid;
 }
 
+bool PARTIALDECOMP::setSymmetryInformation(
+   std::function<int(int)>& blockmapping,
+   std::function<int(int)>& varmapping
+   )
+{
+   bool success = true;
+   blockstoeqclasses.resize(getNBlocks());
+   for( int b = 0; b < getNBlocks(); ++b )
+   {
+      int rb = blockmapping(b);
+      if( rb == b )
+      {
+         // new equivalence class
+         blockstoeqclasses[b] = nequivalenceclasses;
+         assert((int)eqclasstoblocks.size() == nequivalenceclasses);
+         eqclasstoblocks.emplace_back();
+         eqclasstoblocks[nequivalenceclasses].push_back(b);
+         eqclassesvarmappings.emplace_back();
+         eqclassesvarmappings[nequivalenceclasses].emplace_back();
+         assert(eqclassesvarmappings[nequivalenceclasses].size() == 1);
+
+         for( int i = 0; i < getNVarsForBlock(b); ++i )
+         {
+            eqclassesvarmappings[nequivalenceclasses][0].push_back(i);
+         }
+         ++nequivalenceclasses;
+      }
+      else if( rb < b && rb >= 0 )
+      {
+         // existing equivalence class
+         int eqclass = blockstoeqclasses[rb];
+         if( eqclasstoblocks[eqclass][0] != rb )
+         {
+            // representative blocks are not consistent
+            success = false;
+            break;
+         }
+         int blockindex = (int)eqclasstoblocks[eqclass].size();
+         blockstoeqclasses[b] = eqclass;
+         eqclasstoblocks[eqclass].push_back(b);
+         eqclassesvarmappings[eqclass].emplace_back();
+
+         for( int i = 0; i < getNVarsForBlock(b); ++i )
+         {
+            assert(varmapping(varsforblocks[b][i]) >= 0 && varmapping(varsforblocks[b][i]) < getNVars() && isVarBlockvarOfBlock(varmapping(varsforblocks[b][i]), rb));
+            eqclassesvarmappings[eqclass][blockindex].push_back(getVarProbindexForBlock(varmapping(varsforblocks[b][i]), rb));
+         }
+      }
+      else
+      {
+         success = false;
+         break;
+      }
+   }
+
+   if( !success )
+      nequivalenceclasses = 0;
+
+   return success;
+}
+
 } /* namespace gcg */

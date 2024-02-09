@@ -44,6 +44,7 @@
 
 #include <vector>
 #include <string>
+#include <functional>
 
 #include "def.h"
 #include "class_conspartition.h"
@@ -2016,6 +2017,24 @@ public:
    GCG_EXPORT
    std::string buildDecChainString(
       );
+
+   /**
+    * @brief sets symmetry information
+    *
+    * Each block b must be mapped to its representative block rb with rb <= b. Furthermore, rb must be mapped to itself.
+    * It is assumed that a variable assigned to a representative block is mapped to itself (varmapping does not have
+    * to cover this case).
+    *
+    * @param blockmapping function that maps block ids to the ids of the representative blocks
+    * @param varmapping function that maps variable ids to the ids of the representative variables
+    *
+    * @returns true iff symmetry information was stored successfully
+    */
+    GCG_EXPORT
+    bool setSymmetryInformation(
+       std::function<int(int)>& blockmapping,
+       std::function<int(int)>& varmapping
+       );
 
 private:
 
