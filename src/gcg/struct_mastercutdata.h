@@ -37,7 +37,6 @@
 #define GCG_STRUCT_MASTERCUTDATA_H_
 
 #include <scip/type_cons.h>
-#include <scip/type_lp.h>
 #include <scip/type_var.h>
 
 #ifdef __cplusplus
@@ -47,11 +46,12 @@ extern "C" {
 /** data for master variables */
 struct GCG_MasterCutData
 {
-   SCIP_ROW*             mastercons;         /**< row in the master problem that represents the master cut */
+   SCIP_CONS*            mastercons;         /**< row in the master problem that represents the master cut */
    SCIP_VAR**            pricingvars;        /**< array of additional variables in the pricing programs inferred from the master cut */
    int                   npricingvars;       /**< number of additional variables in the pricing programs */
-   SCIP_CONS**           npricingconss;      /**< array of additional constraints in the pricing programs inferred from the master cut */
-   int                   nnpricingconss;     /**< number of additional constraints in the pricing programs */
+   SCIP_CONS**           pricingconss;       /**< array of additional constraints in the pricing programs inferred from the master cut */
+   int                   npricingconss;      /**< number of additional constraints in the pricing programs */
+   SCIP_Real             constantObjValue;   /**< constant part of the objective value of the master cut */
    int                   blocknr;            /**< block number of the master cut */
 };
 

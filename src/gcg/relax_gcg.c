@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    relax_gcg.c
- * 
+ *
  * @brief   GCG relaxator
  * @author  Gerald Gamrath
  * @author  Martin Bergner
@@ -43,6 +43,7 @@
 
 //#define SCIP_DEBUG
 
+#include <scip/type_branch.h>
 #include <string.h>
 
 #include "scip/scipdefplugins.h"
@@ -68,6 +69,8 @@
 #include "params_visu.h"
 
 #include "gcg.h"
+#include "type_branchgcg.h"
+#include "type_mastercutdata.h"
 
 #ifdef WITH_BLISS
 #include "pub_bliss.h"
@@ -3506,6 +3509,273 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
    }
 
    assert(i < relaxdata->nbranchrules);
+
+   return SCIP_OKAY;
+}
+
+/** notifies the branching rule that a new mastervariable was created while this node was active */
+GCG_EXPORT
+SCIP_RETCODE GCGrelaxBranchNewCol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
+   SCIP_VAR*             mastervar           /**< new mastervariable that was created */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   int i;
+
+   assert(scip != NULL);
+   assert(branchrule != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* search for the branching rule in the branchrules array */
+   for( i = 0; i < relaxdata->nbranchrules; i++ )
+   {
+      if( branchrule == relaxdata->branchrules[i]->branchrule )
+      {
+         /* call new mastervariable handler method of branching rule*/
+         if( relaxdata->branchrules[i]->branchnewcol != NULL )
+            SCIP_CALL( relaxdata->branchrules[i]->branchnewcol(relaxdata->masterprob, branchdata, mastervar) );
+
+         break;
+      }
+   }
+
+   assert(i < relaxdata->nbranchrules);
+
+   return SCIP_OKAY;
+}
+
+/** notifies the branching rule that the dual value to its masterconstraint has been determined */
+GCG_EXPORT
+SCIP_RETCODE GCGrelaxBranchUpdateDual(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
+   SCIP_Real             dual                /**< the new dual value */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   int i;
+
+   assert(scip != NULL);
+   assert(branchrule != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* search for the branching rule in the branchrules array */
+   for( i = 0; i < relaxdata->nbranchrules; i++ )
+   {
+      if( branchrule == relaxdata->branchrules[i]->branchrule )
+      {
+         /* call dual value update method of branching rule*/
+         if( relaxdata->branchrules[i]->branchupdatedual != NULL )
+            SCIP_CALL( relaxdata->branchrules[i]->branchupdatedual(relaxdata->masterprob, branchdata, dual) );
+
+         break;
+      }
+   }
+
+   assert(i < relaxdata->nbranchrules);
+
+   return SCIP_OKAY;
+}
+
+/** notifies multiple branching rules that the dual value to their masterconstraints has been determined */
+GCG_EXPORT
+SCIP_RETCODE GCGrelaxBranchUpdateDuals(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_BRANCHRULE**      branchrules,        /**< branching rules that did the branching */
+   GCG_BRANCHDATA**      branchdata,         /**< data representing the branching decisions */
+   SCIP_Real*            duals,              /**< the new dual values */
+   int                   nbranchrules        /**< number of branching rules */
+   )
+{
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+   assert(branchrules != NULL);
+   assert(branchdata != NULL);
+   assert(duals != NULL);
+
+   int i;
+
+   for( i = 0; i < nbranchrules; i++ )
+   {
+      /* call dual value update method of branching rule*/
+      if( branchrules[i]->branchupdatedual != NULL )
+         SCIP_CALL( branchrules[i]->branchupdatedual(scip, branchdata[i], duals[i]) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** gets the mastercutdata created by this branching rule, if any */
+GCG_EXPORT
+SCIP_RETCODE GCGrelaxBranchGetMasterCut(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
+   GCG_MASTERCUTDATA*    mastercutdata       /**< the mastercutdata to grab */
+   )
+{
+   SCIP* original;
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   int i;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+   assert(branchrule != NULL);
+   assert(mastercutdata == NULL);
+
+   original = GCGmasterGetOrigprob(scip);
+   assert(original != NULL);
+
+   relax = SCIPfindRelax(original, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* search for the branching rule in the branchrules array */
+   for( i = 0; i < relaxdata->nbranchrules; i++ )
+   {
+      if( branchrule == relaxdata->branchrules[i]->branchrule )
+      {
+         /* call mastercut getter method of branching rule */
+         if( relaxdata->branchrules[i]->branchgetmastercut != NULL )
+         {
+            assert(relaxdata->masterprob == scip);
+            SCIP_CALL( relaxdata->branchrules[i]->branchgetmastercut(scip, branchdata, mastercutdata) );
+            assert(mastercutdata != NULL);
+         }
+
+         break;
+      }
+   }
+
+   assert(i < relaxdata->nbranchrules);
+
+   return SCIP_OKAY;
+}
+
+/** get mastercuts of all active nods */
+GCG_EXPORT
+SCIP_RETCODE GCGrelaxBranchGetAllActiveMasterCuts(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_BRANCHRULE**      branchrules,        /**< branching rules that created mastercuts */
+   GCG_BRANCHDATA**      branchdata,         /**< data represeting the branching decisions of the active nodes */
+   GCG_MASTERCUTDATA**   mastercutdata,      /**< array of mastercuts generated by branching in all currently active nodes */
+   int*                  nmastercuts         /**< number of currently active branching rules that created mastercuts */
+   )
+{
+   SCIP* original;
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   int i;
+   SCIP_BRANCHRULE* currentscipbranchrule;
+   GCG_BRANCHRULE* currentgcgbranchrule;
+   SCIP_CONS* currentbranchcons;
+   GCG_BRANCHDATA* currentbranchdata;
+   GCG_MASTERCUTDATA* currentmastercutdata;
+   int count;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+   assert(branchrules == NULL);
+   assert(branchdata == NULL);
+   assert(mastercutdata == NULL);
+   assert(nmastercuts != NULL);
+
+   original = GCGmasterGetOrigprob(scip);
+   assert(original != NULL);
+
+   relax = SCIPfindRelax(original, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   count = 0;
+
+   currentbranchcons = GCGconsMasterbranchGetActiveCons(scip);
+   if( currentbranchcons == NULL )
+      return SCIP_OKAY;
+   currentscipbranchrule = GCGconsMasterbranchGetBranchrule(currentbranchcons);
+   if( currentscipbranchrule == NULL )
+      return SCIP_OKAY;
+   currentbranchdata = GCGconsMasterbranchGetBranchdata(currentbranchcons);
+   if( currentbranchdata == NULL )
+      return SCIP_OKAY;
+
+   while( TRUE )
+   {
+      currentmastercutdata = NULL;
+      for( i = 0; i < relaxdata->nbranchrules; i++ )
+      {
+         currentgcgbranchrule = relaxdata->branchrules[i];
+         if( currentscipbranchrule == currentgcgbranchrule->branchrule )
+         {
+            /* call mastercut getter method of branching rule */
+            if( currentgcgbranchrule->branchgetmastercut != NULL )
+            {
+               assert(relaxdata->masterprob == scip);
+               SCIP_CALL( currentgcgbranchrule->branchgetmastercut(scip, currentbranchdata, currentmastercutdata) );
+               assert(mastercutdata != NULL);
+            }
+
+            break;
+         }
+      }
+
+      if( currentmastercutdata != NULL )
+      {
+         if( count == 0 )
+         {
+            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchrules, 1) );
+            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchdata, 1) );
+            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &mastercutdata, 1) );
+            branchrules[0] = currentgcgbranchrule;
+            branchdata[0] = currentbranchdata;
+            mastercutdata[0] = currentmastercutdata;
+         }
+         else
+         {
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchrules, count, count + 1) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &branchdata, count, count + 1) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &mastercutdata, count, count + 1) );
+            branchrules[count] = currentgcgbranchrule;
+            branchdata[count] = currentbranchdata;
+            mastercutdata[count] = currentmastercutdata;
+            count += 1;
+         }
+      }
+
+      // go to parent node
+      currentbranchcons = GCGconsMasterbranchGetParentcons(currentbranchcons);
+      if( currentbranchcons == NULL )
+         break;
+      currentscipbranchrule = GCGconsMasterbranchGetBranchrule(currentbranchcons);
+      if( currentscipbranchrule == NULL )
+         break;
+      currentbranchdata = GCGconsMasterbranchGetBranchdata(currentbranchcons);
+      if( currentbranchdata == NULL )
+         break;
+   }
+
+   *nmastercuts = count;
 
    return SCIP_OKAY;
 }

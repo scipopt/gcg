@@ -40,6 +40,8 @@
 #include "type_mastercutdata.h"
 
 #include "scip/scip.h"
+#include <scip/type_retcode.h>
+#include <scip/type_scip.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,6 +56,28 @@ extern "C" {
 /** get the blocknr of a mastercut */
 GCG_EXPORT
 int GCGmastercutGetBlocknr(
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   );
+
+/** determine whether the mastercutdata is active in the masterscip */
+GCG_EXPORT
+SCIP_Bool GCGmastercutIsActive(
+   SCIP*                  masterscip,         /**< master scip */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   );
+
+
+/** activate the mastercutdata */
+GCG_EXPORT
+SCIP_RETCODE GCGmastercutActivate(
+   SCIP*                  masterscip,         /**< master scip */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   );
+
+/** deactivate the mastercutdata */
+GCG_EXPORT
+SCIP_RETCODE GCGmastercutDeactivate(
+   SCIP*                  masterscip,         /**< master scip */
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    );
 

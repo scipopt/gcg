@@ -37,6 +37,10 @@
 #include "mastercutdata.h"
 #include "type_mastercutdata.h"
 
+#include <scip/cons_linear.h>
+#include <scip/pub_lp.h>
+#include <scip/scip.h>
+
 /**
  * @ingroup TODO-????
  *
@@ -53,4 +57,49 @@ int GCGmastercutGetBlocknr(
    int blocknr = mastercutdata->blocknr;
    assert(blocknr >= 0);
    return blocknr;
+}
+
+/** determine whether the mastercutdata is active in the masterscip */
+GCG_EXPORT
+SCIP_Bool GCGmastercutIsActive(
+   SCIP*                  masterscip,         /**< master scip */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   if( SCIProwIsInLP(SCIPgetRowLinear(masterscip, mastercutdata->mastercons)) )
+      return TRUE;
+
+   return FALSE;
+}
+
+/** activate the mastercutdata */
+GCG_EXPORT
+SCIP_RETCODE GCGmastercutActivate(
+   SCIP*                  masterscip,         /**< master scip */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(masterscip != NULL);
+   assert(mastercutdata != NULL);
+
+   SCIP_CALL( SCIPaddCons(masterscip, mastercutdata->mastercons) );
+
+   return SCIP_OKAY;
+}
+
+/** deactivate the mastercutdata */
+GCG_EXPORT
+SCIP_RETCODE GCGmastercutDeactivate(
+   SCIP*                  masterscip,         /**< master scip */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(masterscip != NULL);
+   assert(mastercutdata != NULL);
+
+   SCIP_CALL( SCIPdelCons(masterscip, mastercutdata->mastercons) );
+
+   return SCIP_OKAY;
 }

@@ -39,8 +39,13 @@
 /* #define SCIP_DEBUG */
 /* #define PRINTDUALSOLS */
 
+#include "mastercutdata.h"
+#include "struct_vardata.h"
 #include <cassert>
 #include <cstring>
+#include <scip/pub_var.h>
+#include <scip/type_lp.h>
+#include <scip/var.h>
 
 /*lint -e64 disable useless and wrong lint warning */
 
@@ -2699,6 +2704,10 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    int nfoundvars;
    SCIP_Bool optimal;
    bool probingnode;
+   GCG_BRANCHRULE** branchrules;
+   GCG_BRANCHDATA** branchdata;
+   GCG_MASTERCUTDATA** branchmastercutdata;
+   int nbranchmastercuts;
 
 #ifdef SCIP_STATISTIC
    SCIP_Real** olddualvalues;
@@ -2728,6 +2737,12 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       *lowerbound = -SCIPinfinity(scip_);
 
    maxniters = pricingcontroller->getMaxNIters();
+
+   branchrules = NULL;
+   branchdata = NULL;
+   branchmastercutdata = NULL;
+   nbranchmastercuts = 0;
+   SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, branchrules, branchdata, branchmastercutdata, &nbranchmastercuts) );
 
    // disable colpool while probing mode is active (can be removed after a feasibility check (#586) is implemented)
    probingnode = (SCIPnodeGetType(SCIPgetCurrentNode(scip_)) == SCIP_NODETYPE_PROBINGNODE);
@@ -2793,9 +2808,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             olddualvalues[i][j] = pricerdata->realdualvalues[i][j];
       }
    }
-#endif
 
-#ifdef SCIP_STATISTIC
    SCIPstatisticMessage("New pr, node %" SCIP_LONGINT_FORMAT "\n", SCIPgetNNodes(scip_));
    SCIPstatisticMessage("MLP t: %g\n", SCIPgetClockTime(scip_, scip_->stat->primallptime) + SCIPgetClockTime(scip_, scip_->stat->duallptime));
    nstabrounds = 0;
@@ -2841,9 +2854,41 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       SCIP_CALL( freePricingProblems() );
       SCIP_CALL( setPricingObjs(pricetype, stabilized) );
 
+      /* @todo-mastercuts : give mastercutdata new dual values
+       * Need to call the following somewhere:
+       * SCIP_CALL( GCGrelaxBranchUpdateDuals(scip_, branchrules, branchdata, "duals", nbranchmastercuts) );
+       */
+
+      /* apply the inferred pricing modifications from the mastercuts */
+      for( i=0; i<nbranchmastercuts; ++i )
+      {
+         assert(GCGmastercutIsActive(scip_, branchmastercutdata[i]));
+
+         // get the pricing problem
+         SCIP* pricingprob = GCGgetPricingprob(scip_, branchmastercutdata[i]->blocknr);
+         assert(pricingprob != NULL);
+
+         // add the constant objective term
+         SCIP_CALL( SCIPaddObjoffset(pricingprob, branchmastercutdata[i]->constantObjValue) );
+
+         // add the inferred pricing variables
+         for( j=0; j<branchmastercutdata[i]->npricingvars; j++)
+         {
+            assert(SCIPvarGetData(branchmastercutdata[i]->pricingvars[j])->vartype == GCG_VARTYPE_INFERREDPRICING);
+            SCIP_CALL( SCIPaddVar(pricingprob, branchmastercutdata[i]->pricingvars[j]) );
+         }
+
+         // add the inferred pricing constraints
+         for( j=0; j<branchmastercutdata[i]->npricingconss; j++)
+         {
+            SCIP_CALL( SCIPaddCons(pricingprob, branchmastercutdata[i]->pricingconss[j]) );
+         }
+      }
+
       /* call update method of pricing solvers to update objectives;
        * also, let them update their bounds since the transformed pricing problems
        * might have contained generic branching bounds before freeing
+       * additionally, notify them of possible changes when adding the inferred pricing modifications
        */
       for( i = 0; i < pricerdata->nsolvers; ++i  )
       {
@@ -2851,7 +2896,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          {
             if( pricerdata->pricingprobs[j] != NULL )
             {
-               SCIP_CALL( GCGsolverUpdate(pricerdata->pricingprobs[j], pricerdata->solvers[i], j, TRUE, TRUE, FALSE) );
+               SCIP_CALL( GCGsolverUpdate(pricerdata->pricingprobs[j], pricerdata->solvers[i], j, TRUE, TRUE, TRUE) );
             }
          }
       }
@@ -2982,6 +3027,34 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       }
 
       SCIP_CALL( retcode );
+
+      /* undo the inferred pricing modifications from the mastercuts */
+      for( i=0; i<nbranchmastercuts; ++i )
+      {
+         assert(GCGmastercutIsActive(scip_, branchmastercutdata[i]));
+
+         // get the pricing problem
+         SCIP* pricingprob = GCGgetPricingprob(scip_, branchmastercutdata[i]->blocknr);
+         assert(pricingprob != NULL);
+
+         // add the constant objective term
+         SCIP_CALL( SCIPaddObjoffset(pricingprob, -(branchmastercutdata[i]->constantObjValue)) );
+
+         // add the inferred pricing variables
+         for( j=0; j<branchmastercutdata[i]->npricingvars; j++)
+         {
+            assert(SCIPvarGetData(branchmastercutdata[i]->pricingvars[j])->vartype == GCG_VARTYPE_INFERREDPRICING);
+            SCIP_Bool deleted = FALSE;
+            SCIP_CALL( SCIPdelVar(pricingprob, branchmastercutdata[i]->pricingvars[j], &deleted) );
+            assert(deleted);
+         }
+
+         // add the inferred pricing constraints
+         for( j=0; j<branchmastercutdata[i]->npricingconss; j++)
+         {
+            SCIP_CALL( SCIPdelCons(pricingprob, branchmastercutdata[i]->pricingconss[j]) );
+         }
+      }
 
       /* collect results from all performed pricing jobs */
       getBestCols(bestcols);
@@ -3161,6 +3234,17 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       pricerdata->dualdiff = 0.0;
    }
 #endif
+
+   // free branchrules and -data
+   if( nbranchmastercuts>0 )
+   {
+      SCIPfreeBlockMemoryArrayNull(scip_, &branchrules, nbranchmastercuts);
+      SCIPfreeBlockMemoryArrayNull(scip_, &branchdata, nbranchmastercuts);
+      SCIPfreeBlockMemoryArrayNull(scip_, &branchmastercutdata, nbranchmastercuts);
+      branchrules = NULL;
+      branchdata = NULL;
+      branchmastercutdata = NULL;
+   }
 
    return SCIP_OKAY;
 }

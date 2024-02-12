@@ -36,9 +36,12 @@
 #ifndef GCG_TYPE_BRANCHGCG_H__
 #define GCG_TYPE_BRANCHGCG_H__
 
+#include "type_mastercutdata.h"
+
 #include "scip/def.h"
 #include "scip/type_result.h"
 #include "scip/type_scip.h"
+#include "scip/type_var.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -112,6 +115,32 @@ typedef enum GCG_BoundType GCG_BOUNDTYPE;
  *    branchdata      : pointer to the branching data to free
  */
 #define GCG_DECL_BRANCHDATADELETE(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA** branchdata)
+
+/** notify the branching rule that a new mastervariable was created while this node was active
+ *
+ *  input:
+ *    scip            : SCIP main data structure of the original problem
+ *    branchdata      : the branching data
+ *    mastervar       : pointer to the new master variable
+ */
+#define GCG_DECL_BRANCHNEWCOL(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, SCIP_VAR* mastervar)
+
+/** notify the branching rule that the dual value to its masterconstraint has been determined
+ *
+ *  input:
+ *    scip            : SCIP main data structure of the original problem
+ *    branchdata      : the branching data
+ *    dual            : the new dual value
+ */
+#define GCG_DECL_BRANCHUPDATEDUAL(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, SCIP_Real dual)
+
+/** get the mastercutdata created by this branching rule, if any
+ *
+ *  input:
+ *    scip            : SCIP main data structure of the original problem
+ *    branchdata      : the branching data
+ */
+#define GCG_DECL_BRANCHGETMASTERCUT(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, GCG_MASTERCUTDATA* mastercutdata)
 
 #ifdef __cplusplus
 }

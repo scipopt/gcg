@@ -45,6 +45,7 @@
 #include "blockmemshell/memory.h"
 #include "pricer_gcg.h"
 #include "sepa_master.h"
+#include "struct_vardata.h"
 
 #include <assert.h>
 
@@ -93,10 +94,13 @@ SCIP_RETCODE GCGcreateGcgCol(
       SCIP_Real constant;
       SCIP_Real origval;
 
+      origvar = vars[i];
+
+      if( SCIPvarGetData(origvar)->vartype == GCG_VARTYPE_INFERREDPRICING )
+         continue;
+
       scalar = 1.0;
       constant = 0.0;
-
-      origvar = vars[i];
 
       /* todo: capture vars? */
       SCIP_CALL( SCIPvarGetOrigvarSum(&origvar, &scalar, &constant) );
