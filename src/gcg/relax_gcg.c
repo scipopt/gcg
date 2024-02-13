@@ -3317,7 +3317,10 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
    GCG_DECL_BRANCHDEACTIVEMASTER((*branchdeactivemaster)),/**<  deactivation method for branchrule */
    GCG_DECL_BRANCHPROPMASTER((*branchpropmaster)),/**<  propagation method for branchrule */
    GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved)),/**<  master solved method for branchrule */
-   GCG_DECL_BRANCHDATADELETE((*branchdatadelete))/**<  branchdata deletion method for branchrule */
+   GCG_DECL_BRANCHDATADELETE((*branchdatadelete)),/**<  branchdata deletion method for branchrule */
+   GCG_DECL_BRANCHNEWCOL ((*branchnewcol)),  /**< new column handler method of branching rule */
+   GCG_DECL_BRANCHUPDATEDUAL ((*branchupdatedual)),/**< dual value handler method of branching rule */
+   GCG_DECL_BRANCHGETMASTERCUT ((*branchgetmastercut))/**< mastercut getter of branching rule */
    )
 {
    SCIP_RELAX* relax;
@@ -3345,6 +3348,9 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
    relaxdata->branchrules[pos]->branchpropmaster = branchpropmaster;
    relaxdata->branchrules[pos]->branchmastersolved = branchmastersolved;
    relaxdata->branchrules[pos]->branchdatadelete = branchdatadelete;
+   relaxdata->branchrules[pos]->branchnewcol = branchnewcol;
+   relaxdata->branchrules[pos]->branchupdatedual = branchupdatedual;
+   relaxdata->branchrules[pos]->branchgetmastercut = branchgetmastercut;
    relaxdata->nbranchrules++;
 
    return SCIP_OKAY;
@@ -3593,30 +3599,23 @@ SCIP_RETCODE GCGrelaxBranchUpdateDual(
    return SCIP_OKAY;
 }
 
-/** notifies multiple branching rules that the dual value to their masterconstraints has been determined */
+/** notifies the branching rule that the dual value to its masterconstraint has been determined */
 GCG_EXPORT
-SCIP_RETCODE GCGrelaxBranchUpdateDuals(
+SCIP_RETCODE GCGrelaxBranchUpdateDualWithGCGBranchrule(
    SCIP*                 scip,               /**< SCIP data structure */
-   GCG_BRANCHRULE**      branchrules,        /**< branching rules that did the branching */
-   GCG_BRANCHDATA**      branchdata,         /**< data representing the branching decisions */
-   SCIP_Real*            duals,              /**< the new dual values */
-   int                   nbranchrules        /**< number of branching rules */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
+   SCIP_Real             dual                /**< the new dual value */
    )
 {
    assert(scip != NULL);
    assert(GCGisMaster(scip));
-   assert(branchrules != NULL);
+   assert(branchrule != NULL);
    assert(branchdata != NULL);
-   assert(duals != NULL);
 
-   int i;
-
-   for( i = 0; i < nbranchrules; i++ )
-   {
-      /* call dual value update method of branching rule*/
-      if( branchrules[i]->branchupdatedual != NULL )
-         SCIP_CALL( branchrules[i]->branchupdatedual(scip, branchdata[i], duals[i]) );
-   }
+   /* call dual value update method of branching rule*/
+   if( branchrule->branchupdatedual != NULL )
+      SCIP_CALL( branchrule->branchupdatedual(scip, branchdata, dual) );
 
    return SCIP_OKAY;
 }

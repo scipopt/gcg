@@ -38,6 +38,9 @@
 
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
+#include "type_mastercutdata.h"
+#include <scip/type_misc.h>
+#include <scip/type_retcode.h>
 
 namespace gcg {
 
@@ -56,6 +59,7 @@ private:
    int stabcenterlinkingconsvalssize;
    SCIP_Real* stabcenterconv;
    int nstabcenterconv;
+   SCIP_HASHMAP* stabcentermasterconsvals;
    SCIP_Real dualdiffnorm; /**< norm of difference between stabcenter and current duals */
    SCIP_Real* subgradientconsvals;
    int subgradientconsvalssize;
@@ -65,6 +69,7 @@ private:
    int nsubgradientcutvals;
    SCIP_Real* subgradientlinkingconsvals;
    int subgradientlinkingconsvalssize;
+   SCIP_HASHMAP* subgradientmasterconsvals;
    SCIP_Real subgradientnorm;
    SCIP_Real hybridfactor;
    PricingType* pricingtype;
@@ -110,11 +115,18 @@ public:
       int i
    );
 
+   SCIP_RETCODE mastercutGetDual(
+      GCG_MASTERCUTDATA*    mastercutdata,      /**< mastercutdata */
+      SCIP_Real*            dual                /**< return pointer for dual value */
+   );
+
    /** updates the stability center if the bound has increased */
    SCIP_RETCODE updateStabilityCenter(
       SCIP_Real             lowerbound,         /**< lower bound due to lagrange function corresponding to current (stabilized) dual vars */
       SCIP_Real*            dualsolconv,        /**< corresponding feasible dual solution for convexity constraints */
-      GCG_COL**             pricingcols         /**< columns of the pricing problems */
+      GCG_COL**             pricingcols,        /**< columns of the pricing problems */
+      GCG_MASTERCUTDATA**   mastercutdata,      /**< array of mastercutdata */
+      int                   nmastercuts         /**< number of mastercuts */
    );
 
    /** updates the alpha after unsuccessful pricing */

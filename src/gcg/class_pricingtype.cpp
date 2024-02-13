@@ -40,6 +40,7 @@
 #include "scip/pub_lp.h"
 #include "scip/clock.h"
 #include "scip_misc.h"
+#include "type_mastercutdata.h"
 
 #include <exception>
 
@@ -139,6 +140,14 @@ SCIP_Real FarkasPricing::rowGetDual(
    return SCIProwGetDualfarkas(row);
 }
 
+SCIP_Real FarkasPricing::mastercutGetDual(
+   SCIP*                 scip,
+   GCG_MASTERCUTDATA*    mastercutdata
+   ) const
+{
+   return SCIPgetDualfarkasLinear(scip, mastercutdata->mastercons);
+}
+
 SCIP_Real FarkasPricing::varGetObj(
    SCIP_VAR*             var
    ) const
@@ -197,6 +206,14 @@ SCIP_Real ReducedCostPricing::rowGetDual(
    ) const
 {
    return SCIProwGetDualsol(row);
+}
+
+SCIP_Real ReducedCostPricing::mastercutGetDual(
+   SCIP*                 scip,
+   GCG_MASTERCUTDATA*    mastercutdata
+   ) const
+{
+   return SCIPgetDualsolLinear(scip, mastercutdata->mastercons);
 }
 
 ReducedCostPricing::ReducedCostPricing(

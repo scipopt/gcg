@@ -43,6 +43,7 @@
 #include "pub_gcgcol.h"
 #include "pub_colpool.h"
 #include "pricestore_gcg.h"
+#include "type_branchgcg.h"
 
 /**@defgroup GCGPRICEROBJ GCG Variable Pricer Object
  * @ingroup PRICING_PUB
@@ -105,7 +106,11 @@ public:
    /** computes the pricing problem objectives */
    SCIP_RETCODE setPricingObjs(
       PricingType*          pricetype,          /**< Farkas or Reduced cost pricing */
-      SCIP_Bool             stabilize           /**< do we use stabilization ? */
+      SCIP_Bool             stabilize,          /**< do we use stabilization ? */
+      GCG_BRANCHRULE**      branchrules,        /**< array of branchrules */
+      GCG_BRANCHDATA**      branchdata,         /**< array of branchdata */
+      GCG_MASTERCUTDATA**   branchmastercutdata,/**< array of mastercutdata */
+      int                   nbranchmastercuts   /**< number of mastercuts */
    );
 
    /** update reduced cost of columns in column pool */

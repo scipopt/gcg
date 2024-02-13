@@ -96,9 +96,6 @@ SCIP_RETCODE GCGcreateGcgCol(
 
       origvar = vars[i];
 
-      if( SCIPvarGetData(origvar)->vartype == GCG_VARTYPE_INFERREDPRICING )
-         continue;
-
       scalar = 1.0;
       constant = 0.0;
 

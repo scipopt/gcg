@@ -79,6 +79,16 @@ SCIP_Bool GCGvarIsMaster(
 #endif
 
 #ifdef NDEBUG
+#define GCGvarIsInferredPricing(var)         (SCIPvarGetData(var)->vartype == GCG_VARTYPE_INFERREDPRICING)
+#else
+/** returns TRUE or FALSE whether variable is a inferred pricing variable or not */
+GCG_EXPORT
+SCIP_Bool GCGvarIsInferredPricing(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   );
+#endif
+
+#ifdef NDEBUG
 #define GCGoriginalVarIsLinking(var)         (SCIPvarGetData(var)->blocknr == -2)
 #else
 /** returns TRUE or FALSE whether variable is a linking variable or not */

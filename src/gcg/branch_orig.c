@@ -77,7 +77,7 @@
 #define DEFAULT_MAXPHASE1OUTCANDS      20
 #define DEFAULT_MAXPHASE1OUTCANDSFRAC  0.7
 #define DEFAULT_PHASE2GAPWEIGHT        1
-/**/   
+/**/
 
 
 /** branching rule data */
@@ -113,7 +113,7 @@ struct GCG_BranchData
 
 /* returns TRUE iff
  * iter = 0 and branchcand is an integer variable belonging to a unique block with fractional value, or
- * iter = 1 and branchcand is an integer variable that belongs to no block but was directly transferred to the 
+ * iter = 1 and branchcand is an integer variable that belongs to no block but was directly transferred to the
  *            master problem and which has a fractional value in the current solution
  */
 static
@@ -159,7 +159,7 @@ SCIP_Bool getUniqueBlockFlagForIter(
       }
       /* candidate is valid in first iteration */
       return TRUE;
-      
+
    }
    else /* iter == 1 */
    {
@@ -204,9 +204,9 @@ SCIP_RETCODE branchVar(
 
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
-   
+
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
-   
+
    assert(scip != NULL);
    assert(branchrule != NULL);
    assert(branchvar != NULL);
@@ -490,7 +490,7 @@ static SCIP_Real score_function(
    {
       if( !branchruledata->mostfrac )
          return 1;
-         
+
       *score = solval - SCIPfloor(scip, solval);
       *score = MIN(*score, 1.0 - *score);
    }
@@ -602,7 +602,7 @@ SCIP_RETCODE branchExtern(
          solval = SCIPgetRelaxSolVal(scip, branchvar);
       }
 
-      
+
    }
    else
    {
@@ -612,15 +612,15 @@ SCIP_RETCODE branchExtern(
 
    if( upinf && downinf )
       return SCIP_OKAY;
-      
+
    if( branchvar == NULL )
    {
       SCIPdebugMessage("Original branching rule could not find a variable to branch on!\n");
       return SCIP_OKAY;
    }
-   
+
    assert(!(upinf && downinf));
-   
+
    SCIPdebugMessage("Original branching rule selected variable %s%s\n",
                     SCIPvarGetName(branchvar), (upinf || downinf)? ", which is infeasible in one direction" : "");
 
@@ -822,7 +822,7 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
    SCIPdebugMessage("Init orig branching rule\n");
 
    SCIP_CALL( GCGrelaxIncludeBranchrule( origprob, branchrule, branchActiveMasterOrig,
-         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig) );
+         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig, NULL, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -881,7 +881,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
       assert(GCGvarIsOriginal(branchcands[i]));
 
       /* variable belongs to no block or the block is not unique */
-      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGgetNIdenticalBlocks(origscip, 
+      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGgetNIdenticalBlocks(origscip,
                                                                          GCGvarGetBlock(branchcands[i])) != 1 )
          continue;
 
@@ -1006,7 +1006,7 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
 
    /* alloc branching rule data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &branchruledata) );
-   
+
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchruleBasic(scip, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
             BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata) );
