@@ -5686,8 +5686,8 @@ void PARTIALDECOMP::setTranslatedpartialdecid(
 }
 
 bool PARTIALDECOMP::setSymmetryInformation(
-   std::function<int(int)>& blockmapping,
-   std::function<int(int)>& varmapping
+   std::function<int(int)> blockmapping,
+   std::function<int(int, int)> varmapping
    )
 {
    bool success = true;
@@ -5729,8 +5729,8 @@ bool PARTIALDECOMP::setSymmetryInformation(
 
          for( int i = 0; i < getNVarsForBlock(b); ++i )
          {
-            assert(varmapping(varsforblocks[b][i]) >= 0 && varmapping(varsforblocks[b][i]) < getNVars() && isVarBlockvarOfBlock(varmapping(varsforblocks[b][i]), rb));
-            eqclassesvarmappings[eqclass][blockindex].push_back(getVarProbindexForBlock(varmapping(varsforblocks[b][i]), rb));
+            assert(varmapping(b, i) >= 0 && varmapping(b, i) < getNVarsForBlock(rb));
+            eqclassesvarmappings[eqclass][blockindex].push_back(varmapping(b, i));
          }
       }
       else

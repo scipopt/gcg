@@ -227,7 +227,8 @@ void DETPROBDATA::getTranslatedPartialdecs(
    std::vector<int>& rowthistoother,
    std::vector<int>& colothertothis,
    std::vector<int>& colthistoother,
-   std::vector<PARTIALDECOMP*>& translatedpartialdecs
+   std::vector<PARTIALDECOMP*>& translatedpartialdecs,
+   SCIP_Bool translateSymmetry
    )
 {
    for( auto otherpartialdec : origpartialdecs )
@@ -303,6 +304,32 @@ void DETPROBDATA::getTranslatedPartialdecs(
 
       newpartialdec->setFinishedByFinisher(otherpartialdec->getFinishedByFinisher());
       newpartialdec->prepare();
+
+      if( translateSymmetry && otherpartialdec->getNBlocks() == newpartialdec->getNBlocks() && otherpartialdec->aggInfoCalculated() )
+      {
+         newpartialdec->setSymmetryInformation(
+            [otherpartialdec] (int b)
+            {
+               return otherpartialdec->getReprBlockForEqClass(otherpartialdec->getEqClassForBlock(b));
+            },
+            [&colothertothis, &colthistoother, otherpartialdec, newpartialdec] (int b, int vi)
+            {
+               int v = newpartialdec->getVarsForBlock(b)[vi];
+               int eqclass = otherpartialdec->getEqClassForBlock(b);
+               int rb = otherpartialdec->getReprBlockForEqClass(eqclass);
+               auto& eqclassblocks = otherpartialdec->getBlocksForEqClass(eqclass);
+               assert(std::lower_bound(eqclassblocks.begin(), eqclassblocks.end(), b) != eqclassblocks.end());
+               int eqclassblock = (int) (std::lower_bound(eqclassblocks.begin(), eqclassblocks.end(), b) - eqclassblocks.begin());
+               assert(std::find(colthistoother.begin(), colthistoother.end(), v) != colthistoother.end());
+               int othervi = otherpartialdec->getVarsForBlock(b)[vi] == colthistoother[v] ? vi : otherpartialdec->getVarProbindexForBlock(colthistoother[v], b);
+               int blockVarIndex = otherpartialdec->getRepVarmap(eqclass, eqclassblock)[othervi];
+               if( newpartialdec->getVarsForBlock(rb)[blockVarIndex] == colothertothis[otherpartialdec->getVarsForBlock(rb)[blockVarIndex]] )
+                  return blockVarIndex;
+               else
+                  return newpartialdec->getVarProbindexForBlock(colothertothis[otherpartialdec->getVarsForBlock(rb)[blockVarIndex]], rb);
+            }
+         );
+      }
 
       newpartialdec->getScore(GCGgetCurrentScore(scip)) ;
 
@@ -1241,14 +1268,16 @@ std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
    std::vector<int> colthistoother;
    std::vector<int> missingrowinthis;
    std::vector<PARTIALDECOMP*> newpartialdecs;
+   int nmaxpresolrounds;
 
-   calcTranslationMapping( origdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
+   calcTranslationMapping(origdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis);
 
-   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL,
+   SCIPverbMessage(this->scip, SCIP_VERBLEVEL_HIGH, NULL,
       " calculated translation; number of missing constraints: %ld; number of other partialdecs: %ld \n", missingrowinthis.size(),
-      origpartialdecs.size() );
+      origpartialdecs.size());
 
-   getTranslatedPartialdecs( origpartialdecs, rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs );
+   SCIPgetIntParam(scip, "presolving/maxrounds", &nmaxpresolrounds);
+   getTranslatedPartialdecs(origpartialdecs, rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, nmaxpresolrounds == 0);
    return newpartialdecs;
 }
 
@@ -1262,15 +1291,17 @@ std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
    std::vector<int> colthistoother;
    std::vector<int> missingrowinthis;
    std::vector<PARTIALDECOMP*> newpartialdecs;
+   int nmaxpresolrounds;
 
-   calcTranslationMapping( origdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
+   calcTranslationMapping(origdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis);
 
-   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL,
+   SCIPverbMessage(this->scip, SCIP_VERBLEVEL_HIGH, NULL,
       " calculated translation; number of missing constraints: %ld; number of other partialdecs: %ld \n", missingrowinthis.size(),
-      (origdata->getOpenPartialdecs().size() + origdata->getFinishedPartialdecs().size()) );
+      (origdata->getOpenPartialdecs().size() + origdata->getFinishedPartialdecs().size()));
 
-   getTranslatedPartialdecs( origdata->getOpenPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs );
-   getTranslatedPartialdecs( origdata->getFinishedPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs );
+   SCIPgetIntParam(scip, "presolving/maxrounds", &nmaxpresolrounds);
+   getTranslatedPartialdecs(origdata->getOpenPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, nmaxpresolrounds == 0);
+   getTranslatedPartialdecs(origdata->getFinishedPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, nmaxpresolrounds == 0);
    return newpartialdecs;
 }
 

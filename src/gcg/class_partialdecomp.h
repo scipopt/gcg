@@ -2026,14 +2026,14 @@ public:
     * to cover this case).
     *
     * @param blockmapping function that maps block ids to the ids of the representative blocks
-    * @param varmapping function that maps variable ids to the ids of the representative variables
+    * @param varmapping function that maps tuples (block, variable index (in the block)) to the indices of the representative variables (in their blocks)
     *
     * @returns true iff symmetry information was stored successfully
     */
     GCG_EXPORT
     bool setSymmetryInformation(
-       std::function<int(int)>& blockmapping,
-       std::function<int(int)>& varmapping
+       std::function<int(int)> blockmapping,
+       std::function<int(int, int)> varmapping
        );
 
 private:
