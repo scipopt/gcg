@@ -1249,7 +1249,7 @@ public:
     * @brief  Gets the index of a variable in the vector returned by PARTIALDECOMP::getVarsForBlock.
     * @param varid the id of the variable
     * @param block the corresponding block id
-    * @return the index of the variable
+    * @return the index of the variable or -1 if var is not in block
     */
    GCG_EXPORT
    int getVarProbindexForBlock(
