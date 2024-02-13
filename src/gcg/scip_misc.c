@@ -98,9 +98,9 @@ consType GCGconsGetType(
       return sos2;
    }
    else if( strcmp(conshdlrname, "indicator") == 0 )
-      {
-         return sos2;
-      }
+   {
+      return indicator;
+   }
    return unknown;
 }
 
