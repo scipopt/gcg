@@ -118,22 +118,56 @@ SCIP_RETCODE readNDec(
 
          if( !data.rootdecomposition->symmetrydata.empty() )
          {
-            bool success = partialdec->setSymmetryInformation(
-               [&data] (int b)
-               {
-                  assert(b < (int)data.rootdecomposition->blocks.size());
-                  return data.rootdecomposition->blocks[b].symmetricalblock;
-               },
-               [&data, detprobdata, partialdec] (int b, int vi)
+            bool success = true;
+            auto& symmetrydata = data.rootdecomposition->symmetrydata;
+
+            for( int b = 0; b < partialdec->getNBlocks() && success; ++b )
+            {
+               int symmetricalblock = data.rootdecomposition->blocks[b].symmetricalblock;
+               for( int vi = 0; vi < partialdec->getNVarsForBlock(b) && success; ++vi )
                {
                   SCIP_VAR* var = detprobdata->getVar(partialdec->getVarsForBlock(b)[vi]);
                   assert(var != NULL);
-                  assert(data.rootdecomposition->symmetrydata.find(SCIPvarGetName(var)) != data.rootdecomposition->symmetrydata.end());
-                  int ri = detprobdata->getIndexForVar(data.rootdecomposition->symmetrydata[SCIPvarGetName(var)].c_str());
-                  assert(partialdec->getVarProbindexForBlock(ri, data.rootdecomposition->blocks[b].symmetricalblock) >= 0);
-                  return partialdec->getVarProbindexForBlock(ri, data.rootdecomposition->blocks[b].symmetricalblock);
+                  const auto& it = symmetrydata.find(SCIPvarGetName(var));
+                  if( symmetricalblock == b )
+                  {
+                     success = (it == symmetrydata.end() || it->first == it->second);
+                     assert(success);
+                  }
+                  else if( it != symmetrydata.end() )
+                  {
+                     SCIP_VAR* reprvar = SCIPfindVar(scip, it->second.c_str());
+                     success = (reprvar != NULL &&
+                        partialdec->getVarProbindexForBlock(detprobdata->getIndexForVar(reprvar), symmetricalblock) >= 0);
+                     assert(success);
+                  }
+                  else
+                  {
+                     success = false;
+                     assert(success);
+                  }
                }
-            );
+            }
+
+            if( success )
+            {
+               success = partialdec->setSymmetryInformation(
+                  [&data] (int b)
+                  {
+                     assert(b < (int)data.rootdecomposition->blocks.size());
+                     return data.rootdecomposition->blocks[b].symmetricalblock;
+                  },
+                  [&data, detprobdata, partialdec, &symmetrydata] (int b, int vi)
+                  {
+                     SCIP_VAR* var = detprobdata->getVar(partialdec->getVarsForBlock(b)[vi]);
+                     assert(var != NULL);
+                     assert(symmetrydata.find(SCIPvarGetName(var)) != symmetrydata.end());
+                     int ri = detprobdata->getIndexForVar(symmetrydata[SCIPvarGetName(var)].c_str());
+                     assert(partialdec->getVarProbindexForBlock(ri, data.rootdecomposition->blocks[b].symmetricalblock) >= 0);
+                     return partialdec->getVarProbindexForBlock(ri, data.rootdecomposition->blocks[b].symmetricalblock);
+                  }
+               );
+            }
             if( !success )
             {
                SCIPwarningMessage(scip, "Could not set symmetry information.\n");
