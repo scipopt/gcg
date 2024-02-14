@@ -2886,6 +2886,9 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
       SCIPdebugMessage("Problem has been already solved at this node\n");
    }
 
+   if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
+      *result = SCIP_CUTOFF;
+
    return SCIP_OKAY;
 }
 
