@@ -82,7 +82,7 @@ struct NestedDecompositionData
    int version;
    std::string name;
    bool presolved;
-   std::string comment;
+   std::string description;
    DecompositionData* rootdecomposition;
 };
 

@@ -614,11 +614,11 @@ void RootElementParser::handleKeyValuePair(
          error_ = true;
       }
    }
-   else if( strcmp(name, "comment") == 0 )
+   else if( strcmp(name, "description") == 0 )
    {
       if( json_is_string(value) )
       {
-         data_.comment = std::string(json_string_value(value));
+         data_.description = std::string(json_string_value(value));
       }
    }
    else if( strcmp(name, "presolved") == 0 )
