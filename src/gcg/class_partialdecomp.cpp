@@ -5712,6 +5712,7 @@ bool PARTIALDECOMP::setSymmetryInformation(
             eqclassesvarmappings[nequivalenceclasses][0].push_back(i);
          }
          ++nequivalenceclasses;
+         SCIPdebugMessage("Block %d is a representative block.\n", b);
       }
       else if( rb < b && rb >= 0 )
       {
@@ -5727,11 +5728,15 @@ bool PARTIALDECOMP::setSymmetryInformation(
          blockstoeqclasses[b] = eqclass;
          eqclasstoblocks[eqclass].push_back(b);
          eqclassesvarmappings[eqclass].emplace_back();
+         SCIPdebugMessage("Block %d is represented by block %d.\n", b, rb);
 
          for( int i = 0; i < getNVarsForBlock(b); ++i )
          {
             assert(varmapping(b, i) >= 0 && varmapping(b, i) < getNVarsForBlock(rb));
             eqclassesvarmappings[eqclass][blockindex].push_back(varmapping(b, i));
+            SCIPdebugMessage("Var <%s> is mapped to <%s>.\n",
+               SCIPvarGetName(getDetprobdata()->getVar(varsforblocks[b][i])),
+               SCIPvarGetName(getDetprobdata()->getVar(varsforblocks[rb][varmapping(b, i)])));
          }
       }
       else

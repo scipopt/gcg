@@ -686,6 +686,7 @@ SCIP_RETCODE checkIdenticalBlocks(
          // block b will be represented by block rb
          relaxdata->blockrepresentative[b] = rb;
          relaxdata->nblocksidentical[b] = 0;
+         SCIPdebugMessage("Block %d is represented by block %d.\n", b, rb);
 
          for( k = 0; k < GCGconshdlrDecompPartialdecGetNVarsForBlock(partialdec, b); ++k )
          {
@@ -700,6 +701,8 @@ SCIP_RETCODE checkIdenticalBlocks(
             GCGoriginalVarSetPricingVar(origvar, pricingvar);
             assert(GCGvarGetBlock(pricingvar) == rb);
             SCIP_CALL( GCGpricingVarAddOrigVar(relaxdata->pricingprobs[rb], pricingvar, origvar) );
+            SCIPdebugMessage("Var <%s> is mapped to <%s> (<%s>).\n", SCIPvarGetName(origvar), SCIPvarGetName(repvar),
+                  SCIPvarGetName(pricingvar));
          }
       }
    }
