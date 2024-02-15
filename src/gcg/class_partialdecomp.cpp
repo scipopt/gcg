@@ -61,6 +61,7 @@
 
 #ifdef WITH_BLISS
 #include "bliss_automorph.h"
+#include "bliss/defs.hh"
 #endif
 
 
