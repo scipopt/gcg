@@ -1185,10 +1185,6 @@ SCIP_RETCODE createMasterProblem(
    /* do not modify the time limit after solving the master problem */
    SCIP_CALL( SCIPsetBoolParam(masterscip, "reoptimization/commontimelimit", FALSE) );
 
-   /* disable aggregation and multiaggregation of variables, as this might lead to issues with copied original variables */
-   SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotaggr", TRUE) );
-   SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
-
    /* for Benders' decomposition, some additional parameter settings are required for the master problem. */
    if( mode == GCG_DECMODE_BENDERS )
    {
