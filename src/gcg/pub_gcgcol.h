@@ -225,15 +225,15 @@ SCIP_RETCODE GCGcolSetLinkvars(
    int                  nlinkvars           /**< number of linking variables in gcgcol->var */
    );
 
-/** get master cut coefficients of column */
+/** get original separator cut coefficients of column in master problem */
 GCG_EXPORT
-SCIP_Real* GCGcolGetMastercuts(
+SCIP_Real* GCGcolGetOriginalSepaMastercuts(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
-/** get number of master cut coefficients of column */
+/** get number of original separator cut coefficients of column in master problem */
 GCG_EXPORT
-int GCGcolGetNMastercuts(
+int GCGcolGetNOriginalSepaMastercuts(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
@@ -243,12 +243,12 @@ SCIP_Real GCGcolGetNorm(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
-/** update master cut coefficients information of column */
+/** update original separator cut coefficients information of column in the amster problem */
 GCG_EXPORT
-SCIP_RETCODE GCGcolUpdateMastercuts(
+SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
    GCG_COL*             gcgcol,             /**< gcg column structure */
-   SCIP_Real*           newmastercuts,      /**< pointer to new array of master cut coefficients */
-   int                  nnewmastercuts      /**< new number of master cut coefficients */
+   SCIP_Real*           neworiginalsepamastercuts,/**< pointer to new array of master cut coefficients */
+   int                  nneworiginalsepamastercuts/**< new number of master cut coefficients */
    );
 
 /** gets the age of the col */

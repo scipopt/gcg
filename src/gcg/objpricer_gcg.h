@@ -106,11 +106,7 @@ public:
    /** computes the pricing problem objectives */
    SCIP_RETCODE setPricingObjs(
       PricingType*          pricetype,          /**< Farkas or Reduced cost pricing */
-      SCIP_Bool             stabilize,          /**< do we use stabilization ? */
-      GCG_BRANCHRULE**      branchrules,        /**< array of branchrules */
-      GCG_BRANCHDATA**      branchdata,         /**< array of branchdata */
-      GCG_MASTERCUTDATA**   branchmastercutdata,/**< array of mastercutdata */
-      int                   nbranchmastercuts   /**< number of mastercuts */
+      SCIP_Bool             stabilize           /**< do we use stabilization ? */
    );
 
    /** update reduced cost of columns in column pool */
@@ -268,7 +264,7 @@ public:
       );
 
    /** compute master cut coefficients of column */
-   SCIP_RETCODE computeColMastercuts(
+   SCIP_RETCODE computeColOriginalSepaCuts(
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
@@ -337,7 +333,7 @@ private:
       );
 
    /** add variable with computed coefficients to the master cuts */
-   SCIP_RETCODE addVariableToMastercuts(
+   SCIP_RETCODE addVariableToOriginalSepaCuts(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
@@ -346,7 +342,7 @@ private:
       );
 
    /** add variable with computed coefficients to the master cuts */
-   SCIP_RETCODE addVariableToMastercutsFromGCGCol(
+   SCIP_RETCODE addVariableToOriginalSepaCutsFromGCGCol(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );

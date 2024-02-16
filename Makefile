@@ -341,7 +341,7 @@ LIBOBJ = \
 			gcg/score_strong.o \
 			gcg/score.o \
 			gcg/sepa_basis.o \
-			gcg/sepa_master.o \
+			gcg/sepa_original.o \
 			gcg/solver.o \
 			gcg/solver_knapsack.o \
 			gcg/solver_mip.o \

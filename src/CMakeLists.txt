@@ -145,7 +145,7 @@ set(gcgsources
     gcg/score_strong.cpp
     gcg/score.c
     gcg/sepa_basis.c
-    gcg/sepa_master.c
+    gcg/sepa_original.c
     gcg/solver_knapsack.c
     gcg/solver_mip.c
     gcg/solver.c
@@ -291,7 +291,7 @@ set(gcgheaders
     gcg/score_strong.h
     gcg/score.h
     gcg/sepa_basis.h
-    gcg/sepa_master.h
+    gcg/sepa_original.h
     gcg/solver.h
     gcg/solver_cliquer.h
     gcg/solver_knapsack.h
