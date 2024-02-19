@@ -53,55 +53,11 @@ extern "C" {
  * @{
  */
 
-/** get the blocknr of a mastercut */
-GCG_EXPORT
-int GCGmastercutGetBlocknr(
-   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
-   );
-
 /** determine whether the mastercutdata is active in the masterscip */
 GCG_EXPORT
 SCIP_Bool GCGmastercutIsActive(
    SCIP*                  masterscip,         /**< master scip */
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
-   );
-
-/** activate the mastercutdata */
-GCG_EXPORT
-SCIP_RETCODE GCGmastercutActivate(
-   SCIP*                  masterscip,         /**< master scip */
-   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
-   );
-
-/** deactivate the mastercutdata */
-GCG_EXPORT
-SCIP_RETCODE GCGmastercutDeactivate(
-   SCIP*                  masterscip,         /**< master scip */
-   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
-   );
-
-/** get all referenced pricing variables */
-GCG_EXPORT
-SCIP_RETCODE GCGmastercutGetAllReferencedPricingVariables(
-   SCIP*                  masterscip,         /**< master scip */
-   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
-   SCIP_VAR***            vars,               /**< pointer to store the array of variables */
-   int*                   nvars               /**< pointer to store the number of variables */
-   );
-
-/** determine whether a constraint is a given mastercut */
-GCG_EXPORT
-SCIP_Bool GCGmastercutIsConstraint(
-   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
-   SCIP_CONS*             cons                /**< constraint */
-   );
-
-/** determine wheter a constraint is any given mastercut */
-GCG_EXPORT
-SCIP_Bool GCGmastercutIsAnyConstraint(
-   GCG_MASTERCUTDATA**    mastercutdata,      /**< array of mastercut data */
-   int                    nmastercutdata,     /**< number of mastercut data */
-   SCIP_CONS*             cons                /**< constraint */
    );
 
 /**@} */
