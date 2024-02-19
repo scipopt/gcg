@@ -43,6 +43,7 @@
 #include "pub_gcgcol.h"
 #include "pub_colpool.h"
 #include "pricestore_gcg.h"
+#include "type_branchgcg.h"
 
 /**@defgroup GCGPRICEROBJ GCG Variable Pricer Object
  * @ingroup PRICING_PUB
@@ -263,7 +264,7 @@ public:
       );
 
    /** compute master cut coefficients of column */
-   SCIP_RETCODE computeColMastercuts(
+   SCIP_RETCODE computeColOriginalSepaCuts(
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
@@ -332,7 +333,7 @@ private:
       );
 
    /** add variable with computed coefficients to the master cuts */
-   SCIP_RETCODE addVariableToMastercuts(
+   SCIP_RETCODE addVariableToOriginalSepaCuts(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
@@ -341,7 +342,7 @@ private:
       );
 
    /** add variable with computed coefficients to the master cuts */
-   SCIP_RETCODE addVariableToMastercutsFromGCGCol(
+   SCIP_RETCODE addVariableToOriginalSepaCutsFromGCGCol(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );

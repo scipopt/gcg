@@ -162,6 +162,23 @@ SCIP_Bool GCGvarIsMaster(
 #endif
 
 #ifndef NDEBUG
+/** returns TRUE or FALSE whether variable is a inferred pricing variable or not */
+GCG_EXPORT
+SCIP_Bool GCGvarIsInferredPricing(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   return vardata->vartype == GCG_VARTYPE_INFERREDPRICING;
+}
+#endif
+
+#ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a original variable or not */
 SCIP_Bool GCGvarIsOriginal(
    SCIP_VAR*             var                 /**< SCIP variable structure */

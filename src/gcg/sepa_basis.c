@@ -41,7 +41,7 @@
 #include "scip/scip.h"
 #include "scip/scipdefplugins.h"
 #include "sepa_basis.h"
-#include "sepa_master.h"
+#include "sepa_original.h"
 #include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
@@ -1200,10 +1200,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP_CALL( SCIPconstructLP(origscip, &cutoff) );
 
    /* add origcuts to probing lp */
-   for( i = 0; i < GCGsepaGetNCuts(scip); ++i )
+   for( i = 0; i < GCGsepaGetNOriginalSepaCuts(scip); ++i )
    {
-      if( SCIProwGetLPPos(GCGsepaGetOrigcuts(scip)[i]) == -1 )
-         SCIP_CALL( SCIPaddRowProbing(origscip, GCGsepaGetOrigcuts(scip)[i]) );
+      if( SCIProwGetLPPos(GCGsepaGetOriginalSepaOrigcuts(scip)[i]) == -1 )
+         SCIP_CALL( SCIPaddRowProbing(origscip, GCGsepaGetOriginalSepaOrigcuts(scip)[i]) );
    }
 
    /* add new cuts which did not cut off master sol to probing lp */
@@ -1449,7 +1449,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          colvarused = FALSE;
          origcut = cuts[i];
 
-         if( GCGsepaOrigcutExists(scip, origcut) )
+         if( GCGsepaOriginalSepaOrigcutExists(scip, origcut) )
             continue;
 
          /* if cut is violated by LP solution, increase nviolatedcuts */
@@ -1518,7 +1518,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          sepadata->mastercuts[sepadata->nmastercuts] = mastercut;
          SCIP_CALL( SCIPcaptureRow(scip, sepadata->mastercuts[sepadata->nmastercuts]) );
          sepadata->nmastercuts++;
-         SCIP_CALL( GCGsepaAddMastercuts(scip, origcut, mastercut) );
+         SCIP_CALL( GCGsepaAddOriginalSepaCuts(scip, origcut, mastercut) );
 
          SCIP_CALL( SCIPreleaseRow(scip, &mastercut) );
          SCIPfreeBufferArray(scip, &roworigvars);

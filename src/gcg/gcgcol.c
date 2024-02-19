@@ -44,7 +44,8 @@
 #include "scip_misc.h"
 #include "blockmemshell/memory.h"
 #include "pricer_gcg.h"
-#include "sepa_master.h"
+#include "sepa_original.h"
+#include "struct_vardata.h"
 
 #include <assert.h>
 
@@ -75,12 +76,12 @@ SCIP_RETCODE GCGcreateGcgCol(
    (*gcgcol)->redcost = redcost;
    (*gcgcol)->age = 0;
    (*gcgcol)->mastercoefs = NULL;
-   (*gcgcol)->mastercuts = NULL;
+   (*gcgcol)->originalsepamastercuts = NULL;
    (*gcgcol)->linkvars = NULL;
    (*gcgcol)->nmastercoefs = 0;
-   (*gcgcol)->nmastercuts = 0;
+   (*gcgcol)->noriginalsepamastercuts = 0;
    (*gcgcol)->maxmastercoefs = 0;
-   (*gcgcol)->maxmastercuts = 0;
+   (*gcgcol)->maxoriginalsepamastercuts = 0;
    (*gcgcol)->nlinkvars = 0;
    (*gcgcol)->initcoefs = FALSE;
 
@@ -93,10 +94,10 @@ SCIP_RETCODE GCGcreateGcgCol(
       SCIP_Real constant;
       SCIP_Real origval;
 
+      origvar = vars[i];
+
       scalar = 1.0;
       constant = 0.0;
-
-      origvar = vars[i];
 
       /* todo: capture vars? */
       SCIP_CALL( SCIPvarGetOrigvarSum(&origvar, &scalar, &constant) );
@@ -146,7 +147,7 @@ void GCGfreeGcgCol(
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vals, (*gcgcol)->maxvars);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercoefs, (*gcgcol)->maxmastercoefs);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->linkvars, (*gcgcol)->maxlinkvars);
-   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercuts, (*gcgcol)->maxmastercuts);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->originalsepamastercuts, (*gcgcol)->maxoriginalsepamastercuts);
    SCIPfreeBlockMemory((*gcgcol)->pricingprob, gcgcol);
 }
 
@@ -454,8 +455,8 @@ void GCGcolComputeNorm(
    SCIP_Real* solvals;
    SCIP_Real* mastercoefs;
    int nmastercoefs;
-   SCIP_Real* mastercuts;
-   int nmastercuts;
+   SCIP_Real* originalsepamastercuts;
+   int noriginalsepamastercuts;
    int* linkvars;
    int nlinkvars;
 
@@ -465,9 +466,8 @@ void GCGcolComputeNorm(
    solvals = GCGcolGetVals(gcgcol);
    nmastercoefs = GCGcolGetNMastercoefs(gcgcol);
    mastercoefs = GCGcolGetMastercoefs(gcgcol);
-   nmastercuts = GCGcolGetNMastercuts(gcgcol);
-   mastercuts = GCGcolGetMastercuts(gcgcol);
-   nmastercuts = GCGcolGetNMastercuts(gcgcol);
+   noriginalsepamastercuts = GCGcolGetNOriginalSepaMastercuts(gcgcol);
+   originalsepamastercuts = GCGcolGetOriginalSepaMastercuts(gcgcol);
    nlinkvars = GCGcolGetNLinkvars(gcgcol);
    linkvars = GCGcolGetLinkvars(gcgcol);
 
@@ -479,10 +479,10 @@ void GCGcolComputeNorm(
          norm += SQR(mastercoefs[i]);
    }
 
-   for( i = 0; i < nmastercuts; ++i )
+   for( i = 0; i < noriginalsepamastercuts; ++i )
    {
-      if( !SCIPisZero(scip, mastercuts[i]))
-         norm += SQR(mastercuts[i]);
+      if( !SCIPisZero(scip, originalsepamastercuts[i]))
+         norm += SQR(originalsepamastercuts[i]);
    }
 
 
@@ -556,20 +556,20 @@ SCIP_RETCODE GCGcolSetLinkvars(
    return SCIP_OKAY;
 }
 
-/** get master cut coefficients of column */
-SCIP_Real* GCGcolGetMastercuts(
+/** get original separator cut coefficients of column in master problem */
+SCIP_Real* GCGcolGetOriginalSepaMastercuts(
    GCG_COL*             gcgcol              /**< gcg column structure */
    )
 {
-   return gcgcol->mastercuts;
+   return gcgcol->originalsepamastercuts;
 }
 
-/** get number of master cut coefficients of column */
-int GCGcolGetNMastercuts(
+/** get number of original separator cut coefficients of column in master problem */
+int GCGcolGetNOriginalSepaMastercuts(
    GCG_COL*             gcgcol              /**< gcg column structure */
    )
 {
-   return gcgcol->nmastercuts;
+   return gcgcol->noriginalsepamastercuts;
 }
 
 /** get norm of column */
@@ -580,30 +580,30 @@ SCIP_Real GCGcolGetNorm(
    return gcgcol->norm;
 }
 
-/** update master cut coefficients information of column */
-SCIP_RETCODE GCGcolUpdateMastercuts(
+/** update original separator cut coefficients information of column in the amster problem */
+SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
    GCG_COL*             gcgcol,             /**< gcg column structure */
-   SCIP_Real*           newmastercuts,      /**< pointer to new array of master cut coefficients */
-   int                  nnewmastercuts      /**< new number of master cut coefficients */
+   SCIP_Real*           neworiginalsepamastercuts,/**< pointer to new array of master cut coefficients */
+   int                  nneworiginalsepamastercuts/**< new number of master cut coefficients */
    )
 {
    int i;
    int newsize;
 
-   i = gcgcol->nmastercuts + nnewmastercuts;
+   i = gcgcol->noriginalsepamastercuts + nneworiginalsepamastercuts;
    newsize = SCIPcalcMemGrowSize(gcgcol->pricingprob, i);
-   if( i > gcgcol->maxmastercuts )
+   if( i > gcgcol->maxoriginalsepamastercuts )
    {
-      SCIP_CALL( SCIPreallocBlockMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->mastercuts),
-            gcgcol->maxmastercuts, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->originalsepamastercuts),
+            gcgcol->maxoriginalsepamastercuts, newsize) );
    }
 
-   gcgcol->maxmastercuts = newsize;
+   gcgcol->maxoriginalsepamastercuts = newsize;
 
-   for( i = 0; i < nnewmastercuts; ++i )
+   for( i = 0; i < nneworiginalsepamastercuts; ++i )
    {
-      gcgcol->mastercuts[gcgcol->nmastercuts] = newmastercuts[i];
-      ++(gcgcol->nmastercuts);
+      gcgcol->originalsepamastercuts[gcgcol->noriginalsepamastercuts] = neworiginalsepamastercuts[i];
+      ++(gcgcol->noriginalsepamastercuts);
    }
 
    return SCIP_OKAY;
@@ -658,14 +658,14 @@ SCIP_Real GCGcolComputeDualObjPara(
    int i;
 
    SCIP_CONS** masterconss;
-   SCIP_ROW** cuts;
+   SCIP_ROW** originalsepamastercuts2;
 
    int prob;
 
    SCIP_Real* mastercoefs;
    int nmastercoefs;
-   SCIP_Real* mastercuts;
-   int nmastercuts;
+   SCIP_Real* originalsepamastercuts1;
+   int noriginalsepamastercuts;
 
    SCIP_Real dualobjnorm;
 
@@ -676,10 +676,10 @@ SCIP_Real GCGcolComputeDualObjPara(
    prob = GCGcolGetProbNr(gcgcol);
    nmastercoefs = GCGcolGetNMastercoefs(gcgcol);
    mastercoefs = GCGcolGetMastercoefs(gcgcol);
-   nmastercuts = GCGcolGetNMastercuts(gcgcol);
-   mastercuts = GCGcolGetMastercuts(gcgcol);
+   noriginalsepamastercuts = GCGcolGetNOriginalSepaMastercuts(gcgcol);
+   originalsepamastercuts1 = GCGcolGetOriginalSepaMastercuts(gcgcol);
    masterconss = GCGgetMasterConss(GCGmasterGetOrigprob(scip));
-   cuts = GCGsepaGetMastercuts(scip);
+   originalsepamastercuts2 = GCGsepaGetOriginalSepaMastercuts(scip);
 
    para = 0.0;
 
@@ -710,30 +710,30 @@ SCIP_Real GCGcolComputeDualObjPara(
       }
    }
 
-   for( i = 0; i < nmastercuts; ++i )
+   for( i = 0; i < noriginalsepamastercuts; ++i )
    {
       SCIP_Real lhs;
       SCIP_Real rhs;
 
-      if( !SCIProwIsInLP(cuts[i]) )
+      if( !SCIProwIsInLP(originalsepamastercuts2[i]) )
          continue;
 
-      lhs = SCIProwGetLhs(cuts[i]);
-      rhs = SCIProwGetRhs(cuts[i]);
+      lhs = SCIProwGetLhs(originalsepamastercuts2[i]);
+      rhs = SCIProwGetRhs(originalsepamastercuts2[i]);
 
       if( !SCIPisInfinity(scip, -lhs))
       {
          dualobjnorm += SQR(lhs);
 
-         if( SCIPisPositive(scip, mastercuts[i]) )
-            para += mastercuts[i] * lhs;
+         if( SCIPisPositive(scip, originalsepamastercuts1[i]) )
+            para += originalsepamastercuts1[i] * lhs;
       }
       else if( !SCIPisInfinity(scip, rhs) )
       {
          dualobjnorm += SQR(rhs);
 
-         if(SCIPisNegative(scip, mastercuts[i] ) )
-            para += mastercuts[i] * rhs;
+         if(SCIPisNegative(scip, originalsepamastercuts1[i] ) )
+            para += originalsepamastercuts1[i] * rhs;
       }
    }
 
@@ -773,8 +773,8 @@ SCIP_Real GCGcolComputeOrth(
    SCIP_Real* solvals1;
    SCIP_Real* mastercoefs1;
    int nmastercoefs1;
-   SCIP_Real* mastercuts1;
-   int nmastercuts1;
+   SCIP_Real* originalsepamastercuts1;
+   int noriginalsepamastercuts1;
    int* linkvars1;
    int nlinkvars1;
 
@@ -783,7 +783,7 @@ SCIP_Real GCGcolComputeOrth(
    SCIP_VAR** solvars2;
    SCIP_Real* solvals2;
    SCIP_Real* mastercoefs2;
-   SCIP_Real* mastercuts2;
+   SCIP_Real* originalsepamastercuts2;
    int* linkvars2;
    int nlinkvars2;
 
@@ -796,8 +796,8 @@ SCIP_Real GCGcolComputeOrth(
    solvals1 = GCGcolGetVals(gcgcol1);
    nmastercoefs1 = GCGcolGetNMastercoefs(gcgcol1);
    mastercoefs1 = GCGcolGetMastercoefs(gcgcol1);
-   nmastercuts1 = GCGcolGetNMastercuts(gcgcol1);
-   mastercuts1 = GCGcolGetMastercuts(gcgcol1);
+   noriginalsepamastercuts1 = GCGcolGetNOriginalSepaMastercuts(gcgcol1);
+   originalsepamastercuts1 = GCGcolGetOriginalSepaMastercuts(gcgcol1);
    nlinkvars1 = GCGcolGetNLinkvars(gcgcol1);
    linkvars1 = GCGcolGetLinkvars(gcgcol1);
 
@@ -805,7 +805,7 @@ SCIP_Real GCGcolComputeOrth(
    solvars2 = GCGcolGetVars(gcgcol2);
    solvals2 = GCGcolGetVals(gcgcol2);
    mastercoefs2 = GCGcolGetMastercoefs(gcgcol2);
-   mastercuts2 = GCGcolGetMastercuts(gcgcol2);
+   originalsepamastercuts2 = GCGcolGetOriginalSepaMastercuts(gcgcol2);
    nlinkvars2 = GCGcolGetNLinkvars(gcgcol2);
    linkvars2 = GCGcolGetLinkvars(gcgcol2);
 
@@ -821,15 +821,15 @@ SCIP_Real GCGcolComputeOrth(
          norm2 += SQR(mastercoefs2[i]);
    }
 
-   for( i = 0; i < nmastercuts1; ++i )
+   for( i = 0; i < noriginalsepamastercuts1; ++i )
    {
-      if( SCIPisPositive(scip, mastercuts1[i] * mastercuts2[i]) )
-         para += mastercuts1[i] * mastercuts2[i];
+      if( SCIPisPositive(scip, originalsepamastercuts1[i] * originalsepamastercuts2[i]) )
+         para += originalsepamastercuts1[i] * originalsepamastercuts2[i];
 
-      if( SCIPisPositive(scip, mastercuts1[i]) )
-         norm1 += SQR(mastercuts1[i]);
-      if( SCIPisPositive(scip, mastercuts2[i]) )
-         norm2 += SQR(mastercuts2[i]);
+      if( SCIPisPositive(scip, originalsepamastercuts1[i]) )
+         norm1 += SQR(originalsepamastercuts1[i]);
+      if( SCIPisPositive(scip, originalsepamastercuts2[i]) )
+         norm2 += SQR(originalsepamastercuts2[i]);
    }
 
    for( i = 0; i < nlinkvars1; ++i )

@@ -2946,7 +2946,7 @@ SCIP_DECL_BRANCHINIT(branchInitGeneric)
    SCIPdebugMessage("Init method of Vanderbecks generic branching\n");
 
    SCIP_CALL( GCGrelaxIncludeBranchrule(origscip, branchrule, branchActiveMasterGeneric,
-         branchDeactiveMasterGeneric, branchPropMasterGeneric, NULL, branchDataDeleteGeneric) );
+         branchDeactiveMasterGeneric, branchPropMasterGeneric, NULL, branchDataDeleteGeneric, NULL, NULL, NULL) );
 
    return SCIP_OKAY;
 }

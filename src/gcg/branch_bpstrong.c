@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    branch_bpstrong.c
- * 
+ *
  * @brief   generic branch-and-price strong branching heuristics
  * @author  Oliver Gaul
  */
@@ -1534,7 +1534,7 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
 
    SCIP_CALL( GCGrelaxIncludeBranchrule( origprob, branchrule, branchActiveMasterBPStrong,
          branchDeactiveMasterBPStrong, branchPropMasterBPStrong, branchMasterSolvedBPStrong,
-         branchDataDeleteBPStrong) );
+         branchDataDeleteBPStrong, NULL, NULL, NULL) );
 
    branchruledata = SCIPbranchruleGetData(branchrule);
 

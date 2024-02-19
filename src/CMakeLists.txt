@@ -116,6 +116,7 @@ set(gcgsources
     gcg/heur_setcover.c
     gcg/heur_xpcrossover.c
     gcg/heur_xprins.c
+    gcg/mastercutdata.c
     gcg/masterplugins.c
     gcg/misc.c
     gcg/miscvisualization.cpp
@@ -146,7 +147,7 @@ set(gcgsources
     gcg/score_strong.cpp
     gcg/score.c
     gcg/sepa_basis.c
-    gcg/sepa_master.c
+    gcg/sepa_original.c
     gcg/solver_knapsack.c
     gcg/solver_mip.c
     gcg/solver.c
@@ -250,6 +251,7 @@ set(gcgheaders
     gcg/heur_setcover.h
     gcg/heur_xpcrossover.h
     gcg/heur_xprins.h
+    gcg/mastercutdata.h
     gcg/masterplugins.h
     gcg/nodesel_master.h
     gcg/objdialog.h
@@ -293,7 +295,7 @@ set(gcgheaders
     gcg/score_strong.h
     gcg/score.h
     gcg/sepa_basis.h
-    gcg/sepa_master.h
+    gcg/sepa_original.h
     gcg/solver.h
     gcg/solver_cliquer.h
     gcg/solver_knapsack.h
@@ -306,6 +308,7 @@ set(gcgheaders
     gcg/struct_detector.h
     gcg/struct_gcgcol.h
     gcg/struct_gcgpqueue.h
+    gcg/struct_mastercutdata.h
     gcg/struct_pricestore_gcg.h
     gcg/struct_pricingjob.h
     gcg/struct_pricingprob.h
@@ -320,6 +323,7 @@ set(gcgheaders
     gcg/type_detector.h
     gcg/type_gcgcol.h
     gcg/type_gcgpqueue.h
+    gcg/type_mastercutdata.h
     gcg/type_masterdiving.h
     gcg/type_origdiving.h
     gcg/type_parameter.h

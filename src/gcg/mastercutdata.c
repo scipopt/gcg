@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,41 +25,41 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_branchgcg.h
- * @ingroup DATASTRUCTURES
- * @brief  data structures for branching rules
- * @author Gerald Gamrath
+/**@file    mastercutdata.c
+ * @ingroup TODO-????
+ * @brief   methods for interacting with GCG_MASTERCUTDATA
+ * @author  Til Mohr
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_BRANCHGCG_H__
-#define GCG_STRUCT_BRANCHGCG_H__
+#include "def.h"
+#include "mastercutdata.h"
+#include "type_mastercutdata.h"
 
-#include "type_branchgcg.h"
+#include <scip/cons_linear.h>
+#include <scip/def.h>
+#include <scip/pub_lp.h>
+#include <scip/scip.h>
+#include <scip/type_scip.h>
 
-#include <scip/type_branch.h>
+/**
+ * @ingroup TODO-????
+ *
+ * @{
+ */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/** branching rule */
-struct GCG_Branchrule
+/** determine whether the mastercutdata is active in the masterscip */
+GCG_EXPORT
+SCIP_Bool GCGmastercutIsActive(
+   SCIP*                  masterscip,         /**< master scip */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
 {
-   SCIP_BRANCHRULE*      branchrule;         /**< pointer to the SCIP branching rule */
-   GCG_DECL_BRANCHACTIVEMASTER ((*branchactivemaster));     /**< node activation method of branching rule */
-   GCG_DECL_BRANCHDEACTIVEMASTER ((*branchdeactivemaster)); /**< node deactivation method of branching rule */
-   GCG_DECL_BRANCHPROPMASTER ((*branchpropmaster));         /**< propagation method of branching rule */
-   GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved));      /**< lp solved method of branching rule */
-   GCG_DECL_BRANCHDATADELETE ((*branchdatadelete));         /**< deinitialization method of branching rule */
-   GCG_DECL_BRANCHNEWCOL ((*branchnewcol));  /**< new column handler method of branching rule */
-   GCG_DECL_BRANCHUPDATEDUAL ((*branchupdatedual));         /**< dual value handler method of branching rule */
-   GCG_DECL_BRANCHGETMASTERCUT ((*branchgetmastercut));     /**< mastercut getter of branching rule */
-};
+   assert(mastercutdata != NULL);
 
-#ifdef __cplusplus
+   if( SCIProwIsInLP(mastercutdata->mastercons) )
+      return TRUE;
+
+   return FALSE;
 }
-#endif
-
-#endif

@@ -155,7 +155,7 @@
 #include "nodesel_master.h"
 #include "cons_masterbranch.h"
 #include "cons_integralorig.h"
-#include "sepa_master.h"
+#include "sepa_original.h"
 #include "branch_ryanfoster.h"
 #include "branch_orig.h"
 #include "branch_relpsprob.h"
@@ -328,7 +328,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeSepaRedcost(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
-   SCIP_CALL( SCIPincludeSepaMaster(scip) );
+   SCIP_CALL( SCIPincludeSepaOriginal(scip) );
    SCIP_CALL( SCIPincludeCutselHybrid(scip) );
    SCIP_CALL( SCIPincludeDispMaster(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/

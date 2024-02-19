@@ -37,6 +37,12 @@
 #ifndef GCG_STRUCT_VARDATA_H__
 #define GCG_STRUCT_VARDATA_H__
 
+#include <scip/type_cons.h>
+#include <scip/type_misc.h>
+#include <scip/type_var.h>
+
+#include "type_mastercutdata.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,9 +50,10 @@ extern "C" {
 /** type of the variable */
 enum GCG_Vartype
 {
-   GCG_VARTYPE_ORIGINAL = 0,                 /**< variable belongs to original problem */
+   GCG_VARTYPE_ORIGINAL = 0,                /**< variable belongs to original problem */
    GCG_VARTYPE_PRICING = 1,                 /**< variable belongs to a pricing problem */
-   GCG_VARTYPE_MASTER = 2                  /**< variable belongs to the master problem */
+   GCG_VARTYPE_MASTER = 2,                   /**< variable belongs to the master problem */
+   GCG_VARTYPE_INFERREDPRICING = 3,         /**< variable is inferred from a master cut */
 };
 typedef enum GCG_Vartype GCG_VARTYPE;
 
@@ -100,6 +107,13 @@ struct GCG_MasterVarData
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
 
+/** data for pricing variables */
+struct GCG_InferredPricingVarData
+{
+   GCG_MASTERCUTDATA*    mastercutdata;      /**< mastercut that inferred this pricing variable */
+};
+typedef struct GCG_InferredPricingVarData GCG_INFERREDPRICINGVARDATA;
+
 /** variable data structure */
 struct SCIP_VarData
 {
@@ -108,6 +122,7 @@ struct SCIP_VarData
       GCG_ORIGVARDATA    origvardata;        /**< data for original variables */
       GCG_PRICINGVARDATA pricingvardata;     /**< data for pricing variables */
       GCG_MASTERVARDATA  mastervardata;      /**< data for variable of the master problem */
+      GCG_INFERREDPRICINGVARDATA inferredpricingvardata; /**< data for inferred pricing variables */
    } data;
    GCG_VARTYPE           vartype;            /**< type of variable */
    int                   blocknr;            /**< number of the block and pricing problem, the variable belongs to,

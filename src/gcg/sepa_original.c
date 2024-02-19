@@ -25,8 +25,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   sepa_master.c
- * @brief  master separator
+/**@file   sepa_original.c
+ * @brief  original separator
  * @author Gerald Gamrath
  * @author Erik Muehmer
  */
@@ -38,14 +38,13 @@
 #include <string.h>
 
 #include "scip/scip.h"
-#include "scip/lp.h"
-#include "sepa_master.h"
+#include "sepa_original.h"
 #include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 
 
-#define SEPA_NAME         "master"
+#define SEPA_NAME         "original"
 #define SEPA_DESC         "separator for separating cuts in the original problem, called in the master"
 #define SEPA_PRIORITY     1000
 
@@ -110,14 +109,14 @@ SCIP_RETCODE ensureSizeCuts(
  * Callback methods of separator
  */
 
-#define sepaCopyMaster NULL
-#define sepaInitMaster NULL
-#define sepaInitsolMaster NULL
-#define sepaExecsolMaster NULL
+#define sepaCopyOriginal NULL
+#define sepaInitOriginal NULL
+#define sepaInitsolOriginal NULL
+#define sepaExecsolOriginal NULL
 
 /** destructor of separator to free user data (called when SCIP is exiting) */
 static
-SCIP_DECL_SEPAFREE(sepaFreeMaster)
+SCIP_DECL_SEPAFREE(sepaFreeOriginal)
 {
    SCIP_SEPADATA* sepadata;
 
@@ -134,7 +133,7 @@ SCIP_DECL_SEPAFREE(sepaFreeMaster)
 
 /** deinitialization method of separator (called before transformed problem is freed) */
 static
-SCIP_DECL_SEPAEXIT(sepaExitMaster)
+SCIP_DECL_SEPAEXIT(sepaExitOriginal)
 {
    SCIP* origscip;
    SCIP_SEPADATA* sepadata;
@@ -159,7 +158,7 @@ SCIP_DECL_SEPAEXIT(sepaExitMaster)
 
 /** solving process deinitialization method of separator (called before branch and bound process data is freed) */
 static
-SCIP_DECL_SEPAEXITSOL(sepaExitsolMaster)
+SCIP_DECL_SEPAEXITSOL(sepaExitsolOriginal)
 {
    SCIP_SEPADATA* sepadata;
    int i;
@@ -179,7 +178,7 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolMaster)
 
 /** LP solution separation method of separator */
 static
-SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
+SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
 {
    SCIP*   origscip;
    SCIP_Bool delayed;
@@ -212,7 +211,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
 
-   SCIPdebugMessage("sepaExeclpMaster\n");
+   SCIPdebugMessage("sepaExeclpOriginal\n");
 
    *result = SCIP_DIDNOTFIND;
 
@@ -362,14 +361,14 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
  * separator specific interface methods
  */
 
-/** creates the master separator and includes it in SCIP */
-SCIP_RETCODE SCIPincludeSepaMaster(
+/** creates the original separator and includes it in SCIP */
+SCIP_RETCODE SCIPincludeSepaOriginal(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_SEPADATA* sepadata;
 
-   /* create master separator data */
+   /* create original separator data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &sepadata) );
 
    sepadata->maxcuts = SCIPcalcMemGrowSize(scip, STARTMAXCUTS);
@@ -380,12 +379,12 @@ SCIP_RETCODE SCIPincludeSepaMaster(
 
    /* include separator */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST, SEPA_USESSUBSCIP, SEPA_DELAY,
-         sepaCopyMaster, sepaFreeMaster, sepaInitMaster, sepaExitMaster,
-         sepaInitsolMaster, sepaExitsolMaster,
-         sepaExeclpMaster, sepaExecsolMaster,
+         sepaCopyOriginal, sepaFreeOriginal, sepaInitOriginal, sepaExitOriginal,
+         sepaInitsolOriginal, sepaExitsolOriginal,
+         sepaExeclpOriginal, sepaExecsolOriginal,
          sepadata) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enable", "enable master separator",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enable", "enable original separator",
          &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/paramsetting", "parameter returns which parameter setting is used for "
@@ -395,8 +394,8 @@ SCIP_RETCODE SCIPincludeSepaMaster(
 }
 
 
-/** returns the array of original cuts saved in the separator data */
-SCIP_ROW** GCGsepaGetOrigcuts(
+/** returns the array of original cuts in the original problem saved in the separator data */
+SCIP_ROW** GCGsepaGetOriginalSepaOrigcuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -414,8 +413,9 @@ SCIP_ROW** GCGsepaGetOrigcuts(
    return sepadata->origcuts;
 }
 
+
 /** returns the number of cuts saved in the separator data */
-int GCGsepaGetNCuts(
+int GCGsepaGetNOriginalSepaCuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -433,8 +433,8 @@ int GCGsepaGetNCuts(
    return sepadata->ncuts;
 }
 
-/** returns the array of master cuts saved in the separator data */
-SCIP_ROW** GCGsepaGetMastercuts(
+/** returns the array of original cuts in the master problem saved in the separator data */
+SCIP_ROW** GCGsepaGetOriginalSepaMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -452,12 +452,12 @@ SCIP_ROW** GCGsepaGetMastercuts(
    return sepadata->mastercuts;
 }
 
-/** adds given original and master cut to master separator data */
-SCIP_RETCODE GCGsepaAddMastercuts(
+/** adds given original cut in both the original and master problem to master separator data */
+SCIP_RETCODE GCGsepaAddOriginalSepaCuts(
    SCIP*                scip,               /**< SCIP data structure */
-   SCIP_ROW*            origcut,            /**< pointer to orginal cut */
-   SCIP_ROW*            mastercut           /**< pointer to master cut */
-)
+   SCIP_ROW*            origcut,            /**< pointer to orginal cut in the original problem */
+   SCIP_ROW*            mastercut           /**< pointer to original cut in the master problem */
+   )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
@@ -483,11 +483,11 @@ SCIP_RETCODE GCGsepaAddMastercuts(
    return SCIP_OKAY;
 }
 
-/** checks whether a given original cut is already known */
-SCIP_Bool GCGsepaOrigcutExists(
-      SCIP*                scip,               /**< SCIP data structure */
-      SCIP_ROW*            origcut             /**< pointer to orginal cut */
-)
+/** checks whether a given original cut in the original problem is already known */
+SCIP_Bool GCGsepaOriginalSepaOrigcutExists(
+   SCIP*                scip,            /**< SCIP data structure */
+   SCIP_ROW*            origcut          /**< pointer to orginal cut in the original problem */
+   )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;

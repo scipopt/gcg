@@ -25,38 +25,62 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_branchgcg.h
- * @ingroup DATASTRUCTURES
- * @brief  data structures for branching rules
+/**@file   sepa_original.h
+ * @ingroup SEPARATORS
+ * @brief  original separator
  * @author Gerald Gamrath
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_BRANCHGCG_H__
-#define GCG_STRUCT_BRANCHGCG_H__
+#ifndef GCG_SEPA_ORIGINAL_H__
+#define GCG_SEPA_ORIGINAL_H__
 
-#include "type_branchgcg.h"
 
-#include <scip/type_branch.h>
+#include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** branching rule */
-struct GCG_Branchrule
-{
-   SCIP_BRANCHRULE*      branchrule;         /**< pointer to the SCIP branching rule */
-   GCG_DECL_BRANCHACTIVEMASTER ((*branchactivemaster));     /**< node activation method of branching rule */
-   GCG_DECL_BRANCHDEACTIVEMASTER ((*branchdeactivemaster)); /**< node deactivation method of branching rule */
-   GCG_DECL_BRANCHPROPMASTER ((*branchpropmaster));         /**< propagation method of branching rule */
-   GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved));      /**< lp solved method of branching rule */
-   GCG_DECL_BRANCHDATADELETE ((*branchdatadelete));         /**< deinitialization method of branching rule */
-   GCG_DECL_BRANCHNEWCOL ((*branchnewcol));  /**< new column handler method of branching rule */
-   GCG_DECL_BRANCHUPDATEDUAL ((*branchupdatedual));         /**< dual value handler method of branching rule */
-   GCG_DECL_BRANCHGETMASTERCUT ((*branchgetmastercut));     /**< mastercut getter of branching rule */
-};
+/** creates the original separator and includes it in SCIP */
+GCG_EXPORT
+SCIP_RETCODE SCIPincludeSepaOriginal(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the array of original cuts in the original problem saved in the separator data */
+GCG_EXPORT
+SCIP_ROW** GCGsepaGetOriginalSepaOrigcuts(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the number of cuts saved in the separator data */
+GCG_EXPORT
+int GCGsepaGetNOriginalSepaCuts(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the array of original cuts in the master problem saved in the separator data */
+GCG_EXPORT
+SCIP_ROW** GCGsepaGetOriginalSepaMastercuts(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** adds given original cut in both the original and master problem to master separator data */
+GCG_EXPORT
+SCIP_RETCODE GCGsepaAddOriginalSepaCuts(
+   SCIP*                scip,               /**< SCIP data structure */
+   SCIP_ROW*            origcut,            /**< pointer to orginal cut in the original problem */
+   SCIP_ROW*            mastercut           /**< pointer to original cut in the master problem */
+   );
+
+/** checks whether a given original cut in the original problem is already known */
+SCIP_Bool GCGsepaOriginalSepaOrigcutExists(
+   SCIP*                scip,            /**< SCIP data structure */
+   SCIP_ROW*            origcut          /**< pointer to orginal cut in the original problem */
+   );
 
 #ifdef __cplusplus
 }

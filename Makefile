@@ -311,6 +311,7 @@ LIBOBJ = \
 			gcg/heur_setcover.o \
 			gcg/heur_xpcrossover.o \
 			gcg/heur_xprins.o \
+			gcg/mastercutdata.o \
 			gcg/masterplugins.o \
 			gcg/bendersplugins.o \
 			gcg/misc.o \
@@ -342,7 +343,7 @@ LIBOBJ = \
 			gcg/score_strong.o \
 			gcg/score.o \
 			gcg/sepa_basis.o \
-			gcg/sepa_master.o \
+			gcg/sepa_original.o \
 			gcg/solver.o \
 			gcg/solver_knapsack.o \
 			gcg/solver_mip.o \
