@@ -41,6 +41,8 @@
 #include "relax_gcg.h"
 #include "scip_misc.h"
 #include "scip/cons_linear.h"
+#include "type_mastercutdata.h"
+#include <scip/type_retcode.h>
 
 #define STARTMAXMASTERVARS 8
 #define STARTMAXORIGVARS 1
@@ -1563,6 +1565,38 @@ SCIP_RETCODE GCGcreateArtificialVar(
    SCIP_CALL( SCIPcreateVar(scip, newvar, name,
          0.0, SCIPinfinity(scip), objcoef, SCIP_VARTYPE_IMPLINT,
          TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
+
+   return SCIP_OKAY;
+}
+
+/** creates the inferred pricing variable and vardata */
+SCIP_RETCODE GCGcreateInferredPricingVar(
+   SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
+   SCIP_VAR**            newvar,             /**< pointer to store new master variable */
+   const char*           varname,            /**< new variable name */
+   SCIP_Real             lb,                 /**< new variable lower bound */
+   SCIP_Real             ub,                 /**< new objective coefficient */
+   SCIP_Real             objcoeff,           /**< new objective coefficient */
+   SCIP_VARTYPE          vartype,            /**< new variable type */
+   int                   prob,               /**< number of pricing problem that created this variable */
+   GCG_MASTERCUTDATA*    mastercutdata       /**< pointer of the master cut data this pricing variable belongs to */
+   )
+{
+   SCIP_VARDATA* newvardata;
+
+   assert(pricingscip != NULL);
+   assert(newvar != NULL);
+   assert(varname != NULL);
+
+   SCIP_CALL( SCIPallocBlockMemory(pricingscip, &newvardata) );
+   newvardata->vartype = GCG_VARTYPE_INFERREDPRICING;
+   newvardata->blocknr = prob;
+   newvardata->data.inferredpricingvardata.mastercutdata = mastercutdata;
+
+   /* create variable in the master problem */
+   SCIP_CALL( SCIPcreateVar(pricingscip, newvar, varname, lb, ub,
+         objcoeff, vartype, TRUE, TRUE, NULL,
+         NULL, gcgvardeltrans, NULL, newvardata) );
 
    return SCIP_OKAY;
 }

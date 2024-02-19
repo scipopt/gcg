@@ -939,7 +939,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       }
       else
       {
-         dualsol = pricetype->mastercutGetDual(scip_, branchmastercutdata[i]);
+         dualsol = pricetype->mastercutGetDual(branchmastercutdata[i]);
       }
 
       SCIP_CALL( GCGrelaxBranchUpdateDualWithGCGBranchrule(scip_, activebranchrules[i], activebranchdata[i], dualsol) );

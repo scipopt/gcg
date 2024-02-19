@@ -141,11 +141,10 @@ SCIP_Real FarkasPricing::rowGetDual(
 }
 
 SCIP_Real FarkasPricing::mastercutGetDual(
-   SCIP*                 scip,
    GCG_MASTERCUTDATA*    mastercutdata
    ) const
 {
-   return SCIPgetDualfarkasLinear(scip, mastercutdata->mastercons);
+   return SCIProwGetDualfarkas(mastercutdata->mastercons);
 }
 
 SCIP_Real FarkasPricing::varGetObj(
@@ -209,11 +208,10 @@ SCIP_Real ReducedCostPricing::rowGetDual(
 }
 
 SCIP_Real ReducedCostPricing::mastercutGetDual(
-   SCIP*                 scip,
    GCG_MASTERCUTDATA*    mastercutdata
    ) const
 {
-   return SCIPgetDualsolLinear(scip, mastercutdata->mastercons);
+   return SCIProwGetDualsol(mastercutdata->mastercons);
 }
 
 ReducedCostPricing::ReducedCostPricing(

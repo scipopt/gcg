@@ -84,7 +84,6 @@ public:
 
    /** get dual value of a mastercut */
    virtual SCIP_Real mastercutGetDual(
-      SCIP*                 scip,               /**< SCIP data structure */
       GCG_MASTERCUTDATA*    mastercutdata       /**< mastercut data */
       ) const = 0;
 
@@ -185,7 +184,6 @@ public:
      ) const;
 
    virtual SCIP_Real mastercutGetDual(
-     SCIP*                 scip,
      GCG_MASTERCUTDATA*    mastercutdata
      ) const;
 
@@ -228,7 +226,6 @@ public:
       ) const;
 
    virtual SCIP_Real mastercutGetDual(
-      SCIP*                 scip,
       GCG_MASTERCUTDATA*    mastercutdata
       ) const;
 

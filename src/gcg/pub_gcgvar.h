@@ -531,6 +531,19 @@ SCIP_RETCODE GCGcreateArtificialVar(
    SCIP_Real             objcoef             /**< objective coefficient of artificial variable */
    );
 
+/** creates the inferred pricing variable and vardata */
+SCIP_RETCODE GCGcreateInferredPricingVar(
+   SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
+   SCIP_VAR**            newvar,             /**< pointer to store new master variable */
+   const char*           varname,            /**< new variable name */
+   SCIP_Real             lb,                 /**< new variable lower bound */
+   SCIP_Real             ub,                 /**< new objective coefficient */
+   SCIP_Real             objcoeff,           /**< new objective coefficient */
+   SCIP_VARTYPE          vartype,            /**< new variable type */
+   int                   prob,               /**< number of pricing problem that created this variable */
+   GCG_MASTERCUTDATA*    mastercutdata       /**< pointer of the master cut data this pricing variable belongs to */
+   );
+
 /* adds the vardata to the auxiliary variable */
 GCG_EXPORT
 SCIP_RETCODE GCGaddDataAuxiliaryVar(

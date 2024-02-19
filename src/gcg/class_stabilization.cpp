@@ -353,8 +353,8 @@ SCIP_RETCODE Stabilization::mastercutGetDual(
       subgradient = SCIPhashmapGetImageReal(subgradientmastercutvals, mastercutdata->mastercons);
 
    *dual = computeDual(SCIPhashmapGetImageReal(stabcentermastercutvals, mastercutdata->mastercons),
-         pricingtype->mastercutGetDual(scip_, mastercutdata), subgradient,
-         SCIPgetLhsLinear(scip_, mastercutdata->mastercons), SCIPgetRhsLinear(scip_, mastercutdata->mastercons));
+         pricingtype->mastercutGetDual(mastercutdata), subgradient,
+         SCIProwGetLhs(mastercutdata->mastercons), SCIProwGetRhs(mastercutdata->mastercons));
 
    return SCIP_OKAY;
 }
@@ -784,7 +784,7 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       GCG_MASTERCUTDATA* mastercutdata = (GCG_MASTERCUTDATA*) SCIPhashmapEntryGetOrigin(entry);
       SCIP_Real stabcentervalue = SCIPhashmapEntryGetImageReal(entry);
 
-      SCIP_Real dual = pricingtype->mastercutGetDual(scip_, mastercutdata);
+      SCIP_Real dual = pricingtype->mastercutGetDual(mastercutdata);
       assert(!SCIPisInfinity(scip_, ABS(dual)));
 
       SCIP_Real stabdual;
@@ -1093,7 +1093,7 @@ void Stabilization::calculateDualdiffnorm()
       GCG_MASTERCUTDATA* mastercutdata = (GCG_MASTERCUTDATA*) SCIPhashmapEntryGetOrigin(entry);
       SCIP_Real real_entry = SCIPhashmapEntryGetImageReal(entry);
 
-      SCIP_Real dualdiff = SQR(real_entry - pricingtype->mastercutGetDual(scip_, mastercutdata));
+      SCIP_Real dualdiff = SQR(real_entry - pricingtype->mastercutGetDual(mastercutdata));
 
       if( SCIPisPositive(scip_, dualdiff) )
          dualdiffnorm += dualdiff;
@@ -1165,8 +1165,8 @@ void Stabilization::calculateBeta()
       GCG_MASTERCUTDATA* mastercutdata = (GCG_MASTERCUTDATA*) SCIPhashmapEntryGetOrigin(entry);
       SCIP_Real real_entry = SCIPhashmapEntryGetImageReal(entry);
 
-      SCIP_Real dualdiff = ABS(pricingtype->mastercutGetDual(scip_, mastercutdata) - real_entry);
-      SCIP_Real product = dualdiff * ABS(pricingtype->mastercutGetDual(scip_, mastercutdata));
+      SCIP_Real dualdiff = ABS(pricingtype->mastercutGetDual(mastercutdata) - real_entry);
+      SCIP_Real product = dualdiff * ABS(pricingtype->mastercutGetDual(mastercutdata));
 
       if( SCIPisPositive(scip_, product) )
          beta += product;
@@ -1247,8 +1247,8 @@ void Stabilization::calculateHybridFactor()
       SCIP_Real real_entry = SCIPhashmapEntryGetImageReal(entry);
 
       SCIP_Real divisor = SQR((beta - 1.0) * real_entry
-                        + beta * (pricingtype->mastercutGetDual(scip_, mastercutdata) * dualdiffnorm / subgradientnorm)
-                        + (1 - beta) * pricingtype->mastercutGetDual(scip_, mastercutdata));
+                        + beta * (pricingtype->mastercutGetDual(mastercutdata) * dualdiffnorm / subgradientnorm)
+                        + (1 - beta) * pricingtype->mastercutGetDual(mastercutdata));
 
       if( SCIPisPositive(scip_, divisor) )
          divisornorm += divisor;
