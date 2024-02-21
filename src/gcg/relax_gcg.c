@@ -2849,19 +2849,22 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
 
          relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
 
-         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol, FALSE) );
+         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol, TRUE) );
    #ifdef SCIP_DEBUG
          SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
    #else
          SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
    #endif
+   #ifndef NDEBUG
          /* only check failed solution if best master solution is valid */
          if( !stored && GCGmasterIsBestsolValid(relaxdata->masterprob) )
          {
             SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
          }
+   #endif
          /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
           *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
+          *  SCIP rejects a solution if it is equal to a known one
           */
          SCIP_CALL( SCIPfreeSol(scip, &newsol) );
 
