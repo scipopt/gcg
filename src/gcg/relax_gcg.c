@@ -4595,8 +4595,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    {
       SCIP_SOL* mastersol;
 
-      relaxdata->lastmasterlpiters = SCIPgetNLPIterations(relaxdata->masterprob);
-
       /* create new solution */
       if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVING )
       {
@@ -4618,6 +4616,8 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIPdebugMessage("stage in master not solving and not solved!\n");
          return SCIP_OKAY;
       }
+
+      relaxdata->lastmasterlpiters = SCIPgetNLPIterations(relaxdata->masterprob);
 
       if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) && GCGmasterIsSolValid(relaxdata->masterprob, mastersol) )
       {

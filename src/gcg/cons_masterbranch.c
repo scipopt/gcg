@@ -46,6 +46,7 @@
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
+#include "pub_colpool.h"
 
 #include "scip/cons_linear.h"
 
@@ -1942,43 +1943,58 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   if( !consdata->needprop && consdata->ncopiedvarbnds == 0 )
+   if( conshdlrdata->npendingbnds == 0 && !consdata->needprop && consdata->ncopiedvarbnds == 0 )
    {
       SCIPdebugMessage("No propagation of masterbranch constraint needed: <%s>, stack size = %d.\n",
          consdata->name, conshdlrdata->nstack);
 
-      *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
 
    SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s>, stack size = %d, newvars = %d, npendingbnds = %d, npropbounds = %d.\n",
       consdata->name, conshdlrdata->nstack, GCGmasterGetNPricedvars(scip) - consdata->npropvars, conshdlrdata->npendingbnds, consdata->ncopiedvarbnds);
 
-   *result = SCIP_DIDNOTFIND;
-
    propcount = 0;
 
-   /* apply global bound changes on original problem variables to the master problem */
-   SCIP_CALL( applyGlobalBndchgsToPricedMastervars(scip, &propcount) );
-
-   /* apply local bound changes on the original variables on newly generated master variables */
-   SCIP_CALL( applyLocalBndchgsToPricedMastervars(scip, cons, &propcount) );
-
-   /* apply local bound changes on original variables that have been directly copied to the master problem */
-   SCIP_CALL( applyLocalBndchgsToCopiedMastervars(scip, cons, &propcount) );
-
-   /* call branching rule specific propagation method */
-   if( consdata->branchrule != NULL )
+   if( conshdlrdata->npendingbnds > 0 )
    {
-      /** @todo count number of propagations */
-      SCIP_CALL( GCGrelaxBranchPropMaster(origscip, consdata->branchrule, consdata->branchdata, result) );
+      *result = SCIP_DIDNOTFIND;
+
+      if( !conshdlrdata->pendingbndsactivated )
+      {
+         /* apply global bound changes in the original problem to the pricing problems */
+         SCIP_CALL(applyGlobalBndchgsToPricingprobs(scip));
+      }
+
+      /* apply global bound changes on original problem variables to the master problem */
+      SCIP_CALL( applyGlobalBndchgsToPricedMastervars(scip, &propcount) );
+
+      GCGcolpoolPropagateGlobalBounds(GCGgetColpool(scip));
+   }
+
+   if( consdata->needprop || consdata->ncopiedvarbnds != 0 )
+   {
+      *result = SCIP_DIDNOTFIND;
+
+      /* apply local bound changes on the original variables on newly generated master variables */
+      SCIP_CALL(applyLocalBndchgsToPricedMastervars(scip, cons, &propcount));
+
+      /* apply local bound changes on original variables that have been directly copied to the master problem */
+      SCIP_CALL(applyLocalBndchgsToCopiedMastervars(scip, cons, &propcount));
+
+      /* call branching rule specific propagation method */
+      if (consdata->branchrule != NULL)
+      {
+         /** @todo count number of propagations */
+         SCIP_CALL(GCGrelaxBranchPropMaster(origscip, consdata->branchrule, consdata->branchdata, result));
+      }
+
+      consdata->needprop = FALSE;
+      consdata->npropvars = GCGmasterGetNPricedvars(scip);
    }
 
    if( *result != SCIP_CUTOFF && propcount > 0 )
       *result = SCIP_REDUCEDDOM;
-
-   consdata->needprop = FALSE;
-   consdata->npropvars = GCGmasterGetNPricedvars(scip);
 
    return SCIP_OKAY;
 }
