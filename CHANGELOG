@@ -34,12 +34,21 @@ New/modified/removed API functions:
 - renamed function 'PARTIALDECOMP::getBlocksForRep' to 'PARTIALDECOMP::getBlocksForEqClass'
 - renamed function 'PARTIALDECOMP::getNReps' to 'PARTIALDECOMP::getNEquivalenceClasses'
 - renamed function 'PARTIALDECOMP::getRepForBlock' to 'PARTIALDECOMP::getEqClassForBlock'
+- added function 'GCGgetColpool'
+- added function 'GCGcolpoolPropagateGlobalBounds'
+- modified function 'GCGtransformMastersolToOrigsol': added an argument that disables varbound checks
 
 Code cleanup:
 -------------
 
 - the explore dialog accesses (partial) decompositions now directly using pointers instead of their ids
 - symmetry information stored for a decomposition is now used by the relaxator without creating intermediate varmaps
+
+Bug fixes
+---------
+
+- fix (global) bound propagation bugs
+- remove columns from colpool that violate global bounds
 
 
 @page RN36 Release notes for GCG 3.6

@@ -147,7 +147,8 @@ GCG_DECL_SORTPTRCOMP(mastervarcomp)
 SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP*                 scip,               /* SCIP data structure */
    SCIP_SOL*             mastersol,          /* solution of the master problem, or NULL for current LP solution */
-   SCIP_SOL**            origsol             /* pointer to store the new created original problem's solution */
+   SCIP_SOL**            origsol,            /* pointer to store the new created original problem's solution */
+   SCIP_Bool             ignorevarbnds       /**< ignore (possibly violated) varbounds */
    )
 {
    SCIP* masterprob;
@@ -533,33 +534,38 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIPfreeBufferArray(scip, &blocknrs);
    SCIPfreeBufferArray(scip, &blockvalue);
 
-   /* if the solution violates one of its bounds by more than feastol
-    * and less than 10*feastol, round it and print a warning
-    */
-   SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
-   SCIP_CALL( SCIPgetRealParam(scip, "numerics/feastol", &feastol) );
-
-   for( i = 0; i < nvars; ++i )
+   if( !ignorevarbnds )
    {
-      SCIP_Real solval;
-      SCIP_Real lb;
-      SCIP_Real ub;
+      /* if the solution violates one of its bounds by more than feastol
+       * and less than 10*feastol, round it and print a warning
+       */
+      SCIP_CALL(SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL));
+      SCIP_CALL(SCIPgetRealParam(scip, "numerics/feastol", &feastol));
 
-      solval = SCIPgetSolVal(scip, *origsol, vars[i]);
-      lb = SCIPvarGetLbLocal(vars[i]);
-      ub = SCIPvarGetUbLocal(vars[i]);
+      for (i = 0; i < nvars; ++i)
+      {
+         SCIP_Real solval;
+         SCIP_Real lb;
+         SCIP_Real ub;
 
-      if( SCIPisFeasGT(scip, solval, ub) && EPSEQ(solval, ub, 10 * feastol) )
-      {
-         SCIP_CALL( SCIPsetSolVal(scip, *origsol, vars[i], ub) );
-         SCIPwarningMessage(scip, "Variable %s rounded from %g to %g in relaxation solution\n",
-            SCIPvarGetName(vars[i]), solval, ub);
-      }
-      else if( SCIPisFeasLT(scip, solval, lb) && EPSEQ(solval, lb, 10 * feastol) )
-      {
-         SCIP_CALL( SCIPsetSolVal(scip, *origsol, vars[i], lb) );
-         SCIPwarningMessage(scip, "Variable %s rounded from %g to %g in relaxation solution\n",
-            SCIPvarGetName(vars[i]), solval, lb);
+         solval = SCIPgetSolVal(scip, *origsol, vars[i]);
+         lb = SCIPvarGetLbLocal(vars[i]);
+         ub = SCIPvarGetUbLocal(vars[i]);
+
+         if (SCIPisFeasGT(scip, solval, ub) && EPSEQ(solval, ub, 10 * feastol))
+         {
+            SCIP_CALL(SCIPsetSolVal(scip, *origsol, vars[i], ub));
+            SCIPwarningMessage(scip, "Variable %s rounded from %g to %g in relaxation solution\n",
+               SCIPvarGetName(vars[i]), solval, ub);
+         }
+         else if (SCIPisFeasLT(scip, solval, lb) && EPSEQ(solval, lb, 10 * feastol))
+         {
+            SCIP_CALL(SCIPsetSolVal(scip, *origsol, vars[i], lb));
+            SCIPwarningMessage(scip, "Variable %s rounded from %g to %g in relaxation solution\n",
+               SCIPvarGetName(vars[i]), solval, lb);
+         }
+         assert(SCIPisFeasGE(scip, SCIPgetSolVal(scip, *origsol, vars[i]), lb) &&
+                SCIPisFeasLE(scip, SCIPgetSolVal(scip, *origsol, vars[i]), ub));
       }
    }
 

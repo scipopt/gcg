@@ -111,6 +111,10 @@ SCIP_RETCODE GCGcreateGcgCol(
 
       if( !SCIPisZero(pricingprob, origval) )
       {
+         assert(GCGvarIsPricing(origvar) && GCGpricingVarGetNOrigvars(origvar) > 0 && GCGpricingVarGetOrigvars(origvar)[0] != NULL);
+         assert(SCIPisFeasGE(pricingprob, origval, SCIPvarGetLbGlobal(GCGpricingVarGetOrigvars(origvar)[0])) &&
+                SCIPisFeasLE(pricingprob, origval, SCIPvarGetUbGlobal(GCGpricingVarGetOrigvars(origvar)[0])));
+
          (*gcgcol)->vars[nnonz] = origvar;
          (*gcgcol)->vals[nnonz] = origval;
          ++nnonz;

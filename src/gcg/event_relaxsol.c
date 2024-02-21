@@ -142,7 +142,7 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
          SCIPsolGetHeur(sol) == NULL ? "relaxation" : SCIPheurGetName(SCIPsolGetHeur(sol)));
 
       /* transform the master solution to the original variable space */
-      SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol) );
+      SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol, FALSE) );
 
       SCIP_CALL( SCIPtrySolFree(origprob, &origsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
       SCIPdebugMessage("  ->%s stored\n", stored ? "" : " not");

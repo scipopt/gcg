@@ -2875,7 +2875,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          foundvarscolpool = FALSE;
          oldnfoundcols = GCGpricestoreGetNCols(pricestore);
 
-         SCIP_CALL( GCGcolpoolPrice(scip_, colpool, pricestore, NULL, &foundvarscolpool) );
+         SCIP_CALL( GCGcolpoolPrice(colpool, pricestore, NULL, &foundvarscolpool) );
          SCIPstatisticMessage("cp: %d impr c\n", GCGpricestoreGetNCols(pricestore) - oldnfoundcols);
 
          if( foundvarscolpool )
@@ -5276,4 +5276,19 @@ GCG_SOLVER** ObjPricerGcg::getSolvers() const
 int ObjPricerGcg::getNumSolvers() const
 {
     return pricerdata->nsolvers;
+}
+
+extern "C"
+GCG_COLPOOL* GCGgetColpool(
+   SCIP*                 scip
+   )
+{
+   ObjPricerGcg* pricer;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   return pricer->colpool;
 }
