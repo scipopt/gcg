@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   disp_gcg.c
- * 
+ *
  * @brief  GCG display columns
  * @author Gerald Gamrath
  * @author Christian Puchert
@@ -357,13 +357,13 @@
 #define DISP_POSI_MCONSS        3150
 #define DISP_STRI_MCONSS        TRUE
 
-#define DISP_NAME_MCUTS         "mcuts"
-#define DISP_DESC_MCUTS         "total number of cuts applied to the master LPs"
-#define DISP_HEAD_MCUTS         "mcuts"
-#define DISP_WIDT_MCUTS         5
-#define DISP_PRIO_MCUTS         80000
-#define DISP_POSI_MCUTS         3550
-#define DISP_STRI_MCUTS         TRUE
+#define DISP_NAME_OCUTS         "ocuts"
+#define DISP_DESC_OCUTS         "total number of original cuts applied to the master LPs"
+#define DISP_HEAD_OCUTS         "ocuts"
+#define DISP_WIDT_OCUTS         5
+#define DISP_PRIO_OCUTS         80000
+#define DISP_POSI_OCUTS         3550
+#define DISP_STRI_OCUTS         TRUE
 
 /*
  * Callback methods
@@ -1158,19 +1158,19 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMconss)
 
 /** output method of display column to output file stream 'file' */
 static
-SCIP_DECL_DISPOUTPUT(SCIPdispOutputMcuts)
+SCIP_DECL_DISPOUTPUT(SCIPdispOutputOcuts)
 {  /*lint --e{715}*/
    assert(disp != NULL);
-   assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MCUTS) == 0);
+   assert(strcmp(SCIPdispGetName(disp), DISP_NAME_OCUTS) == 0);
    assert(scip != NULL);
 
    if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNCutsApplied(GCGgetMasterprob(scip)), DISP_WIDT_MCUTS);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNCutsApplied(GCGgetMasterprob(scip)), DISP_WIDT_OCUTS);
    }
    else
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, 0, DISP_WIDT_MCUTS);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, 0, DISP_WIDT_OCUTS);
    }
 
 
@@ -1516,12 +1516,12 @@ SCIP_RETCODE SCIPincludeDispGcg(
             SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMconss, NULL,
             DISP_WIDT_MCONSS, DISP_PRIO_MCONSS, DISP_POSI_MCONSS, DISP_STRI_MCONSS) );
    }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_MCUTS);
+   tmpdisp = SCIPfindDisp(scip, DISP_NAME_OCUTS);
    if( tmpdisp == NULL )
    {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MCUTS, DISP_DESC_MCUTS, DISP_HEAD_MCUTS,
-            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMcuts, NULL,
-            DISP_WIDT_MCUTS, DISP_PRIO_MCUTS, DISP_POSI_MCUTS, DISP_STRI_MCUTS) );
+      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_OCUTS, DISP_DESC_OCUTS, DISP_HEAD_OCUTS,
+            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputOcuts, NULL,
+            DISP_WIDT_OCUTS, DISP_PRIO_OCUTS, DISP_POSI_OCUTS, DISP_STRI_OCUTS) );
    }
    tmpdisp = SCIPfindDisp(scip, DISP_NAME_DEGENERACY);
    if( tmpdisp == NULL )

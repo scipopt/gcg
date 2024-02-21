@@ -531,7 +531,8 @@ SCIP_RETCODE GCGcreateArtificialVar(
    SCIP_Real             objcoef             /**< objective coefficient of artificial variable */
    );
 
-/** creates the inferred pricing variable and vardata */
+/** creates a pricing variable inferred from a master cut
+ * that does not correspond to any original variable and its vardata */
 SCIP_RETCODE GCGcreateInferredPricingVar(
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
    SCIP_VAR**            newvar,             /**< pointer to store new master variable */
