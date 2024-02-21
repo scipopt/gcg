@@ -71,9 +71,9 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
    GCG_DECL_BRANCHPROPMASTER((*branchpropmaster)),/**<  propagation method for branchrule */
    GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved)),/**<  master solved method for branchrule */
    GCG_DECL_BRANCHDATADELETE((*branchdatadelete)),/**<  branchdata deletion method for branchrule */
-   GCG_DECL_BRANCHNEWCOL ((*branchnewcol)),  /**< new column handler method of branching rule */
-   GCG_DECL_BRANCHUPDATEDUAL ((*branchupdatedual)),/**< dual value handler method of branching rule */
-   GCG_DECL_BRANCHGETMASTERCUT ((*branchgetmastercut))/**< mastercut getter of branching rule */
+   GCG_DECL_BRANCHNEWCOL((*branchnewcol)),   /**< new column handler method of branching rule */
+   GCG_DECL_BRANCHUPDATEDUAL((*branchupdatedual)),/**< dual value handler method of branching rule */
+   GCG_DECL_BRANCHGETMASTERCUT((*branchgetmastercut))/**< mastercut getter of branching rule */
    );
 
 /** perform activation method of the given branchrule for the given branchdata */
