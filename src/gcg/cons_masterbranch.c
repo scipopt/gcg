@@ -1807,21 +1807,9 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    if( (*consdata)->origcons == NULL && (*consdata)->branchdata != NULL )
    {
       SCIP_CALL( GCGrelaxBranchDataDelete(origscip, (*consdata)->branchrule, &(*consdata)->branchdata) );
-      (*consdata)->branchdata = NULL;
-      (*consdata)->branchdata = NULL;
    }
-   else
-   {
-      if( (*consdata)->branchdata != NULL )
-      {
-         SCIP_CALL( GCGrelaxBranchDataDelete(origscip, (*consdata)->branchrule, &(*consdata)->branchdata) );
-         (*consdata)->branchdata = NULL;
-         if( (*consdata)->origcons != NULL )
-         {
-            GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
-         }
-      }
-   }
+
+   (*consdata)->branchdata = NULL;
 
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if( (*consdata)->origcons != NULL )
