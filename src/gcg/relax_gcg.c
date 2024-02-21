@@ -2821,6 +2821,8 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
+      SCIP_CONS* activeorigcons;
+
       /* start root node time clock */
       if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
       {
@@ -2867,10 +2869,11 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
             SCIPdebugMessage("  updated current best primal feasible solution.\n");
       }
 
-      if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL )
+      activeorigcons = GCGconsOrigbranchGetActiveCons(scip);
+      if( GCGconsOrigbranchGetBranchrule(activeorigcons) != NULL )
       {
-         SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
-               GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
+         SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(activeorigcons ),
+               GCGconsOrigbranchGetBranchdata(activeorigcons), *lowerbound) );
       }
 
       /* stop root node clock */
