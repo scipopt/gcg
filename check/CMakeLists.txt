@@ -44,7 +44,7 @@ set(settings_MIPLIB
 )
 
 set(instances_MIPLIB
-   "instances/miplib/noswot.mps\;-41"
+   "instances/miplib/noswot.mps\;instances/miplib/noswot.dec\;-41"
    )
 
 #
@@ -56,9 +56,9 @@ set(settings_BPP
 )
 
 set(instances_BPP
-   "instances/bpp/N1C1W4_M.BPP.lp\;41"
-   "instances/bpp/N1C2W2_O.BPP.lp\;29"
-   "instances/bpp/N1C3W1_A.lp\;16"
+   "instances/bpp/N1C1W4_M.BPP.lp\;\;41"
+   "instances/bpp/N1C2W2_O.BPP.lp\;\;29"
+   "instances/bpp/N1C3W1_A.lp\;\;16"
    )
 
 #
@@ -70,9 +70,9 @@ set(settings_CPMP
 )
 
 set(instances_CPMP
-   "instances/cpmp/p1250-2.lp\;412"
-   "instances/cpmp/p1650-2.txt.lp\;336"
-   "instances/cpmp/p2050-1.txt.lp\;266"
+   "instances/cpmp/p1250-2.lp\;\;412"
+   "instances/cpmp/p1650-2.txt.lp\;\;336"
+   "instances/cpmp/p2050-1.txt.lp\;\;266"
    )
 
 #
@@ -84,8 +84,8 @@ set(settings_CS
 )
 
 set(instances_CS
-   "instances/cs/TEST0055.lp\;11"
-   "instances/cs/TEST0059.lp\;11"
+   "instances/cs/TEST0055.lp\;\;11"
+   "instances/cs/TEST0059.lp\;\;11"
    )
 
 #
@@ -97,8 +97,8 @@ set(settings_GAP
 )
 
 set(instances_GAP
-   "instances/gap/gap4_2.txt.lp\;644"
-   "instances/gap/gap8_4.txt.lp\;1117"
+   "instances/gap/gap4_2.txt.lp\;\;644"
+   "instances/gap/gap8_4.txt.lp\;\;1117"
    )
 
 #
@@ -110,9 +110,9 @@ set(settings_MKP
 )
 
 set(instances_MKP
-   "instances/mkp/strong_d_45_15_12.lp\;-8703"
-   "instances/mkp/strong_s_75_15_14.lp\;-7158"
-   "instances/mkp/strong_s_75_15_18.lp\;-8360"
+   "instances/mkp/strong_d_45_15_12.lp\;\;-8703"
+   "instances/mkp/strong_s_75_15_14.lp\;\;-7158"
+   "instances/mkp/strong_s_75_15_18.lp\;\;-8360"
    )
 
 #
@@ -135,12 +135,14 @@ set_tests_properties(gcg-build
 #
 # macro to split an instance into its relevant information
 # - path
+# - decomp
 # - optval
 # - basename
 #
 macro(split_instance instance)
     list(GET instance 0 path)
-    list(GET instance 1 optval)
+    list(GET instance 1 decpath)
+    list(GET instance 2 optval)
     get_filename_component(basename ${path} NAME)
 endmacro(split_instance)
 
@@ -155,10 +157,20 @@ macro(add_instancetests instances settings prefix)
         #
         foreach(setting ${${settings}})
             #
-            # treat the instance as a tuple (list) of two values
+            # treat the instance as a list of three values
             #
+            set(GCG_TEST_COMMAND
+                $<TARGET_FILE:gcg>
+                -f ${PROJECT_SOURCE_DIR}/check/${path}
+                -s ${PROJECT_SOURCE_DIR}/settings/${setting}.set
+                -o ${optval} ${optval}
+            )
+            if(NOT "${decpath}" STREQUAL "")
+                list(APPEND GCG_TEST_COMMAND -d ${PROJECT_SOURCE_DIR}/check/${decpath})
+            endif()
+
             add_test(NAME ${prefix}-${setting}-${basename}
-                    COMMAND $<TARGET_FILE:gcg> -f ${PROJECT_SOURCE_DIR}/check/${path} -s ${PROJECT_SOURCE_DIR}/settings/${setting}.set -o ${optval} ${optval}
+                    COMMAND ${GCG_TEST_COMMAND}
                     )
             set_tests_properties(${prefix}-${setting}-${basename}
                                 PROPERTIES
@@ -170,7 +182,7 @@ macro(add_instancetests instances settings prefix)
     endforeach(instance)
 endmacro(add_instancetests)
 
-add_instancetests(instances_MIPLIB settings_MIP "MIPLIB")
+add_instancetests(instances_MIPLIB settings_MIPLIB "MIPLIB")
 add_instancetests(instances_BPP settings_BPP "BPP")
 add_instancetests(instances_CPMP settings_CPMP "CPMP")
 add_instancetests(instances_CS settings_CS "CS")
