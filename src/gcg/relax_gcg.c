@@ -807,6 +807,14 @@ SCIP_RETCODE checkIdenticalBlocks(
 
    relaxdata->nrelpricingprobs = nrelevant;
 
+   if( relaxdata->npricingprobs > nrelevant )
+   {
+      // this is a workaround (GCG cannot handle different bounds on aggregated variables, see checkAggregatedLocalBounds)
+      SCIP_CALL( SCIPsetBoolParam(scip, "misc/allowweakdualreds", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(scip, "misc/allowstrongdualreds", FALSE) );
+      assert(!SCIPallowStrongDualReds(scip) && !SCIPallowWeakDualReds(scip));
+   }
+
    return SCIP_OKAY;
 }
 
