@@ -4604,6 +4604,12 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       {
          SCIPdebugMessage("Masterproblem still solving, mastersol = NULL\n");
          mastersol = NULL;
+
+         if( relaxdata->lastmasterlpiters >= SCIPgetNLPIterations(relaxdata->masterprob) )
+         {
+            SCIPdebugMessage("no new lp iterations\n");
+            return SCIP_OKAY;
+         }
       }
       else if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVED )
       {
