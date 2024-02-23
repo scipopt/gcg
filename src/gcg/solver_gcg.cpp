@@ -169,7 +169,8 @@ SCIP_RETCODE adjustSettings(SCIP* pricingprob, SCIP* subgcg)
    SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/finitesolutionstore", TRUE) );
 
    // TODO: disable dualreds?
-   //SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/allowdualreds", FALSE) );
+   //SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/allowstrongdualreds", FALSE) );
+   //SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/allowweakdualreds", FALSE) );
 
    SCIP_CALL( SCIPgetRealParam(pricingprob, "numerics/infinity", &infinity) );
    SCIP_CALL( SCIPgetRealParam(pricingprob, "numerics/epsilon", &epsilon) );
@@ -199,6 +200,9 @@ SCIP_RETCODE adjustSettings(SCIP* pricingprob, SCIP* subgcg)
    //SCIP_CALL( SCIPsetBoolParam(subgcg, "pricing/masterpricer/stabilization", FALSE) );
    //SCIP_CALL( SCIPsetIntParam(subgcg, "lp/solvefreq", -1) );
    //SCIP_CALL( SCIPsetBoolParam(subgcg, "sepa/basis/enable", FALSE) );
+   //SCIP_CALL( SCIPsetBoolParam(subgcg, "relaxing/gcg/aggregation", FALSE) );
+   //SCIP_CALL( SCIPsetIntParam(subgcg, "heuristics/xpcrossover/freq", -1) );
+   //SCIP_CALL( SCIPsetIntParam(subgcg, "heuristics/xprins/freq", -1) );
 
    return SCIP_OKAY;
 }
@@ -346,16 +350,15 @@ SCIP_RETCODE updateVars(
       origvar = vars[i];
       suborigvar = static_cast<SCIP_VAR*>(SCIPhashmapGetImage(varmap, origvar));
 
-      if (SCIPgetStage(pricingprob) >= SCIP_STAGE_TRANSFORMED)
-      {
+      if( SCIPgetStage(pricingprob) >= SCIP_STAGE_TRANSFORMED && !SCIPvarIsTransformed(origvar) )
          var = SCIPvarGetTransVar(origvar);
-         subvar = SCIPvarGetTransVar(suborigvar);
-      }
       else
-      {
          var = origvar;
+
+      if( SCIPgetStage(pricingprob) >= SCIP_STAGE_TRANSFORMED && SCIPvarIsTransformed(suborigvar) )
+         subvar = SCIPvarGetTransVar(suborigvar);
+      else
          subvar = suborigvar;
-      }
 
       if (varbndschanged)
       {
