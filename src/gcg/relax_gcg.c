@@ -130,6 +130,7 @@ struct SCIP_RelaxData
    SCIP_SOL*             currentorigsol;     /**< current lp solution transformed into the original space */
    SCIP_Bool             origsolfeasible;    /**< is the current lp solution primal feasible in the original space? */
    SCIP_Longint          lastmasterlpiters;  /**< number of lp iterations when currentorigsol was updated the last time */
+   SCIP_Longint          lastmasternode;     /**< number of current node when currentorigsol was updated the last time */
    SCIP_SOL*             lastmastersol;      /**< last feasible master solution that was added to the original problem */
    SCIP_CONS**           markedmasterconss;  /**< array of conss that are marked to be in the master */
    int                   nmarkedmasterconss; /**< number of elements in array of conss that are marked to be in the master */
@@ -2448,6 +2449,7 @@ void initRelaxdata(
 
    relaxdata->lastmastersol = NULL;
    relaxdata->lastmasterlpiters = 0;
+   relaxdata->lastmasternode = -1;
    relaxdata->markedmasterconss = NULL;
    relaxdata->maxmarkedmasterconss = 0;
    relaxdata->masterinprobing = FALSE;
@@ -4612,6 +4614,9 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVED || SCIPgetLPSolstat(relaxdata->masterprob) == SCIP_LPSOLSTAT_OPTIMAL )
    {
       SCIP_SOL* mastersol;
+      SCIP_Longint currentnode;
+
+      currentnode = SCIPgetCurrentNode(relaxdata->masterprob) == NULL ? -1 : SCIPnodeGetNumber(SCIPgetCurrentNode(relaxdata->masterprob));
 
       /* create new solution */
       if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVING )
@@ -4619,7 +4624,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIPdebugMessage("Masterproblem still solving, mastersol = NULL\n");
          mastersol = NULL;
 
-         if( relaxdata->lastmasterlpiters >= SCIPgetNLPIterations(relaxdata->masterprob) )
+         if( relaxdata->lastmasternode == currentnode && relaxdata->lastmasterlpiters >= SCIPgetNLPIterations(relaxdata->masterprob) )
          {
             SCIPdebugMessage("no new lp iterations\n");
             return SCIP_OKAY;
@@ -4646,6 +4651,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       freeCurrentOrigSol(scip, relaxdata);
 
       relaxdata->lastmasterlpiters = SCIPgetNLPIterations(relaxdata->masterprob);
+      relaxdata->lastmasternode = currentnode;
 
       if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) && GCGmasterIsSolValid(relaxdata->masterprob, mastersol) )
       {
