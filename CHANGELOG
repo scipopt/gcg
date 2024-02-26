@@ -1,5 +1,5 @@
 @page RN36 Release notes for GCG 3.6
-@section RN360 GCG 3.6.1
+@section RN361 GCG 3.6.1
 *************************
 
 Bug fixes
@@ -7,6 +7,8 @@ Bug fixes
 
 - fix (global) bound propagation bugs
 - remove columns from colpool that violate global bounds
+- tree synchronization: fix segfault
+- fix 'gcg_check' CMake target
 
 New/modified/removed API functions:
 ---------------------------
