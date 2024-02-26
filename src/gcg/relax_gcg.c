@@ -2433,12 +2433,22 @@ static
 SCIP_DECL_RELAXEXIT(relaxExitGcg)
 {
    SCIP_RELAXDATA* relaxdata;
+   int i;
 
    assert(scip != NULL);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   /* free pricing problems */
+   for( i = relaxdata->npricingprobs - 1; i >= 0 ; i-- )
+   {
+      SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
+   }
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->pricingprobs), relaxdata->npricingprobs);
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->blockrepresentative), relaxdata->npricingprobs);
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->nblocksidentical), relaxdata->npricingprobs);
 
    if( relaxdata->decomp != NULL )
    {
@@ -2628,15 +2638,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    {
       SCIP_CALL( SCIPfreeProb(relaxdata->masterprob) );
    }
-
-   /* free pricing problems */
-   for( i = relaxdata->npricingprobs - 1; i >= 0 ; i-- )
-   {
-      SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
-   }
-   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->pricingprobs), relaxdata->npricingprobs);
-   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->blockrepresentative), relaxdata->npricingprobs);
-   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->nblocksidentical), relaxdata->npricingprobs);
 
    /* free solutions */
    if( relaxdata->currentorigsol != NULL )
