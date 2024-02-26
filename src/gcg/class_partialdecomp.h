@@ -1219,7 +1219,7 @@ public:
     * @brief  Gets index in variables array of a block for a variable
     * @param varid the id of the variable the index
     * @param block the corresponding block id
-    * @return  returns index in variables array of a block for a variable
+    * @return the index of the variable or -1 if var is not in block
     */
    GCG_EXPORT
    int getVarProbindexForBlock(
