@@ -39,7 +39,7 @@
 #include "scip/scip.h"
 #include "def.h"
 
-#define GCG_VARHISTORYBUFFER_SIZE 50
+#define GCG_VARHISTORYBUFFER_SIZE 256
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,6 +76,31 @@ SCIP_Bool GCGvarhistoryHasNext(
 SCIP_RETCODE GCGvarhistoryNext(
    SCIP*                  scip,              /**< SCIP data structure */
    GCG_VARHISTORYPOINTER**pointer            /**< pointer to the history */
+   );
+
+/** jump to the latest history event */
+SCIP_RETCODE GCGvarhistoryJumpToLatest(
+   SCIP*                  scip,              /**< SCIP data structure */
+   GCG_VARHISTORYPOINTER**pointer            /**< pointer to the history */
+   );
+
+/** create a new history pointer to an empty existing buffer and captures it */
+SCIP_RETCODE GCGvarhistoryCreatePointer(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_VARHISTORYPOINTER**pointer             /**< pointer to the history */
+   );
+
+/** copy a pointer by creating a new one that points to the same buffer at the same position and capture it */
+SCIP_RETCODE GCGvarhistoryCopyPointer(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_VARHISTORYPOINTER**pointer,            /**< pointer to the history */
+   GCG_VARHISTORYPOINTER* source              /**< source pointer */
+   );
+
+/** release the reference to the buffer and free the history pointer */
+SCIP_RETCODE GCGvarhistoryFreePointer(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_VARHISTORYPOINTER**pointer             /**< pointer to the history */
    );
 
 /** add variable to history */

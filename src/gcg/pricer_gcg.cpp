@@ -3701,9 +3701,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->maxpricedvars = SCIPcalcMemGrowSize(scip, 50);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars) );
 
-   SCIP_CALL( SCIPallocBlockMemory(scip, &pricerdata->varhistorypointer) );
-   pricerdata->varhistorypointer->buffer = NULL;
-   pricerdata->varhistorypointer->pos = 0;
+   SCIP_CALL( GCGvarhistoryCreatePointer(scip, &(pricerdata->varhistorypointer)) );
 
    pricerdata->nroundsredcost = 0;
 #ifdef SCIP_STATISTIC
@@ -3859,9 +3857,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    pricerdata->npricedvars = 0;
 
    assert(pricerdata->varhistorypointer != NULL);
-   if( pricerdata->varhistorypointer->buffer != NULL )
-      SCIP_CALL( GCGvarhistoryReleaseBuffer(scip, &pricerdata->varhistorypointer->buffer) );
-   SCIPfreeBlockMemory(scip, &pricerdata->varhistorypointer);
+   SCIP_CALL( GCGvarhistoryFreePointer(scip, &(pricerdata->varhistorypointer)) );
 
 #ifdef SCIP_STATISTIC
    SCIPfreeBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds);
