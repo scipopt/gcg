@@ -116,6 +116,7 @@ set(gcgsources
     gcg/heur_xprins.c
     gcg/mastercutdata.c
     gcg/masterplugins.c
+    gcg/misc_varhistory.c
     gcg/misc.c
     gcg/miscvisualization.cpp
     gcg/nodesel_master.c
@@ -168,6 +169,7 @@ set(gcgheaders
     gcg/branch_ryanfoster.h
     gcg/class_conspartition.h
     gcg/class_indexpartition.h
+    gcg/misc_varhistory.h
     gcg/miscvisualization.h
     gcg/class_pricingcontroller.h
     gcg/class_pricingtype.h
