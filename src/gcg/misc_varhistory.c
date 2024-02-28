@@ -69,12 +69,34 @@ SCIP_RETCODE historybufferFree(
    return SCIP_OKAY;
 }
 
+/** get the variable behinde the pointer */
+SCIP_RETCODE GCGvarhistoryGetVar(
+   GCG_VARHISTORYPOINTER* pointer,           /**< pointer to the history */
+   SCIP_VAR**             var                /**< pointer to store the variable */
+   )
+{
+   assert(pointer != NULL);
+   assert(0 <= pointer->pos);
+   assert(var != NULL);
+   assert(*var == NULL);
+
+   if( pointer->buffer == NULL || pointer->pos >= pointer->buffer->nvars)
+   {
+      *var = NULL;
+      return SCIP_ERROR;
+   }
+
+   *var = pointer->buffer->vars[pointer->pos];
+
+   return SCIP_OKAY;
+}
+
 /** check if there is a next history event */
 SCIP_Bool GCGvarhistoryHasNext(
    GCG_VARHISTORYPOINTER* pointer            /**< pointer to the history */
    )
 {
-   if( pointer == NULL )
+   if( pointer == NULL || pointer->buffer == NULL )
    {
       return FALSE;
    }

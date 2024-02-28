@@ -61,21 +61,24 @@ struct GCG_VarHistoryPointer {
    int                   pos;                /**< position in the buffer */
 };
 
+/** get the variable behinde the pointer */
+SCIP_RETCODE GCGvarhistoryGetVar(
+   GCG_VARHISTORYPOINTER* pointer,           /**< pointer to the history */
+   SCIP_VAR**             var                /**< pointer to store the variable */
+   );
+
 /** check if there is a next history event */
-GCG_EXPORT
 SCIP_Bool GCGvarhistoryHasNext(
    GCG_VARHISTORYPOINTER* pointer            /**< pointer to the history */
    );
 
 /** get the next history event */
-GCG_EXPORT
 SCIP_RETCODE GCGvarhistoryNext(
    SCIP*                  scip,              /**< SCIP data structure */
    GCG_VARHISTORYPOINTER**pointer            /**< pointer to the history */
    );
 
 /** add variable to history */
-GCG_EXPORT
 SCIP_RETCODE GCGvarhistoryAddVar(
    SCIP*                  scip,               /**< SCIP data structure */
    GCG_VARHISTORYPOINTER* pointer,            /**< pointer to the history */
@@ -83,13 +86,11 @@ SCIP_RETCODE GCGvarhistoryAddVar(
    );
 
 /** capture a reference to the history */
-GCG_EXPORT
 SCIP_RETCODE GCGvarhistoryCaptureBuffer(
    GCG_VARHISTORYBUFFER*  buffer              /**< buffer */
    );
 
 /** release a reference to the history */
-GCG_EXPORT
 SCIP_RETCODE GCGvarhistoryReleaseBuffer(
    SCIP*                  scip,               /**< SCIP data structure */
    GCG_VARHISTORYBUFFER** buffer              /**< buffer */

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_masterbranch.c
- * 
+ *
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
  * @author Martin Bergner
@@ -46,8 +46,10 @@
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
+#include "misc_varhistory.h"
 
 #include "scip/cons_linear.h"
+#include "scip/struct_var.h"
 
 /*#define CHECKPROPAGATEDVARS*/
 
@@ -88,6 +90,8 @@ struct SCIP_ConsData
                                               *   containing information about the branching restrictions */
    SCIP_BRANCHRULE*      branchrule;         /**< branching rule that created the corresponding node in the original problem and imposed
                                               *   branching restrictions */
+
+   GCG_VARHISTORYPOINTER*seen_varhistory;    /**< pointer to the history of priced variables */
 
    /* local bound changes on original variables that belong to a unique block */
    SCIP_VAR**            localbndvars;       /**< original variables of bound changes stored at the current node */
@@ -1692,6 +1696,23 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       SCIP_CALL( GCGrelaxBranchActiveMaster(origscip, consdata->branchrule, consdata->branchdata) );
    }
 
+   while( GCGvarhistoryHasNext(consdata->seen_varhistory) )
+   {
+      GCGvarhistoryNext(scip, &consdata->seen_varhistory);
+
+      SCIP_VAR* new_var = NULL;
+      SCIP_CALL( GCGvarhistoryGetVar(consdata->seen_varhistory, &new_var) );
+      assert(new_var != NULL);
+
+      if( new_var->deleted )
+      {
+         SCIPdebugMessage("Skipping deleted Variable <%s>!\n", SCIPvarGetName(new_var));
+         continue;
+      }
+
+      // TODO: Generate the column entry. See https://git.or.rwth-aachen.de/gcg/gcg/-/issues/697
+   }
+
    return SCIP_OKAY;
 }
 
@@ -1746,6 +1767,11 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    if( consdata->branchrule != NULL )
    {
       SCIP_CALL( GCGrelaxBranchDeactiveMaster(origscip, consdata->branchrule, consdata->branchdata) );
+   }
+
+   while( GCGvarhistoryHasNext(consdata->seen_varhistory) )
+   {
+      GCGvarhistoryNext(scip, &consdata->seen_varhistory);
    }
 
    return SCIP_OKAY;
@@ -1828,6 +1854,11 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       assert(GCGconsOrigbranchGetMastercons((*consdata)->origcons) == cons);
       GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
    }
+
+   assert((*consdata)->seen_varhistory != NULL);
+   if( (*consdata)->seen_varhistory->buffer != NULL )
+      SCIP_CALL( GCGvarhistoryReleaseBuffer(scip, &(*consdata)->seen_varhistory->buffer) );
+   SCIPfreeBlockMemory(scip, &(*consdata)->seen_varhistory);
 
    /* remove branching constraints at child nodes */
    nchildconss = (*consdata)->nchildconss;
@@ -2324,6 +2355,14 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
    consdata->branchdata = branchdata;
    consdata->branchrule = branchrule;
+
+   SCIP_CALL( SCIPallocBlockMemory(scip, &consdata->seen_varhistory) );
+   consdata->seen_varhistory->buffer = GCGgetCurrentVarhistoryPointer(scip)->buffer;
+   consdata->seen_varhistory->pos = GCGgetCurrentVarhistoryPointer(scip)->pos;
+   if( consdata->seen_varhistory->buffer != NULL )
+   {
+      SCIP_CALL( GCGvarhistoryCaptureBuffer(consdata->seen_varhistory->buffer) );
+   }
 
    consdata->localbndvars = NULL;
    consdata->localbndtypes = NULL;

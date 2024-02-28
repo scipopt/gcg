@@ -5394,3 +5394,23 @@ SCIP_RETCODE GCGmasterPrintSimplexIters(
 
    return SCIP_OKAY;
 }
+
+/** get a weak reference to the current and latest varhistory pointer */
+extern "C"
+GCG_VARHISTORYPOINTER* GCGgetCurrentVarhistoryPointer(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   return pricerdata->varhistorypointer;
+}
