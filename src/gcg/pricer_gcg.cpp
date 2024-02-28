@@ -1844,9 +1844,9 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
 
    /* get master variables that were directly transferred or that are linking */
    mastervars = SCIPgetOrigVars(scip_);
-   nmastervars = GCGgetNTransvars(origprob) + GCGgetNLinkingvars(origprob);
+   nmastervars = SCIPgetNOrigVars(scip_);
 
-   assert(nmastervars <= SCIPgetNOrigVars(scip_));
+   assert(GCGgetNTransvars(origprob) + GCGgetNLinkingvars(origprob) <= SCIPgetNOrigVars(scip_));
 
    /* no linking or directly transferred variables exist, set stabdualval pointer and exit */
    if( nmastervars == 0 )
@@ -1884,8 +1884,9 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
 
       SCIP_VAR* linkvar = linkconsvars[0];
 
-      varindex = SCIPvarGetProbindex(linkvar);
+      varindex = SCIPvarGetProbindex(GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(linkvar)[0])[0]); // hack
       assert(varindex < nmastervars);
+      assert(mastervars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(linkvar)[0])[0]);
 
       if( stabilize )
       {
@@ -1942,8 +1943,9 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
             if( blocknr < 0 )
             {
                int varindex;
-               varindex = SCIPvarGetProbindex(mastervar);
+               varindex = SCIPvarGetProbindex(GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]); // hack
                assert(varindex < nmastervars);
+               assert(mastervars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]);
 
                stabredcosts[varindex] -= dualsol * consvals[j];
             }
@@ -2006,8 +2008,9 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
             if( blocknr < 0 )
             {
                int varindex;
-               varindex = SCIPvarGetProbindex(mastervar);
+               varindex = SCIPvarGetProbindex(GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]); // hack
                assert(varindex < nmastervars);
+               assert(mastervars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]);
 
                stabredcosts[varindex] -= dualsol * consvals[j];
             }
