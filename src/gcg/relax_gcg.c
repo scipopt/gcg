@@ -114,9 +114,6 @@ struct SCIP_RelaxData
    int                   nvarlinkconss;      /**< number of constraints that ensure that copies of linking variables have the same value */
    SCIP_Real             pricingprobsmemused; /**< sum of memory used after problem creation stage of all pricing problems */
 
-   /* hashmaps for transformation */
-   SCIP_HASHMAP*         hashorig2origvar;   /**< hashmap mapping original variables to themselves */
-
    /* constraint data */
    SCIP_CONS**           masterconss;        /**< array of constraints in the master problem */
    SCIP_CONS**           origmasterconss;    /**< array of constraints in the original problem that belong to the
@@ -974,6 +971,7 @@ SCIP_RETCODE createPricingVariables(
    int v;
    int i;
    int npricingprobs;
+   SCIP_HASHMAP* hashorig2origvar;
 
    assert(scip != NULL);
    assert(relaxdata != NULL);
@@ -982,6 +980,10 @@ SCIP_RETCODE createPricingVariables(
    vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
    npricingprobs = relaxdata->npricingprobs;
+
+#ifndef NDEBUG
+   SCIP_CALL( SCIPhashmapCreate(&hashorig2origvar, SCIPblkmem(scip), 10*SCIPgetNVars(scip)+1) );
+#endif
 
    for( v = 0; v < nvars; v++ )
    {
@@ -1008,9 +1010,11 @@ SCIP_RETCODE createPricingVariables(
          }
       }
 
+#ifndef NDEBUG
       SCIPdebugMessage("Creating map for (%p, %p) var %s:", (void*)(vars[v]), (void*)(probvar), SCIPvarGetName(probvar));
-      assert( !SCIPhashmapExists(relaxdata->hashorig2origvar, probvar) );
-      SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
+      assert( !SCIPhashmapExists(hashorig2origvar, probvar) );
+      SCIP_CALL( SCIPhashmapInsert(hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
+#endif
 
       /* variable belongs to exactly one block --> create corresponding pricing variable*/
       if( blocknr >= 0 )
@@ -1065,8 +1069,12 @@ SCIP_RETCODE createPricingVariables(
          SCIPdebugPrintf("master!\n");
          relaxdata->ntransvars++;
       }
-      assert(SCIPhashmapExists(relaxdata->hashorig2origvar, probvar));
+      assert(SCIPhashmapExists(hashorig2origvar, probvar));
    }
+
+#ifndef NDEBUG
+   SCIPhashmapFree(&hashorig2origvar);
+#endif
 
    return SCIP_OKAY;
 }
@@ -1138,8 +1146,6 @@ SCIP_RETCODE initRelaxProblemdata(
       /* array for saving convexity constraints belonging to one of the pricing problems */
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->convconss), relaxdata->npricingprobs) );
    }
-
-   SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2origvar), SCIPblkmem(scip), 10*SCIPgetNVars(scip)+1) );
 
    return SCIP_OKAY;
 }
@@ -2350,7 +2356,6 @@ void initRelaxdata(
 
    relaxdata->blockrepresentative = NULL;
    relaxdata->convconss = NULL;
-   relaxdata->hashorig2origvar = NULL;
    relaxdata->lastsolvednodenr = 0;
 
    relaxdata->origmasterconss = NULL;
@@ -2601,12 +2606,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-
-   if( relaxdata->hashorig2origvar != NULL )
-   {
-      SCIPhashmapFree(&(relaxdata->hashorig2origvar));
-      relaxdata->hashorig2origvar = NULL;
-   }
 
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->markedmasterconss), relaxdata->maxmarkedmasterconss);
    relaxdata->markedmasterconss = NULL;
