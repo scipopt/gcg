@@ -152,9 +152,9 @@ SCIP_RETCODE adjustSettings(SCIP* pricingprob, SCIP* subgcg)
    SCIP_CALL( SCIPsetBoolParam(subgcg, "constraints/setppc/presolusehashing", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(subgcg, "constraints/logicor/presolusehashing", FALSE) );
 
-   SCIP_CALL( SCIPsetIntParam(subgcg, "propagating/dualfix/freq", -1) );
+   // SCIP_CALL( SCIPsetIntParam(subgcg, "propagating/dualfix/freq", -1) );
    SCIP_CALL( SCIPsetIntParam(subgcg, "propagating/dualfix/maxprerounds", 0) );
-   SCIP_CALL( SCIPfixParam(subgcg, "propagating/dualfix/freq") );
+   // SCIP_CALL( SCIPfixParam(subgcg, "propagating/dualfix/freq") );
    SCIP_CALL( SCIPfixParam(subgcg, "propagating/dualfix/maxprerounds") );
 
    SCIP_CALL( SCIPsetIntParam(subgcg, "limits/maxorigsol", 0) );
