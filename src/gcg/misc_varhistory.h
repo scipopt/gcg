@@ -39,7 +39,7 @@
 #include "scip/scip.h"
 #include "def.h"
 
-#define GCG_VARHISTORYBUFFER_SIZE 256
+#define GCG_VARHISTORYBUFFER_SIZE 50
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,10 +48,10 @@ extern "C" {
 typedef struct GCG_VarHistoryBuffer GCG_VARHISTORYBUFFER;
 
 struct GCG_VarHistoryBuffer {
-   SCIP_VAR*             vars[GCG_VARHISTORYBUFFER_SIZE]; /**< variables */
    int                   nvars;              /**< number of variables */
    GCG_VARHISTORYBUFFER* next;               /**< next buffer */
    int                   nuses;              /**< number of uses */
+   SCIP_VAR*             vars[GCG_VARHISTORYBUFFER_SIZE]; /**< variables */
 };
 
 typedef struct GCG_VarHistoryPointer GCG_VARHISTORYPOINTER;
@@ -82,6 +82,14 @@ SCIP_RETCODE GCGvarhistoryNext(
 SCIP_RETCODE GCGvarhistoryJumpToLatest(
    SCIP*                  scip,              /**< SCIP data structure */
    GCG_VARHISTORYPOINTER**pointer            /**< pointer to the history */
+   );
+
+/** jump to the latest history event and retrieve all new variables */
+SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
+   SCIP*                  scip,              /**< SCIP data structure */
+   GCG_VARHISTORYPOINTER**pointer,           /**< pointer to the history */
+   SCIP_VAR***            vars,              /**< pointer to store the variables */
+   int*                   nvars              /**< pointer to store the number of variables */
    );
 
 /** create a new history pointer to an empty existing buffer and captures it */

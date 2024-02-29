@@ -267,8 +267,18 @@ SCIP_RETCODE createBranchingCons(
 
    SCIP_CALL( SCIPaddConsNode(scip, node, branchdata->mastercons, NULL) );
 
+   SCIP_VAR** vars = GCGmasterGetPricedvars(scip);
+   int nvars = GCGmasterGetNPricedvars(scip);
+
+   for( int i = 0; i < nvars; ++i )
+   {
+      SCIP_Bool added = FALSE;
+      SCIP_CALL( addVarToMasterbranch(scip, vars[i], branchdata, &added) );
+   }
+
    return SCIP_OKAY;
 }
+
 /** solving process initialization method of event handler (called when branch and bound process is about to begin) */
 static
 SCIP_DECL_EVENTINITSOL(eventInitsolGenericbranchvaradd)

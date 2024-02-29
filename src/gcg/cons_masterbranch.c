@@ -39,6 +39,7 @@
 /*#define SCIP_DEBUG*/
 #include <assert.h>
 #include <scip/def.h>
+#include <scip/scip.h>
 #include <scip/type_cons.h>
 #include <string.h>
 
@@ -1476,22 +1477,100 @@ SCIP_RETCODE forwardUpdateSeenHistory(
    }
    else
    {
-      while( GCGvarhistoryHasNext(consdata->seen_varhistory) )
+      /*
+         mode = 1: no jump, no alloc, function call
+         mode = 0: jump, alloc, function call
+         mode = -1: jump, no alloc, manual
+      */
+      int mode = -1;
+
+      if( mode == 1 )
       {
-         GCGvarhistoryNext(scip, &consdata->seen_varhistory);
-
-         SCIP_VAR* new_var = NULL;
-         SCIP_CALL( GCGvarhistoryGetVar(consdata->seen_varhistory, &new_var) );
-         assert(new_var != NULL);
-
-         if( new_var->deleted )
+         while( GCGvarhistoryHasNext(consdata->seen_varhistory) )
          {
-            SCIPdebugMessage("Skipping deleted Variable <%s>!\n", SCIPvarGetName(new_var));
-            continue;
+            SCIP_CALL( GCGvarhistoryNext(scip, &(consdata->seen_varhistory)) );
+            SCIP_VAR* newvar = NULL;
+            SCIP_CALL( GCGvarhistoryGetVar(consdata->seen_varhistory, &newvar) );
+            if( newvar->deleted )
+            {
+               SCIPdebugMessage("Skipping deleted Variable <%s>!\n", SCIPvarGetName(newvar));
+               continue;
+            }
+            SCIP_CALL( GCGrelaxBranchNewCol(origscip, consdata->branchrule, consdata->branchdata, newvar) );
+         }
+      }
+      else if( mode == 0 )
+      {
+         SCIP_VAR** new_vars = NULL;
+         int n_new_vars = 0;
+         SCIP_CALL( GCGvarhistoryJumpAndRetrieveVars(scip, &(consdata->seen_varhistory), &new_vars, &n_new_vars) );
+         assert((new_vars == NULL) == (n_new_vars == 0));
+         if( new_vars != NULL )
+         {
+            for( int i = 0; i < n_new_vars; ++i )
+            {
+               if( new_vars[i]->deleted )
+               {
+                  SCIPdebugMessage("Skipping deleted Variable <%s>!\n", SCIPvarGetName(new_vars[i]));
+                  continue;
+               }
+               SCIP_CALL( GCGrelaxBranchNewCol(origscip, consdata->branchrule, consdata->branchdata, new_vars[i]) );
+            }
+            SCIPfreeBlockMemoryArray(scip, &new_vars, n_new_vars);
+         }
+      }
+      else if( mode == -1 )
+      {
+         if( consdata->seen_varhistory->buffer->nvars == 0 )
+         {
+            return SCIP_OKAY;
          }
 
-         // TODO: Generate the column entry. See https://git.or.rwth-aachen.de/gcg/gcg/-/issues/697
-         SCIP_CALL( GCGrelaxBranchNewCol(origscip, consdata->branchrule, consdata->branchdata, new_var) );
+         if( consdata->seen_varhistory->pos < 0 )
+         {
+            consdata->seen_varhistory->pos = -1;
+         }
+
+         do
+         {
+            assert(consdata->seen_varhistory->buffer->nvars > 0);
+            assert(consdata->seen_varhistory->pos < consdata->seen_varhistory->buffer->nvars);
+
+            if( consdata->seen_varhistory->pos == consdata->seen_varhistory->buffer->nvars - 1 )
+            {
+               break;
+            }
+
+            for( int i = consdata->seen_varhistory->pos + 1; i < consdata->seen_varhistory->buffer->nvars; i++ )
+            {
+               if( consdata->seen_varhistory->buffer->vars[i]->deleted )
+               {
+                  SCIPdebugMessage("Skipping deleted Variable <%s>!\n", SCIPvarGetName(consdata->seen_varhistory->buffer->vars[i]));
+                  continue;
+               }
+               SCIP_CALL( GCGrelaxBranchNewCol(origscip, consdata->branchrule, consdata->branchdata, consdata->seen_varhistory->buffer->vars[i]) );
+            }
+            GCG_VARHISTORYBUFFER* next = consdata->seen_varhistory->buffer->next;
+            if( next != NULL )
+            {
+               SCIP_CALL( GCGvarhistoryCaptureBuffer(next) );
+               SCIP_CALL( GCGvarhistoryReleaseBuffer(scip, &consdata->seen_varhistory->buffer) );
+
+               consdata->seen_varhistory->buffer = next;
+               consdata->seen_varhistory->pos = -1;
+            }
+            else
+            {
+               consdata->seen_varhistory->pos = consdata->seen_varhistory->buffer->nvars - 1;
+               assert(consdata->seen_varhistory->pos >= 0);
+               break;
+            }
+         }
+         while( TRUE );
+
+         consdata->seen_varhistory->pos = consdata->seen_varhistory->buffer->nvars - 1;
+
+         return SCIP_OKAY;
       }
    }
 
@@ -1736,12 +1815,14 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 
    /* forward history of node we are activating */
    forwardUpdateSeenHistory(scip, origscip, consdata);
-   /* forward history of possible parent node */
-   if( consdata->parentcons != NULL )
+   /* forward history of possible ancestor nodes (all active) */
+   SCIP_CONS* parentcons = consdata->parentcons;
+   SCIP_CONSDATA* parentconsdata;
+   while( parentcons != NULL )
    {
-      SCIP_CONSDATA* parentconsdata;
-      parentconsdata = SCIPconsGetData(consdata->parentcons);
+      parentconsdata = SCIPconsGetData(parentcons);
       GCGvarhistoryJumpToLatest(scip, &parentconsdata->seen_varhistory);
+      parentcons = parentconsdata->parentcons;
    }
 
    return SCIP_OKAY;

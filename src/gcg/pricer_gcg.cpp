@@ -52,6 +52,7 @@
 #include <scip/def.h>
 #include <scip/pub_var.h>
 #include <scip/type_lp.h>
+#include <scip/type_var.h>
 #include <scip/var.h>
 
 /*lint -e64 disable useless and wrong lint warning */
@@ -3701,6 +3702,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->maxpricedvars = SCIPcalcMemGrowSize(scip, 50);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars) );
 
+   pricerdata->varhistorypointer = NULL;
    SCIP_CALL( GCGvarhistoryCreatePointer(scip, &(pricerdata->varhistorypointer)) );
 
    pricerdata->nroundsredcost = 0;
@@ -3845,6 +3847,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    pricerdata->maxartificialvars = 0;
    pricerdata->nartificialvars = 0;
 
+   int copy = pricerdata->npricedvars;
    for( i = 0; i < pricerdata->npricedvars; i++ )
    {
       SCIP_CALL( SCIPdropVarEvent(scip, pricerdata->pricedvars[i], SCIP_EVENTTYPE_VARDELETED,
