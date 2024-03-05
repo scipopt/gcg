@@ -174,7 +174,7 @@ struct SCIP_PricerData
    int                   npricedvars;        /**< number of priced variables */
    int                   maxpricedvars;      /**< maximal number of priced variables */
 
-   GCG_VARHISTORYPOINTER*varhistorypointer;  /**< pointer to the history of priced variables */
+   GCG_VARHISTORY*       varhistory;         /**< pointer to the history of priced variables */
 
    SCIP_VAR**            artificialvars;     /**< array of artificial variables */
    int                   nartificialvars;    /**< number of artificial variables */
@@ -1476,7 +1476,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToPricedvars(
    GCGmasterVarSetIndex(newvar, pricerdata->npricedvars);
    pricerdata->npricedvars++;
 
-   SCIP_CALL( GCGvarhistoryAddVar(scip_, pricerdata->varhistorypointer, newvar) );
+   SCIP_CALL( GCGvarhistoryAddVar(scip_, pricerdata->varhistory, newvar) );
 
    return SCIP_OKAY;
 }
@@ -3702,8 +3702,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->maxpricedvars = SCIPcalcMemGrowSize(scip, 50);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars) );
 
-   pricerdata->varhistorypointer = NULL;
-   SCIP_CALL( GCGvarhistoryCreatePointer(scip, &(pricerdata->varhistorypointer)) );
+   pricerdata->varhistory = NULL;
+   SCIP_CALL( GCGvarhistoryCreate(scip, &(pricerdata->varhistory)) );
 
    pricerdata->nroundsredcost = 0;
 #ifdef SCIP_STATISTIC
@@ -3859,8 +3859,8 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    pricerdata->maxpricedvars = 0;
    pricerdata->npricedvars = 0;
 
-   assert(pricerdata->varhistorypointer != NULL);
-   SCIP_CALL( GCGvarhistoryFreePointer(scip, &(pricerdata->varhistorypointer)) );
+   assert(pricerdata->varhistory != NULL);
+   SCIP_CALL( GCGvarhistoryFreeReference(scip, &(pricerdata->varhistory)) );
 
 #ifdef SCIP_STATISTIC
    SCIPfreeBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds);
@@ -5395,8 +5395,7 @@ SCIP_RETCODE GCGmasterPrintSimplexIters(
 }
 
 /** get a weak reference to the current and latest varhistory pointer */
-extern "C"
-GCG_VARHISTORYPOINTER* GCGgetCurrentVarhistoryPointer(
+GCG_VARHISTORY* GCGgetCurrentVarhistoryReference(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -5411,5 +5410,5 @@ GCG_VARHISTORYPOINTER* GCGgetCurrentVarhistoryPointer(
    pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
-   return pricerdata->varhistorypointer;
+   return pricerdata->varhistory;
 }

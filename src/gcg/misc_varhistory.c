@@ -30,12 +30,12 @@
  * @author  Til Mohr
  */
 
-#include "misc_varhistory.h"
 #include <scip/def.h>
 #include <scip/pub_message.h>
 #include <scip/scip.h>
 #include <scip/type_retcode.h>
 #include <scip/type_scip.h>
+#include "misc_varhistory.h"
 
 /** free a history buffer */
 static
@@ -71,7 +71,7 @@ SCIP_RETCODE historybufferFree(
 
 /** get the variable behinde the pointer */
 SCIP_RETCODE GCGvarhistoryGetVar(
-   GCG_VARHISTORYPOINTER* pointer,           /**< pointer to the history */
+   GCG_VARHISTORY*        pointer,           /**< pointer to the history */
    SCIP_VAR**             var                /**< pointer to store the variable */
    )
 {
@@ -95,7 +95,7 @@ SCIP_RETCODE GCGvarhistoryGetVar(
 
 /** check if there is a next history event */
 SCIP_Bool GCGvarhistoryHasNext(
-   GCG_VARHISTORYPOINTER* pointer            /**< pointer to the history */
+   GCG_VARHISTORY*        pointer            /**< pointer to the history */
    )
 {
    assert(pointer != NULL);
@@ -124,7 +124,7 @@ SCIP_Bool GCGvarhistoryHasNext(
 /** get the next history event */
 SCIP_RETCODE GCGvarhistoryNext(
    SCIP*                  scip,              /**< SCIP data structure */
-   GCG_VARHISTORYPOINTER**pointer            /**< pointer to the history */
+   GCG_VARHISTORY**       pointer            /**< pointer to the history */
    )
 {
    assert(scip != NULL);
@@ -176,7 +176,7 @@ SCIP_RETCODE GCGvarhistoryNext(
 /** jump to the latest history event */
 SCIP_RETCODE GCGvarhistoryJumpToLatest(
    SCIP*                  scip,              /**< SCIP data structure */
-   GCG_VARHISTORYPOINTER**pointer            /**< pointer to the history */
+   GCG_VARHISTORY**       pointer            /**< pointer to the history */
    )
 {
    assert(scip != NULL);
@@ -207,7 +207,7 @@ SCIP_RETCODE GCGvarhistoryJumpToLatest(
 /** jump to the latest history event and retrieve all new variables */
 SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
    SCIP*                  scip,              /**< SCIP data structure */
-   GCG_VARHISTORYPOINTER**pointer,           /**< pointer to the history */
+   GCG_VARHISTORY**       pointer,           /**< pointer to the history */
    SCIP_VAR***            vars,              /**< pointer to store the variables */
    int*                   nvars              /**< pointer to store the number of variables */
    )
@@ -236,7 +236,7 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
       (*pointer)->pos = -1;
    }
 
-   GCG_VARHISTORYPOINTER weak_copy = {(*pointer)->buffer, (*pointer)->pos};
+   GCG_VARHISTORY weak_copy = {(*pointer)->buffer, (*pointer)->pos};
    do
    {
       *nvars += weak_copy.buffer->nvars - weak_copy.pos - 1;
@@ -304,9 +304,9 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
 }
 
 /** create a new history pointer to an empty existing buffer and captures it */
-SCIP_RETCODE GCGvarhistoryCreatePointer(
+SCIP_RETCODE GCGvarhistoryCreate(
    SCIP*                  scip,               /**< SCIP data structure */
-   GCG_VARHISTORYPOINTER**pointer             /**< pointer to the history */
+   GCG_VARHISTORY**       pointer             /**< pointer to the history */
    )
 {
    assert(pointer != NULL);
@@ -326,10 +326,10 @@ SCIP_RETCODE GCGvarhistoryCreatePointer(
 }
 
 /** copy a pointer by creating a new one that points to the same buffer at the same position and capture it */
-SCIP_RETCODE GCGvarhistoryCopyPointer(
+SCIP_RETCODE GCGvarhistoryCopyReference(
    SCIP*                  scip,               /**< SCIP data structure */
-   GCG_VARHISTORYPOINTER**pointer,            /**< pointer to the history */
-   GCG_VARHISTORYPOINTER* source              /**< source pointer */
+   GCG_VARHISTORY**       pointer,            /**< pointer to the history */
+   GCG_VARHISTORY*        source              /**< source pointer */
    )
 {
    assert(pointer != NULL);
@@ -346,9 +346,9 @@ SCIP_RETCODE GCGvarhistoryCopyPointer(
 }
 
 /** release the reference to the buffer and free the history pointer */
-SCIP_RETCODE GCGvarhistoryFreePointer(
+SCIP_RETCODE GCGvarhistoryFreeReference(
    SCIP*                  scip,               /**< SCIP data structure */
-   GCG_VARHISTORYPOINTER**pointer             /**< pointer to the history */
+   GCG_VARHISTORY**       pointer             /**< pointer to the history */
    )
 {
    assert(scip != NULL);
@@ -370,7 +370,7 @@ SCIP_RETCODE GCGvarhistoryFreePointer(
 /** add variable to history */
 SCIP_RETCODE GCGvarhistoryAddVar(
    SCIP*                  scip,               /**< SCIP data structure */
-   GCG_VARHISTORYPOINTER* pointer,            /**< pointer to the history */
+   GCG_VARHISTORY*        pointer,            /**< pointer to the history */
    SCIP_VAR*              var                 /**< variable */
    )
 {

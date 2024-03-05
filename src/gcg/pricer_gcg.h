@@ -291,7 +291,7 @@ SCIP_RETCODE GCGcomputeColMastercoefs(
    );
 
 /** get a weak reference to the current and latest varhistory pointer */
-GCG_VARHISTORYPOINTER* GCGgetCurrentVarhistoryPointer(
+GCG_VARHISTORY* GCGgetCurrentVarhistoryReference(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

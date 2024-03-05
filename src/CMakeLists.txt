@@ -313,6 +313,7 @@ set(gcgheaders
     gcg/struct_score.h
     gcg/struct_solver.h
     gcg/struct_vardata.h
+    gcg/struct_varhistory.h
     gcg/type_branchgcg.h
     gcg/type_classifier.h
     gcg/type_colpool.h
@@ -332,6 +333,7 @@ set(gcgheaders
     gcg/type_score.h
     gcg/type_solver.h
     gcg/type_varclassifier.h
+    gcg/type_varhistory.h
     gcg/wrapper_partialdecomp.h
 )
 

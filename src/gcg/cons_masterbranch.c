@@ -94,7 +94,7 @@ struct SCIP_ConsData
    SCIP_BRANCHRULE*      branchrule;         /**< branching rule that created the corresponding node in the original problem and imposed
                                               *   branching restrictions */
 
-   GCG_VARHISTORYPOINTER*seen_varhistory;    /**< pointer to the history of priced variables */
+   GCG_VARHISTORY*       seen_varhistory;    /**< pointer to the history of priced variables */
 
    /* local bound changes on original variables that belong to a unique block */
    SCIP_VAR**            localbndvars;       /**< original variables of bound changes stored at the current node */
@@ -1919,7 +1919,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    }
 
    assert((*consdata)->seen_varhistory != NULL);
-   SCIP_CALL( GCGvarhistoryFreePointer(scip, &(*consdata)->seen_varhistory) );
+   SCIP_CALL( GCGvarhistoryFreeReference(scip, &(*consdata)->seen_varhistory) );
 
    /* remove branching constraints at child nodes */
    nchildconss = (*consdata)->nchildconss;
@@ -2418,7 +2418,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->branchrule = branchrule;
 
    consdata->seen_varhistory = NULL;
-   SCIP_CALL( GCGvarhistoryCopyPointer(scip, &consdata->seen_varhistory, GCGgetCurrentVarhistoryPointer(scip)) );
+   SCIP_CALL( GCGvarhistoryCopyReference(scip, &consdata->seen_varhistory, GCGgetCurrentVarhistoryReference(scip)) );
 
    consdata->localbndvars = NULL;
    consdata->localbndtypes = NULL;
