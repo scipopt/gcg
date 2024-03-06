@@ -285,11 +285,6 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
       assert((*pointer)->pos < (*pointer)->buffer->nvars);
       assert(((*pointer)->buffer->nvars == GCG_VARHISTORYBUFFER_SIZE) >= ((*pointer)->buffer->next != NULL));
 
-      if( (*pointer)->pos == (*pointer)->buffer->nvars - 1 )
-      {
-         break;
-      }
-
       for( i = (*pointer)->pos + 1; i < (*pointer)->buffer->nvars; i++ )
       {
          (*vars)[curridx] = (*pointer)->buffer->vars[i];
@@ -307,8 +302,6 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
       }
       else
       {
-         (*pointer)->pos = (*pointer)->buffer->nvars - 1;
-         assert((*pointer)->pos >= 0);
          break;
       }
    }
@@ -317,6 +310,8 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
    assert(curridx == *nvars);
 
    (*pointer)->pos = (*pointer)->buffer->nvars - 1;
+   assert((*pointer)->buffer->next == NULL);
+   assert((*pointer)->pos >= 0);
 
    return SCIP_OKAY;
 }

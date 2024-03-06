@@ -1500,11 +1500,6 @@ SCIP_RETCODE forwardUpdateSeenHistory(
          assert(consdata->knownvarhistory->buffer->nvars > 0);
          assert(consdata->knownvarhistory->pos < consdata->knownvarhistory->buffer->nvars);
 
-         if( consdata->knownvarhistory->pos == consdata->knownvarhistory->buffer->nvars - 1 )
-         {
-            break;
-         }
-
          for( i = consdata->knownvarhistory->pos + 1; i < consdata->knownvarhistory->buffer->nvars; i++ )
          {
             if( consdata->knownvarhistory->buffer->vars[i]->deleted )
