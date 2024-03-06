@@ -174,6 +174,7 @@ struct SCIP_PricerData
    int                   npricedvars;        /**< number of priced variables */
    int                   maxpricedvars;      /**< maximal number of priced variables */
 
+   /* always points to the most recently added priced variable */
    GCG_VARHISTORY*       varhistory;         /**< pointer to the history of priced variables */
 
    SCIP_VAR**            artificialvars;     /**< array of artificial variables */
@@ -3847,7 +3848,6 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    pricerdata->maxartificialvars = 0;
    pricerdata->nartificialvars = 0;
 
-   int copy = pricerdata->npricedvars;
    for( i = 0; i < pricerdata->npricedvars; i++ )
    {
       SCIP_CALL( SCIPdropVarEvent(scip, pricerdata->pricedvars[i], SCIP_EVENTTYPE_VARDELETED,

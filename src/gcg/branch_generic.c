@@ -143,8 +143,7 @@ SCIP_Real getGeneratorEntry(
 
    return 0.0;
 }
-int count1 = 0;
-int count2 = 0;
+
 /** adds a variable to a branching constraint */
 static
 SCIP_RETCODE addVarToMasterbranch(
@@ -154,8 +153,6 @@ SCIP_RETCODE addVarToMasterbranch(
    SCIP_Bool*            added               /**< whether the variable was added */
 )
 {
-   count1 += 1;
-   //printf("count1 = %d\n", count1);
    int p;
 
    SCIP_Bool varinS = TRUE;
@@ -201,9 +198,6 @@ SCIP_RETCODE addVarToMasterbranch(
       SCIPdebugMessage("mastervar is added\n");
       SCIP_CALL( SCIPaddCoefLinear(scip, GCGbranchGenericBranchdataGetMastercons(branchdata), mastervar, 1.0) );
       *added = TRUE;
-
-      count2 += 1;
-      //printf("count2 = %d\n", count2);
    }
 
    return SCIP_OKAY;
