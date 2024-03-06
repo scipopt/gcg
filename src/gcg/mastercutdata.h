@@ -37,11 +37,12 @@
 #define GCG_MASTERCUTDATA_H_
 
 #include "def.h"
-#include "type_mastercutdata.h"
 
 #include "scip/scip.h"
 #include <scip/type_retcode.h>
 #include <scip/type_scip.h>
+
+#include "struct_mastercutdata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,10 +55,32 @@ extern "C" {
  */
 
 /** determine whether the mastercutdata is active in the masterscip */
-GCG_EXPORT
 SCIP_Bool GCGmastercutIsActive(
-   SCIP*                  masterscip,         /**< master scip */
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   );
+
+/** add a new variable along with its coefficient to the mastercut */
+SCIP_RETCODE GCGmastercutAddVar(
+   SCIP*                  masterscip,         /**< master scip */
+   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
+   SCIP_VAR*              var,                /**< variable to add */
+   SCIP_Real              coef                /**< coefficient of the variable */
+   );
+
+/** get the constraint that is the master cut
+  * will fail if the master cut is a row
+  */
+SCIP_RETCODE GCGmastercutGetCons(
+   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
+   SCIP_CONS**            cons                /**< pointer to store the constraint */
+   );
+
+/** get the row that is the master cut
+   * will fail if the master cut is a constraint
+   */
+SCIP_RETCODE GCGmastercutGetRow(
+   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
+   SCIP_ROW**             row                 /**< pointer to store the row */
    );
 
 /**@} */

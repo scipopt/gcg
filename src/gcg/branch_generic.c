@@ -38,6 +38,7 @@
 /*#define SCIP_DEBUG*/
 
 #include "branch_generic.h"
+#include "mastercutdata.h"
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"

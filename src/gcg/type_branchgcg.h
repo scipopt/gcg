@@ -36,12 +36,11 @@
 #ifndef GCG_TYPE_BRANCHGCG_H__
 #define GCG_TYPE_BRANCHGCG_H__
 
-#include "type_mastercutdata.h"
-
 #include "scip/def.h"
 #include "scip/type_result.h"
 #include "scip/type_scip.h"
 #include "scip/type_var.h"
+#include "struct_mastercutdata.h"
 
 #ifdef __cplusplus
 extern "C" {

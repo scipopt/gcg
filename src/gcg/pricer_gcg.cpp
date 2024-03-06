@@ -44,7 +44,6 @@
 #include "struct_mastercutdata.h"
 #include "struct_vardata.h"
 #include "type_branchgcg.h"
-#include "type_mastercutdata.h"
 #include <cassert>
 #include <cstring>
 #include <lpi/type_lpi.h>
@@ -939,7 +938,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       }
       else
       {
-         dualsol = pricetype->mastercutGetDual(branchmastercutdata[i]);
+         dualsol = pricetype->mastercutGetDual(scip_, branchmastercutdata[i]);
       }
 
       SCIP_CALL( GCGrelaxBranchUpdateDualWithGCGBranchrule(scip_, activebranchrules[i], activebranchdata[i], dualsol) );
@@ -2893,7 +2892,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       /* apply the inferred pricing modifications from the mastercuts */
       for( i=0; i<nbranchmastercuts; ++i )
       {
-         assert(GCGmastercutIsActive(scip_, branchmastercutdata[i]));
+         assert(GCGmastercutIsActive(branchmastercutdata[i]));
 
          // get the pricing problem
          for( k=0; k<branchmastercutdata[i]->npricingmodifications; ++k )
@@ -3067,7 +3066,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       /* undo the inferred pricing modifications from the mastercuts */
       for( i=0; i<nbranchmastercuts; ++i )
       {
-         assert(GCGmastercutIsActive(scip_, branchmastercutdata[i]));
+         assert(GCGmastercutIsActive(branchmastercutdata[i]));
 
          // get the pricing problem
          for( k=0; k<branchmastercutdata[i]->npricingmodifications; ++k )
