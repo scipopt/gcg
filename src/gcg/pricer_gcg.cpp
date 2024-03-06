@@ -750,7 +750,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
          pricerdata->realdualvalues[i][j] = pricetype->varGetObj(probvars[j]);
 #ifdef PRINTDUALSOLS
-         SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n", SCIPvarGetName(probvars[j]), pricetype->varGetObj(probvars[j]), pricerdata->realdualvalues[i][j]);
+         SCIPdebugMessage("pricingobj var <%s> %g, realdualvalues %g\n", SCIPvarGetName(probvars[j]), pricetype->varGetObj(probvars[j]), pricerdata->realdualvalues[i][j]);
 #endif
       }
    }
@@ -787,6 +787,10 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          dualsol = pricetype->consGetDual(scip_, linkcons);
       }
 
+#ifdef PRINTDUALSOLS
+      SCIPdebugMessage("linkingcons <%s> dualsol: %g\n", SCIPconsGetName(linkcons), dualsol);
+#endif
+
       /* add dual solution value to the pricing variable:
        * lambda variables get coef -1 in linking constraints --> add dualsol
        */
@@ -795,7 +799,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       pricerdata->realdualvalues[block][SCIPvarGetProbindex(pricingvar)] +=  pricetype->consGetDual(scip_, linkcons);
 
 #ifdef PRINTDUALSOLS
-      SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n", SCIPvarGetName(pricingvar), dualsol, pricetype->consGetDual(scip_, linkcons));
+      SCIPdebugMessage("pricingobj var <%s> %g, realdualvalues + %g -> %g\n", SCIPvarGetName(pricingvar), dualsol, pricetype->consGetDual(scip_, linkcons), pricerdata->realdualvalues[block][SCIPvarGetProbindex(pricingvar)]);
 #endif
    }
 
@@ -811,44 +815,41 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
       }
 
-      if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, pricetype->consGetDual(scip_, masterconss[i])) )
+#ifdef PRINTDUALSOLS
+      SCIPdebugMessage("mastercons <%s> dualsol: %g\n", SCIPconsGetName(masterconss[i]), dualsol);
+#endif
+
+      /* for all variables in the constraint, modify the objective of the corresponding variable in a pricing problem */
+      nconsvars = GCGconsGetNVars(origprob, origconss[i]);
+      SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip_, &consvals, nconsvars) );
+      GCGconsGetVars(origprob, origconss[i], consvars, nconsvars);
+      GCGconsGetVals(origprob, origconss[i], consvals, nconsvars);
+      for( j = 0; j < nconsvars; j++ )
       {
-#ifdef PRINTDUALSOLS
-         SCIPdebugMessage("mastercons <%s> dualsol: %g\n", SCIPconsGetName(masterconss[i]), dualsol);
-#endif
-
-         /* for all variables in the constraint, modify the objective of the corresponding variable in a pricing problem */
-         nconsvars = GCGconsGetNVars(origprob, origconss[i]);
-         SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
-         SCIP_CALL( SCIPallocBufferArray(scip_, &consvals, nconsvars) );
-         GCGconsGetVars(origprob, origconss[i], consvars, nconsvars);
-         GCGconsGetVals(origprob, origconss[i], consvals, nconsvars);
-         for( j = 0; j < nconsvars; j++ )
+         int blocknr;
+         blocknr = GCGvarGetBlock(consvars[j]);
+         assert(GCGvarIsOriginal(consvars[j]));
+         /* nothing to be done if variable belongs to redundant block or variable was directly transferred to the master
+          * or variable is linking variable (which means, the directly transferred copy is part of the master cons)
+          */
+         if( blocknr >= 0 && pricerdata->pricingprobs[blocknr] != NULL )
          {
-            int blocknr;
-            blocknr = GCGvarGetBlock(consvars[j]);
-            assert(GCGvarIsOriginal(consvars[j]));
-            /* nothing to be done if variable belongs to redundant block or variable was directly transferred to the master
-             * or variable is linking variable (which means, the directly transferred copy is part of the master cons)
-             */
-            if( blocknr >= 0 && pricerdata->pricingprobs[blocknr] != NULL )
-            {
-               assert(GCGoriginalVarGetPricingVar(consvars[j]) != NULL);
-               /* modify the objective of the corresponding variable in the pricing problem */
-               SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[blocknr],
-                     GCGoriginalVarGetPricingVar(consvars[j]), -1.0 * dualsol * consvals[j]) );
+            assert(GCGoriginalVarGetPricingVar(consvars[j]) != NULL);
+            /* modify the objective of the corresponding variable in the pricing problem */
+            SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[blocknr],
+                  GCGoriginalVarGetPricingVar(consvars[j]), -1.0 * dualsol * consvals[j]) );
 
-               pricerdata->realdualvalues[blocknr][SCIPvarGetProbindex(GCGoriginalVarGetPricingVar(consvars[j]))] += -1.0 * consvals[j] * pricetype->consGetDual(scip_, masterconss[i]);
+            pricerdata->realdualvalues[blocknr][SCIPvarGetProbindex(GCGoriginalVarGetPricingVar(consvars[j]))] -= consvals[j] * pricetype->consGetDual(scip_, masterconss[i]);
 
 #ifdef PRINTDUALSOLS
-               SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n",
-                     SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j] * pricetype->consGetDual(scip_, masterconss[i]));
+            SCIPdebugMessage("pricingobj var <%s> %g, realdualvalues + %g -> %g\n",
+                  SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j] * pricetype->consGetDual(scip_, masterconss[i]), pricerdata->realdualvalues[blocknr][SCIPvarGetProbindex(GCGoriginalVarGetPricingVar(consvars[j]))]);
 #endif
-            }
          }
-         SCIPfreeBufferArray(scip_, &consvals);
-         SCIPfreeBufferArray(scip_, &consvars);
       }
+      SCIPfreeBufferArray(scip_, &consvals);
+      SCIPfreeBufferArray(scip_, &consvars);
    }
 
    /* get the cuts of the master problem and the corresponding cuts in the original problem */
@@ -871,44 +872,45 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          dualsol = pricetype->rowGetDual(mastercuts[i]);
       }
 
-      if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, pricetype->rowGetDual(mastercuts[i])) )
+#ifdef PRINTDUALSOLS
+      SCIPdebugMessage("mastercut <%s> dualsol: %g\n", SCIPconsGetName(mastercuts[i]), dualsol);
+#endif
+
+      /* get columns and vals of the cut */
+      nconsvars = SCIProwGetNNonz(origcuts[i]);
+      cols = SCIProwGetCols(origcuts[i]);
+      consvals = SCIProwGetVals(origcuts[i]);
+
+      /* get the variables corresponding to the columns in the cut */
+      SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
+      for( j = 0; j < nconsvars; j++ )
+         consvars[j] = SCIPcolGetVar(cols[j]);
+
+      /* for all variables in the cut, modify the objective of the corresponding variable in a pricing problem */
+      for( j = 0; j < nconsvars; j++ )
       {
-         /* get columns and vals of the cut */
-         nconsvars = SCIProwGetNNonz(origcuts[i]);
-         cols = SCIProwGetCols(origcuts[i]);
-         consvals = SCIProwGetVals(origcuts[i]);
-
-         /* get the variables corresponding to the columns in the cut */
-         SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
-         for( j = 0; j < nconsvars; j++ )
-            consvars[j] = SCIPcolGetVar(cols[j]);
-
-         /* for all variables in the cut, modify the objective of the corresponding variable in a pricing problem */
-         for( j = 0; j < nconsvars; j++ )
+         int blocknr;
+         blocknr = GCGvarGetBlock(consvars[j]);
+         assert(GCGvarIsOriginal(consvars[j]));
+         /* nothing to be done if variable belongs to redundant block or
+          * variable was directly transferred to the master
+          * or variable is linking variable (which means, the directly transferred copy is part of the master cut) */
+         if( blocknr >= 0 && pricerdata->pricingprobs[blocknr] != NULL )
          {
-            int blocknr;
-            blocknr = GCGvarGetBlock(consvars[j]);
-            assert(GCGvarIsOriginal(consvars[j]));
-            /* nothing to be done if variable belongs to redundant block or
-             * variable was directly transferred to the master
-             * or variable is linking variable (which means, the directly transferred copy is part of the master cut) */
-            if( blocknr >= 0 && pricerdata->pricingprobs[blocknr] != NULL )
-            {
-               assert(GCGoriginalVarGetPricingVar(consvars[j]) != NULL);
-               /* modify the objective of the corresponding variable in the pricing problem */
-               SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[blocknr],
-                     GCGoriginalVarGetPricingVar(consvars[j]), -1.0 * dualsol * consvals[j]) );
+            assert(GCGoriginalVarGetPricingVar(consvars[j]) != NULL);
+            /* modify the objective of the corresponding variable in the pricing problem */
+            SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[blocknr],
+                  GCGoriginalVarGetPricingVar(consvars[j]), -1.0 * dualsol * consvals[j]) );
 
-               pricerdata->realdualvalues[blocknr][SCIPvarGetProbindex(GCGoriginalVarGetPricingVar(consvars[j]))] += -1.0 *consvals[j]* pricetype->rowGetDual(mastercuts[i]);
+            pricerdata->realdualvalues[blocknr][SCIPvarGetProbindex(GCGoriginalVarGetPricingVar(consvars[j]))] -= consvals[j]* pricetype->rowGetDual(mastercuts[i]);
 
 #ifdef PRINTDUALSOLS
-               SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n",
-                     SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j] * pricetype->rowGetDual(mastercuts[i]));
+            SCIPdebugMessage("pricingobj var <%s> %g, realdualvalues + %g -> %g\n",
+                  SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j] * pricetype->rowGetDual(mastercuts[i]), pricerdata->realdualvalues[blocknr][SCIPvarGetProbindex(GCGoriginalVarGetPricingVar(consvars[j]))]);
 #endif
-            }
          }
-         SCIPfreeBufferArray(scip_, &consvars);
       }
+      SCIPfreeBufferArray(scip_, &consvars);
    }
 
    /* get dual solutions / farkas values of the convexity constraints */
@@ -1618,8 +1620,6 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
    }
 
    redcost = (isray ? objvalue : objvalue - pricerdata->dualsolconv[probnr]);
-
-   GCGcolUpdateRedcost(gcgcol, redcost, FALSE);
 
    return redcost;
 }
