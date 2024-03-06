@@ -38,7 +38,7 @@
 
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
-#include "type_mastercutdata.h"
+#include "struct_mastercutdata.h"
 #include <scip/type_misc.h>
 #include <scip/type_retcode.h>
 
@@ -69,7 +69,6 @@ private:
    int nsubgradientoriginalsepacutvals;
    SCIP_Real* subgradientlinkingconsvals;
    int subgradientlinkingconsvalssize;
-   SCIP_HASHMAP* subgradientmastercutvals;
    SCIP_Real subgradientnorm;
    SCIP_Real hybridfactor;
    PricingType* pricingtype;
@@ -235,7 +234,8 @@ private:
       SCIP_Real          current,            /**< current dual value */
       SCIP_Real          subgradient,         /**< subgradient (or 0.0 if not needed) */
       SCIP_Real          lhs,                 /**< lhs (or 0.0 if not needed) */
-      SCIP_Real          rhs                  /**< rhs (or 0.0 if not needed) */
+      SCIP_Real          rhs,                 /**< rhs (or 0.0 if not needed) */
+      SCIP_Bool          hassubgradient       /**< is subgradient available? */
    ) const;
 };
 

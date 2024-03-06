@@ -36,12 +36,11 @@
 #ifndef GCG_TYPE_MASTERCUTDATA_H_
 #define GCG_TYPE_MASTERCUTDATA_H_
 
-#include "struct_mastercutdata.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+typedef struct GCG_PricingModification GCG_PRICINGMODIFICATION;
 typedef struct GCG_MasterCutData GCG_MASTERCUTDATA;
 
 #ifdef __cplusplus

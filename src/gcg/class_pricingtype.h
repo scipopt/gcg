@@ -37,7 +37,7 @@
 
 #include "objscip/objscip.h"
 #include "pricer_gcg.h"
-#include "type_mastercutdata.h"
+#include "struct_mastercutdata.h"
 
 class PricingType
 {
@@ -84,6 +84,7 @@ public:
 
    /** get dual value of a mastercut */
    virtual SCIP_Real mastercutGetDual(
+      SCIP*                 scip,
       GCG_MASTERCUTDATA*    mastercutdata       /**< mastercut data */
       ) const = 0;
 
@@ -184,6 +185,7 @@ public:
      ) const;
 
    virtual SCIP_Real mastercutGetDual(
+     SCIP*                 scip,
      GCG_MASTERCUTDATA*    mastercutdata
      ) const;
 
@@ -226,6 +228,7 @@ public:
       ) const;
 
    virtual SCIP_Real mastercutGetDual(
+      SCIP*                 scip,
       GCG_MASTERCUTDATA*    mastercutdata
       ) const;
 

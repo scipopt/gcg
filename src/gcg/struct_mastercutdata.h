@@ -36,10 +36,10 @@
 #ifndef GCG_STRUCT_MASTERCUTDATA_H_
 #define GCG_STRUCT_MASTERCUTDATA_H_
 
-#include "type_mastercutdata.h"
 #include <scip/type_cons.h>
 #include <scip/type_lp.h>
 #include <scip/type_var.h>
+#include "type_mastercutdata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,12 +55,28 @@ struct GCG_PricingModification
    int                   npricingconss;      /**< number of additional constraints in the pricing programs */
    SCIP_Real             constantObjValue;   /**< constant part of the objective to be added to the pricing problem */
 };
-typedef struct GCG_PricingModification GCG_PRICINGMODIFICATION;
+
+/** type of master cut */
+enum GCG_MasterCutType
+{
+   GCG_MASTERCUTTYPE_CONS,                   /**< master cut is represented by a constraint */
+   GCG_MASTERCUTTYPE_ROW                     /**< master cut is represented by a row */
+};
+typedef enum GCG_MasterCutType GCG_MASTERCUTTYPE;
+
+/** cut of the master cut */
+union GCG_MasterCutCut
+{
+   SCIP_CONS*           cons;                /**< constraint in the master problem that represents the master cut, iff type == Cons */
+   SCIP_ROW*            row;                 /**< row in the master problem that represents the master cut, iff type == Row */
+};
+typedef union GCG_MasterCutCut GCG_MASTERCUTCUT;
 
 /** data for master cuts */
 struct GCG_MasterCutData
 {
-   SCIP_ROW*             mastercons;         /**< row in the master problem that represents the master cut */
+   GCG_MASTERCUTTYPE     type;               /**< type of the master cut */
+   GCG_MASTERCUTCUT      cut;                /**< constraint or row in the master problem that represents the master cut */
    GCG_PRICINGMODIFICATION** pricingmodifications; /**< array of pricing modifications for the master cut */
    int                   npricingmodifications; /**< number of pricing modifications for the master cut */
 };

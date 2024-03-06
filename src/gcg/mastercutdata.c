@@ -35,10 +35,11 @@
 
 #include "def.h"
 #include "mastercutdata.h"
-#include "type_mastercutdata.h"
+#include "struct_mastercutdata.h"
 
 #include <scip/cons_linear.h>
 #include <scip/def.h>
+#include <scip/pub_cons.h>
 #include <scip/pub_lp.h>
 #include <scip/scip.h>
 #include <scip/type_scip.h>
@@ -50,16 +51,88 @@
  */
 
 /** determine whether the mastercutdata is active in the masterscip */
-GCG_EXPORT
 SCIP_Bool GCGmastercutIsActive(
-   SCIP*                  masterscip,         /**< master scip */
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    )
 {
    assert(mastercutdata != NULL);
 
-   if( SCIProwIsInLP(mastercutdata->mastercons) )
-      return TRUE;
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      assert(mastercutdata->cut.cons != NULL);
+      return SCIPconsIsActive(mastercutdata->cut.cons);
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwIsInLP(mastercutdata->cut.row);
+   }
+}
 
-   return FALSE;
+/** add a new variable along with its coefficient to the mastercut */
+SCIP_RETCODE GCGmastercutAddVar(
+   SCIP*                  masterscip,         /**< master scip */
+   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
+   SCIP_VAR*              var,                /**< variable to add */
+   SCIP_Real              coef                /**< coefficient of the variable */
+   )
+{
+   assert(masterscip != NULL);
+   assert(mastercutdata != NULL);
+   assert(var != NULL);
+
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      assert(mastercutdata->cut.cons != NULL);
+      SCIP_CALL( SCIPaddCoefLinear(masterscip, mastercutdata->cut.cons, var, coef) );
+      break;
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      SCIP_CALL( SCIPaddVarToRow(masterscip, mastercutdata->cut.row, var, coef) );
+      break;
+   }
+
+   return SCIP_OKAY;
+}
+
+/** get the constraint that is the master cut
+  * will fail if the master cut is a row
+  */
+SCIP_RETCODE GCGmastercutGetCons(
+   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
+   SCIP_CONS**            cons                /**< pointer to store the constraint */
+   )
+{
+   assert(mastercutdata != NULL);
+   assert(cons != NULL);
+   assert(*cons == NULL);
+
+   if( mastercutdata->type != GCG_MASTERCUTTYPE_CONS )
+      return SCIP_ERROR;
+
+   assert(mastercutdata->cut.cons != NULL);
+   *cons = mastercutdata->cut.cons;
+
+   return SCIP_OKAY;
+}
+
+/** get the row that is the master cut
+   * will fail if the master cut is a constraint
+   */
+SCIP_RETCODE GCGmastercutGetRow(
+   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
+   SCIP_ROW**             row                 /**< pointer to store the row */
+   )
+{
+   assert(mastercutdata != NULL);
+   assert(row != NULL);
+   assert(*row == NULL);
+
+   if( mastercutdata->type != GCG_MASTERCUTTYPE_ROW )
+      return SCIP_ERROR;
+
+   assert(mastercutdata->cut.row != NULL);
+   *row = mastercutdata->cut.row;
+
+   return SCIP_OKAY;
 }

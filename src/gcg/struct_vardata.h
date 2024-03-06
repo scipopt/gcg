@@ -40,8 +40,7 @@
 #include <scip/type_cons.h>
 #include <scip/type_misc.h>
 #include <scip/type_var.h>
-
-#include "type_mastercutdata.h"
+#include "struct_mastercutdata.h"
 
 #ifdef __cplusplus
 extern "C" {

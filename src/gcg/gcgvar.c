@@ -41,7 +41,7 @@
 #include "relax_gcg.h"
 #include "scip_misc.h"
 #include "scip/cons_linear.h"
-#include "type_mastercutdata.h"
+#include "struct_mastercutdata.h"
 #include <scip/type_retcode.h>
 
 #define STARTMAXMASTERVARS 8

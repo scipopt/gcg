@@ -71,7 +71,7 @@
 
 #include "gcg.h"
 #include "type_branchgcg.h"
-#include "type_mastercutdata.h"
+#include "struct_mastercutdata.h"
 
 #ifdef WITH_BLISS
 #include "pub_bliss.h"
