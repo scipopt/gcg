@@ -40,6 +40,7 @@
 /* #define PRINTDUALSOLS */
 
 #include "mastercutdata.h"
+#include "misc_varhistory.h"
 #include "struct_branchgcg.h"
 #include "struct_mastercutdata.h"
 #include "struct_vardata.h"
@@ -50,6 +51,7 @@
 #include <scip/def.h>
 #include <scip/pub_var.h>
 #include <scip/type_lp.h>
+#include <scip/type_var.h>
 #include <scip/var.h>
 
 /*lint -e64 disable useless and wrong lint warning */
@@ -87,6 +89,7 @@
 #include "branch_generic.h"
 #include "event_display.h"
 #include "pub_colpool.h"
+#include "misc_varhistory.h"
 
 #ifdef SCIP_STATISTIC
 #include "scip/struct_scip.h"
@@ -169,6 +172,9 @@ struct SCIP_PricerData
    SCIP_VAR**            pricedvars;         /**< array of all priced variables */
    int                   npricedvars;        /**< number of priced variables */
    int                   maxpricedvars;      /**< maximal number of priced variables */
+
+   /* always points to the most recently added priced variable */
+   GCG_VARHISTORY*       varhistory;         /**< pointer to the history of priced variables */
 
    SCIP_VAR**            artificialvars;     /**< array of artificial variables */
    int                   nartificialvars;    /**< number of artificial variables */
@@ -1469,6 +1475,8 @@ SCIP_RETCODE ObjPricerGcg::addVariableToPricedvars(
    pricerdata->pricedvars[pricerdata->npricedvars] = newvar;
    GCGmasterVarSetIndex(newvar, pricerdata->npricedvars);
    pricerdata->npricedvars++;
+
+   SCIP_CALL( GCGvarhistoryAddVar(scip_, pricerdata->varhistory, newvar) );
 
    return SCIP_OKAY;
 }
@@ -3694,6 +3702,9 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->maxpricedvars = SCIPcalcMemGrowSize(scip, 50);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars) );
 
+   pricerdata->varhistory = NULL;
+   SCIP_CALL( GCGvarhistoryCreate(scip, &(pricerdata->varhistory)) );
+
    pricerdata->nroundsredcost = 0;
 #ifdef SCIP_STATISTIC
    pricerdata->rootlpsol = NULL;
@@ -3846,6 +3857,9 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    SCIPfreeBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars);
    pricerdata->maxpricedvars = 0;
    pricerdata->npricedvars = 0;
+
+   assert(pricerdata->varhistory != NULL);
+   SCIP_CALL( GCGvarhistoryFreeReference(scip, &(pricerdata->varhistory)) );
 
 #ifdef SCIP_STATISTIC
    SCIPfreeBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds);
@@ -5377,4 +5391,23 @@ SCIP_RETCODE GCGmasterPrintSimplexIters(
    }
 
    return SCIP_OKAY;
+}
+
+/** get a weak reference to the current and latest varhistory pointer */
+GCG_VARHISTORY* GCGgetCurrentVarhistoryReference(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   return pricerdata->varhistory;
 }
