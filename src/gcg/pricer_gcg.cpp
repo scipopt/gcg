@@ -1753,28 +1753,15 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
    assert(stabdualval != NULL);
 
    *stabdualval = 0.0;
-
-   /* get the constraints of the master problem and the corresponding constraints in the original problem */
-   nmasterconss = GCGgetNMasterConss(origprob);
-   masterconss = GCGgetMasterConss(origprob);
-   origconss = GCGgetOrigMasterConss(origprob);
-
    dualobjval = 0.0;
 
+#ifndef NDEBUG
+   /* check linking constraints */
    nlinkconss = GCGgetNVarLinkingconss(origprob);
    linkconss = GCGgetVarLinkingconss(origprob);
-
-   /* get the cuts of the master problem */
-   mastercuts = GCGsepaGetMastercuts(scip_);
-   nmastercuts = GCGsepaGetNCuts(scip_);
-
-   assert(mastercuts != NULL);
-
-   /* compute lhs/rhs * dual for linking constraints and add it to dualobjval */
    for( i = 0; i < nlinkconss; ++i )
    {
       SCIP_CONS* linkcons = linkconss[i];
-#ifndef NDEBUG
       SCIP_VAR** linkconsvars;
       int block = GCGgetVarLinkingconssBlock(origprob)[i];
 
@@ -1783,63 +1770,64 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
       SCIP_VAR* linkvar = linkconsvars[0];
 
       assert(GCGvarIsPricing(GCGlinkingVarGetPricingVars(GCGmasterVarGetOrigvars(linkvar)[0])[block]));
+      assert(SCIPisZero(scip_, SCIPgetLhsLinear(scip_, linkcons)));
+      assert(SCIPisZero(scip_, SCIPgetRhsLinear(scip_, linkcons)));
+   }
 #endif
 
-      if( stabilize )
-         dualsol = stabilization->linkingconsGetDual(i);
-      else
-         dualsol = pricetype->consGetDual(scip_, linkcons);
-
-      if( SCIPisFeasPositive(scip_, dualsol) )
-         boundval = SCIPgetLhsLinear(scip_, linkcons);
-      else if( SCIPisFeasNegative(scip_, dualsol) )
-         boundval = SCIPgetRhsLinear(scip_, linkcons);
-      else
-         continue;
-
-      assert(SCIPisZero(scip_, boundval));
-
-      if( !SCIPisZero(scip_, boundval) )
-         dualobjval += boundval * dualsol;
-   }
-
-
    /* compute lhs/rhs * dual for master constraints and add it to dualobjval */
+   /* get the constraints of the master problem and the corresponding constraints in the original problem */
+   nmasterconss = GCGgetNMasterConss(origprob);
+   masterconss = GCGgetMasterConss(origprob);
+   origconss = GCGgetOrigMasterConss(origprob);
    for( i = 0; i < nmasterconss; i++ )
    {
+      SCIP_Real lhs = GCGconsGetLhs(scip_, origconss[i]);
+      SCIP_Real rhs = GCGconsGetRhs(scip_, origconss[i]);
+
       if( stabilize )
          SCIP_CALL( stabilization->consGetDual(i, &dualsol) );
       else
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
 
-      if( SCIPisFeasPositive(scip_, dualsol) )
-         boundval = GCGconsGetLhs(scip_, origconss[i]);
-      else if( SCIPisFeasNegative(scip_, dualsol) )
-         boundval = GCGconsGetRhs(scip_, origconss[i]);
+      if( !SCIPisZero(scip_, dualsol) || (!SCIPisInfinity(scip_, -lhs) && !SCIPisInfinity(scip_, rhs)) )
+         // SCIPisZero(boundval * dualsol) could be FALSE although SCIPisZero(scip_, dualsol) holds
+         boundval = dualsol > 0.0 ? lhs : rhs;
+      else if( !SCIPisInfinity(scip_, -lhs) )
+         boundval = lhs;
+      else if( !SCIPisInfinity(scip_, rhs) )
+         boundval = rhs;
       else
          continue;
 
-      if( !SCIPisZero(scip_, boundval) )
-         dualobjval += boundval * dualsol;
+      dualobjval += boundval * dualsol;
    }
 
    /* compute lhs/rhs * dual for master cuts and add it to dualobjval */
+   /* get the cuts of the master problem */
+   mastercuts = GCGsepaGetMastercuts(scip_);
+   nmastercuts = GCGsepaGetNCuts(scip_);
+   assert(mastercuts != NULL);
    for( i = 0; i < nmastercuts; i++ )
    {
+      SCIP_Real lhs = SCIProwGetLhs(mastercuts[i]);
+      SCIP_Real rhs = SCIProwGetRhs(mastercuts[i]);
+
       if( stabilize )
          SCIP_CALL( stabilization->rowGetDual(i, &dualsol) );
       else
          dualsol = pricetype->rowGetDual(mastercuts[i]);
 
-      if( SCIPisFeasPositive(scip_, dualsol) )
-         boundval = SCIProwGetLhs(mastercuts[i]);
-      else if( SCIPisFeasNegative(scip_, dualsol) )
-         boundval = SCIProwGetRhs(mastercuts[i]);
+      if( !SCIPisZero(scip_, dualsol) || (!SCIPisInfinity(scip_, -lhs) && !SCIPisInfinity(scip_, rhs)) )
+         boundval = dualsol > 0.0 ? lhs : rhs;
+      else if( !SCIPisInfinity(scip_, -lhs) )
+         boundval = lhs;
+      else if( !SCIPisInfinity(scip_, rhs) )
+         boundval = rhs;
       else
          continue;
 
-      if( !SCIPisZero(scip_, boundval) )
-         dualobjval += boundval * dualsol;
+      dualobjval += boundval * dualsol;
    }
 
    /* get master variables that were directly transferred or that are linking */
@@ -1915,44 +1903,41 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
       }
 
-      if( !SCIPisZero(scip_, dualsol) )
+      /* for all variables in the constraint, modify the objective of the corresponding variable in a pricing problem */
+      nconsvars = GCGconsGetNVars(origprob, origconss[i]);
+      SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip_, &consvals, nconsvars) );
+      GCGconsGetVars(origprob, origconss[i], consvars, nconsvars);
+      GCGconsGetVals(origprob, origconss[i], consvals, nconsvars);
+      for( j = 0; j < nconsvars; j++ )
       {
-         /* for all variables in the constraint, modify the objective of the corresponding variable in a pricing problem */
-         nconsvars = GCGconsGetNVars(origprob, origconss[i]);
-         SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
-         SCIP_CALL( SCIPallocBufferArray(scip_, &consvals, nconsvars) );
-         GCGconsGetVars(origprob, origconss[i], consvars, nconsvars);
-         GCGconsGetVals(origprob, origconss[i], consvals, nconsvars);
-         for( j = 0; j < nconsvars; j++ )
+         SCIP_VAR* mastervar;
+         int blocknr;
+
+         assert(GCGvarIsOriginal(consvars[j]));
+
+         if( GCGoriginalVarGetNMastervars(consvars[j]) == 0 )
+            continue;
+         assert( GCGoriginalVarGetNMastervars(consvars[j]) > 0 );
+
+         mastervar = GCGoriginalVarGetMastervars(consvars[j])[0];
+         blocknr = GCGvarGetBlock(mastervar);
+
+         /* nothing to be done if variable belongs to redundant block or variable was directly transferred to the master
+          * or variable is linking variable (which means, the directly transferred copy is part of the master cons)
+          */
+         if( blocknr < 0 )
          {
-            SCIP_VAR* mastervar;
-            int blocknr;
+            int varindex;
+            varindex = SCIPvarGetProbindex(GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]); // hack
+            assert(varindex < nmastervars);
+            assert(mastervars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]);
 
-            assert(GCGvarIsOriginal(consvars[j]));
-
-            if( GCGoriginalVarGetNMastervars(consvars[j]) == 0 )
-               continue;
-            assert( GCGoriginalVarGetNMastervars(consvars[j]) > 0 );
-
-            mastervar = GCGoriginalVarGetMastervars(consvars[j])[0];
-            blocknr = GCGvarGetBlock(mastervar);
-
-            /* nothing to be done if variable belongs to redundant block or variable was directly transferred to the master
-             * or variable is linking variable (which means, the directly transferred copy is part of the master cons)
-             */
-            if( blocknr < 0 )
-            {
-               int varindex;
-               varindex = SCIPvarGetProbindex(GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]); // hack
-               assert(varindex < nmastervars);
-               assert(mastervars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]);
-
-               stabredcosts[varindex] -= dualsol * consvals[j];
-            }
+            stabredcosts[varindex] -= dualsol * consvals[j];
          }
-         SCIPfreeBufferArray(scip_, &consvals);
-         SCIPfreeBufferArray(scip_, &consvars);
       }
+      SCIPfreeBufferArray(scip_, &consvals);
+      SCIPfreeBufferArray(scip_, &consvars);
    }
 
    /* get the cuts of the master problem and the corresponding cuts in the original problem */
@@ -1975,71 +1960,65 @@ SCIP_Real ObjPricerGcg::getDualconvsum(
          dualsol = pricetype->rowGetDual(mastercuts[i]);
       }
 
-      if( !SCIPisZero(scip_, dualsol) )
+      /* get columns and vals of the cut */
+      nconsvars = SCIProwGetNNonz(origcuts[i]);
+      cols = SCIProwGetCols(origcuts[i]);
+      consvals = SCIProwGetVals(origcuts[i]);
+
+      /* get the variables corresponding to the columns in the cut */
+      SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
+      for( j = 0; j < nconsvars; j++ )
+         consvars[j] = SCIPcolGetVar(cols[j]);
+
+      /* for all variables in the cut, modify the objective of the corresponding variable in a pricing problem */
+      for( j = 0; j < nconsvars; j++ )
       {
-         /* get columns and vals of the cut */
-         nconsvars = SCIProwGetNNonz(origcuts[i]);
-         cols = SCIProwGetCols(origcuts[i]);
-         consvals = SCIProwGetVals(origcuts[i]);
+         SCIP_VAR* mastervar;
+         int blocknr;
 
-         /* get the variables corresponding to the columns in the cut */
-         SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
-         for( j = 0; j < nconsvars; j++ )
-            consvars[j] = SCIPcolGetVar(cols[j]);
+         assert(GCGvarIsOriginal(consvars[j]));
 
-         /* for all variables in the cut, modify the objective of the corresponding variable in a pricing problem */
-         for( j = 0; j < nconsvars; j++ )
+         if( GCGoriginalVarGetNMastervars(consvars[j]) == 0 )
+            continue;
+         assert( GCGoriginalVarGetNMastervars(consvars[j]) > 0 );
+
+         mastervar = GCGoriginalVarGetMastervars(consvars[j])[0];
+         blocknr = GCGvarGetBlock(mastervar);
+
+         /* nothing to be done if variable belongs to redundant block or variable was directly transferred to the master
+          * or variable is linking variable (which means, the directly transferred copy is part of the master cons)
+          */
+         if( blocknr < 0 )
          {
-            SCIP_VAR* mastervar;
-            int blocknr;
+            int varindex;
+            varindex = SCIPvarGetProbindex(GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]); // hack
+            assert(varindex < nmastervars);
+            assert(mastervars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]);
 
-            assert(GCGvarIsOriginal(consvars[j]));
-
-            if( GCGoriginalVarGetNMastervars(consvars[j]) == 0 )
-               continue;
-            assert( GCGoriginalVarGetNMastervars(consvars[j]) > 0 );
-
-            mastervar = GCGoriginalVarGetMastervars(consvars[j])[0];
-            blocknr = GCGvarGetBlock(mastervar);
-
-            /* nothing to be done if variable belongs to redundant block or variable was directly transferred to the master
-             * or variable is linking variable (which means, the directly transferred copy is part of the master cons)
-             */
-            if( blocknr < 0 )
-            {
-               int varindex;
-               varindex = SCIPvarGetProbindex(GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]); // hack
-               assert(varindex < nmastervars);
-               assert(mastervars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]);
-
-               stabredcosts[varindex] -= dualsol * consvals[j];
-            }
+            stabredcosts[varindex] -= dualsol * consvals[j];
          }
-         SCIPfreeBufferArray(scip_, &consvars);
       }
+      SCIPfreeBufferArray(scip_, &consvars);
    }
 
    /* add redcost coefficients * lb/ub of linking or directly transferred variables */
    for( i = 0; i < nmastervars; ++i )
    {
-      SCIP_Real stabredcost;
-      SCIP_VAR* mastervar;
+      SCIP_Real stabredcost = stabredcosts[i];
+      SCIP_VAR* mastervar = mastervars[i];
+      SCIP_Real lb = SCIPvarGetLbLocal(mastervar);
+      SCIP_Real ub = SCIPvarGetUbLocal(mastervar);
 
-      mastervar = mastervars[i];
-      stabredcost = stabredcosts[i];
-      if( SCIPisPositive(scip_, stabredcost) )
-      {
-         boundval = SCIPvarGetLbLocal(mastervar);
-      }
-      else if( SCIPisNegative(scip_, stabredcost) )
-      {
-         boundval = SCIPvarGetUbLocal(mastervar);
-      }
+      if( !SCIPisZero(scip_, stabredcost) || (!SCIPisInfinity(scip_, -lb) && !SCIPisInfinity(scip_, ub)) )
+         boundval = stabredcost > 0.0 ? lb : ub;
+      else if( !SCIPisInfinity(scip_, -lb) )
+         boundval = lb;
+      else if( !SCIPisInfinity(scip_, ub) )
+         boundval = ub;
       else
          continue;
 
-      if( !SCIPisZero(scip_, boundval) )
-         dualobjval += boundval * stabredcost;
+      dualobjval += boundval * stabredcost;
    }
 
    SCIPfreeBufferArray(scip_, &stabredcosts);
@@ -2272,13 +2251,12 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
       SCIP_Real solval;
       solval = solvals[i];
 
-      if( !SCIPisZero(scip, solvals[i]) )
+      if( !SCIPisZero(scip, solval) )
       {
          SCIP_VAR* origvar;
 
          assert(GCGvarIsPricing(solvars[i]));
          origvar = GCGpricingVarGetOrigvars(solvars[i])[0];
-         solval = solvals[i];
 
          if( SCIPisZero(scip, SCIPvarGetObj(origvar)) )
             continue;
@@ -3009,7 +2987,59 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          SCIPdebugMessage("lpobjval = %.8g, bestredcost = %.8g, stabdualval = %.8g, beststabobj = %.8g\n",
             SCIPgetLPObjval(scip_), bestredcost, stabdualval, beststabobj);
 
-         assert(!optimal || !*bestredcostvalid || stabilized || SCIPisDualfeasEQ(scip_, SCIPgetLPObjval(scip_) + bestredcost, stabdualval + beststabobj));
+#ifndef NDEBUG
+         if( optimal && *bestredcostvalid && !stabilized && !SCIPisSumEQ(scip_, SCIPgetLPObjval(scip_) + bestredcost, stabdualval + beststabobj) )
+         {
+            SCIP_ROW** rows = SCIPgetLPRows(scip_);
+            int nrows = SCIPgetNLPRows(scip_);
+            SCIP_Real dualobj = 0.0;
+            for( int r = 0; r < nrows; ++r )
+            {
+               SCIP_ROW* row = rows[r];
+               if( !SCIProwIsInLP(row) )
+                  continue;
+               SCIP_Real dualsol = SCIProwGetDualsol(row);
+               SCIP_Real tmp = 0.0;
+               if( !SCIPisZero(scip_, dualsol) || (!SCIPisInfinity(scip_, -SCIProwGetLhs(row)) && !SCIPisInfinity(scip_, SCIProwGetRhs(row))) )
+                  tmp = dualsol * (dualsol > 0 ? SCIProwGetLhs(row) : SCIProwGetRhs(row));
+               else if( !SCIPisInfinity(scip_, -SCIProwGetLhs(row)) )
+                  tmp = dualsol * SCIProwGetLhs(row);
+               else if( !SCIPisInfinity(scip_, SCIProwGetRhs(row)) )
+                  tmp = dualsol * SCIProwGetRhs(row);
+               if( !SCIPisZero(scip_, tmp) )
+               {
+                  SCIPdebugMessage("<%s>, dualsol %.8g, bnds [%.8g, %.8g] -> %.8g\n", SCIProwGetName(row), dualsol, SCIProwGetLhs(row), SCIProwGetRhs(row), tmp);
+                  dualobj += tmp;
+               }
+            }
+
+            SCIP_COL** cols = SCIPgetLPCols(scip_);
+            int ncols = SCIPgetNLPCols(scip_);
+            for( int c = 0; c < ncols; ++c )
+            {
+               SCIP_COL* col = cols[c];
+               if( !SCIPcolIsInLP(col) )
+                  continue;
+               SCIP_Real redcost = SCIPgetColRedcost(scip_, col);
+               SCIP_Real tmp = 0.0;
+               if( !SCIPisZero(scip_, redcost) || (!SCIPisInfinity(scip_, -SCIPcolGetLb(col)) && !SCIPisInfinity(scip_, SCIPcolGetUb(col))) )
+                  tmp = redcost * (redcost >= 0 ? SCIPcolGetLb(col) : SCIPcolGetUb(col));
+               else if( !SCIPisInfinity(scip_, -SCIPcolGetLb(col)) )
+                  tmp = redcost * SCIPcolGetLb(col);
+               else if( !SCIPisInfinity(scip_, SCIPcolGetUb(col)) )
+                  tmp = redcost * SCIPcolGetUb(col);
+               if( !SCIPisZero(scip_, tmp) )
+               {
+                  SCIPdebugMessage("<%s>, redcost %.8g, bnds [%.8g, %.8g] -> %.8g\n", SCIPvarGetName(SCIPcolGetVar(col)), redcost, SCIPcolGetLb(col), SCIPcolGetUb(col), tmp);
+                  dualobj += tmp;
+               }
+            }
+            SCIPdebugMessage("dualobj %.8g\n", dualobj);
+            assert(SCIPisDualfeasEQ(scip_, dualobj, stabdualval));
+         }
+#endif
+
+         assert(!optimal || !*bestredcostvalid || stabilized || SCIPisSumEQ(scip_, SCIPgetLPObjval(scip_) + bestredcost, stabdualval + beststabobj));
 
          if( stabilized || !optimal || !*bestredcostvalid )
             lowerboundcandidate = stabdualval + beststabobj;
