@@ -1720,8 +1720,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    SCIP_Bool             stabilize           /**< stabilize? */
 )
 {
-   SCIP_VAR** mastervars = NULL;
-   int nmastervars;
+   SCIP_VAR** staticvars;
+   int nstaticvars;
 
    SCIP_CONS** origconss = NULL;
 
@@ -1733,7 +1733,6 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    int nconsvars;
    int j;
 
-   SCIP_Real dualobjval;
    SCIP_Real dualsol;
    SCIP_Real boundval;
 
@@ -1753,7 +1752,6 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    assert(stabdualval != NULL);
 
    *stabdualval = 0.0;
-   dualobjval = 0.0;
 
 #ifndef NDEBUG
    /* check linking constraints */
@@ -1775,7 +1773,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    }
 #endif
 
-   /* compute lhs/rhs * dual for master constraints and add it to dualobjval */
+   /* compute lhs/rhs * dual for master constraints and add it to *stabdualval */
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
@@ -1800,10 +1798,10 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       else
          continue;
 
-      dualobjval += boundval * dualsol;
+      *stabdualval += boundval * dualsol;
    }
 
-   /* compute lhs/rhs * dual for master cuts and add it to dualobjval */
+   /* compute lhs/rhs * dual for master cuts and add it to *stabdualval */
    /* get the cuts of the master problem */
    mastercuts = GCGsepaGetMastercuts(scip_);
    nmastercuts = GCGsepaGetNCuts(scip_);
@@ -1827,41 +1825,34 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       else
          continue;
 
-      dualobjval += boundval * dualsol;
+      *stabdualval += boundval * dualsol;
    }
 
    /* get master variables that were directly transferred or that are linking */
-   mastervars = SCIPgetOrigVars(scip_);
-   nmastervars = SCIPgetNOrigVars(scip_);
+   staticvars = SCIPgetOrigVars(scip_);
+   nstaticvars = SCIPgetNOrigVars(scip_);
 
    assert(GCGgetNTransvars(origprob) + GCGgetNLinkingvars(origprob) <= SCIPgetNOrigVars(scip_));
 
-   /* no linking or directly transferred variables exist, set stabdualval pointer and exit */
-   if( nmastervars == 0 )
-   {
-      *stabdualval = dualobjval;
-
+   /* no linking or directly transferred variables exist, exit */
+   if( nstaticvars == 0 )
       return SCIP_OKAY;
-   }
 
-   /* allocate memory for array with (stabilizied) reduced cost coefficients */
-   SCIP_CALL( SCIPallocBufferArray(scip_, &stabredcosts, nmastervars) );
+   /* allocate memory for array with (stabilized) reduced cost coefficients */
+   SCIP_CALL( SCIPallocBufferArray(scip_, &stabredcosts, nstaticvars) );
 
    /* initialize (stabilized) reduced cost with objective coefficients */
-   for( i = 0; i < nmastervars; i++ )
+   for( i = 0; i < nstaticvars; i++ )
    {
-      assert(GCGvarGetBlock(mastervars[i]) == -1);
-      assert( GCGoriginalVarIsLinking(GCGmasterVarGetOrigvars(mastervars[i])[0]) || GCGoriginalVarIsTransVar(GCGmasterVarGetOrigvars(mastervars[i])[0]) );
+      assert(GCGvarGetBlock(staticvars[i]) == -1);
+      assert(GCGoriginalVarIsLinking(GCGmasterVarGetOrigvars(staticvars[i])[0]) || GCGoriginalVarIsTransVar(GCGmasterVarGetOrigvars(staticvars[i])[0]));
 
-      stabredcosts[i] = SCIPvarGetObj(mastervars[i]);
+      stabredcosts[i] = SCIPvarGetObj(staticvars[i]);
    }
 
    /* compute reduced cost for linking variable constraints and update (stabilized) reduced cost coefficients
     * go through constraints, and select correct variable
     */
-   nlinkconss = GCGgetNVarLinkingconss(origprob);
-   linkconss = GCGgetVarLinkingconss(origprob);
-
    for( i = 0; i < nlinkconss; ++i )
    {
       SCIP_VAR** linkconsvars;
@@ -1873,8 +1864,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       SCIP_VAR* linkvar = linkconsvars[0];
 
       varindex = SCIPvarGetProbindex(GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(linkvar)[0])[0]); // hack
-      assert(varindex < nmastervars);
-      assert(mastervars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(linkvar)[0])[0]);
+      assert(varindex < nstaticvars);
+      assert(staticvars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(linkvar)[0])[0]);
 
       if( stabilize )
       {
@@ -1885,8 +1876,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          dualsol = pricetype->consGetDual(scip_, linkcons);
       }
 
-      /* substract dual solution value to the linking variable:
-       * linking variables get coef 11 in linking constraints --> substract dualsol
+      /* subtract dual solution value from the linking variable
+       * (linking variables have coefficient 1 in linking constraints)
        */
       stabredcosts[varindex] -= dualsol;
    }
@@ -1930,8 +1921,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          {
             int varindex;
             varindex = SCIPvarGetProbindex(GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]); // hack
-            assert(varindex < nmastervars);
-            assert(mastervars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]);
+            assert(varindex < nstaticvars);
+            assert(staticvars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]);
 
             stabredcosts[varindex] -= dualsol * consvals[j];
          }
@@ -1940,15 +1931,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       SCIPfreeBufferArray(scip_, &consvars);
    }
 
-   /* get the cuts of the master problem and the corresponding cuts in the original problem */
-   mastercuts = GCGsepaGetMastercuts(scip_);
-   nmastercuts = GCGsepaGetNCuts(scip_);
-   origcuts = GCGsepaGetOrigcuts(scip_);
-
-   assert(mastercuts != NULL);
-   assert(origcuts != NULL);
-
    /* compute reduced cost for master cuts and update (stabilized) reduced cost coefficients */
+   origcuts = GCGsepaGetOrigcuts(scip_);
    for( i = 0; i < nmastercuts; i++ )
    {
       if( stabilize )
@@ -1992,8 +1976,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          {
             int varindex;
             varindex = SCIPvarGetProbindex(GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]); // hack
-            assert(varindex < nmastervars);
-            assert(mastervars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]);
+            assert(varindex < nstaticvars);
+            assert(staticvars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]);
 
             stabredcosts[varindex] -= dualsol * consvals[j];
          }
@@ -2002,12 +1986,12 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    }
 
    /* add redcost coefficients * lb/ub of linking or directly transferred variables */
-   for( i = 0; i < nmastervars; ++i )
+   for( i = 0; i < nstaticvars; ++i )
    {
       SCIP_Real stabredcost = stabredcosts[i];
-      SCIP_VAR* mastervar = mastervars[i];
-      SCIP_Real lb = SCIPvarGetLbLocal(mastervar);
-      SCIP_Real ub = SCIPvarGetUbLocal(mastervar);
+      SCIP_VAR* staticvar = staticvars[i];
+      SCIP_Real lb = SCIPvarGetLbLocal(staticvar);
+      SCIP_Real ub = SCIPvarGetUbLocal(staticvar);
 
       if( !SCIPisZero(scip_, stabredcost) || (!SCIPisInfinity(scip_, -lb) && !SCIPisInfinity(scip_, ub)) )
          boundval = stabredcost > 0.0 ? lb : ub;
@@ -2018,12 +2002,10 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       else
          continue;
 
-      dualobjval += boundval * stabredcost;
+      *stabdualval += boundval * stabredcost;
    }
 
    SCIPfreeBufferArray(scip_, &stabredcosts);
-
-   *stabdualval = dualobjval;
 
    return SCIP_OKAY;
 }
