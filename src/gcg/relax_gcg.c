@@ -4526,7 +4526,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
 }
 
 
-/** checks whether a variable shoudl be added as an external branching candidate, if so it is added */
+/** checks whether a variable should be added as an external branching candidate, if so it is added */
 static
 SCIP_RETCODE checkAndAddExternalBranchingCandidate(
    SCIP*                 scip,               /**< the SCIP data structure */
@@ -4555,6 +4555,27 @@ SCIP_RETCODE checkAndAddExternalBranchingCandidate(
 }
 
 
+/* frees current currentorigsol, sets origsolfeasible to FALSE and clears external branching candidates */
+static
+SCIP_RETCODE freeCurrentOrigSol(
+   SCIP* scip,                               /**< the SCIP data structure */
+   SCIP_RELAXDATA* relaxdata                 /**< relaxdata of the relaxator */
+   )
+{
+   relaxdata->origsolfeasible = FALSE;
+   /* free previous solution and clear branching candidates */
+   if( relaxdata->currentorigsol != NULL )
+   {
+      SCIPdebugMessage("Freeing previous solution origsol\n");
+      SCIP_CALL( SCIPfreeSol(scip, &(relaxdata->currentorigsol)) );
+   }
+
+   if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVING )
+   {
+      SCIPclearExternBranchCands(scip);
+   }
+}
+
 
 /** transforms the current solution of the master problem into the original problem's space
  *  and saves this solution as currentsol in the relaxator's data
@@ -4581,19 +4602,12 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    norigvars = SCIPgetNVars(scip);
    assert(origvars != NULL);
 
-   relaxdata->origsolfeasible = FALSE;
-
    /* if the master problem has not been solved, don't try to update the solution */
    if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_TRANSFORMED )
-      return SCIP_OKAY;
-
-   /* free previous solution and clear branching candidates */
-   if( relaxdata->currentorigsol != NULL )
    {
-      SCIPdebugMessage("Freeing previous solution origsol\n");
-      SCIP_CALL( SCIPfreeSol(scip, &(relaxdata->currentorigsol)) );
+      freeCurrentOrigSol(scip, relaxdata);
+      return SCIP_OKAY;
    }
-   SCIPclearExternBranchCands(scip);
 
    if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVED || SCIPgetLPSolstat(relaxdata->masterprob) == SCIP_LPSOLSTAT_OPTIMAL )
    {
@@ -4616,6 +4630,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          mastersol = SCIPgetBestSol(relaxdata->masterprob);
          if( mastersol == NULL )
          {
+            freeCurrentOrigSol(scip, relaxdata);
             SCIPdebugMessage("Masterproblem solved, no master sol present\n");
             return SCIP_OKAY;
          }
@@ -4626,6 +4641,9 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIPdebugMessage("stage in master not solving and not solved!\n");
          return SCIP_OKAY;
       }
+
+      /* free previous solution and clear branching candidates */
+      freeCurrentOrigSol(scip, relaxdata);
 
       relaxdata->lastmasterlpiters = SCIPgetNLPIterations(relaxdata->masterprob);
 
@@ -4687,6 +4705,10 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
          SCIPdebugMessage("updated relaxation branching candidates\n");
       }
+   }
+   else
+   {
+      freeCurrentOrigSol(scip, relaxdata);
    }
 
    return SCIP_OKAY;
