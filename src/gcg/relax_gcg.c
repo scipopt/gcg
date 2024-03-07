@@ -4393,7 +4393,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
 
       relaxdata->lastmastersol = SCIPgetBestSol(masterprob);
 
-      SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol, FALSE) );
+      SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol, TRUE) );
 
       SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
       if( !stored )
