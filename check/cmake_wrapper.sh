@@ -110,3 +110,60 @@ then
         . ./check_cluster.sh "${TSTNAME}" "${BINNAME}" "${SETNAME}" "${MSETNAME}" "${BINID}" "${TIMELIMIT}" "${NODELIMIT}" "${MEMLIMIT}" "${THREADS}" "${FEASTOL}" "${LPS}" "${DISPFREQ}" "${CONTINUE}" "${QUEUETYPE}" "${QUEUE}" "${PPN}" "${CLIENTTMPDIR}" "${NOWAITCLUSTER}" "${EXCLUSIVE}" "${PERMUTE}" "${MODE}" "${STATISTICS}" "${PROJECT}"
      fi
 fi
+
+if [[ $1 = "test" ]]
+then
+    if [[ -z ${TSTNAME} ]]; then TSTNAME="short"; fi
+    if [[ -z ${BINNAME} ]]; then BINNAME=${GCG_BINARY}; fi
+    if [[ -z ${SETNAME} ]]; then SETNAME="default"; fi
+    if [[ -z ${MSETNAME} ]]; then MSETNAME="default"; fi
+    if [[ -z ${BINID} ]]; then BINID="1"; fi
+    if [[ -z ${TIMELIMIT} ]]; then TIMELIMIT="3600"; fi
+    if [[ -z ${NODELIMIT} ]]; then NODELIMIT="-1"; fi
+    if [[ -z ${MEMLIMIT} ]]; then MEMLIMIT="16000"; fi
+    if [[ -z ${THREADS} ]]; then THREADS="0"; fi
+    if [[ -z ${FEASTOL} ]]; then FEASTOL="default"; fi
+    if [[ -z ${DISPFREQ} ]]; then DISPFREQ="100"; fi
+    if [[ -z ${CONTINUE} ]]; then CONTINUE="false"; fi
+    if [[ -z ${LOCK} ]]; then LOCK="false"; fi
+    if [[ -z ${VERSION} ]]; then VERSION="unknown"; fi
+    if [[ -z ${LPS} ]]; then LPS="spx"; fi
+    if [[ -z ${VALGRIND} ]]; then VALGRIND="false"; fi
+    if [[ -z ${MODE} ]]; then MODE="readdec"; fi
+    if [[ -z ${SETCUTOFF} ]]; then SETCUTOFF="false"; fi
+    if [[ -z ${STATISTICS} ]]; then STATISTICS="false"; fi
+    if [[ -z ${SHARED} ]]; then SHARED="false"; fi
+    if [[ -z ${VISU} ]]; then VISU="false"; fi
+    if [[ -z ${LAST_STATISTICS} ]]; then LAST_STATISTICS="false"; fi
+    if [[ -z ${VISUSETTINGS} ]]; then VISUSETTINGS="none"; fi
+    if [[ -z ${DETECTIONSTATISTICS} ]]; then DETECTIONSTATISTICS="false"; fi
+
+    # print parameters
+    echo "Parameters:"
+    echo "TSTNAME       = $TSTNAME"
+    echo "BINNAME       = $BINNAME"
+    echo "SETNAME       = $SETNAME"
+    echo "MSETNAME      = $MSETNAME"
+    echo "BINID         = $BINID"
+    echo "TIMELIMIT     = $TIMELIMIT"
+    echo "NODELIMIT     = $NODELIMIT"
+    echo "MEMLIMIT      = $MEMLIMIT"
+    echo "THREADS       = $THREADS"
+    echo "FEASTOL       = $FEASTOL"
+    echo "DISPFREQ      = $DISPFREQ"
+    echo "CONTINUE      = $CONTINUE"
+    echo "LOCK      = $LOCK"
+    echo "VERSION     = $VERSION"
+    echo "LPS           = $LPS"
+    echo "VALGRIND         = $VALGRIND"
+    echo "MODE          = $MODE"
+    echo "SETCUTOFF           = $SETCUTOFF"
+    echo "STATISTICS    = $STATISTICS"
+    echo "SHARED  = $SHARED"
+    echo "VISU = $VISU"
+    echo "LAST_STATISTICS     = $LAST_STATISTICS"
+    echo "VISUSETTINGS       = $VISUSETTINGS"
+    echo "DETECTIONSTATISTICS       = $DETECTIONSTATISTICS"
+
+    . ./check.sh "${TSTNAME}" "${BINNAME}" "${SETNAME}" "${MSETNAME}" "${BINID}" "${TIMELIMIT}" "${NODELIMIT}" "${MEMLIMIT}" "${THREADS}" "${FEASTOL}" "${DISPFREQ}" "${CONTINUE}" "${LOCK}" "${VERSION}" "${LPS}" "${VALGRIND}" "${MODE}" "${SETCUTOFF}" "${STATISTICS}" "${SHARED}" "${VISU}" "${LAST_STATISTICS}" "${VISUSETTINGS}" "${DETECTIONSTATISTICS}"
+fi
