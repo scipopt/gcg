@@ -49,11 +49,13 @@ extern "C" {
 struct GCG_PricingModification
 {
    int                   blocknr;            /**< block number of the master cut */
-   SCIP_VAR**            pricingvars;        /**< array of additional variables in the pricing programs inferred from the master cut */
-   int                   npricingvars;       /**< number of additional variables in the pricing programs */
-   SCIP_CONS**           pricingconss;       /**< array of additional constraints in the pricing programs inferred from the master cut */
-   int                   npricingconss;      /**< number of additional constraints in the pricing programs */
-   SCIP_Real             constantObjValue;   /**< constant part of the objective to be added to the pricing problem */
+   SCIP_VAR*             coefvar;            /**< variable in the pricing problem inferred from the master cut
+                                                * always has the objective coefficient of the negated dual value of the master cut
+                                                * its solution value corresponds to the coefficient of the new mastervariable in the master cut */
+   SCIP_VAR**            additionalvars;     /**< array of additional variables with no objective coefficient in the pricing programs inferred from the master cut */
+   int                   nadditionalvars;    /**< number of additional variables in the pricing programs */
+   SCIP_CONS**           additionalconss;    /**< array of additional constraints in the pricing programs inferred from the master cut */
+   int                   nadditionalconss;   /**< number of additional constraints in the pricing programs */
 };
 
 /** type of master cut */

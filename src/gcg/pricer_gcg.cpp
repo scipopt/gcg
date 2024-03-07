@@ -2902,29 +2902,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       {
          assert(GCGmastercutIsActive(branchmastercutdata[i]));
 
-         // get the pricing problem
-         for( k=0; k<branchmastercutdata[i]->npricingmodifications; ++k )
-         {
-            pricingmod = branchmastercutdata[i]->pricingmodifications[k];
-            SCIP* pricingprob = GCGgetPricingprob(scip_, pricingmod->blocknr);
-            assert(pricingprob != NULL);
-
-            // add the constant objective term
-            SCIP_CALL( SCIPaddObjoffset(pricingprob, pricingmod->constantObjValue) );
-
-            // add the inferred pricing variables
-            for( j=0; j<pricingmod->npricingvars; j++)
-            {
-               assert(GCGvarIsInferredPricing(pricingmod->pricingvars[j]));
-               SCIP_CALL( SCIPaddVar(pricingprob, pricingmod->pricingvars[j]) );
-            }
-
-            // add the inferred pricing constraints
-            for( j=0; j<pricingmod->npricingconss; j++)
-            {
-               SCIP_CALL( SCIPaddCons(pricingprob, pricingmod->pricingconss[j]) );
-            }
-         }
+         SCIP_CALL( GCGmastercutApplyPricingModifications(scip_, branchmastercutdata[i]) );
       }
 
       /* call update method of pricing solvers to update objectives;
@@ -3070,37 +3048,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       }
 
       SCIP_CALL( retcode );
-
-      /* undo the inferred pricing modifications from the mastercuts */
-      for( i=0; i<nbranchmastercuts; ++i )
-      {
-         assert(GCGmastercutIsActive(branchmastercutdata[i]));
-
-         // get the pricing problem
-         for( k=0; k<branchmastercutdata[i]->npricingmodifications; ++k )
-         {
-            pricingmod = branchmastercutdata[i]->pricingmodifications[k];
-            SCIP* pricingprob = GCGgetPricingprob(scip_, pricingmod->blocknr);
-            assert(pricingprob != NULL);
-
-            // add the constant objective term
-            SCIP_CALL( SCIPaddObjoffset(pricingprob, -(pricingmod->constantObjValue)) );
-
-            // add the inferred pricing variables
-            for( j=0; j<pricingmod->npricingvars; j++)
-            {
-               SCIP_Bool deleted = FALSE;
-               SCIP_CALL( SCIPdelVar(pricingprob, pricingmod->pricingvars[j], &deleted) );
-               assert(deleted);
-            }
-
-            // add the inferred pricing constraints
-            for( j=0; j<pricingmod->npricingconss; j++)
-            {
-               SCIP_CALL( SCIPdelCons(pricingprob, pricingmod->pricingconss[j]) );
-            }
-         }
-      }
 
       /* collect results from all performed pricing jobs */
       getBestCols(bestcols);
