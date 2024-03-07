@@ -9,6 +9,9 @@ Bug fixes
 - remove columns from colpool that violate global bounds
 - tree synchronization: fix segfault
 - fix 'gcg_check' CMake target
+- fix calculation of dual objective value and improve numerical stability
+- fix calculation of reduced costs of columns (in presence of very small dual values)
+- knapsack pricing solver reports optimality of solution if capacity is zero
 
 New/modified/removed API functions:
 ---------------------------
