@@ -361,6 +361,7 @@ SCIP_RETCODE solveKnapsack(
       nnonsolitems = nitems;
       for( i = 0; i < nitems; ++i )
          nonsolitems[i] = items[i];
+      *status = GCG_PRICINGSTATUS_OPTIMAL;
    }
    else
    {
