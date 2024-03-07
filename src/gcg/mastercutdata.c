@@ -157,8 +157,8 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
 {
 #ifndef NDEBUG
    SCIP_Bool* seenblocks;
-   int i;
 #endif
+   int i;
 
    assert(scip != NULL);
    assert(mastercutdata != NULL);
