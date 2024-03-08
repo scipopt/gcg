@@ -45,12 +45,14 @@
 #include "struct_mastercutdata.h"
 #include "struct_vardata.h"
 #include "type_branchgcg.h"
+#include "type_mastercutdata.h"
 #include <cassert>
 #include <cstring>
 #include <lpi/type_lpi.h>
 #include <scip/def.h>
 #include <scip/pub_var.h>
 #include <scip/type_lp.h>
+#include <scip/type_retcode.h>
 #include <scip/type_var.h>
 #include <scip/var.h>
 
@@ -1010,6 +1012,9 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraints(
          SCIP_Real* coefs;
          int ncoefs;
 
+         if( GCGvarIsInferredPricing(solvars[i]) )
+            continue;
+
          assert(GCGvarIsPricing(solvars[i]));
          origvars = GCGpricingVarGetOrigvars(solvars[i]);
          assert(GCGvarIsOriginal(origvars[0]));
@@ -1208,6 +1213,9 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
          SCIP_Real* coefs;
          int ncoefs;
 
+         if( GCGvarIsInferredPricing(solvars[i]) )
+            continue;
+
          assert(GCGvarIsPricing(solvars[i]));
          origvars = GCGpricingVarGetOrigvars(solvars[i]);
          assert(GCGvarIsOriginal(origvars[0]));
@@ -1363,7 +1371,6 @@ SCIP_RETCODE ObjPricerGcg::addVariableToOriginalSepaCutsFromGCGCol(
    return SCIP_OKAY;
 }
 
-
 /** compute original separator cut coefficients of column in the master problem */
 SCIP_RETCODE ObjPricerGcg::computeColOriginalSepaCuts(
    GCG_COL*              gcgcol              /**< GCG column data structure */
@@ -1462,6 +1469,35 @@ SCIP_RETCODE ObjPricerGcg::computeColOriginalSepaCuts(
    GCGcolUpdateOriginalSepaMastercuts(gcgcol, neworiginalsepamastercuts, nneworiginalsepamastercuts);
 
    SCIPfreeBufferArray(origprob, &neworiginalsepamastercuts);
+
+   return SCIP_OKAY;
+}
+
+/** add variable to the master cuts */
+SCIP_RETCODE ObjPricerGcg::addVariableToMastercuts(
+   SCIP_VAR*             newvar              /**< The new variable to add */
+   )
+{
+   int i;
+   int j;
+
+   GCG_BRANCHRULE** branchrules;
+   GCG_BRANCHDATA** branchdata;
+   GCG_MASTERCUTDATA** branchmastercutdata;
+   int nbranchmastercuts;
+
+   branchrules = NULL;
+   branchdata = NULL;
+   branchmastercutdata = NULL;
+   nbranchmastercuts = 0;
+   SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &branchrules, &branchdata, &branchmastercutdata, &nbranchmastercuts) );
+   assert(nbranchmastercuts == 0 || branchmastercutdata != NULL);
+
+   /* compute coef of the variable in the master cuts */
+   for( i = 0; i < nbranchmastercuts; i++ )
+   {
+      GCGrelaxBranchNewColWithGCGBranchrule(scip_, branchrules[i], branchdata[i], newvar);
+   }
 
    return SCIP_OKAY;
 }
@@ -2155,6 +2191,9 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
       {
          SCIP_VAR* origvar;
 
+         if( GCGvarIsInferredPricing(solvars[i]) )
+            continue;
+
          assert(GCGvarIsPricing(solvars[i]));
          origvar = GCGpricingVarGetOrigvars(solvars[i])[0];
 
@@ -2214,6 +2253,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    SCIP_CALL( addVariableToPricedvars(newvar) );
    SCIP_CALL( addVariableToMasterconstraints(newvar, prob, solvars, solvals, nsolvars) );
    SCIP_CALL( addVariableToOriginalSepaCuts(newvar, prob, solvars, solvals, nsolvars) );
+   SCIP_CALL( addVariableToMastercuts(newvar) );
 
    /* add variable to convexity constraint */
    if( !solisray )
@@ -2313,10 +2353,10 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
       {
          SCIP_VAR* origvar;
 
-         assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
-
          if( GCGvarIsInferredPricing(solvars[i]) )
-            break;
+            continue;
+
+         assert(GCGvarIsPricing(solvars[i]));
 
          origvar = GCGpricingVarGetOrigvars(solvars[i])[0];
          solval = solvals[i];
@@ -2375,6 +2415,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    SCIP_CALL( addVariableToPricedvars(newvar) );
    SCIP_CALL( addVariableToMasterconstraintsFromGCGCol(newvar, gcgcol) );
    SCIP_CALL( addVariableToOriginalSepaCutsFromGCGCol(newvar, gcgcol) );
+   SCIP_CALL( addVariableToMastercuts(newvar) );
 
    /* add variable to convexity constraint */
    if( !isray )

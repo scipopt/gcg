@@ -38,6 +38,7 @@
 #include "pub_gcgcol.h"
 
 #include "gcg.h"
+#include "pub_gcgvar.h"
 #include "scip/def.h"
 #include "scip/scip.h"
 #include "scip/cons_linear.h"
@@ -63,6 +64,7 @@ SCIP_RETCODE GCGcreateGcgCol(
 {
    int i;
    int nnonz;
+   int ninferrednonz;
 
    SCIP_CALL( SCIPallocBlockMemory(pricingprob, gcgcol) );
 
@@ -87,6 +89,7 @@ SCIP_RETCODE GCGcreateGcgCol(
 
 
    nnonz = 0;
+   ninferrednonz = 0;
    for( i = 0; i < nvars; ++i )
    {
       SCIP_VAR* origvar;
@@ -110,12 +113,15 @@ SCIP_RETCODE GCGcreateGcgCol(
       if( SCIPvarIsIntegral(origvar) && SCIPisFeasIntegral(pricingprob, origval) )
          origval = SCIPround(pricingprob, origval);
 
-      if( !SCIPisZero(pricingprob, origval) )
-      {
-         (*gcgcol)->vars[nnonz] = origvar;
-         (*gcgcol)->vals[nnonz] = origval;
-         ++nnonz;
-      }
+      if( SCIPisZero(pricingprob, origval) )
+         continue;
+
+      if( !GCGvarIsPricing(origvar) )
+         continue;
+
+      (*gcgcol)->vars[nnonz] = origvar;
+      (*gcgcol)->vals[nnonz] = origval;
+      ++nnonz;
    }
 
    (*gcgcol)->nvars = nnonz;

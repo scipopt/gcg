@@ -127,6 +127,15 @@ SCIP_RETCODE GCGrelaxBranchNewCol(
    SCIP_VAR*             mastervar           /**< new mastervariable that was created */
    );
 
+/** notifies the branching rule that a new mastervariable was created while this node was active */
+GCG_EXPORT
+SCIP_RETCODE GCGrelaxBranchNewColWithGCGBranchrule(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
+   SCIP_VAR*             mastervar           /**< new mastervariable that was created */
+   );
+
 /** notifies the branching rule that the dual value to its masterconstraint has been determined */
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchUpdateDual(
