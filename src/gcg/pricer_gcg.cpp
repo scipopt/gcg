@@ -1849,9 +1849,11 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       stabredcosts[i] = SCIPvarGetObj(staticvars[i]);
    }
 
-   /* compute reduced cost for linking variable constraints and update (stabilized) reduced cost coefficients
-    * go through constraints, and select correct variable
+   /*
+    * compute (stabilized) reduced cost coefficients for static variables (direct copies and linking variables);
+    * loop over variable linking constraints, master constraints and master cuts
     */
+
    for( i = 0; i < nlinkconss; ++i )
    {
       SCIP_VAR** linkconsvars;
@@ -1881,7 +1883,6 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       stabredcosts[varindex] -= dualsol;
    }
 
-   /* compute reduced cost for master constraints and update (stabilized) reduced cost coefficients */
    for( i = 0; i < nmasterconss; i++ )
    {
       if( stabilize )
@@ -1893,7 +1894,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
       }
 
-      /* for all variables in the constraint, modify the objective of the corresponding variable in a pricing problem */
+      /* search for static variables in the constraint, and update their red. cost coefficients */
       nconsvars = GCGconsGetNVars(origprob, origconss[i]);
       SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
       SCIP_CALL( SCIPallocBufferArray(scip_, &consvals, nconsvars) );
@@ -1913,9 +1914,6 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          mastervar = GCGoriginalVarGetMastervars(consvars[j])[0];
          blocknr = GCGvarGetBlock(mastervar);
 
-         /* nothing to be done if variable belongs to redundant block or variable was directly transferred to the master
-          * or variable is linking variable (which means, the directly transferred copy is part of the master cons)
-          */
          if( blocknr < 0 )
          {
             int varindex;
@@ -1930,7 +1928,6 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       SCIPfreeBufferArray(scip_, &consvars);
    }
 
-   /* compute reduced cost for master cuts and update (stabilized) reduced cost coefficients */
    origcuts = GCGsepaGetOrigcuts(scip_);
    for( i = 0; i < nmastercuts; i++ )
    {
@@ -1953,7 +1950,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       for( j = 0; j < nconsvars; j++ )
          consvars[j] = SCIPcolGetVar(cols[j]);
 
-      /* for all variables in the cut, modify the objective of the corresponding variable in a pricing problem */
+      /* search for static variables in the constraint, and update their red. cost coefficients */
       for( j = 0; j < nconsvars; j++ )
       {
          SCIP_VAR* mastervar;
@@ -1968,9 +1965,6 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          mastervar = GCGoriginalVarGetMastervars(consvars[j])[0];
          blocknr = GCGvarGetBlock(mastervar);
 
-         /* nothing to be done if variable belongs to redundant block or variable was directly transferred to the master
-          * or variable is linking variable (which means, the directly transferred copy is part of the master cons)
-          */
          if( blocknr < 0 )
          {
             int varindex;
@@ -1984,7 +1978,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       SCIPfreeBufferArray(scip_, &consvars);
    }
 
-   /* add redcost coefficients * lb/ub of linking or directly transferred variables */
+   /* add (redcost coefficients * lb/ub) of static variables to *stabdualval */
    for( i = 0; i < nstaticvars; ++i )
    {
       SCIP_Real stabredcost = stabredcosts[i];
