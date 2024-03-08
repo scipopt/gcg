@@ -25,23 +25,23 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    type_mastercutdata.h
+/**@file    type_varhistory.h
  * @ingroup TYPEDEFINITIONS
- * @brief   type definitions for master cuts in GCG projects
+ * @brief   type definitions for managing variable history
  * @author  Til Mohr
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_TYPE_MASTERCUTDATA_H_
-#define GCG_TYPE_MASTERCUTDATA_H_
+#ifndef GCG_TYPE_VARHISTORY_H_
+#define GCG_TYPE_VARHISTORY_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct GCG_PricingModification GCG_PRICINGMODIFICATION;
-typedef struct GCG_MasterCutData GCG_MASTERCUTDATA;
+typedef struct GCG_VarHistoryBuffer GCG_VARHISTORYBUFFER;
+typedef struct GCG_VarHistory GCG_VARHISTORY;
 
 #ifdef __cplusplus
 }

@@ -40,7 +40,7 @@
 #include "scip/pub_lp.h"
 #include "scip/clock.h"
 #include "scip_misc.h"
-#include "type_mastercutdata.h"
+#include "struct_mastercutdata.h"
 
 #include <exception>
 
@@ -145,7 +145,17 @@ SCIP_Real FarkasPricing::mastercutGetDual(
    GCG_MASTERCUTDATA*    mastercutdata
    ) const
 {
-   return SCIPgetDualfarkasLinear(scip, mastercutdata->mastercons);
+   assert(scip != NULL);
+   assert(mastercutdata != NULL);
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      assert(mastercutdata->cut.cons != NULL);
+      return SCIPgetDualfarkasLinear(scip, mastercutdata->cut.cons);
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwGetDualfarkas(mastercutdata->cut.row);
+   }
 }
 
 SCIP_Real FarkasPricing::varGetObj(
@@ -213,7 +223,17 @@ SCIP_Real ReducedCostPricing::mastercutGetDual(
    GCG_MASTERCUTDATA*    mastercutdata
    ) const
 {
-   return SCIPgetDualsolLinear(scip, mastercutdata->mastercons);
+   assert(scip != NULL);
+   assert(mastercutdata != NULL);
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      assert(mastercutdata->cut.cons != NULL);
+      return SCIPgetDualsolLinear(scip, mastercutdata->cut.cons);
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwGetDualsol(mastercutdata->cut.row);
+   }
 }
 
 ReducedCostPricing::ReducedCostPricing(

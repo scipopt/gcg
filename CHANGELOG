@@ -5,6 +5,68 @@
 New features:
 -------------
 
+- Generic approach to handle cuts and branching constraints in the master problem with no couterpart in the original problem
+- Created a pricing variable type for variables not corresponding to any original variable, inferred by mastercuts
+- Automatic Mastervariable Synchronization across the entire B&B-Tree through history-tracking
+
+
+New/modified API functions:
+---------------------------
+
+- Added function 'GCGcreateInferredPricingVar'
+- Added function 'GCGvarIsInferredPricing'
+- Added function 'GCGmastercutIsActive'
+- Added function 'GCGrelaxBranchNewCol'
+- Added function 'GCGrelaxBranchUpdateDual'
+- Added function 'GCGrelaxBranchUpdateDualWithGCGBranchrule'
+- Added function 'GCGrelaxBranchGetMasterCut'
+- Added function 'GCGrelaxBranchGetAllActiveMasterCuts'
+- Added callback 'GCG_DECL_BRANCHNEWCOL' to 'GCG_BRANCHRULE'
+- Added callback 'GCG_DECL_BRANCHUPDATEDUAL' to 'GCG_BRANCHRULE'
+- Added callback 'GCG_DECL_BRANCHGETMASTERCUT' to 'GCG_BRANCHRULE'
+- Added parameter 'GCG_DECL_BRANCHNEWCOL((*branchnewcol))' to 'GCGrelaxIncludeBranchrule'
+- Added parameter 'GCG_DECL_BRANCHUPDATEDUAL((*branchupdatedual))' to 'GCGrelaxIncludeBranchrule'
+- Added parameter 'GCG_DECL_BRANCHGETMASTERCUT((*branchgetmastercut))' to 'GCGrelaxIncludeBranchrule'
+
+
+Renamed API functions:
+---------------------------
+
+- Moved function 'SCIPincludeSepaMaster' to 'SCIPincludeSepaOriginal'
+- Moved function 'GCGsepaGetOrigcuts' to 'GCGsepaGetOriginalSepaOrigcuts'
+- Moved function 'GCGsepaGetNCuts' to 'GCGsepaGetNOriginalSepaCuts'
+- Moved function 'GCGsepaGetMastercuts' to 'GCGsepaGetOriginalSepaMastercuts'
+- Moved function 'GCGsepaAddMastercuts' to 'GCGsepaAddOriginalSepaCuts'
+- Moved function 'GCGsepaOrigcutExists' to 'GCGsepaOriginalSepaOrigcutExists'
+
+New/changed parameters:
+-----------------------
+
+- Moved parameter 'sepa/master/enable' to 'sepa/original/enable'
+- Moved parameter 'sepa/master/paramsetting' to 'sepa/original/paramsetting'
+
+Added structures and defines:
+---------------------------
+
+- Added struct 'GCG_INFERREDPRICINGVARDATA'
+- Added struct 'GCG_PRICINGMODIFICATION'
+- Added struct 'GCG_MASTERCUTDATA'
+- Added struct 'GCG_VARHISTORY'
+- ADDED struct 'GCG_VARHISTORYBUFFER'
+- Added type 'GCG_VARTYPE_INFERREDPRICING'
+
+Command line interface
+-----------------------
+
+- Renamed output log column 'mcuts' to 'ocuts'
+
+Code cleanup:
+-------------
+
+- Moved file 'sepa_master.c' to 'sepa_original.c'
+- Moved file 'sepa_master.h' to 'sepa_original.h'
+- Moved references of 'sepa_master' to 'sepa_original'
+
 
 @page RN36 Release notes for GCG 3.6
 @section RN360 GCG 3.6.0

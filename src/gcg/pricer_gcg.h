@@ -37,6 +37,7 @@
 #ifndef GCG_PRICER_GCG__
 #define GCG_PRICER_GCG__
 
+#include "misc_varhistory.h"
 #include "scip/scip.h"
 #include "def.h"
 #include "type_solver.h"
@@ -287,6 +288,11 @@ GCG_EXPORT
 SCIP_RETCODE GCGcomputeColMastercoefs(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_COL*              gcgcol              /**< GCG column data structure */
+   );
+
+/** get a weak reference to the current and latest varhistory pointer */
+GCG_VARHISTORY* GCGgetCurrentVarhistoryReference(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 /**@} */

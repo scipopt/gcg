@@ -118,6 +118,7 @@ set(gcgsources
     gcg/heur_xprins.c
     gcg/mastercutdata.c
     gcg/masterplugins.c
+    gcg/misc_varhistory.c
     gcg/misc.c
     gcg/miscvisualization.cpp
     gcg/nodesel_master.c
@@ -172,6 +173,7 @@ set(gcgheaders
     gcg/branch_staticvar.h
     gcg/class_conspartition.h
     gcg/class_indexpartition.h
+    gcg/misc_varhistory.h
     gcg/miscvisualization.h
     gcg/class_pricingcontroller.h
     gcg/class_pricingtype.h
@@ -315,6 +317,7 @@ set(gcgheaders
     gcg/struct_score.h
     gcg/struct_solver.h
     gcg/struct_vardata.h
+    gcg/struct_varhistory.h
     gcg/type_branchgcg.h
     gcg/type_classifier.h
     gcg/type_colpool.h
@@ -334,6 +337,7 @@ set(gcgheaders
     gcg/type_score.h
     gcg/type_solver.h
     gcg/type_varclassifier.h
+    gcg/type_varhistory.h
     gcg/wrapper_partialdecomp.h
 )
 

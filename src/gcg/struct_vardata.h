@@ -40,8 +40,7 @@
 #include <scip/type_cons.h>
 #include <scip/type_misc.h>
 #include <scip/type_var.h>
-
-#include "type_mastercutdata.h"
+#include "struct_mastercutdata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,7 +52,8 @@ enum GCG_Vartype
    GCG_VARTYPE_ORIGINAL = 0,                /**< variable belongs to original problem */
    GCG_VARTYPE_PRICING = 1,                 /**< variable belongs to a pricing problem */
    GCG_VARTYPE_MASTER = 2,                   /**< variable belongs to the master problem */
-   GCG_VARTYPE_INFERREDPRICING = 3,         /**< variable is inferred from a master cut */
+   GCG_VARTYPE_INFERREDPRICING = 3,         /**< pricing variable inferred from a master cut
+                                                and does not correspond to any original variable */
 };
 typedef enum GCG_Vartype GCG_VARTYPE;
 
@@ -107,7 +107,8 @@ struct GCG_MasterVarData
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
 
-/** data for pricing variables */
+/** data for pricing variable inferred from a master cut
+ * and does not correspond to any original variable */
 struct GCG_InferredPricingVarData
 {
    GCG_MASTERCUTDATA*    mastercutdata;      /**< mastercut that inferred this pricing variable */

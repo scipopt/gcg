@@ -43,6 +43,7 @@
 
 //#define SCIP_DEBUG
 
+#include <scip/def.h>
 #include <scip/type_branch.h>
 #include <scip/type_retcode.h>
 #include <string.h>
@@ -71,7 +72,7 @@
 
 #include "gcg.h"
 #include "type_branchgcg.h"
-#include "type_mastercutdata.h"
+#include "struct_mastercutdata.h"
 
 #ifdef WITH_BLISS
 #include "pub_bliss.h"
@@ -3621,7 +3622,6 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
 }
 
 /** notifies the branching rule that a new mastervariable was created while this node was active */
-GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchNewCol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
@@ -3635,6 +3635,8 @@ SCIP_RETCODE GCGrelaxBranchNewCol(
 
    assert(scip != NULL);
    assert(branchrule != NULL);
+   assert(branchdata != NULL);
+   assert(mastervar != NULL);
 
    relax = SCIPfindRelax(scip, RELAX_NAME);
    assert(relax != NULL);
@@ -3647,9 +3649,7 @@ SCIP_RETCODE GCGrelaxBranchNewCol(
    {
       if( branchrule == relaxdata->branchrules[i]->branchrule )
       {
-         /* call new mastervariable handler method of branching rule*/
-         if( relaxdata->branchrules[i]->branchnewcol != NULL )
-            SCIP_CALL( relaxdata->branchrules[i]->branchnewcol(relaxdata->masterprob, branchdata, mastervar) );
+         SCIP_CALL( GCGrelaxBranchNewColWithGCGBranchrule(GCGgetMasterprob(scip), relaxdata->branchrules[i], branchdata, mastervar) );
 
          break;
       }
@@ -3660,8 +3660,28 @@ SCIP_RETCODE GCGrelaxBranchNewCol(
    return SCIP_OKAY;
 }
 
+/** notifies the branching rule that a new mastervariable was created while this node was active */
+SCIP_RETCODE GCGrelaxBranchNewColWithGCGBranchrule(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
+   SCIP_VAR*             mastervar           /**< new mastervariable that was created */
+   )
+{
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+   assert(branchrule != NULL);
+   assert(branchdata != NULL);
+   assert(mastervar != NULL);
+
+   /* call new mastervariable handler method of branching rule*/
+   if( branchrule->branchnewcol != NULL )
+      SCIP_CALL( branchrule->branchnewcol(scip, branchdata, mastervar) );
+
+   return SCIP_OKAY;
+}
+
 /** notifies the branching rule that the dual value to its masterconstraint has been determined */
-GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchUpdateDual(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
@@ -3675,6 +3695,7 @@ SCIP_RETCODE GCGrelaxBranchUpdateDual(
 
    assert(scip != NULL);
    assert(branchrule != NULL);
+   assert(branchdata != NULL);
 
    relax = SCIPfindRelax(scip, RELAX_NAME);
    assert(relax != NULL);
@@ -3687,9 +3708,7 @@ SCIP_RETCODE GCGrelaxBranchUpdateDual(
    {
       if( branchrule == relaxdata->branchrules[i]->branchrule )
       {
-         /* call dual value update method of branching rule*/
-         if( relaxdata->branchrules[i]->branchupdatedual != NULL )
-            SCIP_CALL( relaxdata->branchrules[i]->branchupdatedual(relaxdata->masterprob, branchdata, dual) );
+         SCIP_CALL( GCGrelaxBranchUpdateDualWithGCGBranchrule(GCGgetMasterprob(scip), relaxdata->branchrules[i], branchdata, dual) );
 
          break;
       }
@@ -3701,7 +3720,6 @@ SCIP_RETCODE GCGrelaxBranchUpdateDual(
 }
 
 /** notifies the branching rule that the dual value to its masterconstraint has been determined */
-GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchUpdateDualWithGCGBranchrule(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
@@ -3722,7 +3740,6 @@ SCIP_RETCODE GCGrelaxBranchUpdateDualWithGCGBranchrule(
 }
 
 /** gets the mastercutdata created by this branching rule, if any */
-GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchGetMasterCut(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
@@ -3772,7 +3789,6 @@ SCIP_RETCODE GCGrelaxBranchGetMasterCut(
 }
 
 /** get mastercuts of all active nods */
-GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchGetAllActiveMasterCuts(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_BRANCHRULE***     branchrules,        /**< branching rules that created mastercuts */

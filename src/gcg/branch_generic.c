@@ -38,6 +38,8 @@
 /*#define SCIP_DEBUG*/
 
 #include "branch_generic.h"
+#include "pub_gcgvar.h"
+#include "mastercutdata.h"
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"
@@ -63,6 +65,7 @@
 #include "scip/branch_relpscost.h"
 
 #include <assert.h>
+#include <scip/def.h>
 #include <string.h>
 
 
@@ -259,8 +262,18 @@ SCIP_RETCODE createBranchingCons(
 
    SCIP_CALL( SCIPaddConsNode(scip, node, branchdata->mastercons, NULL) );
 
+   SCIP_VAR** vars = GCGmasterGetPricedvars(scip);
+   int nvars = GCGmasterGetNPricedvars(scip);
+
+   for( int i = 0; i < nvars; ++i )
+   {
+      SCIP_Bool added = FALSE;
+      SCIP_CALL( addVarToMasterbranch(scip, vars[i], branchdata, &added) );
+   }
+
    return SCIP_OKAY;
 }
+
 /** solving process initialization method of event handler (called when branch and bound process is about to begin) */
 static
 SCIP_DECL_EVENTINITSOL(eventInitsolGenericbranchvaradd)
@@ -2759,64 +2772,22 @@ SCIP_DECL_BRANCHCOPY(branchCopyGeneric)
    return SCIP_OKAY;
 }
 
-/** callback activation method */
+/** callback new column method */
 static
-GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
-{
-
-   SCIP_VAR** mastervars;
-   int nmastervars;
-   int i;
-   int nvarsadded;
-
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
-   assert(branchdata != NULL);
-   assert(branchdata->mastercons != NULL);
-
-   SCIPdebugMessage("branchActiveMasterGeneric: Block %d, Ssize %d\n", branchdata->consblocknr, branchdata->consSsize);
-
-   if( branchdata->nvars >= SCIPgetNVars(scip) )
-      return SCIP_OKAY;
-
-   nmastervars = SCIPgetNVars(scip);
-   mastervars = SCIPgetVars(scip);
-   nvarsadded = 0;
-
-   for( i = branchdata->nvars; i < nmastervars; ++i )
-   {
-      SCIP_Bool added = FALSE;
-      assert(mastervars[i] != NULL);
-      assert(GCGvarIsMaster(mastervars[i]));
-
-      SCIP_CALL( addVarToMasterbranch(scip, mastervars[i], branchdata, &added) );
-      if( added )
-         ++nvarsadded;
-
-   }
-   SCIPdebugMessage("%d/%d vars added with lhs=%g\n", nvarsadded, nmastervars-branchdata->nvars, branchdata->lhs);
-   branchdata->nvars = nmastervars;
-
-   return SCIP_OKAY;
-}
-
-/** callback deactivation method */
-static
-GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterGeneric)
+GCG_DECL_BRANCHNEWCOL(branchNewColGeneric)
 {
    assert(scip != NULL);
    assert(GCGisMaster(scip));
+   assert(mastervar != NULL);
+   assert(GCGvarIsMaster(mastervar));
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
 
-   SCIPdebugMessage("branchDeactiveMasterGeneric: Block %d, Ssize %d\n", branchdata->consblocknr, branchdata->consSsize);
+   SCIP_Bool added = FALSE;
+   SCIP_CALL( addVarToMasterbranch(scip, mastervar, branchdata, &added) );
 
-   /* set number of variables since last call */
-   branchdata->nvars = SCIPgetNVars(scip);
    return SCIP_OKAY;
 }
-
-
 
 /** callback propagation method */
 static
@@ -2945,8 +2916,8 @@ SCIP_DECL_BRANCHINIT(branchInitGeneric)
 
    SCIPdebugMessage("Init method of Vanderbecks generic branching\n");
 
-   SCIP_CALL( GCGrelaxIncludeBranchrule(origscip, branchrule, branchActiveMasterGeneric,
-         branchDeactiveMasterGeneric, branchPropMasterGeneric, NULL, branchDataDeleteGeneric, NULL, NULL, NULL) );
+   SCIP_CALL( GCGrelaxIncludeBranchrule(origscip, branchrule, NULL,
+         NULL, branchPropMasterGeneric, NULL, branchDataDeleteGeneric, branchNewColGeneric, NULL, NULL) );
 
    return SCIP_OKAY;
 }

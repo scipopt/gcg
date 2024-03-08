@@ -314,6 +314,7 @@ LIBOBJ = \
 			gcg/mastercutdata.o \
 			gcg/masterplugins.o \
 			gcg/bendersplugins.o \
+			gcg/misc_varhistory.o \
 			gcg/misc.o \
 			gcg/miscvisualization.o \
 			gcg/nodesel_master.o \
