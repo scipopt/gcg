@@ -12,6 +12,7 @@ Bug fixes
 - fix calculation of dual objective value and improve numerical stability
 - fix calculation of reduced costs of columns (in presence of very small dual values)
 - knapsack pricing solver reports optimality of solution if capacity is zero
+- prevent cliquer pricing solver from creating columns that violate varbounds
 
 New/modified/removed API functions:
 ---------------------------
