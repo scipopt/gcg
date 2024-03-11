@@ -27,8 +27,8 @@
 
 /**@file    branch_staticvar.c
  *
- * @brief   Static mastervariable branching rule
- * @author  Gerald Gamrath
+ * @brief   static master variable branching rule
+ * @author  Til Mohr
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -49,7 +49,7 @@
 
 #define BRANCHRULE_NAME        "staticvar"                       /**< name of branching rule */
 #define BRANCHRULE_DESC        "static mastervariable branching" /**< short description of branching rule */
-#define BRANCHRULE_PRIORITY        5                             /**< priority of this branching rule */
+#define BRANCHRULE_PRIORITY        -100000                             /**< priority of this branching rule */
 #define BRANCHRULE_MAXDEPTH        -1                            /**< maximal depth level of the branching rule */
 #define BRANCHRULE_MAXBOUNDDIST    1.0                           /**< maximal relative distance from current node's
                                                                       dual bound to primal bound compared to best node's
@@ -304,7 +304,8 @@ SCIP_DECL_BRANCHINIT(branchInitStaticVar)
    assert(origprob != NULL);
 
    SCIP_CALL( GCGrelaxIncludeBranchrule(origprob, branchrule, branchActiveMasterStaticVar,
-         branchDeactiveMasterStaticVar, branchPropMasterStaticVar, branchMasterSolvedStaticVar, branchDataDeleteStaticVar) );
+         branchDeactiveMasterStaticVar, branchPropMasterStaticVar, branchMasterSolvedStaticVar, branchDataDeleteStaticVar,
+         NULL, NULL, NULL) );
 
    return SCIP_OKAY;
 }

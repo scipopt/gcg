@@ -107,14 +107,6 @@ struct GCG_MasterVarData
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
 
-/** data for pricing variable inferred from a master cut
- * and does not correspond to any original variable */
-struct GCG_InferredPricingVarData
-{
-   GCG_MASTERCUTDATA*    mastercutdata;      /**< mastercut that inferred this pricing variable */
-};
-typedef struct GCG_InferredPricingVarData GCG_INFERREDPRICINGVARDATA;
-
 /** variable data structure */
 struct SCIP_VarData
 {
@@ -123,7 +115,6 @@ struct SCIP_VarData
       GCG_ORIGVARDATA    origvardata;        /**< data for original variables */
       GCG_PRICINGVARDATA pricingvardata;     /**< data for pricing variables */
       GCG_MASTERVARDATA  mastervardata;      /**< data for variable of the master problem */
-      GCG_INFERREDPRICINGVARDATA inferredpricingvardata; /**< data for inferred pricing variables */
    } data;
    GCG_VARTYPE           vartype;            /**< type of variable */
    int                   blocknr;            /**< number of the block and pricing problem, the variable belongs to,

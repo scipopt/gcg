@@ -195,16 +195,18 @@ SCIP_RETCODE addActiveBranchMastercut(
    GCG_BRANCHDATA*       branchdata          /**< branchdata that was activated */
    )
 {
+   GCG_MASTERCUTDATA* mastercutdata;
+
    assert(scip != NULL);
    assert(relaxdata != NULL);
    assert(branchrule != NULL);
    assert(branchdata != NULL);
 
    /* add only if branch creates a mastercut */
-   GCG_MASTERCUTDATA* mastercutdata = NULL;
+   mastercutdata = NULL;
    if( branchrule->branchgetmastercut == NULL )
       return SCIP_OKAY;
-   SCIP_CALL( branchrule->branchgetmastercut(scip, branchdata, mastercutdata) );
+   SCIP_CALL( branchrule->branchgetmastercut(scip, branchdata, &mastercutdata) );
    if( mastercutdata == NULL )
       return SCIP_OKAY;
 
@@ -3744,7 +3746,7 @@ SCIP_RETCODE GCGrelaxBranchGetMasterCut(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
-   GCG_MASTERCUTDATA*    mastercutdata       /**< the mastercutdata to grab */
+   GCG_MASTERCUTDATA**   mastercutdata       /**< the mastercutdata to grab */
    )
 {
    SCIP* original;
@@ -3776,7 +3778,7 @@ SCIP_RETCODE GCGrelaxBranchGetMasterCut(
          {
             assert(relaxdata->masterprob == scip);
             SCIP_CALL( relaxdata->branchrules[i]->branchgetmastercut(scip, branchdata, mastercutdata) );
-            assert(mastercutdata != NULL);
+            assert(*mastercutdata != NULL);
          }
 
          break;

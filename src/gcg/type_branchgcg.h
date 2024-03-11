@@ -139,7 +139,7 @@ typedef enum GCG_BoundType GCG_BOUNDTYPE;
  *    scip            : SCIP main data structure of the original problem
  *    branchdata      : the branching data
  */
-#define GCG_DECL_BRANCHGETMASTERCUT(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, GCG_MASTERCUTDATA* mastercutdata)
+#define GCG_DECL_BRANCHGETMASTERCUT(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, GCG_MASTERCUTDATA** mastercutdata)
 
 #ifdef __cplusplus
 }

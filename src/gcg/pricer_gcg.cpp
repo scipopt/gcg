@@ -1479,7 +1479,6 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMastercuts(
    )
 {
    int i;
-   int j;
 
    GCG_BRANCHRULE** branchrules;
    GCG_BRANCHDATA** branchdata;
@@ -1615,8 +1614,10 @@ SCIP_Real ObjPricerGcg::computeRedCost(
    SCIP_CALL_ABORT( SCIPgetSolVals(pricingscip, sol, nsolvars, solvars, solvals) );
 
    /* compute the objective function value of the solution */
-   for( i = 0; i < nsolvars; i++ )
+   for( i = 0; i < nsolvars; i++ ) {
+      assert(GCGvarIsPricing(solvars[i]));
       objvalue += solvals[i] * pricerdata->realdualvalues[probnr][SCIPvarGetProbindex(solvars[i])];
+   }
 
    if( objvalptr != NULL )
       *objvalptr = objvalue;
@@ -1675,8 +1676,10 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
    assert(pricingprob != NULL);
 
    /* compute the objective function value of the column */
-   for( i = 0; i < nsolvars; i++ )
+   for( i = 0; i < nsolvars; i++ ) {
+      assert(GCGvarIsPricing(solvars[i]));
       objvalue += solvals[i] * pricerdata->realdualvalues[probnr][SCIPvarGetProbindex(solvars[i])];
+   }
 
    if( objvalptr != NULL )
       *objvalptr = objvalue;
@@ -2782,7 +2785,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    int niters;
    int i;
    int j;
-   int k;
    int nfoundvars;
    SCIP_Bool optimal;
    bool probingnode;
@@ -2790,7 +2792,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    GCG_BRANCHDATA** branchdata;
    GCG_MASTERCUTDATA** branchmastercutdata;
    int nbranchmastercuts;
-   GCG_PRICINGMODIFICATION* pricingmod;
 
 #ifdef SCIP_STATISTIC
    SCIP_Real** olddualvalues;

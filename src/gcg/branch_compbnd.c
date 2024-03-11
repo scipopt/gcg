@@ -37,10 +37,8 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 
-#include "pub_gcgvar.h"
-#include "struct_vardata.h"
-#include <scip/pub_message.h>
 #define SCIP_DEBUG
+#include <scip/pub_message.h>
 #include <scip/pub_var.h>
 #include <scip/type_misc.h>
 #include <assert.h>
@@ -60,6 +58,9 @@
 #include "gcg.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
+#include "mastercutdata.h"
+#include "pub_gcgvar.h"
+#include "type_mastercutdata.h"
 #include "type_branchgcg.h"
 
 #define BRANCHRULE_NAME            "compbnd"                      /**< name of branching rule */
@@ -70,9 +71,6 @@
                                                                    dual bound to primal bound compared to best node's
                                                                    dual bound for applying branching */
 
-#define EVENTHDLR_NAME         "compbndbranchvaradd"
-#define EVENTHDLR_DESC         "event handler for adding a new generated mastervar into the right branching constraints by using component bound branching"
-
 /*
  * Data structures
  */
@@ -81,241 +79,17 @@
 struct GCG_BranchData
 {
    GCG_BRANCH_TYPE       branchtype;         /**< type of branching */
-   SCIP_CONS*            mastercons;         /**< constraint enforcing the branching restriction in the master problem */
    SCIP_Real             constant;           /**< constant value of the branching constraint in the master problem - either lhs or rhs, depending on branchtype */
    GCG_COMPBND*          B;                  /**< component bound sequence which induce the current branching constraint */
    int                   Bsize;              /**< size of the component bound sequence B */
    int                   blocknr;            /**< id of the pricing problem (or block) to which this branching constraint belongs */
    int                   nvars;              /**< number of master variables the last time the node has been visited - neccessary to later include newly generated master variables */
-   SCIP_VAR*             pricingvar;         /**< the pricing variable that was added to the pricing problem */
-   SCIP_VAR**            compbndvars;        /**< the pricing variables that were added to the pricing problem */
-   SCIP_CONS**           pricingcons;        /**< the pricing constraints that were added to the pricing problem */
+   GCG_MASTERCUTDATA*    mastercons;         /**< master constraint along with its corresponding inferred pricing modifications */
 };
 
 /*
  * Local methods
  */
-
-/** generate the pricing variables and constraints */
-static
-SCIP_RETCODE generatePricingVarsAndCons(
-   SCIP*                 scip,               /**< SCIP data structure */
-   GCG_BRANCHDATA*       branchdata          /**< branching data */)
-{
-   // get the dual value of the master constraint
-   SCIP* origscip;
-   SCIP* pricingscip;
-   SCIP_Real dual_value;
-   SCIP_VARDATA* newvardata;
-   SCIP_VAR** originalvars;
-   int noriginalvars;
-
-   originalvars = NULL;
-   noriginalvars = 0;
-
-   for( int i=0; i<branchdata->Bsize; ++i )
-   {
-      SCIP_Bool already_added = FALSE;
-      for( int j=0; j<noriginalvars; ++j )
-      {
-         if( SCIPvarGetName(branchdata->B[i].component) == SCIPvarGetName(originalvars[j]) )
-         {
-            already_added = TRUE;
-            break;
-         }
-      }
-      if( already_added )
-         continue;
-      if( noriginalvars == 0 )
-      {
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &originalvars, 1) );
-      }
-      else
-      {
-         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &originalvars, noriginalvars, noriginalvars+1) );
-      }
-      originalvars[noriginalvars] = branchdata->B[i].component;
-      noriginalvars += 1;
-   }
-   assert(noriginalvars > 0);
-
-   dual_value = SCIPgetDualsolLinear(scip, branchdata->mastercons);
-   assert((branchdata->branchtype == GCG_BRANCH_DOWN && !SCIPisPositive(scip, dual_value))
-       || (branchdata->branchtype == GCG_BRANCH_UP && !SCIPisNegative(scip, dual_value)));
-
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
-   pricingscip = GCGgetPricingprob(origscip, branchdata->blocknr);
-   assert(pricingscip != NULL);
-   //SCIP_CALL( SCIPfreeTransform(pricingscip) );
-
-   assert(branchdata->pricingvar == NULL);
-   assert(branchdata->pricingcons == NULL);
-   assert(branchdata->compbndvars == NULL);
-
-   char name[SCIP_MAXSTRLEN];
-
-
-   if( branchdata->branchtype == GCG_BRANCH_DOWN )
-   {
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "down(%s%s%.2f,%d)<=%.2f",
-            SCIPvarGetName(branchdata->B[0].component), branchdata->B[0].sense == GCG_COMPBND_SENSE_GE ? ">=" : "<=",
-                           branchdata->B[0].bound, branchdata->Bsize, branchdata->constant);
-   } else
-   {
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "up(%s%s%.2f,%d)>=%.2f",
-            SCIPvarGetName(branchdata->B[0].component), branchdata->B[0].sense == GCG_COMPBND_SENSE_GE ? ">=" : "<=",
-                           branchdata->B[0].bound, branchdata->Bsize, branchdata->constant);
-   }
-
-   char pricingvarname[SCIP_MAXSTRLEN];
-   (void) SCIPsnprintf(pricingvarname, SCIP_MAXSTRLEN, "g(%s)", name);
-
-   // create the g_x variable
-   SCIP_CALL( SCIPcreateVar(pricingscip, &branchdata->pricingvar, pricingvarname, 0.0, 1.0, -dual_value,
-                           SCIP_VARTYPE_BINARY, TRUE, FALSE,
-                           NULL, NULL, NULL, NULL, NULL) );
-   /*GCGaddDataAuxiliaryVar(scip, branchdata->pricingvar, branchdata->blocknr);
-   SCIP_VARDATA* vardata = SCIPvarGetData(branchdata->pricingvar);
-   vardata->vartype = GCG_VARTYPE_PRICING;*/
-   /* create vardata */
-   SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
-   newvardata->vartype = GCG_VARTYPE_PRICING;
-   newvardata->blocknr = branchdata->blocknr;
-   newvardata->data.mastervardata.isray = FALSE;
-   newvardata->data.mastervardata.norigvars = noriginalvars;
-   newvardata->data.mastervardata.maxorigvars = noriginalvars;
-   newvardata->data.mastervardata.isartificial = TRUE;
-   newvardata->data.mastervardata.origvars = originalvars;
-   newvardata->data.mastervardata.origvals = NULL;
-   newvardata->data.mastervardata.origvar2val = NULL;
-   newvardata->data.mastervardata.index = -1;
-   /* setting the variable data */
-   SCIPvarSetData(branchdata->pricingvar, newvardata);
-   /* setting the deltrans callback */
-   //SCIPvarSetDeltransData(branchdata->pricingvar, gcgvardeltrans);
-
-   // create the y_j variables
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &branchdata->compbndvars, branchdata->Bsize) );
-   for (int i = 0; i < branchdata->Bsize; ++i)
-   {
-      (void) SCIPsnprintf(pricingvarname, SCIP_MAXSTRLEN, "y(%s,%s,%f.2)", SCIPvarGetName(branchdata->B[i].component), branchdata->B[i].sense == GCG_COMPBND_SENSE_GE ? ">=" : "<=", branchdata->B[i].bound);
-      SCIP_CALL( SCIPcreateVar(pricingscip, &branchdata->compbndvars[i], pricingvarname, 0.0, 1.0,  0.0,
-                           SCIP_VARTYPE_BINARY, TRUE, FALSE,
-                           NULL, NULL, NULL, NULL, NULL) );
-      /* create vardata */
-      SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
-      newvardata->vartype = GCG_VARTYPE_PRICING;
-      newvardata->blocknr = branchdata->blocknr;
-      newvardata->data.mastervardata.isray = FALSE;
-      newvardata->data.mastervardata.norigvars = 1;
-      newvardata->data.mastervardata.maxorigvars = 1;
-      newvardata->data.mastervardata.isartificial = TRUE;
-      newvardata->data.mastervardata.origvars = &branchdata->B[i].component;
-      newvardata->data.mastervardata.origvals = NULL;
-      newvardata->data.mastervardata.origvar2val = NULL;
-      newvardata->data.mastervardata.index = -1;
-      /* setting the variable data */
-      SCIPvarSetData(branchdata->compbndvars[i], newvardata);
-      /* setting the deltrans callback */
-      //SCIPvarSetDeltransData(branchdata->compbndvars[i], gcgvardeltrans);
-   }
-
-   // create the pricing constraints
-   if( branchdata->branchtype == GCG_BRANCH_DOWN )
-   {
-      /* g_x >= 1 + sum_{j=1}^{n} y_j - n
-         * 1 - n <= g_x - sum_{j=1}^{n} y_j */
-      SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &branchdata->pricingcons, branchdata->Bsize + 1) );
-      char consname[SCIP_MAXSTRLEN];
-      (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "c(%s)", pricingvarname);
-      SCIP_CALL( SCIPcreateConsLinear(pricingscip, &branchdata->pricingcons[0], consname, 0, NULL, NULL, 1.0 - branchdata->Bsize, SCIPinfinity(pricingscip),
-         TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
-      SCIP_CALL( SCIPaddCoefLinear(pricingscip, branchdata->pricingcons[0], branchdata->pricingvar, 1.0) );
-      for (int i = 0; i < branchdata->Bsize; ++i)
-      {
-         SCIP_CALL( SCIPaddCoefLinear(pricingscip, branchdata->pricingcons[0], branchdata->compbndvars[i], -1.0) );
-      }
-
-      for(int i = 0; i < branchdata->Bsize; ++i)
-      {
-         (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "c(%s)(%s,%s,%f.2)", name, SCIPvarGetName(branchdata->B[i].component), branchdata->B[i].sense == GCG_COMPBND_SENSE_GE ? ">=" : "<=", branchdata->B[i].bound);
-
-         if( branchdata->B[i].sense == GCG_COMPBND_SENSE_LE )
-         {
-            /* y_j >= (floor(bound) + 1 - x_j) / (floor(bound) + 1 - l_j)
-               * (floor(bound) + 1 - l_j) * y_j >= floor(bound) + 1 - x_j
-               * floor(bound) + 1 <= (floor(bound) + 1 - l_j) * y_j + x_j */
-            SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
-            SCIP_Real bound = SCIPfloor(pricingscip, branchdata->B[i].bound);
-            SCIP_Real lowerbound = SCIPvarGetLbLocal(pricing_var);
-            SCIP_CALL( SCIPcreateConsLinear(pricingscip, &branchdata->pricingcons[i+1], consname, 0, NULL, NULL, bound + 1.0, SCIPinfinity(pricingscip),
-               TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, branchdata->pricingcons[i+1], branchdata->compbndvars[i], bound + 1.0 - lowerbound) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, branchdata->pricingcons[i+1], pricing_var, -1.0) );
-         } else
-         {
-            /* y_j >= (x_j - floor(bound)) / (u_j - floor(bound))
-               * (u_j - floor(bound)) * y_j >= x_j - floor(bound)
-               * -floor(bound) <= (u_j - floor(bound)) * y_j - x_j */
-            SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
-            SCIP_Real bound = SCIPfloor(pricingscip, branchdata->B[i].bound);
-            SCIP_Real upperbound = SCIPvarGetUbLocal(pricing_var);
-            SCIP_CALL( SCIPcreateConsLinear(pricingscip, &branchdata->pricingcons[i+1], consname, 0, NULL, NULL, -bound, SCIPinfinity(pricingscip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, branchdata->pricingcons[i+1], branchdata->compbndvars[i], upperbound - bound) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, branchdata->pricingcons[i+1], pricing_var, -1.0) );
-         }
-      }
-   } else
-   {
-      /* g_x <= y_j
-         * g_x - y_j <= 0 */
-      SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &branchdata->pricingcons, branchdata->Bsize * 2) );
-      char consname[SCIP_MAXSTRLEN];
-      for( int i = 0; i < branchdata->Bsize; ++i )
-      {
-         (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "c0(%s)(%s,%s,%f.2)", name, SCIPvarGetName(branchdata->B[i].component), branchdata->B[i].sense == GCG_COMPBND_SENSE_GE ? ">=" : "<=", branchdata->B[i].bound);
-         SCIP_CALL( SCIPcreateConsLinear(pricingscip, &branchdata->pricingcons[i], consname, 0, NULL, NULL,
-            -SCIPinfinity(pricingscip), 0.0, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
-         SCIP_CALL( SCIPaddCoefLinear(pricingscip, branchdata->pricingcons[i], branchdata->pricingvar, 1.0) );
-         SCIP_CALL( SCIPaddCoefLinear(pricingscip, branchdata->pricingcons[i], branchdata->compbndvars[i], -1.0) );
-      }
-
-      for( int i = 0; i < branchdata->Bsize; ++i )
-      {
-         (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "c1(%s)(%s,%s,%f.2)", name, SCIPvarGetName(branchdata->B[i].component), branchdata->B[i].sense == GCG_COMPBND_SENSE_GE ? ">=" : "<=", branchdata->B[i].bound);
-
-         if( branchdata->B[i].sense == GCG_COMPBND_SENSE_LE )
-         {
-            /* y_j <= (u_j - x_j) / (u_j - floor(bound))
-               * (u_j - floor(bound)) * y_j <= u_j - x_j
-               * (u_j - floor(bound)) * y_j + x_j <= u_j */
-            SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
-            SCIP_Real bound = SCIPfloor(pricingscip, branchdata->B[i].bound);
-            SCIP_Real upperbound = SCIPvarGetUbLocal(pricing_var);
-            SCIP_CALL( SCIPcreateConsLinear(pricingscip, &branchdata->pricingcons[i+branchdata->Bsize], consname, 0, NULL, NULL, -SCIPinfinity(pricingscip), upperbound, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, branchdata->pricingcons[i+branchdata->Bsize], branchdata->compbndvars[i], upperbound - bound) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, branchdata->pricingcons[i+branchdata->Bsize], pricing_var, -1.0) );
-         } else
-         {
-            /* y_j <= (x_j - l_j) / (floor(bound) + 1 - l_j)
-               * (floor(bound) + 1 - l_j) * y_j <= x_j - l_j
-               * (floor(bound) + 1 - l_j) * y_j - x_j <= -l_j */
-            SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
-            SCIP_Real bound = SCIPfloor(pricingscip, branchdata->B[i].bound);
-            SCIP_Real lowerbound = SCIPvarGetLbLocal(pricing_var);
-            SCIP_CALL( SCIPcreateConsLinear(pricingscip, &branchdata->pricingcons[i+branchdata->Bsize], consname, 0, NULL, NULL, -SCIPinfinity(pricingscip), -lowerbound, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, branchdata->pricingcons[i+branchdata->Bsize], branchdata->compbndvars[i], bound + 1.0 - lowerbound) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, branchdata->pricingcons[i+branchdata->Bsize], pricing_var, -1.0) );
-         }
-      }
-   }
-
-   //SCIP_CALL( SCIPtransformProb(pricingscip) );
-
-   return SCIP_OKAY;
-}
-
 
 /** initialize branchdata at the node */
 static
@@ -338,9 +112,7 @@ SCIP_RETCODE initNodeBranchdata(
    (*nodebranchdata)->B = B;
    (*nodebranchdata)->Bsize = Bsize;
    (*nodebranchdata)->nvars = 0;
-   (*nodebranchdata)->pricingvar = NULL;
-   (*nodebranchdata)->compbndvars = NULL;
-   (*nodebranchdata)->pricingcons = NULL;
+   (*nodebranchdata)->mastercons = NULL;
 
    return SCIP_OKAY;
 }
@@ -415,6 +187,10 @@ SCIP_RETCODE simplifyComponentBounds(
    newB = NULL;
    newBsize = 0;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &already_added, *Bsize) );
+   for( i = 0; i < *Bsize; ++i )
+   {
+      already_added[i] = FALSE;
+   }
 
 
    for( i=0; i<*Bsize; ++i )
@@ -535,6 +311,39 @@ SCIP_Bool isMasterVarInB(
    return TRUE;
 }
 
+/** adds a variable to a branching constraint */
+static
+SCIP_RETCODE addVarToMasterbranch(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             mastervar,          /**< the variable to add */
+   GCG_BRANCHDATA*       branchdata,         /**< branching data structure where the variable should be added */
+   SCIP_Bool*            added               /**< whether the variable was added */
+)
+{
+   SCIP_CONS* branchingcons;
+
+   assert(scip != NULL);
+   assert(mastervar != NULL);
+   assert(branchdata != NULL);
+   assert(added != NULL);
+
+   *added = FALSE;
+
+   if( GCGvarGetBlock(mastervar) == -1 || branchdata->blocknr == -3 || !GCGisMasterVarInBlock(mastervar, branchdata->blocknr) )
+      return SCIP_OKAY;
+
+   if( isMasterVarInB(scip, mastervar, branchdata->B, branchdata->Bsize) )
+   {
+      branchingcons = NULL;
+      SCIP_CALL( GCGmastercutGetCons(branchdata->mastercons, &branchingcons) );
+      assert(branchingcons != NULL);
+      SCIP_CALL( SCIPaddCoefLinear(scip, branchingcons, mastervar, 1.0) );
+      *added = TRUE;
+   }
+
+   return SCIP_OKAY;
+}
+
 /** creates the constraint for branching directly on a master variable */
 static
 SCIP_RETCODE createBranchingCons(
@@ -543,29 +352,210 @@ SCIP_RETCODE createBranchingCons(
    GCG_BRANCHDATA*       branchdata          /**< branching data structure */
 )
 {
+   // get the dual value of the master constraint
+   SCIP* origscip;
+   SCIP* pricingscip;
+
+   SCIP_VAR** mastervars;
+   int nmastervars;
+   int i;
+   SCIP_Bool added = FALSE;
+
+   SCIP_CONS* branchcons;
+
+   SCIP_VAR* coefvar;
+   SCIP_VAR** additionalvars;
+   int nadditionalvars;
+   SCIP_CONS** additionalcons;
+   int nadditionalcons;
+   GCG_PRICINGMODIFICATION* pricingmod;
+   GCG_PRICINGMODIFICATION** pricingmods; // will always only contain one element in this branching rule
+
    char name[SCIP_MAXSTRLEN];
 
    assert(scip != NULL);
+   assert(GCGisMaster(scip));
    assert(node != NULL);
    assert(branchdata != NULL);
 
-   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "child(%d, %g)", branchdata->Bsize, branchdata->constant);
-
    assert(branchdata->mastercons == NULL);
+
+   SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+   assert(nmastervars >= 0);
 
    /*  create constraint for child */
    if (branchdata->branchtype == GCG_BRANCH_DOWN)
    {
-      SCIP_CALL( SCIPcreateConsLinear(scip, &(branchdata->mastercons), name, 0, NULL, NULL,
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "child(%d <= %g)", branchdata->Bsize, branchdata->constant);
+      SCIP_CALL( SCIPcreateConsLinear(scip, &branchcons, name, 0, NULL, NULL,
          -SCIPinfinity(scip), branchdata->constant, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
    }
    else
    {
-      SCIP_CALL( SCIPcreateConsLinear(scip, &(branchdata->mastercons), name, 0, NULL, NULL,
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "child(%d >= %g)", branchdata->Bsize, branchdata->constant);
+      SCIP_CALL( SCIPcreateConsLinear(scip, &branchcons, name, 0, NULL, NULL,
          branchdata->constant, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
    }
 
-   SCIP_CALL( SCIPaddConsNode(scip, node, branchdata->mastercons, NULL) );
+   SCIP_CALL( SCIPaddConsNode(scip, node, branchcons, NULL) );
+
+   origscip = GCGmasterGetOrigprob(scip);
+   assert(origscip != NULL);
+   pricingscip = GCGgetPricingprob(origscip, branchdata->blocknr);
+   assert(pricingscip != NULL);
+
+   assert(branchdata->mastercons == NULL);
+
+   if( branchdata->branchtype == GCG_BRANCH_DOWN )
+   {
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "down(%s%s%.2f,%d)<=%.2f",
+            SCIPvarGetName(branchdata->B[0].component), branchdata->B[0].sense == GCG_COMPBND_SENSE_GE ? ">=" : "<=",
+                           branchdata->B[0].bound, branchdata->Bsize, branchdata->constant);
+   }
+   else
+   {
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "up(%s%s%.2f,%d)>=%.2f",
+            SCIPvarGetName(branchdata->B[0].component), branchdata->B[0].sense == GCG_COMPBND_SENSE_GE ? ">=" : "<=",
+                           branchdata->B[0].bound, branchdata->Bsize, branchdata->constant);
+   }
+
+   char pricingvarname[SCIP_MAXSTRLEN];
+   (void) SCIPsnprintf(pricingvarname, SCIP_MAXSTRLEN, "g(%s)", name);
+
+   // create the g_x variable
+   SCIP_CALL( GCGcreateInferredPricingVar(pricingscip, &coefvar, pricingvarname, 0.0, 1.0, 0.0, SCIP_VARTYPE_BINARY, branchdata->blocknr) );
+
+   // create the y_j variables
+   nadditionalvars = branchdata->Bsize;
+   SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &additionalvars, nadditionalvars) );
+   for (i = 0; i < branchdata->Bsize; ++i)
+   {
+      (void) SCIPsnprintf(pricingvarname, SCIP_MAXSTRLEN, "y(%s,%s,%f.2)", SCIPvarGetName(branchdata->B[i].component), branchdata->B[i].sense == GCG_COMPBND_SENSE_GE ? ">=" : "<=", branchdata->B[i].bound);
+      SCIP_CALL( GCGcreateInferredPricingVar(pricingscip, &additionalvars[i], pricingvarname, 0.0, 1.0, 0.0, SCIP_VARTYPE_BINARY, branchdata->blocknr) );
+   }
+
+   // create the pricing constraints
+   if( branchdata->branchtype == GCG_BRANCH_DOWN )
+   {
+      /* g_x >= 1 + sum_{j=1}^{n} y_j - n
+         * 1 - n <= g_x - sum_{j=1}^{n} y_j */
+      nadditionalcons = branchdata->Bsize + 1;
+      SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &additionalcons, nadditionalcons) );
+      char consname[SCIP_MAXSTRLEN];
+      (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "c(%s)", pricingvarname);
+      SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[0], consname, 0, NULL, NULL, 1.0 - branchdata->Bsize, SCIPinfinity(pricingscip),
+         TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE) );
+      SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[0], coefvar, 1.0) );
+      for( i = 0; i < branchdata->Bsize; ++i)
+      {
+         SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[0], additionalvars[i], -1.0) );
+      }
+
+      for( i = 0; i < branchdata->Bsize; ++i)
+      {
+         (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "c(%s)(%s,%s,%f.2)", name, SCIPvarGetName(branchdata->B[i].component), branchdata->B[i].sense == GCG_COMPBND_SENSE_GE ? ">=" : "<=", branchdata->B[i].bound);
+
+         if( branchdata->B[i].sense == GCG_COMPBND_SENSE_LE )
+         {
+            /* y_j >= (floor(bound) + 1 - x_j) / (floor(bound) + 1 - l_j)
+               * (floor(bound) + 1 - l_j) * y_j >= floor(bound) + 1 - x_j
+               * floor(bound) + 1 <= (floor(bound) + 1 - l_j) * y_j + x_j */
+            SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
+            SCIP_Real bound = SCIPfloor(pricingscip, branchdata->B[i].bound);
+            SCIP_Real lowerbound = SCIPvarGetLbLocal(pricing_var);
+            SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i+1], consname, 0, NULL, NULL, bound + 1.0, SCIPinfinity(pricingscip),
+               TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE) );
+            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+1], additionalvars[i], bound + 1.0 - lowerbound) );
+            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+1], pricing_var, -1.0) );
+         } else
+         {
+            /* y_j >= (x_j - floor(bound)) / (u_j - floor(bound))
+               * (u_j - floor(bound)) * y_j >= x_j - floor(bound)
+               * -floor(bound) <= (u_j - floor(bound)) * y_j - x_j */
+            SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
+            SCIP_Real bound = SCIPfloor(pricingscip, branchdata->B[i].bound);
+            SCIP_Real upperbound = SCIPvarGetUbLocal(pricing_var);
+            SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i+1], consname, 0, NULL, NULL, -bound, SCIPinfinity(pricingscip),
+               TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE) );
+            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+1], additionalvars[i], upperbound - bound) );
+            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+1], pricing_var, -1.0) );
+         }
+      }
+   } else
+   {
+      /* g_x <= y_j
+         * g_x - y_j <= 0 */
+      nadditionalcons = branchdata->Bsize * 2;
+      SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &additionalcons, nadditionalcons) );
+      char consname[SCIP_MAXSTRLEN];
+      for( i = 0; i < branchdata->Bsize; ++i )
+      {
+         (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "c0(%s)(%s,%s,%f.2)", name, SCIPvarGetName(branchdata->B[i].component), branchdata->B[i].sense == GCG_COMPBND_SENSE_GE ? ">=" : "<=", branchdata->B[i].bound);
+         SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i], consname, 0, NULL, NULL, -SCIPinfinity(pricingscip), 0.0,
+            TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE) );
+         SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i], coefvar, 1.0) );
+         SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i], additionalvars[i], -1.0) );
+      }
+
+      for( i = 0; i < branchdata->Bsize; ++i )
+      {
+         (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "c1(%s)(%s,%s,%f.2)", name, SCIPvarGetName(branchdata->B[i].component), branchdata->B[i].sense == GCG_COMPBND_SENSE_GE ? ">=" : "<=", branchdata->B[i].bound);
+
+         if( branchdata->B[i].sense == GCG_COMPBND_SENSE_LE )
+         {
+            /* y_j <= (u_j - x_j) / (u_j - floor(bound))
+               * (u_j - floor(bound)) * y_j <= u_j - x_j
+               * (u_j - floor(bound)) * y_j + x_j <= u_j */
+            SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
+            SCIP_Real bound = SCIPfloor(pricingscip, branchdata->B[i].bound);
+            SCIP_Real upperbound = SCIPvarGetUbLocal(pricing_var);
+            SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i+branchdata->Bsize], consname, 0, NULL, NULL, -SCIPinfinity(pricingscip), upperbound,
+               TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE) );
+            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+branchdata->Bsize], additionalvars[i], upperbound - bound) );
+            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+branchdata->Bsize], pricing_var, -1.0) );
+         } else
+         {
+            /* y_j <= (x_j - l_j) / (floor(bound) + 1 - l_j)
+               * (floor(bound) + 1 - l_j) * y_j <= x_j - l_j
+               * (floor(bound) + 1 - l_j) * y_j - x_j <= -l_j */
+            SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
+            SCIP_Real bound = SCIPfloor(pricingscip, branchdata->B[i].bound);
+            SCIP_Real lowerbound = SCIPvarGetLbLocal(pricing_var);
+            SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i+branchdata->Bsize], consname, 0, NULL, NULL, -SCIPinfinity(pricingscip), -lowerbound,
+               TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE) );
+            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+branchdata->Bsize], additionalvars[i], bound + 1.0 - lowerbound) );
+            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+branchdata->Bsize], pricing_var, -1.0) );
+         }
+      }
+   }
+
+   // create the pricing modification
+   pricingmod = NULL;
+   SCIP_CALL( GCGpricingmodificationCreate(
+      scip,
+      &pricingmod,
+      branchdata->blocknr,
+      coefvar,
+      additionalvars,
+      nadditionalvars,
+      additionalcons,
+      nadditionalcons
+   ) );
+   assert(pricingmod != NULL);
+
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricingmods, 1) );
+   assert(pricingmods != NULL);
+   pricingmods[0] = pricingmod;
+
+   // create the master constraint
+   SCIP_CALL( GCGmastercutCreateFromCons(scip, &branchdata->mastercons, branchcons, pricingmods, 1) );
+
+   // add the variables to the constraint
+   for( i = 0; i < nmastervars; i++ )
+   {
+      added = FALSE;
+      SCIP_CALL( addVarToMasterbranch(scip, mastervars[i], branchdata, &added) );
+   }
 
    return SCIP_OKAY;
 }
@@ -586,9 +576,7 @@ SCIP_RETCODE createChildNodesCompBnd(
    int identicalBlocks;
    SCIP_Real constantSum;
    int nmastervars;
-   int nbranchcands;
    SCIP_VAR** mastervars;
-   SCIP_VAR** branchcands;
    GCG_BRANCHDATA* downBranchData;
    GCG_BRANCHDATA* upBranchData;
 
@@ -599,15 +587,11 @@ SCIP_RETCODE createChildNodesCompBnd(
    identicalBlocks = GCGgetNIdenticalBlocks(scip, blocknr);
    SCIPdebugMessage("Component bound branching rule Node creation for blocknr %d with %d identical blocks \n", blocknr, identicalBlocks);
 
-
    /*  get variable data of the master problem */
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
    SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
    assert(nmastervars >= 0);
-
-   SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL, NULL) );
-
    /* determine the constant value of the master constraint, i.e. the rhs for the down branch, and lhs for the up branch */
    constantSum = 0;
    for( i = 0; i < nmastervars; ++i )
@@ -636,7 +620,7 @@ SCIP_RETCODE createChildNodesCompBnd(
    SCIP_CONS* upChildcons;
 
    /* define names for origbranch constraints */
-   (void) SCIPsnprintf(downChildname, SCIP_MAXSTRLEN, "node(%d) (last comp=%s %s %g) >= %g", blocknr,
+   (void) SCIPsnprintf(downChildname, SCIP_MAXSTRLEN, "node(%d) (last comp=%s %s %g) <= %g", blocknr,
       SCIPvarGetName(downBranchData->B[downBranchData->Bsize-1].component),
       downBranchData->B[downBranchData->Bsize-1].sense == GCG_COMPBND_SENSE_GE? ">=": "<=",
       downBranchData->B[downBranchData->Bsize-1].bound,
@@ -1009,7 +993,7 @@ SCIP_RETCODE _separation(
    return SCIP_OKAY;
 }
 
-/** seperation algorithm determining a component bound sequence to branch on
+/** separation algorithm determining a component bound sequence to branch on
  *
  * @param[out] B the component bound sequence to branch on
  * @param[out] Bsize the size of B
@@ -1208,149 +1192,6 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
 }
 
 /*
- * Callback methods of event handler
- *
- * The event handler is necessary to react on variable additions to the master problem.
- * If the new master variable satisfies all the component bound constraints, it must be added to the branching constraint.
- */
-
-/* define not used callback as NULL*/
-#define branchFreeCompBnd NULL
-#define branchExitCompBnd NULL
-#define branchInitsolCompBnd NULL
-#define branchExitsolCompBnd NULL
-
-
-/** adds a variable to a branching constraint */
-static
-SCIP_RETCODE addVarToMasterbranch(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             mastervar,          /**< the variable to add */
-   GCG_BRANCHDATA*       branchdata,         /**< branching data structure where the variable should be added */
-   SCIP_Bool*            added               /**< whether the variable was added */
-)
-{
-   assert(scip != NULL);
-   assert(mastervar != NULL);
-   assert(branchdata != NULL);
-   assert(added != NULL);
-
-   *added = FALSE;
-
-   if( GCGvarGetBlock(mastervar) == -1 || branchdata->blocknr == -3 || !GCGisMasterVarInBlock(mastervar, branchdata->blocknr) )
-      return SCIP_OKAY;
-
-   if( isMasterVarInB(scip, mastervar, branchdata->B, branchdata->Bsize) )
-   {
-      SCIP_CALL( SCIPaddCoefLinear(scip, branchdata->mastercons, mastervar, 1.0) );
-      *added = TRUE;
-   }
-
-   return SCIP_OKAY;
-}
-
-/** solving process initialization method of event handler (called when branch and bound process is about to begin) */
-static
-SCIP_DECL_EVENTINITSOL(eventInitsolCompBndbranchvaradd)
-{  /*lint --e{715}*/
-    assert(scip != NULL);
-    assert(eventhdlr != NULL);
-    assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
-
-    /* notify SCIP that your event handler wants to react on the event type */
-    SCIP_CALL( SCIPcatchEvent( scip, SCIP_EVENTTYPE_VARADDED, eventhdlr, NULL, NULL) );
-
-    return SCIP_OKAY;
-}
-
-/** solving process deinitialization method of event handler (called before branch and bound process data is freed) */
-static
-SCIP_DECL_EVENTEXITSOL(eventExitsolCompBndbranchvaradd)
-{  /*lint --e{715}*/
-    assert(scip != NULL);
-    assert(eventhdlr != NULL);
-    assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
-
-    /* notify SCIP that your event handler wants to drop the event type */
-    SCIP_CALL( SCIPdropEvent( scip, SCIP_EVENTTYPE_VARADDED, eventhdlr, NULL, -1) );
-
-    return SCIP_OKAY;
-}
-
-/** execution method of event handler */
-static
-SCIP_DECL_EVENTEXEC(eventExecCompBndbranchvaradd)
-{  /*lint --e{715}*/
-   SCIP* origscip;
-   SCIP_CONS* masterbranchcons;
-   SCIP_CONS* parentcons;
-   SCIP_VAR* mastervar;
-   SCIP_VAR** allorigvars;
-   SCIP_VAR** mastervars;
-   GCG_BRANCHDATA* branchdata;
-   int allnorigvars;
-   int nmastervars;
-
-   assert(eventhdlr != NULL);
-   assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
-   assert(event != NULL);
-   assert(scip != NULL);
-   assert(SCIPeventGetType(event) == SCIP_EVENTTYPE_VARADDED);
-
-   mastervar = SCIPeventGetVar(event);
-   if( !GCGvarIsMaster(mastervar) )
-      return SCIP_OKAY;
-
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
-
-   masterbranchcons = GCGconsMasterbranchGetActiveCons(scip);
-   assert(masterbranchcons != NULL);
-
-   /* if branch rule is not component bound, abort */
-   if( !GCGisBranchruleCompBnd(GCGconsMasterbranchGetBranchrule(masterbranchcons)) )
-      return SCIP_OKAY;
-
-   SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
-   SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
-
-   parentcons = masterbranchcons;
-   branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
-
-
-   if( GCGvarIsMaster(mastervar) && GCGconsMasterbranchGetBranchrule(parentcons) != NULL )
-   {
-      SCIP_Bool added = FALSE;
-      while( parentcons != NULL && branchdata != NULL
-            && branchdata->B != NULL && branchdata->Bsize > 0 )
-      {
-         if( GCGconsMasterbranchGetBranchrule(parentcons) == NULL || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetBranchrule(parentcons)), "generic") != 0 )
-            break;
-
-         assert(branchdata != NULL);
-
-
-         if( branchdata->blocknr != GCGvarGetBlock(mastervar) )
-         {
-            parentcons = GCGconsMasterbranchGetParentcons(parentcons);
-
-            if( parentcons != NULL )
-               branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
-
-            continue;
-         }
-
-         SCIP_CALL( addVarToMasterbranch(scip, mastervar, branchdata, &added) );
-
-         parentcons = GCGconsMasterbranchGetParentcons(parentcons);
-         branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
-      }
-   }
-
-   return SCIP_OKAY;
-}
-
-/*
  * Callback methods of branching rule
  */
 
@@ -1473,74 +1314,12 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsCompBnd)
 static
 GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterCompBnd)
 {
-   SCIP* origscip;
-   SCIP* pricingscip;
-   SCIP_VAR** mastervars;
-   int nmastervars;
-   int i;
-   int nvarsadded;
-
    assert(scip != NULL);
    assert(GCGisMaster(scip));
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
 
    SCIPdebugMessage("branchActiveMasterCompBnd: Block %d, Ssize %d\n", branchdata->blocknr, branchdata->Bsize);
-
-   if( branchdata->nvars >= SCIPgetNVars(scip) )
-      return SCIP_OKAY;
-
-   nmastervars = SCIPgetNVars(scip);
-   mastervars = SCIPgetVars(scip);
-   nvarsadded = 0;
-
-   for( i = branchdata->nvars; i < nmastervars; ++i )
-   {
-      SCIP_Bool added = FALSE;
-      assert(mastervars[i] != NULL);
-      assert(GCGvarIsMaster(mastervars[i]));
-      SCIP_CALL( addVarToMasterbranch(scip, mastervars[i], branchdata, &added) );
-      if( added )
-         ++nvarsadded;
-   }
-   SCIPdebugMessage("%d/%d vars added with contant=%g\n", nvarsadded, nmastervars-branchdata->nvars, branchdata->constant);
-   branchdata->nvars = nmastervars;
-
-   // add pricing variables and constraints to pricing problem
-   if (branchdata->pricingvar == NULL)
-   {
-      SCIP_CALL( generatePricingVarsAndCons(scip, branchdata) );
-   }
-
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
-   pricingscip = GCGgetPricingprob(origscip, branchdata->blocknr);
-   assert(pricingscip != NULL);
-
-   assert(branchdata->pricingvar != NULL);
-   assert(branchdata->compbndvars != NULL);
-   assert(branchdata->pricingcons != NULL);
-
-   SCIP_CALL( SCIPaddVar(pricingscip, branchdata->pricingvar) );
-   for( i = 0; i < branchdata->Bsize; ++i )
-   {
-      SCIP_CALL( SCIPaddVar(pricingscip, branchdata->compbndvars[i]) );
-   }
-   if( branchdata->branchtype == GCG_BRANCH_DOWN )
-   {
-      // there are Bsize+1 constraints
-      for( i = 0; i < branchdata->Bsize+1; ++i )
-      {
-         SCIP_CALL( SCIPaddCons(pricingscip, branchdata->pricingcons[i]) );
-      }
-   } else
-   {
-      // there are Bsize*2 constraints
-      for( i = 0; i < branchdata->Bsize*2; ++i )
-      {
-         SCIP_CALL( SCIPaddCons(pricingscip, branchdata->pricingcons[i]) );
-      }
-   }
 
    return SCIP_OKAY;
 }
@@ -1552,43 +1331,12 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterCompBnd)
 static
 GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterCompBnd)
 {
-   int i;
-
    assert(scip != NULL);
    assert(GCGisMaster(scip));
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
 
    SCIPdebugMessage("branchDeactiveMasterCompBnd: Block %d, Ssize %d\n", branchdata->blocknr, branchdata->Bsize);
-
-   /* set number of variables since last call */
-   branchdata->nvars = SCIPgetNVars(scip);
-
-   // remove pricing variables and constraints from pricing problem
-   assert(branchdata->pricingvar != NULL);
-   assert(branchdata->compbndvars != NULL);
-   assert(branchdata->pricingcons != NULL);
-
-   SCIP_CALL( SCIPdelVar(scip, branchdata->pricingvar, NULL) );
-   for( i = 0; i < branchdata->Bsize; ++i )
-   {
-      SCIP_CALL( SCIPdelVar(scip, branchdata->compbndvars[i], NULL) );
-   }
-   if( branchdata->branchtype == GCG_BRANCH_DOWN )
-   {
-      // there are Bsize+1 constraints
-      for( i = 0; i < branchdata->Bsize+1; ++i )
-      {
-         SCIP_CALL( SCIPdelCons(scip, branchdata->pricingcons[i]) );
-      }
-   } else
-   {
-      // there are Bsize*2 constraints
-      for( i = 0; i < branchdata->Bsize*2; ++i )
-      {
-         SCIP_CALL( SCIPdelCons(scip, branchdata->pricingcons[i]) );
-      }
-   }
 
    return SCIP_OKAY;
 }
@@ -1627,21 +1375,10 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteCompBnd)
       return SCIP_OKAY;
    }
 
-   if( (*branchdata)->mastercons != NULL )
-   {
-      SCIPdebugMessage("branchDataDeleteCompBnd: child blocknr %d, %s\n", (*branchdata)->blocknr,
-         SCIPconsGetName((*branchdata)->mastercons) );
-   }
-   else
-   {
-      SCIPdebugMessage("branchDataDeleteCompBnd: child blocknr %d, empty mastercons\n", (*branchdata)->blocknr);
-   }
-
    /* release constraint that enforces the branching decision */
    if( (*branchdata)->mastercons != NULL )
    {
-      SCIP_CALL( SCIPreleaseCons(GCGgetMasterprob(scip), &(*branchdata)->mastercons) );
-      (*branchdata)->mastercons = NULL;
+      SCIP_CALL( GCGmastercutFree(scip, &(*branchdata)->mastercons) );
    }
 
    if( (*branchdata)->B != NULL && (*branchdata)->Bsize > 0 )
@@ -1653,6 +1390,60 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteCompBnd)
 
    SCIPfreeBlockMemoryNull(scip, branchdata);
    *branchdata = NULL;
+
+   return SCIP_OKAY;
+}
+
+/** callback new column method */
+static
+GCG_DECL_BRANCHNEWCOL(branchNewColCompBnd)
+{
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+   assert(mastervar != NULL);
+   assert(GCGvarIsMaster(mastervar));
+   assert(branchdata != NULL);
+   assert(branchdata->mastercons != NULL);
+
+   SCIP_Bool added = FALSE;
+   SCIP_CALL( addVarToMasterbranch(scip, mastervar, branchdata, &added) );
+
+   return SCIP_OKAY;
+}
+
+/** callback dual variable update method */
+static
+GCG_DECL_BRANCHUPDATEDUAL(branchUpdateDualCompBnd)
+{
+   SCIP* origscip;
+   SCIP* pricingprob;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+   assert(branchdata != NULL);
+   assert(branchdata->mastercons != NULL);
+   assert(branchdata->mastercons->npricingmodifications == 1);
+   assert(branchdata->mastercons->pricingmodifications[0] != NULL);
+   assert(branchdata->mastercons->pricingmodifications[0]->coefvar != NULL);
+
+   origscip = GCGmasterGetOrigprob(scip);
+   assert(origscip != NULL);
+   pricingprob = GCGgetPricingprob(origscip, branchdata->blocknr);
+   assert(pricingprob != NULL);
+
+   SCIP_CALL( SCIPchgVarObj(pricingprob, branchdata->mastercons->pricingmodifications[0]->coefvar, -dual) );
+
+   return SCIP_OKAY;
+}
+
+static
+GCG_DECL_BRANCHGETMASTERCUT(branchGetMastercutCompBnd)
+{
+   assert(scip != NULL);
+   assert(branchdata != NULL);
+   assert(branchdata->mastercons != NULL);
+
+   *mastercutdata = branchdata->mastercons;
 
    return SCIP_OKAY;
 }
@@ -1671,7 +1462,8 @@ SCIP_DECL_BRANCHINIT(branchInitCompBnd)
    SCIPdebugMessage("Init method of component bound branching\n");
 
    SCIP_CALL( GCGrelaxIncludeBranchrule(origscip, branchrule, branchActiveMasterCompBnd,
-         branchDeactiveMasterCompBnd, branchPropMasterCompBnd, branchMasterSolvedCompBnd, branchDataDeleteCompBnd) );
+         branchDeactiveMasterCompBnd, branchPropMasterCompBnd, branchMasterSolvedCompBnd, branchDataDeleteCompBnd,
+         branchNewColCompBnd, branchUpdateDualCompBnd, branchGetMastercutCompBnd) );
 
    return SCIP_OKAY;
 }
@@ -1699,12 +1491,6 @@ SCIP_RETCODE SCIPincludeBranchruleCompBnd(
          branchCopyCompBnd, branchFreeCompBnd, branchInitCompBnd, branchExitCompBnd, branchInitsolCompBnd, branchExitsolCompBnd,
          branchExeclpCompBnd, branchExecextCompBnd, branchExecpsCompBnd,
          branchruledata) );
-
-   /* include event handler for adding generated mastervars to the branching constraints */
-   SCIP_CALL( SCIPincludeEventhdlr(scip, EVENTHDLR_NAME, EVENTHDLR_DESC,
-         NULL, NULL, NULL, NULL, eventInitsolCompBndbranchvaradd, eventExitsolCompBndbranchvaradd,
-         NULL, eventExecCompBndbranchvaradd,
-         NULL) );
 
    branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
    assert(branchrule != NULL);

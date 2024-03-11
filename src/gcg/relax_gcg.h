@@ -160,7 +160,7 @@ SCIP_RETCODE GCGrelaxBranchGetMasterCut(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
-   GCG_MASTERCUTDATA*    mastercutdata       /**< the mastercutdata to grab */
+   GCG_MASTERCUTDATA**   mastercutdata       /**< the mastercutdata to grab */
    );
 
 /** get mastercuts of all active nods */

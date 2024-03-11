@@ -541,8 +541,7 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    SCIP_Real             ub,                 /**< new objective coefficient */
    SCIP_Real             objcoeff,           /**< new objective coefficient */
    SCIP_VARTYPE          vartype,            /**< new variable type */
-   int                   prob,               /**< number of pricing problem that created this variable */
-   GCG_MASTERCUTDATA*    mastercutdata       /**< pointer of the master cut data this pricing variable belongs to */
+   int                   prob                /**< number of pricing problem that created this variable */
    );
 
 /* adds the vardata to the auxiliary variable */

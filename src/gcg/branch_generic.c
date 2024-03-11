@@ -247,6 +247,7 @@ SCIP_RETCODE createBranchingCons(
 )
 {
    char name[SCIP_MAXSTRLEN];
+   SCIP_Bool added = FALSE;
 
    assert(scip != NULL);
    assert(node != NULL);
@@ -267,7 +268,7 @@ SCIP_RETCODE createBranchingCons(
 
    for( int i = 0; i < nvars; ++i )
    {
-      SCIP_Bool added = FALSE;
+      added = FALSE;
       SCIP_CALL( addVarToMasterbranch(scip, vars[i], branchdata, &added) );
    }
 

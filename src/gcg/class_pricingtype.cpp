@@ -43,6 +43,7 @@
 #include "struct_mastercutdata.h"
 
 #include <exception>
+#include <scip/def.h>
 
 #define DEFAULT_MAXROUNDSREDCOST         INT_MAX    /**< maximal number of reduced cost pricing rounds */
 #define DEFAULT_MAXCOLSROUNDREDCOSTROOT  100        /**< maximal number of columns per reduced cost pricing round at root node */
@@ -155,6 +156,9 @@ SCIP_Real FarkasPricing::mastercutGetDual(
    case GCG_MASTERCUTTYPE_ROW:
       assert(mastercutdata->cut.row != NULL);
       return SCIProwGetDualfarkas(mastercutdata->cut.row);
+   default:
+      SCIP_CALL_ABORT( SCIP_ERROR );
+      return 0.0;
    }
 }
 
@@ -233,6 +237,9 @@ SCIP_Real ReducedCostPricing::mastercutGetDual(
    case GCG_MASTERCUTTYPE_ROW:
       assert(mastercutdata->cut.row != NULL);
       return SCIProwGetDualsol(mastercutdata->cut.row);
+   default:
+      SCIP_CALL_ABORT( SCIP_ERROR );
+      return 0.0;
    }
 }
 
