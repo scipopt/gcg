@@ -145,6 +145,7 @@ if(MSVC)
     add_definitions(/wd4100)
     add_definitions(/wd4244)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_compile_options(/bigobj)
 endif()
 
 # Visual Studio compiler with static runtime libraries
