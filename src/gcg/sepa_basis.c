@@ -1117,6 +1117,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIPdebugMessage("calling sepaExeclpBasis\n");
 
    *result = SCIP_DIDNOTFIND;
+   cutoff = FALSE;
 
    enable = sepadata->enable;
    enableobj = sepadata->enableobj;
@@ -1220,6 +1221,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    stalllpobjval = SCIP_REAL_MIN;
    stallnfracs = INT_MAX;
    stalling = FALSE;
+   enoughcuts = FALSE;
 
    maxcuts = 0;
    if( isroot )
@@ -1391,7 +1393,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          }
       }
 
-      if( !enoughcuts && !cutoff )
+      if( !cutoff && !enoughcuts )
       {
          /* separate cuts in cutpool */
          SCIPdebugMessage("separate current LP sol in cutpool\n");
