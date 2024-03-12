@@ -1,0 +1,387 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 25,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "gcg-default",
+            "displayName": "GCG Default Config",
+            "description": "Default GCG development build configuration",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "GCG_DEV_BUILD": {
+                    "type": "BOOL",
+                    "value": "ON"
+                },
+                "ZIMPL": {
+                    "type": "BOOL",
+                    "value": "OFF"
+                },
+                "IPOPT": {
+                    "type": "BOOL",
+                    "value": "OFF"
+                },
+                "PAPILO": {
+                    "type": "BOOL",
+                    "value": "OFF"
+                }
+            }
+        },
+        {
+            "name": "gcg-debug",
+            "inherits": "gcg-default",
+            "displayName": "GCG Default Debug Config",
+            "description": "Default GCG development debug build configuration",
+            "hidden": true,
+            "cacheVariables": {
+                "SANITIZE_ADDRESS": {
+                    "type": "BOOL",
+                    "value": "ON"
+                },
+                "SANITIZE_UNDEFINED": {
+                    "type": "BOOL",
+                    "value": "ON"
+                }
+            }
+        },
+        {
+            "name": "gcg-release",
+            "inherits": "gcg-default",
+            "displayName": "GCG Default Release Config",
+            "description": "Default GCG development release build configuration",
+            "hidden": true,
+            "cacheVariables": {}
+        },
+        {
+            "name": "gcg-linux",
+            "displayName": "GCG Default Linux Config",
+            "description": "Default GCG Linux development build configuration",
+            "hidden": true,
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            },
+            "condition": {
+                "type": "inList",
+                "string": "${hostSystemName}",
+                "list": [
+                    "Linux",
+                    "Darwin"
+                ]
+            }
+        },
+        {
+            "name": "gcg-windows",
+            "inherits": "gcg-windows",
+            "displayName": "GCG Default Windows Config",
+            "description": "Default GCG Windows development build configuration",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": {
+                    "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                    "type": "FILEPATH"
+                }
+            },
+            "condition": {
+                "type": "inList",
+                "string": "${hostSystemName}",
+                "list": [
+                    "Windows"
+                ]
+            }
+        },
+        {
+            "name": "gcg-linux-debug",
+            "inherits": [
+                "gcg-debug",
+                "gcg-linux"
+            ],
+            "displayName": "GCG Linux Debug Config",
+            "description": "GCG Linux development debug build configuration",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "gcg-linux-release",
+            "inherits": [
+                "gcg-release",
+                "gcg-linux"
+            ],
+            "displayName": "GCG Linux Release Config",
+            "description": "GCG Linux development release build configuration",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "gcg-linux-relwithdebinfo",
+            "inherits": [
+                "gcg-release",
+                "gcg-linux"
+            ],
+            "displayName": "GCG Linux RelWithDebInfo Config",
+            "description": "GCG Linux development release with debug info build configuration",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "gcg-windows-debug",
+            "inherits": [
+                "gcg-debug",
+                "gcg-windows"
+            ],
+            "displayName": "GCG Windows Debug Config",
+            "description": "GCG Windows development debug build configuration"
+        },
+        {
+            "name": "gcg-windows-release",
+            "inherits": [
+                "gcg-release",
+                "gcg-windows"
+            ],
+            "displayName": "GCG Windows Release Config",
+            "description": "GCG Windows development release build configuration"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "gcg-linux",
+            "displayName": "GCG Linux Default Build",
+            "description": "Default GCG Linux development build",
+            "hidden": true,
+            "nativeToolOptions": [
+                "-j"
+            ]
+        },
+        {
+            "name": "gcg-linux-debug",
+            "inherits": "gcg-linux",
+            "configurePreset": "gcg-linux-debug",
+            "displayName": "GCG Linux Debug Build",
+            "description": "GCG Linux development debug build"
+        },
+        {
+            "name": "gcg-linux-release",
+            "inherits": "gcg-linux",
+            "configurePreset": "gcg-linux-release",
+            "displayName": "GCG Linux Release Build",
+            "description": "GCG Linux development release build"
+        },
+        {
+            "name": "gcg-linux-relwithdebinfo",
+            "inherits": "gcg-linux",
+            "configurePreset": "gcg-linux-relwithdebinfo",
+            "displayName": "GCG Linux RelWithDebInfo Build",
+            "description": "GCG Linux development release with debug info build"
+        },
+        {
+            "name": "gcg-windows-debug",
+            "configurePreset": "gcg-windows-debug",
+            "configuration": "Debug",
+            "displayName": "GCG Windows Debug Build",
+            "description": "GCG Windows development debug build"
+        },
+        {
+            "name": "gcg-windows-release",
+            "configurePreset": "gcg-windows-release",
+            "configuration": "Release",
+            "displayName": "GCG Windows Release Build",
+            "description": "GCG Windows development release build"
+        },
+        {
+            "name": "gcg-windows-relwithdebinfo",
+            "configurePreset": "gcg-windows-release",
+            "configuration": "RelWithDebInfo",
+            "displayName": "GCG Windows RelWithDebInfo Build",
+            "description": "GCG Windows development release with debug info build"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "gcg-default",
+            "hidden": true,
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "name": "GCG-.*"
+                }
+            }
+        },
+        {
+            "name": "gcg-linux-debug",
+            "inherits": "gcg-default",
+            "configurePreset": "gcg-linux-debug",
+            "displayName": "GCG Linux Debug Tests",
+            "description": "GCG Linux development debug tests"
+        },
+        {
+            "name": "gcg-linux-release",
+            "inherits": "gcg-default",
+            "configurePreset": "gcg-linux-release",
+            "displayName": "GCG Linux Release Tests",
+            "description": "GCG Linux development release tests"
+        },
+        {
+            "name": "gcg-linux-relwithdebinfo",
+            "inherits": "gcg-default",
+            "configurePreset": "gcg-linux-relwithdebinfo",
+            "displayName": "GCG Linux RelWithDebInfo Tests",
+            "description": "GCG Linux development release with debug info tests"
+        },
+        {
+            "name": "gcg-windows-debug",
+            "inherits": "gcg-default",
+            "configurePreset": "gcg-windows-debug",
+            "displayName": "GCG Windows Debug Tests",
+            "description": "GCG Windows development debug build tests",
+            "configuration": "Debug"
+        },
+        {
+            "name": "gcg-windows-release",
+            "inherits": "gcg-default",
+            "configurePreset": "gcg-windows-release",
+            "displayName": "GCG Windows Release Tests",
+            "description": "GCG Windows development release build tests",
+            "configuration": "Release"
+        },
+        {
+            "name": "gcg-windows-relwithdebinfo",
+            "inherits": "gcg-default",
+            "configurePreset": "gcg-windows-release",
+            "displayName": "GCG Windows RelWithDebInfo Tests",
+            "description": "GCG Windows development release with debug info build tests",
+            "configuration": "RelWithDebInfo"
+        }
+    ],
+    "workflowPresets": [
+        {
+            "name": "gcg-linux-debug",
+            "displayName": "GCG Linux Debug Workflow",
+            "description": "GCG Linux development debug workflow",
+            "steps": [
+            {
+                "type": "configure",
+                "name": "gcg-linux-debug"
+            },
+            {
+                "type": "build",
+                "name": "gcg-linux-debug"
+            },
+            {
+                "type": "test",
+                "name": "gcg-linux-debug"
+            }
+            ]
+        },
+        {
+            "name": "gcg-linux-release",
+            "displayName": "GCG Linux Release Workflow",
+            "description": "GCG Linux development release workflow",
+            "steps": [
+            {
+                "type": "configure",
+                "name": "gcg-linux-release"
+            },
+            {
+                "type": "build",
+                "name": "gcg-linux-release"
+            },
+            {
+                "type": "test",
+                "name": "gcg-linux-release"
+            }
+            ]
+        },
+        {
+            "name": "gcg-linux-relwithdebinfo",
+            "displayName": "GCG Linux RelWithDebInfo Workflow",
+            "description": "GCG Linux development release with debug info workflow",
+            "steps": [
+            {
+                "type": "configure",
+                "name": "gcg-linux-relwithdebinfo"
+            },
+            {
+                "type": "build",
+                "name": "gcg-linux-relwithdebinfo"
+            },
+            {
+                "type": "test",
+                "name": "gcg-linux-relwithdebinfo"
+            }
+            ]
+        },
+        {
+            "name": "gcg-windows-debug",
+            "displayName": "GCG Windows Debug Workflow",
+            "description": "GCG Windows development debug build workflow",
+            "steps": [
+            {
+                "type": "configure",
+                "name": "gcg-windows-debug"
+            },
+            {
+                "type": "build",
+                "name": "gcg-windows-debug"
+            },
+            {
+                "type": "test",
+                "name": "gcg-windows-debug"
+            }
+            ]
+        },
+        {
+            "name": "gcg-windows-release",
+            "displayName": "GCG Windows Release Workflow",
+            "description": "GCG Windows development release build workflow",
+            "steps": [
+            {
+                "type": "configure",
+                "name": "gcg-windows-release"
+            },
+            {
+                "type": "build",
+                "name": "gcg-windows-release"
+            },
+            {
+                "type": "test",
+                "name": "gcg-windows-release"
+            }
+            ]
+        },
+        {
+            "name": "gcg-windows-relwithdebinfo",
+            "displayName": "GCG Windows RelWithDebInfo Workflow",
+            "description": "GCG Windows development release with debug info build workflow",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "gcg-windows-release"
+                },
+                {
+                    "type": "build",
+                    "name": "gcg-windows-relwithdebinfo"
+                },
+                {
+                    "type": "test",
+                    "name": "gcg-windows-relwithdebinfo"
+                }
+            ]
+        }
+    ]
+}
