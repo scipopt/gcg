@@ -174,10 +174,10 @@ macro(add_instancetests instances settings prefix)
                 list(APPEND GCG_TEST_COMMAND -d ${PROJECT_SOURCE_DIR}/check/${decpath})
             endif()
 
-            add_test(NAME ${prefix}-${setting}-${basename}
+            add_test(NAME GCG-${prefix}-${setting}-${basename}
                     COMMAND ${GCG_TEST_COMMAND}
                     )
-            set_tests_properties(${prefix}-${setting}-${basename}
+            set_tests_properties(GCG-${prefix}-${setting}-${basename}
                                 PROPERTIES
                                     PASS_REGULAR_EXPRESSION "Validation         : Success"
                                     DEPENDS gcg-build
