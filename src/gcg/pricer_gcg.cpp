@@ -1900,7 +1900,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
     * compute (stabilized) reduced cost coefficients for static variables (direct copies and linking variables);
     * loop over variable linking constraints, master constraints and master cuts
     */
-
+   nlinkconss = GCGgetNVarLinkingconss(origprob);
+   linkconss = GCGgetVarLinkingconss(origprob);
    for( i = 0; i < nlinkconss; ++i )
    {
       SCIP_VAR** linkconsvars;
@@ -1978,7 +1979,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
 #ifdef PRINTDUALSOLS
             if( !SCIPisZero(scip_, dualsol) )
             {
-               SCIPdebugMessage("  stabredcost <%s> add %g * %g = %g (cons <%s>)\n", SCIPvarGetName(staticvars[varindex]), dualsol, consvals[j], dualsol * consvals[j], SCIPconsGetName(origconss[i]));
+               SCIPdebugMessage("  stabredcost <%s> add %g * %g = %g (cons <%s>)\n", SCIPvarGetName(staticvars[varindex]), dualsol, consvals[j], -dualsol * consvals[j], SCIPconsGetName(origconss[i]));
             }
 #endif
          }
@@ -2035,7 +2036,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
             if( !SCIPisZero(scip_, dualsol) )
             {
                SCIPdebugMessage("  stabredcost <%s> add %g * %g = %g (cut <%s>)\n",
-                  SCIPvarGetName(staticvars[varindex]), dualsol, consvals[j], dualsol * consvals[j],
+                  SCIPvarGetName(staticvars[varindex]), dualsol, consvals[j], -dualsol * consvals[j],
                   SCIProwGetName(origcuts[i]));
             }
 #endif
