@@ -187,6 +187,18 @@ SCIP_RETCODE GCGmastercutApplyPricingModifications(
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    );
 
+/** undo a pricing modification */
+SCIP_RETCODE GCGpricingmodificationUndo(
+   SCIP*                  pricingscip,        /**< pricing scip */
+   GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
+   );
+
+/** undo all pricing modifications */
+SCIP_RETCODE GCGmastercutUndoPricingModifications(
+   SCIP*                  masterscip,         /**< master scip */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   );
+
 /**@} */
 #ifdef __cplusplus
 }

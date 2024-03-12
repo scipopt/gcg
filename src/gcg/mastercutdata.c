@@ -160,6 +160,7 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
    SCIP* originalproblem;
 #endif
    int i;
+   int j;
 
    assert(scip != NULL);
    assert(mastercutdata != NULL);
@@ -196,6 +197,13 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
    (*mastercutdata)->pricingmodifications = pricingmodifications;
    (*mastercutdata)->npricingmodifications = npricingmodifications;
 
+   for( i = 0; i < npricingmodifications; i++ ) {
+      pricingmodifications[i]->coefvar->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
+      for( j = 0; j < pricingmodifications[i]->nadditionalvars; j++ ) {
+         pricingmodifications[i]->additionalvars[j]->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
+      }
+   }
+
    return SCIP_OKAY;
 }
 
@@ -214,6 +222,7 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
    SCIP* originalproblem;
 #endif
    int i;
+   int j;
 
    assert(scip != NULL);
    assert(mastercutdata != NULL);
@@ -249,6 +258,13 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
    (*mastercutdata)->cut.row = row;
    (*mastercutdata)->pricingmodifications = pricingmodifications;
    (*mastercutdata)->npricingmodifications = npricingmodifications;
+
+   for( i = 0; i < npricingmodifications; i++ ) {
+      pricingmodifications[i]->coefvar->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
+      for( j = 0; j < pricingmodifications[i]->nadditionalvars; j++ ) {
+         pricingmodifications[i]->additionalvars[j]->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
+      }
+   }
 
    return SCIP_OKAY;
 }
@@ -525,6 +541,9 @@ SCIP_RETCODE GCGpricingmodificationApply(
    assert(pricingmodification != NULL);
 
    // add the inferred pricing variables
+   assert(GCGvarIsInferredPricing(pricingmodification->coefvar));
+   SCIP_CALL( SCIPaddVar(pricingscip, pricingmodification->coefvar) );
+
    for( i=0; i < pricingmodification->nadditionalvars; i++)
    {
       assert(GCGvarIsInferredPricing(pricingmodification->additionalvars[i]));
@@ -561,6 +580,67 @@ SCIP_RETCODE GCGmastercutApplyPricingModifications(
       pricingprob = GCGgetPricingprob(origscip, mastercutdata->pricingmodifications[i]->blocknr);
       assert(pricingprob != NULL);
       SCIP_CALL( GCGpricingmodificationApply(pricingprob, mastercutdata->pricingmodifications[i]) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** undo a pricing modification */
+SCIP_RETCODE GCGpricingmodificationUndo(
+   SCIP*                  pricingscip,        /**< pricing scip */
+   GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
+   )
+{
+   int i;
+   SCIP_Bool deleted;
+
+   assert(pricingscip != NULL);
+   assert(pricingmodification != NULL);
+
+   // add the inferred pricing variables
+   assert(GCGvarIsInferredPricing(pricingmodification->coefvar));
+   deleted = FALSE;
+   SCIP_CALL( SCIPdelVar(pricingscip, pricingmodification->coefvar, &deleted) );
+   assert(deleted);
+
+   for( i=0; i < pricingmodification->nadditionalvars; i++)
+   {
+      assert(GCGvarIsInferredPricing(pricingmodification->additionalvars[i]));
+      deleted = FALSE;
+      SCIP_CALL( SCIPdelVar(pricingscip, pricingmodification->additionalvars[i], &deleted) );
+      assert(deleted);
+   }
+
+   // add the inferred pricing constraints
+   for( i=0; i < pricingmodification->nadditionalconss; i++)
+   {
+      SCIP_CALL( SCIPdelCons(pricingscip, pricingmodification->additionalconss[i]) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** undo all pricing modifications */
+SCIP_RETCODE GCGmastercutUndoPricingModifications(
+   SCIP*                  masterscip,         /**< master scip */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   int i;
+   SCIP* origscip;
+   SCIP* pricingprob;
+
+   assert(masterscip != NULL);
+   assert(mastercutdata != NULL);
+
+   origscip = GCGmasterGetOrigprob(masterscip);
+   assert(origscip != NULL);
+
+   for( i = 0; i < mastercutdata->npricingmodifications; i++ )
+   {
+      pricingprob = GCGgetPricingprob(origscip, mastercutdata->pricingmodifications[i]->blocknr);
+      assert(pricingprob != NULL);
+      SCIP_CALL( GCGpricingmodificationUndo(pricingprob, mastercutdata->pricingmodifications[i]) );
    }
 
    return SCIP_OKAY;

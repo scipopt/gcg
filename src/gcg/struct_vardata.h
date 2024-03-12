@@ -41,6 +41,7 @@
 #include <scip/type_misc.h>
 #include <scip/type_var.h>
 #include "struct_mastercutdata.h"
+#include "type_mastercutdata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,7 +92,6 @@ struct GCG_PricingVarData
 };
 typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 
-
 /** data for master variables */
 struct GCG_MasterVarData
 {
@@ -107,6 +107,13 @@ struct GCG_MasterVarData
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
 
+/** data for inferred pricing variables */
+struct GCG_InferredPricingVarData
+{
+   GCG_MASTERCUTDATA*    mastercutdata;      /**< master cut data that was used to infer the pricing variable */
+};
+typedef struct GCG_InferredPricingVarData GCG_INFERREDPRICINGVARDATA;
+
 /** variable data structure */
 struct SCIP_VarData
 {
@@ -115,6 +122,7 @@ struct SCIP_VarData
       GCG_ORIGVARDATA    origvardata;        /**< data for original variables */
       GCG_PRICINGVARDATA pricingvardata;     /**< data for pricing variables */
       GCG_MASTERVARDATA  mastervardata;      /**< data for variable of the master problem */
+      GCG_INFERREDPRICINGVARDATA inferredpricingvardata; /**< data for inferred pricing variables */
    } data;
    GCG_VARTYPE           vartype;            /**< type of variable */
    int                   blocknr;            /**< number of the block and pricing problem, the variable belongs to,

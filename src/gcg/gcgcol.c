@@ -116,8 +116,7 @@ SCIP_RETCODE GCGcreateGcgCol(
       if( SCIPisZero(pricingprob, origval) )
          continue;
 
-      if( !GCGvarIsPricing(origvar) )
-         continue;
+      assert(GCGvarIsPricing(origvar) || GCGvarIsInferredPricing(origvar));
 
       (*gcgcol)->vars[nnonz] = origvar;
       (*gcgcol)->vals[nnonz] = origval;

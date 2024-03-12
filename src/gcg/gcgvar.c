@@ -1385,6 +1385,11 @@ SCIP_RETCODE GCGcreateMasterVar(
       assert(solvars != NULL);
       assert(solvals != NULL);
 
+      assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
+
+      if( GCGvarIsInferredPricing(solvars[i]) )
+         continue;
+
       assert(!SCIPisInfinity(scip, solvals[i]));
       if( !SCIPisZero(scip, solvals[i]) )
       {
@@ -1427,12 +1432,16 @@ SCIP_RETCODE GCGcreateMasterVar(
       assert(solvars != NULL);
       assert(solvals != NULL);
 
+      assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
+
+      if( GCGvarIsInferredPricing(solvars[i]) )
+         continue;
+
       solval = solvals[i];
 
       if( !SCIPisZero(scip, solval) )
       {
          SCIP_VAR* origvar;
-         assert(GCGvarIsPricing(solvars[i]));
 
          origvar = GCGpricingVarGetOrigvars(solvars[i])[0];
          assert(origvar != NULL);
@@ -1589,6 +1598,7 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    SCIP_CALL( SCIPallocBlockMemory(pricingscip, &newvardata) );
    newvardata->vartype = GCG_VARTYPE_INFERREDPRICING;
    newvardata->blocknr = prob;
+   newvardata->data.inferredpricingvardata.mastercutdata = NULL; // will be set in GCGmastercutCreateFrom*
 
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(pricingscip, newvar, varname, lb, ub,
