@@ -3600,6 +3600,9 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    pricerdata->npricingprobsnotnull = 0;
 
+   /* alloc memory for arrays of reduced cost */
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->dualsolconv), pricerdata->npricingprobs) );
+
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
 
@@ -3609,6 +3612,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
       pricerdata->redcostcallsdist[i] = 0;
       pricerdata->redcostfoundvars[i] = 0;
       pricerdata->redcostnodetimedist[i]= 0;
+      pricerdata->dualsolconv[i] = -SCIPinfinity(scip_);
 
 
       if( GCGisPricingprobRelevant(origprob, i) )
@@ -3626,9 +3630,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
       pricerdata->npointsprob[i] = 0;
       pricerdata->nraysprob[i] = 0;
    }
-
-   /* alloc memory for arrays of reduced cost */
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->dualsolconv), pricerdata->npricingprobs) );
 
    /* alloc memory for solution values of variables in pricing problems */
    norigvars = SCIPgetNOrigVars(origprob);
