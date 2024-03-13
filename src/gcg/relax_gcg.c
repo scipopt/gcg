@@ -105,6 +105,7 @@ struct SCIP_RelaxData
    SCIP*                 altmasterprob;      /**< the master problem for the alternate decomposition algorithm */
    SCIP**                pricingprobs;       /**< the array of pricing problems */
    int                   npricingprobs;      /**< the number of pricing problems */
+   int                   maxpricingprobs;    /**< capacity of pricingprobs */
    int                   nrelpricingprobs;   /**< the number of relevant pricing problems */
    int*                  blockrepresentative;/**< number of the pricing problem, that represents the i-th problem */
    int*                  nblocksidentical;   /**< number of pricing blocks represented by the i-th pricing problem */
@@ -1131,20 +1132,28 @@ SCIP_RETCODE initRelaxProblemdata(
 
    /* initialize relaxator data */
    relaxdata->maxmasterconss = 16;
-   relaxdata->nmasterconss = 0;
+   assert(relaxdata->nmasterconss == 0);
 
    /* arrays of constraints belonging to the master problems */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss) );
 
-   if( relaxdata->npricingprobs > 0 )
+   if( relaxdata->npricingprobs > relaxdata->maxpricingprobs )
    {
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->pricingprobs), relaxdata->npricingprobs) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->blockrepresentative), relaxdata->npricingprobs) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->nblocksidentical), relaxdata->npricingprobs) );
+      int i;
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->pricingprobs), relaxdata->maxpricingprobs, relaxdata->npricingprobs) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->blockrepresentative), relaxdata->maxpricingprobs, relaxdata->npricingprobs) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->nblocksidentical), relaxdata->maxpricingprobs, relaxdata->npricingprobs) );
 
       /* array for saving convexity constraints belonging to one of the pricing problems */
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->convconss), relaxdata->npricingprobs) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->convconss), relaxdata->maxpricingprobs, relaxdata->npricingprobs) );
+
+      for( i = relaxdata->maxpricingprobs; i < relaxdata->npricingprobs; ++i)
+      {
+         relaxdata->pricingprobs[i] = NULL;
+      }
+
+       relaxdata->maxpricingprobs = relaxdata->npricingprobs;
    }
 
    return SCIP_OKAY;
@@ -1245,9 +1254,12 @@ SCIP_RETCODE createPricingProblem(
    assert(pricingscip != NULL);
    assert(name != NULL);
 
-   SCIP_CALL( SCIPcreate(pricingscip) );
-   SCIP_CALL( SCIPincludeDefaultPlugins(*pricingscip) );
-   SCIP_CALL( setPricingProblemParameters(*pricingscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastolfactor, dualfeastol, enableppcuts) );
+   if( *pricingscip == NULL )
+   {
+      SCIP_CALL( SCIPcreate(pricingscip) );
+      SCIP_CALL( SCIPincludeDefaultPlugins(*pricingscip) );
+      SCIP_CALL( setPricingProblemParameters(*pricingscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastolfactor, dualfeastol, enableppcuts) );
+   }
    SCIP_CALL( SCIPcreateProb(*pricingscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    return SCIP_OKAY;
@@ -2354,6 +2366,12 @@ void initRelaxdata(
 
    relaxdata->decomp = NULL;
 
+   relaxdata->nbranchrules = 0;
+   relaxdata->branchrules = NULL;
+   relaxdata->masterprob = NULL;
+   relaxdata->altmasterprob = NULL;
+   relaxdata->paramsvisu = NULL;
+
    relaxdata->blockrepresentative = NULL;
    relaxdata->convconss = NULL;
    relaxdata->lastsolvednodenr = 0;
@@ -2363,6 +2381,7 @@ void initRelaxdata(
    relaxdata->nmasterconss = 0;
 
    relaxdata->npricingprobs = -1;
+   relaxdata->maxpricingprobs = 0;
    relaxdata->pricingprobs = NULL;
    relaxdata->nrelpricingprobs = 0;
    relaxdata->currentorigsol = NULL;
@@ -2391,6 +2410,49 @@ void initRelaxdata(
    relaxdata->rootnodetime = NULL;
 }
 
+/** resets relaxator data */
+static
+void resetRelaxdata(
+   SCIP_RELAXDATA*       relaxdata           /**< relaxdata data structure */
+   )
+{
+   assert(relaxdata != NULL);
+
+   assert(relaxdata->decomp == NULL);
+
+   relaxdata->lastsolvednodenr = 0;
+
+   assert(relaxdata->origmasterconss == NULL);
+   assert(relaxdata->masterconss == NULL);
+   relaxdata->nmasterconss = 0;
+
+   relaxdata->npricingprobs = -1;
+   relaxdata->nrelpricingprobs = 0;
+   assert(relaxdata->currentorigsol == NULL);
+   assert(relaxdata->storedorigsol == NULL);
+   relaxdata->origsolfeasible = FALSE;
+   relaxdata->storedfeasibility = FALSE;
+
+   relaxdata->lastmastersol = NULL;
+   relaxdata->lastmasterlpiters = 0;
+   relaxdata->lastmasternode = -1;
+   assert(relaxdata->markedmasterconss == NULL);
+   assert(relaxdata->maxmarkedmasterconss == 0);
+   assert(relaxdata->masterinprobing == FALSE);
+   assert(relaxdata->probingheur == NULL);
+
+   relaxdata->ntransvars = 0;
+   relaxdata->nlinkingvars = 0;
+   relaxdata->nvarlinkconss = 0;
+   assert(relaxdata->varlinkconss == NULL);
+   assert(relaxdata->varlinkconsblock == NULL);
+   relaxdata->pricingprobsmemused = 0.0;
+
+   assert(relaxdata->relaxisinitialized == FALSE);
+   relaxdata->simplexiters = 0;
+   assert(relaxdata->rootnodetime == NULL);
+}
+
 /*
  * Callback methods of relaxator
  */
@@ -2400,9 +2462,23 @@ static
 SCIP_DECL_RELAXFREE(relaxFreeGcg)
 {
    SCIP_RELAXDATA* relaxdata;
+   int i;
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   /* free pricing problems */
+   if( relaxdata->pricingprobs != NULL )
+   {
+      for( i = relaxdata->maxpricingprobs - 1; i >= 0 ; i-- )
+      {
+         SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
+      }
+      SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->pricingprobs), relaxdata->maxpricingprobs);
+      SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->blockrepresentative), relaxdata->maxpricingprobs);
+      SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->nblocksidentical), relaxdata->maxpricingprobs);
+      SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->convconss), relaxdata->npricingprobs);
+   }
 
    /* free visualization parameters */
    if( relaxdata->paramsvisu != NULL )
@@ -2449,11 +2525,8 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    /* free pricing problems */
    for( i = relaxdata->npricingprobs - 1; i >= 0 ; i-- )
    {
-      SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
+      SCIP_CALL( SCIPfreeProb(relaxdata->pricingprobs[i]) );
    }
-   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->pricingprobs), relaxdata->npricingprobs);
-   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->blockrepresentative), relaxdata->npricingprobs);
-   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->nblocksidentical), relaxdata->npricingprobs);
 
    if( relaxdata->decomp != NULL )
    {
@@ -2530,7 +2603,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    assert(relaxdata != NULL);
    assert(relaxdata->masterprob != NULL);
 
-   initRelaxdata(relaxdata);
+   resetRelaxdata(relaxdata);
    SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
 
    /* if the master problem decomposition mode is the same as the original SCIP instance mode, then the master problem
@@ -2608,7 +2681,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    assert(relaxdata != NULL);
 
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->markedmasterconss), relaxdata->maxmarkedmasterconss);
-   relaxdata->markedmasterconss = NULL;
    relaxdata->maxmarkedmasterconss = 0;
 
    /* free arrays for constraints */
@@ -2630,7 +2702,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->varlinkconsblock), relaxdata->nvarlinkconss);
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss);
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss);
-   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->convconss), relaxdata->npricingprobs);
 
    /* free master problem */
    if( relaxdata->masterprob != NULL )
@@ -2642,10 +2713,12 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    if( relaxdata->currentorigsol != NULL )
    {
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->currentorigsol) );
+      relaxdata->currentorigsol = NULL;
    }
    if( relaxdata->storedorigsol != NULL )
    {
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->storedorigsol) );
+      relaxdata->storedorigsol = NULL;
    }
 
    if( relaxdata->decomp != NULL )
@@ -2660,6 +2733,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    if( relaxdata->rootnodetime != NULL )
    {
       SCIP_CALL( SCIPfreeClock(scip, &(relaxdata->rootnodetime)) );
+      relaxdata->rootnodetime = NULL;
    }
 
    relaxdata->relaxisinitialized = FALSE;
@@ -3131,17 +3205,10 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 
    /* create GCG relaxator data */
    SCIP_CALL( SCIPallocMemory(scip, &relaxdata) );
+   initRelaxdata(relaxdata);
 
-   relaxdata->decomp = NULL;
-   relaxdata->nbranchrules = 0;
-   relaxdata->branchrules = NULL;
-   relaxdata->masterprob = NULL;
-   relaxdata->altmasterprob = NULL;
-   relaxdata->paramsvisu = NULL;
    GCGcreateParamsVisu(scip, &(relaxdata->paramsvisu));
    assert(relaxdata->paramsvisu != NULL);
-
-   initRelaxdata(relaxdata);
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
@@ -5258,7 +5325,6 @@ SCIP_RETCODE GCGinitializeMasterProblemSolve(
    )
 {
    SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
 
    assert(scip != NULL);
 
