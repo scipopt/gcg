@@ -712,7 +712,7 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolGcg)
          solverdata->count
       );
 
-   freeBlockMemory(scip, solverdata);
+   SCIP_CALL( freeBlockMemory(scip, solverdata) );
    return SCIP_OKAY;
 }
 
