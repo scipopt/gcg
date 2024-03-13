@@ -241,28 +241,28 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "\n");
 
   /* introduce colors of current color scheme */
-   getTexColorFromHex(SCIPvisuGetColorMasterconss(scip), "colormasterconss", temp);
+   getTexColorFromHex(GCGvisuGetColorMasterconss(scip), "colormasterconss", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorMastervars(scip), "colormastervars", temp);
+   getTexColorFromHex(GCGvisuGetColorMastervars(scip), "colormastervars", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorLinking(scip), "colorlinking", temp);
+   getTexColorFromHex(GCGvisuGetColorLinking(scip), "colorlinking", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorStairlinking(scip), "colorstairlinking", temp);
+   getTexColorFromHex(GCGvisuGetColorStairlinking(scip), "colorstairlinking", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorBlock(scip), "colorblock", temp);
+   getTexColorFromHex(GCGvisuGetColorBlock(scip), "colorblock", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorOpen(scip), "coloropen", temp);
+   getTexColorFromHex(GCGvisuGetColorOpen(scip), "coloropen", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorNonzero(scip), "colornonzero", temp);
+   getTexColorFromHex(GCGvisuGetColorNonzero(scip), "colornonzero", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorLine(scip), "colorline", temp);
+   getTexColorFromHex(GCGvisuGetColorLine(scip), "colorline", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
    /* start writing the document */
@@ -583,9 +583,9 @@ SCIP_RETCODE writeTexPartialdec(
    }
 
    /* --- draw nonzeros --- */
-   if(SCIPvisuGetDraftmode(scip) == FALSE)
+   if(GCGvisuGetDraftmode(scip) == FALSE)
    {
-      writeTikzNonzeros(scip, file, partialdec, SCIPvisuGetNonzeroRadius(scip, partialdec->getNVars(), partialdec->getNConss(), 1),
+      writeTikzNonzeros(scip, file, partialdec, GCGvisuGetNonzeroRadius(scip, partialdec->getNVars(), partialdec->getNConss(), 1),
          nvars, nconss);
    }
 

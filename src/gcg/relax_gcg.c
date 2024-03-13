@@ -3138,7 +3138,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->masterprob = NULL;
    relaxdata->altmasterprob = NULL;
    relaxdata->paramsvisu = NULL;
-   SCIPcreateParamsVisu(scip, &(relaxdata->paramsvisu));
+   GCGcreateParamsVisu(scip, &(relaxdata->paramsvisu));
    assert(relaxdata->paramsvisu != NULL);
 
    initRelaxdata(relaxdata);
