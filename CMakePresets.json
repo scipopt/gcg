@@ -155,7 +155,17 @@
     ],
     "buildPresets": [
         {
+            "name": "gcg-default",
+            "displayName": "GCG Default Build",
+            "description": "Default GCG development build",
+            "hidden": true,
+            "targets": [
+                "gcg"
+            ]
+        },
+        {
             "name": "gcg-linux",
+            "inherits": "gcg-default",
             "displayName": "GCG Linux Default Build",
             "description": "Default GCG Linux development build",
             "hidden": true,
@@ -186,6 +196,7 @@
         },
         {
             "name": "gcg-windows-debug",
+            "inherits": "gcg-default",
             "configurePreset": "gcg-windows-debug",
             "configuration": "Debug",
             "displayName": "GCG Windows Debug Build",
@@ -193,6 +204,7 @@
         },
         {
             "name": "gcg-windows-release",
+            "inherits": "gcg-default",
             "configurePreset": "gcg-windows-release",
             "configuration": "Release",
             "displayName": "GCG Windows Release Build",
@@ -200,6 +212,7 @@
         },
         {
             "name": "gcg-windows-relwithdebinfo",
+            "inherits": "gcg-default",
             "configurePreset": "gcg-windows-release",
             "configuration": "RelWithDebInfo",
             "displayName": "GCG Windows RelWithDebInfo Build",
