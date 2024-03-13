@@ -4565,6 +4565,7 @@ SCIP_RETCODE freeCurrentOrigSol(
    {
       SCIPclearExternBranchCands(scip);
    }
+   return SCIP_OKAY;
 }
 
 
@@ -4596,7 +4597,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    /* if the master problem has not been solved, don't try to update the solution */
    if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_TRANSFORMED )
    {
-      freeCurrentOrigSol(scip, relaxdata);
+      SCIP_CALL( freeCurrentOrigSol(scip, relaxdata) );
       return SCIP_OKAY;
    }
 
@@ -4624,7 +4625,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          mastersol = SCIPgetBestSol(relaxdata->masterprob);
          if( mastersol == NULL )
          {
-            freeCurrentOrigSol(scip, relaxdata);
+            SCIP_CALL( freeCurrentOrigSol(scip, relaxdata) );
             SCIPdebugMessage("Masterproblem solved, no master sol present\n");
             return SCIP_OKAY;
          }
@@ -4637,7 +4638,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       }
 
       /* free previous solution and clear branching candidates */
-      freeCurrentOrigSol(scip, relaxdata);
+      SCIP_CALL( freeCurrentOrigSol(scip, relaxdata) );
 
       relaxdata->lastmasterlpiters = SCIPgetNLPIterations(relaxdata->masterprob);
       relaxdata->lastmasternode = currentnode;
@@ -4703,7 +4704,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    }
    else
    {
-      freeCurrentOrigSol(scip, relaxdata);
+      SCIP_CALL( freeCurrentOrigSol(scip, relaxdata) );
    }
 
    return SCIP_OKAY;
