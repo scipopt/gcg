@@ -3041,6 +3041,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             SCIP_ROW** rows = SCIPgetLPRows(scip_);
             int nrows = SCIPgetNLPRows(scip_);
             SCIP_Real dualobj = 0.0;
+            SCIP_Real dualconvoffset = 0.0;
+
+            SCIPdebugMessage("Check result of getStabilizedDualObjectiveValue() ...\n");
             for( int r = 0; r < nrows; ++r )
             {
                SCIP_ROW* row = rows[r];
@@ -3056,7 +3059,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
                   tmp = dualsol * SCIProwGetRhs(row);
                if( !SCIPisZero(scip_, tmp) )
                {
-                  SCIPdebugMessage("<%s>, dualsol %.8g, bnds [%.8g, %.8g] -> %.8g\n", SCIProwGetName(row), dualsol, SCIProwGetLhs(row), SCIProwGetRhs(row), tmp);
+                  SCIPdebugMessage("  <%s>, dualsol %.8g, bnds [%.8g, %.8g] -> %.8g\n", SCIProwGetName(row), dualsol, SCIProwGetLhs(row), SCIProwGetRhs(row), tmp);
                   dualobj += tmp;
                }
             }
@@ -3078,12 +3081,25 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
                   tmp = redcost * SCIPcolGetUb(col);
                if( !SCIPisZero(scip_, tmp) )
                {
-                  SCIPdebugMessage("<%s>, redcost %.8g, bnds [%.8g, %.8g] -> %.8g\n", SCIPvarGetName(SCIPcolGetVar(col)), redcost, SCIPcolGetLb(col), SCIPcolGetUb(col), tmp);
+                  SCIPdebugMessage("  <%s>, redcost %.8g, bnds [%.8g, %.8g] -> %.8g\n", SCIPvarGetName(SCIPcolGetVar(col)), redcost, SCIPcolGetLb(col), SCIPcolGetUb(col), tmp);
                   dualobj += tmp;
                }
             }
-            SCIPdebugMessage("dualobj %.8g\n", dualobj);
-            assert(SCIPisDualfeasEQ(scip_, dualobj, stabdualval));
+            SCIPdebugMessage("  -> dualobj %.8g\n", dualobj);
+
+            /* getStabilizedDualObjectiveValue() does not include the dual solutions associated with the convexity constraints.
+             * This works since they are also not included in 'beststabobj' and we are only interested in the sum 'stabdualval + beststabobj'
+             */
+            for( int p = 0; p < pricerdata->npricingprobs; p++ )
+            {
+               SCIP_CONS* convcons = GCGgetConvCons(origprob, p);
+
+               if( convcons != NULL )
+                  dualconvoffset += GCGconsGetRhs(scip_, convcons) * pricetype->consGetDual(scip_, convcons);
+            }
+            SCIPdebugMessage("  offset caused by convexity constraints: %g\n", dualconvoffset);
+
+            assert(SCIPisDualfeasEQ(scip_, dualobj, stabdualval + dualconvoffset));
          }
 #endif
 
