@@ -296,6 +296,16 @@ SCIP_RETCODE GCGpricestoreAddCol(
       int i;
       SCIP_VAR* var;
       SCIP_Real val;
+      SCIP_SOL* sol;
+      SCIP_Bool feasible;
+      if( SCIPgetStage(col->pricingprob) <= SCIP_STAGE_SOLVING )
+      {
+         SCIPcreateSol(col->pricingprob, &sol, NULL);
+         SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
+         SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
+         assert(feasible);
+         SCIPfreeSol(col->pricingprob, &sol);
+      }
       for( i = 0; i < col->nvars; ++i )
       {
          var = col->vars[i];
