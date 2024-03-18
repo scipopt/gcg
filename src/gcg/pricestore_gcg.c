@@ -292,6 +292,29 @@ SCIP_RETCODE GCGpricestoreAddCol(
    /* If the column is no duplicate of an existing one, add it */
    if( oldpos == -1 )
    {
+#ifndef NDEBUG
+      int i;
+      SCIP_VAR* var;
+      SCIP_Real val;
+      SCIP_SOL* sol;
+      SCIP_Bool feasible;
+      if( SCIPgetStage(col->pricingprob) <= SCIP_STAGE_SOLVING )
+      {
+         SCIPcreateSol(col->pricingprob, &sol, NULL);
+         SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
+         SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
+         assert(feasible);
+         SCIPfreeSol(col->pricingprob, &sol);
+      }
+      for( i = 0; i < col->nvars; ++i )
+      {
+         var = col->vars[i];
+         val = col->vals[i];
+
+         assert(SCIPisFeasGE(col->pricingprob, val, SCIPvarGetLbGlobal(GCGpricingVarGetOrigvars(var)[0])) &&
+                SCIPisFeasLE(col->pricingprob, val, SCIPvarGetUbGlobal(GCGpricingVarGetOrigvars(var)[0])));
+      }
+#endif
       /* get enough memory to store the col */
       SCIP_CALL( pricestoreEnsureColsMem(pricestore, pricestore->ncols+1) );
       assert(pricestore->ncols < pricestore->colssize);

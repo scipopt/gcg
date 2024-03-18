@@ -273,6 +273,7 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
     */
    if( (*consdata)->mastercons == NULL && (*consdata)->branchdata != NULL && (*consdata)->branchrule != NULL )
    {
+      SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata) );
       (*consdata)->branchdata = NULL;
    }
 

@@ -40,6 +40,7 @@
 #include "scip/scip.h"
 #include "def.h"
 #include "type_solver.h"
+#include "type_colpool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -287,6 +288,12 @@ GCG_EXPORT
 SCIP_RETCODE GCGcomputeColMastercoefs(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_COL*              gcgcol              /**< GCG column data structure */
+   );
+
+/** get colpool */
+GCG_EXPORT
+GCG_COLPOOL* GCGgetColpool(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 /**@} */
