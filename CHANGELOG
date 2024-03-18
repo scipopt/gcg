@@ -52,6 +52,28 @@ Bug fixes
 
 
 @page RN36 Release notes for GCG 3.6
+@section RN361 GCG 3.6.1
+*************************
+
+Bug fixes
+---------
+
+- fix (global) bound propagation bugs
+- remove columns from colpool that violate global bounds
+- tree synchronization: fix segfault
+- fix 'gcg_check' CMake target
+- fix calculation of dual objective value and improve numerical stability
+- fix calculation of reduced costs of columns (in presence of very small dual values)
+- knapsack pricing solver reports optimality of solution if capacity is zero
+- prevent cliquer pricing solver from creating columns that violate varbounds
+
+New/modified/removed API functions:
+---------------------------
+
+- added function 'GCGgetColpool'
+- added function 'GCGcolpoolPropagateGlobalBounds'
+
+
 @section RN360 GCG 3.6.0
 *************************
 
