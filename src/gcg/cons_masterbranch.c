@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -46,6 +46,7 @@
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
+#include "pub_colpool.h"
 
 #include "scip/cons_linear.h"
 
@@ -1301,8 +1302,7 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
                      }
                      else
                      {
-                        SCIP_CALL(
-                           ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1));
+                        SCIP_CALL( ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1) );
                         if ( islinking )
                            linkingvaridxs[blocknr] = ncollectedbndvars[blocknr];
                         else
@@ -1323,8 +1323,7 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
                      }
                      else
                      {
-                        SCIP_CALL(
-                           ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1));
+                        SCIP_CALL( ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1) );
                         if ( islinking )
                            linkingvaridxs[blocknr] = ncollectedbndvars[blocknr];
                         else
@@ -1361,7 +1360,7 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
             /** @todo check if this really works with linking variables */
 
             /* only look at variables not already fixed to 0 or that belong to no block */
-            if((SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))))
+            if( SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
                continue;
 
             origvals = GCGmasterVarGetOrigvalmap(vars[i]);
@@ -1806,21 +1805,9 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    if( (*consdata)->origcons == NULL && (*consdata)->branchdata != NULL )
    {
       SCIP_CALL( GCGrelaxBranchDataDelete(origscip, (*consdata)->branchrule, &(*consdata)->branchdata) );
-      (*consdata)->branchdata = NULL;
-      (*consdata)->branchdata = NULL;
    }
-   else
-   {
-      if( (*consdata)->branchdata != NULL )
-      {
-         SCIP_CALL( GCGrelaxBranchDataDelete(origscip, (*consdata)->branchrule, &(*consdata)->branchdata) );
-         (*consdata)->branchdata = NULL;
-         if( (*consdata)->origcons != NULL )
-         {
-            GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
-         }
-      }
-   }
+
+   (*consdata)->branchdata = NULL;
 
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if( (*consdata)->origcons != NULL )
@@ -1942,43 +1929,58 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   if( !consdata->needprop && consdata->ncopiedvarbnds == 0 )
+   if( conshdlrdata->npendingbnds == 0 && !consdata->needprop && consdata->ncopiedvarbnds == 0 )
    {
       SCIPdebugMessage("No propagation of masterbranch constraint needed: <%s>, stack size = %d.\n",
          consdata->name, conshdlrdata->nstack);
 
-      *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
 
    SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s>, stack size = %d, newvars = %d, npendingbnds = %d, npropbounds = %d.\n",
       consdata->name, conshdlrdata->nstack, GCGmasterGetNPricedvars(scip) - consdata->npropvars, conshdlrdata->npendingbnds, consdata->ncopiedvarbnds);
 
-   *result = SCIP_DIDNOTFIND;
-
    propcount = 0;
 
-   /* apply global bound changes on original problem variables to the master problem */
-   SCIP_CALL( applyGlobalBndchgsToPricedMastervars(scip, &propcount) );
-
-   /* apply local bound changes on the original variables on newly generated master variables */
-   SCIP_CALL( applyLocalBndchgsToPricedMastervars(scip, cons, &propcount) );
-
-   /* apply local bound changes on original variables that have been directly copied to the master problem */
-   SCIP_CALL( applyLocalBndchgsToCopiedMastervars(scip, cons, &propcount) );
-
-   /* call branching rule specific propagation method */
-   if( consdata->branchrule != NULL )
+   if( conshdlrdata->npendingbnds > 0 )
    {
-      /** @todo count number of propagations */
-      SCIP_CALL( GCGrelaxBranchPropMaster(origscip, consdata->branchrule, consdata->branchdata, result) );
+      *result = SCIP_DIDNOTFIND;
+
+      if( !conshdlrdata->pendingbndsactivated )
+      {
+         /* apply global bound changes in the original problem to the pricing problems */
+         SCIP_CALL(applyGlobalBndchgsToPricingprobs(scip));
+      }
+
+      /* apply global bound changes on original problem variables to the master problem */
+      SCIP_CALL( applyGlobalBndchgsToPricedMastervars(scip, &propcount) );
+
+      GCGcolpoolPropagateGlobalBounds(GCGgetColpool(scip));
+   }
+
+   if( consdata->needprop || consdata->ncopiedvarbnds != 0 )
+   {
+      *result = SCIP_DIDNOTFIND;
+
+      /* apply local bound changes on the original variables on newly generated master variables */
+      SCIP_CALL( applyLocalBndchgsToPricedMastervars(scip, cons, &propcount) );
+
+      /* apply local bound changes on original variables that have been directly copied to the master problem */
+      SCIP_CALL( applyLocalBndchgsToCopiedMastervars(scip, cons, &propcount) );
+
+      /* call branching rule specific propagation method */
+      if ( consdata->branchrule != NULL )
+      {
+         /** @todo count number of propagations */
+         SCIP_CALL( GCGrelaxBranchPropMaster(origscip, consdata->branchrule, consdata->branchdata, result) );
+      }
+
+      consdata->needprop = FALSE;
+      consdata->npropvars = GCGmasterGetNPricedvars(scip);
    }
 
    if( *result != SCIP_CUTOFF && propcount > 0 )
       *result = SCIP_REDUCEDDOM;
-
-   consdata->needprop = FALSE;
-   consdata->npropvars = GCGmasterGetNPricedvars(scip);
 
    return SCIP_OKAY;
 }

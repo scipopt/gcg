@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -28,6 +28,7 @@
 /**@file   colpool.c
  * @brief  methods for storing cols in a col pool (based on SCIP's cut pool)
  * @author Jonas Witt
+ * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -36,6 +37,7 @@
 
 #include "scip/clock.h"
 
+#include "gcg.h"
 #include "pub_gcgcol.h"
 #include "colpool.h"
 #include "struct_colpool.h"
@@ -350,7 +352,6 @@ SCIP_RETCODE GCGcolpoolDelCol(
 
 /** prices cols of the col pool */
 SCIP_RETCODE GCGcolpoolPrice(
-   SCIP*                 scip,               /**< SCIP data structure */
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_PRICESTORE*       pricestore,         /**< GCG price storage */
    SCIP_SOL*             sol,                /**< solution to be separated (or NULL for LP-solution) */
@@ -391,13 +392,13 @@ SCIP_RETCODE GCGcolpoolPrice(
 
       redcost = GCGcolGetRedcost(col);
 
-      if( SCIPisDualfeasNegative(scip, redcost) )
+      if( SCIPisDualfeasNegative(colpool->scip, redcost) )
       {
          /* insert col in separation storage */
          SCIPdebugMessage(" -> col %p from the col pool (redcost: %g)\n",
             (void*)col, redcost );
 
-         SCIP_CALL( GCGpricestoreAddCol(scip, pricestore, col, FALSE) );
+         SCIP_CALL( GCGpricestoreAddCol(colpool->scip, pricestore, col, FALSE) );
 
          SCIP_CALL( colpoolDelCol(colpool, col, FALSE) );
 
@@ -552,4 +553,33 @@ SCIP_Longint GCGcolpoolGetNColsFound(
    assert(colpool != NULL);
 
    return colpool->ncolsfound;
+}
+
+SCIP_RETCODE GCGcolpoolPropagateGlobalBounds(
+   GCG_COLPOOL*          colpool
+   )
+{
+   GCG_COL* col;
+   int c;
+   int i;
+
+   for( c = colpool->ncols - 1; c >= 0; --c )
+   {
+      col = colpool->cols[c];
+      assert(col != NULL);
+      assert(col->pricingprob != NULL);
+
+      for( i = 0; i < col->nvars; ++i )
+      {
+         assert(GCGvarIsPricing(col->vars[i]) && GCGpricingVarGetNOrigvars(col->vars[i]) > 0 && GCGpricingVarGetOrigvars(col->vars[i])[0] != NULL);
+         if( SCIPisFeasLT(col->pricingprob, col->vals[i], SCIPvarGetLbGlobal(GCGpricingVarGetOrigvars(col->vars[i])[0])) ||
+             SCIPisFeasGT(col->pricingprob, col->vals[i], SCIPvarGetUbGlobal(GCGpricingVarGetOrigvars(col->vars[i])[0])) )
+         {
+            colpoolDelCol(colpool, col, TRUE);
+            break;
+         }
+      }
+   }
+
+   return SCIP_OKAY;
 }

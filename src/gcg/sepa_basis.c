@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1117,6 +1117,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIPdebugMessage("calling sepaExeclpBasis\n");
 
    *result = SCIP_DIDNOTFIND;
+   cutoff = FALSE;
 
    enable = sepadata->enable;
    enableobj = sepadata->enableobj;
@@ -1220,6 +1221,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    stalllpobjval = SCIP_REAL_MIN;
    stallnfracs = INT_MAX;
    stalling = FALSE;
+   enoughcuts = FALSE;
 
    maxcuts = 0;
    if( isroot )
@@ -1347,44 +1349,51 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          stalllpobjval = lpobjval;
          stallnfracs = nfracs;
       }
+      else if( SCIPgetLPSolstat(origscip) == SCIP_LPSOLSTAT_OBJLIMIT )
+      {
+         cutoff = TRUE;
+      }
       else
       {
          stalling = (stalllpsolstat == SCIPgetLPSolstat(origscip));
       }
 
-      if( !stalling )
+      if( !cutoff )
       {
-         nsepastallrounds = 0;
-      }
-      else
-      {
-         nsepastallrounds++;
-      }
-      stalllpsolstat = SCIPgetLPSolstat(origscip);
-
-      /* separate cuts in cutpool */
-      SCIPdebugMessage("separate current LP sol in cutpool\n");
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, isroot, &resultdummy) );
-
-      enoughcuts = (SCIPgetNCuts(origscip) >= 2 * (SCIP_Longint)maxcuts) || (resultdummy == SCIP_NEWROUND);
-
-      if( !enoughcuts )
-      {
-         /* separate current probing lp sol of origscip */
-         SCIPdebugMessage("separate current LP solution\n");
-         SCIP_CALL( SCIPseparateSol(origscip, NULL, isroot, isroot, FALSE, &delayed, &cutoff) );
-
-         enoughcuts = enoughcuts || (SCIPgetNCuts(origscip) >= 2 * (SCIP_Longint)maxcuts) || (resultdummy == SCIP_NEWROUND);
-
-         /* if we are close to the stall round limit, also call the delayed separators */
-         if( !enoughcuts && delayed && !cutoff && nsepastallrounds >= maxnsepastallrounds-1)
+         if( !stalling )
          {
-            SCIPdebugMessage("call delayed separators\n");
-            SCIP_CALL( SCIPseparateSol(origscip, NULL, isroot, isroot, TRUE, &delayed, &cutoff) );
+            nsepastallrounds = 0;
+         }
+         else
+         {
+            nsepastallrounds++;
+         }
+         stalllpsolstat = SCIPgetLPSolstat(origscip);
+
+         /* separate cuts in cutpool */
+         SCIPdebugMessage("separate current LP sol in cutpool\n");
+         SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, isroot, &resultdummy) );
+
+         enoughcuts = (SCIPgetNCuts(origscip) >= 2 * (SCIP_Longint)maxcuts) || (resultdummy == SCIP_NEWROUND);
+
+         if( !enoughcuts )
+         {
+            /* separate current probing lp sol of origscip */
+            SCIPdebugMessage("separate current LP solution\n");
+            SCIP_CALL( SCIPseparateSol(origscip, NULL, isroot, isroot, FALSE, &delayed, &cutoff) );
+
+            enoughcuts = enoughcuts || (SCIPgetNCuts(origscip) >= 2 * (SCIP_Longint)maxcuts) || (resultdummy == SCIP_NEWROUND);
+
+            /* if we are close to the stall round limit, also call the delayed separators */
+            if( !enoughcuts && delayed && !cutoff && nsepastallrounds >= maxnsepastallrounds-1)
+            {
+               SCIPdebugMessage("call delayed separators\n");
+               SCIP_CALL( SCIPseparateSol(origscip, NULL, isroot, isroot, TRUE, &delayed, &cutoff) );
+            }
          }
       }
 
-      if( !enoughcuts && !cutoff )
+      if( !cutoff && !enoughcuts )
       {
          /* separate cuts in cutpool */
          SCIPdebugMessage("separate current LP sol in cutpool\n");

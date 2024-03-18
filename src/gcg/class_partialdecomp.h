@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1219,7 +1219,7 @@ public:
     * @brief  Gets index in variables array of a block for a variable
     * @param varid the id of the variable the index
     * @param block the corresponding block id
-    * @return  returns index in variables array of a block for a variable
+    * @return the index of the variable or -1 if var is not in block
     */
    GCG_EXPORT
    int getVarProbindexForBlock(

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -160,11 +160,16 @@ void GCGcolpoolEndFarkas(
 /** prices cols of the col pool */
 GCG_EXPORT
 SCIP_RETCODE GCGcolpoolPrice(
-   SCIP*                 scip,               /**< SCIP data structure */
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_PRICESTORE*       pricestore,         /**< GCG price storage */
    SCIP_SOL*             sol,                /**< solution to be separated (or NULL for LP-solution) */
    SCIP_Bool*            foundvars           /**< pointer to store the result of the separation call */
+   );
+
+/** removes cols that violate global bounds */
+GCG_EXPORT
+SCIP_RETCODE GCGcolpoolPropagateGlobalBounds(
+   GCG_COLPOOL*          colpool             /**< col pool */
    );
 
 /** @} */

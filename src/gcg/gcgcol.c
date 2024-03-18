@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -111,6 +111,8 @@ SCIP_RETCODE GCGcreateGcgCol(
 
       if( !SCIPisZero(pricingprob, origval) )
       {
+         assert(GCGvarIsPricing(origvar) && GCGpricingVarGetNOrigvars(origvar) > 0 && GCGpricingVarGetOrigvars(origvar)[0] != NULL);
+
          (*gcgcol)->vars[nnonz] = origvar;
          (*gcgcol)->vals[nnonz] = origval;
          ++nnonz;
