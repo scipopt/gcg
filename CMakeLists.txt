@@ -49,6 +49,7 @@ option(CPLEX "should Cplex be used for solving pricing MIPs" OFF)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
 option(GCG_DEV_BUILD "compile SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
 option(HMETIS "should hmetis be called" OFF)
+option(JSON "should JSON library be linked" ON)
 
 # OPENMP
 if(OPENMP)
@@ -114,6 +115,19 @@ if(HMETIS)
 endif()
 if(HMETIS_FOUND)
    add_definitions(-DWITH_HMETIS)
+endif()
+
+# JSON
+if(JSON)
+   find_package(JANSSON)
+endif()
+if(JANSSON_FOUND)
+   include_directories(${JANSSON_INCLUDE_DIRS})
+   add_definitions(-DWITH_JSON)
+   set(JANSSON_PIC_LIBRARIES ${JANSSON_LIBRARIES})
+else()
+   set(JANSSON_LIBRARIES)
+   set(JANSSON_PIC_LIBRARIES)
 endif()
 
 set(SYM sbliss CACHE STRING "options for symmetry computation")  #create the variable

@@ -426,15 +426,22 @@ else()
    setLibProperties(libgcg "gcg")
 endif()
 
-target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
+target_link_libraries(libgcg
+    PRIVATE
+    ${SCIP_LIBRARIES}
+    ${SYM_LIBRARIES}
+    ${CLIQUER_LIBRARIES}
+    ${CPLEX_LIBRARIES}
+    $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
+    $<$<BOOL:${JANSSON_FOUND}>:jansson::jansson>)
 
 if(SHARED)
     set(SCIP_NEEDED 0)
-    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES} ${CLIQUER_PIC_LIBRARIES} ${CPLEX_PIC_LIBRARIES} ${GSL_PIC_LIBRARIES})
+    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES})
     add_executable(gcg main.c ${gcgsources} ${gcggraphsources} ${gcgheaders} ${gcggraphheaders})
 else()
     set(SCIP_NEEDED ${SCIP_FOUND})
-    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES})
+    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
     add_executable(gcg main.c)
     target_link_libraries(gcg libgcg)
 endif()
@@ -451,7 +458,13 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_sanitizers(gcg)
 endif()
 
-target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${GSL_LIBRARIES})
+target_link_libraries(gcg
+    ${SCIP_LIBRARIES}
+    ${SYM_LIBRARIES}
+    ${CLIQUER_LIBRARIES}
+    ${CPLEX_LIBRARIES}
+    $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
+    $<$<BOOL:${JANSSON_FOUND}>:jansson::jansson>)
 
 add_dependencies(libgcg gcg_update_githash)
 add_dependencies(gcg gcg_update_githash)
