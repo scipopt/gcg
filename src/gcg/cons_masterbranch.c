@@ -1302,8 +1302,7 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
                      }
                      else
                      {
-                        SCIP_CALL(
-                           ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1));
+                        SCIP_CALL( ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1) );
                         if ( islinking )
                            linkingvaridxs[blocknr] = ncollectedbndvars[blocknr];
                         else
@@ -1324,8 +1323,7 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
                      }
                      else
                      {
-                        SCIP_CALL(
-                           ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1));
+                        SCIP_CALL( ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1) );
                         if ( islinking )
                            linkingvaridxs[blocknr] = ncollectedbndvars[blocknr];
                         else
@@ -1362,7 +1360,7 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
             /** @todo check if this really works with linking variables */
 
             /* only look at variables not already fixed to 0 or that belong to no block */
-            if((SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))))
+            if( SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
                continue;
 
             origvals = GCGmasterVarGetOrigvalmap(vars[i]);
@@ -1965,16 +1963,16 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       *result = SCIP_DIDNOTFIND;
 
       /* apply local bound changes on the original variables on newly generated master variables */
-      SCIP_CALL(applyLocalBndchgsToPricedMastervars(scip, cons, &propcount));
+      SCIP_CALL( applyLocalBndchgsToPricedMastervars(scip, cons, &propcount) );
 
       /* apply local bound changes on original variables that have been directly copied to the master problem */
-      SCIP_CALL(applyLocalBndchgsToCopiedMastervars(scip, cons, &propcount));
+      SCIP_CALL( applyLocalBndchgsToCopiedMastervars(scip, cons, &propcount) );
 
       /* call branching rule specific propagation method */
-      if (consdata->branchrule != NULL)
+      if ( consdata->branchrule != NULL )
       {
          /** @todo count number of propagations */
-         SCIP_CALL(GCGrelaxBranchPropMaster(origscip, consdata->branchrule, consdata->branchdata, result));
+         SCIP_CALL( GCGrelaxBranchPropMaster(origscip, consdata->branchrule, consdata->branchdata, result) );
       }
 
       consdata->needprop = FALSE;
