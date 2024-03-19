@@ -177,12 +177,20 @@ macro(add_instancetests instances settings prefix)
             add_test(NAME GCG-${prefix}-${setting}-${basename}
                     COMMAND ${GCG_TEST_COMMAND}
                     )
-            set_tests_properties(GCG-${prefix}-${setting}-${basename}
-                                PROPERTIES
-                                    PASS_REGULAR_EXPRESSION "Validation         : Success"
-                                    DEPENDS gcg-build
-                                    RESOURCE_LOCK libscip
-                                )
+            set_tests_properties(
+                GCG-${prefix}-${setting}-${basename}
+                PROPERTIES
+                    PASS_REGULAR_EXPRESSION "Validation         : Success"
+                    DEPENDS gcg-build
+                    RESOURCE_LOCK libscip
+            )
+            if(MSVC)
+                set_tests_properties(
+                    GCG-${prefix}-${setting}-${basename}
+                    PROPERTIES
+                        ENVIRONMENT_MODIFICATION "PATH=path_list_append:${SCIP_BINARY_DIR}/bin/$<CONFIG>/"
+                )
+            endif()
         endforeach(setting)
     endforeach(instance)
 endmacro(add_instancetests)

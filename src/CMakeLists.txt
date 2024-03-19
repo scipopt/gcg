@@ -531,12 +531,3 @@ configure_file(${PROJECT_SOURCE_DIR}/gcg-config.cmake.in
 # can link easily against gcg
 install(EXPORT gcg-targets FILE gcg-targets.cmake DESTINATION lib/cmake/gcg)
 install(FILES "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/gcg-config.cmake" DESTINATION lib/cmake/gcg)
-
-if(MSVC)
-   if(GCG_DEV_BUILD)
-      add_custom_command(TARGET gcg POST_BUILD
-         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-         "${SCIP_BINARY_DIR}/bin/$<CONFIG>/libscip.dll"
-         "${GCG_BINARY_DIR}/bin/$<CONFIG>")
-    endif()
-endif()
