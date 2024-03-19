@@ -77,7 +77,6 @@
         },
         {
             "name": "gcg-windows",
-            "inherits": "gcg-windows",
             "displayName": "GCG Default Windows Config",
             "description": "Default GCG Windows development build configuration",
             "hidden": true,
