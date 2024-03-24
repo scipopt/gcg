@@ -74,6 +74,24 @@
                     "Darwin"
                 ]
             }
+        },        
+        {
+            "name": "gcg-macos",
+            "displayName": "GCG Default macOS Config",
+            "description": "Default GCG macOS development build configuration",
+            "hidden": true,
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang"
+            },
+            "condition": {
+                "type": "inList",
+                "string": "${hostSystemName}",
+                "list": [
+                    "Darwin"
+                ]
+            }
         },
         {
             "name": "gcg-windows",
@@ -128,6 +146,45 @@
             ],
             "displayName": "GCG Linux RelWithDebInfo Config",
             "description": "GCG Linux development release with debug info build configuration",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "gcg-macos-debug",
+            "inherits": [
+                "gcg-debug",
+                "gcg-macos"
+            ],
+            "displayName": "GCG macOS Debug Config",
+            "description": "GCG macOS development debug build configuration",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "gcg-macos-release",
+            "inherits": [
+                "gcg-release",
+                "gcg-macos"
+            ],
+            "displayName": "GCG macOS Release Config",
+            "description": "GCG macOS development release build configuration",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "gcg-macos-relwithdebinfo",
+            "inherits": [
+                "gcg-release",
+                "gcg-macos"
+            ],
+            "displayName": "GCG macOS RelWithDebInfo Config",
+            "description": "GCG macOS development release with debug info build configuration",
             "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
