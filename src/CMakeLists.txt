@@ -311,6 +311,7 @@ set(gcgheaders
     gcg/struct_pricingjob.h
     gcg/struct_pricingprob.h
     gcg/struct_score.h
+    gcg/struct_sepagcg.h
     gcg/struct_solver.h
     gcg/struct_vardata.h
     gcg/struct_varhistory.h
@@ -330,6 +331,7 @@ set(gcgheaders
     gcg/type_pricingjob.h
     gcg/type_pricingprob.h
     gcg/type_pricingstatus.h
+    gcg/type_sepagcg.h
     gcg/type_score.h
     gcg/type_solver.h
     gcg/type_varclassifier.h

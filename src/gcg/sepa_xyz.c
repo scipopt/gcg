@@ -1,0 +1,331 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                           */
+/*                  This file is part of the program                         */
+/*          GCG --- Generic Column Generation                                */
+/*                  a Dantzig-Wolfe decomposition based extension            */
+/*                  of the branch-cut-and-price framework                    */
+/*         SCIP --- Solving Constraint Integer Programs                      */
+/*                                                                           */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/**@file    sepa_xyz.c
+ *
+ * @brief   xyz separator for master problem (put your description here)
+ * @author  Chantal Reinartz Groba
+ */
+
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+
+#include <assert.h>
+
+#include "sepa_xyz.h"
+#include "type_sepagcg.h"
+
+
+#define SEPA_NAME              "xyz"
+#define SEPA_DESC              "separator template"
+#define SEPA_PRIORITY                 0
+#define SEPA_FREQ                    10
+#define SEPA_MAXBOUNDDIST           1.0
+#define SEPA_USESSUBSCIP          FALSE /**< does the separator use a secondary SCIP instance? */
+#define SEPA_DELAY                FALSE /**< should separation method be delayed, if other separators found cuts? */
+
+
+/*
+ * Data structures
+ */
+
+/* TODO: fill in the necessary separator data */
+
+/** SCIP separator data */
+struct SCIP_SepaData
+{
+
+};
+
+
+/*
+ * Local methods
+ */
+
+/* put your local methods here, and declare them static */
+
+
+/*
+ * Callback methods of separator
+ */
+
+/* TODO: Implement all necessary separator methods. The methods with an #if 0 ... #else #define ... are optional */
+
+
+/** copy method for separator plugins (called when SCIP copies plugins) */
+#if 0
+static
+SCIP_DECL_SEPACOPY(sepaCopyXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define sepaCopyXyz NULL
+#endif
+
+
+/** destructor of separator to free user data (called when SCIP is exiting) */
+#if 0
+static
+SCIP_DECL_SEPAFREE(sepaFreeXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define sepaFreeXyz NULL
+#endif
+
+
+/** initialization method of separator (called after problem was transformed) */
+#if 0
+static
+SCIP_DECL_SEPAINIT(sepaInitXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define sepaInitXyz NULL
+#endif
+
+
+/** deinitialization method of separator (called before transformed problem is freed) */
+#if 0
+static
+SCIP_DECL_SEPAEXIT(sepaExitXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define sepaExitXyz NULL
+#endif
+
+
+/** solving process initialization method of separator (called when branch and bound process is about to begin) */
+#if 0
+static
+SCIP_DECL_SEPAINITSOL(sepaInitsolXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define sepaInitsolXyz NULL
+#endif
+
+
+/** solving process deinitialization method of separator (called before branch and bound process data is freed) */
+#if 0
+static
+SCIP_DECL_SEPAEXITSOL(sepaExitsolXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define sepaExitsolXyz NULL
+#endif
+
+
+/** LP solution separation method of separator */
+#if 0
+static
+SCIP_DECL_SEPAEXECLP(sepaExeclpXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define sepaExeclpXyz NULL
+#endif
+
+
+/** arbitrary primal solution separation method of separator */
+#if 0
+static
+SCIP_DECL_SEPAEXECSOL(sepaExecsolXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define sepaExecsolXyz NULL
+#endif
+
+
+/*
+ * Callback methods of MASTER separator
+ */
+
+/* TODO: Implement all necessary separator methods. The methods with an #if 0 ... #else #define ... are optional */
+
+
+/** method for determining if cut was generated by this separator */
+#if 0
+static
+GCG_DECL_SEPACUTISINSEPA(gcgsepaCutIsInSepaXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define gcgsepaCutIsInSepaXyz NULL
+#endif
+
+
+/** method for making newly generated cuts available */
+#if 0
+static
+GCG_DECL_SEPAUPDATENEWCUTS(gcgsepaUpdateNewCutsXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define gcgsepaUpdateNewCutsXyz NULL
+#endif
+
+
+/** get all relevant cuts generated by this separator */
+#if 0
+static
+GCG_DECL_SEPAGETCUTS(gcgsepaGetCutsXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define gcgsepaGetCutsXyz NULL
+#endif
+
+
+/** method for adding new master variable to cut */
+#if 0
+static
+GCG_DECL_SEPAADDMASTERVAR(gcgsepaAddMastervarXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define gcgsepaAddMastervarXyz NULL
+#endif
+
+
+/** method for adapting pricing objectives to consider cut */
+#if 0
+static
+GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define gcgsepaSetObjectiveXyz NULL
+#endif
+
+
+/*
+ * separator specific interface methods
+ */
+
+/** creates the xyz separator and includes it in SCIP */
+SCIP_RETCODE SCIPincludeSepaXyz(
+   SCIP*                 scip                /**< SCIP data structure */
+)
+{
+   SCIP_SEPADATA* sepadata;
+   SCIP_SEPA* sepa;
+
+   /* create xyz separator data */
+   sepadata = NULL;
+   /* TODO: (optional) create separator specific data here */
+
+   sepa = NULL;
+
+   /* include separator */
+#if 0
+   /* use SCIPincludeSepa() if you want to set all callbacks explicitly and realize (by getting compiler errors) when
+    * new callbacks are added in future SCIP versions
+    */
+   SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
+         SEPA_USESSUBSCIP, SEPA_DELAY,
+         sepaCopyXyz, sepaFreeXyz, sepaInitXyz, sepaExitXyz, sepaInitsolXyz, sepaExitsolXyz, sepaExeclpXyz, sepaExecsolXyz,
+         sepadata) );
+#else
+   /* use SCIPincludeSepaBasic() plus setter functions if you want to set callbacks one-by-one and your code should
+    * compile independent of new callbacks being added in future SCIP versions
+    */
+   SCIP_CALL( SCIPincludeSepaBasic(scip, &sepa, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
+                                   SEPA_USESSUBSCIP, SEPA_DELAY,
+                                   sepaExeclpXyz, sepaExecsolXyz,
+                                   sepadata) );
+
+   assert(sepa != NULL);
+
+   /* set non fundamental callbacks via setter functions */
+   SCIP_CALL( SCIPsetSepaCopy(scip, sepa, sepaCopyXyz) );
+   SCIP_CALL( SCIPsetSepaFree(scip, sepa, sepaFreeXyz) );
+   SCIP_CALL( SCIPsetSepaInit(scip, sepa, sepaInitXyz) );
+   SCIP_CALL( SCIPsetSepaExit(scip, sepa, sepaExitXyz) );
+   SCIP_CALL( SCIPsetSepaInitsol(scip, sepa, sepaInitsolXyz) );
+   SCIP_CALL( SCIPsetSepaExitsol(scip, sepa, sepaExitsolXyz) );
+#endif
+
+   /* add xyz separator parameters */
+   /* TODO: (optional) add separator specific parameters with SCIPaddTypeParam() here */
+
+   return SCIP_OKAY;
+}
