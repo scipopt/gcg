@@ -187,6 +187,13 @@ if(NOT GCG_DEV_BUILD)
    if(SCIP_FOUND)
       # SCIP headers can be directly included
       include_directories(${SCIP_INCLUDE_DIRS})
+
+      if(ZLIB AND NOT TARGET ZLIB::ZLIB)
+         find_package(ZLIB REQUIRED)
+      endif()
+      if(READLINE)
+         find_package(Readline REQUIRED)
+      endif()
    endif()
 endif()
 
