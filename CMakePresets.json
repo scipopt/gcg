@@ -225,7 +225,7 @@
             "description": "Default GCG Linux development build",
             "hidden": true,
             "nativeToolOptions": [
-                "-j"
+                "-j12"
             ]
         },
         {
@@ -256,7 +256,7 @@
             "description": "Default GCG macOS development build",
             "hidden": true,
             "nativeToolOptions": [
-                "-j"
+                "-j12"
             ]
         },
         {
