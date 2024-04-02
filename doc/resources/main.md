@@ -17,5 +17,5 @@
 - @subpage misc
 - <a href="modules.html"><b>GCG C-API</b></a>
 
-@version 3.5.0
-@ref RN350 "Changelog of this version"
+@version 3.6.1
+@ref RN361 "Changelog of this version"
