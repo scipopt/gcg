@@ -47,7 +47,7 @@ If your installed CMake version is equal to 3.25 or higher, you can configure an
 By using `--preset gcg-windows-debug` a debug build will be compiled and tested.
 
 Otherwise, you can use the following commands
-1. Configure: `cmake -S . -B build -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake`
+1. Configure: `cmake -S . -B build -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT"/scripts/buildsystems/vcpkg.cmake`
 2. Build: `cmake --build build --target gcg --config Release`
 3. Test: `cmake --build build --target gcg_check --config Release`
 You can use `--config Debug` instead of `--config Release` to compile and test debug builds.
