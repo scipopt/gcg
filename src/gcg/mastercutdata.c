@@ -61,27 +61,30 @@ SCIP_RETCODE GCGpricingmodificationFree(
    GCG_PRICINGMODIFICATION** pricingmodification /**< pointer to the pricing modification */
    )
 {
+   SCIP* pricingscip;
    int i;
 
    assert(scip != NULL);
    assert(pricingmodification != NULL);
    assert(*pricingmodification != NULL);
 
-   SCIP_CALL( SCIPreleaseVar(scip, &(*pricingmodification)->coefvar) );
+   pricingscip = GCGgetPricingprob(scip, (*pricingmodification)->blocknr);
+
+   SCIP_CALL( SCIPreleaseVar(pricingscip, &(*pricingmodification)->coefvar) );
 
    for( i = 0; i < (*pricingmodification)->nadditionalvars; i++ )
    {
-      SCIP_CALL( SCIPreleaseVar(scip, &(*pricingmodification)->additionalvars[i]) );
+      SCIP_CALL( SCIPreleaseVar(pricingscip, &(*pricingmodification)->additionalvars[i]) );
    }
 
    for( i = 0; i < (*pricingmodification)->nadditionalconss; i++ )
    {
-      SCIP_CALL( SCIPreleaseCons(scip, &(*pricingmodification)->additionalconss[i]) );
+      SCIP_CALL( SCIPreleaseCons(pricingscip, &(*pricingmodification)->additionalconss[i]) );
    }
 
-   SCIPfreeBlockMemoryArray(scip, &(*pricingmodification)->additionalvars, (*pricingmodification)->nadditionalvars);
-   SCIPfreeBlockMemoryArray(scip, &(*pricingmodification)->additionalconss, (*pricingmodification)->nadditionalconss);
-   SCIPfreeBlockMemory(scip, pricingmodification);
+   SCIPfreeBlockMemoryArray(pricingscip, &(*pricingmodification)->additionalvars, (*pricingmodification)->nadditionalvars);
+   SCIPfreeBlockMemoryArray(pricingscip, &(*pricingmodification)->additionalconss, (*pricingmodification)->nadditionalconss);
+   SCIPfreeBlockMemory(pricingscip, pricingmodification);
 
    *pricingmodification = NULL;
 
@@ -100,7 +103,9 @@ SCIP_RETCODE GCGpricingmodificationCreate(
    SCIP_VAR**             additionalvars,      /**< array of additional variables with no objective coefficient in the pricing programs inferred from the master cut */
    int                    nadditionalvars,     /**< number of additional variables in the pricing programs */
    SCIP_CONS**            additionalconss,     /**< array of additional constraints in the pricing programs inferred from the master cut */
-   int                    nadditionalconss      /**< number of additional constraints in the pricing programs */
+   int                    nadditionalconss,     /**< number of additional constraints in the pricing programs */
+   GCG_DECL_MASTERCUTAPPLYFARKASMODIFICATION ((*applyfarkasmodification)), /**< method to apply the Farkas modification */
+   GCG_DECL_MASTERCUTAPPLYREDCOSTMODIFICATION ((*applyredcostmodification)) /**< method to apply the reduced cost modification */
    )
 {
    SCIP* originalproblem;
@@ -141,6 +146,8 @@ SCIP_RETCODE GCGpricingmodificationCreate(
    (*pricingmodification)->nadditionalvars = nadditionalvars;
    (*pricingmodification)->additionalconss = additionalconss;
    (*pricingmodification)->nadditionalconss = nadditionalconss;
+   (*pricingmodification)->applyfarkasmodification = applyfarkasmodification;
+   (*pricingmodification)->applyredcostmodification = applyredcostmodification;
 
    return SCIP_OKAY;
 }
@@ -276,21 +283,25 @@ SCIP_RETCODE GCGmastercutFree(
    GCG_MASTERCUTDATA**    mastercutdata        /**< pointer to the mastercut data */
    )
 {
+   SCIP* masterscip;
    int i;
 
    assert(scip != NULL);
+   assert(GCGisOriginal(scip));
    assert(mastercutdata != NULL);
    assert(*mastercutdata != NULL);
+
+   masterscip = GCGgetMasterprob(scip);
 
    switch( (*mastercutdata)->type )
    {
    case GCG_MASTERCUTTYPE_CONS:
       assert((*mastercutdata)->cut.cons != NULL);
-      SCIP_CALL( SCIPreleaseCons(scip, &(*mastercutdata)->cut.cons) );
+      SCIP_CALL( SCIPreleaseCons(masterscip, &(*mastercutdata)->cut.cons) );
       break;
    case GCG_MASTERCUTTYPE_ROW:
       assert((*mastercutdata)->cut.row != NULL);
-      SCIP_CALL( SCIPreleaseRow(scip, &(*mastercutdata)->cut.row) );
+      SCIP_CALL( SCIPreleaseRow(masterscip, &(*mastercutdata)->cut.row) );
       break;
    default:
       SCIP_CALL( SCIP_ERROR );
@@ -301,8 +312,8 @@ SCIP_RETCODE GCGmastercutFree(
       SCIP_CALL( GCGpricingmodificationFree(scip, &(*mastercutdata)->pricingmodifications[i]) );
    }
 
-   SCIPfreeBlockMemoryArray(scip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
-   SCIPfreeBlockMemory(scip, mastercutdata);
+   SCIPfreeBlockMemoryArray(masterscip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
+   SCIPfreeBlockMemory(masterscip, mastercutdata);
 
    *mastercutdata = NULL;
 
@@ -532,6 +543,7 @@ int GCGmastercutGetNPricingModifications(
 /** apply a pricing modification */
 SCIP_RETCODE GCGpricingmodificationApply(
    SCIP*                  pricingscip,        /**< pricing scip */
+   GCG_PRICETYPE          pricetype,          /**< pricing type */
    GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
    )
 {
@@ -539,6 +551,17 @@ SCIP_RETCODE GCGpricingmodificationApply(
 
    assert(pricingscip != NULL);
    assert(pricingmodification != NULL);
+
+   if( pricetype == GCG_PRICETYPE_FARKAS )
+   {
+      assert(pricingmodification->applyfarkasmodification != NULL);
+      SCIP_CALL( pricingmodification->applyfarkasmodification(pricingscip, pricingmodification) );
+   }
+   else if( pricetype == GCG_PRICETYPE_REDCOST )
+   {
+      assert(pricingmodification->applyredcostmodification != NULL);
+      SCIP_CALL( pricingmodification->applyredcostmodification(pricingscip, pricingmodification) );
+   }
 
    // add the inferred pricing variables
    assert(GCGvarIsInferredPricing(pricingmodification->coefvar));
@@ -562,6 +585,7 @@ SCIP_RETCODE GCGpricingmodificationApply(
 /** apply all pricing modifications */
 SCIP_RETCODE GCGmastercutApplyPricingModifications(
    SCIP*                  masterscip,         /**< master scip */
+   GCG_PRICETYPE          pricetype,          /**< pricing type */
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    )
 {
@@ -579,7 +603,7 @@ SCIP_RETCODE GCGmastercutApplyPricingModifications(
    {
       pricingprob = GCGgetPricingprob(origscip, mastercutdata->pricingmodifications[i]->blocknr);
       assert(pricingprob != NULL);
-      SCIP_CALL( GCGpricingmodificationApply(pricingprob, mastercutdata->pricingmodifications[i]) );
+      SCIP_CALL( GCGpricingmodificationApply(pricingprob, pricetype, mastercutdata->pricingmodifications[i]) );
    }
 
    return SCIP_OKAY;

@@ -43,6 +43,13 @@ extern "C" {
 typedef struct GCG_PricingModification GCG_PRICINGMODIFICATION;
 typedef struct GCG_MasterCutData GCG_MASTERCUTDATA;
 
+
+/** method to apply the Farkas modification */
+#define GCG_DECL_MASTERCUTAPPLYFARKASMODIFICATION(x) SCIP_RETCODE x (SCIP* pricingscip, GCG_PRICINGMODIFICATION* pricingmodification)
+
+/** method to apply the reduced cost modification */
+#define GCG_DECL_MASTERCUTAPPLYREDCOSTMODIFICATION(x) SCIP_RETCODE x (SCIP* pricingscip, GCG_PRICINGMODIFICATION* pricingmodification)
+
 #ifdef __cplusplus
 }
 #endif

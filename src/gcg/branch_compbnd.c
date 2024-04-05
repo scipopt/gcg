@@ -37,6 +37,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 
+#include <scip/scip_var.h>
 #define SCIP_DEBUG
 #include <scip/pub_message.h>
 #include <scip/pub_var.h>
@@ -86,6 +87,36 @@ struct GCG_BranchData
    int                   nvars;              /**< number of master variables the last time the node has been visited - neccessary to later include newly generated master variables */
    GCG_MASTERCUTDATA*    mastercons;         /**< master constraint along with its corresponding inferred pricing modifications */
 };
+
+/*
+ * Mastercutdata pricingmod modifications for pricing
+ */
+
+/** method to apply the Farkas modification in down branch */
+static
+GCG_DECL_MASTERCUTAPPLYFARKASMODIFICATION(farkas_down)
+{
+   SCIP_CALL( SCIPchgVarUb(pricingscip, pricingmodification->coefvar, 0.0) );
+   return SCIP_OKAY;
+}
+
+/** method to apply the Farkas modification in up branch */
+static
+GCG_DECL_MASTERCUTAPPLYFARKASMODIFICATION(farkas_up)
+{
+   SCIP_CALL( SCIPchgVarLb(pricingscip, pricingmodification->coefvar, 1.0) );
+   return SCIP_OKAY;
+}
+
+/** method to apply the reduced cost modification (lb=0, ub=1) */
+static
+GCG_DECL_MASTERCUTAPPLYREDCOSTMODIFICATION(reducedcost)
+{
+   SCIP_CALL( SCIPchgVarLb(pricingscip, pricingmodification->coefvar, 0.0) );
+   SCIP_CALL( SCIPchgVarUb(pricingscip, pricingmodification->coefvar, 1.0) );
+   return SCIP_OKAY;
+}
+
 
 /*
  * Local methods
@@ -576,7 +607,9 @@ SCIP_RETCODE createBranchingCons(
       additionalvars,
       nadditionalvars,
       additionalcons,
-      nadditionalcons
+      nadditionalcons,
+      branchdata->branchtype == GCG_BRANCH_DOWN ? farkas_down : farkas_up,
+      reducedcost
    ) );
    assert(pricingmod != NULL);
 
@@ -1068,6 +1101,9 @@ SCIP_RETCODE separation(
    /* 1. Set X to include all mastervariables in the selected block */
    for( int i = 0; i < nmastervars; ++i )
    {
+      if( SCIPvarGetType(mastervars[i]) > SCIP_VARTYPE_INTEGER )
+         continue;
+
       if( !GCGisMasterVarInBlock(mastervars[i], blocknr) )
          continue;
 
@@ -1085,6 +1121,8 @@ SCIP_RETCODE separation(
       X[Xsize] = mastervars[i];
       Xsize++;
    }
+
+   assert(X != NULL && Xsize > 0);
 
    /* 2. Call the recursive separation algorithm */
    SCIP_CALL( _separation(masterscip, X, Xsize, B, Bsize, result) );
@@ -1145,70 +1183,40 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    /* 1. Determine in what block we are branching. We select the first available block,
     *     i.e. the first block that contains a branching candidate, starting from the master block.
     */
-   /* in case of continuous origvar look for "fractional" blocks using the representation (currentorigsol) in the original problem */
-   if(SCIPgetNContVars(origscip) > 0)
+   int norigvars;
+   SCIP_VAR** origvars;
+   SCIP_VAR* origvar;
+
+   norigvars = SCIPgetNVars(origscip);
+   origvars = SCIPgetVars(origscip);
+
+   nbranchcands = SCIPgetNVars(masterscip);
+   branchcands = SCIPgetVars(masterscip);
+
+   assert(nbranchcands > 0);
+
+   for( i = 0; i < norigvars; ++i )
    {
-      int norigvars;
-      SCIP_VAR** origvars;
-      SCIP_VAR* origvar;
+      origvar = origvars[i];
 
-      norigvars = SCIPgetNVars(origscip);
-      origvars = SCIPgetVars(origscip);
+      if( SCIPvarGetType(origvar) > SCIP_VARTYPE_INTEGER )
+         continue;
 
-      nbranchcands = SCIPgetNVars(masterscip);
-      branchcands = SCIPgetVars(masterscip);
+      if( SCIPisFeasIntegral(origscip, SCIPgetSolVal(origscip, GCGrelaxGetCurrentOrigSol(origscip), origvar)) )
+         continue;
 
-      assert(nbranchcands > 0);
+      blocknr = GCGgetBlockRepresentative(origscip, GCGvarGetBlock(origvar));
 
-      for( i = 0; i < norigvars; ++i )
+      SCIPdebugMessage("Variable %s belonging to block %d with representative %d is not integral!\n", SCIPvarGetName(origvar), GCGvarGetBlock(origvar), blocknr);
+
+      if( blocknr == -1 )
       {
-         origvar = origvars[i];
-
-         if( SCIPvarGetType(origvar) > SCIP_VARTYPE_INTEGER )
-            continue;
-
-         if( SCIPisIntegral(origscip, SCIPgetSolVal(origscip, GCGrelaxGetCurrentOrigSol(origscip), origvar)) )
-            continue;
-
-         blocknr = GCGgetBlockRepresentative(origscip, GCGvarGetBlock(origvar));
-
-         SCIPdebugMessage("Variable %s belonging to block %d with representative %d is not integral!\n", SCIPvarGetName(origvar), GCGvarGetBlock(origvar), blocknr);
-
-         if( blocknr == -1 )
-         {
-            assert(GCGoriginalVarGetNMastervars(origvar) == 1);
-            mastervar = GCGoriginalVarGetMastervars(origvar)[0];
-            break;
-         }
-
+         assert(GCGoriginalVarGetNMastervars(origvar) == 1);
+         mastervar = GCGoriginalVarGetMastervars(origvar)[0];
          break;
       }
-   } else
-   {
-      /* loop over all branching candidates */
-      for( i = 0; i < nbranchcands; ++i )
-      {
-         mastervar = branchcands[i];
-         assert(GCGvarIsMaster(mastervar));
 
-         /* if we have a master variable, we branch on it */
-         if( GCGvarGetBlock(mastervar) == -1 )
-         {
-            assert(!GCGmasterVarIsArtificial(mastervar));
-            blocknr = -1;
-            break;
-         }
-
-         /* else, check if the candidate is in an procing block */
-         for( j = 0; j < GCGgetNPricingprobs(origscip); ++j )
-         {
-            if( GCGisMasterVarInBlock(mastervar, j) )
-            {
-               blocknr = j;
-               break;
-            }
-         }
-      }
+      break;
    }
 
    if( blocknr < -1 )
@@ -1218,7 +1226,8 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
       SCIP_CALL( GCGpricerExistRays(masterscip, &rays) );
       if( rays )
          SCIPwarningMessage(masterscip, "Generic branching is not compatible with unbounded problems!\n");
-      return SCIP_ERROR;
+      *result = SCIP_DIDNOTFIND;
+      return SCIP_OKAY;
    }
 
    // static mastervariables should be handled by the staticvar branchrule
@@ -1227,7 +1236,7 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    SCIPdebugMessage("branching in block %d \n", blocknr);
 
    /* 2. Check B&B-tree ancestors for previous compbnd branching in the node */
-   SCIP_CALL( initComponentBoundsFromAncestors(masterscip, &B, &Bsize, blocknr) );
+   //SCIP_CALL( initComponentBoundsFromAncestors(masterscip, &B, &Bsize, blocknr) );
 
    /* 3. Call to separation algorithm to find a suitable B to branch on in the current block.*/
    SCIP_CALL( separation(masterscip, &B, &Bsize, blocknr, result) );

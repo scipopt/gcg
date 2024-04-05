@@ -1474,7 +1474,10 @@ SCIP_RETCODE GCGcreateMasterVar(
       for( j = 0; j < npricingvars; ++j )
       {
          SCIP_VAR* origvar;
-         assert(GCGvarIsPricing(pricingvars[j]));
+         assert(GCGvarIsPricing(pricingvars[j]) || GCGvarIsInferredPricing(pricingvars[j]));
+
+         if( GCGvarIsInferredPricing(pricingvars[j]) )
+            continue;
 
          origvar = GCGpricingVarGetOrigvars(pricingvars[j])[0];
          assert(origvar != NULL);

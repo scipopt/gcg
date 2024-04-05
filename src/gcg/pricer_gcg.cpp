@@ -2920,7 +2920,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    {
       assert(GCGmastercutIsActive(branchmastercutdata[i]));
 
-      SCIP_CALL( GCGmastercutApplyPricingModifications(scip_, branchmastercutdata[i]) );
+      SCIP_CALL( GCGmastercutApplyPricingModifications(scip_, pricetype->getType(), branchmastercutdata[i]) );
    }
 
    /* stabilization loop */
