@@ -37,7 +37,6 @@
 #include "mastercutdata.h"
 #include "gcg.h"
 #include "pricer_gcg.h"
-#include "pub_gcgvar.h"
 #include "struct_mastercutdata.h"
 
 #include <scip/cons_linear.h>
@@ -45,6 +44,8 @@
 #include <scip/pub_cons.h>
 #include <scip/pub_lp.h>
 #include <scip/scip.h>
+#include <scip/struct_scip.h>
+#include <scip/struct_mem.h>
 #include <scip/struct_var.h>
 #include <scip/type_scip.h>
 
@@ -61,30 +62,44 @@ SCIP_RETCODE GCGpricingmodificationFree(
    GCG_PRICINGMODIFICATION** pricingmodification /**< pointer to the pricing modification */
    )
 {
+   SCIP* masterscip;
    SCIP* pricingscip;
    int i;
 
    assert(scip != NULL);
+   assert(GCGisOriginal(scip));
    assert(pricingmodification != NULL);
    assert(*pricingmodification != NULL);
 
+   masterscip = GCGgetMasterprob(scip);
    pricingscip = GCGgetPricingprob(scip, (*pricingmodification)->blocknr);
 
+   BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
+
    SCIP_CALL( SCIPreleaseVar(pricingscip, &(*pricingmodification)->coefvar) );
+
+   BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
 
    for( i = 0; i < (*pricingmodification)->nadditionalvars; i++ )
    {
       SCIP_CALL( SCIPreleaseVar(pricingscip, &(*pricingmodification)->additionalvars[i]) );
+      BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    }
 
    for( i = 0; i < (*pricingmodification)->nadditionalconss; i++ )
    {
       SCIP_CALL( SCIPreleaseCons(pricingscip, &(*pricingmodification)->additionalconss[i]) );
+      BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    }
 
+   BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    SCIPfreeBlockMemoryArray(pricingscip, &(*pricingmodification)->additionalvars, (*pricingmodification)->nadditionalvars);
+   BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    SCIPfreeBlockMemoryArray(pricingscip, &(*pricingmodification)->additionalconss, (*pricingmodification)->nadditionalconss);
-   SCIPfreeBlockMemory(pricingscip, pricingmodification);
+   BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
+   SCIPfreeBlockMemory(masterscip, pricingmodification);
+
+   BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
 
    *pricingmodification = NULL;
 
