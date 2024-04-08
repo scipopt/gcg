@@ -144,7 +144,7 @@ If your installed CMake version is equal to 3.25 or higher, you can configure an
 
     cmake --workflow --preset gcg-linux-release
 
-> You can replace `linux` by `macos` for MacOS builds.
+> You can replace `linux` by `macos` for MacOS builds (or even by `windows`, see @ref msvc).
 > By using `--preset gcg-linux-debug` a debug build will be compiled and tested.
 
 ### Manual CMake Build
