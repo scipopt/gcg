@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   colpool.h
+ * @ingroup INTERNALAPI-GCG
  * @brief  internal methods for storing cols in a col pool
  * @author Jonas Witt
  */

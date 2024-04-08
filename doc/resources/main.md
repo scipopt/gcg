@@ -15,7 +15,7 @@
 - @subpage devs
 - @subpage example-projects
 - @subpage misc
-- <a href="modules.html"><b>GCG C-API</b></a>
+- <a href="modules.html"><b>GCG API</b></a>
 
 @version 3.6.1
 @ref RN361 "Changelog of this version"

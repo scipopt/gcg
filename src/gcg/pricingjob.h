@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pricingjob.h
+ * @ingroup PRICING_PRIV
  * @brief  private methods for working with pricing jobs, to be used by the pricing controller only
  * @author Christian Puchert
  */

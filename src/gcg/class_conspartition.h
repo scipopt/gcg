@@ -42,6 +42,10 @@
 namespace gcg
 {
 
+/** @ingroup PARTITIONS
+ * @{
+ */
+
 enum ConsClassDecompInfo
 {
    BOTH = 0,                     /**< assign class to master or pricing problem */
@@ -158,6 +162,6 @@ public:
 
 };
 
-
+/** @} */
 } /* namespace gcg */
 #endif /* GCG_CLASS_CONSPARTITION_H__ */

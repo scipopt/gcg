@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clscons.h
- * @ingroup INTERNALAPI
+ * @ingroup INTERNALAPI-GCG
  * @brief  internal methods for constraint classifiers
  * @author Jurgen Lentz
  */
