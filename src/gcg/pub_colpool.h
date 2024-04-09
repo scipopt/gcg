@@ -48,7 +48,7 @@
 extern "C" {
 #endif
 
-/**
+/**@defgroup GCG_COLPOOL GCG Column Pool
  * @ingroup DATASTRUCTURES
  * @{
  */

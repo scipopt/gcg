@@ -50,14 +50,14 @@ fi
 
 if [[ $1 = "cluster" ]]
 then
-    if [[ -z ${TSTNAME} ]]; then TSTNAME="short"; fi
+    if [[ -z ${TEST} ]]; then TEST="short"; fi
     if [[ -z ${BINNAME} ]]; then BINNAME=${GCG_BINARY}; fi
-    if [[ -z ${SETNAME} ]]; then SETNAME="default"; fi
-    if [[ -z ${MSETNAME} ]]; then MSETNAME="default"; fi
+    if [[ -z ${SETTINGS} ]]; then SETTINGS="default"; fi
+    if [[ -z ${MASTERSETTINGS} ]]; then MASTERSETTINGS="default"; fi
     if [[ -z ${BINID} ]]; then BINID="1"; fi
-    if [[ -z ${TIMELIMIT} ]]; then TIMELIMIT="3600"; fi
-    if [[ -z ${NODELIMIT} ]]; then NODELIMIT="-1"; fi
-    if [[ -z ${MEMLIMIT} ]]; then MEMLIMIT="16000"; fi
+    if [[ -z ${TIME} ]]; then TIME="3600"; fi
+    if [[ -z ${NODES} ]]; then NODES="-1"; fi
+    if [[ -z ${MEM} ]]; then MEM="16000"; fi
     if [[ -z ${THREADS} ]]; then THREADS="0"; fi
     if [[ -z ${FEASTOL} ]]; then FEASTOL="default"; fi
     if [[ -z ${LPS} ]]; then LPS="spx"; fi
@@ -77,50 +77,50 @@ then
 
     # print parameters
     echo "Parameters:"
-    echo "TSTNAME       = $TSTNAME"
-    echo "BINNAME       = $BINNAME"
-    echo "SETNAME       = $SETNAME"
-    echo "MSETNAME      = $MSETNAME"
-    echo "BINID         = $BINID"
-    echo "TIMELIMIT     = $TIMELIMIT"
-    echo "NODELIMIT     = $NODELIMIT"
-    echo "MEMLIMIT      = $MEMLIMIT"
-    echo "THREADS       = $THREADS"
-    echo "FEASTOL       = $FEASTOL"
-    echo "LPS           = $LPS"
-    echo "DISPFREQ      = $DISPFREQ"
-    echo "CONTINUE      = $CONTINUE"
-    echo "QUEUETYPE     = $QUEUETYPE"
-    echo "QUEUE         = $QUEUE"
-    echo "PPN           = $PPN"
-    echo "CLIENTTMPDIR  = $CLIENTTMPDIR"
-    echo "NOWAITCLUSTER = $NOWAITCLUSTER"
-    echo "EXCLUSIVE     = $EXCLUSIVE"
-    echo "PERMUTE       = $PERMUTE"
-    echo "MODE          = $MODE"
-    echo "STATISTICS    = $STATISTICS"
-    echo "PROJECT       = $PROJECT"
-    echo "SSH_USER      = $SSH_USER"
+    echo "TEST              = $TEST"
+    echo "BINNAME           = $BINNAME"
+    echo "SETTINGS          = $SETTINGS"
+    echo "MASTERSETTINGS    = $MASTERSETTINGS"
+    echo "BINID             = $BINID"
+    echo "TIME              = $TIME"
+    echo "NODES             = $NODES"
+    echo "MEM               = $MEM"
+    echo "THREADS           = $THREADS"
+    echo "FEASTOL           = $FEASTOL"
+    echo "LPS               = $LPS"
+    echo "DISPFREQ          = $DISPFREQ"
+    echo "CONTINUE          = $CONTINUE"
+    echo "QUEUETYPE         = $QUEUETYPE"
+    echo "QUEUE             = $QUEUE"
+    echo "PPN               = $PPN"
+    echo "CLIENTTMPDIR      = $CLIENTTMPDIR"
+    echo "NOWAITCLUSTER     = $NOWAITCLUSTER"
+    echo "EXCLUSIVE         = $EXCLUSIVE"
+    echo "PERMUTE           = $PERMUTE"
+    echo "MODE              = $MODE"
+    echo "STATISTICS        = $STATISTICS"
+    echo "PROJECT           = $PROJECT"
+    echo "SSH_USER          = $SSH_USER"
 
     if [[ $QUEUETYPE = "condor" ]]
     then
         echo "Connecting to clustor.or.rwth-aachen.de to submit jobs ..."
-        ssh -t "$SSH_USER"@clustor.or.rwth-aachen.de "cd $PWD ; ./check_cluster.sh \"${TSTNAME}\" \"${BINNAME}\" \"${SETNAME}\" \"${MSETNAME}\" \"${BINID}\" \"${TIMELIMIT}\" \"${NODELIMIT}\" \"${MEMLIMIT}\" \"${THREADS}\" \"${FEASTOL}\" \"${LPS}\" \"${DISPFREQ}\" \"${CONTINUE}\" \"${QUEUETYPE}\" \"${QUEUE}\" \"${PPN}\" \"${CLIENTTMPDIR}\" \"${NOWAITCLUSTER}\" \"${EXCLUSIVE}\" \"${PERMUTE}\" \"${MODE}\" \"${STATISTICS}\" \"${PROJECT}\""
+        ssh -t "$SSH_USER"@clustor.or.rwth-aachen.de "cd $PWD ; ./check_cluster.sh \"${TEST}\" \"${BINNAME}\" \"${SETTINGS}\" \"${MASTERSETTINGS}\" \"${BINID}\" \"${TIME}\" \"${NODES}\" \"${MEM}\" \"${THREADS}\" \"${FEASTOL}\" \"${LPS}\" \"${DISPFREQ}\" \"${CONTINUE}\" \"${QUEUETYPE}\" \"${QUEUE}\" \"${PPN}\" \"${CLIENTTMPDIR}\" \"${NOWAITCLUSTER}\" \"${EXCLUSIVE}\" \"${PERMUTE}\" \"${MODE}\" \"${STATISTICS}\" \"${PROJECT}\""
      else
-        . ./check_cluster.sh "${TSTNAME}" "${BINNAME}" "${SETNAME}" "${MSETNAME}" "${BINID}" "${TIMELIMIT}" "${NODELIMIT}" "${MEMLIMIT}" "${THREADS}" "${FEASTOL}" "${LPS}" "${DISPFREQ}" "${CONTINUE}" "${QUEUETYPE}" "${QUEUE}" "${PPN}" "${CLIENTTMPDIR}" "${NOWAITCLUSTER}" "${EXCLUSIVE}" "${PERMUTE}" "${MODE}" "${STATISTICS}" "${PROJECT}"
+        . ./check_cluster.sh "${TEST}" "${BINNAME}" "${SETTINGS}" "${MASTERSETTINGS}" "${BINID}" "${TIME}" "${NODES}" "${MEM}" "${THREADS}" "${FEASTOL}" "${LPS}" "${DISPFREQ}" "${CONTINUE}" "${QUEUETYPE}" "${QUEUE}" "${PPN}" "${CLIENTTMPDIR}" "${NOWAITCLUSTER}" "${EXCLUSIVE}" "${PERMUTE}" "${MODE}" "${STATISTICS}" "${PROJECT}"
      fi
 fi
 
 if [[ $1 = "test" ]]
 then
-    if [[ -z ${TSTNAME} ]]; then TSTNAME="short"; fi
+    if [[ -z ${TEST} ]]; then TEST="short"; fi
     if [[ -z ${BINNAME} ]]; then BINNAME=${GCG_BINARY}; fi
-    if [[ -z ${SETNAME} ]]; then SETNAME="default"; fi
-    if [[ -z ${MSETNAME} ]]; then MSETNAME="default"; fi
+    if [[ -z ${SETTINGS} ]]; then SETTINGS="default"; fi
+    if [[ -z ${MASTERSETTINGS} ]]; then MASTERSETTINGS="default"; fi
     if [[ -z ${BINID} ]]; then BINID="1"; fi
-    if [[ -z ${TIMELIMIT} ]]; then TIMELIMIT="3600"; fi
-    if [[ -z ${NODELIMIT} ]]; then NODELIMIT="-1"; fi
-    if [[ -z ${MEMLIMIT} ]]; then MEMLIMIT="16000"; fi
+    if [[ -z ${TIME} ]]; then TIME="3600"; fi
+    if [[ -z ${NODES} ]]; then NODES="-1"; fi
+    if [[ -z ${MEM} ]]; then MEM="16000"; fi
     if [[ -z ${THREADS} ]]; then THREADS="0"; fi
     if [[ -z ${FEASTOL} ]]; then FEASTOL="default"; fi
     if [[ -z ${DISPFREQ} ]]; then DISPFREQ="100"; fi
@@ -140,30 +140,30 @@ then
 
     # print parameters
     echo "Parameters:"
-    echo "TSTNAME       = $TSTNAME"
-    echo "BINNAME       = $BINNAME"
-    echo "SETNAME       = $SETNAME"
-    echo "MSETNAME      = $MSETNAME"
-    echo "BINID         = $BINID"
-    echo "TIMELIMIT     = $TIMELIMIT"
-    echo "NODELIMIT     = $NODELIMIT"
-    echo "MEMLIMIT      = $MEMLIMIT"
-    echo "THREADS       = $THREADS"
-    echo "FEASTOL       = $FEASTOL"
-    echo "DISPFREQ      = $DISPFREQ"
-    echo "CONTINUE      = $CONTINUE"
-    echo "LOCK      = $LOCK"
-    echo "VERSION     = $VERSION"
-    echo "LPS           = $LPS"
-    echo "VALGRIND         = $VALGRIND"
-    echo "MODE          = $MODE"
-    echo "SETCUTOFF           = $SETCUTOFF"
-    echo "STATISTICS    = $STATISTICS"
-    echo "SHARED  = $SHARED"
-    echo "VISU = $VISU"
-    echo "LAST_STATISTICS     = $LAST_STATISTICS"
-    echo "VISUSETTINGS       = $VISUSETTINGS"
-    echo "DETECTIONSTATISTICS       = $DETECTIONSTATISTICS"
+    echo "TEST              = $TEST"
+    echo "BINNAME           = $BINNAME"
+    echo "SETTINGS          = $SETTINGS"
+    echo "MASTERSETTINGS    = $MASTERSETTINGS"
+    echo "BINID             = $BINID"
+    echo "TIME              = $TIME"
+    echo "NODES             = $NODES"
+    echo "MEM               = $MEM"
+    echo "THREADS           = $THREADS"
+    echo "FEASTOL           = $FEASTOL"
+    echo "DISPFREQ          = $DISPFREQ"
+    echo "CONTINUE          = $CONTINUE"
+    echo "LOCK              = $LOCK"
+    echo "VERSION           = $VERSION"
+    echo "LPS               = $LPS"
+    echo "VALGRIND          = $VALGRIND"
+    echo "MODE              = $MODE"
+    echo "SETCUTOFF         = $SETCUTOFF"
+    echo "STATISTICS        = $STATISTICS"
+    echo "SHARED            = $SHARED"
+    echo "VISU              = $VISU"
+    echo "LAST_STATISTICS   = $LAST_STATISTICS"
+    echo "VISUSETTINGS      = $VISUSETTINGS"
+    echo "DETECTIONSTATISTICS = $DETECTIONSTATISTICS"
 
-    . ./check.sh "${TSTNAME}" "${BINNAME}" "${SETNAME}" "${MSETNAME}" "${BINID}" "${TIMELIMIT}" "${NODELIMIT}" "${MEMLIMIT}" "${THREADS}" "${FEASTOL}" "${DISPFREQ}" "${CONTINUE}" "${LOCK}" "${VERSION}" "${LPS}" "${VALGRIND}" "${MODE}" "${SETCUTOFF}" "${STATISTICS}" "${SHARED}" "${VISU}" "${LAST_STATISTICS}" "${VISUSETTINGS}" "${DETECTIONSTATISTICS}"
+    . ./check.sh "${TEST}" "${BINNAME}" "${SETTINGS}" "${MASTERSETTINGS}" "${BINID}" "${TIME}" "${NODES}" "${MEM}" "${THREADS}" "${FEASTOL}" "${DISPFREQ}" "${CONTINUE}" "${LOCK}" "${VERSION}" "${LPS}" "${VALGRIND}" "${MODE}" "${SETCUTOFF}" "${STATISTICS}" "${SHARED}" "${VISU}" "${LAST_STATISTICS}" "${VISUSETTINGS}" "${DETECTIONSTATISTICS}"
 fi

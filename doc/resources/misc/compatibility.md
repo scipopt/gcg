@@ -3,11 +3,11 @@
 
 |   | 32 bit | 64 bit | Supported Extensions | Comments |
 |---|:---:|:---:|---|---|
-| Ubuntu 18.04        |   | yes | GMP, hmetis, bliss |  |
-| Debian 9            |   | yes | GMP, hmetis, bliss |  |
-| macOS Catalina      | - | yes | GMP, hmetis        |  |
-| Windows 10 ([WSL](https://docs.microsoft.com/de-de/windows/wsl/install-win10), Ubuntu 18.04/20.04) |  | yes | GMP, hmetis, bliss | |
-| Windows 10 ([Visual Studio](https://visualstudio.microsoft.com/de/)) |  | yes (with WSL) |  | tested with Visual Studio 2017 |
+| Ubuntu              |   | yes | GMP, hmetis, bliss, CLIQUER |  |
+| Debian              |   | yes | GMP, hmetis, bliss, CLIQUER |  |
+| macOS               | - | yes | GMP, hmetis, bliss |  |
+| Windows 10 ([WSL](https://docs.microsoft.com/de-de/windows/wsl/install-win10), Ubuntu) |  | yes | GMP, hmetis, bliss, CLIQUER | |
+| Windows 10 ([MSVC](https://visualstudio.microsoft.com/de/)) |  | yes | GMP, bliss | tested with Visual Studio 2022 |
 | Windows 10 ([minGW](http://www.mingw.org/)) |  |  |  |  |
 
 For Windows, please also refer to our @ref windows-install .
