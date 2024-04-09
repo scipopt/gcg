@@ -103,6 +103,7 @@ struct pair_hash
 
 /**
  * class to manage the detection process and data for one coefficient matrix of a MIP, usually there is one detprobdata for the original and one detprobdata for the presolved problem
+ * @ingroup DECOMP
  */
 class DETPROBDATA
 { /*lint -esym(1712,DETPROBDATA)*/

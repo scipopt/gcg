@@ -963,7 +963,7 @@ int findGenericConsname(
       /* create new name candidate */
       char candidatename[SCIP_MAXSTRLEN] = "c_";
       char number[20];
-      sprintf(number, "%d", candidatenumber );
+      snprintf(number, sizeof(number), "%d", candidatenumber );
       strcat(candidatename, number );
 
       /* check candidate, if it is not free increase counter for candidate number */

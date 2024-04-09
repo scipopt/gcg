@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_score.h
- * @ingroup INTERNALAPI
+ * @ingroup INTERNALAPI-GCG
  * @brief  data structures for score
  * @author Jurgen Lentz
  */

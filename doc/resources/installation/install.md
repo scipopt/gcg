@@ -1,8 +1,9 @@
 # Installation {#install}
 
 # Welcome to GCG!
-In the following, we want to show you how to install GCG on your **Linux or Mac** computer.\n
-Note that **GCG cannot be installed on Windows out of the box**. If you only have a Windows computer, please see @ref windows-install "Windows Installation Guide" for more information.  \n
+In the following, we want to show you how to install GCG on your computer.\n
+This documentation supports mainly **Linux or Mac** installations.
+If you have a Windows computer, please see @ref windows-install "Windows Installation Guide" for more information.  \n
 
 > <h2 style="margin-top:5px">Users</h2>
 > <img src="user.png" style="vertical-align:middle; height:5%; position:absolute; right:40px;">

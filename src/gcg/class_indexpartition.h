@@ -44,6 +44,10 @@
 namespace gcg
 {
 
+/** @ingroup PARTITIONS
+ * @{
+ */
+
 class IndexPartition
 {
 
@@ -198,6 +202,6 @@ public:
 
 };
 
-
+/** @} */
 } /* namespace gcg */
 #endif /* SRC_CLASS_INDEXPARTITION_H_ */

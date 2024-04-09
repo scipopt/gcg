@@ -45,6 +45,11 @@
 
 namespace gcg {
 
+/**
+ * @ingroup PRICING_PRIV
+ * @{
+ */
+
 class Pricingcontroller
 {
 
@@ -195,5 +200,6 @@ private:
       ) const;
 };
 
+/** @} */
 } /* namespace gcg */
 #endif /* CLASS_PRICINGCONTROLLER_H_ */

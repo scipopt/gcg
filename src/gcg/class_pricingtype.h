@@ -38,6 +38,11 @@
 #include "objscip/objscip.h"
 #include "pricer_gcg.h"
 
+/**
+ * @ingroup PRICING_PRIV
+ * @{
+ */
+
 class PricingType
 {
 protected:
@@ -229,4 +234,5 @@ public:
    virtual SCIP_Real getRelmaxprobs() const;
 };
 
+/** @} */
 #endif /* CLASS_PRICINGTYPE_H_ */
