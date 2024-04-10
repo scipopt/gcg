@@ -223,9 +223,7 @@ build:windows_release:
   before_script:
     - echo "on windows"
   script:
-    - cmake -S . -B build -DGCG_DEV_BUILD=ON -DREADLINE=OFF -DGMP=OFF -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF
-    - cmake --build build --target gcg --config Release
-    - cmake --build build --target gcg_check --config Release
+    - cmake --workflow --preset gcg-windows-release
   artifacts:
     expire_in: 3 days
     paths:
@@ -249,9 +247,7 @@ build:windows_debug:
   before_script:
     - echo "on windows"
   script:
-    - cmake -S . -B build -DGCG_DEV_BUILD=ON -DREADLINE=OFF -DGMP=OFF -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF
-    - cmake --build build --target gcg --config Debug
-    - cmake --build build --target gcg_check --config Debug
+    - cmake --workflow --preset gcg-windows-debug
   artifacts:
     expire_in: 3 days
     paths:

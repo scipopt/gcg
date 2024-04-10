@@ -14,7 +14,7 @@ set(GCG_VERSION_MAJOR 4)
 set(GCG_VERSION_MINOR 0)
 set(GCG_VERSION_PATCH 0)
 set(GCG_VERSION_SUB 0)
-set(GCG_VERSION_API 18)
+set(GCG_VERSION_API 20)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
@@ -49,6 +49,7 @@ option(CPLEX "should Cplex be used for solving pricing MIPs" OFF)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
 option(GCG_DEV_BUILD "compile SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
 option(HMETIS "should hmetis be called" OFF)
+option(JSON "should JSON library be linked" ON)
 
 # OPENMP
 if(OPENMP)
@@ -116,6 +117,19 @@ if(HMETIS_FOUND)
    add_definitions(-DWITH_HMETIS)
 endif()
 
+# JSON
+if(JSON)
+   find_package(JANSSON)
+endif()
+if(JANSSON_FOUND)
+   include_directories(${JANSSON_INCLUDE_DIRS})
+   add_definitions(-DWITH_JSON)
+   set(JANSSON_PIC_LIBRARIES ${JANSSON_LIBRARIES})
+else()
+   set(JANSSON_LIBRARIES)
+   set(JANSSON_PIC_LIBRARIES)
+endif()
+
 set(SYM sbliss CACHE STRING "options for symmetry computation")  #create the variable
 set_property(CACHE SYM PROPERTY STRINGS sbliss bliss none )  #define list of values GUI will offer for the variable
 
@@ -131,6 +145,7 @@ if(MSVC)
     add_definitions(/wd4100)
     add_definitions(/wd4244)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_compile_options(/bigobj)
 endif()
 
 # Visual Studio compiler with static runtime libraries
@@ -146,25 +161,32 @@ file(WRITE ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake "
 find_program(GIT git)
 if(EXISTS \${DST})
    file(STRINGS \${DST} GITHASH_OLD)
-   string(REGEX REPLACE \"#define GCG_GITHASH \\\"(.*)\\\"\" \"\\\\1\" GITHASH_OLD \${GITHASH_OLD})
+   string(REGEX REPLACE \"#define GCG_GITHASH \\\"(.*)\\\"\" \"\\\\1\" GITHASH_OLD \"\${GITHASH_OLD}\")
 endif()
 if((GIT) AND (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git))
    execute_process(
       COMMAND \${GIT} describe --always --dirty
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       OUTPUT_VARIABLE GITHASH OUTPUT_STRIP_TRAILING_WHITESPACE)
-   string(REGEX REPLACE \"^.*-g\" \"\" GITHASH \${GITHASH})
+   string(REGEX REPLACE \"^.*-g\" \"\" GITHASH \"\${GITHASH}\")
    if(NOT \${GITHASH} STREQUAL \"\${GITHASH_OLD}\")
       file(WRITE \${DST} \"#define GCG_GITHASH \\\"\${GITHASH}\\\"\n\")
    endif()
 else()
    set(GITHASH \${GITHASH_OLD})
+   if(NOT GITHASH)
+      message(STATUS \"Compiling without git information\")
+      set(GITHASH \"NoGitInfo\")
+   endif()
+   file(WRITE \${DST} \"#define GCG_GITHASH \\\"\${GITHASH}\\\"\n\")
 endif()
 message(STATUS \"Git hash: \" \${GITHASH})
 ")
 add_custom_target(gcg_update_githash
-                  COMMAND ${CMAKE_COMMAND} -DDST=${PROJECT_SOURCE_DIR}/src/gcg/githash.c
-                                           -P ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake)
+   COMMAND ${CMAKE_COMMAND}
+      -DDST=${PROJECT_SOURCE_DIR}/src/gcg/githash.c
+      -P ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake)
+
 # use C++11 standard
 set(CMAKE_CXX_STANDARD 11)
 
@@ -179,6 +201,13 @@ if(NOT GCG_DEV_BUILD)
    if(SCIP_FOUND)
       # SCIP headers can be directly included
       include_directories(${SCIP_INCLUDE_DIRS})
+
+      if(ZLIB AND NOT TARGET ZLIB::ZLIB)
+         find_package(ZLIB REQUIRED)
+      endif()
+      if(READLINE)
+         find_package(Readline REQUIRED)
+      endif()
    endif()
 endif()
 
@@ -203,8 +232,14 @@ endif()
 
 #search the selected symmetry computation program
 if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
-   set(SYM_LIBRARIES libbliss ${GMP_LIBRARIES})
-   set(SYM_PIC_LIBRARIES libbliss ${GMP_LIBRARIES})
+   if(NOT TARGET Bliss::bliss)
+      find_package(BLISS REQUIRED)
+      include_directories(${BLISS_INCLUDE_DIRS})
+   else()
+      set(BLISS_LIBRARIES libbliss)
+   endif()
+   set(SYM_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
+   set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
 elseif(SYM STREQUAL "none")

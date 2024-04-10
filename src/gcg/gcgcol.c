@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -38,15 +38,10 @@
 #include "pub_gcgcol.h"
 
 #include "gcg.h"
-#include "pub_gcgvar.h"
 #include "scip/def.h"
-#include "scip/scip.h"
 #include "scip/cons_linear.h"
-#include "scip_misc.h"
-#include "blockmemshell/memory.h"
 #include "pricer_gcg.h"
 #include "sepa_original.h"
-#include "struct_vardata.h"
 
 #include <assert.h>
 
@@ -116,7 +111,7 @@ SCIP_RETCODE GCGcreateGcgCol(
       if( SCIPisZero(pricingprob, origval) )
          continue;
 
-      assert(GCGvarIsPricing(origvar) || GCGvarIsInferredPricing(origvar));
+      assert((GCGvarIsPricing(origvar) && GCGpricingVarGetNOrigvars(origvar) > 0 && GCGpricingVarGetOrigvars(origvar)[0] != NULL) || GCGvarIsInferredPricing(origvar));
 
       (*gcgcol)->vars[nnonz] = origvar;
       (*gcgcol)->vals[nnonz] = origval;

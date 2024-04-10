@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -361,6 +361,7 @@ SCIP_RETCODE solveKnapsack(
       nnonsolitems = nitems;
       for( i = 0; i < nitems; ++i )
          nonsolitems[i] = items[i];
+      *status = GCG_PRICINGSTATUS_OPTIMAL;
    }
    else
    {

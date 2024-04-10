@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -26,23 +26,29 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   xternal.c
- * @brief  documentation page for GCG's C-API (no other pages)
+ * @brief  documentation page for GCG's API (no other pages)
  */
 
 /**@defgroup PUBLICAPI-GCG Public API of GCG
- * @brief methods and headers of the public C-API of \GCG
+ * @brief methods and headers of the public API of \GCG
  *
  * The public API of \GCG is separated into a Core API and a Plugin API.
  * The first contains all methods that can be accessed by including the header gcg.h.
  * The Plugin API is a collection of methods that are provided by the default plugins of \GCG.
- * The Plugin API is provided by gcgplugins.c."
+ * The Plugin API is provided by gcgplugins.c.
+ */
+
+/**@defgroup INTERNALAPI-GCG Internal API of GCG
+ * @brief internal API methods that should only be used by the core of \GCG
  *
- *
+ * This page lists the header files of internal API methods. In contrast to the public API, these internal methods
+ * should not be used by user plugins and extensions of \GCG. Please consult
+ * \ref PUBLICCOREAPI "the Core API" and \ref PUBLICPLUGINAPI "Plugin API" for the complete API available to user plugins.
  */
 
 /**@defgroup PUBLICCOREAPI Core API
 * @ingroup PUBLICAPI-GCG
-* @brief methods and headers of the plugin-independent C-API provided by \GCG.
+* @brief methods and headers of the plugin-independent API provided by \GCG.
 *
 * In order facilitate the navigation through the core API of \GCG, it is structured into different modules.
 */
@@ -96,6 +102,11 @@
 
 /**@defgroup PRICINGPROB Pricing Problem
   * @ingroup PRICING_PUB
+  */
+
+/**@defgroup PRICING_PRIV Pricing
+  * @ingroup INTERNALAPI-GCG
+  * @brief All pricing-related internal functionalities.
   */
 
 /**@defgroup PublicScoreMethods Scores
@@ -195,22 +206,8 @@
    * in the SCIP documentation.
    */
 
-   /**@defgroup PRICING Pricing
-    * @ingroup PUBLICPLUGINAPI-GCG
-    * @brief This page contains a list of all pricers, pricing solvers and the pricing jobs and problem structures.
-    *
-    */
-
-  /**@defgroup PRICERS Pricers
-   * @ingroup PRICING
-   * @brief This page contains a list of all pricers which are currently available.
-   *
-   * Per default there exist no variable pricer. A detailed description what a variable pricer does and how to add a
-   * variable pricer to \GCG can be found in the SCIP documentation.
-   */
-
   /**@defgroup PRICINGSOLVERS Pricing Solvers
-   * @ingroup PRICING
+   * @ingroup PUBLICPLUGINAPI-GCG
    * @brief This page contains a list of all pricing solvers which are currently available.
    *
    * A detailed description what a pricing solver does and how to add a pricing solver to \GCG can be found
@@ -261,11 +258,7 @@
    *
    */
 
-  /**\@defgroup INTERNALAPI Internal API of \GCG
-   * \@brief internal API methods that should only be used by the core of \GCG
-   *
-   * This page lists the header files of internal API methods. In contrast to the public API, these internal methods
-   * should not be used by user plugins and extensions of \GCG. Please consult
-   * \ref PUBLICCOREAPI "the Core API" and \ref PUBLICPLUGINAPI "Plugin API" for the complete API available to user plugins.
-   *
+  /**@defgroup PARTITIONS Partitions
+   * @ingroup DATASTRUCTURES
+   * @brief C++ Data structures that can store partitions of variables and constraints.
    */

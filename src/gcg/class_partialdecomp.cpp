@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -61,6 +61,7 @@
 
 #ifdef WITH_BLISS
 #include "bliss_automorph.h"
+#include "bliss/defs.hh"
 #endif
 
 
@@ -4476,7 +4477,7 @@ int PARTIALDECOMP::getVarProbindexForBlock(
 {
    std::vector<int>::iterator lb = lower_bound( varsforblocks[block].begin(), varsforblocks[block].end(), varid );
 
-   if( lb != varsforblocks[block].end() )
+   if( lb != varsforblocks[block].end() && *lb == varid )
       return (int) ( lb - varsforblocks[block].begin() );
    else
       return -1;
