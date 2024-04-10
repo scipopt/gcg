@@ -203,6 +203,18 @@ SCIP_RETCODE GCGmastercutUndoPricingModifications(
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    );
 
+/** check whether a given variable is a coefficient variable of a given pricing modification */
+SCIP_Bool GCGpricingmodificationIsCoefVar(
+   GCG_PRICINGMODIFICATION* pricingmodification, /**< pricing modification */
+   SCIP_VAR*              var                 /**< variable to check */
+   );
+
+/** check whether a given variable is a coefficient variable of a given mastercut */
+SCIP_Bool GCGmastercutIsCoefVar(
+   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
+   SCIP_VAR*              var                 /**< variable to check */
+   );
+
 /**@} */
 #ifdef __cplusplus
 }

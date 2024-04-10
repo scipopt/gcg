@@ -1666,6 +1666,8 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
    int nsolvars;
    SCIP_Real objvalue;
 
+   GCG_MASTERCUTDATA* mastercutdata;
+
    assert(pricerdata != NULL);
 
    objvalue = 0.0;
@@ -1689,7 +1691,11 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
       else
       {
          assert(GCGvarIsInferredPricing(solvars[i]));
-         objvalue += solvals[i] * pricetype->mastercutGetDual(scip_, solvars[i]->vardata->data.inferredpricingvardata.mastercutdata);
+         mastercutdata = solvars[i]->vardata->data.inferredpricingvardata.mastercutdata;
+         if( GCGmastercutIsCoefVar(mastercutdata, solvars[i]) )
+         {
+            objvalue += solvals[i] * pricetype->mastercutGetDual(scip_, mastercutdata);
+         }
       }
    }
 

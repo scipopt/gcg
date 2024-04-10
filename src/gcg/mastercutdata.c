@@ -684,3 +684,35 @@ SCIP_RETCODE GCGmastercutUndoPricingModifications(
 
    return SCIP_OKAY;
 }
+
+/** check whether a given variable is a coefficient variable of a given pricing modification */
+SCIP_Bool GCGpricingmodificationIsCoefVar(
+   GCG_PRICINGMODIFICATION* pricingmodification, /**< pricing modification */
+   SCIP_VAR*              var                 /**< variable to check */
+   )
+{
+   assert(pricingmodification != NULL);
+   assert(var != NULL);
+
+   return pricingmodification->coefvar == var;
+}
+
+/** check whether a given variable is a coefficient variable of a given mastercut */
+SCIP_Bool GCGmastercutIsCoefVar(
+   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
+   SCIP_VAR*              var                 /**< variable to check */
+   )
+{
+   int i;
+
+   assert(mastercutdata != NULL);
+   assert(var != NULL);
+
+   for( i = 0; i < mastercutdata->npricingmodifications; i++ )
+   {
+      if( GCGpricingmodificationIsCoefVar(mastercutdata->pricingmodifications[i], var) )
+         return TRUE;
+   }
+
+   return FALSE;
+}

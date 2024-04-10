@@ -270,8 +270,14 @@ SCIP_RETCODE simplifyComponentBounds(
       newBsize += 1;
    }
 
-   SCIPdebugMessage("Simplified B from %d to %d\n", *Bsize, newBsize);
    assert(1 <= newBsize && newBsize <= *Bsize);
+   SCIPdebugMessage("Simplified B from %d to %d\n", *Bsize, newBsize);
+   for (int i = 0; i < newBsize; ++i)
+   {
+      SCIPdebugMessage("B[%d]: %s %s %f\n", i, SCIPvarGetName(newB[i].component),
+                        newB[i].sense == GCG_COMPBND_SENSE_LE ? "<=" : ">=",
+                        SCIPfloor(scip, newB[i].bound) + (newB[i].sense == GCG_COMPBND_SENSE_GE ? 1.0 : 0.0));
+   }
 
    SCIPfreeBlockMemoryArrayNull(scip, &already_added, *Bsize);
 
