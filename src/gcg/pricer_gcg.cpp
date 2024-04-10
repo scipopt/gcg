@@ -976,23 +976,12 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          dualsol = pricetype->mastercutGetDual(scip_, branchmastercutdata[i]);
       }
 
-      SCIP_CALL( GCGrelaxBranchUpdateDualWithGCGBranchrule(scip_, activebranchrules[i], activebranchdata[i], dualsol) );
-   }
-
-   SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &activebranchrules, &activebranchdata, &branchmastercutdata, &nbranchmastercutdata) );
-   assert(nbranchmastercutdata == 0 || (activebranchrules != NULL && activebranchdata != NULL && branchmastercutdata != NULL));
-
-   /* generic mastercuts: determine dual values and call update function */
-   for( i = 0; i < nbranchmastercutdata; i++ )
-   {
-      if( stabilize )
-      {
-         SCIP_CALL( stabilization->mastercutGetDual(branchmastercutdata[i], &dualsol) );
-      }
-      else
-      {
-         dualsol = pricetype->mastercutGetDual(scip_, branchmastercutdata[i]);
-      }
+      #ifdef PRINTDUALSOLS
+            if ( !SCIPisZero(scip_, dualsol) )
+            {
+               SCIPdebugMessage("mastercutdata <%s> dualsol: %g\n", GCGmastercutGetName(branchmastercutdata[i]), dualsol);
+            }
+      #endif
 
       SCIP_CALL( GCGrelaxBranchUpdateDualWithGCGBranchrule(scip_, activebranchrules[i], activebranchdata[i], dualsol) );
    }
@@ -1896,14 +1885,6 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    nlinkconss = GCGgetNVarLinkingconss(origprob);
    linkconss = GCGgetVarLinkingconss(origprob);
 
-   /* get the cuts of the master problem */
-   originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(scip_);
-   noriginalsepamastercuts = GCGsepaGetNOriginalSepaCuts(scip_);
-   originalsepaorigcuts = GCGsepaGetOriginalSepaOrigcuts(scip_);
-
-   assert(originalsepamastercuts != NULL);
-   assert(originalsepaorigcuts != NULL);
-
    /* compute lhs/rhs * dual for linking constraints and add it to dualobjval */
    for( i = 0; i < nlinkconss; ++i )
    {
@@ -1955,6 +1936,14 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
 #endif
       *stabdualval += boundval * dualsol;
    }
+
+   /* get the cuts of the master problem */
+   originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(scip_);
+   noriginalsepamastercuts = GCGsepaGetNOriginalSepaCuts(scip_);
+   originalsepaorigcuts = GCGsepaGetOriginalSepaOrigcuts(scip_);
+
+   assert(originalsepamastercuts != NULL);
+   assert(originalsepaorigcuts != NULL);
 
    /* compute lhs/rhs * dual for master cuts and add it to dualobjval */
    for( i = 0; i < noriginalsepamastercuts; i++ )

@@ -716,3 +716,24 @@ SCIP_Bool GCGmastercutIsCoefVar(
 
    return FALSE;
 }
+
+/** get name of the mastercut */
+const char* GCGmastercutGetName(
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      assert(mastercutdata->cut.cons != NULL);
+      return SCIPconsGetName(mastercutdata->cut.cons);
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwGetName(mastercutdata->cut.row);
+   default:
+      SCIP_CALL_ABORT( SCIP_ERROR );
+      return NULL;
+   }
+}

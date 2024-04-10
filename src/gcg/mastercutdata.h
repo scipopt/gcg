@@ -215,6 +215,11 @@ SCIP_Bool GCGmastercutIsCoefVar(
    SCIP_VAR*              var                 /**< variable to check */
    );
 
+/** get name of the mastercut */
+const char* GCGmastercutGetName(
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   );
+
 /**@} */
 #ifdef __cplusplus
 }
