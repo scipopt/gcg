@@ -70,7 +70,24 @@
                 "type": "inList",
                 "string": "${hostSystemName}",
                 "list": [
-                    "Linux",
+                    "Linux"
+                ]
+            }
+        },        
+        {
+            "name": "gcg-macos",
+            "displayName": "GCG Default macOS Config",
+            "description": "Default GCG macOS development build configuration",
+            "hidden": true,
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            },
+            "condition": {
+                "type": "inList",
+                "string": "${hostSystemName}",
+                "list": [
                     "Darwin"
                 ]
             }
@@ -134,6 +151,45 @@
             }
         },
         {
+            "name": "gcg-macos-debug",
+            "inherits": [
+                "gcg-debug",
+                "gcg-macos"
+            ],
+            "displayName": "GCG macOS Debug Config",
+            "description": "GCG macOS development debug build configuration",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "gcg-macos-release",
+            "inherits": [
+                "gcg-release",
+                "gcg-macos"
+            ],
+            "displayName": "GCG macOS Release Config",
+            "description": "GCG macOS development release build configuration",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "gcg-macos-relwithdebinfo",
+            "inherits": [
+                "gcg-release",
+                "gcg-macos"
+            ],
+            "displayName": "GCG macOS RelWithDebInfo Config",
+            "description": "GCG macOS development release with debug info build configuration",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
             "name": "gcg-windows-debug",
             "inherits": [
                 "gcg-debug",
@@ -169,7 +225,7 @@
             "description": "Default GCG Linux development build",
             "hidden": true,
             "nativeToolOptions": [
-                "-j"
+                "-j12"
             ]
         },
         {
@@ -192,6 +248,37 @@
             "configurePreset": "gcg-linux-relwithdebinfo",
             "displayName": "GCG Linux RelWithDebInfo Build",
             "description": "GCG Linux development release with debug info build"
+        },
+        {
+            "name": "gcg-macos",
+            "inherits": "gcg-default",
+            "displayName": "GCG macOS Default Build",
+            "description": "Default GCG macOS development build",
+            "hidden": true,
+            "nativeToolOptions": [
+                "-j12"
+            ]
+        },
+        {
+            "name": "gcg-macos-debug",
+            "inherits": "gcg-macos",
+            "configurePreset": "gcg-macos-debug",
+            "displayName": "GCG macOS Debug Build",
+            "description": "GCG macOS development debug build"
+        },
+        {
+            "name": "gcg-macos-release",
+            "inherits": "gcg-macos",
+            "configurePreset": "gcg-macos-release",
+            "displayName": "GCG macOS Release Build",
+            "description": "GCG macOS development release build"
+        },
+        {
+            "name": "gcg-macos-relwithdebinfo",
+            "inherits": "gcg-macos",
+            "configurePreset": "gcg-macos-relwithdebinfo",
+            "displayName": "GCG macOS RelWithDebInfo Build",
+            "description": "GCG macOS development release with debug info build"
         },
         {
             "name": "gcg-windows-debug",
@@ -254,6 +341,27 @@
             "configurePreset": "gcg-linux-relwithdebinfo",
             "displayName": "GCG Linux RelWithDebInfo Tests",
             "description": "GCG Linux development release with debug info tests"
+        },
+        {
+            "name": "gcg-macos-debug",
+            "inherits": "gcg-default",
+            "configurePreset": "gcg-macos-debug",
+            "displayName": "GCG macOS Debug Tests",
+            "description": "GCG macOS development debug tests"
+        },
+        {
+            "name": "gcg-macos-release",
+            "inherits": "gcg-default",
+            "configurePreset": "gcg-macos-release",
+            "displayName": "GCG macOS Release Tests",
+            "description": "GCG macOS development release tests"
+        },
+        {
+            "name": "gcg-macos-relwithdebinfo",
+            "inherits": "gcg-default",
+            "configurePreset": "gcg-macos-relwithdebinfo",
+            "displayName": "GCG macOS RelWithDebInfo Tests",
+            "description": "GCG macOS development release with debug info tests"
         },
         {
             "name": "gcg-windows-debug",
@@ -335,6 +443,63 @@
             {
                 "type": "test",
                 "name": "gcg-linux-relwithdebinfo"
+            }
+            ]
+        },
+        {
+            "name": "gcg-macos-debug",
+            "displayName": "GCG macOS Debug Workflow",
+            "description": "GCG macOS development debug workflow",
+            "steps": [
+            {
+                "type": "configure",
+                "name": "gcg-macos-debug"
+            },
+            {
+                "type": "build",
+                "name": "gcg-macos-debug"
+            },
+            {
+                "type": "test",
+                "name": "gcg-macos-debug"
+            }
+            ]
+        },
+        {
+            "name": "gcg-macos-release",
+            "displayName": "GCG macOS Release Workflow",
+            "description": "GCG macOS development release workflow",
+            "steps": [
+            {
+                "type": "configure",
+                "name": "gcg-macos-release"
+            },
+            {
+                "type": "build",
+                "name": "gcg-macos-release"
+            },
+            {
+                "type": "test",
+                "name": "gcg-macos-release"
+            }
+            ]
+        },
+        {
+            "name": "gcg-macos-relwithdebinfo",
+            "displayName": "GCG macOS RelWithDebInfo Workflow",
+            "description": "GCG macOS development release with debug info workflow",
+            "steps": [
+            {
+                "type": "configure",
+                "name": "gcg-macos-relwithdebinfo"
+            },
+            {
+                "type": "build",
+                "name": "gcg-macos-relwithdebinfo"
+            },
+            {
+                "type": "test",
+                "name": "gcg-macos-relwithdebinfo"
             }
             ]
         },

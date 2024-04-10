@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   clsvar.h
- * @ingroup INTERNALAPI
+ * @ingroup INTERNALAPI-GCG
  * @brief  internal methods for variable classifiers
  * @author Jurgen Lentz
  */

@@ -2,6 +2,21 @@ body, table, div, p, dl {
    font-family: 'Open Sans', sans-serif;
 }
 
+#scipopttopbar a:link, a:visited, a:hover, a:focus, a:active {
+    font-weight: 500;
+}
+#scipopttopbar .navbar-nav a {
+    color: white !important;
+}
+#scipopttopbar .navbar-nav > .active > a,
+#scipopttopbar .navbar-nav > .active > a:link {
+    color: var(--primary-color) !important;
+}
+#scipopttopbar .navbar-nav > .active > a:hover {
+    color: var(--primary-color);
+    text-shadow: 0px 0px 2px var(--primary-color);
+}
+
 /* scroll up headings a bit to compensate for the header */
 .reveal, .reveal_faq {
   color:#06c;
@@ -86,9 +101,8 @@ body {
     position: relative;
     /* For scrollyspy */
     padding-top: 50px;
-    /* Account for fixed navbar */
-    background-image: url("../../img/scribble_light_@2X.png");
 }
+@media (prefers-color-scheme: light) {
 body > #main .bs-docs-container {
     box-shadow: 0 10px 30px #777;
     background-color: #FFF;
@@ -98,6 +112,7 @@ body > .container {
     box-shadow: 0 10px 30px #777;
     background-color: #FFF;
 }
+}
 .bs-docs-container{
     padding-bottom: 40px;
 }
@@ -106,12 +121,6 @@ body > .container {
 .table code {
     font-size: 13px;
     font-weight: normal;
-}
-
-/* text of navbar brand/title */
-.bs-docs-nav .navbar-brand {
-    color: #fff;
-    padding-right:80px;
 }
 
 /* the z index of the main navigation bar of Doxygen */
@@ -127,10 +136,12 @@ body > .container {
     margin-right: -70px;
   }
 }
-/* text of navbar elements */
-.bs-docs-nav .navbar-nav > li > a {
-    color: #fff;
+/* text of navbar brand/title */
+.bs-docs-nav .navbar-brand {
+    padding-right:80px;
 }
+
+@media (prefers-color-scheme: light) {
 /* style for mouse over in navbar */
 .bs-docs-nav .navbar-nav > li > a:hover {
     background-color: black;
@@ -140,12 +151,15 @@ body > .container {
     border-color: #ddd;
 }
 .bs-footer {
+    color: #777;
+    border-top: 1px solid #e5e5e5;
+}
+}
+.bs-footer {
     padding-top: 40px;
     padding-bottom: 30px;
     margin-top: 50px;
-    color: #777;
     text-align: center;
-    border-top: 1px solid #e5e5e5;
 }
 .footer-links {
     margin: 10px 0;
@@ -175,7 +189,17 @@ body > .container {
 .bs-masthead h1 {
     font-size: 50px;
     line-height: 1;
+}
+@media (prefers-color-scheme: light) {
+.bs-masthead h1 {
     color: #fff;
+}
+.bs-masthead-links a {
+    color: #fff;
+}
+.bs-header h1 {
+    color: #fff;
+}
 }
 .bs-masthead .btn-outline {
     margin-top: 20px;
@@ -196,9 +220,6 @@ body > .container {
 }
 .bs-masthead-links li + li {
     margin-left: 20px;
-}
-.bs-masthead-links a {
-    color: #fff;
 }
 @media screen and (min-width: 768px) {
     .bs-masthead {
@@ -226,9 +247,6 @@ body > .container {
     text-align: center;
     text-shadow: 0 1px 0 rgba(0, 0, 0, .15);
 }
-.bs-header h1 {
-    color: #fff;
-}
 .bs-header p {
     font-size: 21px;
     font-weight: 300;
@@ -255,9 +273,13 @@ body > .container {
 #openNav {
   position: fixed;
   display: none;
+  border-radius: 10px;
+}
+@media (prefers-color-scheme: light) {
+#openNav {
   color: #fff;
   background-color: #9999;
-  border-radius: 10px;
+}
 }
 .container {
    max-width: 100%;
@@ -329,3 +351,50 @@ body > .container {
 .navbar-brand{
   font-size:17px;
 }
+
+/* doxygen-awesome overwrites some styles, correct them back */
+#scipopttopbar .navbar-nav {
+  font-size: 14px;
+}
+
+#scipopttopbar .navbar-nav a {
+  color: inherit;
+}
+
+@media (prefers-color-scheme: light) {
+#scipopttopbar {
+  color: white;
+}
+#scipopttopbar .navbar-brand {
+  color: white !important;
+}
+
+#scipopttopbar .navbar-nav > .dropdown > a {
+  color: white !important;
+}
+
+#scipopttopbar .navbar-nav > .dropdown > .dropdown-menu > li > a {
+  color: black !important;
+}
+}
+
+#doc-content h2, .h2 {
+  font-size: 24px;
+}
+
+#doc-content .memname {
+  font-weight: 400;
+}
+
+#doc-content dd {
+  margin-left: 40px;
+}
+#doc-content .memdoc > p,
+#doc-content p.reference,
+#doc-content p.definition {
+  font: 400 14px/22px Roboto,sans-serif;
+  line-height: 22px;
+  margin-bottom: 14px;
+  margin-top: 14px;
+}
+/* end doxygen-awesome corrections */

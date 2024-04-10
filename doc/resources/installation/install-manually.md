@@ -2,6 +2,7 @@
 > This page guides you through **installing GCG manually**. It is not necessary for most users.
 > Please also check out the compiler and OS @ref compatibility and @ref known-bugs. 
 > You can also find all arguments for the installation under @subpage makefiles-args and @subpage cmake-args.
+> If you have a Windows computer, please see @subpage windows-install "Windows Installation Guide" for more information.
 
 # Install GCG manually
 ## Prerequisites
@@ -57,7 +58,7 @@ Just as for the required packages, we assume that you have each optional package
 the directory above the GCG root directory for the instructions, i.e.
 
     ls
-    bliss-[version].zip  cliquer-[version].tar.gz gcg/ hmetis-[version]-linux.tar.gz 
+    cliquer-[version].tar.gz gcg/ hmetis-[version]-linux.tar.gz
 
 ## Bliss
 > Bliss is used for symmetry detection and required for the @ref det-isomorph. \n

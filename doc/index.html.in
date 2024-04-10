@@ -355,7 +355,7 @@
               <td>Recursive GCG, structure detection</td>
             </tr>
             <tr>
-              <td><a href="https://www.or.rwth-aachen.de/en/details-staff/puchert.html"</a>Christian Puchert</td>
+              <td><a href="https://www.or.rwth-aachen.de/en/details-staff/puchert.html">Christian Puchert</a></td>
               <td>Primal heuristics, pricing loop</td>
             </tr>
             <tr>
@@ -483,7 +483,7 @@
 
     <div>
       <h1 id="more">More Information</h1>
-      <h2 id="contact" style="padding-top:60px">Contact</h3>
+      <h2 id="contact" style="padding-top:60px">Contact</h2>
       For general information or questions about GCG, there are different options to get in touch with us.</br>
       Trouble compiling GCG from source? Please check the <a href="doc/install.html">installation guide</a> before sending an email.
 
@@ -504,7 +504,7 @@
         If you find a bug, please write an email to <a href="mailto:gcg-bugs@or.rwth-aachen.de">gcg-bugs@or.rwth-aachen.de</a>.
       </p>
 
-      <h2 id="cooperation" style="padding-top:70px">Cooperation</h3>
+      <h2 id="cooperation" style="padding-top:70px">Cooperation</h2>
       <p>GCG is developed in cooperation with</p>
       <table class="desc">
         <tbody>
@@ -517,7 +517,7 @@
         </tbody>
       </table>
 
-      <h2 id="license" style="padding-top:70px">License and Citing</h3>
+      <h2 id="license" style="padding-top:70px">License and Citing</h2>
         <p>GCG is released under the LGPL. If you use GCG in a publication, please reference the following article:</p>
         <p><a href="http://www.zib.de/gamrath/publications/gamrathluebbecke2010_experimentsDW.pdf"><em>Experiments with a Generic Dantzig-Wolfe Decomposition for Integer Programs</em></a>, Gerald Gamrath and Marco E. Lübbecke<br>
         In P.Festa (Ed.), Symposium on Experimental Algorithms (SEA 2010), LNCS, 6049, pp. 239-252, 2010, Springer, Berlin. DOI: <a href="http://doi.org/10.1007/978-3-642-13193-6_21">10.1007/978-3-642-13193-6_21</a></p>

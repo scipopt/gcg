@@ -73,7 +73,7 @@ function installPrerequisites(){
               else
                 sudo apt-get install make
               fi
-              sudo apt-get install gcc gpp git build-essential libgmp-dev libreadline-dev zlib1g-dev bison flex libncurses-dev libboost-program-options-dev
+              sudo apt-get install gcc gpp git build-essential libgmp-dev libreadline-dev zlib1g-dev bison flex libncurses-dev libboost-program-options-dev libjansson-dev
               break;;
       [Nn]* ) echo "Not checking prerequisites."
               break;;
@@ -137,10 +137,9 @@ function test(){
 
 function fcmake(){
   printf "${B}Compiling GCG${W}"
-  mkdir build
+  cmake -S. -B./build -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF | tail -n +91
   cd build
-  cmake -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF .. | tail -n +91
-  make ${FLAGS}
+  make gcg ${FLAGS}
   test
 }
 

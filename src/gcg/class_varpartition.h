@@ -42,6 +42,10 @@
 namespace gcg
 {
 
+/** @ingroup PARTITIONS
+ * @{
+ */
+
 enum VarClassDecompInfo
 {
    ALL = 0,
@@ -160,6 +164,6 @@ public:
 
 };
 
-
+/**@} */
 } /* namespace gcg */
 #endif /* GCG_CLASS_VARPARTITION_H__ */

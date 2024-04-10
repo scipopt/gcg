@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   score.h
- * @ingroup INTERNALAPI
+ * @ingroup INTERNALAPI-GCG
  * @brief  internal methods for scores
  * @author Jurgen Lentz
  */

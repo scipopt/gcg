@@ -98,19 +98,24 @@ if(BLISS_INCLUDE_DIR AND BLISS_LIBRARY)
          endif()
       endif()
       if(GMP_FOUND)
-         set(BLISS_INCLUDE_DIRS ${BLISS_INCLUDE_DIRS} ${GMP_INCLUDE_DIRS})
-         set(BLISS_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
          set(BLISS_DEFINITIONS "-DBLISS_USE_GMP" CACHE STRING "Extra CXX flags required for bliss")
-         find_package_handle_standard_args(BLISS DEFAULT_MSG BLISS_INCLUDE_DIR BLISS_INCLUDE_DIRS BLISS_LIBRARIES BLISS_DEFINITIONS)
       elseif(NOT BLISS_FIND_QUIETLY)
          message(STATUS "Could NOT find BLISS (missing: GMP library)")
       endif()
    else()
       set(BLISS_DEFINITIONS " ")
-      find_package_handle_standard_args(BLISS DEFAULT_MSG BLISS_INCLUDE_DIR BLISS_INCLUDE_DIRS BLISS_LIBRARIES BLISS_DEFINITIONS)
    endif()
    file(REMOVE "check_bliss_uses_gmp.cpp")
-else()
-   find_package_handle_standard_args(BLISS DEFAULT_MSG BLISS_INCLUDE_DIR BLISS_INCLUDE_DIRS BLISS_LIBRARIES BLISS_DEFINITIONS)
 endif()
 
+find_package_handle_standard_args(BLISS DEFAULT_MSG BLISS_INCLUDE_DIR BLISS_INCLUDE_DIRS BLISS_LIBRARIES BLISS_DEFINITIONS)
+
+if(BLISS_FOUND AND NOT TARGET Bliss::libbliss)
+   add_library(Bliss::libbliss STATIC IMPORTED)
+
+   set_target_properties(Bliss::libbliss PROPERTIES
+      IMPORTED_LOCATION ${BLISS_LIBRARIES}
+      INTERFACE_INCLUDE_DIRECTORIES "${BLISS_INCLUDE_DIRS}"
+      IMPORTED_IMPLIB ${BLISS_LIBRARIES})
+   add_library(libbliss ALIAS Bliss::libbliss)
+endif()

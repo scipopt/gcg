@@ -41,6 +41,11 @@
 
 namespace gcg {
 
+/**
+ * @ingroup PRICING_PRIV
+ * @{
+ */
+
 class Stabilization
 {
 private:
@@ -227,5 +232,6 @@ private:
    ) const;
 };
 
+/** @} */
 } /* namespace gcg */
 #endif /* CLASS_STABILIZATION_H_ */

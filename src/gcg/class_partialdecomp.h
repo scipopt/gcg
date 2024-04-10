@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   class_partialdecomp.h
+ * @ingroup DECOMP
  * @brief  class storing (potentially incomplete) decompositions
  * @note   formerly called "Seeed"
  * @author Michael Bastubbe
@@ -86,6 +87,7 @@ struct BLOCK_STRUCTURE
 
 /*!
  * @brief class to manage partial decompositions
+ * @ingroup DECOMP
  *
  * each partialdec corresponds to one detprobdata which contains the problem information,
  * there is one detprobdata for the original and the transformed problem.

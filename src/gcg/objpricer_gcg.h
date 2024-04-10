@@ -28,7 +28,6 @@
 /**@file   objpricer_gcg.h
  * @brief  GCG variable pricer
  * @author Martin Bergner
- * @ingroup PRICERS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -44,14 +43,13 @@
 #include "pub_colpool.h"
 #include "pricestore_gcg.h"
 
-/**@defgroup GCGPRICEROBJ GCG Variable Pricer Object
- * @ingroup PRICING_PUB
- * @{
- */
-
 using gcg::Pricingcontroller;
 using gcg::Stabilization;
 
+/**
+ * Pricer C++ Class
+ * @ingroup PRICING_PRIV
+ */
 class ObjPricerGcg : public scip::ObjPricer
 {
 public:
@@ -458,5 +456,5 @@ private:
    );
 
 };
-/** @} */
+
 #endif
