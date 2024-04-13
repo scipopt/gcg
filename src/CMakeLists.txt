@@ -147,6 +147,7 @@ set(gcgsources
     gcg/score.c
     gcg/sepa_basis.c
     gcg/sepa_original.c
+    gcg/sepa_subsetrow.c
     gcg/solver_knapsack.c
     gcg/solver_mip.c
     gcg/solver.c
@@ -294,6 +295,7 @@ set(gcgheaders
     gcg/score.h
     gcg/sepa_basis.h
     gcg/sepa_original.h
+    gcg/sepa_subsetrow.h
     gcg/solver.h
     gcg/solver_cliquer.h
     gcg/solver_knapsack.h
