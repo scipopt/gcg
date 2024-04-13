@@ -1388,7 +1388,7 @@ SCIP_RETCODE GCGcreateMasterVar(
       assert(solvals != NULL);
 
       assert(!SCIPisInfinity(scip, solvals[i]));
-      if( !SCIPisZero(scip, solvals[i]) )
+      if( !SCIPisZero(scip, solvals[i]) && !GCGvarIsInferredPricing(solvars[i]) ) // ignore inferred variables for mastervar creation
       {
          newvardata->data.mastervardata.norigvars++;
       }
@@ -1431,7 +1431,7 @@ SCIP_RETCODE GCGcreateMasterVar(
 
       solval = solvals[i];
 
-      if( !SCIPisZero(scip, solval) )
+      if( !SCIPisZero(scip, solval) && !GCGvarIsInferredPricing(solvars[i]) ) // ignore inferred variables for mastervar creation
       {
          SCIP_VAR* origvar;
          assert(GCGvarIsPricing(solvars[i]));
