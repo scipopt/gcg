@@ -46,15 +46,6 @@
 extern "C" {
 #endif
 
-/** coefficients for all the cuts of a separator */
-struct GCG_SepaMastercutCoef
-{
-   SCIP_Real*   cutcoefs;
-   int          ncutcoefs;
-   int          cutcoefssize;
-};
-typedef struct GCG_SepaMastercutCoef GCG_SEPAMASTERCUTCOEF;
-
 /** Column data structure */
 struct GCG_Col
 {
@@ -75,10 +66,6 @@ struct GCG_Col
    SCIP_Real*           originalsepamastercuts;/**< array of original seperator cut coefficients in the master problem */
    int                  noriginalsepamastercuts;/**< number of original seperator cut coefficients in the master problem */
    int                  maxoriginalsepamastercuts;/**< capacity of originalsepamastercuts */
-   GCG_SEPAMASTERCUTCOEF**gcgsepacutscoefs;    /**< array of master variable coefficients for the gcg separator cuts */
-   int                  ngcgsepacutscoefs;   /**< number of master variable coefficients for the gcg separator cuts */
-   int                  gcgsepacutscoefssize;/**< capacity of gcgsepacutscoefs */
-   SCIP_Bool            initsepacutcoefs;   /**< returns if initial gcgsepacutscoefs have been computed */
    SCIP_Real            norm;               /**< norm of the coefficients in the master */
    int*                 linkvars;           /**< array of indices of variables in var-array which are linking variables */
    int                  nlinkvars;          /**< number of variables in var-array which are linking variables */

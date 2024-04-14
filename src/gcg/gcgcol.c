@@ -47,8 +47,6 @@
 #include "pricer_gcg.h"
 #include "sepa_original.h"
 #include "struct_vardata.h"
-#include "struct_sepagcg.h"
-#include "mastercutdata.h"
 
 #include <assert.h>
 
@@ -81,13 +79,9 @@ SCIP_RETCODE GCGcreateGcgCol(
    (*gcgcol)->age = 0;
    (*gcgcol)->mastercoefs = NULL;
    (*gcgcol)->originalsepamastercuts = NULL;
-   (*gcgcol)->gcgsepacutscoefs = NULL;
    (*gcgcol)->linkvars = NULL;
    (*gcgcol)->nmastercoefs = 0;
    (*gcgcol)->noriginalsepamastercuts = 0;
-   (*gcgcol)->ngcgsepacutscoefs = 0;
-   (*gcgcol)->gcgsepacutscoefssize = 0;
-   (*gcgcol)->initsepacutcoefs = FALSE;
    (*gcgcol)->maxmastercoefs = 0;
    (*gcgcol)->maxoriginalsepamastercuts = 0;
    (*gcgcol)->nlinkvars = 0;
@@ -144,21 +138,11 @@ SCIP_RETCODE GCGcreateGcgCol(
    return SCIP_OKAY;
 }
 
-void GCGfreeSepacutCoefficient(
-   GCG_COL* gcgcol,
-   GCG_SEPAMASTERCUTCOEF** cutcoeff
-)
-{
-   SCIPfreeBlockMemoryArrayNull(gcgcol->pricingprob, &((*cutcoeff)->cutcoefs), (*cutcoeff)->cutcoefssize);
-   SCIPfreeBlockMemory(gcgcol->pricingprob, cutcoeff);
-}
-
 /** free a gcg column */
 void GCGfreeGcgCol(
    GCG_COL**            gcgcol              /**< pointer to store gcg column */
    )
 {
-   int i;
    assert(gcgcol != NULL);
    assert(*gcgcol != NULL);
 
@@ -169,16 +153,9 @@ void GCGfreeGcgCol(
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vals, (*gcgcol)->maxvars);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercoefs, (*gcgcol)->maxmastercoefs);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->linkvars, (*gcgcol)->maxlinkvars);
-   for( i = 0; i < (*gcgcol)->ngcgsepacutscoefs; i++ )
-   {
-      GCGfreeSepacutCoefficient(*gcgcol, &((*gcgcol)->gcgsepacutscoefs[i]));
-   }
-   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &((*gcgcol)->gcgsepacutscoefs), (*gcgcol)->gcgsepacutscoefssize);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->originalsepamastercuts, (*gcgcol)->maxoriginalsepamastercuts);
-
    SCIPfreeBlockMemory((*gcgcol)->pricingprob, gcgcol);
 }
-
 
 /** create a gcg column from a solution to a pricing problem */
 SCIP_RETCODE GCGcreateGcgColFromSol(
@@ -613,7 +590,7 @@ SCIP_Real GCGcolGetNorm(
 SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real*           neworiginalsepamastercuts,/**< pointer to new array of master cut coefficients */
-   int                  nneworiginalsepamastercuts /**< new number of master cut coefficients */
+   int                  nneworiginalsepamastercuts/**< new number of master cut coefficients */
    )
 {
    int i;
@@ -636,275 +613,6 @@ SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
    }
 
    return SCIP_OKAY;
-}
-
-/** update gcg separator cut coefficients information of column */
-SCIP_RETCODE GCGcolUpdateSepacutCoefficients(
-   GCG_COL*                gcgcol,                 /**< GCG column whose coefficients are being updated */
-   GCG_SEPA*               gcgsepa,                /**< GCG sepa which generated the new cuts */
-   GCG_SEPAMASTERCUTCOEF*  gcgcutcoef,             /**< coefficient entry which should be updated */
-   SCIP_Real*              sepacutcoefficients,    /**< newly computed coefficients */
-   int                     nsepacutcoefficients    /**< number of newly computer coefficients */
-)
-{
-   int i;
-   int newsize;
-
-   assert(gcgcol != NULL);
-   assert(gcgsepa != NULL);
-   assert(gcgcutcoef != NULL);
-
-   /* no new coefficients to add */
-   if( nsepacutcoefficients == 0)
-   {
-      return SCIP_OKAY;
-   }
-
-   /* allocate enough memory to store the new coefficients for this separator */
-   newsize = gcgcutcoef->ncutcoefs + nsepacutcoefficients;
-   if( gcgcutcoef->cutcoefssize < newsize )
-   {
-      newsize = SCIPcalcMemGrowSize(gcgcol->pricingprob, newsize);
-      SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcutcoef->cutcoefs), gcgcutcoef->cutcoefssize, newsize) );
-      gcgcutcoef->cutcoefssize = newsize;
-   }
-
-   /* transfer computed coefficients */
-   for( i = 0; i < nsepacutcoefficients; ++i )
-   {
-      gcgcutcoef->cutcoefs[gcgcutcoef->ncutcoefs] = sepacutcoefficients[i];
-      ++(gcgcutcoef->ncutcoefs);
-   }
-
-   return SCIP_OKAY;
-}
-
-SCIP_RETCODE GCGcolCreateSepacutCoef(
-   GCG_SEPAMASTERCUTCOEF** sepacutcoeff,
-   GCG_COL* gcgcol,
-   GCG_SEPA* gcgsepa,
-   SCIP* masterscip
-   )
-{
-   SCIP* origscip;
-   GCG_MASTERCUTDATA** sepamastercutdata;
-   SCIP_Real* sepacutscoefs;
-   SCIP_Real cursepacutcoef;
-   int nsepamastercutdata;
-   int i;
-   int k;
-
-   assert(gcgcol != NULL);
-   assert(gcgsepa != NULL);
-   assert(masterscip != NULL);
-   assert(GCGisMaster(masterscip));
-
-   /* allocate memory for the actual cutcoefficient structure */
-   SCIP_CALL( SCIPallocBlockMemory(gcgcol->pricingprob, sepacutcoeff) );
-   (*sepacutcoeff)->ncutcoefs = 0;
-   (*sepacutcoeff)->cutcoefssize = 0;
-
-   /* retrieve the master cuts for which the coefficients need to computed */
-   origscip = GCGgetOriginalprob(masterscip);
-   nsepamastercutdata = 0;
-   if( gcgsepa->gcgsepagetcuts != NULL )
-   {
-      SCIP_CALL( gcgsepa->gcgsepagetcuts(masterscip, gcgsepa, &sepamastercutdata, &nsepamastercutdata) );
-   }
-
-   /* no cuts were generated by this separator: no coefficients have to be computed */
-   if( nsepamastercutdata == 0 )
-   {
-      (*sepacutcoeff)->cutcoefs = NULL;
-      return SCIP_OKAY;
-   }
-
-   /* cuts were generated: compute corresponding coefficients */
-   SCIP_CALL( SCIPallocBufferArray(origscip, &sepacutscoefs, nsepamastercutdata) );
-   k = 0;
-   for( i = 0; i < nsepamastercutdata; i++ )
-   {
-      /* if cut is not active, no coefficient is computed */
-      if( !GCGmastercutIsActive(sepamastercutdata[i]) )
-      {
-         sepacutscoefs[k] = 0.0;
-         ++k;
-         continue;
-      }
-
-      /* otherwise, compute the actual coefficient using the gcgcol */
-      SCIP_CALL( gcgsepa->gcgsepagetcolcoefficient(masterscip, gcgsepa, sepamastercutdata[i], gcgcol, &cursepacutcoef) );
-      sepacutscoefs[k] = cursepacutcoef;
-      ++k;
-   }
-
-   /* update the data with the newly computed coefficients */
-   SCIP_CALL( GCGcolUpdateSepacutCoefficients(gcgcol, gcgsepa, *sepacutcoeff, sepacutscoefs, k) );
-   SCIPfreeBufferArray(origscip, &sepacutscoefs);
-
-   return SCIP_OKAY;
-}
-
-SCIP_RETCODE GCGcolInitSepacutCoefficients(
-   SCIP*                scip,
-   GCG_COL*             gcgcol
-)
-{
-   GCG_SEPA** separators;
-   int nseparators;
-   int newsize;
-   int i;
-
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
-   assert(!gcgcol->initsepacutcoefs);
-
-   nseparators = GCGrelaxGetNSeparators(scip);
-   separators = GCGrelaxGetSeparators(scip);
-
-   /* if no separators are registered, there is nothing to initialize */
-   if( nseparators == 0 )
-   {
-      assert(gcgcol->ngcgsepacutscoefs == 0);
-      assert(gcgcol->gcgsepacutscoefssize == 0);
-      return SCIP_OKAY;
-   }
-
-   /* none of the separators have their coefficients assigned yet */
-   else if( gcgcol->ngcgsepacutscoefs == 0 )
-   {
-      /* we allocate enough space for the number of registered separators */
-      newsize = SCIPcalcMemGrowSize(gcgcol->pricingprob, nseparators);
-      SCIP_CALL( SCIPallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->gcgsepacutscoefs), newsize) );
-      gcgcol->gcgsepacutscoefssize = newsize;
-
-      /* create the initial cutcoeffcient for every separator */
-      for( i = 0; i < nseparators; i++ )
-      {
-         GCG_SEPAMASTERCUTCOEF* cutcoeff;
-         SCIP_CALL(GCGcolCreateSepacutCoef(&cutcoeff, gcgcol, separators[i], scip) );
-         gcgcol->gcgsepacutscoefs[i] = cutcoeff;
-         ++(gcgcol->ngcgsepacutscoefs);
-      }
-   }
-
-   assert(gcgcol->ngcgsepacutscoefs == nseparators);
-
-   return SCIP_OKAY;
-}
-
-
-/** compute coefficients of cuts which were generated after column was created */
-SCIP_RETCODE computeNewCoefficients(
-   SCIP*                   masterscip,
-   GCG_COL*                gcgcol,              /**< GCG column data structure */
-   GCG_SEPA*               gcgsepa,             /**< GCG sepa which generated the cuts */
-   GCG_SEPAMASTERCUTCOEF*  gcgsepacoef          /**< GCG data to store the newly computed coefficients */
-)
-{
-   SCIP* origscip;
-   GCG_MASTERCUTDATA** sepamastercutdata;
-   SCIP_VAR** solvars;
-   SCIP_Real* solvals;
-   SCIP_Real* sepacutscoefs;
-   SCIP_Real cursepacutcoef;
-   int nsepamastercutdata;
-   int nsolvars;
-   int j;
-   int k;
-
-   assert(gcgcol != NULL);
-   assert(gcgsepa != NULL);
-   assert(gcgsepacoef != NULL);
-   assert(masterscip != NULL);
-   assert(GCGisMaster(masterscip));
-
-   SCIP_CALL( gcgsepa->gcgsepagetcuts(masterscip, gcgsepa, &sepamastercutdata, &nsepamastercutdata) );
-   origscip = GCGgetOriginalprob(masterscip);
-   nsolvars = GCGcolGetNVars(gcgcol);
-   solvars = GCGcolGetVars(gcgcol);
-   solvals = GCGcolGetVals(gcgcol);
-
-   assert(gcgsepacoef->ncutcoefs <= nsepamastercutdata);
-   assert(origscip != NULL);
-
-   /* no new cuts were added since last update */
-   if( nsepamastercutdata == gcgsepacoef->ncutcoefs )
-   {
-      SCIPdebugMessage("No new coefficients to compute.\n");
-      return SCIP_OKAY;
-   }
-
-
-   SCIP_CALL( SCIPallocBufferArray(origscip, &sepacutscoefs, nsepamastercutdata - gcgsepacoef->ncutcoefs) );
-   k = 0;
-   for( j = gcgsepacoef->ncutcoefs; j < nsepamastercutdata; j++ )
-   {
-      /* if cut is not active, no coefficient is computed */
-      if( !GCGmastercutIsActive(sepamastercutdata[j]) )
-      {
-         sepacutscoefs[k] = 0.0;
-         ++k;
-         continue;
-      }
-
-      /* otherwise, compute the actual coefficient */
-      SCIP_CALL( gcgsepa->gcgsepagetvarcoefficient(masterscip, gcgsepa, sepamastercutdata[j], solvars, solvals, nsolvars, &cursepacutcoef) );
-      sepacutscoefs[k] = cursepacutcoef;
-      ++k;
-   }
-
-   /* update the data with the newly computed coefficients */
-   SCIP_CALL( GCGcolUpdateSepacutCoefficients(gcgcol, gcgsepa, gcgsepacoef, sepacutscoefs, k) );
-   SCIPfreeBufferArray(origscip, &sepacutscoefs);
-
-   return SCIP_OKAY;
-}
-
-/** compute the coefficients of cuts generated by separators */
-SCIP_RETCODE GCGcolComputeSepaCutCoefficients(
-   SCIP*                 masterscip,
-   GCG_COL*              gcgcol              /**< GCG column data structure */
-)
-{
-   GCG_SEPA** separators;
-   int i;
-   int nseparators;
-
-   assert(masterscip != NULL);
-   assert(gcgcol != NULL);
-   assert(GCGisMaster(masterscip));
-
-   nseparators = GCGrelaxGetNSeparators(masterscip);
-   separators = GCGrelaxGetSeparators(masterscip);
-
-   /* first call: we have to initialize the cut coefficient data structures */
-   if( !(gcgcol->initsepacutcoefs) )
-   {
-      GCGcolInitSepacutCoefficients(masterscip, gcgcol);
-      SCIPdebugMessage("Initialized structures for coefficients.\n");
-      gcgcol->initsepacutcoefs = TRUE;
-   }
-   else
-   {
-      for( i = 0; i < nseparators; i++ )
-      {
-         if( separators[i]->gcgsepagetcuts != NULL )
-         {
-            SCIP_CALL( computeNewCoefficients(masterscip, gcgcol, separators[i], gcgcol->gcgsepacutscoefs[i]) );
-         }
-      }
-   }
-
-   return SCIP_OKAY;
-}
-
-/** get gcg separators cut coefficients of column in master problem */
-GCG_SEPAMASTERCUTCOEF** GCGcolGetSepaCutCoefs(
-   GCG_COL*             gcgcol              /**< gcg column structure */
-)
-{
-   return gcgcol->gcgsepacutscoefs;
 }
 
 /** return solution value of variable in gcg column */
