@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -963,7 +963,7 @@ int findGenericConsname(
       /* create new name candidate */
       char candidatename[SCIP_MAXSTRLEN] = "c_";
       char number[20];
-      sprintf(number, "%d", candidatenumber );
+      snprintf(number, sizeof(number), "%d", candidatenumber );
       strcat(candidatename, number );
 
       /* check candidate, if it is not free increase counter for candidate number */

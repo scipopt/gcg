@@ -1,10 +1,9 @@
 # Git Installation {#git-install}
-> This page guides you to through the **installation of GCG from Git**. Note that you have to have access to the repository 
-> (it is not public). 
+> This page guides you to through the **installation of GCG from Git**. You can use our private repository (if you have access to it) or the public repository on [GitHub](https://github.com/scipopt/gcg) (requires submodules to be cloned/set up manually).
+> If you have a Windows computer, please see @subpage windows-install "Windows Installation Guide" for more information.
 
-# Install GCG using Git
 > **If you want to let an automated installer do the work for you, you can download it [here](installGCGfromGit.sh).**\n
-> **Note:** Your SSH key has to be registered correctly for it to work. Also, it might be required to make the script
+> **Note:** This script uses our private repository. Your SSH key has to be registered correctly for it to work. Also, it might be required to make the script
 > executable using `sudo chmod +x installGCGfromGit.sh`.
 
 @htmlonly
@@ -12,7 +11,7 @@
 @endhtmlonly
 
 ## Automated Installation
-We generally recommend to use the [automated installer](installGCGfromGit.sh), since it is updated regularly. You can execute it like that:
+If you have access to our private repository, you can use the [automated installer](installGCGfromGit.sh). You can execute it like that:
 ```
 ./installGCGfromGit.sh [additional options]
 ```
@@ -55,22 +54,7 @@ make
 
 4. If it does not: Please report that in an issue or in the meeting.
 
-## Manual Installation
-### Git prerequisites
-Please make sure that you have your ssh key saved in your Git account. Otherwise, you won't be able to
-clone or commit anything, since you have not authorized yourself.
-First, clone the git repo with
-
-    git clone git@git.or.rwth-aachen.de:gcg/gcg.git [gcg-dir]
-
-You **have** to clone it via ssh, otherwise the submodules won't work.
-To initialize the SCIP, SoPlex, bliss and the googletest framework, goto the repository folder "gcg" and run
-
-    git submodule init
-    git submodule sync
-    git submodule update
-
-### System prerequisites
+## System prerequisites
 If you are not working on one of the OR chair's computers make sure that the following libraries are installed:
 
 ```or
@@ -86,9 +70,27 @@ bison
 flex
 libncurses-dev
 libboost-program-options-dev
+libjansson-dev
 ```
 
-### Compile SCIP, SOPLEX, BLISS using makefiles
+## Git prerequisites
+> The following steps require access to our private repository. You can also use the public one and set up the submodules manually (the folders `lib/soplex-git` and `lib/scip-git`)
+Please make sure that you have your ssh key saved in your Git account. Otherwise, you won't be able to
+clone or commit anything, since you have not authorized yourself.
+First, clone the git repo with
+
+    git clone git@git.or.rwth-aachen.de:gcg/gcg.git [gcg-dir]
+
+You **have** to clone it via ssh, otherwise the submodules won't work.
+To initialize the SCIP, SoPlex, and the googletest framework, goto the repository folder "gcg" and run
+
+    git submodule init
+    git submodule sync
+    git submodule update
+
+## Manual Installation using Makefiles
+
+### Compile SCIP and SOPLEX using makefiles
 **Note**: Next, ```make``` is used with some arguments that you prefer. Do not use the ```-j``` option on the very first compilation as it is not compatible with the linker. As the linker is not called again once all links are set, using this option on future compilations should be fine.
 
 Compile the depends (scip, soplex, bliss and googletest) with
@@ -133,3 +135,32 @@ You can run a short test with
 On some distros, including the one used on RWTH cluster, the SCIP link does not work. Do this before compiling:
 
     cd lib && ln -s scip-git scip && cd ..
+
+## Manual Installation using CMake
+> Note that the available `make`-commands provided by CMake's Makefile differ from the commands provided by the Makefile located in the root directory.
+
+### Build using provided CMake Presets
+If your installed CMake version is equal to 3.25 or higher, you can configure and build GCG as well as test the build by calling
+
+    cmake --workflow --preset gcg-linux-release
+
+> You can replace `linux` by `macos` for MacOS builds (or even by `windows`, see @ref msvc).
+> By using `--preset gcg-linux-debug` a debug build will be compiled and tested.
+
+### Manual CMake Build
+In case of an older CMake version you can also build GCG manually.
+
+#### Build
+The following commands will configure and build GCG
+
+    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF
+    cd build
+    make gcg -j8
+
+You can specify the number of compile jobs by changing the number appended to the `-j` flag if CPU/RAM usage is too high/low (using just `-j` will not limit the number of jobs).
+Moreover, you can use `-DCMAKE_BUILD_TYPE=Debug` instead of `-DCMAKE_BUILD_TYPE=Release` to compile debug builds.
+
+#### Test Build
+You can run a short test with
+
+    make gcg_check

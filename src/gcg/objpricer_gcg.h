@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -28,7 +28,6 @@
 /**@file   objpricer_gcg.h
  * @brief  GCG variable pricer
  * @author Martin Bergner
- * @ingroup PRICERS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -45,14 +44,13 @@
 #include "pricestore_gcg.h"
 #include "type_branchgcg.h"
 
-/**@defgroup GCGPRICEROBJ GCG Variable Pricer Object
- * @ingroup PRICING_PUB
- * @{
- */
-
 using gcg::Pricingcontroller;
 using gcg::Stabilization;
 
+/**
+ * Pricer C++ Class
+ * @ingroup PRICING_PRIV
+ */
 class ObjPricerGcg : public scip::ObjPricer
 {
 public:
@@ -460,5 +458,5 @@ private:
    );
 
 };
-/** @} */
+
 #endif

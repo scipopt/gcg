@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -161,7 +161,7 @@ SCIP_RETCODE GCGrelaxBranchGetMasterCut(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
-   GCG_MASTERCUTDATA*    mastercutdata       /**< the mastercutdata to grab */
+   GCG_MASTERCUTDATA**   mastercutdata       /**< the mastercutdata to grab */
    );
 
 /** get mastercuts of all active nods */

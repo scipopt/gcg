@@ -38,11 +38,11 @@
 
 #include "def.h"
 
-#include "scip/scip.h"
+#include "gcg/pricer_gcg.h"
+#include <scip/def.h>
 #include <scip/type_retcode.h>
 #include <scip/type_scip.h>
 
-#include "struct_mastercutdata.h"
 #include "type_mastercutdata.h"
 
 #ifdef __cplusplus
@@ -67,7 +67,9 @@ SCIP_RETCODE GCGpricingmodificationCreate(
    SCIP_VAR**             additionalvars,      /**< array of additional variables with no objective coefficient in the pricing programs inferred from the master cut */
    int                    nadditionalvars,     /**< number of additional variables in the pricing programs */
    SCIP_CONS**            additionalconss,     /**< array of additional constraints in the pricing programs inferred from the master cut */
-   int                    nadditionalconss      /**< number of additional constraints in the pricing programs */
+   int                    nadditionalconss,     /**< number of additional constraints in the pricing programs */
+   GCG_DECL_MASTERCUTAPPLYFARKASMODIFICATION ((*applyfarkasmodification)), /**< method to apply the Farkas modification */
+   GCG_DECL_MASTERCUTAPPLYREDCOSTMODIFICATION ((*applyredcostmodification)) /**< method to apply the reduced cost modification */
    );
 
 /** create a master cut, taking ownership over pricingmodifications */
@@ -178,12 +180,43 @@ int GCGmastercutGetNPricingModifications(
 /** apply a pricing modification */
 SCIP_RETCODE GCGpricingmodificationApply(
    SCIP*                  pricingscip,        /**< pricing scip */
+   GCG_PRICETYPE          pricetype,          /**< pricing type */
    GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
    );
 
 /** apply all pricing modifications */
 SCIP_RETCODE GCGmastercutApplyPricingModifications(
    SCIP*                  masterscip,         /**< master scip */
+   GCG_PRICETYPE          pricetype,          /**< pricing type */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   );
+
+/** undo a pricing modification */
+SCIP_RETCODE GCGpricingmodificationUndo(
+   SCIP*                  pricingscip,        /**< pricing scip */
+   GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
+   );
+
+/** undo all pricing modifications */
+SCIP_RETCODE GCGmastercutUndoPricingModifications(
+   SCIP*                  masterscip,         /**< master scip */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   );
+
+/** check whether a given variable is a coefficient variable of a given pricing modification */
+SCIP_Bool GCGpricingmodificationIsCoefVar(
+   GCG_PRICINGMODIFICATION* pricingmodification, /**< pricing modification */
+   SCIP_VAR*              var                 /**< variable to check */
+   );
+
+/** check whether a given variable is a coefficient variable of a given mastercut */
+SCIP_Bool GCGmastercutIsCoefVar(
+   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
+   SCIP_VAR*              var                 /**< variable to check */
+   );
+
+/** get name of the mastercut */
+const char* GCGmastercutGetName(
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    );
 

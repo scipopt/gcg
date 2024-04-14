@@ -6,7 +6,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -71,6 +71,7 @@ CLIQUER     =   false
 HMETIS      =   false
 OPENMP      =   false
 GSL         =   false
+JSON        =   true
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER)
 
@@ -188,6 +189,15 @@ FLAGS		+=	-DWITH_CPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
 endif
 
 #-----------------------------------------------------------------------------
+# Jansson
+#-----------------------------------------------------------------------------
+
+ifeq ($(JSON),true)
+LDFLAGS		+=	-ljansson
+FLAGS		+=	-DWITH_JSON
+endif
+
+#-----------------------------------------------------------------------------
 # GCG statistics
 #-----------------------------------------------------------------------------
 
@@ -209,6 +219,8 @@ LIBOBJ = \
 			gcg/branch_relpsprob.o \
 			gcg/branch_ryanfoster.o \
 			gcg/branch_bpstrong.o \
+			gcg/branch_compbnd.o \
+			gcg/branch_staticvar.o \
 			gcg/class_conspartition.o \
 			gcg/class_indexpartition.o \
 			gcg/class_pricingcontroller.o \
@@ -782,6 +794,7 @@ help:
 		@echo "  - CLIQUER=<true|false>: Enables CLIQUER (as a heuristic for stable set pricing problems)."
 		@echo "  - HMETIS=<true|false>: Enables hMETIS (hypergraph partitioning, used in structure detection)."
 		@echo "  - GSL=<true|false>: Enables the GNU Scientific Library (needed by a detector)"
+		@echo "  - JSON=<true|false>: Enables JSON functionality (requires Jansson library)"
 		@echo "  - GAMS=<true|false>: To enable or disable (default) reading functionality in GAMS reader (needs GAMS)."
 		@echo "  - GTEST=<true|false>: Enables Google Test."
 		@echo "  - BLISS=<true|false>: Enables BLISS (graph isomorphism, used a.o., by 'isomorph' detector)."

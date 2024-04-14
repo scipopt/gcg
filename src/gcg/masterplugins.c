@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -32,6 +32,7 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#include <scip/def.h>
 #define USEHEURS 1
 #define USESEPA 0
 #define USEPROP 1
@@ -160,6 +161,8 @@
 #include "branch_relpsprob.h"
 #include "branch_generic.h"
 #include "branch_bpstrong.h"
+#include "branch_compbnd.h"
+#include "branch_staticvar.h"
 #include "scip/debug.h"
 #include "dialog_master.h"
 #include "disp_master.h"
@@ -235,6 +238,8 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
    SCIP_CALL( SCIPincludeBranchruleGeneric(scip) );
    SCIP_CALL( SCIPincludeBranchruleBPStrong(scip) );
+   SCIP_CALL( SCIPincludeBranchruleCompBnd(scip) );
+   SCIP_CALL( SCIPincludeBranchruleStaticVar(scip) );
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );

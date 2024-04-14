@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -330,7 +330,7 @@ int addVarToGraph(
    {
       /* Var not yet part of graph, add it with its corresponding weight */
       indsetvars[*indexcount] = consvar;
-      if( !(SCIPvarGetObj(indsetvars[*indexcount]) > 0) )
+      if( SCIPisLT(scip, SCIPvarGetObj(indsetvars[*indexcount]), 0.0) )
       {
          g->weights[*indexcount] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[*indexcount])));
       }
@@ -367,6 +367,8 @@ void setLinkedSolvals(
          if( areVarsLinked(scip,linkmatrix,var,linkedvars[i],linkedvars,nlinkedvars) )
          {
             solvals[SCIPvarGetProbindex(linkedvars[i])] = val;
+            assert(SCIPisGE(scip, val, SCIPvarGetLbLocal(linkedvars[i])) &&
+                   SCIPisLE(scip, val, SCIPvarGetUbLocal(linkedvars[i])));
          }
       }
    }
@@ -569,7 +571,12 @@ SCIP_RETCODE solveCliquer(
          }
          linkmatrix[i][j] = 0;
       }
-      solvals[i] = -1.0; /* To later determine whether a variable was constrained */
+      if( SCIPisLT(pricingprob, SCIPvarGetUbLocal(pricingprobvars[i]), 1.0) )
+         solvals[i] = 0.0;
+      else if( SCIPisGT(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i]), 0.0) )
+         solvals[i] = 1.0;
+      else
+         solvals[i] = -1.0; /* To later determine whether a variable was constrained */
    }
 
    /* Check for "same"-constraints present in Ryan-Foster-Branching and save the links between the variables. */
@@ -768,8 +775,9 @@ SCIP_RETCODE solveCliquer(
                      /* If the node is part of the maximum clique, it is safe to set it to one, so we simply add it to the graph */
                      nodeindex0 = addVarToGraph(pricingprob,g,lconsvars[coefindex],&indexcount,scalingfactor,indsetvars,linkmatrix,linkedvars,nlinkedvars);
 
-                     /* We additionally have to mark the variable to later set it to one */ 
-                     solvals[SCIPvarGetProbindex(lconsvars[coefindex])] = -2.0;
+                     /* We additionally have to mark the variable to later set it to one */
+                     if( solvals[SCIPvarGetProbindex(lconsvars[coefindex])] < 0.0 )
+                        solvals[SCIPvarGetProbindex(lconsvars[coefindex])] = -2.0;
                   }
                   /* Special case: The coefficient is -1, we treat the case like a clique constraint. */
                   else if( abs(consvals[coefindex]) == 1 )
@@ -779,8 +787,9 @@ SCIP_RETCODE solveCliquer(
                      /* We additionally have to mark the variable to later set it to one */ 
                      nodeindex0 = addVarToGraph(pricingprob,g,lconsvars[coefindex],&indexcount,scalingfactor,indsetvars,linkmatrix,linkedvars,nlinkedvars);
 
-                     /* We additionally have to mark the variable to later set it to one */ 
-                     solvals[SCIPvarGetProbindex(lconsvars[coefindex])] = -2.0;
+                     /* We additionally have to mark the variable to later set it to one */
+                     if( solvals[SCIPvarGetProbindex(lconsvars[coefindex])] < 0.0 )
+                        solvals[SCIPvarGetProbindex(lconsvars[coefindex])] = -2.0;
 
                      /* Delete the edges between all the variables of the constraint that are not the coupling variable.
                         This way, at most one can be part of the maximum clique */

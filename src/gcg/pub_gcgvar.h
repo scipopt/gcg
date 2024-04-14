@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -541,8 +541,7 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    SCIP_Real             ub,                 /**< new objective coefficient */
    SCIP_Real             objcoeff,           /**< new objective coefficient */
    SCIP_VARTYPE          vartype,            /**< new variable type */
-   int                   prob,               /**< number of pricing problem that created this variable */
-   GCG_MASTERCUTDATA*    mastercutdata       /**< pointer of the master cut data this pricing variable belongs to */
+   int                   prob                /**< number of pricing problem that created this variable */
    );
 
 /* adds the vardata to the auxiliary variable */

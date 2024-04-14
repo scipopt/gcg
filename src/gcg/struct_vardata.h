@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -41,6 +41,7 @@
 #include <scip/type_misc.h>
 #include <scip/type_var.h>
 #include "struct_mastercutdata.h"
+#include "type_mastercutdata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,7 +92,6 @@ struct GCG_PricingVarData
 };
 typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 
-
 /** data for master variables */
 struct GCG_MasterVarData
 {
@@ -107,11 +107,10 @@ struct GCG_MasterVarData
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
 
-/** data for pricing variable inferred from a master cut
- * and does not correspond to any original variable */
+/** data for inferred pricing variables */
 struct GCG_InferredPricingVarData
 {
-   GCG_MASTERCUTDATA*    mastercutdata;      /**< mastercut that inferred this pricing variable */
+   GCG_MASTERCUTDATA*    mastercutdata;      /**< master cut data that was used to infer the pricing variable */
 };
 typedef struct GCG_InferredPricingVarData GCG_INFERREDPRICINGVARDATA;
 

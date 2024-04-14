@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -139,7 +139,7 @@ typedef enum GCG_BoundType GCG_BOUNDTYPE;
  *    scip            : SCIP main data structure of the original problem
  *    branchdata      : the branching data
  */
-#define GCG_DECL_BRANCHGETMASTERCUT(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, GCG_MASTERCUTDATA* mastercutdata)
+#define GCG_DECL_BRANCHGETMASTERCUT(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, GCG_MASTERCUTDATA** mastercutdata)
 
 #ifdef __cplusplus
 }

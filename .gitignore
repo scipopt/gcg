@@ -33,3 +33,4 @@ CMakeFiles/
 cmake-build-*/
 .idea/
 __pycache__
+.vscode/
