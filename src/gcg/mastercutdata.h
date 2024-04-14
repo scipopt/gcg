@@ -128,8 +128,9 @@ SCIP_RETCODE GCGmastercutGetCons(
 /** get the row that is the master cut
    * will fail if the master cut is a constraint
    */
-SCIP_ROW* GCGmastercutGetRow(
-   GCG_MASTERCUTDATA*     mastercutdata      /**< mastercut data */
+SCIP_RETCODE GCGmastercutGetRow(
+   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
+   SCIP_ROW**             row                 /**< pointer to store the row */
    );
 
 /** get the variable that determines the coefficient of a column in the master cut */
@@ -185,18 +186,6 @@ SCIP_RETCODE GCGmastercutApplyPricingModifications(
    SCIP*                  masterscip,         /**< master scip */
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    );
-
-/** undo all pricing modifications for a mastercut */
-SCIP_RETCODE GCGmastercutUndoPricingModifications(
-   SCIP*                  masterscip,         /**< master scip */
-   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
-);
-
-/** undo the pricing modification */
-SCIP_RETCODE GCGpricingmodificationUndo(
-   SCIP*                    pricingscip,        /**< pricing scip */
-   GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
-);
 
 /**@} */
 #ifdef __cplusplus
