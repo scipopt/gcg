@@ -2648,7 +2648,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
    }
 
-   /*if( relaxdata->nseparators > 0 )
+   if( relaxdata->nseparators > 0 )
    {
       int i;
       for( i = 0; i < relaxdata->nseparators; i++ )
@@ -2656,7 +2656,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
          SCIPfreeMemory(scip, &(relaxdata->separators[i]));
       }
       SCIPfreeMemoryArray(scip, &(relaxdata->separators));
-   }*/
+   }
 
 
    relaxdata->nbranchrules = 0;

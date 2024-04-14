@@ -158,7 +158,7 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolSubsetrow)
    /* release all the master cuts and empty the hashmap tracking the indices of the cuts */
    for( i = 0; i < sepadata->nmastercuts; i++ )
    {
-      row = GCGmastercutGetRow(sepadata->mastercuts[i]);
+      SCIP_CALL( GCGmastercutGetRow(sepadata->mastercuts[i], &row) );
       SCIP_CALL( SCIPreleaseRow(scip, &row) );
    }
    sepadata->nmastercuts = 0;
@@ -166,7 +166,7 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolSubsetrow)
 
    for( i = 0; i < sepadata->nnewcuts; i++ )
    {
-      row = GCGmastercutGetRow(sepadata->newcuts[i]);
+      GCGmastercutGetRow(sepadata->newcuts[i], &row);
       SCIP_CALL( SCIPreleaseRow(scip, &row) );
    }
    sepadata->nnewcuts = 0;
@@ -216,6 +216,7 @@ static
 GCG_DECL_SEPAGETMASTERCUTDATA(gcgsepaGetMastercutdataSubsetrow)
 {
    SCIP_SEPADATA* sepadata;
+   SCIP_ROW* mastercutrow;
    int rowindex;
    assert(scip != NULL);
    assert(sepa != NULL);
@@ -228,7 +229,8 @@ GCG_DECL_SEPAGETMASTERCUTDATA(gcgsepaGetMastercutdataSubsetrow)
    {
       rowindex = SCIPhashmapGetImageInt(sepadata->rowidxmap, row);
       *result = sepadata->mastercuts[rowindex];
-      assert( GCGmastercutGetRow(*result) == row );
+      SCIP_CALL(GCGmastercutGetRow(*result, &mastercutrow));
+      assert(  mastercutrow == row );
       SCIPdebugMessage("Found mastercutdata for row %s\n", SCIProwGetName(row));
       return SCIP_OKAY;
    }
@@ -257,7 +259,7 @@ GCG_DECL_SEPAUPDATENEWCUTS(gcgsepaUpdateNewCutsSubsetrow)
    /* transfer the cuts which were actually added to the LP, to the master cuts array */
    for( i = 0; i < sepadata->nnewcuts; i++ )
    {
-      row = GCGmastercutGetRow(sepadata->newcuts[i]);
+      SCIP_CALL( GCGmastercutGetRow(sepadata->newcuts[i], &row) );
       if ( GCGmastercutIsActive(sepadata->newcuts[i]) )
       {
          ensureSizeMastercuts(scip, sepadata, sepadata->nmastercuts + 1);
