@@ -190,7 +190,6 @@
 #endif
 
 #include "scip/table_default.h"
-#include "sepa_subsetrow.h"
 
 /** includes default GCG master plugins */
 SCIP_RETCODE GCGincludeMasterPlugins(
@@ -325,7 +324,6 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
    SCIP_CALL( SCIPincludeSepaOriginal(scip) );
-   SCIP_CALL( SCIPincludeSepaSubsetrow(scip) );
    SCIP_CALL( SCIPincludeCutselHybrid(scip) );
    SCIP_CALL( SCIPincludeDispMaster(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
