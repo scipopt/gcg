@@ -293,7 +293,6 @@ SCIP_RETCODE GCGcolpoolAddCol(
    /* check in hash table, if col already exists in the pool */
    if( SCIPhashtableRetrieve(colpool->hashtable, (void*)col) == NULL )
    {
-      SCIP_CALL( GCGcolComputeSepaCutCoefficients(colpool->scip, col) );
       SCIP_CALL( GCGcolpoolAddNewCol(colpool, col) );
       *success = TRUE;
    }
