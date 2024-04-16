@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   solver_gcg.h
+ * @ingroup PRICINGSOLVERS
  * @brief  gcg solver for pricing problem
  * @author Erik Muehmer
  */
