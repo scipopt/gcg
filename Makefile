@@ -281,6 +281,7 @@ LIBOBJ = \
 			gcg/event_display.o \
 			gcg/event_mastersol.o \
 			gcg/event_relaxsol.o \
+			gcg/event_sepacuts.o \
 			gcg/event_solvingstats.o \
 			gcg/gcgcol.o \
 			gcg/gcg_general.o \
@@ -355,6 +356,7 @@ LIBOBJ = \
 			gcg/score.o \
 			gcg/sepa_basis.o \
 			gcg/sepa_original.o \
+			gcg/sepa_subsetrow.o \
 			gcg/solver.o \
 			gcg/solver_knapsack.o \
 			gcg/solver_mip.o \
