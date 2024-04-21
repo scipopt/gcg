@@ -45,6 +45,7 @@
 #include <scip/pub_cons.h>
 #include <scip/pub_lp.h>
 #include <scip/scip.h>
+#include <scip/scip_prob.h>
 #include <scip/struct_scip.h>
 #include <scip/struct_mem.h>
 #include <scip/struct_var.h>
