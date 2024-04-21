@@ -220,6 +220,24 @@ const char* GCGmastercutGetName(
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    );
 
+/** get the lhs of the mastercut */
+SCIP_Real GCGmastercutGetLhs(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   );
+
+/** get the rhs of the mastercut */
+SCIP_Real GCGmastercutGetRhs(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   );
+
+/** get the constant of the mastercut (always returns 0 if mastercut is a constraint, returns constant of row otherwise) */
+SCIP_Real GCGmastercutGetConstant(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   );
+
 /**@} */
 #ifdef __cplusplus
 }

@@ -36,6 +36,7 @@
 #include "def.h"
 #include "mastercutdata.h"
 #include "gcg.h"
+#include "gcg/scip_misc.h"
 #include "pricer_gcg.h"
 #include "struct_mastercutdata.h"
 
@@ -735,5 +736,70 @@ const char* GCGmastercutGetName(
    default:
       SCIP_CALL_ABORT( SCIP_ERROR );
       return NULL;
+   }
+}
+
+/** get the lhs of the mastercut */
+SCIP_Real GCGmastercutGetLhs(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      assert(mastercutdata->cut.cons != NULL);
+      return GCGconsGetLhs(scip, mastercutdata->cut.cons);
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwGetLhs(mastercutdata->cut.row);
+   default:
+      SCIP_CALL_ABORT( SCIP_ERROR );
+      return SCIP_INVALID;
+   }
+}
+
+/** get the rhs of the mastercut */
+SCIP_Real GCGmastercutGetRhs(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      assert(mastercutdata->cut.cons != NULL);
+      return GCGconsGetRhs(scip, mastercutdata->cut.cons);
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwGetRhs(mastercutdata->cut.row);
+   default:
+      SCIP_CALL_ABORT( SCIP_ERROR );
+      return SCIP_INVALID;
+   }
+}
+
+/** get the constant of the mastercut (always returns 0 if mastercut is a constraint, returns constant of row otherwise) */
+SCIP_Real GCGmastercutGetConstant(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      return 0.0;
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwGetConstant(mastercutdata->cut.row);
+   default:
+      SCIP_CALL_ABORT( SCIP_ERROR );
+      return SCIP_INVALID;
    }
 }

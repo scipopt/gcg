@@ -51,6 +51,9 @@
 #include <lpi/type_lpi.h>
 #include <scip/def.h>
 #include <scip/pub_var.h>
+#include <scip/scip_lp.h>
+#include <scip/scip_message.h>
+#include <scip/scip_prob.h>
 #include <scip/type_lp.h>
 #include <scip/type_retcode.h>
 #include <scip/type_var.h>
@@ -325,6 +328,7 @@ SCIP_DECL_EVENTEXEC(eventExecVardeleted)
    var = SCIPeventGetVar(event);
    assert(var != NULL);
 
+   SCIPwarningMessage(scip, "remove master variable %s from pricerdata and corresponding original variables\n", SCIPvarGetName(var));
    SCIPdebugMessage("remove master variable %s from pricerdata and corresponding original variables\n", SCIPvarGetName(var));
 
    assert(GCGvarIsMaster(var));
@@ -1724,7 +1728,7 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
          mastercutdata = solvars[i]->vardata->data.inferredpricingvardata.mastercutdata;
          if( GCGmastercutIsCoefVar(mastercutdata, solvars[i]) )
          {
-            objvalue += solvals[i] * pricetype->mastercutGetDual(scip_, mastercutdata);
+            objvalue -= solvals[i] * pricetype->mastercutGetDual(scip_, mastercutdata);
          }
       }
    }
@@ -1871,6 +1875,11 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    int noriginalsepamastercuts;
    int i;
 
+   GCG_BRANCHRULE** activebranchrules = NULL;
+   GCG_BRANCHDATA** activebranchdata = NULL;
+   GCG_MASTERCUTDATA** branchmastercutdata = NULL;
+   int nbranchmastercutdata;
+
    SCIP_Real* stabredcosts = NULL;
 
    assert(stabilization != NULL);
@@ -1966,6 +1975,45 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          continue;
 
       boundval -= SCIProwGetConstant(originalsepamastercuts[i]);
+
+#ifdef PRINTDUALSOLS
+      if( !SCIPisZero(scip_, boundval * dualsol) )
+      {
+         SCIPdebugMessage("  add %g (<%s>, dualsol: %g, bnds: [%g, %g] - %g)\n",
+            boundval * dualsol, SCIProwGetName(mastercuts[i]), dualsol, lhs, rhs, SCIProwGetConstant(originalsepamastercuts[i]));
+      }
+#endif
+      *stabdualval += boundval * dualsol;
+   }
+
+   SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &activebranchrules, &activebranchdata, &branchmastercutdata, &nbranchmastercutdata) );
+   assert(nbranchmastercutdata == 0 || (activebranchrules != NULL && activebranchdata != NULL && branchmastercutdata != NULL));
+
+   /* generic mastercuts: determine dual values and call update function */
+   for( i = 0; i < nbranchmastercutdata; i++ )
+   {
+      SCIP_Real lhs = GCGmastercutGetLhs(scip_, branchmastercutdata[i]);
+      SCIP_Real rhs = GCGmastercutGetRhs(scip_, branchmastercutdata[i]);
+
+      if( stabilize )
+      {
+         SCIP_CALL( stabilization->mastercutGetDual(branchmastercutdata[i], &dualsol) );
+      }
+      else
+      {
+         dualsol = pricetype->mastercutGetDual(scip_, branchmastercutdata[i]);
+      }
+
+      if( !SCIPisZero(scip_, dualsol) || (!SCIPisInfinity(scip_, -lhs) && !SCIPisInfinity(scip_, rhs)) )
+         boundval = dualsol > 0.0 ? lhs : rhs;
+      else if( !SCIPisInfinity(scip_, -lhs) )
+         boundval = lhs;
+      else if( !SCIPisInfinity(scip_, rhs) )
+         boundval = rhs;
+      else
+         continue;
+
+      boundval -= GCGmastercutGetConstant(scip_, branchmastercutdata[i]);
 
 #ifdef PRINTDUALSOLS
       if( !SCIPisZero(scip_, boundval * dualsol) )
@@ -3238,6 +3286,14 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
                   dualconvoffset += GCGconsGetRhs(scip_, convcons) * pricetype->consGetDual(scip_, convcons);
             }
             SCIPdebugMessage("  offset caused by convexity constraints: %g\n", dualconvoffset);
+
+            // TODO-til: remove
+            if(!SCIPisDualfeasEQ(scip_, dualobj, stabdualval + dualconvoffset))
+            {
+               //SCIPwriteOrigProblem(scip_, "origprob", "lp", FALSE);
+               //SCIPwriteLP(scip_, "origprob");
+               SCIPwriteMIP(scip_, "origprob", FALSE, FALSE, TRUE);
+            }
 
             assert(SCIPisDualfeasEQ(scip_, dualobj, stabdualval + dualconvoffset));
          }
