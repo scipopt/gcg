@@ -764,7 +764,7 @@ SCIP_DECL_EVENTEXEC(eventExecMastercutUpdate)
 
 
 /** creates event handler for xyz event */
-SCIP_RETCODE SCIPincludeEventHdlrSeparatorCuts(
+SCIP_RETCODE SCIPincludeEventHdlrSepaCuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

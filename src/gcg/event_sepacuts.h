@@ -42,7 +42,7 @@ extern "C" {
 
 /** creates event handler for xyz event */
 SCIP_EXPORT
-SCIP_RETCODE SCIPincludeEventHdlrSeparatorCuts(
+SCIP_RETCODE SCIPincludeEventHdlrSepaCuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

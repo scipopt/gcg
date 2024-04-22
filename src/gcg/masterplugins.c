@@ -360,8 +360,8 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeEventHdlrDisplay(scip) );
 
    /* GCG Master Separators */
-   SCIP_CALL( SCIPincludeSepaSubsetrow(scip) );
-   //SCIP_CALL( SCIPincludeEventHdlrSeparatorCuts(scip) );
+   //SCIP_CALL( SCIPincludeSepaSubsetrow(scip) );
+   SCIP_CALL( SCIPincludeEventHdlrSepaCuts(scip) );
 
    return SCIP_OKAY;
 }
