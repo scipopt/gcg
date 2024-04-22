@@ -143,6 +143,10 @@
 #include "scip/sepa_strongcg.h"
 #endif
 
+/* Chantal's Separators */
+#include "event_sepacuts.h"
+#include "sepa_subsetrow.h"
+
 /* Jonas' stuff */
 #include "sepa_basis.h"
 
@@ -192,9 +196,6 @@
 #include "solver_cplex.h"
 #endif
 
-/* Chantal's Separators */
-#include "event_sepacuts.h"
-#include "sepa_subsetrow.h"
 #include "scip/table_default.h"
 
 /** includes default GCG master plugins */
@@ -360,7 +361,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeEventHdlrDisplay(scip) );
 
    /* GCG Master Separators */
-   //SCIP_CALL( SCIPincludeSepaSubsetrow(scip) );
+   SCIP_CALL( SCIPincludeSepaSubsetrow(scip) );
    SCIP_CALL( SCIPincludeEventHdlrSepaCuts(scip) );
 
    return SCIP_OKAY;

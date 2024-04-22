@@ -35,13 +35,14 @@
 
 
 #include "scip/scip.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates event handler for xyz event */
-SCIP_EXPORT
+GCG_EXPORT
 SCIP_RETCODE SCIPincludeEventHdlrSepaCuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
