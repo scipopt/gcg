@@ -814,7 +814,14 @@ SCIP_RETCODE initIndexSet(
    int*                  indexSetSize        /**< size of the index set */
    )
 {
+   SCIP* origscip;
    int i;
+   int j;
+   int k;
+   SCIP_Bool found;
+   SCIP_VAR* origvar;
+   SCIP_VAR** origvars;
+   int norigvars;
 
    assert( scip != NULL);
    assert( X != NULL);
@@ -822,39 +829,43 @@ SCIP_RETCODE initIndexSet(
    assert( indexSet != NULL);
    assert( indexSetSize != NULL);
 
+   origscip = GCGmasterGetOrigprob(scip);
+   assert(origscip != NULL);
+
    *indexSet = NULL;
    *indexSetSize = 0;
 
 
    for( i = 0; i < Xsize; ++i )
    {
-      int j;
-      SCIP_VAR** origvars = GCGmasterVarGetOrigvars(X[i]);
-      int norigvars = GCGmasterVarGetNOrigvars(X[i]);
+      origvars = GCGmasterVarGetOrigvars(X[i]);
+      norigvars = GCGmasterVarGetNOrigvars(X[i]);
 
-      if( *indexSetSize == 0 && norigvars > 0 )
+      for( j = 0; j < norigvars; ++j )
       {
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, indexSet, norigvars) );
-         for( j = 0; j < norigvars; ++j )
-         {
+         origvar = origvars[j];
 
-            (*indexSet)[*indexSetSize] = origvars[j];
+         if( SCIPvarGetType(origvar) > SCIP_VARTYPE_INTEGER )
+            continue;
+
+         if( SCIPisFeasIntegral(origscip, SCIPgetSolVal(origscip, GCGrelaxGetCurrentOrigSol(origscip), origvar)) )
+            continue;
+
+         if( *indexSetSize == 0 )
+         {
+            SCIP_CALL( SCIPallocBlockMemoryArray(scip, indexSet, 1) );
+            (*indexSet)[*indexSetSize] = origvar;
             ++(*indexSetSize);
          }
-      }
-      else
-      {
-         for( j = 0; j < norigvars; ++j )
+         else
          {
-            int k;
-            int oldsize = *indexSetSize;
-            SCIP_Bool found = FALSE;
+            found = FALSE;
 
             // Make sure to not include duplicates in the set
-            for( k = 0; k < oldsize; ++k )
+            for( k = 0; k < *indexSetSize; ++k )
             {
                /*  if variable already in union */
-               if( (*indexSet)[k] == origvars[j] )
+               if( (*indexSet)[k] == origvar )
                {
                   found = TRUE;
                   break;
@@ -864,7 +875,7 @@ SCIP_RETCODE initIndexSet(
             {
                /*  add variable to the end */
                SCIP_CALL( SCIPreallocBlockMemoryArray(scip, indexSet, *indexSetSize, *indexSetSize+1) );
-               (*indexSet)[*indexSetSize] = origvars[j];
+               (*indexSet)[*indexSetSize] = origvar;
                ++(*indexSetSize);
             }
          }
@@ -1318,15 +1329,11 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
 
       blocknr = GCGgetBlockRepresentative(origscip, GCGvarGetBlock(origvar));
 
+      if( blocknr == -1 ) // not handled by component bound branching - see staticvar branchrule
+         continue;
+
       SCIPdebugMessage("Variable %s belonging to block %d with representative %d is not integral!\n", SCIPvarGetName(origvar), GCGvarGetBlock(origvar), blocknr);
 
-      if( blocknr == -1 )
-      {
-         assert(GCGoriginalVarGetNMastervars(origvar) == 1);
-         break;
-      }
-
-      break;
    }
 
    if( blocknr < -1 )
@@ -1341,7 +1348,7 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    }
 
    // static mastervariables should be handled by the staticvar branchrule
-   assert(blocknr >= -1);
+   assert(blocknr >= 0);
 
    SCIPdebugMessage("branching in block %d \n", blocknr);
 
